@@ -116,8 +116,9 @@
 //!   which is what a modal file dialog is. Long work behind a pdfcer dialog is
 //!   not surfaced. **GAP.**
 
+pub(crate) mod layout;
 pub(crate) mod preview;
-pub(crate) mod spooler;
+mod spooler;
 pub(crate) mod tabs;
 
 use egui::Ui;
@@ -156,30 +157,6 @@ pub(super) const REGION_PAPER: &str = "print.paper";
 /// no position anything outside the process could compute. Publishing them is
 /// the only route, and it costs nothing when `PDFCER_DIAG` is unset.
 pub(super) const REGION_PAPER_ITEM_PREFIX: &str = "print.paper.item.";
-
-/// Width of the options column, in egui points.
-///
-/// Same reasoning as [`preview::COLUMN_WIDTH_PTS`] — a fixed width is what
-/// gives the horizontal scrollbar something stable to measure — and sized to
-/// hold the longest radio label in the three tabs without wrapping.
-const OPTIONS_COLUMN_WIDTH_PTS: f32 = 400.0;
-
-/// The dialog body's natural content width, in egui points: both columns plus
-/// the separator and the two item gaps around it.
-///
-/// Stated as a constant rather than measured from the laid-out row, because
-/// it is what the scrolling body is *told* to be — see the `set_width` call
-/// in [`PrintDialog::body`] for why measuring instead produces a body that
-/// fits by squeezing a column rather than by scrolling.
-const BODY_CONTENT_WIDTH_PTS: f32 = preview::COLUMN_WIDTH_PTS + OPTIONS_COLUMN_WIDTH_PTS + 24.0;
-
-/// Height reserved under the scrolling body for the footer row.
-///
-/// The footer is drawn AFTER the scroll area, so the scroll area must be told
-/// not to eat the whole window. Reserved as a constant for the same reason
-/// [`preview`]'s strip height is: the commit button's position must not depend
-/// on how much the body happens to contain this frame.
-const FOOTER_HEIGHT_PTS: f32 = 46.0;
 
 /// The print dialog's live state.
 ///
@@ -325,6 +302,17 @@ pub struct PrintDialog {
     /// detail, bigger. An absolute scale would make the preview drift out of
     /// the canvas every time the window changed.
     preview_zoom: f32,
+    /// How wide the preview column is, in egui points — the splitter's state.
+    ///
+    /// Operator request, 2026-09-03: *"the preview should be adjustable
+    /// size."* Lives on the dialog rather than in `egui::Memory` because it is
+    /// part of what the operator has configured about this print, alongside the
+    /// zoom and pan beside it, and those three are reset together when the
+    /// dialog is constructed.
+    ///
+    /// ★ Always read back through the clamp in [`Self::body`], never used raw:
+    /// the bound depends on the window width, which changes under it.
+    preview_width: f32,
     /// How far the sheet is displaced from centred, in egui points.
     ///
     /// Applied AFTER centring, so `Vec2::ZERO` always means "centred at the
@@ -427,6 +415,7 @@ impl PrintDialog {
             // chosen while inspecting sheet 4 of last week's job says nothing
             // about this one.
             preview_zoom: 1.0,
+            preview_width: layout::PREVIEW_DEFAULT_WIDTH_PTS,
             preview_pan: egui::Vec2::ZERO,
             preview_texture: None,
             outcome: None,
@@ -586,13 +575,71 @@ impl PrintDialog {
         if std::mem::take(&mut self.commit_requested)
             && let (Some(printer), Some(job)) = (printer_name, job)
         {
-            self.outcome = Some(self.commit(&printer, doc, &job, &page_sizes));
+            let outcome = self.commit(&printer, doc, &job, &page_sizes);
+            // ★★★ A SUCCESSFUL PRINT CLOSES THE DIALOG — 2026-09-03, and until
+            // this day it did not.
+            //
+            // The operator: *"it doesn't close after I hit the print button
+            // [...] it looks greyed out as though it doesn't do anything even
+            // when I hit print - but it is working, so after many clicks I
+            // checked the printer and of course there was a dozen jobs there."*
+            //
+            // Two defects made that, and this is the half that lives here. The
+            // other is that the button was painted with a translucent canvas
+            // tint and read as disabled (`dialogs::host::Host::buttons`). Fixed
+            // separately, because either one alone still produces a duplicate
+            // job: a button that looks dead in a window that stays open is
+            // pressed again, and a working button in a window that stays open
+            // is pressed again by anyone who expects the window to go.
+            //
+            // ★★ **The conventional interaction is the specification here.**
+            // Every print dialog on this machine — Word, Acrobat, Chrome,
+            // Notepad — dismisses itself the instant the job is handed to the
+            // spooler. A print dialog is a transaction with an end, and the end
+            // is the spooler accepting it. Leaving it open invents a model in
+            // which the dialog is a printing *workspace*, and an operator who
+            // has never met that model reads the window still being there as
+            // the press not having landed. This shell does not get to invent an
+            // interaction the whole product class agrees on.
+            //
+            // ★★★ A FAILURE DOES **NOT** CLOSE, and that asymmetry is the point
+            // rather than a hedge. On failure the operator's next act is to
+            // choose a different printer or a different range — which is what
+            // this window is for — and the driver's own words are the only
+            // thing that tells them which. Closing would destroy the reason and
+            // the settings together, leaving *"nothing printed"* and no route
+            // back. Word and Acrobat behave the same way.
+            //
+            // ★ THE RECEIPT IS NOT LOST, it moves. `Ok` used to be reported in
+            // the footer, which is a surface that only exists while the window
+            // does; on the disclosure row it outlives the dialog and sits with
+            // every other consequence of an operation. Both sentences travel —
+            // the page count and, when the driver held settings pdfcer does not
+            // model, the `Synthesised` disclosure — through `record_notes`
+            // rather than two `record_note` calls, because the slot holds one
+            // disclosure and a second call REPLACES the first. That is
+            // documented at `record_notes` and is exactly the trap it names.
+            match Self::commit_notes(outcome.as_ref()) {
+                Some(notes) => {
+                    crate::app::actions::record_notes(doc.edit_epoch, notes);
+                    // The outcome is still stored, for the trace and for the
+                    // frame that is already in flight. Nothing will draw it.
+                    self.outcome = Some(outcome);
+                    self.close_requested = true;
+                }
+                None => self.outcome = Some(outcome),
+            }
         }
         // ★ Three routes out, one outcome — G4. The OS close button and
         // Escape both arrive as `frame.closed`; the footer's own Close button
         // sets `close_requested`. Treating any of them differently would give
         // one route a different meaning from the other two, which is exactly
         // the surprise the convention exists to prevent.
+        //
+        // ★ A successful commit joins them rather than getting a fourth route,
+        // for the same reason: "the job is away, the window is finished" is the
+        // same outcome as Close, and giving it its own path is how two exits
+        // come to differ.
         !frame.closed && !std::mem::take(&mut self.close_requested)
     }
 
@@ -759,112 +806,50 @@ impl PrintDialog {
         }
     }
 
-    /// The scrolling two-column body: preview on the left, options on the
-    /// right.
-    fn body(&mut self, ui: &mut Ui, doc: &OpenDoc, job: Option<&Job>, page_sizes: &[(f64, f64)]) {
-        // `max_height` reserves the footer. With `auto_shrink([false, false])`
-        // the area fills whatever it is given, so without the reservation it
-        // would take the whole window and push the commit button off the
-        // bottom of a dialog whose entire purpose is that button.
-        let body_height = (ui.available_height() - FOOTER_HEIGHT_PTS).max(200.0);
-        // ★ `max_width` is NOT optional, and leaving it out is a measured
-        // failure rather than a theoretical one.
-        //
-        // A `ScrollArea` decides whether to show a bar by comparing its
-        // CONTENT size against its VIEWPORT size, and with `auto_shrink` off
-        // on the x axis it takes its viewport width from
-        // `ui.available_width()`. Inside an `egui::Window`, `Resize` measures
-        // its content by laying it out with generous space first, so on the
-        // frame that matters `available_width` is not the window's real width
-        // — the area concludes 750 pt of columns fit, shows no horizontal bar,
-        // and the window's own max-size clamp then CLIPS the options column
-        // against the screen edge. Observed at a 700x520 viewport: the third
-        // tab's label and the even-pages radio were cut off with no scrollbar
-        // anywhere.
-        let body_width = ui.available_width();
-        // ★ SOLID SCROLLBARS, not egui's floating default.
-        //
-        // `ScrollStyle::default()` is `floating()`: a 2 pt sliver that
-        // allocates no space and fades out when the pointer is elsewhere.
-        // Functionally the body scrolls either way — but the operator's report
-        // was that a too-small dialog cuts content off, and a scrollbar nobody
-        // can see does not answer it. Measured at a 700x520 viewport: the body
-        // was scrolling correctly in both axes and looked, in a screenshot,
-        // exactly like content clipped at the window edge.
-        //
-        // Scoped to this `ui` rather than set on the application style,
-        // because it is an answer to THIS surface's problem — a dialog whose
-        // content genuinely does not fit at the sizes it can be dragged to.
-        //
-        // `foreground_color` on top of `solid()`, and that second step is not
-        // cosmetic either: a solid handle defaults to
-        // `widgets.inactive.bg_fill`, which in a light theme is a near-white
-        // against a near-white panel — measured on a capture, the bar was
-        // present, opaque, correctly sized, and invisible. `foreground_color`
-        // draws the handle from the same visuals' TEXT colour instead, so it
-        // inherits whatever contrast the active theme gives its text.
-        let mut scroll = egui::style::ScrollStyle::solid();
-        scroll.foreground_color = true;
-        scroll.bar_width = 10.0;
-        ui.style_mut().spacing.scroll = scroll;
-
-        egui::ScrollArea::both()
-            .auto_shrink([false, false])
-            .max_height(body_height)
-            .max_width(body_width)
-            .id_salt("print-dialog-body")
-            .show(ui, |ui| {
-                // ★ THE HORIZONTAL SCROLLBAR DOES NOT APPEAR WITHOUT THIS
-                // LINE. Measured, not reasoned.
-                //
-                // `allocate_ui_with_layout` clamps its requested size to
-                // whatever space is LEFT. So in a viewport narrower than the
-                // two columns, the first column takes its 340 and the second
-                // is silently squeezed into the remainder — 328 instead of
-                // 400. The row then measures exactly the viewport width, the
-                // scroll area concludes everything fits, no bar is drawn, and
-                // the options column's right-hand controls are clipped against
-                // the window edge with nothing saying so.
-                //
-                // `set_width` grows `max_rect` as well as `min_rect`, which is
-                // what makes the second column get its real width and the
-                // scroll area see content wider than its viewport. `max`
-                // rather than a bare assignment so a wide window still fills,
-                // rather than leaving a dead strip to the right of the options.
-                ui.set_width(BODY_CONTENT_WIDTH_PTS.max(body_width));
-                ui.horizontal_top(|ui| {
-                    ui.allocate_ui_with_layout(
-                        egui::vec2(preview::COLUMN_WIDTH_PTS, body_height),
-                        egui::Layout::top_down(egui::Align::Min),
-                        |ui| match job {
-                            Some(job) => preview::column(
-                                ui,
-                                &preview::Inputs {
-                                    doc,
-                                    job,
-                                    page_sizes,
-                                },
-                                self,
-                                body_height,
-                            ),
-                            // The device would not describe itself. Everything
-                            // this column draws — sheet, printable rectangle,
-                            // margins — comes from that description, and a
-                            // guessed rectangle is exactly the confidently
-                            // wrong preview the feature exists to prevent.
-                            None => {
-                                ui.label(t::device_unavailable());
-                            }
-                        },
-                    );
-                    ui.separator();
-                    ui.allocate_ui_with_layout(
-                        egui::vec2(OPTIONS_COLUMN_WIDTH_PTS, body_height),
-                        egui::Layout::top_down(egui::Align::Min),
-                        |ui| self.options_column(ui, job, doc.pages.len()),
-                    );
-                });
-            });
+    /// **What a finished commit owes the operator, and whether the window is
+    /// done** — as a pure function, so it can be tested without a printer.
+    ///
+    /// Returns `Some(notes)` when the job went to the spooler: the sentences to
+    /// put on the application's disclosure row, in reading order. The caller
+    /// records them and closes the dialog. Returns `None` on failure, which
+    /// means *"say nothing here and leave the window open"* — the footer draws
+    /// the driver's own words and the operator picks another printer.
+    ///
+    /// # ★★★ Why this is extracted rather than left inline
+    ///
+    /// Because the behaviour it decides is the operator's 2026-09-03 report —
+    /// *"it doesn't close after I hit the print button [...] there was a dozen
+    /// jobs there"* — and the only way to drive the inline version is to
+    /// actually print. Spooling a real job to his printer to prove a window
+    /// closes is not a test, it is the defect.
+    ///
+    /// So the decision is separated from the act. `ui-verify` cannot reach it
+    /// (no headless route ends in a real spool), and this project's rule is
+    /// that a unit test is the floor rather than the ceiling — so what is
+    /// asserted here is deliberately the part that is **pure logic**: which
+    /// outcome closes, and which sentences travel. The act of printing is
+    /// `Self::commit`'s, and is covered by `print_dialog_reaches_the_spooler`.
+    ///
+    /// ★ Stated plainly because it is a real gap: *"the window closes after a
+    /// successful print"* is asserted as a decision, not as an observed
+    /// window disappearing. Closing that gap needs a driven check that prints
+    /// to a file device — `Microsoft Print to PDF` is on this machine — and it
+    /// is worth building; it is not built.
+    fn commit_notes(outcome: Result<&SpoolReport, &String>) -> Option<Vec<String>> {
+        let report = outcome.ok()?;
+        let mut notes = vec![t::sent(report.pages)];
+        // ★ The only one of the four `SettingsSource` values that is disclosed,
+        // and the operator could not learn it any other way: the job printed,
+        // and everything the driver held that pdfcer does not model was
+        // silently absent from it. See `SettingsSource::Synthesised`.
+        if report.settings_source == SettingsSource::Synthesised {
+            notes.push(t::settings_synthesised().to_owned());
+        }
+        // ★ Both sentences in ONE call. `record_notes`' own doc comment records
+        // why: the slot holds a single disclosure, so a second `record_note`
+        // REPLACES the first rather than joining it, and which one survived
+        // would be decided by statement order.
+        Some(notes)
     }
 
     /// The options column: the printer, then one of three tabs.
@@ -1072,24 +1057,22 @@ impl PrintDialog {
             // grow with the window, but bounded overflow is still overflow.
             // The full text is not lost; it is what the trace records.
             match &self.outcome {
-                Some(Ok(report)) => {
-                    ui.add(egui::Label::new(t::sent(report.pages)).truncate());
-                    // ★ The only one of the four `SettingsSource` values that
-                    // is disclosed, and the operator could not learn it any
-                    // other way: the job printed, and everything the driver
-                    // held that pdfcer does not model was silently absent from
-                    // it. See `SettingsSource::Synthesised`.
-                    if report.settings_source == SettingsSource::Synthesised {
-                        ui.add(
-                            egui::Label::new(
-                                egui::RichText::new(t::settings_synthesised())
-                                    .small()
-                                    .weak(),
-                            )
-                            .truncate(),
-                        );
-                    }
-                }
+                // ★ A SUCCESS DRAWS NOTHING HERE, and the arm is kept rather
+                // than folded into `None` so the reason is where somebody
+                // looking for the missing receipt will find it.
+                //
+                // Since 2026-09-03 a successful commit sets `close_requested`,
+                // so this window is gone by the next frame and anything drawn
+                // here would be shown for at most one. The receipt — the page
+                // count, and the `Synthesised` disclosure when the driver held
+                // settings pdfcer does not model — goes to the application's
+                // disclosure row instead, where it OUTLIVES the dialog. See
+                // `show`'s commit block.
+                //
+                // Drawing it in both places was considered and refused: two
+                // copies of one sentence is how they come to disagree, and the
+                // footer's copy would be the one nobody could act on.
+                Some(Ok(_)) => {}
                 Some(Err(detail)) => {
                     ui.add(
                         egui::Label::new(
@@ -1314,27 +1297,87 @@ fn render_options(
 mod tests {
     use super::*;
 
-    /// The body is wide enough for both columns plus the furniture between
-    /// them.
+    /// A spool report with the given page count and settings source.
     ///
-    /// Pinned because the constant is stated rather than measured — see its
-    /// own doc comment — and a later change to either column width that
-    /// forgot this one would silently reintroduce the squeezed-column defect
-    /// the `set_width` call exists to fix.
+    /// Built by hand rather than by printing, which is the whole reason
+    /// [`PrintDialog::commit_notes`] was extracted: proving that the window
+    /// closes must not require putting a job on the operator's printer.
+    fn report(pages: usize, source: SettingsSource) -> SpoolReport {
+        SpoolReport {
+            pages,
+            printed: true,
+            dpi: (300, 300),
+            clipped_pages: 0,
+            job_id: Some(1),
+            settings_source: source,
+        }
+    }
+
+    /// **A successful print returns sentences, which is what closes the
+    /// window** — the operator's 2026-09-03 report.
+    ///
+    /// > *"it doesn't close after I hit the print button [...] it looks greyed
+    /// > out as though it doesn't do anything even when I hit print - but it is
+    /// > working, so after many clicks I checked the printer and of course
+    /// > there was a dozen jobs there."*
+    ///
+    /// `Some` is the signal to record and close; `None` is the signal to stay
+    /// open. Asserting on the discriminant rather than on the wording, because
+    /// the wording belongs to `crate::text::print` and a test that pinned it
+    /// here would be a second copy of it.
     #[test]
-    fn the_body_width_holds_both_columns() {
-        // Bound to locals rather than compared as constant paths. The
-        // assertion is about a *relationship the three constants must keep*,
-        // and comparing the paths directly is const-folded
-        // (`clippy::assertions_on_constants`) — which would make the test pass
-        // by being erased rather than by being true.
-        let body = BODY_CONTENT_WIDTH_PTS;
-        let columns = preview::COLUMN_WIDTH_PTS + OPTIONS_COLUMN_WIDTH_PTS;
+    fn a_successful_print_asks_the_dialog_to_close() {
+        let ok = report(3, SettingsSource::DriverSupplied);
         assert!(
-            body > columns,
-            "the body content width ({body}) must exceed both columns ({columns}) \
-             by enough for the separator and the two item gaps around it, or the \
-             scroll area sees content that fits and draws no horizontal bar"
+            PrintDialog::commit_notes(Ok(&ok)).is_some(),
+            "a job that reached the spooler must produce a receipt, which is what closes the \
+             window. Leaving it open is how one press became a dozen queued jobs."
+        );
+    }
+
+    /// **A FAILED print leaves the window open**, and the asymmetry is
+    /// deliberate rather than an oversight.
+    ///
+    /// On failure the operator's next act is to choose a different printer or a
+    /// different range — which is what this window is for — and the driver's
+    /// own words in the footer are the only thing telling them which. Closing
+    /// would destroy the reason and the settings together.
+    #[test]
+    fn a_failed_print_leaves_the_dialog_open() {
+        let why = "the device is offline".to_owned();
+        assert!(
+            PrintDialog::commit_notes(Err(&why)).is_none(),
+            "a failed job must NOT close the dialog: the footer's message is the only place the \
+             reason appears, and the settings that produced it are still on screen."
+        );
+    }
+
+    /// **The `Synthesised` disclosure travels WITH the receipt, in one call.**
+    ///
+    /// Two sentences, not two `record_note` calls. `record_notes`' doc comment
+    /// records why that matters: the slot holds one disclosure, so a second
+    /// call REPLACES the first and which one survived would be decided by
+    /// statement order rather than by importance.
+    ///
+    /// The receipt is first because it is the sentence an operator reads if
+    /// they read only one.
+    #[test]
+    fn a_synthesised_settings_source_adds_a_second_sentence_to_the_same_receipt() {
+        let plain = PrintDialog::commit_notes(Ok(&report(2, SettingsSource::DriverSupplied)))
+            .expect("a success returns notes");
+        let synthesised = PrintDialog::commit_notes(Ok(&report(2, SettingsSource::Synthesised)))
+            .expect("a success returns notes");
+
+        assert_eq!(plain.len(), 1, "an ordinary print says one thing");
+        assert_eq!(
+            synthesised.len(),
+            2,
+            "a job printed from settings pdfcer synthesised owes the operator that fact, and it \
+             is the one `SettingsSource` value they could not learn any other way"
+        );
+        assert_eq!(
+            plain[0], synthesised[0],
+            "the receipt must be the same sentence and must come FIRST in both cases"
         );
     }
 }

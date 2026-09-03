@@ -374,6 +374,7 @@ pub mod forms_spotlight;
 pub mod pages_drag;
 pub mod preset_group_reachable;
 pub mod print_dialog;
+pub mod print_layout;
 pub mod print_paper;
 /// The Properties panel's document-metadata half: a title typed into it
 /// reaches the file, and an undo takes it back out of the box too.
@@ -1052,6 +1053,12 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // print job will eventually start one by accident. The module header
         // states what that costs and why the cost is worth paying.
         Box::new(print_dialog::PrintDialogReachesTheSpooler),
+        // ★ Immediately after the spooler check, because the two are the two
+        // halves of "does Print work": one asks whether the job reaches the
+        // device, the other whether the window the operator drives it from is
+        // usable. The gap between those halves is where four defects shipped —
+        // see `print_layout`'s header.
+        Box::new(print_layout::PrintDialogBodyDoesNotDeadlockItsScrollbars),
         // ★ Immediately after it, and the ORDER is load-bearing rather than
         // tidy. This check's every skip message defers to `print_dialog` for
         // the diagnosis — "the dialog never opened", "the spooler refused",

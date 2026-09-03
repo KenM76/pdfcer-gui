@@ -63,9 +63,14 @@
 //!   the ability to type a newline the moment it sat in a dialog.
 //! - **Escape** is equivalent to Cancel *and* to the close button, so all three
 //!   routes out are one outcome.
-//! - The affirmative button is **drawn** as the default, from the theme's own
-//!   selection fill, so the operator knows what Enter will do before pressing
-//!   it. A default nobody can see is not a default; it is a surprise.
+//! - The affirmative button is **drawn** as the default, from the theme's
+//!   **accent** and the foreground the theme pairs with it
+//!   (`Theme::accent_pair`), so the operator knows what Enter will do before
+//!   pressing it. A default nobody can see is not a default; it is a surprise.
+//!   ★ This sentence said *"the theme's own selection fill"* until 2026-09-03,
+//!   and that was the defect rather than a description of it: `selection_fill`
+//!   is a 27 %-opacity canvas tint, so the default button rendered **paler than
+//!   an ordinary button** and read as disabled. See [`Host::buttons`].
 //!
 //! ## G6 — it remembers where it was left
 //!
@@ -406,6 +411,33 @@ pub struct Frame {
 }
 
 impl Host {
+    /// The padding between a dialog's content and its window edge, in points.
+    ///
+    /// # Why a constant, and why it lives on the host
+    ///
+    /// The operator's 2026-09-03 report — *"the print button that is so far off
+    /// in the corner it is touching the edge the window"* — was true of all
+    /// fourteen dialogs, because the `Ui` egui hands a viewport callback is the
+    /// window's root and nothing pads it. The main window never showed it: its
+    /// `CentralPanel` brings egui's own inner margin.
+    ///
+    /// One number, owned here, so that fourteen dialogs cannot pick fourteen
+    /// values and so that nobody has to remember to pad theirs.
+    ///
+    /// ★ 12 pt rather than egui's default 8: this shell's own `Metrics` use
+    /// `panel_padding` of 8-12 depending on preset, and a **dialog** is the one
+    /// surface where the window edge is a hard boundary rather than a seam onto
+    /// the next panel. Windows' own dialogs are roomier at the frame than at
+    /// internal gutters for the same reason.
+    ///
+    /// ★★ It is deliberately NOT read from `Theme::of(ctx).metrics`, and that
+    /// is a real decision. This value is fed into [`Self::fit`], which sizes the
+    /// window; a metric that changes with the preset would change the window
+    /// size on a theme switch, and `fit` is the function whose doc comment
+    /// records an unbounded growth loop. A constant cannot participate in a
+    /// feedback loop.
+    const BODY_MARGIN_PTS: f32 = 12.0;
+
     /// A dialog window.
     ///
     /// `id` must be unique and stable per dialog — `"print"`, `"insert-image"`.
@@ -865,17 +897,63 @@ impl Host {
             // screenshot.**
             ui.painter()
                 .rect_filled(ui.max_rect(), 0.0, ui.visuals().panel_fill);
-            // ui-text-exempt: a panic message for an egui contract violation.
-            let draw = add.take().expect("viewport callback ran twice");
-            let out = draw(ui);
+            // ★★★ THE INNER MARGIN, AND ITS ABSENCE WAS THE OPERATOR'S
+            // "TOUCHING THE EDGE" — 2026-09-03.
+            //
+            // His words, about Print: *"the print button that is so far off in
+            // the corner it is touching the edge the window."* It was, and so
+            // was everything else: the trace showed `print.properties` declared
+            // at `y = 0.0`, i.e. the first control flush against the top of the
+            // client area.
+            //
+            // The `Ui` egui hands a viewport callback is the child window's
+            // ROOT, whose `max_rect` is the whole client area. In the main
+            // window `app::frame` adds a `CentralPanel`, and a `CentralPanel`
+            // brings `Frame::central_panel`'s inner margin with it — which is
+            // why nothing in the application looked like this and every dialog
+            // did. The background paint above was added when that difference
+            // was first noticed; it fixed the colour and left the geometry.
+            //
+            // ★★ It is applied HERE rather than in each dialog, because
+            // fourteen dialogs applying their own margin is fourteen chances to
+            // pick a different number and one guarantee that somebody forgets.
+            // The host already owns the window, the background and the button
+            // pair for exactly that reason.
+            //
+            // ★ `Frame::NONE` with only an inner margin, not
+            // `Frame::window` or `central_panel`: those bring a fill and a
+            // stroke, and the fill would paint over the background this function
+            // just established while the stroke would draw a second border
+            // inside the OS window's own. The margin is the only part wanted.
+            //
+            // ★★ AND IT MUST NOT REACH `fit`. `Self::fit` grows the window to
+            // its content, and its doc comment records a run in which an added
+            // margin turned that into an unbounded growth loop — R128's shape,
+            // met three times in this project. A `Frame`'s `inner_margin`
+            // enlarges the `min_rect` it returns by exactly the margin, every
+            // frame, so feeding that back would grow the window by 16 pt per
+            // frame for ever. The measurement below therefore takes the INNER
+            // ui's `min_rect`, captured before the frame closes, and adds the
+            // margin ONCE as a constant — a constant, not a measurement, which
+            // is the distinction that makes it safe.
+            let margin = Self::BODY_MARGIN_PTS;
+            let framed = egui::Frame::NONE.inner_margin(egui::Margin::same(margin as i8));
+            let inner = framed.show(ui, |ui| {
+                // ui-text-exempt: a panic message for an egui contract violation.
+                let draw = add.take().expect("viewport callback ran twice");
+                (draw(ui), ui.min_rect().size())
+            });
+            let (out, content) = inner.inner;
 
             // ★ Measured AFTER the body has drawn, which is the only moment
             // the answer exists in an immediate-mode toolkit. See [`Self::fit`]
             // for the two guards that keep this from becoming a feedback loop.
             if class == ViewportClass::Immediate {
-                // ★ RAW. Nothing added — see [`Self::fit`] for the run where an
-                // added margin turned this into a growth loop.
-                self.fit(&child, ui.min_rect().size());
+                // ★ The CONTENT's own size plus the margin twice, as a
+                // constant. NOT `ui.min_rect()` of the outer ui, which already
+                // includes the margin and would therefore be a measurement
+                // containing the thing being added — see above.
+                self.fit(&child, content + egui::vec2(margin * 2.0, margin * 2.0));
             }
             out
         });
@@ -943,13 +1021,55 @@ impl Host {
         let mut accepted = false;
         let mut cancelled = false;
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            // ★ Drawn from the theme's own selection fill and the strong text
-            // colour it is guaranteed to contrast with — never a literal, which
-            // `check-theme-colors.sh` enforces and which defect D2 is about.
-            // A palette change moves this button with everything else.
-            let visuals = ui.visuals();
-            let fill = visuals.selection.bg_fill;
-            let text = visuals.strong_text_color();
+            // ★★★ THE ACCENT, NOT THE SELECTION FILL — and the difference is
+            // the operator's 2026-09-03 report about Print.
+            //
+            // His words: *"it looks greyed out as though it doesn't do anything
+            // even when I hit print — but it is working, so after many clicks I
+            // checked the printer and of course there was a dozen jobs there."*
+            //
+            // This used to read `visuals.selection.bg_fill` +
+            // `strong_text_color()`, sourced from the theme rather than from a
+            // literal — so it satisfied `check-theme-colors.sh` and looked
+            // correct in review. **It was the right rule applied to the wrong
+            // role.** `egui-shell`'s theme sets
+            //
+            //     v.selection.bg_fill = p.selection_fill
+            //                         = Color32::from_rgba_unmultiplied(90, 140, 220, 70)
+            //
+            // — a **27 %-opacity** wash, because that role's real job is tinting
+            // selected objects on the CANVAS, where translucency is the whole
+            // point. Composited over a light panel it becomes roughly
+            // `rgb(193, 207, 230)`: a pale blue-grey, *paler than
+            // `widgets.inactive.weak_bg_fill`*, which is the opaque fill every
+            // ordinary button gets. So the affirmative button rendered **less
+            // solid than the Cancel button beside it** — which is exactly what
+            // a disabled control looks like.
+            //
+            // ★★ THIS IS DEFECT D2 AGAIN, in the one place its fix did not
+            // reach. When the active ribbon tab had the identical bug it was
+            // moved to `accent` + `on_accent`; `FEATURES.md` records that fix
+            // and even says the mode selector beside it "always did" paint the
+            // accent. `Host::buttons` was written from the same wrong role and
+            // nobody noticed, because a *dialog* button is not a *ribbon* tab
+            // and no test compares the two.
+            //
+            // ★ `on_accent` rather than `strong_text_color()` is not a detail.
+            // `accent` is a saturated blue in the light presets and a lighter
+            // blue in the dark one, and `strong_text_color()` follows
+            // `override_text_color` — which is the body text colour, near-black
+            // in a light theme. Black on a saturated blue is poor; in the dark
+            // preset it would be near-black text on a light blue, which is
+            // fine, and in a future preset with a dark accent it would be black
+            // on black. `Palette::on_accent` exists precisely so that pairing is
+            // decided by the theme and moves with it — its own doc comment says
+            // so, and says the two must never be welded together.
+            //
+            // Read through `egui-shell`'s accessor rather than reconstructed, so
+            // there is one claimant for "what colour is this application's
+            // accent" and `check-theme-colors.sh` still has nothing to object
+            // to.
+            let (fill, text) = egui_shell::Theme::accent_pair(ui.ctx());
             let default = egui::Button::new(egui::RichText::new(accept).color(text)).fill(fill);
             if ui.add(default).clicked() || enter {
                 accepted = true;

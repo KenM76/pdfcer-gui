@@ -72,20 +72,54 @@ use crate::dialogs::print::PrintDialog;
 use crate::dialogs::print::spooler::Job;
 use crate::text::print as t;
 
-/// Width of the preview column, in egui points.
-///
-/// # ★ A CONSTANT, and that is the whole point
-///
-/// The dialog body lives inside a [`egui::ScrollArea::both`], and a
-/// horizontally scrollable area has no bounded width to report: anything laid
-/// out from `ui.available_width()` inside one is being sized from a number
-/// that the scroll area is itself deriving from the content. Two fixed
-/// columns break that circle — the content width is a constant, so the
-/// horizontal scrollbar has something stable to measure and the operator gets
-/// a scrollbar instead of a column that grows to meet it.
-pub(super) const COLUMN_WIDTH_PTS: f32 = 340.0;
+// ★★★ `COLUMN_WIDTH_PTS` WAS HERE, AND ITS REASONING WAS THE DEFECT — 2026-09-03.
+//
+// It was a fixed 340 pt, and its doc comment argued the case at length:
+//
+// > **A CONSTANT, and that is the whole point.** The dialog body lives inside a
+// > `ScrollArea::both`, and a horizontally scrollable area has no bounded width
+// > to report [...] Two fixed columns break that circle — the content width is
+// > a constant, so the horizontal scrollbar has something stable to measure and
+// > the operator gets a scrollbar instead of a column that grows to meet it.
+//
+// The circle it describes is real. The conclusion is wrong, and it produced two
+// separate operator-visible defects:
+//
+//  1. **Two scrollbars that could not be dismissed.** The fixed content width
+//     was `max`'d with `available_width` at the call site precisely so a wide
+//     window would not leave a dead strip — which put `available_width` back
+//     into the circle the constant existed to break, and deadlocked the two
+//     bars against each other. `PrintDialog::body` documents the mechanism.
+//  2. **A preview that could not be made bigger.** *"the preview should be
+//     adjustable size"* — widening the dialog widened the empty space and left
+//     the sheet the same postage stamp, because the column could not grow.
+//
+// The right answer to the circle is not a constant, it is to lay the columns
+// out to the width actually available and tell the `ScrollArea` nothing. It
+// then shows a bar when, and only when, the content does not fit — which is
+// the only thing a scrollbar should ever mean.
+//
+// The width now comes from `PrintDialog::preview_width`, which the splitter
+// drags; the floor, the default and the options column's floor are
+// `PREVIEW_MIN_WIDTH_PTS`, `PREVIEW_DEFAULT_WIDTH_PTS` and
+// `OPTIONS_COLUMN_MIN_WIDTH_PTS` in the parent module. `column` takes it as a
+// parameter.
 
 /// Height of the fixed strip under the preview canvas, in egui points.
+///
+/// # ★★ It reserves THREE rows, not two, since 2026-09-03
+///
+/// The strip is two `horizontal` rows — the seven controls, then the zoom
+/// caption. The first of those is now `horizontal_wrapped` (see [`strip`] for
+/// why), so on a narrow column it becomes two rows and the strip becomes three.
+///
+/// Reserving for the wrapped case is what keeps the constant honest. If it
+/// reserved two rows the strip would overflow the column vertically the moment
+/// it wrapped, the column's content would exceed the body, and a **vertical**
+/// scrollbar would appear — which is the defect this whole change removes,
+/// re-entering by the other axis. The cost of reserving the third row is about
+/// 28 pt of canvas height on a wide column where it is not needed, against a
+/// scrollbar that cannot be dismissed on a narrow one.
 ///
 /// # ★ FIXED, so the canvas can never be shrunk by its own caption
 ///
@@ -99,7 +133,7 @@ pub(super) const COLUMN_WIDTH_PTS: f32 = 340.0;
 ///
 /// The window-resize coupling is the DESIRED one and is unaffected: a taller
 /// window still means a taller canvas.
-const STRIP_HEIGHT_PTS: f32 = 68.0;
+const STRIP_HEIGHT_PTS: f32 = 96.0;
 
 /// Smallest preview canvas, in egui points. Below this the sheet outline
 /// stops being a picture and becomes a smudge, so the column scrolls rather
@@ -333,6 +367,7 @@ pub(super) fn column(
     inputs: &Inputs<'_>,
     dialog: &mut PrintDialog,
     column_height: f32,
+    column_width: f32,
 ) {
     let job = inputs.job;
     if job.plans.is_empty() {
@@ -350,8 +385,13 @@ pub(super) fn column(
     // clamped at both ends.
     let canvas_height =
         (column_height - STRIP_HEIGHT_PTS).clamp(CANVAS_MIN_HEIGHT_PTS, CANVAS_MAX_HEIGHT_PTS);
+    // ★ The width is passed IN, not read from a constant, because the operator
+    // drags it — see `PrintDialog::splitter`. The `fit` computed below is
+    // recomputed from this rect every frame, so a wider column simply shows a
+    // bigger sheet with no further change; that coupling was already the
+    // desired half of the feedback relationship this function documents.
     let (rect, response) = ui.allocate_exact_size(
-        egui::vec2(COLUMN_WIDTH_PTS, canvas_height),
+        egui::vec2(column_width, canvas_height),
         // `click_and_drag` rather than `drag`: a click that does not move must
         // still mark the canvas hovered-and-interacted, which is what gates
         // the Ctrl+wheel read below.
@@ -594,7 +634,34 @@ fn strip(
     scale: f32,
 ) {
     let sheets = inputs.job.plans.len();
-    ui.horizontal(|ui| {
+    // ★★★ `horizontal_wrapped`, NOT `horizontal` — 2026-09-03, and this was the
+    // last cause of the operator's "two scroll bars that won't go away".
+    //
+    // Measured: `print-strip natural_w=379.9 column_w=340.0`. This row of seven
+    // controls has ALWAYS been wider than the column it sits in — 40 pt wider
+    // at the default width — and `ui.horizontal` does not care: it lays out
+    // past the end and reports a `min_rect` that wide. That overflow became the
+    // body's content width, and the body's content width is what raises the
+    // horizontal scrollbar.
+    //
+    // It was invisible for as long as the body forced its content to a fixed
+    // 764 pt, because the strip's 380 fitted inside that and merely spilled
+    // across the divider into the options column's space. It is visible in the
+    // very first capture of this defect, where the button row runs past the
+    // separator.
+    //
+    // ★★ Wrapped rather than given a wider minimum, and that choice is the
+    // point. A minimum would be a **constant asserting how wide seven buttons
+    // are**, and that depends on the theme preset's font size and button
+    // padding, and on the label text — so it would be correct in one preset and
+    // wrong in another, which is the same class of defect as the hard-coded
+    // item gap this file's caller was just corrected for. A wrapped row is
+    // bounded by its available width **by construction**: there is no number to
+    // get wrong, and no preset in which it can overflow.
+    //
+    // The cost is that the row becomes two rows on a narrow column. That is
+    // paid for in `STRIP_HEIGHT_PTS`, which reserves the space for it.
+    let probe = ui.horizontal_wrapped(|ui| {
         if ui.button(t::preview_previous()).clicked() {
             dialog.preview_page = shown.saturating_sub(1);
             // A different sheet is a different picture, so the zoom and pan
@@ -638,6 +705,26 @@ fn strip(
         {
             zoom_by(dialog, 1.0 / scale, rect.center(), rect.center());
         }
+    });
+    // ★ THE REGRESSION TEST FOR THE LAST CAUSE OF THE TWO-SCROLLBAR DEFECT,
+    // reported from inside the process because it cannot be seen from outside.
+    //
+    // `laid_w` must never exceed `column_w`. When it did — measured at
+    // `laid_w=379.9 column_w=340.0` on 2026-09-03 — the overflow propagated
+    // into the body's content width and raised a horizontal scrollbar that no
+    // amount of resizing could dismiss, because the strip's width did not
+    // depend on the window's.
+    //
+    // A driven check asserts the inequality rather than a value: the strip's
+    // width is a function of the theme's font and button padding and of the
+    // label text, so any constant here would be a claim that decays. The
+    // relationship is what matters and it is what is asserted.
+    crate::diag::trace(|| {
+        format!(
+            "print-strip laid_w={:.1} column_w={:.1}",
+            probe.response.rect.width(),
+            rect.width()
+        )
     });
     ui.horizontal(|ui| {
         // The scale as a percentage of ACTUAL size, not of the fit — see

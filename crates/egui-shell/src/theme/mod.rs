@@ -487,6 +487,57 @@ impl Theme {
             .unwrap_or_default()
     }
 
+    /// **The accent fill and the foreground guaranteed to read on it**, as one
+    /// value, for anything that paints an "this is the default action" surface.
+    ///
+    /// Returns `(accent, on_accent)`. Use it for an affirmative dialog button,
+    /// an active tab, a selected mode chip — any chrome that must look
+    /// *emphatically enabled*.
+    ///
+    /// # ★★★ Why this exists as a function rather than two field reads
+    ///
+    /// Because the two fields have been separated twice, and both times the
+    /// result was a surface that shipped looking broken while every gate stayed
+    /// green.
+    ///
+    /// 1. **DEFECTS.md D2** — the active ribbon tab took `egui`'s *selection*
+    ///    visuals and a plate colour meant for content, and rendered near-white
+    ///    on light grey. [`Palette::on_accent`]'s own doc comment records the
+    ///    root cause: two roles that must vary independently had been welded
+    ///    together.
+    /// 2. **The operator's print-dialog report, 2026-09-03** — the affirmative
+    ///    button in *every* dialog was filled with
+    ///    [`Palette::selection_fill`], a **27 %-opacity** wash whose real job is
+    ///    tinting selected objects on a canvas. Over a light panel it
+    ///    composites *paler than an ordinary button's opaque fill*, so the
+    ///    default action looked **disabled**. He pressed it a dozen times and
+    ///    found a dozen queued print jobs.
+    ///
+    /// Both were correctly sourced from the theme. Neither used a literal, so
+    /// `tools/gates/check-theme-colors.sh` — which forbids raw `Color32`
+    /// outside this module — had nothing to say about either. **The rule that
+    /// gate enforces is "no invented colours"; it cannot enforce "the right
+    /// role".** A named pair is the mechanism that can: there is now one
+    /// spelling of *"paint something as the emphasised action"*, and a preset
+    /// that changes its accent moves every such surface together.
+    ///
+    /// ★ Not `strong_text_color()` for the foreground. That follows
+    /// `override_text_color`, which is the **body text** colour — near-black
+    /// under the light presets. On a saturated accent that is poor contrast,
+    /// and under a preset whose accent is dark it would be black on black.
+    /// [`Palette::on_accent`] is the theme's own answer and inverts per preset.
+    ///
+    /// ★ Deliberately NOT `selection.bg_fill`. That role is translucent on
+    /// purpose and belongs to canvas selection, where seeing the object through
+    /// the tint is the entire point. A translucent chrome fill is not a dimmer
+    /// accent; it is a different colour every time the background behind it
+    /// changes.
+    #[must_use]
+    pub fn accent_pair(ctx: &egui::Context) -> (egui::Color32, egui::Color32) {
+        let theme = Self::of(ctx);
+        (theme.palette.accent, theme.palette.on_accent)
+    }
+
     /// The `egui::Style` this theme produces, standalone.
     ///
     /// # Why this is public

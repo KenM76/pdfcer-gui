@@ -10,8 +10,10 @@
 //! > you've been trained on a million lines of code and software that pops it
 //! > up in its own window."*
 //!
-//! Print was fixed that evening and `print_dialog` asserts it. **The other
-//! thirteen dialogs were not**, and the report was never about printing — it
+//! Print was fixed that evening and `print_dialog` asserts it REACHES THE
+//! SPOOLER — which is not a claim about its window, and the difference let four
+//! window defects ship in it. It is the first entry in `DIALOGS` since
+//! 2026-09-03; see the comment there. **The other thirteen dialogs were not**, and the report was never about printing — it
 //! was about a shell whose dialogs are drawn inside its own canvas. This check
 //! is the general form of `print_dialog`'s section D.
 //!
@@ -65,6 +67,26 @@ const INVOKE_ENV: &str = "PDFCER_DIAG_INVOKE";
 /// DXF opened inside the application window"* is actionable to whoever reads
 /// it, and `export_dxf.rs` is not.
 const DIALOGS: &[(&str, &str)] = &[
+    // ★★★ PRINT IS FIRST, AND ITS ABSENCE FROM THIS LIST WAS A DEFECT — added
+    // 2026-09-03.
+    //
+    // This module's header used to say Print "was fixed that evening and
+    // `print_dialog` asserts it", and left it out. Both halves of that were
+    // wrong in a way worth keeping:
+    //
+    //  · `print_dialog` asserts the dialog reaches the SPOOLER. It says nothing
+    //    about the window, its margins, its scrollbars or its buttons.
+    //  · So the one dialog whose report started this entire piece of work —
+    //    *"Print dialogue box doesn't pop up in its own movable window"* — was
+    //    the only command-reachable dialog with no headless check at all.
+    //
+    // On 2026-09-03 the operator reported four fresh defects in it: two
+    // scrollbars that could not be dismissed, a window that would not close
+    // after printing, a commit button flush against the window corner, and that
+    // button rendered so pale it read as disabled. **A hand-written list inside
+    // a completeness sweep is the gap**, and this is the third time this
+    // project has been caught by that exact shape.
+    ("file.print", "Print"),
     ("file.about", "About"),
     ("tools.render_diagnostics", "Render diagnostics"),
     ("file.export_dxf", "Export to DXF"),

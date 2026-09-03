@@ -80,6 +80,225 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
+## O113 — ◑ **OPEN, 2026-09-03** — the clipping hatch should cover only what actually falls outside the printable area
+
+**Ken, 2026-09-03:** *"also can you make it so the red pattern you put over the
+page if it is going to print beyond the printable borders is only over the areas
+that extend beyond the printable page? Our drawing get drawn 1:1 and the area
+that isn't printed is just empty border."*
+
+The preview hatches to say *"this will be clipped"*, and it hatches **the whole
+overhanging region** rather than the part of it that carries ink. On his
+drawings that is almost always wrong in the direction that matters: a CAD sheet
+printed 1:1 overhangs by a margin of **empty paper**, so the hatch shouts about
+losing something when nothing is being lost.
+
+★ **This is a disclosure that is technically true and practically false**, which
+is the worst kind. An operator who sees the same red band on every 1:1 drawing
+learns to ignore it, and then does not see it on the one sheet where the border
+really does have a title block in it. A warning that fires on the common
+harmless case trains the operator out of reading it.
+
+★★ **It is a rule 4 question and it should be checked against rule 4 before it
+is built.** The hatch is drawn on the *preview*, not on the page and not on the
+saved document, so it is disclosure rather than content marking and it is
+allowed to exist. What is at issue is only its accuracy. But the fix must not
+drift into marking: whatever is drawn stays inside the preview canvas, and the
+page as rendered for printing is unchanged.
+
+### What it needs, and the honest difficulty
+
+The question *"is there ink in this region of this page?"* is not one the
+current plan answers. `Job::clipped()` counts sheets whose page box exceeds the
+printable rectangle — a **geometric** test on the `/MediaBox` against the
+device, which is why it is cheap and why it is wrong here.
+
+Answering it properly means asking what the page's **content** bounding box is,
+which is `pdfcer-core`'s question rather than this shell's. Likely shapes:
+
+- an engine verb returning a page's ink extent (a real content bbox, not the
+  `/MediaBox`), which is the honest general answer and is a request to file;
+- or, entirely within the shell, sampling the preview raster we have **already
+  rendered** for the overhanging band and hatching only where it is not blank.
+  Cheaper, needs no engine change, and is approximate at the edges.
+
+⬜ **Not started, and not guessed at.** The second option is tempting because it
+needs nobody else, and it answers *"is this band blank in the raster we drew"*
+rather than *"is this band blank"* — which is the same class of proxy this
+project has now been caught by three times in one day. Decide deliberately.
+
+---
+
+## O112 — ◑ **HALF DONE 2026-09-03** — the print preview should be resizable, and poppable into its own window
+
+**Ken, 2026-09-03:** *"also the preview should be adjustable size, and even
+better if it has the option to pop out into its own resizeable window - closing
+the window pops it back into place on the print window."*
+
+Two asks, and the second is the interesting one. Taken together with O111 below,
+because they are the same surface.
+
+1. **Adjustable in place** — the preview column is a hard-coded 340 pt
+   (`preview::COLUMN_WIDTH_PTS`) and the sheet is drawn to fit inside it. On a
+   1300 pt-wide dialog that leaves most of the window empty while the preview
+   stays postage-stamp sized. It needs a draggable splitter between the two
+   columns, and the preview must re-fit to whatever width it is given.
+2. **Poppable into its own OS window**, and closing that window returns it to
+   the print dialog.
+
+★ The second is already structurally cheap and that is worth recording: every
+dialog in this shell is a real OS window through `dialogs::host::Host`, which is
+keyed on a name string, remembers its own position and reports its own close.
+A popped-out preview is a second `Host` keyed `print-preview`. **The close is
+already the return path** — `Frame::closed` is what the host reports, so
+"closing the window pops it back" is the default behaviour rather than a feature
+to build.
+
+★ **What it must NOT do (R9):** while the preview is popped out, the print
+dialog's preview column renders **nothing** — not a greyed rectangle, not a
+"preview is in another window" placeholder box occupying the same space. The
+column collapses and the options take the room. A stub is the thing this
+project's no-placeholders rule exists to forbid.
+
+### ✅ Ask 1 done — the preview is draggable
+
+A splitter between the two columns. Drag it; double-click restores the default.
+The preview re-fits to whatever width it is given, because `fit` was already
+recomputed from the current rect every frame — that coupling was the *desired*
+half of the feedback relationship the preview documents, so widening the column
+simply shows a bigger sheet.
+
+- Floors at both ends so neither column can be squeezed out of existence
+  (220 pt preview, 400 pt options). Below their sum the body scrolls
+  horizontally, which is the one case where scrolling is the right answer.
+- **The width you choose survives a resize.** The first version wrote the
+  clamped value back, so narrowing the dialog to 540 pt destroyed your setting
+  and widening it again left the preview at the floor. It is a *preference*
+  now, clamped only for layout.
+- The affordance is a **cursor** and a hover-lift on the divider. Nothing is
+  drawn on the previewed sheet — rule 4's pre-commit clause.
+
+### ⬜ Ask 2 not started — the pop-out window
+
+Still the right shape and still cheap: a second `Host` keyed `print-preview`,
+with `Frame::closed` already being the return path. Deferred deliberately rather
+than rushed in behind four defect fixes in the same file, which is now split
+across `print/mod.rs` and `print/layout.rs`.
+
+### Was blocked behind O111 on purpose
+
+O111's defects are in the same layout code — the forced content width, the
+missing margin and the fixed column widths are all in `PrintDialog::body`. Doing
+this first would mean writing a splitter into a layout that is already
+mis-measuring itself, and then not being able to tell which change fixed what.
+
+---
+
+## O111 — ✅ **FIXED 2026-09-03** — the print dialog: two permanent scrollbars, it will not close, and Print looks broken
+
+**Ken, 2026-09-03:** *"I thought the print dialogue box had been fixed by
+replacing with a more standard window one but with all our current acrobat style
+controls and commands untouched. Instead I have two scroll bars in the pop up
+window that won't go away no matter how, and it doesn't close after I hit the
+print button that is so far off in the corner it is touching the edge the
+window, and it looks greyed out as though it it doesn't do anything even when I
+hit print - but it is working, so after many clicks I checked the printer and of
+course there was a dozen jobs there because the button just looks greyed out and
+broken."*
+
+**★★★ Four separate causes, not one.** Reproduced offscreen on
+`fixtures/a1-titleblock.pdf` and photographed at five window sizes; every
+symptom is visible in the captures.
+
+| # | symptom | cause |
+|---|---|---|
+| 1 | two scrollbars that never go away | the body forces its content to `max(764, available_width)`, so at any width over 764 the content is exactly as wide as the viewport **before** the scrollbar is subtracted. The vertical bar takes 10 pt, the content is then wider than what is left, the horizontal bar appears, that takes 10 pt of height, and the two keep each other alive |
+| 2 | does not close after Print | by construction. `show` returns `!frame.closed && !close_requested`, and `close_requested` is set only by Cancel and the OS close button. Pressing Print prints and leaves the window open |
+| 3 | the button touches the window edge | the dialog body is drawn into the viewport's **root `Ui`** with no frame and no inner margin. The trace shows content at `y = 0.0`. **True of all fourteen dialogs**, not just Print |
+| 4 | Print looks greyed out | `Host::buttons` fills the affirmative with `visuals.selection.bg_fill`, which this theme sets to the **27 %-opacity canvas object-selection tint**. Over the panel it composites to a pale blue-grey — *paler than the ordinary Close button beside it*. This is defect **D2's exact shape**, in the one place the earlier fix did not reach |
+| — | a dozen queued jobs | the consequence of 2 and 4 together: the button looks dead, the window does not close, so it gets pressed again |
+
+### ✅ What was done
+
+| # | fix |
+|---|---|
+| 1 | every width and height in the body is now derived from the space **outside** the scroll area and from constants — never measured inside it — and `auto_shrink` is `[true, true]`. Driven by `print_dialog_body_does_not_deadlock_its_scrollbars`, which reads egui's own `content_size` and `inner_rect` out of a running frame |
+| 2 | a **successful** print records its receipt on the application's disclosure row and closes the window. A **failed** one does not close, because the driver's words and the settings that produced them are what the operator needs next |
+| 3 | `Host::BODY_MARGIN_PTS` — 12 pt, applied once in the host, so **all fourteen dialogs** gain it rather than each remembering |
+| 4 | `Theme::accent_pair` — one named accessor for *"paint this as the emphasised action"*, replacing the translucent `selection.bg_fill` in every dialog's affirmative button |
+
+**★★★ The scrollbar defect took FOUR fixes, not one, and each wrong answer read
+as obviously correct in the source.** In order: the content was sized from the
+width *outside* the scroll area; then `auto_shrink([false, false])`, which
+*defines* the content to be at least the pre-bar viewport; then the two
+`item_spacing` gaps `horizontal_top` inserts between three children; then the
+preview's control strip, measured at **379.9 pt laid out in a 340 pt column** —
+it had overflowed since the day it was written, hidden by the forced content
+width. Only the third and fourth were found by instrumenting the running
+process; nothing in the source suggested either.
+
+★ **A first attempt at the third fix was worse than the defect.** Setting
+`item_spacing.x = 0` removed the bar and inherited into every child, so the
+radio rows lost their spacing — *"Subset ●Every page ○Odd only"*. It was visible
+in the very next capture. The gaps are in the arithmetic now, read from the
+style rather than assumed to be 8, because this shell's gutter differs per theme
+preset.
+
+★★ **And the fourth fix is a wrapped row, not a wider minimum.** A minimum would
+be a constant asserting how wide seven buttons are — which depends on the
+preset's font and button padding, so it would be right in one theme and wrong in
+another. `horizontal_wrapped` is bounded by its column **by construction**:
+there is no number to get wrong.
+
+### ✅ Verified, and how
+
+- **Driven and falsified.** `print_dialog_body_does_not_deadlock_its_scrollbars`
+  fails when the original width defect is planted back in (content 784 pt in a
+  776 pt viewport) and passes when it is removed.
+- **Photographed at five window sizes**, before and after. The before-captures
+  show both bars at 1000 × 760 and 1300 × 900 and the clipped-with-no-bar case
+  at 700 × 520; the after-captures show no bar where nothing needs scrolling and
+  a bar where something does.
+- **Print is now in `dialogs_open_in_their_own_window`'s list**, which it had
+  never been in — see below.
+- Three unit tests on the close-and-report decision, extracted into
+  `commit_notes` so that proving the window closes does not require putting a
+  job on your printer.
+
+### ★★ The gap that let all four ship, recorded because it is the third of its kind
+
+`dialogs_open_in_their_own_window` sweeps every command-reachable dialog from a
+**hand-written list, and Print was not in it** — the dialog whose report started
+that entire piece of work. The header rationalised the omission as *"Print was
+fixed that evening and `print_dialog` asserts it"*, and `print_dialog` asserts
+the job reaches the **spooler**, which is not a claim about the window.
+
+**A hand-written list inside a completeness sweep is the gap.** Print is now the
+first entry.
+
+★ And a unit test named `the_body_width_holds_both_columns` was **green
+throughout**, asserting a relationship between our own constants. A scrollbar
+appears when content exceeds egui's **viewport**, which is smaller than anything
+those constants describe and does not exist until a frame is laid out. It was a
+test of the wrong quantity; it is retired, with the reason kept where it stood.
+
+**★★ The scrollbars are INVERTED, which the size walk found and a single
+screenshot would not have.** At 1000 × 760 and 1300 × 900 both bars are present
+with two thirds of the window empty. At 700 × 520 the options column is clipped
+below "Landscape" — the whole Paper section unreachable — with **no vertical bar
+at all**. Bars when nothing needs scrolling; no bar when content is genuinely
+cut off.
+
+**★★ Why no gate or check caught any of it.** `check-theme-colors.sh` passes
+because `Host::buttons` uses a theme *role* rather than a literal — the rule it
+enforces is "no raw `Color32`", and this is a correctly-sourced colour used for
+the wrong thing. The contrast test measures widget-state pairs and never sees
+this ad-hoc pairing. And `dialogs_open_in_their_own_window` sweeps eight
+command-reachable dialogs from a **hand-written list that does not include
+Print** — the dialog whose report started that whole piece of work.
+
+---
+
 ## O110 — ✅ **RELEASED 2026-09-03 (afternoon)** — release and publish the package on GitHub
 
 **Ken, 2026-09-03:** *"please release and publish the package on github."*
