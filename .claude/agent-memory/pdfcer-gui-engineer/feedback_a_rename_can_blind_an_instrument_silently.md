@@ -4,6 +4,8 @@ description: A hard-coded external path turns a rename into a green check over a
 metadata:
   type: feedback
 ---
+<!-- old-name-exempt-file: this memory is about the rename itself, so the old name IS its subject. -->
+
 
 **An instrument that hard-codes an external path goes blind when anything
 renames, and it goes blind reporting success.** Derive the path from the

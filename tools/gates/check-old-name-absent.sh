@@ -44,7 +44,8 @@
 #      is the lock being correct. It is generated rather than authored, and
 #      rewriting it would make it disagree with what Cargo actually fetched.
 #
-#   5. Any line carrying the marker `old-name-exempt:` with a reason after it.
+#   5. Any line carrying `old-name-exempt:` with a reason, or any FILE that
+#      carries `old-name-exempt-file:` with one.
 #      Prose that has to SPELL the old name to explain the rename is the
 #      obvious case — this gate's own header and `run-all.sh`'s registration
 #      comment both do — and a blanket file exemption would take the whole
@@ -117,8 +118,27 @@ if [[ "$STATUS" -gt 1 ]]; then
     exit 1
 fi
 
+# ★★ A FILE may exempt ITSELF, by carrying `old-name-exempt-file:` and a reason
+# in its own text. Two memory files and this gate's siblings are *about* the
+# rename, so their subject is the old name and marking 25 individual lines would
+# bury the prose in machinery.
+#
+# The exemption is declared in the file rather than listed here on purpose: it
+# is the same reasoning as the per-line marker and as `ui-text-exempt:` — the
+# exception lives where the next reader will meet it, and a list somewhere else
+# is a list nobody re-reads. A file that stops being about the rename loses its
+# marker in the same edit that changes its subject.
+EXEMPT_FILES=$(git grep -lF 'old-name-exempt-file:' -- . 2>/dev/null || true)
+
 HITS=$(printf '%s
 ' "$RAW" | grep -vE "$ALLOWED" || true)
+if [[ -n "$EXEMPT_FILES" ]]; then
+    while IFS= read -r f; do
+        [[ -z "$f" ]] && continue
+        HITS=$(printf '%s
+' "$HITS" | grep -v "^${f}:" || true)
+    done <<< "$EXEMPT_FILES"
+fi
 HITS=$(printf '%s
 ' "$HITS" | sed '/^$/d')
 

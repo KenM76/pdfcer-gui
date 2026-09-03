@@ -38,6 +38,10 @@ carries the git URL Cargo itself resolves. Reading it there means:
 lesson above is that a missing engine must be loud.
 """
 
+# old-name-exempt-file: this module exists BECAUSE of the rename and quotes the
+# literals it replaced; the old name is its subject.
+
+
 from __future__ import annotations
 
 import pathlib

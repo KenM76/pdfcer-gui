@@ -4,6 +4,8 @@ description: Names, folders and repos after the 2026-09-03 rename, and the two t
 metadata:
   type: project
 ---
+<!-- old-name-exempt-file: this memory records the 2026-09-03 rename, so the old name IS its subject. -->
+
 
 The product is **`pdfcer`** — *pdf create, edit, read*, pronounced
 "pdf-see-er". `pdfce` is now its **pre-release code name**, not a mistake.

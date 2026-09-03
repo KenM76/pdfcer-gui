@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# old-name-exempt-file: this gate guards the bridge to the pre-rename engine
+# and must name it to explain itself.
 #
 # check-engine-rename-shim.sh — the tripwire on a temporary shim, which names
 # its own deletion.
