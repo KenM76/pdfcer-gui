@@ -4,6 +4,7 @@ description: The latest build always goes to OneDrive — verified or not. Ken's
 metadata:
   type: feedback
 ---
+<!-- old-name-exempt-file: this memory records the OneDrive slots being renamed, so the old slot names ARE its subject. -->
 
 **Every time you produce a build worth keeping, package it and mirror it to
 Ken's OneDrive, alternating between the `pdfcer-gui1` and `pdfcer-gui2` slots.**

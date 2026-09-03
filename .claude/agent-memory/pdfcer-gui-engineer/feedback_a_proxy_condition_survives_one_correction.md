@@ -4,6 +4,7 @@ description: A gate corrected once for testing a proxy will usually still be tes
 metadata:
   type: feedback
 ---
+<!-- old-name-exempt-file: this memory is about the engine rename shim, so the old crate names ARE its subject. -->
 
 **When a check guards a mechanism, its condition must be the thing that
 mechanism actually reads — and a check that has already been corrected once for
