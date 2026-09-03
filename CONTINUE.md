@@ -1,5 +1,120 @@
 # CONTINUE - handoff
 
+## 2026-09-03 (evening) - his print dialog: four defects, and the scrollbars alone took four fixes
+
+### What he reported
+
+> *"two scroll bars in the pop up window that won't go away no matter how, and
+> it doesn't close after I hit the print button that is so far off in the corner
+> it is touching the edge the window, and it looks greyed out as though it
+> doesn't do anything even when I hit print - but it is working, so after many
+> clicks I checked the printer and of course there was a dozen jobs there."*
+
+**Four separate causes.** Reproduced offscreen with `PDFCER_DIAG_INVOKE=file.print`
+and photographed at five window sizes BEFORE touching anything; every symptom is
+in the captures. Filed as O111, now closed.
+
+### ★★★ The scrollbars needed FOUR fixes, and each wrong answer read as correct
+
+In the order they were found, each one revealing the next:
+
+| # | cause | how it was found |
+|---|---|---|
+| a | content forced to `available_width` measured **outside** the scroll area | reading the source |
+| b | `auto_shrink([false, false])`, which **defines** content to be at least the pre-bar viewport | tracing egui's own `content_size` vs `inner_rect` |
+| c | the two `item_spacing` gaps `horizontal_top` inserts between three children | same trace, `content_w=1260` against `outer_w=1276` with a bar still drawn |
+| d | the preview's control strip, **379.9 pt laid out in a 340 pt column** | a second trace line added to measure it |
+
+Each raised a horizontal bar; a horizontal bar consumes height; that raised a
+vertical bar; the vertical bar consumed width, which kept the horizontal one.
+**The two bars were each other's cause**, which is why resizing never helped.
+
+★★ **The failure was INVERTED**, which walking the size series found and one
+screenshot would not have: bars at 1000x760 and 1300x900 where nothing needed
+scrolling, and **no bar at all** at 700x520 where the whole Paper section was
+clipped and unreachable.
+
+★★ **(d) had overflowed since the day it was written** — hidden by the forced
+content width, and visible spilling past the divider in the very first capture
+if anybody had looked.
+
+★ **The first attempt at (c) was worse than the defect.** `item_spacing.x = 0`
+removed the bar and inherited into every child, so the radio rows lost their
+spacing: *"Subset ●Every page ○Odd only"*. Visible in the next capture. **Fixing
+a layout defect by removing the layout is how one defect becomes several.**
+
+★ **(d) is fixed with `horizontal_wrapped`, not a wider minimum.** A minimum
+would be a constant asserting how wide seven buttons are — which depends on the
+preset's font and button padding, so right in one theme and wrong in another. A
+wrapped row is bounded **by construction**.
+
+⇒ The rule now held by `print/layout.rs`: **every width and height is derived
+from the space OUTSIDE the scroll area and from constants. Nothing is measured
+from inside it.**
+
+### ★★★ The button looked disabled, and it is defect D2 for the third time
+
+`Host::buttons` filled the affirmative with `visuals.selection.bg_fill`, whose
+comment congratulated itself on being *"never a literal, which
+`check-theme-colors.sh` enforces"*. Every clause true. That role is
+`rgba(90,140,220,70)` — a **27 % wash** whose real job is tinting canvas
+selection — and over a light panel it composites **paler than an ordinary
+button's opaque fill**. The default action rendered less solid than Cancel.
+
+`Theme::accent_pair` is now the one spelling of *"paint this as the emphasised
+action"*. **A gate that forbids invented values cannot enforce correct roles**;
+a purpose-named pair is the mechanism that can.
+
+### The other two, briefly
+
+- **It would not close.** By construction — `show` returned
+  `!frame.closed && !close_requested`. A **successful** print now records its
+  receipt on the disclosure row and closes; a **failed** one does not, because
+  the driver's words and the settings are what he needs next.
+- **Everything touched the window edge, in all fourteen dialogs.** A viewport
+  callback's root `Ui` has no `CentralPanel`, so no margin. `Host::BODY_MARGIN_PTS`,
+  applied once in the host — and deliberately kept OUT of `Host::fit`'s
+  measurement, because a margin fed back into a size grows the window every
+  frame.
+
+### ★★ The gap that let all four ship — third of its kind
+
+`dialogs_open_in_their_own_window` sweeps from a **hand-written list, and Print
+was not in it.** Its header rationalised the omission in prose. Print is now the
+first entry, with the reason.
+
+And `the_body_width_holds_both_columns` was **green throughout**, asserting a
+relationship between our own constants while he was looking at two scrollbars.
+A bar appears when content exceeds **egui's** viewport, which does not exist
+until a frame is laid out. Retired; replaced by three relationships that ARE
+ours plus a driven check that reads egui's numbers from a running process.
+
+### Requests filed and their state
+
+| | |
+|---|---|
+| **O111** | ✅ closed — the four defects above |
+| **O112** | ◑ **half** — the preview is draggable (splitter, floors, double-click to reset, width survives a resize). The **pop-out window is NOT started**; it is a second `Host` keyed `print-preview` and `Frame::closed` is already the return path |
+| **O113** | ⬜ **not started** — the clipping hatch should cover only what actually falls outside the printable area. His 1:1 drawings overhang by empty paper, so the hatch cries wolf on every sheet. Needs either an engine verb for a page's ink extent, or sampling the preview raster; **decide deliberately**, the second is a proxy |
+
+### Not verified, and named rather than implied
+
+**The window visibly disappearing after a REAL print.** The decision is unit
+tested (`commit_notes`, extracted for exactly that reason — proving a window
+closes must not require a job on his printer), but nothing has driven a spool.
+Closing that needs a check that prints to a file device; `Microsoft Print to
+PDF` is on this machine. Worth building. Not built.
+
+### State
+
+Engine **v0.28.0 at `e27c3b4`** — it moved under the packager **twice** in one
+afternoon, so treat that as the standing hazard. 2,886 tests, 0 failing; 23 of
+23 gates, 0 skipped. `print/mod.rs` hit R2 at 1,886 lines, so geometry moved to
+`print/layout.rs`. OneDrive: **`pdfcer-gui2` is the new build**, `pdfcer-gui1`
+holds the 14:13 one from before these fixes.
+
+---
+
 ## 2026-09-03 (afternoon) - v0.5.0 released, and the rename had blinded four instruments
 
 ### The release

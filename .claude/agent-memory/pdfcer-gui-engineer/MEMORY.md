@@ -44,3 +44,4 @@
 - [The project is pdfcer-gui since 2026-09-03](project_the_project_is_pdfcer_gui_since_2026_09_03.md) — names, folders, repos; and the two references that deliberately did NOT move.
 - [A rename can blind an instrument silently](feedback_a_rename_can_blind_an_instrument_silently.md) — a hard-coded external path turns a rename into a green check over an empty scan.
 - [A proxy condition survives one correction](feedback_a_proxy_condition_survives_one_correction.md) — a gate corrected once for a stand-in is usually still using one; ask what the mechanism READS.
+- [A correctly-sourced value used for the wrong role passes every gate](feedback_a_correctly_sourced_value_used_for_the_wrong_role_passes_every_gate.md) — the colour gate forbids invented values, not wrong roles; expose the PAIR behind a purpose-named function.

@@ -1,6 +1,52 @@
 # RESUME — read this, then say "continue"
 
 
+> ★★★ **LAST SESSION: 2026-09-03 (evening). HIS PRINT DIALOG — four defects,
+> and the two scrollbars alone needed four separate fixes.** Long form at the
+> top of [`CONTINUE.md`](CONTINUE.md); the ledger rows are O111 (closed), O112
+> (half) and O113 (not started).
+>
+> ★★★ **The finding to carry: EACH WRONG ANSWER READ AS CORRECT IN THE SOURCE.**
+> The scrollbar deadlock had four causes — content sized from the width
+> *outside* the scroll area; `auto_shrink([false, false])`, which *defines*
+> content to be at least the pre-bar viewport; two un-accounted `item_spacing`
+> gaps; and a control strip laid out **379.9 pt inside a 340 pt column** since
+> the day it was written. Causes (c) and (d) were found ONLY by tracing egui's
+> own `content_size` and `inner_rect` from a running frame. ⇒ **For a layout
+> defect, instrument the process before editing it.**
+>
+> ★★ **And the failure was INVERTED.** Bars at 1000×760 and 1300×900 where
+> nothing needed scrolling; **no bar at all** at 700×520 where a whole section
+> was clipped and unreachable. One screenshot would have confirmed the wrong
+> story. **Walk the size series.**
+>
+> ★★★ **`check-theme-colors.sh` forbids invented values, NOT wrong roles.** The
+> Print button was filled from `visuals.selection.bg_fill` — a **27 % wash**
+> meant for canvas selection — so it rendered *paler than the Cancel beside it*
+> and he pressed it a dozen times. Correctly sourced, gate green, defect D2 for
+> the third time. `Theme::accent_pair` is now the one spelling.
+>
+> ★★ **A hand-written list inside a completeness sweep, for the third time.**
+> `dialogs_open_in_their_own_window` did not include **Print** — the dialog
+> whose report started that whole piece of work — and its header rationalised
+> the omission in prose. Four defects shipped in the gap.
+>
+> ⬜ **NOT VERIFIED, named rather than implied:** the window visibly closing
+> after a REAL print. The decision is unit tested; no driven check has spooled a
+> job. Needs one that prints to a file device (`Microsoft Print to PDF` is
+> installed).
+>
+> ⬜ **NEXT, in his likely order:** O113 (the clipping hatch — decide between an
+> engine verb and sampling the raster; the second is a proxy), then O112's
+> pop-out preview window.
+>
+> **State:** engine **v0.28.0 at `e27c3b4`** — it moved under the packager
+> **twice** in one afternoon. **2,886 tests, 0 failing; 23 of 23 gates, 0
+> skipped.** OneDrive: **`pdfcer-gui2` is the new build**, `pdfcer-gui1` holds
+> the 14:13 one.
+
+
+
 > ★★★ **LAST SESSION: 2026-09-03 (afternoon). v0.5.0 IS RELEASED.**
 > https://github.com/KenM76/pdfcer-gui/releases/tag/v0.5.0 — the first release
 > in the new repository; `KenM76/pdfceGUI` is archived and holds v0.1.0–v0.4.0.

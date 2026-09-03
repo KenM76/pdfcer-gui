@@ -41,3 +41,23 @@ file*, which is rare enough that nothing routinely exercises it.
 holding: those two are about a check that never *fires*. This one **fires,
 passes, and reports a number** — the arithmetic is internally consistent and
 externally short.
+
+## ★★★ THIRD RECURRENCE — 2026-09-03, and it hid FOUR operator-visible defects
+
+`ui-verify`'s `dialogs_open_in_their_own_window` sweeps every command-reachable
+dialog for *"is this a real OS window"*. Its subject list is a `const DIALOGS:
+&[(&str, &str)]` typed by hand, and **Print was not in it** — the dialog whose
+report (*"Print dialogue box doesn't pop up in its own movable window"*) started
+that entire piece of work.
+
+The header even rationalised the omission: *"Print was fixed that evening and
+`print_dialog` asserts it."* And `print_dialog` asserts the job reaches the
+**spooler**. That is not a claim about the window, its margins, its scrollbars
+or its buttons — and all four of those were broken, for weeks, in the one
+command-reachable dialog with no headless check.
+
+⇒ The tell to look for: **a completeness sweep that names an exception in
+prose.** "X is covered elsewhere" inside the list's own documentation is the
+sentence that decays, because "elsewhere" asserts something about another test
+that nobody re-reads. If it is genuinely covered elsewhere, the list costs one
+line to include it anyway and the duplicate proves the claim.
