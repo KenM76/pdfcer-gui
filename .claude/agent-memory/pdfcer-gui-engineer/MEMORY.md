@@ -43,3 +43,4 @@
 - [The shell's unit of selection may not be the operator's](project_the_shells_unit_of_selection_may_not_be_the_operators.md) — one PDF path object holds 6,681 anchors across half his sheet; pick a point or a subpath.
 - [The project is pdfcer-gui since 2026-09-03](project_the_project_is_pdfcer_gui_since_2026_09_03.md) — names, folders, repos; and the two references that deliberately did NOT move.
 - [A rename can blind an instrument silently](feedback_a_rename_can_blind_an_instrument_silently.md) — a hard-coded external path turns a rename into a green check over an empty scan.
+- [A proxy condition survives one correction](feedback_a_proxy_condition_survives_one_correction.md) — a gate corrected once for a stand-in is usually still using one; ask what the mechanism READS.

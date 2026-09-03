@@ -115,6 +115,32 @@ failed directory rename moves nothing. Full finding in
 The two-date check is the only reason either failure was noticed. It costs two
 lines and it is not optional.
 
+**★★★ AND ON 2026-09-03 IT CAUGHT A THIRD FAILURE, OF A NEW KIND: THE SLOTS
+THEMSELVES HAD BEEN RENAMED OUT FROM UNDER THE FALLBACK.**
+
+The project rename moved the packager's targets to `pdfcer-gui1` / `pdfcer-gui2`.
+The previous builds were in `pdfceGUI1` / `pdfceGUI2`. So the first package of
+the day wrote into an **empty pair of slots**, and the tool printed:
+
+```
+  pdfcer-gui1  no readable build  <- replacing this one
+  pdfcer-gui2  no readable build
+  ...
+  (replaced the older slot; pdfcer-gui2 still holds the previous build)
+```
+
+The last line is **unconditional prose** and it was false. The `no readable
+build` two lines above is the honest half, and it is easy to read as "first run
+after a rename, fine" rather than as "your fallback does not exist".
+
+Repaired by copying `pdfceGUI2` into `pdfcer-gui2` before re-packaging, so the
+two-slot property holds again. `pdfceGUI1`, `pdfceGUI2` and two
+`.pdfceGUI*-outgoing` staging folders are now orphans in OneDrive.
+
+⇒ Same class as the two above and worth stating as the general rule:
+**the tool's own report is not evidence about the tool's own effect.** The
+two-date read-back has now caught three distinct failures of one script.
+
 Related: [[feedback_update_engine_before_every_build]] — `cargo update -p
 pdfcer-core -p pdfcer-render -p pdfcer-print` comes first, or the package carries
 a stale engine.
