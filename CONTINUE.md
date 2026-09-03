@@ -1,4 +1,99 @@
-# CONTINUE — handoff
+# CONTINUE - handoff
+
+## 2026-09-03 (afternoon) - v0.5.0 released, and the rename had blinded four instruments
+
+### The release
+
+`v0.5.0` on **`KenM76/pdfcer-gui`** - the first release in the new repository;
+`KenM76/pdfceGUI` is archived and holds v0.1.0-v0.4.0. All five historical tags
+were pushed to the new remote so the history is legible.
+https://github.com/KenM76/pdfcer-gui/releases/tag/v0.5.0
+
+Engine `pdfcer-core`/`-render`/`-print` **v0.28.0** at `562ca7e`. 2,881 tests,
+0 failing; 23 of 23 gates, 0 skipped. FEATURES.md re-measured, ninth revision.
+
+OneDrive: **`pdfcer-gui1` holds the new build** (`09bb966`, 14:13),
+**`pdfcer-gui2` holds the previous one** (`eed8d3e`, 08:26).
+
+### The two-slot fallback was BROKEN by the rename, and nothing said so
+
+The packager now writes `pdfcer-gui1`/`pdfcer-gui2`; the previous builds were
+in `pdfceGUI1`/`pdfceGUI2`. So the first package of the day wrote into an
+**empty pair of slots** and the tool printed its usual reassurance -
+*"pdfcer-gui2 still holds the previous build"* - while `pdfcer-gui2` did not
+exist. It printed `no readable build` for both slots one line above, which is
+the honest half, and the reassuring sentence is unconditional.
+
+Repaired by copying `pdfceGUI2` (08:26) into `pdfcer-gui2` before re-packaging.
+**`pdfceGUI1`/`pdfceGUI2` and the two `.pdfceGUI*-outgoing` staging folders are
+still in OneDrive** and are now orphans - they are the operator's to delete.
+
+⇒ Same class as everything else this session: **the tool's own report is not
+evidence about the tool's own effect.** The two-date read-back is what caught
+it, again.
+
+### ★★★ The rename blinded FOUR external names in `ui-verify`'s falsification profile
+
+`PDFCER_LEGACY` is the OLD GUI - the known-defective build the checks must be
+seen to FAIL against, which is the only thing that makes them evidence. The
+project-wide sweep rewrote `default_exe`, `diag_env`, `trace_prefix` and
+`viewport_env`, and all four name a build in **another repository that did not
+rename**.
+
+The exe path came to name something under the ENGINE repo, whose `Pass 247.0`
+had just deleted the only GUI crate it ever had. **The other three fail
+silently**: an env var the old binary does not read leaves its tracing off, and
+a trace prefix it never prints parses EMPTY - and an empty trace and a build
+that said nothing are the same bytes. The suite would have reported *"the old
+build does not exhibit the defect"*, the exact inversion it exists to prevent,
+with every gate green.
+
+Now two tests, both falsified by planting the defect:
+`legacy_profile_names_the_pre_rename_gui` and
+`current_profile_names_only_the_new_project`. `profile.rs` takes
+`old-name-exempt-file:` because it is the one file whose job is to spell the
+old names - the grep is not relaxed there, it is **replaced by a stricter
+instrument**, since a grep can only ask one of those two questions and gets the
+other backwards (`pdfcer` CONTAINS `pdfce`).
+
+### ★★★ A proxy condition survived one correction, and got it wrong the same way one level down
+
+`check-engine-rename-shim.sh`'s header proudly records catching itself testing
+`-d D:/Dev/pdfcer` - a proxy for "has the engine renamed" that fired between
+the clone and the rename. **The fix tested the CRATE on disk, and that is still
+a proxy.** This shell's dependency is `git` + `branch`, chosen deliberately so
+the engine session's working tree cannot break the build, and a `git` dependency
+resolves **committed history only**.
+
+For about an hour the engine held **795 staged-but-uncommitted renames**:
+`crates/pdfcer-core` on disk, in no commit. The gate failed the build, and doing
+what it instructed would have produced an unresolvable dependency. Rewritten to
+ask `git cat-file -e main:<path>`, driven through all four states including the
+in-flight one - and **two hours later it fired for real** when `4db298d`
+landed, the shim came out and the gate deleted itself, as its own header
+instructed.
+
+⇒ The lesson is not "the engine renamed". It is that **a proxy condition
+survives one correction**, and that the honest question is always *"what does
+the thing I am guarding actually READ?"*
+
+### ★ The packager moved the engine pin under the release it was cutting
+
+`4db298d` -> `562ca7e` during the package step. The script says so, in the
+middle of a wall of its own output. Re-verified against the lock it actually
+produced and the lock committed. Worth restating because the revision turned
+out to be docs-only, which is luck rather than method: the settings-completeness
+gate goes red when the engine GROWS a setting, and no revision announces which
+kind it is.
+
+### Not done, and named rather than implied
+
+**The 152-check driven suite was not swept against this build.** The machine
+was in use. Unit tests and gates were run against the exact lock; nothing new
+in this release is claimed as driven-verified. That disclosure is in
+`BUILD-INFO.txt` and in the release notes.
+
+---
 
 ## 2026-09-03 — his dimensioning tool measured the wrong thing, and redaction now works
 

@@ -80,6 +80,70 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
+## O110 — ✅ **RELEASED 2026-09-03 (afternoon)** — release and publish the package on GitHub
+
+**Ken, 2026-09-03:** *"please release and publish the package on github."*
+
+**Release:** <https://github.com/KenM76/pdfcer-gui/releases/tag/v0.5.0>, with
+`pdfcer-gui-v0.5.0-windows-x64.zip` (22.0 MB) attached. `main` pushed
+`3fb06dd` → `09bb966`, and **all five historical tags pushed to the new
+remote** — `v0.1.0` through `v0.4.0` had never existed there, because
+`pdfcer-gui` is a *new* repository rather than a rename of `pdfceGUI`, so its  <!-- old-name-exempt: a record of the rename must name what was renamed -->
+releases page was empty.
+
+### What the release turned out to require first
+
+The request was "release", and the tree was **red** when it was made — which is
+the whole reason a release is not a single command.
+
+★★★ **The engine's `Pass 247.1` (its own `pdfce` → `pdfcer` rename) landed  <!-- old-name-exempt: a record of the rename must name what was renamed -->
+mid-session.** Our three dependency lines carried a temporary
+`package = "pdfce-*"` bridge and a tripwire gate written to fail the build the  <!-- old-name-exempt: a record of the rename must name what was renamed -->
+moment that bridge outlived its cause. It fired. The bridge came out, the call
+site became `is_pdfcer_choice`, and the gate **deleted itself** as its own
+header instructed. Engine locked at `562ca7e`, v0.28.0.
+
+★★★ **And that tripwire's condition was wrong the same way twice.** It tested
+the engine's *working tree* where this build reads its *committed history*, and
+for about an hour the engine held **795 staged-but-uncommitted renames** — so it
+failed the build for a false reason and instructed a fix that would not have
+resolved. Its own header already recorded catching itself using a proxy once.
+**A proxy condition survives one correction.**
+
+★★★ **The rename had blinded the falsification harness, silently.**
+`ui-verify`'s profile for the OLD GUI — the build the checks must be seen to
+FAIL against — had all four of its external names swept to the new spelling.
+Three of the four fail *quietly*: an env var the old binary does not read leaves
+its diagnostics off, and a trace prefix it never prints parses to an empty
+trace. The suite would have said *"the old build does not exhibit the defect"*.
+Repaired, and held by two falsified tests rather than a comment.
+
+★★ **The two-slot OneDrive fallback was broken and the tool said it was fine.**
+The rename moved the slots to `pdfcer-gui1`/`2`; the previous builds were in
+`pdfceGUI1`/`2`. The first package wrote into an **empty pair** while printing  <!-- old-name-exempt: a record of the rename must name what was renamed -->
+its usual *"the other slot still holds the previous build"*. Repaired by hand —
+`pdfcer-gui1` is the new build, `pdfcer-gui2` is the 08:26 one. ⚠ **`pdfceGUI1`,  <!-- old-name-exempt: a record of the rename must name what was renamed -->
+`pdfceGUI2` and two `.pdfceGUI*-outgoing` folders are now orphans in your  <!-- old-name-exempt: a record of the rename must name what was renamed -->
+OneDrive and are yours to delete.**
+
+★ **`FEATURES.md` re-measured against the build**, ninth revision, before
+packaging. Its Source row had read "~215,000 lines" and was **wrong rather than
+stale** — the tracked Rust is 60,692 lines. The old figure named no method,
+which is why nobody could check it; the row now carries the command.
+
+★ Checked before pushing to a **public** repository, as for O109: the licensed
+print-conformance suite's name is absent (gate green), and a sweep for keys,
+tokens and private material found nothing outside fixtures and prose.
+
+### ⬜ What is NOT claimed
+
+**The 152-check driven suite was not swept against this build** — the machine
+was in use. Unit tests (2,881) and gates (23 of 23) were run against the exact
+lock the binary links. That disclosure is in the release notes and in the
+shipped `BUILD-INFO.txt`, not only here.
+
+---
+
 ## O109 — ✅ **RELEASED 2026-09-03** — release the latest source and exe to GitHub
 
 **Ken, 2026-09-03:** *"And while you are doing that release the latest source and

@@ -1,6 +1,55 @@
 # RESUME — read this, then say "continue"
 
 
+> ★★★ **LAST SESSION: 2026-09-03 (afternoon). v0.5.0 IS RELEASED.**
+> https://github.com/KenM76/pdfcer-gui/releases/tag/v0.5.0 — the first release
+> in the new repository; `KenM76/pdfceGUI` is archived and holds v0.1.0–v0.4.0.
+> All five historical tags were pushed to the new remote. Engine v0.28.0 at
+> `562ca7e`. **2,881 tests, 0 failing; 23 of 23 gates, 0 skipped.**
+> OneDrive: **`pdfcer-gui1` = new build** (`09bb966`), **`pdfcer-gui2` = the
+> 08:26 build** (`eed8d3e`). The long-form record is the top section of
+> [`CONTINUE.md`](CONTINUE.md).
+>
+> ★★★ **THE ENGINE'S RENAME LANDED AND THE SHIM IS GONE.** Three dependency
+> lines now name `pdfcer-*` against `file:///D:/Dev/pdfcer` directly, the call
+> site is `is_pdfcer_choice`, and `check-engine-rename-shim.sh` **deleted
+> itself** as its own header instructed. Do not go looking for it; the gate
+> count is 23 and going *down* by one was the mechanism working.
+>
+> ★★★ **AND THE RENAME HAD BLINDED THE FALSIFICATION HARNESS.**
+> `ui-verify`'s `PDFCER_LEGACY` profile — the OLD GUI, the build the checks must
+> be seen to FAIL against — had all four of its external names swept to the new
+> spelling. They belong to the frozen build at `D:\Dev\pdfce` and did not
+> rename with us. **Three of the four fail silently**: an env var the old binary
+> does not read leaves its tracing off, and a trace prefix it never prints
+> parses to an EMPTY trace — indistinguishable from a build that said nothing.
+> The suite would have reported *"the old build does not exhibit the defect"*.
+> Repaired, and now held by two falsified tests rather than by a comment.
+> `profile.rs` carries `old-name-exempt-file:` because it is the one file whose
+> job is to spell the old names.
+>
+> ★★★ **The finding to carry: A PROXY CONDITION SURVIVES ONE CORRECTION.** The
+> shim tripwire's own header proudly recorded catching itself testing
+> `-d D:/Dev/pdfcer`. The fix tested the *crate* on disk — still a proxy. This
+> shell builds from `git` + `branch`, which resolves **committed history only**,
+> and for an hour the engine held 795 staged-but-uncommitted renames: the crate
+> was on disk, in no commit, and doing what the gate instructed would have
+> produced an unresolvable dependency. ⇒ **Ask what the mechanism READS, not
+> what a human would look at.**
+>
+> ★★ **Two OneDrive housekeeping facts.** The rename moved the slots to
+> `pdfcer-gui1`/`2`, so the first package of the day wrote into an **empty
+> pair** while the tool printed its usual *"the other slot still holds the
+> previous build"* — which was false. Repaired by hand. **`pdfceGUI1`,
+> `pdfceGUI2` and two `.pdfceGUI*-outgoing` folders are now orphans in
+> OneDrive** and are the operator's to delete.
+>
+> ⬜ **NOT DONE, and named rather than implied: the 152-check DRIVEN suite was
+> not swept against this build.** The machine was in use. That is the first job
+> of the next session if he is away from the keyboard.
+
+
+
 > ★★★ **LAST SESSION: 2026-09-03.** The newest handoff is the top section of
 > **[`CONTINUE.md`](CONTINUE.md)**. Two of his complaints closed and one
 > harness defect that had been reporting the application as broken.
