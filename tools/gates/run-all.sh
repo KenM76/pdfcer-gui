@@ -212,24 +212,25 @@ run "check-trace-names" python "$HERE/check-trace-names.py"
 # and two cut verbs -- none of which had a sentence anywhere.
 run "check-verb-coverage" bash "$HERE/check-verb-coverage.sh"
 
-# `check-old-name-absent` and `check-engine-rename-shim` are the two gates the
-# 2026-09-03 rename left behind, and both exist because a rename is exactly the
-# operation whose completeness cannot be checked by the obvious means.
+# `check-old-name-absent` is what the 2026-09-03 rename left behind, and it
+# exists because a rename is exactly the operation whose completeness cannot be
+# checked by the obvious means: `pdfcer` CONTAINS the old stem, so a naive grep
+# matches every correct occurrence as well as every stale one and returns
+# thousands of hits on a clean tree. The gate uses the only honest pattern --
+# the stem not followed by `r` -- and carries a written reason for each of the
+# references that legitimately survive. * It reported `clean` on its own first
+# run while its scan was failing; it now checks the scan's exit status, which is
+# the mechanism rather than the intention.
 #
-# The first: `pdfcer` CONTAINS the old stem, so a naive grep matches every correct
-# occurrence as well as every stale one and returns thousands of hits on a clean
-# tree. The gate uses the only honest pattern — the stem not followed by `r` —
-# and carries a written reason for each of the references that legitimately
-# survive. ★ It reported `clean` on its own first run while its scan was
-# failing; it now checks the scan's exit status, which is the mechanism rather
-# than the intention.
-#
-# The second: the `package = ...` bridge in the GUI manifest is a TEMPORARY
-# shim to an engine that has not renamed yet, and it fails the build the moment
-# `D:\Dev\pdfcer` appears. A temporary shim needs a tripwire that names its own
-# deletion; a comment is not one.
+# ** ITS SIBLING, `check-engine-rename-shim`, WAS DELETED ON 2026-09-03 -- by
+# its own instruction, and that is the point of it. The `package = "pdfce-*"`  # old-name-exempt: naming the retired shim key is the explanation
+# bridge in the GUI manifest was a temporary shim to an engine that had not
+# renamed yet, and the gate's job was to fail the build the moment the shim
+# outlived its cause. The engine's `Pass 247.1` landed mid-session (`4db298d`,
+# engine v0.28.0), the gate fired, the shim came out, and the gate went with it.
+# A temporary shim needs a tripwire that names its own deletion; a comment is
+# not one, and this one worked exactly as written.
 run "check-old-name-absent" bash "$HERE/check-old-name-absent.sh"
-run "check-engine-rename-shim" bash "$HERE/check-engine-rename-shim.sh"
 
 # `check-third-party-licences` regenerates THIRD_PARTY_LICENSES.md and fails if
 # the committed one differs. It is the SECOND gate written on 2026-09-01 for the

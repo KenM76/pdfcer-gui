@@ -2390,9 +2390,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "pdfce-core"
-version = "0.27.0"
-source = "git+file:///D:/Dev/pdfce?branch=main#22421b6495e1e6ff301f3fe8128aeee04451cb97"
+name = "pdfcer-core"
+version = "0.28.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#4db298dc6dfc384b81d6981a32fbe36e71893db0"
 dependencies = [
  "aes",
  "brotli",
@@ -2411,30 +2411,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pdfce-print"
-version = "0.27.0"
-source = "git+file:///D:/Dev/pdfce?branch=main#22421b6495e1e6ff301f3fe8128aeee04451cb97"
-dependencies = [
- "thiserror 2.0.20",
- "windows",
-]
-
-[[package]]
-name = "pdfce-render"
-version = "0.27.0"
-source = "git+file:///D:/Dev/pdfce?branch=main#22421b6495e1e6ff301f3fe8128aeee04451cb97"
-dependencies = [
- "iccce-cmm",
- "iccce-color",
- "iccce-profile",
- "pdfce-core",
- "skrifa",
- "subsetter",
- "thiserror 2.0.20",
- "tiny-skia",
-]
-
-[[package]]
 name = "pdfcer-gui"
 version = "0.1.0"
 dependencies = [
@@ -2444,12 +2420,36 @@ dependencies = [
  "embed-resource",
  "flate2",
  "native-window",
- "pdfce-core",
- "pdfce-print",
- "pdfce-render",
+ "pdfcer-core",
+ "pdfcer-print",
+ "pdfcer-render",
  "raw-window-handle",
  "rfd",
  "syn 2.0.119",
+]
+
+[[package]]
+name = "pdfcer-print"
+version = "0.28.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#4db298dc6dfc384b81d6981a32fbe36e71893db0"
+dependencies = [
+ "thiserror 2.0.20",
+ "windows",
+]
+
+[[package]]
+name = "pdfcer-render"
+version = "0.28.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#4db298dc6dfc384b81d6981a32fbe36e71893db0"
+dependencies = [
+ "iccce-cmm",
+ "iccce-color",
+ "iccce-profile",
+ "pdfcer-core",
+ "skrifa",
+ "subsetter",
+ "thiserror 2.0.20",
+ "tiny-skia",
 ]
 
 [[package]]

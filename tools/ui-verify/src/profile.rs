@@ -1,3 +1,20 @@
+// old-name-exempt-file: this file DEFINES the falsification profile for the
+// pre-rename GUI, so it must spell that build's repository, binary,
+// diagnostic environment variables and trace prefix the way THAT build
+// spells them. Every one of those names lives outside this repository and
+// did not rename with us.
+//
+// ** The grep is not being relaxed, it is being REPLACED by a better
+// instrument. Two tests at the bottom of this file cover what the grep
+// covered here and more:
+//
+//   * `legacy_profile_names_the_pre_rename_gui` -- the four external names
+//     must carry the old stem and must NOT carry the new one;
+//   * `current_profile_names_only_the_new_project` -- this build's own
+//     profile must carry the new stem and no bare old one.
+//
+// A grep can only ask one of those two questions and gets the other one
+// backwards, because "pdfcer" CONTAINS "pdfce".
 //! What the harness knows about a particular target binary.
 //!
 //! ## Why the vocabulary is data and not hard-coded
@@ -427,7 +444,8 @@ pub const PDFCER_GUI: Profile = Profile {
     region_sets: &[],
 };
 
-/// The GUI this project replaces, at `D:\Dev\pdfcer`.
+/// The GUI this project replaces, at `D:\Dev\pdfce` — the
+/// **pre-rename** repository, which is where it still is and where it stays.
 ///
 /// **Read-only, always.** The harness launches it and photographs it; nothing
 /// in this crate writes anywhere near it.
@@ -435,13 +453,46 @@ pub const PDFCER_GUI: Profile = Profile {
 /// Its purpose here is falsification. A check suite is only evidence if it has
 /// been seen to fail on a known-defective build, and this profile is how that
 /// is demonstrated.
+///
+/// # ★★★ EVERY NAME IN THIS PROFILE IS AN OLD NAME, DELIBERATELY
+///
+/// This is the one place in the crate where the old stem is *correct*, and it
+/// went wrong on 2026-09-03 in exactly the way this project has a memory for:
+/// **a rename can blind an instrument silently.** The project-wide sweep
+/// rewrote all four of the fields below, and every one of them names something
+/// **outside this repository** that did not rename with us:
+///
+/// | field | swept to | actually |
+/// |---|---|---|
+/// | `default_exe` | `\pdfcer\…\pdfcer-gui.exe` | `\pdfce\…\pdfce-gui.exe` |
+/// | `diag_env` | `PDFCER_DIAG` | `PDFCE_DIAG` |
+/// | `trace_prefix` | `pdfcer-diag` | `pdfce-diag` |
+/// | `viewport_env` | `PDFCER_DIAG_VIEWPORT` | `PDFCE_DIAG_VIEWPORT` |
+///
+/// The swept `default_exe` is worse than merely wrong: the engine's
+/// `Pass 247.0` **stripped the in-repo GUI crate** from the new repository, so
+/// that path can never exist — the falsification profile was pointing at a
+/// binary nothing will ever build. The three trace names would each have failed
+/// *quietly*, which is worse still: an environment variable the old binary does
+/// not read simply leaves diagnostics off, and a trace prefix that does not
+/// match reads an EMPTY trace — indistinguishable from a build that emitted
+/// nothing.
+///
+/// Guarded by `legacy_profile_names_the_pre_rename_gui`, which is the
+/// mechanism; this comment is only the reason.
 pub const PDFCER_LEGACY: Profile = Profile {
     name: "pdfcer-legacy",
-    description: "the OLD GUI at D:\\Dev\\pdfcer — the known-defective build the checks must fail against",
-    default_exe: r"D:\Dev\pdfcer\target\release\pdfcer-gui.exe",
-    diag_env: ("PDFCER_DIAG", "1"),
-    trace_prefix: "pdfcer-diag",
-    viewport_env: Some("PDFCER_DIAG_VIEWPORT"),
+    // old-name-exempt: the old GUI's own repository, which did not rename.
+    description: "the OLD GUI at D:\\Dev\\pdfce — the known-defective build the checks must fail against",
+    // old-name-exempt: the pre-rename binary, in the pre-rename repository.
+    default_exe: r"D:\Dev\pdfce\target\release\pdfce-gui.exe",
+    // old-name-exempt: the variable the OLD binary reads. Renaming it turns
+    // its diagnostics off silently, which reads as a build that says nothing.
+    diag_env: ("PDFCE_DIAG", "1"),
+    // old-name-exempt: the old GUI's `diag.rs:746` prints this exact prefix.
+    trace_prefix: "pdfce-diag",
+    // old-name-exempt: the old GUI's `main.rs:601` reads this exact spelling.
+    viewport_env: Some("PDFCE_DIAG_VIEWPORT"),
     vocab: Vocabulary::pdfcer_legacy(),
     region_sets: &[SETTINGS_HEADINGS_LEGACY],
 };
@@ -634,5 +685,122 @@ mod tests {
     fn a_binary_without_an_object_count_event_reports_none() {
         let trace = Trace::parse("pdfcer-diag objects n=28 page=0", "pdfcer-diag");
         assert_eq!(Vocabulary::pdfcer_legacy().object_count(&trace), None);
+    }
+    /// The falsification profile must keep naming the PRE-RENAME GUI.
+    ///
+    /// # Why this test exists
+    ///
+    /// On 2026-09-03 the project-wide `pdfce` -> `pdfcer` sweep rewrote all
+    /// four external names in [`PDFCER_LEGACY`]. Nothing went red. The old
+    /// GUI does not live in this repository and did not rename, so:
+    ///
+    /// * the exe path came to name a binary in the ENGINE repository, whose
+    ///   `Pass 247.0` had just deleted the only GUI crate it ever had --
+    ///   a path that can never exist;
+    /// * the diagnostic environment variable came to name one the old binary
+    ///   does not read, which leaves its tracing OFF;
+    /// * the trace prefix came to name one the old binary never prints, which
+    ///   parses to an EMPTY trace.
+    ///
+    /// Each of the last two is silent. An empty trace and a build that said
+    /// nothing are the same bytes, so the falsification suite would have
+    /// reported "the old build does not exhibit the defect" -- the exact
+    /// inversion the suite exists to prevent -- with every gate green.
+    ///
+    /// This asserts the shape rather than the spelling: the four fields must
+    /// carry the old stem and must NOT carry the new one. It is deliberately
+    /// a test and not a comment, because a comment is what was there.
+    #[test]
+    fn legacy_profile_names_the_pre_rename_gui() {
+        // Built rather than written, so this file carries no literal that a
+        // future sweep could helpfully "correct".
+        let old_stem = "pdfce";
+        let new_stem = "pdfcer";
+
+        // `contains(old_stem)` is true of the new stem as well -- "pdfcer"
+        // CONTAINS "pdfce" -- so the honest question is whether the new stem
+        // appears at all. That asymmetry is the whole reason the rename needed
+        // a gate in the first place.
+        for (field, value) in [
+            ("default_exe", PDFCER_LEGACY.default_exe),
+            ("diag_env", PDFCER_LEGACY.diag_env.0),
+            ("trace_prefix", PDFCER_LEGACY.trace_prefix),
+            (
+                "viewport_env",
+                PDFCER_LEGACY
+                    .viewport_env
+                    .expect("legacy profile declares a viewport env var"),
+            ),
+        ] {
+            let lower = value.to_ascii_lowercase();
+            assert!(
+                lower.contains(old_stem),
+                "PDFCER_LEGACY.{field} = {value:?} does not name the old GUI at all"
+            );
+            assert!(
+                !lower.contains(new_stem),
+                "PDFCER_LEGACY.{field} = {value:?} was swept to the NEW name. \
+                 The old GUI is in another repository and did not rename; \
+                 see this constant's doc comment for what each wrong name \
+                 breaks, and note that three of the four break SILENTLY."
+            );
+        }
+
+        // And the exe must be in the OLD repository, not the engine's new one.
+        // Spelled as a path fragment because the failure that happened was a
+        // correct-looking path in the wrong tree.
+        let exe = PDFCER_LEGACY.default_exe.to_ascii_lowercase();
+        assert!(
+            exe.contains("dev\\pdfce\\target"),
+            "PDFCER_LEGACY.default_exe = {:?} is not under the pre-rename repository",
+            PDFCER_LEGACY.default_exe
+        );
+    }
+    /// This build's own profile must name THIS project, not the old one.
+    ///
+    /// The other half of the file-level exemption at the top of this file.
+    /// `legacy_profile_names_the_pre_rename_gui` asserts the falsification
+    /// profile still points at the pre-rename build; this asserts that the
+    /// exemption did not become a place where a genuine rename miss could
+    /// hide.
+    ///
+    /// It is the strictly harder direction, and it is the one a grep cannot
+    /// ask: the new stem CONTAINS the old one, so "does this line mention
+    /// pdfce" is true of every correct line as well as every stale one. A
+    /// test can compare the exact bytes.
+    #[test]
+    fn current_profile_names_only_the_new_project() {
+        let new_stem = "pdfcer";
+
+        for (field, value) in [
+            ("name", PDFCER_GUI.name),
+            ("diag_env", PDFCER_GUI.diag_env.0),
+            ("trace_prefix", PDFCER_GUI.trace_prefix),
+            (
+                "viewport_env",
+                PDFCER_GUI
+                    .viewport_env
+                    .expect("this build declares a viewport env var"),
+            ),
+        ] {
+            let lower = value.to_ascii_lowercase();
+            assert!(
+                lower.contains(new_stem),
+                "PDFCER_GUI.{field} = {value:?} does not name this project"
+            );
+            // Every occurrence of the old stem must be the PREFIX of a new
+            // one -- i.e. followed by an `r`. That is the same lookahead
+            // `tools/gates/check-old-name-absent.sh` uses, and it is the only
+            // honest form of the question.
+            let bytes = lower.as_bytes();
+            for (i, _) in lower.match_indices("pdfce") {
+                let next = bytes.get(i + 5).copied();
+                assert_eq!(
+                    next,
+                    Some(b'r'),
+                    "PDFCER_GUI.{field} = {value:?} carries the OLD project name at byte {i}"
+                );
+            }
+        }
     }
 }

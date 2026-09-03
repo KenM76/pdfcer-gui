@@ -34,15 +34,20 @@
 #      otherwise", and both sides read it every session. Renaming one side of a
 #      shared folder is how a channel goes silent.
 #
-#   3. `package = "pdfce-core"` and its two siblings, plus the one
-#      `is_pdfce_choice` call — the temporary bridge to an engine that has not
-#      renamed yet. Guarded separately, and with its own tripwire, by
-#      `check-engine-rename-shim.sh`.
+#   3. RETIRED 2026-09-03. `package = "pdfce-core"` and its two siblings, plus
+#      the one `is_pdfce_choice` call, were the temporary bridge to an engine
+#      that had not renamed yet. The engine's `Pass 247.1` landed the same day
+#      (`4db298d`, engine v0.28.0); the manifest now names `pdfcer-*` against
+#      `file:///D:/Dev/pdfcer` directly and the call site is
+#      `is_pdfcer_choice`. Both substrings are OUT of the allow-list below, so
+#      either one coming back is now a failure rather than an exemption.
 #
-#   4. `Cargo.lock` — Cargo's own record of what RESOLVED. Under the shim the
-#      engine packages really do carry their old names, so the lock naming them
-#      is the lock being correct. It is generated rather than authored, and
-#      rewriting it would make it disagree with what Cargo actually fetched.
+#   4. `Cargo.lock` — Cargo's own record of what RESOLVED. It is generated
+#      rather than authored, and rewriting it would make it disagree with what
+#      Cargo actually fetched. ★ Since the engine's rename the lock no longer
+#      NEEDS this exemption for the engine crates — it names `pdfcer-*` — but it
+#      is kept because the lock also records transitive crates.io packages this
+#      project does not author and cannot rename.
 #
 #   5. Any line carrying `old-name-exempt:` with a reason, or any FILE that
 #      carries `old-name-exempt-file:` with one.
@@ -93,7 +98,7 @@ PATTERN='pdfce(?!r)|PDFCE(?!R)|Pdfce(?!r)'
 # Lines that are allowed to carry a surviving occurrence. Anchored on the
 # substrings above rather than on filenames, so moving a file cannot silently
 # widen the exemption.
-ALLOWED='Dev\\pdfce\\crates\\pdfce-gui|pdfce_FeatureRequests|package = "pdfce-(core|render|print)"|is_pdfce_choice|^Cargo\.lock:|old-name-exempt:'
+ALLOWED='Dev\\pdfce\\crates\\pdfce-gui|pdfce_FeatureRequests|^Cargo\.lock:|old-name-exempt:'
 
 # ★★★ THE SCAN'S OWN EXIT STATUS IS CHECKED, and that is the whole lesson of
 # this gate's first run.
@@ -166,5 +171,6 @@ ALLOWED_COUNT=$(printf '%s
 ' "$RAW" | grep -cE "$ALLOWED" || true)
 echo "old-name-absent: clean - nothing names the old project except the"
 echo "                 $ALLOWED_COUNT documented reference(s): the salvaged GUI's path, the"
-echo "                 shared request-channel folder, and the engine-rename shim."
+echo "                 shared request-channel folder, Cargo.lock, and lines that carry"
+echo "                 an old-name-exempt: reason."
 exit 0

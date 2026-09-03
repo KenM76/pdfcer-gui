@@ -614,12 +614,7 @@ fn calculated_fields(
             // ★ A rule-4 disclosure: pdfcer INFERRED an evaluation order the
             // document was required to state, the inference decides the
             // numbers below, and another reader may compute different ones.
-            // ★ `is_pdfce_choice`, NOT `is_pdfcer_choice` — this method belongs
-            // to `pdfcer_core::form_script::OrderSource` and the ENGINE has not
-            // renamed yet. It becomes `is_pdfcer_choice` when the engine's own
-            // rename lands, at the same moment the `package = ...` shim in
-            // `Cargo.toml` comes out; the tripwire gate names both.
-            if plan.order_source.is_pdfce_choice() {
+            if plan.order_source.is_pdfcer_choice() {
                 ui.colored_label(
                     ui.visuals().warn_fg_color,
                     t::recompute_order_is_a_guess(plan.unlisted_calculations),

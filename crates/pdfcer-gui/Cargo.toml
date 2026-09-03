@@ -321,26 +321,35 @@ rfd = "0.17.2"
 # happened once already (HANDOFF.md §4).
 
 # ═══════════════════════════════════════════════════════════════════════════
-# ★★★ TEMPORARY SHIM — the `package = ...` keys, 2026-09-03
+# THE ENGINE'S RENAME LANDED — 2026-09-03, and the shim is gone
 # ═══════════════════════════════════════════════════════════════════════════
 #
-# This project renamed to `pdfcer` BEFORE the engine did. The engine's own
-# rename is its `Pass 247.1`; until that lands, `D:\Dev\pdfcer` does not
-# exist and the engine crates still carry their old names.
+# This project renamed to `pdfcer` on 2026-09-03, hours BEFORE the engine did.
+# In the gap these three lines carried `package = "pdfce-*"` keys — old-name-exempt:
+# a paragraph explaining a rename must be able to spell the name it renamed —
+# so that every
+# `use pdfcer_core::…` in this source tree could be the final spelling while
+# resolving to the crate that existed that morning.
 #
-# Cargo's `package` key is exactly the bridge for this: the dependency is
-# NAMED `pdfcer-core` locally — so every `use pdfcer_core::…` in the source is
-# the real, final spelling — and RESOLVES to the crate that exists today. No
-# source file carries the old name, and nothing has to be renamed twice.
+# The engine's `Pass 247.1` (`4db298d`, engine `v0.28.0`) renamed
+# `pdfce-core` / `pdfce-render` / `pdfce-print` — old-name-exempt: same reason —
+# and the repository moved to
+# `D:\Dev\pdfcer`, so the bridge was removed the same day and its tripwire
+# gate — `tools/gates/check-engine-rename-shim.sh` — was deleted with it, which
+# is what that gate's own header instructed.
 #
-# ★★ WHEN THE ENGINE'S RENAME LANDS, three edits per line and the shim is
-# gone: drop each `package = ...` key, add the missing `r` to the URL, done.
-# `tools/gates/check-engine-rename-shim.sh` FAILS THE BUILD the moment
-# `D:\Dev\pdfcer` appears, so this cannot be forgotten — a temporary shim
-# needs a tripwire that names its own deletion, and a comment is not one.
+# ★ Kept from that episode, because it cost an hour: the tripwire's first two
+# revisions both tested a PROXY for the real condition. It asked whether
+# `D:\Dev\pdfcer/crates/pdfcer-core` existed ON DISK. This manifest does not
+# build against the engine's disk — the `git` + `branch` form below resolves
+# **committed history only**, deliberately (see the block above). For roughly
+# an hour on 2026-09-03 the engine's tree held 795 staged-but-uncommitted
+# renames, so the crate existed on disk, existed in no commit, and switching
+# these lines would have produced an unresolvable dependency. The condition
+# that governs a `git` dependency is `git cat-file -e main:<path>`, never `-d`.
 # ═══════════════════════════════════════════════════════════════════════════
-pdfcer-core = { package = "pdfce-core", git = "file:///D:/Dev/pdfce", branch = "main", default-features = false }
-pdfcer-render = { package = "pdfce-render", git = "file:///D:/Dev/pdfce", branch = "main", default-features = false }
+pdfcer-core = { git = "file:///D:/Dev/pdfcer", branch = "main", default-features = false }
+pdfcer-render = { git = "file:///D:/Dev/pdfcer", branch = "main", default-features = false }
 
 # pdfcer-print — printer enumeration, device capabilities and spooling.
 #
@@ -354,8 +363,7 @@ pdfcer-render = { package = "pdfce-render", git = "file:///D:/Dev/pdfce", branch
 # from "no printers found": `pdfcer-print` is explicit that a build which
 # cannot ask and a machine with nothing to ask about must never collapse into
 # one message.
-# ★ The same temporary shim — see the block above.
-pdfcer-print = { package = "pdfce-print", git = "file:///D:/Dev/pdfce", branch = "main" }
+pdfcer-print = { git = "file:///D:/Dev/pdfcer", branch = "main" }
 
 [build-dependencies]
 # embed-resource — puts the application icon inside the executable.
