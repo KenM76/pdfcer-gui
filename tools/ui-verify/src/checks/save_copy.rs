@@ -11,7 +11,7 @@
 //! fills, page operations, a document made by `file.new`) was **unwritable**.
 //!
 //! The whole suite was green throughout, and it had to be: the engine's write
-//! verbs are tested in `pdfce-core`, the command's registration is tested in
+//! verbs are tested in `pdfcer-core`, the command's registration is tested in
 //! `shell::commands`, the picker's seam is tested in `app::files`. What has no
 //! test anywhere in the workspace is the **join** — that pressing the control
 //! reaches a dispatch arm, that the arm reaches a picker, that the picker's
@@ -56,7 +56,7 @@
 //! `dialogs::ocr`'s check already makes this assertion for the OCR write, and it
 //! matters more here, not less: this command's own tooltip promises *"The
 //! original is never overwritten unless you pick it"*, and the operator does not
-//! pick it — `PDFCE_DIAG_SAVE_PATH` names somewhere else. A build whose write
+//! pick it — `PDFCER_DIAG_SAVE_PATH` names somewhere else. A build whose write
 //! ignored the picker's answer and used `doc.path` would pass A, B, C, E and F
 //! (E vacuously, F because the annotation really would be in the file) and would
 //! have destroyed the operator's drawing. The digest is what survives a reviewer
@@ -122,7 +122,7 @@
 //!
 //! `panels::comments` traces `comments-panel … listed=N` once per frame, and `N`
 //! is derived by walking the **session's own annotation list** through
-//! `pdfce-core`. In the second process that session was built by loading the
+//! `pdfcer-core`. In the second process that session was built by loading the
 //! saved file from disk, so `listed=` there is a statement about the *file*,
 //! made by the engine, in a process that never saw the first one.
 //!
@@ -133,7 +133,7 @@
 //!
 //! # The picker is answered, not driven
 //!
-//! `PDFCE_DIAG_SAVE_PATH` supplies the save dialog's result and the dialog is
+//! `PDFCER_DIAG_SAVE_PATH` supplies the save dialog's result and the dialog is
 //! never opened — `app::files`' established pattern for a native picker, and the
 //! RAG note it quotes: *"Don't try to script the dialog."* That is what makes
 //! phase C an assertion about **a file on disk** rather than about a button
@@ -264,13 +264,13 @@ const DECLINED_EVENT: &str = "save-copy-declined";
 
 /// `save-picked source=env answer=…` — the seam answered instead of the dialog.
 ///
-/// Read only to improve a SKIP: its absence with `PDFCE_DIAG_SAVE_PATH` set
+/// Read only to improve a SKIP: its absence with `PDFCER_DIAG_SAVE_PATH` set
 /// means the picker was reached and did **not** consult the seam, which would
 /// have opened a real modal and hung this harness rather than failing it.
 const PICKED_EVENT: &str = "save-picked";
 
 /// Bytes the copy must exceed by, at minimum, for `appended` to mean anything.
-const SAVE_PATH_ENV: &str = "PDFCE_DIAG_SAVE_PATH";
+const SAVE_PATH_ENV: &str = "PDFCER_DIAG_SAVE_PATH";
 
 /// The rectangle drag, in page fractions: `((x0, y0), (x1, y1))`, PDF user
 /// space with y measured from the bottom.
@@ -641,7 +641,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // =======================================================================
     // The authoring process. Scoped, so it is killed before the second one
-    // launches — two pdfce windows competing for the foreground would make
+    // launches — two pdfcer windows competing for the foreground would make
     // every click after the first one a race.
     // =======================================================================
     let listed_before;
@@ -758,7 +758,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                     format!(
                         "There is no `{UNIMPLEMENTED_EVENT}` for it, so the command did reach an \
                          arm and the failure is further down: `Action::SaveCopy` may not be \
-                         raised, or `PdfceApp::apply` may not be routing it."
+                         raised, or `PdfcerApp::apply` may not be routing it."
                     )
                 },
                 match trace.last(FAILED_EVENT) {
@@ -868,7 +868,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // ★ PHASE F — THE ROUND TRIP: re-open the file that came out
     // =======================================================================
     let listed_reopened = {
-        // A second `PDFCE_DIAG_SAVE_PATH` is set and never used; harmless, and
+        // A second `PDFCER_DIAG_SAVE_PATH` is set and never used; harmless, and
         // cheaper than a second launch helper that differs in one field.
         let session = launch(
             ctx,
@@ -905,7 +905,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
 
     report.note(
-        "NOT covered here: the save dialog itself. `PDFCE_DIAG_SAVE_PATH` answers it and it is \
+        "NOT covered here: the save dialog itself. `PDFCER_DIAG_SAVE_PATH` answers it and it is \
          never opened, because it is a modal top-level window owned by the OS shell that no \
          synthetic input can reach (`app::files`' rule 1). Everything else — the ribbon click, the \
          dispatch arm, `Action::SaveCopy`, the apply phase, `to_incremental_bytes` and the write — \
@@ -1036,13 +1036,13 @@ mod tests {
     /// application really writes.
     #[test]
     fn the_application_and_shell_streams_do_not_contaminate_each_other() {
-        let text = "pdfce-diag start argv1=None\n\
+        let text = "pdfcer-diag start argv1=None\n\
                     egui-shell-diag ribbon-command-invoked id=file.save_copy handler=110\n\
-                    pdfce-diag comments-panel pages=1 listed=3 with_note=0 excluded_total=0\n\
-                    pdfce-diag save-copy path=\"D:\\\\Program Files\\\\a copy.pdf\" bytes=9001 \
+                    pdfcer-diag comments-panel pages=1 listed=3 with_note=0 excluded_total=0\n\
+                    pdfcer-diag save-copy path=\"D:\\\\Program Files\\\\a copy.pdf\" bytes=9001 \
                     appended=412 objects=3 verbatim=2 reserialized=1 promoted=0 deleted=0 \
                     identical=false delinearized=false epoch=1 origin=Opened";
-        let app = Trace::parse(text, "pdfce-diag");
+        let app = Trace::parse(text, "pdfcer-diag");
         let shell = Trace::parse(text, driving::SHELL_TRACE_PREFIX);
 
         assert!(app.started("start"));

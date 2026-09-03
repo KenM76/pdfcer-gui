@@ -40,7 +40,7 @@
 //!
 //! ## ★ Why it authors its own field rather than needing a form fixture
 //!
-//! `edit.form_text_field` places one, and `PDFCE_DIAG_FORM_ACCEPT=1` makes the
+//! `edit.form_text_field` places one, and `PDFCER_DIAG_FORM_ACCEPT=1` makes the
 //! placement dialog press its own Add — the same seam `form_field` uses. So this
 //! runs on any `--pdf` with a page, which is what keeps it in the ordinary
 //! sweep rather than behind a fixture nobody remembers to pass.
@@ -56,7 +56,7 @@ use crate::report::CheckReport;
 /// Edit mode, then arm the text-field tool.
 const INVOKE: &str = "mode.edit,edit.form_text_field";
 /// Makes the placement dialog accept itself, so no dialog driving is needed.
-const ACCEPT_ENV: (&str, &str) = ("PDFCE_DIAG_FORM_ACCEPT", "1");
+const ACCEPT_ENV: (&str, &str) = ("PDFCER_DIAG_FORM_ACCEPT", "1");
 /// The per-widget census line the canvas publishes, carrying each box's rect.
 ///
 /// ★ Parsed by `checks::formaim::targets` rather than by a copy in this file.
@@ -158,7 +158,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.env
-        .push(("PDFCE_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
+        .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.env
         .push((ACCEPT_ENV.0.to_owned(), ACCEPT_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
@@ -167,7 +167,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
     report.note(format!(
-        "launched {} as pid {} with PDFCE_DIAG_INVOKE={INVOKE}",
+        "launched {} as pid {} with PDFCER_DIAG_INVOKE={INVOKE}",
         exe.display(),
         session.pid()
     ));

@@ -11,7 +11,7 @@
 //! > an object it doesn't select — it still only has the whole page selected."*
 //!
 //! He was reporting the truth, precisely. His file wraps its visible body in a
-//! **form XObject**, `pdfce-core` did not descend into one, and the form's
+//! **form XObject**, `pdfcer-core` did not descend into one, and the form's
 //! `/BBox` is a clipping extent (§8.10.1) rather than a claim about ink — so a
 //! page-sized form sat in paint order above everything drawn before it and won
 //! every click at every point. He was selecting a real object. It was the
@@ -79,7 +79,7 @@
 //! for the checks that need *some* drawing; this one needs a specific shape.
 //!
 //! The fixture is the engine's `forms-xobject/page-sized-form.pdf`, read from
-//! the read-only corpus at `D:\Dev\pdfce`. It is the file the engine built to
+//! the read-only corpus at `D:\Dev\pdfcer`. It is the file the engine built to
 //! reproduce this operator's report, so the check and the fix are aimed at the
 //! same target by construction.
 //!
@@ -157,12 +157,12 @@ impl Check for AClickInsideAFormSelectsWhatIsDrawnThere {
 
 /// Resolve a fixture under the engine repository's synthetic corpus.
 ///
-/// ★ The path is derived, not configured. `D:\Dev\pdfce` is READ-ONLY to this
+/// ★ The path is derived, not configured. `D:\Dev\pdfcer` is READ-ONLY to this
 /// project and its corpus is the only place this shape exists, so the check
 /// reads from it and writes nowhere near it. `None` rather than a panic turns
 /// a missing corpus into a SKIP with a reason instead of a crash mid-suite.
 fn engine_fixture(rel: &str) -> Option<std::path::PathBuf> {
-    let path = std::path::Path::new("D:/Dev/pdfce/fixtures/synthetic").join(rel);
+    let path = std::path::Path::new("D:/Dev/pdfcer/fixtures/synthetic").join(rel);
     path.is_file().then_some(path)
 }
 
@@ -190,7 +190,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     let fixture = engine_fixture(FIXTURE).ok_or_else(|| {
         Error::new(format!(
-            "the engine's form fixture is not at D:/Dev/pdfce/fixtures/synthetic/{FIXTURE}. \
+            "the engine's form fixture is not at D:/Dev/pdfcer/fixtures/synthetic/{FIXTURE}. \
              This check pins it and ignores --pdf: its subject is what a click inside a form \
              XObject selects, and on a document with no forms the honest answer is 'there was \
              nothing to descend into', which is neither a pass nor a defect."

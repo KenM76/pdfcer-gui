@@ -9,7 +9,7 @@
 //! couldn't."*
 //!
 //! He was right. Until now there were two marking routes and nothing between
-//! them: **the search box**, which reaches text pdfce can read *as text*, and
+//! them: **the search box**, which reaches text pdfcer can read *as text*, and
 //! **mark whole page**, which reaches everything. On a CAD drawing most of what
 //! wants redacting is in the gap — a title-block value drawn as vector strokes,
 //! a scanned stamp, a logo, a signature image. None is findable by typing, so
@@ -80,7 +80,7 @@ const SELECTION: &str = "canvas-selection";
 ///
 /// ★ A `ui_rect` region published by the ribbon for every drawn command, named
 /// after the command id. Pressed rather than invoked because
-/// `PDFCE_DIAG_INVOKE` runs at start-up and this verb needs a selection that
+/// `PDFCER_DIAG_INVOKE` runs at start-up and this verb needs a selection that
 /// does not exist then.
 const REDACT_BUTTON: &str = "ribbon.item.edit.redact_selection";
 
@@ -166,7 +166,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.env
-        .push(("PDFCE_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
+        .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
 
@@ -225,7 +225,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- the verb under test ------------------------------------------------
     //
-    // ★★ Clicked on the ribbon, because `PDFCE_DIAG_INVOKE` runs only at
+    // ★★ Clicked on the ribbon, because `PDFCER_DIAG_INVOKE` runs only at
     // START-UP and the selection this verb needs does not exist then. That is a
     // real constraint rather than a preference: an invoke chain cannot express
     // *"select something, then run this"*.

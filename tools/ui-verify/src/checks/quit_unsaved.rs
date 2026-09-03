@@ -252,7 +252,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              This is the operator's report exactly, and it is the state the feature was built \
              for: one edit, one Alt+F4, and the process is gone. Before 2026-09-02 this is \
              what always happened — `eframe`'s close request was never read. Look at \
-             `PdfceApp::step_quit_cycle` being called from the frame at all, and at whether \
+             `PdfcerApp::step_quit_cycle` being called from the frame at all, and at whether \
              `ViewportCommand::CancelClose` reaches egui on the same frame the request is \
              read. Trace: {}.",
             session.trace_path().display()

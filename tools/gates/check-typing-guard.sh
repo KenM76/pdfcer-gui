@@ -73,7 +73,7 @@ cd "$(dirname "$0")/../.." || exit 1
 
 echo "check-typing-guard: one predicate for \"is the operator typing?\"…"
 
-ALLOWED_FILE="crates/pdfce-gui/src/canvas/textedit/mod.rs"
+ALLOWED_FILE="crates/pdfcer-gui/src/canvas/textedit/mod.rs"
 
 violations=0
 while IFS= read -r hit; do

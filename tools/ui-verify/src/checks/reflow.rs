@@ -5,7 +5,7 @@
 //!
 //! `OPERATOR_REQUESTS.md` **O54(b)**, 2026-08-28:
 //!
-//! > *"I think the paragraph reflow was implemented ages ago in the pdfce core,
+//! > *"I think the paragraph reflow was implemented ages ago in the pdfcer core,
 //! > so we should have that option too."*
 //!
 //! He was right. `EditSession::reflow_block` shipped in `Pass 91`, was tested,
@@ -201,14 +201,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.env
-        .push(("PDFCE_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
+        .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
     report.note(format!(
-        "launched {} on fixtures/paragraph.pdf as pid {} with PDFCE_DIAG_INVOKE={INVOKE}",
+        "launched {} on fixtures/paragraph.pdf as pid {} with PDFCER_DIAG_INVOKE={INVOKE}",
         exe.display(),
         session.pid()
     ));
@@ -359,7 +359,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         return Ok(Some(format!(
             "★★★ THE REFLOW RAN AND CHANGED NOTHING: `{}` reports lines={before}->{after}.\n\
              This fixture's six lines are deliberately short and ragged and wrap to the widest \
-             of them, so a correct re-wrap MUST pack them into fewer — `pdfce-cli reflow --page \
+             of them, so a correct re-wrap MUST pack them into fewer — `pdfcer reflow --page \
              1 --block 0` on this file reports 6->5. Equal counts mean the wrap width was taken \
              as something other than the block box, or the request reached the engine with an \
              override this shell does not set. Trace: {}.",

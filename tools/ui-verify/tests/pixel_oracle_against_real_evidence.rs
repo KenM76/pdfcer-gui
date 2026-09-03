@@ -48,7 +48,7 @@ fn evidence() -> PathBuf {
 }
 
 /// The "Appearance" collapsing-header caption — D2's first named heading.
-/// Same fractions as `profile::PDFCE_LEGACY`'s region set.
+/// Same fractions as `profile::PDFCER_LEGACY`'s region set.
 const DEFECTIVE_HEADING: FracRect = FracRect::new(0.030, 0.000, 0.160, 0.042);
 
 /// The explanatory prose two lines below it: *"Changes the window only. It

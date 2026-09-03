@@ -393,7 +393,7 @@ mod tests {
     /// intention alone produces a control with no glyph, no text and no
     /// explanation — a blank box.
     ///
-    /// This is not hypothetical. `pdfce-gui` wired the ribbon at S2 with a
+    /// This is not hypothetical. `pdfcer-gui` wired the ribbon at S2 with a
     /// full set of icon keys and no painter, and its QAT rendered as four
     /// empty rectangles. Every unit test passed; a screenshot caught it.
     /// The lesson is the same one `DEFECTS.md` D2 taught — a property that

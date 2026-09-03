@@ -33,8 +33,8 @@
 //!
 //! `EDITABLE_SURFACES.md`, written 2026-08-28, is an audit keyed on the
 //! **engine's** verb list rather than on this shell's feature list. It found
-//! `unshare_form` implemented in `pdfce-core` and named nowhere in
-//! `crates/pdfce-gui/src`, and `pdfce-core` asked for it by name:
+//! `unshare_form` implemented in `pdfcer-core` and named nowhere in
+//! `crates/pdfcer-gui/src`, and `pdfcer-core` asked for it by name:
 //!
 //! > *"So you can offer the button. Please un-suppress it rather than leaving
 //! > the suppression in place — a control withheld on the strength of a note
@@ -85,7 +85,7 @@
 //!
 //! It stopped there because it had to. `shell::menus::MenuHost::attach_with`
 //! called `egui_shell::menu::Menu::attach` — the convenience constructor that
-//! takes *no optional capabilities at all* — so pdfce's context menus drew rows
+//! takes *no optional capabilities at all* — so pdfcer's context menus drew rows
 //! and published **no `ui_rect` for any of them**. There was no coordinate to
 //! aim at, so no check could press a row, so the entire "does the menu row
 //! actually do the thing" question was unaskable.
@@ -96,7 +96,7 @@
 //! here the **target** was. Both are invisible to a green suite.
 //!
 //! `MenuHost::attach_with` now supplies a rect sink, so every row of every
-//! pdfce context menu publishes `menu.item.<context>.<command id>` through the
+//! pdfcer context menu publishes `menu.item.<context>.<command id>` through the
 //! same `crate::diag::ui_rect` channel the ribbon and the status bar use. This
 //! check is the first consumer; every future menu check inherits it.
 //!
@@ -138,7 +138,7 @@
 //! condition under test.** Sharedness is a property of the file and of nothing
 //! else, so each of these two checks is defined by which file it opens, and
 //! swapping them would swap what each one proves without changing a line of
-//! assertion code. Both are read from the read-only corpus at `D:\Dev\pdfce`.
+//! assertion code. Both are read from the read-only corpus at `D:\Dev\pdfcer`.
 //!
 //! ### `shared-across-two-pages.pdf` — the shared case
 //!
@@ -319,7 +319,7 @@ const OTHER_FIELD: &str = "other";
 /// change to the gesture sequence cannot be made for one case and forgotten
 /// for the other.
 struct Scenario {
-    /// Path under `D:/Dev/pdfce/fixtures/synthetic`.
+    /// Path under `D:/Dev/pdfcer/fixtures/synthetic`.
     fixture: &'static str,
     /// Page-space point to click and right-click. Must land on something the
     /// form draws, because the operand is a leaf.
@@ -397,10 +397,10 @@ impl Check for TheUnshareDeclinesWhenNothingElseDrawsTheForm {
 ///
 /// ★ The path is derived, not configured, and `None` rather than a panic —
 /// `form_selection`'s helper verbatim in shape, for the reason its own docs
-/// give: `D:\Dev\pdfce` is READ-ONLY to this project, and a missing corpus is a
+/// give: `D:\Dev\pdfcer` is READ-ONLY to this project, and a missing corpus is a
 /// SKIP with a reason rather than a crash mid-suite.
 fn engine_fixture(rel: &str) -> Option<std::path::PathBuf> {
-    let path = std::path::Path::new("D:/Dev/pdfce/fixtures/synthetic").join(rel);
+    let path = std::path::Path::new("D:/Dev/pdfcer/fixtures/synthetic").join(rel);
     path.is_file().then_some(path)
 }
 
@@ -452,7 +452,7 @@ fn open_and_press(
     }
     let fixture = engine_fixture(scenario.fixture).ok_or_else(|| {
         Error::new(format!(
-            "the engine's form fixture is not at D:/Dev/pdfce/fixtures/synthetic/{}. This check \
+            "the engine's form fixture is not at D:/Dev/pdfcer/fixtures/synthetic/{}. This check \
              pins it and ignores --pdf: the fixture IS the condition under test — whether the \
              form is drawn on more than one page is a property of the file and of nothing else — \
              and on an arbitrary document the honest answer is 'there was nothing to unshare', \

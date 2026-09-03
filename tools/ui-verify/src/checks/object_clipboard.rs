@@ -7,7 +7,7 @@
 //! > canvas?"* — asked in the first week and repeatedly since.
 //!
 //! Until 2026-08-20 `Ctrl+C` on a shape put a **sentence** on the status row —
-//! *"pdfce can copy comments and markup, but it cannot yet put page content
+//! *"pdfcer can copy comments and markup, but it cannot yet put page content
 //! back onto a page"* — which was honest and was still a refusal. `Pass 120.0`
 //! shipped `ObjectClip` and this check is the wiring of it.
 //!
@@ -31,7 +31,7 @@
 //! | 1 | `Ctrl+C` on page content reaches `copy_objects` rather than the old refusal | nothing — the refusal was in the shell |
 //! | 2 | the clip is parked where a paste can find it, across a page change | nothing |
 //! | 3 | `Ctrl+V` deserialises it and reaches `paste_objects` | nothing |
-//! | 4 | **resources came with it** | `pdfce-core` — and the count is the only thing this side can see |
+//! | 4 | **resources came with it** | `pdfcer-core` — and the count is the only thing this side can see |
 //!
 //! Link 4 is the one that would ship. A clip that carried the operators and
 //! dropped the resources pastes *something*, on the right page, at the right
@@ -74,7 +74,7 @@ impl Check for CopyAndPastePageContent {
     }
 
     fn defect(&self) -> &'static str {
-        "Ctrl+C on a shape, a line or a piece of text does nothing, or says pdfce cannot copy \
+        "Ctrl+C on a shape, a line or a piece of text does nothing, or says pdfcer cannot copy \
          page content — the operator's oldest open request. Or it copies and the paste arrives \
          WITHOUT ITS RESOURCES, which puts the right glyphs on the page in the wrong typeface \
          and errors nowhere"
@@ -212,7 +212,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         return Ok(Some(format!(
             "★ CTRL+C ON PAGE CONTENT COPIED NOTHING.{}\n\
              This is the operator's oldest open request: until 2026-08-20 the shell refused it \
-             by name in `canvas::clipboard::copy`, whose `ContentNotAnnotation` arm said pdfce \
+             by name in `canvas::clipboard::copy`, whose `ContentNotAnnotation` arm said pdfcer \
              could not put page content back. `Pass 120.0` made that false. If no \
              `{COPY_EVENT} kind=content` line appears, either that refusal is back or \
              `copy_content` never ran. Trace: {}.",

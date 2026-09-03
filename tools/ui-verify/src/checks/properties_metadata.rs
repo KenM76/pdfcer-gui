@@ -6,7 +6,7 @@
 //! `file.properties`' own tooltip has commissioned this since S3: *"The
 //! document's own title, author, subject and keywords, and the properties of
 //! whatever is selected on the page."* Only the second half existed, on a
-//! recorded blocker — *"needs a `/Info` accessor that `pdfce-core` does not
+//! recorded blocker — *"needs a `/Info` accessor that `pdfcer-core` does not
 //! expose on `Document` at all"* — which was true when written and false when
 //! read.
 //!
@@ -223,7 +223,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     {
         return Ok(Some(format!(
             "the panel raised its action and the engine REFUSED it: {refusal}. The shell half \
-             works; this is a `pdfce-core` verdict and belongs in a request."
+             works; this is a `pdfcer-core` verdict and belongs in a request."
         )));
     }
     if trace.last(APPLIED).is_none() {

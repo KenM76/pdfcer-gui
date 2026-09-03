@@ -16,7 +16,7 @@
 //! # What it asserts, and why the build block is a trace rather than pixels
 //!
 //! The operator asked on 2026-08-18 for About to carry *"the date and time of
-//! the build … and the date and time of the builds of the used pdfce and
+//! the build … and the date and time of the builds of the used pdfcer and
 //! iccce"*. Those values come from `build.rs` through `env!`, so the thing that
 //! can go wrong is not the wording — that is unit-tested — but a value arriving
 //! **empty**, which renders as `built  from abc1234` and reads as a layout
@@ -117,7 +117,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // ★★★ MAXIMISE, or the File tab's last two groups are not on the band at
     // all. Measured 2026-09-03: at the harness's default 1,100 pt window the
     // File tab publishes fourteen items and stops at `file.print` — the whole
-    // "Document" and "pdfce" groups (properties, fonts, settings, shortcuts,
+    // "Document" and "pdfcer" groups (properties, fonts, settings, shortcuts,
     // about) are folded away, so THREE checks skipped reporting a lost
     // command. The commands are not lost; the band is narrower than they are.
     //
@@ -177,7 +177,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         return Ok(Some(format!(
             "About drew its build block with EMPTY field(s): {}. An empty stamp renders as \
              `built  from abc1234`, which reads as a layout glitch rather than as a missing \
-             value — look at `crates/pdfce-gui/build.rs`, which sets each of these through \
+             value — look at `crates/pdfcer-gui/build.rs`, which sets each of these through \
              `cargo:rustc-env`. A `Cargo.lock` it could not read is the usual cause.",
             empty.join(", ")
         )));

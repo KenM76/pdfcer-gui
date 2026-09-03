@@ -3,17 +3,17 @@
 //!
 //! # The defect
 //!
-//! `crates/pdfce-gui/src/dialogs/print/spooler.rs` is the adapter between the
-//! print dialog and `pdfce-print`. It was written as four **holes** — named
+//! `crates/pdfcer-gui/src/dialogs/print/spooler.rs` is the adapter between the
+//! print dialog and `pdfcer-print`. It was written as four **holes** — named
 //! functions whose bodies returned `Err(Unavailable::NotLinked)` — because at
-//! the time it was written `pdfce-print` genuinely was not a dependency of the
+//! the time it was written `pdfcer-print` genuinely was not a dependency of the
 //! crate. Its module header set out, in full, the two edits that would make the
 //! build print: add the manifest line, then fill the four holes.
 //!
-//! **The manifest line landed and the holes were never filled.** `pdfce-print`
+//! **The manifest line landed and the holes were never filled.** `pdfcer-print`
 //! sat in `Cargo.toml` and in `Cargo.lock`, was compiled and linked into every
 //! shipped binary, and *no source file in the crate contained the identifier
-//! `pdfce_print` outside a doc comment*. So on a machine with twelve printers
+//! `pdfcer_print` outside a doc comment*. So on a machine with twelve printers
 //! installed, `File ▸ Print…` opened a window that said
 //!
 //! > This build cannot reach a print device, so there is nothing to print to.
@@ -30,7 +30,7 @@
 //! The adapter had a test. It was called `every_hole_refuses_rather_than_
 //! guessing`, and it asserted that all four functions returned
 //! `Err(Unavailable::NotLinked)`. That assertion was **correct** — provably,
-//! obviously correct — for as long as `pdfce-print` was not linked. It was
+//! obviously correct — for as long as `pdfcer-print` was not linked. It was
 //! written to catch a specific and real hazard: somebody "helpfully" filling
 //! `plan` with a local placement calculation so the preview would draw
 //! something, producing a confidently wrong sheet indistinguishable from a
@@ -75,7 +75,7 @@
 //! than PASSED when it finds none — the three-state discipline the whole
 //! harness uses. On a machine with no printers the check has learned nothing,
 //! and saying so is the only honest verdict. It is the same reasoning
-//! `pdfce-print` itself applies from the other side: *"reporting the same
+//! `pdfcer-print` itself applies from the other side: *"reporting the same
 //! value for 'this platform cannot enumerate printers at all' would collapse
 //! two different facts into one and send a caller looking for hardware."*
 //!
@@ -83,7 +83,7 @@
 //!
 //! **It does not press the commit button, and it never will.** That button is
 //! the one control in the application that consumes paper, occupies a device
-//! other people may share, and cannot be undone. `pdfce-print`'s own header
+//! other people may share, and cannot be undone. `pdfcer-print`'s own header
 //! states the contract — `spool` is the only function that reaches `StartDoc`,
 //! and it is reached only from a control an operator deliberately clicked —
 //! and a harness that can start a print job is a harness that will eventually
@@ -95,7 +95,7 @@
 //!
 //! What that costs is real and should be named: this check proves the dialog
 //! **reaches the spooler**, not that a sheet comes out correctly placed. The
-//! placement arithmetic is `pdfce-print`'s and is tested there; the conversion
+//! placement arithmetic is `pdfcer-print`'s and is tested there; the conversion
 //! from this crate's mirrored types into the engine's is pinned by
 //! `spooler::tests::the_conversions_map_every_variant_to_its_own`; and the
 //! last link — that the bytes reach paper — is verified by a human pressing
@@ -220,7 +220,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     if trace.events(OPEN_EVENT).next().is_some() {
         return Ok(Some(format!(
             "`{OPEN_EVENT}` appears in the trace before anything was clicked. The print dialog \
-             opened on its own, which pdfce may not do — and this is the one dialog whose commit \
+             opened on its own, which pdfcer may not do — and this is the one dialog whose commit \
              button consumes paper."
         )));
     }
@@ -372,7 +372,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     }
 
     report.note(format!(
-        "the spooler answered with {printers} printer(s); the adapter is reaching `pdfce-print`"
+        "the spooler answered with {printers} printer(s); the adapter is reaching `pdfcer-print`"
     ));
 
     // --- D. ★★★ AND IT OPENED IN ITS OWN OS WINDOW -------------------------

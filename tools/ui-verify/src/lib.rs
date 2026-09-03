@@ -111,8 +111,8 @@
 //!
 //! ```text
 //! cargo run -p ui-verify -- --list
-//! cargo run -p ui-verify -- --exe target/release/pdfce-gui.exe --pdf fixture.pdf
-//! cargo run -p ui-verify -- --profile pdfce-legacy --image evidence/crop_settings.png \
+//! cargo run -p ui-verify -- --exe target/release/pdfcer-gui.exe --pdf fixture.pdf
+//! cargo run -p ui-verify -- --profile pdfcer-legacy --image evidence/crop_settings.png \
 //!                           --check settings_headings_legible
 //! ```
 

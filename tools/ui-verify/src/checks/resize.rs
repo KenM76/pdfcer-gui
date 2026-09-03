@@ -9,7 +9,7 @@
 //! one got a resize cursor, a drag that felt like it was working, and no
 //! change: `DEFECTS.md` D4a's shape exactly.
 //!
-//! They commit as of 2026-08-19, built out of `move_nodes` because `pdfce-core`
+//! They commit as of 2026-08-19, built out of `move_nodes` because `pdfcer-core`
 //! still has no scale verb — see `crate` `canvas::resizing` for why *scaling a
 //! path is moving every one of its nodes*, and for the four cases that are
 //! still refused, in words.
@@ -25,7 +25,7 @@
 //! | 3 | the drag's screen delta becomes scale factors about the right anchor | `canvas::resizing` — yes, and it is pure |
 //! | 4 | the anchor converts screen → canvas → PDF against **this** frame's mapping | **nothing** |
 //! | 5 | every node's new position reaches `move_nodes` as one command | **nothing** |
-//! | 6 | the engine rewrites the content stream and the page redraws | `pdfce-core` |
+//! | 6 | the engine rewrites the content stream and the page redraws | `pdfcer-core` |
 //!
 //! Link 4 is the one that would fail silently and plausibly: a resize computed
 //! against the wrong anchor still resizes, just about a different corner, so
@@ -62,7 +62,7 @@ const DECLINED_EVENT: &str = "resize-declined";
 ///
 /// ★★ **This was `move-nodes` until 2026-08-20**, and the change is the point
 /// rather than a rename. A resize was built out of `move_nodes` — *scaling a
-/// path IS moving every one of its nodes* — because `pdfce-core` had no scale
+/// path IS moving every one of its nodes* — because `pdfcer-core` had no scale
 /// verb at all. `Pass 113.0` shipped `transform_objects`, which wraps each
 /// object in `q <cm> … Q` and therefore works on **text, pictures and several
 /// objects at once**, none of which a node-move can express.

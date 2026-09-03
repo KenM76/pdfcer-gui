@@ -45,7 +45,7 @@
 //! there first, and the Save As destination is a sibling. The check writes only
 //! inside `--out`.
 //!
-//! ★ The native picker is never opened. `PDFCE_DIAG_SAVE_PATH` supplies its
+//! ★ The native picker is never opened. `PDFCER_DIAG_SAVE_PATH` supplies its
 //! answer, which is this project's established seam for a system dialog and is
 //! what makes phase B an assertion about **a file on disk** rather than about a
 //! button having been pressed.
@@ -198,7 +198,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // ★ The picker's answer, so no system dialog opens. `app::files`' header and
     // the RAG note it quotes: *"Don't try to script the dialog."*
     spec.env.push((
-        "PDFCE_DIAG_SAVE_PATH".to_owned(),
+        "PDFCER_DIAG_SAVE_PATH".to_owned(),
         destination.display().to_string(),
     ));
     spec.allow_stale = ctx.allow_stale;
@@ -239,7 +239,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         return Ok(Some(format!(
             "SAVE AS WROTE NOTHING: no `{SAVE_AS}` line followed the command. Either the \
              dispatch arm is missing (look for `{}` in the trace) or the picker's answer did \
-             not reach it — this check supplies it through `PDFCE_DIAG_SAVE_PATH` and never \
+             not reach it — this check supplies it through `PDFCER_DIAG_SAVE_PATH` and never \
              opens a dialog. Trace: {}.",
             driving::UNIMPLEMENTED_EVENT,
             session.trace_path().display()
@@ -283,7 +283,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              save as file instead of the original\"*, and this build wrote the copy and stayed \
              bound to the file he was trying to leave. Every cheaper oracle — the new file \
              exists, the line was traced — passes against it.\n\n\
-             Look at `PdfceApp::save_as_somewhere`: `doc.path` is the binding, and the title, \
+             Look at `PdfcerApp::save_as_somewhere`: `doc.path` is the binding, and the title, \
              the tab and the next save all follow it.",
             original.display(),
             before_save_as.0,

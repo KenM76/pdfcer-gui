@@ -1,9 +1,9 @@
-//! `embedding_works_with_no_font_folder_at_all` — **pdfce's own fourteen faces
+//! `embedding_works_with_no_font_folder_at_all` — **pdfcer's own fourteen faces
 //! answer when nothing of the operator's can.**
 //!
 //! # What this is for
 //!
-//! `OPERATOR_REQUESTS.md` **O47** asked the operator whether pdfce should embed
+//! `OPERATOR_REQUESTS.md` **O47** asked the operator whether pdfcer should embed
 //! the standard-14 faces it ships when none of their folders holds the font a
 //! document names. He answered *"yes"* on 2026-08-28. This is the check that
 //! keeps that answer working.
@@ -13,8 +13,8 @@
 //! Because it asserts the opposite premise. `embedding_fonts_puts_a_program_in_
 //! the_document` supplies a real font folder and would pass identically with the
 //! bundled rung ripped out — the folder answers first, every time, by design.
-//! Only a run with **no folder at all** can distinguish *"pdfce ships faces and
-//! will use them"* from *"pdfce ships faces and never reaches them"*.
+//! Only a run with **no folder at all** can distinguish *"pdfcer ships faces and
+//! will use them"* from *"pdfcer ships faces and never reaches them"*.
 //!
 //! ★★ That is also why it is worth the extra process launch. Two checks over one
 //! feature, differing in one environment variable, is the shape that catches a
@@ -27,7 +27,7 @@
 //! The operator's *"yes"* came with a condition: **disclosed loudly**. A build
 //! that embedded a bundled face and reported it as an ordinary match would
 //! satisfy the letter of the request and lose the half he can act on — the
-//! document goes out with pdfce's stand-in in it, and nothing on the canvas says
+//! document goes out with pdfcer's stand-in in it, and nothing on the canvas says
 //! which face went in.
 //!
 //! `substituted=` is `EmbedPlan::substitutes_any`, computed by the engine from
@@ -59,7 +59,7 @@
 //! reached"*. **That inference is not available**, and has not been since O47.
 //! `DialogsState::open_embed_fonts` has exactly ONE decline sentence left —
 //! `text::embed::nothing_missing` — because O47 falsified the other branch
-//! (*"pdfce has no font folders, so it cannot embed anything"*) and it was
+//! (*"pdfcer has no font folders, so it cannot embed anything"*) and it was
 //! deleted. `EmbedDialog::open` answers `None` only when `plan.targets` is
 //! empty **and** every `plan.blocked` row is `AlreadyEmbedded`; a missing font
 //! nothing can answer for is a `NoSourceFont` row, which is `shown`, which
@@ -83,7 +83,7 @@
 //!
 //! ## What this does NOT establish
 //!
-//! **Which face was substituted, or that it looks right.** pdfce's standard-14
+//! **Which face was substituted, or that it looks right.** pdfcer's standard-14
 //! substitutes are the engine's to choose and its tests cover the choice. This
 //! establishes that the shell reaches them, at the right moment, and says so.
 
@@ -104,7 +104,7 @@ const INVOKE: &str = "mode.edit,tools.embed_fonts";
 /// seam finds this file and its reason rather than concluding it was forgotten.
 /// The whole point of this run is that no folder is configured.
 #[allow(dead_code)]
-const DELIBERATELY_UNSET: &str = "PDFCE_DIAG_FONT_DIR";
+const DELIBERATELY_UNSET: &str = "PDFCER_DIAG_FONT_DIR";
 /// The window body's region.
 const BODY: &str = "embed.body";
 /// The Embed button's region.
@@ -129,9 +129,9 @@ impl Check for EmbeddingWorksWithNoFontFolderAtAll {
     }
 
     fn defect(&self) -> &'static str {
-        "with no font folder configured, Embed fonts refuses everything — pdfce ships the \
+        "with no font folder configured, Embed fonts refuses everything — pdfcer ships the \
          fourteen standard faces and cannot reach them, so an operator who has not set up a \
-         folder is told to go and find one for a font pdfce is already carrying"
+         folder is told to go and find one for a font pdfcer is already carrying"
     }
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
@@ -178,8 +178,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.env
-        .push(("PDFCE_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
-    // ★★★ No `PDFCE_DIAG_FONT_DIR`. That absence IS the check.
+        .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
+    // ★★★ No `PDFCER_DIAG_FONT_DIR`. That absence IS the check.
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
 
@@ -222,7 +222,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     if opened.get("targets") == Some("0") {
         return Ok(Some(format!(
             "★★★ THE WINDOW OPENED WITH NOTHING TO EMBED: `{}`.\n\
-             With no folder configured, `targets` counts exactly what pdfce can supply from its \
+             With no folder configured, `targets` counts exactly what pdfcer can supply from its \
              OWN faces — so zero is the bundled rung not firing. Read `supplied=`: zero means \
              `Library::donor_for` answered nothing for a standard-14 name, which is \
              `allow_bundled` not reaching `resolve_for_embedding`. Trace: {}.",
@@ -271,7 +271,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     if applied.get("substituted") != Some("true") {
         return Ok(Some(format!(
-            "★★★ {embedded} FONT(S) WERE EMBEDDED FROM PDFCE'S OWN FACES AND REPORTED AS NOT \
+            "★★★ {embedded} FONT(S) WERE EMBEDDED FROM PDFCER'S OWN FACES AND REPORTED AS NOT \
              SUBSTITUTED: `{}`.\n\
              With no folder configured every donor is a bundled face, so `substituted=false` \
              means the shell told the engine `FontMatch::Exact` for one. That is not a wording \
@@ -284,7 +284,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
     report.note(format!(
-        "★★★ {embedded} font(s) embedded from pdfce's own faces, with no folder configured, and \
+        "★★★ {embedded} font(s) embedded from pdfcer's own faces, with no folder configured, and \
          every one disclosed as a substitute — still missing afterwards: {}",
         applied.get("missing_after").unwrap_or("?")
     ));

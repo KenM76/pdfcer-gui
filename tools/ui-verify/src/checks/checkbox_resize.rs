@@ -10,16 +10,16 @@
 //!
 //! ## ★★★ The cause was neither of the two the row first guessed
 //!
-//! The border did not thicken because pdfce wrote a bigger `/BS /W`. It
+//! The border did not thicken because pdfcer wrote a bigger `/BS /W`. It
 //! thickened because **nothing was rewritten at all**: the engine rebuilt a
 //! field's appearance for Text and Choice fields only, and a check box is a
-//! `/Btn`. So the artwork pdfce itself had drawn — at the original size, with a
+//! `/Btn`. So the artwork pdfcer itself had drawn — at the original size, with a
 //! hard-coded 1 pt stroke — was kept, and §12.5.5's placement matrix stretched
 //! it into the new box. Drag a 12 pt check box to 40 pt and its 1 pt border
 //! draws at about 3.3 pt.
 //!
 //! That was an engine gap, filed rather than worked around, and answered by
-//! `pdfce-core` **Pass 187.0**: a `/Btn` appearance **pdfce authored** is now
+//! `pdfcer-core` **Pass 187.0**: a `/Btn` appearance **pdfcer authored** is now
 //! redrawn at the new size, and a foreign one refuses by name rather than
 //! stretching. The shell's half is passing the operator's three scale answers
 //! through `WidgetEdit::with_resize`, which the same Pass made possible.
@@ -28,7 +28,7 @@
 //!
 //! **A screenshot cannot tell the two apart.** A border that thickened because
 //! `/BS /W` changed and one that thickened because the placement matrix scaled
-//! pdfce's own artwork are *the same pixels*, and so are a redrawn 1 pt border
+//! pdfcer's own artwork are *the same pixels*, and so are a redrawn 1 pt border
 //! at the new size and a lucky crop. The distinguishing fact is which of three
 //! things the engine did, and it says so:
 //!
@@ -79,7 +79,7 @@ use crate::report::CheckReport;
 /// Edit mode, then arm the check-box tool.
 const INVOKE: &str = "mode.edit,edit.form_check_box";
 /// Makes the placement dialog accept itself, so no dialog driving is needed.
-const ACCEPT_ENV: (&str, &str) = ("PDFCE_DIAG_FORM_ACCEPT", "1");
+const ACCEPT_ENV: (&str, &str) = ("PDFCER_DIAG_FORM_ACCEPT", "1");
 /// The per-widget census line the canvas publishes.
 const BOX_LINE: &str = crate::checks::formaim::TARGET_LINE;
 /// The line the canvas writes when a click selects a widget.
@@ -116,7 +116,7 @@ impl Check for AResizedCheckBoxIsRedrawn {
     }
 
     fn defect(&self) -> &'static str {
-        "dragging a check box larger stretches the artwork pdfce itself drew instead of redrawing \
+        "dragging a check box larger stretches the artwork pdfcer itself drew instead of redrawing \
          it, so a 1 pt border draws at 3 pt and the operator sees the outline thicken with the box"
     }
 
@@ -179,7 +179,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.env
-        .push(("PDFCE_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
+        .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.env
         .push((ACCEPT_ENV.0.to_owned(), ACCEPT_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
@@ -349,11 +349,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         return Ok(Some(format!(
             "★★★ THE CHECK BOX WAS STRETCHED, NOT REDRAWN: `{}`.\n\
              `regenerated=false` on a resize IS the operator's complaint, stated exactly — the \
-             appearance stream pdfce drew at the OLD size is kept and §12.5.5's placement matrix \
+             appearance stream pdfcer drew at the OLD size is kept and §12.5.5's placement matrix \
              scales it into the new box, so a 1 pt border draws thicker in proportion to how far \
              the box was dragged. Note that a screenshot cannot see this: a scaled 1 pt border \
              and a redrawn 3 pt one are the same pixels, which is why this check reads the trace.\n\
-             Two halves have to hold. `pdfce-core` Pass 187.0 redraws a `/Btn` appearance pdfce \
+             Two halves have to hold. `pdfcer-core` Pass 187.0 redraws a `/Btn` appearance pdfcer \
              authored (a FOREIGN one refuses by name instead, which would show as \
              `stale=true`), and this shell must pass the operator's scale answers through \
              `WidgetEdit::with_resize` — from `canvas::resizing` for the drag and from \

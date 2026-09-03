@@ -17,7 +17,7 @@
 //!
 //! # ★★ Why one process per dialog
 //!
-//! `PDFCE_DIAG_INVOKE` fires **once** per process, by design: an environment
+//! `PDFCER_DIAG_INVOKE` fires **once** per process, by design: an environment
 //! variable is not an event, and the latch that turns it into one is consumed
 //! the first time it fires. So a check that wants eight dialogs launches eight
 //! processes. That is slower and it is the honest shape — a dialog opened
@@ -55,7 +55,7 @@ use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
 /// The environment variable that fires one command at start-up.
-const INVOKE_ENV: &str = "PDFCE_DIAG_INVOKE";
+const INVOKE_ENV: &str = "PDFCER_DIAG_INVOKE";
 
 /// Every dialog reachable by a command id, as `(command, what the operator
 /// calls it)`.

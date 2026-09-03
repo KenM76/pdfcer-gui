@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Generic freehand stroke — generic, no trademark risk -->
+  <!-- ui-spec §3.3 "shapes family": a single irregular flowing stroke, which is
+       literally what /Ink authors. Deliberately NOT text-squiggly's regular wave:
+       that one is a periodic four-lobe rule sitting in a band under two text
+       lines, and it means "mark these words". This one spans the whole tile, has
+       no periodicity and no baseline, and means "the path your hand took". The
+       two never share a band — Ink is in Shapes and Squiggly is in Text markup —
+       but an operator carries the vocabulary between them, so the difference is
+       made structural rather than positional.
+       Round caps because pdfcer-core's ink() builder sets LineCap::Round, so the
+       glyph's ends are the annotation's ends. -->
+  <path d="M9 31C13 14 20 12 23 22S30 39 34 30 37 15 39 17" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

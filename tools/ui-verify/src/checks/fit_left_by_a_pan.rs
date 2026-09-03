@@ -202,7 +202,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.env
-        .push(("PDFCE_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
+        .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
 
@@ -255,7 +255,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         return Err(Error::new(format!(
             "the pan did not move the page (still at {:.1},{:.1}), so this run cannot tell a fit \
              that was LEFT from one that was never disturbed. The hand tool may not have armed — \
-             `view.tool_hand` is rung through PDFCE_DIAG_INVOKE at launch. SKIPPED rather than \
+             `view.tool_hand` is rung through PDFCER_DIAG_INVOKE at launch. SKIPPED rather than \
              passed.",
             panned.min.x, panned.min.y
         )));

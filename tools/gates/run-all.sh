@@ -7,7 +7,7 @@
 #
 # One command a developer runs before pushing, and the one CI runs. The reason
 # it exists as a script rather than a list of steps in a CI YAML is the lesson
-# recorded at the top of `check-ui-strings.sh`: pdfce's string rule lived as an
+# recorded at the top of `check-ui-strings.sh`: pdfcer's string rule lived as an
 # inline CI grep, was red at baseline for months, and therefore enforced
 # nothing. A gate has to be runnable locally, in one command, or it becomes
 # scenery.
@@ -117,7 +117,7 @@ run() {
 }
 
 echo ""
-echo "pdfceGUI gates — $(date '+%Y-%m-%d %H:%M:%S') — $ROOT"
+echo "pdfcer-gui gates — $(date '+%Y-%m-%d %H:%M:%S') — $ROOT"
 echo ""
 
 # --- 0. the gates prove they can fail, before their verdicts are believed ---
@@ -166,7 +166,7 @@ run "check-clipboard-chords" bash "$HERE/check-clipboard-chords.sh"
 
 # `check-suite-name-absent` keeps a LICENSED print-conformance suite's name out
 # of this repository entirely -- contents and file names -- per the operator's
-# ruling of 2026-08-25. Carried across from `D:/Dev/pdfce/tools/`, where it was
+# ruling of 2026-08-25. Carried across from `D:/Dev/pdfcer/tools/`, where it was
 # written, rather than re-derived: it already carries the fixes for two defects
 # that a careful reader makes anyway.
 #
@@ -193,7 +193,7 @@ run "check-suite-name-absent" python "$ROOT/tools/check-suite-name-absent.py"
 # to be traced after the funnel's, so `.last()` returned the right one by luck.
 run "check-trace-names" python "$HERE/check-trace-names.py"
 
-# `check-verb-coverage` fails when `pdfce-core` has a verb this shell names
+# `check-verb-coverage` fails when `pdfcer-core` has a verb this shell names
 # nowhere AND `EDITABLE_SURFACES.md` says nothing about it either.
 #
 # The two days that bought it: `EditSession::set_button_action` shipped
@@ -201,7 +201,7 @@ run "check-trace-names" python "$HERE/check-trace-names.py"
 # as many words *"please check your own copy."* It was consumed 2026-09-01, and
 # only because `tools/verb-coverage.py` was run for an unrelated reason. In
 # between, the Button tool stayed greyed and its dialog told the operator that
-# pdfce "cannot give a button something to do yet" -- false, on a capability
+# pdfcer "cannot give a button something to do yet" -- false, on a capability
 # two open operator rows were waiting for.
 #
 # The instrument existed. Nobody ran it. That is the whole lesson, and it is
@@ -211,6 +211,25 @@ run "check-trace-names" python "$HERE/check-trace-names.py"
 # It found five more the moment it worked -- three attachment-clipboard verbs
 # and two cut verbs -- none of which had a sentence anywhere.
 run "check-verb-coverage" bash "$HERE/check-verb-coverage.sh"
+
+# `check-old-name-absent` and `check-engine-rename-shim` are the two gates the
+# 2026-09-03 rename left behind, and both exist because a rename is exactly the
+# operation whose completeness cannot be checked by the obvious means.
+#
+# The first: `pdfcer` CONTAINS the old stem, so a naive grep matches every correct
+# occurrence as well as every stale one and returns thousands of hits on a clean
+# tree. The gate uses the only honest pattern — the stem not followed by `r` —
+# and carries a written reason for each of the references that legitimately
+# survive. ★ It reported `clean` on its own first run while its scan was
+# failing; it now checks the scan's exit status, which is the mechanism rather
+# than the intention.
+#
+# The second: the `package = ...` bridge in the GUI manifest is a TEMPORARY
+# shim to an engine that has not renamed yet, and it fails the build the moment
+# `D:\Dev\pdfcer` appears. A temporary shim needs a tripwire that names its own
+# deletion; a comment is not one.
+run "check-old-name-absent" bash "$HERE/check-old-name-absent.sh"
+run "check-engine-rename-shim" bash "$HERE/check-engine-rename-shim.sh"
 
 # `check-third-party-licences` regenerates THIRD_PARTY_LICENSES.md and fails if
 # the committed one differs. It is the SECOND gate written on 2026-09-01 for the

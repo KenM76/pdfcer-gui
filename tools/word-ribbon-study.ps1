@@ -43,7 +43,7 @@
 #>
 [CmdletBinding()]
 param(
-    [string]$OutDir = "D:\Dev\pdfceGUI\evidence\word-ribbon",
+    [string]$OutDir = "D:\Dev\pdfcer-gui\evidence\word-ribbon",
     [int[]]$Widths = @(1900, 1700, 1500, 1300, 1150, 1000, 900, 800, 700, 620, 540, 460),
     [string]$Tab = "Home",
     [int]$Height = 900

@@ -63,7 +63,7 @@
 //!
 //! # No input
 //!
-//! `PDFCE_DIAG_INVOKE` raises the command at startup, so the Settings window
+//! `PDFCER_DIAG_INVOKE` raises the command at startup, so the Settings window
 //! opens without a pointer. Like `title_build_stamp` and `field_shading`, this
 //! can run beside somebody using the machine.
 //!
@@ -146,14 +146,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.env
-        .push(("PDFCE_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
+        .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
     report.note(format!(
-        "launched {} as pid {} with PDFCE_DIAG_INVOKE={INVOKE}, no document open, no input",
+        "launched {} as pid {} with PDFCER_DIAG_INVOKE={INVOKE}, no document open, no input",
         exe.display(),
         session.pid()
     ));

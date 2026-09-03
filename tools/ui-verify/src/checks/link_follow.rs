@@ -403,7 +403,7 @@ impl Check for ALinkItCannotFollowSaysSo {
     }
 
     fn defect(&self) -> &'static str {
-        "A link pdfce cannot perform — a URI, a script, another file, a deleted target page — \
+        "A link pdfcer cannot perform — a URI, a script, another file, a deleted target page — \
          either navigates somewhere it does not go, or does nothing at all and says nothing \
          about why"
     }
@@ -587,7 +587,7 @@ mod tests {
     /// ★ Pinned because a click on empty paper is symptom-identical to a broken
     /// hit test — the confusion that produced a filed-then-retracted defect in
     /// this codebase — and the numbers here are transcribed from
-    /// `pdfce-cli list-links` output by hand, which is exactly the kind of
+    /// `pdfcer list-links` output by hand, which is exactly the kind of
     /// transcription that goes wrong silently.
     #[test]
     fn both_aim_points_are_inside_the_rectangles_the_engine_reports() {

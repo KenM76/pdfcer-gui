@@ -10,7 +10,7 @@
 //!
 //! # ★★★ What is actually happening, measured before this check was written
 //!
-//! `pdfce-render` composites a page containing transparency in a **subtractive
+//! `pdfcer-render` composites a page containing transparency in a **subtractive
 //! CMYK buffer**, which is the correct space for it. That buffer has a
 //! documented ceiling — `MAX_CMYK_BUFFER_BYTES`, 256 MiB at 20 B/px, i.e.
 //! **13,421,772 pixels**. Past it the renderer falls back to compositing in
@@ -36,7 +36,7 @@
 //!
 //! # ★★★ WHAT THIS CHECK NOW ASSERTS FIRST, AND WHY IT CHANGED — 2026-08-26
 //!
-//! Everything above is still true of `pdfce-render`. What changed is the
+//! Everything above is still true of `pdfcer-render`. What changed is the
 //! **shell**, and it changed in the direction that makes the operator's report
 //! not happen at all rather than be apologised for.
 //!
@@ -126,7 +126,7 @@ const MAX_BATCHES: usize = 40;
 const RASTER_WAIT_TICKS: usize = 60;
 /// The engine's ceiling, in pixels: `MAX_CMYK_BUFFER_BYTES` / 20 B per px.
 ///
-/// ★ Duplicated from `pdfce-render`, where it is `pub(crate)` and therefore
+/// ★ Duplicated from `pdfcer-render`, where it is `pub(crate)` and therefore
 /// unreadable from here. **That is the finding, not an accident**: this shell
 /// cannot choose a raster that respects a ceiling it cannot see, which is why
 /// `render::strategy` keeps asking for whole pages four times past it. Filed as
@@ -430,7 +430,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     //
     // ★ Without this, that regression would be **invisible to this check**: it
     // would land in outcome (3), the fallback would engage, the disclosure
-    // would appear, and the check would PASS — reporting that pdfce correctly
+    // would appear, and the check would PASS — reporting that pdfcer correctly
     // apologised for a defect it had just reacquired. Outcome (2) versus (3) is
     // deliberately a *note* and not a verdict, because a large display's region
     // raster can legitimately exceed the default ceiling (the engine measures
@@ -468,7 +468,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ));
         // The disclosure must ALSO be absent, and that half is not decoration:
         // a status line that appeared while the colours were exact would be
-        // pdfce telling the operator its own output is approximate when it is
+        // pdfcer telling the operator its own output is approximate when it is
         // not — which is the same class of lie as staying quiet when it is.
         if ever_declared(&trace, ui_rect) {
             return Ok(Some(format!(

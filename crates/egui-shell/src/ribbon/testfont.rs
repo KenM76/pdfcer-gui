@@ -21,7 +21,7 @@
 //! | Command | What `egui-shell`'s tests get |
 //! |---|---|
 //! | `cargo test -p egui-shell --lib` | `egui` alone → no fonts → zero widths |
-//! | `cargo test --workspace` | `pdfce-gui` → `eframe` → `egui/default_fonts` → **real** widths |
+//! | `cargo test --workspace` | `pdfcer-gui` → `eframe` → `egui/default_fonts` → **real** widths |
 //!
 //! Cargo unifies features across a workspace build, so the same test
 //! source measured different text depending on which sibling crate

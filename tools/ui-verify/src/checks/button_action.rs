@@ -7,17 +7,17 @@
 //!
 //! > ⬜ *"push buttons that actually do something"*
 //!
-//! And the Button tool was **greyed**, with a sentence saying pdfce *"cannot
+//! And the Button tool was **greyed**, with a sentence saying pdfcer *"cannot
 //! give a button something to do yet, so it will not place one."*
 //!
 //! ## ★★★ The finding that matters more than the feature
 //!
-//! `pdfce-core` shipped `EditSession::set_button_action` on **2026-08-30**
+//! `pdfcer-core` shipped `EditSession::set_button_action` on **2026-08-30**
 //! (`Pass 182.0`/`183.0`/`183.1`), in answer to this shell's own request, and
 //! the reply said in as many words:
 //!
 //! > *"Please check your own copy. If your surface tells the operator that
-//! > pdfce never authors an action, it is now saying something untrue in the
+//! > pdfcer never authors an action, it is now saying something untrue in the
 //! > direction that matters."*
 //!
 //! **Two days passed.** The reply was read, filed, and the sentence stayed on
@@ -186,8 +186,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.env
-        .push(("PDFCE_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
-    // ★★ Deliberately NOT `PDFCE_DIAG_FORM_ACCEPT`. That seam accepts the
+        .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
+    // ★★ Deliberately NOT `PDFCER_DIAG_FORM_ACCEPT`. That seam accepts the
     // dialog with its default draft, whose action is `Nothing` — so a run using
     // it would author an inert button and read no `button-action-applied` line,
     // and would be measuring the placement that already worked. The dialog is
@@ -406,7 +406,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             return Ok(Some(format!(
                 "★★★ THE PANEL READS THE BUTTON AS INERT: `{READ} … state=none`, on a button \
                  this run has just given a Reset action to and watched the engine accept.\n\
-                 That is the exact falsehood the reader was requested to prevent — pdfce \
+                 That is the exact falsehood the reader was requested to prevent — pdfcer \
                  asserting a fact about the operator's document that it did not check. Look at \
                  `panels::forms::button::row` and at whether it asks for the same \
                  fully-qualified name the author wrote. Trace: {}.",
@@ -419,7 +419,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                  which `Pass 212.0` states round-trips as `Known` — including `Only` vs \
                  `Except`, the thing a reader most easily gets backwards. `unmodelled` here \
                  would mean the engine wrote something it cannot decode; `foreign` would mean \
-                 it decoded something it will not author, on a button pdfce itself just \
+                 it decoded something it will not author, on a button pdfcer itself just \
                  authored. Trace: {}.",
                 session.trace_path().display()
             )));

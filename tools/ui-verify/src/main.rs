@@ -121,7 +121,7 @@ fn run(args: &[String]) -> Result<ExitCode, String> {
     // before every other path. See [`refuse_if_self_is_stale`].
     refuse_if_self_is_stale(args)?;
 
-    let mut profile_name = profile::PDFCE_GUI.name.to_owned();
+    let mut profile_name = profile::PDFCER_GUI.name.to_owned();
     let mut exe: Option<PathBuf> = None;
     let mut pdf: Option<PathBuf> = None;
     let mut second_pdf: Option<PathBuf> = None;
@@ -350,7 +350,7 @@ USAGE
   ui-verify [OPTIONS]
 
 OPTIONS
-  --profile NAME     target profile (default: pdfce-gui). --list shows them.
+  --profile NAME     target profile (default: pdfcer-gui). --list shows them.
   --exe PATH         the binary to drive. Defaults to the profile's.
   --pdf PATH         the fixture document to open.
   --second-pdf PATH  a SECOND, different document, for the multi-document
@@ -392,10 +392,10 @@ EXAMPLES
   ui-verify --list
 
   # Falsify the pixel oracle against the dated evidence for D2.
-  ui-verify --profile pdfce-legacy --check settings_headings_legible \\
+  ui-verify --profile pdfcer-legacy --check settings_headings_legible \\
             --image evidence/crop_settings.png
 
   # Drive the Delete-key check against a built binary.
-  ui-verify --exe target/release/pdfce-gui.exe --pdf fixture.pdf \\
+  ui-verify --exe target/release/pdfcer-gui.exe --pdf fixture.pdf \\
             --doc-point 0,300,500 --check delete_key_after_canvas_click
 ";

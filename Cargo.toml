@@ -1,4 +1,4 @@
-# pdfce GUI rebuild — workspace root.
+# pdfcer GUI rebuild — workspace root.
 #
 # Two members, and the split is load-bearing:
 #
@@ -7,19 +7,19 @@
 #                 nothing about PDF and must never learn. Enforced by
 #                 tools/gates/check-shell-purity.sh. MIT, extracted to its
 #                 own repository at or before fold-in.
-#   pdfce-gui   — the pdfce application. Supplies a shell manifest, panel
-#                 bodies and command handlers; depends on pdfce-core and
-#                 pdfce-render by PATH into D:\Dev\pdfce.
+#   pdfcer-gui   — the pdfcer application. Supplies a shell manifest, panel
+#                 bodies and command handlers; depends on pdfcer-core and
+#                 pdfcer-render by PATH into D:\Dev\pdfcer.
 #
 # The path dependencies are deliberate (PROJECT_PLAN.md §2): building
 # against the live engine means divergence shows up at compile time rather
-# than at fold-in. D:\Dev\pdfce is READ-ONLY for this project.
+# than at fold-in. D:\Dev\pdfcer is READ-ONLY for this project.
 [workspace]
 resolver = "2"
 members = [
     "crates/egui-shell",
     "crates/native-window",
-    "crates/pdfce-gui",
+    "crates/pdfcer-gui",
     "tools/ui-verify",
 ]
 
@@ -31,9 +31,9 @@ license = "MIT"
 [workspace.dependencies]
 egui-shell = { path = "crates/egui-shell" }
 
-# Versions are pinned to match D:\Dev\pdfce exactly. A dependency this
-# workspace adds that is NOT already in pdfce's lockfile is an operator
-# decision, not a convenience — pdfce's dependency posture (all-permissive
+# Versions are pinned to match D:\Dev\pdfcer exactly. A dependency this
+# workspace adds that is NOT already in pdfcer's lockfile is an operator
+# decision, not a convenience — pdfcer's dependency posture (all-permissive
 # licences, no GPL engines, skrifa pinned to epaint's) is deliberate.
 eframe = { version = "0.35", default-features = false, features = [
     "glow",
@@ -65,7 +65,7 @@ debug = 1
 # every failing test in the suite reports itself. What it drops is the variable,
 # type and lexical-scope information a step debugger wants — and nothing in this
 # project's workflow steps through a debugger. R1's method is to drive the real
-# binary and read a trace, and the trace is `PDFCE_DIAG`, not a watch window.
+# binary and read a trace, and the trace is `PDFCER_DIAG`, not a watch window.
 #
 # ★ If somebody does need a full debugger session, `cargo test --profile dev
 # --config profile.dev.debug=2` restores it for that run without the tree

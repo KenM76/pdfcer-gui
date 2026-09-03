@@ -1085,14 +1085,14 @@ mod tests {
     /// application really writes.
     #[test]
     fn the_application_and_shell_streams_do_not_contaminate_each_other() {
-        let text = "pdfce-diag start argv1=None\n\
+        let text = "pdfcer-diag start argv1=None\n\
                     egui-shell-diag ribbon-command-invoked id=markup.ink handler=505\n\
-                    pdfce-diag markup-tool tool=Markup(Ink)\n\
-                    pdfce-diag markup-commit kind=Ink page=0 raw=14 kept=2\n\
-                    pdfce-diag markup-vertex kind=PolyLine page=0 n=1 x=10.00 y=20.00\n\
-                    pdfce-diag markup-commit kind=PolyLine page=0 vertices=3 x0=1.00 y0=2.00 \
+                    pdfcer-diag markup-tool tool=Markup(Ink)\n\
+                    pdfcer-diag markup-commit kind=Ink page=0 raw=14 kept=2\n\
+                    pdfcer-diag markup-vertex kind=PolyLine page=0 n=1 x=10.00 y=20.00\n\
+                    pdfcer-diag markup-commit kind=PolyLine page=0 vertices=3 x0=1.00 y0=2.00 \
                     xn=3.00 yn=4.00";
-        let app = Trace::parse(text, "pdfce-diag");
+        let app = Trace::parse(text, "pdfcer-diag");
         let shell = Trace::parse(text, driving::SHELL_TRACE_PREFIX);
 
         assert!(app.started("start"));

@@ -4,7 +4,7 @@
 //! # What this proves
 //!
 //! `attach_file`, `list_attachments`, `extract_attachment` and `detach_file`
-//! have existed in `pdfce-core` for months with **no command, no menu item and
+//! have existed in `pdfcer-core` for months with **no command, no menu item and
 //! no panel** — a capability that does not exist as far as the operator is
 //! concerned. The panel shipped on 2026-08-28. This is what says it stayed
 //! working.
@@ -35,11 +35,11 @@
 //!
 //! # The two seams, and why they are two
 //!
-//! `PDFCE_DIAG_ATTACH_PATH` answers the *attach* picker and
-//! `PDFCE_DIAG_ATTACHMENT_SAVE_PATH` answers the *save-a-copy* picker. Sharing
+//! `PDFCER_DIAG_ATTACH_PATH` answers the *attach* picker and
+//! `PDFCER_DIAG_ATTACHMENT_SAVE_PATH` answers the *save-a-copy* picker. Sharing
 //! one variable would make exactly this check unwritable — the round trip needs
 //! to name an input file and an output file in one session — which is why the
-//! shell declares two rather than reusing `PDFCE_DIAG_SAVE_PATH`.
+//! shell declares two rather than reusing `PDFCER_DIAG_SAVE_PATH`.
 //!
 //! ★ Both are answered by the application, not by synthetic input: a native
 //! modal is a window this harness cannot reach, and every other picker in this
@@ -134,9 +134,9 @@ const SAVE_REGION: &str = "attachments.save";
 /// The region the first row's Remove publishes.
 const REMOVE_REGION: &str = "attachments.remove";
 /// The seam that answers the attach picker.
-const ATTACH_ENV: &str = "PDFCE_DIAG_ATTACH_PATH";
+const ATTACH_ENV: &str = "PDFCER_DIAG_ATTACH_PATH";
 /// The seam that answers the save-a-copy picker.
-const SAVE_ENV: &str = "PDFCE_DIAG_ATTACHMENT_SAVE_PATH";
+const SAVE_ENV: &str = "PDFCER_DIAG_ATTACHMENT_SAVE_PATH";
 
 /// See the module documentation.
 pub struct AFileCanBeAttachedAndTakenBackOut;
@@ -215,7 +215,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.env
-        .push(("PDFCE_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
+        .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.env
         .push((ATTACH_ENV.to_owned(), source.to_string_lossy().into_owned()));
     spec.env

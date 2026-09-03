@@ -25,7 +25,7 @@
 # WHY NOTHING ELSE CATCHES IT
 # ===========================
 #
-# This gate exists because on 2026-08-18 `pdfce-core` reported finding SIX of
+# This gate exists because on 2026-08-18 `pdfcer-core` reported finding SIX of
 # these in its own shipped error messages, two of them live since `95c3416`,
 # and named the reason nothing had caught them:
 #
@@ -36,7 +36,7 @@
 #     broken copy against another and passes.
 #
 # The same grep over this workspace found **36 across 22 files**, eight of them
-# in `crates/pdfce-gui/src/text/` — copy an operator reads on screen, including
+# in `crates/pdfcer-gui/src/text/` — copy an operator reads on screen, including
 # every sentence of the Set-scale dialog written the same afternoon. So this is
 # not a defect one author makes once; it is what the language's line-
 # continuation syntax does when a hand-edit loses one character, and the whole

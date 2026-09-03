@@ -7,10 +7,10 @@
 //! > *"every time I've tried the redact feature it tells me it can't because
 //! > there is objects that weren't redacted."*
 //!
-//! Reproduced with `pdfce-cli` alone, so the refusal is the engine's:
+//! Reproduced with `pdfcer` alone, so the refusal is the engine's:
 //!
 //! ```text
-//! redaction refused: redaction region on page 1 intersects an image; pdfce
+//! redaction refused: redaction region on page 1 intersects an image; pdfcer
 //! cannot yet destroy image pixels … apply refused rather than producing a
 //! false redaction
 //! ```
@@ -22,7 +22,7 @@
 //!
 //! # ★★★ THE REFUSAL IS GONE, and this check's subject changed with it
 //!
-//! `pdfce-core` **v0.26.0** (`Pass 245.0`, 2026-09-03 — the same day as the
+//! `pdfcer-core` **v0.26.0** (`Pass 245.0`, 2026-09-03 — the same day as the
 //! report) ships all three asks: the gate is on the samples rather than the
 //! bounding boxes, a wholly covered image is removed outright, and an
 //! undecodable image now retains just the marks that touch it rather than
@@ -95,7 +95,7 @@ const WITHOUT_IMAGE: &str = "fixtures/a1-titleblock.pdf";
 /// pass a looser check and leave him no wiser about what Apply will do.
 ///
 /// ★★★ **It read `"will be refused"` until 2026-09-03, and the words changed
-/// because the OUTCOME did.** `pdfce-core` v0.26.0 (`Pass 245.0`) destroys
+/// because the OUTCOME did.** `pdfcer-core` v0.26.0 (`Pass 245.0`) destroys
 /// image samples under a region instead of refusing the document, so the
 /// disclosure stopped being a warning about a failure and became a warning
 /// about an irreversible success. This constant is what made that a one-line

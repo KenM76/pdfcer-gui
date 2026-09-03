@@ -121,7 +121,7 @@
 //!
 //! ```text
 //! cargo test -p egui-shell --lib   egui alone            → no fonts, widths ≈ 0
-//! cargo test --workspace           pdfce-gui → eframe    → egui/default_fonts,
+//! cargo test --workspace           pdfcer-gui → eframe    → egui/default_fonts,
 //!                                                          real widths
 //! ```
 //!
@@ -1350,7 +1350,7 @@ mod tests {
     /// pin, and this half cannot check the thing that actually matters.**
     ///
     /// Whether the character is *drawable* is asserted in the consuming
-    /// application (`pdfce_gui::shell`'s
+    /// application (`pdfcer_gui::shell`'s
     /// `the_ribbon_overflow_chevron_has_a_glyph`), because `cargo test -p
     /// egui-shell` compiles without egui's `default_fonts` — a `has_glyph`
     /// call here would answer about a font set no real build has, and would
@@ -1373,7 +1373,7 @@ mod tests {
             "the overflow chevron changed to U+{:04X}. That is allowed, but the \
              bundled fonts must be able to draw it — see this module's own note on \
              which near misses are missing, and update \
-             `pdfce_gui::shell::tests::the_ribbon_overflow_chevron_has_a_glyph`, \
+             `pdfcer_gui::shell::tests::the_ribbon_overflow_chevron_has_a_glyph`, \
              which is the only place that can check.",
             first as u32
         );

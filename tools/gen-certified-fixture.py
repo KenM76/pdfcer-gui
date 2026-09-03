@@ -104,11 +104,11 @@ NO CRYPTOGRAPHY, AND NONE CLAIMED
 ===========================================================================
 
 ``/Contents`` is filler zeros, exactly as in ``gen-signed-fixture.py``.
-``pdfce-core``'s signature module opens *"This module verifies nothing"*, so
+``pdfcer-core``'s signature module opens *"This module verifies nothing"*, so
 a real certificate would test nothing these do and would drag a private key
 into a repository.
 
-**What these fixtures can and cannot support:** they CAN support *"pdfce
+**What these fixtures can and cannot support:** they CAN support *"pdfcer
 found an enforced certification and withheld the control"*, which is the
 whole of the feature. They CANNOT support any claim about signature
 validity, and nothing should be written that reads as though they do.

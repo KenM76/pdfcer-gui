@@ -27,7 +27,7 @@
 //!
 //! 1. **Does a click on real drawing text resolve a run at all?** The hit test
 //!    runs against extracted page text on a page with tens of thousands of
-//!    objects. `pdfce-cli find-text` gives the ground truth: aim at a rectangle
+//!    objects. `pdfcer find-text` gives the ground truth: aim at a rectangle
 //!    the engine itself reports, and a miss is the application's, not the aim's.
 //! 2. **When it declines, does the operator get told?** Every decline path here
 //!    ends in `crate::text::textedit::refusal`, whose sentences are good, are
@@ -47,7 +47,7 @@
 //! one is to ask the engine where text is:
 //!
 //! ```text
-//! pdfce-cli find-text --needle PART D:/Dev/temp/pdfce/SW41177.pdf
+//! pdfcer find-text --needle PART D:/Dev/temp/pdfcer/SW41177.pdf
 //!   match page=1 text="PART" rect=1187.45,1178.37,1215.82,1191.21
 //!
 //! ui-verify … --doc-point 0,1201,1185 --check text_edit_on_a_real_drawing
@@ -168,7 +168,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             "no --doc-point. There is deliberately no default: a click on empty page is \
              symptom-identical to a broken hit test, and this project has already filed and \
              retracted one defect over that confusion. Get a point from the engine — \
-             `pdfce-cli find-text --needle PART <file>` prints a rectangle per hit — and pass \
+             `pdfcer find-text --needle PART <file>` prints a rectangle per hit — and pass \
              its centre as `--doc-point page,x,y` in PDF user space.",
         ));
     };
@@ -423,7 +423,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // ★★★ A REFUSAL ON A SPLIT RUN IS THE PROGRAM WORKING, AND THIS CHECK CALLED
     // IT A DEFECT.
     //
-    // `pdfce-core` `Pass 152.0` lets an empty `find` beside a pin mean *"this
+    // `pdfcer-core` `Pass 152.0` lets an empty `find` beside a pin mean *"this
     // whole show operator"*, which is what a caret in a run actually means — and
     // the shell uses it **only** when `pin::spans_one_operator` says so. On a run
     // split across two operators the whole-operator form would replace one
@@ -436,7 +436,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // which is the designed outcome and the safe one.
     //
     // ⇒ On the sweep of 2026-08-29 this check met exactly that case and reported
-    // *"This is a `pdfce-core` verdict and belongs in a request"*. It does not.
+    // *"This is a `pdfcer-core` verdict and belongs in a request"*. It does not.
     // Nothing in the trace said which path had been taken, so neither the check
     // nor its reader could tell the two apart — `edit-text-pin` was added for
     // this, and it answered `one_operator=false find_len=30` on the very first
@@ -468,7 +468,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              were typed and the plan was built. ★ The split-run case is handled above and is \
              NOT this, so `edit-text-pin` said `one_operator=true` and the whole-operator form \
              was used: the engine refused a request that named a pin and an empty find, which \
-             is a `pdfce-core` verdict and belongs in a request. Trace: {}.",
+             is a `pdfcer-core` verdict and belongs in a request. Trace: {}.",
             refused.raw,
             line.get("run").unwrap_or("?"),
             session.trace_path().display()

@@ -3,7 +3,7 @@
 #
 # WHY THIS IS ITS OWN CRATE, AND IT IS NOT ORGANISATION FOR ITS OWN SAKE
 #
-# Both `egui-shell` and `pdfce-gui` carry `#![forbid(unsafe_code)]`, and that
+# Both `egui-shell` and `pdfcer-gui` carry `#![forbid(unsafe_code)]`, and that
 # is a real claim rather than a lint preference: the UI layer cannot corrupt
 # memory, and a reviewer can establish that by reading one line. `forbid`
 # cannot be relaxed by an inner `allow`, deliberately.

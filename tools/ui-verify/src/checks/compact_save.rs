@@ -7,12 +7,12 @@
 //! It was raised by this project rather than by him, from a limit found while
 //! wiring Remove-embedded-fonts:
 //!
-//! > **Removing fonts does not make the file smaller.** pdfce saves by adding
+//! > **Removing fonts does not make the file smaller.** pdfcer saves by adding
 //! > your changes to the end of the file and leaving the earlier version
 //! > intact, so the outlines stop being used and are still there.
 //!
 //! §7.5.6's update section is *appended*, so every space-reclaiming operation
-//! pdfce has produced a file that was very slightly **larger**. Only a full
+//! pdfcer has produced a file that was very slightly **larger**. Only a full
 //! rewrite drops the bytes, and this is the command that asks for one.
 //!
 //! ## ★★★ The oracle is the FILE ON DISK, and nothing else would do
@@ -34,7 +34,7 @@
 //!
 //! ★★ Assertion 3 is the one this check exists for and the one no unit test can
 //! make: it is a claim about two real files on a real disk, produced by two
-//! different code paths in `pdfce-core` — the incremental writer that made the
+//! different code paths in `pdfcer-core` — the incremental writer that made the
 //! fixture and the full writer that made the copy.
 //!
 //! ## ★★★ The fixture IS the operator-visible problem, built by the CLI
@@ -57,7 +57,7 @@
 //! against: a compacted copy of `reclaimable.pdf` should be tens of kilobytes,
 //! not 1.7 MB.
 //!
-//! ★ Built by `pdfce-cli` rather than by this check, and committed. A check that
+//! ★ Built by `pdfcer` rather than by this check, and committed. A check that
 //! manufactured its own multi-megabyte fixture on every run would spend most of
 //! its wall clock building the thing it measures, and the two CLI calls are a
 //! provenance line rather than a program.
@@ -95,7 +95,7 @@ const WRITTEN: &str = "compact-written";
 /// The refusal, when the engine will not rewrite this file.
 const REFUSED: &str = "compact-refused";
 /// The variable that answers the save picker.
-const SAVE_PATH_ENV: &str = "PDFCE_DIAG_SAVE_PATH";
+const SAVE_PATH_ENV: &str = "PDFCER_DIAG_SAVE_PATH";
 
 /// See the module documentation.
 pub struct ACompactedCopyIsActuallySmaller;
@@ -106,7 +106,7 @@ impl Check for ACompactedCopyIsActuallySmaller {
     }
 
     fn defect(&self) -> &'static str {
-        "removing pages, images or embedded fonts never makes the file smaller — pdfce appends \
+        "removing pages, images or embedded fonts never makes the file smaller — pdfcer appends \
          every save, so the freed bytes stay in the previous revision and the file grows, and \
          there is no command that asks for the full rewrite that would drop them"
     }
@@ -175,7 +175,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.env
-        .push(("PDFCE_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
+        .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.env.push((
         SAVE_PATH_ENV.to_owned(),
         target.to_string_lossy().into_owned(),
@@ -196,7 +196,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let trace = session.trace()?;
     if let Some(refused) = trace.events(REFUSED).last() {
         return Err(Error::new(format!(
-            "the engine refused the rewrite: `{}`. SKIPPED rather than failed: pdfce refuses a \
+            "the engine refused the rewrite: `{}`. SKIPPED rather than failed: pdfcer refuses a \
              full rewrite of a hybrid-reference file by name, and of one whose object numbering \
              is too sparse for §7.5.4's single-section table. Both are facts about the --pdf. \
              Trace: {}.",

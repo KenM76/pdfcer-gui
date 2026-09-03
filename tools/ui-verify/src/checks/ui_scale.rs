@@ -38,7 +38,7 @@
 //! The obvious script is: open Settings, drag the slider, capture. This check
 //! does not, for two reasons and the second is the important one.
 //!
-//! The shallow reason is reach — the *pdfce* group holding `file.settings` is
+//! The shallow reason is reach — the *pdfcer* group holding `file.settings` is
 //! the last group on the File tab, and at the shipped 1100 px window width it
 //! falls into the ribbon overflow, so driving it means opening a popup first.
 //!
@@ -47,7 +47,7 @@
 //! is one frame of one session. Writing `preferences.txt` and launching
 //! exercises the whole chain the operator depends on every morning: parse,
 //! normalise, adopt, apply, lay out. If that path is broken, a slider that
-//! works is worthless — the operator sets their scale, closes pdfce, and
+//! works is worthless — the operator sets their scale, closes pdfcer, and
 //! opens it the next day at 100 %.
 //!
 //! So this check writes the preference and launches twice, once at 1.0 and

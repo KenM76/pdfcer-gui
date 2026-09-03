@@ -24,7 +24,7 @@
 //! Because a drop **cannot be synthesised by moving a mouse**. It originates in
 //! Explorer and is delivered by the window manager as an OLE drag-drop
 //! transaction; this harness drives a cursor and a keyboard and has no way to
-//! begin one. Without `PDFCE_DIAG_DROP_PATH`, drag-and-drop would be the single
+//! begin one. Without `PDFCER_DIAG_DROP_PATH`, drag-and-drop would be the single
 //! feature in this shell that R1 cannot reach — implemented, unit-tested, and
 //! never once exercised in a running window, which is precisely the state R1
 //! exists to forbid.
@@ -53,7 +53,7 @@ use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
 /// The seam that simulates one drop.
-const DROP_PATH_ENV: &str = "PDFCE_DIAG_DROP_PATH";
+const DROP_PATH_ENV: &str = "PDFCER_DIAG_DROP_PATH";
 /// `dropped n=… first=…` or `dropped source=env path=…`.
 const DROPPED_EVENT: &str = "dropped";
 /// The placement window's own region.
@@ -105,10 +105,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     })?;
 
     // The fixture: a PNG this harness encodes, or the file named by
-    // `PDFCE_UIV_IMAGE` — the same seam `insert_image` grew on the same day and
+    // `PDFCER_UIV_IMAGE` — the same seam `insert_image` grew on the same day and
     // for the same reason. A drop of a **JPEG** is what the operator reported,
     // so pointing this at one is the run that answers his sentence.
-    let fixture = match std::env::var_os("PDFCE_UIV_IMAGE") {
+    let fixture = match std::env::var_os("PDFCER_UIV_IMAGE") {
         Some(v) => std::path::PathBuf::from(v),
         None => {
             let path = ctx.out("dropped_fixture.png");

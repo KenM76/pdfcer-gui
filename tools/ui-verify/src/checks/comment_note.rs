@@ -3,7 +3,7 @@
 //!
 //! # The gap this closes, in the engine's own words
 //!
-//! `pdfce-core`'s reply to this shell's blocker (`Pass 154.0`) lists what a
+//! `pdfcer-core`'s reply to this shell's blocker (`Pass 154.0`) lists what a
 //! read-only comment list costs a reviewer, and none of the four is an edge
 //! case:
 //!
@@ -38,7 +38,7 @@
 //!
 //! # What it does
 //!
-//! `PDFCE_DIAG_INVOKE` supplies the two commands at launch rather than clicking
+//! `PDFCER_DIAG_INVOKE` supplies the two commands at launch rather than clicking
 //! for them — Review mode, the Comments panel, and the rectangle tool — because
 //! the subject here is the note, not the ribbon, and three extra clicks are
 //! three extra ways for the check to fail at something it is not testing.
@@ -212,14 +212,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.env
-        .push(("PDFCE_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
+        .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
     report.note(format!(
-        "launched {} as pid {} with PDFCE_DIAG_INVOKE={INVOKE}",
+        "launched {} as pid {} with PDFCER_DIAG_INVOKE={INVOKE}",
         exe.display(),
         session.pid()
     ));
@@ -425,7 +425,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     // ★★★ The panel FOUND the annotation the canvas selected.
     //
-    // This is the second half of the interaction `pdfce-core` describes — *draw
+    // This is the second half of the interaction `pdfcer-core` describes — *draw
     // the shape → it is selected → type the comment in the panel* — and it is
     // the half that is invisible from every other angle: the mark on the row is
     // a word inside a heading string, so a trace cannot see it and a screenshot

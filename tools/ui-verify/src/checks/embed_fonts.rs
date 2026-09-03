@@ -26,10 +26,10 @@
 //! reach"*, in `EmbedPlan`'s own words. This check drives the real gesture and
 //! asserts that it reaches zero.
 //!
-//! ## ★★★ Why `PDFCE_DIAG_FONT_DIR` exists, and why it APPENDS
+//! ## ★★★ Why `PDFCER_DIAG_FONT_DIR` exists, and why it APPENDS
 //!
 //! Embedding needs a folder of font files, and in the product that folder comes
-//! from a preference an operator sets in Settings and pdfce stores in
+//! from a preference an operator sets in Settings and pdfcer stores in
 //! `userdata/preferences.txt`. A harness must not rewrite that file — it
 //! belongs to whoever is running the build, and a check that edited it would
 //! leave it edited.
@@ -50,7 +50,7 @@
 //! ★ **No Windows machine has a font called Helvetica.** So this fixture cannot
 //! be embedded at all unless the resolver's *alias* rung works, and a passing
 //! run is therefore evidence for a claim no unit test in this project can make:
-//! that `pdfce_render::FontEnvironment`'s standard-14 equivalence is reached
+//! that `pdfcer_render::FontEnvironment`'s standard-14 equivalence is reached
 //! from the shell, on a real font folder, through the real dispatch. The first
 //! draft of that resolver had only an exact rung and would fail here while
 //! every one of its own tests passed — they registered a name and then asked
@@ -80,12 +80,12 @@ use crate::report::CheckReport;
 /// left behind.
 const INVOKE: &str = "mode.edit,tools.embed_fonts";
 /// The variable that supplies a font folder without touching the preference.
-const FONT_DIR_ENV: &str = "PDFCE_DIAG_FONT_DIR";
+const FONT_DIR_ENV: &str = "PDFCER_DIAG_FONT_DIR";
 /// The operating system's own font directory — the one folder that certainly
 /// exists on the platform this ships for.
 ///
 /// ★ Deliberately not what the product searches. `Prefs::font_folders` starts
-/// empty and pdfce never adds to it, for the licensing reason `app::fonts`
+/// empty and pdfcer never adds to it, for the licensing reason `app::fonts`
 /// records: which font goes into somebody's document is the operator's call. A
 /// harness may look where a product may not.
 const SYSTEM_FONTS: &str = r"C:\Windows\Fonts";
@@ -182,7 +182,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.env
-        .push(("PDFCE_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
+        .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.env
         .push((FONT_DIR_ENV.to_owned(), SYSTEM_FONTS.to_owned()));
     spec.allow_stale = ctx.allow_stale;
@@ -191,7 +191,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
     report.note(format!(
-        "launched {} as pid {} with PDFCE_DIAG_INVOKE={INVOKE} and {FONT_DIR_ENV}={SYSTEM_FONTS}",
+        "launched {} as pid {} with PDFCER_DIAG_INVOKE={INVOKE} and {FONT_DIR_ENV}={SYSTEM_FONTS}",
         exe.display(),
         session.pid()
     ));

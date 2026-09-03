@@ -488,7 +488,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                  returns `click: caps.edit_content`, `GestureState::update` swallows the click, \
                  and `canvas::interact`'s `Click` arm is never entered. So the capabilities the \
                  canvas was handed this frame were not Read's. Look at link 3 — `canvas::show` \
-                 sampling `PdfceApp::capabilities()` into `canvas::interact::Frame::caps` — \
+                 sampling `PdfcerApp::capabilities()` into `canvas::interact::Frame::caps` — \
                  which is the one link in this chain with no unit test, and note that \
                  `Default for Capabilities` is `FULL`, so a `..Default::default()` anywhere on \
                  that path reopens this defect and breaks nothing.",
@@ -598,7 +598,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              in, and the page in Read is still carrying an outline and eight resize grips: \
              visible controls the operator can aim at that will do nothing, which is the \
              *visible control, silently inert* failure `MODES_AND_PANELS.md` Part 1 forbids by \
-             name. Look at `PdfceApp::on_mode_capabilities_changed` and at whether the \
+             name. Look at `PdfcerApp::on_mode_capabilities_changed` and at whether the \
              mode-change arm in `dock_area` still calls it. {} lines were traced before the \
              switch and {} after.",
             before,
@@ -675,9 +675,9 @@ mod tests {
     #[test]
     fn only_a_click_counts_as_a_click() {
         let trace = Trace::parse(
-            "pdfce-diag canvas-selection via=marquee mod=false sel=7 level=Object\n\
-             pdfce-diag canvas-selection via=click mod=false sel=1 level=Object",
-            "pdfce-diag",
+            "pdfcer-diag canvas-selection via=marquee mod=false sel=7 level=Object\n\
+             pdfcer-diag canvas-selection via=click mod=false sel=1 level=Object",
+            "pdfcer-diag",
         );
         let clicks = selection_clicks(&trace);
         assert_eq!(clicks.len(), 1, "the marquee line must not be counted");
@@ -689,8 +689,8 @@ mod tests {
     #[test]
     fn a_click_that_selected_nothing_is_not_a_hit() {
         let trace = Trace::parse(
-            "pdfce-diag canvas-selection via=click mod=false sel=0 level=Object",
-            "pdfce-diag",
+            "pdfcer-diag canvas-selection via=click mod=false sel=0 level=Object",
+            "pdfcer-diag",
         );
         assert_eq!(selection_clicks(&trace)[0].get_usize("sel"), Some(0));
     }
@@ -705,9 +705,9 @@ mod tests {
     #[test]
     fn the_cleared_flag_is_read_by_name_and_not_by_the_line() {
         let trace = Trace::parse(
-            "pdfce-diag mode-capabilities content=false markup=false measure=false \
+            "pdfcer-diag mode-capabilities content=false markup=false measure=false \
              retired_tool=true cleared_selection=false abandoned_drag=false",
-            "pdfce-diag",
+            "pdfcer-diag",
         );
         let line = trace.last(CAPABILITIES_EVENT).expect("the line");
         assert_eq!(line.get(CLEARED_FIELD), Some("false"));

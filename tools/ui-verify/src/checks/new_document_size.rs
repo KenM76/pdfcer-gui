@@ -6,7 +6,7 @@
 //! `file.new` makes an A4 page and asks nothing, which is what Acrobat and
 //! Inkscape both do. `file.new_from_template` is the other half of
 //! `RIBBON_IA.md` §5.1's row — the command that asks — and it could not exist
-//! until 2026-08-18, because nothing in `pdfce-core` wrote a `/MediaBox` and
+//! until 2026-08-18, because nothing in `pdfcer-core` wrote a `/MediaBox` and
 //! the only shell-side implementation was one checked-in template asset per
 //! size. That plan is recorded and refused in `app::blank`'s §3a; it could not
 //! have answered a custom size at any number of assets.
@@ -78,7 +78,7 @@ const CREATE: &str = "new-document.create";
 /// The line `app::blank::document_sized` emits after the re-parse.
 const SIZED_EVENT: &str = "new-document-sized";
 
-/// The index of A3 in `pdfce_core::paper::PaperSize::ALL`.
+/// The index of A3 in `pdfcer_core::paper::PaperSize::ALL`.
 ///
 /// The list is A0, A1, A2, A3, … — largest-first, which is the engine's own
 /// ordering and is deliberate: this operator's sheets are A1 and A3, and

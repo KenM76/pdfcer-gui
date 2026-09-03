@@ -317,7 +317,7 @@ pub fn strip(ui: &mut egui::Ui, theme: &Theme, tabs: &[TabItem], active: usize) 
     //
     // A rectangle and a pointer position are facts that do not care who owns the
     // interaction, which is what makes them the right instrument here. It is the
-    // same reason `pdfce`'s own page grid resolves its drop target from
+    // same reason `pdfcer`'s own page grid resolves its drop target from
     // `pointer_latest_pos()` against a tile rect rather than from the tile's
     // response.
     //

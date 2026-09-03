@@ -37,7 +37,7 @@
 //!
 //! So the crate's own tests were all true and all silent. `icons`' 52 tests
 //! proved the painter draws. `egui-shell`'s proved the seam accepts it. The
-//! one fact nobody could state in either crate is that `pdfce-gui` hands the
+//! one fact nobody could state in either crate is that `pdfcer-gui` hands the
 //! former to the latter — because that is a property of a call site, and the
 //! only place a call site's *effect* is observable is a running window.
 //!

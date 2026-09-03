@@ -190,14 +190,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             "the reference listed ZERO commands. Either the manifest's keymap failed to load — \
              in which case no chord works at all this session, and the window says so in its own \
              words — or it loaded and binds nothing. `dropped={dropped}`. Look at \
-             `crates/pdfce-gui/src/shell/ron/built_in.ron`."
+             `crates/pdfcer-gui/src/shell/ron/built_in.ron`."
         )));
     }
 
     // ★ THE assertion. See this module's header for why zero is required and
     // why it is not tautological.
     //
-    // ⚠ If pdfce is ever built with a capability stripped — the exe-to-DLL move
+    // ⚠ If pdfcer is ever built with a capability stripped — the exe-to-DLL move
     // makes that the ordinary case — a non-zero count here is CORRECT, and the
     // window discloses it in words. The fix then is to teach this check which
     // build it is looking at (compare against the registry's own census, not

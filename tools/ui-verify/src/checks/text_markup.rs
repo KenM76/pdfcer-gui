@@ -618,7 +618,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              `{}` — and no `{APPLY_EVENT}` line followed, so `app::actions`' apply arm never ran \
              or `EditSession::add_markup` refused. The action funnel is the suspect: a \
              `CommitTextMarkup` raised into `actions` is applied after the frame by \
-             `PdfceApp::apply`, and an arm that is missing there compiles (the `match` would not) \
+             `PdfcerApp::apply`, and an arm that is missing there compiles (the `match` would not) \
              — but a `vector_edit` that returned `Err` traces `add-text-markup-refused` instead, \
              so check for that line first.",
             commit.raw
@@ -742,10 +742,10 @@ mod tests {
     #[test]
     fn the_two_quad_counts_are_read_from_their_own_lines() {
         let trace = Trace::parse(
-            "pdfce-diag canvas-text-selection via=drag page=0 chars=27 quads=2\n\
-             pdfce-diag text-markup-commit kind=Underline page=0 quads=2\n\
-             pdfce-diag add-text-markup page=0 n=1 epoch=1 disclosures=none",
-            "pdfce-diag",
+            "pdfcer-diag canvas-text-selection via=drag page=0 chars=27 quads=2\n\
+             pdfcer-diag text-markup-commit kind=Underline page=0 quads=2\n\
+             pdfcer-diag add-text-markup page=0 n=1 epoch=1 disclosures=none",
+            "pdfcer-diag",
         );
         let selection = selections(&trace);
         assert_eq!(selection.len(), 1);
@@ -761,9 +761,9 @@ mod tests {
         // …and a build whose authoring quads came from somewhere else shows up
         // as two different numbers on two lines, which is the whole assertion.
         let diverged = Trace::parse(
-            "pdfce-diag canvas-text-selection via=drag page=0 chars=27 quads=2\n\
-             pdfce-diag text-markup-commit kind=Underline page=0 quads=27",
-            "pdfce-diag",
+            "pdfcer-diag canvas-text-selection via=drag page=0 chars=27 quads=2\n\
+             pdfcer-diag text-markup-commit kind=Underline page=0 quads=27",
+            "pdfcer-diag",
         );
         assert_ne!(
             selections(&diverged)[0].get_usize(QUADS_FIELD),
@@ -779,9 +779,9 @@ mod tests {
     #[test]
     fn only_a_non_empty_selection_counts() {
         let trace = Trace::parse(
-            "pdfce-diag canvas-text-selection via=clear page=0 chars=0 quads=0\n\
-             pdfce-diag canvas-text-selection via=drag page=0 chars=27 quads=2",
-            "pdfce-diag",
+            "pdfcer-diag canvas-text-selection via=clear page=0 chars=0 quads=0\n\
+             pdfcer-diag canvas-text-selection via=drag page=0 chars=27 quads=2",
+            "pdfcer-diag",
         );
         assert_eq!(selections(&trace).len(), 1, "the clear must not be counted");
     }

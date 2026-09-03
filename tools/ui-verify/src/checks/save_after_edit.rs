@@ -14,7 +14,7 @@
 //! | what exists | what it does | why it misses this |
 //! |---|---|---|
 //! | `every_declared_chord_dispatches` | presses `Ctrl+S` among seven chords | on a **clean** document — nothing to write |
-//! | `saving_writes_the_document` and friends | invoke `file.save` through `PDFCE_DIAG_INVOKE` | the seam, not the keyboard |
+//! | `saving_writes_the_document` and friends | invoke `file.save` through `PDFCER_DIAG_INVOKE` | the seam, not the keyboard |
 //! | 2,786 unit tests | call the verbs | a process that exits is not a returned `Err` |
 //!
 //! ⇒ The gap is the **conjunction**: a real keystroke, on a document that has
@@ -147,7 +147,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.env
-        .push(("PDFCE_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
+        .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
 

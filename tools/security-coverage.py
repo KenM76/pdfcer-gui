@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""security-coverage.py — every ENCRYPTION and SIGNATURE thing `pdfce-core`
+"""security-coverage.py — every ENCRYPTION and SIGNATURE thing `pdfcer-core`
 exposes, and whether this shell reaches it.
 
 WHY THIS EXISTS
@@ -14,23 +14,23 @@ The operator, 2026-09-03 (`OPERATOR_REQUESTS.md` O108):
 completeness claim, and this project has a standing rule about those: a
 completeness question needs an INSTRUMENT, not a document.** `FEATURES.md`
 describes what the GUI does. `NO_SURFACE.md` lists tunables with no control.
-`GUI_ROADMAP.md` is a plan. **None of the three is keyed on `pdfce-core`'s
+`GUI_ROADMAP.md` is a plan. **None of the three is keyed on `pdfcer-core`'s
 API**, so none of them can answer *"is there an encryption or signature thing
 the engine implements that nothing here reaches?"* — and answering it from them
 would be answering it from our own imagination of the engine.
 
 `tools/verb-coverage.py` is the same instrument for `EditSession`'s verbs and
 cannot help here: **almost none of this surface is on `EditSession`.** Encryption
-lives on `Document` and in `pdfce_core::crypto`; signatures live in
-`pdfce_core::signature` as free functions and in two `EditSession` methods. A
+lives on `Document` and in `pdfcer_core::crypto`; signatures live in
+`pdfcer_core::signature` as free functions and in two `EditSession` methods. A
 scan of `edit.rs` sees two of the twenty-odd items below.
 
 WHAT IT MEASURES, AND WHAT THAT MEASUREMENT IS WORTH
 ====================================================
 
-For every public item in `pdfce-core` whose name or module places it in the
+For every public item in `pdfcer-core` whose name or module places it in the
 encryption / signature surface, whether the identifier appears anywhere in
-`crates/pdfce-gui/src`.
+`crates/pdfcer-gui/src`.
 
 ★★ It is a **grep**, and the limits are the same as `verb-coverage.py`'s and
 worth restating because a number from a tool reads as authoritative:
@@ -49,7 +49,7 @@ worth restating because a number from a tool reads as authoritative:
 ==================================================================
 
 Same discipline, same reason, and the reason was paid for again on the morning
-this file was written: `D:/Dev/pdfce` is a **dirty tree by design** — that
+this file was written: `D:/Dev/pdfcer` is a **dirty tree by design** — that
 session runs in parallel and answers requests within the hour — so a capability
 in the worktree and not in `Cargo.lock` is one this shell **cannot call**. On
 2026-09-03 a paragraph was written from the worktree describing a field that did
@@ -63,7 +63,7 @@ this paragraph describes, wearing a tool's authority.
 =======================================================================
 
 Run it and the summary says it: **this surface is entirely READ-SIDE.**
-`pdfce-core` has no `encrypt_document`, no `set_password`, no
+`pdfcer-core` has no `encrypt_document`, no `set_password`, no
 `remove_encryption`, no `set_permissions`, no `sign_document`, no certificate
 validation and no timestamping. What it has is the ability to *open* an
 encrypted document, *report* its scheme and permission bits, and *count and
@@ -91,9 +91,20 @@ import re
 import subprocess
 import sys
 
-ENGINE_REPO = pathlib.Path("D:/Dev/pdfce")
+# ★★★ DERIVED, NOT ASSUMED — see `tools/engine_path.py`.
+#
+# This was a hard-coded literal until 2026-09-03, when the project's rename
+# pointed it at a directory the engine had not created yet and this instrument
+# went silently blind. `engine_path.locate` reads the git URL out of the
+# manifest Cargo actually builds from, so it follows the temporary
+# `package = ...` shim and will follow the engine's rename without anybody
+# remembering that this line exists.
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import engine_path  # noqa: E402
+
+ENGINE_REPO = engine_path.locate() or pathlib.Path("D:/Dev/pdfcer")
 LOCK = pathlib.Path("Cargo.lock")
-GUI = pathlib.Path("crates/pdfce-gui/src")
+GUI = pathlib.Path("crates/pdfcer-gui/src")
 
 #: The engine files this surface lives in.
 #:
@@ -105,12 +116,12 @@ GUI = pathlib.Path("crates/pdfce-gui/src")
 #: built to find it, and the count still adds up. Re-derive it when the engine's
 #: layout moves.
 FILES = [
-    "crates/pdfce-core/src/signature.rs",
-    "crates/pdfce-core/src/crypto/mod.rs",
-    "crates/pdfce-core/src/crypto/standard.rs",
-    "crates/pdfce-core/src/crypto/apply.rs",
-    "crates/pdfce-core/src/crypto/r5.rs",
-    "crates/pdfce-core/src/document.rs",
+    f"crates/{engine_path.crate_name('core')}/src/signature.rs",
+    f"crates/{engine_path.crate_name('core')}/src/crypto/mod.rs",
+    f"crates/{engine_path.crate_name('core')}/src/crypto/standard.rs",
+    f"crates/{engine_path.crate_name('core')}/src/crypto/apply.rs",
+    f"crates/{engine_path.crate_name('core')}/src/crypto/r5.rs",
+    f"crates/{engine_path.crate_name('core')}/src/document.rs",
 ]
 
 #: Names in `document.rs` that belong to this surface. That file is the whole
@@ -163,7 +174,7 @@ PUB_ITEM = re.compile(
 
 
 def locked_revision() -> str | None:
-    """The `pdfce-core` commit `Cargo.lock` pins. See `verb-coverage.py`."""
+    """The `pdfcer-core` commit `Cargo.lock` pins. See `verb-coverage.py`."""
     if not LOCK.exists():
         return None
     for line in LOCK.read_text(encoding="utf-8", errors="replace").splitlines():
@@ -264,7 +275,7 @@ def main() -> int:
                 print(name)
         return 0
 
-    print(f"pdfce-core encryption + signature surface (lock {rev[:7] if rev else '?'})")
+    print(f"pdfcer-core encryption + signature surface (lock {rev[:7] if rev else '?'})")
     if "WORKTREE" in sources:
         print("  ⚠ at least one file was read from the WORKTREE, not the lock — "
               "an item below may not exist in the revision this shell builds")

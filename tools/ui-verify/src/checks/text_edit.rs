@@ -25,7 +25,7 @@
 //! | 2 | a click on the page resolves a **run** | nothing: it needs a rendered page and a real hit test |
 //! | 3 | a draft reaches the commit | nothing: the typing loop is `egui::Event` handling |
 //! | 4 | the commit plans the **right disposition** | `textedit::proof` — the arithmetic, not the route |
-//! | 5 | the engine writes it | `pdfce-core` |
+//! | 5 | the engine writes it | `pdfcer-core` |
 //! | 6 | it is in the saved file | `save_copy` — for an annotation, not for a text edit |
 //! | 7 | a **second process** reads the new text back | nothing |
 //!
@@ -60,8 +60,8 @@
 //! Typing is this feature's entire input, so a check that could supply no text
 //! would be reduced to asserting *"the tool armed"* — `HANDOFF.md` §2's grid
 //! lesson exactly, an assertion in the right direction that measures the wrong
-//! thing. So the draft's characters arrive through `PDFCE_DIAG_TYPE`, a seam in
-//! the shape of `PDFCE_DIAG_OPEN_PATH` and `PDFCE_DIAG_SAVE_PATH` — both of
+//! thing. So the draft's characters arrive through `PDFCER_DIAG_TYPE`, a seam in
+//! the shape of `PDFCER_DIAG_OPEN_PATH` and `PDFCER_DIAG_SAVE_PATH` — both of
 //! which exist because a native modal cannot be driven from here. What the seam
 //! **does not** replace is any other link: the mode still has to change, the
 //! tool still has to arm from a real ribbon click, the click still has to
@@ -130,10 +130,10 @@ const EDIT_TAB: (&str, &str) = ("ribbon.tab.edit", "edit");
 const EDIT_TEXT: (&str, &str) = ("ribbon.item.edit.text", "edit.text");
 
 /// Where the copy goes — the seam every other write-driving check uses.
-const SAVE_PATH_ENV: &str = "PDFCE_DIAG_SAVE_PATH";
+const SAVE_PATH_ENV: &str = "PDFCER_DIAG_SAVE_PATH";
 
 /// ★ The seam that supplies the draft. See this module's header.
-const TYPE_ENV: &str = "PDFCE_DIAG_TYPE";
+const TYPE_ENV: &str = "PDFCER_DIAG_TYPE";
 
 /// What is typed. Deliberately **longer** than what it replaces: the whole
 /// defect is what happens to the followers when the advance delta is positive,
@@ -461,7 +461,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     if trace.events(ctx.profile.vocab.canvas_event).count() == 0 {
         return Ok(Some(format!(
             "THE COPY DID NOT OPEN IN A SECOND PROCESS. It exists and carries the edit, and a \
-             fresh pdfce could not draw it — which is a worse outcome than a failed save. Trace: \
+             fresh pdfcer could not draw it — which is a worse outcome than a failed save. Trace: \
              {}.",
             second.trace_path().display()
         )));

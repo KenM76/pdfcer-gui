@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # check-ui-strings.sh — enforce rule R1:
-# every OPERATOR-VISIBLE string in pdfce-gui lives in the ui_text catalog.
+# every OPERATOR-VISIBLE string in pdfcer-gui lives in the ui_text catalog.
 #
-# This is a PORT of D:\Dev\pdfce\tools\check-ui-strings.sh with one bug fixed
+# This is a PORT of D:\Dev\pdfcer\tools\check-ui-strings.sh with one bug fixed
 # and one exclusion generalised. The original's reasoning is excellent and is
 # preserved below almost verbatim, because the reasoning is the valuable part;
 # what changed is marked "PORT CHANGE".
@@ -13,7 +13,7 @@
 #
 # The original scanned with a flat, non-recursive glob:
 #
-#     for file in "$SRC_DIR"/*.rs; do            # pdfce check-ui-strings.sh:76
+#     for file in "$SRC_DIR"/*.rs; do            # pdfcer check-ui-strings.sh:76
 #
 # `src/*.rs` does not match `src/app/state.rs`. The moment the crate grows its
 # first subdirectory the gate stops seeing almost the whole crate — AND REPORTS
@@ -31,9 +31,9 @@
 # PORT CHANGE 2 — THE CATALOG IS A DIRECTORY, NOT A FILE
 # ===========================================================================
 #
-# The original excluded exactly one filename, `ui_text.rs`. pdfce's catalog is
+# The original excluded exactly one filename, `ui_text.rs`. pdfcer's catalog is
 # already large enough that PROJECT_PLAN.md §9 Q4 contemplates splitting it,
-# and this crate starts split: `crates/pdfce-gui/src/text/` is a directory
+# and this crate starts split: `crates/pdfcer-gui/src/text/` is a directory
 # whose `mod.rs` says so in its first line, with one module per surface
 # (ribbon, panels, dialogs, tools) to come.
 #
@@ -67,10 +67,10 @@
 # 2. Everything from `#[cfg(test)]` to end of file. Test assertion messages are
 #    prose, but they are never rendered to an operator; they are read by whoever
 #    is staring at a failing test. Including them was the single biggest source
-#    of pdfce's 140-hit noise floor (125 of them). This codebase puts its test
+#    of pdfcer's 140-hit noise floor (125 of them). This codebase puts its test
 #    module last, so a truncation is exact rather than a guess.
 #
-#    LIMIT, found the embarrassing way in pdfce: because this truncates, any
+#    LIMIT, found the embarrassing way in pdfcer: because this truncates, any
 #    non-test code placed AFTER the test module is invisible to the checker. It
 #    surfaced while planting a deliberate violation to prove the gate still bit
 #    — the plant was appended to end-of-file, the gate stayed green, and it
@@ -111,7 +111,7 @@
 # ===========================================================================
 # USAGE / EXIT CODES
 # ===========================================================================
-#   tools/gates/check-ui-strings.sh              scan crates/pdfce-gui/src
+#   tools/gates/check-ui-strings.sh              scan crates/pdfcer-gui/src
 #   tools/gates/check-ui-strings.sh <SRC_DIR>    scan an arbitrary tree
 #   tools/gates/check-ui-strings.sh --self-test  prove the gate bites
 #
@@ -134,8 +134,8 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # about what the rule does NOT cover, so it belongs in one reviewable list
 # rather than smuggled into a `find -not -path` somewhere.
 #
-#   text.rs, text/*        the catalog in THIS project (crates/pdfce-gui/src/text/)
-#   ui_text.rs, ui_text/*  the spelling carried over from pdfce, kept so a
+#   text.rs, text/*        the catalog in THIS project (crates/pdfcer-gui/src/text/)
+#   ui_text.rs, ui_text/*  the spelling carried over from pdfcer, kept so a
 #                          rename in either direction cannot silently disarm
 #                          the exclusion
 # ---------------------------------------------------------------------------
@@ -184,7 +184,7 @@ scan_tree() {
             # under R2 and this gate reported 28 assertion messages as
             # operator-facing copy. The gate was right that they were string
             # literals and wrong that anybody would ever read them on screen —
-            # and the noise is the actual hazard: 125 of pdfce'"'"'s old 140-hit
+            # and the noise is the actual hazard: 125 of pdfcer'"'"'s old 140-hit
             # floor were test assertions, which is what exclusion 2 was written
             # to remove. A split that reintroduced them would have trained
             # people to ignore the report.
@@ -264,7 +264,7 @@ scan_tree() {
                 # matters: it happily starts at one literal CLOSING quote and ends
                 # at the next literal OPENING quote, so `"svg" | "?xml"` reads as a
                 # single literal containing " | ". Three of the four remaining hits
-                # when pdfce first ran this were exactly that artefact — i.e. most
+                # when pdfcer first ran this were exactly that artefact — i.e. most
                 # of what was left after the real exclusions was the detector
                 # misreading Rust, not the code violating the rule.
                 #
@@ -366,7 +366,7 @@ self_test() {
         printf '%s\n' "$dirty_hits" | sed 's/^/         /'
     else
         echo "  [FAIL] dirty fixture reported CLEAN — the gate cannot detect its own violation."
-        echo "         This is the pdfce failure mode verbatim: a green gate that guards nothing."
+        echo "         This is the pdfcer failure mode verbatim: a green gate that guards nothing."
         rc=1
     fi
 
@@ -412,7 +412,7 @@ if [ "${1:-}" = "--self-test" ]; then
     exit $?
 fi
 
-SRC_DIR="${1:-crates/pdfce-gui/src}"
+SRC_DIR="${1:-crates/pdfcer-gui/src}"
 
 if [ ! -d "$SRC_DIR" ]; then
     echo "ui-strings: SKIPPED — no $SRC_DIR" >&2

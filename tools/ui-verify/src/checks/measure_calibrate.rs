@@ -68,7 +68,7 @@ const SPAN_PT: f64 = 400.0;
 ///
 /// Deliberately wide. The picks go through the **snap** machinery, which is
 /// correct behaviour and is the entire point of calibrating against a drawing:
-/// pdfce moves the click to the endpoint the operator meant. So the measured
+/// pdfcer moves the click to the endpoint the operator meant. So the measured
 /// length is the distance between two *snapped* points and is not required to
 /// equal the raw span.
 ///

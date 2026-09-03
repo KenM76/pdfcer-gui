@@ -18,7 +18,7 @@
 //! exactly the state this shell shipped in for the day between the two:
 //! `Refusal::InsideForm`, a worded decline, honest and useless.
 //!
-//! It was honest because no verb existed. `pdfce-core` Pass 188.0 shipped six
+//! It was honest because no verb existed. `pdfcer-core` Pass 188.0 shipped six
 //! (2026-08-31), and `move_objects_in_form` is the first wired.
 //!
 //! ## ★★★ The oracle, and why `n=` is half of it
@@ -247,7 +247,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             "★★★ THE DRAG DID NOT REACH THE ENGINE: no `{MOVED}` line.{refused}\n\
              For the life of this shell that refusal was honest — no verb could address anything \
              inside a form, so `canvas::moving::eligible` answered `Refusal::InsideForm`. \
-             `pdfce-core` Pass 188.0 shipped `move_objects_in_form`; if the decline is still \
+             `pdfcer-core` Pass 188.0 shipped `move_objects_in_form`; if the decline is still \
              `InsideForm`, the fork in that function has not been taken. Trace: {}.",
             session.trace_path().display()
         )));

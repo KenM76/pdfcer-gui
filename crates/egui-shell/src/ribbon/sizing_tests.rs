@@ -413,7 +413,7 @@ fn a_large_control_in_a_popup_is_tall_enough_to_click() {
 /// `super::sizing::visible` runs **before measurement**, so a hidden custom
 /// item must give back `plan::CUSTOM_ITEM_WIDTH` rather than leaving a hole
 /// the band has already budgeted for. Drawing nothing into a reserved slot is
-/// precisely what pdfce would have had to do without this field, and the gap
+/// precisely what pdfcer would have had to do without this field, and the gap
 /// it leaves is why the field was added instead.
 #[test]
 fn a_hidden_custom_item_is_never_offered_to_the_renderer_and_gives_its_width_back() {

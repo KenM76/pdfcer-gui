@@ -3,7 +3,7 @@
 WHY THIS EXISTS
 ===============
 
-`crates/pdfce-gui/src/canvas/cursor.rs` builds pdfce's own crosshair cursor
+`crates/pdfcer-gui/src/canvas/cursor.rs` builds pdfcer's own crosshair cursor
 because the platform's stock one is monochrome and its colour belongs to the
 operator's pointer scheme — which is how it came to be *"white, making it hard
 to see"* on the operator's machine (2026-08-18).
@@ -23,7 +23,7 @@ HOW TO USE IT
 Two commands. The first is the real code producing the real bitmap; the second
 is only a viewer.
 
-    cargo test -p pdfce-gui --lib preview -- --ignored --nocapture
+    cargo test -p pdfcer-gui --lib preview -- --ignored --nocapture
     python tools/crosshair-preview.py %TEMP%/crosshair-32.rgba evidence/crosshair-32.png 4
     python tools/crosshair-preview.py %TEMP%/crosshair-64.rgba evidence/crosshair-64.png 2
 

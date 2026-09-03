@@ -11,7 +11,7 @@ def patch(path, pairs):
     print('patched', path)
 
 
-patch('crates/pdfce-gui/src/dialogs/unsaved.rs', [
+patch('crates/pdfcer-gui/src/dialogs/unsaved.rs', [
     # --- the outcome ------------------------------------------------------
     ('''pub enum Outcome {
     /// Write a copy first; resume only if a file was actually written.
@@ -95,7 +95,7 @@ patch('crates/pdfce-gui/src/dialogs/unsaved.rs', [
 ])
 
 # --- the region constant ---------------------------------------------------
-s = io.open('crates/pdfce-gui/src/dialogs/unsaved.rs', encoding='utf-8').read()
+s = io.open('crates/pdfcer-gui/src/dialogs/unsaved.rs', encoding='utf-8').read()
 import re
 m = re.search(r'^(const REGION_SAVE: &str = .*)$', s, re.M)
 assert m, 'REGION_SAVE not found'
@@ -108,5 +108,5 @@ s = s.replace(m.group(1), m.group(1) + '''
 /// them apart would pass on a build that had silently swapped one for the
 /// other.
 const REGION_SAVE_IN_PLACE: &str = "dialog.unsaved.save-in-place"; // ui-text-exempt: trace region name, never displayed''', 1)
-io.open('crates/pdfce-gui/src/dialogs/unsaved.rs', 'w', encoding='utf-8').write(s)
+io.open('crates/pdfcer-gui/src/dialogs/unsaved.rs', 'w', encoding='utf-8').write(s)
 print('region added')

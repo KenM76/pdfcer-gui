@@ -72,16 +72,16 @@
 #
 # Format: <path> <class>
 
-crates/pdfce-gui/src/canvas/selection/annot.rs      click-selects
-crates/pdfce-gui/src/canvas/clicking.rs             click-selects
-crates/pdfce-gui/src/canvas/dimdrag.rs              drag-moves
-crates/pdfce-gui/src/canvas/moving/mod.rs               drag-moves
-crates/pdfce-gui/src/canvas/resizing.rs             drag-moves
-crates/pdfce-gui/src/canvas/handledrag.rs           drag-moves
-crates/pdfce-gui/src/canvas/constrain.rs            drag-moves
-crates/pdfce-gui/src/canvas/handles.rs              handles
-crates/pdfce-gui/src/canvas/textedit/mod.rs         text-caret
-crates/pdfce-gui/src/canvas/textedit/caret.rs       text-caret
-crates/pdfce-gui/src/dialogs/print/mod.rs           dialogs
-crates/pdfce-gui/src/dialogs/insert_image.rs        dialogs
-crates/pdfce-gui/src/dialogs/scale.rs               dialogs
+crates/pdfcer-gui/src/canvas/selection/annot.rs      click-selects
+crates/pdfcer-gui/src/canvas/clicking.rs             click-selects
+crates/pdfcer-gui/src/canvas/dimdrag.rs              drag-moves
+crates/pdfcer-gui/src/canvas/moving/mod.rs               drag-moves
+crates/pdfcer-gui/src/canvas/resizing.rs             drag-moves
+crates/pdfcer-gui/src/canvas/handledrag.rs           drag-moves
+crates/pdfcer-gui/src/canvas/constrain.rs            drag-moves
+crates/pdfcer-gui/src/canvas/handles.rs              handles
+crates/pdfcer-gui/src/canvas/textedit/mod.rs         text-caret
+crates/pdfcer-gui/src/canvas/textedit/caret.rs       text-caret
+crates/pdfcer-gui/src/dialogs/print/mod.rs           dialogs
+crates/pdfcer-gui/src/dialogs/insert_image.rs        dialogs
+crates/pdfcer-gui/src/dialogs/scale.rs               dialogs

@@ -35,12 +35,12 @@ read-through and a `ui-verify` assertion before it is trusted.
 
 | File | Code | Tests | Why it survives | Change needed |
 |---|---:|---:|---|---|
-| `print_flow.rs` | 1,854 | 168 | Three-tab print dialog with a zoomable live preview of real page content. Self-contained, works, nothing like it needs re-deriving. | Add imposition once `pdfce-print` shares the sheet composition (a **C**-row in `FEATURES.md`). |
+| `print_flow.rs` | 1,854 | 168 | Three-tab print dialog with a zoomable live preview of real page content. Self-contained, works, nothing like it needs re-deriving. | Add imposition once `pdfcer-print` shares the sheet composition (a **C**-row in `FEATURES.md`). |
 | `icons.rs` | 1,747 | 383 | SVG path data rasterized at physical pixel size rather than pre-baked PNGs. Mostly data. | New icons for the new commands. |
 | `measure_tool.rs` | 1,230 | 814 | Dimension **groups** with shared scale and drafting standard — better than the comparison product has. Taubin best-fit circle. Snapping. **`TwoLinePick` (`:361`) is here, built and tested** — see the note below. | Add Area, Angular. **Carry the Two-line gesture across**; it does not need wiring, it needs salvaging. |
-| `diag.rs` | 819 | 144 | The `PDFCE_DIAG` key=value channel. Off by default, one atomic load, never load-bearing. This is what made the Delete-key and render analyses possible. | Extend with page complexity per `BENCHMARK.md` §"instrument before optimising". |
+| `diag.rs` | 819 | 144 | The `PDFCER_DIAG` key=value channel. Off by default, one atomic load, never load-bearing. This is what made the Delete-key and render analyses possible. | Extend with page complexity per `BENCHMARK.md` §"instrument before optimising". |
 | `settings_panel.rs` | 800 | 114 | The spec-ambiguity settings model — each row states what the standard leaves open and how well-founded the default is. A genuine differentiator. | ✅ **SALVAGED 2026-08-17** into `dialogs/settings/` (eight files) + `text/settings/` (four), with five deliberate departures: a seventh group, **Measuring and dimensioning**, because the parallel tolerance sat under *Copying and extracting text* where nobody with the symptom would look; **Colour** expanded rather than Appearance, resolving a contradiction where the source's prose said one and its code did the other; four guessed defaults that read as recommendations now admit it; and two engine facts the old window hid are disclosed. Heading contrast fixed — but by `DEFECTS.md` **D11** rather than D2: `.strong()` was the cause, and there is now a gate. ⬜ The **Render** group is still to come — its seven commands are registered and inert, and the window is now a real destination for them. |
-| `object_provider.rs` | 694 | 313 | Front-to-back page object decomposition. Feeds the Objects panel, which is the single strongest thing pdfce has. | Serve more than the current page, for continuous mode (Phase 4). |
+| `object_provider.rs` | 694 | 313 | Front-to-back page object decomposition. Feeds the Objects panel, which is the single strongest thing pdfcer has. | Serve more than the current page, for continuous mode (Phase 4). |
 | `object_summary.rs` | 520 | 276 | Per-object descriptions — type, text, font, colour, width, node count, winding. | Row text must not clip; the old panel truncated with no horizontal scroll. |
 | `viewer.rs` | 509 | 413 | Zoom ladder with provable reversibility, fit modes re-derived per frame, per-page raster ceiling accounting for `pixels_per_point`. Well tested. | Cursor-anchored zoom (Phase 3.1); page *range* not `page_index` (Phase 4.1). |
 | `render_worker.rs` | 466 | 116 | Generation counter + between-operator cancellation. **Measured**: six rapid zoom steps start six generations and complete one. Do not touch the design. | Add a thread pool for thumbnails and adjacent-page prerender (`BENCHMARK.md`). |
@@ -68,16 +68,16 @@ words: **"the canvas gesture has no caller"** (`FEATURES.md`, `HANDOFF.md`,
 | picked-pair overlay, verdict disclosure, Escape to clear | `:23597-23604`, `:23175-23187`, `:23857` |
 | the state type | `measure_tool.rs:361` `TwoLinePick`, tests at `:1717-2040` |
 
-pdfce's own `docs/FEATURES.md:104` marks that row **`gui [x]`**; the `[ ]` in
+pdfcer's own `docs/FEATURES.md:104` marks that row **`gui [x]`**; the `[ ]` in
 it is the *Acrobat* column. The gesture landed in their commit `c4ec3f5`,
 2026-08-12 — the same day this file's survey was taken, which is the most
 likely reason it was missed. The probable textual origin is a misread of
-pdfce's `ROADMAP.md:2778`, which explains why `pick_line_in_page` exists, one
+pdfcer's `ROADMAP.md:2778`, which explains why `pick_line_in_page` exists, one
 paragraph above the commit heading that added its caller.
 
 **What it changes.** The missing caller is *ours*, not theirs. This shell has
 no measure tool at all: `canvas/tool.rs` has two `CanvasTool` variants, no
-`measure.*` command has a dispatch arm, and `crates/pdfce-gui` contains zero
+`measure.*` command has a dispatch arm, and `crates/pdfcer-gui` contains zero
 occurrences of `linepick`, `PickedLine` or `author_from_two_lines`. So the
 work is this row — carry `measure_tool.rs` across — plus the ~900 lines of
 Class C canvas hosting at `main.rs:23100-23900`. The *"cheapest real feature
@@ -97,10 +97,10 @@ claim, and it decays.**
 Flagged by the core team in the request channel, 2026-08-13:
 
 > **`Pass 72.0` — the redaction true-removal proof is not in
-> `pdfce-core`.** It lives in `crates/pdfce-gui/src/redact_apply.rs:269`,
+> `pdfcer-core`.** It lives in `crates/pdfcer-gui/src/redact_apply.rs:269`,
 > i.e. in the shell being replaced. **A shell calling
 > `redact::apply_redactions` directly and writing the bytes ships an
-> unverified redaction and will not know.** … `pdfce-cli`'s
+> unverified redaction and will not know.** … `pdfcer`'s
 > `redact-apply` does exactly that at HEAD and exits `SUCCESS` on a file
 > it never verified. **Do not build a redaction UI against core's
 > current surface**; wait for the verdict type to land in core.
@@ -126,7 +126,7 @@ Good material whose hosting or structure changes.
 
 | File | Code | Tests | Disposition |
 |---|---:|---:|---|
-| `ui_text.rs` | 7,912 | 3,913 | **The string catalog — 1,193 `pub fn` entries.** A large asset and the reason pdfce's copy is as good as it is. Most strings survive verbatim; ribbon/tab/panel labels change with the IA. **Fix `shortcuts_reference()` — it omits six live bindings (`DEFECTS.md` D5) — and derive it from the keyboard map so it cannot drift again.** Split into modules by area; at 7,912 lines it breaks R2. |
+| `ui_text.rs` | 7,912 | 3,913 | **The string catalog — 1,193 `pub fn` entries.** A large asset and the reason pdfcer's copy is as good as it is. Most strings survive verbatim; ribbon/tab/panel labels change with the IA. **Fix `shortcuts_reference()` — it omits six live bindings (`DEFECTS.md` D5) — and derive it from the keyboard map so it cannot drift again.** Split into modules by area; at 7,912 lines it breaks R2. |
 | `canvas.rs` | 1,893 | 1,244 | The `CanvasTool` enum, dispatch, and the escape ladder are sound concepts. The *selection layer* is where Phase 1 lands — handles, context menus, `/Rect` move-and-resize — so this becomes several modules under `canvas/`. |
 | `panels_structure.rs` | 1,807 | 0 | Bookmarks, Layers, Signatures, Fonts panel bodies. The bodies keep; the hosting changes, and Fonts moves to **File ▸ Document** per the IA. Note this file ships **zero tests** and three of its panels shipped with no operator-reachable control at all. |
 | `canvas_overlay.rs` | 749 | 0 | Overlay drawing — theme-invariant by design because the page beneath is white regardless of chrome. Mostly keeps; grows for selection handles and marquee. |
@@ -243,10 +243,10 @@ actually been moved, where it now lives, and what changed on the way.
 
 ### Stage S0 — 2026-08-13
 
-Built against `D:\Dev\pdfce` as of 2026-08-13 (`pdfce-render` 0.5.3).
-All of the below builds, `cargo test -p pdfce-gui` is green (56 tests),
-`cargo fmt -p pdfce-gui --check` and
-`cargo clippy -p pdfce-gui --all-targets -- -D warnings` are clean, and
+Built against `D:\Dev\pdfcer` as of 2026-08-13 (`pdfcer-render` 0.5.3).
+All of the below builds, `cargo test -p pdfcer-gui` is green (56 tests),
+`cargo fmt -p pdfcer-gui --check` and
+`cargo clippy -p pdfcer-gui --all-targets -- -D warnings` are clean, and
 the binary renders the 5.6 MB CAD benchmark drawing.
 
 | Source (old crate) | New home | State | What changed |
@@ -255,8 +255,8 @@ the binary renders the 5.6 MB CAD benchmark drawing.
 | `render_worker.rs` (466 + 116 test) | `src/render/worker.rs` (595) | **complete, three keys deferred** | Generation counter, `RenderCancel` token, `IN_FRAME_BUDGET` and the single-slot design untouched. `RenderKey` compares **two** keys (page, raster scale) rather than five: `annotations`, `font_env_generation` and `layers_generation` land **with the surfaces that vary them** (S2/S3) — the module docs tabulate all three, the defect each prevents, and the rule that the key ships in the same commit as its control. `cmyk_intent`/`fonts`/`view_magnification` left to `RenderOptions`' defaults for the same reason. New: a `render-spawn gen=N page=P scale=S` trace line, so "six zoom steps start six generations and complete one" is checkable from outside the process. |
 | `raster.rs` (363) | `src/render/raster.rs` (214) | **page half complete** | `pixmap_to_color_image`, `PageTexture`, `texture_from_pixels` carried with the premultiplied-alpha and LINEAR-filtering sections verbatim. `ThumbnailCache` deliberately left behind — it belongs with the Pages panel (S3). `texture_from_pixmap` left behind — it exists for the print preview (S5). The stale *"Why rendering is synchronous"* section was replaced by an accurate one that **keeps the original prediction on the record** and notes it was vindicated. New: two unit tests pinning the premultiplied read, which the original had none of. |
 | `canvas.rs` — `pan_offset`, `zoom_anchor_offset` (Class B) | `src/canvas/geometry.rs` (334) | **these two complete** | Lifted verbatim with all eight tests. The rest of `canvas.rs` (tool dispatch, selection, escape ladder) stays behind for S4/S5. |
-| `diag.rs` (819 + 144 test) | `src/diag.rs` (119) | **trace channel only** | `enabled()`/`trace()` and the full header rationale. The `PDFCE_DIAG_SCRIPT` harness grammar (`Step`, `ScriptTool`, …) lands with `tools/ui-verify` at S1 — a script language with no interpreter is not salvage. New: a test that a disabled trace never builds its message. |
-| `main.rs` — eframe bootstrap, `ViewportBuilder`, `PDFCE_DIAG_VIEWPORT`, `configure_context`, `open_path`, `settle_and_rasterize`, `is_unsupported_structure`, the canvas `ScrollArea` (Class C) | `src/main.rs` (149), `src/app/{mod,state,actions,keyboard}.rs`, `src/canvas/mod.rs` | **the S0 slice** | The three-way open-failure distinction, both staleness policies, the `ZOOM_SETTLE` debounce, the discrete-command bypass, the manual page centring (and the ~105 px selection-offset defect its comment records) all carried with their reasoning. `main.rs` is 149 lines against the old 25,005. |
+| `diag.rs` (819 + 144 test) | `src/diag.rs` (119) | **trace channel only** | `enabled()`/`trace()` and the full header rationale. The `PDFCER_DIAG_SCRIPT` harness grammar (`Step`, `ScriptTool`, …) lands with `tools/ui-verify` at S1 — a script language with no interpreter is not salvage. New: a test that a disabled trace never builds its message. |
+| `main.rs` — eframe bootstrap, `ViewportBuilder`, `PDFCER_DIAG_VIEWPORT`, `configure_context`, `open_path`, `settle_and_rasterize`, `is_unsupported_structure`, the canvas `ScrollArea` (Class C) | `src/main.rs` (149), `src/app/{mod,state,actions,keyboard}.rs`, `src/canvas/mod.rs` | **the S0 slice** | The three-way open-failure distinction, both staleness policies, the `ZOOM_SETTLE` debounce, the discrete-command bypass, the manual page centring (and the ~105 px selection-offset defect its comment records) all carried with their reasoning. `main.rs` is 149 lines against the old 25,005. |
 | — (new) | `src/text/mod.rs` (205) | **new** | The ui-string catalog, a directory from the first commit so the old `ui_text.rs`'s 7,912-line R2 breach cannot recur as a migration. |
 
 **`DEFECTS.md` fixes applied at salvage time (procedure step 3):**
@@ -284,11 +284,11 @@ harness exists at S1. A green unit test is the floor, not the ceiling.
 ### Phase 7 — the measure salvage, 2026-08-14
 
 Class A `measure_tool.rs` and the Pass 12.M1 snap primitives, carried across
-in one pass. `cargo test -p pdfce-gui --lib` green, all eight gates green.
+in one pass. `cargo test -p pdfcer-gui --lib` green, all eight gates green.
 
 | Source (old crate) | New home | State | What changed |
 |---|---|---|---|
-| `measure_tool.rs` (1,230 + 814 test) | `src/canvas/measure/pick.rs` (1,290), `scale.rs` (607), `state.rs` (377) | **complete** | Every `///` and `//!` paragraph carried verbatim; **all 36 tests carried, none dropped** — verified by diffing the complete function-name set (public, private and test) old against new: identical. Both load-bearing CLI-equivalence tests pass, so a canvas-authored `DimensionKind` is still byte-for-byte the one `pdfce-cli dimension-add` builds. **No `pdfce-core` API had moved** — every one of the ~25 imported items checked against the engine at this workspace's path dependency, unchanged signatures, no adaptation invented. Three adaptations, all documented in the files: `CanvasTool::MeasureLinear` and `GestureInterrupt` became prose (neither exists here), and cross-module doc links were repointed. |
+| `measure_tool.rs` (1,230 + 814 test) | `src/canvas/measure/pick.rs` (1,290), `scale.rs` (607), `state.rs` (377) | **complete** | Every `///` and `//!` paragraph carried verbatim; **all 36 tests carried, none dropped** — verified by diffing the complete function-name set (public, private and test) old against new: identical. Both load-bearing CLI-equivalence tests pass, so a canvas-authored `DimensionKind` is still byte-for-byte the one `pdfcer dimension-add` builds. **No `pdfcer-core` API had moved** — every one of the ~25 imported items checked against the engine at this workspace's path dependency, unchanged signatures, no adaptation invented. Three adaptations, all documented in the files: `CanvasTool::MeasureLinear` and `GestureInterrupt` became prose (neither exists here), and cross-module doc links were repointed. |
 | `canvas.rs:1584-1892` + tests at `:3046-3136` (12.M1 snap) | `src/canvas/snap.rs` (587) | **complete, not yet queried** | The zoom-invariant catch radius, the master/Alt gate, the Tab cycle, the two-click confirm, the indicator glyph. `#[allow(dead_code, reason = …)]` kept where the item is still unused, with **the reason rewritten** to name this shell's consumer — an inherited reason pointing at a pass in another repo is a stale claim. `screen_tolerance_to_page` deliberately **not** salvaged: `canvas/mapping.rs` already has it, and that module's header states there is no second place in `canvas/` that divides by zoom. |
 
 **Three departures from the source, each deliberate:**
@@ -332,12 +332,12 @@ refusal taxonomy and every paragraph of its reasoning. `cargo test --workspace`
 green (1,715 passing), all ten gates green, and the apply path driven end to end
 against the real binary.
 
-**Both halves of the `Pass 72.0` warning were re-checked against `D:\Dev\pdfce`
+**Both halves of the `Pass 72.0` warning were re-checked against `D:\Dev\pdfcer`
 rather than quoted**, because acting on a stale claim is this project's
 documented failure mode. Both still hold on 2026-08-15:
-`pdfce_core::redact::apply_redactions` still returns
+`pdfcer_core::redact::apply_redactions` still returns
 `Result<(Vec<u8>, RedactionReport), RedactError>` — a **report**, not a verdict;
-`RedactionVerdict` and `verify_redaction` appear nowhere in `pdfce-core` (the
+`RedactionVerdict` and `verify_redaction` appear nowhere in `pdfcer-core` (the
 only `verify_absence` in either tree is still the old shell's, at
 `redact_apply.rs:361`); and
 `D:\Dev\FeatureRequests\pdfce_FeatureRequests\open\` is empty, so nothing is
@@ -345,7 +345,7 @@ owed and Pass 72.0 has not closed.
 
 | Source (old crate) | New home | State | What changed |
 |---|---|---|---|
-| `redact_apply.rs` (429 + 280 test) | `src/redact/mod.rs` (825), `src/redact/proof.rs` (447), `src/redact/sealed.rs` (487) | **complete** | Every `///` and `//!` paragraph carried. The classification table, the four-character floor, the wide stream sweep, the local `contains` ("an absence proof that shared its search routine with the code it is auditing would be a weaker proof"), the two-full-rewrite shape and all five `RedactApplyRefusal` variants are the source's. **All seven tests carried**, plus twelve new ones for the halves the source had none for. No `pdfce-core` API had moved — every imported item checked against the engine at this workspace's pin, unchanged signatures, no adaptation invented. |
+| `redact_apply.rs` (429 + 280 test) | `src/redact/mod.rs` (825), `src/redact/proof.rs` (447), `src/redact/sealed.rs` (487) | **complete** | Every `///` and `//!` paragraph carried. The classification table, the four-character floor, the wide stream sweep, the local `contains` ("an absence proof that shared its search routine with the code it is auditing would be a weaker proof"), the two-full-rewrite shape and all five `RedactApplyRefusal` variants are the source's. **All seven tests carried**, plus twelve new ones for the halves the source had none for. No `pdfcer-core` API had moved — every imported item checked against the engine at this workspace's pin, unchanged signatures, no adaptation invented. |
 | `main.rs::redact_panel` (~600, Class C) | `src/panels/redact.rs` (515) | **complete, panel-driven** | Mark whole page, find-and-mark (literal or pattern), the review list with go-to-page and remove. `Panel::Redact`, `ALL` 9 → 10, command `edit.redact`. |
 | `main.rs::redaction_apply_confirmation` (Class C) | `src/dialogs/redact.rs` (826) | **complete** | The measured report, both acknowledgements, the consequence-labelled confirm control, and the save-as write. |
 | `ui_text.rs:6876-7410` (Class B) | `src/text/redact.rs` (748) | **complete** | The three wording rules carried verbatim into the module header, and each is now a **test** rather than a comment: nothing on the marking surface claims a removal, "verified" appears in exactly one place, no post-apply sentence offers Undo. |
@@ -372,7 +372,7 @@ owed and Pass 72.0 has not closed.
 **The proof is unskippable, structurally, by four mechanisms** — the brief's
 second requirement, and the one copying the file across does not satisfy. The
 source's own docs end *"nothing in this module can reach the filesystem"*, which
-means the proof was enforced by the **caller remembering**; `pdfce-cli`'s
+means the proof was enforced by the **caller remembering**; `pdfcer`'s
 `redact-apply` is the counter-example in the same repository. In order of how
 hard each is to defeat: `PreparedRedaction::bytes` is **private with no
 accessor** and a hand-written `Debug` that reports a length; the **only** way
@@ -415,7 +415,7 @@ and the only one whose verdict is a **byte scan of a file on disk**. Measured
 output, release binary, 2026-08-15:
 
 ```
-phase A: pdfce's own extraction reads 24 character(s) from page 1 of the fixture
+phase A: pdfcer's own extraction reads 24 character(s) from page 1 of the fixture
 phase C: redact-panel marks=1 pages=1 epoch=1
 phase D: redact-prepared marks=1 pages=1 glyphs=24 streams=1 checked=1 short=0
          residuals=0 verified=true bytes=943

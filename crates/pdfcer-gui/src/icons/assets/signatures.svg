@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Signatures panel (ISO 32000-1 §12.8) — engineer-authored, same §1 style
+       contract as the rest of the set. Generic geometry, no trademark risk.
+
+       A written flourish above a signing rule. Deliberately NOT a seal, a
+       badge, a shield or a checkmark: every one of those reads as VALIDATED,
+       and pdfcer performs no cryptographic verification whatsoever. The panel
+       says so in its first line, and the glyph must not contradict it before
+       the panel is even open — an icon is a claim too.
+
+       Distinct from stamp.svg (a bordered impression) by having no frame: the
+       mark itself, on a line. -->
+  <path d="M8 30c5-1 7-16 11-16 3 0 2 8 5 8 3 0 4-6 7-6 4 0 5 12 9 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M8 38h32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

@@ -53,7 +53,7 @@ use crate::trace::Trace;
 
 /// The shell's own diagnostic switch, and its value.
 ///
-/// See the module header. `pdfce-gui` does not call
+/// See the module header. `pdfcer-gui` does not call
 /// `egui_shell::verify::set_prefix`, so the shell's lines arrive under the
 /// crate's default prefix, [`SHELL_TRACE_PREFIX`].
 pub const SHELL_DIAG_ENV: (&str, &str) = ("EGUI_SHELL_DIAG", "1");
@@ -514,7 +514,7 @@ const MAX_BAND_SCROLLS: usize = 32;
 /// It was measured on 2026-09-02: `about_reports_the_build`,
 /// `shortcuts_reference_is_live` and `properties_metadata_round_trips` all
 /// SKIPPED reporting a lost command, on a File tab whose **Document** and
-/// **pdfce** groups were two and three scroll stops away. All three were worked
+/// **pdfcer** groups were two and three scroll stops away. All three were worked
 /// around with `session.maximize()` — a workaround that is fine for those three
 /// and does nothing for the next check to meet this.
 ///
@@ -805,7 +805,7 @@ pub fn delta(a: Rgb, b: Rgb) -> u16 {
 /// into that argument:
 ///
 /// * `egui`'s stock light palette — which is what the built binary actually
-///   paints with, because nothing in `crates/pdfce-gui` calls
+///   paints with, because nothing in `crates/pdfcer-gui` calls
 ///   `egui_shell::theme::Theme::apply` — separates unpressed `#E5E5E5` from
 ///   pressed `#90D1FF` by **85**;
 /// * `egui-shell`'s `quiet` preset, if it were installed, would separate them
@@ -1244,11 +1244,11 @@ mod tests {
     #[test]
     fn a_regions_last_declaration_is_the_one_that_is_used() {
         let trace = Trace::parse(
-            "pdfce-diag start argv1=None\n\
-             pdfce-diag ui-rect name=ribbon.item.measure.linear rect=[[0.0 0.0] - [10.0 10.0]]\n\
-             pdfce-diag ui-rect name=ribbon.item.measure.two_line rect=[[20.0 0.0] - [30.0 10.0]]\n\
-             pdfce-diag ui-rect name=ribbon.item.measure.linear rect=[[4.0 30.0] - [84.0 54.0]]",
-            "pdfce-diag",
+            "pdfcer-diag start argv1=None\n\
+             pdfcer-diag ui-rect name=ribbon.item.measure.linear rect=[[0.0 0.0] - [10.0 10.0]]\n\
+             pdfcer-diag ui-rect name=ribbon.item.measure.two_line rect=[[20.0 0.0] - [30.0 10.0]]\n\
+             pdfcer-diag ui-rect name=ribbon.item.measure.linear rect=[[4.0 30.0] - [84.0 54.0]]",
+            "pdfcer-diag",
         );
         assert_eq!(
             declared(&trace, "ui-rect", "ribbon.item.measure.linear"),
@@ -1277,11 +1277,11 @@ mod tests {
     /// `ribbon-command-invoked` that is not there, or misses one that is.
     #[test]
     fn the_application_and_shell_streams_do_not_contaminate_each_other() {
-        let text = "pdfce-diag start argv1=None\n\
+        let text = "pdfcer-diag start argv1=None\n\
                     egui-shell-diag ribbon-mode-selected mode=review\n\
                     egui-shell-diag ribbon-command-invoked id=measure.linear handler=600\n\
-                    pdfce-diag measure-tool tool=Measure(Linear)\n";
-        let app = Trace::parse(text, "pdfce-diag");
+                    pdfcer-diag measure-tool tool=Measure(Linear)\n";
+        let app = Trace::parse(text, "pdfcer-diag");
         let shell = Trace::parse(text, SHELL_TRACE_PREFIX);
 
         assert!(app.started("start"));

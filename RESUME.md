@@ -6,7 +6,7 @@
 > harness defect that had been reporting the application as broken.
 >
 > ★★★ **His radius/diameter tool was picking OBJECTS, and one object is half his
-> sheet.** `pdfce-cli object-list` on `SW41177.pdf` p1: three path objects carry
+> sheet.** `pdfcer object-list` on `SW41177.pdf` p1: three path objects carry
 > **4,405**, **4,972** and **6,681** anchors, the largest holding 1,194 subpaths
 > across 550 × 500 pt. Every one of them went into the circle fit on a single
 > click. It picks POINTS now, the Tool panel lists and removes them, and the
@@ -21,7 +21,7 @@
 >
 > ★★★ **The finding to carry, because it is the sixth recurrence:** the same
 > paragraph in our source was wrong twice in one morning, in opposite
-> directions — first written from `D:\Dev\pdfce`'s **dirty working tree**, then
+> directions — first written from `D:\Dev\pdfcer`'s **dirty working tree**, then
 > corrected to cite the pin, and the correction was false within the hour when
 > the engine shipped. **A sentence about what the engine cannot do is a dated
 > citation with a shelf life measured in HOURS.** The unit test asserting the
@@ -45,7 +45,7 @@
 > document it points into.
 
 **Written 2026-08-18, last revised 2026-08-28 after the editable-surface
-audit.** For a session starting cold on `D:\Dev\pdfceGUI`.
+audit.** For a session starting cold on `D:\Dev\pdfcer-gui`.
 
 This file is the **entry point**. `HANDOFF.md` is the long-form institutional
 record and is still authoritative for the standing rules, the phase order and
@@ -58,8 +58,8 @@ at a section of it.
 
 Read this before the next release, not after it.
 
-`tools/package-portable.py` runs `cargo update -p pdfce-core -p pdfce-render
--p pdfce-print` **before it builds** — deliberately, and it is the right
+`tools/package-portable.py` runs `cargo update -p pdfcer-core -p pdfcer-render
+-p pdfcer-print` **before it builds** — deliberately, and it is the right
 default. The consequence is that a green `cargo test` taken half an hour before
 packaging describes a **different engine** from the one that ships.
 
@@ -93,7 +93,7 @@ untrue."* The Button tool stayed greyed and the dialog kept telling the
 operator a falsehood, while 2,181 tests passed.
 
 ⇒ **A note is not a mechanism.** What fixed it is
-`tools/gates/check-verb-coverage.sh`, which fails the build when `pdfce-core`
+`tools/gates/check-verb-coverage.sh`, which fails the build when `pdfcer-core`
 has a verb this shell neither calls nor has written a sentence about in
 `EDITABLE_SURFACES.md`. It found five more the moment it worked. Filed to
 `D:/dev/rag/rust/` as *deletion is loud, addition is silent*.
@@ -104,7 +104,7 @@ what the engine cannot do.
 
 ### The one gap left on this subject
 
-`pdfce-core` can WRITE a button's action and cannot READ one — `forms::Widget`
+`pdfcer-core` can WRITE a button's action and cannot READ one — `forms::Widget`
 models no `/A`. So the Forms panel has no row for a button **already in the
 document**; only the placement dialog. Filed as
 `request_a_buttons_action_can_be_written_and_not_read.md`, with a tripwire test
@@ -159,7 +159,7 @@ python tools/verb-coverage.py         # the EditSession verbs nothing here calls
 
 The register it feeds is **[`EDITABLE_SURFACES.md`](EDITABLE_SURFACES.md)**,
 which carries a hand-written reason per miss. Read it before starting any
-feature work: *"is there a verb `pdfce-core` implements that nothing here
+feature work: *"is there a verb `pdfcer-core` implements that nothing here
 calls?"* is a question `FEATURES.md`, `NO_SURFACE.md` and `GUI_ROADMAP.md` are
 all structurally unable to answer, because none of the three is keyed on the
 engine's verb list.
@@ -184,7 +184,7 @@ whole suite with a single fixture and point produced **ten failures on
 articulate failure messages named real mechanisms and were about nothing.
 
 ★★★ **THE OPERATOR'S OWN TEST FILES LIVE AT `D:\Dev\pdfTests\`** — he said so
-on 2026-08-28 after this file recorded them as lost. `D:\Dev	emp\pdfce\` was
+on 2026-08-28 after this file recorded them as lost. `D:\Dev	emp\pdfcer\` was
 swept and is **not** where they live; that folder was scratch and this one is
 his. It holds `SW41177\SW41177.pdf` (the drawing every text and selection check
 was calibrated against), `ncored-benchmark-cad-drawing.pdf` (129,758 objects,
@@ -225,7 +225,7 @@ from it, which is exactly what had happened.
 ```bash
 for f in "polyline-nodes 0,150,260" "four-pages 0,300,500" "a1-titleblock 0,300,500"; do
   set -- $f
-  ./target/release/ui-verify.exe --exe target/release/pdfce-gui.exe     --pdf fixtures/$1.pdf --doc-point $2     --second-pdf fixtures/four-pages.pdf >> evidence/ui-verify-run.txt 2>&1
+  ./target/release/ui-verify.exe --exe target/release/pdfcer-gui.exe     --pdf fixtures/$1.pdf --doc-point $2     --second-pdf fixtures/four-pages.pdf >> evidence/ui-verify-run.txt 2>&1
 done
 ```
 
@@ -272,7 +272,7 @@ behind another tab**, and the dock draws only the active tab's body.
 indistinguishable from a panel with nothing to say. Any check that reads a
 panel's output must bring it to the front first; `dock.tab.<id>` is published
 for exactly that. The point `0,90,703` was right all along — found with
-`pdfce-cli extract-text --json`, which gives every run's first glyph, as the
+`pdfcer extract-text --json`, which gives every run's first glyph, as the
 check's own skip message advises.
 
 ★★★ **`--second-pdf` IS NOT OPTIONAL, and leaving it off costs FIVE checks
@@ -390,8 +390,8 @@ holding the position around 300,000 % and the `f64` tier does not engage until
 ~1,200,000 %. **Do not widen the tolerance.** Written up as **O49**.
 
 **3. A resolver shipped for one commit that could not have worked**, and the
-class generalises: `pdfce-core` says *"the shell resolves it, we never go
-looking"*, which is a statement about **that crate**. `pdfce-render` had the
+class generalises: `pdfcer-core` says *"the shell resolves it, we never go
+looking"*, which is a statement about **that crate**. `pdfcer-render` had the
 whole three-rung matcher with `Helvetica` → `Arial` in its doctest. Grep the
 **sibling** crates before writing the missing half of a documented seam; a
 mirrored enum across the boundary is the tell.
@@ -468,7 +468,7 @@ written and false within hours. What catches that is reading the replies.
 files: `edit.form_flatten` "unbuilt" (it was a citation of a citation), the
 command count out by nineteen, the group count disagreeing with itself across
 five prose sites, and our own retracted claim about synthesised spaces — which
-`pdfce-core` refuted by measuring 256 fixtures. See `CONTINUE.md`; the last one
+`pdfcer-core` refuted by measuring 256 fixtures. See `CONTINUE.md`; the last one
 leaves a shipped function whose stated justification is void, and **do not
 replace it with a second guess.**
 
@@ -479,7 +479,7 @@ replace it with a second guess.**
 **Read `CONTINUE.md` first.** In one paragraph: `EditSession::format_text` was
 consumed, so **existing text can be restyled** — font, size, Bold, Italic,
 colour, in the Properties panel's *This text* section. Shipped, driven against
-the operator's own drawing, falsified, published to `OneDrive\pdfceGUI1`.
+the operator's own drawing, falsified, published to `OneDrive\pdfcer-gui1`.
 
 **Three things a cold session would otherwise rediscover the hard way:**
 
@@ -491,7 +491,7 @@ the operator's own drawing, falsified, published to `OneDrive\pdfceGUI1`.
 2. ★★ **Never hand `TextRun::text` to `format_text` as a `find`** — the
    symptom is real, reproducible and still guarded against. ★★★ **The reason
    this file gave for it is RETRACTED**: it said the extraction synthesises
-   spaces from `TJ` offsets, and `pdfce-core` measured 256 fixtures and found
+   spaces from `TJ` offsets, and `pdfcer-core` measured 256 fixtures and found
    **zero** glyph runs containing one (`layout` emits a derived space as its
    own glyph-less run). The real offender is `/ToUnicode` mapping one glyph to
    several characters. ⇒ `Reading::find` works and its stated justification is
@@ -512,14 +512,14 @@ here so you know roughly where you are, not so you can quote it.
 
 | | |
 |---|---|
-| **Tests** | 1,830 (`pdfce-gui`) + 420 (`egui-shell`) + 144 (`ui-verify`), 0 failing |
+| **Tests** | 1,830 (`pdfcer-gui`) + 420 (`egui-shell`) + 144 (`ui-verify`), 0 failing |
 | **Gates** | **18 of 18**, 0 skipped |
 | **`ui-verify`** | **82 checks declared. The whole suite was driven on 2026-08-27 with the operator off the machine: 76 passed, 0 failed, 6 skipped** — `evidence/ui-verify-run-2026-08-27-SUMMARY.md` accounts for every one of the six. ★ Run it in **slices of six to eight**, not as one suite: three checks that skipped inside a twelve-member batch passed when re-run in a smaller one. Per-check runs are authoritative |
 | **The four defects O44 found** | **Two were real and are fixed** — the status bar going off-window at `ui_scale 1.80`, and the Properties panel's Apply being unreachable because the panel had no scroll area. **Two were the tests** — `blend_space` red on any drawing without transparency, `dimension_groups` contradicting itself in consecutive sentences. Both test defects were permanent false reds on this project's usual fixture |
 | **★ Two controls have no home but the status bar** | The **selection filter** and the **zoom stepper** are reachable nowhere else — no command, no menu, no chord. `status::fitting` refuses to shed either, and its reachability test is what discovered it. If either gains a ribbon home, add it to `SHED_ORDER` |
 | **Panels** | **12.** Pages · Bookmarks · Layers · Signatures · Fonts · Objects · Properties · Forms · Comments · Redact · Dimension groups · Tool |
-| **Engine** | `D:\Dev\pdfce` local `main`, taken as a **git** dependency, pinned at `4c32afe` (**v0.14.0**) — one commit past the revision that shipped `hit_test_point_deep`, `PageObjects::leaves` and the deep `pick_line_in_page`. **Read `Cargo.lock`, not this row** |
-| **Latest build** | `OneDrive\pdfceGUI2`, published 2026-08-30 13:50 from shell `33e1879` on engine `cff102a` (v0.17.0+) — **O63**: the live shape preview, the erase, the hold, the delete preview and the catching-up line. `pdfceGUI1` holds the 09:45 O62b build as the fallback. Tested and gated **after** packaging as well as before, per the `cargo update` trap below |
+| **Engine** | `D:\Dev\pdfcer` local `main`, taken as a **git** dependency, pinned at `4c32afe` (**v0.14.0**) — one commit past the revision that shipped `hit_test_point_deep`, `PageObjects::leaves` and the deep `pick_line_in_page`. **Read `Cargo.lock`, not this row** |
+| **Latest build** | `OneDrive\pdfcer-gui2`, published 2026-08-30 13:50 from shell `33e1879` on engine `cff102a` (v0.17.0+) — **O63**: the live shape preview, the erase, the hold, the delete preview and the catching-up line. `pdfcer-gui1` holds the 09:45 O62b build as the fallback. Tested and gated **after** packaging as well as before, per the `cargo update` trap below |
 
 ### ★★★ THE FORM-XOBJECT SELECTION IS SHIPPED — AND HAS NOT BEEN DRIVEN
 
@@ -569,9 +569,9 @@ and said so.
 |---|---|
 | **No edit verb can address a form-interior object** | `FormLeaf::is_editable()` is `false` for every leaf. Not our decision. The remedy offered is *"Select the form"*, which lands on an ordinary page object |
 | **The measure tools cannot pick a line inside a form** | `linepick` does not see the leaf list. Filed. On the benchmark CAD sheet that is 10,256 invisible candidates — and it was equally true before, hidden behind the selection defect |
-| **`pdfce-cli object-list --hit` still answers with the form** | and its own help calls itself authoritative for the GUI's behaviour, which is now false. Filed |
+| **`pdfcer object-list --hit` still answers with the form** | and its own help calls itself authoritative for the GUI's behaviour, which is now false. Filed |
 
-#### The numbers, measured 2026-08-27 with `pdfce-cli object-list`
+#### The numbers, measured 2026-08-27 with `pdfcer object-list`
 
 | page | page objects | forms | leaves |
 |---|---:|---:|---:|
@@ -593,7 +593,7 @@ traces `objects n=28 … forms=4 leaves=242 depth_overflow=0 cycles=0`.
   The two diagnostic counts come with it because a non-zero one means `leaves`
   is a floor rather than a total.
 
-### ⚠ ON THIS PC, pdfce FAILS TO START ABOUT ONE LAUNCH IN THREE
+### ⚠ ON THIS PC, pdfcer FAILS TO START ABOUT ONE LAUNCH IN THREE
 
 **It is the machine, not the program** — settled 2026-08-26 by the operator
 testing the identical portable build on his laptop, where it is fine. Do not
@@ -638,7 +638,7 @@ rate did not change.** Real leak, real fix, wrong mechanism.
 
 ### ★★★ Colours no longer change with zoom — SHIPPED 2026-08-26
 
-`pdfce-render` composites transparency in a CMYK buffer whose *default* cap is
+`pdfcer-render` composites transparency in a CMYK buffer whose *default* cap is
 256 MiB = **13,421,772 px**; past it, blending falls back to sRGB and the
 colours move (up to 16/255, measured). On **real A4 (595 x 842 pt)** that is
 **zoom 518 %** — against **1946 %** for `MAX_PIXMAP_EDGE`, a factor of 3.76.
@@ -680,7 +680,7 @@ when the fallback engaged *and was disclosed*. The one assertion that can fail
 either way is that `ink-page` was traced — falsified by disabling the
 observation and watching it go red.
 
-### ⚠ ON THIS PC, pdfce FAILS TO START ABOUT ONE LAUNCH IN THREE
+### ⚠ ON THIS PC, pdfcer FAILS TO START ABOUT ONE LAUNCH IN THREE
 
 **It is the machine, not the program** — settled 2026-08-26 by the operator
 testing the identical portable build on his laptop, where it is fine. Do not
@@ -704,7 +704,7 @@ rate did not change.** Real leak, real fix, wrong mechanism.
 
 ### ★★★ Colours change with zoom — the ceiling is now READABLE, and two of our own numbers were wrong
 
-`pdfce-render` composites transparency in a CMYK buffer whose *default* cap is
+`pdfcer-render` composites transparency in a CMYK buffer whose *default* cap is
 256 MiB = **13,421,772 px**; past it, blending falls back to sRGB and the
 colours move (up to 16/255, measured). On **real A4 (595 × 842 pt)** that is
 **zoom 518 %**.
@@ -733,7 +733,7 @@ repair is to move our switch down.
 
 **It needed a number the engine kept private. It is public now** — v0.14.0, see
 the engine-pin note above. Use
-`pdfce_render::will_composite_in_cmyk(w, h, max_bytes)`, **never** a hardcoded
+`pdfcer_render::will_composite_in_cmyk(w, h, max_bytes)`, **never** a hardcoded
 13,421,772: the predicate keeps the 20-B/px arithmetic on their side of the
 boundary, which is the whole reason the request refused to hardcode it.
 
@@ -840,17 +840,17 @@ re-run before it is believed.
 Two skips are legitimate and not defects: `ocr` (no models in this build) and
 `page_ops` on `SW41177.pdf` (the fixture carries 36 `/Rotate` entries, so the
 evidence would be indistinguishable from its own furniture — it PASSES against
-`D:\Dev\pdfce\fixtures\synthetic\pageops\four-pages.pdf`).
+`D:\Dev\pdfcer\fixtures\synthetic\pageops\four-pages.pdf`).
 
 ### ★★ Two defects found by AUDIT rather than by driving, and both were worse
 
-Answering `pdfce`'s capability-register questions found two things no test and
+Answering `pdfcer`'s capability-register questions found two things no test and
 no driven run would have reached, because neither has a symptom on screen.
 
 | | |
 |---|---|
 | **Close destroyed unsaved edits, silently** | `file.close`'s tooltip promised *"You are asked what to do about unsaved edits first"* since the day it shipped, and nothing asked. Open and New too. ★ Why it survived: **the guard that should have caught it existed, was well argued, was correct, and was answering a different question** — `save_pending` asks *is a save in flight*, which is permanently `false` here by design. Fixed |
-| **`Document::recovery()` is never called** | a document whose cross-reference table pdfce **rebuilt by scanning** opens with no indication at all. `last_wins_collisions` means two definitions of one object existed and pdfce chose between them: the operator is looking at one of two possible documents and has not been told there was a choice. Blocked on nothing. **Still open** — `NO_SURFACE.md` §3b |
+| **`Document::recovery()` is never called** | a document whose cross-reference table pdfcer **rebuilt by scanning** opens with no indication at all. `last_wins_collisions` means two definitions of one object existed and pdfcer chose between them: the operator is looking at one of two possible documents and has not been told there was a choice. Blocked on nothing. **Still open** — `NO_SURFACE.md` §3b |
 
 The transferable half: **driving finds what an operator can see. It cannot find
 a promise nobody kept, or a report nobody rendered.** Both of these were sitting
@@ -916,8 +916,8 @@ check reports something absent, ask what else could make it absent before
 writing the limitation down.**
 
 ```bash
-cargo run --release -q -p ui-verify -- --exe target/release/pdfce-gui.exe \
-  --pdf D:/Dev/temp/pdfce/SW41177.pdf --doc-point 0,300,500 > evidence/ui-verify-run.txt 2>&1
+cargo run --release -q -p ui-verify -- --exe target/release/pdfcer-gui.exe \
+  --pdf D:/Dev/temp/pdfcer/SW41177.pdf --doc-point 0,300,500 > evidence/ui-verify-run.txt 2>&1
 ```
 
 ★ **Redirect to a file.** The first attempt piped through `tail`, which threw
@@ -929,7 +929,7 @@ while it was in flight — **finish the edits, rebuild, then run.**
 
 `print_dialog_reaches_the_spooler` reported that the File tab declares no
 `ribbon.item.file.print`. It does not — at **1100 pt**, the harness's window
-width, the ribbon has correctly folded the **Print, Document and pdfce groups
+width, the ribbon has correctly folded the **Print, Document and pdfcer groups
 into the overflow**, and `ribbon.overflow` is declared in the same frame.
 
 Two things are true and both matter:
@@ -952,7 +952,7 @@ build session's.
 
 | check | why |
 |---|---|
-| `page_ops_round_trip` | the fixture already carries 36 `/Rotate` entries, so the evidence would be indistinguishable from the document's own furniture. Point `--pdf` at `D:\Dev\pdfce\fixtures\pageops\four-pages.pdf` |
+| `page_ops_round_trip` | the fixture already carries 36 `/Rotate` entries, so the evidence would be indistinguishable from the document's own furniture. Point `--pdf` at `D:\Dev\pdfcer\fixtures\pageops\four-pages.pdf` |
 | `ocr_recognises_a_page_and_the_document_keeps_it` | needs the `models/ocrs` weights beside the exe, i.e. a **packaged** build |
 | `print_paper_changes_the_plan` | ★ FIXED — both now look in the ribbon overflow |
 
@@ -982,7 +982,7 @@ tooltip promised otherwise.
 ★ **A check that types for real is DONE** — three of them, in fact
 (`add_text_takes_real_keystrokes`, `text_annot_takes_the_keyboard_unclicked`,
 `every_declared_chord_dispatches`). The text-EDITING check still seeds its
-draft through `PDFCE_DIAG_TYPE`, which bypasses the event loop; that seam is
+draft through `PDFCER_DIAG_TYPE`, which bypasses the event loop; that seam is
 now a convenience rather than a workaround, and the link it skips is covered
 by `add_text`.
 
@@ -997,8 +997,8 @@ tempted to edit a number rather than re-run the command.
 git log --oneline -1
 cargo test --workspace
 bash tools/gates/run-all.sh
-cargo run --release -q -p ui-verify -- --exe target/release/pdfce-gui.exe \
-  --pdf D:/Dev/temp/pdfce/SW41177.pdf --doc-point 0,300,500
+cargo run --release -q -p ui-verify -- --exe target/release/pdfcer-gui.exe \
+  --pdf D:/Dev/temp/pdfcer/SW41177.pdf --doc-point 0,300,500
 python tools/package-portable.py --verify --note "what this milestone added"
 ```
 
@@ -1050,7 +1050,7 @@ already done for you — `AnnotKind` on the selected target is `Markup` or
 `CeDimension`, and the second **must** go to `set_dimension_style` instead.
 
 > ★★ A ce dimension is a `/Line` with `/IT /LineDimension`. It passes every
-> "markup pdfce can author" test, and restyling one through `set_markup_style`
+> "markup pdfcer can author" test, and restyling one through `set_markup_style`
 > regenerates it as a **bare line — label and witness lines gone** — from an
 > operator who asked only to recolour it. The engine refuses by name; the kind
 > on the target is what stops the refusal being reached.
@@ -1104,7 +1104,7 @@ a thing to improvise.
 
 Form filling **works**, in every mode including Read: `canvas::forms` never
 consults the mode. What is missing is that **nothing shows where the fields
-are** — Acrobat tints them blue, pdfce paints nothing and only changes the
+are** — Acrobat tints them blue, pdfcer paints nothing and only changes the
 cursor to an I-beam. That is the whole of *"How do I click on a form to edit
 it in the Canvas?"*
 
@@ -1136,7 +1136,7 @@ below the content a refusal.
 **Struck 2026-08-19. It shipped that day, in about an hour.**
 
 It read: *"Confirmed moving upstream on 2026-08-18 — `EditError::TooFewVertices`
-and a `Cloud` subtype are in `D:\Dev\pdfce`'s working tree. The operator:
+and a `Cloud` subtype are in `D:\Dev\pdfcer`'s working tree. The operator:
 'don't worry about item 5. It's aware of that one now.'"*
 
 Every word of that was true, and the **heading** was wrong. He meant the
@@ -1161,7 +1161,7 @@ read as current until somebody happens to look. `NO_SURFACE.md` §1c.
   `HANDOFF.md` §8. It is the defect that began this project, and every earlier
   version of that file treated it as the obvious next move. It is not.
 - **Do not build S6 deep zoom or tiling.** Measured as a 9× regression.
-- **Do not write to `D:\Dev\pdfce`.** Read-only to this project. Engine work
+- **Do not write to `D:\Dev\pdfcer`.** Read-only to this project. Engine work
   goes through `D:\Dev\FeatureRequests\pdfce_FeatureRequests\` and lands there
   as its own Pass. That channel answered seven requests in a day — it works.
 - **Do not run `ui-verify` without the operator's go-ahead** if they are using
@@ -1171,13 +1171,13 @@ read as current until somebody happens to look. `NO_SURFACE.md` §1c.
 
 ## Standing operator instructions set in this session
 
-1. **Always `cargo update -p pdfce-core -p pdfce-render -p pdfce-print` before
+1. **Always `cargo update -p pdfcer-core -p pdfcer-render -p pdfcer-print` before
    building.** Automated as a build step in `package-portable.py`; `--no-update`
    exists for reproducing an exact revision. The engine repo moved 8, then 12,
    then 4, then 6 commits ahead inside one afternoon, and a stale pin already
    cost eighteen missing images on the operator's own file.
 2. ★★ **Publish EVERY build worth keeping to OneDrive**, alternating
-   `pdfceGUI1` / `pdfceGUI2`, newest replacing the older slot. Restated as a
+   `pdfcer-gui1` / `pdfcer-gui2`, newest replacing the older slot. Restated as a
    standing rule by the operator on 2026-08-19.
 
    ```bash
@@ -1215,7 +1215,7 @@ minutes.
 The sequence that works, and what `--no-update` is actually for:
 
 ```bash
-cargo update -p pdfce-core -p pdfce-render -p pdfce-print
+cargo update -p pdfcer-core -p pdfcer-render -p pdfcer-print
 git commit Cargo.lock -m "Take the engine to <rev>"
 python tools/package-portable.py --no-update --verify --note "…"
 ```
@@ -1291,7 +1291,7 @@ true-when-written sentences were false by the time they were read:
 
 | the claim | why it expired |
 |---|---|
-| *"Paper comes from this printer's settings. **pdfce cannot change it.**"* | shipped copy, correct for months, falsified by the control added three lines above it |
+| *"Paper comes from this printer's settings. **pdfcer cannot change it.**"* | shipped copy, correct for months, falsified by the control added three lines above it |
 | `app::blank` §3a *"the size picker is BLOCKED on the engine"* | correct on 2026-08-17, unblocked on 2026-08-18 |
 | `catalog.rs` *"86 of 101 named, 15 refused"* | the registry held 94, of which 85 named and 9 refused. `86 + 15 = 101` is internally consistent, which is why nobody looked twice |
 
@@ -1311,7 +1311,7 @@ noticing at the site of the change that invalidates it.
 
 **Two design decisions worth not re-deriving.**
 
-- **`NotListed` is not `no`.** `pdfce-print` declined our proposal to gate the
+- **`NotListed` is not `no`.** `pdfcer-print` declined our proposal to gate the
   tray control on a `bool`, with a measurement: `DC_BINS` on Microsoft Print to
   PDF returns nothing at all, while that same device's `dmDefaultSource` is
   already `DMBIN_FORMSOURCE`. A bool would have hidden a control from a device

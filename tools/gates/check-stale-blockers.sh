@@ -49,12 +49,12 @@
 
 set -uo pipefail
 
-CHANNEL="${PDFCE_REQUEST_CHANNEL:-D:/Dev/FeatureRequests/pdfce_FeatureRequests/open}"
+CHANNEL="${PDFCER_REQUEST_CHANNEL:-D:/Dev/FeatureRequests/pdfce_FeatureRequests/open}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 if [ ! -d "$CHANNEL" ]; then
   echo "check-stale-blockers: SKIP — the request channel is not at '$CHANNEL'."
-  echo "  Set PDFCE_REQUEST_CHANNEL to point at it. Reported as SKIP rather than"
+  echo "  Set PDFCER_REQUEST_CHANNEL to point at it. Reported as SKIP rather than"
   echo "  PASS: this gate has not looked at anything."
   exit 0
 fi
@@ -93,7 +93,7 @@ for doc in "${DOCS[@]}"; do
       # `request_reusable_parsed_handle.md` — a request the engine answered on
       # 2026-08-13 with "scheduled as a Pass", and then archived. The reply
       # CLOSED THE THREAD. The Pass has not landed; there is still no reusable
-      # handle anywhere in `pdfce-render`. **The row was correct and the gate
+      # handle anywhere in `pdfcer-render`. **The row was correct and the gate
       # was wrong**, and it was wrong in the direction that costs most: it would
       # have had somebody delete a true warning to make a build go green.
       #

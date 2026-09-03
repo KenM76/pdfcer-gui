@@ -23,7 +23,7 @@
 //!
 //! ```text
 //! cargo test -p egui-shell --lib   → egui alone         → no fonts
-//! cargo test --workspace           → pdfce-gui → eframe → egui/default_fonts
+//! cargo test --workspace           → pdfcer-gui → eframe → egui/default_fonts
 //! ```
 //!
 //! `D:/dev/rag/rust/a_crate_tested_alone_and_in_a_workspace_gets_different_features_so_layout_tests_can_be_vacuous.md`

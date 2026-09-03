@@ -5,13 +5,13 @@
 //!
 //! `file.export_dxf` was the first entry in `shell::commands::reach`'s
 //! `SCAFFOLDED` list, with the recorded reason *"No recorded reason anywhere.
-//! Scaffolded by omission, not by decision."* `pdfce-core`'s `export::dxf` had
+//! Scaffolded by omission, not by decision."* `pdfcer-core`'s `export::dxf` had
 //! shipped the whole time and the **old shell has the feature**, so this was a
 //! regression against `FEATURES.md`'s `gui` column rather than a gap.
 //!
 //! # Why this needs driving
 //!
-//! Because the interesting half is not the writer — that is `pdfce-core`'s, and
+//! Because the interesting half is not the writer — that is `pdfcer-core`'s, and
 //! it is tested there. It is the six links between a ribbon press and a file:
 //!
 //! 1. the arm builds a window and computes a scale suggestion from the page's
@@ -67,7 +67,7 @@ const OPENED: &str = "export-dxf-open";
 /// The trace the apply arm emits on a successful write.
 const WROTE: &str = "export-dxf";
 /// The environment seam that answers the save dialog.
-const SAVE_PATH_ENV: &str = "PDFCE_DIAG_SAVE_PATH"; // ui-text-exempt: an environment variable name
+const SAVE_PATH_ENV: &str = "PDFCER_DIAG_SAVE_PATH"; // ui-text-exempt: an environment variable name
 
 /// See the module documentation.
 pub struct ExportDxfWritesThePagesGeometry;

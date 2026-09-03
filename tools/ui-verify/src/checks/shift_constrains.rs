@@ -8,7 +8,7 @@
 //! shell** by the conventions sweep of 2026-08-20, and Shift-preserves-aspect
 //! is the sharpest instance: it is *the* resize convention, present in every
 //! program in the class for thirty years. An operator who holds Shift and gets
-//! a free-form resize does not conclude that pdfce chose differently; they
+//! a free-form resize does not conclude that pdfcer chose differently; they
 //! conclude it is broken.
 //!
 //! # ★★ Why this is a PAIR of drags and not one

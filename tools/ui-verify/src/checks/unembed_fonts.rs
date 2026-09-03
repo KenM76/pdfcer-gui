@@ -18,7 +18,7 @@
 //! `data_span`, and it is non-zero only when real programs were freed.
 //!
 //! ★★ It is also the number this project has the **most** reason to assert on,
-//! because it is the one pdfce cannot deliver. `crate::app::save` writes
+//! because it is the one pdfcer cannot deliver. `crate::app::save` writes
 //! incrementally; §7.5.6's update section is appended, so the freed bytes stay
 //! in the prior revision and the file gets *larger*. The window says so. That
 //! makes `bytes=` a figure with two audiences and exactly one meaning, and a
@@ -40,13 +40,13 @@
 //!
 //! - **The round trip.** Remove-then-embed in one session would be the
 //!   strongest test of both, and it needs the harness to drive two commands
-//!   with a click in each window. `PDFCE_DIAG_INVOKE` runs commands and the
+//!   with a click in each window. `PDFCER_DIAG_INVOKE` runs commands and the
 //!   clicks are separate acts; sequencing them is a harness feature that does
 //!   not exist. Named here so the gap is a decision rather than an omission.
 //! - **The saved file.** Removal is one `EditSession` command and this asserts
 //!   on the session's report. Whether the file on disk is larger afterwards —
 //!   which it will be — is exactly what the window discloses and is not
-//!   asserted, because pdfce cannot currently make it otherwise.
+//!   asserted, because pdfcer cannot currently make it otherwise.
 
 use crate::checks::driving::{
     SHELL_DIAG_ENV, declared, declared_names, frame_of, list, stable_rect,
@@ -122,7 +122,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     })?;
     let pdf = ctx.pdf.clone().ok_or_else(|| {
         Error::new(
-            "no --pdf. This check needs a document carrying an embedded font that pdfce judges \
+            "no --pdf. This check needs a document carrying an embedded font that pdfcer judges \
              removable; a document with none declines by name and the decline is not the \
              behaviour under test.",
         )
@@ -142,14 +142,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.env
-        .push(("PDFCE_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
+        .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
     report.note(format!(
-        "launched {} as pid {} with PDFCE_DIAG_INVOKE={INVOKE}",
+        "launched {} as pid {} with PDFCER_DIAG_INVOKE={INVOKE}",
         exe.display(),
         session.pid()
     ));
@@ -162,7 +162,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     if let Some(declined) = trace.events(DECLINED).last() {
         return Err(Error::new(format!(
             "the command declined: `{}`. SKIPPED rather than failed: it says the --pdf carries no \
-             embedded font pdfce judges removable, which is the harness's aim rather than the \
+             embedded font pdfcer judges removable, which is the harness's aim rather than the \
              program's behaviour. Trace: {}.",
             declined.raw,
             session.trace_path().display()
@@ -186,8 +186,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     {
         return Err(Error::new(format!(
             "the window opened with nothing to remove: `{}`. SKIPPED rather than failed: every \
-             embedded font in this --pdf is one pdfce judges unsafe to unembed - \
-             identity-encoded or Type 3 - so the greyed button is correct. `pdfce-cli list-fonts \
+             embedded font in this --pdf is one pdfcer judges unsafe to unembed - \
+             identity-encoded or Type 3 - so the greyed button is correct. `pdfcer list-fonts \
              <file>` names the verdict per font; this check needs one reading `removable`. \
              Trace: {}.",
             opened.raw,
@@ -235,7 +235,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              line.\n\
              Either the click missed — the button is at {button:?} in the window's own frame — \
              or it landed on a **greyed** button, which is what the window draws when its plan \
-             has no targets. A greyed button on a document whose fonts pdfce reports as \
+             has no targets. A greyed button on a document whose fonts pdfcer reports as \
              removable means the plan and the report disagree. Trace: {}.",
             session.trace_path().display()
         )));

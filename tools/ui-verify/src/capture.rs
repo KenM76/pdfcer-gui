@@ -9,7 +9,7 @@
 //!
 //! A blank capture is indistinguishable from a real one at the call site. The
 //! file exists, the call succeeded, and the only thing that says "this is not
-//! evidence" is a human looking at it. pdfce's predecessor recorded exactly
+//! evidence" is a human looking at it. pdfcer's predecessor recorded exactly
 //! what happens without the guard: a run of blank screenshots got a
 //! plausible-sounding cause invented for them (a compositor recomposite race),
 //! the fix appeared to work because the real cause happened to go away at the

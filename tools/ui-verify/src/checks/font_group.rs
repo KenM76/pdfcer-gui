@@ -67,7 +67,7 @@
 //! called it O37's complaint coming back. It was not. It was the aim.
 //!
 //! ★ The answer was in the trace the check was already holding:
-//! `pdfce-diag properties-panel object=832 kind=Path notes=0`. So
+//! `pdfcer-diag properties-panel object=832 kind=Path notes=0`. So
 //! [`aimed_at_one_text_object`] now reads that line, plus
 //! `canvas-selection … sel=N`, and **skips** — never fails — when the click did
 //! not leave exactly one text object selected. Phase 2 had this guard from the
@@ -214,7 +214,7 @@ impl Check for TheFormatTabOffersFontControlsForSweptText {
 /// `0,1140,62` (`RESUME.md`'s aim table), a 5 pt title-block run.
 ///
 /// ★ The trace had the answer on the same frame the check was already reading:
-/// `pdfce-diag properties-panel object=832 kind=Path notes=0`. Nothing new had
+/// `pdfcer-diag properties-panel object=832 kind=Path notes=0`. Nothing new had
 /// to be published for this guard; the check simply had to look.
 ///
 /// # ★★ The two facts, and why both are needed
@@ -248,7 +248,7 @@ fn aimed_at_one_text_object(session: &Session, trace: &Trace, target: DocPoint) 
              subject — a piece of text selected as an OBJECT — to be about. No `{PANEL_EVENT}` \
              line, which `panels::properties::mod::object_section` writes every frame it has an \
              object to describe. SKIPPED rather than failed: this says where the harness aimed, \
-             not what the program did. Aim at a run of text — `pdfce-cli extract-text --json` \
+             not what the program did. Aim at a run of text — `pdfcer extract-text --json` \
              gives the first glyph's x and y of every run. Trace: {path}."
         ))),
         Aim::NotText(kind) => Err(Error::new(format!(
@@ -351,7 +351,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let target = ctx.target.ok_or_else(|| {
         Error::new(
             "no --doc-point. Pass PAGE,X,Y in PDF user space naming the LEFT END of a piece of \
-             text's baseline. `pdfce-cli extract-text --json` gives the first glyph's x and y \
+             text's baseline. `pdfcer extract-text --json` gives the first glyph's x and y \
              of every run; use those. A point on blank paper selects no object in phase 1 and \
              sweeps nothing in phase 2, and the check would report both surfaces as broken.",
         )
@@ -736,9 +736,9 @@ mod tests {
 
     /// The trace of the state the check is FOR: one text object clicked with
     /// the Select tool, nothing swept.
-    const ON_TEXT: &str = "pdfce-diag canvas-selection via=click mod=false sel=1 level=Object \
+    const ON_TEXT: &str = "pdfcer-diag canvas-selection via=click mod=false sel=1 level=Object \
                            first=object:412\n\
-                           pdfce-diag properties-panel object=412 kind=Text notes=0";
+                           pdfcer-diag properties-panel object=412 kind=Text notes=0";
 
     /// ★★★ The regression this guard was written for, in three lines.
     ///
@@ -751,10 +751,10 @@ mod tests {
     #[test]
     fn a_click_that_landed_on_a_path_is_the_harnesss_aim_and_not_a_defect() {
         let trace = Trace::parse(
-            "pdfce-diag canvas-selection via=click mod=false sel=1 level=Object \
+            "pdfcer-diag canvas-selection via=click mod=false sel=1 level=Object \
              first=object:832\n\
-             pdfce-diag properties-panel object=832 kind=Path notes=0",
-            "pdfce-diag",
+             pdfcer-diag properties-panel object=832 kind=Path notes=0",
+            "pdfcer-diag",
         );
         assert_eq!(aim_verdict(&trace), Aim::NotText("Path"));
     }
@@ -762,7 +762,7 @@ mod tests {
     /// The state every phase-1 oracle below the guard is entitled to assume.
     #[test]
     fn one_text_object_is_the_state_the_check_may_proceed_from() {
-        let trace = Trace::parse(ON_TEXT, "pdfce-diag");
+        let trace = Trace::parse(ON_TEXT, "pdfcer-diag");
         assert_eq!(aim_verdict(&trace), Aim::OneTextObject);
     }
 
@@ -771,14 +771,14 @@ mod tests {
     #[test]
     fn no_properties_panel_line_means_the_click_selected_nothing() {
         let trace = Trace::parse(
-            "pdfce-diag canvas-selection via=click mod=false sel=0 level=Object first=none",
-            "pdfce-diag",
+            "pdfcer-diag canvas-selection via=click mod=false sel=0 level=Object first=none",
+            "pdfcer-diag",
         );
         assert_eq!(aim_verdict(&trace), Aim::NothingSelected);
         // ★ And an EMPTY trace too — a run where the click never reached the
         // canvas is the same absence and must skip rather than proceed.
         assert_eq!(
-            aim_verdict(&Trace::parse("", "pdfce-diag")),
+            aim_verdict(&Trace::parse("", "pdfcer-diag")),
             Aim::NothingSelected
         );
     }
@@ -792,10 +792,10 @@ mod tests {
     #[test]
     fn a_multi_selection_whose_first_object_is_text_still_skips() {
         let trace = Trace::parse(
-            "pdfce-diag canvas-selection via=marquee mod=false sel=11 level=Object \
+            "pdfcer-diag canvas-selection via=marquee mod=false sel=11 level=Object \
              first=object:412\n\
-             pdfce-diag properties-panel object=412 kind=Text notes=0",
-            "pdfce-diag",
+             pdfcer-diag properties-panel object=412 kind=Text notes=0",
+            "pdfcer-diag",
         );
         assert_eq!(aim_verdict(&trace), Aim::NotAlone(11));
     }
@@ -810,8 +810,8 @@ mod tests {
     #[test]
     fn a_missing_selection_count_is_zero_and_not_one() {
         let trace = Trace::parse(
-            "pdfce-diag properties-panel object=412 kind=Text notes=0",
-            "pdfce-diag",
+            "pdfcer-diag properties-panel object=412 kind=Text notes=0",
+            "pdfcer-diag",
         );
         assert_eq!(aim_verdict(&trace), Aim::NotAlone(0));
     }
@@ -827,10 +827,10 @@ mod tests {
         assert_eq!(CANVAS_SELECTION_EVENT, "canvas-selection");
         assert_eq!(PANEL_EVENT, "properties-panel");
         assert_eq!(TEXT_KIND, "Text");
-        let trace = Trace::parse(ON_TEXT, "pdfce-diag");
+        let trace = Trace::parse(ON_TEXT, "pdfcer-diag");
         assert!(
             trace.last(PANEL_EVENT).is_some(),
-            "the panel line must parse under the profile's `pdfce-diag` prefix"
+            "the panel line must parse under the profile's `pdfcer-diag` prefix"
         );
         assert_eq!(
             trace

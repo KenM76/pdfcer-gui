@@ -35,7 +35,7 @@
 //! | the application | the clipboard afterwards | without clearing first |
 //! |---|---|---|
 //! | copies the text correctly | the swept text | passes |
-//! | writes the object marker (the defect) | `"…copied from pdfce…"` | fails |
+//! | writes the object marker (the defect) | `"…copied from pdfcer…"` | fails |
 //! | **does nothing at all** | whatever was there before | **passes, if a previous run left the right text** |
 //!
 //! Row three is the one that matters. A check that passes when the application
@@ -51,7 +51,7 @@
 //! * what it holds is **not the object clipboard's marker sentence**.
 //!
 //! The negative is the one that names the defect. Without it, a build that
-//! wrote *"1 object copied from pdfce"* would satisfy "the clipboard is not
+//! wrote *"1 object copied from pdfcer"* would satisfy "the clipboard is not
 //! empty" and pass while doing exactly the wrong thing.
 //!
 //! It deliberately does **not** assert the exact string. What a sweep across a
@@ -87,7 +87,7 @@ const MODE: &str = "read";
 /// acceptable precisely because a *false negative* here is harmless: if the
 /// wording changes and this stops matching, the positive assertion still fails
 /// on a build that copies no text.
-const OBJECT_MARKER: &str = "copied from pdfce";
+const OBJECT_MARKER: &str = "copied from pdfcer";
 
 /// See the module documentation.
 pub struct CtrlCCopiesTextToTheOsClipboard;
@@ -98,7 +98,7 @@ impl Check for CtrlCCopiesTextToTheOsClipboard {
     }
 
     fn defect(&self) -> &'static str {
-        "sweeping text on the page and pressing Ctrl+C puts \"1 object copied from pdfce\" on the \
+        "sweeping text on the page and pressing Ctrl+C puts \"1 object copied from pdfcer\" on the \
          clipboard instead of the text. Pasting into any other program gives that sentence"
     }
 

@@ -12,7 +12,7 @@
 //! **The resolution the window previewed and the resolution the document
 //! reported are the same number.**
 //!
-//! That equality is not decoration. `pdfce-core` deleted its own copy of
+//! That equality is not decoration. `pdfcer-core` deleted its own copy of
 //! `pixels / (points / 72)` on 2026-08-19 specifically so there would be one
 //! derivation left, after this shell asked for the pure preview and said it
 //! would rather have nothing than two implementations. The engine holds up its
@@ -31,7 +31,7 @@
 //! A committed binary would be an asset to keep in step with a decoder, and
 //! `ui_verify::png` already encodes one for the screenshot path — so the check
 //! writes its own two-colour PNG into the scratch directory and points
-//! `PDFCE_DIAG_IMAGE_PATH` at it. Hermetic, deterministic, and it exercises the
+//! `PDFCER_DIAG_IMAGE_PATH` at it. Hermetic, deterministic, and it exercises the
 //! importer on bytes nothing else in this repository produced.
 //!
 //! The picture is deliberately **wide and short**. A square would let a
@@ -70,7 +70,7 @@ const REQUESTED: &str = "insert-image-requested";
 /// The label `vector_edit` traces when `add_image` succeeded.
 const APPLIED: &str = "add-image";
 /// The environment seam that answers the image picker.
-const IMAGE_PATH_ENV: &str = "PDFCE_DIAG_IMAGE_PATH"; // ui-text-exempt: an environment variable name
+const IMAGE_PATH_ENV: &str = "PDFCER_DIAG_IMAGE_PATH"; // ui-text-exempt: an environment variable name
 
 /// The fixture's pixel size.
 ///
@@ -135,7 +135,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 0: the fixture ------------------------------------------------------
     //
-    // ★★ **A PNG this harness encodes, or a file named by `PDFCE_UIV_IMAGE`.**
+    // ★★ **A PNG this harness encodes, or a file named by `PDFCER_UIV_IMAGE`.**
     //
     // The env seam was added 2026-08-19, on the operator's report that *"the
     // insert image button doesn't insert it either"* — for a **jpg** — while
@@ -150,11 +150,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // An environment variable rather than a CLI flag, because every other input
     // this suite takes (`--pdf`, `--doc-point`) names the thing under test and
     // this one names what the harness feeds it.
-    let supplied = std::env::var_os("PDFCE_UIV_IMAGE").map(std::path::PathBuf::from);
+    let supplied = std::env::var_os("PDFCER_UIV_IMAGE").map(std::path::PathBuf::from);
     if let Some(path) = supplied.as_ref() {
         if !path.exists() {
             return Err(Error::new(format!(
-                "PDFCE_UIV_IMAGE names {} and there is no file there.",
+                "PDFCER_UIV_IMAGE names {} and there is no file there.",
                 path.display()
             )));
         }
@@ -225,7 +225,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // A created document is not an opened one: `Origin::Created`, no file
     // behind it, `stored_under()` empty. If the difference lives there, this is
     // the flag that finds it, and it costs one chord.
-    if std::env::var_os("PDFCE_UIV_NEW_DOCUMENT").is_some() {
+    if std::env::var_os("PDFCER_UIV_NEW_DOCUMENT").is_some() {
         driver.press_chord(&[crate::input::Key::Ctrl.vk()], 0x4E)?;
         session.settle(20);
         let made = session.trace()?;
@@ -353,7 +353,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     {
         return Ok(Some(format!(
             "the window raised its action and the engine REFUSED it: {refusal}. The shell half \
-             works; this is a `pdfce-core` verdict and belongs in a request."
+             works; this is a `pdfcer-core` verdict and belongs in a request."
         )));
     }
     let Some(applied) = trace.last(APPLIED) else {
@@ -396,14 +396,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let Some(reported) = dpi_in(disclosures) else {
         return Ok(Some(format!(
             "the placement disclosed `{disclosures}`, which states no resolution. The number \
-             is the one fact `pdfce-core` calls *\"not a warning — a number\"*, and an \
+             is the one fact `pdfcer-core` calls *\"not a warning — a number\"*, and an \
              operator who cannot see it at editing zoom has no other source for it."
         )));
     };
     if (previewed - reported).abs() > 1.0 {
         return Ok(Some(format!(
             "★ the window promised {previewed:.0} dpi and the document reports {reported:.0}. \
-             They come from one producer by design — `pdfce-core` deleted its own copy of the \
+             They come from one producer by design — `pdfcer-core` deleted its own copy of the \
              formula so there would be one derivation left — so a difference means this shell \
              has re-derived it. Under `Contain`, which is the default, a re-derivation \
              measures the REQUESTED rectangle instead of the placed one and is low by exactly \

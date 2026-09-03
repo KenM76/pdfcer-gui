@@ -48,7 +48,7 @@
 //! read and cross-checked against the gap the release reported, which rules
 //! out the two answers that are wrong by a whole document (the start and the
 //! end). It does not verify the *content* of the inserted sheets; that is
-//! `pdfce-core`'s `insert_pages` and it has its own corpus.
+//! `pdfcer-core`'s `insert_pages` and it has its own corpus.
 
 use crate::checks::driving::{SHELL_DIAG_ENV, declared, declared_names, list};
 use crate::checks::{Check, CheckContext};
@@ -73,7 +73,7 @@ const RELEASE: &str = "pages-drag-release";
 /// The trace line the insert produces once it has landed.
 const LANDED: &str = "insert-pages-landed";
 /// The picker-answering environment variable. See [`super::document_tabs`].
-const OPEN_PATH_ENV: &str = "PDFCE_DIAG_OPEN_PATH";
+const OPEN_PATH_ENV: &str = "PDFCER_DIAG_OPEN_PATH";
 /// The chord that opens a document.
 const CTRL_O: u16 = 0x4F;
 

@@ -2,7 +2,7 @@
 #
 # WHY THIS IS A WORKSPACE MEMBER AND NOT A SCRIPT
 # ===============================================
-# The predecessors (D:\Dev\pdfce\tools\gui-drive.ps1, gui-shot.ps1) are
+# The predecessors (D:\Dev\pdfcer\tools\gui-drive.ps1, gui-shot.ps1) are
 # PowerShell, and they earned their keep — most of what this crate knows was
 # learned by them. But they top out where this project starts: they can drive
 # and photograph, and they cannot ASSERT. Every verdict they produce is a human
@@ -16,9 +16,9 @@
 #
 # DEPENDENCIES
 # ============
-# Exactly one, and it is already in D:\Dev\pdfce's Cargo.lock at this version.
+# Exactly one, and it is already in D:\Dev\pdfcer's Cargo.lock at this version.
 # The workspace root warns that a dependency this workspace adds which is NOT
-# already in pdfce's lockfile is an operator decision; `windows-sys 0.61` is in
+# already in pdfcer's lockfile is an operator decision; `windows-sys 0.61` is in
 # it (pulled in transitively by winit/eframe), so this adds nothing new to the
 # dependency posture.
 #
@@ -37,7 +37,7 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 publish = false
-description = "Drives the built pdfce GUI through the OS and asserts on its diagnostic trace and its pixels."
+description = "Drives the built pdfcer GUI through the OS and asserts on its diagnostic trace and its pixels."
 
 [lib]
 name = "ui_verify"

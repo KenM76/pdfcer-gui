@@ -400,7 +400,7 @@ const TIDY_MAX: usize = 100;
 /// `compact_arrays` and nothing for structs. That was invisible while
 /// [`Item::Command`] was a tuple variant printed as `Command("file.open")`.
 /// The moment it gained [`ItemSize`] and became a struct variant, every one of
-/// pdfce's hundred-odd ribbon items became
+/// pdfcer's hundred-odd ribbon items became
 ///
 /// ```ron
 /// Command(
@@ -916,7 +916,7 @@ pub enum Item {
         /// > copied into three variants, because three copies of a rule is
         /// > three chances for it to drift.
         ///
-        /// The need arrived on 2026-08-27: pdfce's Format tab carries a Font
+        /// The need arrived on 2026-08-27: pdfcer's Format tab carries a Font
         /// group whose face chooser, size field and colour swatch are all
         /// custom items, and the whole group must be **absent** in a mode that
         /// cannot edit page content — R9's rule that an unavailable

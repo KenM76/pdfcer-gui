@@ -7,16 +7,16 @@
 //! An orphaned widget is a `/Widget` annotation in a page's `/Annots` that no
 //! `/AcroForm` field reaches. There is no fixture PDF that contains one and
 //! there should not be: it is not a shape a producer writes, it is a shape
-//! **pdfce itself makes**. `EditSession::insert_pages` copies everything
+//! **pdfcer itself makes**. `EditSession::insert_pages` copies everything
 //! reachable from a page, and a page's `/Annots` reaches its widgets — but
 //! `/AcroForm` is a **catalog** entry, so it is not in the set of objects being
 //! copied. A source with 12 fields inserted into another document arrives as 13
 //! inert boxes and no form at all.
 //!
 //! So this check drives Insert pages first, not as setup but as **half the
-//! subject**: the defect it exists to catch is exactly *"pdfce made these and
+//! subject**: the defect it exists to catch is exactly *"pdfcer made these and
 //! then could not undo it"*, and a hand-authored fixture would prove the
-//! registration works on a shape pdfce never produces.
+//! registration works on a shape pdfcer never produces.
 //!
 //! It is also why the two halves cannot be split into two checks. The state
 //! only exists inside one session.
@@ -45,7 +45,7 @@
 //!
 //! | Phase | Does | Expected |
 //! |---|---|---|
-//! | A | Edit ▸ Insert pages, with `PDFCE_DIAG_INSERT_PATH` set to a form | `insert-pages` traced, `orphans>0` in the disclosure |
+//! | A | Edit ▸ Insert pages, with `PDFCER_DIAG_INSERT_PATH` set to a form | `insert-pages` traced, `orphans>0` in the disclosure |
 //! | B | open Forms ▸ Tab order | `tab-order-unclaimed` census with a non-zero count |
 //! | C | read the per-row preview trace | at least one row knows the name it would register under |
 //! | D | press the first row's Register | `adopt-widget-requested`, then `adopt-widget … epoch=` |
@@ -83,7 +83,7 @@ use crate::report::CheckReport;
 /// mentions the feature" is the intuition that produced the wrong answer here.
 const SOURCE: &str = "forms/demo-form.pdf";
 /// The environment seam that answers the Insert-pages file picker.
-const INSERT_PATH_ENV: &str = "PDFCE_DIAG_INSERT_PATH";
+const INSERT_PATH_ENV: &str = "PDFCER_DIAG_INSERT_PATH";
 /// The mode the Forms panel is reached in.
 const MODE: &str = "edit";
 /// The command that opens the insert window, and the tab it lives on.
@@ -234,7 +234,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         return Ok(Some(format!(
             "the insert succeeded and its disclosure said nothing about form controls needing \
              re-registering: {disclosures:?}. Either `{SOURCE}` no longer carries widgets, or \
-             `InsertOutcome::orphaned_widgets` came back zero — in which case pdfce has started \
+             `InsertOutcome::orphaned_widgets` came back zero — in which case pdfcer has started \
              merging `/AcroForm` on this path and this check's whole premise has changed."
         )));
     }
@@ -400,13 +400,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
 /// Resolve a fixture under the engine repository's synthetic corpus.
 ///
-/// ★ The path is derived, not configured. `D:\Dev\pdfce` is READ-ONLY to this
+/// ★ The path is derived, not configured. `D:\Dev\pdfcer` is READ-ONLY to this
 /// project and its corpus is the only place these shapes exist, so the check
 /// reads from it and writes nowhere near it. Returning `None` rather than
 /// panicking is what turns a missing corpus into a SKIP with a reason instead
 /// of a crash in the middle of a suite.
 fn engine_fixture(rel: &str) -> Option<std::path::PathBuf> {
-    let path = std::path::Path::new("D:/Dev/pdfce/fixtures/synthetic").join(rel);
+    let path = std::path::Path::new("D:/Dev/pdfcer/fixtures/synthetic").join(rel);
     path.is_file().then_some(path)
 }
 

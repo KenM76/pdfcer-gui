@@ -12,7 +12,7 @@
 //!
 //! The measure salvage landed with 36 carried tests, all green, including two
 //! that prove a canvas-authored `DimensionKind` is byte-for-byte the one
-//! `pdfce-cli dimension-add` builds. Every one of them runs without a window.
+//! `pdfcer dimension-add` builds. Every one of them runs without a window.
 //! None of them can state that a ribbon click arms the tool, that a click on
 //! the page becomes a pick, that the third pick raises an action, or that the
 //! action reaches the engine — because each of those is a property of a **call
@@ -46,9 +46,9 @@
 //!
 //! ```text
 //! Ok  → doc.edit_epoch += 1; doc.page_texture = None
-//!       pdfce-diag add-dimension page=P n=1 epoch=E disclosures=…
+//!       pdfcer-diag add-dimension page=P n=1 epoch=E disclosures=…
 //! Err → the document is left ALONE
-//!       pdfce-diag add-dimension-refused page=P n=1 detail=…
+//!       pdfcer-diag add-dimension-refused page=P n=1 detail=…
 //! ```
 //!
 //! A build in which `add_dimension` refuses every kind — a bad group id, a
@@ -128,9 +128,9 @@
 //! ## Gesture evidence — that three picks are taken, and the third commits
 //!
 //! ```text
-//! pdfce-diag measure-pick kind=Linear in_progress=true  committed=false   ← A
-//! pdfce-diag measure-pick kind=Linear in_progress=true  committed=false   ← B
-//! pdfce-diag measure-pick kind=Linear in_progress=false committed=true    ← where
+//! pdfcer-diag measure-pick kind=Linear in_progress=true  committed=false   ← A
+//! pdfcer-diag measure-pick kind=Linear in_progress=true  committed=false   ← B
+//! pdfcer-diag measure-pick kind=Linear in_progress=false committed=true    ← where
 //! ```
 //!
 //! The shape of that sequence *is* the feature. `canvas::measure::click`'s
@@ -153,13 +153,13 @@
 //! Snapping landed after this check was first written, and it changes the
 //! click-to-pick arithmetic in a way that has to be modelled rather than
 //! papered over. `canvas::measure::snapped` resolves every pick through
-//! `pdfce_core::vector::snap::snap_candidates`, and when the winning candidate
-//! is **derived** — a centreline pdfce *inferred* rather than one the file
+//! `pdfcer_core::vector::snap::snap_candidates`, and when the winning candidate
+//! is **derived** — a centreline pdfcer *inferred* rather than one the file
 //! states — `MeasureState::resolve_click` refuses to commit it on the click
 //! that found it:
 //!
 //! ```text
-//! pdfce-diag measure-pick outcome=Promoted reason=derived-candidate-needs-confirm
+//! pdfcer-diag measure-pick outcome=Promoted reason=derived-candidate-needs-confirm
 //! ```
 //!
 //! That is `pdfce_FeatureRequests/README.md` rule 4's fuzzy-never-sneaky gate:
@@ -367,7 +367,7 @@ const REFUSED_EVENT: &str = "add-dimension-refused";
 /// *that*, which is what makes a dimension measure a line rather than *near*
 /// one. So these fractions are the aim, and the committed geometry is the
 /// application's answer to it. Nothing in this check asserts on the committed
-/// coordinates, deliberately: that is `pdfce-core`'s snap query, it has its own
+/// coordinates, deliberately: that is `pdfcer-core`'s snap query, it has its own
 /// tests, and re-deriving the expected snap here would be this harness
 /// reimplementing the thing it is supposed to be observing.
 ///
@@ -998,7 +998,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     if promotions > 0 {
         report.note(format!(
             "{promotions} of the picks needed a confirming second click, which is rule 4 \
-             working rather than a wobble: a derived snap candidate is pdfce's inference, and \
+             working rather than a wobble: a derived snap candidate is pdfcer's inference, and \
              `snap::snap_commit_clicks` requires two clicks for one"
         ));
     }
@@ -1204,9 +1204,9 @@ mod tests {
     #[test]
     fn a_refusal_is_not_read_as_a_commit() {
         let trace = crate::trace::Trace::parse(
-            "pdfce-diag add-dimension-refused page=0 n=1 detail=DegenerateLength\n\
-             pdfce-diag measure-pick kind=Linear in_progress=false committed=true",
-            "pdfce-diag",
+            "pdfcer-diag add-dimension-refused page=0 n=1 detail=DegenerateLength\n\
+             pdfcer-diag measure-pick kind=Linear in_progress=false committed=true",
+            "pdfcer-diag",
         );
         assert_eq!(
             trace.events(COMMIT_EVENT).count(),
@@ -1228,8 +1228,8 @@ mod tests {
     #[test]
     fn a_pick_line_without_a_committed_field_is_not_read_as_false() {
         let trace = crate::trace::Trace::parse(
-            "pdfce-diag measure-pick kind=Linear in_progress=true",
-            "pdfce-diag",
+            "pdfcer-diag measure-pick kind=Linear in_progress=true",
+            "pdfcer-diag",
         );
         let line = trace.last(PICK_EVENT).expect("the pick line");
         assert_eq!(line.get("committed"), None);
@@ -1248,9 +1248,9 @@ mod tests {
     #[test]
     fn a_promotion_is_told_apart_from_a_resolved_pick() {
         let trace = crate::trace::Trace::parse(
-            "pdfce-diag measure-pick outcome=Promoted reason=derived-candidate-needs-confirm\n\
-             pdfce-diag measure-pick kind=Linear in_progress=true committed=false",
-            "pdfce-diag",
+            "pdfcer-diag measure-pick outcome=Promoted reason=derived-candidate-needs-confirm\n\
+             pdfcer-diag measure-pick kind=Linear in_progress=true committed=false",
+            "pdfcer-diag",
         );
         let lines: Vec<_> = trace.events(PICK_EVENT).collect();
         assert_eq!(lines.len(), 2, "both shapes carry the same event name");

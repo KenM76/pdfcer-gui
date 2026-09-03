@@ -3,7 +3,7 @@
 //!
 //! # What this is for
 //!
-//! `pdfce`'s `gui` column ticked *"edit a Bézier handle"* `[x]`. Their sweep of
+//! `pdfcer`'s `gui` column ticked *"edit a Bézier handle"* `[x]`. Their sweep of
 //! 2026-08-19 corrected it to `⬜ nothing` — one of six rows that were true of
 //! the **old** in-repo shell and became false, untouched, when the column's
 //! referent moved to this build.
@@ -23,7 +23,7 @@
 //! | 2 | a press within 8 px of a mark becomes `DragKind::Handle` and **not** a move | `handledrag::at` — the distance, not the routing |
 //! | 3 | the handle outranks `Grip::Move`, which `grip_at` returns for the same press | ★ **nothing** |
 //! | 4 | the pointer's canvas position converts to PDF user space against **this** frame's mapping | ★ **nothing** |
-//! | 5 | `move_handle` rewrites one operator and the page redraws | `pdfce-core` |
+//! | 5 | `move_handle` rewrites one operator and the page redraws | `pdfcer-core` |
 //!
 //! Link 3 is the one that would fail silently and plausibly, and it is not
 //! hypothetical: a handle sits **inside** the selection's bounding box, so

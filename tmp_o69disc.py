@@ -12,7 +12,7 @@ def patch(path, pairs):
 
 
 # ---- the sentence for the rung that had none ---------------------------
-patch('crates/pdfce-gui/src/text/status/selection.rs', [(
+patch('crates/pdfcer-gui/src/text/status/selection.rs', [(
     '''#[cfg(test)]''',
     '''/// ★★★ **The cap fired on a PART, and nothing was said** —
 /// `OPERATOR_REQUESTS.md` O69: *"the nodes are hard to see and click on."*
@@ -50,7 +50,7 @@ patch('crates/pdfce-gui/src/text/status/selection.rs', [(
 #[must_use]
 pub fn too_many_anchors_in_part(count: usize, cap: usize) -> String {
     format!(
-        "This part has {count} points and pdfce draws at most {cap} at a time, so none are \\
+        "This part has {count} points and pdfcer draws at most {cap} at a time, so none are \\
          shown here. Zoom in to see the ones you are looking at."
     )
 }
@@ -59,7 +59,7 @@ pub fn too_many_anchors_in_part(count: usize, cap: usize) -> String {
 ])
 
 # ---- the gate ----------------------------------------------------------
-patch('crates/pdfce-gui/src/canvas/painting.rs', [(
+patch('crates/pdfcer-gui/src/canvas/painting.rs', [(
     '''    // ★ Only when the operator ASKED — `show_points` on — and not on the
     // descent path, where the cap has always fired silently and where the
     // operator's subject is the subpath they entered rather than the whole

@@ -1,6 +1,6 @@
 import io
 
-p = 'crates/pdfce-gui/src/app/actions/apply.rs'
+p = 'crates/pdfcer-gui/src/app/actions/apply.rs'
 lines = io.open(p, encoding='utf-8').read().split('\n')
 
 start = next(i for i, l in enumerate(lines) if 'A fit sets the scale AND asks for the view' in l)
@@ -10,7 +10,7 @@ del lines[start:end]
 io.open(p, 'w', encoding='utf-8').write('\n'.join(lines))
 
 # put it where the code went
-p = 'crates/pdfce-gui/src/app/actions/view.rs'
+p = 'crates/pdfcer-gui/src/app/actions/view.rs'
 s = io.open(p, encoding='utf-8').read()
 block = '\n'.join('        ' + l.strip() for l in orphan if l.strip())
 s = s.replace("        Action::Fit(mode) => {", block + "\n        Action::Fit(mode) => {", 1)

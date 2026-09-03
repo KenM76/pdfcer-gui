@@ -8,11 +8,11 @@ On 2026-08-28 the operator asked a question this project could not answer from
 its own documents:
 
     "confirm that you have built every editable surface into the GUI that has
-     been implemented in pdfce"
+     been implemented in pdfcer"
 
 `FEATURES.md` describes what the GUI does. `NO_SURFACE.md` lists tunables with
 no control. Neither is keyed on the ENGINE's verb list, so neither could answer
-*"is there a verb pdfce-core implements that nothing here calls?"* — and the
+*"is there a verb pdfcer-core implements that nothing here calls?"* — and the
 answer turned out to be yes, repeatedly, including for capabilities the engine
 had shipped IN ANSWER TO THIS SHELL'S OWN REQUESTS and this shell had then not
 consumed.
@@ -27,8 +27,8 @@ WHAT IT MEASURES, AND WHAT THAT MEASUREMENT IS WORTH
 ====================================================
 
 For every `pub fn` declared inside an `impl EditSession` block in
-`pdfce-core/src/edit.rs`, whether the identifier appears anywhere in
-`crates/pdfce-gui/src`.
+`pdfcer-core/src/edit.rs`, whether the identifier appears anywhere in
+`crates/pdfcer-gui/src`.
 
 ★★ It is a **grep**, and its limits are worth stating plainly because a number
 from a tool reads as authoritative:
@@ -48,7 +48,7 @@ from a tool reads as authoritative:
 ★★★ IT MEASURES THE LOCKED REVISION, NOT THE ENGINE'S WORKING TREE
 ==================================================================
 
-The first cut read `D:/Dev/pdfce/crates/pdfce-core/src/edit.rs` off disk, and on
+The first cut read `D:/Dev/pdfcer/crates/pdfcer-core/src/edit.rs` off disk, and on
 2026-08-29 it reported `move_outline_item` and `set_outline_open` as gaps. They
 are not gaps. They were **uncommitted work in the engine session's worktree** —
 that project runs in parallel and edits its own tree continuously — and the
@@ -58,7 +58,7 @@ revision this shell links is whatever `Cargo.lock` pins.
 that listed it would send the next session to write a call that does not
 compile. Worse, it would look like a capability we were behind on.
 
-So the scan reads `git show <locked-rev>:crates/pdfce-core/src/edit.rs`, and it
+So the scan reads `git show <locked-rev>:crates/pdfcer-core/src/edit.rs`, and it
 reports the difference rather than hiding it: verbs the worktree has and the
 lock does not are printed under COMING, so the two facts stay separate —
 *"nothing here calls it"* and *"we could not call it if we wanted to."*
@@ -83,18 +83,29 @@ import re
 import subprocess
 import sys
 
-ENGINE_REPO = pathlib.Path("D:/Dev/pdfce")
-ENGINE_FILE = "crates/pdfce-core/src/edit.rs"
+# ★★★ DERIVED, NOT ASSUMED — see `tools/engine_path.py`.
+#
+# This was a hard-coded literal until 2026-09-03, when the project's rename
+# pointed it at a directory the engine had not created yet and this instrument
+# went silently blind. `engine_path.locate` reads the git URL out of the
+# manifest Cargo actually builds from, so it follows the temporary
+# `package = ...` shim and will follow the engine's rename without anybody
+# remembering that this line exists.
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import engine_path  # noqa: E402
+
+ENGINE_REPO = engine_path.locate() or pathlib.Path("D:/Dev/pdfcer")
+ENGINE_FILE = f"crates/{engine_path.crate_name('core')}/src/edit.rs"
 LOCK = pathlib.Path("Cargo.lock")
-GUI = pathlib.Path("crates/pdfce-gui/src")
+GUI = pathlib.Path("crates/pdfcer-gui/src")
 
 
 def locked_revision() -> str | None:
-    """The `pdfce-core` commit this workspace's `Cargo.lock` pins.
+    """The `pdfcer-core` commit this workspace's `Cargo.lock` pins.
 
     The lock names it in the source URL's fragment:
 
-        source = "git+file:///D:/Dev/pdfce?branch=main#97d445f85f…"
+        source = "git+file:///D:/Dev/pdfcer?branch=main#97d445f85f…"
 
     Read from the lock rather than from `cargo metadata`, which is a process
     spawn and a JSON parse for one hex string that is right there.
@@ -181,7 +192,17 @@ def main() -> int:
     args = ap.parse_args()
 
     if not (ENGINE_REPO / ENGINE_FILE).exists():
-        print(f"engine not found at {ENGINE_REPO / ENGINE_FILE}", file=sys.stderr)
+        # * EXIT NON-ZERO. This printed to stderr and carried on until
+        # 2026-09-03, which let `check-verb-coverage.sh` report
+        # "PASS: all 0 uncalled verb(s)" having read nothing at all.
+        print(
+            f"verb-coverage: FAIL - engine not found at "
+            f"{ENGINE_REPO / ENGINE_FILE}. Nothing was examined, so this exits "
+            f"non-zero rather than reporting an empty miss list - a check that "
+            f"cannot fail is not evidence.",
+            file=sys.stderr,
+        )
+        return 2
         return 0
     rev = locked_revision()
     text, origin = engine_source(rev)
@@ -200,7 +221,7 @@ def main() -> int:
         coming = sorted(live - set(verbs))
 
     if args.markdown:
-        print(f"| verb | occurrences in `crates/pdfce-gui/src` |")
+        print(f"| verb | occurrences in `crates/pdfcer-gui/src` |")
         print("|---|---|")
         for v in verbs:
             print(f"| `{v}` | {counts[v]} |")

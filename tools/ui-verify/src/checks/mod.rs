@@ -52,7 +52,7 @@
 //! > the real defects) and **pass** against the new one.
 //! > — `PROJECT_PLAN.md` §4, stage S1
 //!
-//! That is the reason [`crate::profile::PDFCE_LEGACY`] exists. A check suite
+//! That is the reason [`crate::profile::PDFCER_LEGACY`] exists. A check suite
 //! that has only ever been seen to pass is not evidence of anything: it is
 //! indistinguishable from a suite that cannot fail. This is the same argument
 //! that put a `--self-test` in `tools/gates/check-ui-strings.sh`, and it comes
@@ -301,7 +301,7 @@ pub mod off_page_marquee;
 /// breaks — that the shell's page vector, its rasters and its two selections
 /// stop describing a document that no longer exists. Its header carries the
 /// argument and the three falsifying phases.
-/// ★★ A page pdfce has already drawn is not drawn again — the operator's
+/// ★★ A page pdfcer has already drawn is not drawn again — the operator's
 /// *"they constantly redraw with larger files"*, measured by scrolling a real
 /// drawing set away and back.
 ///
@@ -337,7 +337,7 @@ pub mod save_as;
 /// `the_unshare_declines_when_nothing_else_draws_the_form`.
 ///
 /// ★★ Two things no other check in this file can claim. It is the first to
-/// **press a context-menu row** — until 2026-08-28 pdfce's menus published no
+/// **press a context-menu row** — until 2026-08-28 pdfcer's menus published no
 /// `ui_rect` for any row, so no coordinate existed to aim at and the whole
 /// "does the row do the thing" question was unaskable. And its subject is a
 /// command whose SUCCESS is invisible: the copy `unshare_form` makes is
@@ -366,7 +366,7 @@ pub mod forms_spotlight;
 ///
 /// A new shape of the founding failure and the reason this module exists: the
 /// adapter's own unit test asserted that all four of its calls **refused**,
-/// which was correct while `pdfce-print` was unlinked and became a lock
+/// which was correct while `pdfcer-print` was unlinked and became a lock
 /// holding the defect in place the moment the manifest line landed. A green
 /// suite defended the absence of the feature. See the module header.
 /// Drag a page thumbnail to a new position, and see where it will land
@@ -414,7 +414,7 @@ pub mod deep_pan;
 pub mod deep_zoom;
 /// ★★ **Drag-and-drop**, driven through the one seam that can carry it — a drop
 /// originates in Explorer and cannot be synthesised by moving a mouse, so
-/// without `PDFCE_DIAG_DROP_PATH` this would be the single feature in the shell
+/// without `PDFCER_DIAG_DROP_PATH` this would be the single feature in the shell
 /// that R1 cannot reach.
 pub mod dropped_file;
 /// ★★★ **Zero clicks.** The only check in this suite that drives no gesture: it
@@ -461,7 +461,7 @@ pub mod geometry_fields;
 /// green on 1,628 unit tests and a smoke launch confirming its rect. Every one
 /// of those observed the button, which was never the broken part.
 pub mod max_zoom;
-/// ★ Shift-picked anchors move TOGETHER — the row `pdfce`'s own `gui` column
+/// ★ Shift-picked anchors move TOGETHER — the row `pdfcer`'s own `gui` column
 /// ticked `[x]` and their 2026-08-19 sweep corrected to "objects move together;
 /// nodes one at a time". The capability was in the selection model from the day
 /// the Node rung landed and no consumer read it that way.
@@ -515,14 +515,14 @@ pub mod scale_switch;
 /// a trace line of its own.
 pub mod shape_preview;
 /// ★★★ **The chooser offers a face the document does not contain** —
-/// `pdfce-core` v0.15.0's standard-14 authoring, reached from a font list.
+/// `pdfcer-core` v0.15.0's standard-14 authoring, reached from a font list.
 ///
 /// The engine shipped the capability and the shell could not reach it: the
 /// chooser built its list from `preview_font_resources`, which enumerates the
 /// *page's own* `/Font` resources, so the one thing the release note is about
 /// was absent from every surface in the program. Its header carries the six
 /// links and names the fourth as the one worth writing the check for on its own
-/// — pdfce embeds nothing, so the text is drawn with the READER'S copy of the
+/// — pdfcer embeds nothing, so the text is drawn with the READER'S copy of the
 /// face, and a disclosure that is catalogued, unit-tested and never painted has
 /// discharged nothing.
 pub mod std14_face;
@@ -642,7 +642,7 @@ pub mod bookmark_move;
 pub mod button_action;
 pub mod chords;
 /// ★★★ **The Comments panel stopped being a viewer** — a note can be written
-/// onto a shape that already exists, which needed a verb `pdfce-core` did not
+/// onto a shape that already exists, which needed a verb `pdfcer-core` did not
 /// have until `Pass 154.0`. Its header carries why link 3 of the chain — a
 /// widget raising the action — is unreachable by any unit test.
 pub mod comment_note;
@@ -714,7 +714,7 @@ pub struct CheckContext {
     /// once.
     ///
     /// It must not be the same file as [`Self::pdf`]. `crate::app::documents`
-    /// §3 makes pdfce activate the tab a path is already open in rather than
+    /// §3 makes pdfcer activate the tab a path is already open in rather than
     /// open a duplicate — deliberately, because two `EditSession`s over one
     /// file would be two undo stacks and a save from either would discard the
     /// other's work. So passing the same path twice would make a multi-document
@@ -990,7 +990,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // Insert an image, wired 2026-08-19. Its last assertion is the one
         // that matters: the promised resolution and the reported one are the
         // same number, which is the shell's half of a single-derivation
-        // guarantee `pdfce-core` holds up on its side with a test.
+        // guarantee `pdfcer-core` holds up on its side with a test.
         Box::new(attachment_clip::AnAttachmentMovesBetweenTwoOpenDocuments),
         Box::new(marquee_table::AMarqueeOverATableTakesItsTextAsWellAsItsLines),
         Box::new(bookmark_dest::ABookmarkLandsOnTheDetailItNames),
@@ -1032,7 +1032,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // always been "text, or nothing".
         Box::new(read_image_copy::ReadModeCopiesAPicture),
         // The Properties panel's document half, wired 2026-08-19 after a
-        // recorded blocker — "`pdfce-core` exposes no /Info accessor" — turned
+        // recorded blocker — "`pdfcer-core` exposes no /Info accessor" — turned
         // out to have cleared without the prose moving. Beside the page checks
         // because it is the other surface that edits the DOCUMENT rather than
         // a page's content.
@@ -1062,7 +1062,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         //
         // ★ It never presses Properties…, and no future edit may make it do
         // so. That button opens a VENDOR DRIVER's own modal dialog: a nested
-        // Win32 message loop whose layout pdfce does not know, cannot publish
+        // Win32 message loop whose layout pdfcer does not know, cannot publish
         // rects for, and cannot reliably dismiss — and one left standing
         // blocks the application's event loop, so a failed dismissal does not
         // fail this check, it hangs every check after it.
@@ -1190,7 +1190,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(comment_note::ANoteCanBeWrittenOntoAShape),
         // Last of the three new ones and the most expensive: it drives Insert
         // pages, the Forms panel and the Tab-order section in one session,
-        // because the shape it registers does not exist in any fixture — pdfce
+        // because the shape it registers does not exist in any fixture — pdfcer
         // makes it. See that module's header.
         Box::new(adopt_widget::AdoptWidgetPutsAFormControlBack),
         Box::new(add_text::AddTextTakesRealKeystrokes),

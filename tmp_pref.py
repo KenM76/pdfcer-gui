@@ -1,7 +1,7 @@
 import io
 
 # ---------------------------------------------------------------- 1. the pref
-p = r"crates\pdfce-gui\src\app\prefs\mod.rs"
+p = r"crates\pdfcer-gui\src\app\prefs\mod.rs"
 s = io.open(p, encoding="utf-8").read()
 
 anchor = "    pub wheel_paging: WheelPaging,"
@@ -31,7 +31,7 @@ enum = '''/// **Which chord pastes a form field as a NEW field, and which as a D
 ///
 /// Copying a form field has two legitimate meanings: **a new, independent
 /// field**, and **another box for the same field** that fills in step with the
-/// original. pdfce offers both on two chords rather than asking in a dialog.
+/// original. pdfcer offers both on two chords rather than asking in a dialog.
 ///
 /// **Acrobat assigns them the other way round.** Its plain Copy/Paste is the
 /// *linked* one — paste a field, leave its name alone, and you get a second
@@ -42,7 +42,7 @@ enum = '''/// **Which chord pastes a form field as a NEW field, and which as a D
 ///
 /// Neither order is obviously right, which is precisely why it is a setting:
 ///
-/// - **[`PdfceOrder`](Self::PdfceOrder)** puts the *common intent* on the
+/// - **[`PdfcerOrder`](Self::PdfcerOrder)** puts the *common intent* on the
 ///   *common chord*. Copying a title-block field down a column almost always
 ///   wants independent fields, and Acrobat's own linking default is a
 ///   documented, unresolved point of user friction — there is a standing
@@ -77,7 +77,7 @@ pub enum PasteChords {
     ///
     /// The default, and the operator's original ruling.
     #[default]
-    PdfceOrder,
+    PdfcerOrder,
     /// `Ctrl+V` pastes a **duplicate**; `Ctrl+Shift+V` pastes a **new** field.
     ///
     /// Acrobat's own assignment.
@@ -86,14 +86,14 @@ pub enum PasteChords {
 
 impl PasteChords {
     /// Both, in the order the settings pane offers them.
-    pub const ALL: &'static [Self] = &[Self::PdfceOrder, Self::AcrobatOrder];
+    pub const ALL: &'static [Self] = &[Self::PdfcerOrder, Self::AcrobatOrder];
 
     /// The chord that reaches `edit.paste` (a NEW field) under this order.
     #[must_use]
     pub const fn new_field_chord(self) -> &'static str {
         match self {
             // ui-text-exempt: keymap chord spellings, matched against the manifest.
-            Self::PdfceOrder => "Ctrl+V",
+            Self::PdfcerOrder => "Ctrl+V",
             Self::AcrobatOrder => "Ctrl+Shift+V",
         }
     }
@@ -103,7 +103,7 @@ impl PasteChords {
     pub const fn duplicate_chord(self) -> &'static str {
         match self {
             // ui-text-exempt: keymap chord spellings, matched against the manifest.
-            Self::PdfceOrder => "Ctrl+Shift+V",
+            Self::PdfcerOrder => "Ctrl+Shift+V",
             Self::AcrobatOrder => "Ctrl+V",
         }
     }

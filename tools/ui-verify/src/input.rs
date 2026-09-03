@@ -20,7 +20,7 @@
 //!
 //! ## Rejected as the *primary* driver: in-process injection
 //!
-//! The application already has one — `PDFCE_DIAG_SCRIPT` feeds steps through
+//! The application already has one — `PDFCER_DIAG_SCRIPT` feeds steps through
 //! eframe's `raw_input_hook`. It is excellent, it needs no screen, and it is
 //! the right tool for a behavioural question on a machine the operator is
 //! using. It is **the wrong oracle for D1**, and precisely because of what it
@@ -200,7 +200,7 @@ impl Driver {
     /// ## ★★★ The first driver for a gesture class this project has shipped
     /// ## since Phase 1
     ///
-    /// pdfce has had canvas context menus for months and **not one driven check
+    /// pdfcer has had canvas context menus for months and **not one driven check
     /// has ever opened one**. Everything asserted about them is a unit test over
     /// `MenuHost::would_open`, which asks whether the *manifest* would offer
     /// something — a real question, and not the same question as *"does a right
@@ -298,20 +298,20 @@ impl Driver {
     /// The gesture a **spring-loaded** target needs: press here, walk to
     /// there, *stay* long enough for the application's dwell timer to fire,
     /// then walk on and release. Windows Explorer's folders, every browser's
-    /// tabs and pdfce's document tab strip all work this way, and none of them
+    /// tabs and pdfcer's document tab strip all work this way, and none of them
     /// can be driven by [`Self::drag`] — which walks straight through and never
     /// rests anywhere.
     ///
     /// `dwell` is how long the pointer sits on `via`. It must exceed the
     /// application's own threshold with room to spare: the check that uses this
-    /// passes twice `crate::pdfce::SPRING_DWELL`, because a dwell measured
+    /// passes twice `crate::pdfcer::SPRING_DWELL`, because a dwell measured
     /// against a *frame clock* on a machine that is also rasterizing a CAD
     /// sheet is not a dwell measured against a stopwatch.
     ///
     /// ★ The pointer is **moved slightly** during the dwell rather than being
     /// held perfectly still, in the same place, for a second. A stationary
     /// pointer generates no input, and an application that only repaints on
-    /// input would never run the frame its own timer fires on. pdfce asks for a
+    /// input would never run the frame its own timer fires on. pdfcer asks for a
     /// repaint while a spring is armed precisely so this is not required — but
     /// a harness that depended on that would be testing the repaint request
     /// rather than the spring, and would report a false failure the day the
@@ -322,7 +322,7 @@ impl Driver {
     /// As [`Self::drag`].
     /// `modifier` is held down for the **whole** gesture, press to release.
     ///
-    /// ★ Which is more than the application strictly needs — pdfce samples the
+    /// ★ Which is more than the application strictly needs — pdfcer samples the
     /// drag modifier at the *release*, as Windows does — and it is deliberately
     /// more. Holding it throughout is what an operator's hand actually does,
     /// and it also exercises the frames in between, where the caption has to

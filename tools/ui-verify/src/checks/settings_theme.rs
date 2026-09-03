@@ -177,7 +177,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     let mut spec = LaunchSpec::new(&exe, ctx.out("settings_theme.trace.txt"));
     // ★ NO `--pdf`, and that is the property under test as much as a
     // convenience. `file.settings` is application-scoped: these are choices
-    // about pdfce, meaningful with nothing loaded, and an operator who has just
+    // about pdfcer, meaningful with nothing loaded, and an operator who has just
     // launched the program and wants a dark window must not have to open a
     // document first. If the command ever gains a `doc.open` gate, this check
     // fails at the click rather than passing quietly with a fixture propping it
@@ -234,7 +234,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     if declared(&trace, ui_rect, DIALOG).is_some() {
         return Ok(Some(format!(
             "`{DIALOG}` was declared before anything was clicked — the Settings window opened \
-             on its own, which pdfce may not do."
+             on its own, which pdfcer may not do."
         )));
     }
 

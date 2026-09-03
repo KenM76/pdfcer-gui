@@ -3,10 +3,10 @@
 //!
 //! # What this is about
 //!
-//! `pdfce-core`, unprompted, 2026-08-29:
+//! `pdfcer-core`, unprompted, 2026-08-29:
 //!
 //! > **Do not offer Cut as enabled and let it fail.** A **copy** of something
-//! > pdfce cannot carry costs nothing — the original stays. A **cut** of the
+//! > pdfcer cannot carry costs nothing — the original stays. A **cut** of the
 //! > same thing is a deletion wearing a clipboard's clothes.
 //!
 //! A `/Redact` annotation is a **pending destructive operation**. Pasting one
@@ -113,10 +113,10 @@ impl Check for CuttingARedactionMarkIsRefusedBeforeAnythingIsRemoved {
 /// Resolve a fixture under the engine repository's synthetic corpus.
 ///
 /// `None` rather than a panic turns a missing corpus into a SKIP with a reason
-/// instead of a crash mid-suite. `D:\Dev\pdfce` is READ-ONLY to this project;
+/// instead of a crash mid-suite. `D:\Dev\pdfcer` is READ-ONLY to this project;
 /// this reads from it and writes nowhere near it.
 fn engine_fixture(rel: &str) -> Option<std::path::PathBuf> {
-    let path = std::path::Path::new("D:/Dev/pdfce/fixtures/synthetic").join(rel);
+    let path = std::path::Path::new("D:/Dev/pdfcer/fixtures/synthetic").join(rel);
     path.is_file().then_some(path)
 }
 
@@ -139,7 +139,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let fixture = engine_fixture(FIXTURE).ok_or_else(|| {
         Error::new(format!(
             "the engine's marked redaction fixture is not at \
-             D:/Dev/pdfce/fixtures/synthetic/{FIXTURE}. This check pins it and ignores --pdf: its \
+             D:/Dev/pdfcer/fixtures/synthetic/{FIXTURE}. This check pins it and ignores --pdf: its \
              subject is what happens when you cut a REDACTION MARK, and a drawing with none is \
              neither a pass nor a defect."
         ))

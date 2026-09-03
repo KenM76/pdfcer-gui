@@ -55,7 +55,7 @@ new = """    report.note(format!("★★ the engine wrote it: `{}`", applied.raw
             return Ok(Some(format!(
                 "★★★ THE PANEL READS THE BUTTON AS INERT: `{READ} … state=none`, on a button \\
                  this run has just given a Reset action to and watched the engine accept.\\n\\
-                 That is the exact falsehood the reader was requested to prevent — pdfce \\
+                 That is the exact falsehood the reader was requested to prevent — pdfcer \\
                  asserting a fact about the operator's document that it did not check. Look at \\
                  `panels::forms::button::row` and at whether it is asking for the same \\
                  fully-qualified name the author wrote. Trace: {}.",
@@ -68,7 +68,7 @@ new = """    report.note(format!("★★ the engine wrote it: `{}`", applied.raw
                  which `Pass 212.0` states round-trips as `Known` — including `Only` vs \\
                  `Except`, which is the thing a reader most easily gets backwards. \\
                  `unmodelled` here means the engine wrote something it cannot decode; \\
-                 `foreign` means it decoded something it will not author, on a button pdfce \\
+                 `foreign` means it decoded something it will not author, on a button pdfcer \\
                  itself just authored. Trace: {}.",
                 session.trace_path().display()
             )));

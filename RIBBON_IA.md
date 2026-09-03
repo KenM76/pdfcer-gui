@@ -1,4 +1,4 @@
-# pdfce GUI — Ribbon Information Architecture
+# pdfcer GUI — Ribbon Information Architecture
 
 **Status:** proposal, 2026-08-12
 **Scope:** where every user-reachable command lives, and why.
@@ -19,9 +19,9 @@ on top of everything here).
 
 ## 1. What this document is for
 
-pdfce's ribbon today has six tabs and twenty groups. The grouping is
+pdfcer's ribbon today has six tabs and twenty groups. The grouping is
 principled — there is a real rule set behind it, written down in
-`crates/pdfce-gui/src/ribbon.rs` — but the result does not match what a
+`crates/pdfcer-gui/src/ribbon.rs` — but the result does not match what a
 user reaching for a command expects to find, and three of the six tabs
 are underfilled to the point of looking unfinished.
 
@@ -38,7 +38,7 @@ with where it exists today:
 | Mark | Meaning |
 |---|---|
 | **G** | Exists in the GUI now. Moving it is pure re-parenting. |
-| **C** | Exists in `pdfce-core` and/or `pdfce-cli`, but has no GUI surface. Needs a shell, not an engine. |
+| **C** | Exists in `pdfcer-core` and/or `pdfcer`, but has no GUI surface. Needs a shell, not an engine. |
 | **N** | Does not exist anywhere. Needs building. |
 
 The **C** rows matter disproportionately: they are the cheapest possible
@@ -161,7 +161,7 @@ exists to answer.
 
 | # | Tab | The question it answers |
 |---|---|---|
-| 1 | **File** | What do I do with the file as a whole, or with pdfce itself? |
+| 1 | **File** | What do I do with the file as a whole, or with pdfcer itself? |
 | 2 | **View** | What is on my screen, and how is the page laid out? |
 | 3 | **Pages** | What am I doing to the set of pages? |
 | 4 | **Edit** | What am I changing about content that is already there? |
@@ -184,7 +184,7 @@ view controls its name promises, and let File become an actual file tab.
 
 `Review` is renamed **Markup**. What lives there is markup authoring —
 shapes, notes, stamps. "Review" promises a review *workflow*: compare
-revisions, resolve comments, track changes. pdfce does not have that
+revisions, resolve comments, track changes. pdfcer does not have that
 yet, and when it does, it will want the name. `Markup` is also the term
 this project's audience uses; Bluebeam and every drafting office call it
 that.
@@ -204,7 +204,7 @@ mark. `⌄` means the control is a split button or dropdown.
 
 ---
 
-### 5.1 File — *what do I do with the file as a whole, or with pdfce itself?*
+### 5.1 File — *what do I do with the file as a whole, or with pdfcer itself?*
 
 | Group | Commands | |
 |---|---|---|
@@ -225,7 +225,7 @@ mark. `⌄` means the control is a split button or dropdown.
 | **Document** | Properties | **G** |
 | | Fonts | **G** *(currently View ▸ Panels)* |
 | | Security | **N** |
-| **pdfce** | Settings… | **G** |
+| **pdfcer** | Settings… | **G** |
 | | Keyboard shortcuts | **G** |
 | | About | **N** |
 
@@ -305,7 +305,7 @@ This is a larger build than it looks; `viewer.rs` holds a single
 `page_index` and `object_provider.rs:392-399` returns nothing for any
 page but the current one. See `GUI_ROADMAP.md` Phase 4.
 
-**The Render group is an operator decision, 2026-08-12.** pdfce caches
+**The Render group is an operator decision, 2026-08-12.** pdfcer caches
 one whole-page texture and scales it with linear filtering during the
 150 ms settle. Measured in use on a large drawing, that is *smoother*
 to pan and zoom than the comparison product's progressive tile
@@ -316,7 +316,7 @@ machine.
 
 So the strategy becomes a **choice on the View tab**, with whole-page as
 the default because it is what measured better. This is R169 applied to
-rendering: where the right answer is genuinely undetermined, pdfce
+rendering: where the right answer is genuinely undetermined, pdfcer
 states the trade and lets the operator pick, rather than deciding
 quietly. `ZOOM_SETTLE` (`main.rs:367`) and the raster-scale multiplier
 are constants today and become the two knobs beside it.
@@ -483,15 +483,15 @@ own queue** — core and CLI shipped and measured. It is a shell-only task.
 > and takes the pick at `:23592`; the whole gesture is there — hover
 > highlight, picked-pair overlay, the verdict disclosure, Escape to clear
 > — with `TwoLinePick` in `measure_tool.rs:361` behind 814 lines of tests,
-> and pdfce's own `docs/FEATURES.md` marks the row `gui [x]`.
+> and pdfcer's own `docs/FEATURES.md` marks the row `gui [x]`.
 >
-> The likely origin is a misread of pdfce's `ROADMAP.md:2778`, which
+> The likely origin is a misread of pdfcer's `ROADMAP.md:2778`, which
 > explains *why* `pick_line_in_page` exists, one paragraph above the
 > commit that added its caller.
 >
 > What changes: the caller that is missing is **ours**. The new shell has
 > no measure tool at all — `CanvasTool` has two variants, no `measure.*`
-> command has a dispatch arm, and nothing in `crates/pdfce-gui` mentions
+> command has a dispatch arm, and nothing in `crates/pdfcer-gui` mentions
 > `linepick`. So this is a **salvage** of `measure_tool.rs` (Class A,
 > 1,230 lines) plus the canvas hosting, not a one-line hookup, and the
 > "cheapest real feature in the backlog" claim that rode on it is
@@ -665,8 +665,8 @@ is dropped.
 | File ▸ Export ▸ Export DXF | File ▸ Export |
 | File ▸ Print ▸ Print | File ▸ Print |
 | File ▸ Layout ▸ Reset layout | **View ▸ Window** |
-| File ▸ Settings ▸ Settings | File ▸ pdfce |
-| File ▸ Help ▸ Keyboard shortcuts | File ▸ pdfce |
+| File ▸ Settings ▸ Settings | File ▸ pdfcer |
+| File ▸ Help ▸ Keyboard shortcuts | File ▸ pdfcer |
 | Edit ▸ Pages ▸ Rotate left/right | **Pages ▸ Transform** |
 | Edit ▸ ContentTools ▸ Editing on | Edit ▸ Mode |
 | Edit ▸ ContentTools ▸ Aa / I⁺ Aa / Obj | Edit ▸ Content *(relabelled)* |

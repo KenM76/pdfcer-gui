@@ -1,6 +1,6 @@
 # HOW IT SHOULD WORK
 
-**The target interaction model for pdfceGUI.**
+**The target interaction model for pdfcer-gui.**
 Written 2026-08-26, as part of the interaction-design audit opened by the
 operator's report of 2026-08-26 ("The interface for this has gotten so wonky…").
 
@@ -17,7 +17,7 @@ from another application, that application is **named**. Where the reference
 applications disagree, the disagreement is stated and one side is chosen with
 the argument attached.
 
-Where the text says *"today"*, it is describing shipped pdfceGUI behaviour and
+Where the text says *"today"*, it is describing shipped pdfcer-gui behaviour and
 cites `file:line`. Everything else is the **target**. Nothing in this file has
 been implemented by writing it.
 
@@ -54,11 +54,11 @@ must show him.
 | **Part** | A subpath of a path, or one show-operator run inside a text object. The middle rung of the selection ladder. |
 | **Node / anchor / point** | One coordinate on a subpath. The operator's *"points"*. The bottom rung. |
 | **Hit** | An object the pointer is geometrically over, per §2.2. |
-| **Candidate list** | Every hit under the pointer, deepest-painted last, i.e. topmost first. `hit_test_point_all` already computes this (`D:\Dev\pdfce\crates\pdfce-core\src\vector\hit.rs:126-135`). |
+| **Candidate list** | Every hit under the pointer, deepest-painted last, i.e. topmost first. `hit_test_point_all` already computes this (`D:\Dev\pdfcer\crates\pdfcer-core\src\vector\hit.rs:126-135`). |
 | **Selection** | The set of objects, parts or nodes the next verb will act on. Exactly one such set exists per document. |
-| **Focus** | *Not a thing this design has.* The Objects panel's separate `focus` field (`crates/pdfce-gui/src/panels/objects/mod.rs:158-161`) is retired by §4.4. |
+| **Focus** | *Not a thing this design has.* The Objects panel's separate `focus` field (`crates/pdfcer-gui/src/panels/objects/mod.rs:158-161`) is retired by §4.4. |
 | **Grip / handle** | A drawn square or disc on the selection's bounding box that a drag transforms through. |
-| **Armed tool** | The tool that decides what a press on empty page does. Today `CanvasTool` (`crates/pdfce-gui/src/canvas/tool/mod.rs`). |
+| **Armed tool** | The tool that decides what a press on empty page does. Today `CanvasTool` (`crates/pdfcer-gui/src/canvas/tool/mod.rs`). |
 
 ---
 
@@ -84,7 +84,7 @@ keep.
 **Why this sentence and not another.** It is the sentence that all seven
 surveyed editors (Illustrator, Inkscape, Figma, Affinity Designer, CorelDRAW,
 PowerPoint, Acrobat) would each answer "yes" to, and it is the sentence
-pdfceGUI currently answers "no" to on all four clauses. The operator's
+pdfcer-gui currently answers "no" to on all four clauses. The operator's
 complaint is not a request for a feature; it is a report that this sentence is
 false here and true everywhere else he has worked.
 
@@ -95,8 +95,8 @@ false here and true everywhere else he has worked.
 ### 2.1 The resting state
 
 The **Select tool** (`V`) is the resting state of the canvas. It is already
-`#[derive(Default)]` (`crates/pdfce-gui/src/canvas/tool/mod.rs:188-192`) and
-already bound to `V` (`crates/pdfce-gui/src/shell/manifest/mod.rs:331`). That
+`#[derive(Default)]` (`crates/pdfcer-gui/src/canvas/tool/mod.rs:188-192`) and
+already bound to `V` (`crates/pdfcer-gui/src/shell/manifest/mod.rs:331`). That
 stays.
 
 - `Esc` with no selection and no gesture in flight **returns to the Select
@@ -117,10 +117,10 @@ change — and Acrobat is the program being replaced.
 pixels of ink that object actually paints.**
 
 The tolerance constant already exists and does not change:
-`SELECT_SCREEN_TOLERANCE_PX = 6.0` (`crates/pdfce-gui/src/canvas/mapping.rs:94`).
+`SELECT_SCREEN_TOLERANCE_PX = 6.0` (`crates/pdfcer-gui/src/canvas/mapping.rs:94`).
 It is converted to page units once per frame at the current zoom
 (`mapping.rs:231-233`). It is deliberately tighter than the snap radius of
-`10.0` (`crates/pdfce-gui/src/canvas/snap.rs:136`) because *a snap is an offer
+`10.0` (`crates/pdfcer-gui/src/canvas/snap.rs:136`) because *a snap is an offer
 and a selection is a commitment*.
 
 Per object kind:
@@ -129,7 +129,7 @@ Per object kind:
 |---|---|---|---|
 | Path with a **fill** (`f`, `B`, `f*`, `B*`) | not a target as such | **hit** anywhere inside the filled region | hit within 6 px |
 | Path with **stroke only** (`S`, `s`) | **not a target** | — | hit within 6 px of the stroke centreline, plus half the stroke width |
-| Path with `paint = none` (`n`) | **not a target** | — | hit within 6 px of the geometry. *Already correct in core* (`D:\Dev\pdfce\crates\pdfce-core\src\vector\hit.rs:22-23`). |
+| Path with `paint = none` (`n`) | **not a target** | — | hit within 6 px of the geometry. *Already correct in core* (`D:\Dev\pdfcer\crates\pdfcer-core\src\vector\hit.rs:22-23`). |
 | Text object | **hit** anywhere inside the union of its glyph boxes | — | — |
 | Raster image | **hit** anywhere inside its placed quad | — | — |
 | Form XObject | **never a first-click target at all** — see §2.6 | — | — |
@@ -159,7 +159,7 @@ and it is what makes a dense CAD sheet workable at all.
 - **OCR-invisible text (`Tr 3`) is not an object-selection target**, but it
   **is** a target for the character sweep (`PickClass::Characters`). *Why: the
   operator asked for an invisible layer that makes Find and copy work
-  (`crates/pdfce-gui/src/text/ocr.rs:80-87`); a layer that also starts
+  (`crates/pdfcer-gui/src/text/ocr.rs:80-87`); a layer that also starts
   swallowing object clicks would be the anchor fact happening a second time,
   and this time we would have caused it.*
 
@@ -211,19 +211,19 @@ have a harder problem than any of them: a CAD sheet has thousands of hairlines
 and no layer names, so the outline says *which* and the readout says *what*.
 
 **This is not a new capability, it is an unmounted one.** The measure tools
-already draw exactly this — `crates/pdfce-gui/src/canvas/measure/hover.rs`,
-painted at `crates/pdfce-gui/src/canvas/measure/mod.rs:1020-1039` — and its
+already draw exactly this — `crates/pdfcer-gui/src/canvas/measure/hover.rs`,
+painted at `crates/pdfcer-gui/src/canvas/measure/mod.rs:1020-1039` — and its
 header quotes the operator asking for it: *"I should be able to hover over
 a[n object]…"*. He has asked once, been given it for one tool, and not for
 selection.
 
-**It is not blocked by the disclosure rule.** `crates/pdfce-gui/src/canvas/overlay.rs:277`
+**It is not blocked by the disclosure rule.** `crates/pdfcer-gui/src/canvas/overlay.rs:277`
 and `:402` record that the rule "explicitly welcomes *pre-commit affordances*:
 snap indicators, **hover highlights**, rubber-bands and selection handles."
 The forbidden thing is content marking. A hover highlight is not that.
 
 **The performance contract, because this is the objection that killed it
-before.** `crates/pdfce-gui/src/canvas/interact.rs:1412-1427` refuses hover
+before.** `crates/pdfcer-gui/src/canvas/interact.rs:1412-1427` refuses hover
 hit-testing on the grounds of a measured **355 ms** cost. That figure is the
 **text extraction**, not the vector hit test, which `hit.rs:141-148` describes
 as "one linear pass over the page's objects." The target rule is therefore:
@@ -238,7 +238,7 @@ as "one linear pass over the page's objects." The target rule is therefore:
   selections; the pointer still selects normally.`
 - The budget must be verified against the two known worst cases: the
   6,681-anchor / 1,194-subpath CAD export named in
-  `crates/pdfce-gui/src/canvas/pick.rs:60-66`, and the benchmark sheet
+  `crates/pdfcer-gui/src/canvas/pick.rs:60-66`, and the benchmark sheet
   in `BENCHMARK.md`.
 
 ### 2.5 Clicking on nothing
@@ -249,14 +249,14 @@ alone — the threshold is the platform drag threshold, and the marquee only
 becomes visible once it is exceeded.
 
 This is **7 of 7** across the survey, and it is already implemented twice
-(`crates/pdfce-gui/src/canvas/clicking.rs:59-66`, convention **C6**, which
+(`crates/pdfcer-gui/src/canvas/clicking.rs:59-66`, convention **C6**, which
 clears both the content selection and the separate annotation selection).
 
 `Esc` also deselects. `Esc` a second time returns the tool to Select.
 
 **The reason C6 cannot fire on the the conformance suite’s composite page page today is the whole audit in one
 sentence:** with a full-page form XObject hit-tested as a solid rectangle
-(`D:\Dev\pdfce\crates\pdfce-core\src\vector\hit.rs:24-26`), *there is no empty
+(`D:\Dev\pdfcer\crates\pdfcer-core\src\vector\hit.rs:24-26`), *there is no empty
 page*. Every pixel is a hit, so the gesture `clicking.rs` calls "the gesture
 every operator tries first" re-selects the same page-sized object, which reads
 as stuck. §2.6 removes the cause.
@@ -275,7 +275,7 @@ is a real object the operator may genuinely need to delete.
 form paints selects the leaf object inside the form that painted it.**
 
 This is the single most important rule in this document, and it is the one
-place where pdfceGUI deliberately **departs from the graphics-editor
+place where pdfcer-gui deliberately **departs from the graphics-editor
 convention**. The departure needs its argument stated in full.
 
 **What the convention says.** In Illustrator, Inkscape, Figma, Affinity,
@@ -314,13 +314,13 @@ degenerate zero-height selection box, not the enclosing view and not the page.
 **Three things this rule requires of the engine:**
 
 1. **The decomposer must recurse into form XObjects.** Today it does not:
-   `D:\Dev\pdfce\crates\pdfce-core\src\vector\decompose.rs:2666-2672` handles a
+   `D:\Dev\pdfcer\crates\pdfcer-core\src\vector\decompose.rs:2666-2672` handles a
    `Do` on a form by calling `emit_image(ImageSource::Form, …)` with the form's
    `/BBox` corners and returning. The contents are never decomposed, never
    counted, never given a `TargetId`. **For content inside a form there is
    currently no object to win a click.** That is why double-click descends into
    nothing — a form has zero parts
-   (`crates/pdfce-gui/src/panels/objects/provider.rs:359-365`,
+   (`crates/pdfcer-gui/src/panels/objects/provider.rs:359-365`,
    `:385-391`) — and it is the direct cause of the operator's *"When I double
    click on an object it doesn't select — it still only has the whole page
    selected."*
@@ -363,14 +363,14 @@ already spoken for here — it is the temporary-Select modifier (§2.1) and the
 multi-select modifier in Office — so `Alt` is both the majority and the free
 key. Illustrator's own implementation carries a documented wart worth avoiding:
 select-behind "works when clicking an object's fill, but not its path."
-pdfceGUI's cycle works on any hit, fill or stroke.
+pdfcer-gui's cycle works on any hit, fill or stroke.
 
 **The machinery already exists and is discarded.** `hit_test_point_all`'s doc
 comment says in terms that it "exists so a GUI can offer click-through cycling:
 repeated clicks at one point step down the returned list, which is the only way
 an object completely covered by another can ever be selected"
-(`D:\Dev\pdfce\crates\pdfce-core\src\vector\hit.rs:126-135`), and
-`topmost_allowed` (`crates/pdfce-gui/src/canvas/input.rs:144-155`) walks that
+(`D:\Dev\pdfcer\crates\pdfcer-core\src\vector\hit.rs:126-135`), and
+`topmost_allowed` (`crates/pdfcer-gui/src/canvas/input.rs:144-155`) walks that
 exact list and throws the tail away. This is a binding, not a feature.
 
 **The escape hatch when the cycle is the wrong tool: right-click.** §2.10.
@@ -382,7 +382,7 @@ chain above the object rung. Four ways to move between them, and no ritual:
 
 | Gesture | Effect |
 |---|---|
-| `A` (Node tool) | Arms direct selection. Click an object and every anchor appears immediately; click an anchor to select it. *This already exists and is correct* (`crates/pdfce-gui/src/canvas/tool/mod.rs:195-222`), modelled on Illustrator's Direct Selection (`A`), Inkscape's Node tool, CorelDRAW's Shape tool. |
+| `A` (Node tool) | Arms direct selection. Click an object and every anchor appears immediately; click an anchor to select it. *This already exists and is correct* (`crates/pdfcer-gui/src/canvas/tool/mod.rs:195-222`), modelled on Illustrator's Direct Selection (`A`), Inkscape's Node tool, CorelDRAW's Shape tool. |
 | Double-click on the selection | Descends one rung: object → part → node. Still supported, still tested, no longer the only route. |
 | `Ctrl`+click on a mark | Selects the **container** that owns it — the form XObject, as one object, with one bounding box and one set of handles. Repeat to go up another level of nesting. |
 | `Ctrl`+`Up` / `Ctrl`+`Down` | Selects the parent container / re-descends to the previously selected child, without moving the pointer. |
@@ -407,7 +407,7 @@ you are there.*
 object entirely enclosed by the band is selected.**
 
 - **Default: enclose.** `MarqueeMode::Enclosed` already
-  (`crates/pdfce-gui/src/panels/objects/provider.rs:879`), decided in
+  (`crates/pdfcer-gui/src/panels/objects/provider.rs:879`), decided in
   `hit.rs:83-86` decision 011.
 - **`Alt` held during the drag switches to touch** — anything the band crosses
   is selected. The band's appearance changes when it does, so the mode is
@@ -467,10 +467,10 @@ operator is pointing at.**
 
 ### 2.11 The pick filter stays, and gets a voice
 
-`PickFilter` / `PickClass` (`crates/pdfce-gui/src/canvas/pick.rs`) is correct
+`PickFilter` / `PickClass` (`crates/pdfcer-gui/src/canvas/pick.rs`) is correct
 and stays exactly as designed — eleven switchable classes on the status bar,
 subtractive, `AND`ed with mode capability, one click from anywhere. It is
-pdfceGUI's version of Illustrator's "Object Selection by Path Only" and
+pdfcer-gui's version of Illustrator's "Object Selection by Path Only" and
 CorelDRAW's "Treat all objects as filled", and it is more granular than either.
 
 Three amendments:
@@ -481,7 +481,7 @@ Three amendments:
    relief from *"why is the selection box so big?"* (`pick.rs:203-209`) — is
    met by §2.6 by default, so the row's default becomes irrelevant to the
    complaint rather than being the fix for it.
-2. **The filter must never be off-screen.** `crates/pdfce-gui/src/app/status.rs:806-820`
+2. **The filter must never be off-screen.** `crates/pdfcer-gui/src/app/status.rs:806-820`
    records the measured case where at `ui_scale = 1.80` in an 1100 × 800 window
    the fixed status cluster needed 666 pt of 611 pt available and the filter
    landed at x = −127. A control that explains why nothing is selectable must
@@ -501,7 +501,7 @@ Three amendments:
 
 | Target | Count | Drawn | Existing constant |
 |---|---|---|---|
-| Corner grips (NW, NE, SE, SW) | 4 | 8 pt filled square, screen-sized, does not scale with zoom | `GRIP_SIZE_PX = 8.0` (`crates/pdfce-gui/src/canvas/handles.rs:100`) |
+| Corner grips (NW, NE, SE, SW) | 4 | 8 pt filled square, screen-sized, does not scale with zoom | `GRIP_SIZE_PX = 8.0` (`crates/pdfcer-gui/src/canvas/handles.rs:100`) |
 | Mid-edge grips (N, E, S, W) | 4 | same | dropped on an axis shorter than `MIN_MID_GRIP_EXTENT_PX = 24.0` (`handles.rs:117`) |
 | Rotate handle | 1 | disc on a 20 pt stem above top-centre | `ROTATE_STEM_PX = 20.0` (`handles.rs:335`) |
 | Grab slack | — | 2 pt beyond the drawn square | `GRIP_GRAB_SLACK_PX = 2.0` (`handles.rs:109`) |
@@ -522,7 +522,7 @@ mode toggle (Inkscape, CorelDRAW). The hot-region design is the one users
 complain about — Illustrator's own bug tracker carries "Objects rotating when
 trying to transform or move" and "Cannot grab corner handles on bounding box" —
 because the zone is invisible and sits within a few pixels of the resize grip.
-Nobody complains about PowerPoint's rotation handle. pdfceGUI has already taken
+Nobody complains about PowerPoint's rotation handle. pdfcer-gui has already taken
 the visible-handle route and it is the right one.
 
 **A selection always has handles.** There is no selection state in this program
@@ -544,7 +544,7 @@ convention whose absence most reliably reads as "the program is broken."
   rotate is worth more than matching either family exactly.)*
 - The constraint is **announced while it is active** on the status bar —
   `constrain::caption` already does this
-  (`crates/pdfce-gui/src/app/status.rs:709-713`, convention **D5**).
+  (`crates/pdfcer-gui/src/app/status.rs:709-713`, convention **D5**).
 - **`Alt`+drag duplicates**, leaving the original in place. *(Illustrator,
   Figma, Affinity. CorelDRAW uses right-button-release, PowerPoint uses
   `Ctrl`+drag; `Alt` is the majority and `Ctrl` is taken.)* Note the collision
@@ -573,7 +573,7 @@ it keeps `Shift` meaning "constrain" across move, resize and rotate.
 **Scale-strokes question, which must be answered and not dodged.** Every app in
 the survey treats "resize the frame" and "scale everything inside it" as
 distinguishable operations — Illustrator's `Scale Strokes & Effects`, Figma's
-separate Scale tool (`K`), Affinity's and CorelDRAW's toggles. pdfceGUI's
+separate Scale tool (`K`), Affinity's and CorelDRAW's toggles. pdfcer-gui's
 answer:
 
 - **Stroke widths, text size and dash patterns scale with the object by
@@ -655,7 +655,7 @@ exact place the user is aiming.
 - **PowerPoint 365**: a locked shape still selects — bounding box appears —
   but has **no sizing handles at all**.
 
-**pdfceGUI's rule, taking CorelDRAW's design and adding the sentence nobody
+**pdfcer-gui's rule, taking CorelDRAW's design and adding the sentence nobody
 has:**
 
 1. **A refused object still selects.** The operator gets a selection outline
@@ -673,7 +673,7 @@ has:**
 | Read mode, drag attempted on content | `Read mode does not change the page. Press Ctrl+3 for Edit.` |
 | Review mode, drag attempted on page content | `Review changes your markup, not the page. Press Ctrl+3 for Edit.` |
 | Click landed only on a class switched off in the pick filter | `Nothing here is selectable: {class} is switched off in the filter, on the status bar.` |
-| Every class switched off | *(existing)* `filter::empty_note` (`crates/pdfce-gui/src/app/status/filter.rs:234`) |
+| Every class switched off | *(existing)* `filter::empty_note` (`crates/pdfcer-gui/src/app/status/filter.rs:234`) |
 | Resize attempted on an object whose transform is not invertible | `This object's placement can't be recalculated, so it can't be resized. It can still be moved.` |
 
 **Why words at all, when nobody else uses them.** Because the failure the
@@ -687,7 +687,7 @@ their relative priority.
 
 **What a refusal must never be:** a modal dialog, a red badge, or a toast. The
 operator's standing complaint about "nagging and red flagging"
-(`crates/pdfce-gui/src/panels/tool/mod.rs:63-78`) governs here.
+(`crates/pdfcer-gui/src/panels/tool/mod.rs:63-78`) governs here.
 
 ---
 
@@ -705,23 +705,23 @@ CorelDRAW the Properties inspector, Inkscape the Fill & Stroke dialog and
 selector bar, PowerPoint materialises a whole contextual ribbon tab **and**
 retargets the Format pane, Acrobat swaps the right-hand Format/Objects panel.
 
-pdfceGUI has three surfaces and none of them does it:
+pdfcer-gui has three surfaces and none of them does it:
 
 - The **Format tab** appears on `selection.any`
-  (`crates/pdfce-gui/src/shell/manifest/format.rs:120`, `:126`) and contains
+  (`crates/pdfcer-gui/src/shell/manifest/format.rs:120`, `:126`) and contains
   exactly two commands, `format.properties` and `format.delete` (`:130`). No
   editors.
 - `format.properties` dispatches `file.properties` — the **document**
-  properties command (`crates/pdfce-gui/src/app/dispatch.rs:819-825`). The
+  properties command (`crates/pdfcer-gui/src/app/dispatch.rs:819-825`). The
   button whose stated question is "tell me about the thing I just clicked"
   answers a question about the file.
 - The **Properties panel** holds real editors but is fed by the Objects
   panel's `focus`, not by the canvas selection
-  (`crates/pdfce-gui/src/panels/properties/mod.rs:64-70`), and is entirely
+  (`crates/pdfcer-gui/src/panels/properties/mod.rs:64-70`), and is entirely
   read-only (`:71-86`).
 - The **Tool panel** — the thing the operator calls "the Tool tab" — is
   architecturally about *what is armed*, never about *what is selected*, and
-  says so (`crates/pdfce-gui/src/panels/tool/mod.rs:23-40`). **That panel is
+  says so (`crates/pdfcer-gui/src/panels/tool/mod.rs:23-40`). **That panel is
   right and must not change.** No application in the survey has a panel that
   shows only tool state while an object is selected — and where a surface is
   shared (Illustrator, Inkscape, CorelDRAW's property bar), **the selection
@@ -744,7 +744,7 @@ band, so the operator who works from the ribbon is not forced into a panel.
 **Why both, when Figma ships one.** Illustrator and CorelDRAW ship both
 simultaneously (Properties panel + Control bar; Properties inspector + Property
 bar) and neither is redundant: the panel is for sustained work on one object,
-the bar is for a single change without leaving the ribbon. pdfceGUI has a
+the bar is for a single change without leaving the ribbon. pdfcer-gui has a
 ribbon, so it needs the band; it has docks, so it needs the panel.
 
 **The one hard rule binding them: they read the same state and write the same
@@ -770,7 +770,7 @@ deduce why."*
 - **Worth knowing about this object** — the read-only facts the current
   Properties panel already writes well. They stay, below the editors, at
   ordinary weight, under that heading. They are facts about the document, not
-  warnings about pdfce.
+  warnings about pdfcer.
 
 **Per kind:**
 
@@ -797,7 +797,7 @@ outline on the page; hovering the page highlights the row.**
 
 Today these are two disconnected stores, deliberately, defended by a test named
 `the_panel_focus_has_not_quietly_become_a_selection`
-(`crates/pdfce-gui/src/panels/mod.rs:736`). That test was right for a world in
+(`crates/pdfcer-gui/src/panels/mod.rs:736`). That test was right for a world in
 which panel focus and selection had different lifetimes and different
 capabilities. It is wrong for this one: **the layer/object list is, in every
 application surveyed, the guaranteed route to an object the pointer cannot
@@ -817,7 +817,7 @@ Two features come with the repair, both from PowerPoint's pane:
 
 Consequence for `panels::properties`: its empty state no longer has to name the
 Objects panel as "the only route in"
-(`crates/pdfce-gui/src/panels/properties/mod.rs:64-70`), because it no longer
+(`crates/pdfcer-gui/src/panels/properties/mod.rs:64-70`), because it no longer
 is.
 
 ### 4.5 Immediate-apply versus commit
@@ -857,7 +857,7 @@ licensing guidelines, are the only written specification anyone has for this:
   disappearing tab was active, the ribbon **MUST** fall back to the first tab
   rather than leaving a blank one.
 
-**pdfceGUI adopts all five, and it is only allowed to adopt the MUST NOT
+**pdfcer-gui adopts all five, and it is only allowed to adopt the MUST NOT
 because §4.2 gives it the second surface Office has.** Office can afford not to
 steal ribbon focus because the Format task pane retargets silently at the same
 instant; the user always sees the property surface change *somewhere*. An
@@ -878,7 +878,7 @@ So, concretely:
 **And `format.properties` stops dispatching `file.properties`.** In all eight
 surveyed applications, "Properties" next to a selection means the *object*;
 document-level facts live in a separate File/Document Properties dialog. The
-current wiring (`crates/pdfce-gui/src/app/dispatch.rs:819-825`) is the exact
+current wiring (`crates/pdfcer-gui/src/app/dispatch.rs:819-825`) is the exact
 inverse of universal practice. `format.properties` opens/focuses the Properties
 panel on the selection; `file.properties` keeps the document dialog.
 
@@ -903,7 +903,7 @@ that exist are tools that *author* something or that change what a drag means:
 | Form field (each kind) | ribbon | place that field |
 
 Bindings `V`, `A`, `T`, `H` already exist
-(`crates/pdfce-gui/src/shell/manifest/mod.rs:331-334`).
+(`crates/pdfcer-gui/src/shell/manifest/mod.rs:331-334`).
 
 ### 5.2 An armed authoring tool does not select
 
@@ -915,7 +915,7 @@ they only select objects *of their own shape type*). It is already how
 
 The corresponding obligation: **the operator must always be able to see which
 tool is armed.** The Tool panel does this well
-(`crates/pdfce-gui/src/panels/tool/mod.rs`), the ribbon button is pressed, and
+(`crates/pdfcer-gui/src/panels/tool/mod.rs`), the ribbon button is pressed, and
 the cursor is a crosshair (§8). Three channels; the survey's mature apps use
 three or four.
 
@@ -942,7 +942,7 @@ The Format tab **becomes active** on insert (§4.6, Microsoft's MUST).
   the tool alone. *(Inkscape switches to the Node tool here; we do not, because
   `A` already exists as the signposted route and switching tools under the
   operator is the kind of invention the tool-ladder rewrite was written to
-  stop — see `crates/pdfce-gui/src/canvas/tool/mod.rs:195-222`.)*
+  stop — see `crates/pdfcer-gui/src/canvas/tool/mod.rs:195-222`.)*
 - **`Esc` leaves** whatever a double-click entered, one level per press.
 
 ---
@@ -952,7 +952,7 @@ The Format tab **becomes active** on insert (§4.6, Microsoft's MUST).
 ### 6.1 The question
 
 Today, `Capabilities::edit_content` gates *selection* as well as editing
-(`crates/pdfce-gui/src/app/modes/capability.rs:164-170`, `:358`), so **Read
+(`crates/pdfcer-gui/src/app/modes/capability.rs:164-170`, `:358`), so **Read
 mode cannot select anything at all**. The argument for that, written in the
 same file's §5, is twofold: every Format-tab verb takes the selection as its
 operand so gating twice would be redundant, and — the load-bearing half — *"A
@@ -978,7 +978,7 @@ PDF they are not editing.
 
 1. **The operator's own rule for Read is about *changing*, not about
    *pointing*.** *"Read may produce a new document; it may not modify this
-   one"* (`crates/pdfce-gui/src/dialogs/ocr.rs:36-42`). Clicking a line to see
+   one"* (`crates/pdfcer-gui/src/dialogs/ocr.rs:36-42`). Clicking a line to see
    how wide it is modifies nothing.
 2. **Acrobat's modality is the thing being escaped.** Acrobat is the sole
    modal outlier in the survey — nothing on the page is selectable until you
@@ -995,7 +995,7 @@ PDF they are not editing.
 tabs exist and which panels mount, `Capabilities` remains the owner of *what
 may be authored*, and the pick filter remains authoritative on top of it —
 `pickable(class) = capability_allows(class, mode) && filter.allows(class)`,
-unchanged (`crates/pdfce-gui/src/canvas/pick.rs`). What changes is that
+unchanged (`crates/pdfcer-gui/src/canvas/pick.rs`). What changes is that
 `edit_content` splits into `select_content` (true in all three modes) and
 `edit_content` (Edit only).
 
@@ -1011,17 +1011,17 @@ Editor, Nitro PDF Pro, PDF-XChange Editor, OCRmyPDF) default their scope to the
 the job, and apply the result **in place** so that ordinary Save writes it back.
 Zero of six force a Save-As on the open-document path.
 
-pdfceGUI does the opposite on both axes, deliberately and with the reasoning
+pdfcer-gui does the opposite on both axes, deliberately and with the reasoning
 in-tree:
 
 - `Request` carries a single `page_index: usize`
-  (`crates/pdfce-gui/src/ocr/mod.rs:463-469`); the button reads **"Recognise
-  this page"** (`crates/pdfce-gui/src/text/ocr.rs:92`).
+  (`crates/pdfcer-gui/src/ocr/mod.rs:463-469`); the button reads **"Recognise
+  this page"** (`crates/pdfcer-gui/src/text/ocr.rs:92`).
 - The only write control is **"Save recognised copy as…"**
-  (`crates/pdfce-gui/src/text/ocr.rs:156`), whose tooltip promises "The
+  (`crates/pdfcer-gui/src/text/ocr.rs:156`), whose tooltip promises "The
   document you opened is not changed" (`:162`), under the module rule *"no
   second save command, no in-place path, no `Save`-labelled control anywhere"*
-  (`crates/pdfce-gui/src/dialogs/ocr.rs:64`).
+  (`crates/pdfcer-gui/src/dialogs/ocr.rs:64`).
 
 The operator's four questions — *"how do I OCR more than one page? Why does the
 tool stop at one? Why do I have to save a copy? Where is the option to select
@@ -1060,13 +1060,13 @@ Pages
 genuinely is per-page and lazy — Adobe: "By default, only the current page is
 converted to editable text in one go." That is a lazy-editing convenience, not
 the OCR feature; the explicit `Scan & OCR ▸ Recognize Text` path is
-document-scoped. If pdfceGUI's single-page design was reasoned from Acrobat,
+document-scoped. If pdfcer-gui's single-page design was reasoned from Acrobat,
 this is where the confusion came from.
 
 ### 7.3 Pages that already have text
 
 There are exactly three policies. OCRmyPDF names them and every GUI implements
-some subset. pdfceGUI ships all three, named in the operator's words, with the
+some subset. pdfcer-gui ships all three, named in the operator's words, with the
 consequences stated in the dialog:
 
 | Control label | Behaviour | Equivalent |
@@ -1090,7 +1090,7 @@ ABBYY's documented default, and it is the only one that cannot lose anything.
 *"Acrobat could not perform recognition (OCR) on this page because: This page
 contains renderable text"* — and offers no in-product force or redo; the KB's
 only remedy is to export every page to TIFF and re-import. That is a refusal
-with no way forward, and it is one of the specific frustrations pdfce exists to
+with no way forward, and it is one of the specific frustrations pdfcer exists to
 remove.
 
 ### 7.4 Options
@@ -1107,7 +1107,7 @@ from the OCR dialog itself and never from preferences only:
   degree is a change to the drawing.)*
 
 The confidence sentence stays exactly as written
-(`crates/pdfce-gui/src/text/ocr.rs`, `no_confidence()`). It is the best string
+(`crates/pdfcer-gui/src/text/ocr.rs`, `no_confidence()`). It is the best string
 in the current dialog and nothing here touches it.
 
 ### 7.5 Progress and cancellation
@@ -1137,9 +1137,9 @@ corner of every product surveyed:**
   ships.
 
 **The window must not freeze.** The current tooltip promises "the window will
-not respond while it does" (`crates/pdfce-gui/src/text/ocr.rs:103`). That was
+not respond while it does" (`crates/pdfcer-gui/src/text/ocr.rs:103`). That was
 honest about a single page; across 36 pages it is not acceptable. The worker
-already runs on its own thread (`crates/pdfce-gui/src/ocr/mod.rs`); the dialog
+already runs on its own thread (`crates/pdfcer-gui/src/ocr/mod.rs`); the dialog
 polls it and the canvas keeps painting.
 
 ### 7.6 In place, and saving
@@ -1151,7 +1151,7 @@ saves over the original.**
 recognised copy as…" exactly as today.
 
 **Why this is not a reversal of the operator's own rule.** His rule
-(`crates/pdfce-gui/src/dialogs/ocr.rs:36-42`) is *"Read may produce a new
+(`crates/pdfcer-gui/src/dialogs/ocr.rs:36-42`) is *"Read may produce a new
 document; it may not modify this one."* That is a statement about **Read**. The
 current design enforces it by removing the in-place path from the *whole
 program*, in every mode, which is a stronger rule than he asked for and it is
@@ -1160,13 +1160,13 @@ the one he is now complaining about. Re-siting the enforcement from the
 
 - Read still cannot modify the open document. Nothing in Read can.
 - Edit can, because that is what Edit is for, and `file.save` /
-  `Ctrl+S` already exist (`crates/pdfce-gui/src/shell/manifest/mod.rs:298`)
+  `Ctrl+S` already exist (`crates/pdfcer-gui/src/shell/manifest/mod.rs:298`)
   along with `file.save_copy` / `Ctrl+Shift+S` (`:299`).
 
 **Against the survey:** zero of six tools force Save-As on the open-document
 path. PDF-XChange is the only one that even offers "create a new document" as a
 control, it is a **checkbox inside the OCR dialog next to the other output
-options**, and it is **off by default**. That checkbox is what pdfceGUI should
+options**, and it is **off by default**. That checkbox is what pdfcer-gui should
 ship — and it should sit beside the scope radios, off by default in Edit, on
 and locked in Read.
 
@@ -1197,7 +1197,7 @@ Complete. Every state the pointer can be in over the canvas.
 |---|---|---|
 | Over empty page, Select armed | `Default` arrow | Illustrator, Figma, Inkscape, PowerPoint all do this |
 | Over the **body of an unselected object**, Select armed | `Default` arrow — **the hover outline carries the message, not the cursor** | Illustrator and PowerPoint change nothing here either; only Inkscape adds an open hand. Deliberate: a cursor change over every hairline on a CAD sheet would flicker constantly |
-| Over the **body of the current selection** | `Move` (four-way) | PowerPoint, Figma. Existing: `Grip::Move` → `CursorIcon::Move` (`crates/pdfce-gui/src/canvas/handles.rs:203-218`) |
+| Over the **body of the current selection** | `Move` (four-way) | PowerPoint, Figma. Existing: `Grip::Move` → `CursorIcon::Move` (`crates/pdfcer-gui/src/canvas/handles.rs:203-218`) |
 | Over a **corner grip** NW or SE | `ResizeNwSe` | existing, `handles.rs:203-218` |
 | Over a **corner grip** NE or SW | `ResizeNeSw` | existing |
 | Over a **mid-edge grip** N or S | `ResizeVertical` | existing |
@@ -1205,15 +1205,15 @@ Complete. Every state the pointer can be in over the canvas.
 | Over the **rotate handle** | `Grab` today; **a custom rotate glyph is owed** | egui 0.35 has no rotate cursor. `handles.rs:203-218` records this as a compromise, not a choice, and convention **H6** asks the cursor to *name* the gesture. A texture and an atlas entry. |
 | While **rotating** | the rotate glyph, held | |
 | Over an **anchor**, Node tool armed | arrow with a small square glyph | Illustrator's Direct Selection |
-| Hand tool armed | `Grab`; `Grabbing` while dragging | existing, `crates/pdfce-gui/src/canvas/tool/mod.rs:517-560`. The pair matters: a pan that has run out of scroll must be distinguishable from a pan that is not working |
+| Hand tool armed | `Grab`; `Grabbing` while dragging | existing, `crates/pdfcer-gui/src/canvas/tool/mod.rs:517-560`. The pair matters: a pan that has run out of scroll must be distinguishable from a pan that is not working |
 | `Space` held (temporary pan) | `Grab` / `Grabbing` | |
-| Text sweep or text edit armed | `Text` I-beam, **rotated to match the text's orientation** | existing, `crates/pdfce-gui/src/canvas/cursor.rs:201`, built because Acrobat does it |
-| Any markup / measure / form / place-text tool armed | `Crosshair` — the custom two-tone one | existing, `crates/pdfce-gui/src/canvas/cursor.rs`; built because the stock white crosshair was invisible on white paper |
-| Dragging a ruler guide | existing guide cursors | `crates/pdfce-gui/src/canvas/guides.rs:890-893` |
+| Text sweep or text edit armed | `Text` I-beam, **rotated to match the text's orientation** | existing, `crates/pdfcer-gui/src/canvas/cursor.rs:201`, built because Acrobat does it |
+| Any markup / measure / form / place-text tool armed | `Crosshair` — the custom two-tone one | existing, `crates/pdfcer-gui/src/canvas/cursor.rs`; built because the stock white crosshair was invisible on white paper |
+| Dragging a ruler guide | existing guide cursors | `crates/pdfcer-gui/src/canvas/guides.rs:890-893` |
 | Over a **locked** object's padlock handle | `NotAllowed` | the one place a "no" cursor is correct, because there is a specific thing being refused and a padlock drawn under the pointer explaining it |
 
 **The rule that governs the whole table:** `CanvasTool::Select` returns `None`
-(`crates/pdfce-gui/src/canvas/tool/mod.rs:521`) so that the grip cursors
+(`crates/pdfcer-gui/src/canvas/tool/mod.rs:521`) so that the grip cursors
 underneath are not overwritten. That reasoning is correct and is preserved; the
 "there is something here you can click" signal is carried by the **hover
 outline** (§2.4), not by a cursor. That is the split Illustrator and Figma both
@@ -1225,7 +1225,7 @@ use, and it is why neither needed a cursor for it.
 |---|---|
 | **Far left — the readout** | *(new)* What is under the pointer on hover; what is selected once something is. Includes the containment path. See §8.3. |
 | Left — transient | Drag-constraint caption, page-drag caption, refusal sentences (§3.7), render notes behind a disclosure triangle |
-| Right | Page number box · zoom · fit · Find · **pick Filter** — existing (`crates/pdfce-gui/src/app/status.rs:625-880`) |
+| Right | Page number box · zoom · fit · Find · **pick Filter** — existing (`crates/pdfcer-gui/src/app/status.rs:625-880`) |
 
 ### 8.3 The readout — exact strings
 
@@ -1261,7 +1261,7 @@ is reading the status bar; that is where the answer belongs. It replaces
 nothing and costs nothing.
 
 **Priority when several transient lines compete** — the existing reasoning at
-`crates/pdfce-gui/src/app/status.rs:788-791` holds and extends: *"a decline
+`crates/pdfcer-gui/src/app/status.rs:788-791` holds and extends: *"a decline
 explains why one gesture did nothing, while [the empty filter note] explains
 why EVERY gesture will."* Order, highest first:
 
@@ -1292,7 +1292,7 @@ a form XObject as a leaf, the decomposer failed to recurse.
 
 **9.3 A bounding box must never be a hit region for anything that is not a
 raster image.**
-`D:\Dev\pdfce\crates\pdfce-core\src\vector\hit.rs:24-26` is the defect. 7 of 7
+`D:\Dev\pdfcer\crates\pdfcer-core\src\vector\hit.rs:24-26` is the defect. 7 of 7
 applications hit-test ink.
 
 **9.4 A gesture must never fail silently.**
@@ -1319,29 +1319,29 @@ changes.**
 7 of 7. There is no mainstream editor in which this is allowed.
 
 **9.9 "Properties", next to a selection, must never mean the document.**
-`crates/pdfce-gui/src/app/dispatch.rs:819-825` is the inverse of universal
+`crates/pdfcer-gui/src/app/dispatch.rs:819-825` is the inverse of universal
 practice in all eight surveyed applications.
 
 **9.10 A panel that shows object properties must never be fed by anything but
 the canvas selection.**
-The `focus`/selection severance (`crates/pdfce-gui/src/panels/objects/mod.rs:158-161`)
+The `focus`/selection severance (`crates/pdfcer-gui/src/panels/objects/mod.rs:158-161`)
 is the defect. One selection, one truth.
 
 **9.11 The Tool panel must never become an inspector.**
-`crates/pdfce-gui/src/panels/tool/mod.rs:23-40` is right. The complaint is not
+`crates/pdfcer-gui/src/panels/tool/mod.rs:23-40` is right. The complaint is not
 that the Tool panel is wrong; it is that the panel that *should* have answered
 did not exist. Fixing the wrong panel would break a good one.
 
 **9.12 A contextual tab must never appear empty.**
-`crates/pdfce-gui/src/shell/manifest/format.rs:126-131` — a tab whose entire
+`crates/pdfcer-gui/src/shell/manifest/format.rs:126-131` — a tab whose entire
 content is two commands, one of which answers the wrong question. Either it
 carries the property band (§4.2) or it does not appear.
 
 **9.13 A hidden or covered object must never be unreachable.**
 `hit_test_point_all` exists for exactly this
-(`D:\Dev\pdfce\crates\pdfce-core\src\vector\hit.rs:53-63`, `:126-135`) and is
+(`D:\Dev\pdfcer\crates\pdfcer-core\src\vector\hit.rs:53-63`, `:126-135`) and is
 currently truncated to its first element
-(`crates/pdfce-gui/src/canvas/input.rs:144-155`). Three routes are required:
+(`crates/pdfcer-gui/src/canvas/input.rs:144-155`). Three routes are required:
 `Alt`+click cycling, the right-click Select submenu, and the Objects panel.
 
 **9.14 A gesture the operator must be told about must never be told about only
@@ -1351,7 +1351,7 @@ Inkscape's design, and the reason Inkscape users know about `Alt`+click without
 reading anything.
 
 **9.15 OCR must never stop at one page.**
-6 of 6 tools default to the whole document. `crates/pdfce-gui/src/ocr/mod.rs:463-469`.
+6 of 6 tools default to the whole document. `crates/pdfcer-gui/src/ocr/mod.rs:463-469`.
 
 **9.16 A destructive OCR option must never be unlabelled.**
 `--force-ocr` on an engineering drawing destroys the line work. The consequence
@@ -1360,22 +1360,22 @@ is stated under the control, permanently (§7.3).
 **9.17 A feature must never enforce a mode rule the mode system should
 enforce.**
 The OCR dialog's "no `Save`-labelled control anywhere"
-(`crates/pdfce-gui/src/dialogs/ocr.rs:64`) applies a Read-mode rule to Edit
+(`crates/pdfcer-gui/src/dialogs/ocr.rs:64`) applies a Read-mode rule to Edit
 mode. Rules belong to their owner.
 
 **9.18 A long operation must never freeze the window.**
-`crates/pdfce-gui/src/text/ocr.rs:103` promises exactly that. Acceptable for one
+`crates/pdfcer-gui/src/text/ocr.rs:103` promises exactly that. Acceptable for one
 page, not for thirty-six.
 
 **9.19 A status control that explains a refusal must never be the control that
 disappears when the window is small.**
-`crates/pdfce-gui/src/app/status.rs:806-820` — the measured off-screen filter.
+`crates/pdfcer-gui/src/app/status.rs:806-820` — the measured off-screen filter.
 
 **9.20 The program must never invent an interaction where a convention exists.**
 The operator's own verdict, on the record:
 *"The selector should be predictable like other programs. It seems a lot of
 ideas are getting invented instead of just using the … most common method
-expected."* (`crates/pdfce-gui/src/canvas/tool/mod.rs:195-222`.) Every rule in
+expected."* (`crates/pdfcer-gui/src/canvas/tool/mod.rs:195-222`.) Every rule in
 this document either names the applications it comes from or states why the
 convention does not transfer.
 

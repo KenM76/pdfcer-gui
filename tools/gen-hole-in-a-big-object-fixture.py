@@ -14,7 +14,7 @@ The operator, 2026-09-03:
 The cause was measured rather than guessed: the tool hit-tested for a **PDF
 path object** and fed *every anchor of every subpath of that object* to the
 circle fit. On his own drawing (``D:/Dev/pdfTests/SW41177/SW41177.pdf``,
-page 1, read with ``pdfce-cli object-list``) three objects carry **4,405**,
+page 1, read with ``pdfcer object-list``) three objects carry **4,405**,
 **4,972** and **6,681** anchors, the largest of them holding 1,194 subpaths
 across a 550 x 500 pt region — half the sheet. One click anywhere on that
 object handed the fit six thousand points scattered across the drawing, and

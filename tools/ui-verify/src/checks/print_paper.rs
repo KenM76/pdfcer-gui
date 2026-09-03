@@ -3,7 +3,7 @@
 //!
 //! # What this is about
 //!
-//! On 2026-08-18 `pdfce-print` answered this project's third filing about the
+//! On 2026-08-18 `pdfcer-print` answered this project's third filing about the
 //! print path and shipped paper selection: `printer_forms`, `PaperSelection`,
 //! `printer_caps_for` and a properties dialog. The shell grew a paper combo
 //! and a **Properties…** button beside the printer selector — a surface the
@@ -71,7 +71,7 @@
 //!
 //! **It never presses Properties….** That button opens the *driver's own*
 //! modal dialog — a nested Win32 message loop owned by a vendor's print
-//! driver, whose layout, controls and dismissal keys pdfce does not know and
+//! driver, whose layout, controls and dismissal keys pdfcer does not know and
 //! cannot publish rects for. A harness that opened one would be driving
 //! somebody else's UI blind, and a driver dialog left up blocks the
 //! application's event loop, so a failed dismissal does not fail the check —
@@ -355,7 +355,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     // a Letter-default printer is not a bug — and choosing that one produces an
     // honest, correct, UNCHANGED `sheet=`. A check that took one entry and
     // concluded "the plan ignored the request" would be reporting the driver's
-    // paper list as a pdfce defect.
+    // paper list as a pdfcer defect.
     //
     // So: the verdict is only reached when EVERY form tried leaves the sheet
     // where it was. One that moves it proves the plumbing, and the loop stops

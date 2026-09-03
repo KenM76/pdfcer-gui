@@ -48,7 +48,7 @@
 //! # No input, so this runs at any time
 //!
 //! The preference defaults to on and the fixture opens on the page carrying the
-//! fields, so nothing has to be clicked. With `PDFCE_DIAG_VIEWPORT` the window
+//! fields, so nothing has to be clicked. With `PDFCER_DIAG_VIEWPORT` the window
 //! lays out without taking focus. Like `title_build_stamp`, this can run beside
 //! somebody working — which is worth preserving if the check is ever extended.
 //! An extension that needs the pointer belongs in a second check, not bolted
@@ -94,7 +94,7 @@ use crate::report::CheckReport;
 const SHADE: &str = "canvas-form-shade";
 /// The fixture: two widgets on one page, both visible at once.
 const FIXTURE: &str = "forms/demo-form.pdf";
-/// Where and how large the window is placed, as `PDFCE_DIAG_VIEWPORT` takes it.
+/// Where and how large the window is placed, as `PDFCER_DIAG_VIEWPORT` takes it.
 const VIEWPORT: &str = "0,0,1400,900";
 
 /// See the module documentation.
@@ -225,9 +225,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
 /// Resolve [`FIXTURE`] under the engine repository's synthetic corpus.
 ///
-/// Read-only, as everything under `D:\Dev\pdfce` is until fold-in day. The
+/// Read-only, as everything under `D:\Dev\pdfcer` is until fold-in day. The
 /// harness opens it and never saves.
 fn form_fixture() -> Option<std::path::PathBuf> {
-    let path = std::path::Path::new("D:/Dev/pdfce/fixtures/synthetic").join(FIXTURE);
+    let path = std::path::Path::new("D:/Dev/pdfcer/fixtures/synthetic").join(FIXTURE);
     path.is_file().then_some(path)
 }

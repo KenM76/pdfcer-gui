@@ -9,11 +9,11 @@ measured present) and says what the difference is, what kind of difference it
 is, and what order to close it in.
 
 Bare paths (`canvas/input.rs:151`) are relative to
-`D:/Dev/pdfceGUI/crates/pdfce-gui/src/`. Engine paths are written in full from
-`D:/Dev/pdfce/`. Every claim about pdfceGUI behaviour below was either cited by
+`D:/Dev/pdfcer-gui/crates/pdfcer-gui/src/`. Engine paths are written in full from
+`D:/Dev/pdfcer/`. Every claim about pdfcer-gui behaviour below was either cited by
 one of the two source documents and re-checked against the source tree while
 writing this one, or is marked **[from HOW_IT_WORKS_TODAY, driven]** where the
-evidence is a launch trace in `D:/Dev/pdfceGUI/evidence/audit/`.
+evidence is a launch trace in `D:/Dev/pdfcer-gui/evidence/audit/`.
 
 **This document proposes no code. It describes, classifies, and orders.**
 
@@ -35,10 +35,10 @@ evidence is a launch trace in `D:/Dev/pdfceGUI/evidence/audit/`.
 **On the operator's own files the object he is clicking does not exist in the
 program's object model at all** — the engine decomposes a page into a flat list
 in paint order and stops at the door of a form XObject
-(`D:/Dev/pdfce/crates/pdfce-core/src/vector/decompose.rs:2666-2672`, which emits
+(`D:/Dev/pdfcer/crates/pdfcer-core/src/vector/decompose.rs:2666-2672`, which emits
 the form as one `ImageSource::Form` and never enters it), and then hit-tests
 that form as a bare inflated rectangle
-(`D:/Dev/pdfce/crates/pdfce-core/src/vector/hit.rs:437`), so on
+(`D:/Dev/pdfcer/crates/pdfcer-core/src/vector/hit.rs:437`), so on
 `the conformance suite’s composite page` the page-sized form at index 26 wins
 every hit test at every point on every page while the entire visible body of the
 sheet — every patch, swatch, overprint panel and image — is invisible to
@@ -61,19 +61,19 @@ it is not over-built, it is under-wired** — three parallel notions of "the thi
 I am working on" (the armed tool, the panel `focus`, the canvas selection) with
 no bridge between them and no one of them authoritative, which is a governance
 failure rather than a complexity failure, and it means that of his seven
-complaints five are one binding each in the GUI and only two need pdfce-core.
+complaints five are one binding each in the GUI and only two need pdfcer-core.
 
 **A correction to the brief that opened this audit.** The anchoring hypothesis —
 that the full-page `paint=none` path is swallowing clicks — is **false and was
 tested**. `path_hit` gives an unfilled, unstroked path a proximity band of the
 tolerance alone, so it is selectable only within 6 px of its outline
-(`D:/Dev/pdfce/crates/pdfce-core/src/vector/hit.rs:453-467`, intent stated at
+(`D:/Dev/pdfcer/crates/pdfcer-core/src/vector/hit.rs:453-467`, intent stated at
 `:22-25`); it appears in the candidate list at (0.5, 0.5) and is absent at the
 page centre. **[from HOW_IT_WORKS_TODAY, driven]** That part of the engine is
 correct. The culprit is the *form*, which is the one object kind that most often
 spans a whole CAD sheet and also the one kind tested as a solid opaque
 rectangle. Also corrected: the page has **28** objects (0–27), not 29
-(`pdfce-cli object-list --page 1`: `objects=28 paths=21 text=3 images=0
+(`pdfcer object-list --page 1`: `objects=28 paths=21 text=3 images=0
 forms=4`).
 
 ---
@@ -99,9 +99,9 @@ see because something upstream failed first.
 | Behaviour | Should (`HOW_IT_SHOULD_WORK` §) | Today (`file:line`) | Class |
 |---|---|---|---|
 | A click selects the smallest visible thing that painted the mark | §1, §2.2 | Returns the topmost bbox hit; on the the conformance suite’s composite page file that is the page-sized form #26 at every point tested | **(a)** |
-| Marks painted *inside* a form XObject are selectable | §2.6 | They are not in the object model: `pdfce-core/src/vector/decompose.rs:2666-2672` emits the form and returns | **(a)** — engine |
+| Marks painted *inside* a form XObject are selectable | §2.6 | They are not in the object model: `pdfcer-core/src/vector/decompose.rs:2666-2672` emits the form and returns | **(a)** — engine |
 | Form XObjects are never a first-click target | §2.6, §9.2 | A form is `VectorObject::Image` and wins by paint order | **(a)** — engine |
-| Images and forms hit-tested against ink, not a box | §2.2, §9.3 | `pdfce-core/src/vector/hit.rs:437` — one line, `page_bbox.inflate(tol).contains(point)` | **(a)** — engine |
+| Images and forms hit-tested against ink, not a box | §2.2, §9.3 | `pdfcer-core/src/vector/hit.rs:437` — one line, `page_bbox.inflate(tol).contains(point)` | **(a)** — engine |
 | Paths hit-tested against ink, winding-correct, curves flattened | §2.2 | Exactly this (`hit.rs:443-468`, `:502-513`) | **(d)** |
 | `paint = none` path hittable only near its geometry | §2.2 | Correct (`hit.rs:453-467`) | **(d)** |
 | Clicking blank paper deselects | §2.5 | Implemented (`canvas/selection/mod.rs:387-390`); unreachable on this file because the hit test says there *is* no blank paper | **(b)** |
@@ -192,7 +192,7 @@ see because something upstream failed first.
 | Multi-select thumbnails ▸ "Recognise selected pages…" | §7.2 | No route; this is the literal answer to *"Where is the option to select more than one page?"* | **(a)** |
 | The dialog states which page it is about to do | §7.2 | It never displays a page number anywhere (`dialogs/ocr.rs:293-340`) | **(a)** |
 | Skip / redo / force existing-text policy | §7.3 | Nothing checks for existing text | **(a)** |
-| Language, downsample, deskew options in the dialog | §7.4 | None. The **CLI**, against the same engine, exposes `--dpi`, `--model-dir`, `--words` (`D:/Dev/pdfce/crates/pdfce-cli/src/main.rs:2374-2450`) | **(b)** |
+| Language, downsample, deskew options in the dialog | §7.4 | None. The **CLI**, against the same engine, exposes `--dpi`, `--model-dir`, `--words` (`D:/Dev/pdfcer/crates/pdfcer/src/main.rs:2374-2450`) | **(b)** |
 | Effective DPI shown | §7.4 | Computed and reported — to the trace line only (`dialogs/ocr.rs:268-278`) | **(b)** |
 | Progress: page *k* of *n*, per-page list | §7.5 | An indeterminate spinner and the word "Recognising…" | **(a)** |
 | Cancel, keeping completed pages, writing nothing | §7.5 | No cancel control; closing the dialog detaches the thread, which runs to completion burning CPU (`ocr/mod.rs:493-509`) | **(a)** |
@@ -208,7 +208,7 @@ because it is why an operator stops believing the interface.
 
 | Claim | Where | Status |
 |---|---|---|
-| *"the same list the GUI's Alt+click cycling steps through"* | `pdfce-cli object-list --help`; `pdfce-core/src/vector/hit.rs:41-48`; `target.rs:85-88` | **False.** There is no Alt+click cycling. |
+| *"the same list the GUI's Alt+click cycling steps through"* | `pdfcer object-list --help`; `pdfcer-core/src/vector/hit.rs:41-48`; `target.rs:85-88` | **False.** There is no Alt+click cycling. |
 | *"It takes a few seconds and the window will not respond while it does"* | `text/ocr.rs:102-104` | **False in two directions** — worker thread, own viewport. |
 | *"This document has unsaved changes"* | `text/ocr.rs:246-248` | **False whenever it appears after a successful save.** |
 | *"Nothing here can be changed in this build."* | `text/panels/properties.rs:334-335` | True, and it is the honest one. |
@@ -221,7 +221,7 @@ Ordered by **operator-visible return per unit of work**, not by architectural
 interest. Size is a rough band: **XS** = a constant or a line; **S** = under a
 day; **M** = a few days; **L** = a week or more; **XL** = engine plus shell.
 
-Items **1–9 are GUI-only and unblocked.** Items 10–12 need pdfce-core.
+Items **1–9 are GUI-only and unblocked.** Items 10–12 need pdfcer-core.
 
 ---
 
@@ -423,13 +423,13 @@ within a minute.
 
 ---
 
-### 10. **[BLOCKED — pdfce-core]** OCR as an edit to the open document — **L**
+### 10. **[BLOCKED — pdfcer-core]** OCR as an edit to the open document — **L**
 
 **The engine request:** an OCR verb on `EditSession`. Today
 `add_ocr_layer(doc: &Document, page_index, …)`
-(`D:/Dev/pdfce/crates/pdfce-core/src/ocr/layer.rs:620-625`) takes an immutable
+(`D:/Dev/pdfcer/crates/pdfcer-core/src/ocr/layer.rs:620-625`) takes an immutable
 document and returns a complete new PDF as `Vec<u8>`, and `grep -c "ocr"` over
-`pdfce-core/src/edit.rs` returns **0** against a 26,000-line file holding every
+`pdfcer-core/src/edit.rs` returns **0** against a 26,000-line file holding every
 other editing verb. What the shell needs is: *apply a recognised text layer to
 the live session as an undoable edit, one entry for the whole run, so that
 `edit_epoch` moves and the existing in-place save path
@@ -457,7 +457,7 @@ looking at the recognised document"*.
 
 ---
 
-### 11. **[BLOCKED — pdfce-core]** Decompose into form XObjects — **XL**
+### 11. **[BLOCKED — pdfcer-core]** Decompose into form XObjects — **XL**
 
 **The engine request, in three parts, stated as §2.6 states them:**
 
@@ -541,7 +541,7 @@ have answered did not exist. **Fixing the Tool panel would break a good one.**
 operate on paths, text, images, form XObjects and multi-selections through one
 `TransformObjects` path (`canvas/resizing.rs:285-352`,
 `canvas/moving.rs:375-472`, `canvas/rotating.rs:206-291`). The old `NotAPath`
-refusal — *"pdfce cannot resize text or pictures"* — was already deleted on
+refusal — *"pdfcer cannot resize text or pictures"* — was already deleted on
 2026-08-20. A driven run stretched the title text and squashed the whole-page
 form to 82 % width. **The verbs are not the problem and must not be rewritten
 while fixing selection.**
@@ -574,7 +574,7 @@ a selection is a commitment* — survives §2.2 untouched.
 **`hit_test_point_all` is correct.** The engine already computes the full
 front-to-back candidate list with a doc comment that describes precisely the
 feature that has not been built on top of it
-(`pdfce-core/src/vector/hit.rs:126-135`). Item 4 is a binding, not a feature.
+(`pdfcer-core/src/vector/hit.rs:126-135`). Item 4 is a binding, not a feature.
 
 **The pick filter's design.** Eleven switchable classes, subtractive, ANDed with
 mode capability, one click from anywhere, persisted
@@ -634,7 +634,7 @@ do not let a rewrite trade it for speed.**
 ## 5. THE ONE CHANGE
 
 > **Recurse into form XObjects, and stop a form from being the answer to a
-> click.** (Work item 11 — `pdfce-core`.)
+> click.** (Work item 11 — `pdfcer-core`.)
 
 **Why this one and not a cheaper one.** Every other item on the list improves
 how well the operator can select **the objects that are not his drawing**. On

@@ -3,10 +3,10 @@
 //!
 //! # What this is about
 //!
-//! **Ken, 2026-08-30:** *"I think pdfce added support for several button
+//! **Ken, 2026-08-30:** *"I think pdfcer added support for several button
 //! features and protections for outgoing submits."*
 //!
-//! Half right. pdfce cannot yet **author** a button action — still planned, and
+//! Half right. pdfcer cannot yet **author** a button action — still planned, and
 //! a policy decision rather than a missing verb. What it did ship is the
 //! **detection**, and this shell was not asking for it.
 //!
@@ -19,7 +19,7 @@
 //! > safety are indistinguishable to the reader.
 //!
 //! ⇒ They fixed their scanner. This shell never called it, so the whole finding
-//! stopped at the crate boundary: pdfce could tell an operator that the drawing
+//! stopped at the crate boundary: pdfcer could tell an operator that the drawing
 //! somebody just sent them will post data to a web server, and nothing on
 //! screen said so.
 //!
@@ -47,7 +47,7 @@
 //! |---|---|
 //! | the status row carries the disclosure | the shell asked and said so |
 //! | the sentence names **submitting**, not just "actions" | a disclosure too vague to act on |
-//! | it says pdfce **does not** do it | an alarm about something that cannot happen here |
+//! | it says pdfcer **does not** do it | an alarm about something that cannot happen here |
 //! | ★ a **clean** document says **nothing** | the failure that costs every future disclosure |
 //!
 //! ★★ The last one is a second launch, on an ordinary drawing, and it is the
@@ -161,7 +161,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     if network != "1" {
         return Ok(Some(format!(
             "the scan reports `network={network}` on a fixture whose single push button carries a \
-             `/SubmitForm`. `pdfce-cli list-fields` on the same file reports \
+             `/SubmitForm`. `pdfcer list-fields` on the same file reports \
              `js_network_actions=1`, so the engine sees it and this shell is reading the wrong \
              field or scanning the wrong document. Trace: {}",
             session.trace_path().display()
@@ -180,23 +180,23 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     }
-    // ★ The tone, asserted rather than trusted: the sentence must say pdfce
+    // ★ The tone, asserted rather than trusted: the sentence must say pdfcer
     // does NOT do this. Without that clause it is an alarm about something that
-    // cannot happen in this program, and an operator who learns pdfce cries
+    // cannot happen in this program, and an operator who learns pdfcer cries
     // wolf stops reading the status row entirely.
     let reassures = trace
         .events(NOTE)
-        .any(|l| l.raw.contains("pdfce never does any of that"));
+        .any(|l| l.raw.contains("pdfcer never does any of that"));
     if !reassures {
         return Ok(Some(format!(
-            "the disclosure names the submit action and does not say pdfce never performs one. \
-             That makes it an alarm about something that cannot happen here — pdfce recognises \
+            "the disclosure names the submit action and does not say pdfcer never performs one. \
+             That makes it an alarm about something that cannot happen here — pdfcer recognises \
              actions and never executes them — and the cost is every future disclosure, not this \
              one. Trace: {}",
             session.trace_path().display()
         )));
     }
-    report.note("★★ the disclosure names the submit AND says pdfce never does it");
+    report.note("★★ the disclosure names the submit AND says pdfcer never does it");
 
     // --- ★★ and an ordinary drawing says nothing ----------------------------
     let (clean_session, clean_trace) = open(ctx, &exe, &clean, "clean")?;

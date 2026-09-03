@@ -3,7 +3,7 @@
 //! ## Why the vocabulary is data and not hard-coded
 //!
 //! Two binaries matter to this project: the one being built here, and the one
-//! at `D:\Dev\pdfce\target\release\pdfce-gui.exe` that it replaces. The
+//! at `D:\Dev\pdfcer\target\release\pdfcer-gui.exe` that it replaces. The
 //! harness must be pointable at both, because "these checks FAIL against the
 //! old binary and PASS against the new one" is the acceptance criterion for
 //! the *harness itself* (`PROJECT_PLAN.md` §4, stage S1). A check suite that
@@ -111,7 +111,7 @@ pub struct Vocabulary {
 impl Vocabulary {
     /// The vocabulary of the binary this project is **building**.
     ///
-    /// Every name here was read out of `crates/pdfce-gui/src`, not guessed:
+    /// Every name here was read out of `crates/pdfcer-gui/src`, not guessed:
     ///
     /// * `canvas rect= zoom= page= pages= off=` — `canvas/mod.rs`, traced
     ///   through the de-duplicating gate so there is one line per document
@@ -141,7 +141,7 @@ impl Vocabulary {
     /// written. [`crate::checks::delete_key`] handles the absence explicitly;
     /// see the `(None, None)` arm there.
     #[must_use]
-    pub const fn pdfce_gui() -> Self {
+    pub const fn pdfcer_gui() -> Self {
         Self {
             start_event: "start",
             canvas_event: "canvas",
@@ -162,7 +162,7 @@ impl Vocabulary {
         }
     }
 
-    /// The vocabulary of the OLD binary at `D:\Dev\pdfce`.
+    /// The vocabulary of the OLD binary at `D:\Dev\pdfcer`.
     ///
     /// Every name was read out of `D:\Dev\pdfce\crates\pdfce-gui\src` at the
     /// 2026-08-12 release build:
@@ -184,7 +184,7 @@ impl Vocabulary {
     /// an event this binary cannot produce, and a skip or failure reason that
     /// misidentifies the blocked component sends the reader to the wrong file.
     #[must_use]
-    pub const fn pdfce_legacy() -> Self {
+    pub const fn pdfcer_legacy() -> Self {
         Self {
             start_event: "start",
             canvas_event: "canvas",
@@ -210,9 +210,9 @@ impl Vocabulary {
     /// ## The shape of the evidence
     ///
     /// ```text
-    /// pdfce-diag ui-rect name=central-panel   rect=[[8.0 8.0] - [1092.0 792.0]]
-    /// pdfce-diag ui-rect name=page            rect=[[16.0 22.8] - [1084.0 777.2]]
-    /// pdfce-diag ui-rect name=canvas-viewport rect=[[8.0 8.0] - [1092.0 792.0]]
+    /// pdfcer-diag ui-rect name=central-panel   rect=[[8.0 8.0] - [1092.0 792.0]]
+    /// pdfcer-diag ui-rect name=page            rect=[[16.0 22.8] - [1084.0 777.2]]
+    /// pdfcer-diag ui-rect name=canvas-viewport rect=[[8.0 8.0] - [1092.0 792.0]]
     /// ```
     ///
     /// The rects are in **window logical points**, relative to the client
@@ -387,7 +387,7 @@ impl Profile {
 /// Every profile the harness knows.
 #[must_use]
 pub fn all() -> &'static [Profile] {
-    &[PDFCE_GUI, PDFCE_LEGACY]
+    &[PDFCER_GUI, PDFCER_LEGACY]
 }
 
 /// Look a profile up by name.
@@ -406,14 +406,14 @@ pub fn by_name(name: &str) -> Option<&'static Profile> {
 /// gives now names the missing *subsystem* rather than the missing trace
 /// channel. That difference matters: a reason that blamed the trace channel
 /// would send a reader to `diag.rs`, which is finished.
-pub const PDFCE_GUI: Profile = Profile {
-    name: "pdfce-gui",
-    description: "the application this project is building (crates/pdfce-gui)",
-    default_exe: "target/release/pdfce-gui.exe",
-    diag_env: ("PDFCE_DIAG", "1"),
-    trace_prefix: "pdfce-diag",
-    viewport_env: Some("PDFCE_DIAG_VIEWPORT"),
-    vocab: Vocabulary::pdfce_gui(),
+pub const PDFCER_GUI: Profile = Profile {
+    name: "pdfcer-gui",
+    description: "the application this project is building (crates/pdfcer-gui)",
+    default_exe: "target/release/pdfcer-gui.exe",
+    diag_env: ("PDFCER_DIAG", "1"),
+    trace_prefix: "pdfcer-diag",
+    viewport_env: Some("PDFCER_DIAG_VIEWPORT"),
+    vocab: Vocabulary::pdfcer_gui(),
     // No region sets, deliberately, and now permanently rather than
     // provisionally. The right source for this binary is region source 1 —
     // the application tracing its own `ui-rect` events, which as of S2 it
@@ -427,7 +427,7 @@ pub const PDFCE_GUI: Profile = Profile {
     region_sets: &[],
 };
 
-/// The GUI this project replaces, at `D:\Dev\pdfce`.
+/// The GUI this project replaces, at `D:\Dev\pdfcer`.
 ///
 /// **Read-only, always.** The harness launches it and photographs it; nothing
 /// in this crate writes anywhere near it.
@@ -435,14 +435,14 @@ pub const PDFCE_GUI: Profile = Profile {
 /// Its purpose here is falsification. A check suite is only evidence if it has
 /// been seen to fail on a known-defective build, and this profile is how that
 /// is demonstrated.
-pub const PDFCE_LEGACY: Profile = Profile {
-    name: "pdfce-legacy",
-    description: "the OLD GUI at D:\\Dev\\pdfce — the known-defective build the checks must fail against",
-    default_exe: r"D:\Dev\pdfce\target\release\pdfce-gui.exe",
-    diag_env: ("PDFCE_DIAG", "1"),
-    trace_prefix: "pdfce-diag",
-    viewport_env: Some("PDFCE_DIAG_VIEWPORT"),
-    vocab: Vocabulary::pdfce_legacy(),
+pub const PDFCER_LEGACY: Profile = Profile {
+    name: "pdfcer-legacy",
+    description: "the OLD GUI at D:\\Dev\\pdfcer — the known-defective build the checks must fail against",
+    default_exe: r"D:\Dev\pdfcer\target\release\pdfcer-gui.exe",
+    diag_env: ("PDFCER_DIAG", "1"),
+    trace_prefix: "pdfcer-diag",
+    viewport_env: Some("PDFCER_DIAG_VIEWPORT"),
+    vocab: Vocabulary::pdfcer_legacy(),
     region_sets: &[SETTINGS_HEADINGS_LEGACY],
 };
 
@@ -513,7 +513,7 @@ mod tests {
 
     #[test]
     fn the_legacy_settings_region_set_is_image_calibrated() {
-        let set = PDFCE_LEGACY
+        let set = PDFCER_LEGACY
             .region_set("settings_headings")
             .expect("the legacy profile carries a settings region set");
         assert!(
@@ -527,7 +527,7 @@ mod tests {
     #[test]
     fn the_new_profile_declares_no_stale_fractions() {
         assert!(
-            PDFCE_GUI.region_sets.is_empty(),
+            PDFCER_GUI.region_sets.is_empty(),
             "the new application traces its own ui-rect regions; hard-coded fractions \
              would be stale the first time a panel is resized"
         );
@@ -539,22 +539,22 @@ mod tests {
     /// an event it cannot produce in its own failure text.
     #[test]
     fn the_old_binary_is_not_credited_with_the_new_ones_trace_channels() {
-        assert_eq!(PDFCE_LEGACY.vocab.object_count_event, None);
-        assert_eq!(PDFCE_LEGACY.vocab.ui_rect_event, None);
-        assert_eq!(PDFCE_GUI.vocab.object_count_event, Some("objects"));
-        assert_eq!(PDFCE_GUI.vocab.ui_rect_event, Some("ui-rect"));
+        assert_eq!(PDFCER_LEGACY.vocab.object_count_event, None);
+        assert_eq!(PDFCER_LEGACY.vocab.ui_rect_event, None);
+        assert_eq!(PDFCER_GUI.vocab.object_count_event, Some("objects"));
+        assert_eq!(PDFCER_GUI.vocab.ui_rect_event, Some("ui-rect"));
     }
 
     /// The exact lines the S2 application emits, verbatim from a real capture.
     #[test]
     fn ui_rect_lines_are_read_as_named_regions() {
         let trace = Trace::parse(
-            "pdfce-diag ui-rect name=central-panel rect=[[8.0 8.0] - [1092.0 792.0]]\n\
-             pdfce-diag ui-rect name=page            rect=[[16.0 22.8] - [1084.0 777.2]]\n\
-             pdfce-diag ui-rect name=canvas-viewport rect=[[8.0 8.0] - [1092.0 792.0]]",
-            "pdfce-diag",
+            "pdfcer-diag ui-rect name=central-panel rect=[[8.0 8.0] - [1092.0 792.0]]\n\
+             pdfcer-diag ui-rect name=page            rect=[[16.0 22.8] - [1084.0 777.2]]\n\
+             pdfcer-diag ui-rect name=canvas-viewport rect=[[8.0 8.0] - [1092.0 792.0]]",
+            "pdfcer-diag",
         );
-        let regions = Vocabulary::pdfce_gui().declared_regions(&trace);
+        let regions = Vocabulary::pdfcer_gui().declared_regions(&trace);
         let names: Vec<&str> = regions.iter().map(|r| r.name.as_str()).collect();
         assert_eq!(names, ["canvas-viewport", "central-panel", "page"]);
         let page = regions.iter().find(|r| r.name == "page").unwrap();
@@ -566,11 +566,11 @@ mod tests {
     #[test]
     fn the_last_declaration_of_a_region_wins() {
         let trace = Trace::parse(
-            "pdfce-diag ui-rect name=page rect=[[0.0 0.0] - [10.0 10.0]]\n\
-             pdfce-diag ui-rect name=page rect=[[5.0 5.0] - [40.0 40.0]]",
-            "pdfce-diag",
+            "pdfcer-diag ui-rect name=page rect=[[0.0 0.0] - [10.0 10.0]]\n\
+             pdfcer-diag ui-rect name=page rect=[[5.0 5.0] - [40.0 40.0]]",
+            "pdfcer-diag",
         );
-        let regions = Vocabulary::pdfce_gui().declared_regions(&trace);
+        let regions = Vocabulary::pdfcer_gui().declared_regions(&trace);
         assert_eq!(regions.len(), 1);
         assert_eq!(regions[0].rect.width(), 35.0);
     }
@@ -582,12 +582,12 @@ mod tests {
     #[test]
     fn an_unparsable_ui_rect_is_dropped_not_zeroed() {
         let trace = Trace::parse(
-            "pdfce-diag ui-rect name=broken rect=nonsense\n\
-             pdfce-diag ui-rect rect=[[0.0 0.0] - [4.0 4.0]]",
-            "pdfce-diag",
+            "pdfcer-diag ui-rect name=broken rect=nonsense\n\
+             pdfcer-diag ui-rect rect=[[0.0 0.0] - [4.0 4.0]]",
+            "pdfcer-diag",
         );
         assert!(
-            Vocabulary::pdfce_gui().declared_regions(&trace).is_empty(),
+            Vocabulary::pdfcer_gui().declared_regions(&trace).is_empty(),
             "neither line declares a readable named region"
         );
     }
@@ -597,11 +597,11 @@ mod tests {
     #[test]
     fn a_binary_without_the_event_declares_no_regions() {
         let trace = Trace::parse(
-            "pdfce-diag ui-rect name=page rect=[[0.0 0.0] - [10.0 10.0]]",
-            "pdfce-diag",
+            "pdfcer-diag ui-rect name=page rect=[[0.0 0.0] - [10.0 10.0]]",
+            "pdfcer-diag",
         );
         assert!(
-            Vocabulary::pdfce_legacy()
+            Vocabulary::pdfcer_legacy()
                 .declared_regions(&trace)
                 .is_empty()
         );
@@ -610,11 +610,11 @@ mod tests {
     #[test]
     fn the_object_count_is_read_from_the_last_objects_line() {
         let trace = Trace::parse(
-            "pdfce-diag objects n=28 page=0 paths=13 text=15 images=0 forms=0\n\
-             pdfce-diag objects n=27 page=0 paths=12 text=15 images=0 forms=0",
-            "pdfce-diag",
+            "pdfcer-diag objects n=28 page=0 paths=13 text=15 images=0 forms=0\n\
+             pdfcer-diag objects n=27 page=0 paths=12 text=15 images=0 forms=0",
+            "pdfcer-diag",
         );
-        assert_eq!(Vocabulary::pdfce_gui().object_count(&trace), Some(27));
+        assert_eq!(Vocabulary::pdfcer_gui().object_count(&trace), Some(27));
     }
 
     /// Failure is a *different event*, and it must not read as a count.
@@ -624,15 +624,15 @@ mod tests {
     #[test]
     fn an_unavailable_page_reports_no_count_rather_than_zero() {
         let trace = Trace::parse(
-            "pdfce-diag objects-unavailable page=0 reason=decompose-failed detail=eof",
-            "pdfce-diag",
+            "pdfcer-diag objects-unavailable page=0 reason=decompose-failed detail=eof",
+            "pdfcer-diag",
         );
-        assert_eq!(Vocabulary::pdfce_gui().object_count(&trace), None);
+        assert_eq!(Vocabulary::pdfcer_gui().object_count(&trace), None);
     }
 
     #[test]
     fn a_binary_without_an_object_count_event_reports_none() {
-        let trace = Trace::parse("pdfce-diag objects n=28 page=0", "pdfce-diag");
-        assert_eq!(Vocabulary::pdfce_legacy().object_count(&trace), None);
+        let trace = Trace::parse("pdfcer-diag objects n=28 page=0", "pdfcer-diag");
+        assert_eq!(Vocabulary::pdfcer_legacy().object_count(&trace), None);
     }
 }

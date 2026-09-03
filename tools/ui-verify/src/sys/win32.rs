@@ -227,7 +227,7 @@ pub fn window_frame(w: WindowHandle) -> Result<WindowFrame> {
 /// The consequence of a refusal is a screenshot of whatever is in front, which
 /// is why the uniformity guard exists downstream rather than here.
 ///
-/// pdfce's predecessor script added this after a capture returned a
+/// pdfcer's predecessor script added this after a capture returned a
 /// pixel-perfect screenshot of a completely different application: the target
 /// had started, run its whole script and traced correctly, but its window was
 /// created behind an already-maximised window, so the capture photographed
@@ -417,7 +417,7 @@ pub fn mouse_button(down: bool) {
 ///
 /// ★★★ Added 2026-08-28, and its absence until then is worth recording: this
 /// harness had driven 92 checks and **had never once opened a context menu**.
-/// pdfce has had canvas right-click menus since Phase 1 — `canvas.object` and
+/// pdfcer has had canvas right-click menus since Phase 1 — `canvas.object` and
 /// `canvas.empty` — and every assertion about them is a unit test over
 /// `MenuHost::would_open`, which is a question about the manifest rather than
 /// about the running program.
@@ -941,7 +941,7 @@ pub fn with_modifiers<T>(modifiers: &[u16], body: impl FnOnce() -> T) -> T {
 // ★★ WHY THE HARNESS HAS TO READ THE CLIPBOARD ITSELF
 //
 // Defect O18: the operator selected text, pressed Ctrl+C, pasted into Notepad
-// and got "1 object copied from pdfce" — because Ctrl+C reached the object
+// and got "1 object copied from pdfcer" — because Ctrl+C reached the object
 // clipboard instead of the text one. It had been broken since the day it was
 // written, under 1,628 passing unit tests.
 //
@@ -956,7 +956,7 @@ pub fn with_modifiers<T>(modifiers: &[u16], body: impl FnOnce() -> T) -> T {
 //
 // ★ A NOTE ON THE DEPENDENCY POSTURE. This adds two `windows-sys` FEATURES,
 // not a dependency. This crate's manifest records that a new dependency which
-// is not already in `D:\Dev\pdfce`'s lockfile is an operator decision;
+// is not already in `D:\Dev\pdfcer`'s lockfile is an operator decision;
 // `windows-sys 0.61` is already there and already linked, so enabling
 // `Win32_System_DataExchange` and `Win32_System_Memory` changes nothing about
 // what ships or what has to be reviewed for licensing.

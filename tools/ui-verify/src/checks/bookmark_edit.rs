@@ -3,7 +3,7 @@
 //!
 //! # What this proves, and why the two verbs are one check
 //!
-//! `pdfce-core` `Pass 156.0` shipped `set_outline_title` and
+//! `pdfcer-core` `Pass 156.0` shipped `set_outline_title` and
 //! `delete_outline_item` together, with the engine's own note saying *"bookmarks
 //! could be created and not changed — renaming is the commonest bookmark edit
 //! there is"*. Both reach the operator through the **same block**: click a row,
@@ -210,14 +210,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.env
-        .push(("PDFCE_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
+        .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
     report.note(format!(
-        "launched {} as pid {} with PDFCE_DIAG_INVOKE={INVOKE}",
+        "launched {} as pid {} with PDFCER_DIAG_INVOKE={INVOKE}",
         exe.display(),
         session.pid()
     ));
@@ -319,7 +319,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     };
-    // ★ A row whose destination pdfce could not resolve is drawn DISABLED, and
+    // ★ A row whose destination pdfcer could not resolve is drawn DISABLED, and
     // a disabled `Button` never reports a click — so it can never be selected
     // and the rename block can never appear for it. That is correct behaviour
     // and it would read here as the defect, so it is a SKIP with the reason.

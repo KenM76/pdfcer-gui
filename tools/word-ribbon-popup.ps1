@@ -22,7 +22,7 @@
 #>
 [CmdletBinding()]
 param(
-    [string]$OutDir = "D:\Dev\pdfceGUI\evidence\word-ribbon",
+    [string]$OutDir = "D:\Dev\pdfcer-gui\evidence\word-ribbon",
     [int]$Width = 900,
     [int]$Height = 900,
     # Home tab, then the KeyTip for one collapsed group. `L` is Styles on the

@@ -3,7 +3,7 @@
 //!
 //! # What this is for
 //!
-//! `pdfce-core` publishes two verbs written specifically so a front end could
+//! `pdfcer-core` publishes two verbs written specifically so a front end could
 //! answer *"what will this save do to the signatures already in this
 //! document?"*:
 //!
@@ -20,7 +20,7 @@
 //!
 //! ## ★★★ Why no unit test can make this claim
 //!
-//! `crates/pdfce-gui/src/dialogs/signature.rs` already asserts, headlessly and
+//! `crates/pdfcer-gui/src/dialogs/signature.rs` already asserts, headlessly and
 //! against this same fixture, that the engine reports the invalidation and that
 //! `ask_for` builds a dialog for it. Every one of those assertions passes on a
 //! build where:
@@ -58,7 +58,7 @@
 //! `fixtures/signed-two-pages.pdf`, built by `tools/gen-signed-fixture.py`,
 //! whose header carries the argument. The short version is that the engine's
 //! own signature corpus
-//! (`D:\Dev\pdfce\fixtures\synthetic\signature\`) is three **one-page**
+//! (`D:\Dev\pdfcer\fixtures\synthetic\signature\`) is three **one-page**
 //! documents — they were built for `signature::byte_range_coverage`, which is
 //! arithmetic over byte offsets and needs no pages — and this check has to make
 //! the save **structural**, which it does by deleting a page. A one-page
@@ -68,7 +68,7 @@
 //!
 //! It carries an **approval** signature with no `/Reference`, deliberately, so
 //! `SignatureImpact::documentation_basis` answers `ImpactBasis::ConservativeReport`
-//! — the arm where ISO 32000-1 is silent and pdfce reports the cautious answer
+//! — the arm where ISO 32000-1 is silent and pdfcer reports the cautious answer
 //! under rule 4, which is the wording hardest to get right and therefore the
 //! one worth driving.
 //!
@@ -80,10 +80,10 @@
 //! `checks/ocr.rs` records having hit, one directory over — and the fixture's
 //! whole value is that it is byte-authored and stable.
 //!
-//! `file.save_copy` answers its picker from `PDFCE_DIAG_SAVE_PATH`, so the
+//! `file.save_copy` answers its picker from `PDFCER_DIAG_SAVE_PATH`, so the
 //! bytes land in the run's own output directory and the fixture is never
 //! opened for writing. The guard under test is the same one on both routes —
-//! `crates/pdfce-gui/src/app/actions/apply.rs` asks it in both arms — so
+//! `crates/pdfcer-gui/src/app/actions/apply.rs` asks it in both arms — so
 //! nothing about the assertion is weakened by taking the safe route.
 //!
 //! ## What this does NOT cover
@@ -91,7 +91,7 @@
 //! * **The certification wording.** `ImpactBasis::SpecSourced` needs a
 //!   `/DocMDP` transform in a signature's `/Reference`, and this repository has
 //!   no such fixture. The two footings are asserted apart in
-//!   `crates/pdfce-gui/src/text/signature.rs`'s own tests; what is undriven is
+//!   `crates/pdfcer-gui/src/text/signature.rs`'s own tests; what is undriven is
 //!   the certified *window*, which differs from this one only in three strings.
 //! * **The `ByteRangePreserved` note.** It appears on the status bar's
 //!   disclosure row after a save with no structural change, and reading a bar
@@ -138,7 +138,7 @@ const DELETED: &str = "pages-deleted";
 /// The line `app::save::write_and_report` writes once the bytes are on disk.
 const WRITTEN: &str = "save-copy";
 /// The variable that answers the save picker.
-const SAVE_PATH_ENV: &str = "PDFCE_DIAG_SAVE_PATH";
+const SAVE_PATH_ENV: &str = "PDFCER_DIAG_SAVE_PATH";
 
 /// See the module documentation.
 pub struct AnInvalidatingSaveIsWarnedAbout;
@@ -228,7 +228,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.env
-        .push(("PDFCE_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
+        .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.env.push((
         SAVE_PATH_ENV.to_owned(),
         target.to_string_lossy().into_owned(),
@@ -239,7 +239,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
     report.note(format!(
-        "launched {} on fixtures/signed-two-pages.pdf as pid {} with PDFCE_DIAG_INVOKE={INVOKE}",
+        "launched {} on fixtures/signed-two-pages.pdf as pid {} with PDFCER_DIAG_INVOKE={INVOKE}",
         exe.display(),
         session.pid()
     ));
@@ -271,11 +271,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         return Ok(Some(format!(
             "★★★ A SIGNED DOCUMENT WAS SAVED WITH NO WARNING: `{ASKED}` {} and the `{BODY}` \
              region {}.\n\
-             The engine computed the invalidation — `pdfce-core`'s \
+             The engine computed the invalidation — `pdfcer-core`'s \
              `signature_impact_of_save` is a pure function of the session and the unit tests \
              assert it answers `Invalidated` for this fixture — so the missing link is the \
              shell's. Check that `Action::SaveCopy`'s arm in \
-             `crates/pdfce-gui/src/app/actions/apply.rs` calls \
+             `crates/pdfcer-gui/src/app/actions/apply.rs` calls \
              `DialogsState::ask_signature` and RETURNS on `true`. Regions beginning \
              `signature`: {}. Trace: {}.",
             if asked.is_some() {
@@ -337,7 +337,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             "★★ THE PROCEED BUTTON IS INERT: it was clicked at {button:?} in the window's own \
              frame and no `{CONFIRMED}` line appeared.\n\
              The answer is parked by the window and drained by \
-             `PdfceApp::resume_after_signature`, which runs once a frame after the dialogs \
+             `PdfcerApp::resume_after_signature`, which runs once a frame after the dialogs \
              draw. A missing drain leaves a window the operator can only cancel, which makes \
              Save unusable on every signed document. Trace: {}.",
             session.trace_path().display()

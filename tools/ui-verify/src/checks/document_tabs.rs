@@ -3,7 +3,7 @@
 //!
 //! # The gap this closes
 //!
-//! Until 2026-08-20 pdfce could hold exactly one document. Opening the next
+//! Until 2026-08-20 pdfcer could hold exactly one document. Opening the next
 //! drawing **replaced** the one on screen, which is why `Action::Open` needed
 //! an unsaved-edits prompt in front of it. The operator asked for the
 //! obvious thing:
@@ -55,7 +55,7 @@ const ACTIVATE: &str = "document-activate";
 /// `D:\dev\rag\egui\native_file_dialog_is_a_hard_wall_substitute_the_answer_via_env_var.md`
 /// carries the finding; `crate::app::files::DIAG_OPEN_PATH` is the constant on
 /// the application side.
-const OPEN_PATH_ENV: &str = "PDFCE_DIAG_OPEN_PATH";
+const OPEN_PATH_ENV: &str = "PDFCER_DIAG_OPEN_PATH";
 /// The chord that opens a document.
 const CTRL_O: u16 = 0x4F;
 

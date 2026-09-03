@@ -7,18 +7,18 @@
 # ★★★ WHY THIS GATE EXISTS, and the two days that bought it
 # ---------------------------------------------------------------------------
 #
-# `pdfce-core` shipped `EditSession::set_button_action` on 2026-08-30, in
+# `pdfcer-core` shipped `EditSession::set_button_action` on 2026-08-30, in
 # answer to this shell's own request. The reply was read the same night and
 # answered point by point. It even said, in as many words:
 #
 #     "Please check your own copy. If your surface tells the operator that
-#      pdfce never authors an action, it is now saying something untrue in the
+#      pdfcer never authors an action, it is now saying something untrue in the
 #      direction that matters."
 #
 # The verb was consumed on 2026-09-01 — two days later — and only because
 # `tools/verb-coverage.py` happened to be run for an unrelated reason. In the
 # meantime the Button tool stayed greyed and the placement dialog kept telling
-# the operator that pdfce "cannot give a button something to do yet", which was
+# the operator that pdfcer "cannot give a button something to do yet", which was
 # false, on a capability two open operator rows were waiting for.
 #
 # ⇒ The instrument existed. Nobody ran it. **A tool that must be remembered is
@@ -38,7 +38,7 @@
 # ---------------------------------------------------------------------------
 #
 # `tools/verb-coverage.py` parses `impl EditSession` out of the LOCKED engine
-# revision, takes every `pub fn`, and greps `crates/pdfce-gui/src` for each
+# revision, takes every `pub fn`, and greps `crates/pdfcer-gui/src` for each
 # name. The verbs it reports as named nowhere are the input to this gate.
 #
 #     For every such verb, `EDITABLE_SURFACES.md` must mention it by name,
@@ -65,7 +65,7 @@
 # `OPERATOR_REQUESTS.md` says what the operator asked for. `FEATURES.md` says
 # what the shell does. `GUI_ROADMAP.md` says what is planned. **None of the
 # three is keyed on the engine's verb list**, so none of them can answer "is
-# there something `pdfce-core` implements that nothing here calls?" — the
+# there something `pdfcer-core` implements that nothing here calls?" — the
 # question this gate exists for. A completeness question needs an instrument
 # whose key is the OTHER side's API; a document structurally cannot answer it.
 #

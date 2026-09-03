@@ -83,7 +83,7 @@ use crate::report::CheckReport;
 /// Edit mode, then the insert-image command.
 const INVOKE: &str = "mode.edit,edit.insert_image";
 /// The seam that answers the native picker without a human at the keyboard.
-const IMAGE_PATH_ENV: &str = "PDFCE_DIAG_IMAGE_PATH"; // ui-text-exempt: an environment variable name
+const IMAGE_PATH_ENV: &str = "PDFCER_DIAG_IMAGE_PATH"; // ui-text-exempt: an environment variable name
 /// The button this check presses — `dialogs::insert_image::REGION_PLACE`.
 const PLACE_REGION: &str = "insert-image.place"; // ui-text-exempt: trace region name, never displayed
 /// The line `canvas::placing::arm` writes.
@@ -198,7 +198,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.env
-        .push(("PDFCE_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
+        .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.env
         .push((IMAGE_PATH_ENV.to_owned(), image.display().to_string()));
     spec.allow_stale = ctx.allow_stale;

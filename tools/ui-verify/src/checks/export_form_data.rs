@@ -26,7 +26,7 @@
 //!
 //! ## ★★ The picker is answered, not clicked
 //!
-//! `PDFCE_DIAG_SAVE_PATH` supplies the save dialog's result. That is the same
+//! `PDFCER_DIAG_SAVE_PATH` supplies the save dialog's result. That is the same
 //! seam `save_copy` uses and its header carries the argument: a native modal
 //! blocks the thread, so a harness that tried to drive it would be automating
 //! the operating system's file dialog rather than this program.
@@ -59,7 +59,7 @@ use crate::report::CheckReport;
 /// left behind.
 const INVOKE: &str = "mode.edit,file.export_form_data";
 /// The environment variable that answers the save dialog.
-const SAVE_PATH_ENV: &str = "PDFCE_DIAG_SAVE_PATH";
+const SAVE_PATH_ENV: &str = "PDFCER_DIAG_SAVE_PATH";
 /// The trace line the export writes on success.
 const EXPORTED: &str = "export-form-data";
 /// The two declines, so a refusal is reported as itself rather than as silence.
@@ -70,10 +70,10 @@ const FAILED: &str = "export-form-data-failed";
 const IMPORT_INVOKE: &str = "mode.edit,file.import_form_data";
 /// The environment variable that answers the import picker.
 ///
-/// ★ Its own variable rather than `PDFCE_DIAG_OPEN_PATH`, so a check can name
+/// ★ Its own variable rather than `PDFCER_DIAG_OPEN_PATH`, so a check can name
 /// the data file without also answering the document picker. The application
 /// draws the same distinction, for the same reason.
-const FORM_DATA_ENV: &str = "PDFCE_DIAG_FORM_DATA_PATH";
+const FORM_DATA_ENV: &str = "PDFCER_DIAG_FORM_DATA_PATH";
 /// The import's own summary line.
 ///
 /// ★★★ `-applied`, and the suffix is the whole reason this constant has a doc
@@ -152,7 +152,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.env
-        .push(("PDFCE_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
+        .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.env.push((
         SAVE_PATH_ENV.to_owned(),
         target.to_string_lossy().into_owned(),
@@ -163,7 +163,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
     report.note(format!(
-        "launched {} as pid {} with PDFCE_DIAG_INVOKE={INVOKE} and {SAVE_PATH_ENV}={}",
+        "launched {} as pid {} with PDFCER_DIAG_INVOKE={INVOKE} and {SAVE_PATH_ENV}={}",
         exe.display(),
         session.pid(),
         target.display()
@@ -301,7 +301,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // defect this project reported to the engine about widget borders four
     // hours earlier, and the engine's answer was to make *their* tests round
     // trips for the same reason: *"a hand-authored fixture would test the
-    // reader against bytes I chose; this tests it against bytes pdfce chose,
+    // reader against bytes I chose; this tests it against bytes pdfcer chose,
     // which is the pair that has to agree."*
     //
     // So this reads back the file the previous half just wrote. A separate
@@ -322,7 +322,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.env
-        .push(("PDFCE_DIAG_INVOKE".to_owned(), IMPORT_INVOKE.to_owned()));
+        .push(("PDFCER_DIAG_INVOKE".to_owned(), IMPORT_INVOKE.to_owned()));
     spec.env.push((
         FORM_DATA_ENV.to_owned(),
         target.to_string_lossy().into_owned(),
@@ -340,7 +340,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             "★ THE EXPORT WROTE A FILE AND IMPORTING IT BACK DID NOTHING: no `{IMPORTED}` \
              line.\n\
              The two halves are a pair, and this is the asymmetry a round trip exists to catch: \
-             pdfce wrote bytes pdfce cannot read. Three candidates — the command has no \
+             pdfcer wrote bytes pdfcer cannot read. Three candidates — the command has no \
              dispatch arm; the picker was not answered (`{FORM_DATA_ENV}` supplies it); or the \
              parse failed, which traces `import-form-data-failed` with its stage and reason. \
              Trace: {}.",

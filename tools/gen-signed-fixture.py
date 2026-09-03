@@ -7,7 +7,7 @@ WHY THIS FILE EXISTS
 ===========================================================================
 
 ``crate::dialogs::signature`` puts a window in front of any save that
-``pdfce-core`` reports as invalidating a digital signature. R1 says a feature
+``pdfcer-core`` reports as invalidating a digital signature. R1 says a feature
 is not done until it has been asserted by **driving the running binary**, and
 ``tools/ui-verify``'s ``signature_save`` check does that: it launches on a
 signed document, deletes a page, presses Save-a-copy, and asserts that the
@@ -19,13 +19,13 @@ Every one of those steps needs a document that is:
      real ``/ByteRange``, because ``signature::census`` counts those and
      nothing else. An AcroForm ``/SigFlags`` declaration is NOT a signature,
      deliberately: the engine's census documents that an unsigned form which
-     merely announces it expects signatures *"must not make pdfce warn about
+     merely announces it expects signatures *"must not make pdfcer warn about
      destroying something that does not exist"*;
   2. **signed by an APPROVAL signature, not a certification one** — the
      signature carries no ``/Reference``, so ``census.certifications`` is 0 and
      ``SignatureImpact::documentation_basis`` answers ``ConservativeReport``.
      That is the arm whose copy is the hardest to get right (ISO 32000-1 is
-     silent, and pdfce reports the cautious answer under rule 4), so it is the
+     silent, and pdfcer reports the cautious answer under rule 4), so it is the
      arm the driven check should exercise;
   3. **more than one page** — the check makes the save structural by deleting a
      page, and ``pages.delete`` over the only page of a one-page document is a
@@ -35,7 +35,7 @@ Every one of those steps needs a document that is:
 WHY NOT THE ENGINE'S OWN SIGNATURE FIXTURES
 ===========================================================================
 
-``D:\\Dev\\pdfce\\fixtures\\synthetic\\signature\\`` has three, and they were
+``D:\\Dev\\pdfcer\\fixtures\\synthetic\\signature\\`` has three, and they were
 read before this was written. All three are **one page**, which fails (3)
 above: they were built for ``signature::byte_range_coverage``, which is
 arithmetic over byte offsets and needs no pages at all.
@@ -62,14 +62,14 @@ is standalone and a reader of it will not have the other one open.
 NO CRYPTOGRAPHY, AND NONE CLAIMED
 ===========================================================================
 
-``/Contents`` is filler zeros. Nothing in pdfce inspects a signature value —
-``pdfce-core``'s signature module opens *"This module verifies nothing"* — so a
+``/Contents`` is filler zeros. Nothing in pdfcer inspects a signature value —
+``pdfcer-core``'s signature module opens *"This module verifies nothing"* — so a
 fixture with a real certificate would test nothing this one does not, and would
 drag a private key into a repository.
 
 **What this fixture can and cannot support:**
 
-  * it CAN support "pdfce found a signature and said the right thing about what
+  * it CAN support "pdfcer found a signature and said the right thing about what
     a save does to it", which is the whole of the feature;
   * it CANNOT support any claim about validity, and nothing should be written
     that reads as though it does.

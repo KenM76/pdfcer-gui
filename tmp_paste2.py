@@ -1,6 +1,6 @@
 import io
 
-p = 'crates/pdfce-gui/src/canvas/clipboard.rs'
+p = 'crates/pdfcer-gui/src/canvas/clipboard.rs'
 s = io.open(p, encoding='utf-8').read()
 
 ANCHOR_DOC = '''        /// ★★★ **The point that is placed under the cursor on a paste** —

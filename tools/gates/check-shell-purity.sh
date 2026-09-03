@@ -11,7 +11,7 @@
 # design rests on that. It is to be extracted to its own MIT repository at or
 # before fold-in.
 #
-# The failure this catches is not a crash. It is one `use pdfce_core::PageSize`
+# The failure this catches is not a crash. It is one `use pdfcer_core::PageSize`
 # in a layout helper, added because it was there and it was convenient. That
 # single line:
 #
@@ -32,15 +32,15 @@
 # WHAT IS CHECKED
 # ===========================================================================
 #
-# 1. `crates/egui-shell/Cargo.toml` names no `pdfce-*` dependency. Caught at
+# 1. `crates/egui-shell/Cargo.toml` names no `pdfcer-*` dependency. Caught at
 #    the manifest, which is where the coupling is cheapest to see and where a
-#    reviewer looks first. Matches `pdfce-core`, `pdfce-render`, `pdfce-print`,
-#    `pdfce-gui` and anything else in the family, including the
+#    reviewer looks first. Matches `pdfcer-core`, `pdfcer-render`, `pdfcer-print`,
+#    `pdfcer-gui` and anything else in the family, including the
 #    `{ path = "..." }` and `{ workspace = true }` spellings, because the
 #    dependency KEY is what is matched.
 #
-# 2. No `.rs` file under the crate mentions `pdfce_core`, `pdfce_render` or
-#    `pdfce_print`. The underscore spelling is the one that appears in Rust
+# 2. No `.rs` file under the crate mentions `pdfcer_core`, `pdfcer_render` or
+#    `pdfcer_print`. The underscore spelling is the one that appears in Rust
 #    source; it catches `use`, a fully-qualified path, and a `#[cfg]`-gated
 #    import alike. This is the backstop for the case where the manifest is
 #    clean because the type arrived through a re-export or a dev-dependency.
@@ -54,7 +54,7 @@
 # ===========================================================================
 #
 # The word "pdf" in prose, an icon named `pdf.svg`, or a doc comment that says
-# "the pdfce application supplies this". Purity is about the DEPENDENCY EDGE,
+# "the pdfcer application supplies this". Purity is about the DEPENDENCY EDGE,
 # not about vocabulary. A gate that fired on the word would be switched off
 # within a week, and a gate that has been switched off enforces nothing — the
 # lesson `check-ui-strings.sh`'s header records at length.
@@ -82,12 +82,12 @@ fi
 rc=0
 
 # ---------------------------------------------------------------------------
-# CHECK 1 — the manifest names no pdfce-* dependency.
+# CHECK 1 — the manifest names no pdfcer-* dependency.
 #
 # Scanned line-wise rather than by parsing TOML, because the gate must run with
 # nothing but bash and awk. That means it looks at dependency KEYS: a line
-# whose first token is `pdfce-<something>` followed by `=`, anywhere in the
-# file. `[dependencies.pdfce-core]` table headers are matched too.
+# whose first token is `pdfcer-<something>` followed by `=`, anywhere in the
+# file. `[dependencies.pdfcer-core]` table headers are matched too.
 # ---------------------------------------------------------------------------
 if [ ! -f "$MANIFEST" ]; then
     echo "shell-purity: SKIPPED — no $MANIFEST" >&2
@@ -99,10 +99,10 @@ manifest_hits=$(awk '
     {
         line = $0
         sub(/#.*/, "", line)                       # strip TOML comments
-        if (line ~ /^[[:space:]]*pdfce-[A-Za-z0-9_-]+[[:space:]]*=/) {
+        if (line ~ /^[[:space:]]*pdfcer-[A-Za-z0-9_-]+[[:space:]]*=/) {
             printf "%s:%d:%s\n", FILENAME, FNR, $0
         }
-        if (line ~ /^[[:space:]]*\[[^]]*dependencies[^]]*\.pdfce-/) {
+        if (line ~ /^[[:space:]]*\[[^]]*dependencies[^]]*\.pdfcer-/) {
             printf "%s:%d:%s\n", FILENAME, FNR, $0
         }
     }
@@ -127,7 +127,7 @@ while IFS= read -r -d '' f; do
     scanned=$((scanned + 1))
     h=$(awk '
         $0 ~ /^[[:space:]]*(\/\/|\/\*|\*)/ { next }     # comments are prose
-        $0 ~ /pdfce_(core|render|print)/ { printf "%s:%d:%s\n", FILENAME, FNR, $0 }
+        $0 ~ /pdfcer_(core|render|print)/ { printf "%s:%d:%s\n", FILENAME, FNR, $0 }
     ' "$f")
     [ -n "$h" ] && src_hits="${src_hits}${h}
 "
@@ -144,11 +144,11 @@ if [ "$rc" -ne 0 ]; then
     cat <<'EOF'
 
 egui-shell is a REUSABLE shell and is extracted to its own repository at or
-before fold-in. It must not depend on pdfce-core, pdfce-render, pdfce-print
-or pdfce-gui — not by manifest, not by import, not through a re-export.
+before fold-in. It must not depend on pdfcer-core, pdfcer-render, pdfcer-print
+or pdfcer-gui — not by manifest, not by import, not through a re-export.
 
 If the shell needs something the application knows, INVERT IT: the shell
-declares a trait or a manifest type, and pdfce-gui supplies the value. That is
+declares a trait or a manifest type, and pdfcer-gui supplies the value. That is
 what the shell manifest, the panel-body callbacks and the command registry are
 for. The correct fix is never an import; it is a seam.
 EOF
@@ -165,6 +165,6 @@ if [ "$scanned" -eq 0 ]; then
     exit 2
 fi
 
-echo "shell-purity: clean — $MANIFEST declares no pdfce-* dependency,"
+echo "shell-purity: clean — $MANIFEST declares no pdfcer-* dependency,"
 echo "              and $scanned .rs file(s) under $SHELL_DIR name no domain crate"
 exit 0

@@ -12,15 +12,15 @@
 # WHY THIS WORKSPACE HAS ITS OWN, RATHER THAN LEANING ON THE ENGINE'S
 # ===========================================================================
 #
-# `D:\Dev\pdfce` already has an `about.toml`/`about.hbs` pair and generates its
+# `D:\Dev\pdfcer` already has an `about.toml`/`about.hbs` pair and generates its
 # own `THIRD_PARTY_LICENSES.md`. That file is complete and correct **for
-# pdfce's binaries**, and it is not this one, because the two dependency
+# pdfcer's binaries**, and it is not this one, because the two dependency
 # graphs are not the same graph:
 #
 #   * this workspace adds `eframe`, `egui`, `egui_tiles`, `ron` and their
-#     transitive sets, none of which pdfce-cli links; and
-#   * `pdfce-gui.exe` statically links `pdfce-core` and `pdfce-render` by
-#     path, so it also carries everything pdfce's own notice covers.
+#     transitive sets, none of which pdfcer links; and
+#   * `pdfcer-gui.exe` statically links `pdfcer-core` and `pdfcer-render` by
+#     path, so it also carries everything pdfcer's own notice covers.
 #
 # A notice file generated over there therefore under-reports what ships here,
 # and copying it would be a claim about a lockfile nobody read. The two files
@@ -38,9 +38,9 @@
 # error go away; an id joins it only after a deliberate, recorded operator
 # decision.
 #
-# ★ THE LIST BELOW IS pdfce's OWN, REPRODUCED RATHER THAN RE-DERIVED.
+# ★ THE LIST BELOW IS pdfcer's OWN, REPRODUCED RATHER THAN RE-DERIVED.
 #
-# Every id here is one the operator has already accepted for `D:\Dev\pdfce`
+# Every id here is one the operator has already accepted for `D:\Dev\pdfcer`
 # (see that repo's `about.toml` and `docs/LEGAL.md` §6), and a licence already
 # accepted for the engine is already accepted for a binary that links the
 # engine statically. Re-deriving a narrower list from this workspace's graph
@@ -55,7 +55,7 @@
 # headroom, not evidence — a reader must not take an id's presence here as a
 # claim that some crate uses it.
 #
-# ONE DELIBERATE OMISSION: `CDLA-Permissive-2.0`. pdfce accepted it on
+# ONE DELIBERATE OMISSION: `CDLA-Permissive-2.0`. pdfcer accepted it on
 # 2026-08-13 for `webpki-roots`, which arrives with an HTTPS client. This
 # workspace has no HTTP client and no TLS stack, and if one ever lands here
 # the generator should stop and say so rather than wave it through on an
@@ -64,8 +64,8 @@
 # NOTE: all top-level keys must appear BEFORE the [private] table header — in
 # TOML every key after a table header belongs to that table.
 
-# Only harvest licences for the target pdfceGUI actually distributes today.
-# `tools/package-portable.py` builds `pdfce-gui.exe` for Windows and nothing
+# Only harvest licences for the target pdfcer-gui actually distributes today.
+# `tools/package-portable.py` builds `pdfcer-gui.exe` for Windows and nothing
 # else; add triples here when other artefacts are actually shipped, so the
 # notice does not carry platform-only dependencies for platforms nobody has.
 targets = ["x86_64-pc-windows-msvc"]
@@ -87,7 +87,7 @@ accepted = [
     # IJG — the Independent JPEG Group's licence, reached via `jpeg-encoder`
     # (SPDX `(MIT OR Apache-2.0) AND IJG`; the AND is CONJUNCTIVE, so this id
     # must be accepted or `cargo about generate` fails). It is PERMISSIVE: no
-    # source-disclosure obligation, nothing that touches pdfce's own MIT
+    # source-disclosure obligation, nothing that touches pdfcer's own MIT
     # licence. What it does carry is an ATTRIBUTION obligation on binary
     # redistribution — the sentence "this software is based in part on the
     # work of the Independent JPEG Group" — which cargo-about does NOT
@@ -97,8 +97,8 @@ accepted = [
     # id is here.
     #
     # It is reached HERE, not merely inherited: `jpeg-encoder` is in this
-    # workspace's graph through `pdfce-core`, and the generator counts one
-    # crate against it. Accepted by operator decision 2026-08-08 for pdfce
+    # workspace's graph through `pdfcer-core`, and the generator counts one
+    # crate against it. Accepted by operator decision 2026-08-08 for pdfcer
     # ("accept the ijg attribution line").
     "IJG",
     "ISC",
@@ -111,19 +111,19 @@ accepted = [
     # licences above). egui's default font set (`epaint_default_fonts`, pulled
     # in by this workspace's `default_fonts` feature on eframe) embeds the
     # Ubuntu font and OFL-licensed faces. These govern the FONT FILES, not
-    # pdfce's code: both permit embedding and redistribution and impose only
+    # pdfcer's code: both permit embedding and redistribution and impose only
     # an attribution obligation, satisfied by reproducing their notices in
-    # THIRD_PARTY_LICENSES.md. Neither constrains pdfce's own MIT licence the
+    # THIRD_PARTY_LICENSES.md. Neither constrains pdfcer's own MIT licence the
     # way a copyleft *software* dependency would — the OFL's "derivatives stay
-    # OFL" clause applies to modified fonts, which pdfce does not create; it
+    # OFL" clause applies to modified fonts, which pdfcer does not create; it
     # only embeds them.
     "OFL-1.1",
     "Ubuntu-font-1.0",
 ]
 
-# Skip this workspace's own crates (`pdfce-gui`, `egui-shell`, `ui-verify`)
+# Skip this workspace's own crates (`pdfcer-gui`, `egui-shell`, `ui-verify`)
 # and the engine crates it links by path — we attribute third-party code, not
-# our own. pdfce's own crates are `publish = false` and are covered by the
+# our own. pdfcer's own crates are `publish = false` and are covered by the
 # `LICENSE` file that ships beside the binary.
 [private]
 ignore = true

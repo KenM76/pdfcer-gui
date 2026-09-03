@@ -17,7 +17,7 @@
 //! that hand-over **going up**. This check exists because nothing in the suite
 //! had ever come back **down** through it.
 //!
-//! [`DeepAnchor`]: pdfce-gui `viewer::deep::DeepAnchor`
+//! [`DeepAnchor`]: pdfcer-gui `viewer::deep::DeepAnchor`
 //!
 //! # ★★★ Why the sibling check could not see this
 //!

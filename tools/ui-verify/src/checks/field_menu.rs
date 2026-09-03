@@ -16,7 +16,7 @@
 //! ## ★★★ Why this check is the FIRST of its kind, which is the finding
 //!
 //! **This harness had driven 92 checks and had never once opened a context
-//! menu.** pdfce has had canvas right-click menus since Phase 1. Everything
+//! menu.** pdfcer has had canvas right-click menus since Phase 1. Everything
 //! asserted about them is a unit test over `MenuHost::would_open`, which asks
 //! whether the *manifest* would offer something — a real question, and not the
 //! same question as *"does a right-click on this pixel open a menu"*.
@@ -84,7 +84,7 @@ use crate::trace::Trace;
 /// Edit mode, then arm the text-field tool.
 const INVOKE: &str = "mode.edit,edit.form_text_field";
 /// Makes the placement dialog accept itself, so no dialog driving is needed.
-const ACCEPT_ENV: (&str, &str) = ("PDFCE_DIAG_FORM_ACCEPT", "1");
+const ACCEPT_ENV: (&str, &str) = ("PDFCER_DIAG_FORM_ACCEPT", "1");
 /// The per-widget census line the canvas publishes, carrying each box's rect.
 const BOX_LINE: &str = "form-target";
 /// The line the canvas writes when a click selects a widget.
@@ -194,7 +194,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.env
-        .push(("PDFCE_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
+        .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.env
         .push((ACCEPT_ENV.0.to_owned(), ACCEPT_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
@@ -203,7 +203,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
     report.note(format!(
-        "launched {} as pid {} with PDFCE_DIAG_INVOKE={INVOKE}",
+        "launched {} as pid {} with PDFCER_DIAG_INVOKE={INVOKE}",
         exe.display(),
         session.pid()
     ));

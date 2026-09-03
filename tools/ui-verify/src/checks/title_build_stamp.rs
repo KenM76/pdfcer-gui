@@ -21,7 +21,7 @@
 //! # ★★★ The one check in this suite that needs no input at all
 //!
 //! The title is published as `window-title "..."` whenever it changes, and the
-//! window is placed with `PDFCE_DIAG_VIEWPORT`, which lays out a real window
+//! window is placed with `PDFCER_DIAG_VIEWPORT`, which lays out a real window
 //! **without taking focus**. So this reads a trace line from a launched process
 //! and asserts on it — no pointer, no keyboard, nothing that competes with
 //! whoever is using the machine.
@@ -32,7 +32,7 @@
 //!
 //! # ★★ What is asserted, and why the zone rule is the interesting part
 //!
-//! `PDFCE_BUILD_TIME` has two producers and they disagree about zone:
+//! `PDFCER_BUILD_TIME` has two producers and they disagree about zone:
 //!
 //! | producer | stamp | zone |
 //! |---|---|---|
@@ -65,7 +65,7 @@ use crate::report::CheckReport;
 
 /// The trace event the frame emits when the window title changes.
 const TITLE: &str = "window-title";
-/// Where and how large the window is placed, as `PDFCE_DIAG_VIEWPORT` takes it.
+/// Where and how large the window is placed, as `PDFCER_DIAG_VIEWPORT` takes it.
 ///
 /// Modest, because nothing here depends on width — and it switches `with_active`
 /// off, which is the property that lets this run beside somebody working.
@@ -113,7 +113,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // would have quietly stopped being evidence the first time a fixture moved.
     //
     // Which is exactly what had happened. The whole project's documentation
-    // named the benchmark drawing at `D:\\Dev\\temp\\pdfce\\`, and it now lives
+    // named the benchmark drawing at `D:\\Dev\\temp\\pdfcer\\`, and it now lives
     // in `D:\\Dev\\pdfTests\\`. Three documents were corrected alongside this
     // line. A check whose subject does not need a document should not acquire
     // a dependency on one.

@@ -29,14 +29,14 @@ window width, waits for the re-layout, and captures — twelve widths from
 1,884 down to 444 client points, largest first, because Word re-lays-out
 incrementally and a series that *grew* would photograph the recovery path
 rather than the collapse path. `tools/our-ribbon-study.ps1` is its twin,
-pointed at `target/release/pdfce-gui.exe`, at the same widths.
+pointed at `target/release/pdfcer-gui.exe`, at the same widths.
 
 The two series are in `evidence/word-ribbon/` and `evidence/our-ribbon/`.
 
 ★ Both scripts had to find the window the same careful way. `Process.MainWindowHandle`
 is *not* the visible window for a `winit` application — it can be an invisible
 helper whose rect is nonsense, and sizing it succeeds, reports the size back,
-and moves nothing on screen. The first run of the pdfce study photographed the
+and moves nothing on screen. The first run of the pdfcer study photographed the
 same width six times because of it. `ui-verify`'s own win32 layer already
 carried that comment; the study did not, until it did.
 
@@ -46,7 +46,7 @@ carried that comment; the study did not, until it did.
 
 Groups reachable **on the band**, without opening a menu:
 
-| client width | Word | pdfce |
+| client width | Word | pdfcer |
 |---:|---:|---:|
 | 1,884 | 10 | 7 (all of them) |
 | 1,284 | 10 | 7 |
@@ -54,7 +54,7 @@ Groups reachable **on the band**, without opening a menu:
 | 604 | **7** + a scroll chevron | **1** — six in a `⏷ 6 more` menu |
 
 At the width a laptop or a docked half-screen actually is, Word puts ten
-groups' worth of commands in front of the operator and pdfce puts three.
+groups' worth of commands in front of the operator and pdfcer puts three.
 
 **It is not that our overflow is wrong.** The `⏷ N more` affordance is good,
 it is reachable, it is tested at every width, and it is the arrow the operator
@@ -79,7 +79,7 @@ Word has **three** presentations for a control, and a group mixes them freely:
 The Clipboard group is one Large plus a column of three Small. The Font group
 is two combo boxes and thirteen Small. The Editing group is three Medium.
 
-**This is where Word's density comes from**, and it is the mechanism pdfce
+**This is where Word's density comes from**, and it is the mechanism pdfcer
 lacks entirely: every control in our band is Medium, always, by a hard-coded
 `shows_label: true`.
 
@@ -110,11 +110,11 @@ strip has its own, separate `›`, and tab labels **clip** rather than
 ellipsise.
 
 ★ So the operator's *"arrow at the end to press to move over"* is the **last**
-resort in Word, not the first. In pdfce it is currently the **only** resort.
+resort in Word, not the first. In pdfcer it is currently the **only** resort.
 
 ---
 
-## 4. What pdfce already has, and it is more than it looks
+## 4. What pdfcer already has, and it is more than it looks
 
 Worth stating plainly so the work is additive rather than a rewrite:
 
@@ -332,24 +332,24 @@ Scoped separately from the scaling work because it is an **IA and capability**
 question, not a layout one: it adds commands, and `RIBBON_IA.md` decides where
 a command lives. Tracked in `OPERATOR_REQUESTS.md`; it needs, in order:
 
-1. an inventory of Word's Home ▸ Font group against what `pdfce-core`'s text
+1. an inventory of Word's Home ▸ Font group against what `pdfcer-core`'s text
    editing can actually do — a control for a capability the engine lacks is a
    placeholder, and R9 forbids those;
 2. anything missing written up as an engine hand-off rather than stubbed;
-3. an IA amendment, because pdfce's text lives under **Edit ▸ Content** and the
+3. an IA amendment, because pdfcer's text lives under **Edit ▸ Content** and the
    contextual **Format** tab, not under a Home tab that does not exist here.
 
 ★ The parity target is the **capability list**, not the pixel layout. Word's
 Font group is two combos and fourteen icon buttons; copying that arrangement
 onto a PDF editor whose selection model is different would be cargo cult. What
-is owed is *"everything Word lets me do to text, pdfce lets me do to text"*.
+is owed is *"everything Word lets me do to text, pdfcer lets me do to text"*.
 
 ---
 
 ## 7. What was deliberately not copied
 
 * **Galleries that shrink by showing fewer tiles.** Word's Styles gallery drops
-  from four visible tiles to three to one. pdfce has no galleries, and adding a
+  from four visible tiles to three to one. pdfcer has no galleries, and adding a
   shrinking one to carry a scaling mechanism would be inventing a control to
   justify a rule.
 * **Tab labels that clip without an ellipsis.** Ours truncate with `…`, which
@@ -399,7 +399,7 @@ verbs keep their names.
 ★ Two sizes are also *earned* rather than asserted, which is what lets the
 manifest be bold: a `Small` whose command has no icon, no tooltip, or no
 installed painter renders labelled instead of rendering a mystery. Twelve of
-pdfce's 109 commands have no icon; none of them had to be audited.
+pdfcer's 109 commands have no icon; none of them had to be audited.
 
 **`Large` was applied only to groups with exactly one item** — Recognise,
 Print, Insert, Comments, Diagnostics, Insert image. `sizing`'s layout rule is

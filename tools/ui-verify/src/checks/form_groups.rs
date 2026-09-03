@@ -58,7 +58,7 @@
 //! a **fixture**, not a rewrite: `tools/gen-certified-nested-fixture.py` copies
 //! `nested-form.pdf`'s field tree under `certified-p2-form.pdf`'s
 //! certification. Its header carries the whole argument, and
-//! `crates/pdfce-gui/src/app/actions/forms/delete.rs`'s
+//! `crates/pdfcer-gui/src/app/actions/forms/delete.rs`'s
 //! `the_certified_nested_fixture_is_both_certified_and_nested` pins the four
 //! properties it has to keep — it loads, `deletion_refusal` is `Some`,
 //! `AcroForm::groups` is non-empty, and `fill_refusal` is `None`.
@@ -143,7 +143,7 @@ const NESTED: &str = "forms/nested-form.pdf";
 /// `D:/Dev/fixtures/` that does not exist, and the check SKIPs on every run
 /// while telling the reader to run a generator that writes somewhere else.
 ///
-/// ★ It is in this repository and not the engine's because `D:/Dev/pdfce` is
+/// ★ It is in this repository and not the engine's because `D:/Dev/pdfcer` is
 /// READ-ONLY for this project — see the workspace manifest — so a fixture this
 /// project needs and that project does not have is authored here, by
 /// `tools/gen-certified-nested-fixture.py`.
@@ -621,7 +621,7 @@ fn drive_refusals(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option
     //
     // `certified-nested-form.pdf` is the fixture that closes it, and the
     // engine's answer on it is not in doubt:
-    // `crates/pdfce-gui/src/app/actions/forms/delete.rs`'s
+    // `crates/pdfcer-gui/src/app/actions/forms/delete.rs`'s
     // `the_certified_nested_fixture_is_both_certified_and_nested` asserts
     // `AcroForm::groups == ["Personal.Address", "Personal"]` from inside the
     // crate, every `cargo test` run. So `nodes=0` here cannot mean "this
@@ -886,7 +886,7 @@ fn launch(
     }
     if let Some(commands) = invoke {
         spec.env
-            .push(("PDFCE_DIAG_INVOKE".to_owned(), commands.to_owned()));
+            .push(("PDFCER_DIAG_INVOKE".to_owned(), commands.to_owned()));
     }
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
@@ -983,7 +983,7 @@ fn capture(ctx: &CheckContext, session: &Session, report: &mut CheckReport, name
 /// A fixture from the engine's own corpus, which this repository builds against
 /// by path.
 fn engine_fixture(rel: &str) -> Option<std::path::PathBuf> {
-    let path = std::path::Path::new("D:/Dev/pdfce/fixtures/synthetic").join(rel);
+    let path = std::path::Path::new("D:/Dev/pdfcer/fixtures/synthetic").join(rel);
     path.is_file().then_some(path)
 }
 

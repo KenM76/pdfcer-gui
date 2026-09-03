@@ -14,7 +14,7 @@
   reader of a release.
 -->
 
-`pdfce-gui.exe` statically links the third-party Rust crates listed below,
+`pdfcer-gui.exe` statically links the third-party Rust crates listed below,
 and embeds the data and font assets named in the supplement at the end. Their
 licence terms and copyright notices are reproduced in full. This file covers
 the dependencies shipped in the Windows build target; the crate sections are
@@ -22,7 +22,7 @@ regenerated mechanically from `Cargo.lock`.
 
 The program itself is MIT-licensed — see the `LICENSE` file beside this one.
 Nothing below changes that; these are the terms of other people's work that
-pdfce redistributes.
+pdfcer redistributes.
 
 ## Required acknowledgements
 
@@ -35,7 +35,7 @@ pdfce redistributes.
   licence's required ACKNOWLEDGEMENT SENTENCE — that is a distinct obligation
   with its own wording, and no field in the template model carries it. So a
   conjunctive `... AND IJG` dependency can be fully licence-listed below and
-  still leave pdfce out of compliance.
+  still leave pdfcer out of compliance.
 
   It is therefore written here as unconditional prose, NOT inside the
   per-licence iteration block below, and NOT gated on any crate being present.
@@ -51,7 +51,7 @@ pdfce redistributes.
   about.hbs, never by "the generator stopped emitting it."
 -->
 
-pdfce's JPEG encoder is the `jpeg-encoder` crate, whose SPDX expression is
+pdfcer's JPEG encoder is the `jpeg-encoder` crate, whose SPDX expression is
 `(MIT OR Apache-2.0) AND IJG`. The `AND` is conjunctive: the Independent JPEG
 Group's terms bind **in addition to** the permissive ones, because the crate's
 quantization tables, Huffman tables and DCT are derived from the IJG's
@@ -4876,7 +4876,7 @@ Used by:
 - [iccce-color 0.3.0](https://github.com/KenM76/iccce)
 - [iccce-profile 0.3.0](https://github.com/KenM76/iccce)
 - [egui-shell 0.1.0](https://crates.io/crates/egui-shell)
-- [pdfce-gui 0.1.0](https://crates.io/crates/pdfce-gui)
+- [pdfcer-gui 0.1.0](https://crates.io/crates/pdfcer-gui)
 - [dpi 0.1.2](https://github.com/rust-windowing/winit)
 - [harfrust 0.7.0](https://github.com/harfbuzz/harfrust)
 
@@ -5327,11 +5327,11 @@ the following restrictions:
   ANYONE WHO WAS GIVEN A BINARY.
   ===========================================================================
 
-  cargo-about can only see Cargo crates in Cargo.lock. pdfce also embeds
+  cargo-about can only see Cargo crates in Cargo.lock. pdfcer also embeds
   third-party DATA and FONT FILES that are not crates and are therefore
   invisible to the generator. A `PROVENANCE.md` beside such an asset records
   its terms for whoever reads the SOURCE TREE; it does not ship. The portable
-  package carries `pdfce-gui.exe`, `LICENSE`, `THIRD_PARTY_LICENSES.md`,
+  package carries `pdfcer-gui.exe`, `LICENSE`, `THIRD_PARTY_LICENSES.md`,
   `README.md` and `FEATURES.md` — so an asset documented only in a
   PROVENANCE.md is redistributed to an operator with no notice attached to it
   at all.
@@ -5352,9 +5352,9 @@ the following restrictions:
   ONE DIRECTORY IS DELIBERATELY ABSENT FROM THIS EPILOGUE, and the absence is
   not an oversight:
 
-  * `crates/pdfce-gui/src/icons/assets/` — the operator's OWN art, under the
+  * `crates/pdfcer-gui/src/icons/assets/` — the operator's OWN art, under the
     project's own MIT licence, which the shipped `LICENSE` file already
-    covers. Reproducing pdfce's own grant under a heading saying "third party"
+    covers. Reproducing pdfcer's own grant under a heading saying "third party"
     would make this file say something untrue. The gate exempts a directory
     whose PROVENANCE.md declares own work, and that exemption exists because
     the engine's copy of the checker flagged exactly this directory on its
@@ -5366,7 +5366,7 @@ the following restrictions:
   the operator's decision to ship a CC-BY-SA-4.0 work in an MIT package is
   what made a notice that reaches the RECIPIENT an obligation rather than a
   courtesy. Note what changed and what did not — the section's text is the
-  engine's own, copied from `D:\Dev\pdfce\about.hbs` rather than rewritten,
+  engine's own, copied from `D:\Dev\pdfcer\about.hbs` rather than rewritten,
   because two accounts of one licence are two things that can drift, and the
   engine's account is the one its `PROVENANCE.md` was written against.
 
@@ -5377,38 +5377,38 @@ the following restrictions:
   the claim needs the first.
 -->
 
-The entries below cover third-party **data, font and model assets** pdfce
+The entries below cover third-party **data, font and model assets** pdfcer
 redistributes that are not Cargo crates, so `cargo-about` cannot harvest them
 from `Cargo.lock`. They reach you in one of two ways, and the distinction is
 stated per entry rather than assumed:
 
-- **compiled into `pdfce-gui.exe`** — the Adobe tables and the substitute font
+- **compiled into `pdfcer-gui.exe`** — the Adobe tables and the substitute font
   faces below, which are `include_bytes!` payloads and static tables in crates
   this program links;
 - **loose files in this folder** — the `ocrs` OCR model weights below, which
   live at `models/ocrs/` beside the executable because the program loads them
   from disk on demand.
 
-They all arrive through the engine: `pdfce-gui` depends on `pdfce-core` and
-`pdfce-render` **by path** into `D:\Dev\pdfce`, and Rust links them
+They all arrive through the engine: `pdfcer-gui` depends on `pdfcer-core` and
+`pdfcer-render` **by path** into `D:\Dev\pdfcer`, and Rust links them
 statically, so every asset those crates embed or compile in as a table is
 redistributed by this binary too. The paths named below are paths in the
 engine repository, not in this one — a package's own layout is given
 separately where it differs. The authoritative provenance records (keep in
 sync) are:
 
-- `D:\Dev\pdfce\crates\pdfce-core\src\fontdata\tables.rs` — module-header
+- `D:\Dev\pdfcer\crates\pdfcer-core\src\fontdata\tables.rs` — module-header
   notices for the Adobe metrics and glyph-list tables
-- `D:\Dev\pdfce\crates\pdfce-render\assets\fonts\PROVENANCE.md` — per-face
+- `D:\Dev\pdfcer\crates\pdfcer-render\assets\fonts\PROVENANCE.md` — per-face
   SHA-256 provenance for the bundled substitute faces
-- `D:\Dev\pdfce\crates\pdfce-core\assets\models\ocrs\PROVENANCE.md` — per-file
+- `D:\Dev\pdfcer\crates\pdfcer-core\assets\models\ocrs\PROVENANCE.md` — per-file
   SHA-256 provenance for the OCR model weights, which have no version number
   and are therefore identified by hash
 
 ### Adobe Core 14 AFM font metrics (APAFML)
 
 The standard-14 font width, encoding, and descriptor tables in
-`crates/pdfce-core/src/fontdata/tables.rs` are derived from the Adobe
+`crates/pdfcer-core/src/fontdata/tables.rs` are derived from the Adobe
 Core 14 AFM files (SPDX: `APAFML`).
 
 Modification notice (required by APAFML): only `WX` advance widths and
@@ -5441,7 +5441,7 @@ files.
 ### Adobe Glyph List (BSD-3-Clause)
 
 The glyph-name → Unicode data in
-`crates/pdfce-core/src/fontdata/tables.rs` is a subset of the Adobe
+`crates/pdfcer-core/src/fontdata/tables.rs` is a subset of the Adobe
 Glyph List (`glyphlist.txt`, `zapfdingbats.txt`), licensed under
 BSD-3-Clause:
 
@@ -5479,7 +5479,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ### Bundled `ocrs` OCR model weights (CC-BY-SA-4.0)
 
 The two neural-network weight files in
-`crates/pdfce-core/assets/models/ocrs/` (`text-detection.rten`,
+`crates/pdfcer-core/assets/models/ocrs/` (`text-detection.rten`,
 `text-rec-checkpoint.rten`), shipped in this portable folder as
 `models/ocrs/`, are the pre-trained models of the
 [ocrs](https://github.com/robertknight/ocrs) OCR engine by **Robert
@@ -5492,15 +5492,15 @@ repository's model card. They are trained on
 [HierText](https://github.com/google-research-datasets/hiertext) (also
 CC-BY-SA-4.0) plus synthetic data.
 
-**pdfce has made no changes to these files.** They are byte-identical to
+**pdfcer has made no changes to these files.** They are byte-identical to
 the upstream artifacts; only their filenames were shortened (upstream
 carries a content-addressed suffix). Per-file SHA-256 hashes are recorded
-in `crates/pdfce-core/assets/models/ocrs/PROVENANCE.md`.
+in `crates/pdfcer-core/assets/models/ocrs/PROVENANCE.md`.
 
 CC-BY-SA-4.0 is a licence for creative works and contains no linking or
 source-distribution terms. These files are redistributed **unmodified, in
-a collection**, alongside pdfce's own MIT-licensed code; that is not an
-adaptation, and pdfce's licence is unaffected. Anyone who **modifies**
+a collection**, alongside pdfcer's own MIT-licensed code; that is not an
+adaptation, and pdfcer's licence is unaffected. Anyone who **modifies**
 these weights — fine-tuning, quantizing, retraining, or converting them to
 another runtime's format — creates Adapted Material and must release the
 resulting model under CC-BY-SA-4.0 or a compatible licence.
@@ -5510,14 +5510,14 @@ The human-readable licence deed is linked above; the full legal code is at
 
 ### Bundled Foxit substitute faces (BSD-3-Clause, via pdfium)
 
-The 14 CFF font files in `crates/pdfce-render/assets/fonts/`
+The 14 CFF font files in `crates/pdfcer-render/assets/fonts/`
 (`FoxitSans*.cff`, `FoxitSerif*.cff`, `FoxitFixed*.cff`,
 `FoxitSymbol.cff`, `FoxitDingbats.cff`) are extracted from Chromium
 pdfium (`core/fxge/fontdata/chromefontdata/`, upstream commit
 `a4a2d6706be9f538e355f3b95307ff393f299a54`). They are licensed
 BSD-3-Clause via Google's pdfium grant over Foxit-origin code
 (`Original code copyright 2014 Foxit Software Inc.` in each upstream
-file); see `crates/pdfce-render/assets/fonts/PROVENANCE.md` for
+file); see `crates/pdfcer-render/assets/fonts/PROVENANCE.md` for
 per-face SHA-256 provenance. The pdfium `LICENSE` file, verbatim
 (its BSD-3-Clause grant, followed by the Apache-2.0 text that the
 upstream file appends for other pdfium components):

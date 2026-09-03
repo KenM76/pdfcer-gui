@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- The Tool panel — an arrow cursor with two option rules beside it -->
+  <!-- ui-spec §3.3. This glyph has one job the other panel icons do not: it
+       must read as "what you are holding" rather than as "a thing in the
+       document". Bookmarks, Layers, Pages and Objects all draw CONTENT; this
+       one draws the operator's own pointer.
+
+       So it is an ARROW CURSOR — the one shape in the whole interface an
+       operator already reads as "the pointer" without being taught — with two
+       short option rules beside it.
+
+       Deliberately NOT `tool.svg`, which is this directory's wrench and is
+       spoken for: `Icon::Tools` uses it for the Tools ribbon tab, and a wrench
+       means "settings" everywhere else on this machine — pdfcer already has a
+       settings surface this must not be confused with.
+
+       The two rules are UNEQUAL in length — an option row and its shorter
+       caption — because two equal rules beside an arrow read as a signal-bars
+       icon. Unfilled and stroke 2.5, matching every other panel glyph. -->
+  <path d="M15 8L15 34L21.5 27.5L26 37L30.5 35L26 26L34.5 26Z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M31 13H41" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M31 19H37" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

@@ -3,12 +3,12 @@
 //!
 //! # ★★ The one operation in this program Acrobat cannot do
 //!
-//! `pdfce-core`, 2026-08-29: *"Acrobat cannot do this between two files at all;
+//! `pdfcer-core`, 2026-08-29: *"Acrobat cannot do this between two files at all;
 //! Adobe's own documentation says so by name."*
 //!
 //! That is worth stating in a check file, because it changes what a failure
-//! here means. For most of this suite a red result says *pdfce is behind a
-//! reference implementation*. Here it says *pdfce has lost something nothing
+//! here means. For most of this suite a red result says *pdfcer is behind a
+//! reference implementation*. Here it says *pdfcer has lost something nothing
 //! else offers*, and there is no workaround to fall back on — an operator who
 //! wants a chapter's bookmarks in another drawing does it by hand, one at a
 //! time, or not at all.
@@ -238,7 +238,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.env
-        .push(("PDFCE_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
+        .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
 
@@ -378,7 +378,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         };
         body.is_none_or(|b| r.min.y >= b.min.y && r.max.y <= b.max.y)
     };
-    // ★ ENABLED, too. A row whose destination pdfce cannot resolve is drawn as a
+    // ★ ENABLED, too. A row whose destination pdfcer cannot resolve is drawn as a
     // disabled `Button`, and a disabled button never reports a click — so it can
     // never be selected and the Copy control could never appear for it. That is
     // correct behaviour that would read here as the defect.

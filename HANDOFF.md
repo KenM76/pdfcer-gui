@@ -39,12 +39,12 @@
 | | |
 |---|---|
 | **Shell HEAD** | `3e27b79` — clean tree |
-| **Engine HEAD** | `D:\Dev\pdfce` at `b943ea1` |
+| **Engine HEAD** | `D:\Dev\pdfcer` at `b943ea1` |
 | **Tests** | 1,184 passing, 0 failing |
 | **Gates** | 8 of 8, 0 skipped |
 | **Commands** | 90 registered · 88 declared-and-deferred |
-| **Latest build** | `D:\builds\pdfcegui-20260813-2248-b943ea1-a748414\` |
-| **Requests owed by pdfce** | **none.** Four filed and answered on 2026-08-14 — revision clouds, markup note text, markup opacity, tab-order authoring. Three are **accepted and scheduled, none started**; they block *items within* Phase 6, not Phase 6 itself. From the fourth, **`widget_rects(page_index)` shipped immediately** (engine `e8e9881`) and canvas form filling uses it. Tab-order *writing* stays blocked on their F4 — see §8. |
+| **Latest build** | `D:\builds\pdfcergui-20260813-2248-b943ea1-a748414\` |
+| **Requests owed by pdfcer** | **none.** Four filed and answered on 2026-08-14 — revision clouds, markup note text, markup opacity, tab-order authoring. Three are **accepted and scheduled, none started**; they block *items within* Phase 6, not Phase 6 itself. From the fourth, **`widget_rects(page_index)` shipped immediately** (engine `e8e9881`) and canvas form filling uses it. Tab-order *writing* stays blocked on their F4 — see §8. |
 
 > **★ The table above is from 2026-08-13 and is superseded three times over.**
 > A 2026-08-14 session landed the Read-mode gate and Phase 7; a
@@ -74,7 +74,7 @@ found more than it confirmed. Measured at `a709afc`:
 | **`ui-verify`** | **22 passed · 0 failed · 3 skipped** (was 19/1/4) |
 | **Tests** | 1,823 passing, 0 failing |
 | **Gates** | 12 of 12, 0 skipped |
-| **Engine** | `D:\Dev\pdfce` local `main`, via `git = "file://…", branch = "main"` |
+| **Engine** | `D:\Dev\pdfcer` local `main`, via `git = "file://…", branch = "main"` |
 
 **Three harness defects, each producing a confident wrong answer, and each
 worth more than the check that found it.**
@@ -142,7 +142,7 @@ Both have their assertion shapes ready (`opening-view` and
 > *"I tried a lot of the features that have been added only to find there is no
 > surface for changing or editing the settings for them. please add the ones
 > that are missing for all of the features currently supported in the gui. also
-> port the settings dialog from the pdfce gui. also the print dialogue didn't
+> port the settings dialog from the pdfcer gui. also the print dialogue didn't
 > work."*
 
 Three commits. Every one of them found something worse than the thing reported,
@@ -151,7 +151,7 @@ workspace could see:
 
 | # | reported | found |
 |---|---|---|
-| `6d790db` | print didn't work | `pdfce-print` was linked into every shipped binary and the adapter's four calls still returned `NotLinked`. **A green test held it there**: `every_hole_refuses_rather_than_guessing` asserted all four refused, which was correct while unlinked and became a lock the moment it was not — doing the right thing would have turned the suite red |
+| `6d790db` | print didn't work | `pdfcer-print` was linked into every shipped binary and the adapter's four calls still returned `NotLinked`. **A green test held it there**: `every_hole_refuses_rather_than_guessing` asserted all four refused, which was correct while unlinked and became a lock the moment it was not — doing the right thing would have turned the suite red |
 | `87b4f3d` | no settings surface | `file.settings` inert for the whole project — and, measured against the old shell, **nine of its thirteen settings were persisted, shown, edited and never read by anything**, discarded at every call site that built its own option struct. `app::settings` is now the one funnel and a `syn` check enforces it. D10's second half closed, proved in pixels |
 | `4035b64` | can't change a markup's colour | Markup ▸ Style declared `Item::custom("colour_swatch")` since S2 and **no renderer ever matched the kind**, so the group shipped as a caption over an empty band. The manifest test asserted the item was *declared* and passed correctly |
 
@@ -180,7 +180,7 @@ fix would not fail a gate a terse one passes.
 | | outcome |
 |---|---|
 | **Measure ▸ Set scale** | ✅ `980971f`. The model was salvaged whole in Phase 7 and only a window was missing. **Manage groups stays deferred and its reason was rewritten**: it waited on "the same absent dialog", the dialog landed, and the entry stays — because rename and delete are *not in the shipped `EditSession` surface* and a management window missing half its verbs is worse than none |
-| **The seven `view.*` settings** | ✅ `29cdc31`. **Two built, five deleted.** Four named capabilities that do not exist; the fifth, `app_initiative`, existed to switch off a behaviour pdfce does not have. All seven unregistered on R8, the empty Render group deleted, 32 groups → 31 |
+| **The seven `view.*` settings** | ✅ `29cdc31`. **Two built, five deleted.** Four named capabilities that do not exist; the fifth, `app_initiative`, existed to switch off a behaviour pdfcer does not have. All seven unregistered on R8, the empty Render group deleted, 32 groups → 31 |
 | **The Format contextual tab** | ⛔ `3784cca`. **Blocked, not unbuilt** — see below |
 
 **The Format tab is the finding worth carrying.** §5.8 specifies twenty-four
@@ -202,7 +202,7 @@ The second is ours. The first is filed, along with a request for an
 `annotation_at(page, point)` sibling of the `widget_rects` query that unblocked
 canvas form filling — the exact precedent, and it worked.
 
-### Four requests open to pdfce, all filed 2026-08-17
+### Four requests open to pdfcer, all filed 2026-08-17
 
 `open/` was empty before this session. It now holds four, three of them from
 one operator question about print:
@@ -211,7 +211,7 @@ one operator question about print:
 |---|---|
 | `devicesettings_pick_tray_is_never_read` | the field is declared, documented, plumbed through `spool`'s signature, and **read nowhere**. The GUI shipped a checkbox for it; the checkbox is removed |
 | `orientation_auto_is_per_job_not_per_page` | documented as per-page in a heading that says so, implemented per-job — `build_devmode` is called once with `first_page_pt` |
-| `no_paper_size_selection_in_the_print_path` | no paper list, no way to request one, no route to the driver's properties dialog. The dialog now **discloses** which paper the job is planned against and that pdfce cannot change it |
+| `no_paper_size_selection_in_the_print_path` | no paper list, no way to request one, no route to the driver's properties dialog. The dialog now **discloses** which paper the job is planned against and that pdfcer cannot change it |
 | `no_verb_modifies_an_existing_annotation` | the Format-tab blocker above |
 
 ### …and three more on 2026-08-17, so `open/` holds SEVEN
@@ -224,9 +224,9 @@ engine capability that is absent, or present-and-unreachable.
 |---|---|
 | `redaction_fill_is_unreachable_from_the_search_path` | `/IC` is written, read and painted — but `EditSession::author_text_matches` hard-codes `fill: None` (`edit.rs:11719`), so no caller can set it on a mark from *Find and mark*. A swatch would be honoured on whole-page marks and silently dropped on searched ones |
 | `redaction_overlay_text_is_authored_and_never_drawn` | `/OverlayText` is **written into the PDF and never read**. `gather_page` does not look at it, `build_overlay` draws filled boxes only, and the annotation carrying the string is deleted at apply. Type *REDACTED*, get plain black boxes, no report row. **The sharpest form of it is the disclosure, not the paint**: `ARCHITECTURE.md` says the deferral is *"disclosed at mark time"* and there is no mechanism in the API that discloses it at mark time or ever — so a shell reading only the API cannot know to say anything |
-| `no_verb_sets_a_pages_media_box` | nothing in `pdfce-core` writes a `/MediaBox`, so `file.new` can only ever be A4 without ten template assets — and still no custom size. Priority **low**, stated as such |
+| `no_verb_sets_a_pages_media_box` | nothing in `pdfcer-core` writes a `/MediaBox`, so `file.new` can only ever be A4 without ten template assets — and still no custom size. Priority **low**, stated as such |
 
-#### ★★ Two pdfceGUI sessions were running at once, and both filed the same request
+#### ★★ Two pdfcer-gui sessions were running at once, and both filed the same request
 
 The overlay-text finding was reached **independently by two sessions four
 minutes apart** on 2026-08-17, and filed twice. The duplicate
@@ -265,13 +265,13 @@ automatically a build-the-surface task.
 
 The operator reported the print gaps a **third** time — *"pretty much every
 program I have ever seen lets you press a properties button beside the selected
-printer"* — and instructed that the requests be worked by the pdfce session in
+printer"* — and instructed that the requests be worked by the pdfcer session in
 parallel rather than queued.
 
 **The root cause is one design choice, and finding it took three passes.**
-`pdfce-print`'s `build_devmode` (`lib.rs:2188`) **synthesises a DEVMODE from
+`pdfcer-print`'s `build_devmode` (`lib.rs:2188`) **synthesises a DEVMODE from
 zero** — `DEVMODEW { dmSize, ..Default::default() }` — sets the two fields
-pdfce knows about, and hands that to `CreateDC`. It never asks the driver for
+pdfcer knows about, and hands that to `CreateDC`. It never asks the driver for
 one. That single fact explains all three asks at once:
 
 * **no sheet size**, because there is no DEVMODE to put a `dmPaperSize` *in*;
@@ -287,12 +287,12 @@ two answers were wrong), and the three print requests are cross-linked with a
 standing note in the channel README.
 
 **★ The boundary question is worth carrying**, because it was genuinely
-arguable and the answer generalises. `pdfce-gui` links `pdfce-print` and has a
+arguable and the answer generalises. `pdfcer-gui` links `pdfcer-print` and has a
 window handle, so it *could* call `DocumentProperties` itself. It must not: the
 dialog's **output** is a DEVMODE, and a DEVMODE is meaningless to anything but
 `spool`. A GUI that opened the dialog and could not hand the result anywhere
 would be rebuilding the `pick_tray` defect **deliberately** — an operator
-configuring settings that are then thrown away. And `pdfce-cli` prints too, so
+configuring settings that are then thrown away. And `pdfcer` prints too, so
 paper selection living only in the GUI is the same boundary error mirrored.
 
 The test that decided it: **not "is this a UI call?" but "where does its output
@@ -330,7 +330,7 @@ reusable part*, and it recurs.
 | **Markup** — ink simplification tolerance | ✅ **Not a missing setting — a live defect, fixed.** It was a `const` derived from the pen's *default* width, and the pen became a control on 2026-08-17. At 0.25 pt the fixed tolerance was **4× the stroke's half-width**, so the simplification could author a curve the operator did not draw. Now `Pen::simplify_tolerance_pts`, asserted at both ends of the range |
 | **Snap and drafting** — *"zoom min/max, default fit mode …"* | ⬜ **Partly closed.** Default fit mode and the rulers/grid/guides default visibility shipped as `app::prefs::opening` on 2026-08-17. Snap tolerance (10 px), selection tolerance (6 px), zoom min/max and the alphas are still open and still preference-shaped |
 | **No UI-scale or base-font-size control anywhere** | ✅ **Built 2026-08-17** — `Settings ▸ Appearance`, a multiplier on the OS setting, live-previewed like the theme. It was not a hard-coded constant: `ctx.set_zoom_factor` was never called at all. **`egui` ships a built-in `Ctrl` `+`/`-`/`0` handler for it, and this shell switches that off** (`app::configure_context`) because those chords mean *page* zoom — so the one path that would have surfaced the gap was closed for a good reason, and closing it removed a capability nobody had decided to have |
-| **New document** — always A4, on a machine whose drawings are A1 and A3 | ⛔ **Blocked on the engine, and this is the one that looked most like an ordinary GUI task.** **Nothing in `pdfce-core` writes a `/MediaBox`** — verified three ways; `EditSession`'s page verbs are rotate, delete and reorder. So the only shell-side implementation is one checked-in template per size, which is **ten** once landscape is counted and still cannot answer a custom size. Filed as `request_no_verb_sets_a_pages_media_box.md` (priority **low** — nobody drafts a sheet in pdfce) and **neither implementation built**, because ten assets that still fail the custom case is a half-capability that looks like progress and forecloses the real fix |
+| **New document** — always A4, on a machine whose drawings are A1 and A3 | ⛔ **Blocked on the engine, and this is the one that looked most like an ordinary GUI task.** **Nothing in `pdfcer-core` writes a `/MediaBox`** — verified three ways; `EditSession`'s page verbs are rotate, delete and reorder. So the only shell-side implementation is one checked-in template per size, which is **ten** once landscape is counted and still cannot answer a custom size. Filed as `request_no_verb_sets_a_pages_media_box.md` (priority **low** — nobody drafts a sheet in pdfcer) and **neither implementation built**, because ten assets that still fail the custom case is a half-capability that looks like progress and forecloses the real fix |
 
 **★ A framework default you switch off may have been carrying a capability you
 never decided to have.** That is the UI-scale row's lesson and it generalises:
@@ -475,8 +475,8 @@ is satisfied by any absurdity in the right direction.**
 How to actually do it:
 
 ```bash
-cargo build --release -p pdfce-gui
-PDFCE_DIAG=1 ./target/release/pdfce-gui.exe "D:\Dev\temp\pdfce\SW41177.pdf"
+cargo build --release -p pdfcer-gui
+PDFCER_DIAG=1 ./target/release/pdfcer-gui.exe "D:\Dev\temp\pdfcer\SW41177.pdf"
 ```
 
 Test documents that matter:
@@ -484,7 +484,7 @@ Test documents that matter:
 | file | why |
 |---|---|
 | `D:\Dev\pdfTests\ncored-benchmark-cad-drawing.pdf` | A3, 129,758 objects, ~1.2 s per raster. The performance case. |
-| `D:\Dev\temp\pdfce\SW41177.pdf` | 36 SolidWorks sheets. The multi-page and mixed-size case. |
+| `D:\Dev\temp\pdfcer\SW41177.pdf` | 36 SolidWorks sheets. The multi-page and mixed-size case. |
 
 ---
 
@@ -533,7 +533,7 @@ Test documents that matter:
 These were given explicitly and are still in force.
 
 1. **Check `D:\Dev\FeatureRequests\pdfce_FeatureRequests\open\` periodically
-   while waiting on anything from pdfce.** Empty means nothing is owed. Read
+   while waiting on anything from pdfcer.** Empty means nothing is owed. Read
    `INDEX.md` for the history; `archive/` is not read by default.
 2. **Continuous scroll is an option, not a replacement.** Single page stays
    the default outside Read mode — *"the way I move around a page is great
@@ -550,7 +550,7 @@ These were given explicitly and are still in force.
    and SolidWorks do."*
 
    Three named reference applications, and they are named for reasons that
-   cover the product between them: **Acrobat** is what pdfce replaces,
+   cover the product between them: **Acrobat** is what pdfcer replaces,
    **Inkscape** is the vector editor whose docking and tool model this shell
    already benchmarks against (`MODES_AND_PANELS.md` Part 2), and
    **SolidWorks** is where the operator's drawings come from and therefore
@@ -578,7 +578,7 @@ These were given explicitly and are still in force.
    judgement call. The disagreement was the *other* way out: Inkscape and
    SolidWorks both close a shape by clicking the first vertex, and **Acrobat
    does not**. Acrobat won — two against one — because `/Polygon` closes back
-   to `/Vertices[0]` by ISO 32000-1 §12.5.6.13, so pdfce is in Acrobat's
+   to `/Vertices[0]` by ISO 32000-1 §12.5.6.13, so pdfcer is in Acrobat's
    position, and a click-the-first-vertex rule would author a duplicate
    vertex and a zero-length closing segment. **The majority had never faced
    the surface.** SolidWorks' Escape-to-end was refused outright on a
@@ -618,7 +618,7 @@ These were given explicitly and are still in force.
    **Two things about it that are true today and easy to get wrong:**
 
    - **It is currently vacuous.** There is exactly one save command,
-     `file.save_copy`, and pdfce never overwrites the original unless the
+     `file.save_copy`, and pdfcer never overwrites the original unless the
      operator picks it — so every mode already behaves this way. The rule
      becomes load-bearing **the day in-place `Save` lands**, which is
      precisely when someone will be least likely to remember it. That is why
@@ -631,7 +631,7 @@ These were given explicitly and are still in force.
      *"this search had no matches."*
 
 6. **Dispatch subagents freely; do not ask permission.** See the global
-   `CLAUDE.md`. `D:\Dev\pdfce` is READ-ONLY to this project.
+   `CLAUDE.md`. `D:\Dev\pdfcer` is READ-ONLY to this project.
 
 ---
 
@@ -657,7 +657,7 @@ partition given in each prompt**.
 **What still went wrong, so you can watch for it:** an agent added an
 `Action` variant to `app/actions.rs` outside its territory because the
 crate would not compile without it (harmless, and correct); another ran
-`cargo build` inside `D:\Dev\pdfce`, which touched only its gitignored
+`cargo build` inside `D:\Dev\pdfcer`, which touched only its gitignored
 `target/` but violated the read-only rule.
 
 **Coordination beats racing.** When the Pages panel needed five lines in
@@ -675,7 +675,7 @@ to break the build.
 2. The group count in `shell/manifest/mod.rs`.
 3. Removal from the `PLANNED` list if the command is named there.
 4. Regenerate the RON:
-   `cargo test -p pdfce-gui --lib rewrite_built_in_ron -- --ignored`
+   `cargo test -p pdfcer-gui --lib rewrite_built_in_ron -- --ignored`
 5. A `KNOWN` entry for any new `enabled_when` condition name.
 6. **★ A dispatch arm — or an argued entry in
    `shell::commands::reach::SCAFFOLDED`.** Added 2026-08-15, and it is the
@@ -750,24 +750,24 @@ python tools/package-portable.py --verify --note "what this milestone added"
 nothing and leaves no folder. When it is not run, `BUILD-INFO.txt` says so
 in those words.
 
-**"Integrated with pdfce as a single exe" needs no fold-in.** Rust links the
+**"Integrated with pdfcer as a single exe" needs no fold-in.** Rust links the
 engine statically, so the release binary already carries it. Folding this
-shell into `D:\Dev\pdfce` today would ship a *regression*, because measure,
+shell into `D:\Dev\pdfcer` today would ship a *regression*, because measure,
 redaction, the settings dialog and text editing still live only in the old
 shell.
 
 ### ★★ The engine is PINNED, and it goes stale silently — checked 2026-08-17
 
-The sentence above used to say *"depends on `pdfce-core` and `pdfce-render`
+The sentence above used to say *"depends on `pdfcer-core` and `pdfcer-render`
 **by path**"*. **That has been false since 2026-08-14** and the consequence
 is not cosmetic:
 
 ```toml
-pdfce-core   = { git = "https://github.com/KenM76/pdfce", rev = "718d1e9d4", … }
-pdfce-render = { git = "https://github.com/KenM76/pdfce", rev = "718d1e9d4", … }
+pdfcer-core   = { git = "https://github.com/KenM76/pdfcer", rev = "718d1e9d4", … }
+pdfcer-render = { git = "https://github.com/KenM76/pdfcer", rev = "718d1e9d4", … }
 ```
 
-It fetches from **GitHub**, not from `D:\Dev\pdfce`. So the local engine tree
+It fetches from **GitHub**, not from `D:\Dev\pdfcer`. So the local engine tree
 can move arbitrarily far ahead and nothing here notices — no compile error, no
 warning, no test. It measured **seven commits behind** on 2026-08-17, and one
 of the seven was `1e7a0be`: images in `Separation`, `DeviceN`, `Lab`, `CalGray`
@@ -784,7 +784,7 @@ failure mode a pin creates.
 **Three things follow, and the third is the one that will be forgotten:**
 
 1. **The direction is engine → shells.** Nothing this project builds flows into
-   `D:\Dev\pdfce`, and compiling the old GUI there inherits nothing from here.
+   `D:\Dev\pdfcer`, and compiling the old GUI there inherits nothing from here.
    The operator asked this directly on 2026-08-17 and the assumption was the
    other way round.
 2. **`origin/main` is what this shell can see**, not local `main`. On
@@ -797,7 +797,7 @@ failure mode a pin creates.
    manifest. Check it whenever a rendering complaint arrives:
 
    ```bash
-   cd /d/Dev/pdfce && git rev-list --count 718d1e9d4..origin/main
+   cd /d/Dev/pdfcer && git rev-list --count 718d1e9d4..origin/main
    ```
 
    Non-zero means this shell is rendering with an older engine than the
@@ -816,10 +816,10 @@ the results in `--note`.
 | | |
 |---|---|
 | **Phase 5 — text editing** | **Started 2026-08-15 on the operator's explicit instruction, and partly landed.** Of D4's three problems: **D4b's two wrong cases are FIXED** — aligned tails are pinned and rotated text is no longer shifted along the wrong axis (`canvas::textedit::disposition`), proved by a `ui-verify` check that re-opens the saved copy in a second process and asserts the untouched line's `Tm` survived, with the old `EditOptions::default()` build planted twice to confirm the check fails against it. **Not done:** per-keystroke re-layout — measured at 102.77 ms on a SolidWorks sheet and blocked on the engine, which keeps `plan_edit` `pub(crate)` so there is no dry run; **D4a's cross-run edit**, which needs a multi-run request core does not have and now refuses in a sentence rather than by a dead keyboard; **D4c's three gates**, untouched. `edit.add_text` is wired and unit-tested but not driven, and has no font/size/colour surface. `DEFECTS.md` D4 carries the measurement table and the honest single-line limit. |
-| **Phase 6 — markup** | **In progress, and larger than this row used to imply.** The new shell has *no markup placement at all*: all eight `markup.*` commands draw and fall through to `command-unimplemented`, `CanvasTool` has two variants, and there is no `canvas/markup.rs`. So it is *build the tool substrate, then ten kinds*, plus the Comments panel (which does not exist here either). **Three items needed engine changes; all three were filed and answered on 2026-08-14, accepted and scheduled, none started.** Revision clouds land as `MarkupSpec::Cloud` plus `Square { border_effect }` — and the *rectangular* cloud ships first, being the gesture people actually reach for. Note text lands as `/Contents` + `/T` + `/M` together, `/M` engine-stamped and `/T` optional with **no invented placeholder**. Opacity is `/CA` **alone** — writing `/ca` into the appearance stream would encode a pdfce render bug into the file format; see **`DEFECTS.md` D9**, which is the more urgent half of that exchange and is about *viewing*, not authoring. Polyline, polygon, ink, underline, strikeout, squiggly, width and fill are engine-ready and blocked on nothing. |
+| **Phase 6 — markup** | **In progress, and larger than this row used to imply.** The new shell has *no markup placement at all*: all eight `markup.*` commands draw and fall through to `command-unimplemented`, `CanvasTool` has two variants, and there is no `canvas/markup.rs`. So it is *build the tool substrate, then ten kinds*, plus the Comments panel (which does not exist here either). **Three items needed engine changes; all three were filed and answered on 2026-08-14, accepted and scheduled, none started.** Revision clouds land as `MarkupSpec::Cloud` plus `Square { border_effect }` — and the *rectangular* cloud ships first, being the gesture people actually reach for. Note text lands as `/Contents` + `/T` + `/M` together, `/M` engine-stamped and `/T` optional with **no invented placeholder**. Opacity is `/CA` **alone** — writing `/ca` into the appearance stream would encode a pdfcer render bug into the file format; see **`DEFECTS.md` D9**, which is the more urgent half of that exchange and is about *viewing*, not authoring. Polyline, polygon, ink, underline, strikeout, squiggly, width and fill are engine-ready and blocked on nothing. |
 | **Phase 7 — measure** | **Three tools place dimensions**: Linear (three clicks — what, to what, where), Two-line, and **Radius / diameter**. `measure_tool.rs` came across whole into `canvas/measure/{pick,scale,state}.rs`, the 12.M1 snap primitives into `canvas/snap.rs`, 45 tests carried, **no engine API had moved**. ★ **This row used to name three remaining decisions and two of them are taken.** *Radius/diameter had no natural end to its gesture and the only place to say "done" was an accept box decision 024 retired* — the operator's answer on 2026-08-14 was **two** endings that are not boxes, a double-click and `measure.finish`, through one commit path in `canvas/measure/circular.rs`; the Finish control is gated on a new `measure.finishable` condition so it is live only when there is a non-degenerate fit to commit. *The snap query is unwired* — it is wired. What is left is **Set scale**, which still has no dialog to ask the length in. Area and Count still need engine changes; Angular is core-complete with no tool. See `SALVAGE.md`'s Phase 7 entry for the three deliberate departures from the source and the axis collision it surfaced. |
 | **Salvage remaining** | Redaction (its true-removal proof exists **only** in the old shell), and the settings dialog. |
-| **S6 — deep zoom** | ⛔ Blocked on the reusable parsed handle, which pdfce has scheduled as `Pass 75.0`. Do not build tiling: measured as a 9× regression. |
+| **S6 — deep zoom** | ⛔ Blocked on the reusable parsed handle, which pdfcer has scheduled as `Pass 75.0`. Do not build tiling: measured as a 9× regression. |
 
 Smaller, unblocked, and recorded in `FEATURES.md`:
 
@@ -870,7 +870,7 @@ Smaller, unblocked, and recorded in `FEATURES.md`:
   settings prints with media type, quality and finishing **fallen back**.
 
   ★ **The tray control is drawn in all three capability states**, which
-  inverts R83's usual direction. `pdfce-print` declined our `bool` proposal
+  inverts R83's usual direction. `pdfcer-print` declined our `bool` proposal
   with a measurement: `DC_BINS` on Microsoft Print to PDF returns nothing
   while that same device's `dmDefaultSource` is already `DMBIN_FORMSOURCE`.
   R83 forbids offering what the hardware *cannot* honour; it does not forbid
@@ -979,7 +979,7 @@ Smaller, unblocked, and recorded in `FEATURES.md`:
   | `FEATURES.md` | a ⛔ row: *"the operator asked for it; no verb can do it"* | 19 days |
 
   Plus a fifth in the **engine's** `docs/FEATURES.md`, saying the verb was
-  *"Not reachable in `pdfceGUI`"* — a statement about **our** surface in
+  *"Not reachable in `pdfcer-gui`"* — a statement about **our** surface in
   **their** document, which is the shape neither side re-checks.
 
   ★★ **Every one of them was correct when written.** That is what makes the
@@ -1095,7 +1095,7 @@ Smaller, unblocked, and recorded in `FEATURES.md`:
   change "obviously" did not touch the manifest:
 
   ```bash
-  cargo test -p pdfce-gui --lib rewrite_built_in_ron -- --ignored
+  cargo test -p pdfcer-gui --lib rewrite_built_in_ron -- --ignored
   ```
 
   The round-trip test `the_ron_file_and_the_rust_agree` is what eventually
@@ -1163,7 +1163,7 @@ Smaller, unblocked, and recorded in `FEATURES.md`:
 
 ---
 
-## 11. The relationship with `D:\Dev\pdfce`
+## 11. The relationship with `D:\Dev\pdfcer`
 
 Another session works that repository live. It is **read-only** here.
 

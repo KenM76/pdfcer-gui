@@ -27,7 +27,7 @@
 //! space**, which means it crosses the page→canvas bridge — the conversion
 //! `canvas::mapping`'s header calls *the classic silent defect*, because the
 //! canvas is Y-down from the page's top-left with `/Rotate` applied and every
-//! point pdfce publishes is Y-up from the un-rotated CropBox.
+//! point pdfcer publishes is Y-up from the un-rotated CropBox.
 //!
 //! Get it wrong and the ring never closes: the operator clicks the first corner
 //! of a footprint they have just traced and gets a fifth vertex on top of it.

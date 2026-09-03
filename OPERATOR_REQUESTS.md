@@ -85,24 +85,24 @@ Two observations that are mine to act on, not his to have to make again:
 **Ken, 2026-09-03:** *"And while you are doing that release the latest source and
 exe to github!"*
 
-`KenM76/pdfceGUI` is **public** and was last pushed **2026-08-24** — **345
+`KenM76/pdfcer-gui` is **public** and was last pushed **2026-08-24** — **345
 commits** behind. The last GitHub release is **v0.3.0** (2026-08-15), which
 predates forms, attachments, multi-document, the measure rebuild and everything
 in between.
 
 ★ **One fact that has to travel with the source**, because it is not a defect and
-would read as one: `crates/pdfce-gui/Cargo.toml` takes the engine as
-`git = "file:///D:/Dev/pdfce"`. **Nobody but you can build the published
+would read as one: `crates/pdfcer-gui/Cargo.toml` takes the engine as
+`git = "file:///D:/Dev/pdfcer"`. **Nobody but you can build the published
 source**, because that URL is a path on this machine. Pointing it at
-`https://github.com/KenM76/pdfce` would fix it and is a decision about what this
+`https://github.com/KenM76/pdfcer` would fix it and is a decision about what this
 repository is for, not one to make while releasing.
 
 ### ✅ Done
 
 **Source:** `main` pushed — 346 commits, `d4d8d7f` → `eed8d3e`.
 
-**Release:** <https://github.com/KenM76/pdfceGUI/releases/tag/v0.4.0>, with
-`pdfceGUI-v0.4.0-windows-x64.zip` (21.7 MB) attached — the portable build,
+**Release:** <https://github.com/KenM76/pdfcer-gui/releases/tag/v0.4.0>, with
+`pdfcer-gui-v0.4.0-windows-x64.zip` (21.7 MB) attached — the portable build,
 unzip and run.
 
 ★★ **It was repackaged first, and that mattered.** The build published to
@@ -111,11 +111,11 @@ WORKING TREE"* in its own `BUILD-INFO.txt`, because the packager runs
 `cargo update` and had built before the lock was committed. Shipping that to
 GitHub would have put a binary nobody could tie to a commit behind a version
 tag. The released build is stamped `eed8d3e` on engine `a436432`, and
-`pdfceGUI2` now holds the same build.
+`pdfcer-gui2` now holds the same build.
 
 ★ **The crate version stayed 0.1.0** rather than being bumped to match the tag,
-and that is deliberate: `crates/pdfce-gui/Cargo.toml` carries a comment saying
-the crate is versioned by the pdfce workspace it folds **into**, not by this
+and that is deliberate: `crates/pdfcer-gui/Cargo.toml` carries a comment saying
+the crate is versioned by the pdfcer workspace it folds **into**, not by this
 staging workspace, and `version.workspace = true` replaces the line at fold-in.
 Bumping it would have contradicted a recorded decision to make two numbers
 agree that are not the same number.
@@ -142,7 +142,7 @@ Two things, and the second is the harder one:
    a completeness claim, and this project has a standing rule about those: *a
    completeness question needs an instrument, not a document.* Our own files
    (`FEATURES.md`, `NO_SURFACE.md`, `GUI_ROADMAP.md`) are structurally unable to
-   answer it, because none of them is keyed on `pdfce-core`'s API. The audit has
+   answer it, because none of them is keyed on `pdfcer-core`'s API. The audit has
    to enumerate from the **engine's** side.
 
 ★ `RIBBON_IA.md` is settled and normally not improvised around. A new tab is an
@@ -152,14 +152,14 @@ into that document rather than left as a divergence.
 ### ★★★ THE AUDIT, and the answer is not the one the question expects
 
 `tools/security-coverage.py` is the instrument — new today, keyed on
-`pdfce-core`'s **own** API rather than on any document of ours, and reading the
+`pdfcer-core`'s **own** API rather than on any document of ours, and reading the
 revision `Cargo.lock` pins rather than the engine's working tree. Measured at
 lock `a436432`:
 
 > **61 public items: 12 reached, 31 NOT reached, 7 engine-internal, 11 too
 > generic for a grep to attribute.**
 
-★★★ **Every one of them is READ-SIDE.** `pdfce-core` has **no**
+★★★ **Every one of them is READ-SIDE.** `pdfcer-core` has **no**
 `encrypt_document`, **no** `set_password`, **no** `remove_encryption`, **no**
 `set_permissions`, **no** `sign_document`, no certificate validation and no
 timestamping. What the engine has is the ability to **open** an encrypted
@@ -177,7 +177,7 @@ request to the engine, not something to paper over.
 **An encrypted PDF cannot be opened at all.**
 
 The shell detects the case correctly — `Status::NeedsPassword`, with a tab
-tooltip reading *"This document is encrypted and pdfce has not been given the
+tooltip reading *"This document is encrypted and pdfcer has not been given the
 password"* — and then **there is no way to give it one.**
 `Document::load_with_password` and `from_bytes_with_password` are named in
 exactly one place in this crate: a doc comment in `app::blank` listing the four
@@ -453,11 +453,11 @@ ask. See the plan below the O103 row.
 **Ken, 2026-09-03:** *"every time I've tried the redact feature it tells me it
 can't because there is objects that weren't redacted."*
 
-**Reproduced with `pdfce-cli` alone, so it is not ours.** He supplied eleven
+**Reproduced with `pdfcer` alone, so it is not ours.** He supplied eleven
 drawings in `OneDrive\pdfTests\Redact\`. Nine redact cleanly. The two carrying
 images refuse the moment the marked rectangle **touches** one:
 
-> `redaction refused: redaction region on page 1 intersects an image; pdfce
+> `redaction refused: redaction region on page 1 intersects an image; pdfcer
 > cannot yet destroy image pixels (clipping or masking would leave them
 > recoverable, ISO 32000-1 §12.5.6.23) — apply refused rather than producing a
 > false redaction`
@@ -505,7 +505,7 @@ first half; forcing `images = 1` reddens the second.
 
 ### ✅✅ THE ENGINE ANSWERED THE SAME DAY, AND WENT PAST WHAT WE ASKED
 
-**Two releases in one afternoon.** `pdfce-core` **v0.26.0** (`Pass 245.0`) then
+**Two releases in one afternoon.** `pdfcer-core` **v0.26.0** (`Pass 245.0`) then
 **v0.27.0** (`Pass 246.0`). All three of our asks, in the order we ranked them,
 plus one we had not thought to make:
 
@@ -569,7 +569,7 @@ worth keeping separate because three of them are the ones that get skipped:
 4. **★★ A Save all button**, which is what makes the cycle bearable. Without it
    an operator with six dirty documents answers six questions.
 
-★ pdfce is multi-document, so this is a real cycle rather than a single
+★ pdfcer is multi-document, so this is a real cycle rather than a single
 question. `crate::dialogs::unsaved` already exists for the single-document case
 (closing one tab); what is not known yet is whether the **application close**
 path reaches it at all, and whether anything cycles.
@@ -649,7 +649,7 @@ the question that was actually being got wrong.
 
 ### ★★ The zone is shown only when it is NOT local, and that is the subtlety
 
-`PDFCE_BUILD_TIME` has two producers and they disagree about zone:
+`PDFCER_BUILD_TIME` has two producers and they disagree about zone:
 
 | producer | stamp | zone |
 |---|---|---|
@@ -683,7 +683,7 @@ driven check. Waiting on the pointer.
 > *"the engine I think has a couple of new options for colour rendering that we
 > might need to surface and set for our standards presets."*
 
-**Right, and one of them was brand new.** `pdfce-core 0.20` added
+**Right, and one of them was brand new.** `pdfcer-core 0.20` added
 `Settings::spot_colorant_device_model` — *whether a spot ink keeps its own
 printing plate, or is mixed down to process colour before anything is drawn.*
 
@@ -1067,7 +1067,7 @@ render*. This looks like a tint over part of the page and is not one:
 **A field is a control, not content.** The wash is the affordance that says *this
 box accepts typing* — the same class as the pointing hand that already appears
 over a widget, and the same class as a snap indicator. It marks no inference and
-says nothing about pdfce's confidence in anything.
+says nothing about pdfcer's confidence in anything.
 
 ★★ The property that keeps that true is **where it is painted**: in the canvas
 overlay, over the finished page texture, first so every other overlay lands on
@@ -1084,7 +1084,7 @@ because this sits under the field's own text for as long as the document is open
 
 `fillable_fields_are_shaded_on_the_page`. The preference defaults to on and the
 fixture opens on the page with the fields, so nothing has to be clicked; with
-`PDFCE_DIAG_VIEWPORT` the window lays out without taking focus. One of only two
+`PDFCER_DIAG_VIEWPORT` the window lays out without taking focus. One of only two
 checks in the suite that can run while you are using the machine.
 
 ★★ The trace had to learn to distinguish **three** states first, because drawing
@@ -1153,7 +1153,7 @@ selection and the history all survive** — which is what every other editor doe
 and what you would expect. A write-close-reopen would have discarded every undo
 step silently, which is a data loss with no warning on it.
 
-**Four things move, in one place** (`PdfceApp::save_as_somewhere`), because a
+**Four things move, in one place** (`PdfcerApp::save_as_somewhere`), because a
 document whose path moved while something else did not is a document whose next
 `Ctrl+S` writes a file you are not looking at:
 
@@ -1352,7 +1352,7 @@ margin is where a dropped object lives.
 
 O88's build already contained the fix. What 2026-09-02 added is the **evidence**
 — a fixture, a driven check and a harness conversion — so the published build on
-`pdfceGUI1` already behaves this way.
+`pdfcer-gui1` already behaves this way.
 
 ## O91 — ✅ **SHIPPED AND DRIVEN 2026-09-01 (evening)** — a clickable table of contents works
 
@@ -1370,7 +1370,7 @@ does nothing, and nothing is drawn to suggest it would.
 
 ### Why it is not a shell fix
 
-A `/Link` annotation's **destination cannot be read**. `pdfce-core`'s
+A `/Link` annotation's **destination cannot be read**. `pdfcer-core`'s
 `Annotation` carries `action_type` — the `/S` name, so `GoTo` — by an explicit
 and documented decision (*"the `/S` NAME only, deliberately — not the action
 dictionary"*), which is the right model for `list-annotations`, whose job is to
@@ -1392,10 +1392,10 @@ absence stays silent until the reader lands.
 
 ### ✅ The engine answered the same evening, and it shipped
 
-`pdfce-core` `Pass 222.0` (engine `94d640c`) added
+`pdfcer-core` `Pass 222.0` (engine `94d640c`) added
 `outline::DestinationReader`, `annot::page_link_destinations`,
 `Annotation::destination`, five synthetic link fixtures and
-`pdfce-cli list-links`. `action_type` was left untouched, which was the right
+`pdfcer list-links`. `action_type` was left untouched, which was the right
 call and was the request's own argument: the fix is a second entry point, not a
 changed contract.
 
@@ -1494,7 +1494,7 @@ the zoom rose instead.
 
 `a_bookmark_lands_on_the_detail_it_names` — opens your A1 sheet, clicks
 "Drawing View64", and measures the canvas: **0.382× fitted → 0.766× framed**.
-Shipped to `pdfceGUI1` 2026-09-01 19:57.
+Shipped to `pdfcer-gui1` 2026-09-01 19:57.
 
 ★ The first run of that check FAILED at 0.382 → 0.382 — because I had rebuilt
 the harness and not the shell. Recorded because it is the second time this week
@@ -1542,7 +1542,7 @@ candidates:
 
 ★★★ **A spot ink gets no swatch.** Where the colour is a named ink — a
 `/Separation`, the kind your printed drawings use — the panel names it instead:
-*"PANTONE 300 — a named ink. pdfce will not overwrite it with a screen colour,
+*"PANTONE 300 — a named ink. pdfcer will not overwrite it with a screen colour,
 because that would look right here and change what prints."* A colour picker
 that opened on black over a spot ink would be one click from destroying a plate,
 and it would look completely normal while it happened.
@@ -1552,22 +1552,22 @@ the control does not offer it yet, because when the objects disagree there is no
 honest colour to open on and picking the first one's would quietly propose
 flattening the rest to it.
 
-### ★★★ Asking for this found pdfce writing wrong colours into saved files
+### ★★★ Asking for this found pdfcer writing wrong colours into saved files
 
-Before writing the setter the engine went looking for *"what does pdfce think
+Before writing the setter the engine went looking for *"what does pdfcer think
 this path's colour is"* — and the answer was **nothing**. The object model
 tracked only the basic colour operators and had no handling at all for spot
 inks, `/DeviceN`, `/ICCBased`, `/Indexed` or `/Lab`. A path in any of those
 inherited **a stale colour from an unrelated earlier object.**
 
 ⇒ **That was reaching your documents.** Copy a spot-coloured line, paste it, and
-pdfce invented an RGB colour from that stale value and **wrote it into the
+pdfcer invented an RGB colour from that stale value and **wrote it into the
 file**. Your own copy and paste, on your own drawings, on exactly the kind of
 file you work in. Fixed: a paste now emits no colour at all for an ink it cannot
 decode — visibly wrong and undoable, rather than invisibly wrong and permanent.
 
 ★ It was found because a colour control has to *show* the current colour, and
-asking whether pdfce knew it audited everything else that thought it did.
+asking whether pdfcer knew it audited everything else that thought it did.
 
 ### ⬜ And one of their side-findings is your open "line won't select" report
 
@@ -1581,7 +1581,7 @@ second source.
 
 ### ⬜ Vector colour did not exist AT ALL — filed with the engine
 
-Measured rather than assumed. Every colour verb `pdfce-core` has works on an
+Measured rather than assumed. Every colour verb `pdfcer-core` has works on an
 **annotation** or on **text**: markup style, ce-dimension style, redaction-mark
 style, text fill. **There is no verb that changes the fill or stroke colour of a
 path in page content.**
@@ -1644,7 +1644,7 @@ cannot be drawn big enough.** Not a hit test that excludes text.
 
 | drag | AutoCAD's name | selects |
 |---|---|---|
-| **left → right** | a *window* | only what is completely surrounded (what pdfce did before) |
+| **left → right** | a *window* | only what is completely surrounded (what pdfcer did before) |
 | **right → left** | a *crossing window* | anything the band **touches** |
 
 No modifier key, nothing new to learn. Illustrator selects on touch always;
@@ -1846,10 +1846,10 @@ ribbon button — that alone may settle it without any driving.
 > The second row is the half that was about to bite you: 12 pt in a 13 pt box
 > overflows, and every header field on that form is that size.
 >
-> **And pdfce now tells you which way it decided**, in the words it uses:
+> **And pdfcer now tells you which way it decided**, in the words it uses:
 > *"fitted to the field's HEIGHT; make the box taller to change it"*, or
 > *"shrunk to fit the field's WIDTH"*, or — the honest third case — *"held at
-> pdfce's legibility floor; the box is too small for this text, which will
+> pdfcer's legibility floor; the box is too small for this text, which will
 > overflow"*.
 >
 > ### ★★ It lands about 16% larger than Acrobat, deliberately
@@ -1885,16 +1885,16 @@ ribbon button — that alone may settle it without any driving.
 > in the first filled out row below the headers. 'TC-10 Wheel Chocks' is in the
 > font that should be showing for the other fields."*
 
-### ★★★ It is the size, not the typeface — and pdfce announces it
+### ★★★ It is the size, not the typeface — and pdfcer announces it
 
 Every field in that document declares the same default appearance:
 **`/Helv 0 Tf`**. `0` means *auto-size* — the reader works out what fits.
 
-pdfce's answer is **12 pt, always**, and `fill-field` says so on the way past:
-*"auto-sized to 12 pt (a reviewable pdfce heuristic; §12.7.3.3 mandates no
+pdfcer's answer is **12 pt, always**, and `fill-field` says so on the way past:
+*"auto-sized to 12 pt (a reviewable pdfcer heuristic; §12.7.3.3 mandates no
 formula)."*
 
-| | box height | Acrobat wrote | pdfce writes |
+| | box height | Acrobat wrote | pdfcer writes |
 |---|---|---|---|
 | `DescriptionRow1` | 26.40 pt | **18.08 pt** | 12 pt |
 | `WO` | 13.08 pt | **8.21 pt** | 12 pt |
@@ -1921,7 +1921,7 @@ than a coincidence. Then it shrinks to fit the width.
 **Filed:** `open/request_auto_sized_field_text_is_a_flat_12pt_and_acrobat_fits_the_box.md`,
 with both measurements and the derivation.
 
-**Status:** ✅ **FIXED** in `pdfce-core` `Pass 215.0`, `d5d012e`.
+**Status:** ✅ **FIXED** in `pdfcer-core` `Pass 215.0`, `d5d012e`.
 
 </details>
 
@@ -2008,7 +2008,7 @@ be checked without knowing which edit it was has been checked.
 ## Q3 — ⬜ TWO THINGS THE ENGINE SHIPPED TODAY THAT ONLY YOU CAN SCOPE
 
 **Not a request of yours — a question to you**, filed here rather than asked in
-conversation because that is what this file is for. `pdfce` released **0.18.0**
+conversation because that is what this file is for. `pdfcer` released **0.18.0**
 on 2026-09-01 and two of its headline capabilities have **no GUI surface and no
 plan for one**, because whether they should is a product decision rather than an
 engineering one.
@@ -2023,7 +2023,7 @@ Objects hidden inside compressed streams — invisible to any text search — ar
 reachable for the first time. **Acrobat has no machine-readable equivalent at
 all.**
 
-> **The question:** is that a *pdfce* feature or a *diagnostic tool* feature?
+> **The question:** is that a *pdfcer* feature or a *diagnostic tool* feature?
 >
 > My instinct is the second, and the engine agrees — its own note says no GUI
 > surface is planned. It has already been useful **to me**: the last four defect
@@ -2283,17 +2283,17 @@ the radios should be on his screen.
 
 | checked | result |
 |---|---|
-| does the **published** build contain the radios? | **yes** — all three OneDrive slots (`pdfceGUI1`, `pdfceGUI2`, `pdfce`), built 2026-08-30, contain `All pages`, `This page only` and the range hint |
+| does the **published** build contain the radios? | **yes** — all three OneDrive slots (`pdfcer-gui1`, `pdfcer-gui2`, `pdfcer`), built 2026-08-30, contain `All pages`, `This page only` and the range hint |
 | are the OCR **models** beside it? | **yes** — `models/ocrs/` with both `.rten` files in every slot |
-| is he running one of those? | **yes** — `pdfceGUI2/userdata/recent.txt` was written at 06:55 this morning |
+| is he running one of those? | **yes** — `pdfcer-gui2/userdata/recent.txt` was written at 06:55 this morning |
 | does the dialog draw them here? | **yes** — driven on this machine against his own `SW41177.pdf`: `ocr-scope pages=36 first=Some(0) last=Some(35)` |
 | are the radios **clipped**? | **no** — `ocr-scope` occupies y 83–163 inside a 560×420 window; skip at 175, Recognise at 213 |
 | is the window size remembered small? | **no** — `dialogs::host` remembers **position only**, and only for the session |
 
 ★★ **And a false lead worth recording, because it nearly became the answer.**
-There are **two different programs named `pdfce-gui.exe`** on this machine:
-`D:\Builds\pdfce-*` is the **old** GUI from `D:\Dev\pdfce`, and
-`D:\Builds\pdfcegui-*` plus the OneDrive slots are this one. Same executable
+There are **two different programs named `pdfcer-gui.exe`** on this machine:
+`D:\Builds\pdfcer-*` is the **old** GUI from `D:\Dev\pdfcer`, and
+`D:\Builds\pdfcergui-*` plus the OneDrive slots are this one. Same executable
 name, one character apart in the folder. That is a real hazard and it would
 have explained the symptom perfectly — except that the old GUI has **no OCR at
 all** (its only OCR string is a sentence saying a scanned page *"needs OCR"*),
@@ -2310,7 +2310,7 @@ There is exactly one code path that draws the window **without** the radios:
 compiled in or **the model files cannot be read**. It replaces the whole body
 with a single sentence — no radios *and no Recognise button*.
 
-**So: does the window say anything about model files, or about pdfce not being
+**So: does the window say anything about model files, or about pdfcer not being
 able to read them?** If it does, the models are not reachable from where you
 launch it (a OneDrive "files on demand" placeholder would do exactly this), and
 that is a deployment fact rather than a missing feature.
@@ -2480,7 +2480,7 @@ are re-reports of rows already believed shipped).
 > made it work.
 >
 > **How it went:** filed at 12:48 with a reproduction attached, answered at
-> 14:25 the same day (`pdfce-core` Pass 186.0). The three tests that proved the
+> 14:25 the same day (`pdfcer-core` Pass 186.0). The three tests that proved the
 > defect are now three tests that guard against it coming back, and two of them
 > assert an outcome rather than an `Ok` — a verb that transformed nothing and
 > reported success would be the same complaint wearing a different face.
@@ -2492,7 +2492,7 @@ are re-reports of rows already believed shipped).
 > **★★★ STATUS 2026-08-31 (superseded, see above): this is not our defect, and
 > we have proof rather than an opinion.**
 >
-> `crates/pdfce-gui/tests/engine_overlay_skew.rs` — three tests, all green,
+> `crates/pdfcer-gui/tests/engine_overlay_skew.rs` — three tests, all green,
 > run by `cargo test --workspace` on every commit:
 >
 > 1. after `add_image` the shell's decomposition has N+1 objects and the
@@ -2503,7 +2503,7 @@ are re-reports of rows already believed shipped).
 >    four-page document, `page_objects(3)` still returns `Ok`. Page 3 of a
 >    three-page document must be out of range. It is not.
 >
-> The cause is one line repeated eight times in `pdfce-core`: every
+> The cause is one line repeated eight times in `pdfcer-core`: every
 > content-editing verb reads `page_tree::pages(&self.base)` — the document as
 > it was **on disk** — while everything that adds content writes into the
 > session overlay. So content added this session is invisible to the verbs that
@@ -2515,7 +2515,7 @@ are re-reports of rows already believed shipped).
 > Nothing refuses, nothing discloses.
 >
 > **Filed:** `open/request_edit_verbs_read_the_base_not_the_overlay.md`, with
-> the reproduction attached, and indexed. `D:\Dev\pdfce` is read-only to this
+> the reproduction attached, and indexed. `D:\Dev\pdfcer` is read-only to this
 > project so the fix is not ours to make.
 >
 > The tests are written to **pass on the broken engine and fail on the fixed
@@ -2824,7 +2824,7 @@ Four separate defects in one paragraph, all of which are in scope:
 > ★★ **A fixture had to be built for it, and the reason is worth reading.**
 > Neither of your drawings could test this at the zoom they open at.
 > `SW41177.pdf` contains no wrapped content at all. The benchmark site plan
-> does — one container over 10,256 pieces — but pdfce's click tolerance is six
+> does — one container over 10,256 pieces — but pdfcer's click tolerance is six
 > screen pixels, which on a sheet opened to fit is about fifteen points of
 > paper, and at that radius the big page-level objects win everywhere. So the
 > feature is reachable by you, zoomed in, and unreachable by a harness aiming
@@ -2924,8 +2924,8 @@ three angles. They should be designed together and shipped together.
 > ★★★ **Two things had to be true and neither was.** The click in Read was
 > swallowed by the text sweep, which owns every press in that mode — so a
 > picture could not be selected at all. And the copy put a marker sentence on
-> the clipboard and the real payload in pdfce's own memory, which is exactly
-> right for pasting back into pdfce and worth nothing to Word.
+> the clipboard and the real payload in pdfcer's own memory, which is exactly
+> right for pasting back into pdfcer and worth nothing to Word.
 >
 > ★★ **And a third thing, which only driving it found.** With both halves
 > built, `Ctrl+C` in Read still did nothing: the chord filter refuses a key
@@ -2961,16 +2961,16 @@ three angles. They should be designed together and shipped together.
 
 <details><summary>The row as filed</summary>
 
-### ⬜ In Read mode the ordinary pointer must select an image so it can be copied out of pdfce
+### ⬜ In Read mode the ordinary pointer must select an image so it can be copied out of pdfcer
 
 **Asked:** 2026-08-31.
 
 > *"In read mode the regular pointer should also allow us to select images so we
-> can copy and paste them as well as text outside of the pdfcegui."*
+> can copy and paste them as well as text outside of the pdfcergui."*
 
 Two halves: (a) selecting an image with the read-mode pointer at all, and
 (b) `Ctrl+C` putting a **bitmap** on the Windows clipboard that Word or Paint
-will accept — not pdfce's private clipboard format. O18 covers the text half of
+will accept — not pdfcer's private clipboard format. O18 covers the text half of
 that and is a useful precedent for what went wrong last time.
 
 **Status:** not investigated.
@@ -3139,13 +3139,13 @@ Two defects:
 > stops thickening with the box.
 >
 > **What it actually was — neither of the two things this row first guessed.**
-> pdfce was not writing a fatter border. It was not rewriting the artwork *at
+> pdfcer was not writing a fatter border. It was not rewriting the artwork *at
 > all*: the engine redrew a field's appearance for text and dropdown fields
-> only, and a check box is a button, so the picture pdfce had drawn at the old
+> only, and a check box is a button, so the picture pdfcer had drawn at the old
 > size was kept and simply stretched into the new box. Drag a 12 pt check box
 > to 40 pt and its 1 pt border draws at about 3.3 pt.
 >
-> **Filed at 12:49, answered at 14:26** (`pdfce-core` Pass 187.0), and scoping
+> **Filed at 12:49, answered at 14:26** (`pdfcer-core` Pass 187.0), and scoping
 > it found three more defects nobody had reported: text and dropdown fields
 > were being rebuilt at the OLD size, a push-button caption change redrew
 > nothing, and a resize of a field drawn in several places was silently
@@ -3162,7 +3162,7 @@ Two defects:
 > redrawn 3 pt one are the same pixels.
 >
 > ⬜ **Still open, and it is a feature rather than a bug:** scaling the radii of
-> rounded corners. A form field's border carries no radius and pdfce's check-box
+> rounded corners. A form field's border carries no radius and pdfcer's check-box
 > artwork has square corners, so there is nothing to scale until a
 > rounded-rectangle primitive exists. That is worth scoping with you rather
 > than improvising under a bug report.
@@ -3174,19 +3174,19 @@ Two defects:
 ### ◑ HALF BUILT 2026-08-31 — the honesty half; the fix was an ENGINE row
 
 > **The cause is neither of the two this row guessed.** The outline does not
-> thicken because pdfce wrote a bigger border width. It thickens because
+> thicken because pdfcer wrote a bigger border width. It thickens because
 > **nothing was rewritten at all**: the engine redraws a field's appearance for
 > Text and Choice fields only, and a check box is a button — so the appearance
-> pdfce itself drew, at the ORIGINAL size with a hard-coded 1 pt stroke, is kept
+> pdfcer itself drew, at the ORIGINAL size with a hard-coded 1 pt stroke, is kept
 > and the PDF placement matrix stretches it into the new box. Drag a 12 pt check
 > box to 40 pt and its 1 pt border draws at about 3.3 pt.
 >
 > ★★ That is exactly the case the ANNOTATION resize **refuses by name** — *"a
 > foreign appearance cannot be rebuilt without replacing somebody else's artwork
-> with pdfce's rendering of it"* — and the widget path takes it silently, on
-> artwork pdfce drew and could therefore rebuild exactly.
+> with pdfcer's rendering of it"* — and the widget path takes it silently, on
+> artwork pdfcer drew and could therefore rebuild exactly.
 >
-> ✅ **Shipped: pdfce stops lying about it.** The sentence was chosen on
+> ✅ **Shipped: pdfcer stops lying about it.** The sentence was chosen on
 > "was it resized" and said *"its contents were redrawn to fit"* — a claim the
 > very outcome it was reading denied on the next field. There is now a third
 > case saying the contents are stretched, plus the trace this verb never had,
@@ -3199,7 +3199,7 @@ Two defects:
 > takes, so your Tool-row switches reach a form field at all.
 >
 > ⬜ **Corner radii: nothing to scale, and that is a finding rather than a
-> refusal.** A form field's border style carries no radius, and pdfce's own
+> refusal.** A form field's border style carries no radius, and pdfcer's own
 > check-box artwork draws square corners. What you are seeing thicken is the
 > square artwork, which the engine row fixes. A genuine "scale rounded corners"
 > toggle needs a rounded-rectangle primitive to exist first, and that is a
@@ -3374,7 +3374,7 @@ useful on its own and cannot be wrong; 2 is the only one that can lie.
 
 ### ★★★ MEASURED, 2026-08-30 — AND THE COMFORTABLE ANSWER WAS WRONG
 
-`crates/pdfce-gui/src/app/actions/latency.rs`, release build, on the 5.6 MB CAD
+`crates/pdfcer-gui/src/app/actions/latency.rs`, release build, on the 5.6 MB CAD
 site plan. Written before any design work, because the last time this project
 answered a performance question from architecture it was wrong.
 
@@ -3528,7 +3528,7 @@ an instrument, not a plan. The question is **which half is slow**:
 | candidate | what it would mean |
 |---|---|
 | **(a) the engine commit** — `EditSession`'s verb rewriting content streams and the object graph | his description is right as written: an optimistic edit model with a queue and backpressure |
-| **(b) the re-rasterisation** — `pdfce-render` redrawing the page after the edit epoch moves | a much smaller and much safer change: keep showing the last good frame, render the new one behind it, swap when ready. No optimism, no queue, no divergence between screen and document |
+| **(b) the re-rasterisation** — `pdfcer-render` redrawing the page after the edit epoch moves | a much smaller and much safer change: keep showing the last good frame, render the new one behind it, swap when ready. No optimism, no queue, no divergence between screen and document |
 | **(c) both** | (b) first, because it is cheap and it may be the whole of what he can feel |
 
 ★ On a 129,758-object CAD sheet the prior is strongly **(b)** — but a prior is
@@ -3564,11 +3564,11 @@ original GUI made for a lot of extra bugs in the visibility when editing."*
 A preview drawn differently from the commit is a **second rendering path for the
 same content**, and two paths drift. The one-line test: *would a screenshot of
 the canvas mid-preview differ from a screenshot of the same document after the
-commit lands?* If yes, and the difference is pdfce marking its own uncertainty,
+commit lands?* If yes, and the difference is pdfcer marking its own uncertainty,
 that is the defect.
 
 ★★ What he described is not a rendering optimisation, it is a **decoupling**:
-the picture the operator is dragging and the document pdfce is rewriting stop
+the picture the operator is dragging and the document pdfcer is rewriting stop
 being the same object. The screen follows the pointer at pointer speed; the
 engine catches up behind it; and the queue between them has a depth, past which
 the shell stops accepting input until the engine is level.
@@ -3605,7 +3605,7 @@ the O62 release, and it is the reason that release was rebuilt.
 
 Press **Bold** on a page that carries a real bold face — a title block set in
 Calibri with Calibri-Bold sitting right there in the page's own font list — and
-pdfce **thickened the Calibri instead of using the Calibri-Bold**. Artificially.
+pdfcer **thickened the Calibri instead of using the Calibri-Bold**. Artificially.
 Into the saved file. Every other viewer would show the fake.
 
 ### Why nothing caught it
@@ -3749,11 +3749,11 @@ the machine, first job next session.
 
 ---
 
-## O61 — ✅ pdfce tells you when a document phones home · ✅ AND buttons can now be given actions
+## O61 — ✅ pdfcer tells you when a document phones home · ✅ AND buttons can now be given actions
 
 > ### ★★★ CLOSED 2026-09-01 — you can make a button do something, seven ways
 >
-> **Draw a button and pdfce asks what pressing it should do.** Seven answers:
+> **Draw a button and pdfcer asks what pressing it should do.** Seven answers:
 >
 > | | reaches |
 > |---|---|
@@ -3762,8 +3762,8 @@ the machine, first job next session.
 > | Go to a page | nothing outside the document |
 > | Move through the pages (next / previous / first / last) | nothing outside the document |
 > | Show or hide fields | nothing outside the document |
-> | Open a web address | writes an address; pdfce never opens it |
-> | Send the form's data | writes an address and a declaration; pdfce sends nothing and has no way to |
+> | Open a web address | writes an address; pdfcer never opens it |
+> | Send the form's data | writes an address and a declaration; pdfcer sends nothing and has no way to |
 >
 > Every one of the seven says which of those it is, in a sentence under the
 > chooser — including the five that reach nothing, so the two that do are not
@@ -3776,7 +3776,7 @@ the machine, first job next session.
 > contents, and the message carries this document's own location on disk.
 >
 > ★ **No web address is blocked.** An unencrypted one is *said* to be
-> unencrypted and you decide. Blocking it would be pdfce inventing a rule the
+> unencrypted and you decide. Blocking it would be pdfcer inventing a rule the
 > standard does not state.
 >
 > ★★ **And nothing is marked on the page.** A button that submits looks exactly
@@ -3792,16 +3792,16 @@ the machine, first job next session.
 > landed.
 >
 > That is fixed rather than apologised for: a new build gate now fails whenever
-> pdfce gains something this shell neither uses nor has written a sentence
+> pdfcer gains something this shell neither uses nor has written a sentence
 > about. On its first run it found five more.
 
 
-**Ken, 2026-08-30:** *"I think pdfce added support for several button features
+**Ken, 2026-08-30:** *"I think pdfcer added support for several button features
 and protections for outgoing submits. implement everything available."*
 
 ### ★★★ You were half right, and the half you were right about was worth a lot
 
-**The protections are real and they shipped — on the DETECTION side.** pdfce can
+**The protections are real and they shipped — on the DETECTION side.** pdfcer can
 now spot a push button that posts your data to a web server, an action that
 launches a program, and a script that runs the moment a file is opened. It found
 a defect of its own doing it: its scanner had been looking in the wrong place, so
@@ -3815,7 +3815,7 @@ block to a server, and nothing on screen said so.
 
 **It does now.** Open a document that reaches outside itself and the status row
 says so, once, in one sentence — naming what it can do, and saying plainly that
-pdfce never does any of it but another viewer would.
+pdfcer never does any of it but another viewer would.
 
 ★★ **It is silent on ordinary documents, and that is the half the check exists
 for.** A form that computes a total is an ordinary form; warning about it would
@@ -3831,7 +3831,7 @@ button, one submit pointing at a host RFC 2606 guarantees can never resolve.
 
 `tools/verb-coverage.py` at the current pin: **175 engine verbs, none of them
 authors a button action.** The engine's own `FEATURES.md` lists it under
-**"Planned, in predicted order"** — `Pass 131.0`, alongside a `pdfceNet` plugin
+**"Planned, in predicted order"** — `Pass 131.0`, alongside a `pdfcerNet` plugin
 for submits and a four-rung disclosure ladder. Unblocked as of 2026-08-26, not
 built.
 
@@ -3870,8 +3870,8 @@ actions remain an engine policy decision, filed, unanswered.**
 >
 > *"do push buttons work for some features and can we now add them?"* — **yes to
 > both, and the answer to the first half was always yes.** Buttons in somebody
-> else's form have always kept working when pdfce saves the file; it recognises
-> every action type it meets and preserves all of them. Only pdfce's **own**
+> else's form have always kept working when pdfcer saves the file; it recognises
+> every action type it meets and preserves all of them. Only pdfcer's **own**
 > buttons were inert, and they are not any more.
 >
 > The full account is on **O61**, which is the row that asked for it.
@@ -3893,7 +3893,7 @@ Select anything on a page — a shape, an image, a piece of text, several at onc
 around what you picked.
 
 **You were right that it couldn't, and right about why.** There were exactly two
-routes: the search box, which reaches *text pdfce can read as text*, and *mark
+routes: the search box, which reaches *text pdfcer can read as text*, and *mark
 whole page*, which reaches everything. On a CAD drawing almost everything worth
 redacting is in the gap between them — a title-block value drawn as **vector
 strokes**, a scanned stamp, a logo, a signature image, a run in a font whose
@@ -3924,18 +3924,18 @@ this feature could have.
 ### ⬜ Push buttons — you can add one, and it can never do anything
 
 **Yes, you can already place one**, and it is a correct button in any viewer.
-**No, it cannot do anything**, and that is a deliberate pdfce-wide rule rather
+**No, it cannot do anything**, and that is a deliberate pdfcer-wide rule rather
 than a gap in this shell: the engine authors **no action of any kind** on a
 button it creates — no submit, no reset, no navigate, no script. It says so on
 every single creation, which is why you would have seen it disclosed.
 
 The rule exists because `/A` reaches launch actions, network submits and
-JavaScript, and pdfce's standing position is that it recognises and preserves
+JavaScript, and pdfcer's standing position is that it recognises and preserves
 those and never writes or runs one.
 
 **So this is a policy question and it is not mine to answer.** I have put it
 back to the engine with the narrowest useful version: **a Reset button**, and
-only that. Reset touches nothing but this document's own fields, pdfce already
+only that. Reset touches nothing but this document's own fields, pdfcer already
 performs a reset internally, and it is the button a person actually draws on a
 form and expects to work. I explicitly asked them *not* to give us Submit — its
 whole purpose is to send data somewhere, and no shell can audit a URL you typed.
@@ -3943,7 +3943,7 @@ whole purpose is to send data somewhere, and no shell can audit a URL you typed.
 **One thing I could not confirm and should:** you asked whether push buttons
 *work for some features*, which sounds like you have met one in someone else's
 form and seen it do something. Buttons that already exist in a document are
-preserved when pdfce saves it, so those keep working — I have asked the engine
+preserved when pdfcer saves it, so those keep working — I have asked the engine
 to confirm that in writing.
 
 **Filed:** `request_a_push_button_that_does_nothing_is_the_only_kind_we_can_make.md`
@@ -3993,7 +3993,7 @@ cut_annotations cut_selection  cut_field
 The engine named these itself, and each produces *a document that looks right
 and is not*:
 
-1. **Cut must be greyed, not failed.** A copy of something pdfce cannot carry
+1. **Cut must be greyed, not failed.** A copy of something pdfcer cannot carry
    is free — the original stays. A cut of the same thing is a deletion wearing
    a clipboard's clothes, and the engine refuses it by name. So the control has
    to be disabled with the reason, which means asking `copy_selection` first and
@@ -4065,7 +4065,7 @@ the Pages panel they act on those; with none picked, on the sheet you are
 looking at — the same operand rule every other `pages.*` verb uses, so there is
 one rule to know rather than two. A paste lands **after the current sheet**.
 
-★ **What pdfce holds is a complete PDF.** The engine chose that deliberately, so
+★ **What pdfcer holds is a complete PDF.** The engine chose that deliberately, so
 a copied set of sheets is a document — which is worth knowing because it means
 the eventual "paste into another program" costs no new work at all.
 
@@ -4286,7 +4286,7 @@ number is the ordinary case, not the exotic one — appending would have given
 `Text12`, which reads as field twelve.
 
 **★★★ And one Acrobat convention is deliberately REFUSED.** A second sourced
-account has Acrobat numbering copies `Text.0`, `Text.1` with a **dot**. pdfce
+account has Acrobat numbering copies `Text.0`, `Text.1` with a **dot**. pdfcer
 must not, whichever account is right: `.` is the fully-qualified-name separator
 (§12.7.3.2), so `Text.2` is not a field called that — it is a **child field
 named `2` under a parent named `Text`**. That is a third shape, a shared
@@ -4327,13 +4327,13 @@ conventions?"*
 
 **Yes, and it took no work.** The engine had already shipped it. The request
 this shell filed at 11:56 was answered at **13:03** — `Pass 167.0`,
-`pdfce_core::formclip`, `copy_field` / `paste_field` — and the reply was sitting
+`pdfcer_core::formclip`, `copy_field` / `paste_field` — and the reply was sitting
 unread in the channel while the workaround was being published.
 
 **An unsigned signature field now copies and pastes normally.** Which is more
 than parity: it hands this shell signature-field *authoring* it never had, since
 there is still no `add_signature_field` verb at all. A **signed** field is
-refused at the copy, and that refusal is correct everywhere, not a pdfce limit —
+refused at the copy, and that refusal is correct everywhere, not a pdfcer limit —
 a signature is a byte-range assertion about the document it was made in, so no
 program can duplicate one and have it stay valid. What the engine specifically
 declines to do is carry the *"signed by"* artwork into a file nobody signed,
@@ -4366,7 +4366,7 @@ have it now."*
 
 | | `Ctrl+V` | `Ctrl+Shift+V` |
 |---|---|---|
-| **pdfce's order** (default, your original ruling) | a separate field with its own value | another box that fills in step |
+| **pdfcer's order** (default, your original ruling) | a separate field with its own value | another box that fills in step |
 | **Acrobat's order** | another box that fills in step | a separate field with its own value |
 
 **It swaps the CHORDS, never what a command means.** `edit.paste` is always
@@ -4462,12 +4462,12 @@ to get past the grips at all — which is itself the report.
 
 ---
 
-## O56 — ★★★ "Confirm that you have built every editable surface into the GUI that has been implemented in pdfce"
+## O56 — ★★★ "Confirm that you have built every editable surface into the GUI that has been implemented in pdfcer"
 
 **His ask, 2026-08-28**, verbatim:
 
 > *"confirm that you have built every editable surface into the GUI that has
-> been implemented in pdfce. continue and loop until the handoff items and these
+> been implemented in pdfcer. continue and loop until the handoff items and these
 > other things are done."*
 
 ### ★★★ It could not be answered from this project's own documents, and that is the finding
@@ -4475,7 +4475,7 @@ to get past the grips at all — which is itself the report.
 `FEATURES.md` says what the GUI does. `NO_SURFACE.md` lists compiled-in values
 with no control. `GUI_ROADMAP.md` says what is planned. **None of the three is
 keyed on the engine's verb list**, so none of them could answer *"is there a
-verb `pdfce-core` implements that nothing in this shell calls?"*
+verb `pdfcer-core` implements that nothing in this shell calls?"*
 
 ⇒ The answer required an instrument, and the instrument is the durable half of
 this row: **`tools/verb-coverage.py`** parses `impl EditSession` out of
@@ -4641,7 +4641,7 @@ with a fix guards the fix**, not the original defect.
 > *"Also the highlight tool - it's great that we can just drag a box to highlight
 > an area, but we should be able to drag it along to just highlight text too like
 > it works in adobe. Also I think the paragraph reflow was implemented ages ago
-> in the pdfce core, so we should have that option too."*
+> in the pdfcer core, so we should have that option too."*
 
 ### ★★★ (a) The highlight tool draws a BOX where it should follow text
 
@@ -4663,7 +4663,7 @@ first, and it reads as missing because it is.
 
 ★★ Acrobat's Highlight follows the text and it is the convergent behaviour of
 the class. The fallback matters too: a drag that finds **no text** should still
-draw the area box, because that is what pdfce already does and is genuinely
+draw the area box, because that is what pdfcer already does and is genuinely
 useful on a scan — Acrobat draws nothing there. So the rule is *follow text
 where there is text, box where there is not*, which strictly dominates the
 reference.
@@ -4673,7 +4673,7 @@ strike-out and squiggly are the same gesture over the same quads.
 
 ### ★★★ (b) Paragraph reflow — he is right that the engine has it
 
-`ReflowEngine` is named in `canvas::textedit` and has been in `pdfce-core` for a
+`ReflowEngine` is named in `canvas::textedit` and has been in `pdfcer-core` for a
 long time. **What this shell does with it has never been an operator choice**:
 the editor decides between reflowing a block and keeping a single line by
 inspecting the run's provenance, and the decision is invisible and unappealable.
@@ -4859,12 +4859,12 @@ does nothing"*, which is the D1 shape it was written to remove.
 **His instruction, 2026-08-28:**
 
 > *"under the colour setting we are going to change our default to Match other
-> PDF viewers. you can also remove the The old pdfce formula from that section,
+> PDF viewers. you can also remove the The old pdfcer formula from that section,
 > even the code for it."*
 
 ### ★★★ This REVERSES an earlier ruling of his, and that is the important part
 
-`CmykIntent`'s own type documentation in `pdfce-core` currently reads:
+`CmykIntent`'s own type documentation in `pdfcer-core` currently reads:
 
 > `Calibrated` — **Not the shipped default, despite being the best-evidenced
 > option**
@@ -4883,22 +4883,22 @@ flips, and **the ruling it cites is the one being reversed** — so the change
 carries a documentation obligation the code change alone does not discharge.
 
 ★★ It also removes the reason the *divergence note* exists. That sentence —
-*"pdfce's default deliberately differs from Acrobat here"* — was written so a
+*"pdfcer's default deliberately differs from Acrobat here"* — was written so a
 future session would not investigate a render-parity difference as a bug. With
 the default matching, the note is not merely redundant: **it is backwards**, and
-leaving it would tell somebody pdfce diverges when it no longer does.
+leaving it would tell somebody pdfcer diverges when it no longer does.
 
 ### What is whose
 
 | piece | whose | state |
 |---|---|---|
-| the `#[default]` on `CmykIntent` | **`pdfce-core`** | filed with the engine |
-| deleting the `Naive` variant and its colour maths | **`pdfce-core`** | filed with the engine |
+| the `#[default]` on `CmykIntent` | **`pdfcer-core`** | filed with the engine |
+| deleting the `Naive` variant and its colour maths | **`pdfcer-core`** | filed with the engine |
 | the third radio button and its copy | this shell | **done** |
 | the divergence note | this shell | **done** — deleted, not reworded |
 | what a fresh install gets today | this shell | **done** — seeded, see below |
 
-★ `D:\Dev\pdfce\` is read-only to this project until fold-in, so the first two
+★ `D:\Dev\pdfcer\` is read-only to this project until fold-in, so the first two
 are a hand-off rather than a change I make. The request is
 `request_cmyk_default_flips_and_the_naive_formula_goes.md`.
 
@@ -4981,7 +4981,7 @@ conclusion.
 Four toggles on the selector tool's control bar. His words are *"Inkscape has
 options for this and I want the same"*, so the target is the set, not one flag:
 
-| Inkscape toggle | pdfce equivalent | default |
+| Inkscape toggle | pdfcer equivalent | default |
 |---|---|---|
 | Scale stroke width | `/BS /W`, `/Border`'s width element | **off** |
 | Scale rounded corners | — (no PDF annotation equivalent yet) | n/a |
@@ -5008,7 +5008,7 @@ Inkscape hit exactly this (Launchpad #1335376) and closed it **Invalid**: a
 mathematical limit, not a defect. Its actual behaviour is to **silently produce
 a distorted stroke**.
 
-★★ It transfers to pdfce unchanged, because an annotation's artwork is placed
+★★ It transfers to pdfcer unchanged, because an annotation's artwork is placed
 through §12.5.5's matrix and a resize makes that matrix a non-uniform scale.
 So carrying the appearance stream untouched — which is exactly right for a
 *move* — is **wrong for a non-uniform resize**: the stroke distorts whatever the
@@ -5016,14 +5016,14 @@ toggle says.
 
 Two cases, and only one is fixable:
 
-- **An appearance pdfce authored** can be rebuilt from the scaled geometry at
+- **An appearance pdfcer authored** can be rebuilt from the scaled geometry at
   the new size, and both toggle states become exactly satisfiable.
 - **A foreign appearance** cannot be rebuilt without replacing somebody else's
-  artwork with pdfce's rendering of it. There the honest options are refuse, or
+  artwork with pdfcer's rendering of it. There the honest options are refuse, or
   proceed and **state the residual distortion** — never silently pick a fudge
   factor, which is the one thing the parity reference does.
 
-⇒ The engine's own RAG recommends pdfce be **better than the parity reference
+⇒ The engine's own RAG recommends pdfcer be **better than the parity reference
 here, not equal to it.** Agreed, and it is why the grips must report whether a
 drag was proportional.
 
@@ -5092,7 +5092,7 @@ include fonts from the OS installed font folders."*
 
 ### ★★ Half of this shipped yesterday, and saying so is not a deflection
 
-**The permanent setting exists.** File ▸ pdfce ▸ Settings ▸ **Fonts** holds a
+**The permanent setting exists.** File ▸ pdfcer ▸ Settings ▸ **Fonts** holds a
 list of folders, it persists in `userdata/preferences.txt` as repeated
 `font_folder =` lines, order is search order, duplicates are refused, and Tools
 ▸ Font folders opens the same window as a second route.
@@ -5112,7 +5112,7 @@ the feature:
 
 ### The checkbox itself
 
-**"Use the fonts installed on this computer."** Off by default. On, pdfce also
+**"Use the fonts installed on this computer."** Off by default. On, pdfcer also
 searches:
 
 | | |
@@ -5127,7 +5127,7 @@ machine folder would miss precisely the case that motivated ticking it.
 
 ### ★★★ Why it is a checkbox and not the default, and this is the whole design
 
-`app::fonts`' header argues at length that pdfce must **not** search
+`app::fonts`' header argues at length that pdfcer must **not** search
 `C:\Windows\Fonts` on its own:
 
 > Embedding puts a font **program** — the actual outlines — inside somebody's
@@ -5137,7 +5137,7 @@ machine folder would miss precisely the case that motivated ticking it.
 > the operator's behalf, in a file that outlives the decision.
 
 **A checkbox does not overrule that argument — it satisfies it.** The objection
-was never to *using* system fonts; it was to pdfce deciding *silently*. An
+was never to *using* system fonts; it was to pdfcer deciding *silently*. An
 explicit, persistent, off-by-default switch is the operator making that decision
 once, visibly, where they can find it again.
 
@@ -5189,7 +5189,7 @@ Reproducible — same notch, twice — so it is a boundary rather than noise.
 
 ### Why it happens, as far as I have taken it
 
-pdfce has **two** ways of remembering where the view is. An ordinary one that
+pdfcer has **two** ways of remembering where the view is. An ordinary one that
 works up to about a million percent, and a high-precision one that takes over
 above that. The ordinary one starts losing accuracy at around 300,000%, and the
 high-precision one does not engage until roughly 1,200,000%.
@@ -5259,7 +5259,7 @@ did. Driven: one font removed, 15,025 bytes of program freed.
 
 ### And the number is a lie by omission unless the window says this
 
-**pdfce's Save will not make the file smaller.** It saves by appending your
+**pdfcer's Save will not make the file smaller.** It saves by appending your
 changes to the end of the file and leaving the earlier version intact — that is
 what the Save-a-copy tooltip has promised since day one — so the font outlines
 stop being *used* and are still *there*. The file gets slightly bigger.
@@ -5270,7 +5270,7 @@ feature does the work and cannot deliver the point of it.
 
 ### Why Save works that way, and why it is a good reason
 
-Appending is what lets pdfce promise the previous version of your drawing is
+Appending is what lets pdfcer promise the previous version of your drawing is
 still recoverable inside the file, and it is what keeps a **digital signature**
 valid — a save that rewrites the whole file destroys every signature in it.
 Those are not small things and I do not want to trade them away by default.
@@ -5309,7 +5309,7 @@ fail with `1709629` against `1709629` and name the substitution.
 
 ---
 
-## O47 — A question, not a complaint: should pdfce embed its OWN fonts?
+## O47 — A question, not a complaint: should pdfcer embed its OWN fonts?
 
 **Asked 2026-08-28, by me, and it needs your answer before I build either
 side of it.**
@@ -5320,12 +5320,12 @@ end to end on the A1 title block: three fonts missing before, none after.
 
 ### The question
 
-pdfce **ships with its own copies** of the fourteen standard PDF fonts —
+pdfcer **ships with its own copies** of the fourteen standard PDF fonts —
 Helvetica, Times, Courier and the rest — because it needs them to draw a
-document whose fonts are missing. Those are pdfce's to embed.
+document whose fonts are missing. Those are pdfcer's to embed.
 
 Right now they are **not offered**. If none of your font folders answers for a
-font, that font is reported as one pdfce cannot embed, and the reason it gives
+font, that font is reported as one pdfcer cannot embed, and the reason it gives
 is *"add a folder that does"*.
 
 The alternative is to offer them: press Embed on any drawing and every
@@ -5340,17 +5340,17 @@ your client's screen.
 
 The command-line tool makes it an explicit switch for the same reason. Mine has
 no switch, because that window has no settings by design — so this is a choice
-about what pdfce does, not a checkbox I can add without asking.
+about what pdfcer does, not a checkbox I can add without asking.
 
 ### What I need from you
 
 One of three:
 
 1. **Never** — leave it as it is. A missing font stays missing until you point
-   pdfce at a folder that has it.
-2. **Always** — offer them, disclosed in the window as "pdfce's own copy" so it
+   pdfcer at a folder that has it.
+2. **Always** — offer them, disclosed in the window as "pdfcer's own copy" so it
    is never silent.
-3. **Ask** — a second button in the window, *Embed, using pdfce's own fonts
+3. **Ask** — a second button in the window, *Embed, using pdfcer's own fonts
    where yours have none*.
 
 My own lean is **2**, disclosed loudly, because on your machine the alias rung
@@ -5361,7 +5361,7 @@ taking it.
 **Status:** ★★★ **SHIPPED AND DRIVEN, 2026-08-28** — option 2, always,
 disclosed loudly. With no font folder configured at all, a drawing asking for
 Helvetica now embeds: 3 fonts, 46 KB, every row saying *"none of your fonts
-matched, so pdfce used its own copy. It is a stand-in, not the font the document
+matched, so pdfcer used its own copy. It is a stand-in, not the font the document
 asks for."* It is the LAST rung — a real font on your machine wins every time —
 and there is a driven check that turning it off makes fail by name.
 
@@ -5369,7 +5369,7 @@ and there is a driven check that turning it off makes fail by name.
 button in the window rather than a change to the resolver.
 
 ★★ **And he added a fourth thing in the same breath, which is O50.** It changes
-what this row is worth: with the OS font folders switched on, pdfce reaches a
+what this row is worth: with the OS font folders switched on, pdfcer reaches a
 real Arial before it ever reaches its own bundled substitute, so the bundled
 rung becomes the last resort it was always meant to be rather than the second
 one. Build O50 first.
@@ -5407,9 +5407,9 @@ code was changed**.
 
 > *"BEFORE you make any changes, you are going to go and research how GUIs for
 > graphics editing programs handle editing and navigating and then you are going
-> to write a manual on how things should work in pdfcegui, and in parallel while
+> to write a manual on how things should work in pdfcergui, and in parallel while
 > you do that you are going to write up the manual for how to currently use
-> pdfcegui, then you are going to compare the two documents and see the
+> pdfcergui, then you are going to compare the two documents and see the
 > difference and determine just what you need to change."*
 
 **No code changes until those three documents exist.** That is the method he
@@ -5433,7 +5433,7 @@ first place.
 
 The audit's verdict was that the engine did not enter form XObjects, so a
 page-sized form was a page-sized hit target that won every click at every point.
-That was filed as an engine request on 2026-08-26 and **`pdfce-core` answered it
+That was filed as an engine request on 2026-08-26 and **`pdfcer-core` answered it
 the next day** — Passes 136.0, 136.1 and 136.2:
 
 * `decompose_page` now descends into every reachable form and returns the
@@ -5464,7 +5464,7 @@ Consumed in three commits, each of which left the program working:
    blank paper inside a page-sized form must select **nothing**.
 3. **The surfaces stopped lying.** The status bar says *"Selected: Path ·
    12.4 × 8.0 pt · inside a form"*; Delete on such a selection says *"That
-   object is inside a form — pdfce cannot edit inside one yet"* instead of
+   object is inside a form — pdfcer cannot edit inside one yet"* instead of
    doing nothing; a drag says the same instead of *"nothing selected"* while an
    outline is on screen.
 
@@ -5479,10 +5479,10 @@ copy. Everything drawn inside it moves with it.
 
 | | |
 |---|---|
-| **You cannot edit an object inside a form** | not a shell decision: `pdfce-core` writes a paint-order edit to the *page's* content stream, and a form-interior object lives in the form's. `FormLeaf::is_editable()` is `false` for every one of them today. Select the form and move that, or wait for the engine |
+| **You cannot edit an object inside a form** | not a shell decision: `pdfcer-core` writes a paint-order edit to the *page's* content stream, and a form-interior object lives in the form's. `FormLeaf::is_editable()` is `false` for every one of them today. Select the form and move that, or wait for the engine |
 | **Double-click will not descend into one** | the Part and Node rungs exist to act on geometry, and there is no geometry to act on here. It stops at the whole object rather than descending into something you then cannot change |
 | **The measure tools cannot pick a line inside a form** | the engine's line-pick does not see the leaf list. Filed. On the benchmark CAD sheet that is 10,256 lines the tool cannot see, and it was equally true before today — it was just hidden behind the selection defect |
-| **`pdfce-cli object-list --hit` still answers with the form** | the CLI has not consumed the deep hit test, and its help says it is authoritative for the GUI's behaviour, which is now false. Filed |
+| **`pdfcer object-list --hit` still answers with the form** | the CLI has not consumed the deep hit test, and its help says it is authoritative for the GUI's behaviour, which is now false. Filed |
 
 ### The numbers, measured today
 
@@ -5566,7 +5566,7 @@ opened — deliberately, so it can tell you whether you have unsaved work. It
 compared the **values**.
 
 And **all eight PDF/X and PDF/A presets set exactly the same rendering values.**
-That is not a bug and pdfce already told you so on the selected standard's own
+That is not a bug and pdfcer already told you so on the selected standard's own
 line: the standards genuinely ask the same thing of a *renderer* and differ in
 what they ask of a *file*, which is a preflight question. So picking a second
 standard moved nothing, and Save was correctly greyed about a draft that really
@@ -5716,14 +5716,14 @@ RUN** — see the status below, which says so in those words.
 > In Adobe when I hover over it the I cursor re-orients itself to match the text
 > orientation, and when I select the text it shades each letter as part of the
 > same block. when I copy and paste into notepad, I get the text on one line as
-> expected. I need pdfcegui to have the same behaviour. as it is now the I
+> expected. I need pdfcergui to have the same behaviour. as it is now the I
 > cursor doesn't reorient and it pastes each letter onto its own line."*
 >
 > *"The last page has the vertical text."*
 
 ### ★★★ Three symptoms, one cause, and the cause is in the engine
 
-`pdfce-core` places every glyph by the §9.4.4 text rendering matrix and then
+`pdfcer-core` places every glyph by the §9.4.4 text rendering matrix and then
 publishes four numbers out of it: the origin `x`, `y` — exact — plus the
 `advance` and the `size`, **both of which are lengths**. The two basis
 *vectors* are reduced to their magnitudes, so **which way the text runs is never
@@ -5764,7 +5764,7 @@ lands, the shell-side recovery becomes a fallback and then deletes.
 
 #### ★★★ It landed the next day, and the 1,303 lines are gone — 2026-08-27
 
-`pdfce-core` shipped Passes 139.0 / 139.1 / 139.2 within a day:
+`pdfcer-core` shipped Passes 139.0 / 139.1 / 139.2 within a day:
 `ExtractedGlyph::direction`, `TextRun::direction()`, `Line::direction`, a public
 `glyph_cell()`, and — the one that matters — segmentation resolved into the
 **line's own frame** instead of the page's, so the spurious breaks are never
@@ -5794,7 +5794,7 @@ by construction rather than by luck.
 
 | | |
 |---|---|
-| your own file | **verified.** The stamp on page 36 of `SW41177.pdf` comes back as one line: `W:\Engineering\Products\SAM\SW41177 Toyota Pick up ROPS\SW41177-WELDED FOPS.SLDDRW`. Run it yourself: `cargo test -p pdfce-gui --lib the_operators_own_vertical_stamp -- --ignored --nocapture` |
+| your own file | **verified.** The stamp on page 36 of `SW41177.pdf` comes back as one line: `W:\Engineering\Products\SAM\SW41177 Toyota Pick up ROPS\SW41177-WELDED FOPS.SLDDRW`. Run it yourself: `cargo test -p pdfcer-gui --lib the_operators_own_vertical_stamp -- --ignored --nocapture` |
 | unit tests | 22 new, against real extractions of a real fixture at 0°, 90°, 180°, 270° and 30°. Falsified in both directions before being quoted |
 | **the driven check** | **WRITTEN, NOT RUN.** `ui-verify rotated_text_selects_and_copies_as_one_line` drives the release binary, sweeps the string, asserts `chars=6 quads=1`, asserts the cursor traced `deg=90`, and reads the OS clipboard from outside the process. It needs the pointer and the foreground, and you were using the PC. **Say when and it runs.** |
 | the 30° case | the band it *marks* is a true parallelogram; the wash it *paints* is that band's bounding box, so it over-covers at the corners. Named rather than discovered. Quadrant rotations — every one a CAD exporter emits — are exact |
@@ -5814,7 +5814,7 @@ chose for the zoom limit; the window states the cost and does not prevent the
 choice.
 
 ★ **And you will very likely never need it**, because O41 below is fixed as
-well: pdfce now stops asking for a page image bigger than the colour buffer can
+well: pdfcer now stops asking for a page image bigger than the colour buffer can
 handle, so the colours no longer change with the zoom at all. The setting is
 there for the case the automatic fix cannot cover — a very large monitor, where
 even the visible-part render can exceed the default.
@@ -5832,7 +5832,7 @@ worse than not offering it.
 | 800 % | 641 MB |
 | 1035 % | 1.0 GB |
 | 1200 % | 1.4 GB |
-| every zoom pdfce allows on A4 (1946 %) | **4.0 GB**, plus the page image beside it |
+| every zoom pdfcer allows on A4 (1946 %) | **4.0 GB**, plus the page image beside it |
 
 **★ Two corrections to what I told you earlier, and both are mine.**
 
@@ -5853,9 +5853,9 @@ pixel count, blending in print colours took 1.4 s against 0.9 s. Correct colours
 are slower, which is the actual trade.
 
 **★★ And a finding that changes what I told you earlier.** I said the better fix
-was for pdfce to render only the visible part above that limit, which needs no
+was for pdfcer to render only the visible part above that limit, which needs no
 extra memory. That is true on a small screen and **not true on yours if it is
-1440p or bigger**: the visible part plus the margin pdfce renders around it
+1440p or bigger**: the visible part plus the margin pdfcer renders around it
 already needs 281 MB at 1440p and 633 MB at 4K — both over today's cap. So the
 cap has to grow *as well*, or a big monitor gets approximate colours at every
 zoom. Both changes are needed, not one.
@@ -5874,7 +5874,7 @@ filed with the engine.**
 
 **Your hunch was right — it is one bug, and your bracket contained it.**
 
-pdfce blends a page that uses transparency in *print* colours (CMYK), which is
+pdfcer blends a page that uses transparency in *print* colours (CMYK), which is
 the correct way to do it. That takes a big working buffer, and the engine caps
 it at 256 MB. Past the cap it falls back to blending in screen colours instead.
 On an A4 page the cap is reached at **zoom 534 %** — between the 474 % where you
@@ -5887,7 +5887,7 @@ Nothing is marked on the page itself.
 
 **FIXED, 2026-08-26, and the colours no longer depend on the zoom.**
 
-pdfce should never have asked for a page image that big. Above a *different*,
+pdfcer should never have asked for a page image that big. Above a *different*,
 much higher limit it already renders just the visible part instead — and a
 visible-part render stays under the colour cap at any zoom. So the switch-over
 now happens at the **colour** cap as well, and the page keeps its ink all the way
@@ -5911,7 +5911,7 @@ would have been a serious regression **for you specifically**:
 * about **0.4 %** of real documents use the buffer at all — 15 of 4,012 in the
   engine's own corpus.
 
-So pdfce **learns** instead: the renderer reports, on every page image, whether
+So pdfcer **learns** instead: the renderer reports, on every page image, whether
 it blended in ink, and only a page that has been seen doing so gets the lower
 cap. Your drawings keep free panning at every zoom, exactly as they do today,
 and a print-ready file gets its colours fixed. Asserted both ways.
@@ -5940,7 +5940,7 @@ selectable now.
 ★ **But it will not change what you see, and the window now says so.** Those
 standards differ in what they require of the *file* — embedded fonts, an output
 intent, whether transparency is allowed — which is a preflight question. What
-they ask of a *renderer* is the same, so pdfce gives them the same answers.
+they ask of a *renderer* is the same, so pdfcer gives them the same answers.
 Switching between them changes nothing on screen. Worth knowing before you use
 it to compare against the conformance tests.
 
@@ -5978,7 +5978,7 @@ keyboard shortcut, say — it now tells you why instead of doing nothing.
    Read and Review, and the Forms panel fills in every mode.
 2. **Names must be different, and radio buttons are the exception.** Two fields
    sharing a name are ONE field with two boxes — type in either and both change.
-   pdfce numbers new fields so that cannot happen by accident. Radio buttons in
+   pdfcer numbers new fields so that cannot happen by accident. Radio buttons in
    one set are *supposed* to share a name, so those keep theirs and get
    different values instead.
 3. ~~**Required, read-only, the tooltip and the border can only be set when a
@@ -6067,21 +6067,21 @@ way it was, it is one control in Settings ▸ Images and it stays changed.**
 
 Not a new rendering mode — a **named bundle of settings that already exist**.
 About seven of the twenty-three settings have a *render* radius, and each one
-exists because the standard is genuinely silent and pdfce had to choose. A
+exists because the standard is genuinely silent and pdfcer had to choose. A
 preset says: *for this standard, choose these.* Everything stays individually
 editable afterwards.
 
 Your "dropdown to select view options between the different standards" is the
 same mechanism with more than one entry, and that is how it should be built:
 
-- **pdfce (recommended)** — today's defaults, including the two you ruled on
+- **pdfcer (recommended)** — today's defaults, including the two you ruled on
   personally (neutral black, and now image smoothing)
 - **PDF/X-4 (ISO 15930-7)** — the conformance answers
 
 ### ✅ The mechanism is BUILT (2026-08-25), on your instruction to proceed
 
 Settings ▸ top of the window, above every group because it sets all of them.
-One entry today — **pdfce recommended** — which is the half of your request that
+One entry today — **pdfcer recommended** — which is the half of your request that
 was never blocked: you had changed several settings while investigating and
 wanted a way back.
 
@@ -6105,13 +6105,13 @@ Verified on screen, offscreen: the row publishes `settings.presets` at
 The engine answered within the hour, and answered better than asked: not a table
 of six values but an API, with **every value graded for evidence quality**.
 
-**Ten choices** now: pdfce's own answers, plus PDF/X-1a, X-3, X-4, X-5g, X-6,
+**Ten choices** now: pdfcer's own answers, plus PDF/X-1a, X-3, X-4, X-5g, X-6,
 PDF/A-1, A-2, A-4 and PDF/UA-1.
 
 ★★★ **The important part is not the dropdown — and here is what it says.**
 Choosing a standard now tells you how much of itself it can actually back up:
 
-| standard | stated by the standard | inferred | chosen by pdfce |
+| standard | stated by the standard | inferred | chosen by pdfcer |
 |---|---:|---:|---:|
 | PDF/X-1a | 4 | 0 | 2 |
 | **PDF/X-4** | **1** | 2 | 3 |
@@ -6135,7 +6135,7 @@ useful way.** I filed it as *contentious* — your 2026-08-08 ruling versus a
 conformance render. The engine's answer: **no setting of it is conformant**,
 because every PDF/X level guarantees a measured definition of ink and this
 control picks among fixed built-in tables. So the two were never in tension.
-It is one control standing in for something pdfce cannot do yet, and the preset
+It is one control standing in for something pdfcer cannot do yet, and the preset
 says so on screen rather than leaving a colour conversion that silently did not
 happen.
 
@@ -6148,15 +6148,15 @@ And the image-smoothing change from this morning is **gone as a special case**:
 the engine adopted it as its own default, so the one-time migration deleted
 itself exactly as designed.
 
-## M1 — The PC starts pdfce unreliably. The laptop does not. It is the PC.
+## M1 — The PC starts pdfcer unreliably. The laptop does not. It is the PC.
 
 **★ SETTLED 2026-08-26 by your laptop test, and the conclusion is the useful
-part: pdfce is exonerated.** The same portable build, the same files, works
+part: pdfcer is exonerated.** The same portable build, the same files, works
 normally on the laptop and fails roughly one launch in three on the PC. That is
 a machine difference, not a program defect, and no more of my time goes on it.
 
 **What this costs, and it is worth knowing rather than rediscovering:** the
-automated test suite launches a fresh copy of pdfce for every check, so on the
+automated test suite launches a fresh copy of pdfcer for every check, so on the
 PC about a third of them cannot start. Those show up as skips that look like
 failures. Any future session driving the suite **on this PC** should expect that
 and not go hunting.
@@ -6174,7 +6174,7 @@ tool with the measurement beside it.
 
 ### Original report — the handle leak, which was real but was not the cause
 
-**Found 2026-08-26 while testing. Not a pdfce bug — but it bites pdfce.**
+**Found 2026-08-26 while testing. Not a pdfcer bug — but it bites pdfcer.**
 
 Roughly a third of my automated tests could not start the program at all. It
 dies before showing a window, with a Windows error about **"not enough memory
@@ -6189,14 +6189,14 @@ resources"** coming from the accessibility layer.
 | Explorer | 12,206 |
 
 349,000 handles in one process is roughly a hundred times normal. Windows starts
-refusing to hand out the resources a new window needs, and pdfce is simply the
+refusing to hand out the resources a new window needs, and pdfcer is simply the
 next program that asks.
 
 ★ **It is intermittent, not constant** — three launches in a row gave two
 successes and one crash, and pausing between them helped. So you may have seen
-pdfce fail to open occasionally and put it down to bad luck. It probably was not.
+pdfcer fail to open occasionally and put it down to bad luck. It probably was not.
 
-★★ **What it costs you:** any program can hit this, not just pdfce. A restart of
+★★ **What it costs you:** any program can hit this, not just pdfcer. A restart of
 OneDrive (or of the machine) will clear it. I have not touched it — that is your
 sync and your call.
 
@@ -6221,7 +6221,7 @@ itself, with the measurement beside it, so it survives me.
 
 ★ **This does not undo what has leaked.** The 404,000 handles already taken stay
 taken until OneDrive is restarted — which is worth doing, because at this level
-roughly **one program launch in three fails**, and not only pdfce's.
+roughly **one program launch in three fails**, and not only pdfcer's.
 
 ★★ And the error message is actively misleading, which is why this was never
 going to be reported as a pattern: Windows says *"not enough memory resources"*
@@ -6233,7 +6233,7 @@ at 404,179 handles against a 15 MB working set.
 **Not asked — found by the engine and fixed.** 2026-08-26, commit `fe087c4`.
 
 Scanned pages are usually rotated by the *scanner driver* writing a rotation
-flag rather than by turning the pixels. pdfce honoured that flag when drawing
+flag rather than by turning the pixels. pdfcer honoured that flag when drawing
 the page and **not** when placing the recognised words — so on any quarter-turn
 page, every word ended up on the wrong axis at the wrong scale.
 
@@ -6249,7 +6249,7 @@ Against the benchmark drawing's own text: 72 → 56.5 %, 100 → 56.7 %, 150 →
 originally is *confirmed* — **more scanning resolution makes OCR worse, and the
 conventional 300 DPI is the worst of the five** — but the "150 is the sweet
 spot" part was noise. The truth is that anything from 72 to 200 performs the
-same, and then it falls off a cliff. pdfce's setting sits inside that flat
+same, and then it falls off a cliff. pdfcer's setting sits inside that flat
 range, so nothing needed changing; it was right for the wrong reason and is now
 right for a measured one.
 
@@ -6259,7 +6259,7 @@ words**.
 
 **The original OCR accuracy figures were withdrawn.** The engine's bundled
 text-detection model had never worked. The numbers I reported — including "150
-DPI is the sweet spot at 44.7 %" — were measurements of noise, not of pdfce.
+DPI is the sweet spot at 44.7 %" — were measurements of noise, not of pdfcer.
 They are marked as retracted rather than quietly corrected, because the
 *reasoning* behind them is probably still sound even though the values are not.
 For scale, the fixed engine now reads a realistic synthetic scan at **47 of 47
@@ -6271,11 +6271,11 @@ words**. A proper re-measurement is outstanding.
 
 The sibling of E1 below, and the dangerous one. Some PDFs store text with no
 record of which letters it is — it renders and prints perfectly, and nothing can
-search it. Ask pdfce to redact every occurrence of a name in such a file and it
+search it. Ask pdfcer to redact every occurrence of a name in such a file and it
 would mark nothing, report success, and leave the name in the document. Then you
 send it.
 
-The redact panel now says so, in the strongest wording anywhere in pdfce: how
+The redact panel now says so, in the strongest wording anywhere in pdfcer: how
 many fonts could not be read, and that any matches inside them **were not marked
 and are still in the file**.
 
@@ -6298,7 +6298,7 @@ Find now says how many fonts in the document store unsearchable text, with a
 hover explaining what that means and that recognising the page fixes it.
 
 ★ **Acrobat has exactly the same limit** and says nothing at all. This is a gap
-in the *file*, not in pdfce, and the wording says so — calling a file's own gap
+in the *file*, not in pdfcer, and the wording says so — calling a file's own gap
 a tool limitation would send you looking for a better tool that does not exist.
 
 ★★ It appears in the Find bar, never as a mark on the page. Marking content that
@@ -6378,7 +6378,7 @@ Deliberately not started alongside the scaling work, because it is a
 
 ### ✅ Step 1 done — the inventory, read out of the engine source
 
-★★★ **The headline, and it decides the whole shape of this request: pdfce can
+★★★ **The headline, and it decides the whole shape of this request: pdfcer can
 choose how text looks when it is CREATED, and cannot change how existing text
 looks at all.** `EditSession`'s text verbs are `add_text`, `edit_text` and
 `delete_text_run` — and `edit_text` is find-and-replace that **re-encodes into
@@ -6415,7 +6415,7 @@ lower and Sentence case are the three worth having. This is real Word parity
 for one afternoon.
 
 **2. Three of Word's buttons already exist here, as something else.**
-Underline, strikethrough and highlight are **annotations** in pdfce
+Underline, strikethrough and highlight are **annotations** in pdfcer
 (`markup.underline`, `markup.strikeout`, `markup.highlight`) rather than
 character attributes. ★ That is not a lesser answer for a review tool — it is
 arguably the right one, since an annotation is reviewable, attributable and
@@ -6437,15 +6437,15 @@ front ends. Filing five requests would misdescribe it.
   asks the two questions only the engine can answer: whether a restyle is
   representable for an arbitrary run at all (swapping Helvetica for
   Helvetica-Bold changes every advance width, so the run reflows or overruns),
-  and whether the honest scope is narrower — restyling only text pdfce itself
+  and whether the honest scope is narrower — restyling only text pdfcer itself
   authored, where the metrics are already known. If it is narrower, we would
   rather disclose a narrow capability than ship a wide-looking one.
-- **Step 3** — the IA amendment. pdfce's text lives under Edit ▸ Content and the
+- **Step 3** — the IA amendment. pdfcer's text lives under Edit ▸ Content and the
   contextual **Format** tab; there is no Home tab, and the Format tab is the
   natural home for anything acting on a selection.
 
 ★ The target remains the capability list, not the pixel layout: *"everything
-Word lets me do to text, pdfce lets me do to text"* — not a copy of two combos
+Word lets me do to text, pdfcer lets me do to text"* — not a copy of two combos
 and fourteen buttons onto a different selection model.
 
 ## O36 — Sections re-wrap onto more rows, and the scroll arrow is authorised
@@ -6505,7 +6505,7 @@ recorded, and if you ever set it back it stays back.
 second launch does nothing; marker present plus a deliberate `point_sample`
 survives untouched.
 
-**Engine hand-off filed** — `pdfce-core` grades its own default "a guess" and
+**Engine hand-off filed** — `pdfcer-core` grades its own default "a guess" and
 names the exact evidence that would flip it: a viewer-behaviour comparison.
 You just supplied one, against Acrobat, on your own drawings.
 
@@ -6699,7 +6699,7 @@ path. `tools/our-ribbon-study.ps1` is its twin, pointed at our own build.
 
 Groups reachable on the band without opening a menu:
 
-| client width | Word | pdfce, before |
+| client width | Word | pdfcer, before |
 |---:|---:|---:|
 | 884 | **10** | **3** |
 | 604 | **7** + a scroll chevron | **1** |
@@ -6720,7 +6720,7 @@ had no way to give up space except to vanish.
   is reclaimed and the group re-flows; a group with nothing left is not drawn
   at all, separator included. That is his second paragraph, and it is what will
   let one tab definition serve Read, Review and Edit.
-* Applied to pdfce's manifest: icon-only for the four page displays, four
+* Applied to pdfcer's manifest: icon-only for the four page displays, four
   pointer tools, five display toggles, two page rotations, cut/copy/paste, four
   text markups and seven markup shapes; Large for the six one-item groups.
 
@@ -7631,7 +7631,7 @@ number, so a failure points at one file rather than two.
 ## O24 — A setting for the maximum zoom
 
 **Asked:** 2026-08-21 — *"add a setting so the user can set the maximum zoom.
-the pdfce engine has been updated to handle at least 1,000,000,000,000%. I'm not
+the pdfcer engine has been updated to handle at least 1,000,000,000,000%. I'm not
 concerned about the practicality of offering such a high zoom. it is up to the
 user to determine how much of a performance hit they want to take."*
 
@@ -7641,7 +7641,7 @@ small half.
 
 ### The engine really does do it, and the commits say how
 
-`D:\Dev\pdfce`, both landed since this shell's current lock:
+`D:\Dev\pdfcer`, both landed since this shell's current lock:
 
 ```
 71f7055  Deep zoom now holds its viewport to a trillion percent, and the fix
@@ -7659,7 +7659,7 @@ itself: **deep zoom is a viewport question, not a page-size one.**
 harder one binds. `viewer::max_zoom_for_page` computes:
 
 ```rust
-let ceiling = (pdfce_render::MAX_PIXMAP_EDGE - 1) as f32 / (longest * ppp);
+let ceiling = (pdfcer_render::MAX_PIXMAP_EDGE - 1) as f32 / (longest * ppp);
 ceiling.clamp(MIN_ZOOM, MAX_ZOOM)
 ```
 
@@ -7686,10 +7686,10 @@ setting without the mechanism behind it would be exactly that.
 | | |
 |---|---|
 | **1** | `git push origin main` |
-| **2** | `python tools/package-portable.py`, which mirrors to the older `OneDrive\pdfceGUI*` slot and leaves the other as the fallback |
+| **2** | `python tools/package-portable.py`, which mirrors to the older `OneDrive\pdfcer-gui*` slot and leaves the other as the fallback |
 
 ★ **This is the first push of the project.** `origin` is
-`github.com/KenM76/pdfceGUI.git` and the local branch is **253 commits
+`github.com/KenM76/pdfcer-gui.git` and the local branch is **253 commits
 ahead**; the last tag is `v0.3.0`. So the push is not a routine increment —
 it publishes the whole of this shell's history at once, and it is worth
 doing deliberately rather than as a step in a script.
@@ -7702,7 +7702,7 @@ them.** Every one has bitten this project already:
 2. **The full driven suite**, on his own drawing, with **both** `--doc-point`s
    — `0,300,500` and `0,1211,1021`. One point passing is what hid `O22` for a
    day.
-3. **`cargo update -p pdfce-core -p pdfce-render -p pdfce-print` first**, then
+3. **`cargo update -p pdfcer-core -p pdfcer-render -p pdfcer-print` first**, then
    rebuild and re-run. `O24` depends on two engine commits (`71f7055`,
    `bd9844d`) that this shell's lock predates, so a release built on a stale
    pin would ship without the thing it is a release of.
@@ -7882,24 +7882,24 @@ far less invasive of the two changes — it touches the render worker and the
 raster cache, not the canvas's coordinate model. **If only one thing is
 built, build that one.**
 
-★ And it is not speculative: `crates/pdfce-gui/src/render/offpage.rs` already
+★ And it is not speculative: `crates/pdfcer-gui/src/render/offpage.rs` already
 drives `render_page_region` and asserts the pixmap matches the region asked
 for. Those tests were written for `O23` and this is the same mechanism.
 
 ### What actually delivers it
 
-**Render the viewport, not the page.** `pdfce_render::render_page_region` takes
+**Render the viewport, not the page.** `pdfcer_render::render_page_region` takes
 an arbitrary page-space rect, and at deep zoom the visible rect is a *tiny*
 fraction of the page — so the pixmap stays small however large the zoom is.
 That is what the engine's `--region` commit means.
 
 ★★ This shell **has never called `render_page_region`.** Established
 2026-08-21 while answering `O23`: it appears twice in
-`crates/pdfce-gui/src/`, both times in prose explaining that a tiled path does
+`crates/pdfcer-gui/src/`, both times in prose explaining that a tiled path does
 not exist. The render worker uses `render_page_with_view`, whole-page, every
 time.
 
-★ And it is already de-risked. `crates/pdfce-gui/src/render/offpage.rs` drives
+★ And it is already de-risked. `crates/pdfcer-gui/src/render/offpage.rs` drives
 the region path with regions off, straddling and enclosing the page, and
 asserts the pixmap matches the region asked for rather than its overlap with
 the page. Those four tests were written for `O23` and they are the same
@@ -8006,7 +8006,7 @@ So the change is: introduce the **content extent** as a value distinct from the
 Not yet investigated. What has to be established first, against source:
 
 1. ~~Does the decomposition **include** objects outside the `/MediaBox`?~~
-   **ANSWERED 2026-08-21 against `pdfce-core` source: YES, with no culling of
+   **ANSWERED 2026-08-21 against `pdfcer-core` source: YES, with no culling of
    any kind.** The decomposer is never even *told* what the page box is —
    `decompose_page` has the `&Page` in hand and reads only its content
    stream, resources and fonts. Grepping `media_box|crop_box|page_box` across
@@ -8056,7 +8056,7 @@ Not yet investigated. What has to be established first, against source:
    geometry outside the pixmap is culled by the rasteriser. That is why the
    escape hatch works at all:
 
-   **`pdfce_render::render_page_region(doc, page, scale, region, options)`**
+   **`pdfcer_render::render_page_region(doc, page, scale, region, options)`**
    takes an arbitrary page-space rect and **never clamps or intersects it
    with the crop box**. A region starting left of or below the page produces
    a negative origin and is translated into view. The only limits are
@@ -8070,14 +8070,14 @@ Not yet investigated. What has to be established first, against source:
 
    - ~~**No test exercises a region outside the crop box.**~~ ★★ **CLOSED
      2026-08-21 — one now does, in this repository.**
-     `crates/pdfce-gui/src/render/offpage.rs` drives `render_page_region` with
+     `crates/pdfcer-gui/src/render/offpage.rs` drives `render_page_region` with
      a region entirely off the page, one straddling its left edge, and one
      containing the whole page plus a margin. **All three rasterize, and the
      pixmap is sized to the region asked for rather than to its overlap with
      the page.** So the escape hatch is proven rather than merely
      unrejectable.
 
-     ★ It lives here rather than in `pdfce-render` for two reasons: that crate
+     ★ It lives here rather than in `pdfcer-render` for two reasons: that crate
      is read-only to this project, and a consumer asserting the contract it
      depends on is the right shape anyway — if an engine bump starts clamping
      the region, the failure lands on the shell that cared, naming the feature,
@@ -8113,7 +8113,7 @@ So both halves of this row are shell work:
 | **B** | make the canvas allocate the off-page area as clickable, and render it through `render_page_region` |
 
 ★ Verified against **this** shell rather than assumed: `render_page_region`
-appears twice in `crates/pdfce-gui/src/`, both times in **prose** explaining
+appears twice in `crates/pdfcer-gui/src/`, both times in **prose** explaining
 that a tiled-progressive path does not exist. It has never been called. The
 render worker uses `render_page_with_view`, i.e. whole-page-at-crop-box.
 
@@ -8122,7 +8122,7 @@ was worth establishing rather than assuming: the reflex on hitting a wall
 like *"the raster stops at the page edge"* is to file it as an engine gap,
 and it is not one.
 
-★ Rule 4 applies to the answer: if pdfce can see content the operator cannot,
+★ Rule 4 applies to the answer: if pdfcer can see content the operator cannot,
 that owes an **off-canvas** report. It must not be marked on the page.
 
 ### ★★★ ATTEMPTED 2026-08-21 AND BACKED OUT. What it cost, and what it taught
@@ -8391,7 +8391,7 @@ pasteboard changes.
 4. Re-run `rotate_handle_turns_a_selection` at **both** `--doc-point`s. One
    point passing is what hid `O22` for a day.
 5. **B**, as its own piece of work, starting with the three questions above
-   answered against `pdfce-core` source rather than assumed.
+   answered against `pdfcer-core` source rather than assumed.
 
 
 ## O22 — An object near the top of the view cannot be rotated: its handle is off-canvas
@@ -8571,12 +8571,12 @@ constants rather than as a measurement.
 
 ## O21 — Move, resize and rotate ANY object; click nodes, select several, move them — all with live preview
 
-**Asked:** 2026-08-21 — *"I think pdfce implemented the capability to move and
+**Asked:** 2026-08-21 — *"I think pdfcer implemented the capability to move and
 resize and rotate any object. you'll have to confirm, but that is what I want. I
 should be able to click individual nodes, or select several at once and move
 them too, with live preview of everything if possible."*
 
-**Status:** ★ **ENGINE CONFIRMED 2026-08-21 against `D:\Dev\pdfce` source.**
+**Status:** ★ **ENGINE CONFIRMED 2026-08-21 against `D:\Dev\pdfcer` source.**
 You were right, with two boundaries worth knowing. Asking for it to be
 confirmed rather than assumed was the correct instinct and it paid: the
 confirmation also caught **a claim in this very file that was false**, and I
@@ -8584,7 +8584,7 @@ had re-published it an hour earlier — see `O20`.
 
 ### What the engine actually does
 
-**`EditSession::transform_objects`** (`crates/pdfce-core/src/edit.rs:7512`) is
+**`EditSession::transform_objects`** (`crates/pdfcer-core/src/edit.rs:7512`) is
 **genuinely kind-agnostic**: one verb, one undo entry, doing move, scale,
 rotate, shear and mirror on **paths, text objects, image XObjects, form
 XObjects and inline images**. It is kind-agnostic *by construction* rather than
@@ -8693,7 +8693,7 @@ how to manipulate it*, before any drag.
 ### What this needs, in order
 
 1. **Confirm the engine, per verb and per object kind**, with `file:line`
-   against `D:\Dev\pdfce` source rather than against `docs/core-api/index.md`,
+   against `D:\Dev\pdfcer` source rather than against `docs/core-api/index.md`,
    which is a dated snapshot. Report what it refuses.
 2. **The ninth grip** — rotate — painted and hit-tested from **one** predicate.
    `ui-conventions/handles.md` H7 and C7, and the trap this shell fell into
@@ -8852,7 +8852,7 @@ The page-display controls are `View` ▸ page display, mirrored by
 Settings window: it is a view control the operator changes while reading, in
 the same group as the mode it qualifies.
 
-## O18 — Ctrl+C on selected TEXT puts "1 object copied from pdfce" on the clipboard
+## O18 — Ctrl+C on selected TEXT puts "1 object copied from pdfcer" on the clipboard
 
 **Asked:** 2026-08-21 — *"in the build from 9:50 this morning if I select text
 in read mode, or edit and select text in an edit box in the canvas in edit
@@ -8899,11 +8899,11 @@ named here rather than left for you to find.
 
 ### The sentence he is seeing, and where it comes from
 
-`crate::text::clipboard::os_marker` — *"1 object copied from pdfce. Paste it
-back into pdfce to place it."* It is written to the operating system's
+`crate::text::clipboard::os_marker` — *"1 object copied from pdfcer. Paste it
+back into pdfcer to place it."* It is written to the operating system's
 clipboard deliberately, by the **object** copy path, and it is not a bug in
 itself: `egui-winit` synthesises a paste event only when the OS clipboard holds
-non-empty text, so without *something* there, whether Ctrl+V works inside pdfce
+non-empty text, so without *something* there, whether Ctrl+V works inside pdfcer
 would depend on what the operator last copied in another application.
 
 The defect is that this sentence is reaching the clipboard when the operator
@@ -9088,7 +9088,7 @@ product class IS the specification.
 ### A — The Selection Filter popup
 
 Lives on the **bottom status bar**. Click opens a popup listing **every object
-class pdfce can hit-test**, each with a glyph and a checkbox. Enabled = that
+class pdfcer can hit-test**, each with a glyph and a checkbox. Enabled = that
 class accepts a click. Disabled = clicks pass straight through it to whatever is
 behind, in every mode, with no exception.
 
@@ -9225,7 +9225,7 @@ to go false the week it was written.
 
 ## O16 — Reassemble lines into paragraphs, and move between blocks with the arrow keys
 
-**Asked:** 2026-08-21 — *"there was an acrobat feature in the original pdfce-gui
+**Asked:** 2026-08-21 — *"there was an acrobat feature in the original pdfcer-gui
 that attempted to reassemble individual lines into paragraphs and the cursor
 would move to the next block of text using the navigation keys."*
 **Status:** **SHIPPED 2026-08-21 AND DRIVEN.** Awaiting your verdict.
@@ -9244,7 +9244,7 @@ End now goes to the first of those.
 
 ### It was SALVAGE, and the salvaged part was four lines
 
-The old shell asked `pdfce-core` four questions — `caret_up`, `caret_down`, and
+The old shell asked `pdfcer-core` four questions — `caret_up`, `caret_down`, and
 `line_range_at`'s two ends — and that was the whole of its contribution. **The
 reassembly was always the engine's**: `recognize` groups a page's instructions
 into lines and lines into blocks by column band, and `caret_up` walks *lines*.
@@ -9441,7 +9441,7 @@ decided against.
     to start there.
 
     ★ **Verified, and without touching your mouse.** A new headless seam
-    (`PDFCE_DIAG_INVOKE`) lets a diagnostic run press a ribbon command in an
+    (`PDFCER_DIAG_INVOKE`) lets a diagnostic run press a ribbon command in an
     invisible window, so this was proved on the machine while you were using
     it. The evidence:
 
@@ -9503,7 +9503,7 @@ decided against.
     ★★ **AND THE LAST ROW OF THIS ITEM IS CLOSED TOO, 2026-08-21: a dialog
     can no longer fall behind the main window.** It stood open because the
     toolkit has no way to say *"this window belongs to that one"* — thirty
-    options in its window builder and not one of them is an owner. pdfce now
+    options in its window builder and not one of them is an owner. pdfcer now
     tells Windows directly, which is what every native dialog on your machine
     already does and why none of them has this problem. Confirmed on every
     dialog that opens: `dialog-owned owned=true`.
@@ -9586,14 +9586,14 @@ Save-a-copy renders as text.
 
 It writes to a temporary beside your file and then renames, so a crash or a full
 disk in the middle leaves your original untouched rather than half-written. And
-because pdfce saves incrementally, the previous version of the document stays
+because pdfcer saves incrementally, the previous version of the document stays
 inside the file — nothing is thrown away by pressing it.
 
 Driven: `save_writes_over_the_file_you_opened` — the file grew 140,660 →
 141,423 bytes, no temporary was left behind, and it still reads as a page tree.
 
 ★ The blocker that kept this out for a fortnight said *"in-place save is blocked
-on autosave and crash recovery"*. That was aimed at the wrong hazard: pdfce's
+on autosave and crash recovery"*. That was aimed at the wrong hazard: pdfcer's
 incremental format already WAS the crash recovery. What was actually unsafe was
 the write, and that has a three-line answer nobody had written because nobody
 was asking. Third time in two days that a blocker turned out to be a question
@@ -9660,9 +9660,9 @@ drag resizes all three about the same point, as one undo entry.
 
 Three refusals you may have seen are gone with it:
 
-- *"pdfce cannot resize text or pictures — only shapes drawn out of lines and
+- *"pdfcer cannot resize text or pictures — only shapes drawn out of lines and
   curves."*
-- *"pdfce resizes one shape at a time."*
+- *"pdfcer resizes one shape at a time."*
 - *"This shape has no corners to move."*
 
 **Driven, on your own drawing, 2026-08-20:**
@@ -9698,7 +9698,7 @@ distance, and a preview. Say the word and it is the next thing.
 ### And one more thing that is not built, named rather than left to be found
 
 A picture whose own placement matrix is degenerate cannot be transformed at
-all, and the engine says so — *"do not offer a handle"*. pdfce currently offers
+all, and the engine says so — *"do not offer a handle"*. pdfcer currently offers
 one and you would find out by dragging it. The preflight that would grey it
 needs a page decomposition cached per selection (**~4 seconds** on your
 benchmark drawing in a debug build), which is a piece of work rather than a
@@ -9713,7 +9713,7 @@ O11, exactly as asked for — a placed image and a placed text run are the same
 shape in a content stream, so they got one verb rather than two.
 
 ★ **A move still uses the lighter verb where it can**, and that is deliberate
-rather than a leftover: for a selection made only of shapes, pdfce rewrites the
+rather than a leftover: for a selection made only of shapes, pdfcer rewrites the
 coordinates in place and adds nothing to the file. The general verb wraps each
 object in three extra operators every time you nudge it, and you nudge things
 dozens of times in a file you then send to somebody. Shapes take the light
@@ -9762,7 +9762,7 @@ Image · 6247 × 5010 px"*.
 
 **O4 is still open** — that one is the engine corrupting `/Contents` when it is
 already an indirect array, which is what your CAD sheets use, and it produces a
-file pdfce cannot reopen at all. Filed and unchanged.
+file pdfcer cannot reopen at all. Filed and unchanged.
 
 
 ## O1 — Editing text on the canvas, and editing text in a text box
@@ -9793,7 +9793,7 @@ edit-text-refused page=0 n=1
 ```
 
 So the tool arms, the caret lands on the right run, the typing arrives, the plan
-is built and the commit reaches the engine — **and `pdfce-core` refuses it.**
+is built and the commit reaches the engine — **and `pdfcer-core` refuses it.**
 From your chair that is precisely "the tool responds and the page does not
 change".
 
@@ -9827,7 +9827,7 @@ draft. That is a second feature and it is row **O7** rather than an implied gap.
 You can now click a label, a title-block field or a *pdf dimension* callout on
 a CAD sheet, get a caret, and retype it. That text lives inside what the format
 calls a form XObject — a block the drawing program placed — and until this
-evening pdfce could read it and not write it.
+evening pdfcer could read it and not write it.
 
 Measured on your benchmark drawing, which is why this mattered more than
 anything else in the queue: **1,696 show operators of real drawing text inside
@@ -9836,7 +9836,7 @@ words when you saw the split: *"I need that editing capability as it is 99% of
 the text I will want to edit."* The engine escalated the work ahead of the
 move/resize verbs on the strength of that sentence.
 
-### ★ One thing you need to know, and it is not a pdfce limitation
+### ★ One thing you need to know, and it is not a pdfcer limitation
 
 **A drawing program may place ONE copy of a block and paint it on six sheets.**
 That is what the construct is *for* — the standard names a CAD system's
@@ -9845,7 +9845,7 @@ block to a page. So when you edit text inside a shared one, **it changes on
 every sheet it appears on**, because there is exactly one copy of those letters
 in the file.
 
-pdfce cannot make that not be true, so it tells you: after an edit that touched
+pdfcer cannot make that not be true, so it tells you: after an edit that touched
 shared content, the status row says *"SHARED CONTENT: this text is drawn from
 shared content that appears in N place(s) on M page(s)"*. It is deliberately
 silent on the ordinary case — a warning that fires every time is one nobody
@@ -9913,7 +9913,7 @@ Driven on your own drawing: a 108 KB clip out, one object back in.
 You said *"still no ctrl+c, ctrl+v, ctrl+x"* twice. On 2026-08-20 they were
 bound, which was necessary and **not sufficient**: the toolkit intercepts those
 three chords and converts them into its own clipboard events **before** the
-keystroke reaches anything pdfce can see. So the binding existed, every test
+keystroke reaches anything pdfcer can see. So the binding existed, every test
 agreed it existed, the menu showed it next to the command — and the key did
 nothing, for ever.
 
@@ -9921,10 +9921,10 @@ nothing, for ever.
 clipboard already holds some text. With it empty, the keystroke vanished
 completely — so whether paste worked depended on **whether you had recently
 copied text in another program**. Not random, not reproducible, and nothing to
-do with pdfce.
+do with pdfcer.
 
 That is why copying now also leaves a sentence on the Windows clipboard —
-*"1 object copied from pdfce. Paste it back into pdfce to place it."* It is what
+*"1 object copied from pdfcer. Paste it back into pdfcer to place it."* It is what
 makes the key arrive, and if you paste it into an email by accident it reads as
 an explanation rather than as garbage.
 
@@ -9937,14 +9937,14 @@ an explanation rather than as garbage.
 
 ### Still open, and named rather than left as a silence
 
-- **Across two pdfce windows.** Within one window it is lossless. Between two
+- **Across two pdfcer windows.** Within one window it is lossless. Between two
   processes it needs the clip registered under a private Windows clipboard
   format, which is a call this shell does not make yet.
 - **Copying to another program** — Illustrator, SolidWorks — needs the selection
   rendered as a standalone one-page PDF, which the engine has filed separately
   and deliberately did *not* fold into the same bytes: a one-page PDF cannot
   carry which byte range was which object, so re-deriving it on the way back in
-  would make a pdfce→pdfce paste worse than a pdfce→Illustrator one.
+  would make a pdfcer→pdfcer paste worse than a pdfcer→Illustrator one.
 - **Dimensions and form fields** are annotations rather than page content, so
   these verbs cannot reach them at all. Filed.
 
@@ -9976,7 +9976,7 @@ fields. You stopped that, and the filed request is the whole capability:
    the menu item can be greyed rather than discovering the refusal by pressing.
 2. **Serialisable**, which is what makes cross-document and cross-session paste
    fall out instead of being a second feature.
-3. **The system clipboard** — a pdfce-private format so pdfce→pdfce is lossless,
+3. **The system clipboard** — a pdfcer-private format so pdfcer→pdfcer is lossless,
    plus a standalone PDF and an image so SolidWorks and your CAD packages can
    read it. Registering those is mine; I need the bytes from them.
 4. **Cut as one undo entry**, or Ctrl+X then Ctrl+Z gives your objects back and
@@ -10078,7 +10078,7 @@ separate defects sitting on top of each other:
 **The engine's.** `add_image` corrupted the page's `/Contents` whenever it was
 an indirect reference to an array — which is what every CAD-exported sheet uses.
 The verb returned success, the status bar reported the resolution, the picture
-was not on the page, and **the saved file could not be reopened by pdfce at
+was not on the page, and **the saved file could not be reopened by pdfcer at
 all**. Filed with an eight-line repro; fixed in `Pass 111.0`. Files already
 damaged by an older build now open, render, and say so through a counted
 disclosure rather than being silently patched.
@@ -10124,7 +10124,7 @@ touches reflow and the answer should not have to be re-derived.
 
 The question, kept for that reason:
 
-When you retype a piece of text and the new words are longer, pdfce has to
+When you retype a piece of text and the new words are longer, pdfcer has to
 decide what happens to whatever is drawn after it on the same line. Two answers:
 
 - **Push it along** (today's default). Right for a paragraph; the sentence stays
@@ -10133,7 +10133,7 @@ decide what happens to whatever is drawn after it on the same line. Two answers:
   for a drawing, where a label beside a label is not a sentence and moving one
   is a change nobody asked for.
 
-pdfce already picks *leave it* automatically in three cases: rotated text,
+pdfcer already picks *leave it* automatically in three cases: rotated text,
 right-aligned or centred text, and a line drawn as several separate pieces —
 which is most of a CAD title block. The question is whether **drawing content
 should default to leaving it** rather than relying on those three to catch it.

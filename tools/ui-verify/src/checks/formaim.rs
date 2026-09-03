@@ -9,7 +9,7 @@
 //! application traced
 //!
 //! ```text
-//! pdfce-diag form-field-selected page=0 field=Text1 widget=0
+//! pdfcer-diag form-field-selected page=0 field=Text1 widget=0
 //! ```
 //!
 //! On 2026-08-29 all three failed on that assertion, with the same sentence:
@@ -306,8 +306,8 @@ mod tests {
     #[test]
     fn the_census_line_parses() {
         let trace = Trace::parse(
-            "pdfce-diag form-target page=0 field=Text1 widget=0 rect=(1140.6,1141.8)+(160.0,20.0)\n",
-            "pdfce-diag",
+            "pdfcer-diag form-target page=0 field=Text1 widget=0 rect=(1140.6,1141.8)+(160.0,20.0)\n",
+            "pdfcer-diag",
         );
         let boxes = targets(&trace);
         assert_eq!(boxes.len(), 1);

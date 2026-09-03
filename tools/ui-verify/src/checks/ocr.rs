@@ -11,7 +11,7 @@
 //!
 //! All of that existed because `ocr::layer::add_ocr_layer` took an immutable
 //! `&Document` and returned a complete PDF. Recognition was the one capability
-//! in pdfce that was not an edit, so a shell holding an open session could only
+//! in pdfcer that was not an edit, so a shell holding an open session could only
 //! offer *"here is a different file, somewhere else"*. The operator's verdict,
 //! 2026-08-26: *"Why do I have to save a copy instead of just go back into my
 //! pdf and save over it?"*
@@ -55,7 +55,7 @@
 //!
 //! Because a document with no extractable text is the only kind on which OCR's
 //! result is unambiguous: any text in the output came from the recogniser.
-//! `crates/pdfce-gui/src/ocr/fixture.rs` generates it, and **its header is
+//! `crates/pdfcer-gui/src/ocr/fixture.rs` generates it, and **its header is
 //! required reading before believing anything here**. The short version, and it
 //! is stated in this check's own report so a green result cannot be misread:
 //! the fixture is a *rendered page*, not a scan. It has no scanner noise, no
@@ -97,7 +97,7 @@
 //!
 //! # The file picker is answered, not driven
 //!
-//! `PDFCE_DIAG_SAVE_PATH` supplies the save dialog's result and the dialog is
+//! `PDFCER_DIAG_SAVE_PATH` supplies the save dialog's result and the dialog is
 //! never opened. That is this project's established pattern for a native picker
 //! (`app::files`' header, and the RAG note it quotes: *"Don't try to script the
 //! dialog"*), and it is what makes phase D an assertion about **a file on disk**
@@ -424,7 +424,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let fixture = default_fixture();
     if !fixture.is_file() {
         return Err(Error::new(format!(
-            "the image-only fixture is not at {}. Generate it:\n cargo test -p pdfce-gui \
+            "the image-only fixture is not at {}. Generate it:\n cargo test -p pdfcer-gui \
              --lib write_synthetic_image_only -- --ignored",
             fixture.display()
         )));
@@ -440,7 +440,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
 
     // ★ **There is no save destination any more.** This check used to set
-    // `PDFCE_DIAG_SAVE_PATH` so the file picker could be answered without a
+    // `PDFCER_DIAG_SAVE_PATH` so the file picker could be answered without a
     // human, because the only way out of the dialog was a Save-a-copy.
     // Recognition became an edit on 2026-08-27 and the picker went with it, so
     // there is nothing to answer and nothing to clean up afterwards.
@@ -677,7 +677,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     report.note(
         "NOT established by this check: recognition quality on real scanned material. The \
          fixture is a rendered page with no scanner noise, skew, JPEG ringing or uneven \
-         lighting, so it flatters the recogniser — see `crates/pdfce-gui/src/ocr/fixture.rs`'s \
+         lighting, so it flatters the recogniser — see `crates/pdfcer-gui/src/ocr/fixture.rs`'s \
          header. What is established is the chain: reachable in Read, recognises, discloses, \
          writes where it was told, and leaves the original alone",
     );

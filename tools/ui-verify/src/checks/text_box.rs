@@ -12,7 +12,7 @@
 //!
 //! **A PDF has no paragraph.** Each visual line is its own show operator at its
 //! own absolute position, so something has to decide where the second line
-//! starts — a width to wrap against and a leading to step by. `pdfce-core`'s
+//! starts — a width to wrap against and a leading to step by. `pdfcer-core`'s
 //! `AddTextRequest::with_box` is that, and it needs a rectangle.
 //!
 //! So the gesture is a **drag**, and the chain has four links no unit test can

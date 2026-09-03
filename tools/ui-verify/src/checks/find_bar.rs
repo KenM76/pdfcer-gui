@@ -2,7 +2,7 @@
 //!
 //! # What this is for
 //!
-//! Find is the command that decides whether pdfce can replace a PDF reader,
+//! Find is the command that decides whether pdfcer can replace a PDF reader,
 //! and its chord is the most reflexive one in any application. It was built
 //! with 38 unit tests and driven once by hand; this is the part that runs
 //! every time.
@@ -39,7 +39,7 @@
 //!
 //! # Why the needle is typed rather than injected
 //!
-//! There is no `PDFCE_DIAG_FIND` seam and this check deliberately does not
+//! There is no `PDFCER_DIAG_FIND` seam and this check deliberately does not
 //! ask for one. The native-file-dialog seam exists because a native dialog is
 //! **outside egui's event loop** and cannot be driven at all; the find field
 //! is an ordinary egui text field inside the window, so typing into it

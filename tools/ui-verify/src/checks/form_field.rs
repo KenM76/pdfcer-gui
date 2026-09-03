@@ -14,7 +14,7 @@
 //! Everything between a click and an authored field crosses boundaries a unit
 //! test cannot: an armed tool in `egui::Memory`, a gesture resolved from a real
 //! pointer, a canvas→page transform against a real page, a **second OS window**,
-//! and five `pdfce-core` verbs. The unit tests cover each rule; not one of them
+//! and five `pdfcer-core` verbs. The unit tests cover each rule; not one of them
 //! covers the sequence, and the sequence is where this project's defects live.
 //!
 //! The precedent is the shell's own founding defect: the Delete key's guard was
@@ -24,15 +24,15 @@
 //!
 //! # ★★ The dialog is answered by a seam, and that is not a shortcut
 //!
-//! `PDFCE_DIAG_FORM_ACCEPT=1` makes the placement dialog press its own Add on
+//! `PDFCER_DIAG_FORM_ACCEPT=1` makes the placement dialog press its own Add on
 //! the first frame it is authorable. This harness drives **one** window — the
 //! one `Session::launch` found — and the dialog is a deferred viewport with a
 //! window of its own, so without the seam everything downstream of placing is
 //! unreachable: the five engine verbs, the narrowing in
 //! `app::actions::forms::author`, and all four rule-4 disclosures.
 //!
-//! Two seams already exist for exactly this shape — `PDFCE_DIAG_OPEN_PATH` and
-//! `PDFCE_DIAG_INSERT_PATH`, both substituting the answer to a native picker.
+//! Two seams already exist for exactly this shape — `PDFCER_DIAG_OPEN_PATH` and
+//! `PDFCER_DIAG_INSERT_PATH`, both substituting the answer to a native picker.
 //! What this one substitutes is the **operator's press**, not the authoring:
 //! it sets the same flag the Add button sets, so the readiness guard, the
 //! action, the remembering and the engine call are all the path an operator
@@ -69,7 +69,7 @@ use crate::trace::Trace;
 
 /// The commands rung on startup, in order, one per frame.
 ///
-/// ★ The list form of `PDFCE_DIAG_INVOKE`, which exists because arming a form
+/// ★ The list form of `PDFCER_DIAG_INVOKE`, which exists because arming a form
 /// tool takes two commands: the arm declines without `edit_content`, so Edit
 /// mode has to be entered first. Using it here rather than clicking a mode
 /// segment also removes a whole class of flake from this check — a mode segment
@@ -93,7 +93,7 @@ use crate::trace::Trace;
 const INVOKE: &str = "mode.edit,file.properties,edit.form_text_field";
 
 /// The seam that answers the placement dialog. See the module header.
-const ACCEPT_ENV: (&str, &str) = ("PDFCE_DIAG_FORM_ACCEPT", "1");
+const ACCEPT_ENV: (&str, &str) = ("PDFCER_DIAG_FORM_ACCEPT", "1");
 
 /// Traced when a form tool is armed.
 const ARMED: &str = "form-tool-armed";
@@ -211,7 +211,7 @@ impl Check for FormFieldPlaceAndSelect {
     fn defect(&self) -> &'static str {
         "the five form-field commands arm a tool and a click on the page places nothing — or a \
          field is placed and clicking it again offers no way to rename or delete it, leaving \
-         every form pdfce authors editable only by authoring it again"
+         every form pdfcer authors editable only by authoring it again"
     }
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
@@ -338,7 +338,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ctx.profile.diag_env.1.to_owned(),
     ));
     spec.env
-        .push(("PDFCE_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
+        .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.env
         .push((ACCEPT_ENV.0.to_owned(), ACCEPT_ENV.1.to_owned()));
     // ★ See `VIEWPORT`: the default window's Properties slot is shorter than a
@@ -352,7 +352,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.note(format!(
-        "launched {} as pid {} with PDFCE_DIAG_INVOKE={INVOKE} and {}={}",
+        "launched {} as pid {} with PDFCER_DIAG_INVOKE={INVOKE} and {}={}",
         exe.display(),
         session.pid(),
         ACCEPT_ENV.0,

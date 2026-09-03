@@ -3,7 +3,7 @@
 //!
 //! # What this is for
 //!
-//! `pdfce`'s `gui` column ticked *"multi-node select-and-move"* `[x]` for
+//! `pdfcer`'s `gui` column ticked *"multi-node select-and-move"* `[x]` for
 //! months. Their own sweep of 2026-08-19 corrected it: *"objects move together;
 //! nodes one at a time"*, one of six rows that were true of the **old** in-repo
 //! shell and became false, without anyone touching them, when the column's

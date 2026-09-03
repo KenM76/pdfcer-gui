@@ -5,10 +5,10 @@
 //! The operator, 2026-08-31 (`OPERATOR_REQUESTS.md` **O71**):
 //!
 //! > *"In read mode the regular pointer should also allow us to select images
-//! > so we can copy and paste them as well as text outside of the pdfcegui."*
+//! > so we can copy and paste them as well as text outside of the pdfcergui."*
 //!
-//! *"Outside of pdfceGUI"* is the whole requirement. pdfce has had an internal
-//! clipboard since 2026-08-20 and it is the right thing for pdfce→pdfce work —
+//! *"Outside of pdfcer-gui"* is the whole requirement. pdfcer has had an internal
+//! clipboard since 2026-08-20 and it is the right thing for pdfcer→pdfcer work —
 //! it carries a `MarkupSpec`, an `ObjectClip`, structure a bitmap cannot. None
 //! of it means anything to Word, Outlook or Paint, and those are where the
 //! operator is going.
@@ -35,7 +35,7 @@
 //! | format | for |
 //! |---|---|
 //! | `CF_DIB` | every Windows program that pastes a picture. Word, Outlook, Paint, Excel, LibreOffice |
-//! | `CF_UNICODETEXT` | pdfce's own `Ctrl+V`, per the trap above — and a plain-text fallback anywhere else |
+//! | `CF_UNICODETEXT` | pdfcer's own `Ctrl+V`, per the trap above — and a plain-text fallback anywhere else |
 //!
 //! **No PNG format, deliberately, and it is a stated gap rather than an
 //! oversight.** `CF_DIB` cannot carry transparency that consumers agree about,

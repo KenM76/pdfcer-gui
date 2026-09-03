@@ -38,25 +38,25 @@ persistence, and persistence is now the first thing built.
 ## 2. Crate split
 
 ```
-D:\Dev\pdfceGUI\
+D:\Dev\pdfcer-gui\
 ├── crates\
 │   ├── egui-shell\        ← reusable. Knows nothing about PDF.
-│   └── pdfce-gui\         ← the application. Supplies a manifest + panel bodies.
+│   └── pdfcer-gui\         ← the application. Supplies a manifest + panel bodies.
 └── tools\ui-verify\       ← harness; drives any egui-shell app.
 ```
 
 **The hard rule that keeps `egui-shell` reusable:** it may depend on
 `egui`, `eframe`, `egui_tiles`, `serde` and small leaf utilities —
-**never on `pdfce-core`, `pdfce-render`, or anything that knows what a
-PDF is.** A CI gate enforces it, the same way pdfce already gates
-`pdfce-core` against gaining a GUI dependency. If `egui-shell` needs to
+**never on `pdfcer-core`, `pdfcer-render`, or anything that knows what a
+PDF is.** A CI gate enforces it, the same way pdfcer already gates
+`pdfcer-core` against gaining a GUI dependency. If `egui-shell` needs to
 know about pages, the abstraction is wrong.
 
-**Licence:** MIT, matching pdfce, so it can be published separately.
+**Licence:** MIT, matching pdfcer, so it can be published separately.
 
 **Fold-in:** `egui-shell` is extracted to its own repository at or before
 fold-in and consumed by path or git dependency. It is deliberately *not*
-folded into pdfce as a private module, because the whole point is that
+folded into pdfcer as a private module, because the whole point is that
 the next project can take it.
 
 ---
@@ -175,7 +175,7 @@ GUI."* DLLs are named as the eventual mechanism; the exe stays for now.
 
 ### What exists today
 
-`pdfce-core` already has a documented **strippable capability**
+`pdfcer-core` already has a documented **strippable capability**
 convention, with `jpx` (JPEG 2000) as its first instance: an optional
 dependency named by a feature, forwarded through every intermediate
 crate, with CI building `--no-default-features` to prove the stripped
@@ -253,7 +253,7 @@ Worth being precise, since it is named as the goal:
   feature removes the dependency, the code, and — with the rule above —
   the ribbon item. It is compile-time rather than drop-in, but it is real
   modularity at zero new machinery, and it is already the established
-  convention in `pdfce-core`.
+  convention in `pdfcer-core`.
 - **True drop-in DLLs need an ABI boundary.** Rust has no stable ABI, so
   a `cdylib` cannot expose Rust types across the boundary safely. The
   options are an `extern "C"` interface with a hand-written vocabulary of
@@ -292,7 +292,7 @@ schema to version. Both are cheap; neither is on a hot path.
 
 ## 7. Build order
 
-`egui-shell` is built **as** pdfce-gui is built, not before it. A
+`egui-shell` is built **as** pdfcer-gui is built, not before it. A
 framework designed without a consumer gets the abstractions wrong.
 
 | Stage | `egui-shell` gains | Driven by |
@@ -307,6 +307,6 @@ framework designed without a consumer gets the abstractions wrong.
 
 **Extraction test, at S3b:** write a throwaway second application — a
 few hundred lines, a different domain, three tabs and two panels —
-against `egui-shell` alone. If it needs one line of pdfce, the boundary
+against `egui-shell` alone. If it needs one line of pdfcer, the boundary
 is wrong and it gets fixed then, while the cost is a day rather than a
 rewrite.

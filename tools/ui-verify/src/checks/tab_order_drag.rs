@@ -10,7 +10,7 @@
 //! > and dropping rows around like we can with pages in the page preview, and
 //! > have **clear markers** of where the field is going to move to."*
 //!
-//! The list shipped read-only on 2026-08-30, because `pdfce-core` had no verb
+//! The list shipped read-only on 2026-08-30, because `pdfcer-core` had no verb
 //! that reordered a page's `/Annots`. The verb shipped 2026-09-02; this is the
 //! check that the gesture reached it.
 //!
@@ -61,11 +61,11 @@
 //!   horizontal line, where the page rail's is vertical.
 //! * That the file on disk is correct. The check stops at the engine's own
 //!   applied line and its `moved=` count. Whether the bytes are right is
-//!   `pdfce-core`'s twenty-odd tests for the verb, not this harness's job.
+//!   `pdfcer-core`'s twenty-odd tests for the verb, not this harness's job.
 //! * That `/Tabs` was left alone. Nothing here observes the page dictionary,
 //!   and it deliberately does not try: the sourced reason `/Tabs` must not be
 //!   written by a drag lives in `panels::forms::tab_order::drag`'s header, and
-//!   the place to hold the engine to it is `pdfce-core`'s own dirty-set test,
+//!   the place to hold the engine to it is `pdfcer-core`'s own dirty-set test,
 //!   which asserts the reorder touches exactly one object.
 //!
 //! What it DOES prove about correctness, beyond the gesture, is one thing, and
@@ -559,10 +559,10 @@ const FIXTURE: &str = "forms/demo-form.pdf";
 
 /// Resolve [`FIXTURE`] under the engine repository.
 ///
-/// Read-only, as everything under `D:\Dev\pdfce` is until fold-in day. The
+/// Read-only, as everything under `D:\Dev\pdfcer` is until fold-in day. The
 /// harness opens it, drags in the shell's own window, and never saves.
 fn form_fixture() -> Option<std::path::PathBuf> {
-    let path = std::path::Path::new("D:/Dev/pdfce/fixtures/synthetic").join(FIXTURE);
+    let path = std::path::Path::new("D:/Dev/pdfcer/fixtures/synthetic").join(FIXTURE);
     path.is_file().then_some(path)
 }
 

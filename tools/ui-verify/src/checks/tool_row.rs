@@ -447,7 +447,7 @@ fn drive_show_points(ctx: &CheckContext, report: &mut CheckReport) -> Result<Opt
     // --- 2: switch the toggle on and click again ----------------------------
     //
     // ★ Through the ribbon rather than the harness's invoke seam, deliberately.
-    // `PDFCE_DIAG_INVOKE` runs before the document is open and would prove the
+    // `PDFCER_DIAG_INVOKE` runs before the document is open and would prove the
     // dispatch arm rather than the control; what is under test is a toggle an
     // operator presses, and the whole defect class here is *the control changes
     // state and nothing happens*.

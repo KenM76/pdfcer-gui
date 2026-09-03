@@ -3,12 +3,12 @@
 //!
 //! # What this is for
 //!
-//! `pdfce-core` v0.15.0 (`Pass 162.0`) closed the last of the four things the
+//! `pdfcer-core` v0.15.0 (`Pass 162.0`) closed the last of the four things the
 //! operator named as not fully editable:
 //!
 //! > **FONTS** — text can be restyled to a face the document **DOES NOT
 //! > CONTAIN**, for the fourteen faces every PDF reader is required to have.
-//! > pdfce authors the font resource on demand, with widths, embedding nothing.
+//! > pdfcer authors the font resource on demand, with widths, embedding nothing.
 //!
 //! The engine shipped it and **the shell could not reach it**: the chooser built
 //! its list from `preview_font_resources`, which by construction enumerates the
@@ -37,7 +37,7 @@
 //! | 5 | a standard-14 row is clickable | ★ **nothing** |
 //! | 6 | the click reaches `format_text` and the document changes | unit-tested |
 //!
-//! Link 4 is the one this check would be worth writing for on its own. pdfce
+//! Link 4 is the one this check would be worth writing for on its own. pdfcer
 //! *"authors the font resource on demand, with widths, embedding nothing"*, so
 //! the restyled text is drawn with **the reader's own copy** of that face —
 //! invisible on this screen and visible on somebody else's machine. Rule 4's
@@ -113,7 +113,7 @@ const INVOKE: &str = "mode.edit,file.properties";
 const SECTION_REGION: &str = "properties.text";
 /// The face chooser's combo — the control that opens the popup.
 const FACE_REGION: &str = "properties.text.face";
-/// The heading over the rows pdfce would ADD to the document.
+/// The heading over the rows pdfcer would ADD to the document.
 const ADDABLE_REGION: &str = "properties.text.face.addable";
 /// ★★★ The standard-14 disclosure, drawn once, where the choice is made.
 const DISCLOSURE_REGION: &str = "properties.text.face.disclosure";
@@ -155,7 +155,7 @@ impl Check for TheFaceChooserOffersAFaceTheDocumentDoesNotContain {
     }
 
     fn defect(&self) -> &'static str {
-        "pdfce-core can restyle text to any of the fourteen standard faces without embedding \
+        "pdfcer-core can restyle text to any of the fourteen standard faces without embedding \
          anything, and the shell's font chooser offers only the fonts the page already carries — \
          so the capability is present, released and unreachable; or it is offered without the \
          disclosure that the text will then be drawn with the reader's own copy of the face"
@@ -213,7 +213,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let target = ctx.target.ok_or_else(|| {
         Error::new(
             "no --doc-point. Pass PAGE,X,Y in PDF user space naming the LEFT END of a piece of \
-             text's baseline. `pdfce-cli extract-text --json` gives the first glyph's x and y of \
+             text's baseline. `pdfcer extract-text --json` gives the first glyph's x and y of \
              every run; use those. A point on blank paper sweeps nothing and the check would \
              report the chooser as broken.",
         )
@@ -253,14 +253,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.env
-        .push(("PDFCE_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
+        .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
     report.note(format!(
-        "launched {} as pid {} with PDFCE_DIAG_INVOKE={INVOKE}",
+        "launched {} as pid {} with PDFCER_DIAG_INVOKE={INVOKE}",
         exe.display(),
         session.pid()
     ));
@@ -388,7 +388,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         return Ok(Some(format!(
             "★ THE FONT LIST OFFERS NOTHING THE DOCUMENT DOES NOT ALREADY CONTAIN: the chooser \
              opened and declared no `{ADDABLE_REGION}` region.\n\
-             `pdfce-core` v0.15.0 authors a standard-14 `/Font` resource on demand, so a page \
+             `pdfcer-core` v0.15.0 authors a standard-14 `/Font` resource on demand, so a page \
              built from one embedded face should offer thirteen or fourteen more. Three \
              candidates. (1) **`panels::properties::face::choices` returned no addable rows** — \
              it filters `Std14::ALL` against every `/BaseFont` in the pre-flight's `entries`, so \
@@ -403,7 +403,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     };
-    report.note("★ the chooser offers a second group — faces pdfce would add to the document");
+    report.note("★ the chooser offers a second group — faces pdfcer would add to the document");
 
     // --- 6: ★★★ the disclosure is ON SCREEN, where the choice is made -------
     if driving::declared(&trace, ui_rect, DISCLOSURE_REGION).is_none() {
@@ -415,7 +415,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         return Ok(Some(format!(
             "★★★ THE STANDARD-14 FACES ARE OFFERED AND THE DISCLOSURE IS NOT ON SCREEN: \
              `{ADDABLE_REGION}` is declared and `{DISCLOSURE_REGION}` is not.\n\
-             pdfce authors these faces *\"with widths, embedding nothing\"*, so the restyled text \
+             pdfcer authors these faces *\"with widths, embedding nothing\"*, so the restyled text \
              is drawn with the READER'S OWN COPY of the face — which looks correct on this \
              machine and can look different on somebody else's. That is an inference the \
              operator cannot see, and rule 4 requires an off-canvas report for exactly that \
@@ -457,7 +457,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         return Ok(Some(format!(
             "a standard-14 face was chosen and the restyle DECLINED: `{}`.\n\
              The program answered rather than staying silent, so the chain works — but the \
-             answer is worth reading, and there is one honest reason for it. pdfce runs its own \
+             answer is worth reading, and there is one honest reason for it. pdfcer runs its own \
              coverage test against the SYNTHESIZED dictionary too, so a run containing a \
              character that face cannot encode is refused exactly like a page font that cannot; \
              the shell cannot pre-test that without re-deriving the encoding rule, so these rows \

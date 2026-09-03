@@ -1,17 +1,17 @@
 # HOW IT WORKS TODAY
 
-An accurate, unflattering manual for pdfceGUI exactly as it behaves in the
+An accurate, unflattering manual for pdfcer-gui exactly as it behaves in the
 current build. This is a description, not a defence. Nothing here proposes a
 fix.
 
 Paths written bare (`canvas/input.rs:144`) are relative to
-`D:/Dev/pdfceGUI/crates/pdfce-gui/src/`. Engine paths are written in full from
-`D:/Dev/pdfce/`.
+`D:/Dev/pdfcer-gui/crates/pdfcer-gui/src/`. Engine paths are written in full from
+`D:/Dev/pdfcer/`.
 
 Behaviour marked **[driven]** was observed by launching
-`D:/Dev/pdfceGUI/target/release/pdfce-gui.exe` against
-`D:\Dev\temp\pdfce\the conformance suite’s composite page\the conformance suite’s composite page`;
-traces are in `D:/Dev/pdfceGUI/evidence/audit/`. Behaviour marked
+`D:/Dev/pdfcer-gui/target/release/pdfcer-gui.exe` against
+`D:\Dev\temp\pdfcer\the conformance suite’s composite page\the conformance suite’s composite page`;
+traces are in `D:/Dev/pdfcer-gui/evidence/audit/`. Behaviour marked
 **[UNVERIFIED]** was not confirmed.
 
 ---
@@ -104,7 +104,7 @@ cannot name a form field; those are separate, parallel selection states
 
 The engine decomposes a page into a flat `Vec<VectorObject>` in paint order.
 Three variants only: `Path`, `Text`, `Image`
-(`D:/Dev/pdfce/crates/pdfce-core/src/vector/hit.rs:433-439`). `Image` covers
+(`D:/Dev/pdfcer/crates/pdfcer-core/src/vector/hit.rs:433-439`). `Image` covers
 inline images, image XObjects **and form XObjects** alike. A form XObject is
 therefore modelled as a single opaque picture, and everything drawn inside it
 is invisible to the whole selection system.
@@ -120,7 +120,7 @@ fn object_hit(obj: &VectorObject, point: Point, tolerance: f64) -> bool {
     }
 }
 ```
-(`D:/Dev/pdfce/crates/pdfce-core/src/vector/hit.rs:433-439`)
+(`D:/Dev/pdfcer/crates/pdfcer-core/src/vector/hit.rs:433-439`)
 
 - **Paths are ink-accurate.** Bbox reject, then fill-interior under the object's
   own winding rule, then stroke/outline proximity; curves flattened to 16
@@ -182,7 +182,7 @@ clicks on blank paper select nothing rather than selecting it.
 
 ### The measured page
 
-`pdfce-cli object-list --page 1` on the the conformance suite’s composite page file: **28 objects (0–27)**, not
+`pdfcer object-list --page 1` on the the conformance suite’s composite page file: **28 objects (0–27)**, not
 29. `objects=28 paths=21 text=3 images=0 forms=4`. Index 1 and index 26 both
 span the page; index 26 is painted later and wins.
 
@@ -264,10 +264,10 @@ Shift. There is no `modifiers.alt` in `canvas/`. Ctrl appears in the canvas only
 inside text editing and text-selection clipboard handling
 (`canvas/textedit/keys.rs:247`, `canvas/textsel/clipboard.rs:138`).
 
-★ **A documentation claim that is false.** `pdfce-cli object-list --help`
+★ **A documentation claim that is false.** `pdfcer object-list --help`
 describes `--all-hits` as printing *"the same list the GUI's Alt+click cycling
 steps through."* There is no Alt+click cycling.
-`D:/Dev/pdfce/crates/pdfce-core/src/vector/hit.rs:41-48` and `target.rs:85-88`
+`D:/Dev/pdfcer/crates/pdfcer-core/src/vector/hit.rs:41-48` and `target.rs:85-88`
 repeat the same claim.
 
 ### Repeated clicking at one point
@@ -380,11 +380,11 @@ page slid off the sheet edge in one casual drag on what looked like blank paper.
 object kind** — it needs only a provider and a non-empty selection
 (`resizing.rs:302-308`). Paths, text runs, images, form XObjects and
 multi-selections are all resized through one `TransformObjects` command
-(`app/actions/vector.rs:532-556` → `D:/Dev/pdfce/crates/pdfce-core/src/edit.rs:7607`).
+(`app/actions/vector.rs:532-556` → `D:/Dev/pdfcer/crates/pdfcer-core/src/edit.rs:7607`).
 
 Only three refusals exist: `NothingSelected`, `NoObjectModel`, `Degenerate`
 (factor ≤ 0.001, or a zero-extent grip box) (`canvas/resizing.rs:154-172`,
-`:230-236`, `:268-272`). The old `NotAPath` refusal ("pdfce cannot resize text
+`:230-236`, `:268-272`). The old `NotAPath` refusal ("pdfcer cannot resize text
 or pictures") was deleted on 2026-08-20 (`text/resizing.rs:41-68`).
 
 **[driven]** Dragging the SE grip of the title text object gave
@@ -556,7 +556,7 @@ gesture"* (`panels/tool/armed.rs:52-55`).
 
 It draws: **The pointer** (two lines, one of two sentences chosen by
 `edit_content`), then either a static list of six tool buttons (when nothing is
-armed) or an identity/stage/options block for the armed tool, then **What pdfce
+armed) or an identity/stage/options block for the armed tool, then **What pdfcer
 worked out** (the last edit disclosure).
 
 **Options exist for exactly one tool** — Add Text, which offers Font / Size /
@@ -737,7 +737,7 @@ The shell already owns a working page-range parser — `parse_page_range("5,1-2"
 `add_ocr_layer` reads the **base revision** of the session and returns a
 complete PDF as `Vec<u8>` — the original plus one appended incremental revision
 (`ocr/mod.rs:631-647`;
-`D:/Dev/pdfce/crates/pdfce-core/src/ocr/layer.rs:411-418`).
+`D:/Dev/pdfcer/crates/pdfcer-core/src/ocr/layer.rs:411-418`).
 
 **The open document is not touched.** `edit_epoch` does not move, no `Action` is
 pushed, nothing enters the undo stack (`dialogs/ocr.rs:79-87`).
@@ -802,7 +802,7 @@ and *is* reported — to the trace line only (`dialogs/ocr.rs:268-278`), never t
 the dialog.
 
 The **CLI**, against the same engine, exposes `--dpi`, `--model-dir` and
-`--words` (`D:/Dev/pdfce/crates/pdfce-cli/src/main.rs:2374-2450`). The GUI
+`--words` (`D:/Dev/pdfcer/crates/pdfcer/src/main.rs:2374-2450`). The GUI
 offers none of the three.
 
 ### Progress and cancellation
@@ -829,16 +829,16 @@ thread, and since 2026-08-21 the dialog is its own OS-level viewport
 ### Where the ceiling actually is
 
 The engine's verb takes one page index
-(`D:/Dev/pdfce/crates/pdfce-core/src/ocr/layer.rs:620-625`) and there is **no
+(`D:/Dev/pdfcer/crates/pdfcer-core/src/ocr/layer.rs:620-625`) and there is **no
 OCR verb on `EditSession` at all** — `grep -c "ocr"` over
-`pdfce-core/src/edit.rs` returns **0** against a 26,000-line file holding every
+`pdfcer-core/src/edit.rs` returns **0** against a 26,000-line file holding every
 other editing verb.
 
 But single-page is a shape, not a wall: `Document::from_bytes` is public
-(`pdfce-core/src/document.rs:392`), `OcrsEngine::recognize` takes `&self` and is
+(`pdfcer-core/src/document.rs:392`), `OcrsEngine::recognize` takes `&self` and is
 reusable, and the engine's own docs assume batch callers — *"a bad install fails
 here rather than on page 340 of a batch"*
-(`D:/Dev/pdfce/docs/core-api/03-capabilities.md:1531-1533`). The shell currently
+(`D:/Dev/pdfcer/docs/core-api/03-capabilities.md:1531-1533`). The shell currently
 violates that guidance anyway: `OcrsEngine::from_model_dir` is called inside
 `recognise_image` on every run (`ocr/mod.rs:717-718`), so a naive N-page loop
 would reload ~12 MB of weights N times.

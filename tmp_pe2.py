@@ -1,6 +1,6 @@
 import io
 
-p = 'crates/pdfce-gui/src/panels/objects/provider/mod.rs'
+p = 'crates/pdfcer-gui/src/panels/objects/provider/mod.rs'
 s = io.open(p, encoding='utf-8').read()
 
 # ---- field (the earlier run did not reach this) ---------------------------

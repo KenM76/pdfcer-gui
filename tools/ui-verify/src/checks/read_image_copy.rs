@@ -6,7 +6,7 @@
 //! `OPERATOR_REQUESTS.md` **O71**, 2026-08-31:
 //!
 //! > *"In read mode the regular pointer should also allow us to select images
-//! > so we can copy and paste them as well as text outside of the pdfcegui."*
+//! > so we can copy and paste them as well as text outside of the pdfcergui."*
 //!
 //! ## The two halves, and each has its own way of failing
 //!
@@ -25,7 +25,7 @@
 //! **Because reading the clipboard back would be testing Windows.** The
 //! clipboard is one system-wide resource that any process can take at any
 //! moment, so a harness that opened it would introduce a failure mode that has
-//! nothing to do with pdfce and would report it as a defect — and this suite's
+//! nothing to do with pdfcer and would report it as a defect — and this suite's
 //! own rule is that a harness assertion is a claim about the program *and*
 //! about the harness, so the route with fewer harness-owned failure modes is
 //! the honest one.

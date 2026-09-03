@@ -33,7 +33,7 @@
 //! ★ The last row is the one that matters most. This shell **asserts to the
 //! operator** that a duplicate paste keeps the original's font, colour and
 //! calculation script, and the whole basis of that claim is one branch inside
-//! `pdfce-core`. A green unit suite would restate the claim; only a driven run
+//! `pdfcer-core`. A green unit suite would restate the claim; only a driven run
 //! against the real engine can test it.
 //!
 //! # The oracle
@@ -96,7 +96,7 @@ use crate::trace::Trace;
 const INVOKE: &str = "mode.edit,edit.form_text_field";
 
 /// The placement dialog accepts itself, so no dialog has to be driven.
-const ACCEPT_ENV: (&str, &str) = ("PDFCE_DIAG_FORM_ACCEPT", "1");
+const ACCEPT_ENV: (&str, &str) = ("PDFCER_DIAG_FORM_ACCEPT", "1");
 
 /// The per-widget census the canvas publishes — one line per drawn box.
 const BOX_LINE: &str = "form-target";
@@ -133,7 +133,7 @@ const PLACE_AT: (f64, f64) = (0.30, 0.45);
 /// would pass against a build whose setting did nothing at all.
 #[derive(Clone, Copy)]
 struct Order {
-    /// `PDFCE_DIAG_PASTE_CHORDS`, or `None` for the operator's default.
+    /// `PDFCER_DIAG_PASTE_CHORDS`, or `None` for the operator's default.
     env: Option<&'static str>,
     /// Whether Shift is held to reach the NEW-field paste.
     shift_for_new: bool,
@@ -141,11 +141,11 @@ struct Order {
     label: &'static str,
 }
 
-/// pdfce's own order: `Ctrl+V` is a new field.
-const PDFCE_ORDER: Order = Order {
+/// pdfcer's own order: `Ctrl+V` is a new field.
+const PDFCER_ORDER: Order = Order {
     env: None,
     shift_for_new: false,
-    label: "pdfce order (Ctrl+V = new field)",
+    label: "pdfcer order (Ctrl+V = new field)",
 };
 
 /// Acrobat's order: `Ctrl+V` is a duplicate, `Ctrl+Shift+V` is a new field.
@@ -252,7 +252,7 @@ impl Check for AFormFieldCanBeCopiedAndPastedBothWays {
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
         let mut report = CheckReport::new(self.name(), self.defect());
-        match drive_order(ctx, &mut report, PDFCE_ORDER) {
+        match drive_order(ctx, &mut report, PDFCER_ORDER) {
             Ok(Some(failure)) => report.fail(failure),
             Ok(None) => report.pass(),
             Err(skip) => report.skip(skip.to_string()),
@@ -371,15 +371,15 @@ fn drive_order(
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.env
-        .push(("PDFCE_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
+        .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.env
         .push((ACCEPT_ENV.0.to_owned(), ACCEPT_ENV.1.to_owned()));
     // ★ The paste order for this run. Absent means the operator's own setting,
-    // which on a clean checkout is pdfce's order — see `PasteChords::from_environment`
+    // which on a clean checkout is pdfcer's order — see `PasteChords::from_environment`
     // for why this seam exists rather than a check writing his preferences file.
     if let Some(value) = order.env {
         spec.env
-            .push(("PDFCE_DIAG_PASTE_CHORDS".to_owned(), value.to_owned()));
+            .push(("PDFCER_DIAG_PASTE_CHORDS".to_owned(), value.to_owned()));
     }
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
@@ -387,7 +387,7 @@ fn drive_order(
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
     report.note(format!(
-        "launched {} as pid {} with PDFCE_DIAG_INVOKE={INVOKE}",
+        "launched {} as pid {} with PDFCER_DIAG_INVOKE={INVOKE}",
         exe.display(),
         session.pid()
     ));
@@ -637,7 +637,7 @@ fn drive_order(
         return Ok(Some(format!(
             "★★★ The duplicate paste raised `{PASTE_LINE} mode=Duplicate` and page 1 still has \
              {boxes_after_dup} box(es), unchanged from {boxes_before_dup}. The duplicate paste \
-             authors a field with the SOURCE'S OWN NAME and relies on `pdfce-core` merging it \
+             authors a field with the SOURCE'S OWN NAME and relies on `pdfcer-core` merging it \
              into the existing field as a second widget (`edit.rs:13523`, `merged: true`). If \
              nothing arrived, that merge did not happen — which would mean the engine now \
              REFUSES a duplicate name rather than merging, and the central claim in \

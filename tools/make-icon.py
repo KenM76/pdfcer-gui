@@ -1,4 +1,4 @@
-"""Generate `pdfce-gui.ico` — the application icon, drawn from geometry.
+"""Generate `pdfcer-gui.ico` — the application icon, drawn from geometry.
 
 WHY THE ICON IS A SCRIPT AND NOT A BINARY
 =========================================
@@ -12,14 +12,14 @@ program and hope. Checked in as the script that draws it, every choice is
 readable, every size is regenerated from one source of truth, and a change is a
 diff rather than a replacement.
 
-That also matters for **provenance**. `crates/pdfce-gui/src/icons/assets/PROVENANCE.md`
+That also matters for **provenance**. `crates/pdfcer-gui/src/icons/assets/PROVENANCE.md`
 records the ribbon glyph set as the operator's own art, and `catalog.rs` states
 the standing rule that follows from it: *"a new glyph is not a build session's
 to add."* This icon is a different artefact — an application icon, asked for
 directly — but the same care applies, and a generator makes its authorship
 plain: it was written by a build session, it is geometry rather than drawing,
 and the operator can replace it with real art at any time by dropping in a
-`.ico` and deleting this file. See `crates/pdfce-gui/assets/PROVENANCE.md`.
+`.ico` and deleting this file. See `crates/pdfcer-gui/assets/PROVENANCE.md`.
 
 WHAT IT DRAWS
 =============
@@ -41,10 +41,10 @@ Adobe's brand red and carries none of their marks: a red rectangle with three
 letters in it is the generic convention, used by Chrome, Firefox, Preview,
 Okular, SumatraPDF and every file manager.
 
-Deliberately NOT pdfce's theme accent. An application icon is not themed — it
+Deliberately NOT pdfcer's theme accent. An application icon is not themed — it
 sits in Explorer, on a taskbar and in a file-association dialog, none of which
 know what theme the application is set to, and all of which show it beside
-other applications' icons rather than beside pdfce's own surfaces.
+other applications' icons rather than beside pdfcer's own surfaces.
 
 HOW THE LETTERS ARE DRAWN WITHOUT A FONT
 ========================================
@@ -89,7 +89,7 @@ USAGE
 
     python tools/make-icon.py
 
-Writes `crates/pdfce-gui/assets/pdfce-gui.ico`, the raw window icon beside it,
+Writes `crates/pdfcer-gui/assets/pdfcer-gui.ico`, the raw window icon beside it,
 and, for review,
 `evidence/app-icon.png` — a strip of every size at 1:1 so the small ones can be
 checked rather than assumed. **Look at the strip.** An icon that is fine at
@@ -106,7 +106,7 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 
 ROOT = Path(__file__).resolve().parent.parent
-ICO_PATH = ROOT / "crates" / "pdfce-gui" / "assets" / "pdfce-gui.ico"
+ICO_PATH = ROOT / "crates" / "pdfcer-gui" / "assets" / "pdfcer-gui.ico"
 STRIP_PATH = ROOT / "evidence" / "app-icon.png"
 # The WINDOW icon, as raw RGBA for `eframe::IconData`.
 #
@@ -122,7 +122,7 @@ STRIP_PATH = ROOT / "evidence" / "app-icon.png"
 # 64 rather than 256: the taskbar asks for 32 or 48 on every current Windows
 # and scales down cleanly, while 256 would be a quarter of a megabyte of
 # `include_bytes!` for pixels nothing displays.
-WINDOW_ICON_PATH = ROOT / "crates" / "pdfce-gui" / "assets" / "window-icon-64.rgba"
+WINDOW_ICON_PATH = ROOT / "crates" / "pdfcer-gui" / "assets" / "window-icon-64.rgba"
 WINDOW_ICON_SIZE = 64
 
 SIZES = [16, 24, 32, 48, 64, 128, 256]
@@ -272,7 +272,7 @@ def glyph_c(x, y):
     return ((x - cx) / irx) ** 2 + ((y - cy) / iry) ** 2 > 1.0
 
 
-# The badge's two lines. `pdfce` is PDF + ce, and the operator asked for the
+# The badge's two lines. `pdfcer` is PDF + ce, and the operator asked for the
 # second line on 2026-08-18: *"just add CE below PDF in the same red box."*
 LINE_PDF = [(0.86, glyph_p), (0.85, glyph_d), (0.78, glyph_f)]
 LINE_CE = [(2 * C_RX, glyph_c), (0.78, glyph_e)]

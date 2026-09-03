@@ -309,7 +309,7 @@ pub fn contrast_at(img: &Image, region: PixRect) -> ContrastReport {
 ///   report as low contrast and misdiagnose.
 /// * A uniform region across a whole *window* means the capture is not a
 ///   picture of the application: the display was asleep, the window was never
-///   raised, or the process died before the shot. pdfce's predecessor script
+///   raised, or the process died before the shot. pdfcer's predecessor script
 ///   learned this the expensive way — a run of blank screenshots got a
 ///   plausible invented cause attached to them (a compositor race) before the
 ///   real one was found (the monitor had powered down), and the fix that

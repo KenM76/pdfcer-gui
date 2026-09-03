@@ -52,7 +52,7 @@
 //! ## A correction worth recording: `RichText::strong()` is *not* a
 //! weight cue in `egui`
 //!
-//! `D:\Dev\pdfce\UI_PREFERENCES.md` §9 cites the old dock's active-tab
+//! `D:\Dev\pdfcer\UI_PREFERENCES.md` §9 cites the old dock's active-tab
 //! treatment as already R84-compliant on the grounds that it *"bolds the
 //! active tab's label text — a weight cue, not a fill-color-only cue."*
 //!

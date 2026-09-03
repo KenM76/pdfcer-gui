@@ -1,6 +1,6 @@
-# pdfceGUI — GUI design and remediation workspace
+# pdfcer-gui — GUI design and remediation workspace
 
-The **GUI rebuild** for **`D:\Dev\pdfce`**: a new `pdfce-gui` crate that
+The **GUI rebuild** for **`D:\Dev\pdfcer`**: a new `pdfcer-gui` crate that
 will replace `D:\Dev\pdfce\crates\pdfce-gui\` when complete, built on a
 new reusable `egui-shell` crate that knows nothing about PDF and will be
 extracted for use by other projects.
@@ -42,7 +42,7 @@ is legible on screen at 3.7 × 10¹⁰ % — and their contents are not.**
 ⚠ **A retraction, kept rather than deleted.** This section shipped on
 2026-08-22 saying the limit was the renderer's own `f32` path precision — 11
 nanometres near the middle of a letter sheet — and stated it as a property of
-the design. It was a property of *that revision*: pdfce removed it the
+the design. It was a property of *that revision*: pdfcer removed it the
 following day, and the same molecule that rendered as blank paper now draws
 its bonds. **A measured limit is a fact about a revision, not about a
 design**, and this project has now been wrong in that particular way once.
@@ -57,7 +57,7 @@ this project has written down has been overtaken within a day or two.
 ```
 cargo test --workspace
 bash tools/gates/run-all.sh
-cargo run --release -q -p ui-verify -- --exe target/release/pdfce-gui.exe --pdf D:/Dev/temp/pdfce/SW41177.pdf --doc-point 0,300,500
+cargo run --release -q -p ui-verify -- --exe target/release/pdfcer-gui.exe --pdf D:/Dev/temp/pdfcer/SW41177.pdf --doc-point 0,300,500
 ```
 
 Stages **S0–S5** are complete, along with **Phase 3** (viewer conventions,
@@ -78,27 +78,27 @@ project. It has not been started.
 python tools/package-portable.py --verify --note "what this milestone added"
 ```
 
-Writes `D:\builds\pdfcegui-<stamp>-<engine>-<shell>\` — one folder per
+Writes `D:\builds\pdfcergui-<stamp>-<engine>-<shell>\` — one folder per
 build, never an overwrite, because on Windows a running executable
 cannot be replaced and a half-updated folder is worse than either
 version.
 
-**"Integrated with pdfce as a single exe" needs no fold-in.**
-`crates/pdfce-gui` depends on `pdfce-core` and `pdfce-render` **by path**
-into `D:\Dev\pdfce`, and Rust links them statically — so the release
-binary already carries pdfce's engine. Integration here is a property of
+**"Integrated with pdfcer as a single exe" needs no fold-in.**
+`crates/pdfcer-gui` depends on `pdfcer-core` and `pdfcer-render` **by path**
+into `D:\Dev\pdfcer`, and Rust links them statically — so the release
+binary already carries pdfcer's engine. Integration here is a property of
 the dependency graph, not a merge that has to happen first.
 
 That is worth stating because the alternative — folding this shell into
-`D:\Dev\pdfce` and packaging from there — would ship a **regression**
+`D:\Dev\pdfcer` and packaging from there — would ship a **regression**
 today: `FEATURES.md` § "Not salvaged yet" still lists measure,
 redaction, the settings dialog and text editing as living only in the
-old shell. Shipping from here costs nothing and leaves a pdfce build
+old shell. Shipping from here costs nothing and leaves a pdfcer build
 installable beside it. Fold-in happens when `FEATURES.md` says nothing
 regresses, per `PROJECT_PLAN.md` §5.
 
 **Two identities, because there are two source trees.** `<engine>` is
-`D:\Dev\pdfce`'s short HEAD; `<shell>` is this workspace's. Either gets
+`D:\Dev\pdfcer`'s short HEAD; `<shell>` is this workspace's. Either gets
 a `-dirty` / `-enginedirty` marker when its tree carries changes that
 can reach a compiler — narrowly defined, so a documentation edit does
 not raise a warning about the binary.
@@ -120,7 +120,7 @@ nobody checked.
 
 `python tools/package-portable.py --self-test` asserts the script's own
 two invisible invariants: that the folder name is **not** caught by
-pdfce's own `pdfce-*` glob (it would otherwise diff *its* changelog
+pdfcer's own `pdfcer-*` glob (it would otherwise diff *its* changelog
 against a commit from this tree), and that the source digest is
 deterministic and moves on a rename. Both failures package successfully
 and run fine — the damage lands elsewhere, later — which is why they are
@@ -128,12 +128,12 @@ asserted rather than reasoned about.
 
 ## Licensing, and the material this binary carries that is not ours
 
-pdfceGUI is **MIT** — see `LICENSE`, `Copyright (c) 2026 Ken Mantle`.
+pdfcer-gui is **MIT** — see `LICENSE`, `Copyright (c) 2026 Ken Mantle`.
 That covers everything in this repository, including the icon set, which
-is the operator's own art (`crates/pdfce-gui/src/icons/assets/PROVENANCE.md`).
+is the operator's own art (`crates/pdfcer-gui/src/icons/assets/PROVENANCE.md`).
 
-It does **not** cover everything `pdfce-gui.exe` contains. The binary
-links `pdfce-core` and `pdfce-render` statically, and those crates embed
+It does **not** cover everything `pdfcer-gui.exe` contains. The binary
+links `pdfcer-core` and `pdfcer-render` statically, and those crates embed
 third-party font faces and data tables with `include_bytes!` — so this
 program redistributes work whose licences require their notices to
 travel with it.
@@ -143,7 +143,7 @@ Two surfaces carry those notices, and they are not redundant:
 | Surface | Carries | Reached by |
 |---|---|---|
 | `THIRD_PARTY_LICENSES.md`, copied into every build | every licence **text**, in full | anyone who opens the package folder |
-| **File ▸ pdfce ▸ About pdfce**, in the program | the **attribution** — who made it, what it is, on what terms, and whether pdfce changed it | anyone who runs it |
+| **File ▸ pdfcer ▸ About pdfcer**, in the program | the **attribution** — who made it, what it is, on what terms, and whether pdfcer changed it | anyone who runs it |
 
 `THIRD_PARTY_LICENSES.md` is generated: `cargo about generate about.hbs
 -o THIRD_PARTY_LICENSES.md`, from this workspace's real `Cargo.lock`.
@@ -162,18 +162,18 @@ relative to its template.
 **When the OCR feature lands** it brings the `ocrs` model weights, which
 are **CC-BY-SA-4.0** and which the operator accepted into this MIT
 package on 2026-08-14. Shipping them *unmodified* is distribution of a
-verbatim work in a collection and leaves pdfce's own licence untouched.
+verbatim work in a collection and leaves pdfcer's own licence untouched.
 **Modifying them — fine-tuning, retraining, quantizing to shrink the
 file, or converting them to another runtime's format — creates Adapted
 Material, and the result must be released under CC-BY-SA-4.0 or a
 compatible licence.** That is an engineering constraint, not a footnote:
-see `crates/pdfce-gui/src/text/about.rs`.
+see `crates/pdfcer-gui/src/text/about.rs`.
 
 ## Version control
 
 Under git since `2a504ef` (2026-08-13). `.gitattributes` **predates that
 commit deliberately**: `core.autocrlf` is true globally on this machine,
-and pdfce's 2026-08-02 finding records that CRLF normalization of PDF
+and pdfcer's 2026-08-02 finding records that CRLF normalization of PDF
 fixtures lands **in the index at add time**, not only at checkout. A
 PDF's cross-reference table stores absolute byte offsets, so a
 normalized fixture is a corrupt one, and 18 evidence PNGs would have
@@ -181,9 +181,9 @@ gone the same way. The first `git add` here was made without the file,
 noticed, and unwound with `git rm -r --cached` before anything was
 committed.
 
-The rebuild is owned by the **`pdfce-gui-engineer`** agent
-(`.claude/agents/pdfce-gui-engineer.md`). Its governing rule:
-`D:\Dev\pdfce\` is **read-only** until fold-in day, so the working
+The rebuild is owned by the **`pdfcer-gui-engineer`** agent
+(`.claude/agents/pdfcer-gui-engineer.md`). Its governing rule:
+`D:\Dev\pdfcer\` is **read-only** until fold-in day, so the working
 program keeps working for the whole life of the project.
 
 ## Read in this order
@@ -203,18 +203,18 @@ program keeps working for the whole life of the project.
 | **`mockups/app.html`** | Six full-window scenes: object selected (Format tab + properties panel + context menu), View ▸ Render options, in-place text editing, the Pages tab, Measure, and placing a revision cloud. |
 | **`mockups/modes.html`** | The same document rendered in Read, Review and Edit, with the selector at the far right of the tab row. |
 | **`BENCHMARK.md`** | Measured rendering performance on a real 5.6 MB CAD site plan. This is the evidence that overturned an earlier, unmeasured claim about whole-page rendering. |
-| **`evidence/`** | Screenshots backing every observational claim, plus `bench-gui-diag.txt`, the raw `PDFCE_DIAG` trace. |
+| **`evidence/`** | Screenshots backing every observational claim, plus `bench-gui-diag.txt`, the raw `PDFCER_DIAG` trace. |
 
 ## Evidence index
 
 | File | What it shows |
 |---|---|
-| `pdfce_max.png` | pdfce, maximised, the shared test drawing |
+| `pdfcer_max.png` | pdfcer, maximised, the shared test drawing |
 | `ops_max.png` | The comparison product, same window size, same drawing |
-| `crop_settings.png` | pdfce Settings dialog at 3× — the invisible section headings (D2) |
+| `crop_settings.png` | pdfcer Settings dialog at 3× — the invisible section headings (D2) |
 | `crop_tabs_left.png`, `crop_tabs_right.png` | Dock tab labels at 3× — same defect |
-| `pdfce_settings.png`, `pdfce_panels.png` | Settings dialog and the Objects + Fonts panels in place |
-| `ribbon_*.png` | Every pdfce ribbon tab: edit, review, measure, tools, view |
+| `pdfcer_settings.png`, `pdfcer_panels.png` | Settings dialog and the Objects + Fonts panels in place |
+| `ribbon_*.png` | Every pdfcer ribbon tab: edit, review, measure, tools, view |
 | `ops_*.png` | Every comparison-product ribbon tab: view, drawing, annotation, edit & combine, settings |
 
 The shared test document is `grootformaat_a1_liggend.pdf`, an A1 landscape
@@ -254,7 +254,7 @@ highest-leverage item in the plan.
 | Decision | Effect |
 |---|---|
 | **Pages belongs in Review mode** | Reviewing a set means rotating a sheet to read it and extracting the pages you were asked about. The stance that matters is *the content is not yours to alter*, and page operations do not alter content. |
-| **"Nothing floats over the canvas" becomes two settings, not an invariant** | **Floating panels** (Off · Allowed, default Allowed) governs whether *you* may tear a panel out. **App initiative** (Never · Ask · Allowed, **default Never**) governs whether pdfce may float something *on its own*. The second carries the original complaint and its default preserves today's behaviour — as a choice rather than a law. Both under View ▸ Window. |
+| **"Nothing floats over the canvas" becomes two settings, not an invariant** | **Floating panels** (Off · Allowed, default Allowed) governs whether *you* may tear a panel out. **App initiative** (Never · Ask · Allowed, **default Never**) governs whether pdfcer may float something *on its own*. The second carries the original complaint and its default preserves today's behaviour — as a choice rather than a law. Both under View ▸ Window. |
 | **The shell becomes a reusable crate** | `egui-shell` — ribbon, dock, modes, layout persistence, theme, command registry — knowing nothing about PDF, enforced by a CI gate, extracted to its own repo at fold-in. |
 | **The ribbon becomes data** | Tabs, groups, commands, modes and keymap are a serializable manifest. This is what makes the shell reusable *and* the ribbon customizable — one mechanism for both. Retires the deferral at `ribbon.rs:42-52`, whose objection was about persistence. |
 
@@ -263,6 +263,6 @@ highest-leverage item in the plan.
 | Decision | Effect |
 |---|---|
 | **Continuous scroll is an option, not a replacement** | Single page stays the default — it is the right model for drafting review. Four page-display modes sit together on the View tab, persisted per document. |
-| **Whole-page rendering stays the default** | Now **measured** (`BENCHMARK.md`): six rapid zoom steps started six render generations and completed exactly one, at the destination — 1.9 s instead of ~11 s. The generation counter and settle debounce already solve what a tile cache would have been built to solve. pdfce also uses 2.5× less memory than the competitor on the same file. Tiled progressive becomes an opt-in in a new **View ▸ Render** group. This corrects an earlier draft that called whole-page a weakness on architectural grounds without measuring it. |
+| **Whole-page rendering stays the default** | Now **measured** (`BENCHMARK.md`): six rapid zoom steps started six render generations and completed exactly one, at the destination — 1.9 s instead of ~11 s. The generation counter and settle debounce already solve what a tile cache would have been built to solve. pdfcer also uses 2.5× less memory than the competitor on the same file. Tiled progressive becomes an opt-in in a new **View ▸ Render** group. This corrects an earlier draft that called whole-page a weakness on architectural grounds without measuring it. |
 | **The `Editing on` master toggle is removed** | *"Make it work the same way other programs do."* Selection and Delete are always live; tools arm and disarm. Supersedes defect D6. |
 | **Format tab and properties panel both ship** | Panel first — it holds the full property set including editable X/Y/W/H, and the tab's contents are a subset. Context menus are the third surface. |

@@ -22,7 +22,7 @@ WHAT IT CONTAINS, AND WHY EACH PART
   ``/Resources`` dictionary.
 
   ★ Both were absent in the first version and the GUI refused the file with
-  ``open failed`` while ``pdfce-cli inspect`` read it perfectly. The CLI asks
+  ``open failed`` while ``pdfcer inspect`` read it perfectly. The CLI asks
   *"is this a valid PDF?"*; the shell additionally wants a page it can
   RASTERISE, and a page with no ``/Contents`` and no ``/Resources`` is valid and
   not drawable. **A fixture that only one of the two tools accepts is a fixture
@@ -43,7 +43,7 @@ WHAT IT CONTAINS, AND WHY EACH PART
   server; ``localhost`` is the operator's own machine. Neither belongs in a
   file that exists to be opened by a test.
 
-  ★ pdfce never follows it — actions are recognised and round-tripped, never
+  ★ pdfcer never follows it — actions are recognised and round-tripped, never
   executed (NF4) — so this is belt and braces. It is belt and braces because
   the fixture will outlive that guarantee's current wording.
 

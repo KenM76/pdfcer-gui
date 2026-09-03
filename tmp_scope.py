@@ -1,7 +1,7 @@
 import io
 
 # ---------------------------------------------------------------- the trait
-p = 'crates/pdfce-gui/src/canvas/target.rs'
+p = 'crates/pdfcer-gui/src/canvas/target.rs'
 s = io.open(p, encoding='utf-8').read()
 
 anchor = "    fn hit_test_rect(&self, page_index: usize, rect: Rect) -> Vec<TargetId>;"
@@ -52,7 +52,7 @@ s = s.replace(anchor, add + anchor, 1)
 io.open(p, 'w', encoding='utf-8').write(s)
 
 # ---------------------------------------------------------------- the impl
-p = 'crates/pdfce-gui/src/panels/objects/provider/mod.rs'
+p = 'crates/pdfcer-gui/src/panels/objects/provider/mod.rs'
 s = io.open(p, encoding='utf-8').read()
 anchor2 = "    fn hit_test_rect(&self, page_index: usize, rect: Rect) -> Vec<TargetId> {"
 assert anchor2 in s
@@ -126,7 +126,7 @@ s = s[:j + 1] + const + s[j + 1:]
 io.open(p, 'w', encoding='utf-8').write(s)
 
 # ---------------------------------------------------------------- resolve
-p = 'crates/pdfce-gui/src/canvas/smart.rs'
+p = 'crates/pdfcer-gui/src/canvas/smart.rs'
 s = io.open(p, encoding='utf-8').read()
 old = """        if self
             .entered

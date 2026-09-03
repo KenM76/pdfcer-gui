@@ -104,7 +104,7 @@
 //! `D:/dev/rag/egui/bottom_panel_height_change_retriggers_fit_to_viewport_zoom.md`
 //! records a measured 230 % → 224 % → 215 % zoom drift caused by a panel
 //! whose height was **content-driven** sitting next to a per-frame
-//! fit-to-viewport zoom. The rule it produced is pdfce's R128: *a panel
+//! fit-to-viewport zoom. The rule it produced is pdfcer's R128: *a panel
 //! whose size feeds a fit-to-viewport computation has a fixed size.*
 //!
 //! A user-resizable dock looks like a direct violation. It is not, and

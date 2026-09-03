@@ -63,7 +63,7 @@ pub const TREE_ID: &str = "objects tree";
 
 /// Stand-in for the real `diag` module, so the fixture reads like real code.
 mod diag {
-    /// Mirrors `pdfce_gui::diag::trace`.
+    /// Mirrors `pdfcer_gui::diag::trace`.
     pub fn trace(f: impl FnOnce() -> String) {
         let _ = f;
     }

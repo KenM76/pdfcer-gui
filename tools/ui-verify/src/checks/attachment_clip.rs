@@ -4,11 +4,11 @@
 //! # Where this came from
 //!
 //! Nobody reported it. `tools/gates/check-verb-coverage.sh` shipped on
-//! 2026-09-01 and named five verbs `pdfce-core` implements that this shell
+//! 2026-09-01 and named five verbs `pdfcer-core` implements that this shell
 //! called nowhere and had written no sentence about. Three of them were
 //! `copy_attachment`, `cut_attachment` and `paste_attachment`, shipped in
 //! `Pass 173.0` — so an embedded file could not be moved from one open document
-//! to another, which is an odd thing to be missing now that pdfce is
+//! to another, which is an odd thing to be missing now that pdfcer is
 //! multi-document.
 //!
 //! ⇒ **This check is the answer to "how would anyone have known?"** and the
@@ -110,12 +110,12 @@ const FRESH_REGION: &str = "attachments.paste.fresh"; // ui-text-exempt: a trace
 /// The document tab strip's per-tab region prefix.
 const TAB: &str = "doc-tab."; // ui-text-exempt: a trace region name prefix
 /// The seam that answers the attach picker without a human.
-const ATTACH_ENV: &str = "PDFCE_DIAG_ATTACH_PATH"; // ui-text-exempt: an environment variable name
+const ATTACH_ENV: &str = "PDFCER_DIAG_ATTACH_PATH"; // ui-text-exempt: an environment variable name
 /// The seam that answers the OPEN picker. A fourth copy of this constant, and
 /// the duplication is deliberate in this harness: a shared one would make every
 /// check that names it recompile when any other changed its meaning, and the
 /// name is the application's contract rather than this crate's.
-const OPEN_PATH_ENV: &str = "PDFCE_DIAG_OPEN_PATH"; // ui-text-exempt: an environment variable name
+const OPEN_PATH_ENV: &str = "PDFCER_DIAG_OPEN_PATH"; // ui-text-exempt: an environment variable name
 
 pub struct AnAttachmentMovesBetweenTwoOpenDocuments;
 
@@ -191,7 +191,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.env
         .push((OPEN_PATH_ENV.to_owned(), second.display().to_string()));
     spec.env
-        .push(("PDFCE_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
+        .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
 

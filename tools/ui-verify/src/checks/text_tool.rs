@@ -851,10 +851,10 @@ mod tests {
     #[test]
     fn arming_and_retiring_are_told_apart_by_the_tool_field() {
         let trace = Trace::parse(
-            "pdfce-diag text-tool tool=Text\n\
-             pdfce-diag canvas-text-selection via=drag page=0 chars=27 quads=2\n\
-             pdfce-diag text-tool tool=Select",
-            "pdfce-diag",
+            "pdfcer-diag text-tool tool=Text\n\
+             pdfcer-diag canvas-text-selection via=drag page=0 chars=27 quads=2\n\
+             pdfcer-diag text-tool tool=Select",
+            "pdfcer-diag",
         );
         assert_ne!(TOOL_ARMED, TOOL_RETIRED);
         assert_eq!(
@@ -883,9 +883,9 @@ mod tests {
     #[test]
     fn only_a_non_empty_selection_counts() {
         let trace = Trace::parse(
-            "pdfce-diag canvas-text-selection via=clear page=0 chars=0 quads=0\n\
-             pdfce-diag canvas-text-selection via=drag page=0 chars=27 quads=2",
-            "pdfce-diag",
+            "pdfcer-diag canvas-text-selection via=clear page=0 chars=0 quads=0\n\
+             pdfcer-diag canvas-text-selection via=drag page=0 chars=27 quads=2",
+            "pdfcer-diag",
         );
         let found = selections(&trace);
         assert_eq!(found.len(), 1, "the clear must not be counted");

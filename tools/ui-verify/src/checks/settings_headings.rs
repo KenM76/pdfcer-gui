@@ -344,7 +344,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
 ///
 /// # ★★★ THREE routes, and this file knew about two until 2026-08-27
 ///
-/// `file.settings` is the first item of the *pdfce* group, which is the LAST
+/// `file.settings` is the first item of the *pdfcer* group, which is the LAST
 /// group on the File tab. At the shipped 1100 pt window width that group does
 /// not fit, so the item has no rect of its own — and there are **two different
 /// things** the ribbon may have done with it:
@@ -353,7 +353,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
 /// |---|---|---|
 /// | on the band | `ribbon.item.file.settings` | click it |
 /// | folded into the overflow | `ribbon.overflow` | open the overflow, then click |
-/// | **collapsed as a group** | `ribbon.group.file.pdfce.collapsed` | click the group button, then click |
+/// | **collapsed as a group** | `ribbon.group.file.pdfcer.collapsed` | click the group button, then click |
 ///
 /// The third arrived with the O31 ribbon work, which gave the band a middle
 /// rung: when it runs short of width a whole group folds into one captioned
@@ -361,7 +361,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
 /// two and therefore **could not run at all** afterwards — every invocation
 /// SKIPped with *"neither `ribbon.item.file.settings` nor `ribbon.overflow` was
 /// declared"*, which was true, and not the whole truth: the trace it printed
-/// contained `ribbon.group.file.pdfce.collapsed` five lines down.
+/// contained `ribbon.group.file.pdfcer.collapsed` five lines down.
 ///
 /// ★ **It SKIPped rather than FAILed, and that is the only reason this was
 /// cheap.** A check that had claimed the Settings control was missing would
@@ -398,7 +398,7 @@ fn open_settings(
         ))
     })?;
     report.note(
-        "reached the Settings control through `declared_or_in_overflow`, which tries the band, then each collapsed group's popup, then the overflow. At the harness's 1100 pt window it is usually the second of those: the pdfce group is the last on the File tab and collapses first.",
+        "reached the Settings control through `declared_or_in_overflow`, which tries the band, then each collapsed group's popup, then the overflow. At the harness's 1100 pt window it is usually the second of those: the pdfcer group is the last on the File tab and collapses first.",
     );
     driver.click_at(session.frame()?.declared_center(item))?;
     session.settle(24);

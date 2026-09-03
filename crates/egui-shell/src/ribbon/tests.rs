@@ -27,7 +27,7 @@
 //!
 //! But it also means the tests below measure DIFFERENT TEXT depending on
 //! how they are invoked. Cargo unifies features across a workspace build,
-//! and `pdfce-gui` depends on `eframe`, which turns on
+//! and `pdfcer-gui` depends on `eframe`, which turns on
 //! `egui/default_fonts`:
 //!
 //! ```text
@@ -69,7 +69,7 @@ use egui::{Pos2, Rect, Vec2};
 //
 // But it also means the tests below measure DIFFERENT TEXT depending
 // on how they are invoked. Cargo unifies features across a workspace
-// build, and `pdfce-gui` depends on `eframe`, which turns on
+// build, and `pdfcer-gui` depends on `eframe`, which turns on
 // `egui/default_fonts`:
 //
 //     cargo test -p egui-shell --lib   → no fonts → widths ≈ 0
@@ -1169,7 +1169,7 @@ fn scrolling_right_moves_the_band_and_offers_the_way_back() {
     let ctx = egui::Context::default();
     // ★★ A REAL FONT, pinned. Without it this test passed under
     // `cargo test -p egui-shell` and failed under `cargo test --workspace`,
-    // because feature unification with `pdfce-gui` changes the ambient font and
+    // because feature unification with `pdfcer-gui` changes the ambient font and
     // therefore every measured width — at which point the fixture's 180 pt was
     // too narrow to draw any group at all. A layout test whose verdict depends
     // on which crates happen to be in the build is not a layout test.

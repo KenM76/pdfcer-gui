@@ -81,8 +81,8 @@
 //! ## What changed in the salvage
 //!
 //! **The environment variable is shell-level, and the line prefix is the
-//! application's.** The source hard-coded `PDFCE_DIAG` and the literal
-//! prefix `pdfce-diag`, which is correct for one application and useless
+//! application's.** The source hard-coded `PDFCER_DIAG` and the literal
+//! prefix `pdfcer-diag`, which is correct for one application and useless
 //! for a shell. Splitting them keeps both halves right:
 //!
 //! - **One variable name** ([`ENV_VAR`]) means a harness that drives *any*
@@ -93,7 +93,7 @@
 //!   discovering what to set.
 //! - **A per-application prefix** ([`set_prefix`]) keeps the *output*
 //!   attributable, which is what the prefix was ever for: a line that
-//!   begins `pdfce-diag` is greppable out of a stream that also contains
+//!   begins `pdfcer-diag` is greppable out of a stream that also contains
 //!   the window manager's chatter and the graphics driver's warnings.
 //!
 //! The two must not be conflated in the other direction either. Deriving

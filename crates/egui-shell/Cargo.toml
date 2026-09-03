@@ -4,7 +4,7 @@
 #
 # A ribbon, a dock, modes, a theme, a command registry and a diagnostic
 # channel, with NO knowledge of any document format. See
-# `D:\Dev\pdfceGUI\SHELL_FRAMEWORK.md` for the architecture this
+# `D:\Dev\pdfcer-gui\SHELL_FRAMEWORK.md` for the architecture this
 # implements, and `src/lib.rs` for the module map.
 #
 # WHY THE DEPENDENCY LIST IS SHORT, AND WHY IT MUST STAY SHORT
@@ -12,7 +12,7 @@
 # SHELL_FRAMEWORK.md §2 states the rule this file enforces mechanically:
 #
 #   > it may depend on `egui`, `eframe`, `egui_tiles`, `serde` and small
-#   > leaf utilities — NEVER on `pdfce-core`, `pdfce-render`, or anything
+#   > leaf utilities — NEVER on `pdfcer-core`, `pdfcer-render`, or anything
 #   > that knows what a PDF is. If `egui-shell` needs to know about pages,
 #   > the abstraction is wrong.
 #
@@ -33,8 +33,8 @@
 #                 counterpart in the build.
 #
 # Every version here is `.workspace = true` so the pin lives in one place
-# (the workspace root) and matches `D:\Dev\pdfce` exactly. A dependency
-# this workspace adds that is NOT already in pdfce's lockfile is an
+# (the workspace root) and matches `D:\Dev\pdfcer` exactly. A dependency
+# this workspace adds that is NOT already in pdfcer's lockfile is an
 # operator decision, not a convenience.
 [package]
 name = "egui-shell"

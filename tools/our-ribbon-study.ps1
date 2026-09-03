@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Photograph pdfce-gui's own ribbon at the same widths as Word's.
+    Photograph pdfcer-gui's own ribbon at the same widths as Word's.
 
 .DESCRIPTION
     `OPERATOR_REQUESTS.md` O31. `word-ribbon-study.ps1` photographs the thing
@@ -18,7 +18,7 @@
 
     ## ★★ It drives `target/release`, never the published build
 
-    Filed 2026-08-24 after the suite was pointed at `OneDrive\pdfceGUI1` and
+    Filed 2026-08-24 after the suite was pointed at `OneDrive\pdfcer-gui1` and
     left the operator's own copy with a feature switched on that he had not
     asked for. A portable build keeps its state beside the exe; the
     development build keeps it in `%APPDATA%`, which is this harness's to
@@ -26,9 +26,9 @@
 #>
 [CmdletBinding()]
 param(
-    [string]$Exe = "D:\Dev\pdfceGUI\target\release\pdfce-gui.exe",
-    [string]$Pdf = "D:\Dev\temp\pdfce\SW41177.pdf",
-    [string]$OutDir = "D:\Dev\pdfceGUI\evidence\our-ribbon",
+    [string]$Exe = "D:\Dev\pdfcer-gui\target\release\pdfcer-gui.exe",
+    [string]$Pdf = "D:\Dev\temp\pdfcer\SW41177.pdf",
+    [string]$OutDir = "D:\Dev\pdfcer-gui\evidence\our-ribbon",
     [int[]]$Widths = @(1900, 1500, 1300, 900, 620, 460),
     [int]$Height = 900,
     # A ribbon.tab.* region to click before capturing, as a fraction of the

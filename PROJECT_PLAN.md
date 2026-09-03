@@ -1,4 +1,4 @@
-# pdfce GUI rebuild — project plan
+# pdfcer GUI rebuild — project plan
 
 **Status:** ★ **BUILT AND SHIPPING.** This file was written on 2026-08-13 as a
 proposal and opened with *"Nothing has been built"*; it said so for thirteen
@@ -12,13 +12,13 @@ table below is current, and the only stages still open are the last two — the
 parity audit and the fold-in, both of which are deliberate scheduling decisions
 rather than unfinished work.
 
-★★ What has NOT changed is the governing rule: `D:\Dev\pdfce` remains
+★★ What has NOT changed is the governing rule: `D:\Dev\pdfcer` remains
 **read-only** until fold-in day. Every engine change since has gone through the
 request channel and come back as a released revision.
 **Written:** 2026-08-12
 
-The charter for the `pdfce-gui-engineer` agent
-(`.claude/agents/pdfce-gui-engineer.md`). Read with `SALVAGE.md` (what
+The charter for the `pdfcer-gui-engineer` agent
+(`.claude/agents/pdfcer-gui-engineer.md`). Read with `SALVAGE.md` (what
 carries over), `GUI_ROADMAP.md` (phase order), `RIBBON_IA.md` (the shell
 spec), `DEFECTS.md` (what was wrong), `BENCHMARK.md` (measured
 performance).
@@ -27,7 +27,7 @@ performance).
 
 ## 1. What this project is
 
-A new `pdfce-gui` crate, built in `D:\Dev\pdfceGUI\`, that replaces
+A new `pdfcer-gui` crate, built in `D:\Dev\pdfcer-gui\`, that replaces
 `D:\Dev\pdfce\crates\pdfce-gui\` when it is at least as capable and
 substantially more usable.
 
@@ -41,8 +41,8 @@ ribbon IA, selection model, context menus, properties panel.
 
 Three reasons, in order of weight:
 
-1. **The working program keeps working.** pdfce ships. The operator uses
-   `pdfce-gui.exe` on real drawings. Refactoring in place means every
+1. **The working program keeps working.** pdfcer ships. The operator uses
+   `pdfcer-gui.exe` on real drawings. Refactoring in place means every
    intermediate state is the shipping state, and there is no fallback on
    a bad day. Here the old GUI is untouched until the swap.
 2. **The module split cannot be done incrementally without churn.**
@@ -55,7 +55,7 @@ Three reasons, in order of weight:
 
 ### The cost, stated honestly
 
-**Divergence.** While this runs, `pdfce-core` keeps moving and the old
+**Divergence.** While this runs, `pdfcer-core` keeps moving and the old
 GUI may gain fixes. Mitigated by §2's path dependency (you always build
 against current core) and §6's rule that the old GUI is frozen for
 *features* during the project — bug fixes to it are fine and get
@@ -66,58 +66,58 @@ replayed into the new shell via `SALVAGE.md`.
 ## 2. Topology
 
 ```
-D:\Dev\pdfceGUI\                    ← this project, its own cargo workspace
+D:\Dev\pdfcer-gui\                    ← this project, its own cargo workspace
 ├── .claude\agents\
-│   └── pdfce-gui-engineer.md
+│   └── pdfcer-gui-engineer.md
 ├── Cargo.toml                      ← workspace, three members
 ├── crates\
 │   ├── egui-shell\                 ← REUSABLE shell framework. Knows nothing
 │   │                                  about PDF. Extracted to its own repo at
 │   │                                  or before fold-in. See SHELL_FRAMEWORK.md
-│   └── pdfce-gui\                  ← THE ARTEFACT. Folds in verbatim.
+│   └── pdfcer-gui\                  ← THE ARTEFACT. Folds in verbatim.
 │       ├── Cargo.toml
 │       └── src\
 ├── tools\
-│   ├── ui-verify\                  ← built first; folds in as pdfce/tools/
+│   ├── ui-verify\                  ← built first; folds in as pdfcer/tools/
 │   └── gates\                      ← CI gates, incl. the fixed ui-strings gate
 ├── fixtures\                       ← GUI-specific fixtures only
 └── *.md                            ← the planning docs
 
-D:\Dev\pdfce\                       ← READ-ONLY until fold-in
-└── crates\{pdfce-core, pdfce-render, pdfce-cli, pdfce-gui}
+D:\Dev\pdfcer\                       ← READ-ONLY until fold-in
+└── crates\{pdfcer-core, pdfcer-render, pdfcer, pdfcer-gui}
 ```
 
-**Dependency direction:** `pdfceGUI/crates/pdfce-gui` depends on
-`pdfce-core` and `pdfce-render` **by relative path**:
+**Dependency direction:** `pdfcer-gui/crates/pdfcer-gui` depends on
+`pdfcer-core` and `pdfcer-render` **by relative path**:
 
 ```toml
-pdfce-core   = { path = "../../../pdfce/crates/pdfce-core" }
-pdfce-render = { path = "../../../pdfce/crates/pdfce-render" }
+pdfcer-core   = { path = "../../../pdfcer/crates/pdfcer-core" }
+pdfcer-render = { path = "../../../pdfcer/crates/pdfcer-render" }
 ```
 
 This is deliberate and has one important consequence: **you always build
-against the live engine.** If `pdfce-core` changes under you, you find
+against the live engine.** If `pdfcer-core` changes under you, you find
 out at compile time rather than at fold-in. That is the right trade — a
 vendored copy would hide divergence until the worst possible moment.
 
-The crate is named `pdfce-gui` and its directory is `crates/pdfce-gui`,
+The crate is named `pdfcer-gui` and its directory is `crates/pdfcer-gui`,
 identical to the target. **Fold-in is therefore a directory swap** for
-that crate, and pdfce's root `Cargo.toml` needs no edit for it.
+that crate, and pdfcer's root `Cargo.toml` needs no edit for it.
 
 **`egui-shell` folds in differently, on purpose.** It is extracted to
-its own repository (`D:\Dev\egui-shell`) and consumed by pdfce as a path
+its own repository (`D:\Dev\egui-shell`) and consumed by pdfcer as a path
 or git dependency — *not* copied into `crates/`. The directive was that
 this work be reusable by other projects, and a crate living inside
-pdfce's tree is not reusable in any practical sense. That adds one line
-to pdfce's root `Cargo.toml` at fold-in and is the only edit it needs.
+pdfcer's tree is not reusable in any practical sense. That adds one line
+to pdfcer's root `Cargo.toml` at fold-in and is the only edit it needs.
 The purity gate (`tools/gates/check-shell-purity.sh`) is what keeps the
 extraction cheap: if it stays green throughout, extraction is a `git mv`.
 
 ### Version pinning
 
-`rust-toolchain.toml` is copied from pdfce and kept identical. Any
-dependency the new crate adds must already be in pdfce's lockfile, or it
-is a decision that goes to the operator — pdfce's dependency posture is
+`rust-toolchain.toml` is copied from pdfcer and kept identical. Any
+dependency the new crate adds must already be in pdfcer's lockfile, or it
+is a decision that goes to the operator — pdfcer's dependency posture is
 deliberate (all-permissive licences, no GPL PDF engines, a pinned
 `skrifa` matched to epaint's).
 
@@ -129,10 +129,10 @@ The answer to a 25,005-line file. **No file over 1,500 lines**, gated in
 CI from the first commit.
 
 ```
-crates/pdfce-gui/src/
+crates/pdfcer-gui/src/
 ├── main.rs                 eframe bootstrap ONLY. Target < 150 lines.
 ├── app/
-│   ├── mod.rs              PdfceApp — the one owner of state
+│   ├── mod.rs              PdfcerApp — the one owner of state
 │   ├── state.rs            open/save/close, parked docs, password prompt
 │   ├── frame.rs            panel composition order (load-bearing — see below)
 │   ├── actions.rs          the Action enum + dispatch
@@ -212,7 +212,7 @@ where the crate is a pile of modules that does not launch.
 string lives in the catalog" scans with a **flat, non-recursive glob**:
 
 ```bash
-# D:\Dev\pdfce\tools\check-ui-strings.sh:76
+# D:\Dev\pdfcer\tools\check-ui-strings.sh:76
 for file in "$SRC_DIR"/*.rs; do
 ```
 
@@ -232,7 +232,7 @@ I checked every sibling gate for the same shape. The rest are fine:
 | `check-ui-strings.sh` | `for file in "$SRC_DIR"/*.rs` | ❌ **flat** |
 | `check-theme-colors.sh` | `find "$GUI_SRC" -name '*.rs'` | ✅ |
 | `check-bypass-paths.sh` | `find ./crates -name '*.rs'` | ✅ |
-| `check-disclosure-channel.sh` | `grep -rn … crates/pdfce-gui/src/` | ✅ |
+| `check-disclosure-channel.sh` | `grep -rn … crates/pdfcer-gui/src/` | ✅ |
 | `check-settings-consumed.py`, `check-shipped-assets.py`, `check-one-commit-per-command.py` | `rglob` | ✅ |
 | `check-commits-filed.py`, `check-passes-filed.py` | `walk` | ✅ |
 
@@ -240,9 +240,9 @@ I checked every sibling gate for the same shape. The rest are fine:
 `ui_text.rs` exclusion generalised to the catalog *directory* once
 `ui_text.rs` is split (§9, Q4).
 
-**But it is a change to `D:\Dev\pdfce\tools\`, which this project may not
-write to.** So it is a hand-off to `pdfce-engineer`, filed as its own
-Pass in the pdfce repo, and it must land **before S0**. It is also worth
+**But it is a change to `D:\Dev\pdfcer\tools\`, which this project may not
+write to.** So it is a hand-off to `pdfcer-engineer`, filed as its own
+Pass in the pdfcer repo, and it must land **before S0**. It is also worth
 doing regardless of this project: the gate is currently one refactor away
 from silently protecting nothing.
 
@@ -265,19 +265,19 @@ Full analysis in `MODES_AND_PANELS.md` Part 2. Sequenced into the stages:
 Inkscape is best-in-class on multi-column docking and tear-out, but has
 **no named workspaces, no in-app layout reset, and no per-dock
 collapse** — the last a regression from its own 1.0, still open five
-releases later. pdfce already beats it on all three: the mode selector
+releases later. pdfcer already beats it on all three: the mode selector
 *is* named workspaces, and `Action::ApplyResetLayout` with per-scope
 checkboxes is a better reset than any product surveyed. The target is
 Inkscape's flexibility plus Photoshop's and Affinity's layout
 management. Twelve specific failure modes to design against are tabulated
 in `MODES_AND_PANELS.md` Part 2.
 
-### 4.2b Known structural item — `pdfce-gui` has no `lib.rs`
+### 4.2b Known structural item — `pdfcer-gui` has no `lib.rs`
 
 Modules are declared in `main.rs`, so the crate is a binary with no
 library target. Consequences, none urgent, all compounding:
 
-- `ui-verify` and any integration test cannot `use pdfce_gui::…`; every
+- `ui-verify` and any integration test cannot `use pdfcer_gui::…`; every
   assertion has to go through the process boundary even when it is
   really a unit-level question.
 - `cargo doc` documents a binary, so the module docs this project
@@ -287,7 +287,7 @@ library target. Consequences, none urgent, all compounding:
   is guaranteed.
 
 **Fix:** a `lib.rs` holding the module tree and a `main.rs` reduced to
-`fn main() { pdfce_gui::run() }`. Cheap in isolation, but it changes
+`fn main() { pdfcer_gui::run() }`. Cheap in isolation, but it changes
 visibility on every module, so it wants a quiet moment rather than a
 mid-stage one. **Do it at the S2→S3 boundary**, before the panel modules
 multiply.
@@ -303,7 +303,7 @@ multiply.
 ### 4.3 What the application owes the harness
 
 Discovered by **building** `ui-verify` at S1, not by reading code. Each
-is a small change in `pdfce-gui` that removes a harness workaround, and
+is a small change in `pdfcer-gui` that removes a harness workaround, and
 each must land before the check that needs it can stop being a
 workaround.
 
@@ -330,7 +330,7 @@ capability above invalidates the assumption each one rests on:
 
 **Phase 4 (page display modes), Phase 5b–d (text), Phase 6 (markup),
 Phase 7 (measure), and the display list all land *after* fold-in**, in
-the pdfce repo, as ordinary Passes. They are improvements, not
+the pdfcer repo, as ordinary Passes. They are improvements, not
 prerequisites — and holding fold-in for them would keep the old GUI in
 front of the operator for months longer than necessary.
 
@@ -349,7 +349,7 @@ roadmap.
    properties panel.
 4. **`MODES_AND_PANELS.md` implemented** — the Read/Review/Edit
    selector, and panel layout that survives a restart.
-5. All pdfce CI gates green (§7.2).
+5. All pdfcer CI gates green (§7.2).
 6. No file over 1,500 lines.
 7. `ui-verify` suite green, and it demonstrably detects the two founding
    defects when pointed at the old binary.
@@ -363,13 +363,13 @@ a floating window**. All post-fold-in.
 
 ## 6. Rules while the project runs
 
-1. **`D:\Dev\pdfce\` is read-only.** The governing rule.
+1. **`D:\Dev\pdfcer\` is read-only.** The governing rule.
 2. **The old GUI is feature-frozen** by agreement — bug fixes are fine
    and get replayed into the new shell, tracked in `SALVAGE.md`.
-3. **Engine needs go to `pdfce-engineer`** as a written hand-off, land
-   in pdfce as their own Pass, and are picked up via the path dependency.
+3. **Engine needs go to `pdfcer-engineer`** as a written hand-off, land
+   in pdfcer as their own Pass, and are picked up via the path dependency.
 4. **Re-sync deliberately.** At each stage boundary, rebuild against
-   current `pdfce-core` and record the commit built against.
+   current `pdfcer-core` and record the commit built against.
 5. **Docs stay current in the same commit as the code**, per the
    documentation-first rule.
 
@@ -392,7 +392,7 @@ acting alone.
 - [ ] Operator has personally used the new GUI on real work and signed
       off.
 
-### 7.2 Gates — all green in the pdfce workspace after the swap
+### 7.2 Gates — all green in the pdfcer workspace after the swap
 
 ```
 cargo fmt --all --check
@@ -407,20 +407,20 @@ tools/check-shipped-assets.py
 tools/check-fmt-excluded.py
 ```
 
-Plus pdfce's filing gates — `check-passes-filed.py`,
+Plus pdfcer's filing gates — `check-passes-filed.py`,
 `check-commits-filed.py`, `check-one-commit-per-command.py` — which
 means the fold-in is filed as Passes in `ROADMAP.md` like any other work.
 
 ### 7.3 The swap
 
 ```bash
-cd /d/Dev/pdfce
+cd /d/Dev/pdfcer
 git checkout -b gui-rebuild-foldin
 git tag pre-gui-rebuild                      # the rollback point
-git rm -r crates/pdfce-gui
-cp -r /d/Dev/pdfceGUI/crates/pdfce-gui crates/pdfce-gui
-cp -r /d/Dev/pdfceGUI/tools/ui-verify tools/ui-verify
-# path deps become workspace deps in crates/pdfce-gui/Cargo.toml
+git rm -r crates/pdfcer-gui
+cp -r /d/Dev/pdfcer-gui/crates/pdfcer-gui crates/pdfcer-gui
+cp -r /d/Dev/pdfcer-gui/tools/ui-verify tools/ui-verify
+# path deps become workspace deps in crates/pdfcer-gui/Cargo.toml
 cargo build --release && cargo test --workspace
 ```
 
@@ -432,13 +432,13 @@ Then §7.2 in full, then the documentation:
 - `docs/SESSION_LOG.md` — the append-only record.
 - `README.md` — the `DEFECTS.md` D3 corrections (Bates, PDF/A,
   imposition) land here if they have not already.
-- `.claude/agents/pdfce-gui-engineer.md` moves in, or is retired and its
-  standing rules merged into `pdfce-engineer.md`.
+- `.claude/agents/pdfcer-gui-engineer.md` moves in, or is retired and its
+  standing rules merged into `pdfcer-engineer.md`.
 
 ### 7.4 Rollback
 
 `git reset --hard pre-gui-rebuild`. The old GUI is intact in git and in
-`D:\Dev\pdfce` until the merge is pushed. **Keep `D:\Dev\pdfceGUI` on
+`D:\Dev\pdfcer` until the merge is pushed. **Keep `D:\Dev\pdfcer-gui` on
 disk for at least one release cycle after fold-in.**
 
 ---
@@ -447,22 +447,22 @@ disk for at least one release cycle after fold-in.**
 
 | Risk | Mitigation |
 |---|---|
-| **Scope creep** — the roadmap is Phase 0–7, fold-in needs only parity. | §5 states what is *not* required. Everything else lands after, in pdfce. |
+| **Scope creep** — the roadmap is Phase 0–7, fold-in needs only parity. | §5 states what is *not* required. Everything else lands after, in pdfcer. |
 | **Core divergence** during a long build. | Path dependency compiles against live core; re-sync at every stage boundary; old GUI feature-frozen. |
 | **Salvaged code carries its bugs across.** | R3: every salvaged file is read in full and re-verified, and its `DEFECTS.md` fixes applied at salvage time, not later. |
 | **The rebuild loses hard-won correctness** that lives in details nobody remembers. | The doc comments are the memory, and R5 requires carrying them across with the code. Never salvage by pasting a snippet. |
-| **ui-verify is flaky** — OS-driven input tests often are. | Assert on `PDFCE_DIAG` first and pixels second; keep pixel assertions to contrast thresholds and presence, not exact images. |
+| **ui-verify is flaky** — OS-driven input tests often are. | Assert on `PDFCER_DIAG` first and pixels second; keep pixel assertions to contrast thresholds and presence, not exact images. |
 | **It never ships** — the classic rewrite failure. | Every stage is runnable; fold-in is gated on parity, not perfection; S7 is a hard audit rather than a judgement call. |
-| **egui version skew** between the two workspaces. | Same `rust-toolchain.toml`; no dependency not already in pdfce's lockfile without an operator decision. |
+| **egui version skew** between the two workspaces. | Same `rust-toolchain.toml`; no dependency not already in pdfcer's lockfile without an operator decision. |
 
 ---
 
 ## 9. Open questions for the operator
 
 1. **Timeline and appetite.** S0–S7 is a substantial build. Is this a
-   continuous push, or something that runs alongside pdfce work? It
+   continuous push, or something that runs alongside pdfcer work? It
    changes how hard the feature-freeze in §6.2 has to be.
-2. **Git.** Should `D:\Dev\pdfceGUI` be its own repo, a branch of pdfce,
+2. **Git.** Should `D:\Dev\pdfcer-gui` be its own repo, a branch of pdfcer,
    or untracked working space? The plan assumes its own repo. A branch
    would make the fold-in a merge instead of a copy, which is tidier in
    history but means the old GUI and new live in one tree.
@@ -470,8 +470,8 @@ disk for at least one release cycle after fold-in.**
 4. **`ui_text.rs` split.** 7,912 lines breaks R2 and must be split into
    a `text/` module directory. That requires the §4.1 gate fix to also
    generalise its single-file exclusion to a directory. Both changes are
-   one hand-off to `pdfce-engineer`; confirm you want them filed as a
-   pdfce Pass before S0 starts.
+   one hand-off to `pdfcer-engineer`; confirm you want them filed as a
+   pdfcer Pass before S0 starts.
 5. **The three still-open roadmap questions** — Save semantics,
    comparison, and how much of multi-run text editing — do not block
    fold-in but do shape S2 and S5.

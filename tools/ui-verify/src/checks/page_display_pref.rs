@@ -69,7 +69,7 @@
 //!
 //! ★★ Safe because the suite is **never** pointed at a published build — that is
 //! the standing rule, and this check is one of the reasons for it. Pointed at
-//! `OneDrive\pdfceGUI1`, it would delete the operator's own saved preferences.
+//! `OneDrive\pdfcer-gui1`, it would delete the operator's own saved preferences.
 //!
 //! # Every way this reports SKIP
 //!

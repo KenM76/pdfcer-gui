@@ -5,7 +5,7 @@
 //!
 //! # Why this needs driving
 //!
-//! `PdfceApp::move_slot`'s arithmetic is swept in a unit test across all
+//! `PdfcerApp::move_slot`'s arithmetic is swept in a unit test across all
 //! eighty `(active, from, gap)` combinations on a four-tab strip. **Every one
 //! of those passes on a build where a tab cannot be dragged at all**, because
 //! the arithmetic is a pure function of two fields and the gesture is three
@@ -52,7 +52,7 @@ const REORDER: &str = "document-reorder";
 /// The strip's once-per-change summary, for the active slot afterwards.
 const SUMMARY: &str = "doc-tabs";
 /// The picker-answering environment variable. See [`super::document_tabs`].
-const OPEN_PATH_ENV: &str = "PDFCE_DIAG_OPEN_PATH";
+const OPEN_PATH_ENV: &str = "PDFCER_DIAG_OPEN_PATH";
 /// The chord that opens a document.
 const CTRL_O: u16 = 0x4F;
 

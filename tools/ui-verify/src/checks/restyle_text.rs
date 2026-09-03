@@ -246,7 +246,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let target = ctx.target.ok_or_else(|| {
         Error::new(
             "no --doc-point. Pass PAGE,X,Y in PDF user space naming the LEFT END of a piece of \
-             text's baseline. `pdfce-cli extract-text --json` gives the first glyph's x and y of \
+             text's baseline. `pdfcer extract-text --json` gives the first glyph's x and y of \
              every run; use those. A point on blank paper sweeps nothing and the check would \
              report the panel as broken.",
         )
@@ -288,14 +288,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // the machine happens to have persisted an arrangement containing it, and
     // on 2026-08-29 it had not.
     spec.env
-        .push(("PDFCE_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
+        .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
     report.note(format!(
-        "launched {} as pid {} with PDFCE_DIAG_INVOKE={INVOKE}",
+        "launched {} as pid {} with PDFCER_DIAG_INVOKE={INVOKE}",
         exe.display(),
         session.pid()
     ));
@@ -366,7 +366,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             "★ {swept} CHARACTER(S) ARE SELECTED AND THE PROPERTIES PANEL SAYS NOTHING ABOUT \
              THEM: no `{SECTION_REGION}` region.\n\
              ★★ **The panel being absent is no longer one of the candidates.** This check now \
-             launches with `PDFCE_DIAG_INVOKE={INVOKE}`, so the panel is mounted and active \
+             launches with `PDFCER_DIAG_INVOKE={INVOKE}`, so the panel is mounted and active \
              before anything else happens — that was the 2026-08-29 failure and it is closed. \
              Confirm it in the trace before reading further: a `dock.body.file.properties` \
              region says the panel drew. If it is missing, the finding is that \

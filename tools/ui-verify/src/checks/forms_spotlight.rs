@@ -79,7 +79,7 @@ const SPOTLIGHT: &str = "canvas-form-spotlight";
 /// The fixture — **this project's own**, not the engine's, and that is a
 /// finding rather than a preference.
 ///
-/// ★★★ Not one form fixture in `D:\Dev\pdfceixtures\syntheticorms\` carries a
+/// ★★★ Not one form fixture in `D:\Dev\pdfcerixtures\syntheticorms\` carries a
 /// plain text field with an `/AP` `/N` appearance stream. Measured 2026-09-02
 /// across all eighteen: `demo-form` and `radio-choice-form` have text fields
 /// with **no** appearance, `rich-field-form`'s one paint-ready text field is
@@ -331,7 +331,7 @@ fn select_tool(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> 
 
 /// Resolve [`FIXTURE`] under this project's own `fixtures/`.
 ///
-/// Read-only, as everything under `D:\Dev\pdfce` is until fold-in day.
+/// Read-only, as everything under `D:\Dev\pdfcer` is until fold-in day.
 fn form_fixture() -> Option<std::path::PathBuf> {
     let path = std::path::Path::new("fixtures").join(FIXTURE);
     path.is_file().then_some(path)

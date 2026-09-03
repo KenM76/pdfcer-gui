@@ -1,4 +1,4 @@
-//! `pages_stay_drawn_when_you_scroll_back` — **a page pdfce has already drawn
+//! `pages_stay_drawn_when_you_scroll_back` — **a page pdfcer has already drawn
 //! is not drawn again**, measured by scrolling a real drawing set away and
 //! back.
 //!
@@ -26,7 +26,7 @@
 //!
 //! `strip-raster-requested page=N` is emitted at the one place the strip asks
 //! for a raster. **A page number appearing twice in that stream is the
-//! defect**, verbatim: it means pdfce drew a page, forgot it, and drew it
+//! defect**, verbatim: it means pdfcer drew a page, forgot it, and drew it
 //! again.
 //!
 //! Nothing else would do. The cache's *size* is not the claim — a build that

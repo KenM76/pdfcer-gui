@@ -100,7 +100,7 @@
 //! `Ctrl+H` — must stay a chord: converting it would delete the assertion.
 //!
 //! ★ Step D drags **diagonally by equal amounts** on purpose. A non-uniform
-//! resize of a pdfce-authored appearance is fine — it is rebuilt — but making
+//! resize of a pdfcer-authored appearance is fine — it is rebuilt — but making
 //! the drag uniform keeps this check about the switch rather than about the
 //! distortion refusal, which is a different feature with a different sentence.
 
@@ -261,7 +261,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.env.push((
-        "PDFCE_DIAG_INVOKE".to_owned(),
+        "PDFCER_DIAG_INVOKE".to_owned(),
         format!("{INVOKE},{PANEL_COMMAND}"),
     ));
     spec.allow_stale = ctx.allow_stale;
@@ -279,7 +279,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // ★★★ **NORMALISE: the panel command is a TOGGLE, and the layout persists.**
     //
-    // `PDFCE_DIAG_INVOKE` presses `view.panel_tool` at launch on the assumption
+    // `PDFCER_DIAG_INVOKE` presses `view.panel_tool` at launch on the assumption
     // that it OPENS the panel. It does not — it flips it — and the dock layout
     // is written to disk, so whether this check starts with the panel open
     // depends on what the previous check left behind.
@@ -509,7 +509,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              Either the press missed the grip — it aimed at the shape's own bottom-right \
              corner, which is where the grip is centred — or `resize_annotation` refused. A \
              refusal traces `resize-annotation-refused`; look for that first, and note that a \
-             pdfce-authored appearance is REBUILT and should never be refused. Trace: {}.",
+             pdfcer-authored appearance is REBUILT and should never be refused. Trace: {}.",
             session.trace_path().display()
         )));
     };

@@ -462,7 +462,7 @@ fn clip(r: PixRect, width: u32, height: u32) -> PixRect {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::profile::{PDFCE_GUI, PDFCE_LEGACY};
+    use crate::profile::{PDFCER_GUI, PDFCER_LEGACY};
 
     fn traced(name: &str, area: PixRect) -> PlannedRegion {
         PlannedRegion {
@@ -483,7 +483,7 @@ mod tests {
             convention: "settings heading regions",
         };
         let plan = resolve_set(
-            &PDFCE_LEGACY,
+            &PDFCER_LEGACY,
             "settings_headings",
             Some(Path::new("evidence/crop_settings.png")),
             Some(&t),
@@ -498,7 +498,7 @@ mod tests {
     #[test]
     fn the_fraction_set_remains_the_fallback_for_a_surface_that_cannot_report() {
         let plan = resolve_set(
-            &PDFCE_LEGACY,
+            &PDFCER_LEGACY,
             "settings_headings",
             Some(Path::new("evidence/crop_settings.png")),
             None,
@@ -518,7 +518,7 @@ mod tests {
             convention: "settings heading regions",
         };
         let plan = resolve_set(
-            &PDFCE_LEGACY,
+            &PDFCER_LEGACY,
             "settings_headings",
             Some(Path::new("evidence/crop_settings.png")),
             Some(&t),
@@ -541,7 +541,7 @@ mod tests {
             ],
             convention: "ribbon group caption regions",
         };
-        let reason = resolve_set(&PDFCE_GUI, "ribbon_group_captions", None, Some(&t))
+        let reason = resolve_set(&PDFCER_GUI, "ribbon_group_captions", None, Some(&t))
             .expect_err("there is no ribbon yet");
         assert!(
             reason.contains("declared no ribbon group caption regions"),
@@ -562,7 +562,7 @@ mod tests {
     /// reason must not assert anything about the application either.
     #[test]
     fn a_run_with_no_trace_does_not_claim_the_application_was_silent() {
-        let reason = resolve_set(&PDFCE_GUI, "ribbon_group_captions", None, None)
+        let reason = resolve_set(&PDFCER_GUI, "ribbon_group_captions", None, None)
             .expect_err("no source at all");
         assert!(reason.contains("consulted no live trace"), "{reason}");
         assert!(
@@ -578,7 +578,7 @@ mod tests {
             declared: Vec::new(),
             convention: "ribbon group caption regions",
         };
-        let reason = resolve_set(&PDFCE_GUI, "ribbon_group_captions", None, Some(&t))
+        let reason = resolve_set(&PDFCER_GUI, "ribbon_group_captions", None, Some(&t))
             .expect_err("no source at all");
         assert!(reason.contains("no `ui-rect` regions at all"), "{reason}");
         assert!(reason.contains("diagnostic switch"), "{reason}");

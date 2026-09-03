@@ -31,10 +31,10 @@
 //!
 //! ```text
 //! cargo test -p egui-shell --lib   → egui alone         → no fonts  → 116 pass
-//! cargo test --workspace           → pdfce-gui → eframe → fonts     → 2 fail
+//! cargo test --workspace           → pdfcer-gui → eframe → fonts     → 2 fail
 //! ```
 //!
-//! Cargo unifies features across a workspace build, so `pdfce-gui`'s
+//! Cargo unifies features across a workspace build, so `pdfcer-gui`'s
 //! dependency on `eframe` (which enables `egui/default_fonts`) silently
 //! changed what *this crate's own tests* measured. The same source, the
 //! same assertions, two different answers, and the narrower command — the
@@ -45,7 +45,7 @@
 //! TrueType face built in memory by this crate, and asserts that it took
 //! effect before asserting anything else. The numbers below are then
 //! **identical under both commands** and cannot be changed by any feature
-//! any sibling crate turns on. If someone removes `pdfce-gui` from the
+//! any sibling crate turns on. If someone removes `pdfcer-gui` from the
 //! workspace, or adds a crate that pulls in a different font set, these
 //! tests measure exactly what they measured today.
 //!

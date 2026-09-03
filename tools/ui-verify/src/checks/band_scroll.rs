@@ -35,7 +35,7 @@
 //! Measured 2026-09-02: `about_reports_the_build`,
 //! `shortcuts_reference_is_live` and `properties_metadata_round_trips` all
 //! SKIPPED with that message at the harness's default 1,100 pt window, where
-//! the File tab's **Document** and **pdfce** groups are two and three stops
+//! the File tab's **Document** and **pdfcer** groups are two and three stops
 //! away. All three were worked around with `session.maximize()`, which is a
 //! good thing for those three to do for their own reasons and does nothing at
 //! all for the next check to meet this.

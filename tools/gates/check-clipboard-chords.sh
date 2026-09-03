@@ -43,7 +43,7 @@
 # Ctrl+C had never copied it — in any mode, since the day it was written. The
 # object clipboard answered instead and wrote its marker, so the operator swept
 # some text, pressed Ctrl+C, pasted into Notepad and read
-# "1 object copied from pdfce. Paste it back into pdfce to place it."
+# "1 object copied from pdfcer. Paste it back into pdfcer to place it."
 #
 # Its unit tests injected `Event::Key { key: C }` and passed throughout.
 #

@@ -15,7 +15,7 @@
 #     Adding iccce-profile 0.3.0  (MIT)
 #
 # `THIRD_PARTY_LICENSES.md` named none of them. That file is **shipped beside
-# the exe** by `tools/package-portable.py`, and `pdfce-gui.exe` statically links
+# the exe** by `tools/package-portable.py`, and `pdfcer-gui.exe` statically links
 # all three — so the package would have distributed MIT-licensed code while its
 # own attribution file said it did not.
 #

@@ -1,6 +1,6 @@
-# pdfce — user manual
+# pdfcer — user manual
 
-For the portable build. Unzip it anywhere, run **`pdfce-gui.exe`**. There is no
+For the portable build. Unzip it anywhere, run **`pdfcer-gui.exe`**. There is no
 installer and nothing is written outside the folder you unzipped, except the
 settings described under [Where your settings live](#where-your-settings-live).
 
@@ -21,7 +21,7 @@ settings described under [Where your settings live](#where-your-settings-live).
 11. [Redaction](#redaction)
 12. [Forms — filling one in, and making one](#forms)
 13. [Printing](#printing)
-14. [Settings, and why pdfce asks you things other viewers do not](#settings)
+14. [Settings, and why pdfcer asks you things other viewers do not](#settings)
 15. [Every keyboard shortcut](#every-keyboard-shortcut)
 16. [Where your settings live](#where-your-settings-live)
 17. [When something goes wrong](#when-something-goes-wrong)
@@ -77,13 +77,13 @@ The four fit buttons at the bottom: **actual size**, **fit page**, **fit
 width**, **fit height**. All four also centre the view — pressing fit width
 puts the page in the middle of the window, not off to one side.
 
-★ **pdfce zooms much further than most viewers** — to a trillion percent — and
+★ **pdfcer zooms much further than most viewers** — to a trillion percent — and
 the detail is really there rather than a blur of a big picture. It stays fast
 because it only ever draws what is on your screen, so a huge zoom costs no more
 than a small one.
 
 If you have set a maximum zoom in Settings and want more, that number is yours
-to raise; pdfce does not decide it for you.
+to raise; pdfcer does not decide it for you.
 
 ---
 
@@ -93,7 +93,7 @@ Seven tabs, and each answers one question:
 
 | tab | the question it answers |
 |---|---|
-| **File** | what do I do with the file as a whole, or with pdfce itself? |
+| **File** | what do I do with the file as a whole, or with pdfcer itself? |
 | **View** | what is on my screen, and how is the page laid out? |
 | **Pages** | what am I doing to the set of pages? |
 | **Edit** | what am I changing about content that is already there? |
@@ -153,8 +153,8 @@ rather than in millimetres or inches. If a drawing has more than one scale on
 it, **Dimension groups** lets you keep them apart instead of forcing everything
 through one.
 
-★ Measurements pdfce writes are its own and are stored so it can read them back.
-Dimensions that came from your CAD package are *content* and pdfce will not
+★ Measurements pdfcer writes are its own and are stored so it can read them back.
+Dimensions that came from your CAD package are *content* and pdfcer will not
 quietly change them.
 
 ---
@@ -198,7 +198,7 @@ a PDF with no pages.
 **Ctrl+E** edits text that is already on the page. **Ctrl+Shift+E** adds new
 text.
 
-What pdfce can do to **new** text: choose the typeface (including bold and
+What pdfcer can do to **new** text: choose the typeface (including bold and
 italic), the size, the colour, the alignment and the line spacing.
 
 What it **cannot yet do** is restyle text that is already there — you can change
@@ -216,11 +216,11 @@ capability rather than several.
 Some PDFs store text as drawings with **no record of which letters they are**.
 It renders perfectly and prints perfectly, and nothing can search it.
 
-If you search a document like that, pdfce will tell you: *"No matches. 2 fonts
+If you search a document like that, pdfcer will tell you: *"No matches. 2 fonts
 in this document store text that cannot be searched, so there may be more."*
 
 ★ Acrobat has the same limitation and says nothing at all. The text is not
-missing and pdfce is not failing — the *file* does not carry the information.
+missing and pdfcer is not failing — the *file* does not carry the information.
 **Recognise text** (File ▸ Recognise) adds a searchable layer over such a page.
 
 ---
@@ -236,7 +236,7 @@ actually removed, and **it cannot be undone**.
 ### ★★ The warning to read
 
 If the document contains text that cannot be searched (see above), then
-**"mark every match" cannot find it**. pdfce says so, in the redaction panel:
+**"mark every match" cannot find it**. pdfcer says so, in the redaction panel:
 
 > *N fonts in this document store text that cannot be searched. Any matches
 > inside them were NOT marked and are still in the file.*
@@ -275,13 +275,13 @@ The settings you accept carry over to the next field you place — so a column o
 identical check boxes is one set of choices and then a row of clicks.
 
 ★ **Give every field a different name.** Two fields with the same name are
-*one* field shown twice: type in either and both change. pdfce numbers new
+*one* field shown twice: type in either and both change. pdfcer numbers new
 fields for you so this cannot happen by accident, and it tells you if it does.
 
 ★★ **Radio buttons are the exception, and this is the bit worth reading.** A set
 of radio buttons is *supposed* to share one name — that is what makes picking
 one clear the others. So give every button in a set the **same group name**, and
-a **different value**. pdfce keeps the group name for you and advances the value
+a **different value**. pdfcer keeps the group name for you and advances the value
 as you place them.
 
 ### Changing one that is already there
@@ -297,18 +297,18 @@ split every program that both fills and builds forms uses, because one click
 cannot do both. Drop to Review to go back to filling on the page.
 
 ★ **Required, read-only, the tooltip and the border can only be set when a field
-is placed.** pdfce cannot change them afterwards yet. To change one, delete the
+is placed.** pdfcer cannot change them afterwards yet. To change one, delete the
 field and place a new one.
 
-### The tooltip, and why pdfce asks
+### The tooltip, and why pdfcer asks
 
 Every new field asks for a tooltip. It is what a screen reader reads out, and
-what shows on hover. Leaving it blank is a fine answer and pdfce accepts it —
+what shows on hover. Leaving it blank is a fine answer and pdfcer accepts it —
 what it will not do is decide for you and write something you never chose.
 
 ### The button that cannot do anything yet
 
-**Button** is on the ribbon and greyed. pdfce can draw a button correctly and
+**Button** is on the ribbon and greyed. pdfcer can draw a button correctly and
 cannot yet give it anything to *do*, so one placed today would look right and
 sit there. It stays visible, greyed, rather than disappearing, so you can see
 that it is coming.
@@ -332,27 +332,27 @@ can see that before you press it.
 
 **File ▸ Settings**.
 
-Most viewers decide these things for you. pdfce asks, because the PDF standard
+Most viewers decide these things for you. pdfcer asks, because the PDF standard
 genuinely does not say — and where it is silent, two viewers can both be right
 and disagree. Every setting tells you *what the standard leaves open*, what each
 option does, and whether it affects only what you see or also what is saved.
 
 ### Presets
 
-At the top: **pdfce recommended**, which puts everything back if you have been
+At the top: **pdfcer recommended**, which puts everything back if you have been
 experimenting, and a list of published standards — PDF/X, PDF/A, PDF/UA.
 
 ★ Choosing a standard tells you **how much of itself that standard actually
 specifies**. For PDF/X-4 it is one answer out of six; the rest are inferred or
-are pdfce's own judgement. It also names what the standard says nothing about,
+are pdfcer's own judgement. It also names what the standard says nothing about,
 so a button bearing a standard's name cannot imply more authority than it has.
 
 ### The ones worth knowing about
 
 | setting | why you might touch it |
 |---|---|
-| **How CMYK colour is shown** | pure blacks in CAD line art. pdfce's default keeps them neutral |
-| **Shrinking a large image to fit** | pdfce smooths; the alternative is faster and can make thin lines shimmer |
+| **How CMYK colour is shown** | pure blacks in CAD line art. pdfcer's default keeps them neutral |
+| **Shrinking a large image to fit** | pdfcer smooths; the alternative is faster and can make thin lines shimmer |
 | **Overprint in print-ready files** | if overprinted areas look wrong |
 | **A gradient fill that comes out scrambled** | rare, and this is the fix when it happens |
 
@@ -418,14 +418,14 @@ Beside the program, in a folder called **`userdata`**:
 | file | what it holds |
 |---|---|
 | `settings.txt` | the choices in the Settings window |
-| `preferences.txt` | how pdfce draws — sharpness, cache, zoom limits |
+| `preferences.txt` | how pdfcer draws — sharpness, cache, zoom limits |
 | `layout.ron` | your panel arrangement |
 | `recent.txt` | recently opened files |
 
-**Keep the `userdata` folder when you update pdfce.** Replace everything else.
+**Keep the `userdata` folder when you update pdfcer.** Replace everything else.
 
 All of them are plain text you can read and edit. An unknown line is reported
-and kept, not deleted, and a value pdfce cannot understand falls back for that
+and kept, not deleted, and a value pdfcer cannot understand falls back for that
 one setting alone — one bad line never costs you the rest.
 
 ---
@@ -445,7 +445,7 @@ into a `⌄` button, or scrolled off — look for `›` at the right of the ribb
 **Something looks different from Acrobat.** That is often deliberate and the
 Settings window explains which, and why. Colour and overprint are the usual two.
 
-**pdfce will not start at all.** If Windows reports a memory error, another
+**pdfcer will not start at all.** If Windows reports a memory error, another
 program is usually holding too many system resources. Restarting that program —
 or the machine — clears it.
 

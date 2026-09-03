@@ -731,7 +731,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     {
         return Ok(Some(format!(
             "the Add button raised its action and the engine REFUSED it: {refusal}. The shell \
-             half works; this is a `pdfce-core` verdict and belongs in a request."
+             half works; this is a `pdfcer-core` verdict and belongs in a request."
         )));
     }
     if trace.last(APPLIED).is_none() {

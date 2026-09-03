@@ -4,7 +4,7 @@
 //! # ★★★ The defect
 //!
 //! `OPERATOR_REQUESTS.md` O108. Found 2026-09-03 by
-//! `tools/security-coverage.py` — an instrument keyed on `pdfce-core`'s own API
+//! `tools/security-coverage.py` — an instrument keyed on `pdfcer-core`'s own API
 //! rather than on any document of ours — while answering the operator's
 //! question *"can we get all of the encryption and signature features that have
 //! been implemented in the engine under one new tab?"*
@@ -44,7 +44,7 @@
 //!
 //! ★★★ **D is not decoration and it is the phase most worth having.** The
 //! password travels through an `Action` in a queue, this crate traces liberally
-//! to stderr under `PDFCE_DIAG`, and *this harness captures that stderr to a
+//! to stderr under `PDFCER_DIAG`, and *this harness captures that stderr to a
 //! file it keeps as evidence*. One `format!("{action:?}")` anywhere on the path
 //! would write the operator's password into `target/ui-verify/`, in plain text,
 //! in a directory whose whole purpose is to be kept and read — and it would fail
@@ -69,7 +69,7 @@ const OPEN: &str = "password.open";
 /// `--pdf` will be an ordinary one.
 const FIXTURE: &str = "fixtures/encrypted-aes-128.pdf";
 /// Its user password. Published in the fixture's own `PROVENANCE.md` and in
-/// pdfce's; it is synthetic test data.
+/// pdfcer's; it is synthetic test data.
 const RIGHT: &str = "userpw";
 /// A password that is not it.
 const WRONG: &str = "notthepassword";

@@ -1,15 +1,15 @@
-# EDITABLE_SURFACES.md — every verb `pdfce-core` implements, and where the operator reaches it
+# EDITABLE_SURFACES.md — every verb `pdfcer-core` implements, and where the operator reaches it
 
 **Written 2026-08-28, in answer to a question this project could not answer from
 its own documents:**
 
 > *"confirm that you have built every editable surface into the GUI that has
-> been implemented in pdfce"*
+> been implemented in pdfcer"*
 
 `FEATURES.md` says what the GUI does. `NO_SURFACE.md` lists compiled-in values
 with no control. `GUI_ROADMAP.md` says what is planned. **None of the three is
 keyed on the engine's verb list**, so none of them could answer *"is there a
-verb `pdfce-core` implements that nothing in this shell calls?"*
+verb `pdfcer-core` implements that nothing in this shell calls?"*
 
 The answer was **yes, twelve times**, and the pattern in the misses matters more
 than the count: three were capabilities the engine had shipped **in answer to
@@ -25,8 +25,8 @@ project's own doc comments still recorded the capability as blocked.
 ## ★★★ The instrument, and why this file is not a hand-written list
 
 `tools/verb-coverage.py`. It parses `impl EditSession` out of
-`D:\Dev\pdfce\crates\pdfce-core\src\edit.rs`, takes every `pub fn` declared in
-it, and greps `crates/pdfce-gui/src` for each name.
+`D:\Dev\pdfcer\crates\pdfcer-core\src\edit.rs`, takes every `pub fn` declared in
+it, and greps `crates/pdfcer-gui/src` for each name.
 
 ```
 python tools/verb-coverage.py            # the misses, one per line
@@ -333,8 +333,8 @@ of an **intersection nothing occupied**:
 
 | needed | had | short by |
 |---|---|---|
-| certified | `fixtures/certified-comments.pdf`, `fixtures/threaded-comments.pdf`, `D:/Dev/pdfce/…/forms/certified-p2-form.pdf` | all three are **flat** — no dots in any field name, so `AcroForm::groups` is empty |
-| nested | `D:/Dev/pdfce/…/forms/nested-form.pdf` | **uncertified** — no `/Perms`, no signature, every gate open |
+| certified | `fixtures/certified-comments.pdf`, `fixtures/threaded-comments.pdf`, `D:/Dev/pdfcer/…/forms/certified-p2-form.pdf` | all three are **flat** — no dots in any field name, so `AcroForm::groups` is empty |
+| nested | `D:/Dev/pdfcer/…/forms/nested-form.pdf` | **uncertified** — no `/Perms`, no signature, every gate open |
 
 `tools/ui-verify`'s `structural_refusals_are_sentences_not_controls` asserts
 that a certified document's Field-groups section lists its grouping nodes and
@@ -363,11 +363,11 @@ beside it are still live.
 `AcroForm::groups` is empty makes the check pass while testing nothing, which is
 worse than the SKIP it replaces. So the four properties are pinned by a unit
 test beside the fixture's users
-(`crates/pdfce-gui/src/app/actions/forms/delete.rs`,
+(`crates/pdfcer-gui/src/app/actions/forms/delete.rs`,
 `the_certified_nested_fixture_is_both_certified_and_nested`): it loads,
 `deletion_refusal` is `Some`, `AcroForm::groups` is exactly
 `["Personal.Address", "Personal"]` (post-order, deepest first), and
-`fill_refusal` is `None`. Cross-checked against `pdfce-cli`: `list-fields`
+`fill_refusal` is `None`. Cross-checked against `pdfcer`: `list-fields`
 reports the four terminals, `list-signatures` reports
 `signatures=1 certifications=1`, `delete-field` exits 9 naming `P=2`, and
 `fill-field` exits 0.
@@ -377,14 +377,14 @@ reports the four terminals, `list-signatures` reports
 | Verb | Reason |
 |---|---|
 | `copy_annotations` | ⬜ **Open, and narrowed.** The object clipboard copied a markup by reading it into a `MarkupSpec` and authoring a new one, so everything a spec cannot express was lost — and on 2026-08-28 that came to include the note, the author, the date and the opacity, all of which this shell had just learned to author. `carried_options` closes those four. The general fix (`copy_annotations` → `ObjectClip` → `paste_objects`) is **asked of the engine rather than assumed**, because it is not known whether a `/Popup`, an `/IRT` reply chain or an `/RC` rich-text body survive that path either, and a paste that silently orphans a reply is worse than the loss it replaces. ⇒ The general form: **a copy implemented as a re-author loses ground every time the authoring side gains a key**, silently, in a direction no screenshot can see. |
-| `add_named_destination` | ⛔ **Not a gap — a deliberate absence, and the engine agrees.** Nothing in this shell constructs a `Destination`: the one authoring call passes `Destination::Page { view: DestView::Fit }` and cannot pass anything else, because there is no destination chooser. The engine's own note says why that is right: *"a destination chooser offering fits pdfce cannot write would be a control whose options are mostly refusals."* The **reading** side already resolves named destinations, so the Bookmarks panel navigates them in CAD and Word exports today. |
+| `add_named_destination` | ⛔ **Not a gap — a deliberate absence, and the engine agrees.** Nothing in this shell constructs a `Destination`: the one authoring call passes `Destination::Page { view: DestView::Fit }` and cannot pass anything else, because there is no destination chooser. The engine's own note says why that is right: *"a destination chooser offering fits pdfcer cannot write would be a control whose options are mostly refusals."* The **reading** side already resolves named destinations, so the Bookmarks panel navigates them in CAD and Word exports today. |
 | `field_defaults` | ⛔ **Not a gap.** *"Make another field like this one"* is already how this shell behaves — `FormDefaults::next` carries the previous field's settings forward, with the **name** the one thing that deliberately does not carry. What the verb adds is copying from *any named* field rather than the last one placed, which is a chooser. An operator call, not a hole. |
 
 ---
 
 ## What this register does NOT cover, said so nobody reads it as complete
 
-- **`pdfce-render` and `pdfce-print`.** This is the editing surface only.
+- **`pdfcer-render` and `pdfcer-print`.** This is the editing surface only.
 - **Verbs on other engine types** — `MarkupNote`, `NewTextField`,
   `FieldEdit`, `MarkupStyle` and their builders. The tool scopes itself to
   `impl EditSession` deliberately: those types are *operands*, and an unused

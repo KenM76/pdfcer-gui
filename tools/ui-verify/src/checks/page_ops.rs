@@ -10,7 +10,7 @@
 //! nothing at all, and `FEATURES.md` said the Pages panel shipped *"a context
 //! menu of the six page verbs"*.
 //!
-//! The suite was green throughout, and it had to be. `pdfce-core` tests
+//! The suite was green throughout, and it had to be. `pdfcer-core` tests
 //! `delete_pages`, `reorder_pages` and `rotate_pages` exhaustively;
 //! `shell::commands` tests that all six are registered;
 //! `panels::pages::select` tests the multi-select that feeds them. What no test
@@ -107,7 +107,7 @@
 //! [`crate::checks`]' rule for a new check is that *"it must fail against a
 //! build where the wiring is absent"*, and that every check here "has been run
 //! against such a build and seen to fail". Two builds were planted against
-//! `D:\Dev\pdfce\fixtures\synthetic\pageops\four-pages.pdf` (4 pages, 2453 B,
+//! `D:\Dev\pdfcer\fixtures\synthetic\pageops\four-pages.pdf` (4 pages, 2453 B,
 //! no `/Rotate`):
 //!
 //! | Plant | What was changed | Result |
@@ -142,11 +142,11 @@
 //!   panel, finding a tile and right-clicking it; the menu that opens is an
 //!   `egui` popup which declares no `ui-rect` regions, so there is nothing to
 //!   aim at. The six verbs it offers are the six driven here through the ribbon,
-//!   and both routes reach `PdfceApp::dispatch_command` — which is the whole
+//!   and both routes reach `PdfcerApp::dispatch_command` — which is the whole
 //!   point of one choke point.
 //! * **What is inside the extracted file.** `pages.extract` and
 //!   `file.save_copy` reach the same picker through the same
-//!   `PDFCE_DIAG_SAVE_PATH` seam — one variable, one path — so phase E
+//!   `PDFCER_DIAG_SAVE_PATH` seam — one variable, one path — so phase E
 //!   overwrites phase A2's file and it cannot be re-opened at the end. Phase A2
 //!   therefore proves the **join** (a ribbon click reaches the picker, the
 //!   picker's answer reaches a write, and what lands is a freestanding PDF) and
@@ -213,7 +213,7 @@ const DELETE: (&str, &str) = ("ribbon.item.pages.delete", "pages.delete");
 ///
 /// Driven first and its file thrown away, because `pages.extract` and
 /// `file.save_copy` reach the *same* `crate::app::files::pick_save_path` through
-/// the *same* `PDFCE_DIAG_SAVE_PATH` seam — one variable, one path — so the
+/// the *same* `PDFCER_DIAG_SAVE_PATH` seam — one variable, one path — so the
 /// later of the two overwrites the earlier. See the phase for what that
 /// division does and does not buy.
 const EXTRACT: (&str, &str) = ("ribbon.item.pages.extract", "pages.extract");
@@ -259,7 +259,7 @@ const SAVED_EVENT: &str = "save-copy";
 const FAILED_EVENT: &str = "save-copy-failed";
 
 /// The seam that answers the save dialog. Shared with `save_copy_round_trip`.
-const SAVE_PATH_ENV: &str = "PDFCE_DIAG_SAVE_PATH";
+const SAVE_PATH_ENV: &str = "PDFCER_DIAG_SAVE_PATH";
 
 /// What phase H looks for in the saved copy's bytes.
 const ROTATED_90: &[u8] = b"/Rotate 90";
@@ -595,7 +595,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              rotation reached the file by finding `/Rotate 90` in the saved copy and NOT in the \
              source; on this document that evidence would be indistinguishable from the \
              fixture's own furniture. Point --pdf at a document with no page rotation — \
-             `D:\\Dev\\pdfce\\fixtures\\synthetic\\pageops\\four-pages.pdf` is the one this project uses.",
+             `D:\\Dev\\pdfcer\\fixtures\\synthetic\\pageops\\four-pages.pdf` is the one this project uses.",
             pdf.display()
         )));
     }
@@ -613,7 +613,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // =======================================================================
     // The editing process. Scoped, so it is killed before the second one
-    // launches — two pdfce windows competing for the foreground would make
+    // launches — two pdfcer windows competing for the foreground would make
     // every click after the first one a race.
     // =======================================================================
     let pages_before;
@@ -973,11 +973,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     report.note(
         "NOT covered here: the page tile's context menu, which offers these same six verbs. An \
          egui popup declares no ui-rect regions, so there is nothing to aim a click at — and \
-         both routes reach `PdfceApp::dispatch_command`, which is what one choke point is for",
+         both routes reach `PdfcerApp::dispatch_command`, which is what one choke point is for",
     );
     report.note(
         "NOT covered here: what is INSIDE the extracted file. `pages.extract` and \
-         `file.save_copy` share one PDFCE_DIAG_SAVE_PATH seam, so phase E overwrote phase A2's \
+         `file.save_copy` share one PDFCER_DIAG_SAVE_PATH seam, so phase E overwrote phase A2's \
          file. The join — click to picker to write, landing a freestanding PDF — is phase A2's; \
          the content is covered by `app::actions::pages`' unit tests, which write an extraction \
          and load it back, including one carrying an unsaved rotation",
@@ -1072,14 +1072,14 @@ mod tests {
     /// application really writes.
     #[test]
     fn every_field_this_check_reads_is_parsed_from_a_real_line() {
-        let text = "pdfce-diag start argv1=None\n\
-                    pdfce-diag open ok pages=4 path=\"D:\\\\jobs\\\\Sheet 1.pdf\"\n\
+        let text = "pdfcer-diag start argv1=None\n\
+                    pdfcer-diag open ok pages=4 path=\"D:\\\\jobs\\\\Sheet 1.pdf\"\n\
                     egui-shell-diag ribbon-command-invoked id=pages.delete handler=310\n\
-                    pdfce-diag rotate-pages page=0 n=1 epoch=1 disclosures=none\n\
-                    pdfce-diag pages-resync was=4 now=4 renumbered=0 page=1 epoch=1\n\
-                    pdfce-diag delete-pages page=0 n=1 epoch=3 disclosures=none\n\
-                    pdfce-diag pages-resync was=4 now=3 renumbered=1 page=1 epoch=3";
-        let app = Trace::parse(text, "pdfce-diag");
+                    pdfcer-diag rotate-pages page=0 n=1 epoch=1 disclosures=none\n\
+                    pdfcer-diag pages-resync was=4 now=4 renumbered=0 page=1 epoch=1\n\
+                    pdfcer-diag delete-pages page=0 n=1 epoch=3 disclosures=none\n\
+                    pdfcer-diag pages-resync was=4 now=3 renumbered=1 page=1 epoch=3";
+        let app = Trace::parse(text, "pdfcer-diag");
         let shell = Trace::parse(text, driving::SHELL_TRACE_PREFIX);
 
         assert!(app.started("start"));

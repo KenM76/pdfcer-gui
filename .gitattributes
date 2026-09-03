@@ -2,7 +2,7 @@
 #
 # git applies the LAST matching pattern for a given attribute, so the
 # catch-all `* text=auto` MUST come first and every specific override MUST
-# follow it. In `D:\Dev\pdfce` this file once had the catch-all sitting in
+# follow it. In `D:\Dev\pdfcer` this file once had the catch-all sitting in
 # the middle, below the `*.pdf binary` rule, and the catch-all silently
 # WON for .pdf: `git check-attr text -- foo.pdf` reported `text: auto`,
 # not `unset`.
@@ -16,7 +16,7 @@
 # in anything git guesses is text — and git guesses by looking for NUL
 # bytes, which a small synthetic PDF may not contain.
 #
-# The damage that caused in pdfce (found 2026-08-02, in a fresh worktree):
+# The damage that caused in pdfcer (found 2026-08-02, in a fresh worktree):
 #
 #   - On checkout, 69 binary fixtures were CRLF-inflated. A PDF's
 #     cross-reference table stores ABSOLUTE BYTE OFFSETS, so every offset
@@ -37,7 +37,7 @@
 # That last point is why this file predates the first commit here. The
 # initial `git add` of this workspace was made WITHOUT it, noticed, and
 # unwound with `git rm -r --cached` before anything was committed,
-# precisely because the pdfce finding says the corruption can land at add
+# precisely because the pdfcer finding says the corruption can land at add
 # time. There was no history to lose at that point; there would have been
 # five minutes later.
 #
@@ -70,7 +70,7 @@
 #
 #   * they are `include_str!`-embedded, so a line ending is compiled into
 #     the program and moves `package-portable.py`'s source digest; and
-#   * they were verified byte-identical to `D:\Dev\pdfce`'s copies with
+#   * they were verified byte-identical to `D:\Dev\pdfcer`'s copies with
 #     `cmp` at salvage time, and a checkout that silently inflated them to
 #     CRLF would end that property without touching a single glyph.
 *.svg text eol=lf
@@ -92,7 +92,7 @@
 # ★ `.rgba` — a RAW pixel buffer, and the reason it is listed rather than left
 # to `text=auto` is this file's own opening argument.
 #
-# `crates/pdfce-gui/assets/window-icon-64.rgba` is 64x64x4 bytes of straight
+# `crates/pdfcer-gui/assets/window-icon-64.rgba` is 64x64x4 bytes of straight
 # RGBA handed to `eframe::IconData`, which requires the length to be EXACTLY
 # `width * height * 4`. Git's binary heuristic samples the first 8,000 bytes
 # for a NUL and would very likely get this right — the icon is mostly
@@ -107,7 +107,7 @@
 *.rgba binary
 
 # Windows resource scripts. Pinned to LF with the `.rs`/`.toml` family rather
-# than left to `text=auto`, for the same reason they are: `pdfce-gui.rc` is
+# than left to `text=auto`, for the same reason they are: `pdfcer-gui.rc` is
 # compiled by `rc.exe` during the build, so its bytes reach a build product,
 # and `package-portable.py` digests the source tree.
 *.rc text eol=lf

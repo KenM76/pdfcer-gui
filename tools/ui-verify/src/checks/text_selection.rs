@@ -600,9 +600,9 @@ mod tests {
     #[test]
     fn only_a_non_empty_selection_counts() {
         let trace = Trace::parse(
-            "pdfce-diag canvas-text-selection via=clear page=0 chars=0 quads=0\n\
-             pdfce-diag canvas-text-selection via=drag page=0 chars=27 quads=2",
-            "pdfce-diag",
+            "pdfcer-diag canvas-text-selection via=clear page=0 chars=0 quads=0\n\
+             pdfcer-diag canvas-text-selection via=drag page=0 chars=27 quads=2",
+            "pdfcer-diag",
         );
         let found = selections(&trace);
         assert_eq!(found.len(), 1, "the clear must not be counted");
@@ -619,8 +619,8 @@ mod tests {
     #[test]
     fn a_selection_with_no_boxes_is_visible_to_the_filter() {
         let trace = Trace::parse(
-            "pdfce-diag canvas-text-selection via=drag page=0 chars=27 quads=0",
-            "pdfce-diag",
+            "pdfcer-diag canvas-text-selection via=drag page=0 chars=27 quads=0",
+            "pdfcer-diag",
         );
         let found = selections(&trace);
         assert_eq!(found.len(), 1, "it is still a selection");

@@ -16,7 +16,7 @@
 //! marks, form fills — was reachable by an operator with no way to take any of
 //! it back.
 //!
-//! The whole suite was green throughout, and it had to be. `pdfce-core` tests
+//! The whole suite was green throughout, and it had to be. `pdfcer-core` tests
 //! `EditSession::undo` exhaustively; `shell::commands` tests the registration
 //! and the two predicates; `app::conditions` tests that the ribbon reads the
 //! set it publishes. What no test in the workspace can observe is the **join** —
@@ -646,7 +646,7 @@ fn history_step(
                     None => format!(
                         "There is no `{UNIMPLEMENTED_EVENT}` and no `{}` either, so the command \
                          reached an arm and the arm raised no action — look at whether \
-                         `Action::Undo`/`Action::Redo` are matched in `PdfceApp::apply`.",
+                         `Action::Undo`/`Action::Redo` are matched in `PdfcerApp::apply`.",
                         step.declined
                     ),
                 }
@@ -1026,17 +1026,17 @@ mod tests {
     #[test]
     fn the_invalidation_reading_counts_lines_rather_than_finding_one() {
         let text = "\
-pdfce-diag start argv1=None\n\
-pdfce-diag objects n=812 page=0 paths=700 text=100 images=12 forms=0\n\
-pdfce-diag render-spawn gen=1 page=0 scale=2\n\
-pdfce-diag add-markup page=0 n=1 epoch=1 disclosures=none\n\
-pdfce-diag objects n=812 page=0 paths=700 text=100 images=12 forms=0\n\
-pdfce-diag render-spawn gen=2 page=0 scale=2\n";
+pdfcer-diag start argv1=None\n\
+pdfcer-diag objects n=812 page=0 paths=700 text=100 images=12 forms=0\n\
+pdfcer-diag render-spawn gen=1 page=0 scale=2\n\
+pdfcer-diag add-markup page=0 n=1 epoch=1 disclosures=none\n\
+pdfcer-diag objects n=812 page=0 paths=700 text=100 images=12 forms=0\n\
+pdfcer-diag render-spawn gen=2 page=0 scale=2\n";
         let before = Invalidation {
             objects: 1,
             rasters: 1,
         };
-        let after = Invalidation::of(&Trace::parse(text, "pdfce-diag"));
+        let after = Invalidation::of(&Trace::parse(text, "pdfcer-diag"));
         assert_eq!(
             after,
             Invalidation {
@@ -1051,7 +1051,7 @@ pdfce-diag render-spawn gen=2 page=0 scale=2\n";
         // IDENTICAL in both lines, because an annotation is not a content
         // object. A check that asserted on the count rather than on the line
         // would see nothing happen at all.
-        let parsed = Trace::parse(text, "pdfce-diag");
+        let parsed = Trace::parse(text, "pdfcer-diag");
         let objects: Vec<&str> = parsed
             .events(OBJECTS_EVENT)
             .filter_map(|l| l.get("n"))
@@ -1065,13 +1065,13 @@ pdfce-diag render-spawn gen=2 page=0 scale=2\n";
     #[test]
     fn the_application_and_shell_streams_do_not_contaminate_each_other() {
         let text = "\
-pdfce-diag start argv1=None\n\
+pdfcer-diag start argv1=None\n\
 egui-shell-diag ribbon-command-invoked id=edit.undo handler=490 surface=qat\n\
-pdfce-diag undo kind=AddAnnotation undo_depth=1\n\
-pdfce-diag undo-applied page=0 n=1 epoch=2 disclosures=none\n\
-pdfce-diag comments-panel pages=1 listed=12 with_note=0 excluded_total=0\n\
-pdfce-diag objects-unavailable page=0 reason=decompose-failed detail=\"bad stream\"\n";
-        let app = Trace::parse(text, "pdfce-diag");
+pdfcer-diag undo kind=AddAnnotation undo_depth=1\n\
+pdfcer-diag undo-applied page=0 n=1 epoch=2 disclosures=none\n\
+pdfcer-diag comments-panel pages=1 listed=12 with_note=0 excluded_total=0\n\
+pdfcer-diag objects-unavailable page=0 reason=decompose-failed detail=\"bad stream\"\n";
+        let app = Trace::parse(text, "pdfcer-diag");
         let shell = Trace::parse(text, driving::SHELL_TRACE_PREFIX);
 
         assert!(app.started("start"));

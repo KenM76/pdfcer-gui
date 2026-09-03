@@ -1,6 +1,6 @@
 # NO_SURFACE.md — shipped behaviour with a hard-coded value and no control
 
-**What this is.** Every tunable in `crates/pdfce-gui/src/` that an operator
+**What this is.** Every tunable in `crates/pdfcer-gui/src/` that an operator
 would plausibly want to change and cannot: a compiled-in constant, a `Default`
 impl, or a field only settable from code. One row each, with `file:line`.
 
@@ -157,7 +157,7 @@ constant is left in place of a control.
 ### 1b. ★ The opacity row was wrong, and it is the SECOND stale external blocker found in one day
 
 Corrected **2026-08-19**. Both rows above said *"blocked on the engine — `/CA` is
-not written"*. `pdfce-core` writes it, from `EditSession::set_markup_style`, and
+not written"*. `pdfcer-core` writes it, from `EditSession::set_markup_style`, and
 has a test for both directions (`edit.rs:24514` sets `0.4`, `:24528` asserts the
 key is gone after `StyleEdit::Clear`).
 
@@ -190,7 +190,7 @@ Three things this project can do about it, in descending order of how much they
 are worth:
 
 1. **Re-derive the claim before acting on it, every time.** Both of these took
-   one `grep` of `D:\Dev\pdfce\crates\pdfce-core\src\` to disprove. The cost
+   one `grep` of `D:\Dev\pdfcer\crates\pdfcer-core\src\` to disprove. The cost
    of checking is a minute; the cost of not checking was three weeks of the
    operator asking for a tool whose only blocker had already been removed.
 2. **Write the blocker as a CITATION, not as a verdict.** *"`MarkupSpec` has no
@@ -327,8 +327,8 @@ request folder is explicitly **not** a durable record.
 
 **★ The overlay-text row has a sharper form than the one above, found by a
 concurrent session and worth having here.** The gap is the **disclosure**, not
-the paint. `pdfce`'s own `ARCHITECTURE.md` describes the deferral as *"disclosed
-at mark time"* — and no mechanism in `pdfce-core` discloses it at mark time or
+the paint. `pdfcer`'s own `ARCHITECTURE.md` describes the deferral as *"disclosed
+at mark time"* — and no mechanism in `pdfcer-core` discloses it at mark time or
 at any other time: `add_redaction` takes the text without comment and the
 `RedactionReport` has no note for it. **The disclosure exists in their documents
 and not in their API**, so a shell reading only the API — which is the situation
@@ -352,7 +352,7 @@ believing the wrong thing about content that no longer exists.
 
 ### 3b. ★★ The one gap in this file that is a DISCLOSURE, not a tunable
 
-Found **2026-08-19**, while answering the `pdfce` session's `gui`-column re-base.
+Found **2026-08-19**, while answering the `pdfcer` session's `gui`-column re-base.
 It is listed separately from the table above because it is a different kind of
 thing, and because it is the most serious entry in this document.
 
@@ -361,7 +361,7 @@ thing, and because it is the most serious entry in this document.
 `Document::recovery()` is now read at open. The counters ride along with the
 `open ok` trace line, and **File ▸ Properties** carries the operator-facing
 disclosure: how many objects were recovered by scanning, how many were defined
-more than once so pdfce had to choose, and how many needed repairing.
+more than once so pdfcer had to choose, and how many needed repairing.
 
 ★ Verified by damaging a real file — corrupting its `startxref` offset so the
 loader must scan — and confirming the disclosure fires (`recovered=1
@@ -378,10 +378,10 @@ than decided here — it is the difference between a disclosure and a nag.
 
 ### The original entry
 
-**A document whose cross-reference table pdfce REBUILT BY SCANNING opens with
+**A document whose cross-reference table pdfcer REBUILT BY SCANNING opens with
 no indication whatsoever.**
 
-`pdfce_core::document::Document::recovery()` returns
+`pdfcer_core::document::Document::recovery()` returns
 `Option<&recover::RecoveryReport>` — `document.rs:1057` — and this shell
 **never calls it**. Nothing greps to it. The report carries, among others:
 
@@ -389,13 +389,13 @@ no indication whatsoever.**
 |---|---|
 | `reason` | why the normal load path was abandoned |
 | `file_level_objects` / `objstm_objects` | how much was recovered, and from where |
-| `last_wins_collisions` | how many objects were defined more than once, and pdfce picked one |
+| `last_wins_collisions` | how many objects were defined more than once, and pdfcer picked one |
 | `stream_lengths_recovered` | streams whose `/Length` was wrong and was re-derived from the bytes |
 | `missing_endobj_recovered` | objects with no `endobj`, terminated by inference |
 | `trailer_source` | whether the trailer is the file's own or was synthesized |
 | `offset_start` | whether the whole file is shifted from where its offsets claim |
 
-Every one of those is **an inference pdfce made that the operator cannot see**,
+Every one of those is **an inference pdfcer made that the operator cannot see**,
 which is precisely the half of rule 4 that survives the "never mark the canvas"
 clause:
 
@@ -405,7 +405,7 @@ clause:
 
 `last_wins_collisions` is the one that should have caught someone's attention
 soonest. A non-zero count means **two definitions of one object existed and
-pdfce chose between them**. The operator is looking at one of two possible
+pdfcer chose between them**. The operator is looking at one of two possible
 documents and has not been told there was a choice.
 
 **It is not blocked on anything.** The accessor is `pub`, the report's fields
@@ -413,18 +413,18 @@ are `pub`, and it needs no verb. It is a status-line note and a Diagnostics
 section, and it is the cheapest high-value surface left in this file.
 
 Recorded here rather than filed as a request because **there is nothing to ask
-`pdfce-core` for** — see §1c on how easily a gap on this side gets
+`pdfcer-core` for** — see §1c on how easily a gap on this side gets
 mis-recorded as a blocker on theirs.
 
 ---
 
 ### 3c. ★ Render diagnostics — **11 of the engine's 65 counters reach an operator**
 
-Measured **2026-08-19**, answering the `pdfce` session's question *"which of the
+Measured **2026-08-19**, answering the `pdfcer` session's question *"which of the
 twelve counters does your diagnostics surface actually read?"* The honest answer
 turned out to be a different shape from the question.
 
-`pdfce_render::Diagnostics` (`interpret.rs:192`) has **65 top-level fields**,
+`pdfcer_render::Diagnostics` (`interpret.rs:192`) has **65 top-level fields**,
 several of which are whole sub-structs. This shell reads exactly **eleven**, by
 two routes:
 
@@ -449,11 +449,11 @@ off-canvas report.* Grouped by what an operator would want to know:
 
 | what happened | the counters |
 |---|---|
-| pdfce was asked to composite and **did not** | `blend_modes_ignored`, `soft_masks_ignored`, `soft_mask_transfer_ignored`, `transparency_groups_knockout_approximated`, `overprint_refused` |
-| pdfce could not paint something it found | `shading.refused`, `shading.missing_function`, `shading.function_unloadable`, `shading.function_arity_mismatch`, `color.patterns_unpainted`, `images_codec_unsupported`, `codec_feature_unsupported`, `mask_refused`, `images_mask_unsupported` |
-| pdfce **approximated a colour** | `color.tint_transform_not_applied`, `color.separation_all_approximated`, `color.indexed_index_clamped`, `color.indexed_lookup_short`, `color.icc_alternate_used`, `color.icc_device_fallback_used`, `images_uncalibrated_colorimetry` |
+| pdfcer was asked to composite and **did not** | `blend_modes_ignored`, `soft_masks_ignored`, `soft_mask_transfer_ignored`, `transparency_groups_knockout_approximated`, `overprint_refused` |
+| pdfcer could not paint something it found | `shading.refused`, `shading.missing_function`, `shading.function_unloadable`, `shading.function_arity_mismatch`, `color.patterns_unpainted`, `images_codec_unsupported`, `codec_feature_unsupported`, `mask_refused`, `images_mask_unsupported` |
+| pdfcer **approximated a colour** | `color.tint_transform_not_applied`, `color.separation_all_approximated`, `color.indexed_index_clamped`, `color.indexed_lookup_short`, `color.icc_alternate_used`, `color.icc_device_fallback_used`, `images_uncalibrated_colorimetry` |
 | an **annotation** is not on screen | `annotations_without_ap`, `annotations_hidden`, `annotations_appearance_state_missing`, `annotations_placement_degenerate`, `page_content_suppressed` |
-| the file is malformed and pdfce coped | `lzw_framing_anomalies`, `codec_geometry_mismatch`, `xobject_depth_overflows` |
+| the file is malformed and pdfcer coped | `lzw_framing_anomalies`, `codec_geometry_mismatch`, `xobject_depth_overflows` |
 
 `annotations_without_ap` is the one that should go first. It means **a comment
 is in the file and is not being drawn** — and on a drawing an operator is
@@ -482,7 +482,7 @@ layout decision, not a capability gap.
 | Remembered per-document entries | 200 | `viewer/remembered.rs:134` | none |
 | Navigator / inspector default width | 280 / 320 | `app/modes/defaults.rs:253,260` | none |
 | Window initial / min size | 1100×800 / 640×480 | `lib.rs:107,114` | none |
-| Icon size | 16.0 pt | `icons/mod.rs:171` | ✅ **scales with the UI now** — `Settings ▸ Appearance ▸ Size of pdfce's own menus, buttons and text`, 2026-08-17. The 16 pt is still a constant and is now a size *in points*, which `pixels_per_point` multiplies; ~~no UI-scale or base-font-size control anywhere~~ |
+| Icon size | 16.0 pt | `icons/mod.rs:171` | ✅ **scales with the UI now** — `Settings ▸ Appearance ▸ Size of pdfcer's own menus, buttons and text`, 2026-08-17. The 16 pt is still a constant and is now a size *in points*, which `pixels_per_point` multiplies; ~~no UI-scale or base-font-size control anywhere~~ |
 | Icon cache | 512 | `icons/cache.rs:92` | none |
 | Status bar height / row | 30.0 / 24.0 pt | `app/status.rs:378,386` | none |
 | Object-tree point rows per part | 200 | `panels/objects/mod.rs:197` | none |
@@ -494,7 +494,7 @@ Panels surface almost nothing: only the Pages panel's **previews** checkbox
 (`panels/pages/mod.rs:238`) and the Forms rows' field editors.
 
 **★ Crate-wide widget census, re-run 2026-08-17 at `2275ee0`.** Every file in
-`crates/pdfce-gui/src/` containing a value-editing widget, by count of
+`crates/pdfcer-gui/src/` containing a value-editing widget, by count of
 occurrences:
 
 | file | what it edits |
@@ -513,7 +513,7 @@ occurrences:
 
 > **★ Corrected 2026-08-17, after this file was committed.** The sentence that
 > stood here — *"`color_edit_button` has zero hits in the entire crate. There
-> is no colour picker in pdfce at all"* — was **true when the sweep began at
+> is no colour picker in pdfcer at all"* — was **true when the sweep began at
 > `f794e27` and false by the time the sweep was filed.** `4035b64` landed two
 > `Ui::color_edit_button_srgba` calls in `canvas/markup/swatch.rs:96,106`, and
 > this file's own *Status* section above says that commit was accounted for.
@@ -534,10 +534,10 @@ occurrences:
 >
 > ```bash
 > grep -rn "color_edit_button\|DragValue\|Slider\|TextEdit\|checkbox\|ComboBox" \
->   crates/pdfce-gui/src/ --include=*.rs | grep -v "mod tests"
+>   crates/pdfcer-gui/src/ --include=*.rs | grep -v "mod tests"
 > ```
 
-So pdfce **does** have a colour picker, in exactly one place: the two markup
+So pdfcer **does** have a colour picker, in exactly one place: the two markup
 swatches. It has no colour picker for redaction fill (§3), for text-markup
 colour (§1), or for anything in the settings window. The idiom for the next one
 is set — `color_edit_button_srgba` against an `egui::Color32`, converted at the

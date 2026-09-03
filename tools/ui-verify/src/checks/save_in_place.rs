@@ -21,16 +21,16 @@
 //! byte of the payload is a window in which their only copy is a partial file.
 //! On a CAD sheet that payload is megabytes.
 //!
-//! So `save::save_in_place` writes to `<name>.pdfce-tmp` beside the target and
+//! So `save::save_in_place` writes to `<name>.pdfcer-tmp` beside the target and
 //! renames — an act that either happens or does not. This check drives the
 //! happy path; the property it pins is that **the file that comes out is a
-//! whole PDF that pdfce can read back**, which is what a half-written one would
+//! whole PDF that pdfcer can read back**, which is what a half-written one would
 //! not be.
 //!
 //! # What it does NOT need
 //!
 //! A dialog seam. That is the entire point of the feature and it is worth
-//! stating: `save_copy_round_trip` needs `PDFCE_DIAG_SAVE_PATH` because a modal
+//! stating: `save_copy_round_trip` needs `PDFCER_DIAG_SAVE_PATH` because a modal
 //! picker is a hard wall to a harness. Save has no picker, so this check drives
 //! exactly what the operator drives, with nothing substituted.
 
@@ -221,13 +221,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .len();
     if after <= before {
         return Ok(Some(format!(
-            "Save reported success and the file did not grow: {before} → {after} bytes. pdfce \
+            "Save reported success and the file did not grow: {before} → {after} bytes. pdfcer \
              writes an INCREMENTAL update, so a successful save always appends a revision — a \
              file that stayed the same size means the bytes went somewhere else, and a smaller \
              one means it was truncated."
         )));
     }
-    let stray = subject.with_extension("pdfce-tmp");
+    let stray = subject.with_extension("pdfcer-tmp");
     if stray.exists() {
         return Ok(Some(format!(
             "Save succeeded and left its temporary behind at {}. The rename is supposed to \

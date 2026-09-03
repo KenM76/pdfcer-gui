@@ -10,7 +10,7 @@ hole."*
 
 `canvas::measure::circular::click` hit-tested for a **PDF path object** and fed
 `object_sample_points` — *every anchor of every subpath of that object* — to
-Taubin's fit. Measured on his own drawing with `pdfce-cli object-list`:
+Taubin's fit. Measured on his own drawing with `pdfcer object-list`:
 
 | `SW41177.pdf` p1 | anchors | subpaths | bbox |
 |---|---:|---:|---|
@@ -59,7 +59,7 @@ residuals in the acknowledgement list with `marks_retained` first.
 
 ### ★★★ The finding to carry: the same paragraph was wrong twice in one morning
 
-1. Written from `D:\Dev\pdfce`'s **working tree**, describing cutting the engine
+1. Written from `D:\Dev\pdfcer`'s **working tree**, describing cutting the engine
    had not committed. The compiler caught it — a field did not exist on our pin.
 2. Corrected to *"vector-path redaction is not implemented this build"*, citing
    the pinned hash, **with a careful paragraph on why the dirty tree must not be
@@ -130,7 +130,7 @@ the harness making it.
 about a frame and the name is nearly true; **under load it is not**, so every
 check that settled and then clicked was acting before the interface had caught
 up. The application now emits `frame n=<count>` every tenth frame under
-`PDFCE_DIAG`, and `settle` waits for that count to advance — fast when idle,
+`PDFCER_DIAG`, and `settle` waits for that count to advance — fast when idle,
 patient when loaded, capped so a stopped application is reported by the check's
 own assertions rather than hanging the suite.
 
@@ -197,7 +197,7 @@ failure was the check.
 skipped because *"the point (1614, 629) is owned by 'Windows Script Host'"*. A
 `wscript` window (pid 41832) appeared at 22:38 and is sitting on the desktop.
 **Left alone — it is his machine and not obviously mine to close.** Two leftover
-`pdfce-gui` processes from my own runs WERE cleaned up.
+`pdfcer-gui` processes from my own runs WERE cleaned up.
 
 ### ✅ Three more skips closed — the File tab's last two groups were off the band
 
@@ -205,7 +205,7 @@ skipped because *"the point (1614, 629) is owned by 'Windows Script Host'"*. A
 `properties_metadata_round_trips` all skipped reporting a lost command. The
 commands are not lost: at the harness's default **1,100 pt** window the File tab
 publishes fourteen items and stops at `file.print`, with the whole **Document**
-and **pdfce** groups — properties, fonts, settings, shortcuts, about — folded
+and **pdfcer** groups — properties, fonts, settings, shortcuts, about — folded
 away. `session.maximize()` in each, and all three pass.
 
 ⬜ **One observation left unchased**, recorded rather than guessed at:
@@ -330,7 +330,7 @@ script can see.
 ★★★ Its first run flagged FEATURES.md's deep-zoom row — and **the row was right
 and the gate was wrong**. That request was *answered* ("scheduled as a Pass") and
 archived; the Pass never landed and there is still no reusable handle in
-`pdfce-render`. That is the failure direction that costs most: a gate that would
+`pdfcer-render`. That is the failure direction that costs most: a gate that would
 have had somebody delete a true warning to go green. The predicate is now
 **CONSUMED, not ANSWERED** — a CONSUMED note is written by this side and only
 once the capability is actually taken.
@@ -355,8 +355,8 @@ are structurally blind to the *join*, which is the only part that breaks.
 `title_build_stamp`, `field_shading` and `preset_group_reachable` were written
 and **run** this tick — green against a scratch copy of the release build, with
 him at the machine. `font_folders_lands_on_the_fonts_setting` already could and
-nobody had noticed. `PDFCE_DIAG_VIEWPORT` lays out a real window without taking
-focus, and `PDFCE_DIAG_INVOKE` raises a command at startup; between them a
+nobody had noticed. `PDFCER_DIAG_VIEWPORT` lays out a real window without taking
+focus, and `PDFCER_DIAG_INVOKE` raises a command at startup; between them a
 surprising amount is verifiable with no desktop at all.
 
 ★★★ **Two of the checks I wrote this tick were wrong rather than the code**, and
@@ -374,7 +374,7 @@ exactly like a broken feature*:
 ### ★★ The benchmark fixture moved and every document still pointed at the old path
 
 `ncored-benchmark-cad-drawing.pdf` is in `D:\Dev\pdfTests\`, not
-`D:\Dev\temp\pdfce\`. Named in `BENCHMARK.md` twice — once inside a runnable
+`D:\Dev\temp\pdfcer\`. Named in `BENCHMARK.md` twice — once inside a runnable
 command — plus `GUI_ROADMAP.md` and `HANDOFF.md`. All corrected.
 
 Found because one of the new checks **SKIPPED** and the skip was chased rather
@@ -420,7 +420,7 @@ and **B** entirely left of the media box. The band misses A, touches B, and
 **cannot enclose B** — deliberately, or it would pass under the old mode too. So
 `hits == 1` can only be B, with no index or ordering assumption.
 
-★ **Nothing new ships in the binary.** The `pdfceGUI1` build from 04:16 already
+★ **Nothing new ships in the binary.** The `pdfcer-gui1` build from 04:16 already
 behaves this way; what this tick added is the evidence.
 
 ### ★★★ A harness bound that was wrong in an instructive way
@@ -455,7 +455,7 @@ Only two rows genuinely need him:
 ### Measured this tick
 
 2,214 GUI + 422 shell + 167 ui-verify tests green. **139** driven checks.
-21/21 gates green. Published: `pdfceGUI1` 04:16 (O88), `pdfceGUI2` 22:55
+21/21 gates green. Published: `pdfcer-gui1` 04:16 (O88), `pdfcer-gui2` 22:55
 (fallback).
 
 ★ `FEATURES.md` now carries both marquee rows. The 04:16 package predates them —
@@ -544,7 +544,7 @@ window is the answer, and it is what is driven.
 
 ### ★ Published — and FEATURES.md missed the ferry
 
-**`pdfceGUI1`, 2026-09-02 04:16**, engine `fd4b752`. `pdfceGUI2` still holds the
+**`pdfcer-gui1`, 2026-09-02 04:16**, engine `fd4b752`. `pdfcer-gui2` still holds the
 22:55 build and is the fallback. The four key driven checks were re-run against
 that binary afterwards — marquee, both link checks, OCR progress — all pass.
 
@@ -618,8 +618,8 @@ before `cargo test` produced the honest *"not enough space on the disk"*.
 Cleared **16 GB** by dropping `target/debug` (regenerable; `target/release` was
 left alone because the driven checks use it).
 
-★ **89.7 GB of D: is `D:\Dev\pdfce	arget`** — the read-only tree, which also
-holds his working fallback `pdfce-gui.exe`. Not touched, and his call. Filed to
+★ **89.7 GB of D: is `D:\Dev\pdfcer	arget`** — the read-only tree, which also
+holds his working fallback `pdfcer-gui.exe`. Not touched, and his call. Filed to
 `D:/dev/rag/rust/`.
 
 ### Two R2 splits, both forced and both real seams
@@ -635,7 +635,7 @@ kind was going to require one.
 
 2,214 GUI + 422 shell + 163 ui-verify tests green. 21/21 gates green. The link
 and OCR checks were spot-checked after all of this and still pass. **The
-published build on `pdfceGUI2` is from before this tick** and does not contain
+published build on `pdfcer-gui2` is from before this tick** and does not contain
 the marquee change — which is correct, because it is not driven.
 
 ## 2026-09-01 (late evening) — READ THIS FIRST. Links work, OCR progress is driven, and one falsification had to be repaired before it meant anything
@@ -650,8 +650,8 @@ below is measured against the tree as it stands, not recalled.
 | **Tests** | **2,208** (GUI) + **422** (egui-shell) + **163** (ui-verify), 0 failing |
 | **Driven checks** | **138** (`ui-verify --list`) — 133 + 3 OCR + 2 links |
 | **Gates** | **21 / 21** green |
-| **Engine** | `pdfce-core 0.19.0` @ **`9d43079`** (it moved twice today: `d731410` → `94d640c` → `9d43079`) |
-| **Published** | **`pdfceGUI2`, 2026-09-01 22:45** · `pdfceGUI1` still holds the 19:58 build and is the fallback |
+| **Engine** | `pdfcer-core 0.19.0` @ **`9d43079`** (it moved twice today: `d731410` → `94d640c` → `9d43079`) |
+| **Published** | **`pdfcer-gui2`, 2026-09-01 22:45** · `pdfcer-gui1` still holds the 19:58 build and is the fallback |
 
 ★ **Re-measure before quoting any of these.** Six corrections have been spent on
 prose drifting from a count. The commands take under two minutes.
@@ -684,7 +684,7 @@ page appears — and the operator concludes their document's links are wrong.
 So `canvas::links::follow` has five arms and no collapsing catch-all, and each
 non-navigating one raises **its own sentence** off-canvas: a deleted target page,
 a name table lost when the file was made, another file named with its page, and
-an action pdfce recognises and never executes.
+an action pdfcer recognises and never executes.
 
 **The affordance is a cursor and nothing is drawn on the page.** A pointing hand
 over a followable link, nothing at all over one that is not. No border, no tint,
@@ -843,8 +843,8 @@ below is measured against the tree as it stands at `d725297`, not recalled.
 | **Tests** | **2,201** (GUI) + **422** (egui-shell) + **154** (ui-verify), 0 failing |
 | **Driven checks** | **133** (`ui-verify --list`) |
 | **Gates** | **21 / 21** green (`bash tools/gates/run-all.sh`) |
-| **Engine** | `pdfce-core 0.19.0` @ **`d731410`** |
-| **Published** | `pdfceGUI1`, 2026-09-01 19:58, shell `ed2de58` · **`pdfceGUI2` still holds the previous build** (18:07) and is the fallback |
+| **Engine** | `pdfcer-core 0.19.0` @ **`d731410`** |
+| **Published** | `pdfcer-gui1`, 2026-09-01 19:58, shell `ed2de58` · **`pdfcer-gui2` still holds the previous build** (18:07) and is the fallback |
 
 ★ **Re-measure before quoting any of these.** This project has spent six
 corrections on prose drifting from a count, including in the gate runner's own
@@ -976,12 +976,12 @@ per decision 058. Tracked as **O91**.
 **1. A stale binary produced a confident wrong diagnosis — again.** The bookmark
 check FAILED at 0.382 → 0.382 on its first run. Nothing was wrong with the
 feature; I had rebuilt **only the harness** and not the shell. `cargo build
---release -p ui-verify` does not rebuild `pdfce-gui`. ⇒ **Build the whole
+--release -p ui-verify` does not rebuild `pdfcer-gui`. ⇒ **Build the whole
 workspace before believing a driven failure.** Second occurrence this week.
 
 **2. The packager moved the engine under a build I had already tested.**
 `tools/package-portable.py` runs `cargo update` before it builds — sound on its
-own — so the exe that went to `pdfceGUI1` was linked against `d731410` while my
+own — so the exe that went to `pdfcer-gui1` was linked against `d731410` while my
 green test run had been against `f7eb4a1`. **Four engine commits, two of them
 real core fixes** (a form field's unmodellable colour aliased onto "no colour"
 and written black; `gs` had no arm at all).
@@ -1068,14 +1068,14 @@ the reason the failure count is trustworthy at all.
 ## 2026-08-29 (overnight) — the signature warning is the one new surface that IS verified
 
 **Driven end to end against the release binary, with no mouse**, because its
-whole flow is commands: `PDFCE_DIAG_INVOKE=mode.edit,pages.delete,file.save_copy`
-on `fixtures/signed-two-pages.pdf`, with `PDFCE_DIAG_SAVE_PATH` pointed at a
+whole flow is commands: `PDFCER_DIAG_INVOKE=mode.edit,pages.delete,file.save_copy`
+on `fixtures/signed-two-pages.pdf`, with `PDFCER_DIAG_SAVE_PATH` pointed at a
 scratch file.
 
 ```
-pdfce-diag pages-deleted removed=1 freed=2 …
-pdfce-diag signature-asked pending=Copy
-pdfce-diag ui-rect name=dialog:signature rect=[[0.0 0.0] - [460.0 280.0]] viewport="2DBB"
+pdfcer-diag pages-deleted removed=1 freed=2 …
+pdfcer-diag signature-asked pending=Copy
+pdfcer-diag ui-rect name=dialog:signature rect=[[0.0 0.0] - [460.0 280.0]] viewport="2DBB"
 ```
 
 ★★★ **And no `save-copy` line, and no file on disk.** That absence is the
@@ -1098,8 +1098,8 @@ of gestures cannot.**
 ## 2026-08-29 (overnight, latest) — a SMOKE LAUNCH found the fourth broken check, which reading could not
 
 **The technique is worth more than the bug.** Six new surfaces, none ever
-launched. `PDFCE_DIAG_VIEWPORT=-4000,-4000,1400,900` puts the window off the
-desktop with `with_active(false)`, `PDFCE_DIAG_INVOKE` supplies commands at
+launched. `PDFCER_DIAG_VIEWPORT=-4000,-4000,1400,900` puts the window off the
+desktop with `with_active(false)`, `PDFCER_DIAG_INVOKE` supplies commands at
 startup, and seven seconds later the trace says whether the surface drew and
 whether anything panicked. **No pointer, no focus, nothing in front of the
 operator.** Five of six drew clean.
@@ -1110,7 +1110,7 @@ operator.** Five of six drew clean.
 of the trace: `panel-closed id=edit.attachments closed=true`.
 
 `edit.attachments` is a **toggle**, and Edit's saved arrangement had the panel
-showing — so the check's own `PDFCE_DIAG_INVOKE=mode.edit,edit.attachments`
+showing — so the check's own `PDFCER_DIAG_INVOKE=mode.edit,edit.attachments`
 **shut the surface it exists to test.** Every phase would have failed on a
 correct build, at phase A, reporting the panel was not on screen.
 
@@ -1270,8 +1270,8 @@ answers apart?"*
 checks — seven of them written this session and NEVER RUN. Re-measure before
 quoting.** Engine `97d445f` (it moved during packaging; the suite and the gates
 were re-run against it and are green — that revision is **docs only**).
-**Published**: ★ `OneDrive\pdfceGUI1` is the newest — **2026-08-29 04:55**, engine
-`fde9fa2`, carrying the whole session including the review fixes. `pdfceGUI2`
+**Published**: ★ `OneDrive\pdfcer-gui1` is the newest — **2026-08-29 04:55**, engine
+`fde9fa2`, carrying the whole session including the review fixes. `pdfcer-gui2`
 holds the 00:17 build, which has the Ctrl+S fix but **still has the unshare
 telling him a form is shared when it is not, and Ctrl+X half-cutting a comment**.
 Both slots were read back by date after mirroring, which is not optional.
@@ -1291,7 +1291,7 @@ would notice most — Ctrl+S not killing the program — is already in the slot.
 **Re-publish before he next sits down with it.**
 
 ★★★ **The published build BEFORE this one crashes on Ctrl+S** (D16). If he is
-still on `pdfceGUI1`, that is the reason to move him.
+still on `pdfcer-gui1`, that is the reason to move him.
 
 ### ★★★ WHAT TO DO FIRST: ask him for the machine, then sweep
 
@@ -1307,13 +1307,13 @@ fixtures, not one.
 ### ★★★ THE QUESTION THAT STARTED IT, AND WHY IT NEEDED A SCRIPT
 
 > *"confirm that you have built every editable surface into the GUI that has
-> been implemented in pdfce"*
+> been implemented in pdfcer"*
 
 **It could not be answered from this project's own documents.** `FEATURES.md`
 says what the GUI does, `NO_SURFACE.md` lists compiled-in constants,
 `GUI_ROADMAP.md` says what is planned — and **all three are keyed on this
 shell**. None is keyed on the engine's verb list, so none can answer *"is there
-a verb `pdfce-core` implements that nothing here calls?"*
+a verb `pdfcer-core` implements that nothing here calls?"*
 
 `tools/verb-coverage.py` answers it in two seconds. **157 `EditSession` verbs,
 22 named nowhere, twelve of them real gaps.** The register with a reason per
@@ -1443,8 +1443,8 @@ the operator**. Both queries are now asked once, before anything is drawn.
 **Clean tree. 18/18 gates. 1,899 + 421 + 144 tests, 0 failing. 96 driven checks
 — the fit pair is driven AND falsified; reflow and the field menu are written
 and unrun. Re-measure before quoting.** Engine `1c292bc`.
-**Published**: `OneDrive\pdfceGUI1` is the newest — **O55**, the fit that
-survives a resize. `pdfceGUI2` is the build before it (O51 scale switches).
+**Published**: `OneDrive\pdfcer-gui1` is the newest — **O55**, the fit that
+survives a resize. `pdfcer-gui2` is the build before it (O51 scale switches).
 
 ### ★★★ WHAT TO DO FIRST: the machine is FREE — he said so on 2026-08-28 evening
 
@@ -1574,7 +1574,7 @@ for a real defect, and it names its own suspect:
 
 > `embed-fonts-declined folders=0 detail=nothing-to-open` — **the exact state
 > O47 was answered to change.** The document names a font it does not carry
-> and pdfce ships fourteen faces, so a decline means the **bundled rung was
+> and pdfcer ships fourteen faces, so a decline means the **bundled rung was
 > not reached**.
 
 ⇒ Read `Library::scan_with(folders, true)` in `dialogs::embed`. If the `true`
@@ -1691,7 +1691,7 @@ and means anonymous.
 ★★ `app::clock` is the **only** place this shell reads a wall clock, and its
 header is worth reading before touching it: UTC with `Z`, because local time
 labelled `Z` is the option that looks right to whoever typed the comment and is
-a lie in the file. `pdfce-core` refuses to read a clock at all, deliberately.
+a lie in the file. `pdfcer-core` refuses to read a clock at all, deliberately.
 
 ★ A note on a *shape* is blocked — see item 1 below.
 
@@ -1749,7 +1749,7 @@ the same voice asks the operator to trust both equally.
    sets a note on an annotation that **already exists** — so the conventional
    route (draw → it is selected → type in the panel) does not exist, and the
    Comments panel stays read-only.
-   ★ ⚠ The same engine note warns that `pdfce-core` **could not decode
+   ★ ⚠ The same engine note warns that `pdfcer-core` **could not decode
    PDFDocEncoding** before `943d482` — every comment with an accent, em dash or
    `Ø` came back as mojibake, flagged `exact: false`. Anything cached or
    displayed from an older build is suspect.
@@ -1775,7 +1775,7 @@ Re-measure before quoting.** Engine `8aa9cea`.
 Seven commits landed overnight and **nothing is packaged**. `FEATURES.md` is
 re-measured and current. He was offered a build four times and did not take it;
 he may simply want it in the morning. `package-portable.py` alternates
-`OneDrive\pdfceGUI1` / `2` itself, so the previous one survives.
+`OneDrive\pdfcer-gui1` / `2` itself, so the previous one survives.
 
 ### ★★★ EVERY FORM VERB IS NOW WIRED
 
@@ -1880,12 +1880,12 @@ answer for the product. Three remedies and their costs are in `FEATURES.md`;
 ui-verify --check form_field \
           --check the_format_tab_offers_font_controls_for_swept_text \
           --check restyling_selected_text_reaches_the_document \
-          --exe target/scratch/drive/pdfce-gui.exe \
-          --pdf D:/Dev/temp/pdfce/SW41177.pdf --doc-point 0,1140,62
+          --exe target/scratch/drive/pdfcer-gui.exe \
+          --pdf D:/Dev/temp/pdfcer/SW41177.pdf --doc-point 0,1140,62
 
 ui-verify --check exporting_form_data_writes_a_file \
-          --exe target/scratch/drive/pdfce-gui.exe \
-          --pdf D:/Dev/pdfce/fixtures/synthetic/forms/demo-form.pdf
+          --exe target/scratch/drive/pdfcer-gui.exe \
+          --pdf D:/Dev/pdfcer/fixtures/synthetic/forms/demo-form.pdf
 ```
 
 ★ **Copy the exe to `target/scratch/drive/` first** — never drive the published
@@ -1958,7 +1958,7 @@ beside the one you came for.**
 ### ★★ And one retraction of our own, measured by the engine
 
 We wrote, in three places, that `TextRun::text` *"synthesises a space wherever
-a `TJ` offset exceeds the word-gap threshold"*. `pdfce-core` measured 256
+a `TJ` offset exceeds the word-gap threshold"*. `pdfcer-core` measured 256
 fixtures: **zero** glyph runs contain one. `layout` closes the run and emits the
 derived space as its own glyph-less `TextRun`. The real offender is `/ToUnicode`
 mapping one glyph to several characters.
@@ -1984,7 +1984,7 @@ retracted mechanism with a second guess.**
 ### How to drive today's two checks
 
 ```bash
-ui-verify --check the_format_tab_offers_font_controls_for_swept_text           --check form_field           --exe target/scratch/drive/pdfce-gui.exe           --pdf D:/Dev/temp/pdfce/SW41177.pdf --doc-point 0,1140,62
+ui-verify --check the_format_tab_offers_font_controls_for_swept_text           --check form_field           --exe target/scratch/drive/pdfcer-gui.exe           --pdf D:/Dev/temp/pdfcer/SW41177.pdf --doc-point 0,1140,62
 ```
 
 ★ **Copy the exe to `target/scratch/drive/` first** — never drive the published
@@ -2000,9 +2000,9 @@ run `package-portable.py` when he wants a build.
 ## 2026-08-27 (afternoon) — the font tools, and four defects only driving could find
 
 **Clean tree. 18/18 gates. 1,831 + 420 + 144 tests, 0 failing. Re-measure
-before quoting.** Engine `70c5919`. Build **`OneDrive\pdfceGUI1`**, 18:29,
+before quoting.** Engine `70c5919`. Build **`OneDrive\pdfcer-gui1`**, 18:29,
 shell `1a25e18`-ish — read `BUILD-INFO.txt` in the folder rather than trusting
-this line. `pdfceGUI2` holds the 18:26 build of the same code.
+this line. `pdfcer-gui2` holds the 18:26 build of the same code.
 
 ### ★★★ WHAT TO DO FIRST: ASK HIM ABOUT THE FONT TOOLS
 
@@ -2032,7 +2032,7 @@ is **one run made of several `Tj`s**. So:
   cell read `"FINISH         "` while the buffer held `FINISH`. ★★★ **The
   mechanism this bullet named is RETRACTED, same evening.** It said the
   extraction synthesises a space wherever a `TJ` offset exceeds the word-gap
-  threshold; `pdfce-core` measured 256 fixture PDFs and found **zero** glyph
+  threshold; `pdfcer-core` measured 256 fixture PDFs and found **zero** glyph
   runs containing a synthesised space — `layout` closes the run and emits the
   derived space as its own glyph-less `TextRun`. The one real offender is
   `/ToUnicode` mapping one glyph to several characters. The symptom stands, the
@@ -2071,7 +2071,7 @@ only readable beside a total of the same thing.
 | `reply_synthetic_is_enough_and_142_1_is_the_one_we_want.md` | their priority question answered: a disclosed synthetic weight is enough for CAD title blocks; what we want is `142.1`, the font-resource pre-flight |
 
 ★ We did **not** build a shell-side search for a different bold resource. Twenty
-lines, would work, and is this project second-guessing pdfce's font selection —
+lines, would work, and is this project second-guessing pdfcer's font selection —
 decision 058's exact case.
 
 ### ★★ And a retraction of our own, caught before it was sent
@@ -2098,7 +2098,7 @@ about itself; the grep now happens before the file is **saved**.
 ### How to drive the new check
 
 ```bash
-ui-verify --check restyling_selected_text_reaches_the_document   --exe target/scratch/drive/pdfce-gui.exe   --pdf D:/Dev/temp/pdfce/SW41177.pdf --doc-point 0,1140,62
+ui-verify --check restyling_selected_text_reaches_the_document   --exe target/scratch/drive/pdfcer-gui.exe   --pdf D:/Dev/temp/pdfcer/SW41177.pdf --doc-point 0,1140,62
 ```
 
 ★ **Copy the exe to `target/scratch/drive/` first** — never drive the published
@@ -2111,8 +2111,8 @@ refactors touched: `form_field`, `adopt_widget_puts_a_form_control_back`,
 `a_click_inside_a_form_selects_what_is_drawn_there`, `text_markup_marks_a_selection`,
 `ctrl_c_copies_text_to_the_os_clipboard`, `delete_key_after_canvas_click`. All green.
 
-★ **Both OneDrive slots hold today's code.** `pdfceGUI1` is the clean-tree build
-and `pdfceGUI2` the same code built minutes earlier with an uncommitted
+★ **Both OneDrive slots hold today's code.** `pdfcer-gui1` is the clean-tree build
+and `pdfcer-gui2` the same code built minutes earlier with an uncommitted
 `Cargo.lock`. There is no older fallback in OneDrive tonight; git has one.
 
 ---
@@ -2134,8 +2134,8 @@ in the same session** — with the shallow `hit_test_point_all` put back and the
 binary rebuilt it reports the operator's own sentence back at us, which is what
 makes the green result evidence rather than a green result.
 
-Build **`OneDrive\pdfceGUI1`**, 2026-08-27 12:42, shell `b3d7b1a`, engine
-`4c32afe`. `pdfceGUI2` holds the 07:08 build as the fallback.
+Build **`OneDrive\pdfcer-gui1`**, 2026-08-27 12:42, shell `b3d7b1a`, engine
+`4c32afe`. `pdfcer-gui2` holds the 07:08 build as the fallback.
 
 **The only thing outstanding is his verdict.** The `OPERATOR_REQUESTS.md` O46
 row does not close until he has clicked an object on the file he complained
@@ -2157,11 +2157,11 @@ a batch skip needs the member re-run before it is believed.
 --pdf fixtures/polyline-nodes.pdf --doc-point 0,150,260
 
 # Ctrl+C: --doc-point must be on actual text
---pdf D:/Dev/temp/pdfce/SW41177.pdf --doc-point 0,1140,62
+--pdf D:/Dev/temp/pdfcer/SW41177.pdf --doc-point 0,1140,62
 ```
 
-**Clear the desktop first.** A leaked `pdfce-gui.exe` from an earlier check will
-hold a window and cover the next one — `taskkill /F /IM pdfce-gui.exe` between
+**Clear the desktop first.** A leaked `pdfcer-gui.exe` from an earlier check will
+hold a window and cover the next one — `taskkill /F /IM pdfcer-gui.exe` between
 slices. `(New-Object -ComObject Shell.Application).MinimizeAll()` clears the
 rest, and `UndoMinimizeALL()` puts it back.
 
@@ -2241,7 +2241,7 @@ could select from. On his SolidWorks export nothing changes at all — which is
 what says the fix is aimed at the right thing.
 
 Confirmed live in the release binary by an offscreen smoke launch
-(`PDFCE_DIAG_VIEWPORT=-4000,-4000,1600,1000`):
+(`PDFCER_DIAG_VIEWPORT=-4000,-4000,1600,1000`):
 `objects n=28 page=0 paths=21 text=3 images=0 forms=4 leaves=242 depth_overflow=0 cycles=0`.
 
 ### Three requests filed, none of them blocking
@@ -2302,7 +2302,7 @@ below follows from `evidence/word-ribbon/` and `evidence/our-ribbon*/`.
 
 Groups reachable on the band, no menu:
 
-| client width | Word | pdfce, before |
+| client width | Word | pdfcer, before |
 |---:|---:|---:|
 | 884 | **10** | **3** |
 | 604 | **7** + scroll chevron | **1** |
@@ -2440,12 +2440,12 @@ The operator, after O26 landed:
 
 Both pass twice in a row, which is the property the first defect cost.
 
-### ⚠️ PUBLISHED — `OneDrive\pdfceGUI1`, and a mistake worth not repeating
+### ⚠️ PUBLISHED — `OneDrive\pdfcer-gui1`, and a mistake worth not repeating
 
 Built 2026-08-24 18:08, engine `5661d86` (v0.8.0 — a **version-only** bump over
 the `cc053ac` this tree was driven against: two commits, a `Cargo.toml`
 version, a checked-in demo PDF and a librarian filing, so the compiled
-behaviour is the same). `pdfceGUI2` holds the previous build as the fallback.
+behaviour is the same). `pdfcer-gui2` holds the previous build as the fallback.
 
 ★★★ **The suite was then pointed at the PUBLISHED exe, and it should not have
 been.** `package-portable.py` deliberately keeps the slot's `userdata/`,
@@ -2456,7 +2456,7 @@ recent-files list full of fixtures. It then reported a **failure** against a
 binary `cmp` proves byte-identical to the one that had just passed: the check
 was measuring a layout the previous check had rewritten.
 
-The slot's `userdata/` has been restored from `pdfceGUI2`'s — genuine operator
+The slot's `userdata/` has been restored from `pdfcer-gui2`'s — genuine operator
 state from that morning — and the packaged binary re-verified from a **scratch
 copy**, where it passes. Filed to `D:/dev/rag/egui/`. **Drive
 `target/release`; copy the artifact elsewhere if you want to prove the
@@ -2555,8 +2555,8 @@ forward as if it described this tree.** Run it when the machine is attended.
 which has never passed on any build — an unbuilt path, not a regression, and
 the selection model underneath it is now proven by two unit tests.
 
-**Published: `OneDrive\pdfceGUI2`, built 2026-08-21 16:0x**, with the Select
-popup working. `pdfceGUI1` holds the 15:47 build as the fallback.
+**Published: `OneDrive\pdfcer-gui2`, built 2026-08-21 16:0x**, with the Select
+popup working. `pdfcer-gui1` holds the 15:47 build as the fallback.
 
 ★ **The published build predates the two new driven checks and O22's finding.**
 Nothing in it is wrong that was not wrong before — the checks are harness
@@ -2579,7 +2579,7 @@ APPLICATION SAYS ABOUT ITSELF, FIRST.** Every failing trace from the first
 attempt onward carried
 
 ```
-pdfce-diag canvas-unavailable reason=nothing-visible
+pdfcer-diag canvas-unavailable reason=nothing-visible
 ```
 
 which states the cause exactly. It was never grepped for, because each search
@@ -2705,7 +2705,7 @@ not overnight. And read a window-activation SKIP as an ENVIRONMENT verdict, not
 an application one — it survives re-running, so it reads as a defect.
 
 ★ Clean up orphans first: a killed harness run leaves the application running,
-and that instance competes for the foreground. `taskkill //IM pdfce-gui.exe
+and that instance competes for the foreground. `taskkill //IM pdfcer-gui.exe
 //F`. Note `taskkill //PID` against a pid from `ps -W` fails — that column is
 Git Bash's pid, not Windows'.
 
@@ -2719,7 +2719,7 @@ checks, so **capture does not need foreground rights — only synthesised input
 does.** The harness is not disabled on an idle desktop; its clicking is.
 
 So the unattended set is: unit tests, the gates, an offscreen launch
-(`PDFCE_DIAG_VIEWPORT`) asserting on the trace, and those four. Everything that
+(`PDFCER_DIAG_VIEWPORT`) asserting on the trace, and those four. Everything that
 asserts *a gesture produces a result* needs an attended machine.
 
 ## ★★ A RELEASE IS OWED WHEN O24's STEP 2 LANDS
@@ -2728,7 +2728,7 @@ Ken, 2026-08-21: *"when you complete the step 2 zoom release to git and put on
 OneDrive."*
 
 **`git push origin main`, then `tools/package-portable.py`.** ★ This would be
-the project's **first push** — `origin` is `github.com/KenM76/pdfceGUI.git` and
+the project's **first push** — `origin` is `github.com/KenM76/pdfcer-gui.git` and
 the local branch is 253 commits ahead of it, last tag `v0.3.0`. Not a routine
 increment.
 
@@ -2780,7 +2780,7 @@ Seven things shipped. In the order they matter to Ken:
    text**; End and Home reach the ends of the line he can *see*, however many
    show operators drew it — four or five on a CAD title-block row. **Salvage**:
    the old shell asked `caret_up`, `caret_down` and `line_range_at`, and that
-   was its entire contribution; the reassembly was always `pdfce-core`'s.
+   was its entire contribution; the reassembly was always `pdfcer-core`'s.
 2. **Every dialog is its own OS window**, not just Print. All thirteen: title
    bar, taskbar entry, second monitor.
 3. **A dialog is OWNED by the window it belongs to** — G3, which had been filed
@@ -2903,7 +2903,7 @@ order that returns the most:
 2. **Run the full driven suite**, and fix whatever the engine
    bump moved:
    ```
-   ./target/release/ui-verify.exe --pdf D:/Dev/temp/pdfce/SW41177.pdf \
+   ./target/release/ui-verify.exe --pdf D:/Dev/temp/pdfcer/SW41177.pdf \
        --doc-point 0,300,500
    ```
    Not to gate a release — that has already happened — but because he is
@@ -2954,18 +2954,18 @@ filed was never real.
   that is not the code under test. One or the other, never both.
 - **★ `--second-pdf` must have MORE THAN ONE PAGE.** A one-page source cannot
   be moved out of — the engine refuses to leave a document with no pages.
-  `D:/Dev/temp/pdfce/big.pdf` (5 pages).
+  `D:/Dev/temp/pdfcer/big.pdf` (5 pages).
 - **★ Python heredocs eat the `\` continuation in a Rust string literal**, and
   the result COMPILES: what lands on disk is one long line with the indentation
   baked into the string. `.tmpwork/rewrap.py` repairs a file after the fact and
   `check-string-gaps` catches it at the gate. Use the Edit tool for anything
   with a continuation, or `r"""…"""`, or `chr(92)`.
-- **`PDFCE_DIAG_INVOKE=<command.id>` presses one ribbon command once**, in an
+- **`PDFCER_DIAG_INVOKE=<command.id>` presses one ribbon command once**, in an
   invisible window, through the real dispatcher — the way to verify while he is
   working:
   ```
-  PDFCE_DIAG=1 PDFCE_DIAG_VIEWPORT=-4000,-4000,1200,850 \
-  PDFCE_DIAG_INVOKE=file.print  target/release/pdfce-gui.exe file.pdf
+  PDFCER_DIAG=1 PDFCER_DIAG_VIEWPORT=-4000,-4000,1200,850 \
+  PDFCER_DIAG_INVOKE=file.print  target/release/pdfcer-gui.exe file.pdf
   ```
   `dialogs_open_in_their_own_window` is built entirely on this and needs no
   pointer at all.
@@ -2974,12 +2974,12 @@ filed was never real.
   application one.
 - **`python tools/package-portable.py --verify` after every keeper build**, and
   read the two slot dates it prints. **`--slot <name>` forces the target.**
-  ★ `pdfceGUI1` refused the mirror **three times on 2026-08-21** — `WinError 32`
+  ★ `pdfcer-gui1` refused the mirror **three times on 2026-08-21** — `WinError 32`
   on the rename, with no process running from that folder, so it is OneDrive's
   own sync client. The failure is safe (a failed rename moves nothing) and the
   cost is that the fallback stops rotating. **If it happens again, find out what
   is holding it.**
-- **`cargo update -p pdfce-core -p pdfce-render -p pdfce-print` before every
+- **`cargo update -p pdfcer-core -p pdfcer-render -p pdfcer-print` before every
   build.** The packager does it by default; `--no-update` holds a pin.
 - `.tmpwork/edit.py` is the CRLF-safe edit helper.
 - **Never `git checkout --` a dirty file.**
@@ -3008,7 +3008,7 @@ filed was never real.
 - **A knob must not sit at a value chosen to fix something it does not fix.**
 - **Registering a command is the only way the GUI may learn a capability
   exists** (R8), and **`egui-shell` never learns what a PDF is** (R7).
-- **Unsafe code is quarantined.** `pdfce-gui` and `egui-shell` both
+- **Unsafe code is quarantined.** `pdfcer-gui` and `egui-shell` both
   `#![forbid(unsafe_code)]`; the four `user32` calls that make a dialog owned
   live in their own `native-window` crate, to be deleted rather than ported
   when a toolkit grows an owner option.

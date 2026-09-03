@@ -1,7 +1,7 @@
-# pdfce GUI — defect register
+# pdfcer GUI — defect register
 
-**Compiled:** 2026-08-12, against `D:\Dev\pdfce` at the release build
-dated 2026-08-12 19:54 (`target/release/pdfce-gui.exe`).
+**Compiled:** 2026-08-12, against `D:\Dev\pdfcer` at the release build
+dated 2026-08-12 19:54 (`target/release/pdfcer-gui.exe`).
 
 Every entry below was verified against source at the quoted `file:line`,
 or observed directly by driving the built binary. Screenshots are in
@@ -225,7 +225,7 @@ pairs of all five widget states in all three presets.
 `FEATURES.md:29-31` states:
 
 > `to-pdfa`, `validate-pdfa`, `sign` and `bates-stamp` exist in
-> `pdfce-cli --help` as **stubs that print "not implemented"**. Not
+> `pdfcer --help` as **stubs that print "not implemented"**. Not
 > ticked anywhere; listed under *Planned*.
 
 Confirmed at `FEATURES.md:224-225`, where both Bates numbering and PDF/A
@@ -268,7 +268,7 @@ run. Dragging a selection across runs sets `cross_run`, which **silently
 disables the whole typing loop** (`main.rs:18227`,
 `canvas.rs:1489-1510`) behind this notice (`ui_text.rs:5770`):
 
-> *"This selection spans more than one text run … pdfce's first-cut
+> *"This selection spans more than one text run … pdfcer's first-cut
 > editor edits one run at a time. Narrow the selection to edit or format
 > it."*
 
@@ -284,7 +284,7 @@ a line or block and re-emits them as a set, plus dropping the
 
 > **Status 2026-08-15 — still architectural, but it now refuses in
 > words.** This shell's editor is still one-run; the multi-run request
-> does not exist in `pdfce-core` and was not built. What changed is the
+> does not exist in `pdfcer-core` and was not built. What changed is the
 > failure mode: a selection spanning runs is declined by a sentence on
 > the status row (`text::textedit::spans_runs`, via
 > `actions::record_note`) rather than by a keyboard that silently stops
@@ -669,7 +669,7 @@ what colour a pressed ribbon button is, sampled it, and got
 `egui`'s `widgets.inactive.weak_bg_fill`, where the preset specifies `#E8E8EA`.
 
 `egui_shell::theme::Theme::apply` (`theme/mod.rs:456`) **is never called from
-`pdfce-gui`.** The only mention of `egui_shell::theme` in the whole crate is
+`pdfcer-gui`.** The only mention of `egui_shell::theme` in the whole crate is
 inside a test module in `icons/paint.rs`. Three presets, a palette, a
 role-per-colour discipline, a rendered-pair contrast gate over all five widget
 states, and its own self-test — compiled into the binary, never handed to the
@@ -724,7 +724,7 @@ whatever the code picks until that dialog lands.
 Note this also means **every screenshot in `evidence/`, and every legibility and
 contrast assertion `ui-verify` has ever made against the running binary, was
 measured against the wrong palette.** The assertions were not wrong — the
-contrast they measured was real — but they were measuring `egui`, not pdfce.
+contrast they measured was real — but they were measuring `egui`, not pdfcer.
 
 ### ★ CLOSED 2026-08-17 — both halves, and the second is proved in pixels
 
@@ -764,8 +764,8 @@ each binary:
 
 | build | measured | verdict |
 |---|---|---|
-| `pdfcegui-20260813-2248` (pre-theme) | **2.82:1 – 2.89:1** | **FAIL** — all five captions below the 3.0 floor |
-| `pdfcegui-20260814-0735` (themed) | 4.14:1 – 4.26:1 | PASS |
+| `pdfcergui-20260813-2248` (pre-theme) | **2.82:1 – 2.89:1** | **FAIL** — all five captions below the 3.0 floor |
+| `pdfcergui-20260814-0735` (themed) | 4.14:1 – 4.26:1 | PASS |
 
 So every group caption in every build this project has shipped was rendering
 below its own stated contrast floor, and installing the theme fixed it as a
@@ -791,13 +791,13 @@ touch either should know the margin is 0.3, not comfortable.
 
 ## D9 — Every imported reduced-opacity markup renders solid — **FIXED 2026-08-14**
 
-> **Closed.** `pdfce-render` now reads §12.5.2 `/CA` and composites the
+> **Closed.** `pdfcer-render` now reads §12.5.2 `/CA` and composites the
 > annotation's appearance through a scratch pixmap at that alpha — engine
-> commit `a84bdc3`, carried by the `pdfcegui-20260814-0735-e8e9881-9c81b04`
+> commit `a84bdc3`, carried by the `pdfcergui-20260814-0735-e8e9881-9c81b04`
 > build. `alpha >= 1.0` short-circuits, so the common path allocates nothing.
 >
 > Their commit records why it jumped their queue, and it is this document's
-> argument returned: *"reported by the `pdfceGUI` session, which correctly
+> argument returned: *"reported by the `pdfcer-gui` session, which correctly
 > ranked it as a **fidelity defect in the current product** rather than a
 > prerequisite of a future authoring control."* The entry below is kept
 > because the reasoning is the durable part — a question asked about
@@ -807,16 +807,16 @@ touch either should know the margin is 0.3, not comfortable.
 > authoring lands, write `/CA` alone and leave the appearance stream's
 > `ExtGState` at `1.0`.
 
-**Found 2026-08-14, on the pdfce side, by asking a question about
+**Found 2026-08-14, on the pdfcer side, by asking a question about
 authoring.** Not observed here first — which is the notable part, and the
 reason it is written down rather than left in the request channel.
 
-`pdfce-render` **does not read an annotation's `/CA`** (§12.5.2 constant
+`pdfcer-render` **does not read an annotation's `/CA`** (§12.5.2 constant
 opacity) at all. Their measurement, quoted from
 `archive/2026-08-14-markup-opacity-reply.md`:
 
 > ```
-> grep '/CA' in pdfce-render        -> ONE hit, interpret.rs:2050
+> grep '/CA' in pdfcer-render        -> ONE hit, interpret.rs:2050
 >                                      and it is ExtGState /CA (stroking alpha)
 > annotation paint path (annot.rs)  -> ZERO reads of the annotation dict's /CA
 > ```
@@ -840,7 +840,7 @@ what the operator opened the file for.
 
 ### Status
 
-**Filed and scheduled on the pdfce side as its own piece of work**, deliberately
+**Filed and scheduled on the pdfcer side as its own piece of work**, deliberately
 not folded into the opacity feature — their words: *"it is a correctness bug
 with a blast radius wider than this request and it should not be discovered
 later as 'the opacity feature also changed how imported markup looks'."* The
@@ -851,7 +851,7 @@ scratch pixmap at alpha rather than interpreting it into the page), not a line.
 
 **Do not compensate.** When markup opacity authoring lands, write `/CA` alone
 and leave the appearance stream's `ExtGState` at `1.0`. Writing `/ca` into the
-AP would make the markup look right in pdfce and **half as opaque as intended
+AP would make the markup look right in pdfcer and **half as opaque as intended
 in every other viewer, permanently, in documents that outlive the bug**. That
 is encoding a render defect into the file format. The full three-way table is
 in the archived reply.
@@ -871,7 +871,7 @@ anyone's priority, it needs counting on a real corpus rather than estimating.
 ## D8 — Housekeeping
 
 A stale worktree at
-`D:\Dev\pdfce\.claude\worktrees\agent-ad491473a5659e3eb\` contains an
+`D:\Dev\pdfcer\.claude\worktrees\agent-ad491473a5659e3eb\` contains an
 older `main.rs` in which `editing_enabled` defaults differently and a
 test asserts `!doc.editing_enabled` (line 23274). It pollutes repo-wide
 greps and will mislead the next investigation. Delete it.
@@ -952,13 +952,13 @@ what generates the complaint.
 >
 > **Consequences of the correction:**
 >
-> 1. `crates/pdfce-gui/src/text/forms.rs`'s `⚠` sentences are **fine** and
+> 1. `crates/pdfcer-gui/src/text/forms.rs`'s `⚠` sentences are **fine** and
 >    need no edit. There are **fourteen** of them, not thirteen — counted as
 >    string literals opening with the mark, `grep -c '"⚠'`; the original's
 >    thirteen appears to have missed one. They are the only `⚠` in the whole
 >    catalog.
 > 2. The assertion at
->    `crates/pdfce-gui/src/panels/forms/tab_order/mod.rs:672`
+>    `crates/pdfcer-gui/src/panels/forms/tab_order/mod.rs:672`
 >    (`s.starts_with('⚠')`) was never at risk. Unchanged, still passing.
 > 3. The edit-disclosure line's `⚑` was chosen under the wrong reading.
 >    **Deliberately left alone** — it draws, it is shipped, and re-opening a
@@ -984,7 +984,7 @@ line was drafted with `⚠` to match the forms convention, and the existing gate
 `every_glyph_the_status_bar_draws_has_a_glyph` **failed** on it.
 
 Nothing in this workspace installs fonts, so `egui`'s bundled set is the whole
-set, and it cannot draw **U+26A0**. `crates/pdfce-gui/src/text/forms.rs`
+set, and it cannot draw **U+26A0**. `crates/pdfcer-gui/src/text/forms.rs`
 carries `⚠` in **thirteen** sentences — including
 `forms_fill_autosize_note` and `forms_fill_unencodable_note`, which are drawn
 in the status bar two lines from where the new one goes — and every one of them
@@ -1015,7 +1015,7 @@ catches it. The gate that caught it already existed and was never pointed at
 
 **Not fixed**, deliberately, because it is wider than it looks: thirteen
 strings, plus an assertion at
-`crates/pdfce-gui/src/panels/forms/tab_order/mod.rs:672` that tests
+`crates/pdfcer-gui/src/panels/forms/tab_order/mod.rs:672` that tests
 `s.starts_with('⚠')` and would silently stop matching. The new edit-disclosure
 line uses `⚑`, measured present, rather than joining the convention.
 
@@ -1037,10 +1037,10 @@ than in front of the operator.
 
 | what | where |
 |---|---|
-| A correct predicate — lay the character out, compare the glyph actually drawn against a three-sentinel fingerprint of the substitution mark | `crates/pdfce-gui/src/icons/glyphs.rs` — `GlyphProbe` |
-| The **widened gate**: reads every `.rs` under `crates/pdfce-gui/src/text/` from source, extracts every operator-visible literal, and checks every codepoint | `icons::glyphs::tests::every_glyph_the_catalog_draws_has_a_glyph` |
+| A correct predicate — lay the character out, compare the glyph actually drawn against a three-sentinel fingerprint of the substitution mark | `crates/pdfcer-gui/src/icons/glyphs.rs` — `GlyphProbe` |
+| The **widened gate**: reads every `.rs` under `crates/pdfcer-gui/src/text/` from source, extracts every operator-visible literal, and checks every codepoint | `icons::glyphs::tests::every_glyph_the_catalog_draws_has_a_glyph` |
 | The gate's self-test, on a planted unrenderable codepoint with comment and test-module decoys | `icons::glyphs::tests::the_gate_catches_a_planted_unrenderable_codepoint` |
-| The status-bar gate, repointed at the correct predicate and its doc comment corrected | `crates/pdfce-gui/src/app/status.rs` |
+| The status-bar gate, repointed at the correct predicate and its doc comment corrected | `crates/pdfcer-gui/src/app/status.rs` |
 
 The gate reads **source** rather than a hand-written list of labels, so a
 string added tomorrow is covered without anyone remembering to add it. That is
@@ -1065,7 +1065,7 @@ Three fail-open shapes were designed out, each with its own test:
 
 ### ★ The fifth sighting happened anyway — the widened gate found two on its first run
 
-Both are **live tofu today**, both in `crates/pdfce-gui/src/text/`, which is
+Both are **live tofu today**, both in `crates/pdfcer-gui/src/text/`, which is
 not the territory of the work that found them. They are **quarantined in the
 gate and reported here, not fixed.** The quarantine is self-tightening: the
 gate asserts each entry is *still* undrawable **and** still present in the
@@ -1088,19 +1088,19 @@ pointed somewhere it could find it.
 The mistake this entry records is *trusting a tool's answer without looking at
 the result*, so neither half of the correction is left resting on another
 assertion. Driving the release binary
-(`target/release/pdfce-gui.exe`, 2026-08-14 12:27, `PDFCE_DIAG=1`):
+(`target/release/pdfcer-gui.exe`, 2026-08-14 12:27, `PDFCER_DIAG=1`):
 
 | what was opened | what was on screen |
 |---|---|
 | `qpdf/qtest/qpdf/button-set-broken-out.pdf` — a 15-field form with `/NeedAppearances` | The Forms panel drew **two `⚠` sentences as amber warning triangles**: *"⚠ This form asks viewers to draw field values themselves…"* and *"⚠ 2 field(s) have no drawn appearance in this document…"*. Two of the fourteen this entry condemned. Neither is a box. |
-| the binary with **no argument** | The empty canvas read *"No document open. Choose File **□** Open, press Ctrl+O, or start pdfce with a PDF path."* — the `▸` tofu, live. |
+| the binary with **no argument** | The empty canvas read *"No document open. Choose File **□** Open, press Ctrl+O, or start pdfcer with a PDF path."* — the `▸` tofu, live. |
 
 Corroborated at the pixel level by dumping the glyphs `egui` actually
 rasterizes into its own font atlas at 48 pt: `⚠` is a filled triangle
 enclosing an exclamation mark, 43×38 px; `▸` is a hollow 30×30 square, which
 is `◻` — the substitution mark, not the separator.
 
-`D:\Dev\temp\pdfce\SW41177.pdf` was opened first, as directed, and reached the
+`D:\Dev\temp\pdfcer\SW41177.pdf` was opened first, as directed, and reached the
 Forms panel — but it carries **no** interactive fields, so its panel correctly
 draws the *"this document has no interactive form fields"* sentence and no `⚠`
 at all. It could not have settled the question either way, which is why a form
@@ -1119,7 +1119,7 @@ be last, and where it is not, every non-test item after it is unscanned **and
 the gate reports clean**.
 
 Proven rather than argued: a violation planted after line 262 of
-`crates/pdfce-gui/src/panels/forms/edit.rs` **passes the gate**.
+`crates/pdfcer-gui/src/panels/forms/edit.rs` **passes the gate**.
 
 Three files are affected today:
 
@@ -1192,7 +1192,7 @@ is what turned an invisible defect into a one-line read.
 
 ## D15 — `ocrs` collapses on a sparse clean page, which is the shape of a drawing sheet
 
-**Found 2026-08-14 while building the OCR fixture. Not a pdfce defect — an
+**Found 2026-08-14 while building the OCR fixture. Not a pdfcer defect — an
 upstream characteristic this project has to design around, and it matters here
 more than for most consumers.**
 
@@ -1225,7 +1225,7 @@ release would silently disagree with us.
 Unquantified on real scanned material, because **there is none in the tree**.
 If a scanned drawing ever arrives, this is the first thing to measure — and if
 it reproduces, the honest fix is upstream or a documented refusal, not a magic
-number in `pdfce-gui`.
+number in `pdfcer-gui`.
 
 ---
 
@@ -1239,7 +1239,7 @@ running, and not by any of the 105 driven checks.
 
 ### The code
 
-`PdfceApp::apply` matches the action **twice**: once before the "is a document
+`PdfcerApp::apply` matches the action **twice**: once before the "is a document
 open" guard, for the handful of actions that must answer differently with
 nothing open, and once after it for everything else. Every arm in the first
 match ends with `return`.
@@ -1285,7 +1285,7 @@ least loud — but only if somebody presses the key.
 
 ### ★★ Why no test and no driven check caught it
 
-- `PdfceApp::apply` is called with `&mut self` on a real application; the unit
+- `PdfcerApp::apply` is called with `&mut self` on a real application; the unit
   suite exercises actions through smaller seams.
 - **No driven check drives a save.** `save_in_place` and `save_copy` have unit
   tests that call `crate::app::save::save_in_place(doc)` **directly** — which is
@@ -1296,7 +1296,7 @@ least loud — but only if somebody presses the key.
 
 ### The verification, both directions
 
-Driven offscreen (`PDFCE_DIAG_VIEWPORT` + `PDFCE_DIAG_INVOKE=file.save`) against
+Driven offscreen (`PDFCER_DIAG_VIEWPORT` + `PDFCER_DIAG_INVOKE=file.save`) against
 a scratch copy of `fixtures/a1-titleblock.pdf`, so the operator's pointer and
 focus were untouched:
 
@@ -1311,7 +1311,7 @@ than of something else that moved.
 
 ★★ Note the order in the trace — **the file is written before the panic.** No
 work was lost; the application simply died immediately afterwards, which is why
-the symptom is *"pdfce disappears when I press Ctrl+S"* rather than *"my save
+the symptom is *"pdfcer disappears when I press Ctrl+S"* rather than *"my save
 did not happen"*.
 
 ---
@@ -1367,7 +1367,7 @@ if self.signature.as_mut().map(|d| d.show(ctx)) == Some(false) {
 ```
 
 But this window deliberately **does not act**. It parks the answer, and
-`PdfceApp::resume_after_signature` performs it — later in the same frame —
+`PdfcerApp::resume_after_signature` performs it — later in the same frame —
 because writing over the operator's own file must have exactly one route.
 The dialog was therefore destroyed, with the confirmation in it, three call
 frames before the drain looked; `take_signature_answer` found an empty slot and
@@ -1461,7 +1461,7 @@ which is where every unit test lives.
 
 ### The contract, quoted from the module that owns it
 
-`crates/pdfce-gui/src/canvas/resizing.rs`, on `Frame`:
+`crates/pdfcer-gui/src/canvas/resizing.rs`, on `Frame`:
 
 ```rust
 /// How far the pointer has travelled since then, in screen points.
@@ -1606,7 +1606,7 @@ and permanently:
 
 > this document carries a certification signature whose permissions are
 > enforced (ISO 32000-1 §12.8.4, /Perms /DocMDP, P=2); structural page changes
-> are not among the changes it permits, so pdfce refuses rather than silently
+> are not among the changes it permits, so pdfcer refuses rather than silently
 > breaking it
 
 The Format tab's *Delete* is withheld. The canvas menu's *Delete* is withheld.

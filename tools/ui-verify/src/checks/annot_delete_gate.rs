@@ -3,7 +3,7 @@
 //!
 //! The driven assertion for `EditSession::annotation_deletion_refusal`, which
 //! `crate::panels::properties::annotdelete` consumes and which — until
-//! 2026-08-29 — **nothing in `pdfce-gui` called at all**.
+//! 2026-08-29 — **nothing in `pdfcer-gui` called at all**.
 //!
 //! # ★★★ What was wrong, and why only driving can prove it fixed
 //!
@@ -89,7 +89,7 @@ use crate::sys::vk;
 /// Review mode, with the Properties panel put on screen.
 ///
 /// `file.properties` is the command that mounts and activates the panel from
-/// any arrangement — `app::PdfceApp::show_panel` mounts it first if the
+/// any arrangement — `app::PdfcerApp::show_panel` mounts it first if the
 /// operator's saved layout no longer holds it — so the check does not have to
 /// know what dock layout the machine it runs on happens to have persisted.
 const INVOKE: &str = "mode.review,file.properties";
@@ -259,14 +259,14 @@ fn open_and_select(
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.env
-        .push(("PDFCE_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
+        .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
     report.note(format!(
-        "launched {} on the {label} fixture as pid {} with PDFCE_DIAG_INVOKE={INVOKE}",
+        "launched {} on the {label} fixture as pid {} with PDFCER_DIAG_INVOKE={INVOKE}",
         exe.display(),
         session.pid()
     ));

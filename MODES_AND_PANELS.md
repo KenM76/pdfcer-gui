@@ -6,7 +6,7 @@ Nothing built.
 Two additions, and they turn out to be one system:
 
 1. A three-position **Read — Review — Edit** selector at the far right of
-   the tab row, which changes what the interface contains so pdfce can
+   the tab row, which changes what the interface contains so pdfcer can
    look like a reader rather than an editor.
 2. **Left and right panel areas as flexible as Inkscape's.**
 
@@ -45,7 +45,7 @@ selector, because it acts on the ribbon rather than on the document.
 | **Status bar** | page nav, zoom, find | + tool state, snap | + selection count, edit state |
 | **Badge** | `Read` | `Review` | — |
 
-**Read** is the point of the whole feature: a PDF viewer, with pdfce's
+**Read** is the point of the whole feature: a PDF viewer, with pdfcer's
 inspection panels available but nothing that authors anything. This is
 the mode a person is in when someone sends them a drawing.
 
@@ -109,7 +109,7 @@ That is exactly what this is.
 4. **A document may open into a mode.** A signed, encrypted, or
    read-only-on-disk document opens in **Read** with the badge stating
    *why* — "signed: editing would invalidate the signature",
-   "encrypted: pdfce cannot write encrypted documents yet". Today those
+   "encrypted: pdfcer cannot write encrypted documents yet". Today those
    conditions are disclosed in the status bar and the operator can still
    arm tools that will later refuse. Opening in Read tells the truth
    earlier.
@@ -146,10 +146,10 @@ protection, which is a different feature.
 
 Direct observation of Inkscape 1.4 is archived at
 `evidence/inkscape-dock-observed.png`. Source was deliberately **not**
-read: Inkscape is GPL-2.0-or-later, pdfce is MIT, and
-`pdfce-inkscape-librarian` carries a binding rule against GPL code and
+read: Inkscape is GPL-2.0-or-later, pdfcer is MIT, and
+`pdfcer-inkscape-librarian` carries a binding rule against GPL code and
 GUI mimicry. Nothing is liftable anyway — Inkscape is GTK retained-mode
-C++; pdfce is egui immediate-mode.
+C++; pdfcer is egui immediate-mode.
 
 ### This is not a new ask
 
@@ -182,7 +182,7 @@ what shipped.
   left and a command rail on the right, each with its own overflow —
   so tools and panels do not compete for the same space.
 
-### What this means for pdfce
+### What this means for pdfcer
 
 The current dock (`dock.rs`, 818 lines) is deliberately much more
 restrictive: two independent trees that cannot exchange panes, no
@@ -219,7 +219,7 @@ documented route is to quit and delete that file. And per-dock
 the regression is still open five releases later, with only an
 all-or-nothing `F12` hide-everything as substitute.
 
-**pdfce already beats Inkscape on all three, by design.** The
+**pdfcer already beats Inkscape on all three, by design.** The
 Read/Review/Edit selector *is* named workspaces. `Action::ApplyResetLayout`
 with per-scope checkboxes already exists and is a better reset than any
 product in that table. The icon rail is scoped at ~1 week. So the target
@@ -247,7 +247,7 @@ otherwise walk into.
 | 11 | **Focus-existing shows stale content** — reopening a stacked dialog selected its tab but kept rendering the previous one. | Selecting a tab must invalidate what is painted. |
 | 12 | **No named workspaces, no in-app reset** (see above). | Both are table stakes, not luxuries. |
 
-### Three of these pdfce avoids by construction
+### Three of these pdfcer avoids by construction
 
 Worth recording, because they are accidental advantages of the stack
 rather than decisions anyone made:
@@ -260,7 +260,7 @@ rather than decisions anyone made:
   `show_viewport_immediate` keeps the torn-out panel inside the same
   `App::ui` call and the same action dispatcher, so keyboard handling is
   window-agnostic without any extra work.
-- **#1 (ambiguous handle)** — pdfce draws its own chrome; there is no
+- **#1 (ambiguous handle)** — pdfcer draws its own chrome; there is no
   second OS title bar to confuse with the panel header.
 
 And one it walks straight into: **#8, tab overflow.** `egui_tiles` 0.16
@@ -340,7 +340,7 @@ in `D:\dev\rag\egui\`.
 | **c** | Tabbing panels together within a stack | **Already shipped**, with a caveat: an overflowing tab bar **hides** tabs behind scroll arrows, which is why the current default caps groups at two panes. Raising the cap needs a "⌄ N more" overflow menu, buildable in `top_bar_right_ui`. | zero as-is; ~1 day for the overflow menu |
 | **d** | Drag a panel between left and right docks | **Achievable with work.** Not native — drag identity is tree-scoped, so tree B cannot recognise tree A's dragged tile. Two routes below. | 1–2 weeks (wide tree) or ~3 days (hand-rolled) |
 | **e** | Tear out to a floating OS window, re-dock | **Achievable with work** — and the constraint I expected to kill it does not apply. See below. | 2–4 weeks; ~1 week for a cut-down version |
-| **f** | Persist the arrangement across sessions | **Achievable.** The whole tree derives serde behind the crate's *default* feature, which pdfce currently disables. Persists topology, splitter shares, active tab per group, and the pane payload. | **2–3 days — highest value per hour on this list** |
+| **f** | Persist the arrangement across sessions | **Achievable.** The whole tree derives serde behind the crate's *default* feature, which pdfcer currently disables. Persists topology, splitter shares, active tab per group, and the pane payload. | **2–3 days — highest value per hour on this list** |
 | **g** | Named / savable workspace layouts | **Achievable** — strictly a superset of (f). | +3–4 days on top of (f) |
 | **h** | Collapse a dock to an icon rail | **Achievable with work** — not an `egui_tiles` feature, but it does not need to be: a narrow panel of icon buttons drawn *instead of* the tree, leaving tree state untouched. | ~1 week, mostly icons and tooltips |
 
@@ -408,7 +408,7 @@ retired as an absolute and replaced by two independent options:
 | Setting | Values | Default | What it governs |
 |---|---|---|---|
 | **Floating panels** | Off · Allowed | Allowed | Whether the operator may tear a panel out into its own window at all. Off restores today's behaviour exactly. |
-| **Application initiative** | Never · Ask · Allowed | **Never** | Whether pdfce may float a surface over the canvas *on its own*, without the operator having asked — tool option boxes, transient property bars, notifications. |
+| **Application initiative** | Never · Ask · Allowed | **Never** | Whether pdfcer may float a surface over the canvas *on its own*, without the operator having asked — tool option boxes, transient property bars, notifications. |
 
 The second is the one that carries the original complaint, and its
 default is **Never**, which preserves decision 024's outcome as the

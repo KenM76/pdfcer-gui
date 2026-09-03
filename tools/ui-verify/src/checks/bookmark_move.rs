@@ -3,7 +3,7 @@
 //!
 //! # What this proves
 //!
-//! `pdfce-core` `Pass 161.0` shipped `move_outline_item` and
+//! `pdfcer-core` `Pass 161.0` shipped `move_outline_item` and
 //! `set_outline_open`. Until then a bookmark could be written, retitled and
 //! removed, and an outline in the wrong **order** could only be fixed by
 //! deleting a branch and re-authoring it — which loses every destination,
@@ -89,7 +89,7 @@
 //! | B | drag TAIL onto the middle band of DETAIL | `bookmark-drag-released placement=last-child`, `bookmark-move-report moved=1 reparented=1`, `move-bookmark`, and TAIL at `level=1` |
 //! | C | press DETAIL's triangle | `bookmark-disclosure open=0`, `set-bookmark-open`, and **the item count unmoved with one row fewer drawn** |
 //!
-//! [`OutlinePlacement::LastChild`]: https://docs.rs/pdfce-core
+//! [`OutlinePlacement::LastChild`]: https://docs.rs/pdfcer-core
 
 use crate::checks::driving::{SHELL_DIAG_ENV, click_mode_segment, declared, declared_names, list};
 use crate::checks::{Check, CheckContext};
@@ -293,14 +293,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.env
-        .push(("PDFCE_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
+        .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
     report.note(format!(
-        "launched {} as pid {} with PDFCE_DIAG_INVOKE={INVOKE}",
+        "launched {} as pid {} with PDFCER_DIAG_INVOKE={INVOKE}",
         exe.display(),
         session.pid()
     ));
@@ -625,7 +625,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // ★★★ EXACTLY one fewer, not "fewer". DETAIL holds exactly one child, so
     // folding it hides exactly one row. A "shorter than before" assertion would
     // pass on a build that emptied the list, which is also shorter — the trap
-    // `pdfce-core` reported from its own delete Pass, where *"every defect we
+    // `pdfcer-core` reported from its own delete Pass, where *"every defect we
     // injected leaves a shorter list. One leaves it empty, which is also
     // shorter."*
     let expected = rows_before_move - 1;

@@ -94,7 +94,7 @@ import os
 # Helvetica advance widths, 1000 units per em, for the characters used below.
 #
 # Taken from the Adobe Core-14 AFM metrics, which is the same source
-# `pdfce-core` falls back to for a non-embedded standard face — so the x
+# `pdfcer-core` falls back to for a non-embedded standard face — so the x
 # positions computed here and the glyph boxes the engine extracts agree. Only
 # the characters this fixture actually shows are listed: a fuller table would
 # be data nothing reads, and a missing character raises `KeyError` at

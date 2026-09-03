@@ -134,7 +134,7 @@
 //!    default preset. That seam does not exist here — the shell has no
 //!    engine — and the equivalent test belongs in the application. See
 //!    [`Preset::from_key`]'s doc comment, which states the obligation.
-//! 6. **`egui::Id::new("pdfce-theme")` → `"egui-shell-theme"`.**
+//! 6. **`egui::Id::new("pdfcer-theme")` → `"egui-shell-theme"`.**
 
 pub mod contrast;
 pub mod overlays;

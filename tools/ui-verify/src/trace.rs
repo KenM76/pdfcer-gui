@@ -6,10 +6,10 @@
 //! line per event to **stderr**:
 //!
 //! ```text
-//! pdfce-diag start argv1=Some("a.pdf") viewport=ViewportBuilder { .. }
-//! pdfce-diag canvas tool=None rect=[[240.0 96.0] - [1560.0 968.0]] zoom=1.5 sel=0
-//! pdfce-diag vector-click screen=[820.0 514.0] canvas=[580.0 418.0] hits=1 newsel=1
-//! pdfce-diag delete-objects n=1 indices=[7]
+//! pdfcer-diag start argv1=Some("a.pdf") viewport=ViewportBuilder { .. }
+//! pdfcer-diag canvas tool=None rect=[[240.0 96.0] - [1560.0 968.0]] zoom=1.5 sel=0
+//! pdfcer-diag vector-click screen=[820.0 514.0] canvas=[580.0 418.0] hits=1 newsel=1
+//! pdfcer-diag delete-objects n=1 indices=[7]
 //! ```
 //!
 //! Those four are the **old** binary's. The one this project is building
@@ -17,9 +17,9 @@
 //! `PROJECT_PLAN.md` §4.3 asked it for:
 //!
 //! ```text
-//! pdfce-diag canvas rect=[[16.0 22.8] - [1084.0 777.2]] zoom=0.4480 page=0 pages=1 off=[0.0 0.0]
-//! pdfce-diag ui-rect name=canvas-viewport rect=[[8.0 8.0] - [1092.0 792.0]]
-//! pdfce-diag objects n=28 page=0 paths=13 text=15 images=0 forms=0
+//! pdfcer-diag canvas rect=[[16.0 22.8] - [1084.0 777.2]] zoom=0.4480 page=0 pages=1 off=[0.0 0.0]
+//! pdfcer-diag ui-rect name=canvas-viewport rect=[[8.0 8.0] - [1092.0 792.0]]
+//! pdfcer-diag objects n=28 page=0 paths=13 text=15 images=0 forms=0
 //! ```
 //!
 //! Note what does **not** appear in the second set: `sel=`. A field the
@@ -160,7 +160,7 @@ impl Trace {
     /// Parse a captured stderr stream.
     ///
     /// `prefix` is the marker the application puts at the head of every
-    /// diagnostic line (`"pdfce-diag"`). Lines without it go to
+    /// diagnostic line (`"pdfcer-diag"`). Lines without it go to
     /// [`Trace::other`].
     #[must_use]
     pub fn parse(text: &str, prefix: &str) -> Self {
@@ -227,7 +227,7 @@ impl Trace {
 
     /// Did the application emit anything at all under the prefix?
     ///
-    /// The distinction this answers is the one that cost pdfce's investigation
+    /// The distinction this answers is the one that cost pdfcer's investigation
     /// a round trip on 2026-08-04: an empty trace means either "the process
     /// never saw the diagnostic environment variable" or "the process saw
     /// nothing worth reporting", and those need different fixes. The
@@ -250,7 +250,7 @@ impl Trace {
 
     /// Script steps the application rejected as unparseable.
     ///
-    /// Always worth printing, whatever a check was looking for. pdfce records
+    /// Always worth printing, whatever a check was looking for. pdfcer records
     /// two working features being declared broken because their scripts used
     /// step names that did not exist: the harness traced the rejection on every
     /// single run, and every filter in use matched only the traces the test
@@ -389,11 +389,11 @@ fn is_ident(c: char) -> bool {
 mod tests {
     use super::*;
 
-    const PREFIX: &str = "pdfce-diag";
+    const PREFIX: &str = "pdfcer-diag";
 
     #[test]
     fn parses_a_plain_line() {
-        let t = Trace::parse("pdfce-diag delete-objects n=1 indices=[7]", PREFIX);
+        let t = Trace::parse("pdfcer-diag delete-objects n=1 indices=[7]", PREFIX);
         assert_eq!(t.lines.len(), 1);
         let l = &t.lines[0];
         assert_eq!(l.event, "delete-objects");
@@ -407,7 +407,7 @@ mod tests {
     #[test]
     fn a_value_may_contain_spaces_inside_brackets() {
         let t = Trace::parse(
-            "pdfce-diag canvas rect=[[240.0 96.0] - [1560.0 968.0]] zoom=1.5 sel=2",
+            "pdfcer-diag canvas rect=[[240.0 96.0] - [1560.0 968.0]] zoom=1.5 sel=2",
             PREFIX,
         );
         let l = t.last("canvas").expect("canvas line");
@@ -421,7 +421,7 @@ mod tests {
     #[test]
     fn a_value_may_contain_spaces_inside_quotes() {
         let t = Trace::parse(
-            "pdfce-diag start argv1=Some(\"my drawing a.pdf\") viewport=Some(1)",
+            "pdfcer-diag start argv1=Some(\"my drawing a.pdf\") viewport=Some(1)",
             PREFIX,
         );
         let l = t.first("start").expect("start line");
@@ -431,7 +431,7 @@ mod tests {
 
     #[test]
     fn debug_option_wrappers_are_transparent_and_none_reads_as_absent() {
-        let t = Trace::parse("pdfce-diag canvas first=Some(3) second=None", PREFIX);
+        let t = Trace::parse("pdfcer-diag canvas first=Some(3) second=None", PREFIX);
         let l = t.last("canvas").unwrap();
         assert_eq!(l.get_usize("first"), Some(3));
         assert_eq!(
@@ -444,7 +444,7 @@ mod tests {
     #[test]
     fn non_prefixed_output_is_kept_not_discarded() {
         let t = Trace::parse(
-            "thread 'main' panicked at src/main.rs:1:1\npdfce-diag start argv1=None",
+            "thread 'main' panicked at src/main.rs:1:1\npdfcer-diag start argv1=None",
             PREFIX,
         );
         assert_eq!(t.lines.len(), 1);
@@ -456,12 +456,12 @@ mod tests {
     fn started_distinguishes_no_diag_from_no_output() {
         assert!(!Trace::parse("", PREFIX).started("start"));
         assert!(!Trace::parse("some unrelated stderr", PREFIX).started("start"));
-        assert!(Trace::parse("pdfce-diag start argv1=None", PREFIX).started("start"));
+        assert!(Trace::parse("pdfcer-diag start argv1=None", PREFIX).started("start"));
     }
 
     #[test]
     fn rejected_script_steps_are_findable() {
-        let t = Trace::parse("pdfce-diag script-step-UNPARSEABLE step=nav:home", PREFIX);
+        let t = Trace::parse("pdfcer-diag script-step-UNPARSEABLE step=nav:home", PREFIX);
         assert_eq!(t.rejected_steps().len(), 1);
     }
 }

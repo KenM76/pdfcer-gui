@@ -26,9 +26,9 @@ file in either corpus was both:
     field, no interior in the name tree, so ``AcroForm::groups`` is empty and
     ``groups::section`` takes its early return before any arm control could be
     withheld.
-  * ``D:/Dev/pdfce/fixtures/synthetic/forms/certified-p2-form.pdf`` — certified,
+  * ``D:/Dev/pdfcer/fixtures/synthetic/forms/certified-p2-form.pdf`` — certified,
     and **also flat** (``FullName`` text + ``Subscribe`` check box).
-  * ``D:/Dev/pdfce/fixtures/synthetic/forms/nested-form.pdf`` — the only file in
+  * ``D:/Dev/pdfcer/fixtures/synthetic/forms/nested-form.pdf`` — the only file in
     either corpus with grouping nodes at all, and **not certified**: no
     ``/Perms``, no signature, every gate open.
 
@@ -42,7 +42,7 @@ nothing** — the section early-returns, no arm control is drawn, and "no arm
 control was drawn" is exactly what the assertion looks for. That is strictly
 worse than the SKIP it replaces, because a SKIP is legible in the report and a
 vacuous pass is not. Hence the four-point verification recorded below, and
-hence the unit test in ``crates/pdfce-gui/src/app/actions/forms/delete.rs``
+hence the unit test in ``crates/pdfcer-gui/src/app/actions/forms/delete.rs``
 that pins all four *from inside the crate* so a regression in the engine's
 walk cannot quietly re-empty the list.
 
@@ -67,7 +67,7 @@ from it deliberately — a reader who has read one can read the other.
 THE FIELD TREE, AND WHY IT IS A COPY OF `nested-form.pdf`'S
 ===========================================================================
 
-``pdfce-core``'s ``AcroForm::groups`` collects the field-name tree's
+``pdfcer-core``'s ``AcroForm::groups`` collects the field-name tree's
 **interior** — the *pure* non-terminals, the nodes with child fields and no
 widget kids of their own. ``forms::walk_field`` records one at the early return
 it takes when ``!child_fields.is_empty() && widget_kids.is_empty()``, and
@@ -139,11 +139,11 @@ NO CRYPTOGRAPHY, AND NONE CLAIMED
 
 ``/Contents`` is filler zeros and the ``/ByteRange`` is computed from the
 laid-out bytes, exactly as in ``gen-certified-fixture.py`` and
-``gen-signed-fixture.py``. ``pdfce-core``'s signature module opens *"This
+``gen-signed-fixture.py``. ``pdfcer-core``'s signature module opens *"This
 module verifies nothing"*, so a real certificate would exercise nothing these
 bytes do not, and would drag a private key nobody can rotate into a repository.
 
-**What this fixture can and cannot support:** it CAN support *"pdfce found an
+**What this fixture can and cannot support:** it CAN support *"pdfcer found an
 enforced certification, listed the grouping nodes, and withheld the
 Delete-group controls while leaving the fill controls alone"* — which is the
 whole of the feature. It CANNOT support any claim about signature validity, and
@@ -166,7 +166,7 @@ VERIFIED, WITH THE ENGINE, NOT BY EYE
 ===========================================================================
 
 The four properties this fixture exists to have, each asserted by
-``crates/pdfce-gui/src/app/actions/forms/delete.rs``'s
+``crates/pdfcer-gui/src/app/actions/forms/delete.rs``'s
 ``the_certified_nested_fixture_is_both_certified_and_nested``:
 
   1. it **loads** — ``Document::load`` succeeds and the page tree parses;

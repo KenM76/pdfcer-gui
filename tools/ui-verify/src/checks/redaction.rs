@@ -7,7 +7,7 @@
 //! terms any note in this project uses:
 //!
 //! > **A shell calling `redact::apply_redactions` directly and writing the
-//! > bytes ships an unverified redaction and will not know.** … `pdfce-cli`'s
+//! > bytes ships an unverified redaction and will not know.** … `pdfcer`'s
 //! > `redact-apply` does exactly that at HEAD and exits `SUCCESS` on a file it
 //! > never verified.
 //!
@@ -49,12 +49,12 @@
 //! # ★ …and a fourth oracle, in a second process
 //!
 //! A raw byte scan is the harness's own reading of the file. The other honest
-//! question is what **pdfce** makes of it, and `checks::save_copy` established
+//! question is what **pdfcer** makes of it, and `checks::save_copy` established
 //! the shape: re-open the written file in a second process and read the answer
 //! out of its trace.
 //!
 //! Here that is `file.copy_page_text`, which runs the same extraction
-//! `pdfce-cli extract-text` does, over the page the redaction covered. On the
+//! `pdfcer extract-text` does, over the page the redaction covered. On the
 //! fixture it traces `text-copied source=page chars=N`; on the redacted output
 //! the same click must trace `text-copy-declined source=page
 //! reason=nothing-to-copy`, because there is nothing left on that page to copy.
@@ -85,14 +85,14 @@
 //! *Mark whole page*. The search-and-mark route — which needs a query typed
 //! into a field — is therefore **not covered here**, and that is stated rather
 //! than left to be discovered. Its rule is unit-tested in
-//! `crates/pdfce-gui/src/app/actions/apply.rs`; what is not verified by driving
+//! `crates/pdfcer-gui/src/app/actions/apply.rs`; what is not verified by driving
 //! is the field itself.
 //!
 //! # What each phase would fail on
 //!
 //! | phase | fails when |
 //! |---|---|
-//! | A | the fixture's own text is not extractable by pdfce, so the check has no baseline |
+//! | A | the fixture's own text is not extractable by pdfcer, so the check has no baseline |
 //! | B | `edit.redact` opens no panel, or the panel's controls publish no rects |
 //! | C | marking traces no mark, so nothing after it means anything |
 //! | D | the apply report never appears, or reports `verified=false` on a clean fixture |
@@ -173,14 +173,14 @@ const WRITTEN_EVENT: &str = "redact-written";
 /// `redact-write-failed path=… detail=…`.
 const WRITE_FAILED_EVENT: &str = "redact-write-failed";
 
-/// `text-copied source=page chars=N` — pdfce's own extraction found text.
+/// `text-copied source=page chars=N` — pdfcer's own extraction found text.
 const COPIED_EVENT: &str = "text-copied";
 
 /// `text-copy-declined source=page reason=nothing-to-copy` — it found none.
 const COPY_DECLINED_EVENT: &str = "text-copy-declined";
 
 /// The seam that answers the save dialog instead of opening it.
-const SAVE_PATH_ENV: &str = "PDFCE_DIAG_SAVE_PATH";
+const SAVE_PATH_ENV: &str = "PDFCER_DIAG_SAVE_PATH";
 
 /// **The string the redaction must remove**, drawn on page 1.
 ///
@@ -515,7 +515,7 @@ fn census(trace: &Trace) -> Option<(usize, usize)> {
     Some((line.get_usize("marks")?, line.get_usize("pages")?))
 }
 
-/// **Copy the current page's text through the ribbon, and report what pdfce's
+/// **Copy the current page's text through the ribbon, and report what pdfcer's
 /// own extraction found.**
 ///
 /// `Ok(Some(chars))` when it copied something, `Ok(None)` when it declined
@@ -619,7 +619,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // =======================================================================
     // The marking process. Scoped, so `Drop` kills it before the second one
-    // launches — two pdfce windows competing for the foreground would make
+    // launches — two pdfcer windows competing for the foreground would make
     // every click after the first one a race.
     // =======================================================================
     let extracted_before;
@@ -630,7 +630,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
         session.settle(16);
 
-        // --- PHASE A: pdfce can read page 1's text ------------------------
+        // --- PHASE A: pdfcer can read page 1's text ------------------------
         //
         // The baseline for phase I, and a precondition in its own right: a
         // fixture whose text this build cannot extract is one the redaction
@@ -639,7 +639,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         extracted_before =
             extracted_chars(&session, &driver, ui_rect, "the fixture")?.ok_or_else(|| {
                 Error::new(
-                    "pdfce extracted no text at all from page 1 of the fixture, so this check has \
+                    "pdfcer extracted no text at all from page 1 of the fixture, so this check has \
                      no baseline and its phase-I assertion would pass on a build that removed \
                      nothing. The fixture draws one Helvetica string in an uncompressed content \
                      stream; if that is not extractable, the extractor is the subject and this \
@@ -648,7 +648,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                 )
             })?;
         report.note(format!(
-            "phase A: pdfce's own extraction reads {extracted_before} character(s) from page 1 of \
+            "phase A: pdfcer's own extraction reads {extracted_before} character(s) from page 1 of \
              the fixture"
         ));
 
@@ -903,7 +903,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         let Some(canvas) = canvas else {
             return Ok(Some(format!(
                 "★ the redacted file at {} did not draw in a fresh process — the canvas traced \
-                 nothing at all. A redaction that produces a file pdfce cannot open has removed \
+                 nothing at all. A redaction that produces a file pdfcer cannot open has removed \
                  the content and the document with it.",
                 target.display()
             )));
@@ -921,9 +921,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             Some(chars) => {
                 return Ok(Some(format!(
                     "★★ A SECOND PROCESS STILL EXTRACTS {chars} CHARACTER(S) FROM THE REDACTED \
-                     PAGE. pdfce read {extracted_before} character(s) from page 1 of the fixture \
+                     PAGE. pdfcer read {extracted_before} character(s) from page 1 of the fixture \
                      and reads {chars} from page 1 of {} — through the same extraction \
-                     `pdfce-cli extract-text` uses, which is the tool an operator would reach for \
+                     `pdfcer extract-text` uses, which is the tool an operator would reach for \
                      to get the text back out. The byte scan in phase H found nothing, so the \
                      text has survived in a form that scan cannot see.",
                     target.display()

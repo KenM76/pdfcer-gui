@@ -12,7 +12,7 @@
 //! The cause was measured, not guessed. The tool hit-tested for a **PDF path
 //! object** and fed *every anchor of every subpath of that object* to the
 //! circle fit. On his own drawing — `SW41177.pdf` page 1, read with
-//! `pdfce-cli object-list` — three objects carry **4,405**, **4,972** and
+//! `pdfcer object-list` — three objects carry **4,405**, **4,972** and
 //! **6,681** anchors, the largest holding 1,194 subpaths across a 550 × 500 pt
 //! region. One click anywhere on it handed the fit six thousand points
 //! scattered over half the sheet, and the circle through them is enormous.

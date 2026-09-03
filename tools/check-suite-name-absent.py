@@ -2,7 +2,7 @@
 """check-suite-name-absent -- the licensed suite's name must not appear in this repository.
 
 Operator ruling, 2026-08-25: the name of the licensed print-conformance suite
-pdfce measures itself against is kept out of this public repository entirely --
+pdfcer measures itself against is kept out of this public repository entirely --
 file contents AND file names. `docs/ROADMAP.md` open question `(bt)`.
 
 WHY THIS SCRIPT EXISTS AT ALL, AND WHY IT LOOKS ODD

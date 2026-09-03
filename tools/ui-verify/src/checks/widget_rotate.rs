@@ -65,7 +65,7 @@ use crate::report::CheckReport;
 const INVOKE: &str = "mode.edit,edit.form_text_field";
 
 /// The placement dialog accepts itself, so no dialog has to be driven.
-const ACCEPT_ENV: (&str, &str) = ("PDFCE_DIAG_FORM_ACCEPT", "1");
+const ACCEPT_ENV: (&str, &str) = ("PDFCER_DIAG_FORM_ACCEPT", "1");
 
 /// The per-widget census the canvas publishes.
 const BOX_LINE: &str = "form-target";
@@ -182,7 +182,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.env
-        .push(("PDFCE_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
+        .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.env
         .push((ACCEPT_ENV.0.to_owned(), ACCEPT_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;

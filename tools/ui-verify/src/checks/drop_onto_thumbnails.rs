@@ -13,7 +13,7 @@
 //! A harness moves a pointer and presses keys. It cannot **originate an OLE
 //! drag** — that is Explorer's side of a protocol between two processes, and
 //! no amount of `SendInput` produces one. So `app::filedrag` carries the same
-//! kind of seam `app::dropped` already had (`PDFCE_DIAG_DROP_PATH`), which
+//! kind of seam `app::dropped` already had (`PDFCER_DIAG_DROP_PATH`), which
 //! makes the application behave as though a file had been dropped.
 //!
 //! ★★ **But the seam alone would test the wrong thing.** This feature is
@@ -22,7 +22,7 @@
 //! that ignored the position completely, which is precisely the build that
 //! existed before O67.
 //!
-//! ⇒ Hence `PDFCE_DIAG_DROP_AFTER_MS`. The drop is held back; the check puts
+//! ⇒ Hence `PDFCER_DIAG_DROP_AFTER_MS`. The drop is held back; the check puts
 //! the **real cursor** on the tile it means and waits; and the application then
 //! reads the position from the operating system with the same line of code a
 //! genuine drop uses (`native_window::cursor_position`). The position is real,
@@ -72,9 +72,9 @@ const GRID: &str = "panel-pages-grid"; // ui-text-exempt: a trace region name, n
 /// The prefix of the per-tile regions.
 const TILE: &str = "panel-pages-tile."; // ui-text-exempt: a trace region prefix, never displayed
 /// The seam that makes the application behave as though a file was dropped.
-const DROP_PATH_ENV: &str = "PDFCE_DIAG_DROP_PATH"; // ui-text-exempt: an environment variable name
+const DROP_PATH_ENV: &str = "PDFCER_DIAG_DROP_PATH"; // ui-text-exempt: an environment variable name
 /// How long the application holds that drop back.
-const DROP_AFTER_ENV: &str = "PDFCE_DIAG_DROP_AFTER_MS"; // ui-text-exempt: an environment variable name
+const DROP_AFTER_ENV: &str = "PDFCER_DIAG_DROP_AFTER_MS"; // ui-text-exempt: an environment variable name
 /// The line the drop itself writes.
 const DROPPED: &str = "file-dropped"; // ui-text-exempt: a trace event name, never displayed
 /// The line the Pages panel writes when it claims one.
@@ -150,7 +150,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .pdf
         .clone()
         .ok_or_else(|| Error::new("no --pdf. This check needs a document to import INTO."))?;
-    // ★ The dropped file must be a DIFFERENT document. pdfce activates the tab
+    // ★ The dropped file must be a DIFFERENT document. pdfcer activates the tab
     // a path is already open in rather than opening it twice, so dropping the
     // open document on its own thumbnails would be testing a case with a
     // different correct answer.

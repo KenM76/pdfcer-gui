@@ -18,7 +18,7 @@
 //! ## effect
 //!
 //! Inkscape's selector switches to the text tool on this gesture; Illustrator's
-//! does the same. pdfce could place the caret without arming — its typing path
+//! does the same. pdfcer could place the caret without arming — its typing path
 //! runs whatever tool is selected — and that would leave the operator in a
 //! state no other program has: a caret blinking in the page while the arrow is
 //! still the tool, so their next click means *select* when everything on screen

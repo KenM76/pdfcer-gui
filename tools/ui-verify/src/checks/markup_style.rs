@@ -29,7 +29,7 @@
 //! | shape | example | what was green |
 //! |---|---|---|
 //! | a command with no dispatch arm | `file.settings` | the registry, the manifest, the reachability check |
-//! | a linked crate with a refusing adapter | `pdfce-print` | the adapter's own tests, which asserted the refusal |
+//! | a linked crate with a refusing adapter | `pdfcer-print` | the adapter's own tests, which asserted the refusal |
 //! | **a declared item with no renderer** | `colour_swatch` | everything — the manifest test asserts the item is *declared* |
 //!
 //! The third is the quietest. `shell::manifest::mod`'s own test asserts
@@ -177,7 +177,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
 
     // --- A. Review mode, then the Markup tab -------------------------------
     //
-    // pdfce opens in **Read**, whose tab list is `["file", "view"]`, so Markup
+    // pdfcer opens in **Read**, whose tab list is `["file", "view"]`, so Markup
     // does not exist in the mode this process starts in. Review rather than
     // Edit because Review is the stance in which markup is placed — and
     // `manifest::format`'s header makes the point that a reviewer who cannot

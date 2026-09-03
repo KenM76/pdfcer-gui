@@ -25,7 +25,7 @@
 //!
 //! `app::window` is fully unit-tested — the memory slot flips, `draws_chrome`
 //! is its negation, both directions, three times over. **Every one of those
-//! tests passes against a build where `PdfceApp::ui` never calls
+//! tests passes against a build where `PdfcerApp::ui` never calls
 //! `draws_chrome`.** The whole behaviour is one `if` in the frame composition,
 //! and a composition step's effect is observable only in a window: it is the
 //! identical shape to the defect `measure_linear` exists for, where four
@@ -187,7 +187,7 @@ const CANVAS: &str = "central-panel";
 ///
 /// A floor rather than an equality. The exact height of a two-row ribbon band
 /// is a layout fact this harness must not re-derive — `check-file-size.sh`'s
-/// sibling argument, and the reason `profile::PDFCE_GUI` ships no region
+/// sibling argument, and the reason `profile::PDFCER_GUI` ships no region
 /// fractions at all: a number written here is correct until the first time the
 /// band's padding changes, and then it is a check that fails for a reason that
 /// is not a defect.
@@ -209,7 +209,7 @@ const MIN_RISE_PTS: f32 = 40.0;
 /// conservative in the direction that matters.
 const MIN_REPAINT_DELTA: u16 = driving::MIN_PRESSED_DELTA;
 
-/// Where and how large the window is placed, as `PDFCE_DIAG_VIEWPORT` takes it
+/// Where and how large the window is placed, as `PDFCER_DIAG_VIEWPORT` takes it
 /// (`x,y,w,h` in logical points).
 ///
 /// Wide enough for **all seven** of the View tab's groups, because the control
@@ -292,7 +292,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     // arm this check is about. The chord `Ctrl+H` and the overflow menu are the
     // operator's routes on a small window.
     //
-    // `PDFCE_DIAG_VIEWPORT` also switches `with_active` off, which is harmless
+    // `PDFCER_DIAG_VIEWPORT` also switches `with_active` off, which is harmless
     // here: `Driver::click_at` raises the target window before every click, and
     // that raise is what every driving check already depends on.
     if let Some(name) = ctx.profile.viewport_env {
@@ -482,7 +482,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
              started {:.1} pt down before and {:.1} pt down after, a rise of {rise:.1} pt \
              against the {MIN_RISE_PTS:.0} pt a ribbon band is worth. The toggle flipped and \
              the frame did not read it — look for the `window::draws_chrome` guard around \
-             `self.ribbon_band(...)` in `PdfceApp::ui`, which is the whole of the behaviour and \
+             `self.ribbon_band(...)` in `PdfcerApp::ui`, which is the whole of the behaviour and \
              is invisible to every unit test in the workspace.",
             before_canvas.min.y, after_canvas.min.y
         )));

@@ -12,7 +12,7 @@
 //! > which makes the inert control the least defensible kind — the work behind
 //! > it is done.
 //!
-//! The renderer has produced `pdfce_render::Diagnostics` since S0 and the
+//! The renderer has produced `pdfcer_render::Diagnostics` since S0 and the
 //! status bar has shown a one-line summary of it since S2. What was missing was
 //! a `match` arm and a window. Both landed on 2026-08-15
 //! (`crate::dialogs::diagnostics`), and this is the check that says so from
@@ -182,7 +182,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         return Ok(Some(format!(
             "`{DIALOG}` was declared before anything was clicked. A diagnostic window that \
              opens on its own is the specified default of `view.app_initiative` — **Never** — \
-             broken in the most visible way available: pdfce may not float a surface over the \
+             broken in the most visible way available: pdfcer may not float a surface over the \
              canvas unasked."
         )));
     }
@@ -192,7 +192,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
 
     // --- A. Edit mode, then the Tools tab ----------------------------------
     //
-    // ★ The mode click is a precondition rather than a flourish. pdfce opens in
+    // ★ The mode click is a precondition rather than a flourish. pdfcer opens in
     // **Read**, whose tab list is `["file", "view"]` — so Tools does not exist
     // in the mode this process starts in, and a check that went straight for
     // the tab would SKIP with *"the tab strip is too narrow"*, which is a

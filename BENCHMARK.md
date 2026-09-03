@@ -2,12 +2,12 @@
 
 **Measured:** 2026-08-12
 **Subject:** `D:\Dev\pdfTests\ncored-benchmark-cad-drawing.pdf`
-**Raw trace:** `evidence/bench-gui-diag.txt` (773 lines, `PDFCE_DIAG=1`)
+**Raw trace:** `evidence/bench-gui-diag.txt` (773 lines, `PDFCER_DIAG=1`)
 
 This file exists because an earlier draft of `GUI_ROADMAP.md` asserted
-that pdfce's whole-page raster was a performance weakness and should be
+that pdfcer's whole-page raster was a performance weakness and should be
 replaced with a tile cache. That was reasoned from architecture and
-never measured. The operator's contrary report — that pdfce's zoom and
+never measured. The operator's contrary report — that pdfcer's zoom and
 pan felt *faster and more pleasant* than the tiled competitor's —
 prompted this measurement, and **the operator was right**.
 
@@ -15,18 +15,18 @@ prompted this measurement, and **the operator was right**.
 
 ## ★★★ 2026-08-30 — the EDIT half, measured for the first time
 
-**Instrument:** `crates/pdfce-gui/src/app/actions/latency.rs`, a `#[ignore]`d
+**Instrument:** `crates/pdfcer-gui/src/app/actions/latency.rs`, a `#[ignore]`d
 release-mode test. Run it with:
 
 ```
-cargo test -p pdfce-gui --release edit_latency -- --ignored --nocapture
+cargo test -p pdfcer-gui --release edit_latency -- --ignored --nocapture
 ```
 
 **Why it was written.** `OPERATOR_REQUESTS.md` **O63** asks for a live preview
 that stays on screen *"while the update to the pdf structure runs in the
 background"*. Two completely different fixes follow depending on whether the
-delay an operator feels is the **commit** (`pdfce-core` rewriting the page) or
-the **raster** (`pdfce-render` redrawing it). Nobody had a number for the
+delay an operator feels is the **commit** (`pdfcer-core` rewriting the page) or
+the **raster** (`pdfcer-render` redrawing it). Nobody had a number for the
 commit. This file exists because the last time this project answered a
 performance question from architecture rather than measurement, it was wrong.
 
@@ -101,14 +101,14 @@ one edit parses one content stream twice. Neither side can fix that alone.
 | Version | PDF 1.7 |
 | Pages | 1 |
 | Content | Dense vector site / utilities plan — services overlays, hatched zones, tree symbols, a full legend table, coordinate schedule, title block |
-| pdfce verdict | **"Rendered faithfully — no font substitutions or unsupported content on this page"** |
+| pdfcer verdict | **"Rendered faithfully — no font substitutions or unsupported content on this page"** |
 
 This is a genuinely hard page, not a synthetic stress test. At scale 1 it
-takes pdfce roughly a second to rasterize.
+takes pdfcer roughly a second to rasterize.
 
 ---
 
-## Headless rasterization (`pdfce-cli render-page`)
+## Headless rasterization (`pdfcer render-page`)
 
 Wall time includes process start, parse and PNG encode, so treat these
 as relative rather than absolute engine cost.
@@ -167,7 +167,7 @@ don't render what the user is scrolling past.
 
 What a tile renderer buys is a better *time to first pixel* at the
 destination. What it costs is smoothness — it paints piece by piece, and
-it does work at every intermediate step. On this document, pdfce's model
+it does work at every intermediate step. On this document, pdfcer's model
 is the better trade, which is exactly what the operator observed in use.
 
 The in-frame wait budget is 12 ms (`budget_ms=12`), so a page fast
@@ -180,23 +180,23 @@ behaviour, and this page — which is not — never blocks the UI.
 
 Same file, same window size, both at 95 % fit-page zoom.
 
-| | pdfce | the comparison product |
+| | pdfcer | the comparison product |
 |---|---:|---:|
 | Processes | **1** | 5 (a UI process + 4 render workers) |
 | Working set | **170 MB** at open, 231 MB after zooming to 4× | **569 MB** total |
 | CPU to steady state | 7.4 s | 5.0 s |
 | Render fidelity | faithful, self-reported and correct | correct |
 
-pdfce uses roughly **2.5× less memory** in a single process. The
+pdfcer uses roughly **2.5× less memory** in a single process. The
 comparison product spends its extra memory on crash isolation — a bad page cannot
-take down its UI — which is a real benefit pdfce does not have. Both are
+take down its UI — which is a real benefit pdfcer does not have. Both are
 defensible; neither is free.
 
 ### A comparison-product defect, reproduced
 
 On this file, as on the A1 title-block frame tested earlier, the comparison
 product's Properties panel reports `Pages -`, `Page Size -`, and every
-metadata field blank, plus `Annotations Total 0`. pdfce reports
+metadata field blank, plus `Annotations Total 0`. pdfcer reports
 `PDF 1.7, 1 page(s)` correctly. Two different documents, same failure —
 this is not file-specific.
 
@@ -206,7 +206,7 @@ this is not file-specific.
 
 **No — and threads only help the smaller half.** Measured with the
 project's own `tools/render-profile` (which enables the
-`pdfce-render/profile` feature), `--repeat 3`, fastest run:
+`pdfcer-render/profile` feature), `--repeat 3`, fastest run:
 
 ```
 load      : 1.686 ms   (object graph + xref only)
@@ -255,7 +255,7 @@ thing you were trying to split.
 
 Processes buy **crash isolation**, not throughput. The comparison product runs
 four `pdfium-worker` processes and pays 569 MB for it — a bad page cannot
-take down its UI, which is a genuine benefit. But pdfce is a single Rust
+take down its UI, which is a genuine benefit. But pdfcer is a single Rust
 binary: threads already share memory for free, while processes would have
 to ship a multi-megabyte pixmap back across a pipe on every render. There
 is no speed argument for processes here, only a robustness one.
@@ -277,7 +277,7 @@ is the sequential walk.
 
 ### The bigger win is not parallelism at all
 
-`render_page(doc, page, scale)` (`pdfce-render/src/lib.rs:165`) is a pure
+`render_page(doc, page, scale)` (`pdfcer-render/src/lib.rs:165`) is a pure
 function with **no state retained between calls**. Every zoom change
 re-walks all 148,517 operators from scratch — even though the geometry
 has not changed. Only the transform has.
@@ -325,7 +325,7 @@ allows."*
 
 `MAX_ZOOM` is nominally 8.0 (800 %). It is not the real limit.
 `viewer::max_zoom_for_page` lowers the ceiling per page so a render
-cannot exceed `pdfce_render::MAX_PIXMAP_EDGE` (16,384 px), because a
+cannot exceed `pdfcer_render::MAX_PIXMAP_EDGE` (16,384 px), because a
 whole-page raster's edge scales with zoom:
 
 ```
@@ -358,7 +358,7 @@ Worked through for real sheet sizes:
 > **The conclusion is unaffected**, which is worth stating so the
 > correction is not read as bigger than it is: 6.9× on a HiDPI display is
 > still below `MAX_ZOOM`, still falls as sheets grow, and the region API
-> was still the right answer. The pdfce team quoted the 3.4× figure back
+> was still the right answer. The pdfcer team quoted the 3.4× figure back
 > in their reply; `open/request_reusable_parsed_handle.md` carries the
 > correction to them.
 
@@ -397,7 +397,7 @@ it is the benchmark drawing, at 3.4×.
 >
 > Everything in the two sections below reasons about *tile geometry* on the
 > assumption that a tile's cost is dominated by its **fill**. It is not.
-> The pdfce team shipped `render_page_region` and measured the floor
+> The pdfcer team shipped `render_page_region` and measured the floor
 > directly, and the answer overturns the plan:
 >
 > | case | pixels | time |
@@ -436,7 +436,7 @@ tiled viewer.** Rendering only what is visible guarantees that every pan
 shows stale or blank pixels at the leading edge. Some quantity of
 already-rendered content beyond the viewport is not an optimisation, it
 is the difference between a tiled viewer that feels good and one that
-feels worse than what pdfce does today.
+feels worse than what pdfcer does today.
 
 **The mechanism is where it gets expensive, and it can be had cheaper.**
 What produces coverage beyond the viewport is *rendering a larger area*.
@@ -522,7 +522,7 @@ inverts — at high zoom with tiling, fill is *all* there is, so it scales.
    At 830 ms per render, 150 ms of settle is well judged. On a lighter
    sheet it is dead time; on a heavier one it is too eager. That is a
    setting, per R169.
-4. **Instrument before optimising further.** `PDFCE_DIAG` already emits
+4. **Instrument before optimising further.** `PDFCER_DIAG` already emits
    `render-async-done gen=N ms=M outcome=…`, which is most of a
    performance harness. Adding page complexity — operator count, path
    count, resource count — to that line would make it a complete one.
@@ -532,8 +532,8 @@ inverts — at high zoom with tiling, fill is *all* there is, so it scales.
 ## Method, for repetition
 
 ```powershell
-$env:PDFCE_DIAG = "1"
-Start-Process "D:\Dev\pdfce\target\release\pdfce-gui.exe" `
+$env:PDFCER_DIAG = "1"
+Start-Process "D:\Dev\pdfcer\target\release\pdfcer-gui.exe" `
   -ArgumentList '"D:\Dev\pdfTests\ncored-benchmark-cad-drawing.pdf"' `
   -RedirectStandardError diag.txt
 # …drive the app…
@@ -543,7 +543,7 @@ Select-String "render-async" diag.txt
 Headless timing:
 
 ```powershell
-$exe = "D:\Dev\pdfce\target\release\pdfce-cli.exe"
+$exe = "D:\Dev\pdfcer\target\release\pdfcer.exe"
 foreach ($s in 1,2,4,8) {
   Measure-Command { & $exe render-page $f --page 1 --scale $s -o "out_$s.png" }
 }

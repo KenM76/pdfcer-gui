@@ -192,9 +192,9 @@ const ITEM_PREFIX: &str = "ribbon.item.";
 ///
 /// Two channels, deliberately, and this check reads both. `egui-shell` traces
 /// under `EGUI_SHELL_DIAG` with the prefix an application sets via
-/// `verify::set_prefix` — which `pdfce-gui` does not call, so the lines arrive
+/// `verify::set_prefix` — which `pdfcer-gui` does not call, so the lines arrive
 /// under the crate's default. The application traces separately under
-/// `PDFCE_DIAG` with `pdfce-diag`.
+/// `PDFCER_DIAG` with `pdfcer-diag`.
 ///
 /// The split is not an accident of this build: `verify`'s own header explains
 /// that one variable name lets a harness arm tracing on *any* `egui-shell`
@@ -256,11 +256,11 @@ const UNIMPLEMENTED_EVENT: &str = "command-unimplemented";
 /// — a maximum channel difference of **39**.
 ///
 /// **That is not what the built binary produces.** Measured from a real
-/// capture on 2026-08-14, `pdfce-gui` draws its unpressed control `#E5E5E5`
+/// capture on 2026-08-14, `pdfcer-gui` draws its unpressed control `#E5E5E5`
 /// and its pressed one `#90D1FF`, a difference of **85**. Those are `egui`'s
 /// own stock light values (`widgets.inactive.weak_bg_fill` = grey 230,
 /// `selection.bg_fill` = 144, 209, 255), and the reason is that nothing in
-/// `crates/pdfce-gui` calls `egui_shell::theme::Theme::apply` — the theme
+/// `crates/pdfcer-gui` calls `egui_shell::theme::Theme::apply` — the theme
 /// module is compiled, contrast-gated and never installed, so the ribbon
 /// reads its *metrics* through `Theme::of`'s default and paints with `egui`'s
 /// stock palette. Recorded here rather than fixed: it is outside this work's
@@ -802,7 +802,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 /// prefix.
 ///
 /// One file, two vocabularies. `Session::trace` parses with the profile's
-/// prefix (`pdfce-diag`); everything `egui-shell` writes carries its own, and
+/// prefix (`pdfcer-diag`); everything `egui-shell` writes carries its own, and
 /// lands in [`Trace::other`] on that parse. Re-parsing is cheap next to a
 /// click and keeps both streams honest — a line is attributed to whichever
 /// crate actually wrote it, which is the whole point of the prefix.
@@ -862,11 +862,11 @@ mod tests {
     #[test]
     fn a_regions_last_declaration_is_the_one_that_is_used() {
         let trace = Trace::parse(
-            "pdfce-diag start argv1=None\n\
-             pdfce-diag ui-rect name=ribbon.item.markup.rectangle rect=[[0.0 0.0] - [10.0 10.0]]\n\
-             pdfce-diag ui-rect name=ribbon.item.markup.ellipse rect=[[20.0 0.0] - [30.0 10.0]]\n\
-             pdfce-diag ui-rect name=ribbon.item.markup.rectangle rect=[[4.0 30.0] - [84.0 54.0]]",
-            "pdfce-diag",
+            "pdfcer-diag start argv1=None\n\
+             pdfcer-diag ui-rect name=ribbon.item.markup.rectangle rect=[[0.0 0.0] - [10.0 10.0]]\n\
+             pdfcer-diag ui-rect name=ribbon.item.markup.ellipse rect=[[20.0 0.0] - [30.0 10.0]]\n\
+             pdfcer-diag ui-rect name=ribbon.item.markup.rectangle rect=[[4.0 30.0] - [84.0 54.0]]",
+            "pdfcer-diag",
         );
         assert_eq!(
             declared(&trace, "ui-rect", SUBJECT),
@@ -894,10 +894,10 @@ mod tests {
     /// that is.
     #[test]
     fn the_application_and_shell_streams_do_not_contaminate_each_other() {
-        let text = "pdfce-diag start argv1=None\n\
+        let text = "pdfcer-diag start argv1=None\n\
                     egui-shell-diag ribbon-command-invoked id=markup.rectangle handler=500\n\
-                    pdfce-diag markup-tool tool=Markup(Rectangle)\n";
-        let app = Trace::parse(text, "pdfce-diag");
+                    pdfcer-diag markup-tool tool=Markup(Rectangle)\n";
+        let app = Trace::parse(text, "pdfcer-diag");
         let shell = Trace::parse(text, SHELL_TRACE_PREFIX);
 
         assert!(app.started("start"));

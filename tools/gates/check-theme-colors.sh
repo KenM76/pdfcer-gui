@@ -27,14 +27,14 @@
 # WHY IT ARRIVED LATE, WHICH IS ITSELF THE FINDING
 # ================================================
 #
-# `D:\Dev\pdfce` has had this gate for some time. It was never ported when
+# `D:\Dev\pdfcer` has had this gate for some time. It was never ported when
 # this workspace was created, so from S0 until 2026-08-13 the theme rule
 # was enforced by nothing but habit — through the entire construction of
 # the ribbon, the dock, the panels and the canvas.
 #
 # It surfaced only because the icon salvage was told to respect it, went
 # looking for `tools/gates/check-theme-colors.sh`, and reported that the
-# file did not exist. The agent had emulated pdfce's copy by hand and
+# file did not exist. The agent had emulated pdfcer's copy by hand and
 # found its own work clean; nothing else in the tree had been checked at
 # all. An instruction to obey a gate is not a gate, and a rule that lives
 # only in agent prompts is enforced exactly as often as someone remembers
@@ -74,11 +74,11 @@ set -uo pipefail
 cd "$(dirname "$0")/../.." || exit 1
 
 THEME_DIR="crates/egui-shell/src/theme"
-# Both crates are scanned. Scoping this to `pdfce-gui` alone would have
+# Both crates are scanned. Scoping this to `pdfcer-gui` alone would have
 # left the reusable shell — the crate that OWNS the palette and draws the
 # ribbon, dock and tab labels D2 was about — as the one place a raw
 # colour could hide.
-SRC_ROOTS=("crates/egui-shell/src" "crates/pdfce-gui/src")
+SRC_ROOTS=("crates/egui-shell/src" "crates/pdfcer-gui/src")
 
 # `from_gray` and the named constants (`Color32::RED`) count too: a
 # literal grey is exactly as invisible to a restyle as a literal blue.
@@ -97,7 +97,7 @@ scan() {
     # The marker is honoured on the offending line OR on any of the seven
     # lines above it, because that is where a comment explaining a line
     # actually goes — and an explanation worth writing is usually longer
-    # than one line. pdfce's first version allowed three, which rejected a
+    # than one line. pdfcer's first version allowed three, which rejected a
     # five-line comment saying exactly what the gate asks for.
     find "$1" -name '*.rs' -not -path "$THEME_DIR/*" -print0 \
     | xargs -0 awk -v pat="$PATTERN" -v marker="$MARKER" '

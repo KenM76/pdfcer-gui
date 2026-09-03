@@ -2392,7 +2392,7 @@ dependencies = [
 [[package]]
 name = "pdfce-core"
 version = "0.27.0"
-source = "git+file:///D:/Dev/pdfce?branch=main#a43643234aa332b9e1289a7d16a13f5f30ef45d2"
+source = "git+file:///D:/Dev/pdfce?branch=main#22421b6495e1e6ff301f3fe8128aeee04451cb97"
 dependencies = [
  "aes",
  "brotli",
@@ -2411,7 +2411,31 @@ dependencies = [
 ]
 
 [[package]]
-name = "pdfce-gui"
+name = "pdfce-print"
+version = "0.27.0"
+source = "git+file:///D:/Dev/pdfce?branch=main#22421b6495e1e6ff301f3fe8128aeee04451cb97"
+dependencies = [
+ "thiserror 2.0.20",
+ "windows",
+]
+
+[[package]]
+name = "pdfce-render"
+version = "0.27.0"
+source = "git+file:///D:/Dev/pdfce?branch=main#22421b6495e1e6ff301f3fe8128aeee04451cb97"
+dependencies = [
+ "iccce-cmm",
+ "iccce-color",
+ "iccce-profile",
+ "pdfce-core",
+ "skrifa",
+ "subsetter",
+ "thiserror 2.0.20",
+ "tiny-skia",
+]
+
+[[package]]
+name = "pdfcer-gui"
 version = "0.1.0"
 dependencies = [
  "eframe",
@@ -2426,30 +2450,6 @@ dependencies = [
  "raw-window-handle",
  "rfd",
  "syn 2.0.119",
-]
-
-[[package]]
-name = "pdfce-print"
-version = "0.27.0"
-source = "git+file:///D:/Dev/pdfce?branch=main#a43643234aa332b9e1289a7d16a13f5f30ef45d2"
-dependencies = [
- "thiserror 2.0.20",
- "windows",
-]
-
-[[package]]
-name = "pdfce-render"
-version = "0.27.0"
-source = "git+file:///D:/Dev/pdfce?branch=main#a43643234aa332b9e1289a7d16a13f5f30ef45d2"
-dependencies = [
- "iccce-cmm",
- "iccce-color",
- "iccce-profile",
- "pdfce-core",
- "skrifa",
- "subsetter",
- "thiserror 2.0.20",
- "tiny-skia",
 ]
 
 [[package]]

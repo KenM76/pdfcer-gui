@@ -74,12 +74,12 @@ const ITEMS: [&str; 4] = [
 ];
 /// How many rows the group asks for.
 const WANTED_ROWS: usize = 2;
-/// Where and how large the window is placed, as `PDFCE_DIAG_VIEWPORT` takes
+/// Where and how large the window is placed, as `PDFCER_DIAG_VIEWPORT` takes
 /// it: `x,y,w,h`.
 ///
 /// ★★★ **The width IS the precondition of the assertion**, not a convenience.
 /// See the module header's point 4. It also does not steal the desktop:
-/// `PDFCE_DIAG_VIEWPORT` switches `with_active` off, so the window lays out
+/// `PDFCER_DIAG_VIEWPORT` switches `with_active` off, so the window lays out
 /// fully without taking focus.
 const VIEWPORT: &str = "0,0,2560,1000";
 /// How far apart two rectangles' tops may be and still count as the same row,

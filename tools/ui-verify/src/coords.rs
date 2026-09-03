@@ -79,7 +79,7 @@
 //! Stated separately, because this project has recorded the cost of a comment
 //! that asserts a cause nobody tested.
 //!
-//! **Verified** (against `D:\Dev\pdfce`'s trace and its `tools/gui-drive.ps1`
+//! **Verified** (against `D:\Dev\pdfcer`'s trace and its `tools/gui-drive.ps1`
 //! notes): the canvas trace line carries `rect=` (the image rect in window
 //! logical points) and `zoom=`, and the conversion
 //! `window = rect.min + canvas_point * zoom` with `canvas_y = page_height -
@@ -847,8 +847,8 @@ mod tests {
 
     #[test]
     fn a_missing_canvas_event_is_a_precondition_error_naming_the_event() {
-        let trace = Trace::parse("pdfce-diag start argv1=None", "pdfce-diag");
-        let v = Vocabulary::pdfce_gui();
+        let trace = Trace::parse("pdfcer-diag start argv1=None", "pdfcer-diag");
+        let v = Vocabulary::pdfcer_gui();
         let err = CanvasMapping::from_trace(
             &trace,
             &v,
@@ -864,8 +864,8 @@ mod tests {
 
     #[test]
     fn a_canvas_event_without_a_rect_names_the_fields_that_were_present() {
-        let trace = Trace::parse("pdfce-diag canvas zoom=1.0 sel=0", "pdfce-diag");
-        let v = Vocabulary::pdfce_gui();
+        let trace = Trace::parse("pdfcer-diag canvas zoom=1.0 sel=0", "pdfcer-diag");
+        let v = Vocabulary::pdfcer_gui();
         let err = CanvasMapping::from_trace(
             &trace,
             &v,

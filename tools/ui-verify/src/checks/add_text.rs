@@ -7,7 +7,7 @@
 //!
 //! `checks::text_edit` drives the *other* verb (`edit.text`, which rewrites a
 //! run already on the page) and supplies its characters through
-//! `PDFCE_DIAG_TYPE` — a seam that writes straight into the draft and
+//! `PDFCER_DIAG_TYPE` — a seam that writes straight into the draft and
 //! **bypasses the event loop entirely**. Its header states the reason: at the
 //! time it was written, synthetic keyboard input was believed not to reach the
 //! target window from the session that injects it.

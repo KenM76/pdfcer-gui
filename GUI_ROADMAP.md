@@ -1,20 +1,20 @@
-# pdfce GUI — roadmap
+# pdfcer GUI — roadmap
 
 **Written:** 2026-08-12
 **Companions:** `RIBBON_IA.md` (where commands live), `DEFECTS.md` (what
 is broken, with `file:line`), `mockups/ribbon.html` (what it looks
-like), `evidence/` (screenshots of both pdfce and the comparison
+like), `evidence/` (screenshots of both pdfcer and the comparison
 product).
 
 ---
 
 ## The thesis
 
-pdfce's engine is ahead of its shell. The Objects panel, the Fonts
+pdfcer's engine is ahead of its shell. The Objects panel, the Fonts
 panel and the spec-ambiguity Settings dialog are things no competing
 product has, and the parsing underneath them is demonstrably better. On a
 shared test file the comparison product reported `Pages -`, `Page Size -`
-and every metadata field blank, while pdfce read it correctly.
+and every metadata field blank, while pdfcer read it correctly.
 
 What is missing is not capability. It is the layer of ordinary
 conventions a user brings with them: click a thing and press Delete;
@@ -46,7 +46,7 @@ obvious within thirty seconds of using the app:
 - **D2** — invisible headings. Two theme tests sit adjacent to the bug
   and neither measures a rendered foreground/background pair.
 
-The project already has the ingredients: `PDFCE_DIAG=1` emits a
+The project already has the ingredients: `PDFCER_DIAG=1` emits a
 `key=value` stderr trace, and the 2026-08-08 screenshot audit found two
 ribbon groups rendering with no caption at all — caught by a screenshot,
 not a test.
@@ -133,7 +133,7 @@ or removed and every other object keeps its exact fingerprint at its exact
 index. **So build move and node editing against indices — the selection
 survives them unchanged.** No token, no invalidation.
 
-For the delete case, `pdfce_core::vector::remap_index_after_delete(i, &deleted)`
+For the delete case, `pdfcer_core::vector::remap_index_after_delete(i, &deleted)`
 returns `None` for "it is gone" and never a different object's index. It
 handles unsorted and duplicated input, which matters because a shell
 unioning two overlapping selections would otherwise shift a survivor twice.
@@ -242,7 +242,7 @@ keeps every one of them.
 | 3.4 | **Zoom to selection; marquee zoom to region** | Neither exists. Both are core drafting-review gestures. |
 | 3.5 | **Recent files** | `grep -i recent` finds nothing anywhere in the crate. |
 | 3.6 | **Persist dock layout** | Requires turning on `eframe`'s `persistence` and `egui_tiles`' `serde` features. The in-app notice saying the layout will be lost can then be deleted. |
-| 3.7 | **Thumbnail rail reflows to a grid and narrows** | It reserves ~390 px of a 1936 px window to show one thumbnail. See `evidence/pdfce_max.png`. |
+| 3.7 | **Thumbnail rail reflows to a grid and narrows** | It reserves ~390 px of a 1936 px window to show one thumbnail. See `evidence/pdfcer_max.png`. |
 
 ---
 
@@ -359,7 +359,7 @@ and nothing here should dilute it.
 
 ## Standing backlog — shell-only work
 
-These exist in `pdfce-core` and/or `pdfce-cli` and need a GUI surface,
+These exist in `pdfcer-core` and/or `pdfcer` and need a GUI surface,
 not an engine. Any of them can fill a gap in any sprint; each is small
 and independently shippable.
 
@@ -368,7 +368,7 @@ and independently shippable.
 | Attachments panel | core ✓ CLI ✓ GUI ✗ — no surface at all |
 | Page image export (PNG/JPEG/TIFF, DPI picker) | core ✓ GUI ✗ |
 | Canvas text selection and copy | core ✓ GUI ✗ (`FEATURES.md:70`) |
-| Imposition in the print dialog | CLI ✓ GUI ✗ — needs sheet composition lifted into `pdfce-print` |
+| Imposition in the print dialog | CLI ✓ GUI ✗ — needs sheet composition lifted into `pdfcer-print` |
 | Insert blank page | core ✓ GUI ✗ |
 | Push-button field creation | CLI ✓ GUI ✗ |
 | Move a form widget | core ✓ CLI ✓ GUI ✗ — folds into Phase 1.2 |
@@ -386,7 +386,7 @@ architecture, not measured — exactly the failure mode the standing rule
 above exists to prevent — so it is corrected here rather than quietly
 edited out.
 
-The operator's report was that pdfce's zoom and pan felt *faster and
+The operator's report was that pdfcer's zoom and pan felt *faster and
 more pleasant* than the tiled competitor's. Measured on a 5.6 MB dense
 vector site plan, that is correct, and the reason is sharper than
 "smoothness versus throughput":
@@ -404,7 +404,7 @@ at the destination**. The generation counter plus the 150 ms
 solve the problem a tile cache would have been introduced to solve, by a
 cheaper route: don't render what the user is scrolling past.
 
-pdfce also uses **2.5× less memory** on the same file — 170–231 MB in
+pdfcer also uses **2.5× less memory** on the same file — 170–231 MB in
 one process against 569 MB across five for the tiled competitor, which
 spends the difference on crash isolation.
 
@@ -441,7 +441,7 @@ is genuinely undetermined, state it and let the operator choose.
 > instead of dividing it.
 >
 > **The optimisation that does pay is a reusable parsed handle**: by the
-> pdfce team's own numbers it takes second and subsequent renders of a
+> pdfcer team's own numbers it takes second and subsequent renders of a
 > page from ~700 ms to roughly fill cost — tens of milliseconds. It is
 > **not built**; they asked whether S6 depends on it and the answer is
 > filed in `open/request_reusable_parsed_handle.md`. **S6 should not start
@@ -472,7 +472,7 @@ removes the ceiling. **It is therefore a scheduled requirement, not an
 option** — while whole-page remains the better default for *motion*,
 which is why the choice stays exposed rather than replaced.
 
-`PDFCE_DIAG` already emits `render-async-done gen=N ms=M outcome=…`,
+`PDFCER_DIAG` already emits `render-async-done gen=N ms=M outcome=…`,
 which is most of a performance harness. Adding page complexity —
 operator count, path count, resource count — to that line would make it
 a complete one, and would let the decision about a tiled path be made
@@ -486,7 +486,7 @@ negligible, the render still costs **0.74 s**. That floor is **148,517
 paint operations walked through a sequential state machine** at ~5 µs
 each, and it is 89 % of the cost at fit-page zoom.
 
-- **Processes buy crash isolation, not speed.** pdfce is one binary;
+- **Processes buy crash isolation, not speed.** pdfcer is one binary;
   threads share memory for free, while processes would ship a
   multi-megabyte pixmap across a pipe per render.
 - **The dominant cost cannot be parallelised at all.** A content stream
@@ -496,7 +496,7 @@ each, and it is 89 % of the cost at fit-page zoom.
   ten cores. Real, but not where the money is.
 
 **The bigger win is not parallelism.** `render_page(doc, page, scale)`
-(`pdfce-render/src/lib.rs:165`) retains nothing between calls, so every
+(`pdfcer-render/src/lib.rs:165`) retains nothing between calls, so every
 zoom change re-walks all 148,517 operators although only the transform
 changed. A **display list built once and replayed at any scale** turns a
 zoom re-render into fill alone — ~90 ms at 1× instead of ~830 ms. Bigger

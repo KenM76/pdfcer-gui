@@ -94,7 +94,7 @@ pub struct RibbonGroupCaptionsLegible;
 
 /// The region set this check asks a profile for, when it has to fall back to
 /// one. No profile currently declares it, deliberately — see
-/// [`crate::profile::PDFCE_GUI`].
+/// [`crate::profile::PDFCER_GUI`].
 const SET: &str = "ribbon_group_captions";
 
 /// How the SKIP reason completes the sentence "the application declared no …".
@@ -286,7 +286,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     // Either the application declared captions and this resolves to them, or
     // it did not and this is the SKIP that names the missing subsystem. The
     // profile-fraction fallback is consulted in between and finds nothing,
-    // which is intended: see `crate::profile::PDFCE_GUI`.
+    // which is intended: see `crate::profile::PDFCER_GUI`.
     let plan = legibility::resolve_set(ctx.profile, SET, None, Some(&trace_regions))
         .map_err(Error::new)?;
 
@@ -381,15 +381,15 @@ mod tests {
     #[test]
     fn the_day_the_ribbon_declares_its_captions_this_check_starts_asserting() {
         let trace = Trace::parse(
-            "pdfce-diag start argv1=None\n\
-             pdfce-diag ui-rect name=central-panel rect=[[8.0 8.0] - [1092.0 792.0]]\n\
-             pdfce-diag ui-rect name=page rect=[[16.0 22.8] - [1084.0 777.2]]\n\
-             pdfce-diag ui-rect name=ribbon.group.view.zoom.caption rect=[[20.0 84.0] - [96.0 98.0]]\n\
-             pdfce-diag ui-rect name=ribbon.group.view.pages.caption rect=[[104.0 84.0] - [188.0 98.0]]\n\
-             pdfce-diag ui-rect name=ribbon.group.view.zoom rect=[[20.0 30.0] - [96.0 84.0]]",
-            "pdfce-diag",
+            "pdfcer-diag start argv1=None\n\
+             pdfcer-diag ui-rect name=central-panel rect=[[8.0 8.0] - [1092.0 792.0]]\n\
+             pdfcer-diag ui-rect name=page rect=[[16.0 22.8] - [1084.0 777.2]]\n\
+             pdfcer-diag ui-rect name=ribbon.group.view.zoom.caption rect=[[20.0 84.0] - [96.0 98.0]]\n\
+             pdfcer-diag ui-rect name=ribbon.group.view.pages.caption rect=[[104.0 84.0] - [188.0 98.0]]\n\
+             pdfcer-diag ui-rect name=ribbon.group.view.zoom rect=[[20.0 30.0] - [96.0 84.0]]",
+            "pdfcer-diag",
         );
-        let regions = ribbon_regions(&Vocabulary::pdfce_gui(), &trace, &frame());
+        let regions = ribbon_regions(&Vocabulary::pdfcer_gui(), &trace, &frame());
 
         assert_eq!(regions.declared.len(), 5);
         let matched: Vec<&str> = regions.matched.iter().map(|r| r.name.as_str()).collect();
@@ -402,7 +402,7 @@ mod tests {
             "the two captions, and NOT the group body next to them"
         );
 
-        let plan = legibility::resolve_set(&crate::profile::PDFCE_GUI, SET, None, Some(&regions))
+        let plan = legibility::resolve_set(&crate::profile::PDFCER_GUI, SET, None, Some(&regions))
             .expect("the trace supplies the regions");
         assert_eq!(
             plan.source,

@@ -55,7 +55,7 @@
 //!    there, because no unit test in this project rasterizes.
 //! 4. **A New that works once.** Every step above passes on the first press. It
 //!    is step 6 that fails, and the reason it is worth a second click is that
-//!    the ordinal is *application* state (`PdfceApp::created_documents`) while
+//!    the ordinal is *application* state (`PdfcerApp::created_documents`) while
 //!    everything else is per-document — a distinction whose whole failure mode
 //!    is invisible until the second press.
 //!
@@ -95,7 +95,7 @@
 //! * **the page being blank.** Nothing here reads a pixel. A template with a
 //!   watermark on it would pass. `app::blank::tests` and the 443-byte size
 //!   assertion are the guard against that, and
-//!   `crates/pdfce-gui/src/app/assets/PROVENANCE.md` is the reason it matters.
+//!   `crates/pdfcer-gui/src/app/assets/PROVENANCE.md` is the reason it matters.
 //! * **anything about saving it.** There is no save in this build, for any
 //!   document — see `app::blank` §5.
 //!
@@ -135,7 +135,7 @@ const SUBJECT_ID: &str = "file.new";
 /// The region the ribbon publishes for its control.
 const SUBJECT: &str = "ribbon.item.file.new";
 
-/// `new-document name=… template-bytes=…` — `PdfceApp::new_document`'s own line.
+/// `new-document name=… template-bytes=…` — `PdfcerApp::new_document`'s own line.
 ///
 /// The event that separates "the command was invoked" from "the command ran",
 /// which is the distinction step 3 exists for.
@@ -272,7 +272,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     let Some(rect) = driving::declared(&trace, ui_rect, SUBJECT) else {
         return Ok(Some(format!(
             "the application declared no `{SUBJECT}` region, so `{SUBJECT_ID}` has no control to \
-             click. File is the tab pdfce opens on, so this is not `the wrong tab is showing` — \
+             click. File is the tab pdfcer opens on, so this is not `the wrong tab is showing` — \
              it is a registered command with no reachable control, which is the state \
              `shell::manifest::CUSTOM_BACKED` exists to make deliberate. Regions it did declare \
              under `{ITEM_PREFIX}file.`: {}.",
@@ -504,10 +504,10 @@ mod tests {
     #[test]
     fn the_expected_names_survive_the_trace_quoting_them() {
         let trace = Trace::parse(
-            "pdfce-diag start argv1=None\n\
-             pdfce-diag new-document name=\"Untitled 1.pdf\" template-bytes=443\n\
-             pdfce-diag open ok pages=1 path=\"Untitled 1.pdf\"",
-            "pdfce-diag",
+            "pdfcer-diag start argv1=None\n\
+             pdfcer-diag new-document name=\"Untitled 1.pdf\" template-bytes=443\n\
+             pdfcer-diag open ok pages=1 path=\"Untitled 1.pdf\"",
+            "pdfcer-diag",
         );
         assert_eq!(
             trace
@@ -530,18 +530,18 @@ mod tests {
     #[test]
     fn the_canvas_line_carries_whether_anything_was_rastered() {
         let with = Trace::parse(
-            "pdfce-diag canvas rect=[[0.0 0.0] - [10.0 10.0]] zoom=1.0000 page=0 pages=1 \
+            "pdfcer-diag canvas rect=[[0.0 0.0] - [10.0 10.0]] zoom=1.0000 page=0 pages=1 \
              off=[0.0 0.0] sel=0 display=single visible=1 drawn=1",
-            "pdfce-diag",
+            "pdfcer-diag",
         );
         let line = with.events("canvas").last().expect("one canvas line");
         assert_eq!(line.get_usize("pages"), Some(1));
         assert_eq!(line.get_usize("drawn"), Some(1));
 
         let without = Trace::parse(
-            "pdfce-diag canvas rect=[[0.0 0.0] - [10.0 10.0]] zoom=1.0000 page=0 pages=1 \
+            "pdfcer-diag canvas rect=[[0.0 0.0] - [10.0 10.0]] zoom=1.0000 page=0 pages=1 \
              off=[0.0 0.0] sel=0 display=single visible=1 drawn=0",
-            "pdfce-diag",
+            "pdfcer-diag",
         );
         let line = without.events("canvas").last().expect("one canvas line");
         assert_eq!(line.get_usize("drawn"), Some(0));

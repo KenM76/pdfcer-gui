@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Generic ruler-pair shape — generic, no trademark risk -->
+  <!-- No ui-spec row: rulers are marked N in RIBBON_IA.md §5.2 and shipped in Phase
+       3, after the icon spec was written. Authored in the §3 style contract.
+
+       TWO graduated bands meeting at a corner — the chrome pdfcer actually draws, a
+       horizontal rule along the top of the canvas and a vertical one down its left
+       side. The L is the whole distinction from ruler.svg (ScripTree's, used for
+       Measure), which is ONE horizontal band: one ruler is a tool you measure with,
+       two ruled edges framing a corner are furniture the window wears. Those two
+       controls sit on different tabs but an operator carries the vocabulary between
+       them, so the shapes had to disagree on purpose.
+
+       Ticks alternate long/short around the corner square so the bands read as
+       graduated rather than as two plain bars, which is the only cue at 16 px that
+       says "these carry numbers". -->
+  <rect x="14" y="5" width="28" height="9" rx="1" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M21 14V9M28 14V6M35 14V9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <rect x="5" y="14" width="9" height="28" rx="1" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M14 21H9M14 28H6M14 35H9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

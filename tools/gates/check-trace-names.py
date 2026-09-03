@@ -65,7 +65,7 @@ import re
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-SRC = ROOT / "crates" / "pdfce-gui" / "src"
+SRC = ROOT / "crates" / "pdfcer-gui" / "src"
 EXEMPT = "trace-name-exempt:"
 
 # `vector_edit(doc, "label", …)` — the label is the first string literal on the
