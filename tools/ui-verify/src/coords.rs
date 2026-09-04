@@ -249,6 +249,57 @@ impl CanvasMapping {
             ))
         })?;
 
+        // ═══════════════════════════════════════════════════════════════════
+        // ★★★ THE PAGE THE APPLICATION IS SHOWING, AGAINST THE PAGE THE CALLER
+        // ASKED FOR — 2026-09-04
+        // ═══════════════════════════════════════════════════════════════════
+        //
+        // `doc_to_window` below refuses when a point's page differs from
+        // `self.page_index`, and its doc comment explains why: *"converting it
+        // against the wrong page's rect would produce a confident, wrong
+        // click."* Entirely correct, and **it could never fire**, because every
+        // caller does this:
+        //
+        //     CanvasMapping::from_trace(&trace, vocab, page, target.page)
+        //                                                   ^^^^^^^^^^^
+        //
+        // — the mapping is told its page index BY THE POINT it is about to
+        // check. `p.page != self.page_index` was comparing a number against
+        // itself. A tautology wearing a guard's clothing.
+        //
+        // ⇒ On 2026-09-04 a sweep ran with `--doc-point 1,300,400` against a
+        // ONE-PAGE fixture. Page `1` is the second page. Nothing refused it,
+        // and it produced **six confident, detailed, plausible failure
+        // reports** — resize, rotate, shift-constrained resize, multi-node
+        // move and two more — each naming real functions and real trace
+        // events. **Four were filed as defects.** Re-run on the same fixture at
+        // the same zoom with a valid page, every one passes.
+        //
+        // ★ This is the third time this project has recorded the same shape: a
+        // **proxy condition** standing in for the real one, where the stand-in
+        // is derived from the thing it is meant to be checking. The rule it
+        // keeps re-learning: *ask what the mechanism READS.* A guard reads a
+        // number; the question is where that number came from.
+        //
+        // The application publishes the page it is actually showing on the same
+        // line as the rect. That is an INDEPENDENT quantity, and comparing
+        // against it is a real comparison.
+        if let Some(shown) = line.get_usize("page")
+            && shown != page_index
+        {
+            return Err(Error::new(format!(
+                "the harness was asked to convert a point on page {page_index} (0-based) and \
+                 the application is showing page {shown}.\n  \
+                 Refused rather than converted: the rect on the `{}` line describes the page on \
+                 SCREEN, so mapping another page's coordinates through it yields a click that \
+                 is plausible, precise and in the wrong place — which is indistinguishable from \
+                 a broken feature and costs an investigation to disprove.\n  \
+                 ★ PAGE IS 0-BASED. If this came from `--doc-point PAGE,X,Y`, the first page is \
+                 `0`.",
+                vocab.canvas_event
+            )));
+        }
+
         if !image_rect.is_substantial() {
             return Err(Error::new(format!(
                 "the canvas rect {image_rect:?} has no area — the canvas was not laid out on \

@@ -80,110 +80,88 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
-## O115 — ◑ **OPEN 2026-09-03 (night)** — three defects the driven sweep found, none of them from today
+## O115 — ⛔ **RETRACTED 2026-09-04** — the "three defects the sweep found" were **my own bad argument**
 
-Found by running the full driven suite against the fixed build, and **all three
-verified as PRE-EXISTING** by re-running them against the previous release
-(`09bb966`, the 14:13 build): they fail there too. Not regressions from the
-review work.
+**This row claimed three, then six, operator-facing defects. There were none.
+Every one was a wrong `--doc-point`, and the harness reported them as confident,
+detailed, plausible regressions.**
 
-### ★★★ 1. The canvas stops taking the pointer after you scroll a long way down
+### What actually happened
 
-`scrolling_far_keeps_the_canvas_its_pointer_input`. **2 pointer events before
-the wheel and 2 after it**, at a scroll offset of 1125 pt. The page is still
-drawn, its rect is still published — only the input is gone.
+I ran the sweep with `--doc-point 1,300,400` against `a1-titleblock.pdf`, which
+has **one page**. `PAGE` is **0-based**, so `1` names a second page that does
+not exist.
 
-★ The check's own note is the important part: this is the condition **O23 was
-blaming on its pasteboard**, and it reproduces with **no pasteboard in the
-build**, from an ordinary wheel scroll. So it is not the pasteboard, and it is
-something an operator meets whenever they scroll down a long drawing.
+That single wrong digit produced **six failure reports**:
 
-### ⚠ 2–5 are FOUR canvas-grip failures that share a shape, and they are NOT yet attributable to the program
+| reported as | truth |
+|---|---|
+| the canvas stops taking the pointer after a long scroll | **passes** on `four-pages.pdf` with a valid point |
+| the resize grips commit nothing | **passes** |
+| the rotate handle commits nothing | **passes** |
+| shift does not constrain a resize | **passes** |
+| multi-node move moves nothing | **passes** |
+| the wheel-paging toggle turns no page | skipped — an unrelated stray window owned the desktop |
 
-`resize_scales_a_shape`, `rotate_handle_turns_a_selection`,
-`shift_constrains_a_resize`, `multi_node_move_moves_every_picked_anchor`. All
-four: the click **selects** (`selection-set … via=press` is in the trace, the
-outline is drawn, `canvas-outline drawn=true` repeats to the end of the run),
-and the grip drag then commits nothing and declines nothing.
+**Isolated properly**: the *same* fixture at the *same* zoom, changing only the
+page index from `1` to `0`, passes every one. It was never the fixture and never
+the zoom. It was the argument.
 
-★★★ **Four at once is a shape, not four defects — and before calling it a
-product defect, three things say it may be the instrument:**
+### ★★★ Why this is the worst kind of harness failure
 
-1. **Markup drags PASS in the same sweep.** `dragging_a_markup_moves_it` and
-   `rotating_a_markup_turns_it` both pass, so the harness's press-move-release
-   does reach the canvas and does produce gestures. Whatever is wrong is
-   specific to grips on a selected page **object**.
-2. **The fixture is an A1 sheet at 0.196 zoom.** The trace reads
-   `canvas rect=[[298.0 285.7] - [766.0 616.3]] zoom=0.1963` on a 2384 × 1684 pt
-   page. Objects — and therefore their grips — are tiny on screen. A sibling
-   check skipped in the same run with *"the field is 31.4 px wide on screen at
-   zoom 0.1963, and a quarter of that is …"*, which is the same fixture problem
-   stated out loud by a check that knew to check for it.
-3. **These checks COMPUTE the grip's position** — `frame.declared_at(outline,
-   1.0, 1.0)` — rather than aiming at a declared region. `widget_rotate` already
-   records what that costs: *"the first version took the row's rect and aimed
-   78 % across it … and landed outside the window entirely."* Its conclusion was
-   **a named control is aimed at by name**, and these four do not.
+A harness that cannot start tells you so. **A harness given a bad coordinate
+does not fail — it lies fluently.** Each report named a real function, a real
+trace event and a real line number, and read exactly like a regression. I filed
+four of them as defects and wrote a paragraph claiming one of them disproved an
+earlier pasteboard theory.
 
-⇒ **The next experiment, and it must come before any fix**: re-run all four
-against a small-page fixture with a `--doc-point` that names a real shape, and
-compare. If they pass, the finding is that four checks are fixture-dependent and
-say so nowhere — a harness defect, and a worse one than a broken resize because
-it produces *confident wrong bug reports*. If they still fail, the product
-defect is real and the traces will then mean what they appear to mean.
+They were caught only because there were **four at once, all one gesture
+family**, which finally prompted the question this project has a standing rule
+for: *what did the check SAMPLE?* Had the bad point produced one failure instead
+of four, it would still be in this file as a defect.
 
-★ Recorded this way deliberately. This project's own rule is to **ask what a
-failing check SAMPLED before asking what is broken**, and "resize is broken" is
-exactly the kind of claim that is expensive to retract.
+### ★★★ The real defect, and it is in the harness
 
-★★ One thing IS established regardless: whatever the cause, it is **not from
-today's work** — `resize_scales_a_shape` fails identically on the previous
-release build.
+`CanvasMapping::doc_to_window` **already had** a guard refusing a point on the
+wrong page, with a doc comment explaining that converting against the wrong
+page's rect "would produce a confident, wrong click". It could never fire:
 
-### ★★ (was 2) The resize grips consume the drag and commit nothing
+```rust
+CanvasMapping::from_trace(&trace, vocab, page, target.page)
+//                                             ^^^^^^^^^^^
+```
 
-`resize_scales_a_shape`. The click selects (`selection-set page=0 object=0
-via=press` is in the trace) and the grip drag produces **neither `resize-commit`
-nor `resize-declined`** — silent on both channels.
+The mapping was told its page index **by the point it was about to check**.
+`p.page != self.page_index` was comparing a number with itself.
 
-★ This one is a **regression from a known-good state**: the check's own text
-says *"until 2026-08-19 every resize drag was consumed and thrown away, so a
-build that has reverted to it is silent on both channels."* It was fixed, and it
-is back.
+⇒ **A proxy condition standing in for the real one, where the stand-in is
+derived from the thing being checked.** Third time this project has recorded
+that exact shape. The rule it keeps re-learning: **ask what the mechanism
+READS** — a guard reads a number, and the question is where that number came
+from.
 
-### 3. The wheel-paging toggle does not turn pages
+**Fixed** in `coords.rs`: `from_trace` now compares the caller's page against
+the page the **application says it is showing**, on the same trace line as the
+rect. Two independent quantities, so the comparison is real. The exact
+invocation that fooled me now SKIPs with a message naming both pages and stating
+that PAGE is 0-based; the valid invocation still passes.
 
-`the_wheel_turns_pages_when_the_operator_asks_it_to`. Still on page 1 after the
-toggle was pressed and the wheel rolled. The check names the likely cause:
-`OpenDoc::prefs` is a **snapshot** adopted when Settings is applied, so a wheel
-preference writes the file correctly, draws the control correctly, and changes
-nothing until Settings is opened and applied.
+★ A first attempt — parsing the page count out of the PDF in `main.rs` — was
+written, measured, and **deleted**: it could not read the count confidently from
+either fixture, so it was a guard that never fired. Two weak mechanisms are
+worse than one that works.
 
-⚠ **Weaker evidence than the other two.** The run's own notes show the checks
-share the preference file — *"the wheel setting was left on `flip` by an earlier
-run"* — so this one could be harness state rather than the program. Confirm on a
-clean profile before acting.
+### What survives from this row
 
-### ⬜ The sweep is INCOMPLETE and that is stated rather than implied
+Nothing about the product. The two process findings below are real and are kept:
 
-**43 of 153 checks have run**: 53 passed, 6 failed, 26 skipped. The remaining 120
-have not, and a partial run proves nothing about them.
-
-★★ **Two process findings, both mine, both costly:**
-
-1. **A driven sweep locks the SOURCE TREE, not just the pointer.** Editing under
-   `crates/` mid-run makes the staleness guard skip every remaining check —
-   141 of 153 the first time.
-2. **The harness's stdout is block-buffered when it is not a TTY, so a killed
-   run yields NOTHING** — not even the checks that had already passed. Two full
-   runs were lost that way. It is run in small chunks now, each written to its
-   own file, so a kill costs one chunk.
-
-★ And a third, external: a stray **Windows Search flyout** holding the desktop
-turned 17 checks into SKIPs with a foreground error. The harness named the
-holder, its class and its pid, and said no retry would help. **Read the skip
-REASON, not the count** — a single dominant reason across unrelated checks is
-the environment, not the suite.
+- **A driven sweep locks the SOURCE TREE, not just the pointer.** Editing under
+  `crates/` mid-run makes the staleness guard skip everything remaining — 141 of
+  153 the first time.
+- **The harness's stdout is block-buffered when it is not a TTY**, so a killed
+  run yields *nothing*, not even the checks that had already passed.
+- And one external: a stray **Windows Search flyout** holding the desktop turned
+  17 checks into SKIPs. **Read the skip REASON, not the count.**
 
 ---
 
