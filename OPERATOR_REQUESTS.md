@@ -80,6 +80,71 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
+## O115 — ◑ **OPEN 2026-09-03 (night)** — three defects the driven sweep found, none of them from today
+
+Found by running the full driven suite against the fixed build, and **all three
+verified as PRE-EXISTING** by re-running them against the previous release
+(`09bb966`, the 14:13 build): they fail there too. Not regressions from the
+review work.
+
+### ★★★ 1. The canvas stops taking the pointer after you scroll a long way down
+
+`scrolling_far_keeps_the_canvas_its_pointer_input`. **2 pointer events before
+the wheel and 2 after it**, at a scroll offset of 1125 pt. The page is still
+drawn, its rect is still published — only the input is gone.
+
+★ The check's own note is the important part: this is the condition **O23 was
+blaming on its pasteboard**, and it reproduces with **no pasteboard in the
+build**, from an ordinary wheel scroll. So it is not the pasteboard, and it is
+something an operator meets whenever they scroll down a long drawing.
+
+### ★★ 2. The resize grips consume the drag and commit nothing
+
+`resize_scales_a_shape`. The click selects (`selection-set page=0 object=0
+via=press` is in the trace) and the grip drag produces **neither `resize-commit`
+nor `resize-declined`** — silent on both channels.
+
+★ This one is a **regression from a known-good state**: the check's own text
+says *"until 2026-08-19 every resize drag was consumed and thrown away, so a
+build that has reverted to it is silent on both channels."* It was fixed, and it
+is back.
+
+### 3. The wheel-paging toggle does not turn pages
+
+`the_wheel_turns_pages_when_the_operator_asks_it_to`. Still on page 1 after the
+toggle was pressed and the wheel rolled. The check names the likely cause:
+`OpenDoc::prefs` is a **snapshot** adopted when Settings is applied, so a wheel
+preference writes the file correctly, draws the control correctly, and changes
+nothing until Settings is opened and applied.
+
+⚠ **Weaker evidence than the other two.** The run's own notes show the checks
+share the preference file — *"the wheel setting was left on `flip` by an earlier
+run"* — so this one could be harness state rather than the program. Confirm on a
+clean profile before acting.
+
+### ⬜ The sweep is INCOMPLETE and that is stated rather than implied
+
+**33 of 153 checks have run**: 51 passed, 3 failed, 21 skipped. The remaining 120
+have not, and a partial run proves nothing about them.
+
+★★ **Two process findings, both mine, both costly:**
+
+1. **A driven sweep locks the SOURCE TREE, not just the pointer.** Editing under
+   `crates/` mid-run makes the staleness guard skip every remaining check —
+   141 of 153 the first time.
+2. **The harness's stdout is block-buffered when it is not a TTY, so a killed
+   run yields NOTHING** — not even the checks that had already passed. Two full
+   runs were lost that way. It is run in small chunks now, each written to its
+   own file, so a kill costs one chunk.
+
+★ And a third, external: a stray **Windows Search flyout** holding the desktop
+turned 17 checks into SKIPs with a foreground error. The harness named the
+holder, its class and its pid, and said no retry would help. **Read the skip
+REASON, not the count** — a single dominant reason across unrelated checks is
+the environment, not the suite.
+
+---
+
 ## O114 — ◑ **INTAKE 2026-09-03** — an outside GUI review, twenty findings, one of them a crash
 
 **Ken, 2026-09-03:** *"new feature request in d:/dev/featurerequests/pdfcer-gui.
