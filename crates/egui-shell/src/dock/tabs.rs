@@ -257,12 +257,53 @@ fn draw_tab(
                 // and the tab would overhang into the reservation — the
                 // defect this file exists to prevent, arriving from the
                 // tab's side rather than the affordance's.
-                ui.add(
-                    egui::Button::new(text)
-                        .min_size(rect.size())
-                        .truncate()
-                        .selected(selected),
-                )
+                // ★★★ THE PLATE IS STATED, and not stating it was a defect
+                // that shipped in all three presets — 2026-09-03.
+                //
+                // `Button::selected(true)` alone does NOT leave the fill
+                // alone. `egui::Style::button_style` overwrites it:
+                //
+                //     visuals.weak_bg_fill = self.visuals.selection.bg_fill;
+                //     visuals.bg_fill      = self.visuals.selection.bg_fill;
+                //     visuals.fg_stroke    = self.visuals.selection.stroke;
+                //     ws.text.color        = self.visuals.selection.stroke.color;
+                //
+                // (`egui-0.35.0/src/widget_style.rs:150-155`, verbatim.)
+                //
+                // This theme points `selection.bg_fill` at
+                // `Palette::selection_fill`, a **27 %-alpha wash** whose real
+                // job is tinting selected objects on the CANVAS. Composited
+                // over the tab bar's `palette.panel` it leaves the
+                // `on_accent` label above with a luminance gap of
+                //
+                //     Quiet 44.8 · Airy 28.2 · Dark 52.6
+                //
+                // against this project's own readable floor of **90**. Airy is
+                // the worst because its panel is pure white, so the wash barely
+                // darkens it.
+                //
+                // ★★ `ribbon::tabs` had the identical shape and already states
+                // its fill — `Button::selectable(...).fill(accent)`. The two
+                // are the same control in two docks and they now agree.
+                //
+                // ★★★ AND `tools/gates/check-strong-text.sh` WAS BLESSING THIS
+                // SITE ON A FALSE PREMISE. Its header said of both tab files:
+                // *"Both are drawn ON the accent fill, so `on_accent` is the
+                // right colour anyway."* True of `ribbon/tabs.rs`, which fills.
+                // This file contained **no `.fill(` at all**. The gate's
+                // sentence is corrected in the same change; the sentence is
+                // now true rather than merely written down.
+                //
+                // `.fill()` wins over the class-based styling because
+                // `Button`'s own fill is applied after `button_style` has run.
+                let mut button = egui::Button::new(text)
+                    .min_size(rect.size())
+                    .truncate()
+                    .selected(selected);
+                if selected {
+                    button = button.fill(ctx.theme.palette.accent);
+                }
+                ui.add(button)
             },
         )
         .inner;

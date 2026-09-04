@@ -134,6 +134,26 @@ run "check-theme-colors" bash "$HERE/check-theme-colors.sh"
 # again on 2026-08-17 by someone who had read it; a rule that lives only in a
 # document is enforced as often as somebody remembers to read it.
 run "check-strong-text" bash "$HERE/check-strong-text.sh"
+# ★★★ `check-plate-colour`, added 2026-09-03 — DEFECTS.md D2 for the third
+# time, and the first two fixes did not generalise.
+#
+# `Palette::on_accent` means "drawn ON the accent". On anything else it is a
+# pale glyph on a pale surface: present, correctly sized, and invisible. An
+# outside reviewer found two more instances in screenshots — the selected dock
+# tab and the document tab's close ✕, the latter white-on-white to within five
+# levels of luminance under the Airy preset.
+#
+# ★★ The contrast gate structurally cannot see them. It enumerates widget
+# states against widget fills, and both of these are a colour the CALLER
+# supplied against a background chosen by geometry. A perceptual gate asks
+# "is this readable"; this one asks "were these two things ever paired at all",
+# which is the question that kept going wrong.
+#
+# ★ Its non-vacuity evidence is real sites rather than a planted one: run
+# against the tree with the two 2026-09-03 fixes reverted, it names exactly the
+# three defective drawing sites and passes the four correct ones.
+run "check-plate-colour --self-test" bash "$HERE/check-plate-colour.sh" --self-test
+run "check-plate-colour" bash "$HERE/check-plate-colour.sh"
 run "check-file-size"    bash "$HERE/check-file-size.sh"
 run "check-shell-purity" bash "$HERE/check-shell-purity.sh"
 run "check-shipped-assets" bash "$HERE/check-shipped-assets.sh"

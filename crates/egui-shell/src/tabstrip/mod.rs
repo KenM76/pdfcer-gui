@@ -468,6 +468,38 @@ fn draw_tab(
     // open. Reserving the control and truncating the label is the same
     // discipline the overflow affordance gets one level up, applied inside the
     // tab.
+    // ★★★ THE SELECTED TAB'S PLATE, PAINTED ACROSS THE WHOLE RECT AND BEFORE
+    // IT IS SPLIT — 2026-09-03. Two contrast defects converge here and one
+    // paint closes both.
+    //
+    // (1) The label button below is `.selected(selected)` with no `.fill()`,
+    //     and `egui::Style::button_style` overwrites the fill from
+    //     `visuals.selection.bg_fill` — which this theme points at the 27 %
+    //     CANVAS tint. `on_accent` over that, composited on `palette.panel`,
+    //     is a luminance gap of Quiet 44.8 / Airy 28.2 / Dark 52.6 against a
+    //     floor of 90.
+    //
+    // (2) **The ✕ is worse, and it is `DEFECTS.md` D2's exact shape.** Its
+    //     `close_rect` is carved OUT of the tab rect immediately below, and it
+    //     is drawn `.frame(false)`, so *nothing paints behind it at all*. The
+    //     `on_accent` glyph therefore lands on the bare `palette.panel` from
+    //     this strip's own background fill: gap **Quiet 17.9 / Airy 5.0 /
+    //     Dark 29.1**. Airy is white-on-white to within five levels of
+    //     luminance. That is a plate colour used against a background nobody
+    //     ever paired it with — which is the definition of D2.
+    //
+    // Painting the plate first means every child of this rect — label and ✕
+    // alike — sits on `accent`, which is the background `on_accent` is NAMED
+    // for. The ✕'s own colour choice below then becomes correct rather than
+    // being worked around, which is why it is left untouched.
+    //
+    // ★ Before the split, deliberately: after it, there are two rects and the
+    // gap between them is the one the ✕ sits in.
+    if selected {
+        ui.painter()
+            .rect_filled(rect, theme.metrics.corner_radius, theme.palette.accent);
+    }
+
     let close_rect = if tab.closable {
         Rect::from_min_max(
             egui::pos2(rect.right() - CLOSE_WIDTH, rect.top()),
@@ -506,6 +538,16 @@ fn draw_tab(
                         .min_size(label_rect.size())
                         .truncate()
                         .selected(selected)
+                        // ★ States the fill, so `egui` cannot substitute the
+                        // canvas tint OVER the plate painted above. Without
+                        // this the wash composites on `accent` and the label's
+                        // background becomes a third value again — see the
+                        // block above `close_rect` for the arithmetic.
+                        .fill(if selected {
+                            theme.palette.accent
+                        } else {
+                            ui.visuals().widgets.inactive.weak_bg_fill
+                        })
                         // ★ `click_and_drag`, so the tab can be **reordered**.
                         //
                         // A `Button` senses clicks only, and adding the drag
