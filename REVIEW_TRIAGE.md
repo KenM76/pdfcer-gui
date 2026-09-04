@@ -78,6 +78,29 @@ There is no theme-only fix — re-pointing `selection.bg_fill` at `accent` would
 paint over page thumbnails (`panels/pages/mod.rs:877`). The fix is at the call
 sites, and the gate's job is to make a bare `.selected(true)` impossible.
 
+> ★★ **AMENDMENT, 2026-09-04 — the last sentence above was wrong, and the way
+> it was wrong is worth keeping.** The fix *was* theme-only. The thumbnails
+> were never at risk because the ~33 canvas readers do not need the channel;
+> they need the two VALUES, which now arrive by name
+> (`Theme::canvas_selection_ink` / `canvas_selection_fill`, bit-for-bit
+> identical). "Re-pointing the channel breaks the canvas" quietly assumed the
+> canvas would go on reading the channel.
+>
+> ★ Re-pointing it took **two** attempts, not one, and that is the durable
+> lesson. `visuals.selection.stroke` is spent twice by `egui`: as the ink on a
+> selected widget AND as the frame stroke of a focused, mutable `TextEdit`
+> (`text_edit/builder.rs:699-706`, no `.frame_stroke()` override). The first
+> attempt put `on_accent` there, satisfied the widget half, and made the focus
+> ring near-white on a near-white panel — gaps **17.9 / 5.0 / 29.1**, D2's
+> shape a fourth time, introduced by the fix for the third. The resolution was
+> to dilute the **plate** (`Palette::selected_plate`) rather than the **ink**,
+> which frees the ink to be `accent` and satisfies both grounds at once:
+> **103.1 / 118.9 / 123.2** selected, **147.3 / 170.2 / 96.0** ring, floor 90.
+> Pinned by
+> `egui_shell::theme::tests::both_roles_the_selection_channel_serves_are_readable_in_every_preset`.
+> The gate's one file-level exemption (`icons/mod.rs`) is closed; it now reads
+> `Theme::selected_widget_ink`, and the gate has no holes.
+
 ---
 
 ## 3. Amendments to settled documents — the operator's call, none actioned
