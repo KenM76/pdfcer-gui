@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Generic circle-with-radius shape — generic, no trademark risk -->
+  <!-- No ui-spec row: `measure.radius_diameter` shipped in Phase 7, after the icon
+       spec was written, and until now it borrowed `ruler.svg` from
+       `measure.linear`. Authored in the §3 style contract.
+
+       A closed circle, one spoke running from its centre to the rim, and a dot on
+       the centre — the drafting convention for a radius dimension, and a literal
+       picture of what this tool authors. ONE glyph is correct for a control whose
+       label reads "Radius / diameter" because the two are one stored geometry read
+       at two scales (decision 011: `diameter = 2 x radius`), not two measurements.
+
+       ★ The glyph it must not be confused with is `shape-ellipse.svg`, and the
+       collision is close enough to name exactly: that one is a bare outlined circle
+       at cx=24 cy=24 r=14, which is this glyph's outer ring to within a unit. The
+       ring therefore cannot be the difference, and both cues that separate them are
+       INTERIOR:
+
+       * the CENTRE DOT. A markup ellipse has no centre worth drawing; a radius is
+         measured from one. Drawn as a stroked r=1.5 path rather than a filled disc,
+         because `fill_is_semantic_and_the_set_that_uses_it_is_closed` closes the set of filled icons
+         and this is not the icon that gets to open it.
+       * the SPOKE, centre to rim on the horizontal. It is the radius itself and
+         doubles as the dimension's leader, and it is what stops dot-inside-ring
+         reading as a radio button or a target — the precise failure `list.svg`
+         records against the `icon-ring.svg` the ui-spec once proposed for this tab.
+
+       Also distinct from `convert.svg`, the other round glyph on the Measure tab
+       (`measure.set_scale`): that ring is BROKEN into two arrowed arcs and its
+       interior is empty. A closed ring with a spoke measures a circle; two arrows
+       chasing round an open one convert between two systems of measure — which is
+       the distinction that registration already argues in words. -->
+  <path d="M24 9a15 15 0 1 1 0 30 15 15 0 0 1 0-30z" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M24 24h15" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M24 22.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

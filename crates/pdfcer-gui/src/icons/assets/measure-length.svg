@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Generic bounded run shape — generic, no trademark risk -->
+  <!-- No ui-spec row: `measure.length` is the operator's ask of 2026-08-20 ("add a
+       length tool that works like the perimeter tool without needing to close the
+       profile") and shipped after the icon spec; until now it borrowed `ruler.svg`.
+       Authored in the §3 style contract.
+
+       A meandering OPEN run, with a short upright tick standing off each end. What
+       the glyph says is "this thing, from here to here, is how long" — which is what
+       the tooltip promises for a pipe, a cable or a kerb line.
+
+       ★ The glyph it must not be confused with is `shape-ink.svg`, and the two are
+       nearly the same mark: one irregular flowing stroke spanning the tile, no
+       baseline, no periodicity. The whole difference is the TWO TERMINATOR TICKS.
+       Freehand ink has no ends worth marking — its comment says the round caps are
+       there because the caps are the annotation's ends — whereas a measured run is
+       bounded, and the witness marks at 6 and 42 are the extension lines a dimension
+       always carries. They also sit OUTSIDE the curve's own endpoints rather than on
+       them, which is how a real extension line is drawn and is the reason they read
+       as measurement furniture rather than as two stray strokes.
+
+       Distinct from `measure-perimeter.svg` by being open: that one closes with `z`
+       because the word on its label promises a ring, and these two controls sit
+       side by side on the same tab, so the closed/open contrast has to be the first
+       thing an operator sees. Distinct from `shape-polyline.svg`, whose chain is
+       ANGULAR with visible vertices — this one curves, because a run of cable does,
+       and because the vertices in a polyline are the thing that glyph is about. -->
+  <path d="M8 34c6-14 12-14 18-6s10 4 14-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M6 28v12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M42 14v12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

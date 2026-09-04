@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Next open DOCUMENT — document-previous.svg mirrored about x=24: a
+       folded-corner page with a right-pointing shafted arrow beside it.
+       Primitives only; no trademark risk.
+
+       Mirroring rather than redrawing is this set's convention for a navigation
+       pair, and it is stated in the assets themselves: chevron-right.svg's whole
+       comment is "mirror of chevron-left.svg", and download.svg calls itself
+       "the exact mirror of upload.svg about y=24". A pair that is not a mirror
+       makes an operator check which one they are looking at.
+
+       ★ Replaces a borrow of chevron-right.svg (Icon::ChevronRight, documented
+       "Next page"), for the reason recorded in full on document-previous.svg:
+       the bare two-segment chevron is RESERVED for a step through pages, and
+       switching between open files is a jump between documents. back.svg's
+       ruling gives a jump a shaft.
+
+       The cues, unchanged from the twin: the PAGE says a whole document moves
+       rather than a position within one, and it is what separates this from
+       back.svg, the set's other shafted arrow, which shows nothing but the arrow
+       because what you return to cannot be drawn. Arrowhead is an OPEN chevron,
+       never a filled triangle — back.svg's standing rule for the set. -->
+  <path d="M10 8h12l6 6v26H10z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M22 8v6h6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M34 24h10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M40 20l4 4-4 4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

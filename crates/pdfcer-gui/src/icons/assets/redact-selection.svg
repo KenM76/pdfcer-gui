@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Generic dashed marquee enclosing a solid bar — generic, no trademark risk -->
+  <!-- Edit ▸ Redact selection (`edit.redact_selection`, the third marking route,
+       O60). Until now it borrowed `redact` from `edit.redact`, so the Edit tab
+       drew three consecutive buttons with one identical glyph and only their
+       words to tell them apart. That is the "family shares a glyph" convention
+       misapplied: these three are not one verb over three operands — one ARMS a
+       tool, one marks THE SELECTION, one DESTROYS — and the registration's own
+       comment draws exactly that line ("Marking is not applying — a /Redact
+       annotation removes nothing").
+
+       What it depicts: a marching-ants marquee — the selection — with a
+       redaction bar already laid down inside it. That is the command's contract
+       drawn literally: it takes what is selected and puts a /Redact annotation
+       over it.
+
+       ★ The neighbour it must not be confused with is redact.svg, and it shares
+       that glyph's solid bar ON PURPOSE — the bar is the family mark; all three
+       redaction controls are about the same black rectangle. Three cues
+       separate them, in the order they survive downscaling:
+         (1) this outline is DASHED (5 4) where redact's is solid. Dashes are
+             this shell's marquee vocabulary and read as "a selection" before
+             any other detail resolves at 16 px;
+         (2) redact.svg carries two text rules above and below its bar, saying
+             "a page of words". This one carries none, because a selection is
+             not necessarily text;
+         (3) the frame here is wider and shallower (8,10 32×28) than redact's
+             square page (8,8 32×32).
+
+       ★★ The dash is GEOMETRY here, not decoration. `icons::svg` §Shape::dash
+       records the finding in its own words — "without dashes it becomes
+       `redact`" — which is why stroke-dasharray stopped being an ignored
+       attribute on 2026-09-04. This asset is the reason that parser support
+       exists; it is the first in the set to use it.
+
+       ★★ THE FILL IS DELIBERATE AND IS NOW IN THE CLOSED SET. The inner bar is
+       fill="currentColor". `icons::tests::fill_is_semantic_and_the_set_that_uses_it_is_closed`
+       enumerates every icon entitled to a fill and fails on any other, and this
+       glyph and apply-redactions.svg were added to it on 2026-09-04 with a
+       written reason: they are the redaction FAMILY, they draw the same solid
+       bar redact.svg draws, and they act on the same irreversible thing. An
+       outlined redaction glyph understates a feature that removes content
+       permanently, and that argument does not weaken because the command is
+       scoped to a selection.
+
+       ★★★ The audit that proposed this glyph reported the fill as an
+       unresolved divergence, on the ground that the cited gate
+       "does not exist anywhere in the tree". It grepped honestly and it was
+       reading honestly-stale prose: the test EXISTS and has since 2026-08-19,
+       when it was renamed from `redaction_is_the_only_filled_icon` as the
+       arrow pair joined the set — and four doc comments went on citing the
+       dead name for sixteen days. **A rename that leaves its citations behind
+       blinds a reader exactly as thoroughly as a deletion.** All of them now
+       name the live test. -->
+  <path d="M8 10h32v28H8z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" stroke-dasharray="5 4"/>
+  <rect x="14" y="20" width="20" height="8" rx="1" fill="currentColor" stroke="none"/>
+</svg>

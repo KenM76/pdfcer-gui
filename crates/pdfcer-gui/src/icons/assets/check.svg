@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Accept / complete the gesture in progress — a bare tick. Two straight
+       segments; the simplest primitive in the set. No trademark risk.
+
+       ★ IT FILLS A GAP TWO COMMANDS ALREADY WROTE DOWN. `markup.finish` and
+       `measure.finish` each carry a recorded refusal in the same words: "There
+       is no check-mark, tick or accept glyph in the set, and no existing key
+       means 'complete this gesture'." Both then explain that reusing a
+       neighbour's art would draw a fourth near-identical shape (or a fourth
+       identical ruler) in the same band for a command that draws NOTHING — it
+       ends the drawing — and that naming a key which does not exist draws the
+       catalogue's deliberate slashed mark, "a placeholder arriving through the
+       back door". So both render as their words. This is the glyph whose
+       absence those two paragraphs are about.
+
+       It could not have been a text glyph either way: `✓` U+2713 is MEASURED
+       ABSENT from the shipped font stack by icons::glyphs, so there is no
+       fallback to fall back to.
+
+       DISTINCT FROM chevron-right.svg by ASYMMETRY. A chevron's two limbs are
+       equal and mirror each other about the vertex; a tick's are not — a short
+       descending stroke and a long ascending one, at different angles. That
+       inequality is the only cue at 16 px, so evening the limbs out would turn
+       this into a `>` pointing the wrong way. DISTINCT FROM shape-arrow.svg by
+       having no head: an arrow points somewhere, a tick concludes something.
+
+       ⚠ It must not also be given to a command that CREATES something. This
+       glyph means "the thing you were drawing is now finished", never
+       "validated", "verified" or "correct" — signatures.svg's note records why
+       a checkmark near a signature would be a false claim, and that ruling
+       binds this file too. -->
+  <path d="M10 25l9 9 19-20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

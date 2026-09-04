@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Previous open DOCUMENT — a folded-corner page with a left-pointing shafted
+       arrow beside it. Primitives only; no trademark risk.
+
+       Two parts, two statements. The PAGE says what moves: a whole document, not
+       a position inside one. The SHAFT says how far.
+
+       ★ This replaces a borrow that was against a WRITTEN RESERVATION.
+       `view.previous_document` currently registers `.with_icon("chevron-left")`,
+       but Icon::ChevronLeft is documented "Previous page", and chevron-left.svg's
+       own note reserves the bare two-segment chevron for a STEP through a
+       sequence. Switching documents is not a step through pages; it is a jump
+       between files. back.svg already settled what a jump gets — a full-length
+       shaft with an open arrowhead, because "straight-with-shaft is the untaken
+       slot" — and this borrows that grammar rather than inventing a third.
+
+       The neighbours, and the cues that hold at 16 px:
+
+       * chevron-left.svg — bare chevron, nothing else in frame. Here the chevron
+         has a shaft AND a page beside it. Either alone would separate them; both
+         together survive down to thumbnail size.
+       * back.svg — also a shafted left arrow, and the only real risk in the set.
+         The PAGE is the separation: Back leaves a surface and shows nothing but
+         the arrow, because what you return to is not a thing you can draw. Here
+         there is a specific object on the other end of the arrow, and it is
+         drawn.
+       * document-next.svg is this mirrored about x=24, which is the convention
+         every navigation pair in this set follows (chevron-left/right,
+         rotate-ccw/cw, upload/download).
+
+       The arrowhead is an OPEN chevron, never a filled triangle — back.svg's
+       standing rule for the whole set. -->
+  <path d="M20 8h12l6 6v26H20z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M32 8v6h6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M4 24h10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M8 20l-4 4 4 4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

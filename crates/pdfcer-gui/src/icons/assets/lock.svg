@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- A padlock — body, shackle, keyhole stem. Marks a row the DOCUMENT
+       forbids changing: an optional-content group carrying `/Locked` (ISO
+       32000-1 Table 101, "the UI shall not allow the visibility state to be
+       changed"), and a `/Ff` read-only form field. Constructed from a rect and
+       two arc segments; generic, no trademark risk.
+
+       Those rows draw a DISABLED control today and put the reason on hover
+       only. panels/layers.rs' own header argues that an absence is the wrong
+       shape of disclosure — "a locked row with nothing where the tick goes
+       reads as a rendering fault" — and records that a tooltip-only version of
+       this same fact shipped as a defect, because egui shows no ordinary hover
+       text on a disabled widget: "the one row whose whole problem is that it
+       looks broken was silent about why". A lock beside the greyed tick is the
+       positive statement that argument asks for, and it satisfies R84, which
+       forbids carrying a state in a colour class alone — greyness is one.
+
+       ★★★ IT MUST NEVER APPEAR ON A SIGNATURE ROW, and this is the constraint
+       that most needs to survive a later tidy-up. signatures.svg's note is
+       explicit: that glyph is deliberately NOT a seal, a badge, a shield or a
+       checkmark, because pdfcer performs no cryptographic verification
+       whatsoever and every one of those shapes reads as VALIDATED. A padlock
+       reads exactly the same way. This file claims one thing only: THE
+       DOCUMENT SAYS THIS CONTROL MAY NOT BE OPERATED HERE. Not "secure", not
+       "verified", not "encrypted".
+
+       DISTINCT FROM redact.svg, the set's one filled glyph, whose solid bar
+       means content was irreversibly removed. This one is an outline and
+       nothing has been changed at all — an interface lock, which is what Table
+       101 actually grants (its own table blesses JavaScript and `/AS` bypass).
+       Outline versus fill is the cue, and it is the same cue that carries
+       redaction's honesty. -->
+  <path d="M12 22h24v20H12z" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M16 22v-6a8 8 0 0 1 16 0v6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M24 30v5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

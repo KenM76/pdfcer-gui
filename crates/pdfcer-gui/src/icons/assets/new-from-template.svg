@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- New document FROM A TEMPLATE — the same folded-corner page as
+       new-document.svg, carrying a dashed placeholder rectangle where that one
+       carries a solid plus. Primitives only; no trademark risk.
+
+       The shared body is deliberate, not laziness. `catalog::file` registers
+       `file.new` and `file.new_from_template` adjacent and argues they are "the
+       two ways to MAKE a document"; a shared silhouette is how a ribbon says
+       that without a label. The DASH is the whole distinction and it carries the
+       meaning: a solid plus is "empty, and yours to fill"; a dashed frame is
+       "something is already laid out here, and you will fill it in".
+
+       Deliberately NOT drawn as a second sheet behind the page. Two stacked
+       sheets is copy.svg's and copy-page-text.svg's vocabulary, and here it
+       would claim the command duplicates something already open — which is
+       exactly wrong: a template lives on disk, not in the window.
+
+       Also not folder.svg with a page in it: that reads as "open from a place",
+       which is `file.open`'s job three controls to the right.
+
+       ★ The dashed path is REPRODUCED VERBATIM from the proposal, including its
+       lack of a stroke-linecap. It is a closed rect, so no cap is visible; the
+       geometry is not this file's to adjust. `stroke-dasharray` is parsed rather
+       than ignored by `icons::svg` — see that module's `Shape::dash`. -->
+  <path d="M14 6h14l8 8v28H14z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M28 6v8h8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M19 20h10v14H19z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" stroke-dasharray="3 3"/>
+</svg>

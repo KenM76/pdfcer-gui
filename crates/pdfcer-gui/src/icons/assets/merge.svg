@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Merge another file's pages INTO the open document (`pages.merge_into`).
+       Two streams entering from the left, bending toward one another, joining,
+       and leaving as a single line under an arrowhead. Constructed from
+       primitives — two curves and a chevron; no trademark risk.
+
+       ★ WHY IT EXISTS AT ALL. `pages.merge_into` had no art and named
+       `combine` instead — `link.svg`, the interlocking chain, whose documented
+       owner is `Icon::Combine` ("Combine files…", i.e. `tools.merge_files` on
+       the Tools tab). The two are genuinely different operations, and the
+       catalogue already knows it: each command's tooltip ends by naming the
+       other — "To combine files into a new one instead, leaving this document
+       alone, use Tools > Merge files" and, from the other side, "This document
+       is not changed — to add pages to it instead, use Pages > Merge into this
+       document." Two tooltips written to stop a confusion, and two identical
+       pictures above them. A tooltip is the last thing an operator reads and
+       the glyph is the first, so the disambiguation was happening in the wrong
+       order.
+
+       THE SHAPE CUE AGAINST link.svg IS DIRECTION. A chain is two closed rings,
+       symmetric, with no free ends: it says "these two are joined" and makes no
+       claim about which one survives. This glyph is a Y-junction carrying an
+       arrowhead — two tails on the left, one line on the right — and the arrow
+       says which way the pages travel. That is precisely what separates the two
+       commands: Merge files writes a NEW file and changes neither input; Merge
+       into this document consumes the others INTO the one already open. Drop
+       the arrowhead and this becomes a bracket, which means "these belong
+       together" — the chain's meaning again, and the collision back.
+
+       IT MUST ALSO NOT READ AS shape-arrow, the Markup arrow tool. That glyph
+       is a single straight shaft drawn corner to corner, because a /Line
+       annotation is a straight line an operator drags. Here the head terminates
+       a junction and the two curved tails are what carry the meaning; they are
+       also what keeps this clear of page-extract, which is the same in/out
+       family's opposite sense — an arrow leaving a page, direction OUT. This
+       one points IN, at a destination that is already open. -->
+  <path d="M6 12h8c8 0 8 12 16 12h10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M6 36h8c8 0 8-12 16-12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M35 19l5 5-5 5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Generic mouse-and-page shape — a capsule, a rectangle with a cut corner and a
+       chevron. Constructed from primitives; no vendor artwork traced or adapted. -->
+  <!-- No ui-spec row: the wheel-paging toggle is `OPERATOR_REQUESTS.md` O30 and
+       shipped 2026-08-24, long after the icon spec was written. Authored in the §3
+       style contract.
+
+       WHAT IT DEPICTS. A mouse on the left — a plain capsule body with one short
+       upright stroke for the wheel — and a sheet on the right carrying a forward
+       chevron. Read left to right it is the entire sentence the control makes:
+       *the wheel turns the page*. That is the whole of `prefs::wheel`'s question,
+       and the control it sits on is `app::status::page_box::wheel_toggle`.
+
+       The wheel stroke is SHORT and sits high on the body, at the point where a
+       real wheel is. Lengthen it and the capsule reads as a battery or a door; the
+       glyph only says "mouse" while the wheel is a small mark near the top of a
+       tall rounded body, which is the silhouette every operating system has drawn
+       for thirty years.
+
+       ★ DISTINCT FROM `chevron-right.svg`, which is this glyph's chevron and
+       nothing else. That one means a single act — go to the next thing, once,
+       because you pressed it — and it already sits on `view.next_document`.
+       Enclosing the chevron in a SHEET and setting a MOUSE beside it is what turns
+       the act into a POLICY about an input device, which is what this control
+       actually sets: it does not turn a page when pressed, it decides what the
+       next wheel notch will mean. The mouse is the cue that carries that
+       difference and it is load-bearing — take it away and the glyph is Next page
+       with decoration on it.
+
+       ★ DISTINCT FROM the four page-display glyphs (`page-single.svg` and its three
+       siblings), and by breaking their family rule on purpose. page-single.svg's
+       own note states that rule: those four are BARE page silhouettes and nothing
+       else, because "the arrangement IS the information" and any interior detail
+       would compete with it. This sheet is deliberately MARKED — a folded corner
+       and an interior chevron are exactly the interior detail that family forbids
+       itself — and that is precisely what keeps this glyph out of the family. It is
+       not saying how many pages are on screen.
+
+       ★ DISTINCT FROM `document.svg` (Properties), the other marked sheet on the
+       View surface: that one carries three ruled lines, which read as text somebody
+       wrote — a page ABOUT which something is true. This one carries a direction. -->
+  <path d="M7 16a7 7 0 0 1 14 0v16a7 7 0 0 1-14 0z" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M14 13v6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M28 8h10l6 6v26H28z" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M38 8v6h6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M33 19l5 5-5 5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

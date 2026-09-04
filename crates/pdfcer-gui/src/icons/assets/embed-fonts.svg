@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Embed fonts (`tools.embed_fonts`) — a capital A sealed inside a SOLID
+       square frame: the typeface carried *inside* the file. Constructed from
+       primitives (three straight-line paths); no typeface is reproduced, the
+       letterform is drawn as geometry rather than set as text, exactly as
+       fonts.svg draws its own. No trademark risk.
+
+       It exists because this command SHARED `fonts` with two other controls.
+       Until now `file.fonts` (the Fonts panel), `tools.embed_fonts` and
+       `tools.unembed_fonts` all drew the same A-on-a-baseline, so three
+       controls that do three different things to one subject were one picture
+       drawn three times — and one of them, the panel, writes nothing at all,
+       while the other two rewrite the font programs inside the document.
+       fonts.svg's own note argues that the panel's glyph must not be a pencil
+       or an I-beam because the panel changes nothing; the same argument run
+       the other way says the two write commands must not wear the panel's art.
+
+       DISTINCT FROM fonts.svg BY THE FRAME. fonts.svg is the same letterform
+       standing on an open baseline rule, and that rule is what makes it read
+       as "a typeface, listed". A closed box around the letter reads as "the
+       face is held inside this container", which is what embedding is.
+
+       DISTINCT FROM ITS SIBLING unembed-fonts.svg only by that frame being
+       SOLID rather than dashed — solid means the face is present in the file,
+       dashed means its outline is all that is left. That single difference is
+       the whole distinction between the pair, so neither file may be redrawn
+       without the other. (The dash renders: `stroke-dasharray` is parsed by
+       icons::svg, see `Shape::dash`.)
+
+       Deliberately NOT from the I-beam family (add-text.svg, text-select.svg)
+       and not edit.svg's pencil: those act on the words, and this acts on the
+       faces the words are drawn in. -->
+  <path d="M8 8h32v32H8z" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M16 33l8-18 8 18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M18.5 27h11" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

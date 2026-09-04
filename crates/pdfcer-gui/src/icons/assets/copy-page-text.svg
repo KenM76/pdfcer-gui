@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Copy THIS PAGE's text — a folded-corner page carrying three full-width
+       text rules, with a second sheet showing behind and below it. Primitives
+       only; no trademark risk.
+
+       Three parts, three statements: the rules say TEXT, the second sheet says
+       COPY, and the front page being whole and fully ruled says *one page*.
+
+       ★ This REPLACES A BORROW rather than filling an empty slot, and the borrow
+       is the reason it is worth drawing. `catalog::file` registers this command
+       with `.with_icon("copy")`, and so do `edit.copy`, `pages.copy` and
+       `file.copy_document_text` — FOUR controls wearing one glyph. That is
+       exactly the failure this module's own convention names: several controls
+       drawn identically read as one control drawn repeatedly.
+
+       The neighbours, and what holds them apart:
+
+       * copy.svg (Icon::Copy) is two BLANK overlapping rounded rects. Blank is
+         its meaning — the clipboard does not care what it holds. Text rules are
+         what say this command copies words specifically, which `edit.copy`
+         (a selection, whatever it is) and `pages.copy` (whole sheets) do not.
+       * copy-document-text.svg is the sibling three inches to the right in the
+         same group, and the two differ ONLY in scope, so they differ only in
+         COUNT: two sheets with the front one fully ruled = this page's text;
+         three cascading sheets with only the top one briefly ruled = the whole
+         file's. Reading the pair side by side is how an operator learns which is
+         which, so the shared vocabulary is deliberate.
+       * pages.svg is three blank square-on sheets and means the Pages panel. Two
+         sheets and rules, not three sheets and none. -->
+  <path d="M16 6h16l6 6v24H16z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M16 12H10v30h24v-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M22 18h10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M22 24h10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M22 30h6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

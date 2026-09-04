@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Tree disclosure, OPEN state ("these children are showing — press to hide
+       them"). expand.svg's triangle turned down, outlined, closed with `z`.
+       No trademark risk.
+
+       ★ THIS IS THE HALF THAT FORCED THE WORKAROUND IT REPLACES. The panel
+       draws `⏷` U+23F7 today because `▼` U+25BC — the Geometric Shapes
+       triangle every style guide names — IS ABSENT FROM THE BUNDLED FONT
+       STACK, while its partner `▶` U+25B6 draws. text/panels/bookmarks.rs
+       calls that "the worst possible arrangement": one state would show a
+       triangle and the other a substitution box, so a missing glyph would read
+       as a state rather than as a defect, and nothing but the running window
+       would show it. Both halves were pulled from one emoji face to make the
+       failure at least symmetric. Drawing the pair removes the problem instead
+       of balancing it.
+
+       DISTINCT FROM chevron-down.svg, which is the disclosure marker on a
+       dropdown BUTTON. That is an open chevron and says "this control opens
+       something below it"; this is a closed triangle and says "this row
+       contains the rows beneath it". Different controls, different promises,
+       and the closing edge is the only shape cue between them at 16 px.
+
+       Adopt with expand.svg or not at all. Half a pair reintroduces exactly
+       the failure quoted above: a state and a rendering fault that look the
+       same. -->
+  <path d="M12 18l12 14 12-14z" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

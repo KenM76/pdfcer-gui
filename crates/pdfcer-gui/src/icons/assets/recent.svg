@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Recent documents — a clock face: a closed ring with an hour and a minute
+       hand. Two primitives, no trademark risk.
+
+       Time is the one property every row of the recent list shares, and a clock
+       is the shape that says so with no label. The control it serves is a menu
+       BUTTON whose label is a word (`app::recent::menu`), so the glyph only has
+       to survive being scanned beside its neighbours — which is where the two
+       collisions live:
+
+       * folder.svg (Icon::Open) sits immediately to the left in the same band.
+         `catalog::file`'s refusal for this command is precisely that reusing
+         `open` "would make two adjacent controls in one band look like one
+         control drawn twice". Nothing here is a folder.
+       * undo.svg is the set's other time-flavoured glyph, and the separation is
+         CLOSED vs OPEN: undo is a bare ~270° arc with an arrowhead and no
+         interior; this is an unbroken ring with two hands inside it. The cue is
+         also a claim — an arrowhead says "go back and change what happened", and
+         Recent changes nothing at all, it only reopens.
+       * info.svg is the other circle in the set; it carries a dot-and-stem, this
+         carries two hands meeting off-centre. -->
+  <path d="M24 10a14 14 0 1 1 0 28 14 14 0 0 1 0-28z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M24 15v9l6 4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

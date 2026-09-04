@@ -9,6 +9,8 @@
        is about places IN a document, not the document.
 
        Stroked, not filled — redact.svg's fill is the set's one semantic
-       exception (`redaction_is_the_only_filled_icon` enforces it). -->
+       exception (`fill_is_semantic_and_the_set_that_uses_it_is_closed`
+       enforces it; it was called `redaction_is_the_only_filled_icon` until
+       2026-08-19). -->
   <path d="M14 8h20a2 2 0 0 1 2 2v30l-12-9-12 9V10a2 2 0 0 1 2-2z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
 </svg>

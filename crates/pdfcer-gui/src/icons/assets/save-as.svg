@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Save As — the save body (cut corner, shutter, label field) with a pencil
+       laid across its lower-left field. Primitives only; no trademark risk.
+
+       Save As is Save plus *you choose the name*, so the glyph is the save body
+       plus this set's existing mark for authoring. Building it out of the
+       neighbour rather than away from it is the point: an operator who has
+       learned `save` should recognise this in the same glance and then notice
+       the one thing added.
+
+       Three separations, each of which someone could otherwise collapse in a
+       later "consistency" pass:
+
+       * save.svg is the BARE body with a single horizontal label slot and
+         nothing over it. That is the press an operator makes fifty times a day
+         without reading the label, and `catalog::file` says in as many words
+         that the glyph belongs to it. Nothing here takes that away — this one
+         is marked, that one is clean.
+       * edit.svg (Icon::EditText) is a FULL-FRAME standalone pencil meaning
+         "edit this page's text". Here the pencil is a small modifier over a body
+         that dominates the frame. Scale and company are the cue: a pencil that
+         owns the viewBox is a tool, a pencil sitting on something else is an
+         adverb.
+       * save-copy.svg REPEATS the body where this one MARKS it. "Another file"
+         versus "this file, under a new name" — which is exactly the difference
+         `Action::SaveAs` exists to preserve. -->
+  <path d="M8 8h26l6 6v26H8z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M15 8v9h14V8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M14 40v-10h10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M28 30l6 6-8 8h-6v-6z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+</svg>

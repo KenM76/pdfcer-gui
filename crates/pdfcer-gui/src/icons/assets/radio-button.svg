@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Generic concentric-rings shape — generic, no trademark risk -->
+  <!-- Authored 2026-09-04 for `edit.form_radio_button`, which until now drew
+       `form-field.svg` along with the other four field-type commands in the
+       Edit ▸ Forms group. See check-box.svg for the full argument against that
+       share; in one line: five controls in one group differing only in the
+       field they place cannot all be one picture.
+
+       Two concentric rings — the shape every desktop has drawn for a
+       one-of-a-set control for forty years, and the one thing that says
+       "choosing one clears the others" without the tooltip having to.
+
+       ★ THE SET ALREADY DECIDED THIS SHAPE MEANS RADIO BUTTON. `list.svg` —
+       the glyph on `edit.form_manage_fields`, TWO ITEMS AWAY IN THIS SAME
+       RIBBON GROUP — records a deviation from ui-spec §8.2, which had assigned
+       it `icon-ring.svg`: "`icon-ring.svg` is two concentric circles, and at
+       16 px two concentric circles read as a target or a radio button —
+       neither of which is a list of named things." That deviation was written
+       before this glyph existed. It is now load-bearing in both directions:
+       the rings belong here, the three rows-and-markers belong there, and the
+       two are drawn side by side, so neither may drift toward the other.
+
+       ★★ THE INNER MARK IS A RING, NOT A FILLED DOT, and that is not a style
+       choice. A real radio button's selected state is a solid disc, and this
+       glyph deliberately does not draw one: `fill_is_semantic_and_the_set_that_uses_it_is_closed`
+       closes the set of filled icons, because redact.svg's fill is not a style
+       but the set's one semantic exception (that tool obliterates; every other
+       one draws or measures) and is also the icon pipeline's only coverage of
+       the fill path. Borrowing the fill for fidelity here would cost both. The
+       stroked r6 ring reads as the selected state at every size the ribbon
+       draws.
+
+       Distinct from search.svg, zoom-in.svg and zoom-out.svg — the set's other
+       circles — by having NO HANDLE. A lens is a circle with a stem running
+       off it; this is two circles about one centre and nothing else. -->
+  <path d="M24 9a15 15 0 1 1 0 30 15 15 0 0 1 0-30z" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M24 18a6 6 0 1 1 0 12 6 6 0 0 1 0-12z" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

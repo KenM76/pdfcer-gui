@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Generic ticked-box shape — generic, no trademark risk -->
+  <!-- Authored 2026-09-04 for `edit.form_check_box`, which until now drew
+       `form-field.svg` — and so did `edit.form_text_field`,
+       `edit.form_radio_button`, `edit.form_choice` and
+       `edit.form_push_button` beside it. All five sit in ONE ribbon group
+       (`shell::manifest::edit`, group "forms") and are drawn side by side, so
+       the shared key left five buttons carrying five different words under one
+       identical picture. That is the exact fault the text-markup pass recorded
+       when it refused to reuse `shape-highlight` for underline, strikeout and
+       squiggly: four controls that "differ only in the mark they draw" cannot
+       share a glyph. `form-field.svg` stays with the TEXT field, whose box and
+       typing caret it literally depicts.
+
+       A square with a tick inside it — the one drawing of "an independent
+       on/off box" that needs no label, and the command's own tooltip in a
+       picture: "A single box that is either ticked or not."
+
+       ★★ IT INTRODUCES THE SET'S FIRST TICK, AND TWO RECORDED DECISIONS
+       ASSUMED THERE WAS NONE. `shell::commands::catalog`'s refusal table gives
+       `measure.finish` and `markup.finish` no glyph because "the set has no
+       check/tick/accept glyph". That sentence is now false in the letter, and
+       the refusals must be re-argued on the ground that survives rather than
+       quietly overturned: this tick is ENCLOSED IN A BOX, and the box is the
+       subject — it names a field TYPE, not an accept VERB. A bare tick, which
+       is what Finish would need, still does not exist in this directory and
+       must not be extracted from this file to make one.
+
+       ★ Distinct from signatures.svg, which is forbidden from being a
+       checkmark at all because a checkmark reads as VALIDATED and pdfcer
+       performs no cryptographic verification whatsoever. The separating cue is
+       the FRAME: signatures is "the mark itself, on a line", with nothing
+       around it; this is a box first and a mark second, and the box is 30 of
+       the 48 units across.
+
+       Distinct from redact.svg, the set's other large square, by both interior
+       and fill: redaction's bar is SOLID — the set's one deliberate filled
+       exception, closed by `fill_is_semantic_and_the_set_that_uses_it_is_closed` — and lies
+       across the middle. This square is empty outline carrying a stroked
+       tick, and nothing in it is filled. -->
+  <path d="M9 9h30v30H9z" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M16 24l6 6 11-12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

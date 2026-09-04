@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Recognise text (OCR) — a page carrying a capital A, with a dashed rule
+       sweeping across its foot. Primitives and a generic letterform; no
+       typeface is reproduced and there is no trademark risk.
+
+       Three parts, three statements. The folded-corner page says *this
+       document*. The A says *text*. The DASHED sweep says the text is being
+       FOUND rather than typed — recognition is a scan over a picture, and a
+       broken line is the one cue that reads as "in progress, not yet certain"
+       at 16 px, which is the honest thing to say about OCR output.
+
+       ★ The neighbour it must not become is fonts.svg — also a capital A, also
+       on a rule. TWO cues separate them and both are load-bearing:
+
+       * This A is INSIDE a page outline; the Fonts A stands alone. That panel
+         reports on the document's type inventory; this command reads the
+         document's pixels. The page is what says which of the two.
+       * This rule is DASHED, the Fonts rule is SOLID. `fonts.svg`'s own note
+         says why its baseline is solid: a solid rule turns "a letter" into "a
+         typeface". A dashed rule cannot be mistaken for a baseline, so it
+         cannot be mistaken for that claim.
+
+       Also deliberately not search.svg's magnifier laid over a page: that reads
+       as Find, which is a different command that already exists and already has
+       the empty lens reserved for it. And not add-text.svg's I-beam-plus — this
+       does not place text where the operator points, it writes a layer under
+       everything at once.
+
+       ★ `stroke-dasharray` is parsed rather than ignored by `icons::svg`; see
+       that module's `Shape::dash`. -->
+  <path d="M12 6h18l8 8v28H12z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M30 6v8h8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M19 33l5-13 5 13" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M21 28h6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M14 39h20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="2 4"/>
+</svg>

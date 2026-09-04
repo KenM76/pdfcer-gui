@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Generic stacked-dimension shape — generic, no trademark risk -->
+  <!-- No ui-spec row that survives: §8.2 assigned `icon-ring.svg` to Manage
+       Dimension Groups and that row is a recorded deviation (two concentric circles
+       read as a target or a radio button at 16 px, not as a list of named things).
+       The command has drawn `list.svg` in the interim, shared with
+       `edit.form_manage_fields`. Authored in the §3 style contract.
+
+       TWO dimension lines stacked, each a rule capped at both ends by an upright
+       extension tick, the lower one shorter and resuming past its own right-hand
+       tick as a detached stub.
+
+       ★ The glyph it replaces is `list.svg`, and naming the difference is the whole
+       argument for drawing this one. `list.svg` is three markers and three equal
+       rules — an inventory of anything, which is exactly as much as it could
+       honestly promise while it was shared with Manage fields. Its own comment says
+       so: the family was one of ACTION, not of subject, because "dimension groups"
+       was a phrase only the label could say. THIS glyph can say it. A rule with an
+       extension tick at each end is a dimension and nothing else; two of them
+       stacked is a set of dimensions; and that is what a dimension group is — a
+       named collection of measurements carrying one scale, one number format and
+       one drafting standard.
+
+       Three properties keep it apart from its neighbours:
+
+       * NO ENCLOSING BAND and no graduated ladder, which is the distinction from
+         `ruler.svg` (`Icon::Measure`, on the same tab). Ticks appear only at the
+         ENDS of each rule, never along it: a ruler is subdivided, a dimension is
+         terminated.
+       * ROWS OF UNEQUAL LENGTH, which is the distinction from `list.svg`'s three
+         equal rules and from `grid.svg`'s regularity. Different dimensions measure
+         different things; equal rows would read as a table.
+       * THE STUB past the lower right tick. It is the "and more" cue that makes two
+         rows read as a LIST of dimensions rather than as a picture of exactly two,
+         which is what a manage-the-groups surface has to promise.
+
+       Distinct from `measure-length.svg`, whose ticks also flank a run: that glyph
+       has ONE run and it CURVES, because it is a measurement being taken. These are
+       straight, stacked and plural, because they are measurements being listed. -->
+  <path d="M8 14h32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M8 10v8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M40 10v8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M8 30h20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M8 26v8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M28 26v8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M36 30h4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

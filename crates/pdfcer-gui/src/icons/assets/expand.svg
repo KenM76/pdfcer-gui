@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Tree disclosure, CLOSED state ("there are children here — press to show
+       them"). A right-pointing triangle, outlined, closed with `z`. The
+       simplest possible primitive; no trademark risk.
+
+       ★ IT REPLACES A FONT WORKAROUND, not a blank. The Bookmarks panel draws
+       the text character `⏵` U+23F5 today, and text/panels/bookmarks.rs
+       records why that codepoint rather than the obvious one: the wanted pair
+       is `▶` U+25B6 / `▼` U+25BC, "the Geometric Shapes triangles every style
+       guide names", and THE BUNDLED FONT STACK CANNOT DRAW U+25BC. U+25B6
+       draws and U+25BC does not — "the worst possible arrangement", because a
+       collapsed row would show a triangle and an expanded one a substitution
+       box, so the missing glyph reads as a STATE rather than as a defect. Both
+       halves were therefore taken from one emoji face as a workaround. This
+       file and collapse.svg are that pair drawn, which is the operator's
+       standing ruling — a missing glyph is AUTHORED, not worked around — and
+       it removes the emoji-font dependency from a control's two states.
+
+       DISTINCT FROM chevron-right.svg, which is Next Page. That is an OPEN
+       chevron: two strokes meeting at a point, with no third edge. This is a
+       CLOSED triangle. The closing baseline edge is the ONLY thing that
+       separates them at 16 px, and it is what makes this read as a tree
+       disclosure rather than as navigation — so it must never be opened out
+       into a chevron by a later consistency pass.
+
+       Its pair is collapse.svg, the same triangle turned down. Two glyphs that
+       mean two states of one control must stay one family; neither may be
+       redrawn alone. -->
+  <path d="M18 12l14 12-14 12z" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

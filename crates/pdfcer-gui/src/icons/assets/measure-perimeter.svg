@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Generic dashed closed outline — generic, no trademark risk -->
+  <!-- No ui-spec row: `measure.perimeter` is the operator's ask of 2026-08-20 and
+       shipped long after the icon spec was written; until now it borrowed
+       `ruler.svg` along with its three neighbours. Authored in the §3 style
+       contract.
+
+       An irregular CLOSED quadrilateral, drawn dashed. Both halves of that sentence
+       are doing work:
+
+       * CLOSED, and closed is the whole meaning of the word on the label. The
+         command's own text says so — "Perimeter" says closed, and
+         `MeasureKind::PathLength` exists as a separate control precisely because
+         nobody measuring a pipe run would reach for a tool whose name promises a
+         ring. The `z` is therefore not a drawing convenience, it is the
+         distinction from `measure-length.svg`, whose run has two open ends.
+       * DASHED, which is the whole distinction from `shape-polygon.svg`. That glyph
+         is an irregular closed pentagon in solid stroke and means "an annotation you
+         author by clicking corners"; this one means "a route you trace ROUND
+         something that is already on the page, to get one number for the way
+         round". A measurement path is not ink the document keeps, and the broken
+         line is the only cue at 16 px that says so. The corner count differs too —
+         four here against that glyph's five — but corner-counting is not legible at
+         ribbon size and the dash is, so the dash is what the difference rests on.
+
+       The quadrilateral is deliberately skewed (no two sides parallel, no right
+       angle) so it cannot read as a rotated `shape-rect.svg`, which is the collision
+       `shape-polygon.svg`'s own comment warns about in this band. -->
+  <path d="M12 36l5-24 20 4-3 20z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" stroke-dasharray="6 4"/>
+</svg>

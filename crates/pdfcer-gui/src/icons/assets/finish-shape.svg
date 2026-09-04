@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Generic open segment-chain with an accept tick — generic, no trademark risk -->
+  <!-- Markup ▸ Finish shape (`markup.finish`), and the same glyph answers
+       `measure.finish`. Both registrations carry a written refusal that names
+       exactly what was missing: "There is no check-mark, tick or accept glyph in
+       the set, and no existing key means 'complete this gesture'." This is that
+       glyph, so the refusal's stated cause is discharged rather than worked
+       around. Its second reason — "naming a key that does not exist draws a
+       visible slashed mark, which is a placeholder arriving through the back
+       door" — stops applying the moment this asset exists.
+
+       What it depicts: the vertex run a click-shaped gesture has laid down so
+       far, with a tick set against its end. TWO marks, because the command is
+       two things at once — it is about a POLYLINE/POLYGON in progress (the run)
+       and it ENDS it (the tick). A bare tick was the obvious drawing and is the
+       wrong one: an accept mark alone belongs to no tool, and this control is
+       not a generic OK, it commits one specific gesture.
+
+       ★ The neighbour it must not be confused with is shape-polyline.svg, and
+       the resemblance is deliberate and close. That glyph is
+       `M9 34L19 15L29 29L39 12` — four vertices, three segments, aperiodic,
+       ending upward — and this one's run is the same figure. It has to be,
+       because this control is what finishes that tool; an unrelated run would
+       break the pairing the polyline and polygon glyphs were drawn to teach.
+       The separation is carried entirely by the TICK in the lower right, and to
+       make room for it the run is drawn shorter and pushed up-left (it stops at
+       x=32 where polyline's reaches x=39). The cue that survives to 16 px is
+       the composition rather than the path: ONE mark in the tile is
+       shape-polyline, TWO marks is finish-shape.
+
+       ★ It is also deliberately NOT show-points.svg: that one puts square node
+       boxes ON its run and means "the points are aimable". This run is left
+       bare, because Finish is about the run being over, not about its vertices
+       being targets.
+
+       The tick is shared verbatim in spirit with apply-redactions.svg — a tick
+       means "this gesture is now committed" in both places. The two never share
+       a band (Markup ▸ Shapes against Edit ▸ Redact) and the mark each one
+       accompanies differs completely, so the shared vocabulary reads as
+       consistency rather than as a duplicate. -->
+  <path d="M8 36l8-18 10 8 6-12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M28 34l4 4 8-8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

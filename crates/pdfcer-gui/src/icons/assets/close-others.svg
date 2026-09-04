@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Close OTHER documents — two square-on sheets: a complete one in front,
+       untouched, and behind it a second carrying a small ✕ at its top-right
+       corner. Primitives only; no trademark risk.
+
+       The front sheet is the one you keep. The mark is on the others. Which
+       document survives depends on the route — from a tab's context menu it is
+       the tab that was right-clicked, from the ribbon the one on screen
+       (`PdfcerApp::tab_menu_target`, `unwrap_or(active_slot)`) — and this glyph
+       deliberately says only "this one stays, those go", which is true from both
+       routes, exactly as the tooltip is.
+
+       ★ The dangerous neighbour is close.svg, and getting the pair backwards
+       closes the wrong files. close.svg is a BARE, FULL-FRAME ✕ and means
+       "dismiss the thing in front of you" — it is what `file.close` wears. Here
+       the ✕ is SMALL and sits on the sheet BEHIND, and the front sheet is
+       completely unmarked. Scale and placement carry the inversion; nothing else
+       does, so neither may be tidied away later.
+
+       Also distinct from copy.svg, the set's other two-offset-rect glyph, by the
+       ✕ (copy's rects are blank, because a clipboard does not care what it
+       holds), and from save-copy.svg by having no shutter.
+
+       The rear sheet is drawn as open edges rather than a closed rect, following
+       pages.svg and layers.svg: fully-drawn stacked shapes become a solid mass
+       at 16 px. -->
+  <path d="M8 16h24v26H8z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M16 8h24v24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M30 12l6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M36 12l-6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

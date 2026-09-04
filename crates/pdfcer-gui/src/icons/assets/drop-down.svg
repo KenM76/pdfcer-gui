@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Generic boxed-chevron shape — generic, no trademark risk -->
+  <!-- Authored 2026-09-04 for `edit.form_choice`, which until now drew
+       `form-field.svg` along with the other four field-type commands in the
+       Edit ▸ Forms group — see check-box.svg for that argument in full.
+
+       Named `drop-down` rather than `choice` because that is the word on the
+       button: `text::commands::edit_form_choice` ships the label "Drop-down"
+       and the tooltip "A list of options to choose from." An icon key answers
+       to what the operator reads, not to what the id spells.
+
+       A field box with a value line on the left and a small chevron on the
+       right: the closed state of a combo box, which is the only state a
+       16-pixel glyph can show.
+
+       ★ THE DELICATE PAIR IS chevron-down.svg, and it is delicate because that
+       glyph is not another command's art — it is the ribbon's own
+       menu-disclosure marker, so it can be drawn in this same band on the
+       chrome of a neighbouring split button. The separating cue is the FRAME
+       and nothing else. A bare chevron means "this control opens something
+       below it" (that file's own words); a chevron inside a field rectangle
+       means "the control IS a list". Nothing about the chevron itself keeps
+       them apart, which is exactly why the box must never be trimmed away for
+       optical balance at 16 px.
+
+       Distinct from form-field.svg, one item to the left in the same group, by
+       what stands inside the box: a text field carries a VERTICAL typing caret
+       (and a plus badge outside the box); this carries a HORIZONTAL value line
+       and a chevron within it. Caret means "type here"; line-and-chevron means
+       "pick from these".
+
+       Distinct from forms.svg — the View-tab Forms panel toggle — which is a
+       PAGE containing two field boxes. This is one field box and no page: the
+       page says "a document that has fields", the bare box says "a field". -->
+  <path d="M8 14h32v20H8z" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M14 24h9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M28 22l4 4 4-4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

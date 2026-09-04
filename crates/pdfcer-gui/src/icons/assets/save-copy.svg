@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Save a copy — two save bodies offset: a complete one in front carrying the
+       shutter and label field, and the outline of a second showing behind it.
+       Primitives only; no trademark risk.
+
+       The doubling IS the message. A copy is a second file, and the front body
+       keeps the shutter so the pair still reads as a member of the save family
+       rather than as a generic duplicate of anything.
+
+       ★ This retires a recorded gap rather than merely filling one.
+       `catalog::file` records that `file.save_copy` HANDED the `save` glyph to
+       `file.save` on 2026-08-20 — "two adjacent controls sharing one key would
+       read as one control drawn twice" — and has rendered as text ever since.
+       That reasoning is honoured here, not overturned: the two controls do not
+       share a key, they share a FAMILY, which is what the shutter carries.
+
+       Neighbours, and the cues that hold:
+
+       * copy.svg (Icon::Copy) is two blank rounded rects offset diagonally, with
+         no shutter and no label field, because it means the CLIPBOARD — take
+         this and hold it. This command writes a file. The shutter is the entire
+         separation and it is doing real work; drop it and the two collapse.
+       * save.svg is a single body. The second outline is the count.
+       * save-as.svg MARKS the body with a pencil where this one REPEATS it:
+         another file, versus this file under another name.
+
+       The rear body is drawn as open edges rather than a closed rect, borrowed
+       from pages.svg and layers.svg, which made the same choice against the same
+       risk: fully-drawn stacked shapes become a solid mass at 16 px. -->
+  <path d="M14 4h20l6 6v20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M8 12h22l6 6v26H8z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M14 12v8h12v-8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M14 44v-9h14v9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

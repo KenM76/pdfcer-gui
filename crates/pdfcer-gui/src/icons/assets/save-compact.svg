@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Save compacted — the save body with a downward arrow filling the field
+       beneath the shutter. Primitives only; no trademark risk.
+
+       Down is "smaller", and the arrow sits INSIDE the body because the subject
+       is the file's size, not a journey. Compaction writes a copy with unused
+       objects reclaimed; nothing leaves the document and nothing arrives.
+
+       ★ That containment is the load-bearing cue, and it is aimed at two
+       specific neighbours:
+
+       * download.svg (Icon::Export) is a downward arrow into a TRAY. Its own
+         note calls arrow direction "the family's grammar" for out-of / into this
+         document, and reserves the pair for exactly that. An arrow enclosed by a
+         save body is not in that family — there is no tray, no threshold, and
+         nothing crosses one.
+       * page-extract.svg is a PAGE with an arrow leaving it downward. Same
+         objection, same answer: what is drawn around the arrow says whether the
+         arrow means "out" or "less".
+
+       And within the save family itself, the three are one body with one
+       different thing said about it: save-as.svg adds a pencil (a new name),
+       save-copy.svg adds a second body (a second file), this adds an arrow that
+       stays inside (the same file, smaller). None of the three can be read as
+       either of the others at 16 px, which is the only test that matters. -->
+  <path d="M8 8h26l6 6v26H8z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M15 8v9h14V8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M24 22v14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M18 30l6 6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

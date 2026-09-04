@@ -10,7 +10,8 @@
        as "shape editing", the run of points reads as "the points themselves".
 
        The middle node was FILLED in the first draft, to preview the canvas's
-       selected-node vocabulary. `redaction_is_the_only_filled_icon` failed it,
+       selected-node vocabulary. `fill_is_semantic_and_the_set_that_uses_it_is_closed`
+       — then still called `redaction_is_the_only_filled_icon` — failed it,
        correctly: redact.svg's fill is not a style, it is the set's one
        semantic exception (that tool obliterates; every other one draws or
        measures) and it is also the icon pipeline's only coverage of the fill

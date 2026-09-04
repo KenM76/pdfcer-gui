@@ -171,8 +171,18 @@
 //! redaction actually leaves behind, and an outline-only glyph would
 //! visually understate a feature that irreversibly removes content. **A
 //! future icon audit must not "fix" it back to an outline.**
-//! `super::tests::redaction_is_the_only_filled_icon` asserts both halves —
-//! that redaction is filled and that nothing else is.
+//! `super::tests::fill_is_semantic_and_the_set_that_uses_it_is_closed`
+//! asserts both halves — that redaction is filled and that nothing outside a
+//! named set is.
+//!
+//! ★ That test was called `redaction_is_the_only_filled_icon` until
+//! 2026-08-19, when the arrow pair joined the set and the name stopped
+//! being true. **Four doc comments went on citing the old name for sixteen
+//! days**, and on 2026-09-04 an audit grepped for it, found it in zero test
+//! bodies, and correctly reported that the cited gate did not exist. It did
+//! exist — under a name none of its citations had been told about. A rename
+//! that leaves its citations behind blinds a reader exactly as thoroughly as
+//! a deletion, and costs the same to fix.
 //!
 //! `shape-highlight.svg` uses `stroke-width="1"` for its 45° hatch. Also
 //! deliberate (ui-spec §3.3): the hatch is a *texture* standing in for
@@ -836,3 +846,205 @@ pub(super) const PICK_FORM_XOBJECT: &str = include_str!("assets/pick-form-xobjec
 /// -arrow every browser and office suite uses for "goes somewhere else".
 /// Explicitly **not** [`LINK`], which is a chain and belongs to Combine.
 pub(super) const PICK_LINK: &str = include_str!("assets/pick-link.svg");
+
+// ══════════════════════════════════════════════════════════════════════════
+// The 2026-09-04 batch — thirty-six glyphs adopted from the outside review
+// ══════════════════════════════════════════════════════════════════════════
+//
+// Every one of these fills a gap that was already WRITTEN DOWN. Nine close a
+// registration that carries a "No icon" refusal in prose — `file.new`,
+// `file.ocr`, `markup.finish` and the rest — and the refusals all give the
+// same reason: this directory is declared the operator's own art, reusing a
+// neighbour's glyph would make two controls say the same thing, and naming a
+// key that does not exist draws a slashed placeholder. Each refusal is
+// discharged by the art existing, not by an argument.
+//
+// The rest replace a BORROWED glyph. Four form-field tools shared
+// `form-field.svg` and four measure tools shared `measure.svg`: eight
+// controls rendering as two pictures, which is the failure the set's
+// one-asset-per-role rule exists to prevent.
+//
+// ★ Provenance: these are drawn from primitives for pdfcer in the same style
+// contract as the rest of the directory — 48×48, stroke 2.5, round caps and
+// joins, no fill except the redaction family. `assets/PROVENANCE.md` covers
+// the whole directory and its terms are unchanged by this batch.
+
+/// `apply-redactions.svg` — the art for [`super::Icon::ApplyRedactions`].
+///
+/// Edit ▸ Apply redactions (`edit.redact_apply`) — the one irreversible
+pub(super) const APPLY_REDACTIONS: &str = include_str!("assets/apply-redactions.svg");
+
+/// `attachment.svg` — the art for [`super::Icon::Attachment`].
+///
+/// Attachments (`edit.attachments`) — the files this document carries
+pub(super) const ATTACHMENT: &str = include_str!("assets/attachment.svg");
+
+/// `check.svg` — the art for [`super::Icon::Accept`].
+///
+/// Complete the gesture in progress — `markup.finish` and `measure.finish`.
+pub(super) const CHECK: &str = include_str!("assets/check.svg");
+
+/// `check-box.svg` — the art for [`super::Icon::CheckBox`].
+///
+/// Place a **check box** — one independent on/off box.
+pub(super) const CHECK_BOX: &str = include_str!("assets/check-box.svg");
+
+/// `close-others.svg` — the art for [`super::Icon::CloseOthers`].
+///
+/// Close every open document except one — `view.close_other_documents`.
+pub(super) const CLOSE_OTHERS: &str = include_str!("assets/close-others.svg");
+
+/// `collapse.svg` — the art for [`super::Icon::Collapse`].
+///
+/// A tree row whose children are **showing** — press to hide them.
+pub(super) const COLLAPSE: &str = include_str!("assets/collapse.svg");
+
+/// `copy-document-text.svg` — the art for [`super::Icon::CopyDocumentText`].
+///
+/// Copy the whole document's text to the clipboard — `file.copy_document_text`.
+pub(super) const COPY_DOCUMENT_TEXT: &str = include_str!("assets/copy-document-text.svg");
+
+/// `copy-page-text.svg` — the art for [`super::Icon::CopyPageText`].
+///
+/// Copy this page's text to the clipboard — `file.copy_page_text`.
+pub(super) const COPY_PAGE_TEXT: &str = include_str!("assets/copy-page-text.svg");
+
+/// `dimension-groups.svg` — the art for [`super::Icon::DimensionGroups`].
+///
+/// Dimension groups — `measure.manage_groups`, and the caption's dock tab
+pub(super) const DIMENSION_GROUPS: &str = include_str!("assets/dimension-groups.svg");
+
+/// `document-next.svg` — the art for [`super::Icon::NextDocument`].
+///
+/// Switch to the next open document — `view.next_document` (Ctrl+Tab).
+pub(super) const DOCUMENT_NEXT: &str = include_str!("assets/document-next.svg");
+
+/// `document-previous.svg` — the art for [`super::Icon::PreviousDocument`].
+///
+/// Switch to the previous open document — `view.previous_document`
+pub(super) const DOCUMENT_PREVIOUS: &str = include_str!("assets/document-previous.svg");
+
+/// `drop-down.svg` — the art for [`super::Icon::DropDown`].
+///
+/// Place a **drop-down** (the `/Ch` choice field).
+pub(super) const DROP_DOWN: &str = include_str!("assets/drop-down.svg");
+
+/// `embed-fonts.svg` — the art for [`super::Icon::EmbedFonts`].
+///
+/// Embed the font programs a document references but does not carry
+pub(super) const EMBED_FONTS: &str = include_str!("assets/embed-fonts.svg");
+
+/// `expand.svg` — the art for [`super::Icon::Expand`].
+///
+/// A tree row whose children are **hidden** — press to reveal them.
+pub(super) const EXPAND: &str = include_str!("assets/expand.svg");
+
+/// `finish-shape.svg` — the art for [`super::Icon::FinishShape`].
+///
+/// Markup ▸ Finish shape (`markup.finish`) — commit the vertex run a
+pub(super) const FINISH_SHAPE: &str = include_str!("assets/finish-shape.svg");
+
+/// `lock.svg` — the art for [`super::Icon::Locked`].
+///
+/// A row the **document** forbids changing — an optional-content group
+pub(super) const LOCK: &str = include_str!("assets/lock.svg");
+
+/// `measure-angle.svg` — the art for [`super::Icon::MeasureAngle`].
+///
+/// Two-line measurement — `measure.two_line`.
+pub(super) const MEASURE_ANGLE: &str = include_str!("assets/measure-angle.svg");
+
+/// `measure-length.svg` — the art for [`super::Icon::MeasureLength`].
+///
+/// Path-length measurement — `measure.length`.
+pub(super) const MEASURE_LENGTH: &str = include_str!("assets/measure-length.svg");
+
+/// `measure-perimeter.svg` — the art for [`super::Icon::MeasurePerimeter`].
+///
+/// Perimeter measurement — `measure.perimeter`.
+pub(super) const MEASURE_PERIMETER: &str = include_str!("assets/measure-perimeter.svg");
+
+/// `measure-radius.svg` — the art for [`super::Icon::MeasureRadius`].
+///
+/// Radius / diameter measurement — `measure.radius_diameter`.
+pub(super) const MEASURE_RADIUS: &str = include_str!("assets/measure-radius.svg");
+
+/// `merge.svg` — the art for [`super::Icon::MergeInto`].
+///
+/// Merge another file's pages INTO the open document (`pages.merge_into`).
+pub(super) const MERGE: &str = include_str!("assets/merge.svg");
+
+/// `new-document.svg` — the art for [`super::Icon::New`].
+///
+/// New (blank) document — `file.new`.
+pub(super) const NEW_DOCUMENT: &str = include_str!("assets/new-document.svg");
+
+/// `new-from-template.svg` — the art for [`super::Icon::NewFromTemplate`].
+///
+/// New document from a template — `file.new_from_template`.
+pub(super) const NEW_FROM_TEMPLATE: &str = include_str!("assets/new-from-template.svg");
+
+/// `push-button.svg` — the art for [`super::Icon::PushButton`].
+///
+/// Place a **push button** — the `/Btn` field with no on/off state.
+pub(super) const PUSH_BUTTON: &str = include_str!("assets/push-button.svg");
+
+/// `put-down.svg` — the art for [`super::Icon::PutDown`].
+///
+/// Put the armed tool down — the Tool panel's row 4.
+pub(super) const PUT_DOWN: &str = include_str!("assets/put-down.svg");
+
+/// `radio-button.svg` — the art for [`super::Icon::RadioButton`].
+///
+/// Place a **radio button** — one of a mutually exclusive set.
+pub(super) const RADIO_BUTTON: &str = include_str!("assets/radio-button.svg");
+
+/// `recent.svg` — the art for [`super::Icon::Recent`].
+///
+/// Recently-opened documents — `file.recent`, the menu button in File ▸ File.
+pub(super) const RECENT: &str = include_str!("assets/recent.svg");
+
+/// `recognise-text.svg` — the art for [`super::Icon::RecogniseText`].
+///
+/// Recognise text (OCR) — `file.ocr`.
+pub(super) const RECOGNISE_TEXT: &str = include_str!("assets/recognise-text.svg");
+
+/// `redact-selection.svg` — the art for [`super::Icon::RedactSelection`].
+///
+/// Edit ▸ Redact selection (`edit.redact_selection`) — mark whatever is
+pub(super) const REDACT_SELECTION: &str = include_str!("assets/redact-selection.svg");
+
+/// `reflow.svg` — the art for [`super::Icon::Reflow`].
+///
+/// Reflow paragraph (`edit.reflow_block`) — re-wrap the paragraph the caret
+pub(super) const REFLOW: &str = include_str!("assets/reflow.svg");
+
+/// `render-diagnostics.svg` — the art for [`super::Icon::RenderDiagnostics`].
+///
+/// Report how the page was actually drawn (`tools.render_diagnostics`).
+pub(super) const RENDER_DIAGNOSTICS: &str = include_str!("assets/render-diagnostics.svg");
+
+/// `save-as.svg` — the art for [`super::Icon::SaveAs`].
+///
+/// Save As — `file.save_as` (`OPERATOR_REQUESTS.md` O95).
+pub(super) const SAVE_AS: &str = include_str!("assets/save-as.svg");
+
+/// `save-compact.svg` — the art for [`super::Icon::SaveCompacted`].
+///
+/// Save compacted — `file.save_compacted`, the copy with unused objects
+pub(super) const SAVE_COMPACT: &str = include_str!("assets/save-compact.svg");
+
+/// `save-copy.svg` — the art for [`super::Icon::SaveCopy`].
+///
+/// Save a copy — `file.save_copy`.
+pub(super) const SAVE_COPY: &str = include_str!("assets/save-copy.svg");
+
+/// `unembed-fonts.svg` — the art for [`super::Icon::UnembedFonts`].
+///
+/// Remove embedded font programs, leaving the references behind
+pub(super) const UNEMBED_FONTS: &str = include_str!("assets/unembed-fonts.svg");
+
+/// `wheel-flip.svg` — the art for [`super::Icon::WheelFlip`].
+///
+/// The wheel-paging toggle on the status bar — `OPERATOR_REQUESTS.md` O30.
+pub(super) const WHEEL_FLIP: &str = include_str!("assets/wheel-flip.svg");

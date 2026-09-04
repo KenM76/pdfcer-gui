@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Reflow a text block — a paragraph of rules whose last line is short, with
+       a return arrow beneath. Primitives only; no trademark risk.
+
+       Distinct from text.svg, which is the same family of horizontal rules
+       but EVEN: even rules mean "this is text", ragged rules plus the return
+       arrow mean "this text is being re-broken". The arrow is what separates
+       it from add-text.svg as well, which adds a plus rather than a wrap. -->
+  <path d="M8 12h32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M8 20h32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M8 28h18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M40 28v6H30" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M33 31l-3 3 3 3" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

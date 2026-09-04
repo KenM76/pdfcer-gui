@@ -316,7 +316,25 @@ mod tests {
         ///   square among three outlined ones, which says *this is the point
         ///   you picked* in the same language `canvas::overlay` draws on the
         ///   page itself.
-        const FILLED: &[Icon] = &[Icon::Redact, Icon::Cursor, Icon::CursorNode];
+        /// - [`Icon::RedactSelection`] and [`Icon::ApplyRedactions`] —
+        ///   **2026-09-04, and they inherit the reason rather than extending
+        ///   it.** Both are members of the redaction family, both draw the
+        ///   same solid bar [`Icon::Redact`] draws, and both act on the same
+        ///   irreversible thing. An outline-only redaction glyph understates a
+        ///   feature that removes content permanently, and that argument does
+        ///   not weaken because the command is scoped to a selection or is the
+        ///   apply step. ★ Adding them was a decision, not a formality: the
+        ///   honest alternative was to outline these two and leave the fill to
+        ///   the parent tool, and it was rejected because it would make the
+        ///   family's most destructive member — Apply, the one that cannot be
+        ///   undone — the palest picture of the three.
+        const FILLED: &[Icon] = &[
+            Icon::Redact,
+            Icon::Cursor,
+            Icon::CursorNode,
+            Icon::RedactSelection,
+            Icon::ApplyRedactions,
+        ];
 
         for &icon in Icon::ALL {
             let art = IconArt::parse(icon.source()).expect("parses");
@@ -327,6 +345,284 @@ mod tests {
                 icon.name()
             );
         }
+    }
+
+    /// ★★★ **Look at them.** Writes a contact sheet of every icon in the set to
+    /// `target/icon-contact-sheet.png`, at the 16 px they actually ship at and
+    /// again at 32 px.
+    ///
+    /// `#[ignore]` because it is an INSTRUMENT, not an assertion — it cannot
+    /// fail, and a test that cannot fail must not sit in the suite pretending
+    /// to be evidence. Run it deliberately:
+    ///
+    /// ```text
+    /// cargo test -p pdfcer-gui contact_sheet -- --ignored --nocapture
+    /// ```
+    ///
+    /// # Why this exists
+    ///
+    /// Because on 2026-09-04 thirty-six glyphs were adopted at once, and the
+    /// tests that guard the set answer *"does it parse"*, *"does it draw more
+    /// than twenty pixels"* and *"is the fill semantic"*. None of them can see
+    /// that two icons look **the same**, which is the exact defect the batch
+    /// was adopted to fix — four form tools and four measure tools were each
+    /// rendering as one picture, and every test was green throughout.
+    ///
+    /// This project's standing rule, learned twice: **a layout or rendering
+    /// defect has exactly one oracle, and it is a rendered image.** The same
+    /// review that supplied this art was only correctly assessed once somebody
+    /// rendered it instead of reading its source.
+    #[test]
+    #[ignore = "an instrument, not an assertion — writes a PNG for a human to look at"]
+    fn contact_sheet() {
+        const COLS: usize = 12;
+        const CELL: usize = 40;
+        const PX: u32 = 32;
+        let rows = Icon::ALL.len().div_ceil(COLS);
+        let (w, h) = (COLS * CELL, rows * CELL);
+        let mut buf = vec![0u8; w * h * 4];
+        for (i, &icon) in Icon::ALL.iter().enumerate() {
+            let art = IconArt::parse(icon.source()).expect("parses");
+            let img = art.rasterize(PX, IconWeight::Regular);
+            let (ox, oy) = ((i % COLS) * CELL + 4, (i / COLS) * CELL + 4);
+            for y in 0..PX as usize {
+                for x in 0..PX as usize {
+                    let p = img.pixels[y * PX as usize + x];
+                    let o = ((oy + y) * w + ox + x) * 4;
+                    // Ink is `currentColor`; paint it black on white so the
+                    // sheet reads like the light presets rather than like a
+                    // transparency checkerboard.
+                    let a = f32::from(p.a()) / 255.0;
+                    let v = (255.0 * (1.0 - a)) as u8;
+                    buf[o] = v;
+                    buf[o + 1] = v;
+                    buf[o + 2] = v;
+                    buf[o + 3] = 255;
+                }
+            }
+        }
+        // ★ Absolute, from the manifest dir. `cargo test` runs with the CRATE
+        // as cwd, not the workspace root, so a relative "target/…" resolves to
+        // a directory that does not exist and the write fails with a bare
+        // "cannot find the path specified" — which reads like a permissions
+        // problem and is not one.
+        let path = std::path::Path::new(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../target/icon-contact-sheet.png"
+        ));
+        let map = pdfcer_render::tiny_skia::Pixmap::from_vec(
+            buf,
+            pdfcer_render::tiny_skia::IntSize::from_wh(w as u32, h as u32).expect("size"),
+        )
+        .expect("pixmap");
+        map.save_png(path).expect("write the sheet");
+        println!(
+            "contact sheet: {} icons -> {}",
+            Icon::ALL.len(),
+            path.display()
+        );
+    }
+
+    /// A measurement, not an assertion: how alike is the most-alike pair?
+    ///
+    /// Prints every pair of icons whose 16 px rasters differ by less than 25 %
+    /// of their lit pixels, worst first. Run it before choosing a threshold for
+    /// [`no_two_icons_render_as_the_same_picture`], and after adding art.
+    ///
+    /// ```text
+    /// cargo test -p pdfcer-gui closest_pairs -- --ignored --nocapture
+    /// ```
+    #[test]
+    #[ignore = "a measurement, not an assertion — run it and read the numbers"]
+    fn closest_pairs() {
+        let sheets: Vec<_> = Icon::ALL.iter().map(|&i| (i, lit_mask(i, 16))).collect();
+        let mut pairs = Vec::new();
+        for (a, (ia, ma)) in sheets.iter().enumerate() {
+            for (ib, mb) in &sheets[a + 1..] {
+                let d = difference(ma, mb);
+                if d < 0.25 {
+                    pairs.push((d, ia.name(), ib.name()));
+                }
+            }
+        }
+        pairs.sort_by(|x, y| x.0.total_cmp(&y.0));
+        for (d, a, b) in &pairs {
+            println!("{:6.3}  {a}  ~  {b}", d);
+        }
+        println!("{} pair(s) under 25 %", pairs.len());
+    }
+
+    /// The set of pixels an icon lights at `px`, as a bitmask.
+    fn lit_mask(icon: Icon, px: u32) -> Vec<bool> {
+        let art = IconArt::parse(icon.source()).expect("parses");
+        art.rasterize(px, IconWeight::Regular)
+            .pixels
+            .iter()
+            .map(|p| p.a() > 96)
+            .collect()
+    }
+
+    /// Symmetric difference over union — 0.0 identical, 1.0 disjoint.
+    fn difference(a: &[bool], b: &[bool]) -> f32 {
+        let (mut diff, mut union) = (0usize, 0usize);
+        for (x, y) in a.iter().zip(b) {
+            if *x || *y {
+                union += 1;
+            }
+            if x != y {
+                diff += 1;
+            }
+        }
+        if union == 0 {
+            return 0.0;
+        }
+        diff as f32 / union as f32
+    }
+
+    /// ★★★ **No two icons may render as the same picture.**
+    ///
+    /// # Why this test had to be written, and why it is a raster comparison
+    ///
+    /// Every other test in this module asks whether an icon DREW something:
+    /// does it parse, does it produce more than twenty lit pixels, is its fill
+    /// semantic, does CRLF change it. None of them can see two icons that draw
+    /// the same thing — and on 2026-09-04 that was not hypothetical. **Four
+    /// form-field tools shared one asset and four measure tools shared
+    /// another**: eight controls rendering as two pictures, in a ribbon whose
+    /// own module header says those controls are *"distinguishable only by icon
+    /// and tooltip"*. The whole suite was green for weeks.
+    ///
+    /// That particular shape was visible in [`Icon::source`], which is why
+    /// [`super::catalog::tests`]' `only_the_documented_assets_are_shared`
+    /// catches it. This catches the shape that one **cannot**: two DIFFERENT
+    /// assets that happen to draw nearly the same marks. That is what a future
+    /// "consistency pass" or a careless re-draw produces, and it is what the
+    /// enum's doc comments spend paragraphs warning about, pair by pair —
+    /// [`Icon::Back`] vs [`Icon::ChevronLeft`], [`Icon::ShowPoints`] vs
+    /// [`Icon::EditObjects`], [`Icon::Layers`] vs [`Icon::Combine`]. Those
+    /// warnings had no enforcement until now.
+    ///
+    /// # ★★ Same-asset pairs are excluded, deliberately and by construction
+    ///
+    /// Two roles pointing at one asset render identically **on purpose** and
+    /// are already governed by their own test, which names them and fails if a
+    /// third appears. Comparing them here would report a difference of exactly
+    /// zero for a state another test has already blessed — a gate that fires on
+    /// a correct state is one people learn to ignore. So the comparison is over
+    /// distinct SOURCES, not distinct variants.
+    ///
+    /// # ★★★ The threshold and the exemptions are MEASURED, not chosen
+    ///
+    /// `closest_pairs` ranks every pair at 16 px. Over the set as it stood on
+    /// 2026-09-04 it produced, in order:
+    ///
+    /// ```text
+    /// 0.000  open ~ font-folders                   (one asset — excluded here)
+    /// 0.000  import-form-data ~ insert-pages       (one asset — excluded here)
+    /// 0.103  zoom-out ~ zoom-in                    (the magnifier family)
+    /// 0.125  zoom-in  ~ zoom-region                (the magnifier family)
+    /// 0.185  import-form-data ~ export             (the arrow-leaves-container family)
+    /// 0.185  insert-pages     ~ export             (the arrow-leaves-container family)
+    /// 0.211  new-document ~ new-from-template      ← the real minimum
+    /// 0.217  recognise-text ~ render-diagnostics
+    /// 0.225  zoom-out ~ zoom-region                (the magnifier family)
+    /// ```
+    ///
+    /// So `0.15` sits below the real minimum with about 40 % of headroom, and
+    /// the two families above it are exempted BY NAME with a reason each —
+    /// rather than the threshold being lowered to 0.09 to swallow them, which
+    /// would have made the test assert almost nothing.
+    ///
+    /// ★ `new-document ~ new-from-template` at 0.211 is also the dash support
+    /// added earlier the same day, working: the ONLY difference between those
+    /// two glyphs is a `stroke-dasharray` placeholder box. Before that landed
+    /// they would have measured far closer, and this test — had it existed —
+    /// would have caught the visual duplicate the whole icon batch was blocked
+    /// on. It is kept as the tightest genuine pair for exactly that reason.
+    ///
+    /// ★★ 16 px and not 32: the raster the operator sees is the one that must
+    /// discriminate. Two glyphs that separate cleanly at 32 and collapse at 16
+    /// are a defect, and measuring at 32 would hide precisely that case.
+    #[test]
+    fn no_two_icons_render_as_the_same_picture() {
+        /// Below this symmetric-difference ratio at 16 px, two icons are the
+        /// same picture as far as an operator glancing at a ribbon is
+        /// concerned. See the doc comment for the measurement behind it.
+        const TOO_ALIKE: f32 = 0.15;
+
+        /// Pairs that are SUPPOSED to look alike, each with the reason.
+        ///
+        /// - The **magnifier family**. `zoom-in`, `zoom-out` and `zoom-region`
+        ///   share a lens because they are three aims of one act, and every
+        ///   application that has ever had a zoom control draws them that way.
+        ///   Their whole distinction is the mark inside the lens, which is a
+        ///   few pixels at 16 px by construction. ⚠ `zoom-out ~ zoom-in`
+        ///   measures **0.103**, which is genuinely tight — it is recorded here
+        ///   rather than smoothed away, and if the operator ever reports that
+        ///   the two zoom buttons are hard to tell apart, this line is the
+        ///   evidence that it was known and where to look.
+        /// - The **arrow-leaves-container family**. `upload` (worn by
+        ///   `insert-pages` and `import-form-data`) and `export` both show
+        ///   content crossing a boundary, because both commands move data
+        ///   across the document's edge. They differ in direction, which is the
+        ///   distinction that matters and is the one an operator reads.
+        const DELIBERATELY_ALIKE: &[(&str, &str)] = &[
+            ("zoom-in", "zoom-out"),
+            ("zoom-in", "zoom-region"),
+            ("zoom-out", "zoom-region"),
+            ("insert-pages", "export"),
+            ("import-form-data", "export"),
+        ];
+
+        let exempt = |a: &str, b: &str| {
+            DELIBERATELY_ALIKE
+                .iter()
+                .any(|&(x, y)| (x == a && y == b) || (x == b && y == a))
+        };
+
+        let sheets: Vec<_> = Icon::ALL.iter().map(|&i| (i, lit_mask(i, 16))).collect();
+        let mut worst: Option<(f32, &str, &str)> = None;
+        for (index, (ia, ma)) in sheets.iter().enumerate() {
+            for (ib, mb) in &sheets[index + 1..] {
+                // ★ Two roles on ONE asset are governed by their own test, and
+                // the division of labour is exact: `only_the_documented_assets_are_shared`
+                // buckets `Icon::ALL` by `source()` CONTENT and fails on any
+                // undocumented bucket of more than one. So byte-identical art —
+                // whether deliberately shared or accidentally duplicated into a
+                // second file — is already caught there, loudly and by name.
+                //
+                // ⇒ This test owns the case that one structurally cannot see:
+                // art that is DIFFERENT text and yet the SAME picture. Compared
+                // by content rather than by pointer, deliberately: two
+                // `include_str!`s of byte-identical files may or may not be
+                // interned to one pointer depending on the compiler, and a skip
+                // condition that changes with the optimiser is not a skip
+                // condition. (Found by falsification — a planted duplicate
+                // slipped through a `ptr::eq` guard because the two literals
+                // WERE interned.)
+                if ia.source() == ib.source() {
+                    continue;
+                }
+                if exempt(ia.name(), ib.name()) {
+                    continue;
+                }
+                let d = difference(ma, mb);
+                if worst.is_none_or(|(w, _, _)| d < w) {
+                    worst = Some((d, ia.name(), ib.name()));
+                }
+            }
+        }
+        let (d, a, b) = worst.expect("the set has at least two distinct assets");
+        assert!(
+            d >= TOO_ALIKE,
+            "'{a}' and '{b}' render as the same picture at 16 px (difference {d:.3} < \
+             {TOO_ALIKE}). Two controls that look identical are two controls the operator \
+             cannot tell apart, which is the defect eight tools shipped with until 2026-09-04. \
+             Run `cargo test -p pdfcer-gui closest_pairs -- --ignored --nocapture` for the whole \
+             ranking before deciding which of the two to redraw — and if the resemblance is \
+             DELIBERATE, add the pair to DELIBERATELY_ALIKE with its reason rather than lowering \
+             the threshold, which would silently retire the test for every other pair too."
+        );
     }
 
     /// ★ CRLF line endings must not change a single pixel.

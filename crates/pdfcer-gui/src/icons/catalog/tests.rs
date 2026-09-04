@@ -52,7 +52,7 @@ fn all_is_exhaustive_and_free_of_duplicates() {
     // reader. Prefer that shape for any future count.
     assert_eq!(
         Icon::ALL.len(),
-        93,
+        129,
         "the catalogue changed size: add the new variant to Icon::ALL and update this count"
     );
 }

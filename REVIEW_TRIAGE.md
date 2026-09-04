@@ -25,6 +25,12 @@ to fix. Those are collected in §3 and none has been actioned.
 | **A4** | **The encrypted-file contradiction.** The canvas said the build could not prompt while the prompt was open. | `text/mod.rs`, `app/surfaces.rs` |
 | **A5** | **Read mode offered authoring.** Add / Rename / Remove / Copy / Cut / drag hint, all gated on `authors_anything()`. | `panels/bookmarks/mod.rs` |
 | **A9b** | **A disclosure triangle onto nothing.** Tab-order drew its header unconditionally, on every document with no form fields. | `panels/forms/tab_order/mod.rs` |
+| **A15a** | **Selected dock tab: white on a pale wash.** Fixed by stating the fill — `dock/tabs.rs` contained no `.fill(` at all and let `egui` substitute the 27 % canvas tint. | `egui-shell/src/dock/tabs.rs` |
+| **A15b** | **The document-tab close ✕, near-invisible when selected.** D2's exact shape. Fixed by painting the selected tab's plate across the WHOLE rect before it is split, so the ✕ — drawn `.frame(false)` into a carved-out sub-rect with nothing behind it — lands on `accent` like everything else in the tab. | `egui-shell/src/tabstrip/mod.rs` |
+| **A15d** | **A new gate, whose evidence is real sites rather than a plant.** `check-plate-colour.sh`: `on_accent` may only be drawn where the same FUNCTION states its plate. When written, four of seven sites stated it and three did not — and the three were exactly the three D2 incidents. | `tools/gates/check-plate-colour.sh` |
+| **A14b** | **The zoom readout reserved four characters and can be asked for fourteen.** `ZOOM_READOUT_WIDTH_PTS` documented itself as covering "the whole range `ZOOM_LADDER` can produce"; O24 made the ceiling a preference topping out at 1e12. Now measured per ceiling, floored at the old constant. ★ The review said seven characters — seven was the OLD ceiling's width. | `app/status.rs`, `app/status/zoom.rs` |
+| **A18** | **Read mode showed two authoring controls its own dispatch refuses.** `format.select_form` and `format.unshare_form` got `!edit_content` guards on 2026-09-03; a guard stops the act and leaves the CONTROL. Both now `shown_when("mode.edit_content")`. | `shell/manifest/format.rs` |
+| **Icons** | **Thirty-six glyphs adopted** from the review's sheet, after `stroke-dasharray` support landed (six of them draw the wrong picture without it). Four form tools and four measure tools stopped sharing one glyph each. See `GLYPH_ADOPTION.md`. | `icons/**`, `shell/commands/catalog/**` |
 
 ---
 
@@ -32,11 +38,7 @@ to fix. Those are collected in §3 and none has been actioned.
 
 | # | Finding | Mechanism | Cost |
 |---|---|---|---|
-| **A15a** | **Selected dock tab: white on a pale wash.** `Button::selected(true)` makes egui overwrite both fills with `selection.bg_fill` — the 27 % canvas tint. Measured gap ≈ **45** against the project's own threshold of 90. Fails in Dark too (≈52). | `egui-shell/src/dock/tabs.rs:229-235` | 1 call site |
-| **A15b** | **The document-tab close ✕ is near-invisible when selected.** `on_accent` (luma 250) drawn directly on `panel` (luma 232) — gap ≈ **18**. This is defect **D2's exact shape**: a plate colour used against a background nobody paired it with. | `egui-shell/src/tabstrip/mod.rs:568-575` | 1 call site |
 | **A15e** | **The contrast gate cannot see either.** It enumerates ten pairs — 5 widget states × 2 fills — and `selection.bg_fill`, `weak_text_color()` and any caller-supplied `RichText::color` are all outside it. **That is why it is green while the screenshots are not.** | `egui-shell/src/theme/contrast.rs:280-298` | widen `pairs` |
-| **A18** | **Read mode's Format tab is worse than reported.** It offers no Copy at all — it offers a Selection group of four commands whose enable conditions are *impossible* in Read. The Font group already does the R9 thing and is absent; the Selection group was missed. A stale comment three files away already calls this "the placeholder P3 forbids". | `shell/manifest/format.rs:246-303` | 2–4 files |
-| **A14b** | **The zoom readout's reserved width is stale.** `ZOOM_READOUT_WIDTH_PTS = 46.0` documents itself as "wide enough for four characters, the whole range the ladder can produce". O24 raised the ceiling; `47711 %` is seven. The reserve is real, the number is wrong. | `app/status.rs:507` | 1 constant |
 | **A16c** | **The sticky-note dialog opens at the window origin.** `textannot.rs` computes a click-relative position and then `let _ = pos;` discards it. | `dialogs/host.rs:181`, `dialogs/textannot.rs:158` | 2 files |
 | **A16a** | **The New-text-field dialog clips.** It *does* scroll; the default 440 × 420 is too small and egui's faint scrollbar hides the fact. | `dialogs/formfield.rs:163` | 1 file |
 | **A6** | **Set scale's "Show dimensions in" is a DEAD CONTROL on the ratio path.** `self.unit` reaches neither the preview nor the commit — `entry()` discards it, `commit()` uses `preview.unit`, which is the *basis*. **The summary line is truthful; the dropdown is the broken thing.** Both are at their defaults on every open from the ribbon. ⚠ Fixing the sentence alone would convert a visible contradiction into a silent one, which is worse — and R9 forbids leaving a visible control inert. **Deliberately not guessed at**: whether `NumberFormat.unit` converts or merely labels is engine semantics, and the honest route is a question to `pdfcer-core`, not an assumption here. | `canvas/measure/scale.rs:216-268` | 3 sites + possibly an engine ask |
@@ -142,6 +144,22 @@ The handoff claims `mockups/glyphs/new.json`'s 65 glyphs "can go straight into
 `RenderOptions` has no such field.
 
 **Verdict: good art, a day or two of careful work, not a file copy.**
+
+### ★ Closed 2026-09-04 — see `GLYPH_ADOPTION.md`
+
+All five blockers are discharged and the batch is adjudicated. Blocker 2 was
+fixed first and on its own (`stroke-dasharray` is now parsed and drawn, with a
+pixel-count test rather than a parse assertion, because a build that parses the
+attribute and forgets to hand it to the `Stroke` passes a parse assertion and
+draws a solid line). Blocker 3 turned out to have a twist worth keeping: the
+test the fill claim cites, `redaction_is_the_only_filled_icon`, **was renamed on
+2026-08-19 and four doc comments went on citing the dead name for sixteen
+days** — an audit grepped for it, found it in zero test bodies, and correctly
+reported that the cited gate did not exist. It did; under a name none of its
+citations had been told about.
+
+**36 adopted, 26 deferred**, on one rule: a glyph is adopted only when a command
+or role in this build would use it today. `thin-lines` is confirmed dead art.
 
 ### ★★★ 6b. …and on 2026-09-04 somebody finally LOOKED at them
 

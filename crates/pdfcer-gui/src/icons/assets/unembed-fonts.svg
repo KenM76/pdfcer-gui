@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Unembed fonts (`tools.unembed_fonts`) — embed-fonts.svg's capital A in a
+       frame, with the frame DASHED instead of solid: the container is still
+       named, but what was inside it is gone. Constructed from primitives, the
+       letterform drawn as geometry rather than set as text; no trademark risk.
+
+       ★ THE DASH IS THE ENTIRE DISTINCTION FROM embed-fonts.svg, and it is
+       load-bearing rather than decorative. It renders: icons::svg parses
+       `stroke-dasharray` (see `Shape::dash`), and that support was added on
+       2026-09-04 naming THIS pair as the reason — with the attribute ignored,
+       this file would draw embed-fonts.svg exactly, silently, while passing
+       every icon test the project owns.
+
+       Like its sibling it replaces a borrowed `fonts` key. Three controls —
+       the Fonts panel (which writes nothing), embed and unembed — drew one
+       picture; this is the DESTRUCTIVE one of the three, and the action module
+       records the engine's own sentence about it: "unembedding genuinely
+       breaks that guarantee". An icon is a claim, and "identical to the
+       read-only panel" was the wrong claim for this command.
+
+       DISTINCT FROM fonts.svg by the frame (an A on an open baseline rule is
+       a typeface listed; an A in a box is a face held inside a file), and
+       DISTINCT FROM embed-fonts.svg only by solid-versus-dashed. Neither of
+       the two may be redrawn without the other. -->
+  <path d="M8 8h32v32H8z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" stroke-dasharray="5 4"/>
+  <path d="M16 33l8-18 8 18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M18.5 27h11" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

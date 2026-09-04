@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Generic tool-pot shape — a cup, three uprights and a fourth stroke angling in.
+       Constructed from primitives; no vendor artwork traced or adapted. -->
+  <!-- No ui-spec row: the Tool panel is `MODES_AND_PANELS.md` work that postdates the
+       icon spec, and its "Put this tool down" row (`panels::tool::armed`, row 4 of the
+       armed frame) has drawn its own words since it shipped. Authored in the §3 style
+       contract.
+
+       WHAT IT DEPICTS. A pot — a U-shaped cup with a rounded bottom — holding three
+       tools upright, with a fourth angling in over the left rim. The pot is the whole
+       idea: this control does not perform the armed tool's verb, it ENDS the arming,
+       and a container is the only shape available that says *the implement goes back*
+       rather than *use the implement*.
+
+       ★★ IT MUST NOT BE `cursor.svg`, AND THAT IS WHY THIS FILE EXISTS. The button's
+       handler is literally `canvas::tool::select(ctx, CanvasTool::Select)`, so the
+       Select arrow is the mechanically honest key and is exactly the wrong picture.
+       The Tool panel and the ribbon's Select control are visible at the same time, and
+       two controls sharing one glyph read as one control drawn twice — the hazard
+       `crate::shell::commands`' header names and `file.rs`' Recent registration refuses
+       in the same words. "Put this tool down" and "arm the Select tool" are one code
+       path and two different promises to the operator; the glyph has to keep the
+       promises apart even though the code does not.
+
+       ★ DISTINCT FROM `tool.svg` (the Tools menu), which is one wrench lying at 45° and
+       means *the box of things you can do*. The separation is carried by the axis and
+       by the count: that glyph is a single implement on a diagonal, this one is several
+       implements upright and symmetric about the vertical, inside something. A rest,
+       not a tool.
+
+       ★ DISTINCT FROM `add-text.svg` and `edit.svg` at the other end of the same risk:
+       ONE implement, held or poised, is what those two mean by writing. SEVERAL, stood
+       in a pot, is what this one means by not writing.
+
+       The three uprights step 14 / 16 / 12 units, tallest in the middle, rather than
+       all reaching one line — the reason `hand.svg` gives for its own stepped finger
+       tips: a flat top reads as a comb. The fourth stroke enters from the upper left
+       and stops ON the rim rather than inside the pot, so it reads as arriving rather
+       than as already stored. -->
+  <path d="M14 14v16a10 10 0 0 0 20 0V20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M20 12v14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M26 10v16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M32 14v12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M8 20l6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

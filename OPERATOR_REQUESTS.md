@@ -80,6 +80,66 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
+## O118 — ✅ **SHIPPED 2026-09-04** — "in those featurerequests did you see the new glyphs and layout?"
+
+**Asked:** 2026-09-04, in one line, after the review's triage had already been
+filed. The answer was no — the triage had been written from the JSON and the
+HTML **as source text**, which is the wrong oracle for a question about pictures
+and layout, and this project has a standing rule saying exactly that. So the
+mockups were rendered headlessly and looked at, and looking changed two
+verdicts. The record is `REVIEW_TRIAGE.md` §6b.
+
+### What shipped
+
+**Thirty-six of the sixty-five proposed glyphs, adopted with homes.** Full
+adjudication in `GLYPH_ADOPTION.md`: 36 taken, 26 deferred, on one rule — a
+glyph is adopted only when a command or role in this build would use it today.
+
+The two that matter to you at the ribbon:
+
+- **Four form-field tools were drawing ONE picture between them.** Check box,
+  Radio button, Drop-down and Push button all named `form-field.svg`. The file's
+  own header says these controls are *"distinguishable only by icon and
+  tooltip"* — while all four named the same icon.
+- **Four measure tools likewise**, all on `measure.svg`: Length, Perimeter,
+  Radius/diameter and Angle.
+
+Also: Redact selection and Apply redactions stopped sharing `redact`; Copy page
+text and Copy document text stopped sharing `copy`; Embed and Unembed fonts
+stopped sharing `fonts`; and **Previous/next document stopped drawing the same
+chevrons as previous/next page**. Nine controls that rendered as bare words —
+New, New from template, Recognise text, Save as, Save a copy, Save compacted,
+Recent, Attachments, Reflow, and the two Finish commands — have glyphs, each
+discharging a written refusal rather than overruling one.
+
+### The blocker that had to be cleared first, and it was invisible
+
+Our SVG parser **ignored `stroke-dasharray` silently**. Six of the proposed
+glyphs use the dash AS the distinguishing feature — `new-from-template` against
+`new-document`, `unembed-fonts` against `embed-fonts`, `redact-selection`
+against `redact` — and `select-all` is a dashed marquee that without it is a
+plain rectangle. All six would have shipped as **visual duplicates of glyphs the
+set already had**, and every icon test we own would have stayed green, because
+every one of them asks whether something was DRAWN, not whether it was drawn as
+asked.
+
+### ★ The layout half of your question is NOT shipped, and that is deliberate
+
+Four things in the rendered mockup are materially better than what we ship and
+none of them is a ribbon change: a left icon+word **tab rail** (Pages / Marks /
+Layers / Sigs / Fonts, vertical, every panel one click away), **Objects over
+Properties as a real master–detail** with far richer rows than ours, a one-line
+**tool strip** at the top of the right dock, and **rulers on two edges with a
+corner box**. That is a shell-layout change of a size that wants your ruling
+before it starts, not after. Five ribbon amendments are also still waiting on
+you — they are listed in `REVIEW_TRIAGE.md` §3.
+
+★★ And the dark board in the mock **keeps the page white**, which is the one
+invariant a dark theme in this product must hold. Nothing in our harness
+asserted it; a check is being written now.
+
+---
+
 ## O117 — ◑ **OPEN 2026-09-04** — one driven check is FLAKY, which is a defect in the instrument
 
 `scrolling_far_keeps_the_canvas_its_pointer_input` **failed and then passed on

@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Generic two-line angle shape — generic, no trademark risk -->
+  <!-- No ui-spec row: `measure.two_line` was registered on 2026-08-14 from the
+       operator's ask of 2026-08-12 and until now borrowed `ruler.svg`. Authored in
+       the §3 style contract.
+
+       Two straight lines meeting at a vertex, with a small arc swept across the
+       corner between them. That is the drafting convention for an angular dimension
+       and it is a literal picture of the gesture: pick one line, pick a second, and
+       `pdfcer_core::dimension::author_from_two_lines` places the dimension the
+       geometry calls for.
+
+       ★ Why an ARC and not a pair of parallel rules with a measure between them.
+       The tool has two outcomes — linear between parallels, angular between lines
+       that meet — and only one of them can be drawn without redrawing `ruler.svg`.
+       Two parallels with a dimension across them IS the ruler's job and would put a
+       fourth near-identical band in this group, which is the outcome this tab's
+       registrations argue against by name. The angled case is the one with a shape
+       of its own, and it is also the one an operator cannot reach any other way:
+       Linear and Perimeter both measure distances, and nothing else on the tab
+       measures a corner.
+
+       The glyph it must not be confused with is `shape-polyline.svg`, which is also
+       bare strokes meeting at vertices. Three cues separate them, and the first is
+       the one that carries at 16 px:
+
+       * the ARC. A polyline has no arc; the arc is the dimension itself, and
+         nothing in the shapes family draws one.
+       * ONE vertex, not three. `shape-polyline.svg` needs three segments to read as
+         a CHAIN — that is stated in its own comment — and this glyph deliberately
+         has exactly two lines, because an angle is made of two and a third would
+         start the chain reading.
+       * the base line is HORIZONTAL and the vertex sits on the lower left, so the
+         figure reads as a corner standing on a datum rather than as a bent line
+         floating in the tile.
+
+       Also distinct from `shape-arrow.svg`, the other single-vertex glyph in the
+       vocabulary: that one's second stroke is an open ARROWHEAD at the end of a
+       line, saying which end is the point. This one's second stroke is a full-length
+       line from the same vertex, and the extra mark is a curve rather than a
+       chevron. -->
+  <path d="M10 38h30" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M10 38l22-24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M24 38a14 14 0 0 0-4-10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- New (blank) document — a page with a folded top-right corner and a plus
+       centred in the body. Constructed from primitives (one closed polygon, one
+       open fold, two straight rules); no trademark risk.
+
+       ★ This is the glyph `shell::commands::catalog::file`'s `file.new` note says
+       is "the operator's to draw", and the reuses that note refuses BY NAME are
+       the three neighbours this must stay apart from:
+
+       * document.svg (Icon::Properties) is the same square-on page but carries
+         THREE text rules and no corner fold — it means *this file, the one that
+         is already open*. The fold plus the PLUS is what says "a page that does
+         not exist yet".
+       * upload.svg (Icon::InsertPages) is a tray with an arrow going in — pages
+         INTO a document. Nothing enters here; the plus MAKES a document.
+       * save.svg shares the cut-corner body deliberately (both are file-level
+         acts on a whole document) and separates on its interior mark: save has a
+         single horizontal label slot at y=26, this has a crossed plus at the same
+         optical centre. At 16 px the one-bar/two-bar difference is the read.
+
+       Distinct from new-from-template.svg, its immediate ribbon neighbour, by the
+       SOLID plus against that one's dashed placeholder frame: a plus is "empty and
+       yours to fill", a dashed box is "something is already laid out here". -->
+  <path d="M14 6h14l8 8v28H14z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M28 6v8h8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M24 22v10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M19 27h10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

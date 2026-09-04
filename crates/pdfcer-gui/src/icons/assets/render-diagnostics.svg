@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Render diagnostics (`tools.render_diagnostics`) — a page with a folded
+       top-right corner, carrying a measurement trace (a low run, a spike, a
+       recovery) across its middle. Constructed from primitives; generic
+       instrument-trace geometry, no trademark risk.
+
+       It replaces a BORROWED `tools` key. The command drew tool.svg's wrench,
+       which is the Tools tab's own generic utility glyph, and the objection is
+       the set's standing one: AN ICON IS A CLAIM. A wrench says "adjust this";
+       this command adjusts nothing — it reports what the renderer had to
+       substitute or leave out while drawing the page. That is the same
+       argument fonts.svg's note makes for keeping a pencil off the Fonts
+       panel, and it applies here with the wrench.
+
+       DISTINCT FROM text.svg, which is also a folded page: text.svg carries
+       three parallel text lines, this carries a single irregular trace. Ruled
+       lines mean "words are on this page"; a trace that rises and falls means
+       "something about this page was measured". At 16 px the irregularity is
+       the cue, so the trace must never be regularised into ruled lines.
+
+       DISTINCT FROM document.svg / the `properties` glyph by the same cue:
+       Properties answers "what does this document record about itself", and
+       this answers "what did drawing it actually cost". -->
+  <path d="M12 6h18l8 8v28H12z" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M30 6v8h8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M16 30h5l3-8 4 14 3-6h5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

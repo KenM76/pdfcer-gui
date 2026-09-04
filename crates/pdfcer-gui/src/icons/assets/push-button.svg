@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Generic pressable-slab shape — generic, no trademark risk -->
+  <!-- Authored 2026-09-04 for `edit.form_push_button`, the fifth and last
+       member of the Edit ▸ Forms group that drew `form-field.svg` — see
+       check-box.svg for why one picture under five different words had to end.
+
+       A wide rounded slab carrying a label bar, standing on a base line: a key
+       you press.
+
+       ★ THE COLLISION TO WATCH IS stamp.svg, because the two share a base line
+       at the same height (y40) and that is the kind of coincidence a
+       consistency pass turns into a convergence. They are separated by
+       PROPORTION, which is normally a weak cue and is a strong one here
+       because the difference is a whole axis: stamp.svg is head + narrow
+       handle + wide base, a TALL stack 20 units across read vertically; this
+       is a single WIDE slab 32 units across with its base directly beneath it
+       and nothing between them. At 16 px one is portrait and one is landscape.
+       If either is ever redrawn, that is the property to preserve.
+
+       Distinct from form-field.svg and drop-down.svg, its neighbours in the
+       same group, by CORNER RADIUS and by the base line. Those are
+       square-cornered rectangles, because a field is a hole cut in the page;
+       this is rounded on all four corners and stands on a line, because a
+       button is an object sitting on top of the page. No field in this set has
+       a base line and no field is rounded, so the pair of cues moves together.
+
+       ★ The command is `enabled_when("forms.push_button_runnable")` and was
+       greyed-always until 2026-09-01. That history is recorded at its
+       registration and does not touch the geometry, but it does raise the
+       stakes: a control that spends time dimmed needs its own picture MORE,
+       not less. Five identical glyphs of which one is greyed reads as a
+       rendering fault; five distinct glyphs of which one is greyed reads as
+       the unavailable capability R9 requires it to read as. -->
+  <path d="M8 16a4 4 0 0 1 4-4h24a4 4 0 0 1 4 4v14a4 4 0 0 1-4 4H12a4 4 0 0 1-4-4z" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M16 23h16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M14 40h20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
