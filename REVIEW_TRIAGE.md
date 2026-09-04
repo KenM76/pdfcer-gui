@@ -143,6 +143,65 @@ The handoff claims `mockups/glyphs/new.json`'s 65 glyphs "can go straight into
 
 **Verdict: good art, a day or two of careful work, not a file copy.**
 
+### ★★★ 6b. …and on 2026-09-04 somebody finally LOOKED at them
+
+Everything above was derived from reading `new.json` and `board-shell.html` as
+**source text**. That was the wrong oracle for a question about glyphs and
+layout, and this project has a standing rule saying so: *a layout or rendering
+defect has exactly one oracle, and it is a rendered screenshot.*
+
+Rendered headlessly (`chrome --headless --screenshot`, no desktop touched) at
+`D:\temp\mockshot\` — `board-top.png`, `dark.png`, `glyphs.png`,
+`glyphs-tail.png`.
+
+**What looking confirmed, that reading had only inferred:**
+
+- **The dashed-outline problem is real and it is worse than a cosmetic loss.**
+  Seen side by side, the dash IS the distinguishing feature:
+  `new-from-template` against `new-document`, `unembed-fonts` against
+  `embed-fonts`, `redact-selection` against `redact`. Our SVG parser ignores
+  `stroke-dasharray` silently, so those pairs would ship as **visual
+  duplicates** — and `select-all` would ship as a plain rectangle. They would
+  pass every icon test we own.
+- **`thin-lines` is in the sheet, marked DRAWN FOR THIS MOCK** — art for a
+  command deleted six weeks ago because `RenderOptions` has no such field.
+- **The 65 new glyphs fill real gaps rather than restyling existing ones**:
+  `merge`, `merge-files`, `move-page-up/down`, `paste-in-place`,
+  `pick-form-xobject`, `measure-perimeter`, `measure-radius`, `save-compact`,
+  `save-copy`, `render-diagnostics`, `reflow`, `put-down`, `pin`,
+  `finish-shape`, `fill-colour`, `stroke-colour`, `opacity`, `line-width`,
+  `tab-order`, `wheel-flip`, `zoom-readout`. Those are commands we **have** and
+  draw without a proper icon.
+- **They are shown at 32 px and at the 16 px they ship at**, side by side, in
+  the sheet itself. They read at 16.
+
+**What looking changed about the LAYOUT assessment, which §2 got half wrong:**
+
+§2 concluded the mockup is *"the shipped manifest re-typed"*. That is true of
+the **ribbon** and false of the **shell**. Seen rendered, four things are
+materially better than what we ship and none of them is a ribbon change:
+
+1. **The left icon+word rail** — Pages / Marks / Layers / Sigs / Fonts, vertical,
+   ~50 pt wide, every panel one click away and none of them consuming a tab bar.
+   It replaces two stacked left stacks and a `⏷ 3 more` overflow.
+2. **Objects over Properties as a real master–detail**, and the Objects rows
+   carry *"Text · "A1" · SpaceGrotesk-Bold 8 pt"* and *"Path · stroked #D97706,
+   1.00 pt wide · 2 nodes"*. Ours lists far less per row.
+3. **A one-line tool strip** at the top of the right dock — *"Select · click to
+   pick · drag to marquee… [put down]"* — which is the Tool panel's whole
+   content in 28 px instead of a stack.
+4. **Rulers on two edges with a corner box**, drawn, not proposed.
+
+★★ **And the dark board keeps the PAGE WHITE.** That is the single invariant a
+dark theme in this product must hold — a tinted CAD sheet is an unreadable
+drawing — and the mock gets it right. It is also, precisely, the check the test
+review said nobody has written and should write first.
+
+⇒ **Revised verdict on Part B:** the ribbon is ours re-drawn and its five
+deltas are amendments for the operator (§3, unchanged). The **shell layout is a
+genuine proposal, and it is better than ours.** Reading it as source made it
+look like a restatement; it is not.
+
 ---
 
 ## 7. What the review got right that is worth saying plainly
