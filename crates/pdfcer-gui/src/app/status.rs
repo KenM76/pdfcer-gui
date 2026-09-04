@@ -498,12 +498,28 @@ const _: () = assert!(
     "the panel height must leave room for its own inner margin"
 );
 
-/// A fixed width for the zoom readout.
+/// The **floor** under the zoom readout's reserve — no longer the whole story.
 ///
 /// `8%` and `800%` are different widths, and without a reserve the − button
-/// would step sideways every time the operator clicked +. Wide enough for
+/// would step sideways every time the operator clicked +. This constant was
+/// once the entire answer, and its own doc comment said so: *"wide enough for
 /// four characters, which is the whole range [`crate::viewer::ZOOM_LADDER`]
-/// can produce.
+/// can produce."*
+///
+/// ★★★ **That sentence stopped being true on 2026-08-22 and nothing
+/// re-read it.** O24 made the ceiling a preference. `MAX_MAX_ZOOM_PERCENT` is
+/// `1e12`, [`crate::text::status::zoom_percent`] formats with `{:.0}`, and so
+/// the readout can be asked to draw `1000000000000%` — **fourteen characters
+/// in a reserve sized for four.** The outside review of 2026-09-03 spotted the
+/// staleness and put the figure at seven; seven was the old ceiling's width,
+/// not this one's.
+///
+/// ★ Kept as a FLOOR rather than deleted, because it is still doing the
+/// original job at the bottom of the range: `10%` measures narrower than four
+/// characters, and letting the reserve shrink to it would move the − button
+/// the other way. The reserve is now `max(this, the measured width of the
+/// widest string the CURRENT ceiling can produce)` — see
+/// [`status::zoom::readout_width`].
 const ZOOM_READOUT_WIDTH_PTS: f32 = 46.0;
 
 /// The share of the bar the render-notes line may occupy before eliding.
