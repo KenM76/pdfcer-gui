@@ -98,7 +98,49 @@ blaming on its pasteboard**, and it reproduces with **no pasteboard in the
 build**, from an ordinary wheel scroll. So it is not the pasteboard, and it is
 something an operator meets whenever they scroll down a long drawing.
 
-### ★★ 2. The resize grips consume the drag and commit nothing
+### ⚠ 2–5 are FOUR canvas-grip failures that share a shape, and they are NOT yet attributable to the program
+
+`resize_scales_a_shape`, `rotate_handle_turns_a_selection`,
+`shift_constrains_a_resize`, `multi_node_move_moves_every_picked_anchor`. All
+four: the click **selects** (`selection-set … via=press` is in the trace, the
+outline is drawn, `canvas-outline drawn=true` repeats to the end of the run),
+and the grip drag then commits nothing and declines nothing.
+
+★★★ **Four at once is a shape, not four defects — and before calling it a
+product defect, three things say it may be the instrument:**
+
+1. **Markup drags PASS in the same sweep.** `dragging_a_markup_moves_it` and
+   `rotating_a_markup_turns_it` both pass, so the harness's press-move-release
+   does reach the canvas and does produce gestures. Whatever is wrong is
+   specific to grips on a selected page **object**.
+2. **The fixture is an A1 sheet at 0.196 zoom.** The trace reads
+   `canvas rect=[[298.0 285.7] - [766.0 616.3]] zoom=0.1963` on a 2384 × 1684 pt
+   page. Objects — and therefore their grips — are tiny on screen. A sibling
+   check skipped in the same run with *"the field is 31.4 px wide on screen at
+   zoom 0.1963, and a quarter of that is …"*, which is the same fixture problem
+   stated out loud by a check that knew to check for it.
+3. **These checks COMPUTE the grip's position** — `frame.declared_at(outline,
+   1.0, 1.0)` — rather than aiming at a declared region. `widget_rotate` already
+   records what that costs: *"the first version took the row's rect and aimed
+   78 % across it … and landed outside the window entirely."* Its conclusion was
+   **a named control is aimed at by name**, and these four do not.
+
+⇒ **The next experiment, and it must come before any fix**: re-run all four
+against a small-page fixture with a `--doc-point` that names a real shape, and
+compare. If they pass, the finding is that four checks are fixture-dependent and
+say so nowhere — a harness defect, and a worse one than a broken resize because
+it produces *confident wrong bug reports*. If they still fail, the product
+defect is real and the traces will then mean what they appear to mean.
+
+★ Recorded this way deliberately. This project's own rule is to **ask what a
+failing check SAMPLED before asking what is broken**, and "resize is broken" is
+exactly the kind of claim that is expensive to retract.
+
+★★ One thing IS established regardless: whatever the cause, it is **not from
+today's work** — `resize_scales_a_shape` fails identically on the previous
+release build.
+
+### ★★ (was 2) The resize grips consume the drag and commit nothing
 
 `resize_scales_a_shape`. The click selects (`selection-set page=0 object=0
 via=press` is in the trace) and the grip drag produces **neither `resize-commit`
@@ -124,7 +166,7 @@ clean profile before acting.
 
 ### ⬜ The sweep is INCOMPLETE and that is stated rather than implied
 
-**33 of 153 checks have run**: 51 passed, 3 failed, 21 skipped. The remaining 120
+**43 of 153 checks have run**: 53 passed, 6 failed, 26 skipped. The remaining 120
 have not, and a partial run proves nothing about them.
 
 ★★ **Two process findings, both mine, both costly:**
