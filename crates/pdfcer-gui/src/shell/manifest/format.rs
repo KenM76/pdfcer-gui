@@ -253,7 +253,27 @@ pub(super) fn tab() -> Tab {
                     // a group: describe, then re-aim, then destroy. It is also the
                     // order of increasing commitment, so the eye meets Delete last
                     // in both surfaces that carry it.
-                    command("format.select_form"),
+                    // ★★★ **Gated on the mode, 2026-09-04 — A18's second half.**
+                    // The dispatch arm added a `!edit_content` guard on
+                    // 2026-09-03 and that guard is correct, but a guard alone
+                    // leaves the CONTROL. In Read the operator saw an enabled
+                    // "Select form", pressed it, and nothing happened — this
+                    // project's founding defect class, re-created by the fix
+                    // for a data-loss defect.
+                    //
+                    // R9: withheld, not greyed. A mode is not a temporary
+                    // condition that will pass while the operator hovers; it is
+                    // a standing choice they made in the mode selector, and the
+                    // mode selector is the disclosure.
+                    //
+                    // ★ Why `select_form` counts as authoring when all it does
+                    // is move the selection: it is the first half of the
+                    // compound `dispatch::format` records — in Read, click a
+                    // picture inside a title block, `select_form` re-aims the
+                    // selection from the one image to the whole form XObject,
+                    // and Delete then takes the lot. The re-aim is only ever
+                    // wanted as a prelude to editing.
+                    command("format.select_form").shown_when(FONT_VISIBLE_WHEN),
                     // ★★ Between "select the form" and Delete, and the ordering
                     // rule two comments up decides it without needing a new
                     // one: §5.8's menu rule is least-destructive-first, and the
@@ -268,7 +288,13 @@ pub(super) fn tab() -> Tab {
                     // "Select the form" answers *what am I looking at*, and
                     // this answers *make it mine before I change it*. A reader
                     // scanning the group top to bottom reads the workflow.
-                    command("format.unshare_form"),
+                    // ★★★ Gated for `select_form`'s reason and a blunter one of
+                    // its own: this **writes to the document**
+                    // (`EditSession::unshare_form` gives a page its own copy of
+                    // a shared form), so an enabled control in a mode that
+                    // authors nothing is a promise the dispatch arm must then
+                    // break in silence.
+                    command("format.unshare_form").shown_when(FONT_VISIBLE_WHEN),
                     // ★★★ **Withheld, not greyed, where the engine would refuse
                     // the delete** — `visible_when` rather than a second
                     // `enabled_when`, and the difference is R9 stated by
@@ -301,4 +327,92 @@ pub(super) fn tab() -> Tab {
                 ],
             ),
         ])
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use egui_shell::manifest::Item;
+
+    /// Every command on the Format tab that WRITES is withheld from a mode
+    /// that authors nothing.
+    ///
+    /// # ★★★ Why this is a list and not a predicate
+    ///
+    /// Because "does this command write" is not a property the manifest can
+    /// see. The manifest holds an id and a condition string; whether the arm
+    /// behind that id calls `EditSession` is a fact about
+    /// `app::dispatch::format`. A test that tried to derive the answer would
+    /// be re-implementing the dispatcher, and a hand-written list inside a
+    /// completeness test is exactly the shape this project has already been
+    /// bitten by — a new module invisible to the check built to find it.
+    ///
+    /// So the list is stated, and its JOB is to fail loudly when the Format
+    /// tab grows an item it does not name. `every_writer_is_accounted_for`
+    /// below is the half that makes the list honest: it asserts that the tab's
+    /// full command set is exactly the writers plus the explicitly-declared
+    /// readers, so a new command lands in neither bucket and fails.
+    const WRITERS: &[&str] = &[
+        "format.font",
+        "format.font_size",
+        "format.font_colour",
+        "format.bold",
+        "format.italic",
+        "format.select_form",
+        "format.unshare_form",
+    ];
+
+    /// Read on this tab: describe what is selected, and delete it where the
+    /// mode permits. `format.delete` carries `DELETE_PERMITTED`, which folds
+    /// in the mode question and more besides; `format.properties` opens an
+    /// inspector and changes nothing.
+    const READERS: &[&str] = &["format.properties", "format.delete"];
+
+    fn items() -> Vec<(String, Option<String>)> {
+        tab()
+            .groups()
+            .iter()
+            .flat_map(|g| g.items().iter())
+            .filter_map(|item| match item {
+                Item::Command {
+                    id, visible_when, ..
+                } => Some((id.clone(), visible_when.clone())),
+                _ => None,
+            })
+            .collect()
+    }
+
+    /// ★ A18, second half. The dispatch guard stops the ACT; this stops the
+    /// promise. A control that is enabled, pressed, and does nothing is the
+    /// defect this whole project was founded on, and it was re-created on
+    /// 2026-09-03 by the fix for a data-loss defect.
+    #[test]
+    fn every_writing_command_is_withheld_from_a_mode_that_cannot_author() {
+        for (id, visible_when) in items() {
+            if !WRITERS.contains(&id.as_str()) {
+                continue;
+            }
+            assert_eq!(
+                visible_when.as_deref(),
+                Some(FONT_VISIBLE_WHEN),
+                "`{id}` writes to the document but is shown in every mode. R9: an unavailable \
+                 capability renders NOTHING. Greying is for something temporarily unavailable and \
+                 explained on hover; a mode is a standing choice the operator made in the mode \
+                 selector, and that selector is the disclosure."
+            );
+        }
+    }
+
+    /// The list above is only honest if nothing escapes it.
+    #[test]
+    fn every_format_command_is_classified_as_a_writer_or_a_reader() {
+        for (id, _) in items() {
+            assert!(
+                WRITERS.contains(&id.as_str()) || READERS.contains(&id.as_str()),
+                "`{id}` is on the Format tab and is in neither WRITERS nor READERS. Decide which \
+                 it is: if its dispatch arm reaches `EditSession`, it is a writer and must carry \
+                 `shown_when(FONT_VISIBLE_WHEN)`."
+            );
+        }
+    }
 }

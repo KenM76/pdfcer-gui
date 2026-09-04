@@ -616,5 +616,4 @@ pub enum Icon {
 // lists, and they are kept adjacent to each other rather than adjacent to the
 // enum so that the "did I add it everywhere" check is one file.
 mod mapping;
-#[cfg(test)]
 mod tests;

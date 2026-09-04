@@ -447,8 +447,8 @@
                     caption: "Selection",
                     items: [
                         Command(id: "format.properties"),
-                        Command(id: "format.select_form"),
-                        Command(id: "format.unshare_form"),
+                        Command(id: "format.select_form", visible_when: "mode.edit_content"),
+                        Command(id: "format.unshare_form", visible_when: "mode.edit_content"),
                         Command(id: "format.delete", visible_when: "selection.delete_permitted"),
                     ],
                 ),

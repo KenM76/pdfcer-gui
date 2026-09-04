@@ -1,3 +1,4 @@
+#![cfg(test)]
 //! Catalogue-wide properties: exhaustiveness, key spelling, and the closed
 //! set of shared assets.
 //!
