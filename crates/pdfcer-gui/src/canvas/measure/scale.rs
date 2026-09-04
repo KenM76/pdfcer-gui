@@ -235,7 +235,77 @@ impl ScaleEntryFields {
     /// for a degenerate entry (Accept then shows nothing to commit).
     #[must_use]
     pub fn preview(&self, drawn_pdf_length: Option<f64>) -> Option<ScalePreview> {
-        preview_group_scale(self.entry(drawn_pdf_length))
+        preview_group_scale(self.entry(drawn_pdf_length)).map(|raw| self.in_display_unit(raw))
+    }
+
+    /// Re-express an engine preview in the unit the operator asked to **see**
+    /// dimensions in.
+    ///
+    /// # ★★★ Why this exists: "Show dimensions in" was a dead control
+    ///
+    /// **A6**, from the 2026-09-03 outside review, and the review had
+    /// the symptom right and the culprit backwards. It reported the *summary
+    /// line* as wrong. The summary line was truthful; the **dropdown** was the
+    /// broken thing, and fixing the sentence alone would have converted a
+    /// visible contradiction into a silent one, which is worse.
+    ///
+    /// The mechanism, in one paragraph. [`Self::entry`] builds a
+    /// [`ScaleEntry`], and on the **ratio** path that variant has no unit field
+    /// at all — it carries `paper`, `real` and `basis`, because a ratio is
+    /// unitless and the basis is what turns it into a length. `Self::unit` is
+    /// therefore **discarded on that path**, and
+    /// `preview_group_scale` returns `unit: basis`. So an operator who typed
+    /// `1 : 100` and chose *Metres* got a preview labelled in **inches** and a
+    /// group committed in inches, with nothing anywhere saying so. Both
+    /// controls sit at their defaults on every open from the ribbon, which is
+    /// why it survived: the two agree until somebody touches one.
+    ///
+    /// # ★★ Why the conversion is here and not a request to the engine
+    ///
+    /// It looked like one. `NumberFormat.unit` might have *converted* the value
+    /// or merely *labelled* it, and guessing between those is how a drawing
+    /// gets dimensions that are plausible and wrong. Reading the engine settles
+    /// it with no ambiguity left:
+    ///
+    /// - `ScaleState::Calibrated { scale }` — `effective_scale` **ignores the
+    ///   unit it is passed** and returns `scale` unchanged.
+    /// - `format_measurement` computes `measured_points × effective_scale` and
+    ///   hands the result to `NumberFormat::format`, whose own parameter is
+    ///   named `value_in_top_unit`.
+    ///
+    /// ⇒ **`scale` carries the unit; `format.unit` only names and shapes it.**
+    /// Setting `format.unit` to metres while `scale` is in feet would label
+    /// feet as metres — confidently, at every dimension in the document. The
+    /// conversion has to happen to the *scale*, and the scale is ours to build.
+    ///
+    /// So: no engine change, and the row that suspected one was wrong to.
+    ///
+    /// # The arithmetic
+    ///
+    /// `baseline_per_point(u)` is how many `u` there are in one PDF point at
+    /// 1:1, so one `from` is `bpp(to) / bpp(from)` of a `to`. `scale` is
+    /// `from`-per-point; multiplying by that factor makes it `to`-per-point.
+    ///
+    /// ★ On the **real-length** path this is the identity, because `entry`
+    /// passes `self.unit` straight through and `raw.unit == self.unit`. It is
+    /// applied uniformly anyway rather than branching on the path: a branch
+    /// here would be a second place that has to know which variant carries a
+    /// unit, and that knowledge going stale is exactly how the defect arrived.
+    ///
+    /// ★★ `ratio_label` is left alone. On the ratio path it is `1:100` — a
+    /// pure ratio, true in any unit. On the real-length path it is
+    /// `25 ft = 42.3 pt`, and that path is the identity, so it is never a
+    /// sentence about a unit that has been converted underneath it.
+    fn in_display_unit(&self, raw: ScalePreview) -> ScalePreview {
+        if raw.unit == self.unit {
+            return raw;
+        }
+        let factor = self.unit.baseline_per_point() / raw.unit.baseline_per_point();
+        ScalePreview {
+            scale: raw.scale * factor,
+            unit: self.unit,
+            ratio_label: raw.ratio_label,
+        }
     }
 
     /// The `(ScaleState, NumberFormat)` this entry commits as, for
@@ -396,6 +466,106 @@ impl ScalePick {
     clippy::float_cmp
 )]
 mod tests {
+
+    /// ★★★ **A6: "Show dimensions in" reaches the scale on the ratio path.**
+    ///
+    /// The strongest available assertion, and it is deliberately not *"the
+    /// preview says metres"*. A build that set `format.unit = Metre` and left
+    /// `scale` in inches would pass that, and would then label inches as metres
+    /// at every dimension in the document — the confidently-wrong outcome, and
+    /// worse than the silent dropdown it replaced.
+    ///
+    /// So this asserts the **physical length is unchanged**: the same page
+    /// distance, committed under two different display units, must describe the
+    /// same real-world length. That can only hold if the conversion reached the
+    /// scale.
+    #[test]
+    fn the_display_unit_converts_the_scale_rather_than_relabelling_it() {
+        // 1:100 on the default inch basis. One point is 100/72 inch.
+        let mut fields = ScaleEntryFields {
+            use_real_length: false,
+            ratio_paper: 1.0,
+            ratio_real: 100.0,
+            basis: Unit::Inch,
+            unit: Unit::Inch,
+            ..ScaleEntryFields::default()
+        };
+
+        let (inch_state, inch_format) = fields.commit(None).expect("a ratio commits");
+        fields.unit = Unit::Meter;
+        let (metre_state, metre_format) = fields.commit(None).expect("a ratio commits");
+
+        assert_eq!(inch_format.unit, Unit::Inch);
+        assert_eq!(
+            metre_format.unit,
+            Unit::Meter,
+            "the dropdown must reach the committed format"
+        );
+
+        // 720 points is ten inches of paper, so 1000 inches of ground.
+        const POINTS: f64 = 720.0;
+        let inches = POINTS * inch_state.effective_scale(Unit::Inch).expect("calibrated");
+        let metres = POINTS
+            * metre_state
+                .effective_scale(Unit::Meter)
+                .expect("calibrated");
+        assert!(
+            (inches - 1000.0).abs() < 1e-9,
+            "1:100 at 720 pt is 1000 inches; got {inches}"
+        );
+        assert!(
+            (metres - 25.4).abs() < 1e-9,
+            "the SAME distance is 25.4 m. Got {metres} — which is what a build that relabelled \
+             the format without converting the scale produces, and it would write that number \
+             onto every dimension in the drawing."
+        );
+    }
+
+    /// The real-length path is unaffected, and that is asserted rather than
+    /// assumed: `entry` passes `self.unit` straight through there, so the
+    /// conversion must be the identity and must not quietly scale twice.
+    #[test]
+    fn the_real_length_path_is_untouched_by_the_conversion() {
+        let fields = ScaleEntryFields {
+            use_real_length: true,
+            real_length: 25.0,
+            unit: Unit::DecimalFeet,
+            ..ScaleEntryFields::default()
+        };
+        let preview = fields.preview(Some(42.3)).expect("a real-length preview");
+        assert_eq!(preview.unit, Unit::DecimalFeet);
+        assert!(
+            (preview.scale - 25.0 / 42.3).abs() < 1e-12,
+            "a 42.3 pt line called 25 ft is 25/42.3 ft per point; got {}",
+            preview.scale
+        );
+    }
+
+    /// ★ The preview the operator READS and the value that gets COMMITTED are
+    /// the same number, because `commit` goes through `preview`.
+    ///
+    /// Pinned because the defect this pair replaces was exactly a divergence
+    /// between what a surface said and what a verb did, and the cheapest way
+    /// for it to come back is a second conversion added to one of the two.
+    #[test]
+    fn what_the_preview_shows_is_what_the_commit_stores() {
+        let fields = ScaleEntryFields {
+            use_real_length: false,
+            ratio_paper: 1.0,
+            ratio_real: 50.0,
+            basis: Unit::Inch,
+            unit: Unit::Millimeter,
+            ..ScaleEntryFields::default()
+        };
+        let preview = fields.preview(None).expect("a ratio preview");
+        let (state, format) = fields.commit(None).expect("and it commits");
+        assert_eq!(format.unit, preview.unit);
+        assert_eq!(
+            state.effective_scale(preview.unit),
+            Some(preview.scale),
+            "the committed scale must be the previewed one"
+        );
+    }
     use super::*;
 
     fn p(x: f64, y: f64) -> Point {
@@ -508,6 +678,27 @@ mod tests {
         assert_eq!(format.unit, Unit::DecimalFeet);
     }
 
+    /// ★★★ **This test used to pin the defect**, and the correction is worth
+    /// more than the assertion.
+    ///
+    /// Until 2026-09-04 it asserted `preview.scale == 100.0 / 72.0` — inches
+    /// per point — for a fields struct whose `unit` is `Unit::Meter`, because
+    /// `..ScaleEntryFields::default()` supplies it and the default is metres
+    /// against an inch basis. So the test was green, correct about the engine's
+    /// arithmetic, and describing a preview that told the operator **inches**
+    /// while the control beside it said **Metres**.
+    ///
+    /// ⇒ A6 was not merely untested. It was **tested, and the test agreed with
+    /// it.** A value asserted from the implementation rather than from the
+    /// contract pins whatever the implementation did, including its defects,
+    /// and it does so with all the authority of a green suite. The number here
+    /// is now derived from what the operator asked for.
+    ///
+    /// ★ 1:100 on an inch basis is `100/72` inch per point; the same scale in
+    /// metres is that times `0.0254`, i.e. `2.54/72`. Both spellings appear
+    /// below on purpose — the first is the engine's own arithmetic and the
+    /// second is the conversion, and writing them as one collapsed constant
+    /// would hide which half a future failure is about.
     #[test]
     fn scale_ratio_path_needs_no_drawn_line() {
         // The group-panel path: ratio entry with no reference line.
@@ -518,8 +709,23 @@ mod tests {
             basis: Unit::Inch,
             ..ScaleEntryFields::default()
         };
+        assert_eq!(
+            fields.unit,
+            Unit::Meter,
+            "the default display unit is metres against an INCH basis — the two disagreeing is \
+             the whole subject of this test"
+        );
         let preview = fields.preview(None).expect("a ratio preview with no line");
-        assert!((preview.scale - 100.0 / 72.0).abs() < 1e-12);
+        assert_eq!(preview.unit, Unit::Meter, "the operator asked for metres");
+        let in_inches = 100.0 / 72.0;
+        let expected = in_inches * 0.0254;
+        assert!(
+            (preview.scale - expected).abs() < 1e-12,
+            "1:100 on an inch basis is {in_inches} in/pt, which is {expected} m/pt. Got \
+             {}. If this is {in_inches}, the display unit has stopped reaching the scale and \
+             the preview is labelling inches as metres.",
+            preview.scale
+        );
         assert_eq!(preview.ratio_label, "1:100");
         // for_group_panel() pre-selects the ratio path.
         assert!(!ScaleEntryFields::for_group_panel().use_real_length);
