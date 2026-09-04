@@ -52,7 +52,7 @@ fn all_is_exhaustive_and_free_of_duplicates() {
     // reader. Prefer that shape for any future count.
     assert_eq!(
         Icon::ALL.len(),
-        129,
+        131,
         "the catalogue changed size: add the new variant to Icon::ALL and update this count"
     );
 }
@@ -160,7 +160,13 @@ fn keys_are_lowercase_kebab_case() {
 /// each in [`only_the_documented_assets_are_shared`]'s doc comment.
 const SHARED_PAIRS: &[&[&str]] = &[
     &["font-folders", "open"],
-    &["import-form-data", "insert-pages"],
+    // ★ `["import-form-data", "insert-pages"]` was here until 2026-09-04, when
+    // `insert-pages` was given art of its own. The entry is REMOVED rather than
+    // left harmlessly in place, and `every_declared_share_is_still_a_share`
+    // below is what makes leaving it impossible: a blessing for a state that
+    // has stopped existing is the same defect as a citation for a test that has
+    // been renamed — it reads as a decision somebody made, and nothing is
+    // checking that the decision still describes anything.
 ];
 
 #[test]
@@ -181,6 +187,43 @@ fn only_the_documented_assets_are_shared() {
                  the argument for it, in this test's own doc comment"
             );
         }
+    }
+}
+
+/// ★★★ …and every declared share is **still** a share.
+///
+/// # Why the other direction needs its own test
+///
+/// `only_the_documented_assets_are_shared` walks the icons and asks whether
+/// each real share is blessed. It is silent about a blessing with nothing
+/// behind it — so an entry survives its own subject, and what survives is a
+/// sentence saying *"these two deliberately draw one picture"* about two icons
+/// that no longer do.
+///
+/// That is not tidiness. A stale entry is a **licence**: the next reader who
+/// wants two roles to share art finds a precedent in the list, and the
+/// precedent is a state that has not existed for months. This project has
+/// already paid for the same shape twice in one week — a gate exemption whose
+/// premise expired within a day, and four doc comments citing a test that had
+/// been renamed sixteen days earlier.
+///
+/// ⇒ Blessings expire with their subject, and something has to notice.
+#[test]
+fn every_declared_share_is_still_a_share() {
+    for pair in SHARED_PAIRS {
+        let icons: Vec<Icon> = pair
+            .iter()
+            .map(|name| {
+                Icon::from_key(name).unwrap_or_else(|| panic!("`{name}` is not an icon key"))
+            })
+            .collect();
+        let first = icons[0].source();
+        assert!(
+            icons.iter().all(|i| i.source() == first),
+            "SHARED_PAIRS still blesses {pair:?}, but they no longer draw one asset. Delete the \
+             entry. A blessing left behind after its subject is gone reads as a decision somebody \
+             made and is a precedent for a share nobody argued for."
+        );
     }
 }
 

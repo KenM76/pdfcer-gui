@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Properties — three horizontal rules, each with a slider knob at a different
+       stop. Primitives only (six line segments, three circles); no trademark
+       risk.
+
+       ★★★ IT REPLACES AN ALIAS, NOT A DRAWING. Until 2026-09-04 this role drew
+       `document.svg` — a page — because Properties had no art of its own and a
+       page was the nearest true thing. That reads as *the file*, which is what
+       `document.svg` is for; the Properties panel is about the VALUES of what
+       is selected, and most of the time what is selected is one path on a
+       sheet, not the sheet.
+
+       The mixer-slider metaphor is what every application from Illustrator to
+       a phone's settings uses for "the adjustable attributes of a thing", and
+       it is the one an operator arriving from Acrobat has already been taught.
+
+       Distinct from list.svg (Icon::ManageList) by the KNOBS: `list` puts a
+       small square at the START of each rule, because a list is an inventory of
+       named things, and each of its rules is the same length. Here the knobs
+       sit at three DIFFERENT stops along rules of the same length, because the
+       subject is a value on a range rather than an item in a set. At 16 px the
+       read is "aligned marks" against "staggered marks".
+
+       Distinct from show-points.svg by having no path: those nodes sit ON a
+       drawn line and mean the geometry; these sit on rules that are the
+       control, not the content. -->
+  <path d="M8 14h16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M32 14h8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M8 24h4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M20 24h20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M8 34h12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M28 34h12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M28 10a4 4 0 1 1 0 8 4 4 0 0 1 0-8z" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M12 20a4 4 0 1 1 0 8 4 4 0 0 1 0-8z" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M24 30a4 4 0 1 1 0 8 4 4 0 0 1 0-8z" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

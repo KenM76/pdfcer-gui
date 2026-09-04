@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Set scale — a graduated rule with major and minor ticks, under a
+       double-headed arrow spanning a measured length. Primitives only; no
+       trademark risk.
+
+       ★★★ IT REPLACES AN ALIAS. Until 2026-09-04 this role drew `convert.svg`,
+       which means "change this into that" — a claim `set.scale` does not make.
+       Setting a scale changes no geometry and rewrites no content; it declares
+       what the drawing's units MEAN, and every measurement in the document is
+       then read through that declaration. A conversion glyph on a command that
+       converts nothing is the set's standing "an icon is a claim" failure.
+
+       Distinct from ruler.svg (Icon::Measure, worn by Linear) by the ARROW: a
+       graduated rule alone means *measure this*, which is the tool. The arrow
+       spanning the rule means *this span is that length*, which is the
+       calibration — the operator states a known distance and the scale is
+       derived from it. That is exactly the gesture the Set-scale dialog asks
+       for, so the glyph is a picture of the interaction rather than of the
+       subject.
+
+       Distinct from measure-length.svg by the graduations: that one is a bare
+       dimension line between two witness marks, because it reports a length;
+       this one carries ticks, because it is about the unit rather than the
+       value. -->
+  <path d="M6 22h36v10H6z" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M12 22v5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M18 22v4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M24 22v5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M30 22v4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M36 22v5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M10 12h28" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M14 8l-4 4 4 4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M34 8l4 4-4 4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

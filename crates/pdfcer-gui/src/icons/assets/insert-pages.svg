@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Insert pages — a page with a folded corner and an arrow entering it from the
+       left. Primitives only; no trademark risk.
+
+       ★★★ IT REPLACES AN ALIAS. Until 2026-09-04 this role drew `upload.svg`,
+       SHARED with `import-form-data` — a tray with an arrow going in, which is
+       the generic "content crosses the document's edge" glyph. Two commands
+       drawing one picture is the defect the 2026-09-04 batch was adopted to
+       fix, and this was one of its last three instances.
+
+       `upload.svg` stays with `import-form-data`, which is its honest owner:
+       form DATA arriving from outside really is generic inbound content with no
+       shape of its own. Pages have a shape, so this one draws it.
+
+       ★ The arrow enters from the LEFT and stops at the page's edge — it does
+       not pierce it. Piercing would say "into the page"; stopping at the edge
+       says "into the document, beside the others", which is what the command
+       does. That is the same distinction `export.svg` makes in the opposite
+       direction.
+
+       Distinct from new-document.svg by the arrow against a plus: a plus means
+       a page that does not exist yet, an arrow means one that exists elsewhere. -->
+  <path d="M18 6h14l8 8v28H18z" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M32 6v8h8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M4 24h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M13 19l5 5-5 5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

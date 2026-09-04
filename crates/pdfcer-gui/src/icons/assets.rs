@@ -1048,3 +1048,36 @@ pub(super) const UNEMBED_FONTS: &str = include_str!("assets/unembed-fonts.svg");
 ///
 /// The wheel-paging toggle on the status bar — `OPERATOR_REQUESTS.md` O30.
 pub(super) const WHEEL_FLIP: &str = include_str!("assets/wheel-flip.svg");
+
+// ── the last three aliases, broken 2026-09-04 ─────────────────────────────
+//
+// `properties`, `insert-pages` and `set-scale` were live icon KEYS that
+// resolved to another role's asset: `document.svg`, `upload.svg` and
+// `convert.svg`. That is the same defect as the four form tools sharing one
+// glyph — a control wearing a picture drawn for something else — one level
+// down, and it survived the 2026-09-04 batch because a mechanical pre-filter
+// removed every proposed name that collided with an existing key, on the
+// reasoning that a collision means a restyle.
+//
+// ★ The reasoning was right and the conclusion was wrong: there was no
+// purpose-drawn art to restyle. Each of the three is the FIRST art drawn for
+// its role. Found because the layout mockup draws shipped art beside proposed
+// art and the adoption count did not add up — 36 + 26 = 62 of 65.
+
+/// `insert-pages.svg` — the art for [`super::Icon::InsertPages`].
+///
+/// Replaces an alias, not a drawing. See the asset for which glyph it must
+/// stay distinguishable from and by what cue.
+pub(super) const INSERT_PAGES: &str = include_str!("assets/insert-pages.svg");
+
+/// `properties.svg` — the art for [`super::Icon::Properties`].
+///
+/// Replaces an alias, not a drawing. See the asset for which glyph it must
+/// stay distinguishable from and by what cue.
+pub(super) const PROPERTIES: &str = include_str!("assets/properties.svg");
+
+/// `set-scale.svg` — the art for [`super::Icon::SetScale`].
+///
+/// Replaces an alias, not a drawing. See the asset for which glyph it must
+/// stay distinguishable from and by what cue.
+pub(super) const SET_SCALE: &str = include_str!("assets/set-scale.svg");

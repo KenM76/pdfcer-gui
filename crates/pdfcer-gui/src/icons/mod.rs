@@ -608,7 +608,11 @@ mod tests {
             ("zoom-in", "zoom-out"),
             ("zoom-in", "zoom-region"),
             ("zoom-out", "zoom-region"),
-            ("insert-pages", "export"),
+            // ★ `("insert-pages", "export")` was here until 2026-09-04, when
+            // `insert-pages` stopped wearing `upload` and took art of its own.
+            // The pair now measures well clear of the floor, so the exemption
+            // has nothing to exempt — and an exemption with nothing behind it
+            // is a hole waiting for a future pair to fall into silently.
             ("import-form-data", "export"),
         ];
 

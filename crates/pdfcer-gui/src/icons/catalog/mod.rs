@@ -1386,6 +1386,45 @@ pub enum Icon {
     /// sheet: that one carries three ruled lines and means *a page about which
     /// something is true*. This one carries a direction.
     WheelFlip,
+    // ── two assets orphaned by breaking their aliases, 2026-09-04 ─────────
+    /// A document, as a subject — `document.svg`.
+    ///
+    /// ★★★ **No command names this key today, and the variant exists anyway.**
+    /// Until 2026-09-04 this art was reached only through [`Icon::Properties`],
+    /// which aliased onto it because Properties had no drawing of its own.
+    /// Properties now has one, and the page is nobody's.
+    ///
+    /// Deleting the constant would have been the smaller edit and it is the
+    /// wrong one. `assets/PROVENANCE.md` makes this directory the operator's
+    /// own art and says in as many words that an asset stays when the button
+    /// that used it goes — *"deleting his drawing because a button went away is
+    /// not ours to do"*. But an asset with no constant is an asset **no test
+    /// walks**: `every_icon_parses`, `every_icon_rasterizes_to_visible_pixels`,
+    /// `fill_is_semantic_and_the_set_that_uses_it_is_closed` and
+    /// `crlf_line_endings_parse_identically` all iterate [`Icon::ALL`]. Art
+    /// that is kept but untested rots quietly and is discovered by someone
+    /// wiring it up months later.
+    ///
+    /// ⇒ The variant is how the art stays covered. [`Icon::EditObjects`] is the
+    /// standing precedent — its command was deleted on 2026-08-31 and its
+    /// variant remains.
+    ///
+    /// Distinct from [`Icon::Properties`], which took the role: that is three
+    /// slider rules, because Properties is about the VALUES of what is
+    /// selected. This is the page itself.
+    Document,
+
+    /// Change one form into another — `convert.svg`.
+    ///
+    /// Orphaned on 2026-09-04 with [`Icon::Document`] and kept for the same
+    /// reason; see that variant for the argument.
+    ///
+    /// It was reached only through [`Icon::SetScale`], and the alias was a
+    /// false claim rather than merely a borrowing: setting a scale converts
+    /// nothing. It declares what the drawing's units mean. The set's standing
+    /// rule is that **an icon is a claim**, and this one was making one its
+    /// command could not support.
+    Convert,
 }
 
 // ★ The mapping lives next door. `Icon::ALL`, `Icon::source` and `Icon::name`
