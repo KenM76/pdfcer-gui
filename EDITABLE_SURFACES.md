@@ -133,7 +133,24 @@ operator's machine.
 
 ---
 
-## The 13 remaining misses, each with its reason
+## The misses, each with its reason
+
+**Currently 12, at lock `04f7ec0` (2026-09-04).** This heading used to carry the
+number — *"The 13 remaining misses"* — and the number went stale twice while the
+prose under it stayed true, which is the failure this file warns about in its
+own opening: **re-run the instrument before quoting a count.** So the count now
+lives in one line that says which lock it was measured at, and the heading does
+not carry it.
+
+★ **There are more rows below than there are misses, on purpose.** A row is
+written when a verb becomes a miss and it is *not deleted when the verb stops
+being one* — `copy_attachment` and `paste_attachment` were wired the day their
+row was written and both rows are still here, marked SHIPPED. The reason is that
+the argument is the valuable part: a row saying *why* a verb was left alone for
+a fortnight is what stops the next session re-deriving the same conclusion, or
+worse, reversing it without knowing one was ever reached. The gate only ever
+asks whether a name is **present**; it does not ask that the section be a
+snapshot, and it should not.
 
 ### Not gaps — session queries the shell has no use for
 
@@ -165,6 +182,81 @@ action: **the engine shipped them and this shell said nothing about them
 either way.** That is precisely the silence the gate exists to break — a verb
 nobody has written a sentence about is indistinguishable from a verb nobody
 noticed.
+
+### ★★★ The two the GATE found, 2026-09-04 — encryption AUTHORING landed, and this is the fourth time
+
+`cargo update -p pdfcer-core` moved the lock from `e27c3b4` to `04f7ec0` and the
+gate went red on the next run with two names:
+
+> **191 `EditSession` verbs (lock `04f7ec0`), 179 named somewhere in the shell,
+> 12 named nowhere** — of which ten already had a row in this file, and
+> `set_encryption` and `set_permissions` had nothing anywhere.
+
+★★★ **This is O108's own request coming back answered, and nobody would have
+noticed.** On 2026-09-03 the security audit measured `pdfcer-core` from its own
+side and reported the finding that changed the shape of the ask: *"Every one of
+them is READ-SIDE. `pdfcer-core` has **no** `encrypt_document`, no
+`set_password`, no `remove_encryption`, **no `set_permissions`**, no
+`sign_document`."* A Security tab was therefore scoped as an **information**
+tab, and the authoring half was filed at the engine as
+`request_a_document_cannot_be_encrypted_or_have_its_permissions_set.md`.
+
+The engine's reply
+(`reply_signature_integrity_first_then_encryption_and_your_two_sentences.md`)
+ranked it second of three and closed with one line: *"Encryption authoring
+(`Pass 5.4`) is next in the queue; nothing you need to change for it yet."*
+**It is no longer next in the queue. It is in the lock.** And unlike the
+signature-validation half, which arrived with a `★ UPDATE, same day` written
+into the reply naming the entry point, this one landed with **no reply file, no
+note, and no announcement** — the capability simply appeared in `edit.rs` under
+`// -- encryption authoring (Pass 5.4, ISO 32000-2:2020 §7.6) --`.
+
+⇒ ★★ So the count is now **four**: `set_button_action` (two days), the three
+attachment verbs (silent), and this. Every one of them is a capability the
+engine shipped *because this shell asked for it*, and every one of them sat
+unconsumed because **an addition on the other side of a boundary is silent by
+construction**. The gate is the only thing in this project that made a noise
+this time, and it is the only thing that was keyed on the engine's API.
+
+| Verb | Why nothing calls it — and note the reason this is NOT "should not call" |
+|---|---|
+| `set_encryption` | ⏸ **Real, unwired, and AWAITING AN OPERATOR RULING ON SCOPE.** It is a save transform, not an undoable edit: `(&EncryptionSettings, &SaveOptions) -> (Vec<u8>, SaveReport)`, writing AES-256 `/R` 6 and nothing else, refusing `AlreadyEncrypted` and `SignedDocument` by name. Wiring it means authoring a password dialog, a permission-bit chooser and a save path that is a full rewrite — which is a **new surface**, not a call site, and O108's tab was deliberately scoped read-side when the engine had no authoring half. That scope decision is the operator's and it is now stale. Surfaced to him as **O119**. |
+| `set_permissions` | ⏸ **The same ruling, and it carries a precondition the shell must show first.** `(&mut self, &EncryptionSettings, &SaveOptions)` re-keys an already-encrypted document — `/P` is bound into `/Perms` by Algorithm 10 and cannot be edited in place, so it is a fresh full encrypt under a fresh file key. It is therefore **owner-only**, refusing `NotOwner { opened_as: AuthKind }`. Surfaced as **O119** with `set_encryption`, because they are one operator question. |
+
+★★★ **The wording of those two rows is the point of this whole gate.** *"A verb
+this shell should not call"* and *"a capability that landed, is real, and is
+waiting on a decision that is not mine to make"* are different sentences, and
+the gate's own message says the difference is the entire mechanism: silence
+reads as the first when it is very often the second. These two are the second.
+Neither row is a refusal, neither is a deferral on technical grounds, and
+neither should be read as this project having declined encryption authoring —
+it has declined nothing. It has **asked**.
+
+#### ★★ And a false hit beside them: `remove_encryption`
+
+Not in the gate's list, and it should have been. `remove_encryption` shipped in
+the same `Pass 5.4` block, is the third verb of the same family, and is called
+**nowhere** — `python tools/verb-coverage.py --all` scores it `1`, and that one
+occurrence is a **doc comment** in `text::security::auth_line` quoting the
+engine's instruction to surface `AuthKind` *"because `remove_encryption` will
+refuse a user-authenticated session"*.
+
+⇒ ★★★ **This is exactly the defect O108 recorded in the other instrument, one
+tool along.** `tools/security-coverage.py` reported `load_with_password` as
+*reached* on the strength of a single sentence in a doc comment — *"which would
+have recorded the single most important missing capability in this whole area as
+already built"* — and was fixed by stripping comment-only lines before
+searching. `tools/verb-coverage.py` **has not had that fix**, so it is blind in
+precisely the way its sibling was, and the blindness is worst on exactly the
+verbs this register talks about most: a verb argued about in prose here or in a
+doc comment there scores a hit and leaves the gate.
+
+★ It is not fixed in this pass **deliberately**, because tightening the
+instrument changes what the gate reports and that is a change to make on its own
+and measure on its own, not as a rider on a documentation entry. It is named
+here so the next session does not rediscover it, and `remove_encryption` is
+named here so that when the instrument *is* fixed, this row is already written
+and the gate does not go red for a verb that was known about all along.
 
 ### Not gaps — alternate spellings of a verb the shell already calls
 

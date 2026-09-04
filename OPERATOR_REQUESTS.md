@@ -80,6 +80,57 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
+## O119 — ❓ **A QUESTION FOR YOU, 2026-09-04** — the engine can now put a password on a document and set what it allows. Do you want a way to do it?
+
+**Not something you asked for — something that arrived, and needs your ruling
+before anyone builds it.**
+
+When you asked for the encryption and signature tab (O108), the audit came back
+with an answer that changed the ask: the engine could **read** protected files
+and could not **make** one. So the tab was scoped to tell you things — what a
+document is encrypted with, which password opened it, what it says it allows —
+and the missing half was filed as a request.
+
+**That request has been answered.** As of this morning's engine update, pdfcer
+can put a password on a document, choose what the document permits (printing,
+copying, changing), and take the protection off again. Nothing in the GUI
+reaches any of it, and nothing will until you say so, because it is a new
+surface rather than a new button: it needs a password box, a list of
+permissions to tick, and a save that rewrites the whole file.
+
+### The question, plainly
+
+**Do you want to be able to protect a drawing before you send it out?** If yes,
+it goes into the Security tab beside the read-side facts already planned there.
+If no, or not yet, it stays unbuilt and this row records that you decided so
+rather than that nobody noticed.
+
+### Three things to know before you answer, because they change the answer
+
+1. **A permission setting is a request, not a lock.** Any program that chooses
+   to ignore it can still print or copy the drawing. Only the password actually
+   keeps someone out. That is the standard's design, not a pdfcer limitation,
+   and the engine supplies the sentence we would put on screen.
+2. **Protecting a signed drawing is refused.** Encrypting rewrites every byte,
+   which breaks any signature already on the file. The engine refuses by name
+   rather than doing it quietly.
+3. **Changing the permissions on an already-protected file needs the owner
+   password**, not the one that merely opens it. We can tell you that before you
+   press anything — the GUI already knows which password opened the file.
+
+### Status
+
+⏸ **Awaiting your ruling on scope. Nothing built, nothing half-built.** The
+capability is recorded in `EDITABLE_SURFACES.md` (§"The two the GATE found,
+2026-09-04") so it cannot go quiet again — which is how it was caught: a gate
+that fails the build when the engine grows something nothing here mentions.
+
+★ Worth saying because it is the fourth time: this landed with no note and no
+announcement, and the only thing that made a noise was that gate. The engine's
+last word on it had been *"next in the queue"*.
+
+---
+
 ## O118 — ✅ **SHIPPED 2026-09-04** — "in those featurerequests did you see the new glyphs and layout?"
 
 **Asked:** 2026-09-04, in one line, after the review's triage had already been

@@ -1312,6 +1312,17 @@ dependencies = [
 
 [[package]]
 name = "getrandom"
+version = "0.2.17"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ff2abc00be7fca6ebc474524697ae276ad847ad0a6b3faa4bcb027e9a4614ad0"
+dependencies = [
+ "cfg-if",
+ "libc",
+ "wasi",
+]
+
+[[package]]
+name = "getrandom"
 version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "899def5c37c4fd7b2664648c28120ecec138e4d395b459e5ca34f9cce2dd77fd"
@@ -2391,13 +2402,14 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-core"
-version = "0.28.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#e27c3b46d58c1321d6813771a35a1f334c0a3882"
+version = "0.31.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#04f7ec0a0d65bfcb483a6d172c49297056b6bffa"
 dependencies = [
  "aes",
  "brotli",
  "cbc",
  "flate2",
+ "getrandom 0.2.17",
  "hayro-ccitt",
  "hayro-jbig2",
  "hayro-jpeg2000",
@@ -2430,8 +2442,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-print"
-version = "0.28.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#e27c3b46d58c1321d6813771a35a1f334c0a3882"
+version = "0.31.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#04f7ec0a0d65bfcb483a6d172c49297056b6bffa"
 dependencies = [
  "thiserror 2.0.20",
  "windows",
@@ -2439,13 +2451,15 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-render"
-version = "0.28.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#e27c3b46d58c1321d6813771a35a1f334c0a3882"
+version = "0.31.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#04f7ec0a0d65bfcb483a6d172c49297056b6bffa"
 dependencies = [
  "iccce-cmm",
  "iccce-color",
  "iccce-profile",
+ "jpeg-encoder",
  "pdfcer-core",
+ "png 0.17.16",
  "skrifa",
  "subsetter",
  "thiserror 2.0.20",
@@ -3618,6 +3632,12 @@ dependencies = [
  "same-file",
  "winapi-util",
 ]
+
+[[package]]
+name = "wasi"
+version = "0.11.1+wasi-snapshot-preview1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ccf3ec651a847eb01de73ccad15eb7d99f80485de043efb2f370cd654f4ea44b"
 
 [[package]]
 name = "wasip2"
