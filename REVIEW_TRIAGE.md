@@ -48,6 +48,34 @@ to fix. Those are collected in §3 and none has been actioned.
 
 ---
 
+## 2b. Found while triaging — not in the review, and worse than most of it
+
+Three defects the reviewer never saw, found by reading the code his findings
+pointed at. Each is the same family: **a claim that was true when written, cited
+later as justification, with nothing re-reading its premise.**
+
+| # | The claim | Why it is false now |
+|---|---|---|
+| **T1** | `tools/gates/check-strong-text.sh:53` blesses two sites on the ground that *"Both are drawn ON the accent fill, so `on_accent` is the right colour anyway."* | True of `ribbon/tabs.rs`, which does `.fill(accent)` at `:443`. **False of `dock/tabs.rs`, which contains no `.fill(` at all** — it passes `.selected(true)` and lets egui choose, which takes the fill from the 27 % canvas tint. **The gate was passing the site for a reason that had stopped being true**, which is why A15a shipped in all three presets. |
+| **T2** | ★★★ **Every bare `Button::selected(true)` / `selectable_label` renders accent text on the wash.** `egui::Style::button_style` overwrites the *text* colour too — `ws.text.color = self.visuals.selection.stroke.color` (`egui-0.35.0/src/widget_style.rs:153`, verified verbatim) — and this theme sets that stroke to `palette.accent`. | **~17 sites**, two in `egui-shell` (`menu/render.rs:459`, `ribbon/control.rs:218`) and ~15 `selectable_label` calls in `pdfcer-gui`. Measured gap in **Dark: 72.5** against a floor of 90. **The two sites the review found are the two that happened to be protected by an explicit colour**; the unprotected majority was never looked at. |
+| **T3** | `tools/ui-verify/src/checks/driving.rs:807-810` derives a live threshold partly from *"egui's stock light palette — which is what the built binary actually paints with, **because nothing in `crates/pdfcer-gui` calls `Theme::apply`**"*. | `app/frame.rs:274` calls `theme.apply(&ctx)`. It has since D10 was fixed on 2026-08-14. ★ **The constant itself is safe** — its derivation deliberately covers *both* palettes and says so — so this is a false sentence rather than a wrong number. Correct it in place. |
+
+★★ **And Airy is the worst preset for both reported contrast failures, which the
+review did not measure**: gap **28.2** on the selected dock tab and **5.0** on
+the close glyph — white on white to within five levels of luminance — because
+Airy's panel is pure white and the 27 % wash barely darkens it.
+
+★★★ **The root cause under all of it:** `egui::Visuals::selection` is doing
+double duty. It is egui's styling channel for selected *widgets*, and this theme
+has handed it to the *canvas* (`selection_fill` is the object-selection tint;
+~30 readers depend on `selection.stroke` for canvas ink). The canvas won, so
+**every selected chrome control in the application is painted with canvas ink**.
+There is no theme-only fix — re-pointing `selection.bg_fill` at `accent` would
+paint over page thumbnails (`panels/pages/mod.rs:877`). The fix is at the call
+sites, and the gate's job is to make a bare `.selected(true)` impossible.
+
+---
+
 ## 3. Amendments to settled documents — the operator's call, none actioned
 
 | # | The reviewer asks for | What it contradicts |

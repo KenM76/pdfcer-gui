@@ -73,3 +73,27 @@ While driving, his desktop is yours to tidy **reversibly**: killing leaked
 before reporting.
 
 See also [[project-operator-report-2026-08-17]].
+
+## ★★★ AND DO NOT EDIT SOURCE WHILE THE SWEEP IS RUNNING — 2026-09-03
+
+The harness refuses to drive a binary older than `crates/`, and it is right to:
+*"the traces you are about to collect would describe code that is NOT the code
+you just wrote, and a missing trace looks exactly like a broken feature."*
+
+So a sweep started, and then edited under, does not fail — it **skips**. A
+90-minute run came back **8 passed, 4 failed, 141 SKIPPED**, every skip reading
+`STALE BINARY — refusing to run`, because source edits landed ten minutes into
+it. The staleness guard did exactly its job; the whole run was wasted anyway.
+
+⇒ **A driven sweep is a lock on the source tree, not just on the pointer.**
+While one is running, do documentation, triage, memory and RAG work — never a
+`cargo build`, never an edit under `crates/` or `tools/`.
+
+★ Two smaller ones from the same run:
+
+- **`nohup … &` inside the Bash tool does not survive.** The wrapper shell exits
+  and takes the job with it; the log had two lines and no process. Use the
+  tool's own `run_in_background`.
+- **Do not pipe the sweep through `tail`.** The output buffers, so nothing is
+  readable until it finishes, and the pass/fail lines are then truncated away.
+  Redirect to a file and read that.
