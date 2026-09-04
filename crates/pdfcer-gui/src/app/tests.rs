@@ -127,6 +127,17 @@ fn opened_with_a_form() -> PdfcerApp {
     let mut app = PdfcerApp::new();
     app.open_path(engine_fixture("forms-xobject/page-sized-form.pdf"));
     assert!(matches!(app.status, Status::Open(_)), "the fixture opens");
+    // ★★★ EDIT, and the mode is stated here rather than in each caller — every
+    // test built on this fixture drives a CONTENT-EDITING verb
+    // (`format.select_form`, `format.unshare_form`, `format.delete`).
+    //
+    // `PdfcerApp::new` starts in **Read**, so before 2026-09-03 these tests
+    // exercised those verbs in the mode that authors nothing, and passed —
+    // because `app::dispatch::format` had no capability guard on any of the
+    // three arms. **The suite had encoded the defect as expected behaviour**,
+    // which is the strongest evidence A18 was real: not a missing check, but
+    // several checks asserting the wrong thing and going green.
+    app.ribbon.set_mode("edit");
     app
 }
 
@@ -344,6 +355,70 @@ fn the_ribbon_delete_raises_the_delete_action() {
     // is where per-frame UI state lives.
     let ctx = egui::Context::default();
     let mut app = opened();
+    // ★★★ EDIT, EXPLICITLY — and until 2026-09-03 this line was not here and
+    // the test passed anyway, which is what made it evidence of a defect
+    // rather than a description of behaviour.
+    //
+    // `PdfcerApp::new` starts in **Read** ("Start in the first mode the
+    // manifest declares"). So this test was dispatching a content-editing verb
+    // in the mode whose whole promise is that it authors nothing, asserting
+    // that it raised `DeleteSelection`, and going green — because
+    // `dispatch::format`'s object arm had no capability guard at all.
+    //
+    // ⇒ **The suite had encoded the defect as expected behaviour.** That is
+    // the strongest single piece of evidence that A18 was real: not that a
+    // check was missing, but that four checks were asserting the wrong thing
+    // and passing. The mode is now stated, so what is under test is the verb
+    // rather than the absence of a guard.
+    app.ribbon.set_mode("edit");
+    // ★★★ EDIT, EXPLICITLY — and until 2026-09-03 this line was not here and
+    // the test passed anyway, which is what made it evidence of a defect
+    // rather than a description of behaviour.
+    //
+    // `PdfcerApp::new` starts in **Read** ("Start in the first mode the
+    // manifest declares"). So this test was dispatching a content-editing verb
+    // in the mode whose whole promise is that it authors nothing, asserting
+    // that it raised `DeleteSelection`, and going green — because
+    // `dispatch::format`'s object arm had no capability guard at all.
+    //
+    // ⇒ **The suite had encoded the defect as expected behaviour.** That is
+    // the strongest single piece of evidence that A18 was real: not that a
+    // check was missing, but that four checks were asserting the wrong thing
+    // and passing. The mode is now stated, so what is under test is the verb
+    // rather than the absence of a guard.
+    app.ribbon.set_mode("edit");
+    // ★★★ EDIT, EXPLICITLY — and until 2026-09-03 this line was not here and
+    // the test passed anyway, which is what made it evidence of a defect
+    // rather than a description of behaviour.
+    //
+    // `PdfcerApp::new` starts in **Read** ("Start in the first mode the
+    // manifest declares"). So this test was dispatching a content-editing verb
+    // in the mode whose whole promise is that it authors nothing, asserting
+    // that it raised `DeleteSelection`, and going green — because
+    // `dispatch::format`'s object arm had no capability guard at all.
+    //
+    // ⇒ **The suite had encoded the defect as expected behaviour.** That is
+    // the strongest single piece of evidence that A18 was real: not that a
+    // check was missing, but that four checks were asserting the wrong thing
+    // and passing. The mode is now stated, so what is under test is the verb
+    // rather than the absence of a guard.
+    app.ribbon.set_mode("edit");
+    // ★★★ EDIT, EXPLICITLY — and until 2026-09-03 this line was not here and
+    // the test passed anyway, which is what made it evidence of a defect
+    // rather than a description of behaviour.
+    //
+    // `PdfcerApp::new` starts in **Read** ("Start in the first mode the
+    // manifest declares"). So this test was dispatching a content-editing verb
+    // in the mode whose whole promise is that it authors nothing, asserting
+    // that it raised `DeleteSelection`, and going green — because
+    // `dispatch::format`'s object arm had no capability guard at all.
+    //
+    // ⇒ **The suite had encoded the defect as expected behaviour.** That is
+    // the strongest single piece of evidence that A18 was real: not that a
+    // check was missing, but that four checks were asserting the wrong thing
+    // and passing. The mode is now stated, so what is under test is the verb
+    // rather than the absence of a guard.
+    app.ribbon.set_mode("edit");
     let delete = token_for(&app, "format.delete");
 
     // Nothing selected: nothing raised. An empty batch would be an action

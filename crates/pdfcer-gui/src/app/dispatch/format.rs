@@ -202,7 +202,17 @@ pub(crate) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>)
                 // question. Locked (§12.5.3 bit 8) does nothing rather than
                 // raising an action the engine would refuse; the control
                 // itself should be absent, which is the Format tab's work.
-                if let Some(annot) = doc.selection.annot() {
+                if let Some(annot) = doc.selection.annot().filter(|_| {
+                    // ★ `author_markup`, NOT `edit_content` — one predicate per
+                    // capability, the rule `canvas::keys` states beside its own
+                    // pair. **Review must keep this**: deleting a markup is
+                    // exactly what Review is for, and a guard that reached for
+                    // `edit_content` here would take the working verb away from
+                    // the mode that owns it while leaving the broken one in
+                    // Read. The two capabilities are separate questions and
+                    // neither stands in for the other.
+                    app.capabilities().author_markup
+                }) {
                     // ★★★ R83 — ASKED HERE, THROUGH THE SAME FUNCTION THAT
                     // WITHHELD THE CONTROL.
                     //
@@ -245,6 +255,54 @@ pub(crate) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>)
                             },
                         )),
                     }
+                } else if !app.capabilities().edit_content {
+                    // ★★★ THE MODE, ASKED HERE, AND ITS ABSENCE DELETED PAGE
+                    // CONTENT IN READ — 2026-09-03.
+                    //
+                    // `canvas::keys`' Delete-key path has carried this guard
+                    // for weeks and argues it at length. This arm — the ribbon
+                    // and every other command route — had **none**, so:
+                    //
+                    //   Read mode › click a picture › Format ▸ Delete
+                    //     → `VectorAction::DeleteSelection`
+                    //
+                    // in the mode whose entire promise is that it authors
+                    // nothing. The keyboard refused and the button did it.
+                    //
+                    // ★★ WHY IT WAS UNREACHABLE AND THEN WAS NOT. Both files
+                    // once rested on the same argument — *"entering a mode
+                    // without the capability clears the selection, and no
+                    // gesture can build a new one."* `canvas::keys` wrote the
+                    // guard anyway and said why:
+                    //
+                    //   > "Delete is safe because nothing can be selected"
+                    //   > holds only for as long as its other half does, and
+                    //   > the other half is in a different file.
+                    //
+                    // **O71 falsified that other half nine days later.**
+                    // `canvas::clicking`'s image arm runs precisely when
+                    // `!caps.edit_content` — it exists so a reader can click a
+                    // picture and copy it — so from 2026-08-31 a content
+                    // selection has been reachable in Read, and every
+                    // condition built on `selection.any` has been set there.
+                    // The control was not greyed. It was **enabled**.
+                    //
+                    // ★ The compound is what makes this a data-loss defect
+                    // rather than an untidy one: `format.select_form` re-aims
+                    // the selection from one picture to the whole form
+                    // XObject, and `format.delete` then takes the lot. Click a
+                    // logo inside a title block in Read, and the title block
+                    // goes.
+                    //
+                    // ⇒ The lesson, which is why this comment is long: **a
+                    // guard justified as "unreachable in practice" is a claim
+                    // about a different file, and it decays without either
+                    // file changing.** `canvas::keys` was right to write it
+                    // anyway. This arm is the one that did not.
+                    crate::diag::trace(|| {
+                        // ui-text-exempt: diagnostic trace, never displayed in the UI
+                        "format-delete-declined reason=mode-cannot-edit-content".to_owned()
+                    });
                 } else {
                     let page = doc.view.page_index;
                     let objects = doc.selection.deletable_objects_on(page);
@@ -318,6 +376,17 @@ pub(crate) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>)
         // mean one thing always. `select_only` then replaces the selection
         // outright, which is the honest report: what you now have is the
         // form, and not the set you had before.
+        // ★ Guarded with the other two — 2026-09-03. Non-destructive on its
+        // own, but it is the FIRST HALF of the compound that made A18 a
+        // data-loss defect: in Read, click a picture inside a title block,
+        // `select_form` re-aims the selection from the one image to the whole
+        // form XObject, and `format.delete` then takes the lot.
+        "format.select_form" if !app.capabilities().edit_content => {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                "format-select-form-declined reason=mode-cannot-edit-content".to_owned()
+            });
+        }
         "format.select_form" => {
             if let Status::Open(doc) = &mut app.status {
                 let page = doc.view.page_index;
@@ -394,6 +463,14 @@ pub(crate) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>)
         // is not `record_inside_form`'s: that one reports a verb refusing
         // BECAUSE the selection is in a form, and this one refuses because it is
         // not. Reusing it would state the exact inverse of what happened.
+        // ★ Guarded — it WRITES TO THE DOCUMENT (`EditSession::unshare_form`),
+        // and had no mode check at all. Reachable from Read by the same route.
+        "format.unshare_form" if !app.capabilities().edit_content => {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                "format-unshare-declined reason=mode-cannot-edit-content".to_owned()
+            });
+        }
         "format.unshare_form" => {
             if let Status::Open(doc) = &app.status {
                 let page = doc.view.page_index;
