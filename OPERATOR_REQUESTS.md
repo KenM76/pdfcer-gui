@@ -149,13 +149,33 @@ they all call** rather than by a rule each must remember:
 - **Falsified**: with the crash planted back in, the same check that reported
   PASS now reports **FAIL** and quotes the panic line.
 
-### ◑ A2–A20 — under triage
+### ◑ A2–A20 — triaged in full: **[`REVIEW_TRIAGE.md`](REVIEW_TRIAGE.md)**
 
-Four agents are reading the findings against the source in parallel, classifying
-each as confirmed / already known / already decided against / partly wrong, with
-the mechanism at `file:line` and the blast radius counted. **Nothing else is
-being changed until that lands** — several recommendations touch `RIBBON_IA.md`,
-which is settled and is the operator's to amend, not this session's.
+Every finding read against the source, with the mechanism at `file:line` and the
+ruling quoted where the project already made one. **Five more fixed** beyond the
+crash (A3's real defect, A4, A5, A9's R9 hole, and the harness gap); thirteen
+confirmed and queued; seven already decided against with the reasoning quoted;
+**eight of the reviewer's statements are factually wrong** and are recorded as
+such so they do not become facts by repetition.
+
+★★★ **Five items are amendments to `RIBBON_IA.md`, which is settled and yours to
+rule on — none has been actioned.** The sharpest is **A10**: the review wants
+the four page-display buttons labelled, `RIBBON_SCALING.md` made them icon-only
+on a measurement, and **`RIBBON_IA.md:143-147` already argues the reviewer's
+side** — the two documents were never reconciled and the later one won by being
+later. That one wants a decision from you.
+
+★★ **The mockup's ribbon does not load.** It puts Fonts and Comments on two tabs
+each, and `no_command_appears_twice_on_the_tabs` refuses it. Most of the mock is
+the shipped manifest re-drawn; the genuinely new parts are a left icon rail
+(~1 week, and gated behind the R128 fit-zoom cache), a bundled typeface, a
+palette, and an 11 pt type floor.
+
+★ **The 65 proposed icons are good art with a false delivery claim** — not the
+asset format, six draw the wrong picture because the parser ignores
+`stroke-dasharray`, two fail a closed-set test, all 65 lack the rationale
+comment, and one is art for a command deleted six weeks ago. A day or two, not a
+copy.
 
 ★ One is already answered by inspection and is recorded here so it is not
 re-litigated: the **Keyboard shortcuts list does scroll** — 34 commands, 0
