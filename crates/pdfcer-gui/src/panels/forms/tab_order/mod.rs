@@ -240,13 +240,40 @@ pub(super) fn section(
     // document can carry an `/AcroForm` whose fields are all unreachable, and
     // that is equally nothing to order. The condition is what the section would
     // SHOW, not what it was handed.
-    // `total_rows` plus the orphan count, because both are things this section
-    // would have had something to say about. Zero of each is the honest
-    // "nothing to order" — and `fields_without_widgets` is deliberately part of
-    // it: a document whose only form content is fields with no widgets has
-    // nothing on any page to reorder, but it DOES have a disclosure this
-    // section is the only place that makes.
-    if listing.total_rows() == 0 && listing.fields_without_widgets == 0 {
+    // ★★★ EVERY THING THIS SECTION CAN SHOW, and the first version of this
+    // guard MISSED ONE — caught by the driven sweep on 2026-09-04, hours after
+    // it shipped.
+    //
+    // The guard exists for R9: on a document with no form fields — nearly every
+    // drawing this operator opens — the Tab-order header used to render over an
+    // empty listing, which is a disclosure triangle onto nothing.
+    //
+    // It first tested `total_rows() == 0 && fields_without_widgets == 0`. Both
+    // terms are real and neither covers **unclaimed widgets**:
+    //
+    //   · `total_rows()`            sums `PageTabs::rows` — fields WITH widgets
+    //   · `fields_without_widgets`  `/Fields` entries with no `/Widget` anywhere
+    //   · `PageTabs::unclaimed`     a `/Widget` no listed field owns  ← MISSED
+    //
+    // And unclaimed widgets are exactly what `register::rows` — called further
+    // down THIS function — exists to offer a Register control for. So on the
+    // one document shape that most needs it, a form's pages inserted into
+    // another document, the early return fired and **the Register rows were
+    // never drawn**. `adopt_widget_puts_a_form_control_back` reported it as
+    // *"2 unclaimed widget(s) are listed and no `adopt-row` line was traced"*.
+    //
+    // ★★ The lesson, and it is the reason for the length of this comment: an
+    // early return added to a function is a claim about **everything that
+    // function does**, not about the part that prompted it. I was thinking
+    // about the header and did not read as far as line 318. The condition now
+    // names all three sources, and the doc comment on `Listing` is where the
+    // list of them lives.
+    //
+    // ★ `anonymous` is deliberately NOT in the condition. A direct-dictionary
+    // `/Widget` has no identity to adopt, so `register::rows` can offer nothing
+    // for it; its disclosure belongs to a page that has other rows anyway.
+    let unclaimed: usize = listing.pages.iter().map(|p| p.unclaimed.len()).sum();
+    if listing.total_rows() == 0 && listing.fields_without_widgets == 0 && unclaimed == 0 {
         return;
     }
 

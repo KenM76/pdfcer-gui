@@ -1191,6 +1191,13 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(dialog_windows::DialogsOpenInTheirOwnWindow),
         Box::new(draft_selection::ShiftArrowsSelectText),
         Box::new(bookmark_add::BookmarkCanBeWritten),
+        // ★ Immediately after its sibling, because they are one assertion in
+        // two halves: that authoring is REACHABLE in Review, and that it is
+        // ABSENT in Read. Either alone is satisfied by a build that is simply
+        // wrong the other way — a panel that never draws the row passes the
+        // absence test, and one that draws it everywhere passes the presence
+        // test.
+        Box::new(bookmark_add::ReadModeOffersNoBookmarkAuthoring),
         Box::new(bookmark_edit::ABookmarkCanBeRenamedAndRemoved),
         Box::new(bookmark_move::ABookmarkCanBeDraggedAndABranchCollapsed),
         Box::new(attachments::AFileCanBeAttachedAndTakenBackOut),

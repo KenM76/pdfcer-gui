@@ -400,7 +400,46 @@ impl eframe::App for PdfcerApp {
         // published value rather than a fifth parameter threaded through two
         // call chains — and the obligation that comes with it: one writer, and
         // it is this line.
-        crate::app::modes::capability::publish_edit_content(&ctx, self.capabilities().edit_content);
+        let caps = self.capabilities();
+        crate::app::modes::capability::publish_edit_content(&ctx, caps.edit_content);
+        // ★★★ AND THE WHOLE SET, EVERY FRAME — 2026-09-04, and its absence was a
+        // defect I introduced the day before.
+        //
+        // `canvas::tool::store_capabilities` was called from exactly one place:
+        // `on_mode_capabilities_changed`, which runs **when the mode CHANGES**.
+        // Its own comment argued that was the right home — *"this is the ONE
+        // function that runs when the answer changes"* — and for a value read
+        // only after a mode switch it was.
+        //
+        // ⇒ **On a fresh launch nothing has changed.** The application starts in
+        // Read, no mode switch has happened, nothing was ever stored, and
+        // `canvas::tool::capabilities` returns its `Capabilities::FULL`
+        // fallback — a deliberately permissive default, chosen so a unit test
+        // with a bare `Context` is not silently gated.
+        //
+        // That was harmless while the only reader was `panels::tool::idle`,
+        // which uses it to pick a *sentence*. It stopped being harmless the
+        // moment `panels::bookmarks` used it to decide whether to draw the
+        // AUTHORING half of a panel: on first launch, in Read, the panel read
+        // FULL and drew Add, Rename, Remove, Copy and Cut — the exact defect
+        // that gating was written to remove, surviving in the one state an
+        // operator always starts in.
+        //
+        // ★★ The lesson is not "publish more". It is that a value stored **on
+        // change** has no value **before the first change**, and a permissive
+        // fallback turns that gap into a silently-ungated surface. A gate whose
+        // default is "allow" must be published unconditionally or not read at
+        // all.
+        //
+        // Beside `publish_edit_content` and for its stated reason: before
+        // anything draws, so no surface can read last frame's answer, and one
+        // writer. `store_capabilities` is an `insert_temp` of a `Copy` struct —
+        // the per-frame cost is a hash-map write.
+        //
+        // `on_mode_capabilities_changed` keeps its job: RETIRING what a new
+        // mode forbids. That is genuinely a change-triggered act and must not
+        // run every frame.
+        crate::canvas::tool::store_capabilities(&ctx, caps);
 
         // ★ Step 0c — clear any bitmap cursor, BEFORE anything draws.
         //
