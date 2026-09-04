@@ -80,6 +80,117 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
+## O117 — ◑ **OPEN 2026-09-04** — one driven check is FLAKY, which is a defect in the instrument
+
+`scrolling_far_keeps_the_canvas_its_pointer_input` **failed and then passed on
+the very next run, with identical arguments, against the same binary.**
+
+```
+run 1   FAIL   "2 pointer event(s) before the wheel and 2 after it"
+run 2   PASS   before: 1 pointer event(s) · after: 4 pointer event(s)
+```
+
+Its oracle is a **count of pointer events in the trace**, and the count it gets
+depends on how many the harness's synthetic mouse happens to generate in the
+settle window. That is timing, not behaviour.
+
+### ★★ Why this is filed rather than shrugged at
+
+A flaky check is the same defect as the bad `--doc-point` that produced six
+false reports on 2026-09-03 (O115), arriving by a different route: **it
+manufactures confident wrong bug reports at random.** This one already did — it
+is one of the six I filed and retracted, and I retracted it for the wrong
+reason. I attributed it to the page index. The page index was wrong *and* this
+check is flaky, and the second fact was hidden behind the first.
+
+★ **Two causes for one symptom, and finding the first one stopped me looking.**
+That is worth more than the fix: a retraction is not a licence to stop
+investigating.
+
+### What it needs
+
+An oracle that is a **relationship**, not a count. The question is *"does the
+canvas still receive pointer input after a long scroll"*, and the honest form is
+to send a known number of pointer events after scrolling and assert that number
+arrived — rather than comparing two opportunistic counts taken either side of a
+wheel. Until then it should assert nothing, because a check that is right two
+runs in three is worse than no check: it teaches people to re-run until green.
+
+---
+
+## O116 — ◑ **OPEN 2026-09-04** — an edit the engine refuses is SILENT: you type, you commit, nothing happens, nothing says why
+
+Found by the driven sweep — `text_edit_on_a_real_drawing`, on
+`four-pages.pdf` — and this one is real, reproducible, and **the founding
+defect class of this project**.
+
+### What happens
+
+1. Edit ▸ Edit text arms. ✅
+2. A click on the drawing's text places a caret — `text-edit-caret kind=Edit
+   page=0 run=0 len=10`. ✅
+3. Characters are typed and a plan is built. ✅
+4. The commit reaches the engine and the engine **refuses**:
+
+   > `R-INV-2: font 'AAAAAA+JetBrainsMono-Regular' is symbolic with a
+   > built-in/custom cmap and no usable /Encoding (§9.6.6.4 Branch B ignores
+   > /Encoding); its code↔glyph relation lives inside the embedded program,
+   > which pdfcer-core does not parse (R21). Editing is refused.`
+
+5. **The operator is told nothing at all.** The refusal goes to the trace.
+
+★★ The engine's verdict is *correct* and well-reasoned — this font genuinely
+cannot be edited safely. The defect is entirely on our side: the shell asks,
+is refused, and says nothing.
+
+### ★★★ It is already written down, at the site, as a deferral
+
+`app::actions::funnel`'s error arm:
+
+> *A refusal is a **decline**: nothing happened, and the sentence has to arrive
+> while the operator still believes it did. [...] That is `FEATURES.md`'s
+> "Worded decline" row, which wants its own decision about wording and
+> placement; this arm is where it lands when it is taken.*
+
+So this is a **known, argued deferral** rather than an oversight — and the
+argument for deferring it is good. What the sweep adds is that the deferral is
+now reachable **on an ordinary CAD drawing with an ordinary embedded font**,
+which is the case that makes it urgent rather than theoretical.
+
+★ It is also, precisely, the report this whole project was founded on: *"I did
+the thing and nothing happened and nothing told me why."* The old GUI's Delete
+key and its text tools both failed exactly this way.
+
+### What the fix is, and what it is not
+
+- **Not** `format!("{error}")`. `EditError`'s `Display` is diagnostic prose, and
+  `check-ui-strings.sh`'s exclusion 3 says in as many words that being a
+  `Display` impl *"is not permission to route UI text through an error type"*.
+- **Is** catalog work in `text/`: a sentence per refusal *category*, in the
+  operator's terms — *"this text is in a font pdfcer cannot edit safely"* rather
+  than *"R-INV-2 … §9.6.6.4 Branch B"*.
+- **Placement is decided**, and by the same comment: the decline channel, not
+  the disclosure row — *"an undone gesture and a completed one wearing the same
+  wording in the same place is worse than the trace-only state it replaced."*
+  `app::status::decline` is where it goes.
+
+### ⚠ The open question, and it is an engine one
+
+The categories have to come from somewhere. `EditError`'s variants are
+`pdfcer-core`'s, and wording one sentence per variant here would be a second
+catalog that drifts from theirs. **Ask the engine whether `EditError` can expose
+a stable, coarse `kind()`** — "unsupported font", "structure is frozen",
+"nothing matched" — that a front end may switch on without re-deriving
+diagnostic prose. That is a request to file, not a thing to guess.
+
+### The check that proves it
+
+`text_edit_on_a_real_drawing` fails today and names the whole chain, including
+that *"the shell half of this works"*. It is the regression test for the fix
+when the fix lands, and it should keep failing until it does.
+
+---
+
 ## O115 — ⛔ **RETRACTED 2026-09-04** — the "three defects the sweep found" were **my own bad argument**
 
 **This row claimed three, then six, operator-facing defects. There were none.
