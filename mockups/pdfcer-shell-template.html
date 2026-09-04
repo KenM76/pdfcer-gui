@@ -1,0 +1,1107 @@
+<title>pdfcer Shell — the four proposals, revised</title>
+<!--
+  ===================================================================
+  pdfcer-shell-template.html — SOURCE for mockups/pdfcer-shell.html
+  ===================================================================
+
+  WHAT THIS IS. A mockup of the pdfcer GUI shell, drawn to support ONE
+  scheduling decision: whether, and in what order, to build the four
+  shell-layout proposals analysed in `SHELL_LAYOUT_PROPOSAL.md`. Two
+  placeholders — {{SPRITE}} and {{GLYPHS}} — are filled by
+  `build-pdfcer-shell.py`. Do not edit `pdfcer-shell.html` directly; edit this
+  file and rebuild, or the next rebuild silently discards the edit.
+
+  ★★★ WHAT IT IS NOT. It is not the product, and it is not a specification.
+  A mock that drifts from the product is how a deleted feature comes back as a
+  picture of itself — which is not a hypothetical: the reviewer's original drew
+  a `Thin lines` toggle for a command deleted six weeks earlier, and it took a
+  deliberate re-read against the source to catch it (`GLYPH_ADOPTION.md`).
+  Every divergence from the shipped build in this file is therefore STATED, in
+  one line, in the legend drawer along the bottom of the mock — with its state:
+
+      SHIPPED    it is in the build today; the mock is not proposing it
+      PROPOSED   it is not built; the legend line carries the rank and cost
+      REJECTED   it was analysed and refused; the line carries the reason
+      NOTED      neither, but the operator should see it
+
+  A silent difference is the defect. A stated one is the deliverable.
+
+  HOW THE MOCK IS DRIVEN. All state lives in one `state` object and every
+  surface is re-rendered from it. The controls that change it are in the
+  "mock controls" bar at the bottom — deliberately NOT in the title bar, so
+  that nothing in the window chrome above is a control the product lacks.
+
+  COLOUR. The palette is the product's own, read from
+  `crates/egui-shell/src/theme/mod.rs`, not invented: three presets (Quiet,
+  Airy, Dark) with `accent` #175CC4 / #175CC4 / #4C9AFF and `selected_plate`
+  #A9BEDF / #B9CEED / #0B1726. A selected chrome control is ACCENT INK on an
+  OPAQUE PLATE — never white on a translucent wash, which was the D2 defect.
+
+  ★ THE ONE INVARIANT A DARK THEME IN THIS PRODUCT MUST HOLD: the page stays
+  white. `--paper` is #FFFFFF under every preset and is deliberately NOT
+  redefined in any preset block. A dark board is a dark BENCH; the sheet on it
+  is the document's own colour, and a PDF page is white. If a future edit ever
+  makes `--paper` follow the theme, that edit is wrong.
+
+  OFFLINE. The IBM Plex `<link>` is a progressive enhancement. Every font
+  token carries a real fallback stack (system-ui / Segoe UI / Consolas), so the
+  file reads correctly opened from disk with no network.
+-->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
+<style>
+/* ---------------------------------------------------------------------------
+   Palette. Every value below is read from crates/egui-shell/src/theme/mod.rs.
+   Roles, never colour names — `accent`, not `blue`.
+   --------------------------------------------------------------------------- */
+:root, .app[data-board="quiet"]{
+  --chrome:#F2F2F3;      /* Palette::surface  — the window ground            */
+  --chrome-2:#E8E8EA;    /* Palette::panel    — panels, bars, docks          */
+  --chrome-3:#DBDBDE;    /* hover, derived                                   */
+  --bench:#6E7074;       /* Palette::content_backdrop — the board            */
+  --ink:#1C1C1E;         /* Palette::text                                    */
+  --ink-quiet:#5E6066;   /* Palette::text_muted                              */
+  --line:#C4C6CA;        /* Palette::outline                                 */
+  --line-strong:#A6A9AF; /* derived                                          */
+  --accent:#175CC4;      /* Palette::accent                                  */
+  --plate:#A9BEDF;       /* Palette::selected_plate — OPAQUE. accent is ink. */
+  --warn:#B06A1A;        /* Palette::notice                                  */
+  --danger:#C02A2A;      /* Palette::danger                                  */
+}
+.app[data-board="airy"]{
+  --chrome:#FAFAFB; --chrome-2:#FFFFFF; --chrome-3:#EDEEF1; --bench:#8A8D93;
+  --ink:#24262B; --ink-quiet:#6C7078; --line:#DCDEE3; --line-strong:#B9BCC4;
+  --accent:#175CC4; --plate:#B9CEED; --warn:#B06A1A; --danger:#C02A2A;
+}
+.app[data-board="dark"]{
+  --chrome:#24262A; --chrome-2:#2E3136; --chrome-3:#3A3E45; --bench:#16171A;
+  --ink:#E6E8EC; --ink-quiet:#9A9EA6; --line:#44484F; --line-strong:#5C6068;
+  --accent:#4C9AFF; --plate:#0B1726; --warn:#E0A040; --danger:#FF6B6B;
+}
+/* ★ NOT inside any preset block, and that is the point. See the header. */
+:root{
+  --paper:#FFFFFF;
+  --sans:"IBM Plex Sans",system-ui,"Segoe UI",Arial,sans-serif;
+  --cond:"IBM Plex Sans Condensed","IBM Plex Sans",system-ui,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",Consolas,ui-monospace,monospace;
+}
+
+html,body{height:100%}
+body{margin:0;background:#1A1B1E;font-family:var(--sans);font-size:13px;line-height:1.3;color:#1C1C1E;overflow:hidden}
+*{box-sizing:border-box}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:default;text-align:left}
+svg.g{width:16px;height:16px;fill:none;stroke:currentColor;flex:none;display:block}
+.g.big{width:24px;height:24px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+kbd{font-family:var(--mono);font-size:.9em;border:1px solid var(--line-strong);border-radius:2px;padding:0 3px}
+.indic{font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-quiet);border:1px dashed var(--line-strong);border-radius:2px;padding:0 3px;vertical-align:1px}
+
+/* --------------------------------------------------------------------------
+   The window. Rows: titlebar · top strip · ribbon · doc tabs · body · status ·
+   mock-control bar · legend drawer. The last two are NOT the product.
+   -------------------------------------------------------------------------- */
+.app{position:fixed;inset:0;display:grid;
+     grid-template-rows:30px 34px 96px 26px minmax(0,1fr) 26px 30px auto;
+     background:var(--chrome);color:var(--ink);font-variant-numeric:tabular-nums;min-width:1100px}
+.titlebar{display:flex;align-items:center;gap:10px;padding:0 4px 0 10px;background:var(--chrome-2);border-bottom:1px solid var(--line);font-size:12px}
+.titlebar .name{flex:1}
+.titlebar .name b{font-weight:500}
+.titlebar .wc{display:flex}
+.titlebar .wc span{width:40px;text-align:center;color:var(--ink-quiet)}
+
+/* top strip: QAT · ribbon tabs · modes */
+.top{display:flex;align-items:stretch;padding:0 8px;border-bottom:1px solid var(--line)}
+.qat{display:flex;align-items:center;gap:2px;padding-right:10px;margin-right:6px;border-right:1px solid var(--line)}
+.qat button{width:26px;height:26px;display:grid;place-items:center;border-radius:2px}
+.qat button:hover{background:var(--chrome-3)}
+.tabs{display:flex;align-items:stretch;gap:2px}
+.tabs button{padding:0 10px;border-bottom:2px solid transparent;font-weight:500;color:var(--ink-quiet)}
+.tabs button:hover{color:var(--ink)}
+.tabs button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent);background:var(--plate)}
+.tabs button.ctx{font-style:italic}
+.modes{margin-left:auto;display:flex;align-self:center;border:1px solid var(--line-strong);border-radius:3px;overflow:hidden}
+.modes button{padding:4px 12px;font-weight:500;color:var(--ink-quiet)}
+.modes button+button{border-left:1px solid var(--line-strong)}
+.modes button[aria-pressed="true"]{background:var(--plate);color:var(--accent)}
+
+/* ribbon */
+.ribbon{display:flex;align-items:stretch;gap:0;padding:6px 8px 0;border-bottom:1px solid var(--line);overflow:hidden}
+.grp{display:flex;flex-direction:column;padding:0 10px 0 6px;border-right:1px solid var(--line);position:relative}
+.grp:last-child{border-right:0}
+.grp .cap{font-size:11px;color:var(--ink-quiet);text-align:center;margin-top:auto;padding:3px 0 5px;line-height:1.1}
+.grp .items{display:flex;gap:2px;align-items:flex-start}
+.grp .col{display:flex;flex-direction:column;gap:1px}
+.rb{display:flex;align-items:center;gap:6px;padding:3px 6px 3px 4px;border-radius:2px;font-size:12px;white-space:nowrap;border:1px solid transparent;height:22px}
+.rb:hover{background:var(--chrome-3)}
+.rb[aria-pressed="true"]{background:var(--plate);color:var(--accent);border-color:var(--plate)}
+.rb[disabled]{color:var(--ink-quiet);opacity:.45}
+.rb.big{flex-direction:column;justify-content:flex-start;gap:4px;height:56px;padding:5px 8px 2px;min-width:52px}
+.rb.big .lb{font-size:11px;line-height:1.1;text-align:center;white-space:normal;max-width:76px}
+.rb .car{width:10px;height:10px;margin-left:-2px}
+.app[data-labels="off"] .rb:not(.big) .lb{display:none}
+.app[data-labels="off"] .rb:not(.big){padding:3px 4px}
+.sw{width:14px;height:14px;border:1px solid var(--line-strong);border-radius:2px}
+.rb.big .sw{width:24px;height:16px}
+
+/* document tabs */
+.doctabs{display:flex;align-items:flex-end;gap:2px;padding:0 8px;background:var(--chrome-2);border-bottom:1px solid var(--line)}
+.doctab{display:flex;align-items:center;gap:8px;padding:3px 8px 3px 10px;font-size:12px;color:var(--ink-quiet);border:1px solid transparent;border-bottom:0;border-radius:3px 3px 0 0}
+.doctab[aria-selected="true"]{background:var(--chrome);color:var(--ink);border-color:var(--line);margin-bottom:-1px}
+/* The unsaved-edits marker is a bullet, not a glyph — a settled copy decision
+   with three stated grounds. `modified` art was proposed and deferred. */
+.doctab .dot{color:var(--accent);font-size:15px;line-height:0}
+.doctab .x{width:12px;height:12px;color:var(--ink-quiet)}
+
+/* --------------------------------------------------------------------------
+   Body. Columns depend on two knobs: the left arrangement (rail vs one
+   five-tab stack) and the right dock's width (320 today vs 360 proposed).
+   -------------------------------------------------------------------------- */
+.body{display:grid;min-height:0;grid-template-columns:52px 228px minmax(0,1fr) 320px}
+/* ★ EXPLICIT COLUMNS, and the reason is a defect this mock actually had.
+   The rail is hidden with `display:none` in the five-tab arrangement — and a
+   `display:none` child is not a grid item at all, so auto-placement silently
+   shifted the panel, the canvas and the dock one column to the LEFT. The
+   result rendered without an error: a 0 pt panel, a 280 pt canvas, a dock in
+   the canvas's 1fr track and 360 pt of empty ground at the right edge. It was
+   invisible in the source and obvious in the screenshot, which is this
+   project's standing rule about layout defects having exactly one oracle. */
+.rail{grid-column:1}.panel{grid-column:2}.canvas{grid-column:3}.dock{grid-column:4}
+.app[data-left="tabs"] .body{grid-template-columns:0 280px minmax(0,1fr) 320px}
+.app[data-dock="360"] .body{grid-template-columns:52px 228px minmax(0,1fr) 360px}
+.app[data-left="tabs"][data-dock="360"] .body{grid-template-columns:0 280px minmax(0,1fr) 360px}
+
+/* the rail. Its width is a CONSTANT — see the legend's R128 line. */
+.rail{grid-column:1;display:flex;flex-direction:column;gap:2px;padding:6px 4px;border-right:1px solid var(--line);background:var(--chrome-2);overflow:hidden}
+.app[data-left="tabs"] .rail{display:none}
+.rail button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0 5px;border-radius:2px;font-size:9.5px;color:var(--ink-quiet);border-left:2px solid transparent;text-align:center}
+.rail button:hover{color:var(--ink)}
+.rail button[aria-selected="true"]{color:var(--accent);border-left-color:var(--accent);background:var(--plate)}
+.rail .spacer{flex:1}
+
+.panel{grid-column:2;border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;background:var(--chrome-2)}
+/* the cheap 80 %: one stack, five tabs, at 280 pt — and its overflow chevron */
+.tabbar{display:flex;align-items:stretch;height:24px;border-bottom:1px solid var(--line);background:var(--chrome-2);overflow:hidden;flex:none}
+.tabbar button{display:flex;align-items:center;gap:4px;padding:0 7px;font-size:11.5px;color:var(--ink-quiet);border-right:1px solid var(--line);white-space:nowrap}
+.tabbar button[aria-selected="true"]{background:var(--plate);color:var(--accent)}
+/* The overflow marker never shrinks; the last TAB truncates instead. Getting
+   this backwards reproduces Inkscape failure mode #8 — "past ~6 tabs the
+   overflow button itself gets hidden" — which is a defect, not a demo. */
+.tabbar button:not(.more){min-width:0;overflow:hidden}
+.tabbar .more{margin-left:auto;border-right:0;color:var(--ink-quiet);font-family:var(--mono);font-size:11px;flex:none}
+.ph{display:flex;align-items:center;gap:8px;padding:5px 8px 5px 10px;font-size:13.5px;font-weight:600;border-bottom:1px solid var(--line);font-family:var(--cond);flex:none;background:var(--chrome-2)}
+.ph .n{font-weight:400;color:var(--ink-quiet);font-family:var(--sans);font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ph .tools{margin-left:auto;display:flex;gap:2px;flex:none}
+.ph .tools button{width:20px;height:20px;display:grid;place-items:center;color:var(--ink-quiet);border-radius:2px}
+.ph .tools button:hover{background:var(--chrome-3);color:var(--ink)}
+.pb{padding:8px 10px;overflow:auto;font-size:12px;color:var(--ink);min-height:0}
+.thumbs{display:grid;grid-template-columns:1fr;gap:10px}
+.thumb{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:var(--ink-quiet)}
+.thumb .pg{width:100%;aspect-ratio:1.414;background:var(--paper);border:1px solid var(--line-strong);position:relative}
+.thumb[aria-selected="true"] .pg{outline:2px solid var(--accent);outline-offset:1px}
+.thumb .pg i{position:absolute;right:0;bottom:0;width:38%;height:22%;border-top:2px solid #C8451E;border-left:1px solid var(--line-strong);background:#fff}
+.empty{color:var(--ink-quiet)}
+.lrow{display:flex;align-items:center;gap:7px;padding:3px 0;font-size:12px}
+.lrow .cb{width:13px;height:13px;border:1px solid var(--line-strong);border-radius:2px;display:grid;place-items:center;flex:none;color:var(--accent)}
+.lrow .cb.on{background:var(--plate);border-color:var(--accent)}
+.lrow .cb.off{opacity:.45}
+/* R9 + the padlock's own ruling: drawn ONLY on a locked row, and in
+   text_muted rather than the accent, because /Locked is the producer's
+   recorded intent and not a state of the application. */
+.lrow .pad{color:var(--ink-quiet);flex:none}
+.cap{font-size:10.5px;color:var(--ink-quiet);padding:6px 0 0;line-height:1.35}
+
+/* --------------------------------------------------------------------------
+   Canvas: bench, rulers, paper.
+   -------------------------------------------------------------------------- */
+.canvas{grid-column:3;position:relative;background:var(--bench);min-height:0;overflow:hidden}
+.ruler{position:absolute;background:var(--chrome-2);color:var(--ink-quiet);font-size:9px;font-family:var(--mono);z-index:2}
+.ruler.h{left:18px;right:0;top:0;height:18px;border-bottom:1px solid var(--line-strong)}
+.ruler.v{top:18px;bottom:0;left:0;width:18px;border-right:1px solid var(--line-strong)}
+.ruler.c{left:0;top:0;width:18px;height:18px;border-right:1px solid var(--line-strong);border-bottom:1px solid var(--line-strong)}
+.ruler svg{position:absolute;inset:0;width:100%;height:100%}
+.app[data-rulers="off"] .ruler{display:none}
+.sheet{position:absolute;left:18px;top:18px;right:0;bottom:0;display:grid;place-items:center;padding:20px}
+.app[data-rulers="off"] .sheet{left:0;top:0}
+.sheet svg{max-width:100%;max-height:100%;display:block}
+/* ★ The page is white on every board. Not themed, deliberately. */
+.canvas .paper{fill:var(--paper)}
+
+/* --------------------------------------------------------------------------
+   Right dock.
+   -------------------------------------------------------------------------- */
+.dock{grid-column:4;display:flex;flex-direction:column;border-left:1px solid var(--line);min-height:0;background:var(--chrome-2)}
+/* The SALVAGE of proposal 3: the armed tool's identity + stage line as a
+   per-side dock BANNER — chrome drawn over the columns, not a stack, because
+   a 28 pt stack is illegal (MIN_STACK_HEIGHT = 80). It is an ADDITION; it
+   takes nothing away from the Tool panel below it. */
+.banner{display:flex;align-items:center;gap:7px;padding:4px 8px 4px 10px;border-bottom:1px solid var(--line);font-size:12px;background:var(--chrome);flex:none;height:28px;white-space:nowrap;overflow:hidden}
+.banner b{font-weight:600}
+.banner .st{color:var(--ink-quiet);overflow:hidden;text-overflow:ellipsis}
+.banner.armed{color:var(--accent);background:var(--plate)}
+.banner.armed .st{color:var(--accent)}
+.banner .tagp{margin-left:auto;flex:none}
+/* An in-place mark on a surface the product does NOT have. The legend says it
+   in words; this says it where the operator is looking. Both, deliberately:
+   a legend entry nobody scrolls to is the same as no legend entry. */
+.tagp{font-size:8.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--accent);border:1px dashed var(--accent);border-radius:2px;padding:0 3px;line-height:1.5;opacity:.85}
+.rail .tagp{margin:4px 1px 2px;text-align:center;display:block;font-size:7px;letter-spacing:0;padding:0 1px;overflow:hidden}
+.stack{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.rows{overflow:auto;flex:1;min-height:0}
+/* Rows are deliberately NOT ellipsised: the shipped panel puts them in a
+   ScrollArea::both() and measures each row's intrinsic width. At 320 pt they
+   run past the pane's right edge and are HARD CLIPPED mid-character — which
+   is the defect the reviewer photographed and read as "ours lists less". */
+.row{display:grid;grid-template-columns:1fr;gap:6px;align-items:center;padding:3px 10px;font-size:12px;border-bottom:1px solid var(--chrome);white-space:nowrap;overflow:hidden}
+.app[data-dock="360"] .row{grid-template-columns:18px 34px 1fr}
+.app[data-dock="320"] .row .g,.app[data-dock="320"] .row .id{display:none}
+.row .id{font-family:var(--mono);color:var(--ink-quiet);font-size:11px}
+.row .t{overflow:hidden}
+.row .t i{font-style:normal;color:var(--ink-quiet)}
+.row[aria-selected="true"]{background:var(--plate);color:var(--accent)}
+.row[aria-selected="true"] .id,.row[aria-selected="true"] .t i{color:var(--accent)}
+.split{height:6px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--chrome);cursor:row-resize;display:grid;place-items:center;flex:none}
+.split i{width:28px;height:2px;background:var(--line-strong);border-radius:1px}
+.props{overflow:auto;flex:1;min-height:0;font-size:12px}
+.sec{padding:7px 10px 3px;font-size:10.5px;color:var(--ink-quiet);text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:4px}
+.sec .g{width:12px;height:12px}
+.kv{display:grid;grid-template-columns:88px 1fr;gap:3px 8px;padding:0 10px 6px 22px}
+.kv div:nth-child(odd){color:var(--ink-quiet)}
+.kv div:nth-child(even){font-family:var(--mono);font-size:11.5px;text-align:right;padding-right:4px}
+.kv div.tx{font-family:var(--sans);font-size:12px;text-align:left;padding-right:0}
+.kv input{width:100%;font:inherit;color:inherit;background:var(--chrome);border:1px solid var(--line);padding:1px 5px;text-align:right;font-family:var(--mono);font-size:11.5px}
+.comment{padding:7px 10px;border-bottom:1px solid var(--chrome)}
+.comment .who{font-size:11px;color:var(--ink-quiet)}
+.comment .acts{display:flex;gap:4px;margin-top:4px}
+.comment .acts button{font-size:11px;padding:1px 6px;border:1px solid var(--line-strong);border-radius:2px;color:var(--ink-quiet)}
+.field{display:grid;grid-template-columns:1fr;gap:3px;padding:6px 10px}
+.field label{font-size:11px;color:var(--ink-quiet)}
+.field input{font:inherit;padding:3px 6px;border:1px solid var(--line);background:var(--paper);color:#1C1C1E}
+/* the Tool panel — the thing the one-line strip would have deleted */
+.tool{overflow:auto;flex:1;min-height:0;font-size:12px;padding:6px 10px 8px}
+.tool h4{font-family:var(--cond);font-size:12.5px;font-weight:600;margin:0 0 2px}
+.tool .lead{color:var(--ink-quiet);margin-bottom:8px;white-space:normal;line-height:1.35}
+.trow{display:grid;grid-template-columns:22px 1fr;gap:6px;margin-bottom:6px;align-items:start}
+.trow .tb{width:22px;height:22px;display:grid;place-items:center;border:1px solid var(--line-strong);border-radius:2px}
+.trow .tb[aria-pressed="true"]{background:var(--plate);color:var(--accent);border-color:var(--accent)}
+.trow .s{white-space:normal;line-height:1.3}
+.trow .ch{color:var(--ink-quiet);font-size:11px;font-family:var(--mono)}
+.opt{display:flex;align-items:center;gap:6px;padding:2px 0;white-space:normal}
+.opt .cb{width:13px;height:13px;border:1px solid var(--line-strong);border-radius:2px;display:grid;place-items:center;flex:none;color:var(--accent)}
+.opt .cb.on{background:var(--plate);border-color:var(--accent)}
+.pick{display:grid;grid-template-columns:52px 1fr;gap:4px 6px;align-items:center;margin:4px 0 6px}
+.pick label{color:var(--ink-quiet);font-size:11px}
+.pick select,.pick input{font:inherit;font-size:11.5px;padding:1px 4px;border:1px solid var(--line);background:var(--chrome);color:var(--ink);width:100%}
+.pick .swatch{width:100%;height:18px;border:1px solid var(--line-strong);border-radius:2px;background:#175CC4}
+.putdown{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border:1px solid var(--line-strong);border-radius:2px;font-size:11.5px;margin-top:4px}
+.disc{margin-top:10px;padding-top:8px;border-top:1px solid var(--line);color:var(--warn);white-space:normal;line-height:1.4;font-size:11.5px}
+
+/* --------------------------------------------------------------------------
+   Status bar.
+   -------------------------------------------------------------------------- */
+.status{display:flex;align-items:center;gap:2px;padding:0 6px;border-top:1px solid var(--line);background:var(--chrome-2);font-size:12px;overflow:hidden}
+.sb{display:flex;align-items:center;gap:5px;padding:2px 6px;border-radius:2px;height:20px;white-space:nowrap}
+.sb:hover{background:var(--chrome-3)}
+.sb[aria-pressed="true"]{background:var(--plate);color:var(--accent)}
+.sb.note{color:var(--warn)}
+.sb.info{color:var(--ink-quiet)}
+.sep{width:1px;height:14px;background:var(--line);margin:0 4px}
+.status .grow{flex:1}
+.zoom{font-family:var(--mono);min-width:56px;text-align:center}
+.pageno{display:flex;align-items:center;gap:4px;font-family:var(--mono);font-size:12px}
+.pageno input{width:34px;text-align:center;font:inherit;background:var(--chrome);color:var(--ink);border:1px solid var(--line);padding:1px 2px}
+
+/* --------------------------------------------------------------------------
+   MOCK FURNITURE — everything below this line is the mockup's own scaffolding
+   and has NO counterpart in the product. It is styled to look unmistakably
+   unlike the shell above it so that no screenshot can confuse the two.
+   -------------------------------------------------------------------------- */
+.mockbar{display:flex;align-items:center;gap:6px;padding:0 8px;background:#1A1B1E;color:#C9CBD0;font-size:11px;border-top:2px solid #4C9AFF;overflow-x:auto}
+.mockbar .lbl{color:#7E838C;letter-spacing:.06em;text-transform:uppercase;font-size:9.5px;flex:none}
+.mockbar .seg{display:flex;border:1px solid #3A3E45;border-radius:3px;overflow:hidden;flex:none}
+.mockbar .seg button{padding:2px 8px;color:#C9CBD0;white-space:nowrap}
+.mockbar .seg button+button{border-left:1px solid #3A3E45}
+.mockbar .seg button[aria-pressed="true"]{background:#4C9AFF;color:#0B1726;font-weight:600}
+.mockbar>button.tg{padding:2px 8px;border:1px solid #3A3E45;border-radius:3px;color:#C9CBD0;white-space:nowrap;flex:none}
+.mockbar>button.tg[aria-pressed="true"]{background:#4C9AFF;color:#0B1726;font-weight:600}
+.mockbar .push{flex:1;min-width:8px}
+
+.legend{background:#121316;color:#D6D8DC;overflow:auto;height:236px;padding:10px 12px 14px;border-top:1px solid #2B2E34}
+.legend[hidden]{display:none}
+.legend h2{font-family:var(--cond);font-size:14px;margin:0 0 2px;color:#FFF;font-weight:600}
+.legend .sub{color:#8B9098;font-size:11px;margin-bottom:9px;line-height:1.4;max-width:1240px}
+.legend .sub em{color:#C6CAD1;font-style:normal}
+/* The first thing on screen is the decision, not the evidence — the detail
+   grid below is 22 lines and the drawer shows about six of them at once. */
+.verdict{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:4px 0 8px;font-size:11px}
+.verdict .v{padding:2px 9px;border-radius:10px;font-size:10.5px;letter-spacing:.03em}
+.verdict .v b{font-size:12px}
+.verdict .v.shipped{background:#123A20;color:#7FD79A;border:1px solid #1E6236}
+.verdict .v.proposed{background:#0B2647;color:#7FB6FF;border:1px solid #1C4E8C}
+.verdict .v.rejected{background:#3A1414;color:#FF9C9C;border:1px solid #7A2626}
+.verdict .v.noted{background:#2A2214;color:#E0BE7C;border:1px solid #5C4A22}
+.verdict .rank{color:#9AA0A8;flex:1;min-width:420px;line-height:1.4}
+.verdict .rank b{color:#F0F1F3}
+.verdict .rank em{color:#C6CAD1;font-style:normal}
+.lgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(370px,1fr));gap:6px 14px;align-items:start}
+.li{display:grid;grid-template-columns:78px 1fr;gap:8px;padding:5px 0;border-top:1px solid #23262B;align-items:start}
+.li .chip{font-size:9px;letter-spacing:.07em;text-transform:uppercase;font-weight:700;text-align:center;padding:2px 0;border-radius:2px;margin-top:1px}
+.li .t{font-size:12px;color:#F0F1F3;font-weight:600;line-height:1.3}
+.li .w{font-size:11px;color:#9AA0A8;line-height:1.42;margin-top:2px}
+.li .w em{color:#C6CAD1;font-style:normal}
+.li .r{font-family:var(--mono);font-size:9.5px;color:#666C75}
+.li.shipped  .chip{background:#123A20;color:#7FD79A;border:1px solid #1E6236}
+.li.proposed .chip{background:#0B2647;color:#7FB6FF;border:1px solid #1C4E8C}
+.li.rejected .chip{background:#3A1414;color:#FF9C9C;border:1px solid #7A2626}
+.li.noted    .chip{background:#2A2214;color:#E0BE7C;border:1px solid #5C4A22}
+.li.proposed .t::after{content:" ";}
+
+/* glyph sheet overlay */
+.sheetov{position:fixed;inset:0;background:var(--chrome);color:var(--ink);z-index:10;display:flex;flex-direction:column;font-variant-numeric:tabular-nums}
+.sheetov[hidden]{display:none}
+.sheetov header{display:flex;align-items:center;gap:14px;padding:12px 20px;border-bottom:2px solid var(--ink)}
+.sheetov h1{font-family:var(--cond);font-size:22px;margin:0;font-weight:600}
+.sheetov .sum{color:var(--ink-quiet);font-size:12px;max-width:640px;line-height:1.4}
+.sheetov input{margin-left:auto;font:inherit;padding:4px 8px;border:1px solid var(--line);background:var(--paper);color:#1C1C1E;width:220px}
+.sheetov header button{padding:4px 10px;border:1px solid var(--line-strong);border-radius:2px;font-size:12px}
+.grid{overflow:auto;padding:14px 20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;align-content:start}
+.cell{border:1px solid var(--line);padding:9px 8px 7px;display:flex;flex-direction:column;align-items:center;gap:5px;background:var(--chrome-2)}
+.cell .g{width:30px;height:30px}
+.cell .g.s{width:16px;height:16px;margin-top:-2px}
+.cell .nm{font-family:var(--mono);font-size:10px;text-align:center;word-break:break-all}
+.cell .or{font-size:9px;color:var(--ink-quiet);letter-spacing:.05em;text-transform:uppercase;text-align:center}
+.cell .wy{font-size:9.5px;color:var(--ink-quiet);text-align:center;line-height:1.3}
+.cell.proposed{border-color:var(--warn);border-style:dashed}
+.cell.proposed .or{color:var(--warn)}
+.cell.alias{border-color:var(--accent)}
+.cell.alias .or{color:var(--accent)}
+</style>
+
+{{SPRITE}}
+
+<div class="app" id="app" data-mode="edit" data-tab="view" data-board="quiet"
+     data-labels="on" data-left="rail" data-dock="320" data-rulers="on">
+
+  <div class="titlebar">
+    <svg class="g" style="color:var(--accent)"><use href="#g-document"/></svg>
+    <div class="name"><b>a1-titleblock.pdf</b> — pdfcer — Edit</div>
+    <div class="wc"><span>—</span><span>▢</span><span>✕</span></div>
+  </div>
+
+  <div class="top">
+    <div class="qat">
+      <button title="Open… (Ctrl+O)"><svg class="g"><use href="#g-folder"/></svg></button>
+      <button title="Save (Ctrl+S)"><svg class="g"><use href="#g-save"/></svg></button>
+      <button title="Undo (Ctrl+Z)"><svg class="g"><use href="#g-undo"/></svg></button>
+      <button title="Redo (Ctrl+Y)"><svg class="g"><use href="#g-redo"/></svg></button>
+    </div>
+    <div class="tabs" id="tabs" role="tablist"></div>
+    <div class="modes" role="group" aria-label="Mode">
+      <button data-mode="read">Read</button><button data-mode="review">Review</button><button data-mode="edit" aria-pressed="true">Edit</button>
+    </div>
+  </div>
+
+  <div class="ribbon" id="ribbon"></div>
+
+  <div class="doctabs">
+    <div class="doctab" aria-selected="true"><span class="dot" title="Unsaved changes">&bull;</span>a1-titleblock.pdf<svg class="g x"><use href="#g-close"/></svg></div>
+    <div class="doctab">synthetic-image-only-8pages.pdf<svg class="g x"><use href="#g-close"/></svg></div>
+  </div>
+
+  <div class="body">
+    <div class="rail" id="rail" role="tablist" aria-orientation="vertical"></div>
+    <div class="panel" id="leftpanel"></div>
+    <div class="canvas">
+      <div class="ruler c"></div>
+      <div class="ruler h"><svg id="rulerH"></svg></div>
+      <div class="ruler v"><svg id="rulerV"></svg></div>
+      <div class="sheet" id="sheet"></div>
+    </div>
+    <div class="dock" id="dock"></div>
+  </div>
+
+  <div class="status" id="status"></div>
+
+  <!-- ============ mock controls — not the product ============ -->
+  <div class="mockbar" id="mockbar"></div>
+  <div class="legend" id="legend"></div>
+</div>
+
+<div class="sheetov" id="sheetov" hidden>
+  <header>
+    <h1>Glyph sheet</h1>
+    <div class="sum" id="sheetsum"></div>
+    <input id="sheetq" placeholder="Filter by name…" aria-label="Filter glyphs">
+    <button id="kSheetClose">Back to the shell</button>
+  </header>
+  <div class="grid" id="sheetgrid"></div>
+</div>
+
+<script>
+/* ======================================================================
+   glyph inventory — written by build-pdfcer-shell.py from the PRODUCT'S OWN
+   assets plus the review's un-adopted proposals. Never hand-edited.
+   ====================================================================== */
+const GLYPHS = {{GLYPHS}};
+
+const $ = (s, r=document) => r.querySelector(s);
+const g = (name, cls='') => `<svg class="g ${cls}" aria-hidden="true"><use href="#g-${name}"/></svg>`;
+const app = $('#app');
+
+const state = {
+  mode:'edit', tab:'view', selection:true, facing:false,
+  leftPanel:'pages', left:'rail',        /* rail | tabs  (proposal 1 vs the cheap 80 %) */
+  dock:'320',                            /* 320 today | 360 proposed  (proposal 2)      */
+  rulers:true,                           /* shipped, ships OFF — see the legend         */
+  armed:false,                           /* arm a tool to see what the strip deletes    */
+  toolTab:false,                         /* Tool as a tab of the Objects stack          */
+  labels:true, board:'quiet', legend:true, pageDisplay:'scroll', wheelFlip:false
+};
+
+/* ======================================================================
+   THE RIBBON AS DATA. One command, one tab (shell rule P1).
+   item: [label, glyph, opts]   opts: big, on, dis, menu, swatch, radio, noicon
+   `noicon` means the command registers with NO icon in the shipped catalog.
+   Drawing art there would be inventing a decision — see `select-all` and
+   `actual-size` in GLYPH_ADOPTION.md's deferred list.
+   ====================================================================== */
+const TABS = [
+ {id:'file', label:'File', modes:['read','review','edit'], groups:[
+   {cap:'File', items:[['New','new-document',{big:1}],['Open…','folder',{big:1}],[['New from template…','new-from-template'],['Recent','recent',{menu:1}],['Close','close']]]},
+   {cap:'Recognise', items:[['Recognise text…','recognise-text',{big:1}]]},
+   {cap:'Save', items:[['Save','save',{big:1}],[['Save as…','save-as'],['Save a copy…','save-copy'],['Save a compacted copy…','save-compact']]]},
+   {cap:'Export', items:[[['Export DXF…','download'],['Export form data…','download'],['Import form data…','upload']],[['Copy page text','copy-page-text'],['Copy document text','copy-document-text']]]},
+   {cap:'Print', items:[['Print…','printer',{big:1}]]},
+   {cap:'Document', items:[['Document','document',{big:1,menu:1}],[['Properties','properties'],['Fonts','fonts']]]},
+   /* `Help` removed: there is no Help command, no help dialog and no
+      documentation target anywhere in the build. A control with nothing
+      behind it is exactly what R9 forbids. */
+   {cap:'pdfcer', items:[['Settings…','settings',{big:1}]]},
+ ]},
+ {id:'view', label:'View', modes:['read','review','edit'], groups:[
+   {cap:'Page display', items:[[['Single','page-single',{radio:'pd'}],['Scroll','page-continuous',{radio:'pd',on:1}]],[['Facing','page-facing',{radio:'pd'}],['Facing scroll','page-facing-continuous',{radio:'pd'}]]]},
+   {cap:'Navigate', items:[['Select','pointer',{big:1,radio:'tool',on:1}],['Points','show-points',{big:1,radio:'tool',editOnly:1}],['Text','text-select',{big:1,radio:'tool'}],['Hand','hand',{big:1,radio:'tool'}]]},
+   /* `Actual size` draws no icon: view.zoom_actual registers without one and
+      the `actual-size` art was DEFERRED, not adopted. */
+   {cap:'Zoom', items:[[['Actual size',null,{noicon:1}],['Fit page','fit-page'],['Fit width','fit-width']],[['Fit height','fit-height'],['Zoom to selection','zoom-selection',{needsSel:1}],['Zoom to region','zoom-region']]]},
+   /* ★ `Thin lines` REMOVED. Art for a command deleted six weeks ago: no such
+      field on RenderOptions, no such command in the tree. */
+   {cap:'Display', items:[[['Comments','comment',{toggle:1,on:1}],['Points','show-points',{toggle:1}]],[['Rulers','rulers',{toggle:1,rulers:1}],['Grid','grid',{toggle:1}],['Guides','guides',{toggle:1}]]]},
+   {cap:'Panels', items:[[['Pages','pages',{toggle:1,on:1}],['Bookmarks','bookmarks',{toggle:1}],['Layers','layers',{toggle:1}]],[['Objects','edit-objects',{toggle:1,on:1}],['Properties','properties',{toggle:1,on:1}],['Comments','comment',{toggle:1}]],[['Fill form','forms',{toggle:1}],['Signatures','signatures',{toggle:1}],['Fonts','fonts',{toggle:1}]]]},
+   {cap:'Window', items:[[['Previous document','document-previous'],['Next document','document-next'],['Close others','close-others']],[['Read mode','read-mode'],['Full screen','fullscreen'],['Reset layout','reset-layout']]]},
+ ]},
+ {id:'pages', label:'Pages', modes:['review','edit'], groups:[
+   /* `insert-pages` is an ALIAS: it draws upload.svg (mapping.rs:271). */
+   {cap:'Insert', items:[['Insert from file…','insert-pages',{big:1}]]},
+   {cap:'Clipboard', items:[['Cut pages','scissors',{big:1}],['Copy pages','copy',{big:1}],['Paste pages','paste',{big:1}]]},
+   /* Move up/down draw the chevrons — their own role, not borrowed art. */
+   {cap:'Organise', items:[[['Delete pages','delete'],['Extract…','page-extract'],['Merge into this document…','merge']],[['Move up','chevron-up'],['Move down','chevron-down']]]},
+   {cap:'Transform', items:[['Rotate left','rotate-ccw',{big:1}],['Rotate right','rotate-cw',{big:1}]]},
+ ]},
+ {id:'edit', label:'Edit', modes:['edit'], groups:[
+   /* `Select all` draws no icon — edit.select_all registers without one and
+      `select-all` was deliberately NOT adopted. */
+   {cap:'Content', items:[[['Select all',null,{noicon:1}],['Reflow paragraph','reflow']],['Edit text','edit',{big:1}],['Add text','add-text',{big:1}]]},
+   {cap:'Insert', items:[['Image…','image',{big:1}],['Attachments','attachment',{big:1}]]},
+   {cap:'Clipboard', items:[[['Cut','cut'],['Copy','copy'],['Paste','paste']]]},
+   /* Four form-field tools, four distinct glyphs since 2026-09-04 — they all
+      borrowed `form-field` before. */
+   {cap:'Forms', items:[[['Text field','form-field'],['Check box','check-box'],['Radio button','radio-button'],['Drop-down','drop-down']],[['Button','push-button',{dis:1}],['Manage fields','list'],['Flatten','form-flatten']]]},
+   {cap:'Protect', items:[['Redact','redact',{big:1}],[['Redact selection','redact-selection',{needsSel:1}],['Apply redactions','apply-redactions']]]},
+ ]},
+ {id:'markup', label:'Markup', modes:['review','edit'], groups:[
+   {cap:'Shapes', items:[[['Rectangle','shape-rect',{radio:'shape'}],['Ellipse','shape-ellipse',{radio:'shape'}],['Arrow','shape-arrow',{radio:'shape'}],['Polyline','shape-polyline',{radio:'shape'}]],[['Polygon','shape-polygon',{radio:'shape'}],['Cloud','shape-cloud',{radio:'shape'}],['Freehand','shape-ink',{radio:'shape'}],['Finish shape','finish-shape',{dis:1}]]]},
+   {cap:'Text markup', items:[[['Highlight','shape-highlight'],['Underline','text-underline']],[['Strikeout','text-strikeout'],['Squiggly','text-squiggly']]]},
+   {cap:'Notes', items:[['Text box','text-freetext',{big:1}],['Sticky note','text-sticky',{big:1}],['Stamp','stamp',{big:1}]]},
+   /* Colour is not a command and cannot take an icon; line width and opacity
+      are drag values with no icon slot. All four proposed glyphs deferred. */
+   {cap:'Style', items:[[['Stroke',null,{swatch:'#C8451E'}],['Fill',null,{swatch:'#F2D64B'}]],[['2.0 pt',null,{menu:1,noicon:1}],['100 %',null,{menu:1,noicon:1}]]]},
+   {cap:'Comments', items:[['Comments','comment',{big:1,toggle:1}]]},
+ ]},
+ {id:'measure', label:'Measure', modes:['review','edit'], groups:[
+   /* Four measure tools, four distinct glyphs since 2026-09-04 — they shared
+      one before. `Finish` takes `check` (it accepts a result); Markup's
+      `Finish shape` takes `finish-shape` (it closes a drawn shape). */
+   {cap:'Dimension', items:[[['Linear','ruler',{radio:'dim'}],['Radius / diameter','measure-radius',{radio:'dim'}],['Perimeter','measure-perimeter',{radio:'dim'}]],[['Length','measure-length',{radio:'dim'}],['Two-line','measure-angle',{radio:'dim'}],['Finish','check',{dis:1}]]]},
+   /* `set-scale` is an ALIAS: it draws convert.svg (mapping.rs:277). */
+   {cap:'Scale', items:[['Set scale…','set-scale',{big:1}],['Dimension groups','dimension-groups',{big:1}]]},
+ ]},
+ {id:'tools', label:'Tools', modes:['edit'], groups:[
+   /* `merge-files` was DEFERRED — the command already has dedicated art. */
+   {cap:'Batch', items:[['Merge files…','convert',{big:1}]]},
+   {cap:'Fonts', items:[['Font folders…','folder',{big:1}],[['Embed fonts','embed-fonts'],['Unembed fonts','unembed-fonts']]]},
+   {cap:'Diagnostics', items:[['Render diagnostics','render-diagnostics',{big:1}]]},
+ ]},
+ {id:'format', label:'Format', ctx:true, modes:['review','edit'], groups:[
+   /* Bring forward / send backward are REGISTERED ABSENCES blocked on an
+      engine primitive that does not exist. Drawn disabled, with no art. */
+   {cap:'Arrange', items:[[['Bring forward',null,{noicon:1,dis:1}],['Send backward',null,{noicon:1,dis:1}]]]},
+   {cap:'Object', items:[['Duplicate','copy',{big:1}],['Delete','delete',{big:1}],['Properties','properties',{big:1}]]},
+ ]},
+];
+
+function itemHtml(it){
+  const [label, glyph, o={}] = it;
+  const big = o.big ? ' big' : '';
+  let on = o.on ? 'true' : (o.toggle||o.radio ? 'false' : null);
+  if (o.rulers) on = state.rulers ? 'true' : 'false';
+  if (o.radio==='tool' && glyph==='pointer') on = state.armed ? 'false' : 'true';
+  if (o.radio==='shape' && glyph==='shape-cloud' && state.armed) on = 'true';
+  if (o.radio==='pd'){
+    const want = {'page-single':'single','page-continuous':'scroll','page-facing':'facing','page-facing-continuous':'facingscroll'}[glyph];
+    on = state.pageDisplay===want ? 'true' : 'false';
+  }
+  const dis = (o.dis || (o.needsSel && !state.selection)) ? ' disabled' : '';
+  const icon = o.swatch ? `<span class="sw" style="background:${o.swatch}"></span>`
+             : (o.noicon || !glyph) ? '' : g(glyph, big?'big':'');
+  const car = o.menu ? g('chevron-down','car') : '';
+  const data = glyph ? ` data-glyph="${glyph}"` : '';
+  const act = o.rulers ? ' data-act="rulers"' : '';
+  return `<button class="rb${big}" ${on!==null?`aria-pressed="${on}"`:''}${dis}${data}${act} title="${label}">${icon}<span class="lb">${label}</span>${car}</button>`;
+}
+function renderTabs(){
+  const tabs = TABS.filter(t => t.modes.includes(state.mode) && (!t.ctx || state.selection));
+  if (!tabs.find(t=>t.id===state.tab)) state.tab = tabs[0].id;
+  $('#tabs').innerHTML = tabs.map(t=>`<button role="tab" data-tab="${t.id}" class="${t.ctx?'ctx':''}" aria-selected="${t.id===state.tab}">${t.label}</button>`).join('');
+  const tab = TABS.find(t=>t.id===state.tab);
+  $('#ribbon').innerHTML = tab.groups.map(gr=>{
+    const keep = x => !(x[2] && x[2].editOnly && state.mode!=='edit');
+    const items = gr.items.map(it => Array.isArray(it[0])
+      ? `<div class="col">${it.filter(keep).map(itemHtml).join('')}</div>`
+      : (keep(it) ? itemHtml(it) : '')).join('');
+    return `<div class="grp"><div class="items">${items}</div><div class="cap">${gr.cap}</div></div>`;
+  }).join('');
+}
+
+/* ======================================================================
+   LEFT SIDE — proposal 1, and the one-line alternative to it.
+
+   `rail`  the proposal: a permanently visible vertical navigation surface,
+           one entry per panel, ALL FIVE simultaneously one click away. Its
+           width is a CONSTANT (52 px here, `exact_size` in the build), which
+           is what discharges the R128 fit-zoom gate by argument. The moment
+           anyone sizes it from its widest word the gate becomes real.
+           ★ This is NOT S6. S6's rail is a collapsed-state SUBSTITUTE for a
+           hidden dock ("drawn instead of the tree, leaving tree state
+           untouched"). This one replaces the dock's arrangement while the
+           dock is open. VS Code's activity bar, not its collapsed sidebar.
+
+   `tabs`  the cheap 80 %: merge the two left stacks into one five-tab stack,
+           one line at defaults.rs:412-421, legal today. At 280 pt it holds
+           three tabs and pushes two into an overflow chevron — which is the
+           thing a vertical rail does not have to do.
+   ====================================================================== */
+const RAIL = [['pages','Pages','pages'],['bookmarks','Marks','bookmarks'],['layers','Layers','layers'],['signatures','Sigs','signatures'],['fonts','Fonts','fonts']];
+const PTITLE = {pages:'Pages', bookmarks:'Bookmarks', layers:'Layers', signatures:'Signatures', fonts:'Fonts'};
+
+function panelBody(id){
+  const cb = on => `<span class="cb ${on?'on':'off'}">${on?'✓':''}</span>`;
+  switch(id){
+    case 'pages': return `<div class="pb"><div class="thumbs"><div class="thumb" aria-selected="true"><div class="pg"><i></i></div><span>1 · A1 landscape</span></div></div></div>`;
+    case 'bookmarks': return `<div class="pb empty">No bookmarks.<div style="margin-top:8px"><button class="rb" style="border-color:var(--line-strong)">${g('bookmarks')}<span class="lb">Add one at page 1</span></button></div></div>`;
+    case 'layers': return `<div class="pb">
+        <div class="lrow">${cb(true)}<span>Base plan</span></div>
+        <div class="lrow">${cb(true)}<span>Dimensions</span></div>
+        <div class="lrow">${cb(false)}<span style="color:var(--ink-quiet)">Ventilation</span>${g('lock','pad')}</div>
+        <div class="cap">The padlock is drawn only on the <code>/Locked</code> row, in muted ink rather than the accent, because <code>/Locked</code> is the producer's recorded intent and not a state of the application. <em>Drawn populated so the padlock is visible — the fixture on the board has no layers, which is itself the rail's argument.</em></div>
+      </div>`;
+    case 'signatures': return `<div class="pb empty">Not signed.</div>`;
+    case 'fonts': return `<div class="pb">
+        <div class="lrow">${g('fonts')}<span>SpaceGrotesk-Bold <i style="font-style:normal;color:var(--ink-quiet)">· embedded subset</i></span></div>
+        <div class="lrow">${g('fonts')}<span>JetBrainsMono-Regular <i style="font-style:normal;color:var(--ink-quiet)">· embedded subset</i></span></div>
+        <div class="lrow">${g('info')}<span>Inter <i style="font-style:normal;color:var(--ink-quiet)">· not embedded, substituted</i></span></div></div>`;
+  }
+}
+function renderLeft(){
+  const tools = `<div class="tools"><button title="Float this panel">${g('floating-panels')}</button><button title="Close">${g('close')}</button></div>`;
+  const count = {pages:'1 page', fonts:'3', bookmarks:'', layers:'3', signatures:''}[state.leftPanel] || '';
+  if (state.left==='rail'){
+    $('#rail').innerHTML = RAIL.map(([id,lb,gl])=>
+      `<button role="tab" data-panel="${id}" aria-selected="${state.leftPanel===id}" title="${PTITLE[id]}">${g(gl)}<span>${lb}</span></button>`).join('')
+      + `<div class="spacer"></div><span class="tagp" title="Not built. Not S6 either — see the legend.">proposed</span><button title="Collapse the dock">${g('chevron-left')}<span>Hide</span></button>`;
+    $('#leftpanel').innerHTML =
+      `<div class="ph">${PTITLE[state.leftPanel]} <span class="n">${count}</span>${tools}</div>` + panelBody(state.leftPanel);
+  } else {
+    /* three tabs fit at 280 pt; the other two go behind the overflow chevron */
+    const shown = RAIL.slice(0,3), hidden = RAIL.slice(3);
+    const sel = RAIL.find(r=>r[0]===state.leftPanel);
+    const list = shown.some(r=>r[0]===state.leftPanel) ? shown : [sel, shown[0], shown[1]];
+    $('#rail').innerHTML = '';
+    $('#leftpanel').innerHTML =
+      `<div class="tabbar">${list.map(([id,,gl])=>`<button data-panel="${id}" aria-selected="${state.leftPanel===id}">${g(gl)}${PTITLE[id]}</button>`).join('')}<button class="more" title="${hidden.map(h=>PTITLE[h[0]]).join(', ')}">⏷ 2 more</button></div>`
+      + `<div class="ph">${PTITLE[state.leftPanel]} <span class="n">${count}</span>${tools}</div>` + panelBody(state.leftPanel);
+  }
+}
+
+/* ======================================================================
+   THE SHEET ON THE BENCH. The page is WHITE on every board — `class="paper"`
+   takes --paper, which no preset redefines.
+   ====================================================================== */
+function renderSheet(){
+  const sel = state.selection && state.mode!=='read';
+  const ACC = getComputedStyle(app).getPropertyValue('--accent').trim() || '#175CC4';
+  const one = (x) => `
+    <g>
+      <rect class="paper" x="${x}" y="0" width="841" height="594" fill="#FFFFFF"/>
+      <rect x="${x+14}" y="14" width="813" height="566" fill="none" stroke="#2A2B2E" stroke-width="1.4"/>
+      <g stroke="#2A2B2E" stroke-width="1.1" fill="none">
+        <path d="M${x+120} 120h300v180h-300z M${x+150} 150h240v120h-240z"/>
+        <circle cx="${x+270}" cy="210" r="42"/><circle cx="${x+270}" cy="210" r="14"/>
+        <path d="M${x+270} 150v120 M${x+210} 210h120" stroke-dasharray="14 4 2 4" stroke-width=".7"/>
+        <path d="M${x+480} 130h200v50h-200z M${x+480} 200h200v50h-200z M${x+480} 270h200v30h-200z"/>
+        <path d="M${x+120} 330v40 M${x+420} 330v40 M${x+120} 360h300" stroke-width=".8"/>
+        <path d="M${x+120} 360l8-3v6z M${x+420} 360l-8-3v6z" fill="#2A2B2E"/>
+      </g>
+      <text x="${x+270}" y="352" font-family="IBM Plex Mono, monospace" font-size="11" text-anchor="middle" fill="#2A2B2E">340</text>
+      <text x="${x+150}" y="112" font-family="IBM Plex Sans, sans-serif" font-size="10" fill="#2A2B2E">SECTION A-A · 1:100</text>
+      <g transform="translate(${x+543},430)">
+        <rect x="0" y="0" width="284" height="150" fill="#fff" stroke="#2A2B2E" stroke-width="1.1"/>
+        <rect x="0" y="0" width="284" height="12" fill="#C8451E"/>
+        <text x="8" y="26" font-family="IBM Plex Sans, sans-serif" font-size="8" font-weight="600" fill="#2A2B2E">Construction drawing</text>
+        <text x="8" y="44" font-family="IBM Plex Sans, sans-serif" font-size="10" font-weight="600" fill="#2A2B2E">Project name</text>
+        <text x="8" y="56" font-family="IBM Plex Sans, sans-serif" font-size="6" fill="#6B6D72">Street, number, city</text>
+        <g font-family="IBM Plex Sans, sans-serif" font-size="5.5" fill="#6B6D72"><text x="8" y="76">CLIENT</text><text x="100" y="76">STATUS</text><text x="8" y="100">PROJECT NO.</text><text x="100" y="100">PHASE</text><text x="190" y="100">AUTHOR</text><text x="8" y="124">SCALE</text><text x="100" y="124">DATE</text><text x="190" y="124">REV.</text></g>
+        <g font-family="IBM Plex Sans, sans-serif" font-size="7" fill="#2A2B2E"><text x="8" y="86">Client name</text><text x="100" y="86">Not for construction</text><text x="8" y="110">2026-001</text><text x="100" y="110">Phase</text><text x="190" y="110">Author name</text><text x="8" y="134">1:100</text><text x="100" y="134">2026-09-04</text><text x="190" y="134">C</text></g>
+        <path d="M0 64h284 M0 92h284 M0 116h284 M96 64v76 M186 92v48" stroke="#2A2B2E" stroke-width=".6"/>
+        <rect x="236" y="128" width="40" height="16" fill="none" stroke="#C8451E" stroke-width="1"/>
+        <text x="256" y="139" font-family="IBM Plex Sans, sans-serif" font-size="8" font-weight="600" text-anchor="middle" fill="#2A2B2E">A1</text>
+        ${sel ? `<g fill="${ACC}" stroke="${ACC}" stroke-width="1.2"><rect x="0" y="0" width="284" height="150" fill="none" stroke-dasharray="4 3"/><rect x="-4" y="-4" width="8" height="8"/><rect x="280" y="-4" width="8" height="8"/><rect x="-4" y="146" width="8" height="8"/><rect x="280" y="146" width="8" height="8"/><rect x="138" y="-4" width="8" height="8"/><rect x="138" y="146" width="8" height="8"/><rect x="-4" y="71" width="8" height="8"/><rect x="280" y="71" width="8" height="8"/><path d="M142 -4v-22" fill="none"/><circle cx="142" cy="-30" r="5" fill="none"/></g>` : ''}
+      </g>
+    </g>`;
+  const W = state.facing ? 841*2+40 : 841;
+  $('#sheet').innerHTML = `<svg viewBox="-20 -40 ${W+40} 674" preserveAspectRatio="xMidYMid meet">${one(0)}${state.facing?one(881):''}</svg>`;
+  if (!state.rulers) return;
+  const rh=[], rv=[];
+  for(let i=0;i<60;i++){
+    rh.push(`<line x1="${i*40}" y1="${i%5?12:6}" x2="${i*40}" y2="18" stroke="currentColor" stroke-width="1"/>`);
+    if(i%5===0) rh.push(`<text x="${i*40+3}" y="9">${i*20}</text>`);
+    rv.push(`<line x1="${i%5?12:6}" y1="${i*40}" x2="18" y2="${i*40}" stroke="currentColor" stroke-width="1"/>`);
+    if(i%5===0) rv.push(`<text x="2" y="${i*40-3}" transform="rotate(-90 4 ${i*40-3})" style="font-size:8px">${i*20}</text>`);
+  }
+  $('#rulerH').innerHTML = `<g fill="currentColor" style="font-size:8px;font-family:var(--mono)">${rh.join('')}</g>`;
+  $('#rulerV').innerHTML = `<g fill="currentColor" style="font-size:8px;font-family:var(--mono)">${rv.join('')}</g>`;
+}
+
+/* ======================================================================
+   THE RIGHT DOCK — proposals 2 and 3.
+
+   ★ OBJECT ROWS ARE THE ROWS WE ACTUALLY PRODUCE. The review said ours list
+   far less per row than the mock's; read against the source that is backwards.
+   Every fragment below is one the shipped composer emits, in its fixed order:
+   paint style · colour hex · line width · node count · quoted text preview ·
+   font name and size · image pixels · and a trailing DIAGNOSTIC NOTE for which
+   the reviewer's mock has no equivalent at all.
+
+   The impression came from horizontal clipping at 320 pt, not from missing
+   content — which is why the width knob is the demonstration. At `320` the
+   rows below run past the pane's right edge and are cut mid-character,
+   exactly as in `24-edit-selected-object.png`.
+
+   Each row: [n, glyph, kind, today, proposed].  `today` is the fragment as it
+   ships. `proposed` differs in only two ways, both argued:
+     · the AAAAAA+ subset tag is stripped IN THE ROW ONLY (it stays in
+       Properties — two subsets of one face carry different tags, so stripping
+       it in both makes two rows read identically while naming different font
+       objects);
+     · a path that both fills and strokes shows BOTH colours (today the
+       summary collapses the engine's fill/stroke pair into one Option<Rgb>
+       and shows the fill alone).
+   ====================================================================== */
+const OBJECTS = [
+ [27,'pick-text','Text',
+  '“A1” · AAAAAA+SpaceGrotesk-Bold 8.00 pt · bounds from metrics',
+  '“A1” · SpaceGrotesk-Bold 8.00 pt · bounds from metrics'],
+ [26,'pick-text','Text',
+  '“SIZE” · BAAAAA+JetBrainsMono-Regular 5.50 pt',
+  '“SIZE” · JetBrainsMono-Regular 5.50 pt'],
+ [25,'pick-path','Path',
+  'filled (even-odd) and stroked #FAEEDC, 0.50 pt wide · 5 node(s)',
+  'filled (even-odd) #FAEEDC and stroked #1A73E8, 0.50 pt wide · 5 node(s)'],
+ [24,'pick-text','Text',
+  '“Not for construction” · CAAAAA+Inter-Regular 7.00 pt',
+  '“Not for construction” · Inter-Regular 7.00 pt'],
+ [23,'pick-text','Text',
+  '“FOUNDATION AND GROUND FLOOR PLA…” · BAAAAA+JetBrainsMono-Regular 5.50 pt',
+  '“FOUNDATION AND GROUND FLOOR PLA…” · JetBrainsMono-Regular 5.50 pt'],
+ [22,'pick-path','Path',
+  'stroked #D97706, 1.00 pt wide · 2 node(s) · zero height',
+  'stroked #D97706, 1.00 pt wide · 2 node(s) · zero height'],
+ [21,'pick-path','Path',
+  'stroked #D97706, 1.00 pt wide · 2 node(s)',
+  'stroked #D97706, 1.00 pt wide · 2 node(s)'],
+ [20,'pick-path','Path',
+  'filled (even-odd) and stroked #1A73E8, 0.50 pt wide · 6681 node(s)',
+  'filled (even-odd) #FFFFFF and stroked #1A73E8, 0.50 pt wide · 6681 node(s)'],
+ [19,'pick-path','Path',
+  'paints nothing (a clip or discarded path) · 4 node(s)',
+  'paints nothing (a clip or discarded path) · 4 node(s)'],
+ [18,'image','Image', '64 × 64 px', '64 × 64 px'],
+ [17,'pick-form-xobject','Form XObject',
+  'a whole nested drawing',
+  'a whole nested drawing'],
+ [16,'pick-text','Text',
+  '“Construction drawing” · AAAAAA+SpaceGrotesk-Bold 8.00 pt',
+  '“Construction drawing” · SpaceGrotesk-Bold 8.00 pt'],
+ [15,'pick-path','Path',
+  'filled #C8451E · 5 node(s)', 'filled #C8451E · 5 node(s)'],
+ [14,'pick-path','Path',
+  'stroked #2A2B2E, 1.43 pt wide · 6 node(s)',
+  'stroked #2A2B2E, 1.43 pt wide · 6 node(s)'],
+ [13,'pick-link','Link',
+  '→ page 1 · “SECTION A-A”', '→ page 1 · “SECTION A-A”'],
+];
+
+/* The Tool panel — SHIPPED, and the thing the one-line strip would delete.
+   Blocks A (the pointer, unconditional and drawn FIRST because "the row an
+   operator's eye lands on must not move"), B (the tool list, hard cap 7 rows),
+   B′ (Select's own three scale switches), and C (the disclosure slot). */
+const TOOLROWS = [
+  ['pointer','Select','Pick a shape, then drag it. The tool everything comes back to.','View · V'],
+  ['show-points','Points','Show every node on the picked path and drag them one at a time.','View · N'],
+  ['text-select','Text','Sweep across words to select them, then restyle or replace them.','View · T'],
+  ['hand','Hand','Push the sheet around without touching anything on it.','View · H'],
+];
+
+function toolPanel(){
+  const cb = (on,label) => `<div class="opt"><span class="cb ${on?'on':''}">${on?'✓':''}</span><span>${label}</span></div>`;
+  if (state.armed){
+    return `<div class="tool">
+      <h4>Cloud</h4>
+      <div class="lead">Armed. Click each corner; double-click to finish.</div>
+      <div class="pick">
+        <label>Font</label><select><option>SpaceGrotesk-Bold</option></select>
+        <label>Size</label><input value="8.00">
+        <label>Colour</label><div class="swatch" style="background:#C8451E"></div>
+      </div>
+      ${cb(true,'Scale line weight with the shape')}
+      ${cb(true,'Keep the insets')}
+      ${cb(false,'Allow distortion')}
+      <button class="putdown">${g('put-down')}put down <kbd>Esc</kbd></button>
+      <div class="disc"><span class="indic">indicative</span> A click was declined because the words under the pointer are drawn inside a form XObject that this document reuses on more than one page, and editing them here would silently change every other place the drawing appears, so the pen declines rather than doing that quietly.</div>
+    </div>`;
+  }
+  return `<div class="tool">
+    <h4>Select</h4>
+    <div class="lead">Pick a shape, then drag it. The tool everything comes back to.</div>
+    ${TOOLROWS.map(([gl,name,sent,chord])=>`<div class="trow"><button class="tb" aria-pressed="${gl==='pointer'}" title="${name}">${g(gl)}</button><div><div class="s"><b>${name}</b> — ${sent}</div><div class="ch">${chord}</div></div></div>`).join('')}
+    <div class="cap"><span class="indic">indicative</span> Only Select's sentence is quoted verbatim; the shipped strings live in <code>text/tool.rs</code>. The list is hard-capped at seven rows.</div>
+    <div style="margin-top:8px"><h4>Select's own options</h4>
+      ${cb(true,'Scale line weight when resizing')}
+      ${cb(true,'Keep the insets')}
+      ${cb(false,'Allow distortion')}
+    </div>
+    <div class="disc"><span class="indic">indicative</span> A click was declined because the words under the pointer are drawn inside a form XObject that this document reuses on more than one page, and editing them here would silently change every other place the drawing appears, so the pen declines rather than doing that quietly.</div>
+  </div>`;
+}
+
+function renderDock(){
+  const d = $('#dock');
+  const hdrTools = (extra='') => `<div class="tools">${extra}<button title="Float this panel">${g('floating-panels')}</button><button title="Close">${g('close')}</button></div>`;
+
+  /* The salvage of proposal 3. An ADDITION: 28 pt of permanent chrome that
+     answers "what am I holding?" at frame one. It carries the identity and
+     the stage line ONLY — no `put down`, because put-down is live only in the
+     armed block and one beside Select would be a dead control (Select IS the
+     resting state). */
+  const banner = state.armed
+    ? `<div class="banner armed">${g('shape-cloud')}<b>Cloud</b><span class="st">armed · click each corner, double-click to finish</span><span class="tagp">proposed</span></div>`
+    : `<div class="banner">${g('pointer')}<b>Select</b><span class="st">click to pick · drag to marquee</span><span class="tagp">proposed</span></div>`;
+
+  if (state.mode==='read'){
+    d.innerHTML = `<div class="ph">Fill form <span class="n">1 field</span>${hdrTools()}</div>
+      <div class="props"><div class="field"><label>Full name · page 1</label><input value="Ada Lovelace"></div>
+      <div class="sec">Tab order</div><div class="kv"><div class="tx">1</div><div class="tx">Full name</div></div>
+      <div class="sec">Calculated fields</div><div class="kv"><div class="tx" style="grid-column:1/-1;color:var(--ink-quiet)">None.</div></div>
+      <div style="display:flex;gap:4px;padding:8px 10px"><button class="rb" style="border-color:var(--line-strong)"><span class="lb">Reset to defaults</span></button><button class="rb" style="border-color:var(--line-strong)">${g('form-flatten')}<span class="lb">Flatten form</span></button></div></div>`;
+    return;
+  }
+
+  if (state.mode==='review'){
+    d.innerHTML = banner + `<div class="ph">Comments <span class="n">13</span>${hdrTools(`<button title="Filter">${g('search')}</button>`)}</div><div class="rows">
+      ${[['FreeText · p. 1','documenttype','Construction drawing'],['FreeText · p. 1','kenmerk','OA-2026-001-A100'],['Square · p. 1','you · just now','Rectangle, 2.0 pt, no fill'],['FreeText · p. 1','projectnaam','Project name'],['Cloud · p. 1','reviewer','Check flange thickness against S355J2+N']]
+        .map(([k,w,t])=>`<div class="comment"><div style="display:flex;gap:6px;align-items:center">${g(k.startsWith('Cloud')?'shape-cloud':k.startsWith('Square')?'shape-rect':'text-freetext')}<b>${k}</b></div><div class="who">by ${w}</div><div>${t}</div><div class="acts"><button>${g('edit')} Edit note</button><button>${g('zoom-selection')} Go to</button></div></div>`).join('')}
+    </div>`;
+    return;
+  }
+
+  const proposed = state.dock==='360';
+  /* Objects header. TODAY: two prose lines above the list — the disclosure
+     rule is "every disclosure ABOVE the list, without exception". PROPOSED:
+     the same two facts compressed into the header row, which keeps them above
+     the list and is therefore compatible in spirit. The operator's call. */
+  const objHead = proposed
+    ? `<div class="ph">Objects <span class="n">28 on this page · front first</span>${hdrTools(`<button title="Filter">${g('search')}</button>`)}</div>`
+    : `<div class="ph">Objects${hdrTools(`<button title="Filter">${g('search')}</button>`)}</div>
+       <div style="padding:5px 10px 6px;font-size:11.5px;color:var(--ink-quiet);line-height:1.35;border-bottom:1px solid var(--chrome)">Everything drawn on this page, front-most first — the object painted last is the first row.<br>28 object(s) on this page — 13 path(s), 15 text object(s).</div>`;
+
+  const rows = OBJECTS.map(([n,gl,ty,today,prop])=>
+    `<div class="row" aria-selected="${state.selection && n===26}">${g(gl)}<span class="id">#${n}</span><span class="t">${proposed?'':'#'+n+' '}${ty} <i>· ${proposed?prop:today}</i></span></div>`).join('');
+
+  /* The Properties stack's tab bar — six panels share it. At 320 pt three fit
+     and three go behind `⏷ 3 more`; at 360 four fit. This is the same
+     overflow the left side has, and it is why five horizontal tabs do not fit
+     in 280 pt either. */
+  const ptabs = ['Properties','Comments','Fill form','Redact'];
+  const shownTabs = proposed ? ptabs.slice(0,4) : ptabs.slice(0,3);
+  const moreTabs = 6 - shownTabs.length;
+
+  const toolStack = `<div class="stack" style="flex:1.3">
+      <div class="ph">Tool${hdrTools()}</div>${toolPanel()}</div>
+    <div class="split" title="Drag to resize"><i></i></div>`;
+
+  d.innerHTML = banner
+    + (state.toolTab ? '' : toolStack)
+    + `<div class="stack" style="flex:1.35">
+         ${state.toolTab ? `<div class="tabbar"><button aria-selected="true">${g('edit-objects')}Objects</button><button>${g('pointer')}Tool</button></div>` : ''}
+         ${objHead}<div class="rows">${rows}</div>
+       </div>
+       <div class="split" title="Drag to resize"><i></i></div>
+       <div class="stack" style="flex:1.1">
+         <div class="tabbar">${shownTabs.map((t,i)=>`<button aria-selected="${i===0}">${t}</button>`).join('')}<button class="more">⏷ ${moreTabs} more</button></div>
+         <div class="ph">Properties <span class="n">${state.selection?'#26 · Text':'nothing picked'}</span>${hdrTools()}</div>
+         <div class="props">${state.selection ? `
+           <div class="sec">${g('fit-page')} Position and size <span style="margin-left:auto;text-transform:none;letter-spacing:0">pt · from bottom-left</span></div>
+           <div class="kv"><div>Left</div><div><input value="1817.01"></div><div>Bottom</div><div><input value="28.35"></div><div>Width</div><div><input value="538.58"></div><div>Height</div><div><input value="311.81"></div><div>Rotation</div><div><input value="0.00"></div></div>
+           <div class="sec">Text</div>
+           <div class="kv"><div>Content</div><div class="tx">SIZE</div><div>Font</div><div class="tx">BAAAAA+JetBrainsMono-Regular <i style="font-style:normal;color:var(--ink-quiet)">· embedded subset</i></div><div>Size</div><div>5.50</div><div>Fill</div><div class="tx"><span class="sw" style="display:inline-block;vertical-align:-3px;background:#6B6D72"></span> #6B6D72</div></div>
+           <div class="sec">${g('layers')} Placement</div>
+           <div class="kv"><div>Page</div><div>1</div><div>Paint order</div><div>26 of 28</div><div>Clip</div><div class="tx">none</div></div>
+           <div style="padding:4px 10px 10px;color:var(--ink-quiet);font-size:11px;line-height:1.35">The subset tag <code>BAAAAA+</code> stays here even when the row above drops it: two subsets of one face carry different tags.</div>`
+           : `<div class="pb empty">Pick a row above, or click an object on the sheet.</div>`}</div>
+       </div>`;
+}
+
+/* ======================================================================
+   STATUS BAR. Note what is NOT here: no first-page and no last-page buttons.
+   There is no such control anywhere in the tree — the page group is
+   ⏴ ⟨n⟩ / ⟨N⟩ ⏵ and nothing else — and the art proposed for them was
+   deferred for exactly that reason. Drawing them would be inventing controls.
+   The note badge and the wheel toggle draw NO icon: every candidate home for
+   the `note` triangle is a place this project has already ruled against an
+   icon, and `wheel-flip`'s asset ships unclaimed pending an operator ruling.
+   ====================================================================== */
+function renderStatus(){
+  const fit = (lb,gl,on)=>`<button class="sb" aria-pressed="${on?'true':'false'}" title="${lb}">${gl?g(gl):''}<span>${lb}</span></button>`;
+  $('#status').innerHTML =
+   `<button class="sb note" title="1 render note: 119 glyphs drawn with a bundled substitute face"><span>1 note</span></button>
+    <span class="sep"></span>
+    <span class="sb info">${state.selection&&state.mode!=='read' ? 'Selected: Text · 13.0 × 15.3 pt · 1 of 2 here' : 'A1 landscape · 841 × 594 mm · PDF 1.3'}</span>
+    <span class="grow"></span>
+    <button class="sb" aria-pressed="${state.armed?'false':'true'}" title="Select tool (V)">${g('pointer')}<span>${state.armed?'Cloud':'Select'}</span></button>
+    <button class="sb" title="Find (Ctrl+F)">${g('search')}<span>Find</span></button>
+    <span class="sep"></span>
+    ${fit('Actual size',null,false)}${fit('Fit page','fit-page',true)}${fit('Fit width','fit-width',false)}${fit('Fit height','fit-height',false)}
+    <span class="sep"></span>
+    <button class="sb" title="Zoom out">${g('zoom-out')}</button><button class="sb zoom" title="Zoom presets and maximum zoom">40 %</button><button class="sb" title="Zoom in">${g('zoom-in')}</button>
+    <span class="sep"></span>
+    <button class="sb" title="Previous page">${g('chevron-left')}</button>
+    <span class="pageno"><input value="1" aria-label="Page"> / ${state.facing?2:1}</span>
+    <button class="sb" title="Next page">${g('chevron-right')}</button>
+    <span class="sep"></span>
+    <button class="sb" id="kWheel" aria-pressed="${state.wheelFlip}" title="${state.wheelFlip ? 'On: the mouse wheel turns to the next or previous page.' : 'Off: the mouse wheel scrolls down the page and moves on at the end.'}"><span>Wheel turns pages</span></button>`;
+}
+
+/* ======================================================================
+   THE LEGEND — the point of this fork. One line per divergence, with its
+   state and its reason. A mock that silently differs from the one the
+   operator saw yesterday is worse than one that says where and why.
+   ====================================================================== */
+const LEGEND = [
+ ['proposed','1st — Right dock 320 → 360 pt, and object rows given columns',
+  'The review said our rows list far less than the mock\'s. Read against the source it is <em>backwards</em>: ours already compose paint style, colour hex, line width, node count, text preview, font name and size, image pixels — <em>and a trailing diagnostic note the mock has no equivalent for</em>. The screenshot impression was horizontal clipping at 320 pt. Flip the dock knob and watch the rows stop being cut mid-character.',
+  '§0.2, §2, §5 · ~1 day code, ~2 days harness re-baseline'],
+ ['proposed','· Strip the AAAAAA+ subset tag in the row only',
+  'Kept in Properties. Two subsets of one face carry different tags, so stripping it in both makes two rows read identically while they name different font objects.',
+  '§2.4 hazard 2'],
+ ['noted','360 pt fits most rows, not all — and that is not a failure',
+  'Our composed rows are longer than the mock\'s, on purpose: a fill colour, a stroke colour, a width, a node count and a diagnostic note is more than "Path · filled (even-odd) #FAEEDC" carries. The pane is a two-axis scroll area and the full row is on hover when it overflows. 360 pt stops the <em>common</em> row being cut mid-character; it does not promise every row fits, and a width that did would be a dock nobody wants.',
+  '§2.1'],
+ ['proposed','· Show the stroke colour beside the fill',
+  'A path that both fills and strokes shows only the fill today — the summary collapses the engine\'s fill/stroke pair into one <code>Option&lt;Rgb&gt;</code>. The data is already in hand at the call site. The mock did not ask for this; it collapses them the same way we do.',
+  '§0.2 ★★ · ~40 lines'],
+ ['proposed','· Compress the Objects header into one line',
+  'Ours draws two prose lines above the list. The mock folds both into the header — which keeps the disclosure <em>above</em> the list and is therefore compatible with the rule. An amendment, not a fix; the operator\'s call. Visible on the 360 setting.',
+  '§2.2'],
+ ['proposed','2nd — The left icon + word rail. And it is <em>not</em> S6.',
+  'The only arrangement in which all five left panels are simultaneously one click away: a 280 pt horizontal tab bar cannot hold five tabs, a 700 pt vertical rail holds five entries with room to spare. It ends the permanent half-height reservation for three panels that are empty on nearly every document. <em>S6\'s rail is a different feature</em> — a collapsed-state substitute drawn <em>instead of</em> a hidden tree. This one replaces the dock\'s arrangement while the dock is open.',
+  '§0.1, §1, §5 · ~1 week + re-baseline'],
+ ['proposed','· The cheap 80 %: one stack, five tabs',
+  'One line at <code>defaults.rs:412-421</code>, legal today since the two-pane cap was retired. It buys the height back and pays with an overflow chevron. Switch the Left knob to see what that costs at 280 pt.',
+  '§1.2, §5'],
+ ['proposed','· Conditions on scheduling the rail',
+  'Fix the dock\'s rect channel first — it publishes through the <em>unguarded</em> sink, so no check can tell a working rail from the 2026-08-10 defect, which was this feature. Convert every harness coordinate in one pass, not thirteen of fourteen. Keep the rail\'s width a constant and the R128 gate is discharged by argument; size it from its widest word and the gate becomes real.',
+  '§1.6, §6'],
+ ['proposed','3rd — The tool identity line, as a dock <em>banner</em>',
+  'The salvage of the rejected strip: 28 pt of permanent chrome answering "what am I holding?" at frame one, drawn <em>over</em> the columns as dock chrome. It is an addition and takes nothing away. It carries no <code>put down</code> — put-down is live only in the armed block, and one beside Select would be a dead control because Select is the resting state.',
+  '§3.4 · ~120 lines'],
+
+ ['rejected','The one-line tool strip is not built',
+  'It cannot be a dock stack: <code>MIN_STACK_HEIGHT = 80</code> against 28 pt, and a tab bar alone is 24. It <em>deletes live controls</em> — the text pen\'s font, size and colour swatch, the measure options, the three scale switches. It <em>orphans the disclosure slot</em> into a row R128 forbids growing, and that slot exists precisely because a 47-word refusal sentence had nowhere else to fit. And it re-litigates a triage ruling the reviewer did not defeat. The Tool panel below the banner is what it would have replaced.',
+  '§3, §5 4th'],
+ ['rejected','<code>Thin lines</code> removed from View ▸ Display',
+  'Dead art for a command <em>deleted six weeks ago</em>: no such field on <code>RenderOptions</code>, no such command anywhere in the tree. It was carried into the proposal sheet marked "drawn for this mock", which is exactly how a deleted feature comes back — as a picture of itself in a document nobody re-checked against the code.',
+  'GLYPH_ADOPTION.md'],
+ ['rejected','<code>Select all</code> and <code>Actual size</code> draw no icon',
+  'Both commands register without one and both proposed glyphs were deliberately <em>not</em> adopted. Drawing art there would invent a decision nobody made.',
+  'GLYPH_ADOPTION.md'],
+ ['rejected','No Help button, no first-page / last-page buttons',
+  'There is no Help command, no help dialog and no documentation target in the build; and there is no on-screen first- or last-page control — the status bar\'s page group is <code>⏴ n / N ⏵</code> and nothing else. R9: an unavailable capability renders nothing.',
+  'GLYPH_ADOPTION.md'],
+
+ ['shipped','Rulers on two edges with a corner box — <em>already built</em>',
+  'Proposal 4 is not a proposal. 1,413 lines ship a top gutter, a left gutter and an explicit corner rect (held as a rect so the two rulers cannot draw the same tick twice at two alphas). R128-correct: the thickness is a constant and a test asserts the gutters are a constant bite out of the viewport. Labels come from the dimension engine, so a ruler reading and a placed dimension agree <em>to the digit</em>. <em>They ship OFF</em>, by a recorded decision — 44 pt off every canvas for every operator. Recommend leaving that; changing one boolean prices as a suite-wide harness re-baseline.',
+  '§0.3, §4 · nothing to build'],
+ ['shipped','Objects → Properties is already a real master–detail',
+  'A row click raises <code>Action::SelectObject</code> rather than mutating; Properties reads the <em>same</em> canvas selection. Vertical pair, draggable split, since 2026-08-26. What was missing was room, not linkage.',
+  '§2.1'],
+ ['shipped','Per-mode dock width, already persisted',
+  'The review asked to "let the dock remember the width per mode". <code>SideLayout.width_pts</code> is per side, per mode, and recorded on layout change. That half needs no work at all — only the default constant changes.',
+  '§2.2'],
+ ['shipped','36 of the review\'s 65 glyphs adopted, 2026-09-04',
+  'Four form-field tools, four measure tools and two redaction commands no longer share one glyph each; the four Save commands are now four distinct glyphs. Adopted on one rule: a glyph is taken only when a command or role in this build would use it <em>today</em>. 26 deferred with a written reason each.',
+  'GLYPH_ADOPTION.md'],
+ ['shipped','A selected chrome control is accent ink on an <em>opaque</em> plate',
+  'Not white on a translucent wash — that was the D2 defect. The plates are measured per preset and derived, not picked: Quiet <code>#A9BEDF</code>, Airy <code>#B9CEED</code>, Dark <code>#0B1726</code>, with <code>accent</code> as the ink. Cycle the preset knob; every selected tab, row, toggle and rail entry moves together.',
+  'theme/mod.rs'],
+ ['shipped','A locked layer row carries a muted padlock',
+  'Drawn only where <code>/Locked</code> is true — a column of open padlocks would be noise the eye must filter — and in muted ink rather than the accent, because <code>/Locked</code> is the producer\'s recorded intent, not a state of the application. It never appears on a signature row: this product performs no cryptographic verification and a padlock there would read as "verified".',
+  'GLYPH_ADOPTION.md postscript'],
+ ['shipped','★ The dark board keeps the page white',
+  'The single invariant a dark theme in this product must hold. <code>--paper</code> is defined once, outside every preset block, and no preset redefines it. A dark board is a dark <em>bench</em>; the sheet on it is the document\'s own colour.',
+  'the mock\'s own CSS header'],
+
+ ['noted','Three of the review\'s glyphs are in <em>neither</em> adoption list',
+  '<code>properties</code>, <code>insert-pages</code> and <code>set-scale</code>. 36 adopted + 26 deferred accounts for 62 of the 65 delivered. All three are live icon <em>keys</em> that alias onto another role\'s art — <code>document.svg</code>, <code>upload.svg</code>, <code>convert.svg</code>. So they were neither adopted nor written up, and this mock draws the shipped art for them. Worth one line in GLYPH_ADOPTION.md.',
+  'icons/catalog/mapping.rs:234, :271, :277'],
+ ['noted','<code>save.svg</code> is now the odd member of its own family',
+  'The three new Save commands were drawn as a family — one shared floppy body, one interior difference each. <code>save.svg</code> predates them and is a rounded square with a bar. The grammar is right and Save is the outlier. Deliberately not fixed: it is the operator\'s own art on the most-used control in the application.',
+  'GLYPH_ADOPTION.md postscript'],
+ ['noted','The dock\'s rect channel is unguarded — a live gap under all four',
+  'Every dock region publishes through the unguarded sink rather than the visibility-guarded one, so <em>every driven assertion about a docked panel today proves layout, not visibility</em>. One line, and every future dock check means what it says.',
+  '§6'],
+ ['noted','The harness cannot read text a panel renders',
+  'No AccessKit reader, no OCR, no extraction — only trace lines the application publishes on purpose. Three of these four proposals are about text a panel renders, so any check for them must bring its own oracle, and the pixel channel is the only non-circular one available.',
+  '§6'],
+];
+
+const CHIP = {shipped:'shipped', proposed:'proposed', rejected:'rejected', noted:'noted'};
+function renderLegend(){
+  const el = $('#legend');
+  el.hidden = !state.legend;
+  if (!state.legend) return;
+  const n = s => LEGEND.filter(x=>x[0]===s).length;
+  el.innerHTML = `<h2>What changed in this mockup, and why <span style="font-weight:400;font-size:11px;color:#7E838C">— ${LEGEND.length} lines, scroll for all of them</span></h2>
+    <div class="verdict">
+      <span class="v proposed"><b>${n('proposed')}</b> proposed</span>
+      <span class="v rejected"><b>${n('rejected')}</b> rejected</span>
+      <span class="v shipped"><b>${n('shipped')}</b> shipped today</span>
+      <span class="v noted"><b>${n('noted')}</b> noted</span>
+      <span class="rank">Ranked by value per risk-adjusted day: <b>1st</b> give the right dock its room (~1 day + ~2 days harness) · <b>2nd</b> the left rail (~1 week + re-baseline) · <b>3rd</b> rulers, <em>nothing to build</em> · <b>4th</b> the tool strip, <em>do not build it as proposed</em>.</span>
+    </div>
+    <div class="sub">A revision of the outside reviewer's <code>board-shell.html</code>, redrawn against the shipped source. Four states, and the difference between them is the whole point: <b style="color:#7FD79A">shipped</b> is in the build today and is <em>not</em> being proposed; <b style="color:#7FB6FF">proposed</b> is not built, and carries its rank and its cost; <b style="color:#FF9C9C">rejected</b> was analysed and refused, and carries the reason; <b style="color:#E0BE7C">noted</b> is neither, but the operator should see it. References are sections of <code>SHELL_LAYOUT_PROPOSAL.md</code> unless named otherwise; every claim there carries a <code>file:line</code>.</div>
+    <div class="lgrid">${LEGEND.map(([s,t,w,r])=>
+      `<div class="li ${s}"><div class="chip">${CHIP[s]}</div><div><div class="t">${t}</div><div class="w">${w}</div><div class="r">${r}</div></div></div>`).join('')}</div>`;
+}
+
+/* ---------- the mock's own control bar ---------- */
+function renderMockbar(){
+  const seg = (label, key, opts) => `<span class="lbl">${label}</span><span class="seg">` +
+    opts.map(([v,t,title])=>`<button data-set="${key}" data-val="${v}" aria-pressed="${String(state[key])===String(v)}" title="${title||''}">${t}</button>`).join('') + `</span>`;
+  const tg = (id, label, on, title) => `<button class="tg" data-tg="${id}" aria-pressed="${on}" title="${title||''}">${label}</button>`;
+  $('#mockbar').innerHTML =
+      `<span class="lbl" style="color:#4C9AFF;font-weight:700">mock controls</span>`
+    + seg('preset','board',[['quiet','Quiet'],['airy','Airy'],['dark','Dark']])
+    + seg('left','left',[['rail','Rail','The proposal: all five panels one click away'],['tabs','5 tabs','The cheap 80 %: one stack, one line, an overflow chevron']])
+    + seg('right dock','dock',[['320','320 · today','Rows are hard-clipped at this width'],['360','360 · proposed','Rows fit; icon and index columns']])
+    + tg('selection','Selected', state.selection)
+    + tg('armed','Armed tool', state.armed, 'Arm a tool to see the controls the one-line strip would delete')
+    + tg('toolTab','Tool as a tab', state.toolTab, 'The honest lever for the panel\'s third of the dock — one line at defaults.rs:427')
+    + tg('rulers','Rulers', state.rulers, 'Shipped since long before this review — and shipping OFF by a recorded decision')
+    + tg('labels','Button labels', state.labels)
+    + `<span class="push"></span>`
+    + `<button class="tg" data-tg="sheet">Glyph sheet</button>`
+    + tg('legend','What changed ▾', state.legend);
+}
+
+/* ---------- glyph sheet ---------- */
+function renderGlyphSheet(q=''){
+  const list = GLYPHS.filter(x=>x.name.includes(q));
+  $('#sheetgrid').innerHTML = list.map(x=>{
+    const sym = x.sym || ('g-'+x.name);
+    const cls = x.origin==='proposed' ? 'proposed' : (x.alias ? 'alias' : 'shipped');
+    const or = x.origin==='proposed'
+      ? (x.shadowed ? `proposed · the key already draws ${x.shadowed}` : `not adopted · ${x.verdict}`)
+      : (x.alias ? `alias → ${x.src}` : 'in the app today');
+    const why = x.origin==='proposed' ? `<div class="wy">${x.why}</div>` : '';
+    return `<div class="cell ${cls}"><svg class="g"><use href="#${sym}"/></svg><svg class="g s"><use href="#${sym}"/></svg><div class="nm">${x.name}</div><div class="or">${or}</div>${why}</div>`;
+  }).join('');
+  const prop = GLYPHS.filter(x=>x.origin==='proposed').length;
+  const alias = GLYPHS.filter(x=>x.alias).length;
+  $('#sheetsum').innerHTML = `${GLYPHS.length} keys · <b>${GLYPHS.length-prop} draw art the product ships today</b>, read straight out of <code>icons/assets</code> at build time — ${alias} of them are aliases onto another key's asset. ${prop} were proposed by the review and <b>not adopted</b>; each says why. <code>thin-lines</code> is absent on purpose: art for a command deleted six weeks ago. Each key is shown at 30 px and at the 16 px it ships at.`;
+}
+
+/* ---------- wiring ---------- */
+function renderAll(){
+  app.dataset.mode = state.mode;
+  app.dataset.board = state.board;
+  app.dataset.left = state.left;
+  app.dataset.dock = state.dock;
+  app.dataset.labels = state.labels ? 'on' : 'off';
+  app.dataset.rulers = state.rulers ? 'on' : 'off';
+  renderTabs(); renderLeft(); renderSheet(); renderDock(); renderStatus();
+  renderMockbar(); renderLegend();
+}
+document.addEventListener('click', e=>{
+  const t = e.target.closest('button'); if(!t) return;
+  if (t.dataset.set){ state[t.dataset.set] = t.dataset.val; renderAll(); return; }
+  if (t.dataset.tg){
+    const k = t.dataset.tg;
+    if (k==='sheet'){ $('#sheetov').hidden=false; renderGlyphSheet($('#sheetq').value.trim().toLowerCase()); return; }
+    state[k] = !state[k]; renderAll(); return;
+  }
+  if (t.dataset.mode){ state.mode=t.dataset.mode; document.querySelectorAll('.modes button').forEach(b=>b.setAttribute('aria-pressed', b===t)); renderAll(); return; }
+  if (t.dataset.tab){ state.tab=t.dataset.tab; renderTabs(); return; }
+  if (t.dataset.panel){ state.leftPanel=t.dataset.panel; renderLeft(); return; }
+  if (t.dataset.act==='rulers'){ state.rulers=!state.rulers; renderAll(); return; }
+  if (t.classList.contains('rb') && t.dataset.glyph){
+    const glyph=t.dataset.glyph;
+    if (glyph.startsWith('page-')){
+      state.pageDisplay = {'page-single':'single','page-continuous':'scroll','page-facing':'facing','page-facing-continuous':'facingscroll'}[glyph];
+      state.facing = state.pageDisplay.startsWith('facing'); renderAll(); return;
+    }
+    if (t.hasAttribute('aria-pressed') && !t.disabled){
+      const isRadio = /^(pointer|show-points|text-select|hand|shape-|ruler|measure-)/.test(glyph);
+      if (isRadio){
+        t.closest('.grp').querySelectorAll('.rb[aria-pressed]').forEach(b=>{
+          if(/^(pointer|show-points|text-select|hand|shape-|ruler|measure-)/.test(b.dataset.glyph||'')) b.setAttribute('aria-pressed','false');
+        });
+        t.setAttribute('aria-pressed','true');
+      } else t.setAttribute('aria-pressed', t.getAttribute('aria-pressed')!=='true');
+    }
+    return;
+  }
+  if (t.id==='kWheel'){ state.wheelFlip=!state.wheelFlip; renderStatus(); return; }
+  if (t.id==='kSheetClose'){ $('#sheetov').hidden=true; return; }
+});
+$('#sheetq').addEventListener('input', e=>renderGlyphSheet(e.target.value.trim().toLowerCase()));
+document.addEventListener('keydown', e=>{ if(e.key==='Escape' && !$('#sheetov').hidden) $('#sheetov').hidden=true; });
+
+/* A URL fragment forces state, so a headless capture can reach every
+   combination without editing a default and re-shooting:
+     …/pdfcer-shell.html#dark,dock360,tabs,armed,nolegend
+   Tokens: quiet|airy|dark · rail|tabs · dock320|dock360 · armed · tooltab ·
+           norulers · nosel · nolegend · read|review                        */
+for (const tok of (location.hash||'').replace('#','').split(',').filter(Boolean)){
+  if (['quiet','airy','dark'].includes(tok)) state.board = tok;
+  else if (['rail','tabs'].includes(tok)) state.left = tok;
+  else if (tok==='dock320') state.dock='320';
+  else if (tok==='dock360') state.dock='360';
+  else if (tok==='armed') state.armed = true;
+  else if (tok==='tooltab') state.toolTab = true;
+  else if (tok==='norulers') state.rulers = false;
+  else if (tok==='nosel') state.selection = false;
+  else if (tok==='nolegend') state.legend = false;
+  else if (['read','review','edit'].includes(tok)) state.mode = tok;
+  else if (tok==='sheet') queueMicrotask(()=>{ $('#sheetov').hidden=false; renderGlyphSheet(); });
+}
+
+renderAll();
+</script>

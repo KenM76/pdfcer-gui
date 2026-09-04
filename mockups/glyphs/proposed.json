@@ -1,0 +1,275 @@
+{
+ "_contract": "The review's 65 proposed glyphs, minus the 36 the product adopted on 2026-09-04, minus `thin-lines`. `thin-lines` is NOT here and must never be re-added: it is art for a command deleted six weeks ago (no such field on RenderOptions, no such command in the tree). Carrying it is how a deleted feature comes back as a picture of itself. Geometry contract unchanged from the delivery: 48x48 viewBox, stroke 2.5 currentColor, round caps and joins, fill none. `p` = path d strings drawn with the contract; `x` = raw markup for the deliberate exceptions. `verdict`/`why` are from GLYPH_ADOPTION.md, except the three `alias` entries, which that file omits and which are recorded here instead.",
+ "actual-size": {
+  "verdict": "none",
+  "why": "view.zoom_actual registers with no icon. The adopt gate was open and the refusal names this shape verbatim.",
+  "p": [
+   "M10 19l4-4v18",
+   "M34 19l4-4v18",
+   "M24 18v1",
+   "M24 30v1"
+  ]
+ },
+ "bring-forward": {
+  "verdict": "no-home",
+  "why": "A registered absence: it needs a content-stream reordering primitive the engine does not have.",
+  "p": [
+   "M16 8h24v24H16z",
+   "M8 16v24h24v-8",
+   "M8 16h8"
+  ]
+ },
+ "calculated": {
+  "verdict": "none",
+  "why": "The role is a CollapsingHeader, which has no icon slot.",
+  "p": [
+   "M10 10h28v28H10z",
+   "M17 17h6",
+   "M20 14v6",
+   "M26 30h6",
+   "M17 26l6 6",
+   "M23 26l-6 6",
+   "M26 18h6"
+  ]
+ },
+ "eye": {
+  "verdict": "no-home",
+  "why": "Every visibility control in the build is a native egui Checkbox, which has no icon slot.",
+  "p": [
+   "M4 24c6-9 13-13 20-13s14 4 20 13c-6 9-13 13-20 13S10 33 4 24z",
+   "M24 19a5 5 0 1 1 0 10 5 5 0 0 1 0-10z"
+  ]
+ },
+ "fill-colour": {
+  "verdict": "no-home",
+  "why": "Fill is not a gap — it is a decision recorded AGAINST in three files and reserved to the operator.",
+  "p": [
+   "M22 6l14 14-12 12L10 18z",
+   "M14 22h18",
+   "M38 24c3 4 5 7 3 10a3 3 0 0 1-6 0c-2-3 0-6 3-10z"
+  ],
+  "x": "<path d=\"M8 42h32\" stroke=\"currentColor\" stroke-width=\"3.5\" stroke-linecap=\"round\"/>"
+ },
+ "first-page": {
+  "verdict": "no-home",
+  "why": "There is no on-screen first-page control. The status bar's page group is ⏴ n / N ⏵ and nothing else.",
+  "p": [
+   "M30 12L18 24l12 12",
+   "M13 12v24"
+  ]
+ },
+ "flip-pages": {
+  "verdict": "none",
+  "why": "Duplicate home: this and wheel-flip are two proposals for the same single control.",
+  "p": [
+   "M24 13c-6-4-13-5-18-3v27c5-2 12-1 18 3 6-4 13-5 18-3V10c-5-2-12-1-18 3z",
+   "M24 13v27"
+  ]
+ },
+ "help": {
+  "verdict": "no-home",
+  "why": "There is no Help command, no help dialog and no documentation target anywhere in the build.",
+  "p": [
+   "M24 9a15 15 0 1 1 0 30 15 15 0 0 1 0-30z",
+   "M19 20a5 5 0 1 1 7 4.6c-2 1-2 2.4-2 4.4",
+   "M24 33v1"
+  ]
+ },
+ "insert-pages": {
+  "verdict": "alias",
+  "why": "Draws upload.svg today (mapping.rs:271, shared with import-form-data). In neither of GLYPH_ADOPTION.md's lists.",
+  "p": [
+   "M18 6h14l8 8v28H18z",
+   "M32 6v8h8",
+   "M4 24h14",
+   "M13 19l5 5-5 5"
+  ]
+ },
+ "last-page": {
+  "verdict": "no-home",
+  "why": "As first-page: End is a keystroke owned by app::keyboard, not a command with an icon slot.",
+  "p": [
+   "M18 12l12 12-12 12",
+   "M35 12v24"
+  ]
+ },
+ "line-width": {
+  "verdict": "no-home",
+  "why": "The control ships as a drag value over the pen's own units; it has no icon slot and no id to carry a key.",
+  "p": [
+   "M8 22h32"
+  ],
+  "x": "<path d=\"M8 12h32\" stroke=\"currentColor\" stroke-width=\"1\" stroke-linecap=\"round\"/><path d=\"M8 35h32\" stroke=\"currentColor\" stroke-width=\"3.5\" stroke-linecap=\"round\"/>"
+ },
+ "merge-files": {
+  "verdict": "has-own",
+  "why": "The command already has dedicated art — Icon::Combine. Taking this one would be a restyle.",
+  "p": [
+   "M6 8h10v12H6z",
+   "M6 28h10v12H6z",
+   "M16 14h6c4 0 4 10 8 10",
+   "M16 34h6c4 0 4-10 8-10",
+   "M30 24h4",
+   "M36 12h6v24h-6"
+  ]
+ },
+ "modified": {
+  "verdict": "none",
+  "why": "The unsaved-edits marker is a settled copy decision with three stated grounds, and it rejects this shape by name.",
+  "p": [
+   "M24 17a7 7 0 1 1 0 14 7 7 0 0 1 0-14z"
+  ]
+ },
+ "move-page-down": {
+  "verdict": "has-own",
+  "why": "pages.move_down draws with chevron-down today; deferred as a pair with move-page-up.",
+  "p": [
+   "M14 12h14l6 6v24H14z",
+   "M28 12v6h6",
+   "M24 22v12",
+   "M19 29l5 5 5-5"
+  ]
+ },
+ "move-page-up": {
+  "verdict": "has-own",
+  "why": "pages.move_up draws with chevron-up, which is that glyph's own role, not borrowed art.",
+  "p": [
+   "M14 12h14l6 6v24H14z",
+   "M28 12v6h6",
+   "M24 34V22",
+   "M19 27l5-5 5 5"
+  ]
+ },
+ "note": {
+  "verdict": "none",
+  "why": "Every candidate home for a caution triangle is a place this project has already ruled against an icon.",
+  "p": [
+   "M24 6L4 42h40z",
+   "M24 18v12",
+   "M24 35v1"
+  ]
+ },
+ "opacity": {
+  "verdict": "no-home",
+  "why": "The live opacity editor is a label row in a surface that draws no icons.",
+  "p": [
+   "M24 9a15 15 0 1 1 0 30 15 15 0 0 1 0-30z",
+   "M24 9v30"
+  ],
+  "x": "<path d=\"M30 11.5v25M35 15v18M38.5 20v8\" stroke=\"currentColor\" stroke-width=\"1\" stroke-linecap=\"round\"/>"
+ },
+ "overflow": {
+  "verdict": "none",
+  "why": "The overflow marker draws text by argument, across three surfaces. Three dots would be a second answer.",
+  "p": [
+   "M12 21.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5z",
+   "M24 21.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5z",
+   "M36 21.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5z"
+  ]
+ },
+ "paste-in-place": {
+  "verdict": "no-home",
+  "why": "No such command, and deliberately none coming — it is in the registered-absence table.",
+  "p": [
+   "M16 10h-4v30h24V10h-4",
+   "M18 6h12v8H18z",
+   "M24 20v14",
+   "M17 27h14"
+  ]
+ },
+ "pin": {
+  "verdict": "no-home",
+  "why": "Tear-out/keep-floating was unregistered on 2026-08-17: the dock has no floating mode at all.",
+  "p": [
+   "M18 6h12l-2 12 6 6H14l6-6z",
+   "M24 24v18"
+  ]
+ },
+ "properties": {
+  "verdict": "alias",
+  "why": "Draws document.svg today (icons/catalog/mapping.rs:234). In NEITHER of GLYPH_ADOPTION.md's two lists.",
+  "p": [
+   "M8 14h16",
+   "M32 14h8",
+   "M8 24h4",
+   "M20 24h20",
+   "M8 34h12",
+   "M28 34h12",
+   "M28 10a4 4 0 1 1 0 8 4 4 0 0 1 0-8z",
+   "M12 20a4 4 0 1 1 0 8 4 4 0 0 1 0-8z",
+   "M24 30a4 4 0 1 1 0 8 4 4 0 0 1 0-8z"
+  ]
+ },
+ "reset": {
+  "verdict": "none",
+  "why": "No draw site (a CollapsingHeader), plus a second independent reason that would stand even if there were one.",
+  "p": [
+   "M10 24a14 14 0 1 1 4 10",
+   "M10 14v10h10"
+  ]
+ },
+ "select-all": {
+  "verdict": "none",
+  "why": "edit.select_all registers with no icon. The gate was open; the refusal names the delivered shape.",
+  "p": [
+   "M19 17v16l4.5-4 3 6.5 3.5-1.5-3-6.5H33z"
+  ],
+  "x": "<path d=\"M8 8h32v32H8z\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linejoin=\"round\" stroke-dasharray=\"5 4\"/>"
+ },
+ "send-backward": {
+  "verdict": "no-home",
+  "why": "With its twin: blocked below the GUI on the same missing engine primitive.",
+  "p": [
+   "M8 8h24v24H8z",
+   "M40 16v24H16v-8",
+   "M40 16h-8"
+  ]
+ },
+ "set-scale": {
+  "verdict": "alias",
+  "why": "Draws convert.svg today (mapping.rs:277). In neither of GLYPH_ADOPTION.md's lists.",
+  "p": [
+   "M6 22h36v10H6z",
+   "M12 22v5",
+   "M18 22v4",
+   "M24 22v5",
+   "M30 22v4",
+   "M36 22v5",
+   "M10 12h28",
+   "M14 8l-4 4 4 4",
+   "M34 8l4 4-4 4"
+  ]
+ },
+ "stroke-colour": {
+  "verdict": "no-home",
+  "why": "Colour is not a command and cannot take an icon — refused in writing at manifest/markup.rs:27-33.",
+  "p": [
+   "M30 8l10 10-18 18H12V26z",
+   "M26 12l10 10"
+  ],
+  "x": "<path d=\"M8 42h32\" stroke=\"currentColor\" stroke-width=\"3.5\" stroke-linecap=\"round\"/>"
+ },
+ "tab-order": {
+  "verdict": "none",
+  "why": "The role genuinely exists and genuinely draws no icon — it is a CollapsingHeader.",
+  "p": [
+   "M8 12h4",
+   "M18 12h22",
+   "M8 24h4",
+   "M18 24h22",
+   "M8 36h4",
+   "M18 36h22",
+   "M10 8v8",
+   "M10 20v8"
+  ]
+ },
+ "zoom-readout": {
+  "verdict": "none",
+  "why": "The one control in the application with a written, argued refusal that anticipated a completeness drive.",
+  "p": [
+   "M10 34l28-20",
+   "M13 12a4 4 0 1 1 0 8 4 4 0 0 1 0-8z",
+   "M35 28a4 4 0 1 1 0 8 4 4 0 0 1 0-8z"
+  ]
+ }
+}

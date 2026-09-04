@@ -153,6 +153,32 @@ Three groups, and the distinction matters when re-reading this:
 | `tab-order` | none | DEFERRED, and the state is reported honestly as "none" rather than bent to fit the verdict: the role genuinely exists and genuinely draws no icon. It is `egui::CollapsingHeader::new(t::tab_order_headi… |
 | `zoom-readout` | none | The art is a percent sign — two rings and a slash — and the role it names is the one control in this application with a WRITTEN, ARGUED refusal that anticipated a completeness drive and refused it in … |
 
+### ★★★ Three of the sixty-five are in NEITHER list, and the arithmetic says so
+
+36 adopted + 26 deferred = **62**. The missing three are `properties`,
+`insert-pages` and `set-scale`, and they were dropped before the audit ran
+rather than by it: a mechanical pre-filter removed every proposed name that
+collided with a key `Icon::name()` already answers to, on the reasoning that a
+collision is a restyle and this document defers restyles.
+
+**That reasoning is right and the silence was not.** Each of the three is a live
+icon *key* that ALIASES onto an existing asset — `properties` → `document.svg`,
+`insert-pages` → `upload.svg`, `set-scale` → `convert.svg`
+(`icons/catalog/mapping.rs`) — so the proposal was not offering a restyle of
+purpose-drawn art. It was offering, for the first time, art drawn **for these
+three roles specifically**, in place of three borrowings.
+
+⇒ They belong in the deferred table with the other restyle candidates, and they
+are a **stronger** case than most of it: an alias is the same defect class as
+the four-form-tools share this whole batch was adopted to fix, one level down.
+Not adopted today because nobody has reported the confusion and because
+`document`, `upload` and `convert` each still read correctly for their aliased
+role — but they are the first three to revisit, not the last.
+
+★ Found by the mockup build, which draws the shipped art beside the proposed art
+on a glyph sheet, because a count that does not add up is invisible in prose and
+obvious in a picture.
+
 ### The one that is verified dead
 
 `thin-lines` — art for a command **deleted six weeks ago with evidence**.
