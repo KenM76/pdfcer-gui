@@ -46,3 +46,4 @@
 - [A proxy condition survives one correction](feedback_a_proxy_condition_survives_one_correction.md) — a gate corrected once for a stand-in is usually still using one; ask what the mechanism READS.
 - [A correctly-sourced value used for the wrong role passes every gate](feedback_a_correctly_sourced_value_used_for_the_wrong_role_passes_every_gate.md) — the colour gate forbids invented values, not wrong roles; expose the PAIR behind a purpose-named function.
 - [A trace-grepping check passes on a build that crashed](feedback_a_trace_grepping_check_passes_on_a_build_that_crashed.md) — the oracle line is written before the panic; liveness belongs in the shared reader, and must be RED not SKIP.
+- [A harness with a bad input produces defects that do not exist](feedback_a_harness_with_a_bad_input_produces_defects_that_do_not_exist.md) — one wrong page index made six plausible failure reports and four filed defects; check what the check was ASKED to do.
