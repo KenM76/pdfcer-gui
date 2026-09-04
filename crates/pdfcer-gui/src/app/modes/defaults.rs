@@ -257,7 +257,48 @@ const NAVIGATOR_WIDTH: f32 = 280.0;
 /// Wider than a navigator because its rows are `label: value` pairs whose
 /// values are paths, font names and coordinate triples — content that wraps
 /// badly and reads terribly when it does.
+///
+/// This is Read's and Review's width. Edit's is [`EDIT_INSPECTOR_WIDTH`], and
+/// the two being different constants is the whole of what *"remembered per
+/// mode"* needs from this file — see that constant's ★★ section.
 const INSPECTOR_WIDTH: f32 = 320.0;
+
+/// The default width of **Edit's** inspector dock, in points —
+/// `OPERATOR_REQUESTS.md` **O123**: *"Default dock width 360 px in Edit,
+/// remembered per mode."*
+///
+/// ## ★★ "Remembered per mode" is already built, and this is the other half
+///
+/// A width is stored on [`egui_shell::dock::SideLayout::width_pts`], which is
+/// per side, of a [`egui_shell::dock::DockLayout`], which is saved **per mode**
+/// as a named workspace by `super::Modes::record_layout` every time the dock
+/// reports `layout_changed`. So a splitter drag in Edit has never been able to
+/// move Read's dock, and this change adds no mechanism — it changes what the
+/// *unremembered* case starts from.
+///
+/// ⇒ Which is why it is a second constant and not a runtime branch: an
+/// operator who has dragged Edit's dock is unaffected by either number, because
+/// their saved workspace wins. This is only the first frame of a fresh profile.
+///
+/// ## ★★★ Why 360 rather than "as wide as the widest row"
+///
+/// Because no width fits every row and a dock that tried would be one nobody
+/// wants. `SHELL_LAYOUT_PROPOSAL.md` §0.2 measured the real complaint: our
+/// object rows already carry paint style, colour hex, line width, node count,
+/// text preview, font name and size, image pixels **and a trailing diagnostic
+/// note the mockup has no equivalent for**. They were never missing content;
+/// they were being cut mid-character at 320 pt.
+///
+/// 360 stops the *common* row being cut. The uncommon one is elided with a
+/// tooltip — see `crate::panels::objects`' row work, which is the other half of
+/// O123 and the half that actually closes the defect.
+///
+/// ⚠ **Widening this is a harness re-baseline.** The canvas rect moves when the
+/// right dock widens, so every canvas-relative click coordinate in
+/// `tools/ui-verify` shifts. `SHELL_LAYOUT_PROPOSAL.md` §2.4 calls it *"the
+/// single most under-estimated line in this document"*, and it is a one-line
+/// constant change that is a suite-wide event.
+const EDIT_INSPECTOR_WIDTH: f32 = 360.0;
 
 /// The default arrangement for `mode_id`, **before** this build's panels
 /// are taken into account.
@@ -361,26 +402,22 @@ fn spec(mode_id: &str) -> ModeSpec {
         "review" => ModeSpec {
             left: vec![vec![pages(), Panel::Bookmarks.command_id()]],
             right: vec![
-                // ★★ The Tool panel gets a STACK OF ITS OWN, at the top, and
-                // it is the only panel in any arrangement that does.
+                // ★★★ **The Tool panel is gone** — `OPERATOR_REQUESTS.md` O123.
                 //
-                // Every recent addition went in as the last tab of an existing
-                // stack, and the reasoning was right for those panels: Redact
-                // is *"reachable in a click and invisible until asked for"*
-                // because a surface whose whole subject is permanent removal
-                // must not be on screen unasked, and Dimension groups followed
-                // because *"group setup is not what a reviewer opens Review to
-                // do."*
+                // It used to hold a stack of its own here, at the top, and the
+                // argument was recorded at length: *"Its entire purpose is
+                // being OFFERED rather than asked for … A tab that is
+                // invisible until clicked cannot fix a discoverability
+                // defect."* That argument was about a **tab**, and it is not
+                // what replaced the panel: `crate::app::toolstatus` is a
+                // permanent strip the dock reserves above these columns, which
+                // is offered harder than a stack was — it cannot be closed at
+                // all.
                 //
-                // **This panel is the exact inverse.** Its entire purpose is
-                // being OFFERED rather than asked for — it exists because an
-                // operator could not find a command that was on the ribbon all
-                // along. A tab that is invisible until clicked cannot fix a
-                // discoverability defect: it has the same shape as the defect.
-                //
-                // Its own stack, first, so it is on screen at frame one with no
-                // clicks. That is the assertion the whole feature rests on.
-                vec![Panel::Tool.command_id()],
+                // The panel's live controls did not go with it. They are in
+                // `crate::panels::properties::tool`, one stack down, which is
+                // the whole of the operator's *"everything can be in object
+                // and properties."*
                 vec![
                     comments(),
                     Panel::Properties.command_id(),
@@ -411,20 +448,51 @@ fn spec(mode_id: &str) -> ModeSpec {
         // other, and it is why Objects and Properties are separate stacks
         // rather than two tabs of one.
         "edit" => ModeSpec {
-            left: vec![
-                vec![pages(), Panel::Bookmarks.command_id()],
-                vec![
-                    Panel::Layers.command_id(),
-                    Panel::Signatures.command_id(),
-                    Panel::Fonts.command_id(),
-                ],
-            ],
+            // ★★★ **ONE stack, five tabs** — `OPERATOR_REQUESTS.md` O123:
+            // *"Layers, Signatures and Fonts join Pages and Bookmarks as tabs
+            // in one dock instead of a second dock with a fixed split."*
+            //
+            // It used to be two stacks with a splitter between them, on the
+            // rule *"reaching one surface must not hide another you are using
+            // AT THE SAME TIME"* — navigating pages while reading the layer
+            // list being the named pair. The operator has ruled the other way,
+            // and the cost he is buying is real: a second stack is a second
+            // tab bar plus `plan::MIN_STACK_HEIGHT` of floor, and it spent
+            // that on a pair nobody had reported using together.
+            //
+            // ★ Five tabs is where `plan`'s overflow affordance starts to
+            // matter at a 280 pt navigator, and that is the same three-rung
+            // ladder `RIBBON_SCALING.md` documents for the band. It is the
+            // dock's own mechanism, already built and already checked by
+            // failure mode #8 — not a second answer invented here.
+            left: vec![vec![
+                pages(),
+                Panel::Bookmarks.command_id(),
+                Panel::Layers.command_id(),
+                Panel::Signatures.command_id(),
+                Panel::Fonts.command_id(),
+            ]],
             right: vec![
-                // The Tool panel, first and alone, for the reason Review's arm
-                // records at length. Ahead of Objects because Objects is a
-                // navigator an operator consults about the document, and this
-                // is the one surface that tells them what they are holding.
-                vec![Panel::Tool.command_id()],
+                // ★★★ **Objects over Properties is the master–detail pair, and
+                // it now has the whole side** — `OPERATOR_REQUESTS.md` O123.
+                //
+                // > *"Objects and Properties become master–detail in one panel
+                // > with a draggable split … I'd also like those one to appear
+                // > in the space where the tool dock currently shown."*
+                //
+                // Two adjacent stacks in ONE column is exactly that shape, and
+                // it is what this dock already builds: `SHELL_LAYOUT_PROPOSAL`
+                // §2.1 — *"We already ship a master–detail, and it is already a
+                // vertical pair with a draggable split."* The split is
+                // `egui_shell::dock`'s own stack splitter, dragged at
+                // `dock/mod.rs`, floored at `plan::MIN_STACK_HEIGHT`.
+                //
+                // ★ So what O123 changes here is **room, not linkage**. The
+                // Tool panel's stack was taking a third of the side; deleting
+                // it hands that third to these two. A row click already raises
+                // `Action::SelectObject` and Properties already reads the same
+                // canvas selection — since 2026-08-26, and neither end is
+                // touched by this change.
                 vec![Panel::Objects.command_id()],
                 vec![
                     Panel::Properties.command_id(),
@@ -476,7 +544,7 @@ fn spec(mode_id: &str) -> ModeSpec {
                 ],
             ],
             left_width: NAVIGATOR_WIDTH,
-            right_width: INSPECTOR_WIDTH,
+            right_width: EDIT_INSPECTOR_WIDTH,
         },
         // A mode this module has no opinion about. The full arrangement,
         // for the reason in the module header — and it is reachable: an
@@ -555,6 +623,104 @@ mod tests {
         layout.panels().map(|p| p.as_str().to_owned()).collect()
     }
 
+    /// ★★★ **Edit's inspector starts at 360 pt and the reading stances start
+    /// at 320** — `OPERATOR_REQUESTS.md` O123, part 6.
+    ///
+    /// Asserted per mode rather than as one constant, because *"remembered per
+    /// mode"* is the operator's phrase and the failure it guards against is the
+    /// tempting one-line version: bumping `INSPECTOR_WIDTH` alone, which would
+    /// widen Read's and Review's docks too and take that room from the page in
+    /// the two modes whose whole subject is the page.
+    ///
+    /// ★ The left widths are asserted in the same test on purpose. Edit's left
+    /// side became ONE stack of five tabs in this change, and a five-tab bar in
+    /// a 280 pt navigator is where the dock's overflow affordance starts to
+    /// matter — so a future widening of the navigator is a decision somebody
+    /// should have to change a test to make.
+    #[test]
+    fn the_inspector_is_wider_in_edit_than_in_the_reading_stances() {
+        let edit = layout_for("edit");
+        assert!(
+            (edit.right.width_pts - 360.0).abs() < f32::EPSILON,
+            "Edit's inspector is {} pt, not the 360 O123 asks for",
+            edit.right.width_pts
+        );
+        for reading in ["read", "review"] {
+            let layout = layout_for(reading);
+            assert!(
+                (layout.right.width_pts - 320.0).abs() < f32::EPSILON,
+                "{reading}'s inspector moved to {} pt; O123 widened Edit alone",
+                layout.right.width_pts
+            );
+        }
+        for mode in ["read", "review", "edit"] {
+            let layout = layout_for(mode);
+            assert!(
+                (layout.left.width_pts - 280.0).abs() < f32::EPSILON,
+                "{mode}'s navigator is {} pt",
+                layout.left.width_pts
+            );
+        }
+    }
+
+    /// ★★★ **Edit's left side is ONE stack, and it holds all five navigators**
+    /// — `OPERATOR_REQUESTS.md` O123, part 5.
+    ///
+    /// > *"Layers, Signatures and Fonts join Pages and Bookmarks as tabs in one
+    /// > dock instead of a second dock with a fixed split."*
+    ///
+    /// The count is asserted as well as the membership, and the count is the
+    /// half that matters: a build that put all five panels back into two stacks
+    /// would satisfy a membership assertion exactly, and would be the fixed
+    /// split he asked to be rid of.
+    #[test]
+    fn edits_navigators_share_one_stack() {
+        let edit = layout_for("edit");
+        let stacks: usize = edit.left.columns.iter().map(|c| c.stacks.len()).sum();
+        assert_eq!(stacks, 1, "Edit's left side is not one stack");
+        assert_eq!(
+            edit.left.panels().map(PanelId::as_str).collect::<Vec<_>>(),
+            [
+                pages(),
+                Panel::Bookmarks.command_id(),
+                Panel::Layers.command_id(),
+                Panel::Signatures.command_id(),
+                Panel::Fonts.command_id(),
+            ],
+            "the five navigators, in one stack, in reading order"
+        );
+    }
+
+    /// ★★★ **Objects sits directly above Properties on Edit's right side, and
+    /// nothing sits above them** — `OPERATOR_REQUESTS.md` O123, parts 3 and 4.
+    ///
+    /// > *"Objects and Properties become master–detail in one panel with a
+    /// > draggable split … I'd also like those one to appear in the space where
+    /// > the tool dock currently shown."*
+    ///
+    /// Two adjacent stacks in one column is the master–detail shape, and the
+    /// split between them is the dock's own draggable stack splitter. What this
+    /// test pins is the part a refactor could undo without anybody noticing:
+    /// that **Objects is the first stack**, which is only true because the Tool
+    /// panel's stack was removed rather than merely emptied.
+    #[test]
+    fn edits_right_side_is_objects_over_properties() {
+        let edit = layout_for("edit");
+        assert_eq!(edit.right.columns.len(), 1, "one column, two stacks");
+        let stacks = &edit.right.columns[0].stacks;
+        assert_eq!(stacks.len(), 2, "master over detail, and nothing else");
+        assert_eq!(
+            stacks[0].tabs.first().map(PanelId::as_str),
+            Some(Panel::Objects.command_id()),
+            "Objects must be the master, at the top of the side"
+        );
+        assert_eq!(
+            stacks[1].tabs.first().map(PanelId::as_str),
+            Some(Panel::Properties.command_id()),
+            "Properties must be the detail, directly under it"
+        );
+    }
+
     /// ★ **Each mode's default is the arrangement `MODES_AND_PANELS.md`
     /// specifies.**
     ///
@@ -591,7 +757,6 @@ mod tests {
                 .map(PanelId::as_str)
                 .collect::<Vec<_>>(),
             [
-                Panel::Tool.command_id(),
                 comments(),
                 Panel::Properties.command_id(),
                 Panel::Forms.command_id(),
@@ -715,7 +880,6 @@ mod tests {
                 .map(PanelId::as_str)
                 .collect::<Vec<_>>(),
             [
-                Panel::Tool.command_id(),
                 comments(),
                 Panel::Properties.command_id(),
                 Panel::Forms.command_id(),

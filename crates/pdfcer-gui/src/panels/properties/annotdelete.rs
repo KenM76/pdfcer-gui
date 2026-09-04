@@ -33,9 +33,12 @@
 //! * the **Delete key** raised the action,
 //!
 //! and all three ended in `crate::app::actions::apply::vector_edit`'s `Err`
-//! arm — which writes one line to the trace and, by that arm's own recorded
-//! decision, says **nothing to the operator**. Three visible controls, silently
-//! inert. That is the failure this project is named after.
+//! arm — which wrote one line to the trace and, by that arm's own recorded
+//! decision, said **nothing to the operator**. Three visible controls, silently
+//! inert. That is the failure this project is named after. (Since O116,
+//! 2026-09-04, that arm words an un-categorised decline. It ends the silence
+//! and names no annotation, no kind and no cause, which is why this file's
+//! sentences are still owed.)
 //!
 //! ⇒ ★★ The generalisation, and it is the audit's rather than this file's: **a
 //! query the engine wrote for a shell is not consumed by being read.** Both of

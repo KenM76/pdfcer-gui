@@ -1,41 +1,10 @@
-//! # icons::catalog — which glyphs exist, and what each one means
-//!
-//! The [`Icon`] enum is the whole vocabulary: one variant per drawn glyph,
-//! named for the **role** the icon plays rather than for the artwork, so a
-//! future re-draw changes one constant in [`super::assets`] and touches no
-//! call site.
-//!
-//! Salvaged from `D:\Dev\pdfce\crates\pdfce-gui\src\icons.rs` (Class A,
-//! `SALVAGE.md`). Every variant's doc comment is carried across, because
-//! several of them are not descriptions at all — they are *rulings*. Three
-//! kinds recur and each one is a decision somebody paid for:
-//!
-//! * **"This glyph was authored because a text character had no face."**
-//!   [`Icon::Back`], [`Icon::Close`], [`Icon::ChevronUp`],
-//!   [`Icon::ChevronDown`] each replace a Unicode character that was
-//!   VERIFIED to render as a tofu box in the shipped font stack. The
-//!   operator's standing ruling (2026-08-06) is that a missing glyph is
-//!   **authored**, not worked around by rewording the control.
-//! * **"This glyph must not be that other glyph."** [`Icon::Back`] vs
-//!   [`Icon::ChevronLeft`], [`Icon::ShowPoints`] vs [`Icon::EditObjects`],
-//!   [`Icon::Layers`] vs [`Icon::Combine`]. Each pair states the shape cue
-//!   that keeps them apart at 16 px, and losing that note is how the pair
-//!   quietly converges in a later "consistency" pass.
-//! * **"An icon is a claim."** [`Icon::Signatures`] must not be a seal,
-//!   badge, shield or checkmark, because pdfcer performs no cryptographic
-//!   verification and those shapes read as VALIDATED. [`Icon::Fonts`] must
-//!   not be a pencil or an I-beam, because the Fonts panel writes nothing.
-//!   A glyph reaches the operator's eye before the panel's first line does.
-//!
-//! ## The one key namespace
-//!
-//! [`Icon::name`] is the string an `egui_shell::Command` names with
-//! `.with_icon("…")`, and [`Icon::from_key`] is the reverse. There is
-//! exactly one spelling of each key and it lives in `name`; `from_key`
-//! searches [`Icon::ALL`] rather than carrying a second `match`, so the two
-//! cannot drift. `every_name_round_trips_through_from_key` pins it anyway,
-//! because "cannot drift" is a property of today's implementation and the
-//! test is a property of the contract.
+//! ★ **This module's documentation lives in `OVERVIEW.md`** beside this file,
+//! included below — moved there 2026-09-04 for the reason `app::actions`
+//! records for the same move: *"the bulk is prose"*, and prose in `//!`
+//! comments spends R2's line budget without giving a compiler anything to
+//! check. **That file also carries the argument for the next split**, which
+//! this one is only a reprieve from: treat this file as full.
+#![doc = include_str!("OVERVIEW.md")]
 
 /// Every icon pdfcer ships, one variant per drawn glyph.
 ///
@@ -1425,6 +1394,66 @@ pub enum Icon {
     /// rule is that **an icon is a claim**, and this one was making one its
     /// command could not support.
     Convert,
+    // ── five glyphs no control reaches yet, 2026-09-04. One replaces a live
+    // borrow; four are art before button ([`Icon::EditObjects`] is the precedent).
+    /// Export the page as a raster image — `file.export_image`. A picture tile
+    /// (rect, mountain horizon) with an arrow leaving it to the right.
+    /// ★ Replaces a LIVE BORROW made hours earlier: the command registered wearing
+    /// [`Icon::Export`], defended as one act in three formats — true of DXF and
+    /// form data, false of a picture, because [`Icon::InsertImage`] has already
+    /// taught the operator what a framed tile with a horizon means here. Distinct
+    /// from IT by DIRECTION alone, from [`Icon::Export`] (an empty tray) by naming
+    /// its cargo, from [`Icon::PickLink`] by leaving a closed frame horizontally
+    /// where that escapes a corner GAP diagonally.
+    ExportImage,
+
+    /// Hand this file to the system's PDF viewer. An application WINDOW — a frame
+    /// with a title bar — with a document sheet overlapping its lower-left corner
+    /// and breaking its outline. No command names it yet.
+    /// ⚠ **The label names a vendor; the art carries nothing of that mark** — no
+    /// letterform, no badge, no traced shape. ★★ The title bar is the whole
+    /// distinction: [`Icon::PickLink`] already claims the box-with-escaping-arrow
+    /// by name, so an arrow on a plain frame would draw one sentence for two
+    /// meanings. A frame DIVIDED by a rule is an application, not a box something
+    /// leaves, and it is the set's only one; the overlap is the "handed to" cue,
+    /// the window being an open path so the sheet passes in FRONT of it.
+    OpenInAcrobat,
+
+    /// Copy the selection to the clipboard as vector geometry rather than as a
+    /// picture of it. **Not built**; the art exists so the proposal can be drawn.
+    /// [`Icon::Copy`]'s two offset sheets, a Bezier between two square nodes on
+    /// the FRONT one.
+    /// The arrangement IS the clipboard family and may not be given up — what
+    /// [`Icon::SaveCopy`] refuses to borrow — so every distinguishing mark is
+    /// inside the front sheet, answering what lands on the clipboard: the
+    /// construction. Distinct from [`Icon::Copy`] by that interior alone (the
+    /// curve runs corner to corner so it cannot read as a smudge at 16 px), from
+    /// [`Icon::EditObjects`] by having sheets, [`Icon::ShowPoints`] by curving.
+    CopyAsVector,
+
+    /// Put a password on this document — the engine's `set_encryption`, **awaiting
+    /// the operator's ruling** as O119. A folded page, padlock over its lower half.
+    /// ★★★ The page is the entire point. [`Icon::Locked`] is a BARE padlock marking
+    /// a ROW the document forbids operating — its asset says "not 'secure', not
+    /// 'verified', not 'encrypted'" — and this makes the sentence that one refuses:
+    /// the DOCUMENT is what is locked. ⚠ Its constraint travels too: never on a
+    /// signature row, because pdfcer performs no cryptographic verification and a
+    /// padlock reads as VALIDATED. Distinct from the other folded pages, whose
+    /// interiors are all LINEAR, by a chunky closed block; from [`Icon::Redact`]
+    /// by being unfilled — nothing here is removed.
+    Encrypt,
+
+    /// What the document permits — the engine's `set_permissions`, the other half
+    /// of O119 and awaiting the same ruling. A folded-corner page carrying two
+    /// ticked rows: a tick, then a rule, twice. `/P` is a bit field, and on screen
+    /// a bit field is a list of things with ticks beside them.
+    /// ⚠ The ticks mean THIS BOX IS ON, never *verified* — [`Icon::Accept`] carries
+    /// the same warning, and a permission setting is a request any program may
+    /// ignore. Distinct from [`Icon::ManageList`] on both axes at once: ticks where
+    /// that has square markers, a page where that has, by its own note, "no frame
+    /// at all". From [`Icon::Accept`] by scale and enclosure, `check-box.svg` by
+    /// count, [`Icon::Encrypt`] by the interior alone — one page, two questions.
+    Permissions,
 }
 
 // ★ The mapping lives next door. `Icon::ALL`, `Icon::source` and `Icon::name`

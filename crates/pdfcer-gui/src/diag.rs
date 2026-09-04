@@ -405,16 +405,56 @@ fn record_if_changed(
 /// clip whichever end is cut.
 const VISIBLE_FRACTION: f32 = 0.6;
 
-pub fn ui_rect_visible(name: &str, rect: egui::Rect, clip: egui::Rect) {
-    if !enabled() {
-        return;
-    }
+/// **The verdict, on its own, with no side effect.**
+///
+/// `true` when at least [`VISIBLE_FRACTION`] of `rect` survives `clip`.
+///
+/// # ★★ Why this is split out of [`ui_rect_visible`]
+///
+/// Because *a change to a diagnostic channel is exactly the kind that can be
+/// green and wrong*, and the only way to write a test that fails on the wrong
+/// behaviour is for the decision to be something a test can call. Everything
+/// else in this module writes to a global map and to `stderr` behind an
+/// environment variable, which is observable only by a driven run — and a
+/// driven run is precisely what cannot tell you that a check silently became a
+/// SKIP.
+///
+/// So the rule the whole visibility channel turns on is one pure function, it
+/// is public, and `crates/pdfcer-gui/src/app/surfaces.rs`'s dock-sink test
+/// calls it against rectangles a **real** `egui_shell::dock::Dock` produced.
+///
+/// ★ Note what it does with a zero-area region: `false`. A rectangle with no
+/// area cannot be 60 % anything, and the old spelling's `area > 0.0` guard said
+/// the same thing by falling through to silence. Named rather than implied,
+/// because "a collapsed control is not visible" is a claim worth being able to
+/// read.
+#[must_use]
+pub fn visible_enough(rect: egui::Rect, clip: egui::Rect) -> bool {
     let shown = clip.intersect(rect);
     let area = rect.width() * rect.height();
     let visible = shown.width().max(0.0) * shown.height().max(0.0);
-    if area > 0.0 && visible / area >= VISIBLE_FRACTION {
-        ui_rect(name, rect);
+    area > 0.0 && visible / area >= VISIBLE_FRACTION
+}
+
+/// Returns whether the region was published — i.e. whether it is visible
+/// enough to be worth naming. **Not** whether the channel is on: a caller
+/// asking "can the operator see this?" gets the same answer with
+/// `PDFCER_DIAG` unset, which is what makes the answer testable.
+pub fn ui_rect_visible(name: &str, rect: egui::Rect, clip: egui::Rect) -> bool {
+    // ★ The verdict is computed BEFORE the `enabled()` short-circuit, which
+    // costs six floating-point operations per region on a channel-off build.
+    // That is deliberate and it is cheap: the alternative is a function whose
+    // return value means "visible" when the channel is on and "no" when it is
+    // off, i.e. a two-valued answer to a three-valued question, and every test
+    // written against it would be asserting the environment rather than the
+    // layout. `ui_rect` below still returns immediately when the channel is
+    // off, so the map lock and the `format!` — the parts that actually cost
+    // anything — are unchanged.
+    if !visible_enough(rect, clip) {
+        return false;
     }
+    ui_rect(name, rect);
+    true
     // Deliberately silent when it does not intersect. This is not a retirement
     // — `end_ui_frame` handles that, and a region that scrolls out of view and
     // back is exactly the case it was built for: it emits `ui-rect-gone` on the

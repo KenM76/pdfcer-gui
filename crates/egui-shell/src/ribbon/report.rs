@@ -159,6 +159,17 @@ pub fn qat_item(command_id: &str) -> String {
     format!("{PREFIX}.qat.{command_id}")
 }
 
+/// The name under which one **trailing control** — a button at the far right
+/// of the tab-strip row, past the mode selector — is published.
+///
+/// Its own name rather than sharing [`qat_item`], because the two regions are
+/// at opposite ends of the row and a driven check that could not tell them
+/// apart would pass on a build that had put the control in the wrong one.
+#[must_use]
+pub fn trailing_item(command_id: &str) -> String {
+    format!("{PREFIX}.trailing.{command_id}")
+}
+
 /// The name under which one **band command control** — a button inside a
 /// captioned group on the active tab — is published.
 ///

@@ -73,6 +73,39 @@ fn a_decline_lives_exactly_as_long_as_its_reason() {
             );
         }
     }
+
+    // ★★★ An engine refusal survives every combination too — and for a
+    // DIFFERENT reason from the one above, which is why it is asserted
+    // separately rather than folded into the same loop.
+    //
+    // `SaveFailed` survives because its condition is stable. `EditRefused`
+    // cannot claim that: its causes are unknown by construction and some of
+    // them do change under the operator. What it has instead is the tense —
+    // the sentence reports what happened when the operator pressed, so no
+    // later frame can falsify it — and, decisively, **no predicate to
+    // re-ask**. A build that gave it one would be guessing at the engine's
+    // reason, and a wrong guess answering `false` would take a true sentence
+    // off the screen while the operator was reading it. See the variant's
+    // docs; this is the assertion that fails if somebody "improves" it.
+    for has_bounds in [false, true] {
+        for drawn in [false, true] {
+            for in_form in [false, true] {
+                assert!(
+                    Declined::EditRefused.still_true(
+                        has_bounds,
+                        drawn,
+                        History {
+                            can_undo: true,
+                            can_redo: true,
+                        },
+                        in_form
+                    ),
+                    "an unexplained refusal was retired by a fact that has nothing to do with \
+                     it ({has_bounds}, {drawn}, {in_form})"
+                );
+            }
+        }
+    }
 }
 
 /// ★ **Each history decline is retired by ITS OWN stack filling, and by
@@ -259,6 +292,11 @@ fn no_two_declines_share_a_sentence() {
         Declined::NothingToFrame,
         Declined::CanvasNotDrawn,
         Declined::SaveFailed,
+        // ★ Four now. The un-categorised engine refusal is the one most at
+        // risk of being written as a paraphrase of a neighbour, because it is
+        // the one with the least to say — and a decline that reads like
+        // another decline tells the operator the wrong thing happened.
+        Declined::EditRefused,
     ];
     for (i, a) in all.iter().enumerate() {
         for b in &all[i + 1..] {

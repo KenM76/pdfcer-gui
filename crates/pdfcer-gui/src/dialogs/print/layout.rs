@@ -214,12 +214,19 @@ impl PrintDialog {
     /// - a **vertical** bar appears only when a column's own content is taller
     ///   than the body, which for the options column is a real possibility on a
     ///   short window and for the preview never is.
+    ///
+    /// ★ `context` is the frame's one cache context — see
+    /// [`super::verdicts::Context`]. It is `Some` exactly when `job` is, and
+    /// the two are zipped below rather than unwrapped separately: the preview
+    /// needs both or neither, and a `job` drawn against a context from a
+    /// different device is the staleness the whole type exists to prevent.
     pub(super) fn body(
         &mut self,
         ui: &mut Ui,
         doc: &OpenDoc,
         job: Option<&Job>,
         page_sizes: &[(f64, f64)],
+        context: Option<&super::verdicts::Context>,
     ) {
         // ═══════════════════════════════════════════════════════════════════
         // EVERY NUMBER BELOW IS DERIVED FROM THE OUTER SPACE AND CONSTANTS.
@@ -356,13 +363,14 @@ impl PrintDialog {
                     ui.allocate_ui_with_layout(
                         egui::vec2(preview_width, column_height),
                         egui::Layout::top_down(egui::Align::Min),
-                        |ui| match job {
-                            Some(job) => preview::column(
+                        |ui| match job.zip(context) {
+                            Some((job, context)) => preview::column(
                                 ui,
                                 &preview::Inputs {
                                     doc,
                                     job,
                                     page_sizes,
+                                    context,
                                 },
                                 self,
                                 column_height,

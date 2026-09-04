@@ -143,7 +143,7 @@ pub(crate) fn tab_bar(
 
     ui.painter().rect_filled(rect, 0.0, ctx.theme.palette.panel);
     ctx.reporter
-        .report(rect, || report::tab_bar(side, column, stack_index));
+        .report(ui, rect, || report::tab_bar(side, column, stack_index));
 
     // 1. Measure. `egui` memoizes layout jobs, so asking for the width of
     //    a label that is about to be drawn costs a hash lookup rather
@@ -367,7 +367,8 @@ fn draw_tab(
         ctx.intents.push(Intent::Close(panel.clone()));
     }
 
-    ctx.reporter.report(response.rect, || report::tab(panel));
+    ctx.reporter
+        .report(ui, response.rect, || report::tab(panel));
 }
 
 /// Draw the "⏷ N more" affordance and the menu behind it.
@@ -416,7 +417,7 @@ fn draw_overflow(
         )
         .inner;
 
-    ctx.reporter.report(response.rect, || {
+    ctx.reporter.report(ui, response.rect, || {
         report::overflow(side, column, stack_index)
     });
 
@@ -483,7 +484,7 @@ fn text_width(ui: &egui::Ui, text: &str) -> f32 {
 mod tests {
     use super::*;
     use crate::dock::model::{Column, DockLayout, PanelId, PanelInfo, PanelRegistry, SideLayout};
-    use crate::dock::{Dock, DockFrameReport, DockState};
+    use crate::dock::{Dock, DockFrameReport, DockState, RectReport};
 
     /// A registry of `n` panels with short, distinct labels.
     fn registry(n: usize) -> PanelRegistry {
@@ -517,7 +518,7 @@ mod tests {
         let mut rects: Vec<(String, Rect)> = Vec::new();
         let ctx = egui::Context::default();
         {
-            let mut sink = |name: &str, rect: Rect| rects.push((name.to_owned(), rect));
+            let mut sink = |r: &RectReport<'_>| rects.push((r.name.to_owned(), r.rect));
             let input = egui::RawInput {
                 screen_rect: Some(Rect::from_min_size(egui::Pos2::ZERO, window)),
                 ..Default::default()
@@ -636,7 +637,7 @@ mod tests {
         let mut rects: Vec<(String, Rect)> = Vec::new();
         let ctx = egui::Context::default();
         {
-            let mut sink = |name: &str, rect: Rect| rects.push((name.to_owned(), rect));
+            let mut sink = |r: &RectReport<'_>| rects.push((r.name.to_owned(), r.rect));
             let input = egui::RawInput {
                 screen_rect: Some(Rect::from_min_size(
                     egui::Pos2::ZERO,
@@ -760,7 +761,7 @@ mod tests {
                 ..Default::default()
             };
             let out = {
-                let mut sink = |name: &str, rect: Rect| rects.push((name.to_owned(), rect));
+                let mut sink = |r: &RectReport<'_>| rects.push((r.name.to_owned(), r.rect));
                 let mut handler = handler;
                 ctx.run_ui(input, |ui| {
                     let mut dock = Dock::new()

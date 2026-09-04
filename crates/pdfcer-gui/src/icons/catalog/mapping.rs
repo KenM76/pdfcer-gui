@@ -168,6 +168,15 @@ impl Icon {
         Icon::SaveCopy,
         Icon::UnembedFonts,
         Icon::WheelFlip,
+        // The five with no ribbon control yet, 2026-09-04. `ExportImage` is
+        // named by `file.export_image`; the other four are art before button,
+        // and joining this list is what puts them under the catalogue-wide
+        // tests — which is the whole reason a variant exists for each.
+        Icon::CopyAsVector,
+        Icon::Encrypt,
+        Icon::ExportImage,
+        Icon::OpenInAcrobat,
+        Icon::Permissions,
     ];
 
     /// The asset's SVG source.
@@ -217,6 +226,11 @@ impl Icon {
             Icon::SaveCopy => assets::SAVE_COPY,
             Icon::UnembedFonts => assets::UNEMBED_FONTS,
             Icon::WheelFlip => assets::WHEEL_FLIP,
+            Icon::CopyAsVector => assets::COPY_AS_VECTOR,
+            Icon::Encrypt => assets::ENCRYPT,
+            Icon::ExportImage => assets::EXPORT_IMAGE,
+            Icon::OpenInAcrobat => assets::OPEN_IN_ACROBAT,
+            Icon::Permissions => assets::PERMISSIONS,
             Icon::Open | Icon::FontFolders => assets::FOLDER,
             Icon::Save => assets::SAVE,
             Icon::Sidebar => assets::SIDEBAR,
@@ -369,6 +383,13 @@ impl Icon {
             Icon::SaveCopy => "save-copy",
             Icon::UnembedFonts => "unembed-fonts",
             Icon::WheelFlip => "wheel-flip",
+            Icon::CopyAsVector => "copy-as-vector",
+            Icon::Encrypt => "encrypt",
+            Icon::ExportImage => "export-image",
+            // ui-text-exempt: icon key, never displayed. The vendor name is the
+            // COMMAND's label, not this string, and the art carries no mark.
+            Icon::OpenInAcrobat => "open-in-acrobat",
+            Icon::Permissions => "permissions",
             Icon::Open => "open",
             Icon::Save => "save",
             Icon::Sidebar => "sidebar",

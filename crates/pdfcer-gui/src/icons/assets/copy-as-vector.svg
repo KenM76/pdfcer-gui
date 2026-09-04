@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Copy the selection to the clipboard AS VECTOR GEOMETRY rather than as a
+       picture of it — two offset sheets in `copy.svg`'s arrangement, with the
+       FRONT sheet carrying a Bezier segment between two square node handles.
+       Two rects, a curve and two node rects; primitives only, no trademark
+       risk.
+
+       ★ NOT WIRED TO ANY COMMAND TODAY, and that is deliberate rather than an
+       omission. `Icon::EditObjects` is the standing precedent — its command was
+       deleted on 2026-08-31 and its variant remains, because an asset with no
+       `Icon` variant is an asset NO TEST WALKS: `every_icon_parses`,
+       `every_icon_rasterizes_to_visible_pixels`,
+       `fill_is_semantic_and_the_set_that_uses_it_is_closed`,
+       `crlf_line_endings_parse_identically` and
+       `no_two_icons_render_as_the_same_picture` all iterate `Icon::ALL`. Art
+       kept outside that list rots quietly and is discovered by whoever wires it
+       up months later. The variant is how the art stays covered.
+
+       ★★ WHAT THE FRONT SHEET SAYS, AND WHY IT IS THE ONLY THING THAT CHANGES.
+
+       The clipboard family in this set is defined by ARRANGEMENT: two rounded
+       rects, offset diagonally, one behind the other. `copy.svg`'s own note
+       fixes that as the meaning — *take this and hold it* — and `save-copy.svg`
+       spends a paragraph on why it may NOT borrow the arrangement without also
+       carrying the save body, because "a copy is a second file" is a different
+       claim from "a copy is in the clipboard". So a second clipboard verb must
+       keep the arrangement or it stops being a clipboard verb.
+
+       ⇒ Everything that distinguishes this glyph is therefore INSIDE the front
+       sheet, and what is inside it is the answer to the only question the
+       operator is actually asking: *what will be on the clipboard?* A curve
+       with grabbable ends. Not a picture of the shape — the shape's
+       CONSTRUCTION.
+
+       Neighbours, and the cue that holds each apart:
+
+       * `copy.svg` (`Icon::Copy`) is this arrangement with both sheets BLANK.
+         The separation is the front sheet's contents and nothing else, which is
+         exactly the intended reading: same act, different payload. ⚠ This is
+         the tightest pair in the glyph's neighbourhood by construction, and it
+         is tight ON PURPOSE — the two commands are siblings and belong to one
+         band. The curve is drawn large and diagonal, corner to corner of the
+         front sheet, precisely so the interior is not a subtle mark: at 16 px
+         a small mark inside a sheet is a smudge, and a smudge would collapse
+         this into `copy`.
+       * `edit-objects.svg` (`Icon::EditObjects`) is the SAME Bezier-and-two-
+         nodes construction with NO sheets at all — it fills the whole grid,
+         because its subject is the geometry itself. This one has sheets, and
+         the sheets are the cue: a curve on a page is a thing being carried, a
+         bare curve is a thing being edited.
+       * `show-points.svg` puts THREE nodes on a STRAIGHT run for the same
+         reason in reverse: its own note records that a straight run of points
+         reads as "the points themselves" where a curve reads as "shape
+         editing". Both cues survive here — this is a curve, it is on sheets,
+         and it is neither of them.
+       * `copy-page-text.svg` and `copy-document-text.svg` are the other two
+         "copy out in a stated format" commands, and they are drawn as SHEETS
+         WITH RULED LINES rather than as the clipboard pair, because their
+         payload is typography. Ruled lines versus a construction curve is the
+         axis this whole sub-family is organised on.
+
+       The nodes are the set's standard 8-unit stroked squares, matching
+       `edit-objects.svg` and `show-points.svg` exactly. They are NOT filled:
+       `fill_is_semantic_and_the_set_that_uses_it_is_closed` reserves fill for
+       `redact.svg` alone, and `show-points.svg` records that it lost the same
+       argument for the same reason.
+
+       ★★ THE REAR SHEET IS DRAWN AS OPEN EDGES, NOT AS A CLOSED RECT, and it
+       was a closed rect for exactly one render. `copy.svg` can afford two full
+       rects because its front sheet is EMPTY, so the rear's right edge crosses
+       nothing. This front sheet is not empty: at 48 px that edge ran straight
+       down through the lower node, and the node stopped reading as a handle and
+       started reading as a crossroads. The defect was invisible in the source
+       and obvious in a rendered screenshot, which is this project's standing
+       rule about anything visual having exactly one oracle.
+
+       ⇒ So the rear is a left edge and a bottom edge, stopping where the front
+       sheet covers it — the construction `save-copy.svg` and `pages.svg` and
+       `layers.svg` all reached for against the same risk, and `save-copy`'s note
+       states the general form of it: *fully-drawn stacked shapes become a solid
+       mass at 16 px*. The stack still reads as a stack, because two edges
+       peeling out from behind a sheet is what a stack looks like; what is gone
+       is the line that had nothing to say and was standing where the payload
+       needed to be. -->
+  <path d="M18 14H10a2 2 0 0 0-2 2v22a2 2 0 0 0 2 2h16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="16" y="6" width="26" height="32" rx="2" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M23 31C23 19 32 27 36 14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <rect x="19" y="27" width="8" height="8" rx="1" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+  <rect x="32" y="10" width="8" height="8" rx="1" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+</svg>

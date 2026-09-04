@@ -158,10 +158,34 @@ scan() {
             esac
         done
 
+        # ★★★ `ui.spinner()` JOINS `.strong()`, 2026-09-04 — DEFECTS.md D2's
+        # fourth recurrence, and the funniest one in the tree.
+        #
+        # `egui::Spinner` resolves its OWN colour from
+        # `visuals.strong_text_color()` (egui-0.35 `widgets/spinner.rs:44`) and
+        # draws it on whatever is behind it. That accessor is
+        # `widgets.active.fg_stroke.color` — the ink for the accent FILL — so on
+        # a dialog background it measures a luminance gap of **17.9 / 5.0 /
+        # 29.1** across the three presets against a floor of 90. Airy is white
+        # on white to within five levels.
+        #
+        # ★★ It shipped in `dialogs/ocr.rs`, on the spinner the operator asked
+        # for BY NAME — *"so that the user can see that it is doing something
+        # and hasn't frozen on large documents."* An invisible spinner is
+        # precisely the state his request existed to prevent.
+        #
+        # ★ And this gate could not see it, because the whole file greps for a
+        # SITE THAT NAMES A COLOUR and a bare `ui.spinner()` names none. It was
+        # found by `theme::contrast`, which enumerates what a `Style` will
+        # RENDER rather than what a source file SAYS — a different question,
+        # and the reason both gates exist. This clause is the cheap half: the
+        # perceptual gate finds the class, the grep stops the recurrence.
         local k
         for k in "${!code[@]}"; do
             case "${code[$k]}" in
                 *".strong()"*) ;;
+                *"ui.spinner()"*) ;;
+                *"Spinner::new()"*) ;;
                 *) continue ;;
             esac
             local lo=$((k - 2))
@@ -173,7 +197,14 @@ scan() {
             case "$window" in
                 *".color("*) continue ;;
             esac
-            echo "  $file:${where[$k]}: .strong() with no explicit .color() nearby"
+            case "${code[$k]}" in
+                *"pinner"*)
+                    echo "  $file:${where[$k]}: a spinner with no explicit .color() — it will resolve strong_text_color() and draw it on the panel behind it"
+                    ;;
+                *)
+                    echo "  $file:${where[$k]}: .strong() with no explicit .color() nearby"
+                    ;;
+            esac
             violations=$((violations + 1))
         done
     done < <(find "$root" -name '*.rs' -not -path '*/target/*' 2>/dev/null)

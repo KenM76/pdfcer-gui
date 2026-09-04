@@ -149,6 +149,7 @@
 /// The two controls that minimise a side and bring it back — split out under
 /// R2 on 2026-08-20. Its header carries the operator's ask and the argument for
 /// why a collapsed side must leave something on screen.
+pub mod banner;
 mod collapse;
 pub mod ctx;
 pub mod model;
@@ -192,11 +193,12 @@ use egui::{Align, Layout, Rect, UiBuilder, Vec2};
 use ctx::{Ctx, Intent};
 use splitter::Axis;
 
+pub use banner::BannerHandler;
 pub use model::{
     AnyPanel, Column, DockLayout, DockSide, PanelAddress, PanelCatalog, PanelId, PanelInfo,
     PanelRegistry, SideLayout, Stack,
 };
-pub use report::RectSink;
+pub use report::{RectReport, RectSink};
 pub use tab_menu::{TabMenu, TabMenuHandler};
 
 /// What one frame of the dock drew and what the operator did to it.
@@ -332,6 +334,10 @@ pub struct Dock<'a> {
     sink: Option<&'a mut RectSink<'a>>,
     id_salt: Option<egui::Id>,
     tab_menu: Option<&'a mut TabMenuHandler<'a>>,
+    /// The permanent strip above one side's columns, if the application
+    /// asked for one. Built by [`Dock::with_side_banner`], which lives in
+    /// [`banner`] beside the geometry it belongs to.
+    banner: Option<(DockSide, f32, &'a mut BannerHandler<'a>)>,
 }
 
 impl<'a> Dock<'a> {
@@ -353,8 +359,39 @@ impl<'a> Dock<'a> {
     }
 
     /// Publish every drawn rectangle to a sink. See [`report`].
+    ///
+    /// The sink is handed a [`report::RectReport`]: the region's name, the
+    /// rectangle it was laid out at, **and the clip rectangle in force where
+    /// it was drawn**.
+    ///
+    /// ```no_run
+    /// # use egui_shell::dock::{Dock, DockState, RectReport};
+    /// # fn frame(ui: &mut egui::Ui, state: &mut DockState) {
+    /// let mut sink = |r: &RectReport<'_>| {
+    ///     // `r.rect` alone answers "where was this laid out".
+    ///     // `r.rect` with `r.clip` answers "can the operator see it".
+    ///     let shown = r.clip.intersect(r.rect);
+    ///     let _visible = (shown.width() * shown.height()) / (r.rect.width() * r.rect.height());
+    /// };
+    /// Dock::new().reporting_rects_to(&mut sink).show(ui, state, |_p, _ui| {});
+    /// # }
+    /// ```
+    ///
+    /// # Why the dock reports a clip and the ribbon does not
+    ///
+    /// [`crate::ribbon::RectSink`] and [`crate::menu`]'s — which is the
+    /// ribbon's, shared — are still `FnMut(&str, Rect)`. That divergence is a
+    /// decision, not an unfinished migration, and the whole argument is on
+    /// [`report::RectSink`] under *"Why the dock reports a clip and the
+    /// ribbon does not"*. The short of it: **the dock's rects are
+    /// compartments and the question asked of them is reachability; the
+    /// ribbon's are content and the question asked of them is whether they
+    /// drew at all.**
     #[must_use]
-    pub fn reporting_rects_to(mut self, sink: &'a mut (impl FnMut(&str, Rect) + 'a)) -> Self {
+    pub fn reporting_rects_to(
+        mut self,
+        sink: &'a mut (impl FnMut(&report::RectReport<'_>) + 'a),
+    ) -> Self {
         self.sink = Some(sink);
         self
     }
@@ -567,7 +604,12 @@ impl<'a> Dock<'a> {
                 ui.style_mut().spacing.scroll = scroll;
 
                 let area = ui.max_rect();
-                ctx.reporter.report(area, || report::side(side));
+                ctx.reporter.report(ui, area, || report::side(side));
+                // ★ The banner is reserved off the TOP before the columns are
+                // resolved, so a side with one takes its height from the
+                // stacks once rather than painting over them. See
+                // [`banner`]'s header for why it is chrome and not a stack.
+                let area = banner::draw(ui, ctx, side, area, self.banner.as_mut());
                 self.draw_side_contents(ui, ctx, layout, side, area, report, body);
                 // ★ The collapse chevron, drawn LAST and OVER the columns.
                 //
@@ -616,7 +658,7 @@ impl<'a> Dock<'a> {
             &ctx.theme,
         );
         ctx.reporter
-            .report(handle_rect, || report::side_splitter(side));
+            .report(ui, handle_rect, || report::side_splitter(side));
         if outcome.changed() {
             // Dragging the right dock's handle rightwards makes it
             // NARROWER. Getting this sign wrong produces a dock that runs
@@ -646,7 +688,7 @@ impl<'a> Dock<'a> {
                 egui::pos2(x, columns_rect.top()),
                 Vec2::new(*span, columns_rect.height()),
             );
-            ctx.reporter.report(rect, || report::column(side, i));
+            ctx.reporter.report(ui, rect, || report::column(side, i));
             self.draw_column(ui, ctx, layout, side, i, rect, report, body);
             x += span;
 
@@ -663,7 +705,7 @@ impl<'a> Dock<'a> {
                     &ctx.theme,
                 );
                 ctx.reporter
-                    .report(split, || report::column_splitter(side, i));
+                    .report(ui, split, || report::column_splitter(side, i));
                 // A double-click and a drag are different gestures, so
                 // they are different intents — never both in one frame.
                 if outcome.equalize {
@@ -708,7 +750,7 @@ impl<'a> Dock<'a> {
             let stack_rect =
                 Rect::from_min_size(egui::pos2(rect.left(), y), Vec2::new(rect.width(), *span));
             ctx.reporter
-                .report(stack_rect, || report::stack(side, column, i));
+                .report(ui, stack_rect, || report::stack(side, column, i));
             self.draw_stack(
                 ui, ctx, side, column, i, &stacks[i], stack_rect, report, body,
             );
@@ -727,7 +769,7 @@ impl<'a> Dock<'a> {
                     &ctx.theme,
                 );
                 ctx.reporter
-                    .report(split, || report::stack_splitter(side, column, i));
+                    .report(ui, split, || report::stack_splitter(side, column, i));
                 if outcome.equalize {
                     ctx.intents.push(Intent::EqualizeStacks {
                         side,
@@ -812,7 +854,7 @@ impl<'a> Dock<'a> {
             },
         );
 
-        ctx.reporter.report(body_rect, || report::body(&panel));
+        ctx.reporter.report(ui, body_rect, || report::body(&panel));
         report.panels_drawn.push(panel);
     }
 }

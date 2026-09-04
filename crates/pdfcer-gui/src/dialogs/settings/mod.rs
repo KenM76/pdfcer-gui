@@ -108,6 +108,10 @@
 //!
 //! **Theme is the single exception**, and it is deliberate — see [`Draft`].
 
+/// ★★★ O122 — where Acrobat is. The one group in this window that is about
+/// **another program on this machine**, and the only one whose whole purpose
+/// is to be reachable while the control it governs is absent from the ribbon.
+mod acrobat;
 pub mod appearance;
 pub mod colour;
 mod comments;
@@ -400,6 +404,7 @@ pub fn show(
     draft: &mut Draft,
     store: &StoreLocation,
     open: &mut bool,
+    acrobat_viewer: Option<&crate::acrobat::Viewer>,
 ) -> Outcome {
     // ★★ TAKEN, not read. See `Draft::focus`: the group is forced open and
     // scrolled to on the first frame and left alone afterwards, so the operator
@@ -637,6 +642,27 @@ pub fn show(
                     display::field_shade(ui, &mut draft.working_prefs);
                     display::page_chrome(ui, &mut draft.working_prefs);
                 });
+                // ★★★ WHERE ACROBAT IS — O122, and LAST of all.
+                //
+                // Every group above changes something about a PDF; this one
+                // changes nothing at all except which program a single button
+                // starts, so it is the setting furthest from the document.
+                //
+                // ★ It is drawn whether or not an Acrobat was found, which is
+                // the load-bearing half of O122's escape hatch: the ribbon
+                // control is ABSENT on a machine where discovery failed, so
+                // this group is the only place a person in that position can
+                // be told the feature exists. `acrobat`'s own header carries
+                // the argument.
+                widgets::group(
+                    ui,
+                    "acrobat",
+                    &crate::text::acrobat::group_acrobat(),
+                    false,
+                    |ui| {
+                        acrobat::path(ui, &mut draft.working_prefs, acrobat_viewer);
+                    },
+                );
                 widgets::group(ui, "saving", t::group_saving(), false, |ui| {
                     saving::xref_entry_eol(ui, draft);
                     ui.add_space(10.0);
@@ -812,6 +838,7 @@ mod tests {
         ("mod", include_str!("mod.rs")),
         ("appearance", include_str!("appearance.rs")),
         ("colour", include_str!("colour.rs")),
+        ("acrobat", include_str!("acrobat.rs")),
         ("comments", include_str!("comments.rs")),
         ("display", include_str!("display.rs")),
         ("fonts", include_str!("fonts.rs")),

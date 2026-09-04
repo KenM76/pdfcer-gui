@@ -120,8 +120,18 @@ fn vector_edit_scoped<E: std::fmt::Display>(
         });
         return;
     };
+    // ★★★ The floor under the refusal below, taken **before** the verb runs so
+    // that the arm can tell the verb's own sentence from a stale one left by an
+    // earlier gesture. See `decline::BeforeTheVerb`, which carries the whole
+    // argument for why this is a take rather than a comparison, and why it is
+    // what makes two presses two events.
+    let floor = crate::app::status::decline::before_the_verb();
     match edit(session) {
         Ok(disclosures) => {
+            // Nothing about a successful edit changes: whatever was live goes
+            // back exactly as it was, and if the verb recorded something of its
+            // own during the call, that stands.
+            floor.granted();
             doc.edit_epoch = doc.edit_epoch.wrapping_add(1);
             // ★★★ …and the per-page answer beside it (O74). `edit_epoch`
             // above keeps its exact meaning and every one of its readers is
@@ -229,15 +239,47 @@ fn vector_edit_scoped<E: std::fmt::Display>(
         // wants its own decision about wording and placement; this arm is
         // where it lands when it is taken.
         //
+        // ★★★ **TAKEN, 2026-09-04 — `OPERATOR_REQUESTS.md` O116.** The
+        // paragraph above stood, correct and unfinished, while the silence it
+        // described became reachable on an ordinary CAD drawing: the operator
+        // arms Edit ▸ Edit text, places a caret, types, commits, the engine
+        // refuses a symbolic font it cannot re-encode, and **nothing appears**.
+        // That is this project's founding defect class, and the decision the
+        // paragraph deferred is now made — the decline channel, `⊗`, one
+        // sentence, no cause named.
+        //
+        // Three things about `floor.refused()` rather than a bare record, each
+        // argued at length on `decline::BeforeTheVerb`:
+        //
+        // 1. **The verb speaks first.** Six recorders fire from *inside* the
+        //    closure above, so their sentence is already in the slot when this
+        //    arm runs. The floor yields to it — a decline that names a remedy
+        //    beats one that names nothing.
+        // 2. **A stale sentence does not count as the verb speaking**, because
+        //    the slot was taken before the call. Two canvas gestures in a row
+        //    reach that state: `decline::retire` runs at the dispatcher and a
+        //    canvas-raised `Action` never passes through it.
+        // 3. **Two presses are two events.** The take is what delivers it;
+        //    there is no "already shown" gate anywhere on this path.
+        //
         // Note also that `EditError` is `Display` output — diagnostic prose an
         // error writes about itself — and `check-ui-strings.sh`'s exclusion 3
         // says in as many words that this exclusion "is not permission to
         // route UI text through an error type". So wording a decline is
-        // catalog work in `text/`, not a `format!` of this value.
-        Err(error) => crate::diag::trace(|| {
-            // ui-text-exempt: diagnostic trace, never displayed in the UI
-            format!("{label}-refused page={page} n={operands} detail={error}")
-        }),
+        // catalog work in `text/`, not a `format!` of this value: the sentence
+        // is `crate::text::status::edit_declined_by_engine`, it names no cause
+        // because `EditError` exposes no coarse discriminant a front end may
+        // switch on, and **the trace line below keeps the engine's own words
+        // unchanged**. Two audiences, two lines, one event — whoever is reading
+        // `PDFCER_DIAG` wants §9.6.6.4, and the operator wants to know their
+        // drawing is intact.
+        Err(error) => {
+            floor.refused();
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                format!("{label}-refused page={page} n={operands} detail={error}")
+            });
+        }
     }
 }
 

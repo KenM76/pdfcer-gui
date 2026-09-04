@@ -67,7 +67,7 @@
 //!
 //! ## ★ The two defects this rebuild fixes
 //!
-//! ### 1. Row text no longer clips
+//! ### 1. Row text no longer clips — and since O123, it ELLIPSISES
 //!
 //! `SALVAGE.md`'s row for `object_summary.rs` states the requirement:
 //! *"Row text must not clip; the old panel truncated with no horizontal
@@ -81,28 +81,43 @@
 //! stroked #1A73E8, 0.50 pt wide · 6681 node(s) · zero height` is not a
 //! contrived example.
 //!
-//! Two fixes, together, because either alone leaves a hole:
+//! ★★★ **This shell answered that with a two-axis scroll area for a month, and
+//! on 2026-09-04 the operator replaced the answer** — `OPERATOR_REQUESTS.md`
+//! O123: *"rows that ellipsise with a tooltip instead of hard-clipping
+//! mid-character."*
 //!
-//! - **`ScrollArea::both`, with the container's own width stated.**
-//!   `Ui::allocate_ui*` and `add_sized` CLAMP a requested size to the space
-//!   left in the parent, so a wide row is silently squeezed, the area
-//!   measures content == viewport, and no bar appears. The fix is
-//!   [`super::content_width`] fed to `Ui::set_width`, which *grows*
-//!   `max_rect`. The width is the **intrinsic** text width from
-//!   [`super::text_width`], never a measurement of a laid-out row —
-//!   measuring the laid-out row is what produced the squeezed number in the
-//!   first place.
-//! - **A tooltip carrying the full row text**, on every row that was
-//!   measured wider than the pane. Scrolling sideways is a gesture an
-//!   operator has to think of; hovering is one they already do. Attached
-//!   only when it is needed, because a tooltip that always repeats the
-//!   visible label is noise.
+//! What ships now, and why each half is needed:
 //!
-//! And a third guard on top, because the first two do not help a 6,681-row
-//! part: [`POINT_ROWS_PER_PART`] caps how many point rows one part
-//! contributes, and the cap is **disclosed with both numbers** rather than
-//! the list being quietly shortened. A silently truncated list is
-//! indistinguishable from a short one.
+//! - **[`crate::panels::elide_to_width`] per row, against that row's own
+//!   room.** The pane's width less this row's indent and its expander column,
+//!   because a point row indented twice has 28 pt less text room than the
+//!   object row above it. The row is shortened to fit and ends in a single
+//!   ellipsis, so the eye is told it was cut.
+//! - **The full text on hover, on every shortened row**, including the point
+//!   rows and the capped-rows disclosure — which never carried one before,
+//!   because they could not overflow while the pane scrolled sideways and they
+//!   can now.
+//! - **`ScrollArea::vertical`.** The horizontal axis existed to reach the part
+//!   of a row past the pane's edge. There is no such part any more, and a
+//!   scroll bar with nothing beyond its viewport is a control that cannot do
+//!   anything — R9.
+//!
+//! ★ `SALVAGE.md`'s requirement is still met, by a different route: what it
+//! forbade was **silent** loss, and nothing here is silent. An operator seeing
+//! `#27 Text · "A1" · AAAAAA+SpaceGrotesk-Bold 1` with a `2` invisibly cut off
+//! was the defect; `…` plus a hover is not it.
+//!
+//! ⚠ What was given up, stated rather than glossed: an operator could
+//! previously read a very long row **in the panel**, by dragging a bar. Now
+//! they read it in a tooltip. That is the operator's own trade and it is why
+//! the same request also widened Edit's dock to 360 pt — the width at which the
+//! *common* row stops needing either affordance.
+//!
+//! And a third guard on top, because neither helps a 6,681-row part:
+//! [`POINT_ROWS_PER_PART`] caps how many point rows one part contributes, and
+//! the cap is **disclosed with both numbers** rather than the list being
+//! quietly shortened. A silently truncated list is indistinguishable from a
+//! short one.
 //!
 //! ### 2. Scrollbars are visible
 //!
@@ -170,7 +185,7 @@ pub mod summary;
 
 use crate::app::actions::Action;
 use crate::app::state::OpenDoc;
-use crate::panels::{PanelsState, content_width, text_width};
+use crate::panels::{PanelsState, elide_to_width, text_width};
 use crate::shell::menus::{self, MenuHost};
 use crate::text::panels::objects as t;
 use egui_shell::HandlerToken;
@@ -337,35 +352,80 @@ pub fn body(
     let row_height = ui.spacing().interact_size.y;
     let viewport = ui.available_width();
 
-    egui::ScrollArea::both()
+    // ★★★ **`ScrollArea::vertical`, not `both`, since 2026-09-04** —
+    // `OPERATOR_REQUESTS.md` O123.
+    //
+    // A horizontal bar is what this panel used to offer instead of shortening a
+    // row: the container stated its own intrinsic width via
+    // `crate::panels::content_width`, the area measured content wider than
+    // viewport, and a bar appeared. That worked, and the operator did not want
+    // it — *"rows that ellipsise with a tooltip instead of hard-clipping
+    // mid-character."*
+    //
+    // ⇒ With every row shortened to the pane, there is nothing left of a row to
+    // scroll sideways to, and a horizontal bar with nothing beyond its viewport
+    // is a control that cannot do anything. R9. So the axis goes with the
+    // mechanism it existed for.
+    egui::ScrollArea::vertical()
         .id_salt("objects-tree-rows")
         .show_rows(ui, row_height, total_rows, |ui, range| {
-            // Label every row in the visible range FIRST, so the container's
-            // width can be stated before anything is laid out. Doing it
-            // after would measure clamped rows, which is the defect this
-            // exists to fix.
-            let labelled: Vec<(ObjectTreeRow, String, f32)> = range
+            // Label every row in the visible range FIRST, and measure each
+            // against its own indent — a point row indented twice has 28 pt
+            // less text room than the object row above it, and shortening both
+            // to the same character count would leave the deep row short and
+            // the shallow row cut.
+            let labelled: Vec<(ObjectTreeRow, String, Option<String>)> = range
                 .filter_map(|i| rows.get(i).copied())
                 .map(|row| {
                     let label = row_label(provider, row);
-                    let width = text_width(ui, &label) + row_indent(row) + EXPANDER_SPACE;
-                    (row, label, width)
+                    // The text's own room: the pane, less the indentation and
+                    // the expander column this row will spend before its first
+                    // character.
+                    let room = viewport - row_indent(row) - EXPANDER_SPACE;
+                    let shortened =
+                        elide_to_width(&label, room, |candidate| text_width(ui, candidate));
+                    (row, label, shortened)
                 })
                 .collect();
-            // The fix: state the content's own width, so a wide row makes
-            // the area scroll rather than being squeezed into the pane and
-            // clipped. `set_width` GROWS `max_rect`; `auto_shrink` and
-            // `max_width` do not help, because they bound the viewport,
-            // which was already right.
-            let width = content_width(labelled.iter().map(|(_, _, w)| *w), viewport);
-            ui.set_width(width);
 
-            for (row, label, measured) in labelled {
-                // The tooltip is the recovery path for an operator who does
-                // not think to scroll sideways. Attached only when the row
-                // really is wider than the pane, because a tooltip that
-                // repeats a fully visible label is noise.
-                let overflows = measured > viewport;
+            // ★★★ **The elision report, and it is the ONLY channel a driven
+            // check can read this decision through** — `OPERATOR_REQUESTS.md`
+            // O123.
+            //
+            // `objects-panel` above counts LAID-OUT rows, produced before the
+            // draw, and the recorded lesson
+            // `a_per_item_diagnostic_line_is_not_a_list_of_what_you_can_click`
+            // is about exactly that: it answers *what was computed*, never
+            // *what is on screen*. This line answers the second question, for
+            // the rows actually in the viewport.
+            //
+            // ⚠ It is the application marking its own homework, and it is
+            // published anyway because there is no substitute — the harness
+            // cannot read the text a panel renders. What makes the check built
+            // on it non-circular is the PIXEL half:
+            // `the_objects_rows_fit_the_inspector` samples the pane's right
+            // edge, and a column of background there cannot be produced by an
+            // arithmetic error in the same function that writes this line.
+            //
+            // `trace_changed`, not `trace`: a still panel would otherwise write
+            // this sixty times a second.
+            crate::diag::trace_changed(ROWS_SLOT, || {
+                let elided = labelled.iter().filter(|(_, _, e)| e.is_some()).count();
+                // ui-text-exempt: diagnostic trace, never displayed.
+                format!(
+                    "objects-rows visible={} elided={elided} pane={viewport:.1}",
+                    labelled.len()
+                )
+            });
+
+            for (row, full, shortened) in labelled {
+                // ★ Two strings per row from here down, and the pair is the
+                // whole of O123's row work: `label` is what is DRAWN and `full`
+                // is what the hover SHOWS. They are the same string on a row
+                // that fits, and the hover is not attached then — a tooltip
+                // repeating a fully visible label is noise.
+                let overflows = shortened.is_some();
+                let label = shortened.unwrap_or_else(|| full.clone());
                 match row {
                     ObjectTreeRow::Object { index } => {
                         ui.horizontal(|ui| {
@@ -385,7 +445,7 @@ pub fn body(
                                 .selectable_label(focused == Some(index), label.as_str())
                                 .on_hover_text(t::objects_dock_row_tooltip());
                             if overflows {
-                                resp = resp.on_hover_text(label.as_str());
+                                resp = resp.on_hover_text(full.as_str());
                             }
                             if resp.clicked() {
                                 focus = Some(index);
@@ -434,21 +494,39 @@ pub fn body(
                                 .label(label.as_str())
                                 .on_hover_text(t::object_tree_part_tooltip());
                             if overflows {
-                                resp.on_hover_text(label.as_str());
+                                resp.on_hover_text(full.as_str());
                             }
                         });
                     }
                     ObjectTreeRow::Point { .. } => {
                         ui.horizontal(|ui| {
                             ui.add_space(POINT_ROW_INDENT);
-                            ui.label(label.as_str())
+                            // ★ A point row gains the recovery hover it never
+                            // had. It could not overflow before — it was
+                            // horizontally scrollable like every other row —
+                            // and it can now, because it is shortened like
+                            // every other row. A coordinate pair cut
+                            // mid-number is exactly the failure O123 names.
+                            let resp = ui
+                                .label(label.as_str())
                                 .on_hover_text(t::object_tree_node_tooltip());
+                            if overflows {
+                                resp.on_hover_text(full.as_str());
+                            }
                         });
                     }
                     ObjectTreeRow::PointsCapped { .. } => {
                         ui.horizontal(|ui| {
                             ui.add_space(POINT_ROW_INDENT);
-                            ui.label(egui::RichText::new(label.as_str()).small().weak());
+                            let resp = ui.label(egui::RichText::new(label.as_str()).small().weak());
+                            // The capped-rows notice carries BOTH numbers by
+                            // design — a silently truncated list is
+                            // indistinguishable from a short one — so it is the
+                            // one row here that must never lose its tail
+                            // without a way back to it.
+                            if overflows {
+                                resp.on_hover_text(full.as_str());
+                            }
                         });
                     }
                 }
@@ -493,6 +571,14 @@ pub fn body(
     }
     tokens
 }
+
+/// The change-log slot [`body`]'s per-frame elision report is keyed on.
+///
+/// ★ Its own slot rather than sharing `objects-panel`'s, because the two lines
+/// change on different events: the panel line moves when the page does, and
+/// this one moves when the dock is dragged. Sharing a slot would make each
+/// suppress the other's changes.
+const ROWS_SLOT: &str = "objects-rows"; // ui-text-exempt: trace slot name, never displayed
 
 /// Leading space on a point row: two indents plus the expander column a
 /// point row never fills (a point has nothing beneath it).
@@ -875,26 +961,23 @@ mod tests {
         );
     }
 
-    /// **★ THE NO-CLIP TEST: a row wider than the pane widens the container
-    /// rather than being squeezed into it.**
+    /// ★★★ **A long row is SHORTENED to the pane, and the whole of it stays
+    /// reachable** — `OPERATOR_REQUESTS.md` O123.
     ///
-    /// `SALVAGE.md`'s requirement for this panel, made mechanical: *"Row text
-    /// must not clip; the old panel truncated with no horizontal scroll."*
+    /// This test used to be `a_long_row_widens_the_container_past_the_viewport`
+    /// and asserted the opposite mechanism: that
+    /// `crate::panels::content_width` grew the container past the viewport so
+    /// `ScrollArea::both` would draw a horizontal bar. That was the shipped
+    /// answer to `SALVAGE.md:44` for a month, and the operator has replaced it
+    /// — *"rows that ellipsise with a tooltip instead of hard-clipping
+    /// mid-character."*
     ///
-    /// The measurement is the *intrinsic* width of the row's own text plus
-    /// its indent and expander space, and the container is the max of that
-    /// and the viewport. If the container came out equal to the viewport for
-    /// a long row, `ScrollArea` would compare content against viewport, find
-    /// them equal, draw no bar, and the row would be cut off at the pane's
-    /// edge with nothing to say so — which is exactly the old defect.
-    ///
-    /// A stand-in measurer is used rather than a live `egui::Fonts`, for the
-    /// reason `crate::lib`'s header gives: a windowed UI cannot run on a CI
-    /// runner, so the *arithmetic* is pushed into a pure function and tested
-    /// there. What is proven here is that the panel feeds that function the
-    /// row's own width and not the pane's.
+    /// ★ The requirement it enforced has not changed and is asserted here in
+    /// its new form: **nothing is lost silently.** The drawn row fits the pane,
+    /// it ends in the ellipsis so the eye knows it was cut, and it is a prefix
+    /// of the full row the hover carries.
     #[test]
-    fn a_long_row_widens_the_container_past_the_viewport() {
+    fn a_long_row_is_shortened_to_the_pane_and_stays_recoverable() {
         // A row whose text is genuinely long: a filled-and-stroked path with
         // a colour, a width, a node count and a disclosure.
         let p = provider(b"0 0 1 rg 1 0 0 RG 0.5 w 10 20 m 300 20 l B*");
@@ -913,24 +996,33 @@ mod tests {
         // pane.
         const PANE: f32 = 370.0;
         let measure = |s: &str| s.chars().count() as f32 * 6.0;
-        let widths: Vec<f32> = rows
-            .iter()
-            .map(|r| measure(&row_label(&p, *r)) + row_indent(*r) + EXPANDER_SPACE)
-            .collect();
-        let widest = widths.iter().copied().fold(0.0_f32, f32::max);
+        let room = PANE - row_indent(rows[0]) - EXPANDER_SPACE;
         assert!(
-            widest > PANE,
-            "the fixture row is not wide enough to exercise the overflow path: \
-             {widest} <= {PANE}"
+            measure(&label) > room,
+            "the fixture row is not wide enough to exercise the elision path: \
+             {} <= {room}",
+            measure(&label)
         );
 
-        let container = content_width(widths.iter().copied(), PANE);
+        let shown = crate::panels::elide_to_width(&label, room, measure)
+            .expect("a row wider than its room must be shortened");
         assert!(
-            container > PANE,
-            "the container must be wider than the viewport, or the area draws no \
-             horizontal bar and the row is clipped: {container} <= {PANE}"
+            measure(&shown) <= room,
+            "the shortened row is {} pt in {room} pt of room",
+            measure(&shown)
         );
-        assert!((container - widest).abs() < f32::EPSILON);
+        assert!(
+            shown.ends_with(crate::panels::ELLIPSIS),
+            "{shown:?} does not say that it was cut"
+        );
+        let kept = &shown[..shown.len() - crate::panels::ELLIPSIS.len_utf8()];
+        assert!(
+            label.starts_with(kept),
+            "{shown:?} is not a prefix of the row it shortened"
+        );
+        // And the half that makes it not a loss: the hover carries the whole
+        // thing, so the tail is one gesture away rather than gone.
+        assert!(label.len() > kept.len());
     }
 
     /// …and the indent is part of that width.

@@ -38,6 +38,13 @@ fn all_is_exhaustive_and_free_of_duplicates() {
     // edit the number: it is to check that the variant you added really is
     // in `ALL`, and only then to update this count.
     //
+    // 131 until later on 2026-09-04, when five glyphs landed for controls
+    // the ribbon does not reach yet — `export-image` (which repointed a live
+    // borrow), `open-in-acrobat`, `copy-as-vector`, `encrypt` and
+    // `permissions`. Four of those name no command; `Icon::EditObjects` is
+    // the precedent, and joining `ALL` is precisely what puts their art under
+    // the tests in this file.
+    //
     // ★ This comment used to also say "and update the two prose figures
     // that quote it". That instruction was followed exactly once. On
     // 2026-08-21 the count here was 86 while both of those paragraphs
@@ -52,7 +59,7 @@ fn all_is_exhaustive_and_free_of_duplicates() {
     // reader. Prefer that shape for any future count.
     assert_eq!(
         Icon::ALL.len(),
-        131,
+        136,
         "the catalogue changed size: add the new variant to Icon::ALL and update this count"
     );
 }

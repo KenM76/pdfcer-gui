@@ -314,7 +314,23 @@ mod tests {
         // of the original just like other programs have it."* Save a copy
         // already wrote the bytes; what it could not do was MOVE the document,
         // so the next Ctrl+S went back to the file he was leaving.
-        assert_eq!(registry().len(), 129);
+        // ★★ 129 → 130 on 2026-09-04: `file.export_image` — O120. Ken, to the
+        // engine side on 2026-09-03: *"can you add the ability to export
+        // page(es) to png, jpg, svg."* `RIBBON_IA.md` §5.1 had carried the row
+        // since the ribbon was specified, and nothing was required to read it.
+        // ★ 130 → 131 on 2026-09-04: `file.open_in_acrobat` — O122. The
+        // operator: *"beside our read-review-edit buttons at the top there
+        // should be an open in acrobat button."* The first command this shell
+        // has whose job is to STOP being the program holding the document.
+        // ★★ 131 → 130 on 2026-09-04: `view.panel_tool` RETIRED — O123. The
+        // panel it toggled no longer exists; its status is permanent dock
+        // chrome, its live controls are in Properties, and a toggle for a
+        // surface that is always drawn would be a control with nothing to
+        // toggle (R9). ★ The first DECREMENT this counter has taken, and it is
+        // recorded the same way every increment is — with the operator's
+        // reason, in the same commit as the list — because a count that only
+        // ever goes up is a count nobody has had to think about.
+        assert_eq!(registry().len(), 130);
     }
 
     /// ★ **The icon-coverage split adds up to the registry.**
@@ -434,6 +450,17 @@ mod tests {
         // bumped three times in a race records the last writer's arithmetic and
         // none of the reasoning. The bands reported their deltas and the
         // coordinating session settled it once.
+        // ★ 119 → 120 on 2026-09-04: `file.export_image` (O120) NAMES a
+        // glyph, and is entitled to one for the reason `format.unshare_form`
+        // above is — it is not new art. It reuses `export`, the download
+        // glyph its two band neighbours already wear, under the header's
+        // shared-key convention: "out of this document, into a file" is
+        // equally and completely true of all three, and what differs is the
+        // FORMAT, which is a word only a label can say. `icons/assets/
+        // PROVENANCE.md` is untouched, because nothing was drawn.
+        // ★ 120 → 119 on 2026-09-04: `view.panel_tool` is retired (O123) and it
+        // named `pointer`. The glyph itself is untouched — `view.tool_select`
+        // still wears it — so this is a command leaving, not art leaving.
         assert_eq!(named, 119, "commands naming an icon");
         // ★ 12 → 17 on 2026-08-27: the Format ▸ Font group's five commands
         // all refuse a glyph, and they refuse it for one reason argued once at
@@ -507,8 +534,18 @@ mod tests {
         //
         // The five Format ▸ Font refusals also stand: the sheet offered no
         // `B`/`I` art and the argument was never only about supply.
+        // ★ 10 → 11 on 2026-09-04: `file.open_in_acrobat` refuses a glyph, and
+        // it reaches the judgement its predecessors did by a route worth
+        // stating. Two reuses were available and both would MISLEAD in the
+        // exact way this list exists to prevent: `export` says "out of this
+        // document, into a file", and this produces no file; `open` says
+        // "bring a file in here", which is its opposite. Drawing a new one is
+        // not a build session's to do — `icons/assets/PROVENANCE.md` makes that
+        // directory the operator's own art. And the label is a PROPER NOUN,
+        // which is the one case where a word beats a picture outright: nobody
+        // has to learn what "Acrobat" means.
         assert_eq!(
-            refused, 10,
+            refused, 11,
             "commands with no icon, each argued at its registration"
         );
         // Each refusal is argued at its own registration and listed in the
@@ -759,13 +796,6 @@ mod tests {
             "tools.font_folders",
             "tools.merge_files",
             "view.fullscreen",
-            // ★ The Tool panel is live with NOTHING OPEN, and it is the only
-            // panel toggle that is. Its body still names the tools this mode
-            // has and where they live on the ribbon, which is exactly what an
-            // operator who has just launched pdfcer is looking for. Gating it on
-            // `doc.open` would hide the surface at the one moment it answers
-            // the question it was built for.
-            "view.panel_tool",
             "view.read_mode",
             "view.reset_layout",
         ]

@@ -119,6 +119,17 @@
 //! up as a foreground and which as a background on the actual
 //! `egui::Style`. The gate closes that by reading the style back.
 //!
+//! ★★ **It enumerated ten pairs until 2026-09-04 and was green through
+//! three separately shipped contrast defects** (`REVIEW_TRIAGE.md` A15e),
+//! because none of the three was one of the ten. It now enumerates
+//! twenty-seven: the original widget matrix plus every foreground `egui`
+//! resolves through a `Visuals` *accessor* — body text, weak text, strong
+//! text, hyperlink, warn, error — on the grounds each is really drawn on,
+//! plus the two roles `visuals.selection` serves. [`contrast`]'s own
+//! header states which of the three defects the widening reaches and
+//! which two it deliberately still cannot, with the gates that do cover
+//! those. Knowing what a gate cannot see is part of the gate.
+//!
 //! # What changed in the salvage
 //!
 //! 1. **`eframe::egui` → `egui`.** The shell does not depend on `eframe`.
@@ -498,7 +509,52 @@ impl Theme {
                 accent: Color32::from_rgb(0x4C, 0x9A, 0xFF),
                 on_accent: Color32::from_rgb(0x10, 0x14, 0x1A),
                 outline: Color32::from_rgb(0x44, 0x48, 0x4F),
-                danger: Color32::from_rgb(0xFF, 0x6B, 0x6B),
+                // ★★ RAISED FROM `#FF6B6B` ON 2026-09-04, BY THE PAIR-GATE
+                // WIDENING (`REVIEW_TRIAGE.md` A15e). It is the one shipped
+                // value that widening actually caught.
+                //
+                // `Theme::write_style` hands this role to
+                // `visuals.error_fg_color`, which every dialog reads for the
+                // line that says the operator must act — and a dialog is
+                // painted on `window_fill`, i.e. on `panel`. The old value
+                // measured:
+                //
+                //   luma(#FF6B6B) = 0.2126·255 + 0.7152·107 + 0.0722·107
+                //                 = 138.46
+                //   luma(panel)   =  48.72   ⇒ gap 89.74, floor 90.
+                //
+                // ★ It is a MARGINAL miss and the arithmetic says why: the
+                // crude Rec. 709 measure weights red at 0.2126, so a
+                // saturated red scores far below how it reads. Under WCAG the
+                // same pair is 4.71:1 — a comfortable AA pass. The colour was
+                // not invisible; the gate was right at the edge of its own
+                // resolution.
+                //
+                // ★★ It was still fixed at the ROLE rather than exempted, and
+                // the reason is not the 0.26 itself: it is that 0.26 of
+                // headroom is not headroom. `panel` and `accent` are both
+                // live values in this preset — `selected_plate` is derived
+                // from `accent`, and Dark's focus ring already clears the
+                // floor by six — so the next chrome edit would have spent it
+                // silently, and the pair would have crossed the line inside a
+                // change about something else. An exemption would also have
+                // been the wrong shape: exemptions are for pairs no theme
+                // value can satisfy (see `contrast::EXEMPTIONS`), and this one
+                // is satisfied by twelve levels of green and blue.
+                //
+                //   luma(#FF7B7B) = 0.2126·255 + 0.7152·123 + 0.0722·123
+                //                 = 151.06
+                //   ⇒ on `panel` (48.72)   gap 102.34
+                //   ⇒ on `surface` (37.86) gap 113.20
+                //
+                // The hue is unchanged (still a pure-red-channel salmon); only
+                // its lightness moved, by 16 levels on two channels, which is
+                // below the threshold at which the colour stops reading as the
+                // same warning red. The light presets keep `#C02A2A` from
+                // `..quiet.palette`: their grounds are light, so the DARK red
+                // is the one that separates, and this preset's problem is the
+                // mirror of theirs.
+                danger: Color32::from_rgb(0xFF, 0x7B, 0x7B),
                 notice: Color32::from_rgb(0xE0, 0xA0, 0x40),
                 // ★★★ THE ONE PRESET WHERE THE LIGHT PRESETS' DERIVATION
                 // CANNOT BE USED, AND THE ARITHMETIC THAT PROVES IT.
@@ -866,9 +922,16 @@ impl Theme {
     ///    place.
     ///
     /// The regression test is
-    /// `every_rendered_widget_pair_is_readable_in_every_preset`, and its
+    /// `every_rendered_pair_is_readable_in_every_preset`, and its
     /// doc comment explains why the two tests that already existed could
     /// not have caught this.
+    ///
+    /// ★ It was called `..._widget_pair_...` until 2026-09-04, when
+    /// `REVIEW_TRIAGE.md` A15e widened [`contrast::pairs`] from ten pairs
+    /// to twenty-seven. The word was dropped because it had stopped being
+    /// true, and the citation was updated here at the same time — a
+    /// renamed test cited by an old name is the drift
+    /// `every_declared_share_is_still_a_share` exists to shame.
     fn write_style(style: &mut egui::Style, p: &Palette, m: &Metrics, preset: Preset) {
         let v = &mut style.visuals;
 
@@ -912,15 +975,33 @@ impl Theme {
         // of those call sites is wrong. They ask `egui` for "selected"; the
         // theme was answering with the wrong pair.
         //
-        // ★★ Why this was invisible to every gate we own. `check-theme-colors`
-        // forbids **invented** colours, and both values were correctly sourced
-        // from the palette. `contrast::pairs` enumerates the five widget
-        // states × two fills, reading `fg_stroke` against `bg_fill` — and the
-        // selected pair is not in that matrix, because `egui` substitutes it
-        // *after* the style is read. The colours were named, the gate was
-        // green, and the surface was unreadable. That is the third time this
-        // exact shape has shipped (`DEFECTS.md` D2), and it is why
-        // `tools/gates/check-selection-channel.sh` now exists.
+        // ★★ Why this was invisible to every gate we owned ON THE DAY, and
+        // read the tense: this paragraph describes a state of the world that
+        // has since been changed on purpose, and it must not be cited as a
+        // present fact. `check-theme-colors` forbids **invented** colours, and
+        // both values were correctly sourced from the palette. `contrast::pairs`
+        // enumerated the five widget states × two fills, reading `fg_stroke`
+        // against `bg_fill` — and the selected pair was in none of them,
+        // because `egui` substitutes it *after* the style is read. The colours
+        // were named, the gate was green, and the surface was unreadable. That
+        // is the third time this exact shape has shipped (`DEFECTS.md` D2), and
+        // it is why `tools/gates/check-selection-channel.sh` exists.
+        //
+        // ⇒ **AMENDED 2026-09-04 by `REVIEW_TRIAGE.md` A15e: the gate can see
+        // it now.** `contrast::pairs` reproduces the substitution above and
+        // enumerates both roles this channel serves —
+        // `contrast::Origin::SelectedWidget` over each ground, and
+        // `Origin::FocusRing` — so re-pointing this channel at a wash fails
+        // `every_rendered_pair_is_readable_in_every_preset` rather than
+        // shipping. `check-selection-channel.sh` remains the gate over CALL
+        // SITES reading `visuals.selection` directly, which is a different
+        // question and still not one a `Style` can answer.
+        //
+        // ★★★ The reason this correction is written in rather than the old
+        // sentence being deleted: the old sentence was TRUE and became FALSE,
+        // and a paragraph that says "the gate cannot see X" is exactly the kind
+        // of premise a future reader cites to justify not adding a check. That
+        // is `REVIEW_TRIAGE.md` T1's whole lesson, one file over.
         //
         // ★ The pair below is `egui`'s own design for the channel — its stock
         // light theme pairs a pale blue `bg_fill` with a dark blue `stroke`,

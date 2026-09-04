@@ -939,6 +939,20 @@ impl eframe::App for PdfcerApp {
         // ever changes.
         self.resume_after_signature();
 
+        // ★★ O122's answer, drained on the same line of reasoning as its two
+        // neighbours and immediately after them — a frame-level observation
+        // that a window has been answered, whose acts (a write, a process
+        // launch and a close) belong to the application rather than to a
+        // dialog.
+        //
+        // ★ LAST of the three, and the order is real rather than incidental.
+        // This drain can **close the document**, and both of the drains above
+        // read it: running it first would let a signature warning resume over a
+        // document that had already been handed to Acrobat and closed. The
+        // three questions cannot currently be live at once; the order is fixed
+        // in the direction that stays correct if that ever changes.
+        self.resume_after_open_in_acrobat();
+
         // ★★★ **THE WINDOW'S ✕, AND THE QUIT CYCLE** —
         // `OPERATOR_REQUESTS.md` O102. Read here, after both drains, because
         // an answer given this frame may have cleaned or closed the very

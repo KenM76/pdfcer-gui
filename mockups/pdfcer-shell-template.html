@@ -139,6 +139,22 @@ kbd{font-family:var(--mono);font-size:.9em;border:1px solid var(--line-strong);b
 .rb .car{width:10px;height:10px;margin-left:-2px}
 .app[data-labels="off"] .rb:not(.big) .lb{display:none}
 .app[data-labels="off"] .rb:not(.big){padding:3px 4px}
+/* ★ A ribbon control the mock draws that the BUILD does not have. Dashed, in
+   the same notice colour as `.cell.proposed` in the dock, so "not built" reads
+   one way everywhere in this artifact rather than two. Two shades because the
+   two states are scheduled differently and the operator reads this to schedule:
+   `soon` is not built and not being built; `building` is in flight on another
+   track TODAY and will be real before he next opens this file. The state word
+   itself rides in the tooltip and in the legend — the dash is only the glance. */
+.rb.soon{border-color:var(--warn);border-style:dashed}
+.rb.soon .lb{color:var(--warn)}
+.rb.building{border-color:var(--accent);border-style:dashed}
+.rb.building .lb{color:var(--accent)}
+/* Open in Acrobat sits OUTSIDE the mode selector on purpose — see the legend.
+   It is not a mode, and a fourth cell in that segmented control would say it is. */
+.openin{display:flex;align-items:center;gap:5px;align-self:center;margin-left:8px;padding:3px 8px;border:1px dashed var(--accent);border-radius:3px;font-size:12px;font-weight:500;color:var(--accent)}
+.openin:hover{background:var(--plate)}
+.openin .g{width:15px;height:15px}
 .sw{width:14px;height:14px;border:1px solid var(--line-strong);border-radius:2px}
 .rb.big .sw{width:24px;height:16px}
 
@@ -397,6 +413,16 @@ kbd{font-family:var(--mono);font-size:.9em;border:1px solid var(--line-strong);b
     <div class="modes" role="group" aria-label="Mode">
       <button data-mode="read">Read</button><button data-mode="review">Review</button><button data-mode="edit" aria-pressed="true">Edit</button>
     </div>
+    <!-- ★ Open in Acrobat — BEING BUILT as this mock is drawn, on a track that
+         owns `src/acrobat/`. Placed where the operator asked for it: at the top
+         right, beside the mode selector. NOT inside it — Read / Review / Edit is
+         a segmented radio group and every cell in it is a mode; a fourth cell
+         that opened another application would be a button pretending to be a
+         state, and the one press in that control that does not toggle anything
+         is the one the eye will not expect. Its dashed outline says "not yet";
+         the legend says which kind of not-yet. ⚠ The glyph carries no vendor
+         mark — a window with a title bar, a sheet, and nothing else. -->
+    <button class="openin" title="Open in Acrobat — being built now, on another track"><svg class="g"><use href="#g-open-in-acrobat"/></svg><span>Open in Acrobat</span></button>
   </div>
 
   <div class="ribbon" id="ribbon"></div>
@@ -468,7 +494,29 @@ const TABS = [
    {cap:'File', items:[['New','new-document',{big:1}],['Open…','folder',{big:1}],[['New from template…','new-from-template'],['Recent','recent',{menu:1}],['Close','close']]]},
    {cap:'Recognise', items:[['Recognise text…','recognise-text',{big:1}]]},
    {cap:'Save', items:[['Save','save',{big:1}],[['Save as…','save-as'],['Save a copy…','save-copy'],['Save a compacted copy…','save-compact']]]},
-   {cap:'Export', items:[[['Export DXF…','download'],['Export form data…','download'],['Import form data…','upload']],[['Copy page text','copy-page-text'],['Copy document text','copy-document-text']]]},
+   /* ★ `Export image…` is SHIPPED — `file.export_image`, wired earlier on
+      2026-09-04. It sits between the two other export verbs because it is the
+      same act, and it is the only one of the three NOT wearing `download`: a
+      DXF and a form-data file have no picture, a raster image does, and this
+      set already draws one (`edit.insert_image` wears `image.svg`). It wore
+      `export` for about six hours; the reversal is argued in `catalog/file.rs`.
+      `Import form data…` heads the second column as the band's one inbound
+      verb, which keeps each column three rows and reads out/in rather than
+      out/out/in. */
+   {cap:'Export', items:[[['Export DXF…','download'],['Export image…','export-image'],['Export form data…','download']],[['Import form data…','upload'],['Copy page text','copy-page-text'],['Copy document text','copy-document-text']]]},
+   /* ★★ SECURITY — a NEW GROUP, proposed, awaiting O119. Both controls are
+      unbuilt; their art ships. Why a new group on FILE rather than a row in
+      Edit ▸ Protect, which is where a reader would expect to find them: every
+      other command on Edit is an undoable edit to page CONTENT, and these two
+      are neither. `EDITABLE_SURFACES.md` calls `set_encryption` "a save
+      transform, not an undoable edit" — pressing either rewrites every byte and
+      produces a different file. Redaction, four groups away, removes marks from
+      a page and is undoable until applied. Putting them on one tab would say
+      they are the same verb. The position within File is the operator's own
+      framing of the question: O119 asks "do you want to protect a drawing
+      before you send it out?", so it sits immediately after the band that sends
+      it out. */
+   {cap:'Security', items:[['Encrypt…','encrypt',{big:1,soon:1}],['Permissions…','permissions',{big:1,soon:1}]]},
    {cap:'Print', items:[['Print…','printer',{big:1}]]},
    {cap:'Document', items:[['Document','document',{big:1,menu:1}],[['Properties','properties'],['Fonts','fonts']]]},
    /* `Help` removed: there is no Help command, no help dialog and no
@@ -489,7 +537,11 @@ const TABS = [
    {cap:'Window', items:[[['Previous document','document-previous'],['Next document','document-next'],['Close others','close-others']],[['Read mode','read-mode'],['Full screen','fullscreen'],['Reset layout','reset-layout']]]},
  ]},
  {id:'pages', label:'Pages', modes:['review','edit'], groups:[
-   /* `insert-pages` is an ALIAS: it draws upload.svg (mapping.rs:271). */
+   /* `insert-pages` was given art of its own on 2026-09-04; it drew upload.svg
+      until then, shared with `import-form-data`. This comment and the
+      generator's ALIASES table were emptied in the same pass — a note about a
+      borrowing that has stopped is the same defect as a blessing that outlived
+      its subject. */
    {cap:'Insert', items:[['Insert from file…','insert-pages',{big:1}]]},
    {cap:'Clipboard', items:[['Cut pages','scissors',{big:1}],['Copy pages','copy',{big:1}],['Paste pages','paste',{big:1}]]},
    /* Move up/down draw the chevrons — their own role, not borrowed art. */
@@ -501,7 +553,15 @@ const TABS = [
       `select-all` was deliberately NOT adopted. */
    {cap:'Content', items:[[['Select all',null,{noicon:1}],['Reflow paragraph','reflow']],['Edit text','edit',{big:1}],['Add text','add-text',{big:1}]]},
    {cap:'Insert', items:[['Image…','image',{big:1}],['Attachments','attachment',{big:1}]]},
-   {cap:'Clipboard', items:[[['Cut','cut'],['Copy','copy'],['Paste','paste']]]},
+   /* ★ `Copy as vector` — PROPOSED, not built, art drawn. In the CLIPBOARD
+      group and not in File ▸ Export, because it is a clipboard verb: it puts
+      something on the clipboard, it is reached with a chord, and its result is
+      pasted rather than saved. It takes its own column rather than a fourth row
+      because those three rows are Cut / Copy / Paste — the one triad in the
+      ribbon an operator does not read but reaches for by position — and
+      inserting into it would cost exactly that. A column beside Copy reads as a
+      variant of Copy, which is what it is. */
+   {cap:'Clipboard', items:[[['Cut','cut'],['Copy','copy'],['Paste','paste']],[['Copy as vector','copy-as-vector',{soon:1}]]]},
    /* Four form-field tools, four distinct glyphs since 2026-09-04 — they all
       borrowed `form-field` before. */
    {cap:'Forms', items:[[['Text field','form-field'],['Check box','check-box'],['Radio button','radio-button'],['Drop-down','drop-down']],[['Button','push-button',{dis:1}],['Manage fields','list'],['Flatten','form-flatten']]]},
@@ -521,7 +581,10 @@ const TABS = [
       one before. `Finish` takes `check` (it accepts a result); Markup's
       `Finish shape` takes `finish-shape` (it closes a drawn shape). */
    {cap:'Dimension', items:[[['Linear','ruler',{radio:'dim'}],['Radius / diameter','measure-radius',{radio:'dim'}],['Perimeter','measure-perimeter',{radio:'dim'}]],[['Length','measure-length',{radio:'dim'}],['Two-line','measure-angle',{radio:'dim'}],['Finish','check',{dis:1}]]]},
-   /* `set-scale` is an ALIAS: it draws convert.svg (mapping.rs:277). */
+   /* `set-scale` likewise: purpose-drawn since 2026-09-04, where it borrowed
+      convert.svg before — an alias that was also a false claim, since setting a
+      scale converts nothing. `convert.svg` survives as an orphan variant so the
+      art stays under test. */
    {cap:'Scale', items:[['Set scale…','set-scale',{big:1}],['Dimension groups','dimension-groups',{big:1}]]},
  ]},
  {id:'tools', label:'Tools', modes:['edit'], groups:[
@@ -549,13 +612,21 @@ function itemHtml(it){
     const want = {'page-single':'single','page-continuous':'scroll','page-facing':'facing','page-facing-continuous':'facingscroll'}[glyph];
     on = state.pageDisplay===want ? 'true' : 'false';
   }
+  /* ★ `soon` / `building` mark a control the BUILD does not have. Deliberately
+     NOT `disabled`: a disabled button is a REAL control the document cannot
+     accept right now, and drawing an unbuilt one that way would tell the
+     operator it exists and is unavailable — two different pieces of news, and
+     the wrong one is the one that gets scheduled. The dash says "not there
+     yet"; the tooltip and the legend say which kind. */
+  const soon = o.soon ? ' soon' : (o.building ? ' building' : '');
+  const notyet = o.soon ? ' — proposed, not built' : (o.building ? ' — being built now' : '');
   const dis = (o.dis || (o.needsSel && !state.selection)) ? ' disabled' : '';
   const icon = o.swatch ? `<span class="sw" style="background:${o.swatch}"></span>`
              : (o.noicon || !glyph) ? '' : g(glyph, big?'big':'');
   const car = o.menu ? g('chevron-down','car') : '';
   const data = glyph ? ` data-glyph="${glyph}"` : '';
   const act = o.rulers ? ' data-act="rulers"' : '';
-  return `<button class="rb${big}" ${on!==null?`aria-pressed="${on}"`:''}${dis}${data}${act} title="${label}">${icon}<span class="lb">${label}</span>${car}</button>`;
+  return `<button class="rb${big}${soon}" ${on!==null?`aria-pressed="${on}"`:''}${dis}${data}${act} title="${label}${notyet}">${icon}<span class="lb">${label}</span>${car}</button>`;
 }
 function renderTabs(){
   const tabs = TABS.filter(t => t.modes.includes(state.mode) && (!t.ctx || state.selection));
@@ -933,6 +1004,16 @@ const LEGEND = [
   'The salvage of the rejected strip: 28 pt of permanent chrome answering "what am I holding?" at frame one, drawn <em>over</em> the columns as dock chrome. It is an addition and takes nothing away. It carries no <code>put down</code> — put-down is live only in the armed block, and one beside Select would be a dead control because Select is the resting state.',
   '§3.4 · ~120 lines'],
 
+ ['proposed','<code>Open in Acrobat</code>, top right beside Read / Review / Edit — <em>being built now</em>',
+  'Where you asked for it. It is drawn <em>beside</em> the mode selector and not <em>inside</em> it: those three cells are a radio group and every one of them is a mode, so a fourth cell that opened another application would be a button pretending to be a state — and the one press in that control that does not toggle anything is the one your hand will not expect. This is the only line here that will be stale in a good way: another track is building the command as this mock is drawn, so the dashed outline should be solid by the time you next open it. ⚠ The picture is a window with a title bar and a sheet going into it — nothing of Adobe\'s mark is in it, and nothing ever will be.',
+  'src/acrobat/ · in flight today'],
+ ['proposed','<code>Copy as vector</code>, beside Cut / Copy / Paste on Edit',
+  'Not built. Copy today puts a <em>picture</em> of the selection on the clipboard; this would put the geometry, so what you paste into the next drawing is still editable line-work rather than an image of it. It sits in Clipboard rather than in File ▸ Export because it is a clipboard verb — chord-reachable, and its result is pasted, not saved. It takes a column of its own rather than a fourth row in Cut / Copy / Paste: that triad is the one place in the ribbon you reach by position without reading, and inserting into it would cost you that.',
+  'not scheduled · art drawn so the proposal has a face'],
+ ['proposed','<code>Encrypt…</code> and <code>Permissions…</code> — a <em>new</em> Security group on File, not a row in Edit ▸ Protect',
+  'This is <b>O119</b> drawn: the engine can now put a password on a drawing and choose what it permits, and nothing in the GUI reaches any of it. Neither button exists — they are here so the question has a picture. <em>Why a new group, argued rather than assumed:</em> every other command on Edit is an undoable edit to what is on a page, and these two are not edits at all — each rewrites every byte of the file and hands you a different one, which is a <em>save</em>. Redaction, four groups away, removes marks from a page and can be undone until you apply it; putting them on one tab would tell you they are the same kind of act. And the position within File is your own framing of the question — "protect a drawing before you send it out" — so it sits immediately after the band that sends it out. ⚠ Three things you already said change the answer and would be on screen beside these: a permission setting is a <em>request</em> any program may ignore, protecting a signed drawing is refused outright, and changing permissions on a protected file needs the owner password.',
+  'OPERATOR_REQUESTS.md O119 · a new surface: a password box, a permission list, and a full-rewrite save'],
+
  ['rejected','The one-line tool strip is not built',
   'It cannot be a dock stack: <code>MIN_STACK_HEIGHT = 80</code> against 28 pt, and a tab bar alone is 24. It <em>deletes live controls</em> — the text pen\'s font, size and colour swatch, the measure options, the three scale switches. It <em>orphans the disclosure slot</em> into a row R128 forbids growing, and that slot exists precisely because a 47-word refusal sentence had nowhere else to fit. And it re-litigates a triage ruling the reviewer did not defeat. The Tool panel below the banner is what it would have replaced.',
   '§3, §5 4th'],
@@ -955,6 +1036,9 @@ const LEGEND = [
  ['shipped','Per-mode dock width, already persisted',
   'The review asked to "let the dock remember the width per mode". <code>SideLayout.width_pts</code> is per side, per mode, and recorded on layout change. That half needs no work at all — only the default constant changes.',
   '§2.2'],
+ ['shipped','<code>Export image…</code> is on File ▸ Export, with art of its own',
+  'The command shipped this morning (O120) and spent six hours wearing the generic <code>export</code> tray, alongside Export DXF and Export form data. That share was defended and it was wrong for this one control: a DXF and a form-data file have no picture to draw, a raster image does, and <em>this set already draws it</em> — Insert image wears the framed tile with a horizon, so you have already learned what that picture means here. Same tile, arrow pointing out instead of in. The other two exports keep the tray, correctly.',
+  'catalog/file.rs · nothing to build — the button is live'],
  ['shipped','36 of the review\'s 65 glyphs adopted, 2026-09-04',
   'Four form-field tools, four measure tools and two redaction commands no longer share one glyph each; the four Save commands are now four distinct glyphs. Adopted on one rule: a glyph is taken only when a command or role in this build would use it <em>today</em>. 26 deferred with a written reason each.',
   'GLYPH_ADOPTION.md'],
@@ -968,9 +1052,12 @@ const LEGEND = [
   'The single invariant a dark theme in this product must hold. <code>--paper</code> is defined once, outside every preset block, and no preset redefines it. A dark board is a dark <em>bench</em>; the sheet on it is the document\'s own colour.',
   'the mock\'s own CSS header'],
 
- ['noted','Three of the review\'s glyphs are in <em>neither</em> adoption list',
-  '<code>properties</code>, <code>insert-pages</code> and <code>set-scale</code>. 36 adopted + 26 deferred accounts for 62 of the 65 delivered. All three are live icon <em>keys</em> that alias onto another role\'s art — <code>document.svg</code>, <code>upload.svg</code>, <code>convert.svg</code>. So they were neither adopted nor written up, and this mock draws the shipped art for them. Worth one line in GLYPH_ADOPTION.md.',
-  'icons/catalog/mapping.rs:234, :271, :277'],
+ ['noted','The three glyphs in <em>neither</em> adoption list now have art — closed',
+  '<code>properties</code>, <code>insert-pages</code> and <code>set-scale</code> were live icon <em>keys</em> wearing another role\'s picture, and were in neither list — 36 adopted + 26 deferred accounts for 62 of the 65 delivered. This mock is what found them, by drawing shipped art beside proposed art until the count did not add up. All three were drawn later the same day; the generator\'s alias table is now <em>empty</em>, and the two orphaned pictures were kept as variants so they stay under test rather than rotting unused.',
+  'icons/catalog/mapping.rs · closed 2026-09-04'],
+ ['noted','★ Five new pictures are in the build; four of the five buttons are not',
+  'Worth saying plainly, because it is the one way this mock could mislead you. A glyph shipping is <em>not</em> a command shipping. <code>export-image</code> is on a live button today. <code>open-in-acrobat</code>, <code>copy-as-vector</code>, <code>encrypt</code> and <code>permissions</code> are drawings with nothing behind them yet — every one of them is dashed here, and each has its own line above. The art was drawn first on purpose: the icon set is tested as a whole, so a picture that exists is a picture the suite checks for legibility and for not colliding with its neighbours, and one that waits in a folder is not. It also means the question can be asked with a picture instead of a paragraph.',
+  'icons/catalog/mod.rs · Icon::EditObjects is the standing precedent'],
  ['noted','<code>save.svg</code> is now the odd member of its own family',
   'The three new Save commands were drawn as a family — one shared floppy body, one interior difference each. <code>save.svg</code> predates them and is a rounded square with a bar. The grammar is right and Save is the outlier. Deliberately not fixed: it is the operator\'s own art on the most-used control in the application.',
   'GLYPH_ADOPTION.md postscript'],
@@ -1088,7 +1175,15 @@ document.addEventListener('keydown', e=>{ if(e.key==='Escape' && !$('#sheetov').
    combination without editing a default and re-shooting:
      …/pdfcer-shell.html#dark,dock360,tabs,armed,nolegend
    Tokens: quiet|airy|dark · rail|tabs · dock320|dock360 · armed · tooltab ·
-           norulers · nosel · nolegend · read|review                        */
+           norulers · nosel · nolegend · read|review · sheet · tab-<id>
+
+   ★ `tab-<id>` (tab-file, tab-edit, tab-pages, …) was added 2026-09-04, when
+   three commands landed on tabs the mock does not open with and there was no
+   way to photograph them without editing `state.tab` and putting it back. That
+   edit-and-revert is precisely what this whole fragment mechanism exists to
+   avoid, and the one time it is skipped is the time the default is left
+   changed. It is PREFIXED rather than bare because `edit` is already a MODE
+   token — a bare `edit` would have silently meant one of the two. */
 for (const tok of (location.hash||'').replace('#','').split(',').filter(Boolean)){
   if (['quiet','airy','dark'].includes(tok)) state.board = tok;
   else if (['rail','tabs'].includes(tok)) state.left = tok;
@@ -1099,6 +1194,7 @@ for (const tok of (location.hash||'').replace('#','').split(',').filter(Boolean)
   else if (tok==='norulers') state.rulers = false;
   else if (tok==='nosel') state.selection = false;
   else if (tok==='nolegend') state.legend = false;
+  else if (tok.startsWith('tab-')) state.tab = tok.slice(4);
   else if (['read','review','edit'].includes(tok)) state.mode = tok;
   else if (tok==='sheet') queueMicrotask(()=>{ $('#sheetov').hidden=false; renderGlyphSheet(); });
 }

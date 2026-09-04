@@ -70,6 +70,13 @@
 //! should hold and the 1,500-line ceiling is not raised for catalogs.
 
 pub mod about;
+/// ★★★ **Every word `OPERATOR_REQUESTS.md` O122 puts on screen** — the
+/// *Open in Acrobat* control beside the mode selector, the three things it can
+/// say before it acts, and the Settings field that says where Acrobat is. One
+/// module for four surfaces because they are one conversation; see its header.
+/// Consumed by `crate::shell::commands`, `crate::dialogs::open_in_acrobat` and
+/// `crate::dialogs::settings::acrobat`.
+pub mod acrobat;
 /// Every word the About dialog shows, plus the structured attribution catalog
 /// naming the third-party material this binary redistributes. Consumed by
 /// `crate::dialogs::about`.
@@ -143,6 +150,14 @@ pub mod embed;
 /// says nothing, so a 1:2 detail arrives at half size **looking plausible**.
 pub mod export_dxf;
 pub mod export_form;
+/// ★★★ Every word the Export-image window shows, and every sentence an image
+/// export owes afterwards. `OPERATOR_REQUESTS.md` O120.
+///
+/// Its header carries the operator's own parenthesis — *"(including
+/// transparency where supported!)"* — and why that parenthesis is an
+/// instruction rather than an aside: one of the three formats cannot do it, and
+/// what is being asked for is that pdfcer be the thing that says which.
+pub mod export_image;
 /// ★ The FORM-FIELD clipboard's sentences — five refusals and the paste's
 /// off-canvas loss note. Separate from [`clipboard`] because the loss note is
 /// not a refusal: the paste worked, and the sentence exists because part of the
@@ -317,13 +332,25 @@ pub mod textedit;
 /// Copy for the three markup kinds that carry words. Its header carries the
 /// one distinction every string in it has to preserve: a text box prints and a
 /// sticky note does not.
-/// ★ Every word the Tool panel says — and it says a great deal, because that
-/// panel has almost no controls.
+/// ★ Every word the TOOLS say, wherever they are said — the one-line status
+/// strip, the Properties panel's armed-tool section, and the canvas refusals.
 ///
-/// Its header carries three rules: no label that the command registry already
+/// It was *"every word the Tool panel says"* until `OPERATOR_REQUESTS.md` O123
+/// dissolved that panel; the copy outlived it and its header tabulates which
+/// surface now says which sentence, and which fifteen strings were deleted with
+/// the tool list rather than re-homed.
+///
+/// The three rules are unchanged: no label that the command registry already
 /// owns, no sentence that is a tip rather than a fact, and no instruction that
 /// fails to say how its gesture ends.
 pub mod tool;
+/// ★ The one-line tool status's own two strings — `OPERATOR_REQUESTS.md` O123.
+///
+/// Deliberately tiny. Everything else the strip says is already written down
+/// somewhere authoritative — the tool's NAME in the command registry, its
+/// SENTENCE in [`tool`], its verb in [`tool::put_down_button`] — and its
+/// header tabulates which is which and why none of them was copied.
+pub mod toolstatus;
 /// The words of the question `file.close` had been promising to ask since it
 /// shipped, and did not.
 ///

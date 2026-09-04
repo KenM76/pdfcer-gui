@@ -65,6 +65,7 @@
 use egui::{Pos2, Rect, Vec2};
 
 use super::model::{Column, DockLayout, PanelId, PanelInfo, PanelRegistry, SideLayout, Stack};
+use super::report::RectReport;
 use super::{Dock, DockState, plan, testfont};
 
 /// Tolerance, in points, for "inside" and "does not overlap".
@@ -151,7 +152,7 @@ fn render(n: usize, dock_width: f32, window: Vec2) -> Rendered {
     let mut rects: Vec<(String, Rect)> = Vec::new();
     let window_rect = Rect::from_min_size(Pos2::ZERO, window);
     {
-        let mut sink = |name: &str, rect: Rect| rects.push((name.to_owned(), rect));
+        let mut sink = |r: &RectReport<'_>| rects.push((r.name.to_owned(), r.rect));
         let input = egui::RawInput {
             screen_rect: Some(window_rect),
             ..Default::default()
@@ -399,7 +400,7 @@ fn the_active_tab_is_drawn_whenever_any_tab_is() {
             let mut state = DockState::new(l);
             let mut rects: Vec<(String, Rect)> = Vec::new();
             {
-                let mut sink = |name: &str, rect: Rect| rects.push((name.to_owned(), rect));
+                let mut sink = |r: &RectReport<'_>| rects.push((r.name.to_owned(), r.rect));
                 let input = egui::RawInput {
                     screen_rect: Some(Rect::from_min_size(Pos2::ZERO, Vec2::new(2000.0, 900.0))),
                     ..Default::default()

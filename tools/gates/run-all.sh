@@ -278,6 +278,31 @@ run "check-verb-coverage" bash "$HERE/check-verb-coverage.sh"
 # not one, and this one worked exactly as written.
 run "check-old-name-absent" bash "$HERE/check-old-name-absent.sh"
 
+# ★★★ `check-engine-backlog`, added 2026-09-04 — `check-verb-coverage`'s twin
+# for the channel that had no gate at all.
+#
+# `check-verb-coverage` reads the engine's API and fails when this shell names
+# none of a verb. It caught `set_encryption` and `set_permissions` within hours
+# of their arrival, unannounced.
+#
+# ★★ A capability announced in PROSE had no such gate, and the hole swallowed an
+# operator request whole. On 2026-09-03 he asked the ENGINE for PNG/JPEG/SVG
+# export and clipboard copy-out; the engine shipped all of it that day and sent
+# a note saying exactly what to wire. **This shell built none of it and filed no
+# row, for a day**, and it was found only because a session read the request
+# folder looking for something else.
+#
+# The engine's own `docs/FEATURES.md` states the gap in a machine-readable
+# place — every row reading `[x] core` / `[ ] gui` — and until this gate nothing
+# on this side read it. `ENGINE_BACKLOG.md` accounts for all ninety, each with a
+# verdict and an argument; this fails when a ninety-first appears.
+#
+# ★ It also found the column is stale in the OTHER direction: 64 of the 90 are
+# already shipped here. That correction went back to the engine as a request
+# rather than being fixed locally, because `D:\Dev\pdfcer\` is read-only to us.
+run "check-engine-backlog --self-test" bash "$HERE/check-engine-backlog.sh" --self-test
+run "check-engine-backlog" bash "$HERE/check-engine-backlog.sh"
+
 # `check-third-party-licences` regenerates THIRD_PARTY_LICENSES.md and fails if
 # the committed one differs. It is the SECOND gate written on 2026-09-01 for the
 # same underlying shape as `check-verb-coverage`: an ADDITION on the other side

@@ -596,7 +596,40 @@ impl OcrDialog {
                 // Stating the dependency is the point.
                 ui.ctx().request_repaint();
                 ui.horizontal(|ui| {
-                    ui.spinner();
+                    // ★★★ **A BARE `ui.spinner()` IS INVISIBLE IN ALL THREE
+                    // PRESETS — A15f, found 2026-09-04 by the widened contrast
+                    // gate, and it is the funniest defect in the tree because
+                    // this control exists to prove the program has not frozen.**
+                    //
+                    // `egui::Spinner` resolves its own colour from
+                    // `visuals.strong_text_color()` (egui-0.35
+                    // `widgets/spinner.rs:44`) and draws it on
+                    // `window_fill`. That accessor **is**
+                    // `widgets.active.fg_stroke.color` — the ink meant for the
+                    // accent FILL — so on a dialog background the luminance gap
+                    // measures **Quiet 17.9 / Airy 5.0 / Dark 29.1** against a
+                    // readable floor of 90. Airy is white on white to within
+                    // five levels.
+                    //
+                    // ★★ Those are the same three numbers as `DEFECTS.md` D2,
+                    // because it is the same pair: a plate colour used against
+                    // a background nobody paired it with. The fourth
+                    // recurrence.
+                    //
+                    // ★ And `check-strong-text.sh` structurally cannot see it.
+                    // That gate greps for a `.strong()` or a colour named at a
+                    // call site; **a bare `ui.spinner()` names no colour at
+                    // all**. It took a gate that enumerates what a `Style` will
+                    // RENDER rather than what a source file SAYS.
+                    //
+                    // ⇒ Stated at the call site, in the body-text role, because
+                    // that is what this is: a spinner beside "Working…" is
+                    // content at the same weight as the sentence next to it,
+                    // not an emphasis and not a selection. Measured on
+                    // `window_fill`: Quiet 204.0 / Airy 217.1 / Dark 183.1.
+                    ui.add(
+                        egui::Spinner::new().color(egui_shell::Theme::of(ui.ctx()).palette.text),
+                    );
                     ui.label(t::working());
                 });
                 // ★★★ **WHAT IT IS DOING** — the operator's own ask, 2026-09-01:

@@ -168,11 +168,27 @@ pub const PLANNED: &[(&str, &str)] = &[
         // ui-text-exempt: developer note about an ABSENT command; never rendered.
         "N — meaningless until there is a save point to revert to, so it follows `file.save`.",
     ),
-    (
-        "file.export_image",
-        "C — pdfcer-core rasterises to PNG/JPEG/TIFF already. Needs a DPI picker and a save \
-         dialog; no engine work.",
-    ),
+    // ★★★ **`file.export_image` BUILT 2026-09-04 — `OPERATOR_REQUESTS.md`
+    // O120.** Kept as a comment rather than silently deleted, for the reason
+    // this list states above: *"this used to be planned and is now built"* is
+    // the transition it exists to make legible. Its note read:
+    //
+    //   "C — pdfcer-core rasterises to PNG/JPEG/TIFF already. Needs a DPI
+    //    picker and a save dialog; no engine work."
+    //
+    // ★ Both halves were right and neither was a gate, which is the whole
+    // finding. The entry was accurate for the life of the project,
+    // `RIBBON_IA.md` §5.1 carried the same row, and the operator asked for the
+    // feature out loud on 2026-09-03 — to the ENGINE side, which shipped it the
+    // same day and sent a note marked *"informational, no reply needed; consume
+    // when convenient"*. Nothing here reads that channel and no test fails for
+    // an unbuilt **C**, so "when convenient" did not arrive on its own.
+    //
+    // ⇒ And the correction to the note itself is worth keeping: it said TIFF,
+    // and the engine has no TIFF encoder; it did not say SVG, because
+    // `pdfcer_render::svg` did not exist when it was written. **A capability
+    // note is a measurement with a date on it**, and this one was read long
+    // after it was taken.
     (
         "file.export_text",
         "C — pdfcer-core extracts text already. Needs a save dialog and nothing else. Not to be \

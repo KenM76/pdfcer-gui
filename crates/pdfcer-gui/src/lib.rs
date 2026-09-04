@@ -55,6 +55,11 @@
 
 #![forbid(unsafe_code)]
 
+// O122 — finding the operator's installed Acrobat and handing the open
+// document over to it. Everything that can only be true of a real machine
+// (reading the registry, starting a process) is behind a trait in there, so
+// the decisions are testable without either. See its header.
+pub mod acrobat;
 pub mod app;
 pub mod canvas;
 pub mod diag;

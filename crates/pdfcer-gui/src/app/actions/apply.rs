@@ -144,6 +144,14 @@ impl PdfcerApp {
                 self.apply_close();
                 return;
             }
+            // ★ Beside `Close` and returning like it, for `Close`'s own
+            // reason: nothing here is an edit, so it must not fall through to
+            // the edit-epoch bookkeeping below. It raises a question and
+            // returns; the acts it leads to happen in the drain.
+            Action::OpenInAcrobat => {
+                self.apply_open_in_acrobat();
+                return;
+            }
             // ★ Beside the four above rather than below the document guard,
             // and for a third reason again: this arm needs `&mut self`, not
             // `&mut OpenDoc`. It reads a **parked** document's session while
@@ -304,6 +312,7 @@ impl PdfcerApp {
             | Action::New
             | Action::NewSized { .. }
             | Action::Close
+            | Action::OpenInAcrobat
             | Action::CloseDocument(_)
             | Action::CloseOtherDocuments(_)
             | Action::InsertPagesFromOpenDocument { .. }
@@ -1149,6 +1158,9 @@ impl PdfcerApp {
                 super::write::WriteAction::Dxf { page, options } => {
                     super::export::dxf(doc, page, &options)
                 }
+                // O120. The refusal of an impossible combination, the picker
+                // and the whole disclosure live in `super::export::image`.
+                super::write::WriteAction::Image { plan } => super::export::image(doc, &plan),
                 super::write::WriteAction::FormData => super::export::form_data(doc),
                 super::write::WriteAction::Compacted { bytes, before } => {
                     crate::app::save::compacted(doc, &bytes, before);

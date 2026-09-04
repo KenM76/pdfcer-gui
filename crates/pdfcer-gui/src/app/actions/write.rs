@@ -73,6 +73,40 @@ pub enum WriteAction {
         /// put a second constructor in the path.
         options: pdfcer_core::export::dxf::DxfOptions,
     },
+    /// ★★★ **Write one or more pages out as a picture** — PNG, JPEG or SVG.
+    /// `OPERATOR_REQUESTS.md` **O120**.
+    ///
+    /// Raised by `crate::dialogs::export_image` and by nothing else.
+    ///
+    /// # Why it carries a whole plan, like [`Self::Dxf`] and unlike
+    /// [`Self::FormData`]
+    ///
+    /// A dialog collected four decisions before the press — which format, which
+    /// pages, what resolution, whether transparency survives — and none of them
+    /// can be recovered from a save picker. `FormData` needs no plan precisely
+    /// because its one decision (the format) *is* recoverable from the picker,
+    /// as the extension the operator types.
+    ///
+    /// # ★★ Why the plan is the SHELL's type and not the engine's
+    ///
+    /// [`Self::Dxf`] carries `DxfOptions` because that is literally the value
+    /// the writer takes. There is no engine equivalent here, and that is a fact
+    /// about the feature rather than a gap: the engine offers three unrelated
+    /// writers (`export::encode_png`, `export::encode_jpeg`,
+    /// `svg::export_svg_view`) with three options types and three error types,
+    /// and *"which of the three, over which pages"* is a question none of them
+    /// asks. See `super::imageexport` for the whole argument.
+    ///
+    /// # ★ The pages are RESOLVED, not a scope and a string
+    ///
+    /// The window has already parsed the typed range — it needs the answer to
+    /// decide whether Export is pressable — so re-parsing in the apply phase
+    /// would be a second reading of the same box against a document that may
+    /// have changed pages in between.
+    Image {
+        /// Everything the writer needs, frozen when Export was pressed.
+        plan: super::imageexport::ImagePlan,
+    },
     /// **Write the form's values out as FDF, XFDF or CSV.**
     ///
     /// # ★ It carries nothing, and that is the difference from [`Self::Dxf`]

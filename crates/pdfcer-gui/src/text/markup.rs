@@ -329,8 +329,10 @@ pub fn note_removed(previous: &str) -> Option<String> {
 /// shell called it**. On a certified drawing the Format tab's Delete, the
 /// canvas right-click's Delete and the Delete key were all live, and every one
 /// of them ended in `crate::app::actions::apply::vector_edit`'s `Err` arm,
-/// which writes one line to the trace and **says nothing at all to the
-/// operator**. That is the identical shape the forms panel's `deletion_refusal`
+/// which wrote one line to the trace and **said nothing at all to the
+/// operator** — it words one un-categorised sentence since O116 (2026-09-04),
+/// which names no cause and so replaces none of these.
+/// That is the identical shape the forms panel's `deletion_refusal`
 /// audit found the day before (`crate::panels::properties::formfield`), one
 /// annotation kind along, and it was found the same way: by asking what the
 /// engine offers rather than by re-reading this shell.

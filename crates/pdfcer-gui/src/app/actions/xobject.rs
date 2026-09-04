@@ -154,9 +154,11 @@ pub(super) fn apply(doc: &mut OpenDoc, action: XObjectAction) {
 ///
 /// # ★★★ Every refusal is caught INSIDE the closure and worded
 ///
-/// `super::apply::vector_edit`'s `Err` arm traces and says nothing to the
-/// operator, and its own comment explains why that is a scope statement rather
-/// than an oversight: wording a decline is catalog work per refusal, and a
+/// `super::apply::vector_edit`'s `Err` arm traces, and since O116 (2026-09-04)
+/// words one un-categorised sentence and nothing more — it names no verb and no
+/// remedy, by construction. Its own comment explains why that floor is a scope
+/// statement rather than an oversight: wording a decline is catalog work per
+/// refusal, and a
 /// `format!` of an `EditError`'s `Display` would route diagnostic prose into
 /// the UI. So a verb that owes sentences words them here, from inside the
 /// closure, the way `super::annots::resize` and `super::annots::rotate` do.

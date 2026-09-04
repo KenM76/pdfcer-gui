@@ -119,6 +119,20 @@ pub(crate) struct RowDemand {
     /// Used for the tabs and the affordance, which are text-only. The QAT
     /// has [`Self::qat_floor`] instead.
     pub button_floor: f32,
+    /// The trailing region's natural width, from
+    /// [`super::super::trailing::measure`]. **Zero when there is nothing to
+    /// draw there**, which is the ordinary case and is what makes the region
+    /// cost nothing when it is not in use.
+    pub trailing: f32,
+    /// The narrowest a trailing region worth drawing can be — its first
+    /// control's own floor, from [`super::super::trailing::min_width`].
+    ///
+    /// A separate figure from [`Self::button_floor`] for exactly the reason
+    /// [`Self::qat_floor`] is: a control with an **icon slot** bottoms out
+    /// around 40 pt rather than at `truncate()`'s 19.7, and granting the
+    /// smaller figure produces a control drawn outside its own rectangle —
+    /// here, over the mode selector.
+    pub trailing_floor: f32,
 }
 
 /// How the tab-strip row's width is divided between its three regions.
@@ -140,6 +154,19 @@ pub(crate) struct RowPlan {
     pub qat_truncated: bool,
     /// Whether the mode selector was granted less than it asked for.
     pub selector_truncated: bool,
+    /// Width granted to the trailing region, at the far right — past the
+    /// mode selector. Zero when there is nothing to draw, and **also** zero
+    /// when the row is too narrow to hold it; see [`RowPlan::trailing_dropped`]
+    /// for how the two are told apart.
+    pub trailing: f32,
+    /// Whether a trailing region that wanted space got none.
+    ///
+    /// ★ Its own flag rather than `trailing < demand.trailing`, because the
+    /// two cases that produce a zero grant are *"there was nothing to draw"*
+    /// and *"there was something and the row could not hold it"* — the first
+    /// is the ordinary state of this region and must not be announced, the
+    /// second is a control the operator cannot reach and must be.
+    pub trailing_dropped: bool,
 }
 
 /// Divide the tab-strip row between the QAT, the mode selector and the
@@ -153,8 +180,8 @@ pub(crate) struct RowPlan {
 /// may shrink. So the row is divided in one pass, outermost first:
 ///
 /// ```text
-/// [ QAT ][ tabs … ⏷ N more ][ mode selector ]
-///    1              3              2
+/// [ QAT ][ tabs … ⏷ N more ][ mode selector ][ trailing ]
+///    1              4              2            3
 /// ```
 ///
 /// 1. **The QAT** is a fixed cost. It is neither content nor an
@@ -163,7 +190,12 @@ pub(crate) struct RowPlan {
 ///    sit behind a tab switch. It is therefore reserved first.
 /// 2. **The mode selector** is reserved from the right edge, out of what
 ///    the QAT left.
-/// 3. **The tabs** — and the affordance that reaches the ones that do not
+/// 3. **The trailing region** — see [`RowDemand::trailing`] — is reserved from
+///    the right edge past the selector, out of what the QAT and the floors
+///    left. It is the one reserved region that may be granted **nothing**,
+///    because it is an optional extra rather than a promise the interface has
+///    already made; see the ★★ comment in the body.
+/// 4. **The tabs** — and the affordance that reaches the ones that do not
 ///    fit — get the remainder.
 ///
 /// # ★ The floors: no reservation may consume the row
@@ -180,9 +212,10 @@ pub(crate) struct RowPlan {
 /// their floors*:
 ///
 /// ```text
-/// qat      = grant(demand.qat, row − tabs_floor − selector_floor, qat_floor)
-/// selector = min(demand.selector, row − qat − tabs_floor)
-/// tabs     = row − qat − selector          ← therefore ≥ tabs_floor
+/// qat      = grant(demand.qat,      row − tabs_floor − selector_floor, qat_floor)
+/// trailing = grant(demand.trailing, row − qat − tabs_floor − selector_floor, trailing_floor)
+/// selector = min(demand.selector,   row − qat − trailing − tabs_floor)
+/// tabs     = row − qat − selector − trailing   ← therefore ≥ tabs_floor
 /// ```
 ///
 /// Note what `selector_floor` does and does not promise. It is held back
@@ -224,11 +257,33 @@ pub(crate) fn plan_strip_row(row: f32, demand: RowDemand) -> RowPlan {
     let tabs_floor = sane(demand.tabs_floor);
     let qat_floor = sane(demand.qat_floor);
 
+    let trailing_wanted = sane(demand.trailing);
+    let trailing_floor = sane(demand.trailing_floor);
+
     let qat = grant(qat_wanted, row - tabs_floor - selector_floor, qat_floor);
+    // ★★ THE TRAILING REGION IS RESERVED LAST AMONG THE RESERVED REGIONS, AND
+    // IT IS THE ONLY ONE ALLOWED TO VANISH.
+    //
+    // The header's ordering argument is about controls that must SURVIVE, and
+    // the QAT, the selector and the tabs' floor all qualify: an operator who
+    // cannot reach them has lost something the interface promised. The
+    // trailing region is different in kind — it holds an optional extra whose
+    // absence is already a state the application handles, because R9 makes it
+    // absent whenever the capability behind it is missing. So it takes what is
+    // left after everything load-bearing has its floor, and takes NOTHING
+    // rather than a sliver.
+    //
+    // `grant`, not a clamp: this region's controls are `egui::Button`s with an
+    // icon slot, so the floor is real in exactly the way the selector's is not.
+    let trailing = grant(
+        trailing_wanted,
+        row - qat - tabs_floor - selector_floor,
+        trailing_floor,
+    );
     // A plain clamp, not `grant`: see the header on why the selector has
     // no button floor.
-    let selector = selector_wanted.min((row - qat - tabs_floor).max(0.0));
-    let tabs = (row - qat - selector).max(0.0);
+    let selector = selector_wanted.min((row - qat - trailing - tabs_floor).max(0.0));
+    let tabs = (row - qat - selector - trailing).max(0.0);
 
     RowPlan {
         qat,
@@ -236,6 +291,8 @@ pub(crate) fn plan_strip_row(row: f32, demand: RowDemand) -> RowPlan {
         tabs,
         qat_truncated: qat < qat_wanted,
         selector_truncated: selector < selector_wanted,
+        trailing,
+        trailing_dropped: trailing_wanted > 0.0 && trailing <= 0.0,
     }
 }
 
@@ -551,6 +608,23 @@ mod tests {
             selector_floor: selector.min(positions as f32 * FLOOR),
             tabs_floor: 2.0 * FLOOR + GAP,
             button_floor: FLOOR,
+            // No trailing region, which is the ordinary case: every existing
+            // assertion in this file is about a row that has none, and the
+            // arithmetic must be unchanged for it. `trailing_demand` below is
+            // the fixture for a row that has one.
+            trailing: 0.0,
+            trailing_floor: 0.0,
+        }
+    }
+
+    /// The same demand, with a trailing region of `trailing` points whose
+    /// single control bottoms out at [`QAT_FLOOR`] — a trailing control is a
+    /// button with an icon slot, exactly as a QAT control is.
+    fn trailing_demand(qat: f32, selector: f32, positions: usize, trailing: f32) -> RowDemand {
+        RowDemand {
+            trailing,
+            trailing_floor: QAT_FLOOR.min(trailing),
+            ..demand(qat, selector, positions)
         }
     }
 
@@ -1102,6 +1176,114 @@ mod tests {
             assert_eq!(
                 p.overflow_width, 0.0,
                 "available={bad}: there is no width to draw an affordance in"
+            );
+        }
+    }
+
+    /// **★ A row with no trailing region is arithmetically unchanged.**
+    ///
+    /// The first thing to establish about a new claimant on a shared budget:
+    /// it costs nothing when it is not there. Every other assertion in this
+    /// file was written against the three-region row, and if adding a fourth
+    /// moved any of them the fourth is wrong rather than the third.
+    #[test]
+    fn a_row_with_no_trailing_region_divides_exactly_as_it_did_before() {
+        for row in (1..600).map(|r| r as f32) {
+            let without = plan_strip_row(row, demand(166.0, 189.0, 3));
+            let with_empty = plan_strip_row(row, trailing_demand(166.0, 189.0, 3, 0.0));
+            assert_eq!(
+                (without.qat, without.selector, without.tabs),
+                (with_empty.qat, with_empty.selector, with_empty.tabs),
+                "row={row}: an absent trailing region changed the division"
+            );
+            assert_eq!(without.trailing, 0.0, "row={row}");
+            assert!(
+                !without.trailing_dropped,
+                "row={row}: nothing was asked for, so nothing was dropped"
+            );
+        }
+    }
+
+    /// **★★ The trailing region never eats the selector, the QAT or the tabs'
+    /// floor — at any width.**
+    ///
+    /// This is `the_qat_is_not_allowed_to_consume_the_strip` restated for the
+    /// new claimant, and it is the assertion that makes reserving a fourth
+    /// region safe. A trailing control four times wider than the whole window
+    /// must still leave every load-bearing region what it had; the only thing
+    /// that may give is the trailing region itself.
+    #[test]
+    fn a_trailing_region_never_consumes_the_row() {
+        for row in (1..800).map(|r| r as f32) {
+            let baseline = plan_strip_row(row, demand(166.0, 189.0, 3));
+            let greedy = plan_strip_row(row, trailing_demand(166.0, 189.0, 3, 4.0 * row));
+
+            assert!(
+                greedy.trailing <= row,
+                "row={row}: the trailing region took more than the row has"
+            );
+            assert!(
+                greedy.tabs >= baseline.tabs.min(greedy.tabs) - 0.001,
+                "row={row}"
+            );
+            assert!(
+                (greedy.qat + greedy.selector + greedy.tabs + greedy.trailing - row).abs() < 0.001,
+                "row={row}: the four regions must tile the row exactly"
+            );
+            // The load-bearing regions keep what they had. A trailing region
+            // that could shrink the QAT would be able to hide Undo behind a
+            // button that opens another program, which is the wrong way round.
+            assert_eq!(greedy.qat, baseline.qat, "row={row}: the QAT gave ground");
+            assert!(
+                greedy.selector >= baseline.selector.min(greedy.selector) - 0.001,
+                "row={row}"
+            );
+        }
+    }
+
+    /// **★★ A trailing region that cannot have a whole control gets NOTHING,
+    /// and says so.**
+    ///
+    /// The three-way `grant` rule, which this module's header measures: a
+    /// width between zero and the floor does not produce a smaller button, it
+    /// produces a button drawn *outside its own rectangle* — here, on top of
+    /// the mode selector, where a misplaced click changes the operator's mode
+    /// instead of opening their document elsewhere.
+    ///
+    /// And the drop is announced. `trailing_dropped` is a separate flag from
+    /// `trailing == 0.0` precisely because the ordinary state of this region
+    /// is to be empty, and announcing that every frame would bury the one
+    /// case worth reading.
+    #[test]
+    fn a_trailing_region_below_its_floor_is_dropped_whole_and_disclosed() {
+        // Roomy: it gets exactly what it asked for and nothing is disclosed.
+        let roomy = plan_strip_row(900.0, trailing_demand(166.0, 189.0, 3, 60.0));
+        assert_eq!(roomy.trailing, 60.0);
+        assert!(!roomy.trailing_dropped);
+
+        // Tight: below the floor, so nothing — not a sliver.
+        let tight = plan_strip_row(260.0, trailing_demand(166.0, 189.0, 3, 60.0));
+        assert_eq!(
+            tight.trailing, 0.0,
+            "a region that cannot hold a whole control must hold none"
+        );
+        assert!(
+            tight.trailing_dropped,
+            "a control the operator cannot reach must be disclosed"
+        );
+
+        // Never a width between zero and the floor, at any row width.
+        for row in (1..900).map(|r| r as f32) {
+            let plan = plan_strip_row(row, trailing_demand(166.0, 189.0, 3, 60.0));
+            assert!(
+                plan.trailing == 0.0 || plan.trailing >= QAT_FLOOR.min(60.0) - 0.001,
+                "row={row}: granted a sliver of {}",
+                plan.trailing
+            );
+            assert_eq!(
+                plan.trailing_dropped,
+                plan.trailing <= 0.0,
+                "row={row}: the flag and the grant disagree"
             );
         }
     }

@@ -78,18 +78,25 @@ const TAB: &str = "ribbon.tab.measure";
 const TAB_ID: &str = "measure";
 /// The control that arms the radius/diameter tool.
 const SUBJECT: &str = "ribbon.item.measure.radius_diameter";
-/// The View-tab control that mounts the Tool panel.
-const TOOL_PANEL_ITEM: &str = "ribbon.item.view.panel_tool";
-/// The View tab, which carries that control.
-const VIEW_TAB: &str = "ribbon.tab.view";
-/// The Tool panel's body region.
-const TOOL_PANEL_BODY: &str = "panel:tool";
-/// The Tool panel's dock tab header.
-const TOOL_PANEL_TAB: &str = "dock.tab.tool";
-/// The picked-point list's region.
-const POINT_LIST: &str = "tool.measure_points";
+/// The Properties panel's body compartment, as the DOCK reports it.
+///
+/// ★★★ **The pick list moved on 2026-09-04** — `OPERATOR_REQUESTS.md` O123
+/// dissolved the Tool panel and sent its live controls to Properties, on the
+/// operator's own argument: *"I never understood why there is a tool dock when
+/// everything can be in object and properties."*
+///
+/// The dock's own name is used rather than a panel-published body region
+/// because Properties has never published one — and the dock's is the better
+/// oracle anyway, since it goes through `crate::diag::ui_rect_visible` and
+/// therefore says *the compartment is reachable* rather than *a function ran*.
+const PROPERTIES_BODY: &str = "dock.body.file.properties";
+/// The Properties panel's dock tab header, for raising it from behind a
+/// sibling.
+const PROPERTIES_TAB: &str = "dock.tab.file.properties";
+/// The picked-point list's region, in its new home.
+const POINT_LIST: &str = "properties.tool.measure_points";
 /// The prefix of one picked point's row.
-const POINT_ROW_PREFIX: &str = "tool.measure_point.";
+const POINT_ROW_PREFIX: &str = "properties.tool.measure_point.";
 /// The line the tool traces on every pick and every removal.
 const PICK_EVENT: &str = "measure-circular-point";
 
@@ -350,7 +357,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // tab publishes nothing, which is indistinguishable from a panel with
     // nothing to say — the finding `RESUME.md` records after a check spent an
     // evening being reported as a defect in the Properties pane.
-    raise_tool_panel(&session, &driver, ui_rect, report)?;
+    raise_properties_panel(&session, &driver, ui_rect, report)?;
     let trace = session.trace()?;
     if declared(&trace, ui_rect, POINT_LIST).is_none() {
         failures.push(format!(
@@ -466,69 +473,55 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
 }
 
-/// Put the Tool panel in front, whatever state the dock is in.
+/// Put the **Properties** panel on screen, whatever state the dock is in.
 ///
-/// Three cases, and each really occurs:
+/// Three states, and the middle one is the reason this is a function:
 ///
-/// 1. **Already the active tab** — its body publishes, nothing to do.
-/// 2. **Mounted but behind another tab** — its `dock.tab.tool` header
-///    publishes while its body does not. Clicking the header raises it. ★ The
-///    ribbon toggle must NOT be used here: it would *unmount* a panel that is
-///    already there, and the check would then report an absent list about a
-///    panel it closed itself.
-/// 3. **Not mounted** — neither region publishes; the View tab's toggle mounts
-///    it.
+/// 1. **Already the active tab** — the dock publishes its body; nothing to do.
+/// 2. **Mounted, behind a sibling** — the dock publishes the tab header while
+///    its body does not. Clicking the header raises it. ★ A ribbon toggle must
+///    NOT be used here: it would *unmount* a panel that is already there, and
+///    the check would then report an absent list about a panel it closed
+///    itself.
+/// 3. **Not mounted at all** — the check SKIPs. ★ Deliberately a skip rather
+///    than a ribbon hunt: `file.properties` is mounted by every mode's default
+///    arrangement, so its absence means the operator's persisted layout removed
+///    it, and a check that re-mounted somebody's closed panel would be
+///    measuring a dock it had just rearranged.
 ///
 /// # Errors
 ///
-/// SKIPs the check when the panel cannot be reached at all, because a check
-/// that could not open the surface it reads has learned nothing about it.
-fn raise_tool_panel(
+/// SKIPs the check when the panel cannot be reached, because a check that could
+/// not open the surface it reads has learned nothing about it.
+fn raise_properties_panel(
     session: &Session,
     driver: &Driver,
     ui_rect: &str,
     report: &mut CheckReport,
 ) -> Result<()> {
     let trace = session.trace()?;
-    if declared(&trace, ui_rect, TOOL_PANEL_BODY).is_some() {
-        report.note("the Tool panel is already the active tab in its dock");
+    if declared(&trace, ui_rect, PROPERTIES_BODY).is_some() {
+        report.note("the Properties panel is already the active tab in its dock");
         return Ok(());
     }
-    if let Some(tab) = declared(&trace, ui_rect, TOOL_PANEL_TAB) {
+    if let Some(tab) = declared(&trace, ui_rect, PROPERTIES_TAB) {
         driver.click_at(
-            driving::frame_of(session, &trace, ui_rect, TOOL_PANEL_TAB)?.declared_center(tab),
+            driving::frame_of(session, &trace, ui_rect, PROPERTIES_TAB)?.declared_center(tab),
         )?;
         session.settle(16);
-        if declared(&session.trace()?, ui_rect, TOOL_PANEL_BODY).is_some() {
-            report.note("the Tool panel was behind another tab; raised it by its header");
+        if declared(&session.trace()?, ui_rect, PROPERTIES_BODY).is_some() {
+            report.note("the Properties panel was behind another tab; raised it by its header");
             return Ok(());
         }
     }
 
     let trace = session.trace()?;
-    let view = declared(&trace, ui_rect, VIEW_TAB).ok_or_else(|| {
-        Error::new(format!(
-            "no `{VIEW_TAB}` region, so the Tool panel's toggle cannot be reached. Tabs \
-             declared: {}.",
-            list(&declared_names(&trace, ui_rect, "ribbon.tab."))
-        ))
-    })?;
-    driver.click_at(session.frame()?.declared_center(view))?;
-    session.settle(14);
-    let Some(item) = driving::declared_or_in_overflow(session, driver, ui_rect, TOOL_PANEL_ITEM)?
-    else {
-        return Err(Error::new(format!(
-            "the View tab declares no `{TOOL_PANEL_ITEM}`, so the Tool panel cannot be mounted."
-        )));
-    };
-    driver.click_at(session.frame()?.declared_center(item))?;
-    session.settle(20);
-    if declared(&session.trace()?, ui_rect, TOOL_PANEL_BODY).is_none() {
-        return Err(Error::new(format!(
-            "pressing `{TOOL_PANEL_ITEM}` declared no `{TOOL_PANEL_BODY}` region, so the Tool \
-             panel did not mount and its picked-point list cannot be read."
-        )));
-    }
-    report.note("mounted the Tool panel from View");
-    Ok(())
+    Err(Error::new(format!(
+        "neither `{PROPERTIES_BODY}` nor `{PROPERTIES_TAB}` is on screen, so the \
+         Properties panel is not mounted in this dock and the radius tool's pick \
+         list — which lives in it since O123 — cannot be read. SKIPPED rather \
+         than failed: this check's subject is the pick list, not the dock. \
+         Regions beginning `dock.tab.`: {}.",
+        list(&declared_names(&trace, ui_rect, "dock.tab."))
+    )))
 }

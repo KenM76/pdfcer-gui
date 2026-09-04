@@ -78,6 +78,7 @@
 //!   what a catalog header should make legible.)
 
 mod formdelete;
+mod refused;
 mod selection;
 
 /// ★ Re-exported for the reason stated on [`selection`]'s block below, and it
@@ -86,6 +87,14 @@ mod selection;
 /// description** almost word for word has to justify every word it does not
 /// share with it, or the two surfaces become two paraphrases of one fact.
 pub use formdelete::field_delete_declined_structural;
+
+/// ★ Re-exported on [`formdelete`]'s precedent and for the same two reasons —
+/// R2 forced a file, the subject decided which one — with one addition that is
+/// this entry's whole difficulty: **it is the only sentence in this catalog
+/// that names no cause**, because the engine exposes none this shell may
+/// switch on. Its file carries the argument for every word it does not say,
+/// including why it does not point the operator at Render diagnostics.
+pub use refused::edit_declined_by_engine;
 
 /// ★ Re-exported rather than moved-and-repathed.
 ///

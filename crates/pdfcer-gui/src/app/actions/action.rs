@@ -350,6 +350,13 @@ pub enum Action {
     /// is *not* on screen is [`Self::CloseDocument`], raised only by the ✕ on
     /// a tab and by a middle click on one.
     Close,
+    /// ★★★ **Hand the open document to Acrobat and stop being the program that
+    /// has it** — O122, raised by `file.open_in_acrobat` beside the mode
+    /// selector. Carries nothing: always the document on screen. It raises a
+    /// question and does nothing else, as [`Self::Close`] does and for its
+    /// reason; `crate::app::actions::acrobat` holds the whole argument,
+    /// including why the drain's order is save → launch → close.
+    OpenInAcrobat,
     /// **Close the document in tab position `0`-based slot.**
     ///
     /// Raised by the document tab strip's ✕ and by a middle click on a tab,

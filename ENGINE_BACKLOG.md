@@ -1,0 +1,447 @@
+# ENGINE_BACKLOG.md — every capability the engine says it has and this shell does not, and what we decided about each
+
+**Written 2026-09-04, in answer to a failure rather than a question.**
+
+On 2026-09-03 the operator asked the **engine** session for PNG / JPEG / SVG
+export and for copy-paste of vector graphics into Word and Inkscape. The engine
+shipped all of it the same day, across four passes, and sent a note — *"here is
+what a shell wires"* — with the call for every capability, the clipboard format
+order validated against a real Word paste, and a worked example.
+
+**This shell built none of it and had no row for it.** It was found a day later
+only because somebody happened to read the request folder for an unrelated
+reason. It is now `OPERATOR_REQUESTS.md` O120.
+
+The same morning, two new engine verbs — `set_encryption` and `set_permissions` —
+arrived with **no note at all**, and *those were caught immediately*, by
+`tools/gates/check-verb-coverage.sh`, because that gate reads the engine's API
+and fails when this shell names none of it.
+
+> ⇒ **★★★ A capability announced in prose has no such gate. A capability
+> announced in an API does.** That asymmetry is the defect this file and
+> `tools/gates/check-engine-backlog.sh` exist to close.
+
+---
+
+## ★★★ The measurement that already existed and was not read
+
+`D:\Dev\pdfcer\docs\FEATURES.md` is a table whose first three columns are
+`core | cli | gui`. **A row reading `[x]` under `core` and `[ ]` under `gui` is
+the engine stating, in a machine-readable place, that it has something this
+shell does not.**
+
+That is not a note in a folder. It is a checkbox, in a file the engine's own
+librarian updates on every filing, and it has been sitting there the whole time.
+Nothing here read it.
+
+**Measured at 2026-09-04: 259 table rows in that file, of which 90 read
+`[x] core` and `[ ] gui`.** Re-measure before quoting the number —
+`bash tools/gates/check-engine-backlog.sh` prints it on every run, and this
+project has a standing rule about counts in prose going stale while the prose
+around them stays true.
+
+⇒ **This file gives each of those 90 rows a verdict and a reason in one
+sentence.** Nothing else. It is deliberately the same shape as
+`EDITABLE_SURFACES.md`'s misses table, for the same reason: *the argument is the
+valuable part*, and a register whose rows carry only a status trains the next
+session to re-derive a conclusion somebody already reached.
+
+---
+
+## ★★ What the engine's `gui` column is worth, stated plainly
+
+The single largest finding of this triage is that **the column is badly stale in
+one direction**, and it is worth being precise about which:
+
+- **A `[x]` is trustworthy.** The engine's own ticking bar is *"a row is ticked
+  only when an operator can reach it in a real `pdfcer-gui` build — not when the
+  code exists, not when a test passes"*, and nothing ticks itself.
+- **A `[ ]` is a negative existential and is falsifiable by nothing.** The engine
+  says so in its own header, about its own file: *"`[x]` is falsifiable by the
+  build — delete the function, tests go red. `[ ]` is falsifiable by **nothing**:
+  no test, no gate, no compiler notices a capability arriving."*
+- **And a `[ ]` about a repository the engine does not build decays fastest of
+  all.** That is not a criticism, it is a structural fact both projects have
+  written up: a verdict about a repository this project does not build has no
+  falsifier here and rots silently regardless of diligence on either side.
+
+**Sixty-four of the ninety rows turned out to be reachable in this shell today.**
+Some by weeks. The engine's evidence for a dozen of them is a single dated sweep
+— *"confirmed 2026-08-19"* — taken before the work landed, and an absence
+measured once is a claim with a date on it.
+
+⇒ ★★★ **This file therefore runs in both directions.** Its `wanted` rows are
+work for us. Its `shipped` rows are a **report back to the engine**, and sending
+them is part of discharging this file rather than an optional courtesy: every
+stale `[ ]` there is a row that will be quoted at somebody as a gap.
+
+---
+
+## ★★★ The five verdicts, and why there are five rather than three
+
+Three verdicts were asked for. A fourth (`unknown`) was asked for as the honest
+escape hatch. **A fifth was unavoidable, and refusing to add it would have meant
+knowingly writing a wrong label ninety-six times out of a hundred rows.**
+
+| verdict | means | and specifically |
+|---|---|---|
+| `wanted` | A real gap somebody should schedule. | The engine has it, an operator would use it, nobody has filed it. |
+| `declined` | Deliberately not a GUI surface, with the argument. | The argument is the row. A `declined` with a bare verdict is worse than no row. |
+| `blocked` | Wanted, but waiting on something **named**. | An operator ruling, or another surface that must exist first. The blocker is named or it is not a `blocked`. |
+| `unknown` | Could not be settled, and saying so beats guessing. | An honest `unknown` is worth more than a guessed `declined`. |
+| `shipped` | **The engine's `[ ]` is stale — an operator can reach it today.** | The row names the surface or the call site, and the date where this project's own record carries one. |
+
+★★ **`shipped` is not an invention; it is `EDITABLE_SURFACES.md`'s own
+vocabulary.** That register keeps rows for verbs that have *stopped* being
+misses, marked SHIPPED, and states why: *"the argument is the valuable part: a
+row saying why a verb was left alone for a fortnight is what stops the next
+session re-deriving the same conclusion, or worse, reversing it without knowing
+one was ever reached."* The same rule applies here, and it is why **no row is
+ever deleted from this file** — a row whose `gui` box gets ticked keeps its
+argument.
+
+★ **Why not fold `shipped` into `declined`.** Because they say opposite things to
+the next reader. `declined` means *do not build this*. `shipped` means *this is
+built; go and tell the engine its column is wrong*. Collapsing them would hide
+the largest actionable finding here inside the verdict that means "settled,
+move on" — which is precisely the silence this project keeps paying for.
+
+---
+
+## ★★ Why nothing is `unknown`, which is itself a claim
+
+**The `unknown` section is empty, and that deserves suspicion rather than
+credit.** It was not for want of trying to use it. The evidence available for
+every row was: the engine's own prose in the row (which frequently *states* the
+verdict, and where it does it is quoted rather than re-derived); this project's
+`FEATURES.md`, `EDITABLE_SURFACES.md` and `OPERATOR_REQUESTS.md`, which record
+reachability with dates; and a call-site search over `crates/pdfcer-gui/src` for
+the verb the row names.
+
+**Two rows came closest to `unknown` and are named here so a reader can
+challenge them rather than having to find them:**
+
+1. *"Edit an image, text run or pasted object added in THIS session"* — verdict
+   `shipped`, and it is the only `shipped` row whose evidence is a **linked
+   revision** rather than a surface. The fix is entirely engine-side and needs no
+   control of ours; `Cargo.lock` pins `04f7ec0`, well past `Pass 186.0`. There is
+   no driven check of this project that asserts it. **If one verdict in this file
+   is to be overturned, overturn that one.**
+2. *"List the form XObjects a page paints"* — verdict `wanted`, and the argument
+   for `declined` is real: this shell already discloses `invocations=` and
+   `pages=` at the moment of an in-form text edit, which is where the number
+   matters. It is `wanted` because a standing listing answers the question
+   *before* the tool is picked up, and on a thirty-six-sheet SolidWorks set that
+   is a different question.
+
+---
+
+## ★★★ What a `shipped` verdict rests on, and what it does not prove
+
+Stated as plainly as `EDITABLE_SURFACES.md` states the same caveat about its own
+instrument, because the two are the same caveat:
+
+- **A named call site in `app::actions::*` or `panels::*` means the verb is
+  reached through this shell's funnel** — an undo entry, a cache invalidation, a
+  disclosure. That is much stronger than a bare grep hit, and every `shipped` row
+  below cites one, a dated record in this project's own `FEATURES.md`, or an
+  `OPERATOR_REQUESTS.md` row marked DRIVEN.
+- **It does not prove an operator can reach it.** A call site behind a condition
+  nothing sets is a call site and is dead in the running program. Only
+  `tools/ui-verify`, driving the real binary, answers that — and this file was
+  compiled without running it.
+- ⇒ **So `shipped` here means *"the engine's `[ ]` is not supported by this
+  repository's contents"*, which is enough to make the engine's row a claim
+  worth re-checking, and is not enough on its own to tick their box.** Where a
+  row's evidence is a **driven** check this project has run, the row says so.
+
+---
+
+## The gate, and why this file cannot be allowed to go quiet
+
+`tools/gates/check-engine-backlog.sh` parses the live `FEATURES.md`, collects
+every `[x] core / [ ] gui` row, and **fails when one is not accounted for
+here**. It is deliberately weak in one direction and strong in the other, in
+exactly the way `check-verb-coverage.sh` is:
+
+- **Weak**: it does not judge the verdict. A row saying `declined` because
+  somebody could not be bothered passes. This gate cannot read English and must
+  not pretend to.
+- **Strong**: a capability that appears in the engine's table and is discussed
+  **nowhere** fails the build on the first `git pull` in the engine's checkout
+  that brings it. Somebody has to look at it and write a sentence — which is the
+  entire mechanism, and is exactly what did not happen on 2026-09-03.
+
+The gate's row key is the **opening clause** of a row, not the whole row; its
+header states why at length, and the short version is that the engine's prose
+churns in the tail and is stable at the head. When the gate reports a row it
+cannot find, read its message before adding anything: *a reworded row and a new
+row look identical to a key and are opposite acts.*
+
+★ **Re-run the gate before quoting any number in this file.** The engine files
+daily.
+
+---
+
+## The tally, 2026-09-04
+
+| verdict | rows |
+|---|---|
+| `shipped` — the engine's `[ ]` is stale | **64** |
+| `wanted` — a real gap | **18** |
+| `declined` — deliberately no surface | **5** |
+| `blocked` — waiting on something named | **3** |
+| `unknown` | **0** |
+| **total** | **90** |
+
+---
+
+## `wanted` — 18 of 90
+
+A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
+
+### Document & pages
+
+| Row (`FEATURES.md`, wanted) | Why |
+|---|---|
+| Set a page's size (`/MediaBox`) — writing a value equal … | No operator-facing page-size control exists. `set_media_box` is called in exactly one place — `app::blank`, sizing a **new** blank document — so the verb is linked and the surface is not: a drawing that arrives on the wrong sheet size cannot be put right here. The Pages panel's context menu is where it belongs, beside rotate and extract. |
+
+### Text
+
+| Row (`FEATURES.md`, wanted) | Why |
+|---|---|
+| List the form XObjects a page paints, and how many places … | The engine answers *"how many places paint this form?"* only where this shell already asks it — `canvas::textedit::report` prints `invocations=` and `pages=` at the moment of an in-form **text** edit, via `text_edit::invocation_set`. There is no standing listing. ★ That matters more than it sounds on a SolidWorks set, where one title block is a single form drawn on thirty-six sheets: the operator wants to know the blast radius **before** picking up the tool, not in the disclosure afterwards. |
+
+### Vector objects (Inkscape-style editing)
+
+| Row (`FEATURES.md`, wanted) | Why |
+|---|---|
+| Copy, cut and paste a selection, within a document or across documents/sessions/processes … | **Half shipped, and the missing half is the annotations.** `canvas::clipboard` calls `copy_objects` and `app::actions::vector` calls `paste_objects`, so content-stream objects travel. `copy_annotations` appears in this crate exactly once — in a comment — so a stamp, a cloud or an arrow cannot be copied to another drawing. `EDITABLE_SURFACES.md` carries it as the one still-open miss of the original twelve. |
+| Selectable-object diagnostics: when the model disagrees with the canvas. Four … | **One of the four is surfaced and three are not.** `app::status::notes::findings` reports `oc_sections_hidden` — content on a layer the operator's own file hid — among its nine render findings. `paths_with_undecoded_colour`, `paths_invisible_by_alpha` and `shadings_unmodelled` are nowhere, and they are the three that say *the object list and the picture disagree*, which is the one class of confusion an operator cannot diagnose by looking harder. The surface already exists: the Render-diagnostics dialog. |
+
+### ce dimensions
+
+| Row (`FEATURES.md`, wanted) | Why |
+|---|---|
+| Move, insert or remove a vertex on a placed perimeter/path ce … | **Move is wired, insert and remove are not.** `app::actions::dimensions` calls `move_dimension_vertex`; `insert_dimension_vertex` and `remove_dimension_vertex` appear once each, in a `canvas::measure::perimeter` comment that says a menu could be greyed from `vertex_edit_preview`. So a placed perimeter can be dragged into a new shape but cannot gain or lose a corner — and the engine's row says this **exceeds Acrobat**, which cannot do it at all. |
+
+### Annotations & markup
+
+| Row (`FEATURES.md`, wanted) | Why |
+|---|---|
+| Copy and paste almost any annotation, with its appearance intact — sticky … | **The annotation clipboard, and it is the same gap as the selection-clipboard row above.** Nothing here calls `copy_annotations`, so a stamp, a revision cloud, a text box or a link cannot be carried to a second drawing with its baked `/AP` intact — which is the routine act of standardising a title-block note across a set. The engine has it; this shell has not written the call. |
+
+### Redaction & security
+
+| Row (`FEATURES.md`, wanted) | Why |
+|---|---|
+| Detect an unencrypted wrapper (§7.6.7) and warn that the visible … | **Nothing here detects the §7.6.7 wrapper.** An unencrypted wrapper is a cover sheet standing in front of a document this reader cannot open, and pdfcer would render the cover, in full, silently — an operator looking at a plausible page has no way to know they are not looking at the drawing. It belongs in **O108's Security tab**, beside the encryption state, and it is the cheapest row on that tab. |
+| Tell me what this document would run in Acrobat/Reader … | **Nothing here reads the action census.** *"What would this document run if I opened it in Acrobat, and does it reach outside itself?"* is the question an operator asks of a drawing that arrived by email, and the engine answers it across every place an action can live — page open triggers, navigation nodes, annotation triggers, chains — without executing anything. It is the second row of **O108's Security tab** and arguably the one with the most value per line. |
+| Verify a signature's integrity and coverage — `signature::verify_all` … | **Half consumed.** `panels::signatures` calls `byte_range_coverage`, so the panel can say what a signature covers; `verify_all` is called nowhere, so it cannot say whether the covered bytes were **altered**. The engine's three facts never collapse into a bool, and trust is honestly `NotChecked` — which is exactly the shape a shell can surface without pretending to a certificate store. The entry point went to this project on 2026-09-03. |
+
+### Fonts & rendering
+
+| Row (`FEATURES.md`, wanted) | Why |
+|---|---|
+| Reusable parsed page handle (display list) — record a page … | **No display list anywhere in this crate.** Every frame re-interprets the page, so a pan at fixed zoom pays full interpretation over and over: the engine measures 636 ms → 1.06 ms on a repeat render and 462 µs per pan frame at depth. ★ This is the largest single **felt** improvement available to a CAD sheet, and the engine has already paid for it — the key is `(page, epoch, scale)`, and this shell already tracks all three. |
+| Opt-in sub-pixel culling — `render-page --fast-subpixel` … | **A toggle, and the engine says so plainly**: *"`gui` is a gap, not a shape mismatch — a toggle is a sensible thing to build and no GUI code path exposes one."* Measured 1 468 ms → 108 ms (13.6×) on a 342-form page with zero pixels different at page fit, and genuinely lossy near the threshold — so it is off by default and counted separately from the exact cull. ★ It is **not** a `Settings` key (it is `RenderOptions::subpixel_culling`), which is why the settings-completeness test cannot see it and why it needs a row here. |
+| Colour spaces and PDF functions — all four function types … | **None of the twelve counters is read here.** `app::status::notes::findings` carries nine entries and every one is a *drawing* finding; unresolved colour spaces, ICC fallback and tint-transform failure are colour findings, and on a print-ready CAD file they are the difference between a colour that is wrong and a colour that is different. The Render-diagnostics dialog is the surface and it already exists; this is adding rows to a list. |
+| Probe the ink at a pixel — report the four CMYK colorant tints … | **An ink eyedropper, and nothing here consumes `InkProbe`.** It is the only instrument that splits a colour error into the half that happened while compositing and the half that happened while converting to sRGB — a saved PNG cannot answer either. ★ Narrow, and worth the row anyway: this shell already surfaces the *settings* that change subtractive compositing, so it offers the controls without offering the measurement that says whether they helped. |
+| Overprint (`/OP`, `/op`, `/OPM`) tracked and disclosed — Table 58's … | **The one shortfall that cannot be seen by looking.** The engine says it in its own row: a non-zero `overprint_refused` means *"the operator is seeing knocked-out backdrops where a press would show ink"* — a wrong picture that looks like a right one. None of the six counters reaches `app::status::notes::findings`. ★ The row also carries the engine's warning that an exhaustive list of them is *"a claim with an expiry date"* (it read "four" until 2026-09-01), so whatever surfaces them should enumerate rather than hard-code. |
+
+### Export
+
+★ **All four Export rows were being built on a concurrent track as this file was
+written (2026-09-04)** — `dialogs::export_image`, `app::actions::imageexport` and
+`text::export_image` are new and untracked in the working tree. They stay
+`wanted` rather than becoming `shipped` on that evidence, because O120's own
+Status line sets the bar and it is the engine's bar: *"they get ticked when the
+GUI half is driven, not when it compiles."*
+
+| Row (`FEATURES.md`, wanted) | Why |
+|---|---|
+| Export page(s) to PNG or JPEG, with real transparency (PNG … | **O120, and it is the reason this file exists.** He asked the **engine** for PNG/JPEG/SVG export on 2026-09-03; the engine shipped it that day and sent a note; this shell built none of it and had no row. `export::encode_png(&pixmap, Some(dpi))` with `PageBackdrop::Transparent` is the whole call. ★ The `pHYs` DPI is not a detail: without it Word places a 300 dpi page four times too large, which is the difference between *supporting export* and *the thing you paste being the right size*. A transparent JPEG must be **refused by name**, never silently flattened. |
+| Export page(s) to SVG 1.1 (vector), from the renderer's … | **O120.** `svg::export_svg_view(...)` → `SvgExport { svg, outcome }`, from the renderer's own display-list recording, so it carries images, clips, transparency and blend modes rather than the editing model. Axial and focal-radial shadings go out as native gradients; what cannot be expressed exactly comes back in `ExportTally` and goes **off-canvas**, after the export, per rule 4. |
+| Export page(s) to EMF (Windows Enhanced Metafile) — a hand-rolled … | **O120, and it is the format Word and LibreOffice actually paste.** `emf::export_emf(...)`; solid opaque geometry goes out as real GDI path records and everything else is replayed as `EMR_ALPHABLEND`, counted. LibreOffice 24.x reads the EMF because it cannot read a foreign SVG clipboard entry before 25.2. |
+| Copy page content to the OS clipboard as editable vector (Word/PowerPoint/Excel/Inkscape/LibreOffice) … | **O120's second half, and the one he asked for in his own words**: *"copy and paste vector graphics into word or inkscape"*. The format order is measured, not chosen — SVG, then EMF, then PNG, then `CF_DIBV5`, all in one transaction; place only the raster formats and Word degrades it to a plain picture. ⇒ `arboard` cannot register custom formats, so this needs `clipboard-win` directly, as the CLI does. |
+
+
+---
+
+## `blocked` — 3 of 90
+
+Wanted, and waiting on something named. Every row here says **what** it is waiting on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat, and this project has found seven stale blockers already.
+
+### Document & pages
+
+| Row (`FEATURES.md`, blocked) | Why |
+|---|---|
+| Split a document — `EveryN` only; no bookmark- or size-based … | The engine's own row states the block and states it correctly: *"blocked on a decision (no boundary chooser, output directory or name template — no honest default exists for a UI that hasn't asked)"*. `EveryN` is the only criterion the engine offers, and a Split button that silently chose every-1-page and a directory would be R9's placeholder rule broken at the scale of a command. **Needs an operator ruling on the chooser**, not engineering. |
+
+### Reading, navigation & printing
+
+| Row (`FEATURES.md`, blocked) | Why |
+|---|---|
+| Author a named destination and point an outline item at it — `add_named_destination` … | The engine's row states the block and it is this project's own argument coming back: *"Shipped and deliberately NOT wired in `pdfcer-gui` — that shell has drag-to-reorder pages, and a destination resolved-and-baked at author time would look identical to a correct one until the next reorder moved the page it points at. Held until there is a surface where the destination-kind choice means something (the `insert_pages` bookmark-carry work)."* **Blocked on that surface**, not on the verb; `add_named_destination` is called nowhere here and should stay that way until then. |
+
+### Export
+
+| Row (`FEATURES.md`, blocked) | Why |
+|---|---|
+| Encrypt a document (AES-256, `/R` 6 only), set … | **Blocked on the operator's own ruling, filed as O119 and awaiting an answer.** The authoring half arrived on 2026-09-04 with no note, and the only thing that made a noise was `check-verb-coverage.sh` — the fourth time. It is a new **surface**, not a new button: a password box, a permissions list, and a save that rewrites the whole file. ★ Three facts change the answer and are already written for the screen: a permission setting is a request rather than a lock, protecting a signed drawing is refused, and changing permissions on a protected file needs the owner password. |
+
+
+---
+
+## `unknown` — 0 of 90
+
+Could not be settled from the documents and the source, and saying so is worth more than a guess. **This section is empty**, and that is a claim: see *★★ Why nothing is `unknown`* in the header before you trust it.
+
+
+---
+
+## `declined` — 5 of 90
+
+Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
+
+### Document & pages
+
+| Row (`FEATURES.md`, declined) | Why |
+|---|---|
+| Inspect and dump a document's own internal COS object … | Quoting the engine's row: *"No `pdfcer-gui` surface exists or is planned."* A COS object browser is a format-engineer's instrument, not a drawing tool — the audience for a reverse-reference map over `/ObjStm` membership is somebody already at a command line, and `pdfcer inspect` is that command line. ★ Declining this is not declining *diagnostics*: the Render-diagnostics dialog exists and is where an operator-facing finding goes. |
+| Export a document's structure to an editable form and compile a hand … | Same argument as the row above, and the engine says the same thing in the same words: *"No `pdfcer-gui` surface exists or is planned."* Exporting a document's structure to an editable form and compiling a hand edit back is a **text-editor** workflow; a GUI that offered it would be offering a worse text editor. |
+
+### Annotations & markup
+
+| Row (`FEATURES.md`, declined) | Why |
+|---|---|
+| Note text on markup at author time — `/Contents`, `/T` and `/M` … | **Declined on the engine's own argument, which this shell reached independently and wrote down first.** Their row: *"a geometric markup has no text-entry moment (it is authored on mouse-release from geometry alone), so the route a reviewer UI actually needs is the sibling row directly below"*. Ours: *"a dialog on every shape a reviewer draws is the interaction nobody ships"*. Author-time note text is the wrong verb for this shell; `set_markup_note` on a finished shape is the right one, and it ships. |
+
+### Fonts & rendering
+
+| Row (`FEATURES.md`, declined) | Why |
+|---|---|
+| Form XObject viewport culling — a `Do` whose `/BBox`, mapped … | The cull is **lossless by construction** — §8.10.1 makes `/BBox` a clip, so a culled form cannot mark a pixel and the raster is byte-identical. `app::status::notes::findings` reports only findings that change *what the operator can see*, and it excludes `tolerated` and `compat_skipped` on exactly that argument. `forms_culled` belongs with those two, not with the nine. ★ It becomes wanted the day a **performance** readout exists; it is not wanted on a correctness one. |
+| Decode `/BrotliDecode` streams (`Pass 123.0`, `4163ad9`) — read … | A decode filter has no control and should not have one. `/BrotliDecode` is read-only, reached through every path that opens a stream, and the operator's experience of it is that a file opens. ★ The only surfaceable fact would be a refusal — an inline image, or the nonstandard `/Br` abbreviation — and that already arrives as a load error rather than as a setting. |
+
+
+---
+
+## `shipped` — 64 of 90
+
+**The engine's row is stale: an operator can reach this today.** Sixty-four of ninety, which is the single largest finding of this triage. Each row names the surface or the call site, and where this project's own record dates the work, the date. These rows are kept, never deleted — `EDITABLE_SURFACES.md`'s own rule, and the argument is the valuable part.
+
+### Document & pages
+
+| Row (`FEATURES.md`, shipped) | Why |
+|---|---|
+| Merge several files into one — three verbs share … | **Reachable — File ▸ Merge, `app::actions::pages::merge_into`.** It loads the source outside the edit closure, calls `merge_document` through `vector_edit` and reports `pages/fields/renamed/bookmarks` on the diagnostic channel. The engine's *"`pages.merge_into` falls through to `command-unimplemented`"* has been false since that wiring landed; the row is stale, not a gap. |
+| Cut, copy and paste whole PAGES, within a document or between … | **Reachable — `app::dispatch::pageclip` calls `copy_pages`** and pastes through the same funnel, so a page clip is one `EditSession` command and one `Ctrl+Z`. The clip is a real openable PDF by the engine's own design, which is what lets it leave this process. |
+
+### Text
+
+| Row (`FEATURES.md`, shipped) | Why |
+|---|---|
+| Text on a rotated baseline — a CAD title block's `Tm = [0 1 -1 0 e f]` … | **Consumed — `canvas::textsel` reads `line.direction`.** This is the field the engine's row says *"`pdfcer-gui` filed the request and has not yet consumed"*; it is read in the line model and in the selection geometry, which is what makes a swept selection follow a CAD title block's rotated baseline instead of boxing it page-axis. The row is stale. |
+| Choose what pdfcer does when bold or italic needs … | **Reachable — Settings, honoured at `app::actions::textstyle`**, which reads `doc.settings.style_policy` and passes it into `FormatOptions`. The engine's row explains its `[ ]` as *"the three-option control shipped in `crates/pdfce-gui`'s settings window … `D:\dev\pdfcer-gui` has not been notified"* — it was notified, and the settings-completeness test would have failed the build if the key had no control. Stale. |
+| Copy-on-write a shared form XObject onto one page … | **Reachable — `app::actions::xobject` calls `unshare_form`**, offered as *"Give this page its own copy"* with seven worded refusals (`EDITABLE_SURFACES.md`, the twelve-gap table). It is the option the engine's decision `112` names for an edit that would otherwise change every invocation. |
+| Reflow within a block, including justified alignment. Not reachable … | **Reachable — Edit ▸ Reflow paragraph, and a right-click inside the text you are editing, 2026-08-28**, on the operator's own ask. `app::actions::textstyle` calls `reflow_block`. The engine quotes this project's *"three gates … Untouched"* line, which was true when written and stopped being true the day the command shipped; the save-and-reopen gate survives as a **worded refusal with a remedy**, which is a shipped behaviour rather than an absence. |
+| Add new page text — point insert and wrapped multi-line … | **Reachable — Edit ▸ Add text**, click to place one line or **drag a rectangle** for a wrapped multi-line box (2026-08-21), committed with `Ctrl+Enter`; `app::actions::apply` calls `add_text`. The engine's *"no font, size or colour surface yet"* predates the Format work: new text is authored with a font, a size and a colour. Stale. |
+| OCR as an edit to the open document, not a separate file — `EditSession::add_ocr_layer` … | **Reachable — `app::actions::apply` calls `add_ocr_layer`**, so recognition is an undoable edit to the open document. The engine's *"`gui` still routes through the free-function one-shot (`<stem>-recognised.pdf`, never in place)"* describes the route as it was; both routes exist now and the in-place one goes through the funnel. |
+
+### Vector objects (Inkscape-style editing)
+
+| Row (`FEATURES.md`, shipped) | Why |
+|---|---|
+| Edit a Bézier handle, with grab/hover/live preview. … | **Reachable — `app::actions::vector` calls `move_handle`**, and the stage table records Phase 1 complete *"but for the clipboard (selection, move, resize by grip and by typed number, multi-node move, Bézier handles)"*. The engine's evidence was `grep -i bezier` over the canvas on 2026-08-19, which is four days before the work; **an absence measured once is a claim with a date on it**, and this one expired. |
+| Select several nodes and move them as one surgery, one … | **Reachable — `app::actions::vector` calls `move_nodes`** with a slice, so several nodes move as one surgery and one undo entry. Same stale measurement as the Bézier row above, from the same 2026-08-19 sweep. |
+| Edit geometry INSIDE a form XObject — `move_node_in_form` … | **Reachable — `app::actions::vector` calls `move_node_in_form`** and its siblings, which is the whole point of the deep hit test below: click a line inside a title block and drag *that line*. The engine's disclosure data (`FormSurgeryOutcome { invocations, pages }`) is what the shell reports back, deliberately as two numbers rather than one. |
+| Edit an image, text run or pasted object added in THIS session … | **Reachable by linking the fix, which is the whole of it.** `Pass 186.0` made every content-editing verb resolve a page through the session overlay; `Cargo.lock` pins `04f7ec0`, well past it, and this shell's call sites are unchanged by design. ★ This is the one row in the *shipped* column whose evidence is a **revision** rather than a surface — there is no new control to point at, and no driven check of this project asserts it. If a reader wants to overturn one verdict in this file, overturn this one. |
+| Ask whether a page's model has changed — `EditSession::page_content_generation(page_index) -> u64` … | **Consumed — `app::cache` calls `page_content_generation`** to decide whether a cached decomposition still describes the page. This is the verb the engine's row says was *"asked for by name by `pdfcer-gui`"*; it is the answer to that ask, and it is in use. |
+
+### ce dimensions
+
+| Row (`FEATURES.md`, shipped) | Why |
+|---|---|
+| Author a perimeter/path-length ce dimension — one number … | **Reachable — the Perimeter measure tool**; `canvas::dimdrag` handles `DimensionKind::Perimeter` and `app::actions::dimensions` calls `place_dimension`. Phase 7 shipped Linear, Two-line and Radius/diameter with snapping and dimension groups. |
+| Rotate a placed ce dimension about any pivot — `rotate_dimension(id, pivot, degrees)` … | **Reachable — the ninth grip on the selection box, routed by kind** to `rotate_dimension` (`EDITABLE_SURFACES.md`). The engine's *"notified 2026-08-28"* is the notification; consuming it happened. |
+| Override a ce dimension's printed text, or clear the override … | **Reachable — `app::actions::dimensions` calls `set_dimension_label`.** This is `2X <DIM> TYP` on a drawing: the caption is overridden and still tracks the geometry through a later re-scale, and clearing it restores the measurement with no re-measurement. The engine's *"not yet notified as of 2026-08-30"* is out of date. |
+
+### Annotations & markup
+
+| Row (`FEATURES.md`, shipped) | Why |
+|---|---|
+| Revision clouds — a scalloped `/BE << /S /C /I n >>` border … | **Reachable — `markup.cloud`, its own glyph, `/BE /I 1.0`** (the operator's request #6). One of the eight markup kinds Phase 6 shipped. |
+| Author a markup at an opacity, in one command and one undo entry … | **Reachable — Markup ▸ Style ▸ Opacity, 2026-08-28**, authored through `add_markup_with` so a translucent highlight costs **one** undo entry rather than author-then-restyle. The engine's *"the request originated there, the API now exists, consuming it is their work"* was discharged the day after it was written. |
+| Write, correct or clear a note on an annotation that already exists — `EditSession::set_markup_note(annot_id, &MarkupNote)` … | **Reachable — the Comments panel writes, 2026-08-28**: Add note, Edit note, Remove note on every row, through `set_markup_note` / `clear_markup_note` at `app::actions::annots`. Correcting somebody else's typo deliberately leaves `/T` alone, so a fixed comment is not re-attributed to nobody. |
+| Reorder a page's `/Annots` array — `reorder_annotations(page, &[ObjId])` … | **Reachable — O99, driven 2026-09-02: the tab-order list drags, with the caret.** `app::actions::reorder` calls `reorder_annotations`. The engine's *"its Tab-order panel is deliberately kept read-only until the drag is wired"* describes the state before that day; the drag is wired. |
+| Resolve a link annotation's destination — `Annotation::destination` (one-shot … | **Consumed — `app::cache` calls `annot::page_link_destinations`**, so the links table resolves where each link goes. This is the *"dead-looking table of contents"* the engine's row names, and the reply it shipped the same day. |
+| Move anything carrying a `/Rect` — markup, the four text markups … | **Reachable — dragging a markup moves it, driven 2026-08-28** (`dragging_a_markup_moves_it`, asserting travel in both axes). `app::actions::annots` calls `move_annotation`. Before that the gesture was *eaten* by a fork whose branches could both answer *not mine*, which is why the row was right for ten days and is wrong now. |
+| Resize anything carrying a `/Rect` — `resize_annotation(annot_id, anchor, sx, sy, &ResizeOptions)` … | **Reachable — `app::actions::annots` calls `resize_annotation`** with the engine's anchor-and-factors shape, so a placed markup resizes by grip. The engine's *"notified 2026-08-28, consuming it is their work"* was consumed. |
+| Rotate anything carrying a `/Rect` — `rotate_annotation(annot_id, anchor, degrees)` … | **Reachable — the ninth grip on the selection box**, calling `rotate_annotation` (`EDITABLE_SURFACES.md`). Widgets and ce dimensions route to their own verbs from the same grip, which is what the engine's *"refused by name"* pair is for. |
+| Restyle a placed markup annotation — colour, interior fill, line … | **Reachable — the Properties panel's restyle section, 2026-08-19**: colour, line width and opacity on a selected annotation, through `set_markup_style`. The engine's evidence is *"zero call sites there, confirmed 2026-08-19"* — the same day, and the call site is `app::actions::annots`, whose header records being that verb's first caller. |
+
+### Forms (AcroForm)
+
+| Row (`FEATURES.md`, shipped) | Why |
+|---|---|
+| Import and export form data — FDF, XFDF and two-column … | **Reachable — `app::actions::forms` calls `import_form_data` and `app::actions::export` calls `export_form_data`**, so FDF, XFDF and CSV all move. The engine quotes this project's own file listing them as ⬜, which it did before the Forms work. |
+| Create a field — text, check box, radio, choice, push … | **Reachable — five commands on Edit ▸ Forms, 2026-08-26, on the operator's ask**: text field, check box, radio button, drop-down, push button; click to place or drag for an exact box, and the field exists once Add is pressed. The engine's *"it cannot create a field yet"* was true for nine days of a blocker that turned out not to exist. |
+| Give a push button a declared action (`/A`) — `set_button_action` … | **Reachable — placing a button asks what pressing it does, seven ways, 2026-09-01**, driven by `a_placed_button_can_be_given_something_to_do`. This is the row `tools/gates/check-verb-coverage.sh` exists because of: the engine shipped `set_button_action` on 2026-08-30 with a note saying *"your surface is now saying something untrue"* and it sat unread for two days. |
+| Read a push button's declared action — `EditSession::button_action(fqn)` … | **Reachable — `panels::forms::button` calls `doc.session.button_action(&fqn)`**, which is exactly the condition the engine's row sets: *"`pdfcer-gui` ticks `gui` when its panel ships"*. The panel ships, and the four states are what let it offer **replace** on an `Unmodelled` action and nothing on a `Foreign` one. |
+| Delete a field, a single widget, or a grouping node and its subtree — selected … | **Reachable — `app::actions::forms::delete` calls `delete_field`, and `forms::groups` calls `delete_field_group`** behind Forms ▸ Field groups, previewed before the press (`EDITABLE_SURFACES.md`). The engine's *"the Forms panel is fill-only by design"* describes 2026-08-19. |
+| Rename a field, reporting how many descendants the rename reached … | **Reachable — `app::actions::forms` calls `rename_field`**, and the outcome's `action_targets_retargeted` is what tells the operator how many buttons the rename repaired. Stale for the same reason as Delete above. |
+| Move and resize a widget — a pure translation carries the artwork untouched … | **Reachable — `app::actions::forms` calls `move_widget` and `edit_widget`**, so a widget both moves and takes a new extent, with the engine's `Pass 187.0` redraw behind it. This is the row where a resize that did **not** redraw would ship magnified artwork, so the tick is worth having. |
+| Rotate a widget — `rotate_widget(fqn, index, degrees)` / `rotate-widget` … | **Reachable — `app::actions::forms::widget` calls `rotate_widget`.** The engine quotes this project's own line *"a form field gets no circle at all"*, from 2026-08-28; the circle is offered now, and it routes by kind to the verb `/MK /R` needs rather than to `rotate_annotation`, which refuses a widget by name. |
+| Change a field's properties after placing it, without delete-and-re-place … | **Reachable — `app::actions::forms` calls `edit_widget`, and the Properties panel carries the field-scope controls.** The engine's own split — field scope hits every widget, widget scope hits one — is the split the panel draws, because a required flag and a border colour are not the same kind of edit. |
+| Copy, CUT and paste a form field — `cut_field` returns … | **Reachable — `canvas::fieldclip` calls `copy_field`, `app::actions::forms::paste` pastes**, with the operator's two chords (`Ctrl+V` a new field, `Ctrl+Shift+V` another widget of the same one). `cut_field` is deliberately **not** called: the panel's Cut is copy + `DeleteWidget`, because the operator pointed at a **box** and `cut_field` removes the whole field — argued at length in `EDITABLE_SURFACES.md`. |
+| Recognise and disclose script-driven fields, and natively recompute a whitelisted … | **Reachable — the Forms panel's Recompute**, `panels::forms::edit`. No script is executed on either side; the whitelisted built-in subset is recomputed natively, and an ambiguous stored date is refused rather than guessed. |
+| Read a widget's border and visibility — `forms::Widget::border` … | **Consumed — `panels::properties::widgetedit` reads `widget.annot_flags`** and words the unmappable case rather than collapsing it onto the nearest of the four visibilities. This is the reply the engine sent at 2026-08-27 23:13 and says is *"not yet consumed"*; the two properties controls it unblocks are drawn. |
+
+### Fonts & rendering
+
+| Row (`FEATURES.md`, shipped) | Why |
+|---|---|
+| Rasterize an arbitrary page region, so magnification is bounded by viewport … | **Reachable — `render::worker` calls `render_page_region` for the canvas**, and `render::offpage` calls it for content outside the crop box. The engine's *"no GUI code path calls it at all"* is the single most consequential stale claim in this file: region rendering is what holds the cost of a zoom flat instead of quadratic, and it is what this shell's canvas is built on. |
+| `/Separation`/`/DeviceN`/`Lab`/`CalGray`/`CalRGB` colour spaces on image … | **Reachable — it is what the canvas draws.** The shell rasterises through `render_page_with_view` / `render_page_region`, so an `/Indexed` duotone or a `/Separation` image XObject paints correctly on screen with no code of ours involved. The engine's *"GUI surface deliberately paused by the operator"* is a note about a **control** surface and about a project (`crates/pdfce-gui`) that has since been deleted. |
+| Paint shading via the `sh` operator — axial and radial (types … | **Reachable — it is what the canvas draws.** Axial and radial `sh` shadings paint on screen through the same renderer the CLI uses. Same stale *"paused by the operator"* note as the row above. |
+| Paint shading patterns (`PatternType 2`, named via `scn`) … | **Reachable — it is what the canvas draws.** A `PatternType 2` shading pattern selected by `scn` paints on screen, anchored to the pattern's own base CTM. Same stale note. |
+| Paint mesh shadings — types 4 (free-form Gouraud … | **Reachable twice over — the canvas paints mesh shadings, and `mesh_patch_padding` has a control** in Settings ▸ Colour (`dialogs::settings::colour`). The engine's row names that setting as its own permanent-ambiguity switch and marks `gui` `[ ]`; the switch is drawn. |
+| Subtractive (colorant) compositing buffer — a page whose group declares … | **Reachable — it is what the canvas draws.** A page whose group declares a subtractive space composites in four colorant planes on this shell's canvas exactly as it does at the CLI, because it is the same renderer. The 8.7 kB of argument in that row is all about the arithmetic, none of it about a control. |
+| Choose how much memory pdfcer may spend blending … | **Reachable — Settings ▸ Colour carries `max_cmyk_buffer_bytes`** (`dialogs::settings::colour`). The engine's *"this column tracks `D:\dev\pdfcer-gui`, which asked for the API and has not wired it yet"* is stale: it was wired with the rest of the Colour group, and the settings-completeness test would have failed the build otherwise. |
+| Page-group blend-space source, when `/CS` is undeclared … | **Reachable — Settings ▸ Colour carries `page_blend_space_source`** (`dialogs::settings::colour`), the three-value setting that decides whether an undeclared page group borrows a CMYK `/OutputIntent`. Surfaced with the rest of the Colour group; the engine's `[ ]` is stale. |
+| Blend modes — the eleven separable modes (Multiply, Screen, Overlay … | **Reachable — it is what the canvas draws.** The eleven separable blend modes composite on screen in the group's own blending space. Same stale *"paused by the operator"* note as its siblings. |
+| Non-separable blend modes — Hue, Saturation, Color, Luminosity … | **Reachable — it is what the canvas draws.** Hue, Saturation, Color and Luminosity are computed by pdfcer itself rather than handed to the rasteriser, on this canvas as at the CLI. |
+| Transparency GROUP compositing — pdfcer owns the arithmetic (`pdfcer-render/src/compositor.rs`) … | **Reachable — it is what the canvas draws.** Transparency-group compositing, knockout groups and backdrop removal all happen in the raster this shell uploads. |
+| Overprint SIMULATION — ISO 32000-1 §11.7.4.3 … | **Reachable — it is what the canvas draws.** Overprint simulation is on the screen; what is **not** on the screen is the counter that says when it was refused, and that is the row below, where it belongs. |
+| Choose whether a grey fill knocks a spot backdrop out … | **Reachable — Settings ▸ Colour carries `overprint_zero_tint_scope`** (`dialogs::settings::colour`), *Grey over a spot colour in print-ready files*, surfaced under O100 beside its sibling. The engine's *"`D:\dev\pdfcer-gui` … has not been offered the setting"* is stale by a filing. |
+| Soft masks from `ExtGState /SMask` — `/Alpha` and `/Luminosity` mask groups … | **Reachable — it is what the canvas draws.** `/Alpha` and `/Luminosity` soft masks are built and applied in the raster this shell uploads. |
+| Type 3 font rendering — vector glyph procedures (`d0`/`d1` … | **Reachable — it is what the canvas draws.** Type 3 vector and bitmap glyph procedures render on screen. ★ Type 3 **search and copy** is a different row in *Text* with its own `/ToUnicode` gate, and rendering does not imply either. |
+| Remove an embedded font's program, refusing by name (reason … | **Reachable — `app::actions::fonts` carries both document-level font verbs**, embedding and removing, and the Fonts panel's `removability` verdict is the control's own gate. The engine's *"a report, not an editor"* was measured 2026-08-19 and the editor arrived after it. |
+| Embed a font that's referenced but missing — attach a program … | **Reachable — `app::actions::fonts::embed` calls `embed_fonts` through the funnel**, with `dialogs::embed` carrying the donor mapping. ★ Worth noting because the engine is explicit that it will **not** check the honesty of a donor match: `SuppliedFont::matched` is *"the inference rule 4 governs"*, so this shell owns that claim and its own module header says so. |
+| Per-standard render presets (`Pass 128.1`) — a settings … | **Consumed — O100, 2026-09-02.** The presets are read through `entries()` and each set entry's `why` is printed, because `disclosures()` emitted a `why` only for keys a preset leaves alone. That work went back to the engine as a note, and it is the reason a preset's reasoning now leaves the crate at all. |
+
+### Reading, navigation & printing
+
+| Row (`FEATURES.md`, shipped) | Why |
+|---|---|
+| Rename a bookmark, or delete one and its subtree — `set_outline_title(item_id, title)` … | **Reachable — `app::actions::bookmarks` calls `set_outline_title` and `delete_outline_item`** (`EDITABLE_SURFACES.md`: *"Bookmarks rename and remove"*). The subtree goes with the parent, as Acrobat does. |
+| Reorder and re-parent a bookmark — `move_outline_item(item_id, OutlinePlacement)` … | **Reachable — `app::actions::bookmarks` calls `move_outline_item`.** These were the two verbs `EDITABLE_SURFACES.md` said to *"pick up the moment the engine commits them"* — they were uncommitted worktree at the time of that audit, they are in the lock now, and the panel drags. |
+| Expand or collapse a bookmark, independent of moving it — `set_outline_open(item_id, open)` … | **Reachable — `app::actions::bookmarks` calls `set_outline_open`**, kept a separate act from the move for the engine's stated reason: a caller who wanted only one of the two could not undo just that half. The engine's *"No `pdfcer-gui` build reaches this yet"* is stale. |
+| Cut, copy and paste a whole BOOKMARK SUBTREE, including between … | **Reachable — `panels::bookmarks::clip` calls `copy_outline_item` and `app::actions::bookmarks` calls `paste_outline_item`**, so a bookmark subtree moves between two open documents — which the engine's row notes **Acrobat cannot do at all**. |
+| List, extract, attach and detach embedded attachments — detach removes … | **Reachable — Edit ▸ Insert ▸ Attachments, with extraction** (`EDITABLE_SURFACES.md`); `app::actions::attachments` calls `attach_file` / `detach_file` and words the attacker-controlled-name hazard rather than deriving a path from it. |
+| Cut, copy and paste an EMBEDDED FILE — `copy_attachment` / `cut_attachment` … | **Reachable — SHIPPED 2026-09-01**: Copy and Cut on every document-level row, Paste at the top of the panel, drawn only when the clipboard holds one. `cut_attachment` is deliberately not called — the panel's Cut is `copy_attachment` then a `Detach` through the funnel, which is one undo entry and lets the copy fail before the delete is raised. |
+
+### Shell & UX
+
+| Row (`FEATURES.md`, shipped) | Why |
+|---|---|
+| Build provenance stamp — `pdfcer --version` states the UTC build … | **Reachable — O101, driven 2026-09-02: the build time in the top bar.** The engine's row is honest about not having checked (*"gui not verified this filing … so this stays `[ ]` rather than being rounded up"*), which is the right posture and is also why the row is wrong. |
+
+### Export
+
+| Row (`FEATURES.md`, shipped) | Why |
+|---|---|
+| Move, resize and rotate a content-stream object (path, text … | **Reachable — move, resize and rotate ANY object, 2026-08-20**, closing a request the operator made three times; `app::actions::vector` calls `transform_objects`, which wraps each object's operator run in `q <cm> … Q` and so is kind-agnostic by mechanism rather than by match arm. Driven by `resize_scales_a_shape` and `geometry_fields_resize_a_shape`. |
+| Reach inside a form XObject for hit-testing — click and marquee … | **Reachable — clicking an object inside a form XObject selects THAT object, 2026-08-27**, and it closed the operator's largest single report: *"when I click on one of the objects all I get is the page selected"*. `hit_test_point_deep` is the pick and the marquee has the same reach, so the two gestures that both mean *select this* cannot disagree. |
+

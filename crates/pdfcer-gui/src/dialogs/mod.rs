@@ -92,6 +92,9 @@ pub mod embed;
 /// `pdfcer-core`: every generic PDF-to-DXF converter exports at paper scale and
 /// says nothing, so a 1:2 detail arrives at half size **looking plausible**.
 pub mod export_dxf;
+/// ★★★ The Export-image window — a picture of the page in a format that can
+/// actually hold what is on it. `OPERATOR_REQUESTS.md` O120.
+pub mod export_image;
 pub mod formfield;
 /// ★★ **A dialog is an OS window** — the operator's report of 2026-08-20, and
 /// `ui-conventions/dialogs.md` G1. One host, so the path of least resistance
@@ -103,6 +106,14 @@ pub mod insert_image;
 pub mod insert_pages;
 pub mod new_document;
 pub mod ocr;
+/// ★★★ **The question that comes before pdfcer lets go of the file** —
+/// `OPERATOR_REQUESTS.md` O122. Three shapes of one window: save-then-hand-over,
+/// confirm-and-hand-over, and the refusal for a document that has never been
+/// written anywhere.
+///
+/// Its header carries why there is no third *"open without saving"* button,
+/// which is the one place it deliberately departs from [`unsaved`]'s shape.
+pub mod open_in_acrobat;
 /// ★ How a window offers to step aside so the operator can point at the page —
 /// `OPERATOR_REQUESTS.md` O66. The dialog half of `canvas::placing`.
 /// The box that lets an encrypted document be opened. Its header records the
@@ -394,6 +405,12 @@ pub struct DialogsState {
     /// suggestion is computed from that document's own dimension groups.
     export_dxf: Option<export_dxf::ExportDxfDialog>,
 
+    /// The Export-image window, when one is open.
+    ///
+    /// **Document-scoped**, for its neighbour's reason: every control in it is
+    /// a statement about the open document's pages.
+    export_image: Option<export_image::ExportImageDialog>,
+
     /// The unsaved-edits confirmation, when one is open.
     ///
     /// **Document-scoped in subject and deliberately NOT closed by
@@ -411,6 +428,34 @@ pub struct DialogsState {
     /// It is cleared by its own answer instead, in `PdfcerApp`'s drain, which is
     /// the only place that can know the question was finished with.
     unsaved: Option<unsaved::UnsavedDialog>,
+
+    /// The Open-in-Acrobat confirmation, when one is open — O122.
+    ///
+    /// ★★ **Document-scoped**, and it is the one classification here worth
+    /// arguing. The window is about handing *this file* to Acrobat: its
+    /// sentences name the file and count its unsaved edits, and both facts stop
+    /// being true the moment the document closes. A window left up over a
+    /// closed document would be offering to hand over something that is no
+    /// longer open.
+    ///
+    /// ⚠ It is nonetheless **not** cleared by [`Self::close_document_scoped`],
+    /// and that is deliberate rather than an omission: the act this window
+    /// authorises *is* a close, so clearing it on close would destroy the
+    /// answer at the exact moment the answer is being carried out. It is
+    /// cleared by its own drain, like [`Self::unsaved`] and
+    /// [`Self::signature`], which is the correct owner of a window whose
+    /// outcome outlives the document it was asked about.
+    open_in_acrobat: Option<open_in_acrobat::OpenInAcrobatDialog>,
+
+    /// ★ Set when the Open-in-Acrobat question was answered with Cancel.
+    ///
+    /// The twin of [`Self::unsaved_cancelled`] and it exists for the same
+    /// reason: a Cancel parks no outcome, so a drain reports nothing, which is
+    /// indistinguishable from "not answered yet". Without this the application
+    /// would have no way to trace `acrobat-cancelled` — and a driven check
+    /// cannot tell a cancelled question from an ignored one by looking at the
+    /// screen, because both leave the document exactly where it was.
+    open_in_acrobat_cancelled: bool,
     /// **The operator answered Cancel**, parked because the window is dropped
     /// on that answer and the answer must outlive it.
     ///
@@ -901,6 +946,9 @@ impl DialogsState {
         if self.export_dxf.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.export_dxf = None;
         }
+        if self.export_image.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
+            self.export_image = None;
+        }
         if self.embed.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.embed = None;
         }
@@ -970,6 +1018,27 @@ impl DialogsState {
                 self.unsaved_cancelled = true;
             }
             self.unsaved = None;
+        }
+        // ★★ O122 — beside the unsaved question rather than among the
+        // document-scoped windows above, because it belongs to the same
+        // family: it PARKS an answer that the application acts on, and the act
+        // is a close. `retire` rather than `== Some(false)`, for the reason its
+        // two neighbours record with receipts — pressing a button is what makes
+        // `show` say `false`, and dropping the dialog on that `false` throws
+        // the answer away with it.
+        if self
+            .open_in_acrobat
+            .as_mut()
+            .is_some_and(|d| retire(d.show(ctx), d.answered()))
+        {
+            if self
+                .open_in_acrobat
+                .as_ref()
+                .is_some_and(open_in_acrobat::OpenInAcrobatDialog::was_cancelled)
+            {
+                self.open_in_acrobat_cancelled = true;
+            }
+            self.open_in_acrobat = None;
         }
         // ★ LAST of all, one place beyond the unsaved question, and the
         // position is argued the same way its neighbour's is.
@@ -1088,6 +1157,85 @@ impl DialogsState {
         Some(answer)
     }
 
+    /// **Ask before handing the open document to Acrobat** — O122.
+    ///
+    /// Returns `true` when the question was raised and the caller must
+    /// **stop**: the handover is now this window's to authorise.
+    ///
+    /// # ★ The return value is "did I interrupt you", exactly as
+    /// [`Self::ask_unsaved`]'s and [`Self::ask_signature`]'s are
+    ///
+    /// And for the identical reason, which is worth restating because this is
+    /// the third guard to take the shape: a guard read as *"may I proceed"*
+    /// fails **open** when somebody inverts it or forgets it, and here that
+    /// means a document closed and handed to another program with nothing
+    /// asked. Read this way it fails **closed** — a missing `if` raises the
+    /// question, and the operator sees one redundant window rather than losing
+    /// a document off their screen without warning.
+    ///
+    /// The already-asking guard is the same one its two siblings carry: a
+    /// second press while the question is on screen is impatience, not a
+    /// second request, and stacking it would leave a window nobody can dismiss.
+    pub fn ask_open_in_acrobat(
+        &mut self,
+        prompt: crate::acrobat::Prompt,
+        viewer: crate::acrobat::Viewer,
+        edits: u64,
+        file: String,
+    ) -> bool {
+        if self.open_in_acrobat.is_some() {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed.
+                "acrobat-ask-ignored reason=already-asking".to_owned()
+            });
+            return true;
+        }
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed.
+            //
+            // ★ The prompt shape is IN the line. A reader of a trace from a
+            // machine they cannot see needs to know which of the three
+            // questions was asked: `SaveFirst` means the operator had unsaved
+            // work at that moment, and `NoFileOnDisk` means nothing was ever
+            // going to happen.
+            format!("acrobat-asked prompt={prompt:?} edits={edits}")
+        });
+        self.open_in_acrobat = Some(open_in_acrobat::OpenInAcrobatDialog::new(
+            prompt, viewer, edits, file,
+        ));
+        true
+    }
+
+    /// Take the operator's answer to the Open-in-Acrobat question.
+    ///
+    /// Drained by `crate::app::PdfcerApp` immediately after [`Self::show`], for
+    /// the reason every hand-over in this module has one: the acts it
+    /// authorises — a save, a close and a process launch — belong to the
+    /// application. A window that could call `close_document` would be a
+    /// second route to the most destructive operation this shell has, and one
+    /// that could spawn a process would be the only place in the crate that
+    /// did.
+    ///
+    /// ★ **It clears the window on the way out**, so a confirmation cannot be
+    /// answered once and acted on every frame — which here would mean starting
+    /// Acrobat sixty times a second.
+    pub fn take_open_in_acrobat_answer(
+        &mut self,
+    ) -> Option<(open_in_acrobat::Outcome, crate::acrobat::Viewer)> {
+        let answer = self.open_in_acrobat.as_mut()?.take_outcome()?;
+        self.open_in_acrobat = None;
+        Some(answer)
+    }
+
+    /// **Was the Open-in-Acrobat question cancelled?** Drains the flag.
+    ///
+    /// ★ Draining rather than peeking, so one cancel produces one trace line.
+    /// A flag that stayed set would have the application reporting a
+    /// cancellation on every frame until the next question was asked.
+    pub fn take_open_in_acrobat_cancelled(&mut self) -> bool {
+        std::mem::take(&mut self.open_in_acrobat_cancelled)
+    }
+
     /// Drop the state of every dialog that is about the open document.
     ///
     /// One place, so a document-scoped dialog added later cannot be forgotten
@@ -1102,6 +1250,7 @@ impl DialogsState {
         self.scale = None;
         self.insert_image = None;
         self.export_dxf = None;
+        self.export_image = None;
         self.embed = None;
         self.unembed = None;
         self.compact = None;
@@ -1179,6 +1328,20 @@ impl DialogsState {
             return;
         }
         self.export_dxf = export_dxf::open_for(status);
+    }
+
+    /// Open the Export-image window for the open document.
+    ///
+    /// **The dispatch target for the `file.export_image` command.** The two
+    /// guards [`Self::open_print`] documents apply, and the no-document one is
+    /// real rather than ceremonial: the window measures the largest page at
+    /// construction to promise a pixel count, and there is nothing to measure
+    /// without one.
+    pub fn open_export_image(&mut self, status: &Status) {
+        if self.export_image.is_some() {
+            return;
+        }
+        self.export_image = export_image::open_for(status);
     }
 
     /// Open the Embed-fonts window, and say so when there is nothing to open.
@@ -1305,192 +1468,7 @@ impl DialogsState {
     }
 }
 
+// The dialog owner's assertions. Split out on 2026-09-04 under R2; see its
+// header for why the tests were the seam and the code was not.
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    /// ★★★ **A window that closed BECAUSE it was answered is not retired
-    /// until the answer has been taken out of it.**
-    ///
-    /// The regression test for the defect
-    /// `an_invalidating_save_is_warned_about` found by driving on 2026-08-29:
-    /// the signature warning's proceed button set the confirmation, which made
-    /// `show` answer `false`, which made the owner drop the dialog **and the
-    /// confirmation with it** — so `resume_after_signature` found nothing,
-    /// traced nothing, and wrote nothing. Save was unusable on every signed
-    /// document.
-    ///
-    /// Four rows because the predicate has two inputs and each combination is a
-    /// real state: an open unanswered window (the normal case), an open window
-    /// that has just been answered (`answered` wins and it is kept — it cannot
-    /// arise today, since answering closes both windows, but the rule must not
-    /// depend on that), a cancelled window (retired, and it answers nothing —
-    /// which is what makes the ✕ non-destructive), and the one that cost the
-    /// day.
-    #[test]
-    fn an_answered_window_survives_its_own_close() {
-        assert!(
-            !retire(true, false),
-            "an open window with nothing parked stays open"
-        );
-        assert!(
-            !retire(true, true),
-            "an answer is never discarded, whatever `show` says about visibility"
-        );
-        assert!(
-            retire(false, false),
-            "a CANCELLED window is retired: it closed and answered nothing, which is \
-             exactly what makes the ✕ mean Cancel"
-        );
-        assert!(
-            !retire(false, true),
-            "★ THE DEFECT: a window closed by its own proceed button is holding the \
-             answer that closed it, and dropping it here loses the save"
-        );
-    }
-
-    /// A dialog cannot be opened without a document.
-    ///
-    /// The guard that stops a keyboard chord from enumerating the spooler —
-    /// a call that blocks on a network printer — to populate a window that
-    /// would be closed again on the next frame.
-    #[test]
-    fn no_document_means_no_dialog() {
-        let mut dialogs = DialogsState::default();
-        dialogs.open_print(&Status::Empty);
-        assert!(dialogs.print.is_none());
-    }
-
-    /// Closing the document closes the document-scoped dialogs.
-    ///
-    /// Asserted through the public path rather than by setting the field, so
-    /// the test covers what a frame actually does.
-    #[test]
-    fn a_closed_document_closes_every_document_scoped_dialog() {
-        let mut dialogs = DialogsState::default();
-        assert!(dialogs.print.is_none());
-        dialogs.close_document_scoped();
-        assert!(dialogs.print.is_none());
-        assert!(dialogs.ocr.is_none());
-        assert!(dialogs.diagnostics.is_none());
-        assert!(dialogs.redact.is_none());
-    }
-
-    /// ★ **Apply redactions cannot be opened without a document, and a second
-    /// invocation does not rebuild it.**
-    ///
-    /// Both guards matter more for this dialog than for any of its neighbours,
-    /// because opening it runs a full rewrite of the document. The second
-    /// assertion is the one with teeth: a rebuild would re-run that work *and*
-    /// discard the operator's two acknowledgements, throwing away the reading
-    /// they have just done on the one report in this program that has to be
-    /// read before a control is pressed.
-    #[test]
-    fn the_apply_dialog_is_guarded_on_both_counts() {
-        let mut dialogs = DialogsState::default();
-        dialogs.open_redact(&Status::Empty);
-        assert!(
-            dialogs.redact.is_none(),
-            "a document with nothing open has nothing to redact, and building \
-             the dialog would run a full rewrite in order to refuse"
-        );
-
-        let status = Status::Open(Box::new(crate::app::state::open_fixture(
-            crate::app::state::FOUR_PAGES,
-        )));
-        dialogs.open_redact(&status);
-        let first = std::ptr::from_ref(dialogs.redact.as_ref().expect("open"));
-        dialogs.open_redact(&status);
-        let second = std::ptr::from_ref(dialogs.redact.as_ref().expect("still open"));
-        assert_eq!(
-            first, second,
-            "the second press replaced the dialog, re-running the removal and \
-             discarding both acknowledgements"
-        );
-    }
-
-    /// The render report cannot be opened without a document either, and the
-    /// guard is the one that matters most for it.
-    ///
-    /// Its command is gated on `doc.open`, so the ribbon cannot reach this
-    /// state — but a chord can, and without the guard the dialog would be built
-    /// and then closed by [`DialogsState::show`] on the very next frame. A
-    /// window that flickers is harder to diagnose than one that never appears.
-    #[test]
-    fn no_document_means_no_diagnostics_dialog() {
-        let mut dialogs = DialogsState::default();
-        dialogs.open_diagnostics(&Status::Empty);
-        assert!(dialogs.diagnostics.is_none());
-    }
-
-    /// Pressing Render diagnostics twice does not rebuild the report.
-    ///
-    /// Nothing would be lost — it holds no configuration, and it reads the
-    /// texture live — but the window would jump back to the centre and the
-    /// findings list back to the top, which for an operator half-way down a
-    /// census is the program losing their place. About's argument, one dialog
-    /// over.
-    #[test]
-    fn opening_the_diagnostics_report_twice_leaves_the_first_one_alone() {
-        let mut dialogs = DialogsState::default();
-        let status = Status::Open(Box::new(crate::app::state::open_fixture(
-            crate::app::state::FOUR_PAGES,
-        )));
-        dialogs.open_diagnostics(&status);
-        let first = std::ptr::from_ref(dialogs.diagnostics.as_ref().expect("open"));
-        dialogs.open_diagnostics(&status);
-        let second = std::ptr::from_ref(dialogs.diagnostics.as_ref().expect("still open"));
-        assert_eq!(first, second, "the second press replaced the dialog");
-    }
-
-    /// Recognise text cannot be opened without a document either.
-    ///
-    /// Same guard as print's, and it matters for a different reason: the
-    /// dialog captures the page index and the document path on construction,
-    /// so one built against `Status::Empty` would have neither and would be a
-    /// window that could only refuse.
-    #[test]
-    fn no_document_means_no_recognition_dialog() {
-        let mut dialogs = DialogsState::default();
-        dialogs.open_ocr(&Status::Empty, Vec::new());
-        assert!(dialogs.ocr.is_none());
-    }
-
-    /// About opens with no document, and survives the document closing.
-    ///
-    /// ★ The one property that would have been lost by reusing print's shape.
-    /// `open_about` takes no `Status` precisely so this cannot regress by
-    /// someone adding a guard "for consistency"; the assertion is here so
-    /// that if they do, something says why it was not consistent in the first
-    /// place.
-    #[test]
-    fn about_opens_without_a_document_and_survives_one_closing() {
-        let mut dialogs = DialogsState::default();
-        dialogs.open_about();
-        assert!(
-            dialogs.about.is_some(),
-            "About must open on an empty canvas: it describes pdfcer, not a file"
-        );
-        dialogs.close_document_scoped();
-        assert!(
-            dialogs.about.is_some(),
-            "About is not about the document and must not close with it"
-        );
-    }
-
-    /// Pressing About twice does not rebuild the dialog.
-    ///
-    /// Nothing would be *lost* — it holds no configuration — but the window
-    /// would jump back to the centre and the attribution list back to the
-    /// top, which for an operator reading it is the program losing their
-    /// place.
-    #[test]
-    fn opening_about_twice_leaves_the_first_one_alone() {
-        let mut dialogs = DialogsState::default();
-        dialogs.open_about();
-        let first = std::ptr::from_ref(dialogs.about.as_ref().expect("open"));
-        dialogs.open_about();
-        let second = std::ptr::from_ref(dialogs.about.as_ref().expect("still open"));
-        assert_eq!(first, second, "the second press replaced the dialog");
-    }
-}
+mod tests;

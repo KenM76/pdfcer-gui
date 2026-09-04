@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Export image (`file.export_image`, `OPERATOR_REQUESTS.md` O120) — a
+       PICTURE TILE with an arrow leaving it to the right. Constructed from a
+       rect, a polyline horizon and a two-segment arrow head; primitives only,
+       no trademark risk.
+
+       ★★★ WHY THIS ASSET EXISTS AT ALL, because the command's own registration
+       argued against it for one day and that argument is now overturned rather
+       than deleted. `shell/commands/catalog/file.rs` wired `file.export_image`
+       with `.with_icon("export")` on 2026-09-04 and spent a paragraph
+       defending the share: three export verbs, one act — *out of this
+       document, into a file* — and the FORMAT is "a word only a label can
+       say". The reasoning is sound about DXF and form data, which are two
+       spellings of "structured data leaves". It is wrong here, and the reason
+       is that the set already draws pictures as a subject in their own right:
+       `image.svg` exists, `insert-image` wears it, and the operator has
+       therefore already learned that a framed tile with a horizon inside means
+       *a raster picture* in this application. Handing the picture command the
+       generic download tray asks him to unlearn that on one control. Worse, it
+       is the exact defect the whole 2026-09-04 glyph batch was adopted to fix,
+       one level down: eight tools wearing two pictures, "distinguishable only
+       by icon and tooltip" and not distinguishable by icon.
+
+       ⇒ The thing that leaves is drawn as WHAT leaves.
+
+       Neighbours, and the cue that holds each apart:
+
+       * `download.svg` (worn by `Icon::Export`, and still worn by
+         `file.export_dxf` and `file.export_form_data`) is a bare arrow
+         descending into an open tray. Nothing in it says what fell in, which
+         is correct for a command whose payload is a coordinate list. THIS
+         glyph names its payload. The two are not in the same family by
+         accident — they sit adjacent in File ▸ Export and are read together,
+         so the difference must be legible in one glance: a TILE WITH A
+         HORIZON versus AN EMPTY TRAY.
+       * `image.svg` (`Icon::InsertImage`) is the same picture metaphor with
+         NO arrow: frame, sun and horizon, filling the whole 48 grid. The
+         separation from it is DIRECTION, and direction is the only thing that
+         separates them, deliberately — insert brings a picture in, export
+         sends one out, and they are otherwise the same noun. The tile here is
+         shrunk to the left two-thirds to buy the arrow its lane, and the sun
+         is dropped: at 16 px a 3-unit circle inside a 24-unit tile is one grey
+         pixel, and it would be the pixel that made this read as `image` with
+         something stuck to it.
+       * `pick-link.svg` is the other box-with-an-escaping-arrow in the set,
+         and it stays clear on two counts. Its arrow leaves through a DELIBERATE
+         GAP in the frame's top-right corner and travels diagonally; this one
+         leaves a CLOSED frame, horizontally, from the middle of the right edge.
+         And its box is empty, because its subject is the destination rather
+         than the cargo. ⚠ If either glyph is ever restyled, that gap and this
+         horizon are the two cues doing the work — do not "tidy" either away.
+       * `page-extract.svg` is a page with an arrow leaving DOWNWARD out of the
+         bottom. Down is the set's grammar for "into a tray"; right is the
+         grammar for "handed across". The axis is the cue.
+
+       The arrow is drawn at the tile's vertical centre rather than at its
+       corner so the pair reads as one sentence left-to-right — picture, then
+       departure — which is the reading order of the label beside it. -->
+  <rect x="5" y="12" width="25" height="24" rx="2" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M8 32l7-9 5 5 3-4 6 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M33 24h11" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M39 19l5 5-5 5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

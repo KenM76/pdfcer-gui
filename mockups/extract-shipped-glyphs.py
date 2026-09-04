@@ -33,37 +33,73 @@ INPUT — read-only, and deliberately so
 
     D:/Dev/pdfcer-gui/crates/pdfcer-gui/src/icons/assets/*.svg
 
-127 files as of 2026-09-04. This script NEVER writes into `crates/`. It opens
+Every `.svg` in that directory, however many there are — deliberately not a
+number in this prose, matching `assets/PROVENANCE.md`'s own ruling that a count
+nothing verifies is a count that rots (it carried "79 files" for a week while
+the real figure was 85). The script NEVER writes into `crates/`. It opens
 each file, reads its `viewBox`, strips the XML comments (which are the house
 style's rationale blocks — often longer than the art, and always irrelevant to a
 browser), and keeps the drawing elements verbatim.
 
 Comments are stripped rather than kept because they are the single largest term
 in the file size: `lock.svg` is 28 lines of ruling above 3 lines of path data.
-Inlining 127 of those would roughly triple the artifact for no visible effect.
+Inlining every one of them would roughly triple the artifact for no visible
+effect.
 
 =====================================================================
-ALIASES — three keys that draw art belonging to another key
+ALIASES — keys that draw art belonging to another key. Currently EMPTY.
 =====================================================================
 
-`crates/pdfcer-gui/src/icons/catalog/mapping.rs` maps some `Icon` variants onto
-an asset named for a different role. Three of those matter to this mock because
-the command catalog names the key and the reviewer's sheet drew NEW art for it:
+`crates/pdfcer-gui/src/icons/catalog/mapping.rs` may map an `Icon` variant onto
+an asset named for a different role. Such a key has no file of its own, so the
+directory sweep above cannot see it, and ALIASES is how it reaches the mock.
 
-    properties     -> document.svg   (mapping.rs:234)
-    insert-pages   -> upload.svg     (mapping.rs:271, shared with import-form-data)
-    set-scale      -> convert.svg    (mapping.rs:277)
+★★ THE TABLE IS EMPTY AND THAT IS THE NEWS. It held three entries until
+2026-09-04:
 
-★ These three are the ones to watch, because they are in NEITHER of
-`GLYPH_ADOPTION.md`'s two lists — 36 adopted + 26 deferred accounts for 62 of the
-65 glyphs the review delivered, and these are the missing three. They were not
-adopted (no `properties.svg` exists) and they were not written up as deferred.
-The mock therefore draws the SHIPPED art for these roles and files the review's
-drawings under "proposed" with that reason stated, rather than silently showing
-art the product does not have.
+    properties     -> document.svg
+    insert-pages   -> upload.svg     (shared with import-form-data)
+    set-scale      -> convert.svg
 
-If `mapping.rs` ever gives one of these its own asset, delete its line from
-ALIASES below and the extraction picks the real file up automatically.
+Those three were live icon KEYS with no art of their own, and they were in
+NEITHER of `GLYPH_ADOPTION.md`'s lists — 36 adopted + 26 deferred accounts for
+62 of the 65 glyphs the review delivered, and these were the missing three. This
+mock is what found them: it draws shipped art beside proposed art, and the
+adoption count did not add up. All three have since been given purpose-drawn
+assets, `document.svg` and `convert.svg` were kept as orphan variants so the art
+stays under test, and the borrowing they recorded no longer exists.
+
+⇒ An alias entry is therefore a live claim about `mapping.rs`, not a
+convenience. Add one only when a key really has no file; the loop below prints a
+NOTE and skips any entry whose key has acquired its own asset, and that NOTE is
+an instruction to delete the line rather than a warning to live with.
+
+=====================================================================
+⚠ THE ROOT `<svg>` ATTRIBUTES ARE DROPPED, AND ONE OF THEM MATTERS
+=====================================================================
+
+`body_of` keeps the drawing elements and throws the opening tag away, so the
+root's `fill="none"` goes with it. Every asset in the set relies on that
+attribute: the paths carry `stroke="currentColor"` and say nothing about fill,
+so a `<path>` lifted out of its root and dropped into a page that does not set
+`fill` renders as a SOLID BLACK SILHOUETTE of its own outline. A padlock becomes
+a black slab, a tick becomes a filled wedge, and every glyph in the set looks
+like a different (and much worse) glyph.
+
+`build-pdfcer-shell.py`'s artifact is fine because the mock's own stylesheet
+sets `fill:none` on `.g`. ★ The trap is the throwaway preview page — the one
+somebody writes to compare four glyphs side by side while judging a new drawing.
+Written without `fill:none`, it renders every icon filled, and the judgement it
+is used for is made about pictures the product does not draw. That happened on
+2026-09-04 while these five were being reviewed, and the only thing that caught
+it was the sheet looking obviously wrong.
+
+⇒ If you consume `shipped.json` anywhere, set `fill:none` (or re-add
+`fill="none"` to whatever element wraps the body). It is not kept in the JSON
+because the mock's CSS is the right place for a set-wide constant, and because
+`redact.svg`'s one deliberately-filled rect carries its own `fill` attribute and
+therefore survives either way — which is the tell: if your preview shows the
+redaction bar solid and everything else outlined, it is correct.
 
 =====================================================================
 OUTPUT
@@ -96,11 +132,10 @@ HERE = Path(__file__).parent
 ASSETS = HERE.parent / "crates" / "pdfcer-gui" / "src" / "icons" / "assets"
 
 # Key -> asset file, for keys whose art belongs to another key. See the header.
-ALIASES = {
-    "properties": "document.svg",
-    "insert-pages": "upload.svg",
-    "set-scale": "convert.svg",
-}
+# Empty since 2026-09-04, when the last three keys were given art of their own.
+# See the header: an entry here is a claim about `mapping.rs`, and a claim with
+# nothing behind it is the shape of defect this whole generator exists to catch.
+ALIASES: dict[str, str] = {}
 
 COMMENT = re.compile(r"<!--.*?-->", re.S)
 OPEN_TAG = re.compile(r"<svg\b[^>]*>", re.I)

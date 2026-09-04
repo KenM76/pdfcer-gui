@@ -120,6 +120,13 @@ pub mod annotdelete;
 /// canvas selection became a second claimant on it. Its own header carries the
 /// argument for broadening this panel's purpose rather than inventing a ninth.
 mod dimension;
+/// ★★★ **The Tool panel's disclosure block, re-homed** —
+/// `OPERATOR_REQUESTS.md` O123.
+///
+/// The 47-word refusal sentence that has never been readable needed a surface
+/// whose width is decided before its body draws. The status bar is not one
+/// (R128), and its own header checks that rather than assuming it.
+mod disclose;
 /// ★★★ The **face chooser**, which is one control drawn on two surfaces — this
 /// panel's [`text`] section and the ribbon's Format ▸ Font group in
 /// [`crate::app::fontband`], which were two copies of one loop until 2026-08-29.
@@ -173,6 +180,15 @@ mod paint;
 /// provenance extraction, so it is stamped and kept rather than re-taken every
 /// frame.
 pub mod text;
+/// ★★★ **The armed tool's own settings** — the text pen's face, size and
+/// colour, the circular measure's pick list, and the three resize switches.
+///
+/// `OPERATOR_REQUESTS.md` O123: *"I never understood why there is a tool dock
+/// when everything can be in object and properties."* They are properties of
+/// what is about to be drawn, and this is the panel that owns that category.
+/// `pub` rather than private because `block_for` is the shipped decision a
+/// driven check and a unit test both assert against.
+pub mod tool;
 /// The **box** a form field is drawn in — `EditSession::edit_widget`, consumed
 /// 2026-08-27. Its own file rather than four more rows in [`fieldedit`],
 /// because the engine has two verbs and Acrobat's own scripting model has two
@@ -306,6 +322,34 @@ fn body_sections(
     state: &mut PanelsState,
     actions: &mut Vec<Action>,
 ) {
+    // ★★★ **The disclosure block, FIRST** — `OPERATOR_REQUESTS.md` O123.
+    //
+    // Above everything, on `REVIEW_TRIAGE.md`'s rule that every disclosure
+    // sits above the thing it qualifies: *"a caveat below a list arrives after
+    // the operator has already drawn a conclusion."* Everything below this
+    // line describes what is selected, and a refusal read after that
+    // description arrives too late to explain it. See its header for why the
+    // status bar could not be the home and this panel can.
+    //
+    // ★ Its answer is deliberately NOT part of `something_drew`. That
+    // predicate is O75's, and O75 is about whether a **selection**-scoped
+    // section has spoken; a refusal from the last edit is not a description of
+    // the current selection, and letting it collapse the document section
+    // would make the panel change shape for a reason unconnected to what is
+    // picked.
+    let _drew_disclosure = disclose::section(ui, doc);
+    // ★★★ **The armed tool's settings, second** — the controls that were in
+    // the Tool panel until O123 moved them here.
+    //
+    // Above the selection-scoped sections because an armed tool is the more
+    // immediate subject: somebody who has just armed the text pen is about to
+    // ask *what size*, not *what is that path's line width*. Also NOT part of
+    // `something_drew`, and for a sharper reason than the disclosure block's —
+    // `Block::ScaleSwitches` draws whenever Select is armed, which is most of
+    // the time, so folding it in would collapse the document section for ever
+    // and suppress *"nothing is selected"* for ever. That is O75 answered
+    // backwards.
+    let _drew_tool = tool::section(ui);
     // ★★ The markup restyle section, first among the selection-scoped ones.
     //
     // Before the ce-dimension section and before the object one, because the

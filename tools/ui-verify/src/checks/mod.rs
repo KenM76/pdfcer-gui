@@ -211,6 +211,9 @@ pub mod insert_image;
 pub mod insert_image_place;
 pub mod legibility;
 pub mod markup_move;
+/// ★★★ `OPERATOR_REQUESTS.md` O123's layout claims, driven — Objects over
+/// Properties in one column with a draggable split, at a width whose rows fit.
+pub mod master_detail;
 pub mod markup_rectangle;
 /// ★ The three Phase 6 markup kinds that are **not drag-shaped** — Freehand,
 /// Polyline and Polygon — and the one control in this application whose
@@ -373,6 +376,10 @@ pub mod forms_spotlight;
 /// before letting go.
 pub mod pages_drag;
 pub mod preset_group_reachable;
+/// The commit button's clip count is corrected by what the preview has
+/// already examined — operator request O113. See the module header for why
+/// no unit test can observe the recording half of it.
+pub mod print_clip_claim;
 pub mod print_dialog;
 pub mod print_layout;
 pub mod print_paper;
@@ -1081,6 +1088,17 @@ pub fn all() -> Vec<Box<dyn Check>> {
         //
         // ★ And it never presses commit, for the reason stated above.
         Box::new(print_paper::PrintPaperChangesThePlan),
+        // ★ Last of the four print checks, and after them all for the reason
+        // the two above give: every skip message it can produce defers to
+        // `print_dialog` for the diagnosis — "the dialog never opened", "the
+        // spooler refused", "the ribbon control is missing" are its subject.
+        // A reader of a failing run should meet the specific cause first.
+        //
+        // ★ It never presses commit either. Four print checks now state that
+        // rule; it is restated rather than referenced because the day somebody
+        // adds a fifth by copying one of them, the copied file is what they
+        // will read.
+        Box::new(print_clip_claim::PrintClipClaimFollowsThePreview),
         // ★ Beside it because it is the same shape — two ribbon clicks into a
         // dialog — and because both are checks whose subject is a control that
         // was drawn and did nothing.
@@ -1179,7 +1197,9 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(tool_row::ThePointsToolShowsPointsOnOneClick),
         Box::new(tool_row::ShowPointsDrawsAnObjectsPointsWithoutDescending),
         Box::new(dropped_file::ADroppedImageReachesThePlacementWindow),
-        Box::new(first_frame::TheFirstFrameNamesTheTools),
+        Box::new(first_frame::TheFirstFrameNamesTheArmedTool),
+        Box::new(master_detail::TheInspectorIsOneMasterDetailColumn),
+        Box::new(properties_tool::TheArmedToolsSettingsAreInProperties),
         Box::new(redaction::RedactionRemovesAndProvesIt),
         // ★ Beside the text-editing checks and owning its own fixture, like
         // `text_edit` and `redaction` above: its verdict is a LINE COUNT that

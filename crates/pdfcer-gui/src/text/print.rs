@@ -905,6 +905,86 @@ pub fn clip_summary(clipped: usize, total: usize) -> String {
     }
 }
 
+/// **A CEILING on how many sheets will lose content**, for the state where
+/// some have been examined and some have not — operator request O113,
+/// 2026-09-04.
+///
+/// # Why this sentence exists rather than a reworded [`clip_summary`]
+///
+/// `clip_summary` states a number that was *counted*: every sheet it names has
+/// a page box exceeding the printable rectangle, or (once every clipped sheet
+/// has been previewed) has been measured to carry ink out in the band. This
+/// one states a number that was **bounded**. With some sheets examined and
+/// some not, the count is `known_inked + unexamined`, and the true figure can
+/// be anywhere from `known_inked` up to that — see
+/// `dialogs::print::verdicts`' header for the inequality.
+///
+/// ★★★ **The hedge is a correction, not a weakening.** Saying "will" of a
+/// number nobody measured would be the invented claim; the two words that
+/// change — *"Up to"* and *"may"* — are the difference between reporting a
+/// measurement and reporting a bound, and they appear exactly when the number
+/// stops being a measurement. Nothing softens `clip_summary` itself: where
+/// nothing has been subtracted, that sentence is still what is shown, in the
+/// words it has always used.
+///
+/// # Why it does not name which sheets
+///
+/// Because the answer would be a list that grows as the operator steps through
+/// the preview, on a surface they are not looking at. The preview's own
+/// caption names the sheet on screen; this line is the job.
+#[must_use]
+pub fn clip_summary_at_most(clipped: usize, total: usize) -> String {
+    if clipped == 1 {
+        format!("Up to 1 of these {total} sheets may lose content outside the printable area.")
+    } else {
+        format!(
+            "Up to {clipped} of these {total} sheets may lose content outside the printable area."
+        )
+    }
+}
+
+/// **The sheet on screen overhangs the printable area, and the overhang is
+/// empty paper** — operator request O113, 2026-09-03.
+///
+/// # ★★★ The sentence that stops a warning and a picture contradicting
+///
+/// > *"can you make it so the red pattern you put over the page if it is going
+/// > to print beyond the printable borders is only over the areas that extend
+/// > beyond the printable page? Our drawing get drawn 1:1 and the area that
+/// > isn't printed is just empty border."*
+///
+/// [`clip_summary`] above counts sheets whose **page box** exceeds the
+/// printable rectangle. That count is a plan-time geometric fact and it is
+/// still exactly true. Since O113 the hatch beside it is not geometric: it
+/// samples the raster and covers only what actually carries ink. So on the
+/// operator's own 1:1 drawings the two disagree — a sentence saying content
+/// will be lost, over a picture that visibly loses none — and an operator
+/// resolving that disagreement resolves it by trusting neither half.
+///
+/// This is the resolution. It does **not** contradict the count and does not
+/// soften it; it adds the one thing the count could not know, which is what is
+/// actually printed on the part that will be cropped.
+///
+/// # Why it names the SHEET and says "on screen"
+///
+/// Because that is the only sheet whose raster exists. The preview renders the
+/// page it is showing and no other, so this is a statement about one sheet, and
+/// wording it as though it covered the job would be a claim nothing checked.
+/// The job-wide count above stays the statement about the job.
+///
+/// # Why "nothing is printed there" rather than "nothing will be lost"
+///
+/// The stronger phrasing would be a promise about the outcome, and the ink test
+/// has a threshold in it (`dialogs::print::ink::INK_MAX_LEVEL`) — a mark
+/// lighter than about 4% grey is treated as paper. Saying what was *observed*
+/// on the sheet is a claim this code can support; saying what *will* happen at
+/// the printer is one it cannot.
+#[must_use]
+pub const fn overhang_is_blank() -> &'static str {
+    "This sheet hangs over the printable area, but nothing is printed there — the overhang is \
+     blank."
+}
+
 // ---------------------------------------------------------------------------
 // The footer — the one irreversible control in the application
 // ---------------------------------------------------------------------------
@@ -938,6 +1018,71 @@ pub fn commit_with_clipping(clipped: usize) -> String {
         "Print — 1 sheet will be clipped".to_owned()
     } else {
         format!("Print — {clipped} sheets will be clipped")
+    }
+}
+
+/// Send the job, **naming a count that has actually been measured** —
+/// operator request O113, 2026-09-04.
+///
+/// # Why a second sentence rather than a reworded [`commit_with_clipping`]
+///
+/// The two say different things and both are needed.
+///
+/// `commit_with_clipping` says *"N sheets will be **clipped**"* — a geometric
+/// fact about page boxes and the printable rectangle, taken at planning time
+/// with no raster in hand. It is exactly true and it is what the button says
+/// when nothing better is known.
+///
+/// This one says *"N sheets will **lose content**"*, and it may only be shown
+/// when every clipped sheet in the job has been rendered by the preview and
+/// its overhang tested for ink. `N` is then the number that really will lose
+/// something, which is smaller than the geometric count whenever the operator
+/// prints a 1:1 CAD sheet whose border is empty paper — *"the area that isn't
+/// printed is just empty border."*
+///
+/// ★★ **Reusing the old sentence for the corrected number would have been the
+/// defect.** With two of five clipped sheets known blank, *"Print — 3 sheets
+/// will be clipped"* is plainly false: five are clipped. The count changed
+/// what it counts, so the sentence has to say what it now counts. That is a
+/// correction, and it is the opposite of softening a true statement to match a
+/// better one.
+#[must_use]
+pub fn commit_losing_content(losing: usize) -> String {
+    if losing == 1 {
+        "Print — 1 sheet will lose content".to_owned()
+    } else {
+        format!("Print — {losing} sheets will lose content")
+    }
+}
+
+/// Send the job, **naming a ceiling** — operator request O113, 2026-09-04.
+///
+/// Shown when some clipped sheets have been examined and found blank and
+/// others have not been looked at. The number is `known_inked + unexamined`:
+/// the most sheets that could possibly lose something, with every sheet nobody
+/// has looked at still counted, because a claim about an unexamined sheet
+/// would be invented.
+///
+/// # ★ The two words carrying the whole difference
+///
+/// *"up to"* and *"may"*. They are here because the number is a bound rather
+/// than a count, and they are **absent** from [`commit_losing_content`] and
+/// from [`commit_with_clipping`] because those two report numbers that were
+/// measured — one by the ink test, one by the geometry. A hedge that appeared
+/// on all three would say nothing at all; appearing on exactly the one bounded
+/// number is what makes it informative.
+///
+/// # The singular has no "up to", and that is not an inconsistency
+///
+/// *"Up to 1 sheet"* reads as a quantity discount. *"1 sheet **may** lose
+/// content"* carries the same uncertainty in the word that is doing the work,
+/// which is `may` in both forms.
+#[must_use]
+pub fn commit_may_lose_content(at_most: usize) -> String {
+    if at_most == 1 {
+        "Print — 1 sheet may lose content".to_owned()
+    } else {
+        format!("Print — up to {at_most} sheets may lose content")
     }
 }
 
@@ -1064,9 +1209,66 @@ mod tests {
     fn the_counted_sentences_are_grammatical_at_one() {
         assert!(commit_with_clipping(1).contains("1 sheet will"));
         assert!(clip_summary(1, 4).contains("1 of these 4 sheets"));
+        assert!(commit_losing_content(1).contains("1 sheet will"));
+        assert!(commit_may_lose_content(1).contains("1 sheet may"));
+        assert!(clip_summary_at_most(1, 4).contains("1 of these 4 sheets"));
         assert!(sent(1).contains("1 page to"));
         assert!(range_all(1).contains("1 page"));
         assert!(!range_all(1).contains("1 pages"));
+    }
+
+    /// ★★★ **The three commit labels are three different claims**, and an
+    /// operator must be able to tell which one they are being shown from the
+    /// words alone — operator request O113, 2026-09-04.
+    ///
+    /// | label | what it claims | when |
+    /// |---|---|---|
+    /// | [`commit_with_clipping`] | N page boxes exceed the printable area | nothing examined |
+    /// | [`commit_losing_content`] | N sheets really do lose ink | every clipped sheet examined |
+    /// | [`commit_may_lose_content`] | **at most** N sheets lose ink | some examined, some not |
+    ///
+    /// The hedge is the load-bearing distinction: it must be present on the
+    /// bounded claim and absent from the two measured ones. A wording change
+    /// that put "may" on all three, or took it off the ceiling, would collapse
+    /// three states into one sentence and hide exactly the difference the
+    /// count was made better to expose.
+    #[test]
+    fn the_three_commit_labels_are_distinguishable_claims() {
+        let geometric = commit_with_clipping(3);
+        let measured = commit_losing_content(3);
+        let bounded = commit_may_lose_content(3);
+        assert_ne!(geometric, measured);
+        assert_ne!(measured, bounded);
+        assert_ne!(geometric, bounded);
+
+        assert!(
+            bounded.contains("may") && bounded.contains("up to"),
+            "the ceiling must hedge, or a number nobody measured reads as one that was: {bounded}"
+        );
+        for measured_claim in [&geometric, &measured] {
+            assert!(
+                !measured_claim.contains("may"),
+                "a measured count must NOT hedge — softening a true statement to match a \
+                 better one is how the next defect gets built: {measured_claim}"
+            );
+        }
+        // And all three still carry the number, which is the whole
+        // disclosure mechanism.
+        for label in [&geometric, &measured, &bounded] {
+            assert!(label.contains('3'), "the count vanished from {label}");
+        }
+    }
+
+    /// The bounded job-wide sentence hedges where its measured twin does not.
+    ///
+    /// [`clip_summary`] serves both the geometric and the measured state — in
+    /// the first it is the unchanged shipped wording, in the second it is
+    /// verified — so the only sentence that may hedge is the ceiling's.
+    #[test]
+    fn only_the_bounded_summary_hedges() {
+        assert!(!clip_summary(2, 5).contains("may"));
+        assert!(clip_summary_at_most(2, 5).contains("may"));
+        assert!(clip_summary_at_most(2, 5).contains("Up to 2"));
     }
 
     /// The capped-resolution disclosure names all three numbers.

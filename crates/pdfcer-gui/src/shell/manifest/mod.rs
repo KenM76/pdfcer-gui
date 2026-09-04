@@ -245,6 +245,32 @@ pub fn built_in() -> Shell {
         // -------------------------------------------------------------------
         .with_qat(["file.open", "file.save", "edit.undo", "edit.redo"])
         // -------------------------------------------------------------------
+        // THE TRAILING REGION — `OPERATOR_REQUESTS.md` O122.
+        //
+        // The operator, 2026-09-04: *"beside our read-review-edit buttons at
+        // the top there should be an open in acrobat button."* The far right of
+        // the tab-strip row, past the mode selector, which is a region
+        // `egui-shell` grew for this and which nothing else uses.
+        //
+        // ★★★ `shown_when("acrobat.available")` is the whole of R9 for this
+        // control, and it is the reason the command is registered
+        // unconditionally rather than only on a machine that has an Acrobat.
+        // The registry is built once at start-up; the path to Acrobat is a
+        // SETTING, and O122's escape hatch requires that typing one makes the
+        // button appear without a restart. A condition is re-read every frame
+        // and a registration is not.
+        //
+        // ★ It is on NO tab, which is the first command in this manifest of
+        // which that is true, and it is deliberate rather than an oversight.
+        // `RIBBON_IA.md` P1 says a command has one discoverable home; this
+        // one's home is a fixed position in the chrome that is visible in every
+        // mode, which is a stronger form of the same guarantee than a tab
+        // provides. Putting it on the File tab as well would give an operator
+        // two places to press for one act, one of which appears and disappears
+        // — and `Shell::validate`'s uniqueness rule walks tabs only, so nothing
+        // would have complained.
+        .with_trailing([Item::command("file.open_in_acrobat").shown_when(ACROBAT_AVAILABLE)])
+        // -------------------------------------------------------------------
         // KEYMAP
         //
         // Chords are opaque strings here; parsing them into modifiers and a
@@ -533,6 +559,32 @@ pub const SELECTION_ANY: &str = "selection.any"; // ui-text-exempt: a condition 
 /// predicate would draw a band of controls that cannot act on what is
 /// selected.
 pub const SELECTION_ACTIONABLE: &str = "selection.actionable"; // ui-text-exempt: a condition name, never displayed
+
+/// **An Acrobat was found on this machine, or the operator has pointed
+/// pdfcer at one** — the condition under which `file.open_in_acrobat` is
+/// DRAWN AT ALL. `OPERATOR_REQUESTS.md` O122.
+///
+/// # ★★★ Why this is a `visible_when` and never an `enabled_when`
+///
+/// R9, exactly: *an unavailable capability renders nothing; greying is
+/// reserved for **temporarily** unavailable and is always explained on hover.*
+/// "This machine has no Acrobat" is not temporary and there is no hover
+/// sentence that would help — the remedy is installing a different program,
+/// which is not something a tooltip can walk somebody through and not
+/// something this shell should nag about on every hover for the life of the
+/// installation.
+///
+/// The command's own `enabled_when("doc.open")` is the greying, and it is the
+/// legitimate case: *no document open* is temporary, is the operator's to fix
+/// in one click, and IS explained on hover.
+///
+/// # ★★ Published by `PdfcerApp::conditions` from ONE resolved viewer
+///
+/// Not from a fresh registry read per frame — see `crate::acrobat`. The
+/// resolution is cached on the application and recomputed when the setting
+/// changes, so this condition and the path the button will actually launch are
+/// the same fact rather than two reads that could disagree.
+pub const ACROBAT_AVAILABLE: &str = "acrobat.available"; // ui-text-exempt: a condition name, never displayed
 
 /// **The engine would not refuse a delete of what is selected** — the
 /// condition under which `format.delete` is DRAWN AT ALL.

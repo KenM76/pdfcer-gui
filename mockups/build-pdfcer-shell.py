@@ -50,10 +50,13 @@ at all rather than a hand-kept HTML file:
 INPUTS
 =====================================================================
 
-    glyphs/shipped.json    130 keys — 127 assets read from
-                           crates/pdfcer-gui/src/icons/assets/*.svg, plus 3
-                           alias keys (properties, insert-pages, set-scale)
-                           that draw another key's art per mapping.rs.
+    glyphs/shipped.json    One key per .svg in
+                           crates/pdfcer-gui/src/icons/assets/, plus one per
+                           live alias key that draws another role's art per
+                           mapping.rs — of which there are currently NONE, the
+                           last three having been given purpose-drawn assets on
+                           2026-09-04. No count in this prose on purpose; the
+                           script prints the real one every run.
                            REGENERATE with extract-shipped-glyphs.py.
 
     glyphs/proposed.json   28 keys — the review's 65 proposed glyphs, minus the

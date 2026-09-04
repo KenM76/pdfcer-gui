@@ -242,6 +242,12 @@ pub(super) fn tab() -> Tab {
                 ribbon::group_file_export(),
                 [
                     command("file.export_dxf"),
+                    // ★ O120, 2026-09-04. Second in the band, directly after
+                    // the other export that writes a picture of the page's own
+                    // content — and before the form-data pair, which is a round
+                    // trip and reads as one. §5.1's own Export table has the
+                    // image row second for the same reason.
+                    command("file.export_image"),
                     command("file.export_form_data"),
                     // ★ Import directly after export, in that order, because
                     // the pair is a round trip and an operator meets the half

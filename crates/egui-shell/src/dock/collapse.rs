@@ -145,7 +145,7 @@ pub(super) fn draw_collapsed_rail(
     // at the glyph's own rect would be measuring the glyph's centring
     // rather than whether the strip is reachable.
     ctx.reporter
-        .report(inner.response.rect, || report::rail(side));
+        .report(ui, inner.response.rect, || report::rail(side));
     report.sides_drawn.push(side);
 }
 
@@ -206,5 +206,5 @@ pub(super) fn draw_collapse(ctx: &mut Ctx<'_>, ui: &mut egui::Ui, side: DockSide
     if button.clicked() {
         ctx.intents.push(Intent::ToggleSide(side));
     }
-    ctx.reporter.report(rect, || report::collapse(side));
+    ctx.reporter.report(ui, rect, || report::collapse(side));
 }

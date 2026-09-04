@@ -38,10 +38,30 @@
 //!    the printable area.
 //! 4. **The page's real content**, rendered through the same options the
 //!    spooler uses (see [`super::render_options`]) and drawn into (3).
-//! 5. **A hatch over what will be lost**, when the placement reports a clip.
-//!    Hatched rather than filled: a hatch means *"this will happen and has
-//!    not happened yet"*, which is exactly a pre-print clip. A solid fill
-//!    reads as something already done.
+//! 5. **A hatch over what will be lost** — over the part of the overhang that
+//!    actually carries ink, and over nothing else. Hatched rather than filled:
+//!    a hatch means *"this will happen and has not happened yet"*, which is
+//!    exactly a pre-print clip. A solid fill reads as something already done.
+//!
+//! ## ★★★ (5) became ink-aware on 2026-09-03 — operator request O113
+//!
+//! It used to hatch the **whole** overhanging region the moment
+//! `Placement::clipped` was true, and that flag is a *geometric* verdict: the
+//! page box exceeds the printable rectangle. On a CAD sheet printed 1:1 the
+//! part that exceeds it is empty paper, so the hatch shouted about losing
+//! something on every one of the operator's drawings while nothing was being
+//! lost — *"the area that isn't printed is just empty border."*
+//!
+//! **A disclosure that is technically true and practically false is the worst
+//! kind.** An operator who sees the same red band on every drawing learns to
+//! ignore it, and then does not see it on the one sheet where the border really
+//! does have a title block in it.
+//!
+//! The hatch now asks [`super::ink::InkMask`] — a downsample of the very raster
+//! drawn at (4) — what is in the band, and covers the ink extent within it. No
+//! ink ⇒ no hatch. [`hatch_lost_content`] holds the geometry, `super::ink`
+//! holds the pixel test and the measurement behind its threshold, and
+//! [`Overhang`] is how the caption is kept from contradicting the picture.
 //!
 //! ## ★ The preview owns NO scroll area, deliberately
 //!
@@ -69,8 +89,43 @@ use egui::{Color32, Pos2, Rect, Sense, Stroke, StrokeKind, TextureHandle, Textur
 
 use crate::app::state::OpenDoc;
 use crate::dialogs::print::PrintDialog;
+use crate::dialogs::print::ink;
 use crate::dialogs::print::spooler::Job;
 use crate::text::print as t;
+
+/// What the shown sheet's overhang turned out to contain — the fact the hatch
+/// is drawn from, lifted out so the CAPTION can be drawn from the same one.
+///
+/// # ★★★ Why this is a return value and not something the caption re-derives
+///
+/// Operator request O113 makes the hatch ink-aware, and a caption that kept
+/// announcing a clip over a preview showing no hatch would be the identical
+/// contradiction one level up: *"this sheet will lose content"* printed above a
+/// picture that visibly loses none. An operator resolving that disagreement
+/// resolves it by trusting neither.
+///
+/// The only way the two cannot disagree is for them to be the **same
+/// computation**, so [`paint`] reports what it found and [`column`] says it.
+/// A caption that asked the mask a second time would be a second call site for
+/// a question with a threshold in it, and the two would drift.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) enum Overhang {
+    /// The placement reported no clip. The page fits the printable area.
+    Fits,
+    /// The placement reported a clip **and the overhanging band carries ink**,
+    /// so something really will be cropped. Hatched.
+    Losing,
+    /// ★ The placement reported a clip and the band is **blank paper** — the
+    /// 1:1 CAD drawing O113 is about. Nothing hatched, and the caption says so
+    /// rather than leaving the operator to wonder why the warning has no
+    /// picture.
+    BlankBand,
+    /// The placement reported a clip and there is **no raster to ask** — the
+    /// degraded state [`texture_for`] documents, where the page did not render
+    /// and the preview shows a flat fill. The whole band is hatched, because a
+    /// failed render must not be able to switch a warning off.
+    Unknown,
+}
 
 // ★★★ `COLUMN_WIDTH_PTS` WAS HERE, AND ITS REASONING WAS THE DEFECT — 2026-09-03.
 //
@@ -272,6 +327,43 @@ pub(super) struct PreviewKey {
     settings: pdfcer_core::settings::Settings,
 }
 
+impl PreviewKey {
+    /// Build the key for one page.
+    ///
+    /// # ★★★ Called from exactly one place, and that place is the VERDICT
+    /// # cache's context
+    ///
+    /// [`super::verdicts::Context::preview_key`] is the sole caller — operator
+    /// request O113, 2026-09-04. The inversion is the point rather than
+    /// plumbing.
+    ///
+    /// That module remembers, per sheet, whether the overhang the preview
+    /// hatched turned out to be blank, so the commit button can subtract the
+    /// sheets known to lose nothing. A remembered verdict is a claim about
+    /// **these pixels**, and this type's own doc comment states what a cache
+    /// key is: *"if these are equal, re-rendering would produce the same
+    /// image."* A verdict cached under a weaker key would be a verdict about a
+    /// page that has changed — and it would be confidently wrong, because its
+    /// whole purpose is to take a warning away.
+    ///
+    /// Deriving this key **from** the verdict cache's context makes "the
+    /// verdict is keyed on at least what the pixels are keyed on" a structural
+    /// fact rather than a promise held by two doc comments. Constructing it
+    /// here as well, from the same three values, would be the second reading
+    /// of one rule that this file's `settings` field already argues against.
+    pub(super) fn new(
+        page: usize,
+        scope: pdfcer_render::AnnotationScope,
+        settings: &pdfcer_core::settings::Settings,
+    ) -> Self {
+        Self {
+            page,
+            scope,
+            settings: settings.clone(),
+        }
+    }
+}
+
 /// Everything the preview needs that is NOT the dialog's own state.
 ///
 /// # Why a struct rather than five parameters
@@ -290,6 +382,14 @@ pub(super) struct Inputs<'a> {
     /// [`crate::dialogs::print::spooler::PagePlan::index`] and never by a
     /// position in the plan list.
     pub(super) page_sizes: &'a [(f64, f64)],
+    /// The frame's cache context: the rendering inputs and the printable
+    /// rectangle, built once in [`PrintDialog::show`].
+    ///
+    /// ★ Both caches in this dialog hang off it. The page texture's
+    /// [`PreviewKey`] is built from it (see [`PreviewKey::new`]), and every
+    /// remembered overhang verdict is void the moment it changes — so the
+    /// verdict cache cannot be keyed on less than the pixels are.
+    pub(super) context: &'a super::verdicts::Context,
 }
 
 /// The preview zoom and pan after multiplying the zoom by `step` while
@@ -432,8 +532,17 @@ pub(super) fn column(
     let scale = fit * dialog.preview_zoom;
     // Rendered before the strip is laid out, because the strip's Actual-size
     // button needs the scale this frame settled on.
-    let texture = paint(ui, inputs, dialog, shown, rect, scale);
+    let (texture, overhang) = paint(ui, inputs, dialog, shown, rect, scale);
     strip(ui, inputs, dialog, shown, rect, scale);
+
+    // ★ Read AFTER `paint`, which is what makes the sheet on screen count as
+    // examined on the frame it is drawn rather than on the next one — see the
+    // clip summary below for what this number is and how its wording follows
+    // from it. Also read BEFORE the trace, so the trace reports the claim this
+    // frame's picture was drawn beside.
+    let claim = dialog
+        .verdicts
+        .claim(inputs.context, job, inputs.page_sizes);
 
     // The canvas rectangle and the two geometry rectangles, in one line.
     //
@@ -449,7 +558,7 @@ pub(super) fn column(
             // ui-text-exempt: diagnostic trace, never displayed in the UI
             "print-preview canvas=[{:.0},{:.0} {:.0}x{:.0}] fit={fit:.4} scale={scale:.4} \
              device_dpi={:?} sheet={:.0}x{:.0} printable={:.0}x{:.0} margin={:.0},{:.0} \
-             sheet_of={}/{} zoom={:.3} pan=({:.1},{:.1}) tex={}",
+             sheet_of={}/{} zoom={:.3} pan=({:.1},{:.1}) tex={} overhang={} claim={}:{}",
             rect.min.x,
             rect.min.y,
             rect.width(),
@@ -467,25 +576,92 @@ pub(super) fn column(
             dialog.preview_pan.x,
             dialog.preview_pan.y,
             u8::from(texture.is_some()),
+            // ★ `overhang=` is the ONLY headless evidence that operator request
+            // O113 works, and it is here because the thing that changed is
+            // something a capture cannot distinguish: a preview with no hatch
+            // over a blank band and a preview with no hatch because the ink
+            // test silently found nothing anywhere look IDENTICAL in a
+            // screenshot. The word says which. `blank-band` on a 1:1 CAD sheet
+            // is the request satisfied; `losing` on the same sheet is the
+            // defect back; `unknown` means the page did not render and the
+            // whole band was hatched as the honest fallback.
+            match overhang {
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                Overhang::Fits => "fits",
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                Overhang::Losing => "losing",
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                Overhang::BlankBand => "blank-band",
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                Overhang::Unknown => "unknown",
+            },
+            // ★ The job-wide claim beside the sheet-level verdict, because the
+            // pair is what a driven check has to read: `overhang=blank-band`
+            // says this sheet's band is empty paper, and `claim=` says what
+            // that did to the number on the button. `overhang=blank-band` next
+            // to `claim=geometric:1` would be the verdict landing and the
+            // count not moving — a cache that silently never matched, which is
+            // indistinguishable from a working cache in any capture.
+            claim.trace_word(),
+            claim.count(),
         )
     });
 
     // The count, always, for a multi-page job whose clip is on a sheet the
     // preview is not showing.
-    let clipped = job.clipped();
-    if clipped > 0 {
-        ui.label(
-            egui::RichText::new(t::clip_summary(clipped, job.plans.len()))
-                .color(ui.visuals().warn_fg_color),
-        );
+    //
+    // ★★★ THE COUNT GOT BETTER — the sentence did not get vaguer. Operator
+    // request O113, 2026-09-04.
+    //
+    // This comment used to say the line was "UNCHANGED by O113, deliberately",
+    // on the grounds that `Job::clipped()` is a plan-time geometric fact which
+    // is still exactly true and that softening its wording to match a picture
+    // that knows more would be trading a true statement for a comfortable one.
+    // **That reasoning stands, and it is the reason the fix is here rather
+    // than in the wording.** What changed is not the sentence; it is that the
+    // number is now corrected by verdicts the preview has *already* produced,
+    // at no rendering cost, and the wording follows what the corrected number
+    // can support:
+    //
+    //   * nothing subtracted  -> the geometric sentence, unchanged, word for
+    //     word — including the case where the operator never stepped the
+    //     preview at all;
+    //   * every clipped sheet examined -> the same sentence, now verified;
+    //   * some examined, some not -> a ceiling, which says so.
+    //
+    // ★ It must be the SAME claim the commit button draws, or this line and
+    // the button would show two different numbers for one job — the exact
+    // contradiction O113 reported, moved rather than fixed. Both call
+    // `Verdicts::claim` on the same context, and `ClipClaim` owns which
+    // sentence each state gets, so neither surface chooses wording of its own.
+    if let Some(summary) = claim.summary(job.plans.len()) {
+        ui.label(egui::RichText::new(summary).color(ui.visuals().warn_fg_color));
+    }
+    // ★★★ …and the sheet-level correction under it, which is what stops the
+    // caption and the hatch contradicting each other — operator request O113.
+    //
+    // The job-wide count above says "this sheet will lose content" while the
+    // picture beside it shows a page with nothing hatched. Left alone, an
+    // operator resolving that disagreement resolves it by trusting neither
+    // half. This line resolves it for them, and it can only be written because
+    // `paint` has already answered the question for the sheet on screen — the
+    // same computation the hatch was drawn from, so the two cannot drift.
+    //
+    // Drawn in the ordinary text colour, not the warning colour: it is the
+    // sentence that takes a warning AWAY for this sheet, and colouring it as a
+    // warning would put back the alarm it exists to remove.
+    if overhang == Overhang::BlankBand {
+        ui.label(egui::RichText::new(t::overhang_is_blank()).small());
     }
 }
 
 /// Paint the sheet, the printable area, the placed page and the clip hatch.
 ///
-/// Returns the texture that was drawn, or `None` when the page would not
-/// render — which is the degraded-but-honest state described on
-/// [`texture_for`].
+/// Returns the texture that was drawn — `None` when the page would not render,
+/// which is the degraded-but-honest state described on [`texture_for`] — and
+/// **what the overhang turned out to hold**, which is what the caption is then
+/// written from. See [`Overhang`] for why the second half is returned rather
+/// than recomputed.
 fn paint(
     ui: &Ui,
     inputs: &Inputs<'_>,
@@ -493,7 +669,7 @@ fn paint(
     shown: usize,
     rect: Rect,
     scale: f32,
-) -> Option<TextureId> {
+) -> (Option<TextureId>, Overhang) {
     let painter = ui.painter_at(rect);
     let visuals = ui.visuals();
     let job = inputs.job;
@@ -539,8 +715,20 @@ fn paint(
     // placed rectangle at the size of a page the job may not even contain,
     // which on a document mixing sheet sizes is a preview that reports a clip
     // that will not happen or misses one that will.
-    let plan = *job.plans.get(shown)?;
-    let size = *inputs.page_sizes.get(plan.index)?;
+    //
+    // A missing plan or page size means the sheet the stepper is on does not
+    // exist, which is a state one frame of a page-range edit can pass through.
+    // The sheet and printable rectangles are already drawn, which is the
+    // honest picture; there is no page to place and therefore no clip to
+    // report, so the overhang is `Fits` rather than a warning about nothing.
+    let (Some(&plan), Some(&size)) = (
+        job.plans.get(shown),
+        job.plans
+            .get(shown)
+            .and_then(|p| inputs.page_sizes.get(p.index)),
+    ) else {
+        return (None, Overhang::Fits);
+    };
 
     let placed = Rect::from_min_size(
         printable.min
@@ -584,32 +772,253 @@ fn paint(
     // What will be lost, hatched. A hatch means "this will happen and has not
     // happened yet", which is exactly a pre-print clip. A solid fill would
     // read as something already done.
-    if plan.placement.clipped {
-        hatch_lost_content(&painter, placed, printable, visuals.warn_fg_color);
+    //
+    // ★ `plan.placement.clipped` is the cheap GEOMETRIC gate and is kept as
+    // one: it is a plan-time fact needing no raster, so it costs nothing and it
+    // short-circuits every sheet that fits. Everything past it asks the
+    // narrower question O113 is about — is anything actually THERE.
+    if !plan.placement.clipped {
+        return (texture, Overhang::Fits);
     }
-    texture
+    // ★ The mask is re-borrowed here rather than returned from `texture_for`
+    // because it is 64 KiB (see `ink::CELLS_LONG_SIDE`) and cloning it once a
+    // frame to satisfy a borrow would cost more than the hatch. The mutable
+    // borrow `texture_for` took has ended by this line, so an immutable
+    // reborrow is free.
+    //
+    // Matched against the texture that was actually DRAWN, not merely taken
+    // from the cache: if those two could differ, the mask would be describing a
+    // different page from the one on screen, which is the exact staleness the
+    // shared cache tuple exists to prevent. Asserting it here as well costs one
+    // comparison and makes the invariant checkable at the point it is relied
+    // on.
+    let mask = dialog
+        .preview_texture
+        .as_ref()
+        .filter(|(_, tex, _)| Some(tex.id()) == texture)
+        .map(|(_, _, mask)| mask);
+    let overhang = hatch_lost_content(&painter, placed, printable, mask, visuals.warn_fg_color);
+    // ★★★ REMEMBERED HERE, at the single point where the ink question was
+    // actually asked — operator request O113, 2026-09-04.
+    //
+    // The commit button's count is the geometric count minus the sheets known
+    // blank, and this is where a sheet becomes known. It is recorded from the
+    // value `hatch_lost_content` just returned — the same computation the
+    // hatch above was drawn from — and never re-derived: a second call site
+    // for a question with a pixel threshold in it is how the button and the
+    // picture would come to disagree again, one level further down.
+    //
+    // Recorded only past the `plan.placement.clipped` gate, so the map holds
+    // exactly what the count consults: what the ink test found in the overhang
+    // of a sheet that has one. A sheet that fits is not a sheet anybody needs
+    // a verdict about.
+    dialog
+        .verdicts
+        .remember(inputs.context, &plan, inputs.page_sizes, overhang);
+    (texture, overhang)
 }
 
-/// Hatch the part of `placed` that falls outside `printable`.
+/// Hatch **only the parts of `placed` that fall outside `printable` AND carry
+/// ink**.
 ///
-/// Only the right and bottom overhangs are hatched, and that is not an
-/// omission: a placement offsets the page *into* the printable area from its
-/// top-left corner, so content is lost off the far edges. Hatching all four
-/// would draw a warning over paper that will print.
-fn hatch_lost_content(painter: &egui::Painter, placed: Rect, printable: Rect, colour: Color32) {
-    let lost = placed
-        .intersect(Rect::everything_right_of(printable.max.x))
-        .union(placed.intersect(Rect::everything_below(printable.max.y)));
-    if !lost.is_positive() {
-        return;
+/// # ★★★ Operator request O113 — what changed here and why
+///
+/// > *"can you make it so the red pattern you put over the page if it is going
+/// > to print beyond the printable borders is only over the areas that extend
+/// > beyond the printable page? Our drawing get drawn 1:1 and the area that
+/// > isn't printed is just empty border."*
+///
+/// This function used to hatch the whole overhanging region the moment
+/// `Placement::clipped` was true. That flag is a *geometric* verdict — the page
+/// box exceeds the printable rectangle — and on a CAD sheet printed 1:1 the
+/// part that exceeds it is empty paper. The hatch shouted about losing
+/// something on every drawing, and nothing was being lost, which is a
+/// disclosure that is technically true and practically false. An operator who
+/// sees the same red band on every 1:1 drawing learns to ignore it, and then
+/// does not see it on the one sheet where the border really does have a title
+/// block in it.
+///
+/// It now asks [`ink::InkMask`] what is actually in the band, and hatches the
+/// **ink extent within it**. No ink in the band ⇒ **no hatch at all**, which
+/// is the whole request.
+///
+/// # Only the right and bottom overhangs, and that is not an omission
+///
+/// Carried from the original, because it is still true: a placement offsets the
+/// page *into* the printable area from its top-left corner, so content is lost
+/// off the far edges. Hatching all four would draw a warning over paper that
+/// will print.
+///
+/// # ★★ The two bands are now DISJOINT, which fixes a second over-hatch
+///
+/// The old code took `right_band.union(bottom_band)`, and `Rect::union` is a
+/// **bounding box**, not a set union: the union of a tall strip on the right
+/// and a wide strip along the bottom is a rectangle that also covers the region
+/// which is neither right of nor below the printable area — paper that prints
+/// perfectly. That was a second, smaller instance of the same defect O113
+/// reports, hiding inside the first.
+///
+/// The bottom band is therefore cut at `printable.max.x`, so the two bands meet
+/// without overlapping. Disjoint also means the shared bottom-right corner is
+/// hatched once rather than twice, so its lines are the same weight as
+/// everywhere else instead of reading as a darker patch.
+///
+/// # ★ What happens when there is no mask
+///
+/// `mask` is `None` when the page did not render — the same degraded state
+/// [`texture_for`] documents, in which the preview shows a flat fill instead of
+/// the page. In that state the honest answer to *"is anything in the band?"* is
+/// **"unknown"**, and the disclosure falls back to the old behaviour: hatch the
+/// whole band. Silence would be the wrong failure direction here. A missing
+/// render must not be able to turn a warning off.
+/// # Returns
+///
+/// What the band turned out to hold, so the caption can be written from the
+/// same computation the hatch was — see [`Overhang`].
+fn hatch_lost_content(
+    painter: &egui::Painter,
+    placed: Rect,
+    printable: Rect,
+    mask: Option<&ink::InkMask>,
+    colour: Color32,
+) -> Overhang {
+    let (lost, overhang) = lost_regions(placed, printable, mask);
+    for region in lost {
+        hatch(painter, region, colour);
     }
+    overhang
+}
+
+/// **What is actually lost, and what to call it** — the whole of operator
+/// request O113's decision, with no painter in it.
+///
+/// # ★★★ Pure on purpose, because this is the pair that must not disagree
+///
+/// It returns the rectangles to hatch *and* the [`Overhang`] the caption is
+/// written from, from **one** computation. That is the only structural
+/// guarantee that the picture and the sentence agree: they are not two readings
+/// of the same data, they are two halves of one answer. Splitting it out from
+/// [`hatch_lost_content`] also makes that agreement **testable with no GUI at
+/// all** — see [`tests::a_blank_overhang_hatches_nothing_and_says_so`], which
+/// asserts the empty list and the `BlankBand` verdict together, and
+/// [`tests::an_inked_overhang_hatches_only_the_ink_and_says_so`], which asserts
+/// the hatched rectangle really is a small part of the band.
+///
+/// The returned rectangles are in screen points and are ready to draw; the
+/// caller does no further arithmetic on them.
+fn lost_regions(
+    placed: Rect,
+    printable: Rect,
+    mask: Option<&ink::InkMask>,
+) -> (Vec<Rect>, Overhang) {
+    // The two disjoint overhangs, in SCREEN points.
+    //
+    // Right: everything of the page past the printable area's right edge, full
+    // height. Bottom: everything past its bottom edge, cut at that same right
+    // edge so the corner belongs to exactly one band.
+    let bands = [
+        placed.intersect(Rect::everything_right_of(printable.max.x)),
+        placed
+            .intersect(Rect::everything_below(printable.max.y))
+            .intersect(Rect::everything_left_of(printable.max.x)),
+    ];
+    let Some(mask) = mask else {
+        // No raster to ask. Disclose the whole of both bands rather than
+        // nothing: "unknown" must not present as "nothing is lost".
+        let whole: Vec<Rect> = bands.into_iter().filter(|b| b.is_positive()).collect();
+        // A clipped placement with no positive band is a geometric
+        // contradiction the arithmetic can produce at a degenerate scale.
+        // Report it as `Fits` rather than as an unexplained warning with no
+        // picture under it.
+        let verdict = if whole.is_empty() {
+            Overhang::Fits
+        } else {
+            Overhang::Unknown
+        };
+        return (whole, verdict);
+    };
+
+    let mut lost = Vec::new();
+    for band in bands {
+        if !band.is_positive() {
+            continue;
+        }
+        // The band, expressed as a fraction of the page, handed to the mask;
+        // the ink extent inside it, brought back to screen points. `placed` is
+        // the page's own rectangle on screen, so it is exactly the frame that
+        // converts between the two — and it already carries the zoom, the pan
+        // and the placement scale, which is why nothing here has to know about
+        // any of them.
+        //
+        // ★ THE REQUEST, in one `else`: no ink in the band means the band is
+        // empty paper, so nothing is lost and nothing is drawn.
+        let Some(extent) = mask.ink_extent(normalised_in(band, placed)) else {
+            continue;
+        };
+        let region = denormalised_in(extent, placed);
+        if region.is_positive() {
+            lost.push(region);
+        }
+    }
+    let verdict = if lost.is_empty() {
+        Overhang::BlankBand
+    } else {
+        Overhang::Losing
+    };
+    (lost, verdict)
+}
+
+/// Express `part` as a fraction of `whole`: 0..1 page space, the coordinate
+/// system [`ink::InkMask`] speaks.
+///
+/// A degenerate `whole` — a page placed at zero scale, which a nonsense
+/// `/MediaBox` can produce — yields a rectangle the mask rejects rather than a
+/// `NaN` that would propagate into the hatch geometry.
+fn normalised_in(part: Rect, whole: Rect) -> Rect {
+    if whole.width() <= 0.0 || whole.height() <= 0.0 {
+        return Rect::NOTHING;
+    }
+    Rect::from_min_max(
+        egui::pos2(
+            (part.min.x - whole.min.x) / whole.width(),
+            (part.min.y - whole.min.y) / whole.height(),
+        ),
+        egui::pos2(
+            (part.max.x - whole.min.x) / whole.width(),
+            (part.max.y - whole.min.y) / whole.height(),
+        ),
+    )
+}
+
+/// The inverse of [`normalised_in`]: 0..1 page space back to screen points.
+fn denormalised_in(fraction: Rect, whole: Rect) -> Rect {
+    Rect::from_min_max(
+        egui::pos2(
+            whole.min.x + fraction.min.x * whole.width(),
+            whole.min.y + fraction.min.y * whole.height(),
+        ),
+        egui::pos2(
+            whole.min.x + fraction.max.x * whole.width(),
+            whole.min.y + fraction.max.y * whole.height(),
+        ),
+    )
+}
+
+/// Draw diagonal hatching across `area`.
+///
+/// Split out of [`hatch_lost_content`] when that function gained the ink test,
+/// so the geometry question (*what is lost?*) and the drawing question (*what
+/// does a hatch look like?*) stopped sharing a body. The lines run at 45° and
+/// are clamped to the rectangle at both ends, which is what lets a caller hatch
+/// several small regions without any of them bleeding into the paper between.
+fn hatch(painter: &egui::Painter, area: Rect, colour: Color32) {
     let step = 6.0;
-    let mut x = lost.min.x;
-    while x < lost.max.x + lost.height() {
+    let mut x = area.min.x;
+    while x < area.max.x + area.height() {
         painter.line_segment(
             [
-                egui::pos2(x.min(lost.max.x), lost.min.y),
-                egui::pos2((x - lost.height()).max(lost.min.x), lost.max.y),
+                egui::pos2(x.min(area.max.x), area.min.y),
+                egui::pos2((x - area.height()).max(area.min.x), area.max.y),
             ],
             Stroke::new(1.0, colour),
         );
@@ -799,12 +1208,13 @@ fn texture_for(
     dialog: &mut PrintDialog,
     page: usize,
 ) -> Option<TextureId> {
-    let key = PreviewKey {
-        page,
-        scope: dialog.scope,
-        settings: inputs.doc.settings.clone(),
-    };
-    if let Some((cached, texture)) = &dialog.preview_texture
+    // ★ From the frame's context, not built here — see [`PreviewKey::new`].
+    // The verdict cache's validity is defined by that context, so a key
+    // derived from it cannot be stronger than the one the verdicts are held
+    // under, which is the property that stops a remembered "the overhang is
+    // blank" outliving the raster it was measured from.
+    let key = inputs.context.preview_key(page);
+    if let Some((cached, texture, _)) = &dialog.preview_texture
         && *cached == key
     {
         return Some(texture.id());
@@ -825,9 +1235,20 @@ fn texture_for(
         dialog.preview_texture = None;
         return None;
     };
+    // ★ The ink mask is built HERE, from the same pixmap, on the same miss —
+    // operator request O113. Once per raster and never per frame: it is a pure
+    // function of these bytes, so recomputing it while the operator pans would
+    // be re-deriving an answer that cannot have changed. See the
+    // `preview_texture` field's own docs for why it shares this tuple and this
+    // key rather than living in a cache of its own.
+    let mask = ink::InkMask::from_rgba_premultiplied(
+        rendered.pixmap.width(),
+        rendered.pixmap.height(),
+        rendered.pixmap.data(),
+    );
     let texture = upload(ctx, &rendered.pixmap);
     let id = texture.id();
-    dialog.preview_texture = Some((key, texture));
+    dialog.preview_texture = Some((key, texture, mask));
     Some(id)
 }
 
@@ -873,222 +1294,5 @@ fn premultiplied_image(width: u32, height: u32, data: &[u8]) -> egui::ColorImage
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    /// The screen position a sheet point lands at, for a given view.
-    ///
-    /// Mirrors [`paint`]'s own `origin` computation so the anchor tests below
-    /// assert the property that matters — "this point did not move" — rather
-    /// than re-stating the formula they are meant to be checking.
-    fn on_screen(
-        sheet_pt: Vec2,
-        fit: f32,
-        zoom: f32,
-        pan: Vec2,
-        centre: Pos2,
-        point_in_sheet: Vec2,
-    ) -> Pos2 {
-        let s = fit * zoom;
-        let origin = centre - (sheet_pt * s) / 2.0 + pan;
-        origin + point_in_sheet * s
-    }
-
-    /// ★ The point under the pointer does not move when you zoom on it.
-    ///
-    /// This is the whole reason the anchor term exists, and it is the one
-    /// property a reader can check without re-deriving the algebra. Asserted
-    /// on an OFF-CENTRE point, because every wrong version of this formula —
-    /// including simply omitting the term — is correct at the centre.
-    #[test]
-    fn ctrl_wheel_zoom_holds_the_point_under_the_pointer_still() {
-        // US Letter, fitted into a 340 x 400 canvas at the same margin factor
-        // the preview uses.
-        let sheet = egui::vec2(612.0, 792.0);
-        let fit = (340.0_f32 / sheet.x).min(400.0 / sheet.y) * FIT_MARGIN;
-        let centre = egui::pos2(170.0, 200.0);
-        // A point near the sheet's bottom-right, which is where an operator
-        // checking a margin actually looks.
-        let target_in_sheet = egui::vec2(560.0, 730.0);
-
-        let (zoom0, pan0) = (1.0_f32, Vec2::ZERO);
-        let at = on_screen(sheet, fit, zoom0, pan0, centre, target_in_sheet);
-
-        let (zoom1, pan1) = zoomed_view(zoom0, pan0, 2.5, at, centre);
-        let after = on_screen(sheet, fit, zoom1, pan1, centre, target_in_sheet);
-
-        assert!(
-            (after - at).length() < 0.001,
-            "the anchored point moved from {at:?} to {after:?} — without the \
-             (at - centre)(1 - k) term, zooming in on a corner walks the sheet \
-             off the canvas"
-        );
-        assert!(
-            (zoom1 - 2.5).abs() < 1e-6,
-            "the zoom itself must still be applied; got {zoom1}"
-        );
-    }
-
-    /// A button press anchors on the canvas centre, which is the degenerate
-    /// case `pan1 = k * pan0` — the sheet grows about the middle rather than
-    /// about wherever the pointer happened to be resting.
-    #[test]
-    fn a_button_zoom_scales_the_existing_pan_about_the_centre() {
-        let centre = egui::pos2(170.0, 200.0);
-        let (zoom, pan) = zoomed_view(2.0, egui::vec2(30.0, -12.0), 1.25, centre, centre);
-        assert!((zoom - 2.5).abs() < 1e-6);
-        assert!((pan.x - 37.5).abs() < 1e-4, "pan.x was {}", pan.x);
-        assert!((pan.y + 15.0).abs() < 1e-4, "pan.y was {}", pan.y);
-    }
-
-    /// ★ A zoom the clamp refuses must not pan either.
-    ///
-    /// The bug this pins is subtle and would look like a hardware fault: at
-    /// maximum zoom the wheel stops magnifying but keeps sliding the sheet
-    /// sideways, so the preview appears to drift on its own. It comes from
-    /// using the REQUESTED step for the anchor term instead of the effective,
-    /// post-clamp ratio.
-    #[test]
-    fn a_refused_zoom_leaves_the_pan_exactly_where_it_was() {
-        let pan = egui::vec2(21.0, -8.0);
-        let (zoom, after) = zoomed_view(
-            ZOOM_MAX,
-            pan,
-            4.0,
-            egui::pos2(300.0, 40.0),
-            egui::pos2(170.0, 200.0),
-        );
-        assert!((zoom - ZOOM_MAX).abs() < 1e-6, "clamped at the ceiling");
-        assert!(
-            (after - pan).length() < 1e-4,
-            "a refused zoom moved the sheet from {pan:?} to {after:?}"
-        );
-
-        // The same at the floor.
-        let (zoom, after) = zoomed_view(
-            ZOOM_MIN,
-            pan,
-            0.1,
-            egui::pos2(300.0, 40.0),
-            egui::pos2(170.0, 200.0),
-        );
-        assert!((zoom - ZOOM_MIN).abs() < 1e-6);
-        assert!((after - pan).length() < 1e-4);
-    }
-
-    /// A hostile or degenerate step is a no-op rather than a `NaN` that
-    /// poisons every later frame's pan arithmetic.
-    #[test]
-    fn a_non_finite_or_negative_step_changes_nothing() {
-        let pan = egui::vec2(3.0, 4.0);
-        let centre = egui::pos2(0.0, 0.0);
-        for step in [f32::NAN, f32::INFINITY, 0.0, -1.5] {
-            let (zoom, after) = zoomed_view(2.0, pan, step, egui::pos2(10.0, 10.0), centre);
-            assert!(
-                (zoom - 2.0).abs() < 1e-6 && (after - pan).length() < 1e-6,
-                "step {step} must be ignored, got zoom {zoom} pan {after:?}"
-            );
-        }
-    }
-
-    /// An ordinary page renders at the target DPI — the pixel ceiling does not
-    /// bind, and must not quietly downgrade every normal preview.
-    #[test]
-    fn a_letter_page_previews_at_the_target_resolution() {
-        let scale = raster_scale((612.0, 792.0));
-        assert!(
-            (scale - TARGET_DPI / 72.0).abs() < 1e-6,
-            "a Letter page must not be capped; got {scale}"
-        );
-    }
-
-    /// ★ A large-format sheet is capped by PIXELS, not by DPI.
-    ///
-    /// The bound that matters. An ANSI E sheet at the target DPI would be
-    /// 5100 x 6600 px and about 134 MB of RGBA for a picture drawn 300 pt
-    /// wide — and CAD sheets are exactly the population this project's
-    /// operator prints, so this is the common case, not the exotic one.
-    #[test]
-    fn a_large_format_sheet_is_capped_by_pixels() {
-        let sheet = (2448.0, 3168.0); // ANSI E, 34 x 44 inches.
-        let scale = raster_scale(sheet);
-        let longest = sheet.0.max(sheet.1) as f32 * scale;
-        assert!(
-            longest <= MAX_SIDE_PX + 0.5,
-            "the long side rendered to {longest} px, over the {MAX_SIDE_PX} ceiling"
-        );
-        assert!(
-            scale < TARGET_DPI / 72.0,
-            "the cap must actually bind on this size; got {scale}"
-        );
-    }
-
-    /// ★ Where the pixel ceiling starts to bind, asserted from both sides.
-    ///
-    /// The regression the ceiling's own doc comment records is a value chosen
-    /// too low: 1600 px silently downgraded Letter, Legal and A4 — the common
-    /// case — in order to bound the rare one. Asserting only that those three
-    /// are uncapped would let the constant drift *upward* unnoticed instead,
-    /// so the boundary is pinned from both directions.
-    ///
-    /// **A3 is on the capped side, and that is correct rather than a
-    /// near-miss.** Its long edge is 1191 pt, which at the target DPI is
-    /// 2481 px — past the 2200 ceiling. A3 is a drafting sheet, not an office
-    /// page, so it belongs with the large-format population this bound exists
-    /// for; US Legal at 2100 px is the largest size that clears it. If either
-    /// constant moves, this test says which side of the line each size landed
-    /// on rather than merely that something changed.
-    #[test]
-    fn the_pixel_ceiling_binds_above_the_office_sizes() {
-        for (name, size) in [
-            ("A4", (595.0, 842.0)),
-            ("Letter", (612.0, 792.0)),
-            ("Legal", (612.0, 1008.0)),
-        ] {
-            let scale = raster_scale(size);
-            assert!(
-                (scale - TARGET_DPI / 72.0).abs() < 1e-6,
-                "{name} was capped to {scale}; the ceiling is meant to leave every \
-                 office page size at the full target DPI"
-            );
-        }
-        for (name, size) in [("A3", (842.0, 1191.0)), ("ANSI E", (2448.0, 3168.0))] {
-            let scale = raster_scale(size);
-            assert!(
-                scale < TARGET_DPI / 72.0,
-                "{name} was NOT capped ({scale}); the ceiling is meant to bind on \
-                 drafting and large-format sheets, which is where the memory goes"
-            );
-        }
-    }
-
-    /// A degenerate `/MediaBox` must not divide by zero. Real files carry
-    /// them — the renderer has its own guards, and this only has to hand it a
-    /// finite number.
-    #[test]
-    fn a_zero_sized_page_yields_a_finite_scale() {
-        let scale = raster_scale((0.0, 0.0));
-        assert!(scale.is_finite() && scale > 0.0, "got {scale}");
-    }
-
-    /// ★ The preview reads pixels as premultiplied, exactly as the canvas does.
-    ///
-    /// The same fixture `render::raster`'s own test uses — a half-transparent
-    /// red pixel stored the way `tiny-skia` stores it (`R·A, G·A, B·A, A`).
-    /// Read as *unmultiplied*, epaint would take the red channel at face value
-    /// and re-multiply it, yielding `r = 64`; read as premultiplied it
-    /// round-trips.
-    ///
-    /// This test exists because [`upload`] is a **second** call site for a
-    /// convention that module says must have exactly one. Until that is fixed
-    /// there, this is what stops the two drifting silently — and the failure
-    /// mode being defended against is not a crash but every antialiased glyph
-    /// edge in the preview quietly darkening.
-    #[test]
-    fn the_preview_upload_reads_pixels_as_premultiplied() {
-        let image = premultiplied_image(1, 1, &[128, 0, 0, 128]);
-        assert_eq!(image.size, [1, 1]);
-        let px = image.pixels[0];
-        assert_eq!((px.r(), px.g(), px.b(), px.a()), (128, 0, 0, 128));
-    }
-}
+#[path = "preview_tests.rs"]
+mod tests;

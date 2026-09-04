@@ -21,6 +21,27 @@
 //! subject is a page set. If a third export lands, that is the moment to move
 //! it here.
 //!
+//! ## ★ The third export landed on 2026-09-04, and the trigger above FIRED
+//!
+//! [`image`] — `OPERATOR_REQUESTS.md` **O120**, PNG / JPEG / SVG — is the third,
+//! and it is written here rather than in a module of its own, which is the
+//! easier half of what the sentence above asks for. The harder half is
+//! **`pages::extract` has not moved**, and that is recorded rather than quietly
+//! not done:
+//!
+//! * The condition is met. Three exports now exist and the family is real.
+//! * Moving `extract` is a change to `pages`, to `apply`'s dispatch and to
+//!   whatever names it, made in the same pass as a new feature — and this
+//!   project's own record of what that produces is `RIBBON_IA.md`'s repeated
+//!   lesson that a taxonomy move and a capability arriving together make a diff
+//!   nobody can review as either.
+//!
+//! ⇒ So the trigger is left **armed and stated** rather than silently reset. The
+//! next reader of this header is looking at a condition that has fired, with
+//! the reason it was not acted on written beside it, which is the shape this
+//! project uses everywhere else for a decision deferred on purpose. What must
+//! not happen is the sentence above being read as still-waiting: it is not.
+//!
 //! ## ★ Why an export is an `Action` at all
 //!
 //! `super::apply`'s header answers it for `SaveCopy` and the answer is the same
@@ -324,8 +345,10 @@ fn suggested_form_path(doc: &OpenDoc) -> std::path::PathBuf {
     let stem = path
         .file_stem()
         .map_or_else(|| "form".to_owned(), |s| s.to_string_lossy().into_owned());
-    path.set_file_name(stem);
-    path.set_extension("fdf"); // ui-text-exempt: a file extension, never displayed as prose
+    // ★★★ `set_file_name`, NOT `set_extension` — see [`suggested_path`] below,
+    // which carries the whole argument. `set_extension` replaces everything
+    // after the LAST dot, so a `plan.rev2.pdf` loses its revision here too.
+    path.set_file_name(format!("{stem}.fdf")); // ui-text-exempt: a file extension, never displayed as prose
     path
 }
 
@@ -341,11 +364,536 @@ fn suggested_path(doc: &OpenDoc) -> std::path::PathBuf {
     let stem = path
         .file_stem()
         .map_or_else(|| "export".to_owned(), |s| s.to_string_lossy().into_owned());
-    path.set_file_name(stem);
-    // `set_extension` rather than pushing a string: a document called
-    // `plan.rev2.pdf` has a stem of `plan.rev2`, and appending would produce
-    // `plan.rev2.dxf` either way — but a document with no extension at all
-    // would gain one only through this call.
-    path.set_extension("dxf"); // ui-text-exempt: a file extension, never displayed as prose
+    // ★★★ **THE COMMENT THAT USED TO BE HERE WAS WRONG, AND THE CODE IT
+    // DEFENDED SILENTLY OVERWROTE THE OPERATOR'S EXPORTS.**
+    //
+    // It read: *"`set_extension` rather than pushing a string: a document
+    // called `plan.rev2.pdf` has a stem of `plan.rev2`, and appending would
+    // produce `plan.rev2.dxf` either way."*
+    //
+    // The first clause is true and the conclusion does not follow.
+    // `Path::set_extension` replaces everything after the **last** dot, and
+    // `plan.rev2` has one — so the call produced **`plan.dxf`**, not
+    // `plan.rev2.dxf`. The revision was dropped.
+    //
+    // ⇒ Why that is a data-loss defect rather than a cosmetic one:
+    // `plan.rev2.pdf` and `plan.rev3.pdf` both suggested `plan.dxf`, so
+    // exporting the second **overwrote the first**, in a save dialog whose only
+    // warning is the operating system's generic "a file with that name already
+    // exists". `.rev2` / `.rev3` is an ordinary CAD naming shape, and the two
+    // files that collide are the two the operator is most likely to want side
+    // by side.
+    //
+    // ★ Found on 2026-09-04 by the image export, which wrote the same helper,
+    // tested it against `plan.rev2.pdf` on its first run, and watched it fail.
+    // The DXF path had shipped for weeks with a comment asserting the
+    // behaviour it did not have — **a claim in a comment is not a test**, and
+    // this one was load-bearing enough that its author wrote it down to explain
+    // why the safer-looking alternative was unnecessary.
+    //
+    // `set_file_name` with the stem interpolated appends unconditionally, which
+    // is what the old comment believed `set_extension` did. A document with no
+    // extension at all still gains one, because the stem of `plan` is `plan`.
+    path.set_file_name(format!("{stem}.dxf")); // ui-text-exempt: a file extension, never displayed as prose
     path
+}
+
+/// ★★★ **Write one or more pages out as PNG, JPEG or SVG** —
+/// `OPERATOR_REQUESTS.md` **O120**, and the third member of this module's
+/// family.
+///
+/// The operator, 2026-09-03, verbatim:
+///
+/// > *"can you add the ability to export page(es) to png, jpg, svg. note that
+/// > there had better be full support (including transparency where
+/// > supported!)."*
+///
+/// This module's header says the third export is the one that decides whether
+/// the family is real. It is, and it is: nothing here changes the document, no
+/// `vector_edit` runs, no epoch moves, no cache is dropped. What it shares with
+/// its two siblings is the whole of what the module is for — **it reads the
+/// open file and writes a different one.**
+///
+/// # ★★★ The refusal comes FIRST, before the picker and before the render
+///
+/// [`crate::app::actions::imageexport::ImagePlan::impossible`] is asked before
+/// anything else happens, and the reason is the engine's own instruction:
+///
+/// > **refuse a "transparent" JPEG by name in your UI, never flatten silently**
+///
+/// The window already prevents the combination — its checkbox goes dead when
+/// JPEG is selected and says why — so reaching this branch means the window was
+/// bypassed. That it is *unreachable today* is exactly why it is here: the
+/// property that must hold is **pdfcer never puts a page on a white background
+/// without saying so**, and a guard that lives only in a window makes that a
+/// property of the window rather than of the program. A keymap, a restored
+/// plan, or a later window with a different layout each walk past a window and
+/// none of them walks past this.
+///
+/// ⇒ And it *refuses*. Flattening would produce a file that opens, looks nearly
+/// right, and carries a white rectangle the operator meets when the drawing is
+/// already inside somebody else's document.
+///
+/// # ★★ Why there is no call to `pdfcer_render::export::flatten_over`
+///
+/// The engine offers it, this function does not use it, and that is worth
+/// stating rather than leaving as an apparent omission.
+///
+/// Transparency is declined **at the source**, by rendering with
+/// [`pdfcer_render::PageBackdrop::White`]. ISO 32000-1 §11.4.7 already makes
+/// the page an isolated group composited over white, so the renderer's own
+/// composite *is* the standard's; `flatten_over` is a second, later composite
+/// over a buffer that has already been premultiplied. The two agree for
+/// ordinary content and only one of them is the specification's, so that is
+/// the one used. `flatten_over` earns its place in a caller holding a pixmap
+/// it did not render — a clipboard paste, a region grab — and this is not one.
+///
+/// # ★ The order is REFUSE, ASK, RENDER — and it differs from [`dxf`]'s
+///
+/// [`dxf`] does the whole write before opening the picker, on the rule *"the
+/// operator is never asked where to put a file that turns out to be empty"*,
+/// and it can afford to because a DXF write is pure and cannot fail.
+///
+/// A page render is neither pure nor cheap. It is the most expensive thing this
+/// program does, it takes seconds on a dense CAD sheet, and fifty of them
+/// before a picker would mean an operator who presses Cancel has waited for
+/// nothing. So the picker comes second — and the property `dxf`'s ordering was
+/// protecting is preserved by a different mechanism: **everything that could
+/// make this export empty has already been said in the window**, beside the
+/// control that causes it. The pixel count, the `MAX_PIXMAP_EDGE` ceiling, a
+/// range naming no page, and the transparent-JPEG refusal are all on screen
+/// before the button is pressable.
+///
+/// # ★★ Rule 4 — the disclosure, off-canvas and afterwards
+///
+/// Nothing is marked on the page or on the canvas. Every sentence goes to
+/// [`super::record_notes`], the same slot [`dxf`] and [`form_data`] use,
+/// stamped with the current epoch so it stands until the next real edit moves
+/// past it.
+///
+/// What it carries, and why each is owed:
+///
+/// * **the resolution written into the file.** The engine's note: *"without
+///   `pHYs` Word places a 300 DPI page four times too large."* That the number
+///   was *chosen* is not the claim; that it *travelled* is.
+/// * **whether transparency survived**, in either direction — the operator
+///   asked for it by name, so both answers are answers.
+/// * **`ExportTally`, for SVG** — shadings rasterised, soft masks kept,
+///   overprint and non-separable blends drawn as their `Normal` approximation,
+///   dashed strokes pre-applied, blend modes Word's importer ignores.
+/// * **that SVG text is glyph outlines**, which nothing counts, which no
+///   inspection of the file by an operator would reveal, and which is the
+///   single largest surprise the format holds.
+pub(super) fn image(doc: &mut OpenDoc, plan: &crate::app::actions::imageexport::ImagePlan) {
+    use crate::app::actions::imageexport;
+    use crate::app::settings::SettingsExt;
+    use crate::text::export_image as t;
+
+    // ★★★ First, before the picker and before the render. See the header.
+    if let Some(why) = plan.impossible() {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed
+            format!("export-image-refused reason={why:?}")
+        });
+        super::record_note(doc.edit_epoch, t::refused(why).to_owned());
+        return;
+    }
+    if plan.pages.is_empty() {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed
+            "export-image-declined reason=no-pages".to_owned()
+        });
+        super::record_note(doc.edit_epoch, t::no_pages().to_owned());
+        return;
+    }
+
+    let suggested = imageexport::suggested_path(&doc.path, plan.format);
+    let crate::app::files::Picked::Path(chosen) =
+        crate::app::files::pick_save_path(&suggested, t::save_dialog_title())
+    else {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed
+            "export-image-cancelled".to_owned()
+        });
+        return;
+    };
+
+    // ★ Through the settings funnel, never `RenderOptions::default()`.
+    //
+    // `crate::app::settings::SettingsExt` is the one place that turns the
+    // operator's configuration into render options, and a `syn` check in that
+    // module fails the build if any other file constructs these itself. The
+    // five settings it applies — CMYK intent, mask resampling, minification,
+    // JPEG polarity, missing appearance state — are exactly the ones that
+    // decide what the exported picture LOOKS like, so an export that skipped
+    // the funnel would disagree with the canvas the operator was looking at.
+    //
+    // ★★ The annotation stance and the layer overrides come from the DOCUMENT,
+    // which is what makes this export *a picture of what you can see*. An
+    // operator who has hidden a layer and turned annotations off is looking at
+    // a drawing, and the file they asked for is a picture of that drawing
+    // rather than of the one underneath it. Neither is a control this window
+    // offers, deliberately: both are already offered on the ribbon, against a
+    // canvas that shows the answer immediately.
+    let mut options = doc
+        .settings
+        .render_options()
+        .with_backdrop(if plan.transparent {
+            pdfcer_render::PageBackdrop::Transparent
+        } else {
+            pdfcer_render::PageBackdrop::White
+        });
+    options.annotations = doc.annotations_visible();
+    options.layers = doc.layer_visibility();
+
+    let multi = plan.is_multi_file();
+    let scale = imageexport::scale_for(plan.dpi);
+    // `session.view()`, NOT `session.document()` — the view composes the
+    // overlay and the staging buffer, so unsaved edits are what gets exported.
+    // The print preview states the same rule for the same reason.
+    let view = doc.session.view();
+
+    let mut written: Vec<std::path::PathBuf> = Vec::new();
+    let mut notes: Vec<String> = Vec::new();
+    let mut first_line: Option<String> = None;
+    for &page_index in &plan.pages {
+        let Some(page) = doc.pages.get(page_index) else {
+            continue;
+        };
+        let target = imageexport::output_path(&chosen, plan.format, page_index, multi);
+        let number = page_index.saturating_add(1);
+
+        let produced = if plan.format.is_vector() {
+            svg_bytes(&view, page, &options, plan)
+        } else {
+            raster_bytes(&view, page, scale, &options, plan)
+        };
+        let produced = match produced {
+            Ok(produced) => produced,
+            // ★ One page's failure STOPS the run rather than skipping on.
+            //
+            // The alternative — carry on and summarise at the end — leaves the
+            // operator with a directory of files and a sentence about a gap
+            // somewhere in it. A run that stops names the page it stopped on,
+            // and every file written before it is on disk and named in the same
+            // disclosure.
+            //
+            // ★★ The two failures are told APART, and that is not decoration.
+            // *"Could not be drawn"* is about the page and will happen again
+            // whatever format is chosen; *"could not be written as this
+            // format"* is about the encoder, and its commonest cause —
+            // `ExportError::TooLargeForJpeg`, a raster over 65,535 pixels on a
+            // side, which is JPEG's 16-bit dimension field (ITU-T T.81 §B.2.2)
+            // — is fixed by choosing PNG or lowering the resolution. Rolling
+            // the two together would send an operator whose only problem is a
+            // format limit off to investigate their drawing.
+            Err(Failed::Render(detail)) => {
+                crate::diag::trace(|| {
+                    // ui-text-exempt: diagnostic trace, never displayed
+                    format!("export-image-render-failed page={page_index} detail={detail}")
+                });
+                notes.push(t::render_failed(number, &detail));
+                break;
+            }
+            Err(Failed::Encode(detail)) => {
+                crate::diag::trace(|| {
+                    // ui-text-exempt: diagnostic trace, never displayed
+                    format!("export-image-encode-failed page={page_index} detail={detail}")
+                });
+                notes.push(t::encode_failed(number, &detail));
+                break;
+            }
+        };
+
+        if let Err(error) = std::fs::write(&target, &produced.bytes) {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed
+                format!("export-image-write-failed page={page_index} detail={error}")
+            });
+            notes.push(t::write_failed(&error.to_string()));
+            break;
+        }
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed
+            format!(
+                "export-image page={page_index} format={:?} bytes={} dpi={} transparent={}",
+                plan.format,
+                produced.bytes.len(),
+                plan.dpi,
+                u8::from(plan.transparent)
+            )
+        });
+
+        // ★★ Only the FIRST page's fidelity notes are kept.
+        //
+        // The alternative is fifty copies of *"text is written as outlines"* in
+        // one status line, which is a disclosure nobody reads — and Rule 4's
+        // whole value is in being read. What differs between pages is the
+        // counters; what does not is the standing truth (outlines, the
+        // resolution, the background), and that is the half an operator acts
+        // on. A per-page report belongs in a panel, and there is not one.
+        if written.is_empty() {
+            first_line = Some(match produced.kind {
+                Produced::Raster { width, height } => t::wrote_raster(
+                    &target.display().to_string(),
+                    number,
+                    width,
+                    height,
+                    plan.dpi,
+                ),
+                Produced::Vector { ops } => {
+                    t::wrote_svg(&target.display().to_string(), number, ops)
+                }
+            });
+            notes.extend(produced.notes);
+        }
+        written.push(target);
+    }
+
+    if written.is_empty() {
+        // Nothing landed. Whatever went wrong has already pushed its sentence;
+        // the fallback covers a plan whose every page index was out of range,
+        // which the window cannot produce and a restored plan could.
+        if notes.is_empty() {
+            notes.push(t::no_pages().to_owned());
+        }
+        super::record_notes(doc.edit_epoch, notes);
+        return;
+    }
+
+    // ★ The lead-in goes FIRST — `record_notes`' own rule: *"the first sentence
+    // is the one an operator reads if they read only one."* For a single file
+    // that is the file's own line; for many it is the count and the range of
+    // names, because fifty paths in a status bar is not a sentence.
+    let lead = if written.len() > 1 {
+        t::wrote_many(
+            written.len(),
+            &written[0].display().to_string(),
+            &written[written.len() - 1].display().to_string(),
+        )
+    } else {
+        first_line.unwrap_or_else(|| t::no_pages().to_owned())
+    };
+    notes.insert(0, lead);
+    super::record_notes(doc.edit_epoch, notes);
+}
+
+/// What one page's writer produced: the bytes, the shape of its receipt line,
+/// and whatever it has to disclose.
+///
+/// A struct rather than a tuple because the caller has to pick a *different
+/// sentence* per kind, and a `(Vec<u8>, u32, u32, usize, Vec<String>)` would
+/// carry two fields that are meaningless for one of the two branches.
+struct Output {
+    bytes: Vec<u8>,
+    kind: Produced,
+    notes: Vec<String>,
+}
+
+/// ★★ Why a page's writer failed, kept apart because the two failures ask
+/// different things of the operator.
+///
+/// [`Self::Render`] is about the **page** — it will happen again whatever
+/// format is chosen, and the resolution or the document is the thing to look
+/// at. [`Self::Encode`] is about the **format**, and its commonest cause is
+/// `ExportError::TooLargeForJpeg`: JPEG stores its dimensions in sixteen bits
+/// (ITU-T T.81 §B.2.2), so a raster over 65,535 pixels on a side has no JPEG
+/// form at all while having a perfectly good PNG one.
+///
+/// ⇒ A single "export failed" would send an operator whose only problem is a
+/// format's arithmetic limit off to investigate their drawing. Each carries
+/// the engine's own message, which names the numbers.
+enum Failed {
+    /// The page could not be rasterised or recorded.
+    Render(String),
+    /// The bytes existed and the encoder would not take them.
+    Encode(String),
+}
+
+/// Which receipt line a page's output earns.
+enum Produced {
+    /// Pixels — the line names the pixel count and the resolution recorded in
+    /// the file.
+    Raster { width: u32, height: u32 },
+    /// Geometry — the line names the drawing operations, which is the only
+    /// honest size measure a vector file has.
+    Vector { ops: usize },
+}
+
+/// One page, encoded as PNG or JPEG.
+///
+/// Split out of [`image`] so the loop reads as *produce, write, say* rather
+/// than as one branch nested in another. `Err` carries the engine's own
+/// message; the caller wraps it in a sentence that names the page.
+fn raster_bytes(
+    view: &pdfcer_render::DocumentView<'_>,
+    page: &pdfcer_core::page_tree::Page,
+    scale: f32,
+    options: &pdfcer_render::RenderOptions,
+    plan: &crate::app::actions::imageexport::ImagePlan,
+) -> Result<Output, Failed> {
+    use crate::app::actions::imageexport::ImageFormat;
+
+    let rendered = pdfcer_render::render_page_with_view(view, page, scale, options)
+        .map_err(|error| Failed::Render(error.to_string()))?;
+    let pixmap = &rendered.pixmap;
+    let (width, height) = (pixmap.width(), pixmap.height());
+
+    // ★★★ `Some(dpi)`, never `None`. The engine's note is unambiguous about
+    // what leaving it out costs: *"without `pHYs` Word places a 300 DPI page
+    // four times too large."* That is not a metadata nicety — it is the
+    // difference between a paste the size of the page and one four times it,
+    // and there is no case in which pdfcer knows the resolution and should
+    // decline to write it down.
+    let bytes = match plan.format {
+        ImageFormat::Png => pdfcer_render::export::encode_png(pixmap, Some(plan.dpi)),
+        ImageFormat::Jpeg => {
+            // `#[non_exhaustive]`: default, then assign. A struct literal will
+            // not compile from outside the crate, and that is the engine
+            // reserving the right to add a field — which this call site should
+            // inherit rather than have to be told about.
+            let mut jpeg = pdfcer_render::export::JpegOptions::default();
+            jpeg.quality = plan.quality;
+            jpeg.dpi = Some(plan.dpi);
+            // Reachable only when the operator did NOT ask for transparency: a
+            // transparent JPEG was refused before the picker opened, so the
+            // render above already came back opaque over white and this
+            // composites nothing. Set anyway, because a default that happens to
+            // agree is not the same as a decision.
+            jpeg.background = pdfcer_render::export::Rgb::WHITE;
+            pdfcer_render::export::encode_jpeg(pixmap, &jpeg)
+        }
+        // Unreachable — the caller branches on `is_vector` first. Written as an
+        // arm returning the lossless format rather than as `unreachable!`,
+        // because a panic inside an export is never the right answer to a
+        // fourth variant arriving.
+        ImageFormat::Svg => pdfcer_render::export::encode_png(pixmap, Some(plan.dpi)),
+    }
+    .map_err(|error| Failed::Encode(error.to_string()))?;
+
+    let notes = vec![if plan.transparent {
+        crate::text::export_image::transparency_kept().to_owned()
+    } else {
+        crate::text::export_image::flattened_to_white().to_owned()
+    }];
+    Ok(Output {
+        bytes,
+        kind: Produced::Raster { width, height },
+        notes,
+    })
+}
+
+/// One page, recorded as SVG.
+fn svg_bytes(
+    view: &pdfcer_render::DocumentView<'_>,
+    page: &pdfcer_core::page_tree::Page,
+    options: &pdfcer_render::RenderOptions,
+    plan: &crate::app::actions::imageexport::ImagePlan,
+) -> Result<Output, Failed> {
+    // ★★ The BACKGROUND, not the backdrop. `export_svg_view`'s own doc: *"The
+    // backdrop field of `render` is ignored: an SVG's background is
+    // `SvgOptions::background`."* Setting one and expecting the other is
+    // precisely the shape of mistake that ships a window promising transparency
+    // and a file that is opaque — so both are set, from the same flag, and this
+    // comment is why the apparent duplication is not one.
+    let svg_options = pdfcer_render::svg::SvgOptions::default()
+        .with_raster_dpi(plan.dpi)
+        .with_background(if plan.transparent {
+            None
+        } else {
+            Some(pdfcer_render::export::Rgb::WHITE)
+        });
+    let export = pdfcer_render::svg::export_svg_view(view, page, options, &svg_options)
+        .map_err(|error| Failed::Render(error.to_string()))?;
+
+    let mut notes = vec![if plan.transparent {
+        crate::text::export_image::transparency_kept().to_owned()
+    } else {
+        crate::text::export_image::flattened_to_white().to_owned()
+    }];
+    // ★★★ Rule 4's content. `svg_fidelity` always leads with the fact nothing
+    // counts — that text is glyph outlines — and then names every counter the
+    // recording had to raise. See `crate::text::export_image`.
+    notes.extend(crate::text::export_image::svg_fidelity(
+        &export.outcome.tally,
+        export.outcome.dashed_strokes_pre_applied,
+        export.outcome.blend_modes_used,
+    ));
+    let ops = export.outcome.ops;
+    Ok(Output {
+        bytes: export.svg.into_bytes(),
+        kind: Produced::Vector { ops },
+        notes,
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::{Path, PathBuf};
+
+    /// The two suggested-name helpers, reduced to the part under test.
+    ///
+    /// `suggested_path` and `suggested_form_path` take an `OpenDoc`, which
+    /// carries a session and cannot be built in a unit test. Their arithmetic
+    /// is one line each and it is that line that was wrong, so it is
+    /// reproduced here **from the same expression** rather than re-derived —
+    /// if either site changes shape, this stops describing it and the comment
+    /// below is the instruction to whoever notices.
+    ///
+    /// ★ Not a seam worth extracting: a shared helper would be a third place
+    /// the rule lives, and the rule is `format!("{stem}.{ext}")`.
+    fn named(document: &str, extension: &str) -> PathBuf {
+        let mut path = Path::new(document).to_path_buf();
+        let stem = path
+            .file_stem()
+            .map_or_else(|| "export".to_owned(), |s| s.to_string_lossy().into_owned());
+        path.set_file_name(format!("{stem}.{extension}"));
+        path
+    }
+
+    /// ★★★ **A revision in the document's name survives the export, and until
+    /// 2026-09-04 it did not.**
+    ///
+    /// `Path::set_extension` replaces everything after the **last** dot, so
+    /// `plan.rev2` became `plan` and the suggested name was `plan.dxf`.
+    ///
+    /// ⇒ The consequence is data loss, not untidiness: `plan.rev2.pdf` and
+    /// `plan.rev3.pdf` both suggested `plan.dxf`, so exporting the second
+    /// **overwrote the first** — behind nothing but the operating system's
+    /// generic "a file with that name already exists". `.rev2` / `.rev3` is an
+    /// ordinary CAD naming shape, and the two files that collided are the two
+    /// an operator is most likely to want side by side.
+    ///
+    /// ★★ The site carried a comment asserting the behaviour it did not have,
+    /// written to explain why the safer-looking alternative was unnecessary.
+    /// **A claim in a comment is not a test.** This is that comment, executed.
+    #[test]
+    fn a_dotted_document_name_keeps_its_revision() {
+        assert_eq!(
+            named("C:/d/plan.rev2.pdf", "dxf"),
+            PathBuf::from("C:/d/plan.rev2.dxf"),
+            "the revision must survive — `plan.rev2.pdf` and `plan.rev3.pdf` both suggesting \
+             `plan.dxf` means the second export silently overwrites the first"
+        );
+        assert_eq!(
+            named("C:/d/plan.rev2.pdf", "fdf"),
+            PathBuf::from("C:/d/plan.rev2.fdf"),
+            "the form-data export shares the defect and the fix"
+        );
+    }
+
+    /// The ordinary case, and the one a document with no extension produces.
+    ///
+    /// ★ The old comment's one true claim was that a document called `plan`
+    /// with no extension *"would gain one only through this call"*. It still
+    /// does: the stem of `plan` is `plan`, and the format string appends
+    /// unconditionally.
+    #[test]
+    fn an_ordinary_name_and_a_bare_one_both_gain_the_extension() {
+        assert_eq!(
+            named("C:/d/drawing.pdf", "dxf"),
+            PathBuf::from("C:/d/drawing.dxf")
+        );
+        assert_eq!(named("C:/d/plan", "dxf"), PathBuf::from("C:/d/plan.dxf"));
+    }
 }

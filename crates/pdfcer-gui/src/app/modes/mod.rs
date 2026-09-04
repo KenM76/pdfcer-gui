@@ -1255,10 +1255,16 @@ mod tests {
 
     /// ★★★ **An adopted panel arrives VISIBLE, not merely mounted.**
     ///
-    /// The regression test for the defect that made the Tool panel — built to
-    /// answer *"no side bar area showing what tool is active"* — invisible to
-    /// the operator who reported the gap, for its entire life, on the profile
-    /// he had been running for two weeks.
+    /// The regression test for the defect that made the (since retired) Tool
+    /// panel — built to answer *"no side bar area showing what tool is
+    /// active"* — invisible to the operator who reported the gap, for its
+    /// entire life, on the profile he had been running for two weeks.
+    ///
+    /// ★ The panel in the assertion is now Layers, because the Tool panel was
+    /// dissolved by `OPERATOR_REQUESTS.md` O123. The property under test is
+    /// `adopt`'s and has nothing to do with which panel arrives — but naming a
+    /// panel that no longer exists would have made the test read as being
+    /// about a surface, which it never was.
     ///
     /// `stack.tabs.push` mounted it and left whatever was active still active,
     /// so it landed behind another tab: present in `layout.ron`, present in the
@@ -1272,7 +1278,7 @@ mod tests {
     fn an_adopted_panel_is_raised_and_not_merely_mounted() {
         let mut layout = DockLayout::default();
         let occupant = PanelId::new("view.panel_pages");
-        let arrival = PanelId::new("view.panel_tool");
+        let arrival = PanelId::new("view.panel_layers");
         layout.left.columns.push(Column {
             stacks: vec![Stack::new(occupant.clone())],
             share: 1.0,

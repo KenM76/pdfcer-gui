@@ -316,3 +316,197 @@ fn selecting_from_the_objects_panel_produces_an_ordinary_canvas_selection() {
         "clicking the already-selected row must deselect"
     );
 }
+
+// =======================================================================
+// The worded decline — `OPERATOR_REQUESTS.md` O116
+// =======================================================================
+
+/// The engine's own prose for the refusal that produced **O116**, kept
+/// verbatim.
+///
+/// ★ A real `EditError`'s `Display` is what these two tests are defending
+/// against, and paraphrasing it would have made them defend a paraphrase.
+/// `vector_edit`'s error bound is `Display` and nothing more (see
+/// [`super::vector_edit`]'s ★ section on why), so a bespoke type carrying the
+/// engine's exact sentence is a faithful stand-in for the value the funnel
+/// really meets — and it keeps the test independent of
+/// `pdfcer_core::edit::EditError`, which is `#[non_exhaustive]` and whose
+/// variants this crate is deliberately not permitted to name.
+struct SymbolicFontRefusal;
+
+impl std::fmt::Display for SymbolicFontRefusal {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(
+            "R-INV-2: font 'AAAAAA+JetBrainsMono-Regular' is symbolic with a built-in/custom \
+             cmap and no usable /Encoding (§9.6.6.4 Branch B ignores /Encoding); its code-glyph \
+             relation lives inside the embedded program, which pdfcer-core does not parse (R21). \
+             Editing is refused.",
+        )
+    }
+}
+
+/// ★★★ **A refused edit is a sentence, never a silence** —
+/// `OPERATOR_REQUESTS.md` O116.
+///
+/// The founding defect class of this project, pinned at the one place every
+/// document change passes through. Before 2026-09-04 this arm wrote a line to
+/// `PDFCER_DIAG` and stopped, so an operator who armed Edit ▸ Edit text on a
+/// CAD drawing, placed a caret, typed and committed was told **nothing at
+/// all** — and the engine's refusal was correct, which is what makes the
+/// silence indefensible rather than merely unhelpful.
+///
+/// # The four properties asserted, and why each would fail invisibly
+///
+/// 1. **A decline is recorded.** Break the wiring and nothing errors, no other
+///    test notices, and the symptom is exactly the state this test exists to
+///    end — which is why it cannot be left to review.
+/// 2. **The document did not move.** The sentence says *"the document is
+///    unchanged"*, and that has to be true by construction rather than by
+///    intention: no epoch bump, so no cache invalidation and no undo entry.
+/// 3. **The verb's own sentence wins.** Six recorders fire from inside the
+///    closure, and an unconditional write in the error arm would replace a
+///    sentence naming a one-click remedy with one naming nothing. This is the
+///    assertion that stops a future "simplification" of `BeforeTheVerb` into a
+///    bare `record`.
+/// 4. **Two presses are two events.** The second commit on the same
+///    unsupported text has to register; see `decline::BeforeTheVerb`'s
+///    repeatability section for why the take is what delivers it.
+#[test]
+fn a_refused_edit_is_a_sentence_rather_than_a_silence() {
+    use crate::app::status::decline;
+
+    decline::retire();
+    let mut doc = open_fixture(FOUR_PAGES);
+    let before = doc.edit_epoch;
+
+    vector_edit(&mut doc, "edit-text", 0, 1, |_session| {
+        Err::<Vec<String>, _>(SymbolicFontRefusal)
+    });
+
+    assert_eq!(
+        decline::recorded_for_test(),
+        Some(decline::Declined::EditRefused),
+        "the engine refused and the operator was told nothing — the founding defect class, \
+         reachable from the one funnel every edit passes through"
+    );
+    assert_eq!(
+        doc.edit_epoch, before,
+        "a refusal must cost nothing: the sentence claims the document is unchanged, and that \
+         claim is only true while the error arm bumps no epoch"
+    );
+
+    // 3 — the verb spoke for itself, so the floor yields.
+    decline::retire();
+    vector_edit(&mut doc, "resize-annotation", 0, 1, |_session| {
+        decline::record_resize_not_rebuildable(true);
+        Err::<Vec<String>, _>(SymbolicFontRefusal)
+    });
+    assert_eq!(
+        decline::recorded_for_test(),
+        Some(decline::Declined::ResizeNotRebuildable { uniform: true }),
+        "the funnel overwrote a sentence that names a one-click remedy with one that names \
+         nothing at all"
+    );
+
+    // 4 — and pressing commit again on the same unsupported text is a second
+    // event, with no dispatcher in between to retire the first.
+    vector_edit(&mut doc, "edit-text", 0, 1, |_session| {
+        Err::<Vec<String>, _>(SymbolicFontRefusal)
+    });
+    assert_eq!(
+        decline::recorded_for_test(),
+        Some(decline::Declined::EditRefused),
+        "the second commit was swallowed, or answered with the previous gesture's sentence"
+    );
+
+    decline::retire();
+}
+
+/// ★★★ **The sentence names no cause and carries none of the engine's own
+/// words.**
+///
+/// Two rules that look like one and are not.
+///
+/// **No cause**, because there is no honest way to obtain one:
+/// `pdfcer_core::edit::EditError` exposes no coarse discriminant a front end
+/// may switch on, matching on its variants would be a second copy of its
+/// taxonomy that drifts and then tells the operator the *wrong* reason, and
+/// parsing its prose is greping a diagnostic that is theirs to reword. The
+/// engine has been asked for the discriminant; until it lands, one
+/// un-categorised sentence is the fallback the request itself specifies.
+///
+/// **No borrowed words**, because `check-ui-strings.sh`'s exclusion 3 says in
+/// as many words that being a `Display` impl *"is not permission to route UI
+/// text through an error type"*. That gate cannot see a `format!("{error}")`
+/// that reaches a label at runtime; this can.
+///
+/// # ★ How the second half is asserted, and why it is not a keyword list
+///
+/// Every word of the engine's prose is checked against every word of the
+/// sentence, and a collision fails — except for a short, explicitly-named set
+/// of ordinary English that any two sentences about the same event will share.
+/// A keyword list would only catch the words whoever wrote it thought of; this
+/// catches **any** leak, including the one that matters most — somebody
+/// appending `format!(": {error}")` to make the message "more helpful".
+///
+/// ★ `refused` is on the allow-list and is the interesting entry: it is the
+/// plain English verb for what happened, not part of the engine's diagnostic
+/// vocabulary, and both sentences are entitled to it.
+#[test]
+fn the_sentence_names_no_cause_and_borrows_none_of_the_engines_words() {
+    let sentence = crate::text::status::edit_declined_by_engine();
+    let lowered = sentence.to_lowercase();
+
+    // --- no cause -------------------------------------------------------
+    //
+    // The four buckets the engine was asked for — unsupported font, structure
+    // frozen, not found, other — plus the diagnostic apparatus of the refusal
+    // that produced O116. None of it may appear, because this shell does not
+    // know which of them is true.
+    for forbidden in [
+        "font",
+        "encoding",
+        "cmap",
+        "glyph",
+        "symbolic",
+        "signed",
+        "certified",
+        "encrypted",
+        "structure",
+        "not found",
+        "r-inv",
+        "r21",
+    ] {
+        assert!(
+            !lowered.contains(forbidden),
+            "the sentence names a cause (`{forbidden}`) this shell cannot know: {sentence}"
+        );
+    }
+
+    // --- no borrowed words ----------------------------------------------
+    //
+    // Ordinary English two sentences about one event will share. Deliberately
+    // short: every addition here weakens the assertion, so an entry earns its
+    // place by being a word no diagnostic vocabulary owns.
+    const ORDINARY: &[&str] = &[
+        "a", "an", "and", "does", "in", "is", "it", "its", "no", "not", "refused", "the", "was",
+        "which", "with",
+    ];
+    let strip = |w: &str| {
+        w.trim_matches(|c: char| !c.is_alphanumeric())
+            .to_lowercase()
+    };
+    let ours: Vec<String> = sentence.split_whitespace().map(strip).collect();
+    for theirs in SymbolicFontRefusal.to_string().split_whitespace() {
+        let word = strip(theirs);
+        if word.is_empty() || ORDINARY.contains(&word.as_str()) {
+            continue;
+        }
+        assert!(
+            !ours.contains(&word),
+            "the operator's sentence carries the engine's own word `{word}` — diagnostic prose \
+             has reached a label, which `check-ui-strings.sh`'s exclusion 3 forbids by name: \
+             {sentence}"
+        );
+    }
+}

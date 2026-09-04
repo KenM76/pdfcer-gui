@@ -116,10 +116,24 @@
 //!   which is what a modal file dialog is. Long work behind a pdfcer dialog is
 //!   not surfaced. **GAP.**
 
+/// **Where a rendered sheet actually carries ink** — operator request O113.
+///
+/// Split out of [`preview`] rather than added to it, at the seam between
+/// *"what do these pixels say"* and *"how is the preview painted"*. The first
+/// is pure arithmetic over a byte slice and is fully testable with no GUI at
+/// all; the second needs an `egui::Ui`. Keeping them in one file would have
+/// put a page of pixel-threshold reasoning in the middle of a painting
+/// routine and pushed `preview.rs` toward R2's 1500-line ceiling.
+pub(crate) mod ink;
 pub(crate) mod layout;
 pub(crate) mod preview;
 mod spooler;
 pub(crate) mod tabs;
+
+/// **What the operator has actually looked at, and what may be said about the
+/// rest** — operator request O113, 2026-09-04. Its own header carries the
+/// whole argument: the count, the cache key, and the four sentences.
+mod verdicts;
 
 use egui::Ui;
 
@@ -319,15 +333,42 @@ pub struct PrintDialog {
     /// current zoom" and the Fit button is a two-field reset rather than a
     /// recomputation.
     preview_pan: egui::Vec2,
-    /// The rendered page bitmap behind the preview, and what it is a picture
-    /// of.
+    /// The rendered page bitmap behind the preview, what it is a picture of,
+    /// and **where that picture carries ink**.
     ///
     /// `None` until the first successful render, and set back to `None` when
     /// a render fails — in which case the preview falls back to a flat fill,
     /// which still shows the GEOMETRY correctly. A preview that shows the
     /// right rectangle and no content is degraded; one that shows a stale
     /// page is wrong.
-    preview_texture: Option<(preview::PreviewKey, egui::TextureHandle)>,
+    ///
+    /// # ★ The ink mask rides in the SAME tuple, under the SAME key
+    ///
+    /// Added 2026-09-03 for operator request O113, and the placement is the
+    /// point rather than an implementation detail. [`ink::InkMask`] describes
+    /// **these exact pixels** — it is a downsample of this texture's source
+    /// pixmap and of nothing else. A mask held in a separate field, or under a
+    /// key of its own, could outlive the raster it describes, and a mask that
+    /// has outlived its raster is strictly worse than no mask: it would answer
+    /// *"is the overhang blank?"* about a page the operator is no longer
+    /// looking at, and answer it confidently.
+    ///
+    /// One tuple, one [`preview::PreviewKey`], one lifetime. When the key
+    /// misses, all three are replaced together; when the render fails, all
+    /// three go away together.
+    preview_texture: Option<(preview::PreviewKey, egui::TextureHandle, ink::InkMask)>,
+    /// **What the preview found in the overhang of each sheet it has been
+    /// shown** — operator request O113, 2026-09-04.
+    ///
+    /// The one piece of state here that accumulates as the operator works, and
+    /// the reason it may: each entry was *measured*, from the same computation
+    /// the hatch was drawn from, and is dropped the moment anything it depended
+    /// on moves. It only ever makes the commit button's number **smaller**, and
+    /// only for sheets a raster was examined for; a sheet nobody has looked at
+    /// stays counted, because a claim about it would be invented. See
+    /// [`verdicts`] for the key, and for why an over-strong one is the safe
+    /// direction.
+    verdicts: verdicts::Verdicts,
     /// The last spool attempt's outcome, once there is one.
     outcome: Option<Result<SpoolReport, String>>,
     /// Set by the commit button, consumed after the window closure returns.
@@ -418,6 +459,11 @@ impl PrintDialog {
             preview_width: layout::PREVIEW_DEFAULT_WIDTH_PTS,
             preview_pan: egui::Vec2::ZERO,
             preview_texture: None,
+            // Empty, and emptied again by every change of context — see
+            // `verdicts::Verdicts::remember`. A dialog opens knowing nothing
+            // about any sheet, which is why a job printed without ever
+            // stepping the preview gets the unchanged geometric count.
+            verdicts: verdicts::Verdicts::default(),
             outcome: None,
             commit_requested: false,
             close_requested: false,
@@ -501,6 +547,19 @@ impl PrintDialog {
             self.preview_page = self.preview_page.min(job.plans.len().saturating_sub(1));
         }
 
+        // ★ ONE context per frame, built here and passed down — operator
+        // request O113. It is the job-wide half of every cache key in this
+        // dialog: the preview texture's key is *derived from it*
+        // (`verdicts::Context::preview_key` is the only place a `PreviewKey` is
+        // built), every remembered overhang verdict is void the moment it
+        // changes, and the frame's one `Settings` clone is paid here rather
+        // than at each of the three sites that need it. `None` exactly when
+        // there is no job — the printable rectangle comes from the planned
+        // geometry, and with no device there is no clip to report.
+        let context = job
+            .as_ref()
+            .map(|job| verdicts::Context::new(self.scope, &doc.settings, job.device.printable_pt));
+
         // ★★ A REAL OS WINDOW, as of 2026-08-20. The operator's report:
         //
         // > *"Print dialogue box doesn't pop up in its own movable window. It
@@ -550,12 +609,22 @@ impl PrintDialog {
                 ui.label(t::no_printers());
                 return;
             }
-            self.body(ui, doc, job.as_ref(), &page_sizes);
+            self.body(ui, doc, job.as_ref(), &page_sizes, context.as_ref());
             ui.separator();
-            self.footer(ui, job.as_ref());
+            self.footer(ui, job.as_ref(), &page_sizes, context.as_ref());
         });
 
-        self.trace_plan(printer_name.as_deref(), job.as_ref());
+        // ★ The claim is read AFTER the closure, so it includes whatever the
+        // preview learned while drawing this very frame. Reading it before
+        // would report the state of the previous frame on the surface that
+        // exists to describe this one — the footer already avoids that by
+        // running after the preview column inside the closure, and this line
+        // keeps the trace level with the footer.
+        let claim = match (&job, &context) {
+            (Some(job), Some(context)) => self.verdicts.claim(context, job, &page_sizes),
+            _ => verdicts::ClipClaim::None,
+        };
+        self.trace_plan(printer_name.as_deref(), job.as_ref(), claim);
 
         // ★ The driver's properties dialog, opened here for a stronger version
         // of the reason the commit is deferred: it is a nested modal message
@@ -985,7 +1054,34 @@ impl PrintDialog {
     /// - There is no third case. A job that exists can always be sent; whether
     ///   it *should* be is the operator's call, and the clip count in the
     ///   label is how they make it.
-    fn footer(&mut self, ui: &mut Ui, job: Option<&Job>) {
+    ///
+    /// # ★★★ The label's count is corrected by what the preview has seen
+    ///
+    /// Operator request O113, 2026-09-04. It used to be [`Job::clipped`] —
+    /// a geometric count of page boxes exceeding the printable rectangle —
+    /// which on a 1:1 CAD sheet read *"Print — 1 sheet will be clipped"* over
+    /// a preview showing nothing hatched and saying the overhang was blank.
+    ///
+    /// It is now the geometric count **minus the sheets the preview has
+    /// examined and found blank**, with every sheet nobody has looked at still
+    /// counted. [`verdicts::ClipClaim`] carries both the number and how well
+    /// it is known, and picks the sentence that number can support; this
+    /// function does not choose wording, so the button and the preview's own
+    /// caption cannot come to say different things about one job.
+    ///
+    /// ★ Drawn AFTER the body, which is what makes the sheet on screen count
+    /// as examined on the same frame it is drawn. The alternative — the
+    /// footer reading a cache the preview has not written yet — would make the
+    /// button lag the picture beside it by exactly one frame, which is a
+    /// contradiction that flickers rather than one that persists, and is
+    /// therefore harder to notice and worse.
+    fn footer(
+        &mut self,
+        ui: &mut Ui,
+        job: Option<&Job>,
+        page_sizes: &[(f64, f64)],
+        context: Option<&verdicts::Context>,
+    ) {
         ui.horizontal(|ui| {
             // ★★ G4 — ENTER PRESSES PRINT, AND PRINT LOOKS LIKE THE DEFAULT.
             //
@@ -1086,12 +1182,15 @@ impl PrintDialog {
             }
             match job.filter(|j| !j.plans.is_empty()) {
                 Some(job) => {
-                    let clipped = job.clipped();
-                    let label = if clipped > 0 {
-                        t::commit_with_clipping(clipped)
-                    } else {
-                        t::commit().to_owned()
-                    };
+                    // ★ `ClipClaim::None` when there is no context, which
+                    // happens only when there is no job — and this arm has
+                    // one. The plain label is therefore not a fallback that
+                    // could hide a clip; it is what an unclipped job says.
+                    let label = context
+                        .map(|context| self.verdicts.claim(context, job, page_sizes))
+                        .unwrap_or(verdicts::ClipClaim::None)
+                        .commit_label()
+                        .unwrap_or_else(|| t::commit().to_owned());
                     let (accepted, cancelled) =
                         crate::dialogs::host::Host::buttons(ui, &label, t::close());
                     if accepted {
@@ -1197,11 +1296,19 @@ impl PrintDialog {
     /// pair that exposes the orientation defect: a radio that changes
     /// `orientation=` and not `scale=` on a landscape page is that regression,
     /// restated. A harness can assert the relationship; a screenshot cannot.
-    fn trace_plan(&self, printer: Option<&str>, job: Option<&Job>) {
+    ///
+    /// ★★ `clipped=` and `claim=` are on this line TOGETHER, and the pairing is
+    /// the assertion — operator request O113. `clipped=` is the unchanged
+    /// geometric count; `claim=` is what the button says, as `<state>:<count>`.
+    /// A driven check asserts the *correction* between them, which no capture
+    /// can supply: a button reading "Print" and a button reading "Print"
+    /// because the cache silently never matched are the same photograph.
+    fn trace_plan(&self, printer: Option<&str>, job: Option<&Job>, claim: verdicts::ClipClaim) {
         crate::diag::trace(|| {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
                 "print-plan printer={printer:?} driver={:?} port={:?} sheets={:?} clipped={:?} \
+                 claim={}:{} \
                  dpi={:?} capped={:?} uncapped_mb={:?} orientation={:?} duplex={:?} \
                  paper={:?} sheet={:?} config={} \
                  scale={:?} tab={:?}",
@@ -1209,6 +1316,8 @@ impl PrintDialog {
                 self.printers.get(self.selected).map(|p| &p.port),
                 job.map(|j| j.plans.len()),
                 job.map(Job::clipped),
+                claim.trace_word(),
+                claim.count(),
                 job.map(|j| j.resolution.dpi),
                 job.map(|j| j.resolution.capped),
                 job.map(|j| j.resolution.uncapped_page_mb),

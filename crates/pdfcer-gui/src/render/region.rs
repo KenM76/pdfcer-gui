@@ -224,6 +224,111 @@ mod tests {
         );
     }
 
+    // =======================================================================
+    // ★★★ Where the SHARP picture ends and the blurry one begins
+    // =======================================================================
+
+    /// ★★★ **The sharp raster covers the window, on every side, at every phase
+    /// of the snap grid** — the operator's report of 2026-09-04.
+    ///
+    /// > *"the canvas does a fading around the edges on stuff shown at the
+    /// > edges of the view. I don't want this. it should render true."*
+    ///
+    /// ## What this asserts, and why it is the composed chain rather than one
+    /// function
+    ///
+    /// [`super::strategy::region_for`] has its own test of this property in
+    /// page points, and it is the tighter one. This is the same claim made
+    /// **where the operator makes it — in screen pixels, about the rectangle
+    /// the texture is actually painted at** — and it therefore has to go
+    /// through every conversion `canvas::present` goes through:
+    ///
+    /// | step | what it produces |
+    /// |---|---|
+    /// | the viewport, in the page's own points | what `present` derives from `visible_rect ∩ place` |
+    /// | [`page_region`] (which calls `region_for`) | the PDF-space rect that will be rasterized |
+    /// | [`region_on_screen`] | `paint_rect` — where that raster lands |
+    ///
+    /// ★★ The y flip lives in the middle of that chain and is the reason this
+    /// test is worth writing separately. `region_for` snaps in canvas space,
+    /// y-**down**; `page_region` then flips to PDF space, y-**up**; and
+    /// `region_on_screen` flips back. A margin that is generous on the snapped
+    /// low side and starved on the high side comes out of that pair of flips
+    /// attached to a *different screen edge* than the page-space test names, and
+    /// only a test that composes all three can say which edge of the operator's
+    /// window is the starved one.
+    ///
+    /// ## What a failure looks like on his screen
+    ///
+    /// `paint_rect` is where `canvas::present` draws the sharp texture;
+    /// `canvas::backdrop` has already painted the low-resolution whole-page
+    /// texture underneath, across the page's *whole* rect. So every screen pixel
+    /// inside the window but outside `paint_rect` is showing **the blurry
+    /// stand-in instead of the page**. A margin of zero on a side means that
+    /// band opens along that edge of the window on the first pixel of a pan and
+    /// stays open for the ~1.6 s a region raster takes on a CAD sheet.
+    #[test]
+    fn the_sharp_raster_covers_the_window_on_every_side() {
+        // A region-tier zoom on a Letter page: the page is ~26 windows across,
+        // so the window is entirely inside it and `visible ∩ place` is the
+        // whole window — the ordinary case at the zooms this tier engages at.
+        let zoom = 24.0_f32;
+        let window = egui::vec2(1400.0, 900.0);
+        let page_screen =
+            egui::Rect::from_min_size(egui::pos2(0.0, 0.0), egui::vec2(612.0, 792.0) * zoom);
+        // The viewport in page points, which is what `present` hands on.
+        let (vw, vh) = (f64::from(window.x / zoom), f64::from(window.y / zoom));
+
+        let mut worst = f64::INFINITY;
+        let mut worst_side = "";
+        let mut worst_at = (0.0_f64, 0.0_f64);
+        // One full grid step in each axis — the phase is the whole variable,
+        // and a single position samples one phase and proves nothing.
+        for i in 0..120 {
+            let t = f64::from(i) / 120.0;
+            let (x0, y0) = (137.0 + t * vw * 0.5, 249.0 + t * vh * 0.5);
+            let region = page_region((x0, y0, x0 + vw, y0 + vh), LETTER);
+            let paint = region_on_screen(region, LETTER, page_screen);
+            // The window on screen, from the same canvas-space rect.
+            let view = egui::Rect::from_min_size(
+                egui::pos2(
+                    page_screen.min.x + (x0 as f32) * zoom,
+                    page_screen.min.y + (y0 as f32) * zoom,
+                ),
+                window,
+            );
+            for (side, gap, extent) in [
+                ("left", view.min.x - paint.min.x, window.x),
+                ("right", paint.max.x - view.max.x, window.x),
+                ("top", view.min.y - paint.min.y, window.y),
+                ("bottom", paint.max.y - view.max.y, window.y),
+            ] {
+                let fraction = f64::from(gap / extent);
+                if fraction < worst {
+                    worst = fraction;
+                    worst_side = side;
+                    worst_at = (x0, y0);
+                }
+            }
+        }
+        assert!(
+            // ★ `0.24`, a little under the quarter the snap can guarantee —
+            // this chain crosses `f32` twice (the page's screen rect and the
+            // returned `egui::Rect`) at a magnitude of ~19,000 px, so a few
+            // ULPs of slack is honest rather than lax. What the threshold
+            // excludes is a side with no margin at all, which is the reported
+            // defect and which measured `0.0000` here before the fix.
+            worst >= 0.24,
+            "the sharp raster reaches only {:.4} of a window past the {worst_side} edge at its \
+             worst grid phase (view origin {:.2},{:.2} pt) — every pixel between there and the \
+             edge of the window is `canvas::backdrop`'s low-resolution stand-in, which is the \
+             operator's fade",
+            worst,
+            worst_at.0,
+            worst_at.1
+        );
+    }
+
     /// ★★★ **The deep placement stays exact where the shallow one cannot.**
     ///
     /// At four billion percent the page's own screen rect has a magnitude of

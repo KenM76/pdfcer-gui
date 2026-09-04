@@ -192,8 +192,11 @@ pub(super) fn resize(
             .resize_annotation(id, anchor, sx, sy, &opts)
             .inspect_err(|error| {
                 // ★★★ **The refusal is caught here and worded**, rather than
-                // being left to `vector_edit`'s generic arm, which traces and
-                // says nothing to the operator.
+                // being left to `vector_edit`'s generic arm, which traces the
+                // engine's reason and — since O116, 2026-09-04 — words only
+                // *"That change was refused, and the document is unchanged."*
+                // That floor ends the silence; it cannot name a remedy, and
+                // naming one is the whole value of catching the refusal here.
                 //
                 // A resize that silently did nothing is this project's founding
                 // failure: the operator drags a grip, lets go, the shape snaps
@@ -312,8 +315,9 @@ pub(super) fn rotate(doc: &mut OpenDoc, id: ObjId, pivot: (f64, f64), degrees: f
             .rotate_annotation(id, pivot, degrees)
             .inspect_err(|error| {
                 // ★★★ **The refusal is caught here and worded**, rather than
-                // being left to `vector_edit`'s generic arm, which traces and
-                // says nothing to the operator. [`resize`]'s own comment is the
+                // being left to `vector_edit`'s generic arm, which since O116
+                // words an un-categorised sentence naming no remedy.
+                // [`resize`]'s own comment is the
                 // argument and it applies unchanged: a grip that is dragged,
                 // released, and does nothing with no explanation is this
                 // project's founding defect.

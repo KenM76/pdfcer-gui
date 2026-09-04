@@ -171,6 +171,15 @@ pub const DIAG_FORM_DATA_PATH: &str = "PDFCER_DIAG_FORM_DATA_PATH"; // ui-text-e
 /// document picker.
 pub const DIAG_FONT_FOLDER_PATH: &str = "PDFCER_DIAG_FONT_FOLDER"; // ui-text-exempt: an environment variable name, never displayed
 
+/// The harness seam for [`pick_acrobat`] — `OPERATOR_REQUESTS.md` O122.
+///
+/// ★ Its own variable, for [`DIAG_FONT_FOLDER_PATH`]'s reason and with an
+/// extra one of its own: a driven check that sets the Acrobat path must be
+/// able to name a **program** without also answering the document picker, and
+/// the file it names is deliberately not a PDF — sharing a variable with the
+/// open picker would make a check that set one accidentally answer the other.
+pub const DIAG_ACROBAT_PATH: &str = "PDFCER_DIAG_ACROBAT_PATH"; // ui-text-exempt: an environment variable name, never displayed
+
 /// The environment variable that answers the **save** dialog instead of
 /// opening it.
 ///
@@ -572,6 +581,44 @@ pub fn pick_font_folder() -> Picked {
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         format!("font-folder-picked source=native answer={answer:?}")
+    });
+    answer
+}
+
+/// **Ask which program is Acrobat** — `OPERATOR_REQUESTS.md` O122's Browse
+/// button.
+///
+/// ★ A *file* picker, not a folder one, and not the document picker: the value
+/// is a full path to an executable. It is offered beside the text field rather
+/// than instead of it, because typing a path from memory is how a letter goes
+/// missing and because somebody who already knows the path should not have to
+/// navigate to it.
+///
+/// ★★ The filter offers programs first and everything second. First, because a
+/// person browsing for Acrobat is looking for an `.exe` and a picker showing
+/// every file in `Program Files` is a picker they have to fight. Second,
+/// because pdfcer does not actually require an `.exe` — a launcher script or a
+/// shim is a legitimate answer, and `crate::acrobat::resolve` honours a
+/// configured path whatever its name — so a filter that could not be widened
+/// would be this shell overruling the operator about their own machine.
+#[must_use]
+pub fn pick_acrobat() -> Picked {
+    if let Some(answer) = from_env(std::env::var_os(DIAG_ACROBAT_PATH)) {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed.
+            format!("acrobat-picked source=env answer={answer:?}")
+        });
+        return answer;
+    }
+    let answer = rfd::FileDialog::new()
+        .set_title(crate::text::acrobat::path_dialog_title())
+        .add_filter(crate::text::acrobat::path_filter_name(), &["exe"])
+        .add_filter(crate::text::files::filter_all(), &["*"])
+        .pick_file()
+        .map_or(Picked::Cancelled, Picked::Path);
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        format!("acrobat-picked source=native answer={answer:?}")
     });
     answer
 }

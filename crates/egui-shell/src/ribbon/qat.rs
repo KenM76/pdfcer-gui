@@ -196,7 +196,7 @@ fn control_pieces(ui: &egui::Ui, ctx: &Ctx<'_>, command: &Command) -> ItemWidths
 }
 
 /// The width one QAT control wants.
-fn control_width(ui: &egui::Ui, ctx: &Ctx<'_>, command: &Command) -> f32 {
+pub(super) fn control_width(ui: &egui::Ui, ctx: &Ctx<'_>, command: &Command) -> f32 {
     control_pieces(ui, ctx, command).total()
 }
 
@@ -208,7 +208,7 @@ fn control_width(ui: &egui::Ui, ctx: &Ctx<'_>, command: &Command) -> f32 {
 /// So the floor is *per control*, and it is what [`render`] tests each
 /// control's remaining room against before drawing it — see that
 /// function's header on why drawing it anyway is not an option.
-fn min_control_width(ui: &egui::Ui, ctx: &Ctx<'_>, command: &Command) -> f32 {
+pub(super) fn min_control_width(ui: &egui::Ui, ctx: &Ctx<'_>, command: &Command) -> f32 {
     let pieces = control_pieces(ui, ctx, command);
     ItemWidths {
         text: if pieces.text > 0.0 {

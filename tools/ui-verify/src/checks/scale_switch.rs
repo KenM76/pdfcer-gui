@@ -115,35 +115,40 @@ use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
-/// Review mode, the rectangle tool, and the Tool panel — all three rung.
+/// Review mode and the rectangle tool.
 ///
-/// ★ `view.panel_tool` last, because the panel changes the dock's width and
-/// therefore the canvas rect. Opening it **before** the shape is drawn would
-/// mean every coordinate this check computes was taken against a layout that
-/// then moved — the harness-coordinate hazard `D:/dev/rag/egui/` records.
+/// ★★★ **`view.panel_tool` is no longer rung, because it no longer exists.**
+/// `OPERATOR_REQUESTS.md` O123 dissolved the Tool panel and moved the three
+/// resize switches to Properties, on the operator's own argument that they were
+/// never the tool's: *"everything can be in object and properties."*
 ///
-/// ⇒ It is rung after the drawing steps for that reason and the mapping is
-/// re-read afterwards.
+/// Properties is mounted by every mode's default arrangement, so nothing has to
+/// be opened here at all — which also removes the hazard the old comment on this
+/// constant was about. Opening a panel changes the dock's width and therefore
+/// the canvas rect, and every coordinate this check computes would have been
+/// taken against a layout that then moved.
 const INVOKE: &str = "mode.review,markup.rectangle";
-/// Opens the Tool panel, rung separately after the shape exists.
-const PANEL_COMMAND: &str = "view.panel_tool";
 
-/// The Tool panel's own region — the oracle for *"is it actually open?"*.
+/// The Properties panel's body compartment, as the DOCK reports it — the oracle
+/// for *"can the operator see the switches' panel?"*.
 ///
-/// ★ Needed because [`PANEL_COMMAND`] is a **toggle**, not an opener, and the
-/// dock layout persists across runs. See the normalisation at the top of the
-/// body for the incident that made this necessary.
-const PANEL_REGION: &str = "panel:tool";
+/// ★★ The dock's name rather than a panel-published one, and that is the whole
+/// upgrade: it goes through `crate::diag::ui_rect_visible`, so its presence is a
+/// claim about **reachability** rather than about a function having run.
+const PANEL_REGION: &str = "dock.body.file.properties";
 
-/// The ribbon item that toggles the Tool panel, for putting it back when the
-/// launch invoke turned it off.
-const PANEL_ITEM_REGION: &str = "ribbon.item.view.panel_tool";
+/// The Properties panel's dock tab header, for raising it from behind a sibling.
+///
+/// ★ A tab header, never a ribbon toggle. The toggle would *unmount* a panel
+/// that is already mounted, and the check would then report absent switches
+/// about a panel it closed itself.
+const PANEL_TAB_REGION: &str = "dock.tab.file.properties";
 /// The line the canvas writes when a shape is authored.
 const COMMIT_EVENT: &str = "markup-commit";
 /// The line the canvas writes when a click selects an annotation.
 const SELECT_EVENT: &str = "annot-select";
-/// The switch's own published rect.
-const SWITCH_REGION: &str = "tool.scale.stroke";
+/// The switch's own published rect, in its new home.
+const SWITCH_REGION: &str = "properties.tool.scale.stroke";
 /// The line the panel writes when a switch changes.
 const MODIFIERS_EVENT: &str = "resize-modifiers";
 /// The line the apply arm writes when the engine has resized it.
@@ -260,73 +265,71 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
-    spec.env.push((
-        "PDFCER_DIAG_INVOKE".to_owned(),
-        format!("{INVOKE},{PANEL_COMMAND}"),
-    ));
+    spec.env
+        .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
     report.note(format!(
-        "launched {} as pid {} with the Tool panel open",
+        "launched {} as pid {}; the switches live in Properties since O123",
         exe.display(),
         session.pid()
     ));
     session.settle(45);
     let driver = Driver::new(session.window());
 
-    // ★★★ **NORMALISE: the panel command is a TOGGLE, and the layout persists.**
+    // ★★★ **NORMALISE: the panel this check reads may be behind a sibling tab.**
     //
-    // `PDFCER_DIAG_INVOKE` presses `view.panel_tool` at launch on the assumption
-    // that it OPENS the panel. It does not — it flips it — and the dock layout
-    // is written to disk, so whether this check starts with the panel open
-    // depends on what the previous check left behind.
+    // Since `OPERATOR_REQUESTS.md` O123 the three resize switches live in the
+    // Properties panel, and Review mounts Properties in a stack it shares with
+    // Comments, Fill form and Dimension groups. A tabbed stack draws only its
+    // active tab, so the switches may be perfectly correct and simply not the
+    // tab on screen.
     //
-    // ★★ It became reliably wrong on 2026-08-31, and by a fix rather than a
-    // break. `OPERATOR_REQUESTS.md` O80 wired `LayoutStore::flush` to an exit
-    // hook that had never existed — before that, a layout change made in the
-    // last 750 ms before a process exited was lost to the debounce, so the
-    // panel state usually did NOT carry over and this check usually got away
-    // with it. Making persistence work surfaced the latent order-dependence.
+    // ★★ The previous version of this block pressed a RIBBON TOGGLE to open the
+    // Tool panel, and the comment it carried is worth keeping because the lesson
+    // outlived the panel: `PDFCER_DIAG_INVOKE` pressed `view.panel_tool` at launch
+    // on the assumption that it OPENED the panel. It did not — it flipped it — and
+    // the dock layout is written to disk, so whether this check started with the
+    // panel open depended on what the previous check had left behind. It became
+    // reliably wrong on 2026-08-31 by a FIX rather than a break: O80 wired
+    // `LayoutStore::flush` to an exit hook that had never existed, and making
+    // persistence work surfaced the latent order-dependence.
     //
-    // ⇒ The lesson is the one `D:\dev\rag\egui` already records: **a driven
-    // check that mutates persisted state must normalise at the start.** This
-    // one asserted its precondition in its report text ("with the Tool panel
-    // open") and never checked it.
-    //
-    // So: look, and press the ribbon item if the panel is not there. One
-    // correction, not a loop — if a single press does not open it the panel is
-    // broken, which is a different check's subject and must not be papered
-    // over here.
+    // ⇒ The rule that came out of it is unchanged and is why this block still
+    // exists: **a driven check that depends on persisted state must normalise at
+    // the start.** What has changed is the gesture — a TAB HEADER, never a ribbon
+    // toggle, because a toggle would unmount a panel that is already mounted and
+    // the check would then report absent switches about a panel it closed itself.
     if declared(&session.trace()?, ui_rect, PANEL_REGION).is_none() {
         report.note(
-            "★ the Tool panel was not open after the launch invoke — the toggle closed a \
-             panel the persisted layout had already opened. Pressing the ribbon item to \
-             put it back.",
+            "★ the Properties panel is mounted but not the active tab. Raising it by its \
+             dock header.",
         );
         let trace = session.trace()?;
-        let Some(item) = declared(&trace, ui_rect, PANEL_ITEM_REGION) else {
+        let Some(tab) = declared(&trace, ui_rect, PANEL_TAB_REGION) else {
             return Err(Error::new(format!(
-                "the Tool panel is closed and `{PANEL_ITEM_REGION}` is not on the ribbon, so \
-                 there is no route to reopen it. SKIPPED rather than failed: this check's \
-                 subject is the scale switches, not the panel. Regions beginning \
-                 `ribbon.item.view`: {}.",
-                list(&declared_names(&trace, ui_rect, "ribbon.item.view"))
+                "the Properties panel is not mounted at all — neither `{PANEL_REGION}` nor \
+                 `{PANEL_TAB_REGION}` is on screen — so the resize switches, which live in \
+                 it since O123, cannot be read. SKIPPED rather than failed: this check's \
+                 subject is the switches, not the dock. Regions beginning `dock.tab.`: {}.",
+                list(&declared_names(&trace, ui_rect, "dock.tab."))
             )));
         };
         // ★ Resolved from the frame taken a moment ago rather than from one
         // cached earlier: the dock width changes when a panel opens, and a
         // stale coordinate is the harness hazard this project has written up
         // twice. Nothing has moved between the `declared` above and here.
-        driver.click_at(session.frame()?.declared_center(item))?;
+        driver.click_at(session.frame()?.declared_center(tab))?;
         session.settle(30);
         if declared(&session.trace()?, ui_rect, PANEL_REGION).is_none() {
             return Err(Error::new(format!(
-                "pressing `{PANEL_ITEM_REGION}` did not put `{PANEL_REGION}` on screen, so the \
-                 Tool panel will not open at all. That is a defect, and it is a different \
-                 check's subject — this one cannot reach its own precondition. Trace: {}.",
+                "clicking `{PANEL_TAB_REGION}` did not put `{PANEL_REGION}` on screen, so the \
+                 Properties panel will not raise at all. That is a defect, and it is a \
+                 different check's subject — this one cannot reach its own precondition. \
+                 Trace: {}.",
                 session.trace_path().display()
             )));
         }

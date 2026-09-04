@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Encrypt this document (the engine's `set_encryption`;
+       `OPERATOR_REQUESTS.md` O119) — a folded-corner page with a PADLOCK over
+       its lower half. A page outline, its fold, a lock body and a shackle arc;
+       primitives only, no trademark risk.
+
+       ★ NOT WIRED TO ANY COMMAND, and awaiting the operator's ruling rather
+       than an engineer's. O119 asks him whether he wants a way to protect a
+       drawing before sending it out; nothing in the GUI reaches the engine's
+       authoring half and nothing will until he answers. The asset exists ahead
+       of the answer for the reason `Icon::EditObjects` records — art outside
+       `Icon::ALL` is art no test walks — and because the mockup that carries
+       the question to him has to draw the control it is asking about.
+
+       ★★★ THE PAGE IS THE ENTIRE POINT, and the glyph is wrong without it.
+
+       `lock.svg` is already in this set and it is a BARE padlock. Its note is
+       unusually emphatic about what it may and may not claim: it means *THE
+       DOCUMENT SAYS THIS CONTROL MAY NOT BE OPERATED HERE* — an interface lock
+       on a layer row carrying `/Locked`, or a read-only form field — and
+       explicitly "not 'secure', not 'verified', not 'ENCRYPTED'". It is a row
+       marker. It says nothing about the file.
+
+       ⇒ This glyph is the sentence that one refuses to make, and the page
+       behind the lock is the whole difference: *THIS DOCUMENT is the thing
+       being locked*, not a row in a panel. Subject versus marker. An operator
+       who has learned the muted padlock in the Layers panel meets the same
+       padlock here ON A PAGE, and the page is the word that changed.
+
+       ⚠ THE CONSTRAINT `lock.svg` BINDS ONTO THIS FILE, restated because it is
+       the one that will be forgotten: IT MUST NEVER APPEAR ON A SIGNATURE ROW
+       OR ON ANYTHING THAT REPORTS SIGNATURE STATE. `signatures.svg` is
+       deliberately not a seal, a badge, a shield or a checkmark because pdfcer
+       performs NO cryptographic verification whatsoever and every one of those
+       shapes reads as VALIDATED. A padlock reads exactly the same way. This
+       file claims one thing: the document is, or is about to be, encrypted.
+       O119's own briefing makes the neighbouring point on screen — a permission
+       setting is a REQUEST, not a lock, and only the password actually keeps
+       anyone out — so the glyph must not be spent implying more than the
+       standard delivers.
+
+       Neighbours, and the cue that holds each apart:
+
+       * `lock.svg` — argued above. Bare padlock, filling the grid, no page.
+       * `permissions.svg` — the other half of O119, and the pair is drawn as a
+         family on purpose: one page silhouette, one different thing said
+         inside it. That one carries TICKED ROWS (what the document allows);
+         this one carries a LOCK (whether it is closed at all). They will sit
+         adjacent if O119 is answered yes, so the interior mark is the only
+         thing an operator has to read, and lock-versus-ticks is legible at
+         16 px where two variations on a keyhole would not be.
+       * `text.svg`, `recognise-text.svg`, `insert-pages.svg` and the other
+         folded pages all carry LINEAR interiors — ruled lines, a letterform,
+         an arrow. This one carries a closed BLOCK with an arc on top, which is
+         the only chunky silhouette among them.
+       * `redact.svg` is the set's one FILLED glyph, and the fill is semantic:
+         that tool obliterates. Nothing here is filled, because encryption
+         removes nothing — the document is intact and merely closed. Outline
+         versus fill carries the same honesty it carries for `lock.svg`.
+
+       ★ NO KEYHOLE. `lock.svg` has one; this lock body is 16 units wide against
+       that one's 24, which is five pixels at the size it ships at, and a
+       keyhole stem inside five pixels is a smudge that reads as a rendering
+       fault rather than as detail. The shackle is what makes a rectangle a
+       padlock, and the shackle is kept. -->
+  <path d="M8 4h20l8 8v32H8z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M28 4v8h8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="14" y="26" width="16" height="14" rx="2" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M18 26v-3a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -59,14 +59,53 @@
 /// | overscan | pixels | pans that cost nothing |
 /// |---|---|---|
 /// | `0.0` | 1× | none — every pixel of movement crosses the edge |
-/// | `0.5` | **4×** | up to half a screen in any direction |
-/// | `1.0` | 9× | up to a full screen |
+/// | `0.5` | **4×** | **at least a quarter screen in every direction**, up to three quarters |
+/// | `1.0` | 9× | at least half a screen in every direction |
 ///
 /// `0.5` is the shipped value. At the zooms where the region tier engages the
 /// viewport is a few hundred thousand pixels, so 4× of it is small in absolute
 /// terms — which is the entire point of the region tier: **the raster stops
 /// scaling with the zoom**, so a constant multiple of the window is affordable
 /// where a constant multiple of the page would not be.
+///
+/// # ★★★ The middle column is the budget; the right column is what SURVIVES
+/// the snap
+///
+/// This table said *"up to half a screen in any direction"* against `0.5` until
+/// 2026-09-04, and that sentence was **false in two of the four directions** —
+/// not because the overscan was not bought, but because [`region_for`]'s snap
+/// spent it all on one side. The measurement and the operator report that
+/// exposed it are in that function's header; the correction is recorded here
+/// because this is the number a future reader will reach for when they want a
+/// bigger margin, and reaching for it would have been the wrong fix.
+///
+/// ★★ The right-hand column is now a **guarantee at the worst grid phase**
+/// rather than a best case, which is the only form of it worth writing down:
+/// what the operator experiences is the worst side of the worst phase, because
+/// that is the edge the fade appears along. The spread exists because the snap
+/// quantises the window to half a viewport, so the margin varies between
+/// `OVERSCAN − 0.25` and `OVERSCAN + 0.25` viewports on each side as the view
+/// moves through the grid.
+///
+/// # ★★ What a bigger number would cost, priced rather than guessed
+///
+/// `BENCHMARK.md` carries the engine's own measurement of the region path on
+/// the benchmark CAD sheet: **691 ms of fixed cost** (a one-by-one-*point*
+/// region costs 691 ms — ~99 % of render cost there is area-independent) plus
+/// roughly **0.19 µs per pixel**. On a ~1.3-megapixel viewport that puts one
+/// region raster at ~1.6 s today, and moving this constant costs:
+///
+/// | overscan | region | raster time | guaranteed margin |
+/// |---|---|---|---|
+/// | `0.5` (shipped) | 4× viewport | ~1.6 s | 0.25 screens |
+/// | `0.75` | 6.25× | ~2.1 s (**+0.5 s**) | 0.5 screens |
+/// | `1.0` | 9× | ~2.8 s (**+1.2 s**) | 0.75 screens |
+///
+/// ★ Which is why this is an operator decision and not a tuning exercise. He
+/// has already ruled on this trade once — *"I don't want the affect that other
+/// readers have where you always have to wait for detail to render after
+/// panning"* — and both columns of that ruling move together: a wider margin
+/// means fewer waits but each one is longer.
 pub const OVERSCAN: f64 = 0.5;
 
 /// What to hand the renderer for one page at one zoom.
@@ -256,6 +295,95 @@ pub fn overscanned(visible: (f64, f64, f64, f64)) -> (f64, f64, f64, f64) {
 /// constant in page points would be a different distance on screen at every
 /// zoom, so the redraw cadence would vary with magnification for no reason the
 /// operator could see.
+///
+/// # ★★★ The snap moves the WINDOW, and it must move it about its CENTRE
+///
+/// **Operator, 2026-09-04:**
+///
+/// > *"the canvas does a fading around the edges on stuff shown at the edges of
+/// > the view. I don't want this. it should render true."*
+///
+/// He is describing [`crate::canvas::backdrop`]'s low-resolution whole-page
+/// texture showing along the edge of the window — a second, blurry rendering of
+/// content the sharp region raster ought to have covered. It is not a taste
+/// question and it is not a slow raster: rule 4's *"applied content renders
+/// exactly as saved content will render"* is violated the moment the same
+/// content is on screen at two fidelities at once.
+///
+/// ## What the snap used to do, and the arithmetic that made it visible
+///
+/// The origin was floored onto the grid and the window was then laid out
+/// *forwards* from there:
+///
+/// ```text
+/// snapped_x = (x0 / step_x).floor() * step_x      // ≤ x0, by up to step_x
+/// window    = (snapped_x, snapped_x + w)          // …so it sits LEFT of the view
+/// ```
+///
+/// `.floor()` only ever moves the window **towards the origin**, by anything up
+/// to a whole grid step — and the grid step is half a viewport. The overscan is
+/// then added symmetrically to a window that is already off-centre, so the
+/// margin the operator actually gets is off-centre too:
+///
+/// | side | margin, in viewports |
+/// |---|---|
+/// | left / top | `0.5` … `1.0` |
+/// | **right / bottom** | **`0.0` … `0.5`** |
+///
+/// ★★ Measured over a full grid step in 2,000 increments, before the fix:
+/// **left `0.5000`, top `0.5002`, right `0.0002`, bottom `0.0000`.** At the
+/// worst phase the sharp raster stops *exactly at the bottom edge of the
+/// window* while a full half-screen of it is spent off the left, where nothing
+/// can ever see it.
+///
+/// ## ★★ Why that reads as a permanent fade rather than an occasional one
+///
+/// The raster in hand lags the view: `canvas::present` computes the wanted
+/// region from `last_scroll_offset`, which is the *previous* frame's, and the
+/// current page's texture slot is deliberately served **without a staleness
+/// check** (O24c) so that a pan shows the last good picture instead of blank
+/// paper. On the benchmark CAD sheet a region raster takes ~1.6 s to land
+/// (`BENCHMARK.md`: 691 ms of fixed cost plus ~0.19 µs per pixel), so for that
+/// whole window what is drawn is a picture of the *previous* region.
+///
+/// ⇒ With a right-hand margin of ~0, **any pan at all — one pixel — puts the
+/// view's leading edge outside the held raster**, and it stays outside for a
+/// second and a half. The operator pans constantly. That is why he experiences
+/// a fade that is always there rather than a redraw that occasionally lags.
+///
+/// ## The fix, and what it costs
+///
+/// Snap the window's **centre** to the same grid instead of its origin, and
+/// round rather than floor:
+///
+/// ```text
+/// centre_x  = (( x0 + w/2 ) / step_x).round() * step_x   // within step_x/2 of the view's centre
+/// window    = (centre_x - w/2, centre_x + w/2)
+/// ```
+///
+/// ★★★ **This costs nothing.** The window is the same size, the returned rect
+/// is still exactly `(1 + 2 × OVERSCAN)` viewports across, the grid step is
+/// unchanged, and the cache-hit cadence is unchanged — `round(c / step)` steps
+/// exactly as often as `floor(x0 / step)` did, once per half viewport of
+/// travel. The only thing that changes is *which* half viewport of already-paid-
+/// for raster the operator gets, and the answer becomes "a quarter of it on
+/// every side" instead of "all of it on two sides and none on the other two".
+/// Measured after the fix, same sweep: **left `0.2500`, right `0.2502`, top
+/// `0.2502`, bottom `0.2500`.**
+///
+/// ## ★ What it does NOT fix, stated rather than glossed
+///
+/// A quarter viewport is a guarantee about where the raster *reaches*, not
+/// about how fast the operator moves. A pan of more than a quarter of the
+/// window inside one raster's ~1.6 s still arrives beyond the held picture and
+/// still shows the backdrop at the leading edge. Closing *that* means buying
+/// more margin, and [`OVERSCAN`]'s table prices it: `0.75` costs about
+/// **+0.5 s** per raster and `1.0` about **+1.2 s**, against a raster that
+/// already takes ~1.6 s. That is an operator decision about a trade he has
+/// already ruled on once (*"I don't want the affect that other readers have
+/// where you always have to wait for detail"*), so the constant is left where
+/// he set it and this function stops wasting what it buys.
+///
 /// # ★★★ `f64`, and this is the arithmetic that forces it
 ///
 /// `OPERATOR_REQUESTS.md` **O24i**. The snap divides a page coordinate by the
@@ -264,6 +392,10 @@ pub fn overscanned(visible: (f64, f64, f64, f64)) -> (f64, f64, f64, f64) {
 /// ```text
 /// snapped_x = (x0 / step_x).floor() * step_x
 /// ```
+///
+/// (The division is unchanged by the centring above; only its numerator moved
+/// from the window's origin to the window's centre, which has the same
+/// magnitude and therefore the same requirement.)
 ///
 /// At a trillion percent the visible extent is about 5 × 10⁻⁸ pt, so `step_x`
 /// is 2 × 10⁻⁸ — while `x0` is an ordinary page coordinate near 540. Their
@@ -293,12 +425,26 @@ pub fn region_for(visible: (f64, f64, f64, f64)) -> (f64, f64, f64, f64) {
     if !(w.is_finite() && h.is_finite()) || w <= 0.0 || h <= 0.0 {
         return visible;
     }
-    // Snap the ORIGIN to a half-viewport grid, then grow from there. Snapping
+    // Snap the window to a half-viewport grid, then grow from there. Snapping
     // after growing would move the margin around instead of the window.
+    //
+    // ★★★ It is the window's CENTRE that lands on the grid, not its origin.
+    // `.floor()` on the origin only ever moves the window one way — towards the
+    // page origin, by up to a whole step — so the overscan added around it is
+    // spent off the left and top and the right and bottom are left with as
+    // little as nothing. `.round()` on the centre is bounded by half a step in
+    // EITHER direction, which is what makes the margin symmetric. See this
+    // function's header for the measurement and for the operator's report.
     let step_x = w * 0.5;
     let step_y = h * 0.5;
-    let snapped_x = (x0 / step_x).floor() * step_x;
-    let snapped_y = (y0 / step_y).floor() * step_y;
+    // ★ `step` and half the window are the same number today, and they are
+    // still written as two ideas: the grid step is the *cadence* (how far the
+    // operator may travel before a redraw) and the half-window is the
+    // *geometry* (where the window's centre sits relative to its origin). Only
+    // the first would move if the redraw cadence were ever retuned, and a
+    // reader who saw one name would have to work out which of the two it meant.
+    let snapped_x = ((x0 + w * 0.5) / step_x).round() * step_x - w * 0.5;
+    let snapped_y = ((y0 + h * 0.5) / step_y).round() * step_y - h * 0.5;
     overscanned((snapped_x, snapped_y, snapped_x + w, snapped_y + h))
 }
 
@@ -399,23 +545,122 @@ mod tests {
         }
     }
 
-    /// ★★★ **A small pan reuses the same raster** — the property the operator's
-    /// constraint turns on.
+    /// ★★★ **Panning does not redraw continuously** — the property the
+    /// operator's constraint turns on.
     ///
     /// He refused *"the affect that other readers have where you always have to
     /// wait for detail to render after panning"*. A region that changed on every
     /// pixel would do exactly that, because every request would miss the cache.
+    /// [`region_for`]'s header states the bound it offers instead: **at most one
+    /// redraw per half viewport of travel**, so a pan of one whole viewport may
+    /// ask for at most three distinct rasters — the one it started in, and one
+    /// for each grid line it crosses.
+    ///
+    /// # ★★★ This test used to pin a PHASE, and the phase is not the property
+    ///
+    /// Until 2026-09-04 it read:
+    ///
+    /// ```text
+    /// let base = region_for((1000.0, 1000.0, 1800.0, 1600.0));
+    /// for (dx, dy) in [(80.0, 0.0), …] {          // a tenth of a viewport
+    ///     assert_eq!(base, region_for(base moved by dx, dy));
+    /// }
+    /// ```
+    ///
+    /// — one base position, four small pans, asserting the rect never changes.
+    /// **No snapping implementation can satisfy that**, because a small pan that
+    /// happens to cross a grid line must change the rect; that is what a grid
+    /// *is*. It passed only because `1000, 1000` happened to sit mid-cell under
+    /// the old grid.
+    ///
+    /// ★★ Measured rather than argued, because it is the difference between a
+    /// test that was over-specified and a change that broke something. Sweeping
+    /// the base across a full grid step in 400 increments and applying the same
+    /// four pans, **the old implementation fails its own assertion in 320 of the
+    /// 1,600 cases** — and the new one fails it in 320 as well. Identical. The
+    /// assertion was never describing behaviour that distinguished them; it was
+    /// describing where `1000, 1000` fell.
+    ///
+    /// ⇒ So it is replaced by the bound the header actually promises, asserted
+    /// over every phase. Both implementations satisfy it (measured: at most 3
+    /// for each), which is the point — the cache-hit cadence is exactly what it
+    /// was, and the centring changed only *which* side the margin lands on.
     #[test]
-    fn a_small_pan_asks_for_the_same_rectangle() {
-        let base = region_for((1000.0, 1000.0, 1800.0, 1600.0));
-        // Move a tenth of a viewport in each direction.
-        for (dx, dy) in [(80.0, 0.0), (0.0, 60.0), (40.0, 30.0), (-40.0, -30.0)] {
-            let moved = region_for((1000.0 + dx, 1000.0 + dy, 1800.0 + dx, 1600.0 + dy));
-            assert_eq!(
-                base, moved,
-                "a {dx},{dy} pan changed the raster rect, so every pan would redraw"
+    fn panning_a_whole_viewport_asks_for_at_most_three_rasters() {
+        let (w, h) = (800.0_f64, 600.0_f64);
+        // Every phase of the snap grid, because the phase is the whole
+        // variable — see the header above on what testing one costs.
+        for phase in 0..200 {
+            let base = 1000.0 + f64::from(phase) * (w * 0.5) / 200.0;
+            let mut seen: Vec<(f64, f64, f64, f64)> = Vec::new();
+            // One viewport of travel, sampled every hundredth of it — fine
+            // enough that a rect appearing and vanishing between samples would
+            // have to live for under 8 points at this size.
+            for i in 0..=100 {
+                let x0 = base + f64::from(i) * w / 100.0;
+                let r = region_for((x0, 1000.0, x0 + w, 1000.0 + h));
+                if !seen.contains(&r) {
+                    seen.push(r);
+                }
+            }
+            assert!(
+                seen.len() <= 3,
+                "panning one viewport from phase {phase} asked for {} distinct rasters — the \
+                 grid step is half a viewport, so three is the most a full viewport of travel \
+                 can cross, and more than that is the continuous redraw the operator refused",
+                seen.len()
             );
         }
+    }
+
+    /// ★ …and most small pans reuse the raster outright.
+    ///
+    /// The other half of the bound above: three is a **ceiling**, and a test
+    /// that only checked a ceiling would pass on an implementation that
+    /// returned three different rects for every pan. This asserts the floor —
+    /// that the snap is doing the job it exists for.
+    ///
+    /// ## ★★ Why a proportion of phases, and not one hand-picked base
+    ///
+    /// *No* snapping implementation reuses the raster for *every* small pan:
+    /// a pan that crosses a grid line must change the rect, and roughly a fifth
+    /// of phases sit within a tenth of a viewport of a line. Naming one base
+    /// that happens to avoid one would be pinning that base's position in one
+    /// implementation's grid — the exact mistake the sibling test's header
+    /// records, where a fixture at `1000, 1000` stood in for a property for
+    /// months and then failed the moment the grid's offset moved by a quarter
+    /// cell without its cadence changing at all.
+    ///
+    /// ⇒ So the claim is made over the whole grid: **at least three quarters of
+    /// all view positions reuse the raster across a tenth-of-a-viewport pan.**
+    /// Measured at 80 % both before and after the centring change, because the
+    /// cadence is a property of the grid step and the centring moved only the
+    /// grid's offset.
+    #[test]
+    fn most_small_pans_reuse_the_raster() {
+        let (w, h) = (800.0_f64, 600.0_f64);
+        let pans = [(80.0, 0.0), (0.0, 60.0), (40.0, 30.0), (-40.0, -30.0)];
+        let mut reused = 0_usize;
+        let mut total = 0_usize;
+        for phase in 0..400 {
+            let t = f64::from(phase) / 400.0;
+            let (x0, y0) = (1000.0 + t * w * 0.5, 1000.0 + t * h * 0.5);
+            let base = region_for((x0, y0, x0 + w, y0 + h));
+            for (dx, dy) in pans {
+                let moved = region_for((x0 + dx, y0 + dy, x0 + w + dx, y0 + h + dy));
+                total += 1;
+                if base == moved {
+                    reused += 1;
+                }
+            }
+        }
+        let fraction = reused as f64 / total as f64;
+        assert!(
+            fraction >= 0.75,
+            "only {fraction:.3} of view positions reuse the raster across a tenth-of-a-viewport \
+             pan ({reused}/{total}) — the snap has stopped quantising and the operator is \
+             waiting for a redraw on every pan, which is what he refused"
+        );
     }
 
     /// …and a large pan does ask for a new one, or the operator would be looking
@@ -477,6 +722,110 @@ mod tests {
     fn the_same_view_always_asks_for_the_same_rectangle() {
         let view = (12.5, 33.25, 812.5, 633.25);
         assert_eq!(overscanned(view), overscanned(view));
+    }
+
+    // =======================================================================
+    // ★★★ The MARGIN — what is sharp beyond the edge of the view
+    // =======================================================================
+
+    /// The smallest gap, on any of the four sides, between the view and the
+    /// edge of the region that will be rasterized — expressed as a **fraction
+    /// of the viewport**, which is the unit [`OVERSCAN`]'s own table is
+    /// written in.
+    ///
+    /// ★ Returned as a fraction rather than in points so the answer is the
+    /// same number at every zoom, which is the whole claim being made: the
+    /// region tier's margin is supposed to be a constant multiple of the
+    /// window.
+    fn margin_fraction(visible: (f64, f64, f64, f64)) -> f64 {
+        let (x0, y0, x1, y1) = visible;
+        let (w, h) = (x1 - x0, y1 - y0);
+        let r = region_for(visible);
+        // Four gaps, each normalised by the viewport extent it is measured
+        // along. A negative value would mean the region does not even reach
+        // the view; zero means it stops exactly at the edge.
+        [
+            (x0 - r.0) / w,
+            (r.2 - x1) / w,
+            (y0 - r.1) / h,
+            (r.3 - y1) / h,
+        ]
+        .into_iter()
+        .fold(f64::INFINITY, f64::min)
+    }
+
+    /// ★★★ **[`OVERSCAN`]'s promise holds in every direction, not just two of
+    /// them.**
+    ///
+    /// That constant's table says of the shipped `0.5`:
+    ///
+    /// > | `0.5` | **4×** | at least a quarter screen in every direction |
+    ///
+    /// *In every direction* is the clause under test, and it is the clause the
+    /// operator's report of 2026-09-04 is about —
+    ///
+    /// > *"the canvas does a fading around the edges on stuff shown at the
+    /// > edges of the view. I don't want this. it should render true."*
+    ///
+    /// ## ★★ Why a sweep, and why over exactly one grid step
+    ///
+    /// The margin is not a constant: it is a function of **where in the snap
+    /// grid the view happens to sit**, and that phase repeats every
+    /// `step = w/2`. A test at one position would sample one phase and could
+    /// pass on an implementation that starves a side at every other phase —
+    /// which is exactly what happened here, because every existing test of
+    /// this function checks its *size* or its *origin* and none checks the
+    /// gap between it and the view.
+    ///
+    /// So the sweep walks a full step in 200 increments and takes the worst
+    /// case. Nothing about the page, the zoom or the viewport shape is special
+    /// to it; the phase is the whole variable.
+    ///
+    /// ## What a failure means
+    ///
+    /// A margin below the threshold is not a slow raster — it is the operator
+    /// looking at **the low-resolution backdrop instead of the page** in a band
+    /// along the edge of the window (`canvas::backdrop`), because the sharp
+    /// region raster stops before the view does. That is the fade he reported,
+    /// and it is a rule 4 defect rather than a performance one: the same
+    /// content is being shown at two different fidelities at once.
+    #[test]
+    fn the_overscan_reaches_a_quarter_screen_in_every_direction() {
+        // An ordinary page coordinate and an ordinary viewport, in points at
+        // some region-tier zoom. The numbers are deliberately not round: a
+        // grid-aligned view is the one phase that cannot fail.
+        let (w, h) = (48.3_f64, 37.1_f64);
+        let (step_x, step_y) = (w * 0.5, h * 0.5);
+        let mut worst = f64::INFINITY;
+        let mut worst_at = (0.0_f64, 0.0_f64);
+        for i in 0..200 {
+            let t = f64::from(i) / 200.0;
+            let x0 = 217.4 + t * step_x;
+            let y0 = 361.9 + t * step_y;
+            let m = margin_fraction((x0, y0, x0 + w, y0 + h));
+            if m < worst {
+                worst = m;
+                worst_at = (x0, y0);
+            }
+        }
+        assert!(
+            // ★ A quarter, less a hair for `f64`. The snap quantises the
+            // window to a half-viewport grid, so half a screen on all four
+            // sides at once is not achievable at every phase by ANY
+            // implementation that keeps the raster at 2× the window: the
+            // quarter is the arithmetic ceiling, not this implementation's
+            // limit. The threshold pins the guarantee rather than the
+            // arithmetic, and what it excludes is the case the operator
+            // reported — a side with essentially no margin at all.
+            worst >= 0.245,
+            "the sharp raster reaches only {:.4} of a viewport past the view at its worst phase \
+             (view origin {:.3},{:.3}) — OVERSCAN's table promises half a screen in ANY \
+             direction, and a side with no margin is the low-resolution backdrop showing along \
+             the edge of the window",
+            worst,
+            worst_at.0,
+            worst_at.1
+        );
     }
 
     /// ★★★ O24i — **the region must keep shrinking all the way to the

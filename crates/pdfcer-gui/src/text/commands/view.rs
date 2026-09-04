@@ -449,31 +449,12 @@ pub const fn view_sidebar() -> CommandText {
     )
 }
 
-/// `view.panel_tool`
-///
-/// ★★ **"Tool", not "Tool options"**, and the two text tools are why.
-///
-/// `RIBBON_IA.md` §6 commissions this surface and calls it the *Tool Options
-/// pane*. The label is nevertheless `Tool`, because a label is a promise and
-/// *options* is one this panel cannot keep: `CanvasTool::TextEdit` has no
-/// font, no size and no alignment — §5.8 gives all three to the Format tab —
-/// so the two tools whose absence produced this panel have **exactly zero
-/// options**. A panel captioned *Tool options* would render nothing for them,
-/// and the complaint would survive its own fix.
-///
-/// `Tool` promises to name what is armed. That question always has an answer.
-///
-/// The label is also the **dock tab caption**, because the panel registry is
-/// built from the command catalog — one string, so a tab and its ribbon toggle
-/// can never disagree about what a surface is called.
-#[must_use]
-pub const fn view_panel_tool() -> CommandText {
-    CommandText::new(
-        "Tool",
-        "Show what the pointer does right now, which tool is armed, and where each tool lives \
-         on the ribbon.",
-    )
-}
+// ★★★ `view_panel_tool` was retired on 2026-09-04 — `OPERATOR_REQUESTS.md`
+// O123 dissolved the panel it labelled. Its argument was that the caption had
+// to be *Tool* and not *Tool options*, because the two text tools that
+// produced the panel have no options at all; that argument is now settled the
+// other way round, since the options the panel DID hold turned out to be
+// properties and moved to the Properties panel.
 
 /// `view.panel_bookmarks`
 #[must_use]

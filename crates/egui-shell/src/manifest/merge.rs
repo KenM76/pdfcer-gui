@@ -98,7 +98,7 @@
 //! that runs it.
 
 use super::validate::Site;
-use super::{CommandCatalog, Group, Item, Keymap, Mode, Qat, Shell, Tab};
+use super::{CommandCatalog, Group, Item, Keymap, Mode, Qat, Shell, Tab, Trailing};
 use std::collections::BTreeMap;
 
 /// Which layer an override came from.
@@ -367,9 +367,56 @@ fn apply(
             report,
         )));
     }
+    if let Some(trailing) = &overlay.trailing {
+        // ★ Replaced whole, exactly as the QAT is, and for the same reason:
+        // both are short ORDERED lists whose whole content is their order. A
+        // per-item merge would have to answer "what does it mean to override
+        // item 2?" and every answer to that is worse than "the layer that
+        // mentions the region owns it" — which is the rule an operator can
+        // hold in their head while editing the file by hand.
+        base.trailing = Some(filter_items(
+            trailing.items(),
+            layer,
+            &Site::Trailing,
+            catalog,
+            report,
+        ));
+    }
     if let Some(keymap) = &overlay.keymap {
         merge_keymap(&mut base.keymap, keymap, layer, catalog, report);
     }
+}
+
+/// Filter a flat list of items (the trailing region), disclosing each drop.
+///
+/// The item twin of [`filter_ids`]. Kept separate rather than generalised
+/// because the two carry different payloads — a bare id and a whole `Item` —
+/// and a generic over "things that might contain a command id" would be more
+/// machinery than the six lines it replaced.
+fn filter_items(
+    items: &[Item],
+    layer: Layer,
+    site: &Site,
+    catalog: &dyn CommandCatalog,
+    report: &mut MergeReport,
+) -> Trailing {
+    items
+        .iter()
+        .filter(|item| match item {
+            Item::Command { id, .. } if !catalog.contains(id) => {
+                report.push(
+                    layer,
+                    site.clone(),
+                    SkipReason::UnknownCommand {
+                        command: id.clone(),
+                    },
+                );
+                false
+            }
+            Item::Command { .. } | Item::Separator | Item::Custom { .. } => true,
+        })
+        .cloned()
+        .collect()
 }
 
 /// Merge a tab list: mentioned ids first in overlay order, then the rest.

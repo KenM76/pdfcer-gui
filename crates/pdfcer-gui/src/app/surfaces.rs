@@ -65,6 +65,30 @@ impl PdfcerApp {
         // legibility on the frame the rect was measured on instead of
         // hard-coding fractions that go stale the first time a panel moves
         // (`PROJECT_PLAN.md` §4.2 prerequisite 1).
+        //
+        // ★★ **`ui_rect`, and not `ui_rect_visible` — unlike the dock's sink in
+        // `Self::docks`, and the asymmetry is a decision rather than an
+        // omission.**
+        //
+        // A ribbon rect is *content*: a group's rectangle is whatever its
+        // controls laid out to, a caption's is a galley. Content-sized regions
+        // are the exact shape the RAG entry
+        // `a_visibility_gated_region_disappears_when_the_section_is_taller_than_its_slot`
+        // warns about — a visibility gate deletes them from the trace precisely
+        // when they overflow, which is when a check most wants to see them. A
+        // group caption 40 % clipped by a narrow window is still a legitimate
+        // thing to assert legibility on and still the answer to *did this group
+        // draw at all*; a dock panel 40 % visible is not reachable, and that is
+        // the difference.
+        //
+        // The band also already carries one documented silent-drop mechanism —
+        // `a_ribbon_group_that_collapses_at_the_default_window_width_makes_a_driven_check_skip_forever`,
+        // where a collapsed group stops publishing `ribbon.item.*` and a check
+        // SKIPs forever without ever going red. Stacking a second silent filter
+        // on the same stream multiplies the ways a check can quietly stop
+        // running. If a specific ribbon check ever needs the stronger claim,
+        // the shell's `RectReport` is the shape to copy and the decision has to
+        // be made per region name.
         let mut report_rect = |name: &str, rect: egui::Rect| {
             crate::diag::ui_rect(name, rect);
         };
@@ -242,8 +266,54 @@ impl PdfcerApp {
             .as_ref()
             .map(|s| crate::shell::menus::MenuHost::new(s, commands, &conditions));
 
-        let mut report_rect = |name: &str, rect: egui::Rect| {
-            crate::diag::ui_rect(name, rect);
+        // ★★★ **The dock's rects are published as VISIBILITY, not layout.**
+        //
+        // `crate::diag::ui_rect` states *"this region was laid out at these
+        // coordinates"*. Until 2026-09-04 that is what every docked panel
+        // published, and every driven check in `tools/ui-verify` that names a
+        // `dock.…` region was reading it as *"the operator can get to this"*.
+        // Those are two different claims, and the distance between them is the
+        // whole of the defect this project shipped on 2026-08-10: Bookmarks,
+        // Layers and Signatures unreachable in a real build, each with a rail
+        // entry, each publishing a perfectly healthy rectangle, every gate
+        // green. `tools/ui-verify/src/checks/preset_group_reachable.rs` spells
+        // the general form out, and `SHELL_LAYOUT_PROPOSAL.md` §5 makes closing
+        // it a precondition for the proposed panel rail — because no check
+        // could distinguish a working rail from that defect.
+        //
+        // `crate::diag::ui_rect_visible` makes the stronger claim: it publishes
+        // only when at least `VISIBLE_FRACTION` of the region survived the clip
+        // rectangle in force where it was drawn. `egui_shell::dock` now hands
+        // that clip over beside the rect (`RectReport`), so this line is the
+        // one place the dock's stream is upgraded from layout to reachability.
+        //
+        // ★★ Why the *whole* dock stream and not a chosen subset. The RAG entry
+        // `a_visibility_gated_region_disappears_when_the_section_is_taller_than_its_slot`
+        // records the rule that governs this choice: gate what a check will
+        // CLICK or SAMPLE, do not gate what a check asks a yes/no question
+        // about, because a *content-sized* region is never 60 % inside its clip
+        // and gating it deletes it exactly when it is interesting. That hazard
+        // does not reach here, and the reason is structural rather than lucky:
+        // **every name the dock publishes is a compartment, not content.**
+        // `egui_shell::dock::plan::resolve_spans` degrades to an equal split
+        // rather than letting a child overflow its container, and a panel body
+        // is clipped into its stack before it is drawn — so no dock rectangle
+        // is ever bigger than the thing containing it. The only way one fails
+        // the fraction is the case we want reported: the dock itself is not on
+        // screen.
+        //
+        // ⚠ And the failure mode if that reasoning is wrong is **silent**:
+        // `ui_rect_visible` is deliberately quiet when a region misses the
+        // threshold, so an over-applied filter turns working checks into SKIPs,
+        // and a SKIP is not red. The guard against it is not this comment — it
+        // is the before/after SKIP-set diff across the driven suite, which is
+        // the one artefact that can catch a check that stopped running.
+        //
+        // The ribbon's sink, ~180 lines above, deliberately still calls
+        // `ui_rect`. See `egui_shell::dock::Dock::reporting_rects_to` for the
+        // per-surface argument in full.
+        let mut report_rect = |r: &egui_shell::dock::RectReport<'_>| {
+            publish_dock_rect(r);
         };
 
         // Tokens collected inside the dock body and dispatched after it, for
@@ -265,9 +335,32 @@ impl PdfcerApp {
                     .flat_map(|h| h.attach(tab.response(), crate::shell::menus::DOCK_TAB)),
             );
         };
+        // ★★★ **The one-line tool status** — `OPERATOR_REQUESTS.md` O123.
+        //
+        // The strip the right dock reserves above its columns, in place of the
+        // Tool panel's stack. It is a `FnMut` for the same borrow reason
+        // `tab_menu` is one, and it captures only `host` and the shared `doc` —
+        // deliberately nothing mutable, so it cannot compete with the body
+        // closure below for `tokens`.
+        //
+        // ★ It draws through `crate::diag::ui_rect_visible`, and the dock
+        // publishes `dock.right.banner` around it. Two regions rather than one,
+        // and the pair is the point: the dock's says *the strip is on screen*,
+        // the application's says *something was drawn into it*. A build whose
+        // handler returned early would keep the first and lose the second,
+        // which is exactly the distinction three unreachable panels shipped
+        // without on 2026-08-10.
+        let mut tool_banner = |ui: &mut egui::Ui| {
+            crate::app::toolstatus::banner(ui, doc, host.as_ref());
+        };
         let report = egui_shell::dock::Dock::new()
             .with_registry(panel_registry)
             .with_tab_menu(&mut tab_menu)
+            .with_side_banner(
+                egui_shell::dock::DockSide::Right,
+                crate::app::toolstatus::BANNER_HEIGHT_PTS,
+                &mut tool_banner,
+            )
             .reporting_rects_to(&mut report_rect)
             .show(
                 ui,
@@ -473,5 +566,194 @@ impl PdfcerApp {
             }
         };
         crate::diag::ui_rect(REGION_STATUS_MESSAGE, message.inner.rect);
+    }
+}
+
+/// **Publish one dock region as a claim about VISIBILITY.**
+///
+/// Returns whether the region was published — `false` means the dock laid it
+/// out somewhere the operator cannot see it, and the trace stays silent about
+/// it on purpose.
+///
+/// A free function rather than the closure body it used to be, for one reason:
+/// **the tests below have to be able to call the production line.** A closure
+/// inlined in [`PdfcerApp::docks`] is reachable only by running the
+/// application, and a change to a diagnostic channel that can only be checked
+/// by running the application is a change that can be green and wrong — which
+/// is the entire failure class this function exists to close.
+pub(super) fn publish_dock_rect(r: &egui_shell::dock::RectReport<'_>) -> bool {
+    crate::diag::ui_rect_visible(r.name, r.rect, r.clip)
+}
+
+#[cfg(test)]
+mod dock_rect_tests {
+    use super::publish_dock_rect;
+    use eframe::egui;
+    use egui_shell::dock::{
+        Column, Dock, DockLayout, DockState, PanelInfo, PanelRegistry, RectReport, SideLayout,
+        Stack,
+    };
+
+    /// One published region: its name, the verdict [`publish_dock_rect`]
+    /// reached about it, and the two rectangles that produced the verdict.
+    struct Row {
+        name: String,
+        published: bool,
+        rect: egui::Rect,
+        clip: egui::Rect,
+    }
+
+    /// Render one frame of a **real** dock in a window of the given size and
+    /// return a [`Row`] per published region.
+    ///
+    /// ★ Deliberately the real [`Dock`], not a hand-built list of rectangles.
+    /// The rectangles that matter here are the ones `egui` and the dock's own
+    /// geometry produce together at a window size nobody laid out for, and a
+    /// fixture written by hand could only contain the numbers its author
+    /// already expected.
+    fn rows(window: egui::Vec2) -> Vec<Row> {
+        let ctx = egui::Context::default();
+        let mut registry = PanelRegistry::new();
+        registry.register(PanelInfo::new("p0", "Bookmarks").with_tooltip("Bookmarks — the tree"));
+        registry.register(PanelInfo::new("p1", "Layers").with_tooltip("Layers — what shows"));
+        let mut state = DockState::new(DockLayout::new(
+            SideLayout::new([Column::new([Stack::tabbed(vec![
+                "p0".to_string(),
+                "p1".to_string(),
+            ])])]),
+            SideLayout::none(),
+        ));
+        let mut out = Vec::new();
+        {
+            let mut sink = |r: &RectReport<'_>| {
+                out.push(Row {
+                    name: r.name.to_owned(),
+                    published: publish_dock_rect(r),
+                    rect: r.rect,
+                    clip: r.clip,
+                });
+            };
+            let input = egui::RawInput {
+                screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, window)),
+                ..Default::default()
+            };
+            let _ = ctx.run_ui(input, |ui| {
+                Dock::new()
+                    .with_registry(&registry)
+                    .reporting_rects_to(&mut sink)
+                    .show(ui, &mut state, |_panel, ui| {
+                        ui.label("body");
+                    });
+            });
+        }
+        out
+    }
+
+    fn verdict(rows: &[Row], name: &str) -> Option<bool> {
+        rows.iter().find(|r| r.name == name).map(|r| r.published)
+    }
+
+    /// Every row, formatted for a failure message. A verdict on its own is
+    /// unreadable; the two rectangles say *why*.
+    fn detail(rows: &[Row]) -> String {
+        rows.iter()
+            .map(|r| {
+                format!(
+                    "\n  {:32} published={} rect={:?} clip={:?}",
+                    r.name, r.published, r.rect, r.clip
+                )
+            })
+            .collect()
+    }
+
+    /// ★★★ **A dock control laid out past the window edge must publish
+    /// nothing.**
+    ///
+    /// This is the test that fails on the behaviour this change replaced, and
+    /// the state it drives is not contrived. `egui_shell::dock::plan`'s
+    /// `MIN_SIDE_WIDTH` is a hard floor of 160 pt that wins over the window —
+    /// `DockLayout::drawn_side_width` clamps *up* to it — and `egui::Panel`
+    /// honours an `exact_size` wider than the space it was given. So in a
+    /// window narrower than 160 pt the side is drawn 160 pt wide and clipped,
+    /// and everything the dock puts at the side's **trailing edge** — the
+    /// collapse chevron that minimises it, and the splitter that resizes it —
+    /// lands outside the clip entirely.
+    ///
+    /// Measured, at a 120 pt window (the numbers this test asserts against):
+    ///
+    /// ```text
+    /// dock.left             rect=[0..160]   clip=[0..120]   0.750 visible
+    /// dock.left.split.side  rect=[154..160] clip=[0..120]   0.000 visible
+    /// dock.left.collapse    rect=[138..154] clip=[0..120]   0.000 visible
+    /// dock.body.p0          rect=[0..154]   clip=[0..120]   0.779 visible
+    /// ```
+    ///
+    /// **Both zero-visibility regions used to publish an ordinary-looking
+    /// rectangle**, and a driven check asserting "the collapse control is
+    /// there" would have passed on a build where the operator could not reach
+    /// it by any means. That is the shape of the 2026-08-10 defect —
+    /// Bookmarks, Layers and Signatures shipping unreachable with a rail entry
+    /// and every gate green — reproduced at unit scale.
+    ///
+    /// ★★ The assertions run in **both** directions on purpose. Asserting only
+    /// the silences would be satisfied by a filter that dropped the whole dock
+    /// stream, which is the over-application hazard: `ui_rect_visible` is
+    /// deliberately silent, so a filter that is too aggressive turns working
+    /// checks into SKIPs, and a SKIP is not red. The body and the tab are
+    /// asserted PRESENT for that reason and no other.
+    #[test]
+    fn a_dock_control_laid_out_past_the_window_edge_publishes_nothing() {
+        let rows = rows(egui::Vec2::new(120.0, 800.0));
+        assert!(!rows.is_empty(), "the dock published nothing at all");
+
+        for name in ["dock.left.collapse", "dock.left.split.side"] {
+            assert_eq!(
+                verdict(&rows, name),
+                Some(false),
+                "{name} is laid out entirely outside the clip and must NOT be \
+                 published — a rect for it is a claim that the operator can \
+                 reach a control which is off screen.{}",
+                detail(&rows)
+            );
+        }
+
+        for name in ["dock.left", "dock.body.p0", "dock.tab.p0"] {
+            assert_eq!(
+                verdict(&rows, name),
+                Some(true),
+                "{name} is mostly inside the clip and MUST still be published \
+                 — dropping it would silently turn every check that names it \
+                 into a SKIP, and a SKIP is not red.{}",
+                detail(&rows)
+            );
+        }
+    }
+
+    /// At an ordinary window size **nothing** is filtered.
+    ///
+    /// The companion to the test above, and the one that catches
+    /// over-application. Every region the dock publishes at 1280 × 800 is
+    /// fully inside its clip, so the gate must be a no-op there. If this ever
+    /// fails, the filter has begun eating regions that driven checks
+    /// legitimately need — in silence, because that is what the gate does.
+    #[test]
+    fn at_an_ordinary_window_size_the_visibility_gate_drops_nothing() {
+        let rows = rows(egui::Vec2::new(1280.0, 800.0));
+        assert!(
+            rows.len() >= 8,
+            "too few regions to be a real frame{}",
+            detail(&rows)
+        );
+        let dropped: Vec<&str> = rows
+            .iter()
+            .filter(|r| !r.published)
+            .map(|r| r.name.as_str())
+            .collect();
+        assert!(
+            dropped.is_empty(),
+            "the gate dropped {dropped:?} in an ordinary window; every one of \
+             those is a check that has silently stopped running{}",
+            detail(&rows)
+        );
     }
 }

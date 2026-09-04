@@ -499,9 +499,11 @@ pub(crate) enum Declined {
     ///   drawing a sentence at all.
     ///
     /// ⇒ Before 2026-08-29 that residue was **silence**:
-    /// `crate::app::actions::apply::vector_edit`'s `Err` arm writes one line to
-    /// the trace and, by its own recorded decision, says nothing to the
-    /// operator. R83's rule is not *gate the controls*, it is **a refusal must
+    /// `crate::app::actions::apply::vector_edit`'s `Err` arm wrote one line to
+    /// the trace and, by its own recorded decision, said nothing to the
+    /// operator. (Since O116 it words [`Self::EditRefused`], which names no
+    /// field and no gate — the floor, not this sentence.) R83's rule is not
+    /// *gate the controls*, it is **a refusal must
     /// be a sentence, never a silence** — so the verb still owes the sentence
     /// for the case the forecast missed.
     ///
@@ -629,6 +631,85 @@ pub(crate) enum Declined {
     /// Its live predicate is `EditSession::can_redo`, for
     /// [`Self::NothingToUndo`]'s reason and asked the same way.
     NothingToRedo,
+    /// ★★★ **The engine refused an edit and this shell cannot say why** —
+    /// `OPERATOR_REQUESTS.md` **O116**, 2026-09-04.
+    ///
+    /// The **last** variant in this enum in every sense: it is what the
+    /// operator is told when no other variant applies, recorded from the one
+    /// funnel every document change passes through
+    /// ([`super::super::actions::funnel`]) rather than from any verb.
+    ///
+    /// # ★★★ It is the deferral this file's neighbours kept naming, taken
+    ///
+    /// Six variants above cite `vector_edit`'s error arm by name and say some
+    /// version of *"before this, that residue was a **silence**"* —
+    /// [`Self::FieldDeleteRefused`], [`Self::BookmarkMoveRefused`],
+    /// [`Self::ResizeNotRebuildable`] among them. Each of them worded **one**
+    /// verb's residue. The arm itself stayed silent for every other verb, and
+    /// its own comment said so deliberately: *"That is `FEATURES.md`'s 'Worded
+    /// decline' row, which wants its own decision about wording and placement;
+    /// this arm is where it lands when it is taken."* This is it, taken.
+    ///
+    /// What made it urgent rather than tidy is that the silence became
+    /// reachable on **an ordinary CAD drawing with an ordinary embedded font**:
+    /// Edit ▸ Edit text arms, a caret lands, characters are typed, Enter
+    /// commits, `EditSession::edit_text` refuses a symbolic font it cannot
+    /// re-encode, and nothing whatever appears. That is this project's founding
+    /// defect class — *"I did the thing and nothing happened and nothing said
+    /// why"* — reproduced by the driven check `text_edit_on_a_real_drawing`.
+    ///
+    /// # ★★ It carries NO payload, unlike every other refusal variant here
+    ///
+    /// [`Self::TextStyle`], [`Self::Rotate`] and [`Self::Unshare`] each carry a
+    /// `Copy` enum saying *which* refusal, because in those three cases the
+    /// shell can tell: the verb has a small, closed set of engine errors and a
+    /// hand-written `refusal_for` maps them. This one deliberately has none,
+    /// and adding one would be the exact mistake those three narrowly avoid at
+    /// scale — a second copy of `pdfcer-core`'s whole taxonomy, in this crate,
+    /// drifting from theirs. [`crate::text::status::edit_declined_by_engine`]
+    /// carries the full argument, including why the sentence points nowhere.
+    ///
+    /// ⇒ A payload arrives the day `EditError` exposes a coarse `kind()`. Until
+    /// then the honest arity is zero.
+    ///
+    /// # ★★★ Retirement: the `retire`-only class, and NOT for its usual reason
+    ///
+    /// [`Self::still_true`] answers `true` unconditionally, joining
+    /// [`Self::SaveFailed`], [`Self::FlattenCertified`] and the rest — but the
+    /// argument those variants use **does not hold here**, and copying it would
+    /// be recording a fact this shell does not have.
+    ///
+    /// Their argument is *stability*: a document does not stop being certified,
+    /// a folder does not become writable, an appearance does not become
+    /// rebuildable, between one frame and the next. **This decline cannot claim
+    /// that.** Its causes are unknown by construction, and the set certainly
+    /// contains conditions that change under the operator — the residue
+    /// [`Self::BookmarkMoveRefused`] names is *"an id that stopped resolving
+    /// between the frame that drew the row and the apply that moved it, which
+    /// is the ordinary state one frame after an undo"*, and that is squarely
+    /// inside what an unexplained refusal can be.
+    ///
+    /// So it is not in the stable class. Nor can it be in the live-predicate
+    /// class ([`Self::NothingToFrame`], [`Self::NothingToUndo`],
+    /// [`Self::InsideForm`]), and the reason is structural rather than
+    /// awkward: **that class's entry requirement is that the sentence be
+    /// re-asked through the same predicate that produced it**, and there is no
+    /// predicate here to re-ask. Inventing a plausible one would be the
+    /// "second spelling that drifts" this module's header forbids, with a
+    /// failure mode worse than drift — a guessed predicate that answered
+    /// `false` would retire a **true** sentence while the operator was reading
+    /// it, which is the silence all over again with an extra step.
+    ///
+    /// ⇒ What actually earns the `true` is the **tense**. This sentence is a
+    /// report of a past moment — *that change was refused, and the document is
+    /// unchanged* — and it was true when it was written whatever the frame does
+    /// afterwards. That is [`Self::SaveFailed`]'s second clause, the one its
+    /// docs add after the stability claim: *"and if it did, the sentence would
+    /// still be a true report of what happened when the operator pressed
+    /// Save."* Here that clause is not the supporting argument; it is the whole
+    /// of it. A sentence in the past tense can go stale, and [`retire`] — the
+    /// operator's next command — is what handles stale.
+    EditRefused,
 }
 
 impl Declined {
@@ -800,6 +881,19 @@ impl Declined {
             // operator *does* — and doing it is a command, which `retire`
             // catches.
             Self::Rotate(_) => true,
+            // ★★★ `true`, and NOT on the stability argument its neighbours in
+            // this arm use — see the variant's own docs, which spend a section
+            // refusing to claim it. An unexplained refusal's causes are unknown
+            // by construction and some of them do change under the operator.
+            //
+            // What earns it is that the sentence is in the **past tense**: it
+            // reports what happened when the operator pressed, so nothing on a
+            // later frame can falsify it — only make it stale, which is
+            // `retire`'s job. And there is nothing to re-ask: the live-predicate
+            // class exists for declines that can be put back to *the predicate
+            // that produced them*, and this one was produced by an error value
+            // this shell is not permitted to interpret.
+            Self::EditRefused => true,
         }
     }
 
@@ -823,6 +917,17 @@ impl Declined {
             Self::ResizeNotRebuildable { uniform } => t::resize_not_rebuildable(uniform),
             Self::FlattenCertified => t::flatten_declined_certified(),
             Self::FieldDeleteRefused => t::field_delete_declined_structural(),
+            // ★ Stays in `crate::text::status` rather than reaching across the
+            // way the five arms below do, and the reach-across rule is what
+            // decides it rather than what is bent for it: *a string lives with
+            // the surface that owns its subject*, and this sentence's subject
+            // is not a tool, a panel or a verb — it is any edit at all,
+            // arriving from ~78 call sites through one funnel. The only surface
+            // that owns it is this bar's `⊗` slot, whose catalog area is
+            // `text::status`. It is in a FILE of its own there for the reason
+            // `field_delete_declined_structural` above is: `text::status`'
+            // `mod.rs` stands two dozen lines from R2's ceiling.
+            Self::EditRefused => t::edit_declined_by_engine(),
             // ★ Reaches across to `crate::text::tool` rather than adding an
             // entry to `crate::text::status`, on the precedent the two field
             // -group sentences below already set: a string lives with the
@@ -992,9 +1097,11 @@ pub(crate) fn record_flatten_certified() {
 /// delete arriving with no field selected — and the verb is the one place all
 /// of it passes through.
 ///
-/// ★★★ Without it that residue is a **silence**, because
-/// `crate::app::actions::apply::vector_edit`'s `Err` arm writes a trace line
-/// and says nothing to the operator by its own recorded decision. R83's rule is
+/// ★★★ Without it that residue was a **silence**, because
+/// `crate::app::actions::apply::vector_edit`'s `Err` arm wrote a trace line and
+/// said nothing to the operator by its own recorded decision. It now words
+/// [`Declined::EditRefused`] (O116), which is a floor rather than a
+/// replacement: it cannot say *form fields* or *certification*. R83's rule is
 /// not *gate the controls*; it is *a refusal must be a sentence*. See
 /// [`Declined::FieldDeleteRefused`].
 /// Record that a field-group deletion **preview** was refused.
@@ -1191,8 +1298,18 @@ pub(crate) fn record_history_empty(declined: Declined) {
 /// | `FieldNameEmpty` | the box is trimmed and an empty one sends `None`, not `Some("")` |
 ///
 /// They still reach the trace through [`super::super::actions::apply::vector_edit`]'s
-/// error branch, which is where an impossible refusal belongs: visible to
-/// whoever is debugging, absent from the status bar an operator reads.
+/// error branch, which is where an impossible refusal's *reason* belongs:
+/// visible to whoever is debugging, and never on the status bar in the engine's
+/// own words.
+///
+/// ★ **Corrected 2026-09-04 (O116):** this used to end *"absent from the status
+/// bar an operator reads"*, and that is no longer true. Those three now reach
+/// the bar as [`Declined::EditRefused`] — *"That change was refused, and the
+/// document is unchanged."* — because the funnel's floor words every refusal no
+/// verb claimed. That is the right outcome rather than a leak: an unreachable
+/// refusal that somehow happened is still a gesture that did nothing, and the
+/// operator is owed a sentence about it. What stays off the bar is the engine's
+/// *prose*, which was always the property this paragraph was defending.
 pub(crate) fn record_adopt_refusal(declined: Declined) {
     LAST.with_borrow_mut(|slot| *slot = Some(declined));
 }
@@ -1313,6 +1430,16 @@ pub(super) fn show(ui: &mut egui::Ui, doc: &OpenDoc) {
     };
     super::disclosure::disclosure_line(ui, REGION_DECLINE, declined.line());
 }
+
+/// ★ **The funnel's floor**, split out under R2 when this file reached 1,530
+/// lines. See `decline/floor.rs`'s header for why that particular seam: it is
+/// the one part of this module that answers a question about somebody else's
+/// protocol rather than about what a decline is.
+mod floor;
+/// Re-exported so that the one caller — `crate::app::actions::funnel` — still
+/// says `decline::before_the_verb()`. The split is about where the code lives; a
+/// call site should not have to learn that a submodule exists.
+pub(crate) use floor::before_the_verb;
 
 /// See `decline/tests.rs`.
 #[cfg(test)]

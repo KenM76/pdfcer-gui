@@ -650,6 +650,57 @@ for it.
 **Tool Options pane** — per P2, every armed tool's parameters. Unchanged
 in principle; the pane needs the layout work described in the roadmap.
 
+### ★★★ Amendment, 2026-09-04 — a fourth surface: the TRAILING region
+
+`OPERATOR_REQUESTS.md` **O122**, the operator: *"beside our read-review-edit
+buttons at the top there should be an open in acrobat button."*
+
+This document specified three surfaces — the ribbon, the QAT and the status bar
+— and the tab-strip row had three regions: QAT on the left, tabs in the middle,
+the mode selector on the right. There was no way to put a control **past** the
+mode selector, which is where he asked for one. So there is now a fourth
+region, and it is a first-class part of the shell rather than a special case:
+
+```text
+[QAT] │ File View Pages ⏷ 2 more   ( Read │ Review │ Edit )   [Acrobat]
+                                                              └ trailing ┘
+```
+
+**What may go here, and it is a narrow set.** The QAT is *"the handful of
+controls that must never sit behind a tab switch"* — verbs used continuously,
+on the left, where reading starts. This is the opposite end of the row, read
+last, and the rule that follows is:
+
+> A trailing control **ends the current activity** rather than advancing it.
+
+*Open in Acrobat* qualifies exactly: it closes the document and hands the file
+to another program. A control an operator reaches for during their work does
+not belong here and belongs on a tab, or on the QAT if it is used all day.
+
+**P1 is not weakened.** A trailing control may appear here **and** on a tab, on
+the same amendment P1a already grants the QAT and the status bar: *a shortcut
+to a known home is not a second place to hunt.* `Shell::validate`'s
+one-command-one-tab rule walks tabs only, so nothing here relaxes it.
+
+★ `file.open_in_acrobat` is nonetheless on **no** tab, which is the first
+command in this manifest of which that is true. Its home is a fixed position in
+chrome that is visible in every mode, which is a *stronger* discoverability
+guarantee than a tab gives — and putting it on File as well would give two
+places to press for one act, one of which comes and goes with what is installed.
+
+★★ **P3 applies here with full force and is the reason the region is data
+rather than a callback.** The control is absent on a machine with no Acrobat —
+not greyed — through `visible_when` on the manifest item, which is the shell's
+own R9 mechanism. The region holds `Item`s, resolved through the command
+registry, precisely so that nothing can draw a control here that has no command
+behind it.
+
+★ It is also the one reserved region on that row that may be **squeezed out**.
+The QAT, the mode selector and the two overflow affordances are promises the
+interface has already made; a trailing control's absence is a state the
+application already handles, so on a very narrow window it is dropped whole
+(never a sliver) and the drop is disclosed as `ribbon-trailing-dropped`.
+
 ---
 
 ## 7. Migration map

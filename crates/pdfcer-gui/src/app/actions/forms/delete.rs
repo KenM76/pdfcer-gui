@@ -28,9 +28,10 @@
 //! 1. right-click a widget, or press Delete over it;
 //! 2. the box stays, because `deletion_refusal` was always going to refuse;
 //! 3. the selection vanishes anyway;
-//! 4. nothing is said, because `crate::app::actions::apply::vector_edit`'s `Err` arm writes
-//!    one trace line and — by that arm's own recorded decision — says nothing
-//!    to the operator;
+//! 4. nothing was said, because `crate::app::actions::apply::vector_edit`'s `Err` arm wrote
+//!    one trace line and — by that arm's own recorded decision — said nothing
+//!    to the operator (it words an un-categorised decline since O116,
+//!    2026-09-04, which ends the silence and still names no field);
 //! 5. **and the Properties panel, which was correctly showing "This document
 //!    does not allow form fields to be removed", goes blank**, because that
 //!    section is drawn from `doc.selected_field`.
@@ -112,8 +113,10 @@ pub(in crate::app::actions) fn widget(doc: &mut OpenDoc, field: &str, widget: us
 /// predict.
 ///
 /// Before 2026-08-29 that residue was a **silence**:
-/// `crate::app::actions::apply::vector_edit`'s `Err` arm writes one line to the trace and, by
-/// its own recorded decision, says nothing to the operator. R83's rule is not
+/// `crate::app::actions::apply::vector_edit`'s `Err` arm wrote one line to the trace and, by
+/// its own recorded decision, said nothing to the operator. (Since O116,
+/// 2026-09-04, it words an un-categorised decline — the floor under every verb,
+/// and no substitute for a sentence that names the field.) R83's rule is not
 /// *gate the controls*; it is **a refusal must be a sentence, never a
 /// silence.**
 ///

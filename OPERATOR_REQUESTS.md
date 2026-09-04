@@ -80,6 +80,435 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
+## O124 — ✅ **FIXED 2026-09-04** — the canvas fades content at the edges of the view; it should render true
+
+> *"the canvas does a fading around the edges on stuff shown at the edges of the
+> view. I don't want this. it should render true."*
+
+**It was a seam, not an effect.** There is no vignette, gradient, feather or
+shadow anywhere in the canvas — the soft band along the edge of your window is
+`canvas::backdrop`'s **low-resolution whole-page texture** showing through where
+the sharp raster stops. Two pictures of the same content, side by side, which is
+the rule 4 reading your own sentence reached for.
+
+### ★★★ The cause: half the overscan was bought and then thrown away
+
+Above the pixmap ceiling the shell rasterizes **the window plus 50 % on each
+side** (`render::strategy::OVERSCAN`), so a pan inside that margin costs
+nothing. `region_for` then snapped that window onto a half-viewport grid with
+`.floor()` **on its origin** — and `.floor()` only ever moves a window one way.
+The margin you actually got was:
+
+| side | margin, in viewports |
+|---|---|
+| left / top | `0.5` … `1.0` |
+| **right / bottom** | **`0.0` … `0.5`** |
+
+Measured over a full grid step in 2,000 increments: **left `0.5000`, top
+`0.5002`, right `0.0002`, bottom `0.0000`.** At its worst phase the sharp
+picture stopped *exactly at the bottom edge of the window* while a full half
+screen of it sat off the left where nothing could ever see it.
+
+★★ **That is why it looked permanent rather than occasional.** A region raster
+takes ~1.6 s on a CAD sheet and the canvas deliberately keeps showing the last
+good picture while the next one renders (O24c). With ~0 margin on the right,
+**one pixel of pan** puts the leading edge outside the held raster — and leaves
+it there for a second and a half. You pan constantly, so the band was always
+there.
+
+### The fix — snap the window's CENTRE, not its origin
+
+`.round()` on the centre is bounded by half a step in *either* direction.
+Measured after, same sweep: **left `0.2500`, right `0.2502`, top `0.2502`,
+bottom `0.2500`** — a quarter of a screen guaranteed on every side.
+
+★★★ **It costs nothing.** Same raster size (exactly 2× the window, unchanged),
+same grid step, same cache-hit cadence — measured at 80 % of small pans reusing
+the raster both before and after. The only thing that changed is which side the
+margin lands on.
+
+### ★ What is NOT fixed, and the price if you want it
+
+A quarter viewport is a promise about where the raster *reaches*, not about how
+fast you move. A pan of more than a quarter of the window inside one raster's
+~1.6 s still arrives past the held picture and still shows the backdrop at the
+leading edge. Closing that means buying more overscan, and it is priced from the
+engine's own measurement in `BENCHMARK.md` (691 ms fixed + ~0.19 µs/px):
+
+| overscan | raster time | guaranteed margin |
+|---|---|---|
+| `0.5` (shipped) | ~1.6 s | 0.25 screens |
+| `0.75` | ~2.1 s (**+0.5 s**) | 0.5 screens |
+| `1.0` | ~2.8 s (**+1.2 s**) | 0.75 screens |
+
+**Your call, and it cuts against your own earlier ruling** — *"I don't want the
+affect that other readers have where you always have to wait for detail to
+render after panning"*. A wider margin means fewer waits, each one longer. The
+constant is left where you set it.
+
+### ★★ Two instruments were blind to this, and both are fixed
+
+`canvas-coverage` published one number, `covered`, which **counts the backdrop
+on purpose** — it answers *"is he looking at the drawing?"*, so it read
+`1.000` throughout the entire defect. A second number, `sharp`, now answers
+*"is he looking at the real raster?"* beside it. Fixing that also closed a hole
+in `covered` itself: on the branch where there is no raster **and** no backdrop
+it used to report `1.000` for a blank page, which is the one state the module
+was built to detect.
+
+**Verification:** two tests that fail on the old arithmetic —
+`the_overscan_reaches_a_quarter_screen_in_every_direction` (page space) and
+`the_sharp_raster_covers_the_window_on_every_side` (composed through the y-flip
+into screen pixels). Falsified by reinstating `.floor()`: they report
+`0.0003 of a viewport` and `0.0014 of a window past the right edge`. Not driven
+in the GUI — you were at the keyboard.
+
+---
+
+## O123 — ◑ **OPEN 2026-09-04** — A7: one dock, master–detail, a one-line tool status, and selection controls in the left rail
+
+**Ken, 2026-09-04, verbatim:**
+
+> *"Also I want A7 from the plan implemented. I never understood why there is a
+> tool dock when everything can be in object and properties. I'd also like those
+> one to appear in the space where the tool dock currently shown. to recap 'The
+> Tool panel becomes a one-line tool status (name, one sentence, "Put this tool
+> down"); its buttons duplicate the ribbon and go. Objects and Properties become
+> master–detail in one panel with a draggable split, ellipsis and tooltip on
+> rows. Layers, Signatures and Fonts join Pages and Bookmarks as tabs in one
+> dock instead of a second dock with a fixed split. Default dock width 360 px in
+> Edit, remembered per mode.' What I'd also added in the bar at the left side
+> that we are adding: the navigate selectors and some other related selection
+> controls (lasso tool when we implement one, etc) and these will fold up into a
+> drop down arrow if space becomes scarce."*
+
+### ★★★ This overrules `SHELL_LAYOUT_PROPOSAL.md` §3, and his version answers the objection that document raised
+
+That analysis ranked the one-line tool strip **4th of four and said do not build
+it**, on the ground that it deletes the armed block's live controls — the text
+pen's font, size and colour, and the three scale switches — and orphans a
+disclosure slot that exists because R128 forbids a 47-word refusal sentence in a
+status row.
+
+**His first sentence dissolves that:** *"I never understood why there is a tool
+dock when everything can be in object and properties."* The objection was
+*"those controls are deleted"*. His answer is that they were never the tool
+panel's to hold — they are **properties of what is selected or about to be
+drawn**, and Properties is where a property belongs. Nothing is deleted; it
+moves to the surface that owns it.
+
+⇒ The analysis was right about the cost and wrong about the remedy, because it
+took the panel's contents as fixed and asked only whether the strip could hold
+them. Recorded here rather than quietly amended in that file, because a
+recommendation that was overruled is more useful to the next reader than a gap
+where it used to be.
+
+### The six parts
+
+1. **Tool panel → a one-line status:** the tool's name, one sentence, and *"Put
+   this tool down"*. Its buttons duplicate the ribbon and go.
+2. **Its live controls move to Properties**, not to oblivion — see above.
+3. **Objects + Properties become one master–detail panel** with a **draggable**
+   split, and rows that **ellipsise with a tooltip** instead of hard-clipping
+   mid-character.
+4. **That panel occupies the space the Tool dock uses today.**
+5. **Layers, Signatures and Fonts join Pages and Bookmarks as tabs in ONE dock**
+   — no second dock, no fixed split.
+6. **Default dock width 360 pt in Edit, remembered per mode.** ★ Per-mode width
+   is already modelled and already persisted, so this is a constant plus the row
+   work.
+
+### And the left rail gains the navigation and selection controls
+
+His addition, and it changes what the rail is for. It was going to be five panel
+tabs; it is now **panel tabs plus the navigate selectors and the selection tools
+— lasso included, when it exists** — with an **overflow chevron** when space runs
+short.
+
+★★ The overflow is the load-bearing detail, and it is the ribbon's own problem
+one surface over: `RIBBON_SCALING.md` already documents a three-rung ladder
+(re-wrap → collapse → scroll) for exactly this. The rail should reuse that
+reasoning rather than inventing a second answer to "what happens when the
+controls do not fit".
+
+⚠ **`SHELL_LAYOUT_PROPOSAL.md` §5 makes one thing a precondition for the rail,
+and it is now met**: the dock's rect channel published layout rather than
+visibility, so no driven check could tell a working rail from the 2026-08-10
+defect where three panels shipped unreachable with every gate green. That landed
+2026-09-04.
+
+### Sequencing
+
+The right dock (parts 1–6) first; the rail second. They share the dock layout
+and building them in one pass would mean two large changes in one file with no
+green state between them.
+
+---
+
+## O122 — ◑ **OPEN 2026-09-04** — an "Open in Acrobat" button beside Read / Review / Edit
+
+**Ken, 2026-09-04, verbatim:**
+
+> *"also beside our read-review-edit buttons at the top there should be an open
+> in acrobat button which will open the active pdf in acrobat reader or pro
+> depending on what is installed - we'll have to add a feature to automatically
+> locate and open the installed acrobat on the system, and have a setting where
+> people can change it. When clicked it will check if the file has been changed
+> (forms filled out for example, etc) and ask to save changes first, but if it
+> hasn't changed it will note the file will be closed when opened in acrobat
+> with and ok button to continue - there will be a cancel button as well."*
+
+### What he specified, itemised so nothing is dropped
+
+1. **Placement:** beside the Read / Review / Edit selector, at the top right.
+2. **Target:** Acrobat **Pro** or **Reader**, whichever is installed.
+3. **Discovery:** find the installed Acrobat automatically.
+4. **Override:** a setting where the path can be changed.
+5. **If the document has unsaved changes** — *"forms filled out for example"* —
+   **ask to save first.**
+6. **If it does not** — say that **the file will be closed** when it opens in
+   Acrobat, with **OK** to continue and **Cancel**.
+
+★ Point 6 is his, and it is the interesting one: pdfcer **gives the file up**
+rather than keeping it open alongside. That is the right call and worth writing
+down — Acrobat takes its own lock, and two editors on one file is how an
+afternoon's work disappears. The dialog exists because closing a document is not
+something to do without telling him.
+
+### Decisions taken rather than referred back, and each is reversible
+
+- **Pro is preferred over Reader** when both are installed. Pro is the superset
+  and is what somebody who has both reaches for; Reader is the fallback.
+- **Discovery reads Windows' own registration**, not a guessed path — the
+  `App Paths` keys for `Acrobat.exe` and `AcroRd32.exe` first, then the `.pdf`
+  handler's own command. A hard-coded `C:\Program Files\Adobe\…` is wrong the
+  first time somebody installs to another drive, and this operator's machine
+  already has `D:` as its working volume.
+- **The button is absent when nothing is found and nothing is configured** —
+  R9: an unavailable capability renders nothing, and greying is reserved for
+  *temporarily* unavailable. ★ **The escape hatch is that the path control lives
+  in Settings and is visible there whether or not discovery succeeded**, so a
+  non-standard install is fixable without the button ever having appeared.
+- **Save-then-open, or cancel.** No third "open without saving" option: the
+  document is about to be closed, so discarding is silent data loss dressed as a
+  choice.
+
+### Status
+
+**Built 2026-09-04. NOT VERIFIED by a driven run** — see "The driven check that
+was not run" below, and the reason, which is that you were at your keyboard.
+
+All six parts are in. What was verified, and how:
+
+| Part | Where | Evidence |
+|---|---|---|
+| 1. a control beside Read / Review / Edit | a new `trailing` region on `egui_shell::manifest::Shell`, rendered by `ribbon::trailing` | three unit tests over `plan_strip_row`, all three falsified |
+| 2. discovery from Windows' own registration | `crate::acrobat` + `acrobat::windows` | six unit tests over a described machine, plus an `#[ignore]`d probe that reads the real registry |
+| 3. a setting for the path | `Prefs::acrobat_path`, `dialogs::settings::acrobat` | the prefs round-trip test; the settings-catalog count gate |
+| 4. absent, not greyed, when there is no Acrobat | `visible_when: "acrobat.available"` on the manifest item | `a_machine_with_no_acrobat_offers_no_viewer_and_therefore_no_button` |
+| 5. unsaved ⇒ ask to save first | `acrobat::prompt_for` → `dialogs::open_in_acrobat` | `the_document_state_chooses_the_dialog_and_never_saved_refuses_distinctly` |
+| 6. unchanged ⇒ say the file will be closed | the same dialog's `ConfirmClose` shape | `both_confirmations_say_the_document_will_be_closed` |
+
+**What discovery found on your machine**, read 2026-09-04:
+
+```text
+App Paths\Acrobat.exe    = C:\Program Files\Adobe\Acrobat DC\Acrobat\Acrobat.exe   (verified on disk)
+App Paths\AcroRd32.exe   = absent — no Reader on this machine
+HKLM\SOFTWARE\Classes\.pdf         = OpenPDFStudio.pdf      <- NOT Adobe
+HKCU\...\FileExts\.pdf\UserChoice  = Acrobat.Document.DC     <- your own choice
+```
+
+★★★ The third line is the finding worth keeping. **The machine-wide `.pdf`
+handler on your machine is another vendor's product**, so the fallback that
+reads it had to be filtered by executable name — otherwise a button saying
+*Open in Acrobat* would have launched PDF Studio, and you would have found out
+about it after pdfcer had already closed your document. `UserChoice` is read
+before the class registration for the same reason: it is where Windows recorded
+that *you* picked Acrobat.
+
+### ⚠ The driven check that was not run, and is not in the harness
+
+`tools/ui-verify/` is another track's tree this session and I stayed out of it,
+so the check below is specified rather than added. **I did not run it, and I did
+not launch the GUI or Acrobat at any point** — you were at your keyboard, and a
+driven run takes your screen.
+
+`open_in_acrobat` — four phases, no Acrobat ever started:
+
+| Phase | Does | Expected |
+|---|---|---|
+| A | launch with no document; list declared regions | `ribbon.trailing.file.open_in_acrobat` **is** declared (discovery found Pro) and the control is **disabled** — `doc.open` is unset |
+| B | open a fixture, click the control | `dialog:open-in-acrobat` declared; `open-in-acrobat.proceed` and `open-in-acrobat.cancel` declared; `open-in-acrobat.save_first` **absent** — the fixture is clean; trace carries `acrobat-asked prompt=ConfirmClose edits=0` |
+| C | press Cancel | the window closes, the document is **still open**, the trace carries `acrobat-cancelled` and no `acrobat-launched` |
+| D | make one edit, click the control again | `open-in-acrobat.save_first` **is** declared; trace carries `acrobat-asked prompt=SaveFirst edits=1`; press Cancel again |
+
+★ Phase D stops at Cancel deliberately. Driving past that point starts Acrobat,
+and a check that opens another program on your machine is not one worth having
+run automatically. The launch itself is covered by
+`launching_passes_the_document_to_the_viewer`, which asserts the argv without
+starting anything.
+
+★★ A fifth phase is worth adding on a machine with no Acrobat: run with the
+setting pointed at a path that does not exist and assert
+`ribbon.trailing.file.open_in_acrobat` is **not declared at all** — R9's absence
+in the only form a screenshot can prove.
+
+### One thing to know before the next `Action` is added
+
+`crates/pdfcer-gui/src/app/actions/action.rs` is at **exactly 1,500 lines** —
+R2's ceiling — after this row's one new variant. The next variant added cannot
+be added without splitting that file first. Recorded here rather than left as a
+surprise for whoever writes it.
+
+---
+
+## O121 — ◑ **OPEN 2026-09-04** — the test harness took your screen twice after you said you were back, and the fix is a lock rather than an apology
+
+**What you saw:** *"my screen is still being driven. is it almost done?"* — after
+I had already killed it once and told you it was stopped.
+
+**What was happening.** Earlier this morning, while you were away, one of the
+background workers was told the machine was free and to run the driven suite
+broadly. That instruction stays in force for as long as that worker runs, and
+**there is no way to call one back** — no message channel, no stop control. So
+when I killed its run, it did what any sensible runner does with a process that
+died: it retried. Eight times.
+
+**What stopped it:** a watchdog that kills any window either program opens, on
+sight; and deleting the built binary, so every retry has to sit through a full
+rebuild before it can try again. Your screen has been quiet since.
+
+### ★★★ The real fix, and it is small
+
+Killing windows treats the symptom. The harness should **refuse to start** when
+the desktop is claimed:
+
+- a lock file carrying a PID and a reason, written by whoever claims the machine;
+- **checked in the harness's own launch path**, before the first window exists;
+- present and alive ⇒ exit non-zero with the reason.
+
+⇒ The property that matters: **the lock is checked by the process that opens the
+window, not by the process that decided to open it.** Any number of
+uncoordinated workers then behave correctly, because none of them has to have
+heard the instruction.
+
+★ The refusal must be a hard failure, never a skip. A skip is not red, and *"the
+desktop was busy"* rendered as green is exactly the silence this harness exists
+to remove.
+
+**Blocked until** the track currently rewriting `tools/ui-verify/` lands, so the
+two do not collide. It is perhaps forty lines.
+
+---
+
+## O120 — ◑ **OPEN 2026-09-04, AND IT SHOULD HAVE BEEN OPEN SINCE 2026-09-03** — export to PNG / JPEG / SVG, and copy-paste into Word and Inkscape
+
+**Ken, 2026-09-03, verbatim:**
+
+> *"can you add the ability to export page(es) to png, jpg, svg. note that there
+> had better be full support (including transparency where supported!). Also I'd
+> like to be able to copy and paste anything to other software - like copy and
+> paste vector graphics into word or inkscape for example if possible."*
+
+### ★★★ The engine built all of it. This shell built none of it. There was no row.
+
+That is the failure worth recording, and it is a process one rather than a
+technical one. He said this to the **engine** side, which shipped it the same
+day across four passes and then sent a note — *"here is what a shell wires"* —
+with the call for every capability, the clipboard format order validated against
+a real Word paste, and a worked 60-line example in the CLI.
+
+The note landed in `D:\Dev\FeatureRequests\pdfce_FeatureRequests\open\`
+marked *"informational, no reply needed; consume when convenient"*, and **that
+is exactly the shape of thing this project has already been burned by**: no
+gate reads the request channel, no test fails, and "when convenient" never
+arrives on its own. It was found on 2026-09-04 only because a session read the
+channel looking for something else.
+
+⇒ The standing rule — *write the row when he speaks, not when the work lands* —
+has a hole in it: it assumes he speaks to **this** side. He does not always, and
+an ask routed through the engine arrives here as a note nobody is required to
+read.
+
+### What the engine gives us
+
+| capability | call |
+|---|---|
+| page raster **keeping its transparency** | `RenderOptions::default().with_backdrop(PageBackdrop::Transparent)` |
+| PNG with alpha **and a `pHYs` DPI** | `export::encode_png(&pixmap, Some(dpi))` |
+| JPEG | `export::encode_jpeg(&pixmap, &JpegOptions)` |
+| explicit flatten onto a colour | `export::flatten_over(&pixmap, Rgb)` |
+| SVG, with native gradients | `svg::export_svg_view(...)` → `SvgExport { svg, outcome }` |
+| EMF | `emf::export_emf(...)` → `EmfExport { emf, outcome }` |
+
+★ **The DPI metadata is not a detail.** Without `pHYs`, Word places a 300 DPI
+page four times too large. That is the difference between "we support export"
+and "the thing you paste is the right size".
+
+★★ **A JPEG cannot hold transparency, and the note is explicit about what to
+do:** *"refuse a 'transparent' JPEG by name in your UI, never flatten
+silently."* Asking for one will say so. It will not quietly give you a white
+background and let you find out in print.
+
+★★★ **Every export carries a disclosure and it is rule 4's shape.** `ExportTally`
+counts what could not be expressed exactly — shadings rasterised, soft masks
+kept as `<mask>`, overprint and non-separable blends drawn as their `Normal`
+approximation, dashed strokes pre-applied, **text as glyph outlines** — and
+`is_exact()` when the whole page came out as geometry. That goes off-canvas,
+after the export, never as a mark on the page.
+
+### The clipboard order is not ours to choose
+
+Measured by the engine against a real Word paste through combridge: SVG first,
+then EMF, then PNG, then `CF_DIBV5`, all in one transaction. Word stores the
+SVG as `svgBlip` and the shape lands at the page's physical size; place only
+the raster formats and it degrades to a plain picture. LibreOffice 24.x reads
+the EMF because it cannot read a foreign SVG clipboard entry before 25.2.
+Inkscape prefers `image/svg+xml`.
+
+⇒ `arboard` cannot register custom formats; this needs `clipboard-win`
+directly, as the CLI does.
+
+### Status
+
+◑ **The FILE-EXPORT half shipped 2026-09-04. Copy-out and EMF did not, and
+that is a scope line rather than a forgetting.**
+
+**What is on the ribbon now:** File ▸ Export ▸ **Export image…**
+(`file.export_image`, token 124) → `crate::dialogs::export_image`. Format
+(PNG / JPEG / SVG), pages (this one / all / a typed range), resolution with the
+pixel count and the `MAX_PIXMAP_EDGE` ceiling shown live, transparency, and JPEG
+quality. The refusal is worded and doubled: the checkbox goes dead beside a
+sentence naming JPEG, and `ImagePlan::impossible` refuses the same combination
+again at the writer so the property survives a build with a different window.
+The disclosure is off-canvas, after the export, and always states that SVG text
+became outlines — the one loss nothing counts.
+
+**What is NOT built, and is the second pass:**
+
+1. **Clipboard copy-out.** The whole of the operator's second sentence —
+   *"copy and paste anything to other software"*. It needs `clipboard-win`
+   directly (`arboard` cannot register a custom format) and the placement order
+   the engine MEASURED against a real Word paste: `image/svg+xml` +
+   trailing NUL, then `CF_ENHMETAFILE`, then `PNG`, then `CF_DIBV5`, all in one
+   transaction. `crates/pdfcer-cli/src/clipboard.rs` is the worked example.
+   ★ Placing only the raster formats degrades Word's paste to a plain
+   picture, so a half-built version of this is worse than none.
+2. **EMF, as a file and as a clipboard entry.** `emf::export_emf` exists and
+   `EmfOutcome` carries its own disclosure (what became a bitmap). It is what
+   LibreOffice 24.x reads, since that version cannot read a foreign SVG
+   clipboard entry.
+3. **The driven check.** ⚠ The window has never been opened in a running
+   binary. R1's bar is *an operator can reach it in a real build*, and by that
+   bar this is not finished — stated here rather than implied by a green
+   test count.
+
+`D:\Dev\pdfcer\docs\FEATURES.md`'s `gui` boxes are **not** ticked, and cannot
+be from this side: that tree is read-only until fold-in. The engine's note asks
+for the tick; it is owed and it is not ours to make.
+
+---
+
 ## O119 — ❓ **A QUESTION FOR YOU, 2026-09-04** — the engine can now put a password on a document and set what it allows. Do you want a way to do it?
 
 **Not something you asked for — something that arrived, and needs your ruling
@@ -503,7 +932,7 @@ dialog already carries the fix and the reasoning (`ScrollStyle::solid` +
 
 ---
 
-## O113 — ◑ **OPEN, 2026-09-03** — the clipping hatch should cover only what actually falls outside the printable area
+## O113 — ✅ **DONE 2026-09-04** — the clipping hatch should cover only what actually falls outside the printable area, and the button's count follows it
 
 **Ken, 2026-09-03:** *"also can you make it so the red pattern you put over the
 page if it is going to print beyond the printable borders is only over the areas
@@ -545,10 +974,129 @@ which is `pdfcer-core`'s question rather than this shell's. Likely shapes:
   rendered** for the overhanging band and hatching only where it is not blank.
   Cheaper, needs no engine change, and is approximate at the edges.
 
-⬜ **Not started, and not guessed at.** The second option is tempting because it
-needs nobody else, and it answers *"is this band blank in the raster we drew"*
-rather than *"is this band blank"* — which is the same class of proxy this
-project has now been caught by three times in one day. Decide deliberately.
+### ★★★ That ranking was BACKWARDS, and the work proved it
+
+This row called the engine content-bbox *"the honest general answer"* and the
+raster route *"cheaper … approximate at the edges."* Wrong way round.
+
+**A content bounding box is a rectangle, and a rectangle is conservative in
+exactly the wrong direction here.** A title block bottom-right and a revision
+block top-right produce a bbox spanning the whole right edge — whether or not
+the strip that actually gets cropped holds a single stroke. So the engine verb
+would report *"content reaches into the overhang"* **on the very drawing shape
+this request is about.** It is a different proxy, not a better answer.
+
+The raster route is not the cheap compromise. It is the one that answers the
+question, because **the pixels sampled ARE the pixels about to print**. Its
+"approximate at the edges" caveat is bounded at one mask cell and always errs
+toward hatching *more*, never less.
+
+★ An engine content-extent verb is still worth having — for auto-crop and
+fit-to-content. Just not as the answer to this.
+
+### ★★★ And the finding that decided the whole thing: your paper is not white
+
+Measured through the preview's own render path, on `a1-titleblock.pdf`:
+
+> **The blank paper of that CAD sheet renders at `(249, 249, 249)`** —
+> 236,443 pixels of it, against only 7,246 at pure white.
+
+⇒ Under the intuitive test — *"anything not pure white is ink"* — **97 % of your
+sheet reads as ink and the entire overhang hatches.** The defect you reported,
+reproduced by a wrong definition of one word. The threshold is nine levels below
+white and is pinned to that measurement by a compile-time assertion.
+
+★★ A second measurement killed the other intuitive test: the page is composited
+onto opaque paper before it is handed over, so **every pixel has alpha 255**. An
+alpha-based "is there anything here" test would have hatched **nothing, ever**,
+and looked exactly like the fix working.
+
+### A smaller instance of the same defect was hiding inside it
+
+The old hatch took `right.union(bottom)` — and `Rect::union` is a **bounding
+box**, not a set union, so it also covered the corner region that is neither
+right-of nor below the printable area: **paper that prints perfectly**. The two
+bands are disjoint now.
+
+### ✅ The question back to you — answered, and built 2026-09-04
+
+The question was: `Job::clipped()` counts sheets whose page box exceeds the
+printable rectangle — a geometric test made at planning time, with no raster —
+so on a 1:1 drawing the preview said *"nothing is printed there"* while the
+button said **"Print — 1 sheet will be clipped"**. Both true, reading as a
+contradiction, with the button the louder surface.
+
+**Your ruling:** *"Remember the blank/not-blank verdict for each sheet as the
+operator steps through the preview, and label the button with the geometric
+count minus the sheets known blank, with the ones not yet looked at still
+counted."*
+
+Built as `dialogs/print/verdicts.rs`. Three things are worth recording because
+each was a decision rather than a transcription.
+
+#### ★★ The corrected number is a CEILING, not a floor
+
+The proposal called it *"a floor"*. It is the other way round, and the
+direction decides the wording, so it was derived rather than adopted. With `T`
+the number of sheets that really will lose ink:
+
+```text
+known_inked  ≤  T  ≤  known_inked + unexamined  =  displayed
+```
+
+The displayed number is the **largest** `T` could be. `known_inked` is the
+floor, and displaying *that* would be the dangerous mistake — it would
+under-report loss on exactly the sheets nobody has looked at.
+
+#### ★★★ So the wording had to change, and it is a CORRECTION not a weakening
+
+A ceiling cannot honestly be said with *"will"*. But the hedge appears **only**
+where the number stops being a measurement — four states, four sentences, each
+the strongest thing its state can support:
+
+| state | button | when |
+|---|---|---|
+| nothing to say | **Print** | nothing clipped, or every clipped sheet examined and blank |
+| geometric | *"Print — N sheets will be clipped"* — **unchanged, word for word** | nothing has been subtracted |
+| measured | *"Print — N sheets will lose content"* | every clipped sheet examined |
+| ceiling | *"Print — up to N sheets may lose content"* | some examined, some not |
+
+Nothing was softened to match anything. The *measured* sentence is stronger
+than the one it replaces, and the geometric one is untouched.
+
+#### ★ Printing without ever opening the preview — ruled on deliberately
+
+Every sheet is then unexamined, nothing is subtracted, and the claim is the
+**geometric** row above: the pre-O113 count in the pre-O113 words, byte for
+byte. Hedging there would have replaced an exactly true statement with a
+bounded one for no gain, and would have softened pdfcer's whole divergence from
+Acrobat (which clips silently) in the one state with no evidence to soften it
+with. It is written into the code as a decision, not left as an accident of the
+arithmetic.
+
+#### The cache key is stronger than the texture's, on purpose
+
+A verdict is a claim about pixels. `PreviewKey`'s own doc comment says what a
+cache key is — *"if these are equal, re-rendering would produce the same
+image"* — so a verdict under a weaker key is a verdict about a page that has
+changed, and it would be **confidently** wrong, because its whole job is to
+take a warning away.
+
+`verdicts::Context` is now the **only** place a `PreviewKey` is constructed, so
+the texture's key is *derived from* the verdict's context and cannot be
+stronger than it. Each entry additionally pins the sheet's `Placement` and page
+size, which `PreviewKey` deliberately omits — those change no pixel but they
+move the band, so a Fit→100 % switch must void the verdict and does. An
+over-strong key only ever pushes a sheet back to "unexamined" and the number
+**up**; an under-strong one removes a warning on evidence about another page.
+Everything ambiguous resolves to unexamined, including *"the page would not
+render"*.
+
+#### What it does not do
+
+It renders nothing. The correction uses verdicts the preview had already
+produced, from the same `lost_regions` call the hatch is drawn from — so there
+is no second computation to drift, and opening the dialog still costs one page.
 
 ---
 

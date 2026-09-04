@@ -45,12 +45,150 @@ use egui::Rect;
 
 use super::model::{DockSide, PanelId};
 
-/// The callback an application supplies to receive drawn rectangles.
+/// **One drawn region, as the dock reports it.**
 ///
-/// Identical in shape to [`crate::ribbon::RectSink`] so an application
-/// can pass the same closure to both surfaces and filter on the name
-/// prefix.
-pub type RectSink<'a> = dyn FnMut(&str, Rect) + 'a;
+/// # ★★★ Why this is a struct, and why it carries a second rectangle
+///
+/// Until 2026-09-04 the dock's sink was `FnMut(&str, Rect)` — a name and
+/// a rectangle — and the application on the other end of it published
+/// every one of those through its unconditional rect channel. That is
+/// **a report about LAYOUT, and it was being read as a report about
+/// VISIBILITY.** The two are not the same claim, and on this project the
+/// gap between them has a body count: `D:/dev/rag/egui/` records
+/// Bookmarks, Layers and Signatures shipping *unreachable in a real
+/// build with every gate green*, each of them with a rail entry and a
+/// perfectly healthy rectangle in the trace.
+///
+/// A consumer that wants to make the stronger claim — *the operator can
+/// see this* — needs to know what the region was **clipped to**, because
+/// "laid out at these coordinates" and "at least three fifths of it
+/// survived the clip" are answerable only together. So the dock now
+/// hands over the clip rectangle in force at the moment the region was
+/// published, and what the consumer does with it is the consumer's
+/// business (see this module's [`Reporter::report`] and, on the
+/// application side, `pdfcer_gui::diag::ui_rect_visible`).
+///
+/// # ★★ Why a struct rather than a third positional parameter
+///
+/// `FnMut(&str, Rect, Rect)` was the obvious widening and it is the
+/// dangerous one: **two adjacent parameters of the same type, whose
+/// meanings are not symmetric.** A consumer that swaps them compiles,
+/// runs, and produces plausible numbers — `clip.intersect(rect)` is
+/// commutative, so the *intersection* is unchanged, but the denominator
+/// a visibility fraction divides by is not. A region 20 % inside a huge
+/// clip and a region containing a tiny clip would then be told apart
+/// only by which way round the caller happened to write them, and the
+/// failure is silent in exactly the way this whole change exists to
+/// stop.
+///
+/// Named fields cannot be swapped by accident. They are also the
+/// extension point: a fourth thing to report (a z-order, an "is this
+/// enabled") adds a field rather than a fourth breaking change to every
+/// call site in three crates.
+///
+/// Not `Copy`, not stored: it borrows the freshly formatted name and
+/// lives only for the duration of one sink call.
+pub struct RectReport<'a> {
+    /// The structural name — see this module's header for the scheme.
+    pub name: &'a str,
+    /// **Where the region was laid out**, in the drawing viewport's
+    /// coordinates. This is exactly what the old `FnMut(&str, Rect)`
+    /// sink was handed, so a consumer that wants the old behaviour reads
+    /// this field and ignores the next one.
+    pub rect: Rect,
+    /// **What the region was clipped to** — the `egui` clip rectangle in
+    /// force on the `Ui` that drew it.
+    ///
+    /// Not the containing compartment and not the window: the clip is
+    /// what `egui` will actually let paint through, which is the only
+    /// one of the three that answers *can this be seen*.
+    ///
+    /// For most of the dock's stream this equals or contains
+    /// [`Self::rect`], because the dock's geometry is a pure subdivision
+    /// of the side panel it was given ([`super::plan::resolve_spans`]
+    /// never lets a child fall off the end of its container). The cases
+    /// where it does **not** are the interesting ones, and they are the
+    /// reason the field exists.
+    pub clip: Rect,
+}
+
+/// # ★★★ Why the dock reports a clip and the ribbon does not
+///
+/// This is the judgement in this change, and it is deliberately
+/// **asymmetric**. [`crate::ribbon::RectSink`] and
+/// [`crate::menu`]'s (which is the ribbon's, shared) are still
+/// `FnMut(&str, Rect)`. That is not an unfinished migration; the two
+/// surfaces are asked different questions and want different answers.
+///
+/// **The dock's rects are compartments, never content.** Every name
+/// this module publishes is a subdivision of the side the dock drew:
+/// [`super::plan::resolve_spans`] degrades to an equal split rather
+/// than letting a child overflow its parent, and a body rectangle is
+/// clipped into its stack before anything is drawn into it. Nothing
+/// here is sized by what a panel decided to put inside it. So the
+/// question *how much of this survived the clip* is always a question
+/// about whether **the dock** is on screen, and never — as it would be
+/// for a `ScrollArea`'s content — a question about whether the panel's
+/// contents are long. The claim a consumer wants from this stream is
+/// **reachability**, *can the operator get to this*, and reachability
+/// is precisely what a rectangle alone cannot state.
+///
+/// ★ That the dock itself can miss is not hypothetical, and it does not
+/// need a broken layout. [`super::plan::MIN_SIDE_WIDTH`] is a hard
+/// floor that wins over the window
+/// ([`super::DockLayout::drawn_side_width`] clamps *up* to it) and
+/// [`egui::Panel`] honours an `exact_size` wider than the space it was
+/// given, so in a window narrower than that floor the side is drawn at
+/// the floor and clipped. Measured at a 120 pt window, with a 160 pt
+/// floor:
+///
+/// ```text
+/// dock.left             rect=[0..160]    clip=[0..120]    0.750 visible
+/// dock.left.split.side  rect=[154..160]  clip=[0..120]    0.000 visible
+/// dock.left.collapse    rect=[138..154]  clip=[0..120]    0.000 visible
+/// dock.body.p0          rect=[0..154]    clip=[0..120]    0.779 visible
+/// ```
+///
+/// Everything the dock puts at the side's **trailing edge** — the
+/// splitter that resizes it and the chevron that minimises it — is off
+/// screen with a perfectly ordinary rectangle. `D:/dev/rag/egui/`
+/// records this project shipping Bookmarks, Layers and Signatures
+/// unreachable in a real build with every gate green, each with a rail
+/// entry and a healthy rectangle; `SHELL_LAYOUT_PROPOSAL.md` §5 makes
+/// closing that gap a precondition for the panel rail, on the ground
+/// that no check could otherwise tell a working rail from that defect.
+///
+/// **The ribbon's rects are content.** A group's rectangle is what
+/// its controls laid out to, a caption's is a galley, and a menu
+/// item's belongs to an [`egui::Area`] floating above everything with
+/// a clip of its own. Those are the shape the RAG entry
+/// `a_visibility_gated_region_disappears_when_the_section_is_taller_than_its_slot`
+/// warns about: gate a content-sized region on visibility and it
+/// vanishes from the trace *exactly when it is interesting*. The
+/// ribbon also already has one documented silent-drop mechanism —
+/// `a_ribbon_group_that_collapses_at_the_default_window_width_makes_a_driven_check_skip_forever`
+/// — and stacking a second on the same stream multiplies the ways a
+/// check can stop running without turning red.
+///
+/// ⚠ **The failure mode of getting this wrong is a SKIP, and a SKIP is
+/// not red.** A consumer that filters on visibility drops regions
+/// silently by design; over-apply the filter and checks that were
+/// asserting something become checks that assert nothing, with no
+/// signal anywhere. So the rule this crate follows is: **widen a
+/// surface's sink when a consumer needs to make a reachability claim
+/// about compartments, and leave it alone where the consumer is
+/// asking "did this draw" or "where do I scroll to" about content.**
+/// If the ribbon ever needs the clip, [`RectReport`] is the
+/// shape to copy — and the decision has to be re-made per region
+/// name, not per crate.
+///
+/// # In one line
+///
+/// **No longer identical in shape to [`crate::ribbon::RectSink`].** An
+/// application driving both surfaces now writes two closures, which is the
+/// honest spelling: it was always free to treat the two streams differently,
+/// and it now has to decide that it does.
+pub type RectSink<'a> = dyn FnMut(&RectReport<'_>) + 'a;
 
 /// The name prefix every rect this module publishes begins with.
 pub const PREFIX: &str = "dock";
@@ -123,6 +261,19 @@ pub fn collapse(side: DockSide) -> String {
     format!("{PREFIX}.{}.collapse", side.key())
 }
 
+/// **The permanent strip above a side's columns** — see [`super::banner`].
+///
+/// Published only on a side that actually reserved one, so its **absence**
+/// is the evidence that no banner was drawn. That asymmetry is deliberate: a
+/// name published unconditionally, with a constant height, would go on
+/// reporting a healthy rectangle for a strip the caller had stopped drawing
+/// into — which is the shape of defect this whole stream was widened to
+/// close.
+#[must_use]
+pub fn banner(side: DockSide) -> String {
+    format!("{PREFIX}.{}.banner", side.key())
+}
+
 /// The rail a collapsed side leaves behind — the way back.
 #[must_use]
 pub fn rail(side: DockSide) -> String {
@@ -163,10 +314,52 @@ impl<'a> Reporter<'a> {
         self.sink.is_some()
     }
 
-    /// Publish a rect under a lazily-formatted name.
-    pub fn report(&mut self, rect: Rect, name: impl FnOnce() -> String) {
+    /// Publish a rect under a lazily-formatted name, together with the
+    /// clip rectangle in force where it was drawn.
+    ///
+    /// # ★★ Why this takes the `Ui` rather than a `clip: Rect`
+    ///
+    /// The clip is not a parameter a call site should be *choosing*; it
+    /// is a fact about the `Ui` the region was drawn into, and the only
+    /// correct value is `ui.clip_rect()`. Passing the `Ui` makes that
+    /// the only value obtainable, which closes two holes at once:
+    ///
+    /// 1. **The swap.** `report(rect, clip, name)` puts two `Rect`s side
+    ///    by side with no type to tell them apart. Every one of this
+    ///    module's dozen call sites would have been one transposition
+    ///    away from a consumer computing a visibility fraction against
+    ///    the wrong denominator — silently, with plausible output. See
+    ///    [`RectReport`]'s note on the same hazard at the sink end.
+    /// 2. **The stale clip.** A call site that captured a clip early and
+    ///    reported late would report a rectangle from one `Ui` against a
+    ///    clip from another. Asking the `Ui` at the moment of
+    ///    publication cannot go stale.
+    ///
+    /// The cost is that this module now knows about [`egui::Ui`] and not
+    /// only [`Rect`]. That is a widening of an `egui` dependency the
+    /// crate already has from end to end, and it names nothing outside
+    /// `egui` — R7 (`tools/gates/check-shell-purity.sh`) is about
+    /// `pdfcer-*`, and a clip rectangle is as domain-free as the
+    /// rectangle beside it.
+    ///
+    /// # Which `Ui` to pass
+    ///
+    /// **The one whose clip the region is actually subject to**, which is
+    /// not always the one that drew the region's contents. A panel body
+    /// is drawn in a child `Ui` clipped tighter still
+    /// ([`super::Dock::show`]'s `draw_stack`), but the question a
+    /// consumer asks of `dock.body.…` is *is this compartment on
+    /// screen*, so the compartment's own `Ui` is the right one to ask.
+    /// Reporting against the child's clip would compare the body
+    /// rectangle to a clip derived from itself, which is the
+    /// tautology `visible == 1.0` dressed up as a measurement.
+    pub fn report(&mut self, ui: &egui::Ui, rect: Rect, name: impl FnOnce() -> String) {
         if let Some(sink) = self.sink.as_deref_mut() {
-            sink(&name(), rect);
+            sink(&RectReport {
+                name: &name(),
+                rect,
+                clip: ui.clip_rect(),
+            });
         }
     }
 }
@@ -190,6 +383,7 @@ mod tests {
             column_splitter(DockSide::Left, 0),
             stack_splitter(DockSide::Left, 0, 1),
             side_splitter(DockSide::Right),
+            banner(DockSide::Right),
         ];
         for name in &names {
             assert!(name.starts_with(PREFIX), "{name} is not prefixed");
@@ -221,8 +415,52 @@ mod tests {
     /// A reporter with no sink formats nothing.
     #[test]
     fn a_silent_reporter_does_not_format_names() {
-        let mut reporter = Reporter::new(None);
-        assert!(!reporter.is_listening());
-        reporter.report(Rect::ZERO, || panic!("the name was formatted"));
+        in_a_ui(|ui| {
+            let mut reporter = Reporter::new(None);
+            assert!(!reporter.is_listening());
+            reporter.report(ui, Rect::ZERO, || panic!("the name was formatted"));
+        });
+    }
+
+    /// ★★★ **The clip a region is reported against is the one in force on
+    /// the `Ui` that drew it — not the region, and not the window.**
+    ///
+    /// This is the property the whole widening exists for, and it is
+    /// worth a test of its own because the failure mode is invisible: a
+    /// reporter that handed back `rect` as its own clip, or the screen
+    /// rectangle as everybody's clip, would make every consumer's
+    /// visibility fraction come out at exactly 1.0 and every check built
+    /// on it green forever.
+    #[test]
+    fn a_report_carries_the_clip_in_force_not_the_region_itself() {
+        let region = Rect::from_min_size(egui::pos2(0.0, 0.0), egui::vec2(200.0, 200.0));
+        let clip = Rect::from_min_size(egui::pos2(0.0, 0.0), egui::vec2(50.0, 50.0));
+        let mut seen: Vec<(String, Rect, Rect)> = Vec::new();
+        in_a_ui(|ui| {
+            ui.set_clip_rect(clip);
+            let mut sink = |r: &RectReport<'_>| seen.push((r.name.to_owned(), r.rect, r.clip));
+            let mut reporter = Reporter::new(Some(&mut sink));
+            reporter.report(ui, region, || "probe".to_owned());
+        });
+        assert_eq!(seen.len(), 1, "exactly one report");
+        let (name, rect, reported_clip) = &seen[0];
+        assert_eq!(name, "probe");
+        assert_eq!(*rect, region, "the region is reported unchanged");
+        assert_eq!(
+            *reported_clip, clip,
+            "the clip must be the Ui's, not the region and not the window"
+        );
+    }
+
+    /// Run `f` against a real root `Ui`, because [`Reporter::report`]
+    /// reads a clip rectangle and only a `Ui` has one.
+    fn in_a_ui(f: impl FnOnce(&mut egui::Ui)) {
+        let ctx = egui::Context::default();
+        let mut f = Some(f);
+        let _ = ctx.run_ui(egui::RawInput::default(), |ui| {
+            if let Some(f) = f.take() {
+                f(ui);
+            }
+        });
     }
 }

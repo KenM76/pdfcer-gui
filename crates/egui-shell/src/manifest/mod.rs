@@ -185,6 +185,10 @@ pub struct Shell {
     /// The quick-access toolbar: command ids, in order.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub qat: Option<Qat>,
+    /// The **trailing controls** — the far right of the tab-strip row, past
+    /// the mode selector. See [`Trailing`].
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub trailing: Option<Trailing>,
     /// Key chord → command id.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub keymap: Option<Keymap>,
@@ -288,6 +292,21 @@ impl Shell {
         S: Into<String>,
     {
         self.qat = Some(Qat(ids.into_iter().map(Into::into).collect()));
+        self
+    }
+
+    /// Set the trailing controls — the far right of the tab-strip row. See
+    /// [`Trailing`].
+    ///
+    /// Takes [`Item`]s rather than ids, unlike [`Self::with_qat`], because the
+    /// whole reason this region exists is that its controls carry a
+    /// `visible_when` — see [`Trailing`]'s note on R9.
+    #[must_use]
+    pub fn with_trailing<I>(mut self, items: I) -> Self
+    where
+        I: IntoIterator<Item = Item>,
+    {
+        self.trailing = Some(items.into_iter().collect());
         self
     }
 
@@ -1085,6 +1104,101 @@ impl Qat {
 impl<S: Into<String>> FromIterator<S> for Qat {
     fn from_iter<I: IntoIterator<Item = S>>(iter: I) -> Self {
         Qat(iter.into_iter().map(Into::into).collect())
+    }
+}
+
+/// The **trailing controls**: the far right of the tab-strip row, past the
+/// mode selector.
+///
+/// ```text
+/// [QAT…] │ File View Pages ⏷ 2 more   ( Read │ Review │ Edit )  [ … ]
+///                                                                 ↑ here
+/// ```
+///
+/// # ★★★ Why this exists at all, and why it is a manifest field rather than
+/// a callback
+///
+/// It is the extension point for a control an application wants **beside the
+/// mode selector** — the one region of the tab-strip row that has, until now,
+/// had no way to hold anything. The immediate consumer is a button whose
+/// *existence* is a property of the machine the program is running on rather
+/// than of the program, and `SHELL_FRAMEWORK.md` §2's diagnostic applies with
+/// full force: this crate must not learn what that button opens, and the
+/// abstraction would be wrong if it had to.
+///
+/// The obvious cheaper spelling is a closure — *"hand the application a
+/// rectangle beside the selector and let it draw"*. That is what
+/// [`crate::ribbon::ctx::CustomItemRenderer`] does for [`Item::Custom`], and
+/// it would work. It is rejected here because it would put a control on the
+/// ribbon that the **command registry does not know about**, and
+/// `SHELL_FRAMEWORK.md` §5b's one rule is that
+///
+/// > a capability's presence is expressed by registering its command, and by
+/// > nothing else.
+///
+/// A raw callback is precisely the hole in that rule: an application could
+/// draw a button for a capability that has no command, no enable predicate,
+/// no keyboard binding and no id in any trace. Making the trailing region
+/// carry [`Item`]s instead means every control in it is a registered command
+/// with all of that machinery, reached through the same
+/// [`crate::ribbon::ctx::Ctx::command`] lookup as every other control on the
+/// ribbon.
+///
+/// # Why [`Item`] and not [`Qat`]'s bare id list
+///
+/// Because [`Item::Command::visible_when`] is exactly the mechanism R9 asks
+/// for — *"an unavailable capability renders nothing; greying is reserved for
+/// **temporarily** unavailable"* — and a bare id has nowhere to carry it. An
+/// application whose trailing control depends on something being installed
+/// needs the control to be **absent**, not disabled, and needs that decision
+/// re-made every frame because the operator can install it, or point a
+/// setting at it, without restarting the program.
+///
+/// A conditional *registration* cannot do that: the registry is built once,
+/// at start-up, and [`Shell::validate_against`] hard-fails on a manifest
+/// naming a command that is not in it. So the command is always registered —
+/// which keeps validation strict and typos fatal — and the *item* carries the
+/// condition.
+///
+/// # What it is not
+///
+/// Not a second QAT. The QAT is *"the handful of controls that must never sit
+/// behind a tab switch"* — continuous-use verbs, on the left, where the eye
+/// starts. This is the opposite end of the row and holds controls that leave
+/// the program: it is the last thing read, and nothing in it should be
+/// something the operator reaches for all day.
+///
+/// One command may appear here **and** on a tab, for the same reason
+/// `SHELL_FRAMEWORK.md` §5 permits it for the QAT: a shortcut to a known home
+/// is not a second place to hunt. [`Shell::validate`]'s one-command-one-tab
+/// rule walks [`Shell::all_tabs`] only, so nothing here has to enforce it and
+/// nothing here relaxes it.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct Trailing(pub Vec<Item>);
+
+impl Trailing {
+    /// The items, in display order — left to right, ending at the row's
+    /// right edge.
+    #[must_use]
+    pub fn items(&self) -> &[Item] {
+        &self.0
+    }
+
+    /// Whether there is nothing to draw.
+    ///
+    /// A present-but-empty `Trailing` is treated exactly as an absent one by
+    /// the renderer, so that an operator customization that removed the last
+    /// item reclaims the space instead of leaving a gap the width of nothing.
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+}
+
+impl FromIterator<Item> for Trailing {
+    fn from_iter<I: IntoIterator<Item = Item>>(iter: I) -> Self {
+        Trailing(iter.into_iter().collect())
     }
 }
 

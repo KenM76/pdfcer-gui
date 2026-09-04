@@ -68,10 +68,19 @@ const PAGE_REGION: &str = "page"; // ui-text-exempt: a trace region name, never 
 /// is simply not on screen. A region that is absent because it is on another
 /// tab looks exactly like one that is absent because the feature is missing.
 ///
-/// The Tool panel is a dock, so it is drawn whatever tab is showing — and it is
-/// the surface an operator actually reads while a tool is armed, which makes it
-/// the more honest oracle as well as the reachable one.
-const ARMED_BLOCK: &str = "tool.armed"; // ui-text-exempt: a trace region name
+/// ★★★ **The oracle moved on 2026-09-04, and the new one is strictly better.**
+/// `OPERATOR_REQUESTS.md` O123 dissolved the Tool panel, so `tool.armed` no
+/// longer exists. Its replacement is the *Put this tool down* button in the
+/// right dock's permanent strip — and that button is drawn **only when
+/// something other than `CanvasTool::Select` is armed**, because a put-down
+/// beside the resting state would be a control whose press changes nothing
+/// (`crate::app::toolstatus`, R9).
+///
+/// ⇒ So its presence is a stronger claim than the old armed block's was: the
+/// block drew for any armed tool *and* sat inside a panel an operator could
+/// close, while this is chrome that cannot be closed and appears for exactly
+/// the condition under test.
+const ARMED_BLOCK: &str = "toolstatus.put_down"; // ui-text-exempt: a trace region name
 
 pub struct DoubleClickingATextBoxEditsTheText;
 
@@ -216,7 +225,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     if declared(&session.trace()?, ui_rect, ARMED_BLOCK).is_none() {
         return Ok(Some(format!(
             "**THE CARET OPENED AND NO TOOL IS ARMED**: `{ARMED_BLOCK}` is not drawn, so \
-             the Tool panel is still showing its idle row. The caret would type — this \
+             the dock's tool strip is still showing the resting state. The caret would type — this \
              shell runs its typing path whatever tool is selected — and the operator would \
              be left in a state no other program has: a caret blinking in the page while \
              the arrow is still the tool, so the next click means SELECT when everything \

@@ -227,6 +227,11 @@ pub mod textstyle;
 
 pub mod vector;
 
+// ★★★ O122 — the two halves of handing the document to Acrobat: the arm that
+// raises the question, and the drain that saves, launches and then closes. Its
+// header carries the save→launch→close ordering and why the other order loses
+// the operator's document off their screen when a `spawn` fails.
+mod acrobat;
 mod action;
 /// The three verbs that exist only to move a native file picker out of the
 /// layout pass — DXF, form data and a compacted copy. Split out of [`action`]
@@ -301,6 +306,12 @@ pub use vector::VectorAction;
 pub(crate) fn plant_edit_disclosure_for_test(disclosure: EditDisclosure) {
     record_edit_disclosure(Some(disclosure));
 }
+
+/// ★★★ **What an image export IS** — the format, the pages, the resolution and
+/// whether transparency survives — decided as a value before anything is
+/// written, and with the one combination pdfcer refuses named as an enum rather
+/// than as a `bool`. `OPERATOR_REQUESTS.md` O120.
+pub mod imageexport;
 
 #[cfg(test)]
 mod tests;

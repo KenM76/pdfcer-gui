@@ -1,5 +1,153 @@
 # CONTINUE - handoff
 
+## 2026-09-04 — nine parallel tracks, the glyph batch, and a request that had gone missing for a day
+
+### The shape of the day, because it was unusual
+
+He said, three times and in three phrasings, *"run as many tasks in parallel
+that you can without colliding. you have full use of the PC."* Nine tracks ran
+concurrently in one working tree and every one landed. What made that work is
+written up in memory (`parallelism-is-the-default-and-it-needs-an-ownership-map`)
+and is four things: an explicit ownership map naming the OTHER tracks' files in
+every brief; a no-racing rule on shared counters; a warning that the tree will
+transiently not compile for reasons that are not yours; and commits taken at
+reconciliation points rather than per track.
+
+★★★ **The most valuable thing three of the nine did was disagree with the brief
+they were given.** The "distinguishable only by icon and tooltip" sentence was
+about different commands entirely; the sticky-note dialog's position was never
+click-relative; and the whole *"there is no theme-only fix, the work is at ~19
+call sites"* analysis was wrong on both halves — the real fix touched **zero**
+call sites. Write briefs that invite the contradiction.
+
+---
+
+### 1. The glyphs, and the defect they existed to fix
+
+The 2026-09-03 review delivered 65 proposed icons. **36 adopted, 26 deferred,
+3 found missing from the arithmetic later** — full adjudication in
+`GLYPH_ADOPTION.md`, on one rule: *a glyph is adopted only when a command or
+role in this build would use it today.*
+
+★★ **The blocker had to be cleared first and was invisible.** Our SVG parser
+ignored `stroke-dasharray` silently. Six of the proposed glyphs use the dash AS
+the distinguishing feature — `new-from-template` against `new-document`,
+`unembed-fonts` against `embed-fonts`, `redact-selection` against `redact` — so
+all six would have shipped as **visual duplicates of glyphs the set already
+had**, and every icon test would have stayed green, because every one of them
+asks whether something was DRAWN, not whether it was drawn as asked.
+
+★★★ **And the defect the batch existed to fix was invisible for the same
+reason.** Four form-field tools shared one asset; four measure tools shared
+another; eight controls rendering as two pictures, for weeks, in a ribbon whose
+own header says those controls are *"distinguishable only by icon and tooltip"*.
+
+⇒ `no_two_icons_render_as_the_same_picture` compares the **16 px rasters** of
+every pair. Three things about it are deliberate: 16 px because that is the size
+they ship at and a pair that separates at 32 and collapses at 16 is exactly the
+defect; the threshold is **measured** by a companion `#[ignore]`d instrument
+that ranks the whole set (a threshold chosen before that ranking existed was set
+at 0.12 and would have failed on a *correct* state); and deliberate look-alike
+families are exempted **by name with a reason** rather than by lowering the
+threshold, which would retire the test for every other pair.
+
+★ Falsifying it found a real trap: a planted byte-identical duplicate **passed**,
+because the skip used `ptr::eq` and the compiler had interned the two
+`include_str!` literals to one pointer. A skip condition that changes with the
+optimiser is not a skip condition. Written up in `D:/dev/rag/rust/`.
+
+---
+
+### 2. Six review defects closed, and two of them were mis-diagnosed in the ledger
+
+- **A6** — Set scale's *"Show dimensions in"* was a dead control on the ratio
+  path: `ScaleEntry::Ratio` has no unit field, so the operator's choice was
+  discarded and the preview labelled inches while the dropdown said Metres.
+  ★★★ **A green test was pinning it** — it asserted the inches figure straight
+  out of the implementation. A value asserted from the implementation rather
+  than from the contract pins whatever the implementation did, defects included,
+  with all the authority of a passing suite. ★ And the ledger's suspicion that
+  this needed an engine change was wrong: `scale` carries the unit and
+  `format.unit` only names it, so the conversion belongs on our side.
+- **A11** — About showed `Version 0.1.0` in a v0.5.0 release. `CARGO_PKG_VERSION`
+  was not stale, it was the **wrong question**; the source is the git tag.
+- **A12b / A12c** — the field editor now honours `/Q`, and the Fill-form panel
+  shows what you are typing on the page. The second was made *correct* rather
+  than disclosed.
+- **A14b** — a width reserved for four characters that can be asked for
+  fourteen, since the zoom ceiling became a preference.
+- **A16a / A16c** — the sticky-note dialog opened at the window origin; the
+  form-field dialog was too small AND its scrollbar was invisible.
+- **A18** — Read mode showed two authoring controls its own dispatch refuses.
+  A guard stops the ACT and leaves the CONTROL.
+
+---
+
+### 3. `Visuals::selection` was doing two jobs and the canvas had won
+
+egui spends that channel in **five** places. This theme had handed it to the
+canvas, so every selected chrome control in the application was painted with
+canvas ink on a 27 %-alpha canvas wash — Dark measured a luminance gap of 72.3
+against a floor of 90, and the two light presets passed *by accident of their
+panel being light*.
+
+Re-pointing it at the chrome roles fixed ~19 call sites with **zero call-site
+edits** — and cost the focused-`TextEdit` ring, which takes its stroke from the
+same channel and has no per-widget override. The arithmetic looked
+unsatisfiable until somebody questioned its premise: it assumed `bg_fill` had to
+BE `accent`. With an opaque light accent **plate** and `accent` as the ink, both
+roles clear the floor in all three presets. ★★ Dark needed a different
+*derivation*, not a different number — its accent is lighter than its panel, so
+the light presets' formula moves the plate the wrong way.
+
+Full finding in `D:/dev/rag/egui/`.
+
+---
+
+### 4. ★★★ O120 — a request of his had been built by the engine and dropped by us, invisibly, for a day
+
+On 2026-09-03 he asked the **engine** session for PNG/JPEG/SVG export with real
+transparency, and copy-paste of vector into Word and Inkscape. The engine
+shipped **all of it** that day across four passes and sent a note — *"here is
+what a shell wires"* — with every call and a worked example.
+
+**This shell built none of it and had no row.** Found a day later only because a
+session read the request channel looking for something else.
+
+⇒ Two consequences, and the second is the durable one:
+
+1. The export surface is being built now (O120).
+2. **`check-verb-coverage.sh` catches a new engine VERB within hours. Nothing
+   caught a capability announced in PROSE.** The engine's own `FEATURES.md`
+   states the gap in a machine-readable place — **about 90 rows read `[x] core`
+   and `[ ] gui`** — and until today nothing on this side read it.
+   `ENGINE_BACKLOG.md` + `check-engine-backlog.sh` close that, and they are
+   **S7's deliverable**: the parity audit was always planned as a document, and
+   is being built as an instrument instead.
+
+---
+
+### 5. The harness took his screen, twice, and it is a design gap
+
+He said *"I'm back using the PC"*, then later *"my screen is still being driven.
+is it almost done?"* — after I had killed it once and told him it was stopped.
+
+**There is no way to recall a running worker.** One had been told, while he was
+away, that it owned the desktop. When its run was killed it retried — eight
+times. The only levers were `taskkill //F //IM … //T` and deleting the binary it
+drives, so each retry had to sit through a full rebuild.
+
+⇒ **O121**: the harness must refuse to start when the desktop is claimed, via a
+lock checked **in the launch path** — by the process that opens the window, not
+by the process that decided to open one. Then any number of uncoordinated
+workers behave correctly without having heard the instruction. Hard FAIL, never
+a SKIP.
+
+★ His verdicts from that run are **void** — an interrupted driven run proves
+nothing, and a PASS is as suspect as a FAIL. What it WROTE survives and stays.
+
+---
+
 ## 2026-09-03 (evening) - his print dialog: four defects, and the scrollbars alone took four fixes
 
 ### What he reported

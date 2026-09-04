@@ -101,6 +101,25 @@ impl PdfcerApp {
         if self.document_count() > 1 {
             set.set("docs.multiple");
         }
+        // ★★★ **An Acrobat exists on this machine** — `OPERATOR_REQUESTS.md`
+        // O122, and the ONE thing that decides whether the control beside the
+        // mode selector is drawn.
+        //
+        // Set OUTSIDE the `Status::Open` arm, deliberately and for a reason
+        // that is easy to get backwards: this condition answers *"does this
+        // machine have an Acrobat?"* and NOT *"can I press the button now?"*.
+        // The second question is the command's own
+        // `enabled_when("doc.open")`, and R9 is what splits them — a machine
+        // with no Acrobat renders nothing, a machine with one and no document
+        // open renders a greyed control that explains itself on hover.
+        //
+        // Nesting it inside `Status::Open` would collapse the two into one and
+        // lose the distinction the operator can actually see: a button that
+        // flickers in and out as documents open and close, rather than one
+        // that is simply always there on a machine that has Acrobat.
+        if self.acrobat.is_some() {
+            set.set(crate::shell::manifest::ACROBAT_AVAILABLE);
+        }
         if let Status::Open(doc) = &self.status {
             set.set("doc.open");
             if !doc.pages.is_empty() {

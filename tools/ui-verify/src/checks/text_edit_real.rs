@@ -93,6 +93,27 @@ const CARET_EVENT: &str = "text-edit-caret";
 /// Raised by the `edit_text` apply arm from the engine's own `EditReport`. It is
 /// the observable half of `Pass 119.0`: the prose disclosure goes to the status
 /// row for the operator, and this goes to the channel for a check.
+/// The status bar's decline slot, as `app::status::decline` publishes it.
+///
+/// ★★ This is a SECOND COPY of a string, and nothing enforces the pair.
+///
+/// The constant it mirrors is `app::status::decline::REGION_DECLINE`, private
+/// to that module and unreachable from here — the harness is a separate crate
+/// and must not depend on the GUI's internals, which is the property that lets
+/// it drive a *shipped binary* rather than a test build. So the duplication is
+/// structural rather than lazy, and there is no gate for it. (An earlier draft
+/// of this comment cited `check-trace-names.sh`, which **does not exist**;
+/// naming a gate that is not there is the same defect as a doc comment citing
+/// a renamed test, and this project fixed four of those this morning.)
+///
+/// ★★★ What makes the duplication tolerable is the DIRECTION it fails in.
+/// Rename the region in the application and this check stops matching, so it
+/// reports *"the operator was told nothing"* — a **false failure**, loud, on
+/// the very check whose subject is silence. The dangerous direction would be a
+/// false pass, and that is not reachable here: no other region carries this
+/// name, so nothing can satisfy the assertion by accident.
+const DECLINE_REGION: &str = "status-group:decline";
+
 const TARGET_EVENT: &str = "edit-text-target";
 
 /// How many following absolutely-placed `Tm`s one edit may reposition before
@@ -461,7 +482,61 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             pin.raw
         )));
     }
+    // ★★★ **A REFUSAL IS NOW A PASS OR A FAIL, NOT A SKIP — O116, 2026-09-04.**
+    //
+    // Until today this arm skipped and quoted the engine's verdict, on the
+    // ground that a `pdfcer-core` refusal is not this shell's defect. That was
+    // right about whose verdict it is and **wrong about what this check tests**.
+    //
+    // The founding defect class of this project is *"I did the thing and
+    // nothing happened and nothing said why."* When the engine refuses, the
+    // engine is doing its job — and the SHELL still owes the operator a
+    // sentence. The old arm could not tell a build that says nothing from one
+    // that speaks, because it stopped looking the moment it saw the refusal.
+    //
+    // ⇒ What is asserted now is the DISCLOSURE, not the edit. `REGION_DECLINE`
+    // is `status-group:decline`, the `⊗` slot in the status bar, and it is
+    // published as a `ui-rect` on the frame it draws. A refusal followed by
+    // that region is the program behaving correctly and is reported as such; a
+    // refusal followed by silence is O116 and fails.
+    //
+    // ★★ Deliberately keyed on the REGION rather than on the sentence. The
+    // harness cannot read rendered text — there is no accessibility reader and
+    // no OCR — so a check for the wording would have to assert against a string
+    // the application also publishes, which is the application agreeing with
+    // itself. The region is the honest available oracle: it says a disclosure
+    // was DRAWN, which is precisely the half that was missing.
+    //
+    // ★ And it must come AFTER the refusal in the trace. A decline left in the
+    // slot by an earlier gesture would otherwise satisfy this, and a stale
+    // sentence is exactly what `app::status::decline`'s retirement rule exists
+    // to prevent — a check that could be passed by one would be blessing the
+    // bug it is written to catch.
     if let Some(refused) = trace.last("edit-text-refused") {
+        // ★ `lineno`, which is the trace's own ordering key — the 1-based line
+        // in the stderr capture. Ordering matters here and is argued above: a
+        // decline left in the slot by an earlier gesture must not satisfy this.
+        let refusal_at = refused.lineno;
+        let disclosed = trace.lines.iter().any(|r| {
+            r.event == "ui-rect" && r.lineno > refusal_at && r.get("name") == Some(DECLINE_REGION)
+        });
+        if !disclosed {
+            return Err(Error::new(format!(
+                "THE ENGINE REFUSED THE EDIT AND THE OPERATOR WAS TOLD NOTHING. The shell half \
+                 works — a caret was placed on run {}, characters were typed, the plan was built \
+                 and the commit reached the engine, which refused it: `{}`. That verdict is \
+                 correct and is not the defect. **The defect is the silence after it**: no \
+                 `{}` region was published on any frame following the refusal, so the status \
+                 bar's decline slot never drew. This is O116 and it is the founding defect \
+                 class of this project — the operator clicks, types, commits, and nothing \
+                 happens and nothing says why. Trace: {}.",
+                line.get("run").unwrap_or("?"),
+                refused.raw,
+                DECLINE_REGION,
+                session.trace_path().display()
+            )));
+        }
+        report.note("★★ the engine refused the edit AND the shell said so — the decline slot drew");
         return Ok(Some(format!(
             "the caret took keystrokes, the commit REACHED the engine, and the engine refused \
              it: `{}`. The shell half of this works — a caret was placed on run {}, characters \

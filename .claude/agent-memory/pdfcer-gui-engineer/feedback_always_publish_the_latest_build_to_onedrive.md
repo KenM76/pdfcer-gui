@@ -164,3 +164,40 @@ starts on a tree that says "dirty" for no visible reason.
 
 ⇒ Related to the two-slot date check above, and the same class: **the tool's own
 report is not evidence about the tool's own effect.**
+
+## ★★★ AND DO NOT STOP WORK OVER IT EITHER — 2026-09-04, and this is stronger than the two above
+
+Ken, in his own words, after a session that kept reporting features as "built
+but not driven, so by R1 not done":
+
+> ***"don't stop work even if you think it needs to be driven in a running
+> window. just do it headlessly as best you can and release as best you can. we
+> can debug later when I'm not on the pc."***
+
+And, minutes later:
+
+> ***"also, don't forget to always make the newest available in a portable
+> release on github."***
+
+The two rules above say *publish an unverified build rather than withhold it*.
+This one goes further: **the absence of driven verification must not slow the
+WORK down either.** Do not queue a feature behind a sweep, do not hold a commit
+for it, do not narrow scope because the desktop is busy. Build it headlessly,
+land it, ship it, and let the driven pass happen later.
+
+⇒ **Three obligations, and the third is new:**
+
+1. **Say plainly what has not been driven** — unchanged, and R1 still defines
+   what "works" means. `FEATURES.md` rows and `OPERATOR_REQUESTS.md` Status
+   lines stay honest.
+2. **Publish to OneDrive** — unchanged, alternating slots, both dates read back.
+3. **★ Cut a GitHub release with the portable zip**, every time. Not only when a
+   version is bumped, not only when something notable lands. *"always make the
+   newest available in a portable release on github"* is the same instruction as
+   the OneDrive one, aimed at the other channel — and it has the same reason: a
+   build that exists only on this machine has not reached him.
+
+★★ Do not read this as R1 being relaxed. It separates two things that had been
+conflated all day: *whether a feature may be CALLED verified* (R1, unchanged)
+and *whether work may proceed and ship without it* (yes). The founding rule is
+about the truth of a claim, not about the pace of the work.

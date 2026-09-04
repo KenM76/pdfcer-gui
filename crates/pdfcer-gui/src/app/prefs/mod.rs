@@ -506,6 +506,45 @@ pub struct Prefs {
     /// know the operator's name, and reading one out of the OS user account
     /// would put a Windows login into a document that leaves the building.
     pub author_name: String,
+
+    /// ★★★ **Where Acrobat is, when the operator has had to say** —
+    /// `OPERATOR_REQUESTS.md` **O122**: *"have a setting where people can
+    /// change it."*
+    ///
+    /// # ★★ Empty is the normal value, and it means "find it yourself"
+    ///
+    /// Not "there is no Acrobat". `crate::acrobat::resolve` reads an empty or
+    /// whitespace-only value as *unset* and goes and asks Windows — the
+    /// `App Paths` registrations first, the registered `.pdf` handler second.
+    /// Nearly every machine will never write anything here.
+    ///
+    /// The distinction matters because clearing a text field is how a person
+    /// un-sets it. A cleared field read as *"configured to nothing"* would
+    /// permanently suppress the button with no way back except editing this
+    /// file by hand, which is the trap version of an escape hatch.
+    ///
+    /// # ★★★ Why this exists at all, given discovery works
+    ///
+    /// Because discovery reads registrations, and a registration is a thing an
+    /// installer writes. A portable copy, a second version kept for a client,
+    /// an install on a volume Windows was never told about, a build where the
+    /// registration was written with an environment variable in it that pdfcer
+    /// does not expand — every one of those is an Acrobat that exists and that
+    /// discovery cannot see.
+    ///
+    /// ★ And it is visible in Settings **whether or not discovery succeeded**,
+    /// which is O122's decision and is the load-bearing half: somebody in that
+    /// position arrives having seen no button at all, so the only place they
+    /// can be told the feature exists is the field that fixes it. See
+    /// `crate::dialogs::settings::acrobat`.
+    ///
+    /// # A path, held as a `String` rather than a `PathBuf`
+    ///
+    /// Because it is a value the operator TYPES, and a half-typed path is not
+    /// a path. `PathBuf` would claim more than is known about the contents of
+    /// a text field, and every consumer converts at the point of use anyway —
+    /// where the existence check happens.
+    pub acrobat_path: String,
 }
 
 impl Default for Prefs {
@@ -542,6 +581,9 @@ impl Default for Prefs {
             // ★ Empty = anonymous, deliberately. See the field's own note on
             // why the OS user name is not a defensible guess.
             author_name: String::new(),
+            // ★ Empty = "ask Windows", deliberately. See the field's own note
+            // on why a cleared field must not mean "no Acrobat".
+            acrobat_path: String::new(),
         }
     }
 }
@@ -705,6 +747,13 @@ impl Prefs {
                 // renders as an empty author column in every reviewer UI,
                 // which is worse than no key at all because it claims one.
                 "author_name" => prefs.author_name = value.trim().to_owned(),
+                // ui-text-exempt: a file KEY, matched literally.
+                // ★ Trimmed, like its neighbour and for a related reason: a
+                // path with a trailing space is a path that does not exist, and
+                // the failure would present as "the setting does nothing".
+                // `resolve` trims again at the point of use, because this file
+                // is not the only way the value arrives.
+                "acrobat_path" => prefs.acrobat_path = value.trim().to_owned(),
                 // ui-text-exempt: a file KEY, matched literally.
                 // ★ A REPEATED key: every occurrence appends. That is why this
                 // arm pushes where every other arm assigns, and it is the one
@@ -1027,6 +1076,20 @@ impl Prefs {
         // ui-text-exempt: a file KEY, as above.
         out.push_str("author_name = ");
         out.push_str(&self.author_name);
+        out.push('\n');
+        out.push_str(
+            "\n\
+             # Where Acrobat is — OPERATOR_REQUESTS.md O122. Leave this blank\n\
+             # and pdfcer asks Windows itself, preferring Acrobat Pro over\n\
+             # Acrobat Reader. Fill it in with the full path to the program to\n\
+             # point at a particular installation: a portable copy, a second\n\
+             # version, or one Windows has not been told about. If nothing is\n\
+             # found and nothing is set here, the Acrobat button beside\n\
+             # Read / Review / Edit is simply not shown.\n",
+        );
+        // ui-text-exempt: a file KEY, as above.
+        out.push_str("acrobat_path = ");
+        out.push_str(&self.acrobat_path);
         out.push('\n');
         out.push_str(
             "\n\

@@ -291,6 +291,12 @@ impl PdfcerApp {
             // guard `Action::New` takes.
             "file.new_from_template" => self.dialogs.open_new_document(),
             "file.open" => crate::app::files::raise(crate::app::files::pick_document(), actions),
+            // ★★★ O122 — the control beside the mode selector. A literal arm
+            // rather than a routed one: it has its own `Action`, because what
+            // follows is a sequence (save, launch, close) that no existing verb
+            // performs and that must not be reachable without the confirmation
+            // in front of it.
+            "file.open_in_acrobat" => actions.push(Action::OpenInAcrobat),
             // ★ Close. `doc.open` gates the control, so the no-document case
             // is unreachable from the ribbon — and the action handles it
             // anyway, because a customized keymap can reach any command from
@@ -723,6 +729,20 @@ impl PdfcerApp {
             // there is no mode in which it should be refused. Read mode
             // exporting a drawing is exactly what a reading stance is for.
             "file.export_dxf" => self.dialogs.open_export_dxf(&self.status),
+            // ★★★ **Export image — `OPERATOR_REQUESTS.md` O120, wired
+            // 2026-09-04.** The operator asked the ENGINE side for it on
+            // 2026-09-03; the engine shipped all of it the same day and sent a
+            // note marked *"informational, no reply needed"*, which nothing
+            // here was required to read. There was no row on this side until a
+            // session happened to read the request channel looking for
+            // something else.
+            //
+            // ★ Gated through the registry on `doc.pages` rather than on a
+            // capability, exactly as its DXF neighbour is and for that arm's
+            // reason: an export reads the document and writes elsewhere, so
+            // there is no mode in which it should be refused. Read mode
+            // exporting a drawing is what a reading stance is FOR.
+            "file.export_image" => self.dialogs.open_export_image(&self.status),
             // ★★★ **`file.export_form_data` — registered, drawn on File ▸
             // Export, and inert for the whole life of the project.**
             //

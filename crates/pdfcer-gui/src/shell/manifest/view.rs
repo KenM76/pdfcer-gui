@@ -365,17 +365,6 @@ pub(super) fn tab() -> Tab {
                     // There is no sidebar rail in this build — there is a
                     // dock, and every dock panel below already has its own
                     // command. So the group loses nothing.
-                    // ★★ FIRST among the panels, and the placement is the
-                    // operator's complaint answered in the IA rather than only
-                    // in the code.
-                    //
-                    // Every other entry in this group answers *"what is in this
-                    // file"* — pages, bookmarks, layers, signatures, objects,
-                    // form fields. This one answers *"what can I do"*, which is
-                    // a different question and the one an operator who cannot
-                    // find a command is actually asking. They scan this group
-                    // from the top; the answer belongs there.
-                    command("view.panel_tool"),
                     // ★ Pages is a panel like any other in this build. The
                     // note above described the OLD shell's sidebar rail, in
                     // which thumbnails were the rail's first pane rather than

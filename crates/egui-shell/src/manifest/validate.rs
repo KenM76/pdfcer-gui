@@ -55,6 +55,13 @@ pub enum Site {
     },
     /// The quick-access toolbar.
     Qat,
+    /// The trailing controls at the right of the tab-strip row.
+    ///
+    /// Its own site rather than sharing [`Self::Qat`], because a message
+    /// naming the wrong end of the row sends the reader to the wrong line of
+    /// the manifest — and the two regions are three fields apart in a file
+    /// that is mostly tabs.
+    Trailing,
     /// A key binding.
     Keymap {
         /// The chord, e.g. `"Ctrl+E"`.
@@ -73,6 +80,7 @@ impl std::fmt::Display for Site {
             Site::Document => f.write_str("the manifest"),
             Site::Group { tab, group } => write!(f, "tab `{tab}` group `{group}`"),
             Site::Qat => f.write_str("the quick-access toolbar"),
+            Site::Trailing => f.write_str("the trailing controls"),
             Site::Keymap { chord } => write!(f, "key binding `{chord}`"),
             Site::Mode { mode } => write!(f, "mode `{mode}`"),
         }
@@ -394,6 +402,19 @@ impl Shell {
         if let Some(qat) = &self.qat {
             for id in qat.ids() {
                 out.push((Site::Qat, id.clone()));
+            }
+        }
+        // ★ The trailing region is walked, so a typo in it is a start-up
+        // failure exactly as a typo in the QAT is. It is deliberately NOT
+        // treated as a place where an unregistered id means "this build does
+        // not have that capability": conditional *presence* is expressed by
+        // `Item::Command::visible_when`, which is evaluated every frame, and
+        // an id that names nothing is a mistake in either region.
+        if let Some(trailing) = &self.trailing {
+            for item in trailing.items() {
+                if let Item::Command { id, .. } = item {
+                    out.push((Site::Trailing, id.clone()));
+                }
             }
         }
         if let Some(keymap) = &self.keymap {

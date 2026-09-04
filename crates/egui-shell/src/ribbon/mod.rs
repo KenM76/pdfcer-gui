@@ -30,6 +30,7 @@
 //! | [`tabs`] | which tabs exist, and how one looks | Mode's tabs, then contextual tabs; R84 redundant cues. |
 //! | [`mode_selector`] | the N-position segmented control | Every position labelled and reachable; a roving keyboard tab stop. |
 //! | [`qat`] | the quick-access toolbar | Never behind a tab switch; icon-only is earned, not assumed. |
+//! | [`trailing`] | the controls past the mode selector | Registered commands only — the region an application extends without the shell learning what it extended it with. |
 //! | [`band`] | the row of captioned groups | **One closure, every group, caption cannot be omitted.** |
 //! | [`ctx`] | the per-frame render context | One condition set for the whole ribbon, so no two surfaces can disagree about what is true. |
 //! | [`report`] | published rectangles | Stable names, zero cost when unused. |
@@ -56,6 +57,10 @@
 //!
 //! This is the one rule that spans every file above, and it is why the
 //! ribbon is split the way it is.
+//!
+//! (The [`trailing`] region is the one reserved region that MAY be squeezed
+//! out — see [`plan::plan_strip_row`]. It is an optional extra whose absence
+//! costs nothing, where the four below are load-bearing.)
 //!
 //! Four things on this ribbon must never be squeezed out by content: the
 //! **mode selector**, the **QAT**, the **band's overflow affordance** and
@@ -112,6 +117,10 @@ pub mod sizing;
 pub mod state;
 pub mod strip;
 pub mod tabs;
+// The trailing controls at the far right of the tab-strip row, past the mode
+// selector -- the seam for a control whose presence is a property of the
+// machine. See `crate::manifest::Trailing`.
+pub mod trailing;
 
 // Test-only, and separate files rather than one `mod tests` for three
 // reasons: R2 caps a source file at 1,500 lines; the width tests need a

@@ -97,3 +97,38 @@ While one is running, do documentation, triage, memory and RAG work — never a
 - **Do not pipe the sweep through `tail`.** The output buffers, so nothing is
   readable until it finishes, and the pass/fail lines are then truncated away.
   Redirect to a file and read that.
+
+## ★★★ AND WHEN A SUBAGENT OWNS THE DESKTOP, KILLING THE PROCESS IS THE ONLY LEVER — 2026-09-04
+
+Nine tracks were running and one of them had been told, in its brief, that it
+owned the desktop and should drive the suite broadly. Ken then said *"I'm back
+using the PC."*
+
+**There is no way to reach a running subagent from the coordinating session.**
+No message tool, no stop tool — the only thing that reaches it is the operating
+system:
+
+```bash
+taskkill //F //IM ui-verify.exe //T
+taskkill //F //IM pdfcer-gui.exe //T
+```
+
+`//T` matters: `ui-verify.exe` is the parent and the GUI is its child, so
+killing the parent alone leaves a window on his screen.
+
+⇒ Three consequences, and the first is a planning rule rather than a reaction:
+
+1. **Only ever give ONE track the desktop**, and say so in every other brief
+   (*"do NOT run the ui-verify harness; another agent owns the desktop"*). With
+   one holder there is one process family to kill; with three there is a race.
+2. **Kill first, explain second.** Checking whether it is mid-run costs seconds
+   his pointer does not have. `tasklist | grep -i ui-verify` before and after,
+   and if the count is 0 the screen is his.
+3. **The killed run's verdicts are void, and so are the ones it already
+   printed** — same rule as a run that overlapped his input. Say so when the
+   agent reports, in those words, and re-queue the run rather than reading its
+   partial output as evidence.
+
+★ What survives the kill: everything the agent WROTE. The source edits, the new
+checks and the analysis are on disk and are not contaminated by the run being
+cut short — only the *verdicts* are. Do not revert its work; re-drive it.

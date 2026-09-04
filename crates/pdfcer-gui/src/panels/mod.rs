@@ -165,7 +165,6 @@ pub mod pages;
 pub mod properties;
 pub mod redact;
 pub mod signatures;
-pub mod tool;
 
 /// One dockable panel.
 ///
@@ -294,23 +293,6 @@ pub enum Panel {
     /// a panel with authoring controls does not belong on a reading stance's
     /// ribbon.
     Attachments,
-    /// What the pointer does, which tool is armed, and where each tool lives.
-    ///
-    /// ★★ **The only panel in this taxonomy whose subject is the OPERATOR
-    /// rather than the document.** Every other variant answers a question about
-    /// the file — what pages it has, what layers, what fonts, what is on this
-    /// page, what one object's properties are. This one answers *"what can I
-    /// do, and what am I holding"*, and its absence is the operator's item 4,
-    /// verbatim: *"no side bar area showing what tool is active and its
-    /// options."*
-    ///
-    /// It is also the fix for his item 5. `edit.text` and `edit.add_text` are
-    /// registered, drawn, chord-bound and driven-verified, and he reported them
-    /// missing — a discoverability defect that stayed green for three weeks
-    /// because *"the tests pass"* is not a report of working software. See
-    /// [`tool`]'s header for the whole account, including why the panel is
-    /// captioned **Tool** and not *Tool options*.
-    Tool,
 }
 
 impl Panel {
@@ -321,7 +303,7 @@ impl Panel {
     /// is added — so [`tests::the_panel_catalog_is_complete`] pins its
     /// length against a match that the compiler *does* check, which is the
     /// only way to make a hand-written catalog self-defending.
-    pub const ALL: [Self; 13] = [
+    pub const ALL: [Self; 12] = [
         Self::Attachments,
         Self::Bookmarks,
         Self::Layers,
@@ -334,7 +316,6 @@ impl Panel {
         Self::Comments,
         Self::Redact,
         Self::DimensionGroups,
-        Self::Tool,
     ];
 
     /// The ribbon command that shows this panel.
@@ -464,13 +445,6 @@ impl Panel {
             // changed on 2026-08-19 is that pressing it toggles a panel rather
             // than opening a window.
             Self::DimensionGroups => "measure.manage_groups",
-            // ★ On View ▸ Panels, and FIRST in that group. Unlike the four
-            // exceptions above, this one needed no argument about which tab: it
-            // is a panel toggle in the ordinary sense, and it must be on a tab
-            // EVERY mode is shown, because every mode has tools and every mode
-            // can therefore mount it. `view` and `file` are the only two Read
-            // is shown; `view` is where panels live.
-            Self::Tool => "view.panel_tool",
         }
     }
 
@@ -564,13 +538,6 @@ impl Panel {
             Self::Comments => comments::body(ui, doc, state, actions),
             Self::Redact => redact::body(ui, doc, state, actions),
             Self::DimensionGroups => dimension_groups::body(ui, doc, state, actions),
-            // ★ Takes `host`, and is the third panel that does — but for a
-            // different reason from the other two. Objects and Pages want a
-            // context MENU; this one wants the command **registry**, so its
-            // identity row can read the label and chord off the same source
-            // the ribbon does rather than carrying a second copy of either.
-            // See `crate::shell::menus::MenuHost::label`.
-            Self::Tool => tool::body(ui, doc, host, actions),
         }
         Vec::new()
     }
@@ -1190,6 +1157,95 @@ pub fn content_width(row_widths: impl IntoIterator<Item = f32>, viewport: f32) -
         .fold(viewport, f32::max)
 }
 
+/// The character this crate ends a shortened row with.
+///
+/// One code point, not three periods. Three periods measure wider, and at the
+/// width where a row is being shortened at all, three periods is another
+/// character and a half of the operator's text spent on the punctuation that
+/// says text was spent.
+pub const ELLIPSIS: char = '\u{2026}';
+
+/// **Shorten `label` until it fits `available`, or say that it already does** —
+/// `OPERATOR_REQUESTS.md` **O123**: *"rows that ellipsise with a tooltip
+/// instead of hard-clipping mid-character."*
+///
+/// Returns `None` when the whole label fits, and `Some(shortened)` when it does
+/// not. The caller draws whichever it got and attaches the **full** text on
+/// hover in the `Some` case.
+///
+/// # ★★★ This reverses a recorded ruling, and the operator reversed it
+///
+/// `REVIEW_TRIAGE.md` §4 lists *"A7 — Objects rows should ellipsize"* under
+/// *already decided against*, citing `SALVAGE.md:44` — *"Row text must not
+/// clip; the old panel truncated with no horizontal scroll."* That ruling was
+/// right about the OLD behaviour and it is being overturned on the operator's
+/// own instruction, not quietly.
+///
+/// ★ And the requirement `SALVAGE.md` states is still met, by a different
+/// route. What it forbade was **silent** loss: the old panel cut a row at the
+/// pane's edge with no bar, no mark and no recovery. This shortens the row, says
+/// so with a character the eye reads as *there is more*, and puts the whole
+/// string one hover away. The thing that must not happen — an operator seeing
+/// `AAAAAA+SpaceGrotesk-Bold 1` and having no idea a `2` was cut off — cannot
+/// happen either way round.
+///
+/// # ★★ Why a `measure` closure rather than a `&Ui`
+///
+/// So the decision is a pure function and can be tested against a synthetic
+/// font. Every earlier attempt at this in this crate ended as three lines
+/// inside a draw closure, and [`content_width`]'s own doc records what that
+/// costs: *"the difference between 'the intrinsic width of this text' and 'the
+/// width this row ended up with' is invisible at a call site and obvious in a
+/// test."*
+///
+/// # The search
+///
+/// Binary search over **character** counts, never bytes: slicing a UTF-8 string
+/// at a byte offset panics mid-code-point, and this crate's rows carry the
+/// middle dot, the em dash, the multiplication sign and font names with
+/// accents. The predicate is monotone — a longer prefix is never narrower — so
+/// the search is sound, and it costs `log2(len)` measurements on the rows that
+/// need it and one on the rows that do not.
+///
+/// Returns `Some` of the bare ellipsis when not even one character plus the
+/// ellipsis fits. That is a legitimate state at a very narrow dock and it is
+/// **still better than a clipped row**: a lone ellipsis says *this is a row,
+/// and it has content you cannot see here*, and it still carries the hover.
+#[must_use]
+pub fn elide_to_width(
+    label: &str,
+    available: f32,
+    measure: impl Fn(&str) -> f32,
+) -> Option<String> {
+    if !available.is_finite() || available <= 0.0 {
+        // No width to fit into. Nothing sensible to shorten to, and returning
+        // `None` here is deliberate: the caller draws the whole label, `egui`
+        // clips it, and the frame in which a pane has no width is not one worth
+        // making a layout decision inside.
+        return None;
+    }
+    if measure(label) <= available {
+        return None;
+    }
+    let chars: Vec<char> = label.chars().collect();
+    // `lo` always fits, `hi` never does. `lo` starts at zero because the bare
+    // ellipsis is the floor of what this function will return.
+    let (mut lo, mut hi) = (0usize, chars.len());
+    while lo + 1 < hi {
+        let mid = lo + (hi - lo) / 2;
+        let mut candidate: String = chars[..mid].iter().collect();
+        candidate.push(ELLIPSIS);
+        if measure(&candidate) <= available {
+            lo = mid;
+        } else {
+            hi = mid;
+        }
+    }
+    let mut out: String = chars[..lo].iter().collect();
+    out.push(ELLIPSIS);
+    Some(out)
+}
+
 /// Measure the intrinsic width of a row's text, in points.
 ///
 /// The *intrinsic* width — what the text would occupy with no wrapping and
@@ -1212,279 +1268,4 @@ pub fn text_width(ui: &egui::Ui, text: &str) -> f32 {
         .width()
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::shell::{commands, manifest};
-    use egui_shell::CommandRegistry;
-    use std::collections::BTreeSet;
-
-    /// **★ Every panel is reachable from the ribbon.**
-    ///
-    /// The check three panels shipped without. The old shell's
-    /// `panels_structure.rs` header records what that cost:
-    ///
-    /// > All three shipped with a `PaneSubject`, a panel body, a rail entry
-    /// > and a diagnostic step — and no control an operator could click.
-    /// > Their only callers were the harness step handlers, so every
-    /// > verification passed while the panels were unreachable in a real
-    /// > build.
-    ///
-    /// Two assertions per panel, and both are needed. A command **the
-    /// manifest references** is one the ribbon draws a control for; a
-    /// command **the registry holds** is one that has a label, a tooltip and
-    /// an enable predicate. Either alone is half a control: an id on a tab
-    /// with no registration renders nothing, and a registration nothing
-    /// references is an orphan (`crate::shell`'s own
-    /// `no_registered_command_is_orphaned` catches the second direction from
-    /// the other side).
-    ///
-    /// This is deliberately stronger than the gate it replaces, which read
-    /// `main.rs` as a **string** and looked for a `show_pane_subject(…)`
-    /// substring outside the harness function. A substring search cannot
-    /// tell a live call from one inside a `#[cfg(test)]` block, and it
-    /// silently stops working the day the call is spelled differently. This
-    /// one asks the same data the ribbon draws itself from.
-    #[test]
-    fn every_panel_is_reachable_from_the_ribbon() {
-        let shell = manifest::built_in();
-        let mut registry = CommandRegistry::new();
-        commands::register(&mut registry);
-        let referenced: BTreeSet<String> = shell
-            .command_references()
-            .into_iter()
-            .map(|(_, id)| id)
-            .collect();
-
-        for panel in Panel::ALL {
-            let id = panel.command_id();
-            assert!(
-                referenced.contains(id),
-                "{panel:?} names the command `{id}`, and no tab, QAT slot or key \
-                 binding references it. An operator cannot open this panel. \
-                 Give it a control in `shell::manifest`, or remove the panel."
-            );
-            assert!(
-                registry.get(id).is_some(),
-                "{panel:?} names the command `{id}`, which is not registered — so \
-                 the ribbon has an id with no label, no tooltip and no enable \
-                 predicate, and draws nothing for it."
-            );
-        }
-    }
-
-    /// **No two panels claim the same command.**
-    ///
-    /// A shared id would make the reachability test above pass for both
-    /// while only one of them could ever be opened — the failure hiding
-    /// inside the fix. It is a live hazard rather than a hypothetical: two
-    /// of the nine panels are commissioned by one `RIBBON_IA.md` sentence
-    /// (`file.properties` names both the document's metadata and the
-    /// selection's properties), and the temptation to hang both off that one
-    /// id is exactly what this refuses.
-    #[test]
-    fn no_two_panels_share_a_command() {
-        let mut seen: Vec<&str> = Vec::new();
-        for panel in Panel::ALL {
-            let id = panel.command_id();
-            assert!(
-                !seen.contains(&id),
-                "{panel:?} claims `{id}`, which another panel already claims. \
-                 One command opens one panel."
-            );
-            seen.push(id);
-        }
-    }
-
-    /// **The hand-written catalog is exhaustive.**
-    ///
-    /// [`Panel::ALL`] is an array, and an array cannot notice a new variant.
-    /// The `match` below can: it has no catch-all arm, so adding a variant
-    /// to [`Panel`] fails to compile until it is listed here, and the length
-    /// assertion then fails until it is added to `ALL`. That chain is what
-    /// makes a hand-written enumeration self-defending, and it matters
-    /// because every sweep in this module — reachability included — is only
-    /// as complete as `ALL`.
-    #[test]
-    fn the_panel_catalog_is_complete() {
-        // Exhaustive by construction: no `_` arm.
-        const fn ordinal(p: Panel) -> usize {
-            match p {
-                Panel::Bookmarks => 0,
-                Panel::Layers => 1,
-                Panel::Signatures => 2,
-                Panel::Fonts => 3,
-                Panel::Objects => 4,
-                Panel::Properties => 5,
-                Panel::Forms => 6,
-                Panel::Pages => 7,
-                Panel::Comments => 8,
-                Panel::Redact => 9,
-                Panel::DimensionGroups => 10,
-                Panel::Tool => 11,
-                Panel::Attachments => 12,
-            }
-        }
-        let mut ordinals: Vec<usize> = Panel::ALL.iter().copied().map(ordinal).collect();
-        ordinals.sort_unstable();
-        ordinals.dedup();
-        assert_eq!(
-            ordinals,
-            (0..Panel::ALL.len()).collect::<Vec<_>>(),
-            "Panel::ALL is missing a variant, or lists one twice"
-        );
-    }
-
-    /// **★ The container width exceeds the viewport when a row is wider —
-    /// which is the whole of the no-clipping fix.**
-    ///
-    /// If this returned the viewport width, `ScrollArea` would compare
-    /// content against viewport, find them equal, draw no bar, and the row
-    /// would be cut off at the panel's edge with nothing to say so. That is
-    /// the exact defect the Objects panel had, and it is why this is a pure
-    /// function rather than three lines inside a closure.
-    #[test]
-    fn a_row_wider_than_the_viewport_widens_the_container() {
-        // The measured case: a 600 pt row in a 370 pt dock pane.
-        assert!((content_width([600.0], 370.0) - 600.0).abs() < f32::EPSILON);
-        // The widest row wins, not the last or the first.
-        assert!((content_width([120.0, 600.0, 90.0], 370.0) - 600.0).abs() < f32::EPSILON);
-    }
-
-    /// …and it fills the viewport when every row is narrower, rather than
-    /// leaving a dead strip.
-    #[test]
-    fn narrow_rows_still_fill_the_panel() {
-        assert!((content_width([120.0, 90.0], 370.0) - 370.0).abs() < f32::EPSILON);
-        // No rows at all — an empty page — is the viewport, not zero.
-        assert!((content_width(std::iter::empty(), 370.0) - 370.0).abs() < f32::EPSILON);
-    }
-
-    /// A non-finite measurement is ignored rather than poisoning the width.
-    ///
-    /// `f32::max` propagates `NaN` in one direction and swallows it in the
-    /// other depending on argument order, and a `NaN` container width makes
-    /// egui lay nothing out at all — a blank panel, which reads as a crash.
-    /// Filtering is cheaper than reasoning about which way round it went.
-    #[test]
-    fn a_non_finite_row_width_cannot_blank_the_panel() {
-        let w = content_width([f32::NAN, 500.0, f32::INFINITY], 370.0);
-        assert!(w.is_finite(), "container width went non-finite: {w}");
-        assert!((w - 500.0).abs() < f32::EPSILON);
-    }
-
-    /// The focus is a toggle, so a row click is its own undo.
-    ///
-    /// With no selection model there is no Escape ladder and no other route
-    /// back to "nothing focused". A panel an operator cannot get out of is
-    /// worse than one they cannot get into.
-    #[test]
-    fn clicking_the_focused_row_again_clears_the_focus() {
-        let mut state = PanelsState::default();
-        assert_eq!(state.focus(), None);
-        state.set_focus(7);
-        assert_eq!(state.focus(), Some(7));
-        state.set_focus(9);
-        assert_eq!(state.focus(), Some(9), "a different row moves the focus");
-        state.set_focus(9);
-        assert_eq!(state.focus(), None, "the same row clears it");
-    }
-
-    /// **★ The panel focus has not quietly become a selection.**
-    ///
-    /// [`ObjectTreeUi::focus`]'s own docs say the field is **deleted** when
-    /// the real selection model lands, not extended — because two selections
-    /// that have to be kept in step will drift, and the drift is invisible
-    /// until an edit acts on the wrong object.
-    ///
-    /// The danger is not that someone renames it in one commit. It is that it
-    /// grows into one an attribute at a time — a second index here, surviving
-    /// a page change there — until deleting it is a refactor nobody wants to
-    /// start. So the four properties that make it *not* a selection are
-    /// asserted directly, and the canvas's real selection model landing in
-    /// this same stage is exactly why they are asserted now:
-    ///
-    /// 1. **Single-valued.** A selection is a set; this is one `Option`.
-    /// 2. **Does not survive a page change.** A selection is document-scoped;
-    ///    a paint-order index is a position on one page.
-    /// 3. **Does not survive an edit.** Deleting one object renumbers every
-    ///    object after it, so a retained index describes a different object.
-    /// 4. **Read by one panel, and drives nothing else.** No enable
-    ///    predicate reads it. `crate::app::PdfcerApp::conditions` **does**
-    ///    set `selection.any` as of S4 — but from `OpenDoc::selection`, the
-    ///    canvas's real selection, and never from this focus. That is the
-    ///    distinction this test defends: the two look alike, and the day
-    ///    someone wires the condition to whichever one is nearest, a row
-    ///    highlighted in a panel starts arming a destructive command.
-    #[test]
-    fn the_panel_focus_has_not_quietly_become_a_selection() {
-        use crate::app::state::OpenDoc;
-        use crate::panels::objects::test_support::engine_fixture;
-
-        let mut state = PanelsState::default();
-        let path = engine_fixture("pageops/four-pages.pdf");
-        let doc = pdfcer_core::document::Document::load(&path).expect("the fixture loads");
-        let pages = pdfcer_core::page_tree::pages(&doc).expect("a page tree");
-        let mut open = OpenDoc::new(path, pdfcer_core::edit::EditSession::new(doc), pages);
-
-        // Property 1 is structural: `focus()` returns `Option<usize>`, so a
-        // second focused row is not representable. Asserted by use — a set
-        // would not compile on the left of this binding.
-        state.sync(&open);
-        state.set_focus(2);
-        state.tree_mut().toggle_object(2);
-        let focused: Option<usize> = state.focus();
-        assert_eq!(focused, Some(2), "state within one page survives `sync`");
-
-        // 2. A page change forgets it.
-        open.view.page_index = 1;
-        state.sync(&open);
-        assert_eq!(
-            state.focus(),
-            None,
-            "a paint-order index is a position on ONE page; carrying it \
-             across a page step would describe a different object"
-        );
-        assert!(state.tree_mut().objects_expanded.is_empty());
-
-        // 3. An edit forgets it, without moving page.
-        state.set_focus(2);
-        open.edit_epoch = 1;
-        state.sync(&open);
-        assert_eq!(
-            state.focus(),
-            None,
-            "an edit renumbers every object after the one it touched"
-        );
-
-        // 4. Setting the focus arms nothing. A real selection now exists —
-        //    `format.delete` is gated on `selection.any` — which makes this
-        //    the live hazard rather than a hypothetical one: if the focus
-        //    ever came to satisfy that predicate, clicking a row in a REPORT
-        //    panel would enable a destructive command, and the operator
-        //    would have no way to tell which of the two "selections" it was
-        //    about to act on.
-        //
-        //    Asserted through the enable machinery itself: a `ConditionSet`
-        //    that has seen nothing but a focus must not satisfy the
-        //    predicate that gates those commands.
-        let mut registry = CommandRegistry::new();
-        commands::register(&mut registry);
-        let mut conditions = egui_shell::commands::ConditionSet::new();
-        conditions.set("doc.open");
-        conditions.set("doc.pages");
-        state.set_focus(2);
-        let armed: Vec<&str> = registry
-            .iter()
-            .filter(|c| format!("{:?}", c.enable).contains("selection"))
-            .filter(|c| c.is_enabled(&conditions))
-            .map(|c| c.id.as_str())
-            .collect();
-        assert!(
-            armed.is_empty(),
-            "a selection-gated command is enabled by a document being open \
-             and a panel row being focused: {armed:?}. The Objects panel's \
-             focus is not a selection and must not arm one."
-        );
-    }
-}
+mod tests;

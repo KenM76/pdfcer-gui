@@ -14,6 +14,33 @@
 
 use super::CommandText;
 
+/// ★★★ **Export image** — `OPERATOR_REQUESTS.md` **O120**, the operator's own
+/// ask of 2026-09-03: *"can you add the ability to export page(es) to png, jpg,
+/// svg."*
+///
+/// # The label is `RIBBON_IA.md` §5.1's, and the tooltip is not the label again
+///
+/// §5.1's Export band already carried the row — *Export image… (PNG/JPEG/TIFF,
+/// DPI picker)* — so the label is settled rather than chosen. What the tooltip
+/// has to add is the thing a label cannot say and an operator cannot find out
+/// by pressing: **which formats are actually offered**, because that is the
+/// decision they are about to make and one of the three names in the IA row is
+/// not one that shipped. TIFF has no encoder in the engine; SVG arrived after
+/// the row was written and is the one that makes his second sentence — *"copy
+/// and paste vector graphics into word or inkscape"* — possible at all.
+///
+/// ★★ **And it names transparency**, because that is the half of the request he
+/// put in a parenthesis and an exclamation mark — *"(including transparency
+/// where supported!)"* — and a tooltip that omitted it would leave him pressing
+/// the control to find out whether the thing he asked for by name is there.
+pub const fn file_export_image() -> CommandText {
+    CommandText::new(
+        "Export image…",
+        "Save pages as PNG, JPEG or SVG pictures, at a resolution you choose \
+         and with the page's transparency kept where the format allows it.",
+    )
+}
+
 /// **Save As** — `OPERATOR_REQUESTS.md` O95.
 ///
 /// ★★ The tooltip's job is the **difference from its neighbour**: the two labels

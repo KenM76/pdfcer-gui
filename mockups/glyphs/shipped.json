@@ -84,6 +84,11 @@
   "body": "<rect x=\"10\" y=\"13\" width=\"20\" height=\"24\" rx=\"2\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/> <rect x=\"18\" y=\"8\" width=\"20\" height=\"24\" rx=\"2\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/>",
   "src": "copy.svg"
  },
+ "copy-as-vector": {
+  "vb": "0 0 48 48",
+  "body": "<path d=\"M18 14H10a2 2 0 0 0-2 2v22a2 2 0 0 0 2 2h16\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <rect x=\"16\" y=\"6\" width=\"26\" height=\"32\" rx=\"2\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/> <path d=\"M23 31C23 19 32 27 36 14\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\"/> <rect x=\"19\" y=\"27\" width=\"8\" height=\"8\" rx=\"1\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/> <rect x=\"32\" y=\"10\" width=\"8\" height=\"8\" rx=\"1\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/>",
+  "src": "copy-as-vector.svg"
+ },
  "copy-document-text": {
   "vb": "0 0 48 48",
   "body": "<path d=\"M20 4h14l6 6v20H20z\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/> <path d=\"M20 10h-6v24h20\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M14 16H8v26h20\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M26 12h8\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\"/> <path d=\"M26 18h8\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\"/>",
@@ -159,10 +164,20 @@
   "body": "<path d=\"M8 8h32v32H8z\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M16 33l8-18 8 18\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M18.5 27h11\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>",
   "src": "embed-fonts.svg"
  },
+ "encrypt": {
+  "vb": "0 0 48 48",
+  "body": "<path d=\"M8 4h20l8 8v32H8z\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/> <path d=\"M28 4v8h8\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <rect x=\"14\" y=\"26\" width=\"16\" height=\"14\" rx=\"2\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/> <path d=\"M18 26v-3a4 4 0 0 1 8 0v3\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>",
+  "src": "encrypt.svg"
+ },
  "expand": {
   "vb": "0 0 48 48",
   "body": "<path d=\"M18 12l14 12-14 12z\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>",
   "src": "expand.svg"
+ },
+ "export-image": {
+  "vb": "0 0 48 48",
+  "body": "<rect x=\"5\" y=\"12\" width=\"25\" height=\"24\" rx=\"2\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/> <path d=\"M8 32l7-9 5 5 3-4 6 8\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M33 24h11\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\"/> <path d=\"M39 19l5 5-5 5\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>",
+  "src": "export-image.svg"
  },
  "finish-shape": {
   "vb": "0 0 48 48",
@@ -246,8 +261,8 @@
  },
  "insert-pages": {
   "vb": "0 0 48 48",
-  "body": "<path d=\"M9 31v8h30v-8\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M24 38V16\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\"/> <path d=\"M15 25l9-9 9 9\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>",
-  "src": "upload.svg"
+  "body": "<path d=\"M18 6h14l8 8v28H18z\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M32 6v8h8\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M4 24h14\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M13 19l5 5-5 5\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>",
+  "src": "insert-pages.svg"
  },
  "keyboard": {
   "vb": "0 0 48 48",
@@ -314,6 +329,11 @@
   "body": "<path d=\"M14 6h14l8 8v28H14z\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/> <path d=\"M28 6v8h8\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M19 20h10v14H19z\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linejoin=\"round\" stroke-dasharray=\"3 3\"/>",
   "src": "new-from-template.svg"
  },
+ "open-in-acrobat": {
+  "vb": "0 0 48 48",
+  "body": "<path d=\"M15 25V8a2 2 0 0 1 2-2h24a2 2 0 0 1 2 2v24a2 2 0 0 1-2 2H26\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M16 14h27\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\"/> <path d=\"M5 28h12l6 6v10H5z\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/> <path d=\"M17 28v6h6\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>",
+  "src": "open-in-acrobat.svg"
+ },
  "page-continuous": {
   "vb": "0 0 48 48",
   "body": "<rect x=\"15\" y=\"5\" width=\"18\" height=\"26\" rx=\"2\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/> <path d=\"M15 48v-9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v9\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/>",
@@ -348,6 +368,11 @@
   "vb": "0 0 48 48",
   "body": "<rect x=\"11\" y=\"10\" width=\"26\" height=\"32\" rx=\"3\" stroke=\"currentColor\" stroke-width=\"2.5\"/> <rect x=\"18\" y=\"5\" width=\"12\" height=\"9\" rx=\"2.5\" stroke=\"currentColor\" stroke-width=\"2.5\"/> <path d=\"M18 25h12M18 32h12\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\"/>",
   "src": "paste.svg"
+ },
+ "permissions": {
+  "vb": "0 0 48 48",
+  "body": "<path d=\"M10 5h18l8 8v30H10z\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/> <path d=\"M28 5v8h8\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M14 24l3 3 5-6\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M26 25h8\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\"/> <path d=\"M14 34l3 3 5-6\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M26 35h8\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\"/>",
+  "src": "permissions.svg"
  },
  "pick-form-xobject": {
   "vb": "0 0 48 48",
@@ -386,8 +411,8 @@
  },
  "properties": {
   "vb": "0 0 48 48",
-  "body": "<rect x=\"10\" y=\"4\" width=\"28\" height=\"40\" rx=\"2\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/> <path d=\"M16 16h16M16 24h16M16 32h10\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\"/>",
-  "src": "document.svg"
+  "body": "<path d=\"M8 14h16\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M32 14h8\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M8 24h4\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M20 24h20\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M8 34h12\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M28 34h12\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M28 10a4 4 0 1 1 0 8 4 4 0 0 1 0-8z\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M12 20a4 4 0 1 1 0 8 4 4 0 0 1 0-8z\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M24 30a4 4 0 1 1 0 8 4 4 0 0 1 0-8z\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>",
+  "src": "properties.svg"
  },
  "push-button": {
   "vb": "0 0 48 48",
@@ -501,8 +526,8 @@
  },
  "set-scale": {
   "vb": "0 0 48 48",
-  "body": "<path d=\"M11 19a14 14 0 0124-7\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\"/> <path d=\"M37 29a14 14 0 01-24 7\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\"/> <path d=\"M30 9l6 3-3 6M18 39l-6-3 3-6\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>",
-  "src": "convert.svg"
+  "body": "<path d=\"M6 22h36v10H6z\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M12 22v5\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M18 22v4\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M24 22v5\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M30 22v4\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M36 22v5\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M10 12h28\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M14 8l-4 4 4 4\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M34 8l4 4-4 4\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>",
+  "src": "set-scale.svg"
  },
  "settings": {
   "vb": "0 0 48 48",

@@ -360,6 +360,69 @@ pub(super) fn band() -> Vec<Command> {
         command("file.export_dxf", t::file_export_dxf(), 120)
             .with_icon("export")
             .enabled_when("doc.pages"),
+        // ★★★ **Export image — `OPERATOR_REQUESTS.md` O120, wired 2026-09-04.**
+        //
+        // Registered between the two existing export verbs and drawn in the
+        // same band, because it is the same act: *content of this document,
+        // written out to somewhere that is not this document.* What differs is
+        // only what a reader of the result can do with it — CAD geometry there,
+        // form values there, a picture here.
+        //
+        // ★★★ **IT WORE `export` FOR ABOUT SIX HOURS, AND THAT WAS WRONG.**
+        // The argument is left standing below rather than deleted, because the
+        // reversal is the useful part and a comment that quietly changed its
+        // mind teaches nobody anything.
+        //
+        // What was argued, and it is not a bad argument: the glyph is the
+        // download twin of `insert-pages`' upload art, reserved for exactly
+        // this by the icon ui-spec §3.1; what it says — "out of this document,
+        // into a file" — is equally true of all three export verbs; what
+        // differs is the FORMAT, which is "a word only a label can say", and
+        // all three labels say it. New art would then ask the operator to learn
+        // a picture distinguishing three controls their labels already
+        // distinguish, on a band where the three sit adjacent and are read
+        // together. `file.save`, `file.save_as` and `file.save_compacted` a few
+        // registrations above make the OPPOSITE choice — one body, three
+        // interior marks — and can, because they are three spellings of one
+        // verb where these are three different verbs.
+        //
+        // ★★ WHERE IT FAILS: the premise that the format is a word only a label
+        // can say is **false for this one control**, and true for the other
+        // two. A DXF is a coordinate list and a form-data file is a set of
+        // name/value pairs — neither has a picture, so neither can be drawn,
+        // so the tray is honest about them. **A raster image does have a
+        // picture, and this set already draws it.** `image.svg` exists,
+        // `edit.insert_image` wears it, and the operator has therefore already
+        // learned in this application that a framed tile with a horizon means
+        // *a raster image*. Handing the picture command a generic tray asks him
+        // to unlearn that on exactly one control.
+        //
+        // ★ And it is the same defect the 2026-09-04 glyph batch was adopted to
+        // fix, one level down. That batch's own note: four form-field tools
+        // shared one asset and four measure tools shared another, "eight
+        // controls rendering as two pictures", in a ribbon whose module header
+        // says such controls are "distinguishable only by icon and tooltip".
+        // Three export verbs rendering as one picture is that shape again, and
+        // the shared-key convention is not a licence to re-commit it — the
+        // convention permits a share where the art is EQUALLY true of both, and
+        // `download.svg`'s emptiness is less true here than of its neighbours.
+        //
+        // ⇒ `export-image` — a picture tile with an arrow leaving it to the
+        // right. `export_dxf` and `export_form_data` keep `export`, unchanged
+        // and correctly: their share was never the problem. See
+        // `icons/assets/export-image.svg` for which neighbours the new glyph
+        // must stay apart from and by what cue — `image.svg` by the arrow's
+        // DIRECTION (out, not in), `download.svg` by naming its cargo where
+        // that draws an empty tray, `pick-link.svg` by leaving a closed frame
+        // horizontally where that escapes a deliberate corner gap diagonally.
+        //
+        // ★ `doc.pages` rather than `doc.open`, matching `file.export_dxf` and
+        // for the stronger version of its reason: every control in the window
+        // is a statement about a page, and the largest-page measurement the
+        // window opens with has nothing to fold over on a document with none.
+        command("file.export_image", t::file_export_image(), 124)
+            .with_icon("export-image")
+            .enabled_when("doc.pages"),
         command("file.export_form_data", t::file_export_form_data(), 121)
             .with_icon("export")
             .enabled_when("doc.open"),
@@ -487,6 +550,68 @@ pub(super) fn band() -> Vec<Command> {
             .enabled_when("doc.open"),
         // Settings, the shortcut list and About are always available: they
         // are about pdfcer, not about a document.
+        // ★★★ **Open in Acrobat** — `OPERATOR_REQUESTS.md` **O122**, the
+        // operator, 2026-09-04: *"beside our read-review-edit buttons at the
+        // top there should be an open in acrobat button."*
+        //
+        // ## Where it appears, and why that is not a tab
+        //
+        // It is the sole member of the manifest's TRAILING region — the far
+        // right of the tab-strip row, past the mode selector — which is where
+        // he asked for it and which had no way to hold anything until this
+        // work. `egui_shell::manifest::Trailing` carries the argument for the
+        // region existing; the argument for this command being in it is his
+        // sentence and nothing more, and that is sufficient.
+        //
+        // ## ★★★ Registered UNCONDITIONALLY, absent CONDITIONALLY
+        //
+        // The obvious spelling is to register this only on a machine that has
+        // an Acrobat, so R8's rule holds by construction: *a capability's
+        // presence is expressed by registering its command, and by nothing
+        // else.* It is wrong here, for a reason specific to this capability
+        // rather than a general objection.
+        //
+        // The registry is built ONCE, at start-up. The path to Acrobat is a
+        // SETTING the operator can change at any moment, and O122's whole
+        // escape hatch is that the setting is reachable *while the button is
+        // absent* — somebody with a non-standard install types a path and the
+        // control has to appear. A conditional registration cannot do that
+        // without a restart, and a restart to make a button appear is the
+        // failure the escape hatch exists to prevent.
+        //
+        // So the ITEM carries `visible_when: "acrobat.available"`, which is
+        // `egui_shell`'s own R9 mechanism — its `Item::Command::visible_when`
+        // doc states it in those words: *"an unavailable capability renders
+        // nothing; greying is reserved for TEMPORARILY unavailable"* — and is
+        // re-evaluated every frame. See `crate::shell::manifest`'s trailing
+        // block, and `PdfcerApp::conditions`, which sets the name from the one
+        // resolved viewer.
+        //
+        // ## No icon, and it is a refusal rather than an omission
+        //
+        // `icons/assets/PROVENANCE.md` declares that directory the operator's
+        // own art, so the alternative to a glyph is not "draw one" but "ask him
+        // for one" — the judgement `file.save_as`, `edit.select_all` and
+        // `edit.attachments` all reached. And every reuse available would
+        // mislead: `export` says "out of this document into a file", which is
+        // not what this does, and `open` says "bring a file in here", which is
+        // its opposite. The label is a proper noun the operator reads faster
+        // than any picture — which is the one case where words beat a glyph
+        // outright.
+        //
+        // ## `doc.open`, not `doc.pages`
+        //
+        // Acrobat is handed a FILE, and a file with no pages pdfcer could
+        // rasterize is still a file Acrobat may well open — it is a more
+        // capable reader of damaged documents than this shell is. Greying it
+        // on `doc.pages` would refuse the case where handing the document over
+        // is the most useful thing pdfcer could do.
+        command(
+            "file.open_in_acrobat",
+            crate::text::acrobat::file_open_in_acrobat(),
+            161,
+        )
+        .enabled_when("doc.open"),
         command("file.settings", t::file_settings(), 150).with_icon("settings"),
         command("file.shortcuts", t::file_shortcuts(), 151).with_icon("keyboard"),
         // ★ `file.about` carries an OBLIGATION, not a courtesy: it is the

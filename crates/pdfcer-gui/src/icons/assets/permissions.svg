@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- What the document PERMITS (the engine's `set_permissions`;
+       `OPERATOR_REQUESTS.md` O119) — a folded-corner page carrying TWO TICKED
+       ROWS: a small tick, then a rule, twice. A page outline, its fold, two
+       two-segment ticks and two rules; primitives only, no trademark risk.
+
+       ★ NOT WIRED TO ANY COMMAND. Same standing as `encrypt.svg` and the same
+       reason: O119 is a question to the operator, not a decision an engineer
+       gets to make, and `Icon::EditObjects` is the precedent for a variant no
+       command names yet — art outside `Icon::ALL` is art no test walks.
+
+       ★★ WHAT IT DEPICTS. `/P` is a bit field: printing, copying, changing,
+       annotating, form filling, extraction for accessibility, assembly,
+       high-quality printing. On screen that is A LIST OF THINGS WITH TICKS
+       BESIDE THEM, and the glyph is a picture of that list on a page — which is
+       what the surface behind it would literally be if O119 is answered yes.
+       Two rows and not three: three rows in a 30-unit page interior puts the
+       rules under five units apart, and five units is under two pixels at the
+       size this ships at. Two rows say "a list" as well as three do and stay
+       separable.
+
+       ⚠ IT IS A LIST OF PERMISSIONS, NOT A GUARANTEE, and the tick must not be
+       allowed to drift into meaning *verified*. `signatures.svg`'s ruling binds
+       here: pdfcer performs no cryptographic verification, and a checkmark near
+       anything security-shaped reads as VALIDATED. `check.svg` carries the same
+       warning in its own file — never "validated", "verified" or "correct".
+       What these ticks mean is what a tick means in a settings dialog: THIS BOX
+       IS ON. O119's briefing sentence says the rest out loud — a permission
+       setting is a request that any program may ignore — and the glyph must not
+       promise what that sentence retracts.
+
+       Neighbours, and the cue that holds each apart:
+
+       * `list.svg` (`Icon::ManageList`) is three SQUARE MARKERS beside three
+         rules and, by its own note, has "no frame at all: it is not a document,
+         it is an inventory". This is the inverse on both axes — the markers are
+         TICKS, and there IS a page around them. Square marker versus tick is
+         the mark; frame versus no frame is the subject. Either cue alone would
+         carry it; both are present because the two glyphs could otherwise sit
+         on the same tab.
+       * `check.svg` (`Icon::Accept`) is a BARE tick filling the grid and means
+         *the gesture you were making is now finished*. A tick inside a page is
+         not that: it is one item in a list, drawn at a quarter of the size, and
+         the page is what stops the reading.
+       * `check-box.svg` is one tick inside one SQUARE — a form-field kind, a
+         thing you place on a page. The count is the cue: one box, versus a page
+         holding two rows.
+       * `encrypt.svg` is this glyph's sibling and shares its page silhouette
+         deliberately, so the O119 pair reads as one subject with two questions.
+         The interior is the whole separation: a LOCK there (is the document
+         closed?), TICKED ROWS here (what does it allow?). ⚠ If either is ever
+         restyled, keep the page identical and change only what is inside it —
+         the family is the message, and two different page shapes would say the
+         two commands are unrelated.
+       * `text.svg` is the other ruled page, and its rules run the FULL interior
+         width with nothing before them. Here every rule is short and preceded
+         by a tick, which is why the interior reads as a form rather than as
+         prose. -->
+  <path d="M10 5h18l8 8v30H10z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M28 5v8h8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M14 24l3 3 5-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M26 25h8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M14 34l3 3 5-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M26 35h8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

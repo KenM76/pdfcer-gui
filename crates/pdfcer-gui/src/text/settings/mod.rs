@@ -532,7 +532,15 @@ mod tests {
     // setting, so the sibling coverage test in `dialogs::settings` — which
     // enumerates the engine's store — could never have demanded it. This
     // catalog is the only instrument that covers both.
-    const SETTINGS_COUNT: usize = 30;
+    // ★ 30 → 31 on 2026-09-04: `acrobat_path` — O122, *"have a setting where
+    // people can change it."* The second SHELL preference in this count and the
+    // first setting in the window about **another program on this machine**, so
+    // neither the engine-store coverage test nor anything else could have
+    // demanded it. Its copy lives in `crate::text::acrobat` rather than here,
+    // because O122's four surfaces are one conversation and were filed
+    // together; this list reaches across for it, which is what keeps the count
+    // honest about a group whose words live elsewhere.
+    const SETTINGS_COUNT: usize = 31;
 
     /// The `(title, silence, radius)` triple for every setting in the window.
     ///
@@ -555,6 +563,13 @@ mod tests {
     fn triples() -> Vec<(&'static str, &'static str, &'static str)> {
         vec![
             (theme_title(), theme_silence(), theme_radius()),
+            // ★ O122's triple, reached across into `crate::text::acrobat`. See
+            // `SETTINGS_COUNT` on why that module holds it.
+            (
+                crate::text::acrobat::path_title(),
+                crate::text::acrobat::path_silence(),
+                crate::text::acrobat::path_radius(),
+            ),
             (
                 cmyk_intent_title(),
                 cmyk_intent_silence(),
@@ -749,6 +764,13 @@ mod tests {
             include_str!("../../dialogs/settings/appearance.rs"),
         ),
         ("colour", include_str!("../../dialogs/settings/colour.rs")),
+        // ★★★ Added 2026-09-04 with the Acrobat-path control — O122 — and
+        // added BEFORE the control was written rather than ten minutes after,
+        // which is the whole point of the note on `comments` below and of
+        // `every_settings_module_is_counted`. That test caught this file's
+        // absence on the first `cargo test` after the module was created,
+        // exactly as designed.
+        ("acrobat", include_str!("../../dialogs/settings/acrobat.rs")),
         // ★★★ Added 2026-08-28 with the author-name control, and its
         // absence for the first ten minutes is the finding: this list is
         // HAND-WRITTEN, so a new settings module is invisible to the very

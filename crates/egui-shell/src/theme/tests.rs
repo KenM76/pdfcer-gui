@@ -139,16 +139,75 @@ fn label_plates_stay_content_facing_not_chrome_facing() {
 /// property — *the test enumerates the render surface, not the
 /// author's intentions* — is the transferable lesson.
 ///
+/// # ★★★ The widening, 2026-09-04 — `REVIEW_TRIAGE.md` A15e
+///
+/// This test was called `..._widget_pair_...` until that date, and the
+/// word was load-bearing in the wrong direction: it enumerated ten pairs
+/// and **was green through three separately shipped contrast defects**,
+/// because none of the three was a widget pair. [`contrast::pairs`] now
+/// returns **twenty-seven**, and its module header states which of the
+/// three the widening reaches (the selection channel) and which two it
+/// deliberately still cannot (a caller's `RichText::color`, and a
+/// background produced by geometry) with the gates that do cover those.
+///
+/// The seventeen new pairs are the foregrounds `egui` resolves through a
+/// `Visuals` *accessor* rather than storing in a `WidgetVisuals` — body
+/// text, weak text, strong text, hyperlink, warn, error — each measured
+/// on the grounds it is really drawn on, plus the two roles the selection
+/// channel serves.
+///
+/// # The numbers, measured 2026-09-04, floor 90
+///
+/// Every new pair, per preset. The widget ten are omitted; they were
+/// already comfortable and are unchanged.
+///
+/// | pair | Quiet | Airy | Dark |
+/// |---|---:|---:|---:|
+/// | `text_color()` on `panel_fill` | 213.9 | 212.1 | 194.0 |
+/// | `text_color()` on `window_fill` | 204.0 | 217.1 | 183.1 |
+/// | `text_color()` on `text_edit_bg_color()` | 204.0 | 217.1 | 183.1 |
+/// | `weak_text_color()` on `panel_fill` | 128.9 | 128.0 | 116.0 |
+/// | `weak_text_color()` on `window_fill` | 123.0 | 131.0 | 109.2 |
+/// | `weak_text_color()` on `text_edit_bg_color()` | 123.0 | 131.0 | 109.2 |
+/// | `strong_text_color()` on `panel_fill` | **7.9** | **0.1** | **18.3** |
+/// | `strong_text_color()` on `window_fill` | **17.9** | **5.0** | **29.1** |
+/// | `hyperlink_color` on `panel_fill` | 157.2 | 165.2 | 106.8 |
+/// | `hyperlink_color` on `window_fill` | 147.3 | 170.2 | **96.0** |
+/// | `warn_fg_color` on `panel_fill` | 127.0 | 135.0 | 128.8 |
+/// | `warn_fg_color` on `window_fill` | 117.0 | 139.9 | 118.0 |
+/// | `error_fg_color` on `panel_fill` | 168.2 | 176.2 | 113.2 |
+/// | `error_fg_color` on `window_fill` | 158.3 | 181.1 | 102.3 |
+/// | selected plate over `panel_fill` | 103.1 | 118.9 | 123.2 |
+/// | selected plate over `window_fill` | 103.1 | 118.9 | 123.2 |
+/// | focus ring on `text_edit_bg_color()` | 147.3 | 170.2 | **96.0** |
+///
+/// ★ Two rows need reading rather than scanning.
+///
+/// **`strong_text_color()` is the theme's only exemption**, and it is
+/// structural rather than a tuning miss: that accessor **is**
+/// `widgets.active.fg_stroke.color`, the ink chosen for the accent FILL,
+/// and no value reads on both the accent and a panel. It is measured,
+/// excused by [`contrast::EXEMPTIONS`] with the argument written out, and
+/// expired by `every_contrast_exemption_still_has_a_subject`. What covers
+/// it instead is `tools/gates/check-strong-text.sh`, at the call site.
+///
+/// **`error_fg_color` on `window_fill` in Dark is the pair the widening
+/// actually caught.** It measured **89.7** against this floor on the day
+/// it was first enumerated — a real, if marginal, shortfall in the colour
+/// every dialog uses to say the operator must act. The fix was to move the
+/// role (`Palette::danger` in the dark preset, `#FF6B6B` → `#FF7B7B`), not
+/// the threshold and not the pair; `Theme::dark` carries the arithmetic.
+///
 /// # On the threshold
 ///
 /// 90 on a 0–255 crude luminance scale, the same figure the salvaged
 /// text test uses, and for the same reason: a coarse check that always
 /// fires beats a precise one nobody runs. It is not a WCAG ratio and
 /// does not claim to be. The values it passes are comfortable — the
-/// tightest real pair in the shipped presets is `on_accent` on
-/// `accent` in the dark preset, at roughly 125.
+/// tightest two real pairs in the shipped presets are Dark's focus ring
+/// and Dark's hyperlink, both at 96.0.
 #[test]
-fn every_rendered_widget_pair_is_readable_in_every_preset() {
+fn every_rendered_pair_is_readable_in_every_preset() {
     for preset in Preset::ALL {
         let theme = Theme::new(*preset);
         if let Err(failures) = theme.check_contrast(contrast::READABLE_LUMA_GAP) {
@@ -158,7 +217,7 @@ fn every_rendered_widget_pair_is_readable_in_every_preset() {
                 .collect::<Vec<_>>()
                 .join("\n  ");
             panic!(
-                "{preset:?}: {} rendered widget pair(s) are not readable. \
+                "{preset:?}: {} rendered pair(s) are not readable. \
                  A pair here is a foreground egui WILL paint on a background egui \
                  WILL paint it on — not two palette entries someone chose together, \
                  which is the distinction that let DEFECTS.md D2 ship past two \
@@ -169,10 +228,82 @@ fn every_rendered_widget_pair_is_readable_in_every_preset() {
     }
 }
 
+/// **★★ Every contrast exemption still describes a pair that would
+/// otherwise fail.**
+///
+/// # Why the other direction needs its own test
+///
+/// [`contrast::check`] skips the entries in [`contrast::EXEMPTIONS`]. It
+/// is silent about an entry with nothing behind it — so a blessing
+/// survives its own subject, and what survives is a paragraph arguing
+/// that a pair *cannot* be made readable, about a pair that now is.
+///
+/// That is not tidiness. A stale exemption is a **licence**: the next
+/// person who wants a contrast failure waved through finds a precedent in
+/// the list, and the precedent is a state that has not existed for months.
+/// This project has already paid for the same shape twice in one week — a
+/// gate exemption whose premise expired within a day, and
+/// `check-strong-text.sh` blessing a site on a sentence that had stopped
+/// being true (`REVIEW_TRIAGE.md` T1). ⇒ **Blessings expire with their
+/// subject, and something has to notice.**
+///
+/// The shape is `icons::catalog::tests::every_declared_share_is_still_a_share`,
+/// which is where this project settled the pattern.
+///
+/// # What "would otherwise fail" means here, precisely
+///
+/// At least **one** shipped preset, not all three. An exemption exists
+/// because *some* real theme cannot satisfy the pair; requiring every
+/// preset to fail would delete an entry the moment one preset's palette
+/// happened to drift into the clear, which is the opposite of the point.
+/// The failure message lists the per-preset numbers either way, so a
+/// reader deleting an entry can see exactly how much room there now is.
+///
+/// The companion half — "and the origin still exists" — is
+/// `contrast::tests::every_exemption_names_an_origin_the_gate_produces`,
+/// which needs no presets and lives with the module.
+#[test]
+fn every_contrast_exemption_still_has_a_subject() {
+    for exemption in contrast::EXEMPTIONS {
+        let mut measured: Vec<(Preset, f32)> = Vec::new();
+        for preset in Preset::ALL {
+            let style = Theme::new(*preset).rendered_style();
+            let pair = contrast::pairs(&style)
+                .into_iter()
+                .find(|p| p.origin == exemption.origin)
+                .unwrap_or_else(|| {
+                    panic!(
+                        "the exemption granted {} covers {:?}, which `contrast::pairs` \
+                         no longer produces",
+                        exemption.granted, exemption.origin
+                    )
+                });
+            measured.push((*preset, pair.gap));
+        }
+        assert!(
+            measured
+                .iter()
+                .any(|(_, gap)| *gap < contrast::READABLE_LUMA_GAP),
+            "the contrast exemption granted {} for {:?} now passes the gate in EVERY \
+             preset ({}), so it excuses nothing. Delete it. An allow-list entry left \
+             behind after its subject is gone reads as a decision somebody made and is \
+             a precedent for a failure nobody argued for. Its argument was:\n  {}",
+            exemption.granted,
+            exemption.origin,
+            measured
+                .iter()
+                .map(|(p, g)| format!("{p:?} {g:.1}"))
+                .collect::<Vec<_>>()
+                .join(", "),
+            exemption.reason,
+        );
+    }
+}
+
 /// **The gate is not vacuous: it fails on the defect it was written
 /// for.**
 ///
-/// Without this, `every_rendered_widget_pair_is_readable_in_every_preset`
+/// Without this, `every_rendered_pair_is_readable_in_every_preset`
 /// would pass identically if [`contrast::check`] returned `Ok` for
 /// everything, and would be asserting nothing at all. So this
 /// reconstructs D2 exactly — a light foreground on the active state
@@ -194,10 +325,11 @@ fn the_contrast_gate_catches_the_exact_defect_it_was_written_for() {
     let failures = contrast::check(&style, contrast::READABLE_LUMA_GAP)
         .expect_err("near-white on light grey must fail the gate");
     assert!(
-        failures
-            .iter()
-            .any(|f| f.state == contrast::WidgetState::Active
-                && f.fill == contrast::FillKind::BgFill),
+        failures.iter().any(|f| f.origin
+            == contrast::Origin::Widget {
+                state: contrast::WidgetState::Active,
+                fill: contrast::FillKind::BgFill,
+            }),
         "the gate must name the widget state and the fill that failed, \
          so the message points at the line to change; got: {failures:?}"
     );
@@ -226,89 +358,27 @@ fn on_accent_inverts_where_the_accent_is_light() {
     );
 }
 
-/// **★★★ Defect T2's regression test: a SELECTED WIDGET's text is
-/// readable on the fill `egui` will paint behind it, in every preset.**
-///
-/// # Why the gate above cannot see this pair, and why that mattered
-///
-/// `every_rendered_widget_pair_is_readable_in_every_preset` enumerates
-/// `WidgetState::ALL` × `FillKind::ALL` — ten pairs, foreground always
-/// `fg_stroke.color`, background always one of the state's own fills. The
-/// selected pair is in none of them, because `egui` does not *store* it:
-/// `Style::button_style` substitutes it at paint time
-/// (`egui-0.35.0/src/widget_style.rs:151-154`), overwriting both fills
-/// and the text colour from `visuals.selection`. Reading the `Style` back
-/// therefore cannot reach it — the pair that renders was never a pair in
-/// the struct.
-///
-/// So this test reproduces `egui`'s substitution arithmetic explicitly.
-/// It is the same discipline as the rendered-pair gate one level up:
-/// measure what will be *painted*, not what somebody wrote down.
-///
-/// # The background is composited, and that is load-bearing
-///
-/// The fill is measured **over `panel`**, through [`contrast::over`],
-/// because the value that shipped here was `selection_fill` — 27 % alpha.
-/// Measuring a translucent fill as if it were opaque is exactly the error
-/// that hides this class of defect: it overstates the gap against a dark
-/// background and understates it against a light one.
-///
-/// # The numbers this pins, measured 2026-09-04
-///
-/// | preset | `accent` on 27 % wash | `on_accent` on `accent` | `accent` on `selected_plate` |
-/// |---|---:|---:|---:|
-/// | Quiet | 120 | 165 | 103.1 |
-/// | Airy  | 137 | 165 | 118.9 |
-/// | Dark  | **72.5** | 125 | 123.2 |
-///
-/// The third column is what ships. It is lower than the second and that is
-/// a deliberate trade, not a regression: the second column's ink was
-/// `on_accent`, which made the focused-`TextEdit` ring `egui` draws from
-/// the *same* channel unreadable (17.9 / 5.0 / 29.1). See
-/// `both_roles_the_selection_channel_serves_are_readable_in_every_preset`,
-/// which is the test that now holds both ends at once.
-///
-/// Only Dark actually breached the floor, and Dark is the preset the
-/// reviewer's screenshots came from. Quiet and Airy passed *by accident of
-/// their panel being light* — the same colours over a dark panel failed.
-/// A pair that is readable only because of what happens to be behind it is
-/// not readable; it is lucky. Pinning all three presets is what converts
-/// the luck into an assertion.
-#[test]
-fn a_selected_widgets_text_is_readable_on_the_fill_egui_paints_behind_it() {
-    for preset in Preset::ALL {
-        let theme = Theme::new(*preset);
-        let style = theme.rendered_style();
-        let v = &style.visuals;
-
-        // Exactly what `Style::button_style` does for a selected button:
-        // the fill becomes `selection.bg_fill` and the text becomes
-        // `selection.stroke.color`. The panel is what the fill is
-        // composited over, because a selected control lives on a panel.
-        let fg = v.selection.stroke.color;
-        let bg = contrast::over(v.selection.bg_fill, theme.palette.panel);
-        let gap = contrast::gap(fg, bg);
-
-        assert!(
-            gap >= contrast::READABLE_LUMA_GAP,
-            "{preset:?}: a selected widget renders text of luminance {:.1} on a \
-             fill of luminance {:.1} — a gap of {gap:.1}, under the floor of {:.0}. \
-             This is every bare `ui.selectable_label(true, …)` and every \
-             `Button::selected(true)` in the application at once: egui takes BOTH \
-             the fill and the text colour from `visuals.selection`, so a theme that \
-             points that channel anywhere but at a fill-and-its-ink pair makes all \
-             of them unreadable together. See `Theme::write_style`.",
-            contrast::luma(fg),
-            contrast::luma(bg),
-            contrast::READABLE_LUMA_GAP,
-        );
-    }
-}
+// ★ **`a_selected_widgets_text_is_readable_on_the_fill_egui_paints_behind_it`
+// used to live here, and was deleted on 2026-09-04 during the A15e
+// widening.** It measured one half of what
+// `both_roles_the_selection_channel_serves_are_readable_in_every_preset`
+// measures, with the same arithmetic and a weaker message, and both of
+// them now read their numbers out of the one gate rather than
+// reproducing `egui`'s substitution by hand. Its own table — `accent` on
+// the 27 % wash at 120 / 137 / **72.5**, which is what defect T2
+// actually shipped — is preserved in that test's doc comment below, so
+// nothing it recorded was lost with it.
+//
+// The reason it is worth a note rather than a silent deletion: three
+// tests measuring one pair is how a project ends up unable to say which
+// of them is the contract.
 
 /// **The selection channel carries the CHROME pair, not the canvas one.**
 ///
-/// The test above measures a *property* (readable), which several wrong
-/// answers could satisfy. This pins the *identity*: `selection.bg_fill` is
+/// `both_roles_the_selection_channel_serves_are_readable_in_every_preset`
+/// below, and the widened gate under it, measure a *property* (readable),
+/// which several wrong answers could satisfy. This pins the *identity*:
+/// `selection.bg_fill` is
 /// [`Palette::selected_plate`] and `selection.stroke.color` is
 /// [`Palette::accent`], in every preset.
 ///
@@ -406,45 +476,69 @@ fn both_roles_the_selection_channel_serves_are_readable_in_every_preset() {
     for preset in Preset::ALL {
         let theme = Theme::new(*preset);
         let style = theme.rendered_style();
-        let v = &style.visuals;
-        let ink = v.selection.stroke.color;
+        let measured = contrast::pairs(&style);
+        let ink = style.visuals.selection.stroke.color;
 
-        // Role 1 — the selected widget. `over` rather than a bare read
-        // because a translucent plate must be measured composited; the
-        // shipped `selected_plate` is opaque, and this is what would catch
-        // a future edit that made it a wash again.
-        let plate = contrast::over(v.selection.bg_fill, theme.palette.panel);
-        let selected_gap = contrast::gap(ink, plate);
+        // ★ Both numbers come out of `contrast::pairs` rather than being
+        // recomputed here. Until the A15e widening this test reproduced
+        // `egui`'s substitution arithmetic by hand, because the gate could
+        // not reach it; the gate reaches it now, and a second hand-rolled
+        // copy of an arithmetic this delicate is a place for the two to
+        // disagree. What this test still owns — and the reason it was not
+        // simply deleted into the gate — is the two MESSAGES below, which
+        // say what to tune and in which direction. The gate's own message
+        // names the fields; these name the move.
+        let find = |origin: contrast::Origin| {
+            measured
+                .iter()
+                .find(|p| p.origin == origin)
+                .copied()
+                .unwrap_or_else(|| {
+                    panic!(
+                        "{preset:?}: `contrast::pairs` no longer produces {origin:?}. \
+                         Both roles this channel serves must stay in the one gate — \
+                         a role that leaves the enumeration is a role nothing measures."
+                    )
+                })
+        };
+
+        // Role 1 — the selected widget, its plate composited over the
+        // window ground. The shipped `selected_plate` is opaque, so the
+        // compositing is a no-op today; it is what would catch a future
+        // edit that made it a wash again.
+        let selected = find(contrast::Origin::SelectedWidget {
+            ground: contrast::Ground::WindowFill,
+        });
         assert!(
-            selected_gap >= contrast::READABLE_LUMA_GAP,
+            selected.gap >= contrast::READABLE_LUMA_GAP,
             "{preset:?}: a SELECTED WIDGET renders ink of luminance {:.1} on a plate \
-             of luminance {:.1} — a gap of {selected_gap:.1}, under the floor of \
-             {:.0}. egui takes both the plate and the ink from \
-             `visuals.selection`, so this is every `selectable_label(true, …)`, \
-             every `Button::selected(true)`, the highlight behind selected text and \
-             a ProgressBar's fill, all at once. See `Theme::write_style`.",
+             of luminance {:.1} — a gap of {:.1}, under the floor of {:.0}. egui takes \
+             both the plate and the ink from `visuals.selection`, so this is every \
+             `selectable_label(true, …)`, every `Button::selected(true)`, the highlight \
+             behind selected text and a ProgressBar's fill, all at once. See \
+             `Theme::write_style`.",
             contrast::luma(ink),
-            contrast::luma(plate),
+            contrast::luma(selected.bg),
+            selected.gap,
             contrast::READABLE_LUMA_GAP,
         );
 
         // Role 2 — the focused TextEdit's ring, on `text_edit_bg_color()`.
-        let ring_bg = v.text_edit_bg_color();
-        let ring_gap = contrast::gap(ink, ring_bg);
+        let ring = find(contrast::Origin::FocusRing);
         assert!(
-            ring_gap >= contrast::READABLE_LUMA_GAP,
+            ring.gap >= contrast::READABLE_LUMA_GAP,
             "{preset:?}: a FOCUSED TextEdit draws its frame with \
              `visuals.selection.stroke` (luminance {:.1}) over \
-             `text_edit_bg_color()` (luminance {:.1}) — a gap of {ring_gap:.1}, \
-             under the floor of {:.0}. A focused field then looks unfocused, and \
-             `TextEdit` has no `.frame_stroke()` to override it with. This is the \
-             half of the channel that was lost the first time it was re-pointed: \
-             `on_accent` here measured 17.9 / 5.0 / 29.1. If the selected-widget \
-             pair above is what you were tuning, tune `Palette::selected_plate` \
-             instead — diluting the PLATE leaves the ink free to be `accent`, which \
-             is far from `panel` by construction.",
+             `text_edit_bg_color()` (luminance {:.1}) — a gap of {:.1}, under the floor \
+             of {:.0}. A focused field then looks unfocused, and `TextEdit` has no \
+             `.frame_stroke()` to override it with. This is the half of the channel \
+             that was lost the first time it was re-pointed: `on_accent` here measured \
+             17.9 / 5.0 / 29.1. If the selected-widget pair above is what you were \
+             tuning, tune `Palette::selected_plate` instead — diluting the PLATE leaves \
+             the ink free to be `accent`, which is far from `panel` by construction.",
             contrast::luma(ink),
-            contrast::luma(ring_bg),
+            contrast::luma(ring.bg),
+            ring.gap,
             contrast::READABLE_LUMA_GAP,
         );
     }

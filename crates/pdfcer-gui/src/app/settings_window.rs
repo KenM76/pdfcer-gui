@@ -26,12 +26,24 @@ impl PdfcerApp {
     /// window would have two exits with two meanings and no way to tell which
     /// one an operator took. Both paths drop the draft.
     pub(super) fn settings_window(&mut self, ctx: &egui::Context) {
+        // ★ Read BEFORE the draft is borrowed mutably, and cloned rather than
+        // borrowed: `settings_draft` and `acrobat` are both fields of `self`,
+        // and the window needs one mutably and the other by shared reference.
+        // A clone of one `PathBuf` and two enums, once per frame the Settings
+        // window is open, is not a cost worth a borrow-splitting dance.
+        let acrobat_viewer = self.acrobat.clone();
         let Some(draft) = self.settings_draft.as_mut() else {
             return;
         };
 
         let mut open = true;
-        let outcome = settings::show(ctx, draft, &self.settings_store, &mut open);
+        let outcome = settings::show(
+            ctx,
+            draft,
+            &self.settings_store,
+            &mut open,
+            acrobat_viewer.as_ref(),
+        );
 
         match outcome {
             Outcome::Save => self.save_settings(),
@@ -143,6 +155,27 @@ impl PdfcerApp {
         if let Some(shell) = self.shell.as_mut() {
             crate::shell::manifest::apply_paste_chords(shell, self.prefs.paste_chords);
         }
+
+        // ★★★ AND THE ACROBAT PATH IS RE-RESOLVED — `OPERATOR_REQUESTS.md`
+        // O122, and this is the paste-chord paragraph above applied to a
+        // second setting for the identical reason.
+        //
+        // `Prefs::acrobat_path` is data; `PdfcerApp::acrobat` is what decides
+        // whether the button is drawn and which program it starts. Adopting the
+        // preference without re-resolving would give the operator a text field
+        // that saves correctly, reloads correctly, reads back correctly — and
+        // changes nothing until pdfcer is restarted. That is the silently-inert
+        // control this project has shipped before.
+        //
+        // ★ It matters more here than it does for the paste chords, because
+        // this setting's WHOLE PURPOSE is to be used by somebody who is looking
+        // at an interface with no Acrobat button in it. If typing the path does
+        // not make the button appear, they have no way to tell whether they got
+        // the path right.
+        //
+        // ★ After `self.prefs` is adopted, necessarily. `refresh_acrobat`
+        // reads it.
+        self.refresh_acrobat();
 
         // ★ Trace before the write, so a harness can see the adopted values
         // even if the write is what fails. `theme` is named separately because

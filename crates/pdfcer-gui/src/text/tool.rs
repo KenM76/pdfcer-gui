@@ -1,19 +1,41 @@
-//! # `text::tool` — every word the Tool panel says
+//! # `text::tool` — the words the tools say, wherever they are said
 //!
-//! The strings for [`crate::panels::tool`]. Its header carries the design; this
-//! file carries the copy, and the copy is doing more of the work here than in
-//! any other panel, because **the Tool panel has almost no controls.** It is
-//! nine-tenths sentences.
+//! ## ★★★ This file OUTLIVED the panel it was written for
 //!
-//! ## ★ The three rules the whole file follows
+//! It was `every word the Tool panel says`. `OPERATOR_REQUESTS.md` **O123**
+//! dissolved that panel on 2026-09-04, and the copy went three ways rather than
+//! away:
+//!
+//! | what | who says it now |
+//! |---|---|
+//! | the per-tool instructions and live stages | [`crate::app::toolstatus`] — the right dock's permanent one-line strip |
+//! | the second sentence of the stages that had one | the same strip, in its hover |
+//! | the text pen's labels, the measure pick list, the resize switches | [`crate::panels::properties::tool`] |
+//! | the disclosure heading | [`crate::panels::properties::disclose`] |
+//!
+//! ⚠ **What was DELETED, and it is the only deletion**: the fifteen strings the
+//! panel's tool LIST used — `tools_heading`, `tools_hint`, `row_home` and the
+//! nine `row_*` sentences, plus `pointer_heading`, `armed_heading` and
+//! `no_document`. Every one of them labelled a button that duplicated a ribbon
+//! control, and the operator's instruction was *"its buttons duplicate the
+//! ribbon and go."* They are gone rather than left orphaned, because an unused
+//! catalog entry is a sentence nobody can find and nobody can retire.
+//!
+//! ★ Worth naming what that cost: those rows were the answer to a
+//! discoverability defect — *"The feature works. He could not find it."* The
+//! strip that replaced them cannot list what is NOT armed. That is a real
+//! subtraction and it is the operator's own call; it is recorded in
+//! `crate::app::toolstatus`'s header rather than argued here.
+//!
+//! ## ★ The three rules the whole file follows, unchanged
 //!
 //! **1. No label is written here that the command registry already owns.**
-//! The armed tool's name and every arming row's name come from
-//! `CommandRegistry` through `crate::shell::menus::MenuHost::label`, and the
-//! chord comes from the operator's own keymap. A second copy of a label
-//! compiles, reads identically the day it is written, and drifts the first time
-//! either is reworded — invisibly, because nothing renders both at once.
-//! `NO_SURFACE.md` §1 records that exact failure with a colour.
+//! The armed tool's name comes from `CommandRegistry` through
+//! `crate::shell::menus::MenuHost::label`, and the chord comes from the
+//! operator's own keymap. A second copy of a label compiles, reads identically
+//! the day it is written, and drifts the first time either is reworded —
+//! invisibly, because nothing renders both at once. `NO_SURFACE.md` §1 records
+//! that exact failure with a colour.
 //!
 //! **2. Every sentence states a fact about the program, never a tip.** The
 //! operator's own report about the shell this replaces: *"the nagging and red
@@ -27,21 +49,14 @@
 //! caret does not — and *"click each corner"* is not a complete instruction
 //! because nothing in it says when to stop. Every instruction below that
 //! describes an open-ended gesture names its ending.
-
 use crate::canvas::markup::MarkupKind;
 use crate::canvas::measure::MeasureKind;
 use crate::canvas::textannot::TextAnnotKind;
 use crate::canvas::textedit::TextEditKind;
 
 // ===========================================================================
-// Block A — what the pointer does right now
+// What the pointer does right now — the resting tool's sentence
 // ===========================================================================
-
-/// The heading over the "what the pointer does" block.
-#[must_use]
-pub const fn pointer_heading() -> &'static str {
-    "The pointer"
-}
 
 /// What a press means in a mode that can select page content — Edit.
 ///
@@ -69,139 +84,9 @@ pub const fn pointer_reading() -> &'static str {
 // Block B — the tools this mode has
 // ===========================================================================
 
-/// The heading over the list of tools.
-#[must_use]
-pub const fn tools_heading() -> &'static str {
-    "Tools"
-}
-
-/// The sentence under that heading.
-///
-/// ★ It says **where the tools live**, and that is the anti-second-ribbon
-/// mechanism written into the copy rather than only into the code. This panel
-/// exists because an operator could not find a command; it must teach the
-/// ribbon rather than replace it, and a list that never mentioned the ribbon
-/// would become the place people go instead.
-#[must_use]
-pub const fn tools_hint() -> &'static str {
-    "Each of these is also on the ribbon, on the tab named beside it."
-}
-
-/// One row's second line: where the command lives and what key reaches it.
-///
-/// `tab` is a ribbon tab's own label. The chord is omitted entirely when the
-/// keymap binds none — never rendered as "no shortcut", which would be a row of
-/// text saying nothing.
-#[must_use]
-pub fn row_home(tab: &str, chord: Option<&str>) -> String {
-    match chord {
-        Some(chord) => format!("{tab} · {chord}"),
-        None => tab.to_owned(),
-    }
-}
-
-/// What the Hand tool does, in the tool list.
-#[must_use]
-pub const fn row_select() -> &'static str {
-    "Pick a shape, then drag it. The tool everything comes back to."
-}
-
-/// What the Points tool does, in the tool list.
-///
-/// ★ Leads with **seeing**, not with selecting, and that is the whole sentence:
-/// the operator's report was *"how do I get to SEE the end points of an object
-/// and select them"*, in that order, because you cannot pick a point you cannot
-/// find. A row reading "select and move individual points" would describe the
-/// same tool and answer a question he did not ask.
-#[must_use]
-pub const fn row_points() -> &'static str {
-    "Show a shape's points, then drag one to move it."
-}
-
-/// What the Text tool does, in the tool list.
-///
-/// ★★ **One row, where there were two**, and the sentence covers every half in
-/// the order they are tried. `row_edit_text` and `row_add_text` said the first
-/// two things separately, under two rows, for a distinction that no longer
-/// exists anywhere the operator can see — the click decides.
-///
-/// ★★★ **A third clause landed on 2026-08-27, and its absence was a
-/// discoverability defect rather than a missing detail.**
-///
-/// The row read *"Click words to change them, or click empty space to start
-/// new text"* — two true clauses about what a **click** does, on the one tool
-/// whose **drag** is the only route to the Format tab's Font group and to the
-/// Properties panel's *This text* section. So the panel written to teach the
-/// tools taught two of this tool's three uses, and the one it left out was the
-/// one the operator was looking for: O37's *"we should also have all the font
-/// tools available that Word does"* is reached by sweeping and by nothing
-/// else.
-///
-/// ★ The clause is in the **middle** rather than appended. The two
-/// text-acting gestures belong beside each other — both are about words that
-/// are already there — and *"click empty space"* is the one that changes
-/// subject, so it stays last. An operator who reads only the beginning of a
-/// line, which is most operators, still meets both.
-#[must_use]
-pub const fn row_text() -> &'static str {
-    "Click words to change them, sweep across them to restyle them, or click empty space to \
-     start new text."
-}
-
-/// See the module header.
-#[must_use]
-pub const fn row_hand() -> &'static str {
-    "Move the paper without changing anything."
-}
-
-/// What the text-selection tool does, in the tool list.
-#[must_use]
-pub const fn row_select_text() -> &'static str {
-    "Sweep a range of the page's words, to copy or mark them."
-}
-
-/// What Edit text does — half of the pair the operator could not find.
-///
-/// ★ The distinction from [`row_add_text`] is the entire point of these two
-/// rows, and it is carried by the first three words of each: *change words
-/// already* against *put new text*. An operator who reads only the beginnings
-/// of lines — which is most operators — still gets it.
-#[must_use]
-pub const fn row_edit_text() -> &'static str {
-    "Change words already on the page."
-}
-
-/// What Add text does — the other half.
-#[must_use]
-pub const fn row_add_text() -> &'static str {
-    "Put new text wherever you click."
-}
-
-/// What the markup family does, in the tool list.
-///
-/// Names three kinds and stops. A row that listed all eight would be the
-/// palette this panel refuses to become, and three is enough to say what the
-/// family is for.
-#[must_use]
-pub const fn row_markup() -> &'static str {
-    "Draw a comment on the page — rectangle, revision cloud, arrow, freehand."
-}
-
-/// What the measure family does, in the tool list.
-#[must_use]
-pub const fn row_measure() -> &'static str {
-    "Add a dimension the drawing does not already carry."
-}
-
 // ===========================================================================
 // The armed frame
 // ===========================================================================
-
-/// The heading over the armed tool's own block.
-#[must_use]
-pub const fn armed_heading() -> &'static str {
-    "Armed"
-}
 
 /// The put-the-tool-down button.
 ///
@@ -748,17 +633,6 @@ pub const fn disclosures_heading() -> &'static str {
 // The empty case
 // ===========================================================================
 
-/// What the panel says with no document open.
-///
-/// The one sentence in this file that is a placeholder, and it is the panel
-/// host's own — `Panel::show` answers the no-document case once for every
-/// panel rather than eleven times. It is here only so the Tool panel's own
-/// no-document state is not a second, differently-worded sentence.
-#[must_use]
-pub const fn no_document() -> &'static str {
-    "Open a document to use the drawing and measuring tools."
-}
-
 /// What the Tool panel says while a form-field tool is armed.
 ///
 /// ★★★ It names BOTH gestures, and that is the point of the line. The whole
@@ -858,36 +732,11 @@ mod tests {
         }
     }
 
-    /// The two text tools' rows are distinguishable from their first words.
-    ///
-    /// The pair the operator confuses, and the row that fixes it. Asserted on
-    /// the *prefix* because that is what gets read: two sentences differing
-    /// only in their last clause would look identical in a narrow column.
-    #[test]
-    fn the_two_text_rows_differ_where_a_reader_looks() {
-        let edit = row_edit_text();
-        let add = row_add_text();
-        assert_ne!(edit, add);
-        let (a, b) = (&edit[..8], &add[..8]);
-        assert_ne!(
-            a, b,
-            "the two rows begin with the same words, so in a narrow column they read as \
-             one repeated line"
-        );
-    }
-
     /// The corner count reads as English at one and at many.
     #[test]
     fn the_corner_count_reads_as_english() {
         assert!(vertices_placed(1).starts_with("1 corner placed"));
         assert!(vertices_placed(3).starts_with("3 corners placed"));
         assert!(!vertices_placed(0).contains('0'));
-    }
-
-    /// A row with no chord renders the tab alone, not "no shortcut".
-    #[test]
-    fn a_row_with_no_chord_says_nothing_about_chords() {
-        assert_eq!(row_home("Edit", None), "Edit");
-        assert_eq!(row_home("Edit", Some("Ctrl+E")), "Edit · Ctrl+E");
     }
 }

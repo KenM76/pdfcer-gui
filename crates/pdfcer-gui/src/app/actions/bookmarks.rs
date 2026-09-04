@@ -660,9 +660,10 @@ fn delete(doc: &mut OpenDoc, item: ObjId) {
 /// A sentence, through `app::status::decline`, recorded from **inside** the
 /// closure — [`crate::app::status::decline::record_resize_not_rebuildable`]'s
 /// placement and its stated reason: whether the engine will refuse is not
-/// knowable before the call. `vector_edit`'s `Err` arm traces and, by its own
-/// recorded decision, says nothing, and **a refusal must be a sentence, never a
-/// silence.**
+/// knowable before the call. `vector_edit`'s `Err` arm traces, and since O116
+/// (2026-09-04) words an un-categorised decline naming neither this verb nor a
+/// remedy — so **a refusal must be a sentence** still means *this* sentence,
+/// recorded here.
 ///
 /// The panel forecasts and refuses the one case an operator can act on — a drop
 /// into the bookmark's own subtree — before raising this action at all, so what

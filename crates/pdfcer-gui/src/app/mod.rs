@@ -207,6 +207,14 @@ pub mod status;
 /// `mod.rs` answers *what is the application and how is it built* and
 /// `surfaces.rs` answers *what does it draw*.
 pub mod surfaces;
+/// ★ **The one-line tool status** — `OPERATOR_REQUESTS.md` O123.
+///
+/// The strip the right dock reserves above its columns, naming what is armed
+/// and offering to put it down. It is the surviving half of the Tool panel;
+/// that panel's live controls moved to `crate::panels::properties::tool` and
+/// its disclosure block to `crate::panels::properties::disclose`. The module
+/// header tabulates every piece and where it went.
+pub mod toolstatus;
 /// Read mode and full screen — the two View ▸ Window verbs that change the
 /// shape of the application rather than anything about the document.
 pub mod window;
@@ -631,6 +639,36 @@ pub struct PdfcerApp {
     /// nothing behind them.
     pub prefs: prefs::Prefs,
 
+    /// ★★★ **The Acrobat this machine has, resolved once** —
+    /// `OPERATOR_REQUESTS.md` **O122**.
+    ///
+    /// `None` means the button beside the mode selector is not drawn at all.
+    /// See [`crate::acrobat`] for how it is found, and
+    /// [`crate::shell::manifest::ACROBAT_AVAILABLE`] for why absence is a
+    /// `visible_when` rather than a greying.
+    ///
+    /// # ★★ Cached, not asked per frame, and recomputed on exactly one event
+    ///
+    /// Resolving spawns `reg.exe` up to five times — three `App Paths` roots
+    /// and two class lookups. At sixty frames a second that is not a cost, it
+    /// is a fault. So it is answered once at start-up and again when the
+    /// operator saves Settings, which is the only thing that can change the
+    /// answer from inside pdfcer. See [`Self::refresh_acrobat`].
+    ///
+    /// ★ The one thing it deliberately does NOT notice is Acrobat being
+    /// installed while pdfcer is running. That is a real gap and a small one:
+    /// the remedy is restarting pdfcer, which somebody who has just run an
+    /// Adobe installer is being asked to do anyway. Watching the registry for
+    /// it would be a background thread and a file-system notification for an
+    /// event that happens once in the life of a machine.
+    ///
+    /// ★★ It is **one** value rather than two — a condition and a path —
+    /// because those two must never disagree. A build where the condition said
+    /// *available* and the launch path said something else would draw a button
+    /// that starts the wrong program, and the two would be edited in different
+    /// files by different people.
+    pub acrobat: Option<crate::acrobat::Viewer>,
+
     /// The draft the Settings window is editing, if it is open.
     ///
     /// `None` is the normal state and the window renders nothing. `Some` is
@@ -955,8 +993,54 @@ impl PdfcerApp {
             // reason the settings and the recent list above are: a suite that
             // read the developer's own preferences would pass on this machine
             // and fail on another because somebody had chosen `faster`.
+            // ★★★ O122. Resolved here, once, and NOT under `cfg(test)` — the
+            // same rule the three loads above follow, and for a stronger
+            // reason than any of them. Resolving spawns `reg.exe`, so a suite
+            // that did it would (a) be slower by five process launches per
+            // constructed application and (b) produce a DIFFERENT verdict on
+            // every machine, passing here where Acrobat Pro is installed and
+            // failing on a build server where it is not. Everything about the
+            // decision is asserted over values in `crate::acrobat::tests`,
+            // where a fake machine can be described instead of found.
+            acrobat: if cfg!(test) {
+                None
+            } else {
+                crate::acrobat::resolve(
+                    &crate::acrobat::windows::Windows,
+                    Some(&prefs.acrobat_path),
+                )
+            },
             prefs,
         }
+    }
+
+    /// **Ask the machine about Acrobat again.**
+    ///
+    /// Called on exactly one event — the operator saving Settings — because
+    /// that is the only thing inside pdfcer that can change the answer. See
+    /// [`Self::acrobat`] for why this is not asked per frame, and for the one
+    /// change it deliberately does not notice.
+    ///
+    /// ★ It reads [`Self::prefs`], so it must run **after** the draft has been
+    /// adopted. `crate::app::settings_window::save_settings` calls it there,
+    /// and the ordering is the thing to preserve if that function is ever
+    /// rearranged: run first and the button would appear one Settings visit
+    /// late, which is exactly the "typed a path and nothing happened" failure
+    /// the setting exists to fix.
+    pub fn refresh_acrobat(&mut self) {
+        self.acrobat = crate::acrobat::resolve(
+            &crate::acrobat::windows::Windows,
+            Some(&self.prefs.acrobat_path),
+        );
+        crate::diag::trace(|| match &self.acrobat {
+            // ui-text-exempt: diagnostic trace, never displayed.
+            Some(viewer) => format!(
+                "acrobat-resolved edition={:?} source={:?} path={:?}",
+                viewer.edition, viewer.source, viewer.path
+            ),
+            // ui-text-exempt: diagnostic trace, never displayed.
+            None => "acrobat-resolved none".to_owned(),
+        });
     }
 }
 

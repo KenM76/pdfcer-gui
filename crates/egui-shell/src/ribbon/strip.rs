@@ -4,11 +4,16 @@
 //!
 //! ```text
 //! ┌──────────────────────────────────────────────────────────────────────┐
-//! │ [Open][Save] │ File View Pages ⏷ 3 more   ( Read │ Review │ Edit )   │
+//! │ [Open][Save] │ File View Pages ⏷ 3 more  ( Read │ Review │ Edit ) [⧉] │
 //! └──────────────────────────────────────────────────────────────────────┘
-//!   └── QAT ───┘  └──── tabs ────┘└affordance┘ └──── mode selector ────┘
-//!        1                4            3                    2
+//!   └── QAT ───┘  └─── tabs ───┘└affordance┘ └─── mode selector ───┘  └──┘
+//!        1               5           4                  2              3
 //! ```
+//!
+//! The fifth region — [`super::trailing`] — is the only one on this row that
+//! may be granted **nothing** when the row is narrow. See
+//! [`super::plan::plan_strip_row`]'s ★★ for why an optional extra is a
+//! different kind of claimant from a promise the interface has already made.
 //!
 //! # ★ The defect this module exists to retire
 //!
@@ -89,6 +94,7 @@
 //! | The **active tab is pinned** — never in the menu | its label truncates | `ribbon-active-tab-truncated` |
 //! | The QAT may not consume the row | its labels truncate | `ribbon-qat-truncated` |
 //! | The mode selector may not consume the row | its track compresses | `ribbon-mode-selector-compressed` |
+//! | The trailing region yields before anything load-bearing | it is not drawn at all | `ribbon-trailing-dropped` |
 //! | The affordance itself may be crowded | its label truncates | `ribbon-tab-overflow-clamped` |
 //!
 //! A **contextual** tab needs no rule of its own. It is appended last by
@@ -124,6 +130,7 @@ use super::plan::{self, StripPlan};
 use super::qat;
 use super::report;
 use super::tabs;
+use super::trailing;
 
 /// What the tab-strip row did on one frame.
 ///
@@ -202,6 +209,8 @@ pub(crate) fn render(
     let qat_wanted = qat::measure(ui, ctx, shell.qat.as_ref());
     let qat_floor = qat::min_width(ui, ctx, shell.qat.as_ref());
     let (_, selector_wanted) = mode_selector::measure_track(ui, shell.modes());
+    let trailing_wanted = trailing::measure(ui, ctx, shell.trailing.as_ref());
+    let trailing_floor = trailing::min_width(ui, ctx, shell.trailing.as_ref());
     let tab_widths: Vec<f32> = visible.iter().map(|t| tabs::measure_tab(ui, t)).collect();
     let affordance_wanted = plan::overflow_width(visible.len(), band::button_padding(ui), |s| {
         band::text_width(ui, s, &egui::TextStyle::Button)
@@ -229,8 +238,19 @@ pub(crate) fn render(
             // A pinned tab and an affordance beside it.
             tabs_floor: 2.0 * button_floor + gap,
             button_floor,
+            trailing: trailing_wanted,
+            trailing_floor,
         },
     );
+    if row_plan.trailing_dropped {
+        // A control the operator asked to have on the ribbon and cannot
+        // reach. See `plan_strip_row`'s ★★ on why this region is the one
+        // allowed to vanish — and why vanishing still gets said out loud.
+        crate::verify::event("ribbon-trailing-dropped")
+            .kv("wanted", format!("{trailing_wanted:.1}"))
+            .kv("row", format!("{:.1}", row.width()))
+            .emit();
+    }
     if row_plan.qat_truncated {
         crate::verify::event("ribbon-qat-truncated")
             .kv("wanted", format!("{qat_wanted:.1}"))
@@ -264,7 +284,11 @@ pub(crate) fn render(
         |left: f32, right: f32| Rect::from_min_max(pos2(left, top), pos2(left.max(right), bottom));
 
     let qat_rect = region(row.left(), row.left() + row_plan.qat);
-    let selector_rect = region(row.right() - row_plan.selector, row.right());
+    let trailing_rect = region(row.right() - row_plan.trailing, row.right());
+    let selector_rect = region(
+        trailing_rect.left() - row_plan.selector,
+        trailing_rect.left(),
+    );
     // The affordance hugs the right edge of the tab area, immediately left
     // of the selector. `plan_tab_strip` guarantees its reservation is no
     // wider than that area, so no clamp is needed here — the clamping is
@@ -320,6 +344,18 @@ pub(crate) fn render(
     if selector_rect.width() > 0.0 {
         outcome.chosen_mode = island(ui, "egui-shell-ribbon-modes", selector_rect, |ui| {
             mode_selector::render(ui, ctx, shell.modes(), selected_mode)
+        });
+    }
+
+    // ★ The same zero-width guard the selector carries, and for a related
+    // reason: a `Ui` with no width still lays its children out, and `egui`
+    // does not clip them to it. A zero-width island here would draw the
+    // control from the row's right edge leftwards, straight over the mode
+    // selector — the one place on this row where an overlap is guaranteed to
+    // be misread as a click on the wrong control.
+    if trailing_rect.width() > 0.0 {
+        island(ui, "egui-shell-ribbon-trailing", trailing_rect, |ui| {
+            trailing::render(ui, ctx, shell.trailing.as_ref());
         });
     }
 

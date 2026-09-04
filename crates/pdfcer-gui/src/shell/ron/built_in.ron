@@ -74,6 +74,7 @@
                     caption: "Export",
                     items: [
                         Command(id: "file.export_dxf"),
+                        Command(id: "file.export_image"),
                         Command(id: "file.export_form_data"),
                         Command(id: "file.import_form_data"),
                         Command(id: "file.copy_page_text"),
@@ -173,7 +174,6 @@
                     id: "panels",
                     caption: "Panels",
                     items: [
-                        Command(id: "view.panel_tool"),
                         Command(id: "view.panel_pages"),
                         Command(id: "view.panel_bookmarks"),
                         Command(id: "view.panel_layers"),
@@ -460,6 +460,9 @@
         "file.save",
         "edit.undo",
         "edit.redo",
+    ],
+    trailing: [
+        Command(id: "file.open_in_acrobat", visible_when: "acrobat.available"),
     ],
     keymap: {
         "A": "view.tool_node",

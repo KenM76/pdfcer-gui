@@ -392,23 +392,21 @@ pub(super) fn band() -> Vec<Command> {
         // prominent dead control in the program.
         //
         // R8: absence is expressed by not registering. R9: it renders nothing.
-        // ★★ **The Tool panel**, registered 2026-08-19 — the operator's item 4,
-        // *"no side bar area showing what tool is active and its options"*, and
-        // the fix for his item 5 as well.
+        // ★★★ **`view.panel_tool` was retired on 2026-09-04** —
+        // `OPERATOR_REQUESTS.md` O123, and token 247 goes with it and is never
+        // reused.
         //
-        // Token 247, out of the `view.panel_*` run, because tokens are never
-        // reused and 240-246 are taken. The ORDER on the ribbon is
-        // the manifest's, not the token's: this sits FIRST in View ▸ Panels,
-        // ahead of every navigator, because it is the only panel there that
-        // answers *"what can I do"* rather than *"what is in this file"* — and
-        // because an operator looking for a missing command scans that group
-        // from the top.
-        command("view.panel_tool", t::view_panel_tool(), 247).with_icon("pointer"), // ★ NO `enabled_when`. A panel toggle is about the operator's own
-        // screen, and the Tool panel is the one panel whose body says
-        // something useful with nothing open — Block B still names the
-        // tools this mode has and where they live. Gating it on
-        // `doc.open` would hide the surface at exactly the moment somebody
-        // has launched pdfcer and is looking for what it does.
+        // The panel it toggled no longer exists: its status is a permanent
+        // strip the right dock reserves (`crate::app::toolstatus`), its live
+        // controls are in `crate::panels::properties::tool`, and its
+        // disclosure block is in `crate::panels::properties::disclose`. A
+        // toggle for a surface that is always drawn would be a control with
+        // nothing to toggle, which R9 forbids.
+        //
+        // ★ Recorded here rather than deleted silently, because the argument
+        // for registering it was recorded here at length and a reader finding
+        // a gap between 246 and 248 deserves to know it was an answer to a
+        // real complaint rather than an oversight.
         command("view.panel_bookmarks", t::view_panel_bookmarks(), 241)
             .with_icon("bookmarks")
             .enabled_when("doc.open"),

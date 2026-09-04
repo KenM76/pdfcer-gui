@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Open this document in the system's PDF viewer — an APPLICATION WINDOW
+       (a frame with a title bar) with a DOCUMENT SHEET overlapping its
+       lower-left corner and breaking the window's outline. Two objects and one
+       interior rule; a rounded rect, a straight line and a folded page, all
+       primitives. No trademark risk.
+
+       ★★★ TRADEMARK, STATED FIRST BECAUSE THE COMMAND'S LABEL NAMES A VENDOR.
+       `PROVENANCE.md` permits METAPHOR-level resemblance to what Acrobat and
+       Inkscape use and forbids ASSET-level copying, vendor logos and traced
+       shapes outright, and it says the rule is deliberately stricter than
+       copyright law requires "because it removes the question rather than
+       leaving a judgement call in a file nobody will re-examine". So: there is
+       NOTHING OF ADOBE'S MARK IN THIS FILE and there must never be. No stylised
+       A, no rounded-square badge, no red anything (the set has no colour at
+       all), no letterform of any kind. What is drawn is the generic
+       operating-system metaphor for *hand this file to another application* —
+       a window, and a document going to it — which is what the command
+       literally does. The label carries the vendor's name because the operator
+       asked for the vendor by name; the picture carries none of it, and the
+       picture is the part that ships as art.
+
+       ★★ THE TITLE BAR IS THE WHOLE DISTINCTION, and it is load-bearing.
+
+       `pick-link.svg`'s own note already claims the neighbouring metaphor in as
+       many words: it is "the box-with-escaping-arrow every browser and office
+       suite uses for 'goes somewhere else'", chosen because "the convergence of
+       a product class IS the specification". That glyph owns the arrow, and it
+       owns it for a role — the `/Link` annotation filter — that this command
+       would sit near in any future Tools band. An arrow leaving a plain frame
+       here would draw the same sentence twice with two meanings, which is the
+       near-miss reuse the catalogue's refusal table exists to prevent.
+
+       ⇒ So this frame does NOT escape anything. It is DIVIDED. The horizontal
+       rule 8 units below its top edge is a title bar, this is the only glyph in
+       the set that has one, and a divided frame is not a box an arrow can leave
+       — it is an application. That single line is what an operator's eye lands
+       on, and it is the entire separation from `pick-link`. ⚠ Do not "simplify"
+       it away, and do not add an arrow to make the departure more obvious: the
+       departure is already said by the overlap, twice over would be three
+       objects fighting for nine pixels at 16 px.
+
+       ★ THE OVERLAP IS THE "HANDED TO" CUE. The window's outline is drawn as an
+       OPEN path — its left edge stops short above the sheet, its bottom edge
+       resumes clear to the right of it — so the sheet passes in FRONT rather
+       than beside. Two closed shapes touching read as two things next to each
+       other; one shape interrupted by another reads as depth, and depth is the
+       only way an outline-only set can say *this goes into that*. The same
+       device is why `pick-link` leaves its top-right corner open, and why
+       `save-copy` and `pages` draw their rear bodies as open edges rather than
+       closed rects: fully-drawn stacked shapes become a solid mass at 16 px.
+
+       Other neighbours, and why each stays clear:
+
+       * `document.svg` and `text.svg` are bare sheets with ruled lines. This
+         sheet carries NO rules — it is deliberately blank, because the
+         information is *where it is going*, not what is on it, and three rules
+         inside a 6 px shape would be the mud that hides the fold.
+       * `folder.svg` (Open) is a folder, opening a file INTO pdfcer. This is
+         the opposite direction and does not use the folder metaphor at all.
+       * `window`-shaped glyphs elsewhere in the set: there are none. That is
+         the point, and it is why the title bar can be spent on this one. -->
+  <path d="M15 25V8a2 2 0 0 1 2-2h24a2 2 0 0 1 2 2v24a2 2 0 0 1-2 2H26" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M16 14h27" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M5 28h12l6 6v10H5z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M17 28v6h6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

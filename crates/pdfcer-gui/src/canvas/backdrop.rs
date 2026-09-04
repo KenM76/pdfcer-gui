@@ -121,6 +121,57 @@ pub(super) fn paint(ui: &Ui, doc: &OpenDoc, page: usize, current: usize, rect: e
 /// twenty frames appears once, which is what makes a minimum over the series
 /// meaningful and what keeps this off the `canvas-pointer` list of traces that
 /// buried a capture in identical lines.
+///
+/// # ★★★ TWO numbers, because one of them cannot see the second defect
+///
+/// **Operator, 2026-09-04:**
+///
+/// > *"the canvas does a fading around the edges on stuff shown at the edges of
+/// > the view. I don't want this. it should render true."*
+///
+/// `covered` is deliberately unable to report that, and the paragraph above is
+/// the reason: it counts the backdrop, because it answers *"is the operator
+/// looking at the drawing?"*. Wherever the backdrop is painted at all it is
+/// painted across the page's whole rect, so `covered` is **`1.000` by
+/// construction** — including in exactly the state he reported, where a band
+/// along the edge of the window is showing the blurry stand-in rather than the
+/// page.
+///
+/// ⇒ That is not a fault in the number; it is the number answering its own
+/// question correctly. It is a fault in there being only one number. So `sharp`
+/// is published beside it and answers the other one: **what fraction of the
+/// visible page has the picture the operator is entitled to** — the region or
+/// whole-page raster itself, with the backdrop excluded.
+///
+/// | | reads `1.000` when | reads low when |
+/// |---|---|---|
+/// | `covered` | anything at all is drawn | the page is **blank** — the 2026-08-26 defect |
+/// | `sharp` | the real raster reaches every visible corner | the **backdrop is showing** — the 2026-09-04 defect |
+///
+/// ★★ The pair is what makes both falsifiable from one capture, and neither
+/// could be derived from the other after the fact. It is the same argument this
+/// module's header makes about a camera: what the application knows and a
+/// screenshot does not is *which* of the two pictures it drew at any given
+/// pixel — a soft edge and a sharp one at low zoom are the same photograph.
+///
+/// ★ `sharp` is the honest measure of `render::strategy::OVERSCAN`'s promise as
+/// the operator experiences it, and a capture whose minimum `sharp` sits well
+/// below `1.000` while `covered` holds at `1.000` is the signature of a starved
+/// margin rather than of a slow raster.
+///
+/// ## ★★ …and adding it closed a hole in `covered` itself
+///
+/// `covered` used to be computed as *"the backdrop's rect if there is a
+/// backdrop, else `paint_rect`"* — with no reference to whether there was a
+/// **texture**. `canvas::present` sets `paint_rect = rect` on the branch where
+/// there is no raster at all, so the state this module was built to detect —
+/// no backdrop, no texture, a state sentence on blank paper — reported
+/// `covered=1.000`. The instrument was blind to its own subject on the one
+/// path where nothing is drawn.
+///
+/// ⇒ It is now derived from `sharp`, which is `0.000` when `textured` is false,
+/// so the blank case reads `covered=0.000` as the module header's measurement
+/// of it says it should. Nothing about the backdrop case changes.
 pub(super) fn publish_coverage(
     ui: &Ui,
     doc: &OpenDoc,
@@ -135,20 +186,27 @@ pub(super) fn publish_coverage(
     }
     let want = rect.intersect(ui.clip_rect());
     let area = |r: egui::Rect| f64::from(r.width().max(0.0) * r.height().max(0.0));
-    let got = if backdrop {
-        want
-    } else {
-        paint_rect.intersect(want)
+    let fraction = |got: egui::Rect| {
+        if area(want) > 0.0 {
+            area(got) / area(want)
+        } else {
+            1.0
+        }
     };
-    let covered = if area(want) > 0.0 {
-        area(got) / area(want)
+    // ★ The REAL raster's reach, backdrop excluded, and it is the same
+    // `paint_rect` `canvas::present` drew the texture at — not a recomputation
+    // of where it should have gone. A second derivation is how an instrument
+    // comes to report on a rectangle nothing was painted at.
+    let sharp = if textured {
+        fraction(paint_rect.intersect(want))
     } else {
-        1.0
+        0.0
     };
+    let covered = if backdrop { fraction(want) } else { sharp };
     crate::diag::trace_on_change("canvas-coverage", || {
         format!(
             // ui-text-exempt: diagnostic trace, never displayed in the UI
-            "covered={covered:.3} textured={} backdrop={} zoom={:.3}",
+            "covered={covered:.3} sharp={sharp:.3} textured={} backdrop={} zoom={:.3}",
             u8::from(textured),
             u8::from(backdrop),
             doc.view.zoom

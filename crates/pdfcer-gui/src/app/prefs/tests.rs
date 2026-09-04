@@ -41,6 +41,9 @@ fn every_preference_round_trips_through_the_file() {
                 default_page_display: Some(crate::viewer::PageDisplay::Facing),
                 font_folders: vec![std::path::PathBuf::from("C:/Fonts")],
                 use_os_fonts: true,
+                // ★ Non-default, like every field here, and with a SPACE in
+                // it — a path a person would really type on Windows. O122.
+                acrobat_path: r"D:\Apps\Acrobat DC\Acrobat.exe".to_owned(),
                 // ★ Non-default, like every other field here: a `None`
                 // would pass on a build whose writer emitted no
                 // `chosen_standard` key at all.
@@ -507,6 +510,10 @@ fn the_writer_emits_no_key_the_parser_rejects() {
         ],
         // Non-default, for the reason this test states about every field.
         chosen_standard: Some("pdf-x4".to_owned()),
+        // ★ Non-default and with a space in it — O122. A path is the one
+        // value in this file most likely to contain the character that
+        // breaks a naive writer.
+        acrobat_path: r"D:\Apps\Acrobat DC\Acrobat.exe".to_owned(),
         // ★ Non-default, with a space and a non-ASCII character. The file
         // is UTF-8 and a name is the one field an operator will put an
         // accent in; a writer or reader that mangled it would put mojibake

@@ -1081,3 +1081,85 @@ pub(super) const PROPERTIES: &str = include_str!("assets/properties.svg");
 /// Replaces an alias, not a drawing. See the asset for which glyph it must
 /// stay distinguishable from and by what cue.
 pub(super) const SET_SCALE: &str = include_str!("assets/set-scale.svg");
+
+// ══════════════════════════════════════════════════════════════════════════
+// The commands the ribbon does not reach yet — five glyphs, 2026-09-04
+// ══════════════════════════════════════════════════════════════════════════
+//
+// One of these closes a LIVE BORROW; four exist ahead of the commands that
+// will wear them, and the difference matters when reading what follows.
+//
+// ★ `export-image` is the live one. `file.export_image` shipped earlier the
+// same day wearing `export` (`download.svg`) with a paragraph in
+// `shell::commands::catalog::file` defending the share — three export verbs,
+// one act, and the FORMAT is "a word only a label can say". That argument is
+// right about DXF and form data and wrong about a picture, because this set
+// already draws a picture as a subject: `image.svg` exists and `insert-image`
+// wears it, so the operator has already learned what a framed tile with a
+// horizon means here. The registration is repointed and its comment records
+// the reversal rather than being quietly rewritten.
+//
+// ★★ The other four are ART BEFORE BUTTON, deliberately:
+//
+// * `open-in-acrobat` — a command being built on another track as this lands.
+//   That track was told not to add icons; this is the icon it will name.
+// * `copy-as-vector` — the clipboard's missing copy-out. Not built, not
+//   scheduled, drawn so the layout mockup can put the proposal in front of the
+//   operator as a picture rather than as a sentence.
+// * `encrypt` and `permissions` — the engine grew both on 2026-09-04 and
+//   nothing in this GUI reaches either. `OPERATOR_REQUESTS.md` O119 is the
+//   question to him, and it is a question about a SURFACE (a password box, a
+//   permission list, a save that rewrites the file), not about a button. The
+//   art does not pre-empt his answer; it lets the mockup ask.
+//
+// ⇒ A variant with no command is the SUPPORTED state, not a loose end.
+// [`super::Icon::EditObjects`] is the standing precedent — its command was
+// deleted on 2026-08-31 and its variant remains — and the reason is
+// mechanical rather than sentimental: `every_icon_parses`,
+// `every_icon_rasterizes_to_visible_pixels`,
+// `fill_is_semantic_and_the_set_that_uses_it_is_closed`,
+// `crlf_line_endings_parse_identically` and
+// `no_two_icons_render_as_the_same_picture` all iterate
+// [`super::Icon::ALL`]. Art that is kept outside that list is art no test
+// walks, and untested art rots quietly until somebody wires it up months
+// later and finds it blank.
+//
+// ★ Provenance unchanged: drawn from primitives for pdfcer in the same style
+// contract as the rest of the directory — 48×48, stroke 2.5, round caps and
+// joins, no fill except the redaction family. `assets/PROVENANCE.md` covers
+// the whole directory. ⚠ `open-in-acrobat` names a vendor in its LABEL and
+// carries nothing of that vendor's mark in its ART; see the asset's own
+// comment, which states the constraint first because the label is what
+// invites the mistake.
+
+/// `copy-as-vector.svg` — the art for [`super::Icon::CopyAsVector`].
+///
+/// Copy the selection to the clipboard as vector geometry rather than as a
+/// picture of it. See the asset for which glyph it must stay distinguishable
+/// from and by what cue.
+pub(super) const COPY_AS_VECTOR: &str = include_str!("assets/copy-as-vector.svg");
+
+/// `encrypt.svg` — the art for [`super::Icon::Encrypt`].
+///
+/// Put a password on this document — the engine's `set_encryption`, awaiting
+/// the operator's ruling as `OPERATOR_REQUESTS.md` O119.
+pub(super) const ENCRYPT: &str = include_str!("assets/encrypt.svg");
+
+/// `export-image.svg` — the art for [`super::Icon::ExportImage`].
+///
+/// Export the page as a raster image — `file.export_image`, which wore
+/// [`DOWNLOAD`] for one day. See the asset for the reversal and its reason.
+pub(super) const EXPORT_IMAGE: &str = include_str!("assets/export-image.svg");
+
+/// `open-in-acrobat.svg` — the art for [`super::Icon::OpenInAcrobat`].
+///
+/// Hand this file to the system's PDF viewer. ⚠ The label names a vendor; the
+/// art carries nothing of that vendor's mark, and the asset's comment states
+/// that constraint before it states anything else.
+pub(super) const OPEN_IN_ACROBAT: &str = include_str!("assets/open-in-acrobat.svg");
+
+/// `permissions.svg` — the art for [`super::Icon::Permissions`].
+///
+/// What the document permits — the engine's `set_permissions`, the other half
+/// of `OPERATOR_REQUESTS.md` O119.
+pub(super) const PERMISSIONS: &str = include_str!("assets/permissions.svg");
