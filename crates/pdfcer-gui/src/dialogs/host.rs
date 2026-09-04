@@ -617,16 +617,49 @@ impl Host {
     /// window or the caller's own code did. [`Frame::closed`] is a report about
     /// this frame only, and the caller decides what closing means — which for
     /// a dialog that is mid-transaction is not always "stop".
-    pub fn show<R>(&self, ctx: &egui::Context, add: impl FnOnce(&mut egui::Ui) -> R) -> (Frame, R) {
+    pub fn show<R>(
+        &self,
+        ctx: &egui::Context,
+        mut add: impl FnMut(&mut egui::Ui) -> R,
+    ) -> (Frame, R) {
         let owner = owner(ctx);
-        // ★ `show_viewport_immediate` takes `FnMut`, because egui reserves the
-        // right to call a viewport's callback more than once. `add` is `FnOnce`
-        // — the honest signature for a dialog body, which draws once per frame
-        // and may consume what it captures — so it is moved into an `Option`
-        // and taken. A second call would `expect` here rather than silently
-        // drawing nothing, because "the dialog was blank" is a symptom nobody
-        // could trace back to this line.
-        let mut add = Some(add);
+        // ★★★ `FnMut`, NOT `FnOnce` — and the difference was a CRASH that took
+        // the operator's unsaved work. Fixed 2026-09-03 (evening).
+        //
+        // `show_viewport_immediate` takes `impl FnMut` because egui reserves
+        // the right to call a viewport's callback **more than once in a
+        // frame** — and it exercises that right routinely, whenever anything
+        // in the body calls `Context::request_discard` to re-run a pass at a
+        // size it has just learned. A `Grid` or a wrapped table doing its own
+        // sizing is enough.
+        //
+        // This function used to take `FnOnce`, move it into an `Option`, and
+        // `expect("viewport callback ran twice")` on the second call. The
+        // comment defending that read:
+        //
+        // > the honest signature for a dialog body, which draws once per frame
+        // > and may consume what it captures [...] a second call would `expect`
+        // > here rather than silently drawing nothing, because "the dialog was
+        // > blank" is a symptom nobody could trace back to this line.
+        //
+        // Every clause is reasonable and the conclusion turned a routine egui
+        // behaviour into a **process abort**. An outside reviewer found it in
+        // the first ten minutes: `pdfcer ▸ Keyboard shortcuts` panicked
+        // instantly, on a fresh launch, taking the open documents with it.
+        //
+        // ★★ The choice between "blank" and "crash" was a FALSE ONE. The third
+        // option is the correct one and it is what egui means: **draw again.**
+        // A second pass exists precisely because the first is being discarded,
+        // so re-running the body is not a workaround, it is the contract. The
+        // result of the last call is the one returned, exactly as egui's own
+        // `*out = Some(...)` keeps the last.
+        //
+        // ★ What this costs: a body must now be re-runnable within a frame.
+        // That is already true of every dialog here — they draw from state they
+        // borrow rather than consume — and it is the same requirement
+        // immediate mode places on every other widget in the process. If a
+        // future body genuinely cannot be run twice, the fix is to move what it
+        // consumes out of the closure, not to reinstate the panic.
         let mut builder = ViewportBuilder::default()
             .with_title(self.title.clone())
             .with_inner_size(self.default_size)
@@ -869,14 +902,6 @@ impl Host {
                 !child.text_edit_focused() && child.input(|i| i.key_pressed(egui::Key::Escape));
             frame.closed = escape || child.input(|i| i.viewport().close_requested());
 
-            // egui may in principle call a viewport's callback more than once
-            // in a frame; a dialog body is `FnOnce` and may consume what it
-            // captures, so the second call panics rather than silently drawing
-            // nothing. "The dialog was blank" is a symptom nobody could trace
-            // back to this line.
-            //
-            // ui-text-exempt: a panic message for an egui contract violation,
-            // never displayed to an operator and never reachable from one.
             // ★★★ THE WINDOW'S OWN BACKGROUND, and its absence was a defect
             // that shipped for an hour on 2026-08-21.
             //
@@ -938,11 +963,11 @@ impl Host {
             // is the distinction that makes it safe.
             let margin = Self::BODY_MARGIN_PTS;
             let framed = egui::Frame::NONE.inner_margin(egui::Margin::same(margin as i8));
-            let inner = framed.show(ui, |ui| {
-                // ui-text-exempt: a panic message for an egui contract violation.
-                let draw = add.take().expect("viewport callback ran twice");
-                (draw(ui), ui.min_rect().size())
-            });
+            // ★ Called directly. See this function's signature for why there is
+            // no longer an `Option` and a `take()` here: egui may run this
+            // callback more than once per frame, and the right answer to a
+            // second run is to draw again.
+            let inner = framed.show(ui, |ui| (add(ui), ui.min_rect().size()));
             let (out, content) = inner.inner;
 
             // ★ Measured AFTER the body has drawn, which is the only moment

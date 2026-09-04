@@ -331,6 +331,35 @@ use crate::text::panels as t;
 
 /// Draw the Bookmarks panel.
 pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: &mut Vec<Action>) {
+    // ★★★ MAY THIS MODE AUTHOR? — added 2026-09-03 on an outside review.
+    //
+    // The reviewer's report: **Read mode offers "Add a bookmark"** — a title
+    // field, a parent line and an Add button, in the mode whose whole promise
+    // is that it cannot change the document. `MODES_AND_PANELS.md`'s panel
+    // table already draws the distinction by name, giving Read *"Comments
+    // (read)"* against Review's *"Comments (authoring)"*; Bookmarks was granted
+    // to Read with no authoring qualifier and nobody split the panel.
+    //
+    // ★★ Why this panel needs a capability read at all, when the taxonomy
+    // usually does the gating for free. The normal mechanism is **command
+    // placement**: `measure` is not a tab Read is shown, so Read cannot reach
+    // the Measure panel and the panel needs no flag of its own. That cannot
+    // work here, because Read *should* reach this panel — navigating by
+    // bookmark is reading. The panel is the right one; half its controls are
+    // not.
+    //
+    // ★ The precedent is `panels::tool::idle`, which reads
+    // `canvas::tool::capabilities(ctx)` off the `Context` for the same reason
+    // and frames it as R9: *"an unavailable capability renders nothing"*. This
+    // is the second such read in the crate, and it is deliberately the same
+    // call rather than a new predicate, so the panel and the canvas can never
+    // disagree about what the mode permits.
+    //
+    // `authors_anything()` rather than `edit_content`: a bookmark is document
+    // structure, not page content, so Review — which authors markup and
+    // measurements but not content — must keep the whole row. Read is the only
+    // mode that loses it.
+    let authoring = crate::canvas::tool::capabilities(ui.ctx()).authors_anything();
     let outline = pdfcer_core::outline::read_outline(&doc.session.view());
 
     let total = outline.diagnostics.items;
@@ -358,7 +387,13 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
         // exactly the one an operator most wants to add the first one to, and
         // returning here is what made this panel read-only-looking for its
         // whole life — the sentence said "none" and offered nothing.
-        add::show(ui, doc, state.bookmarks_mut(), actions);
+        //
+        // ★ …in a mode that authors. In Read the sentence above is the whole
+        // panel, which is the correct Read answer: *this document has no
+        // bookmarks*, with nothing offered to change that.
+        if authoring {
+            add::show(ui, doc, state.bookmarks_mut(), actions);
+        }
         return;
     }
     ui.separator();
@@ -395,7 +430,15 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     // position is a claim about what it acts on. Above the list it is making
     // that claim correctly, and the operator sees the destination before they
     // scroll rather than after.
-    add::show(ui, doc, state.bookmarks_mut(), actions);
+    //
+    // ★ Gated on the mode, and the whole authoring block goes together — the
+    // add row, the rename-and-remove block below it, and the drag hint. Half a
+    // form is worse than none: an operator shown a title field with no Add
+    // button, or a drag hint for a gesture the mode refuses, has been told the
+    // panel is broken rather than that the mode is read-only.
+    if authoring {
+        add::show(ui, doc, state.bookmarks_mut(), actions);
+    }
     // ★ The rename-and-remove block, and it is drawn ONLY when a row has been
     // clicked. That is R9 rather than tidiness: with nothing selected there is
     // no bookmark for either verb to name, so the controls would be offering a
@@ -412,7 +455,12 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     // `crate::text::panels::bookmarks::bookmark_drag_hint`: R83 forbids
     // offering a control that cannot work, and its quieter twin is that a
     // gesture nobody is told about is a capability the program does not have.
-    ui.weak(crate::text::panels::bookmarks::bookmark_drag_hint());
+    // ★ The drag hint goes with the drag. In Read the reorder gesture is not
+    // offered, so a sentence teaching it would be describing a capability the
+    // mode does not have — R83's quieter twin, inverted.
+    if authoring {
+        ui.weak(crate::text::panels::bookmarks::bookmark_drag_hint());
+    }
     ui.separator();
 
     // Read before the scroll area, because the walk needs it and the walk
@@ -467,7 +515,10 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
                 .bookmarks_mut()
                 .selected
                 .and_then(|id| tree::find(&outline.items, id));
-            if let Some(item) = selected {
+            // ★ `authoring` gates this too — see the top of `body`. Rename,
+            // Remove, Copy and Cut all change the document, so in Read the
+            // selection is for navigating with and nothing more.
+            if let Some(item) = selected.filter(|_| authoring) {
                 // Cloned because `state` is borrowed mutably by `edit::show` and the
                 // item is borrowed out of `outline`, which `state` does not own. One
                 // `OutlineItem` per frame in which a bookmark is selected, against

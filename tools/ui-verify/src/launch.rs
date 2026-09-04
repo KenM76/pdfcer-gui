@@ -38,6 +38,7 @@
 //! An absence is only evidence when the thing that would have produced it was
 //! actually built.
 
+use std::cell::{Cell, RefCell};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::time::{Duration, Instant};
@@ -112,11 +113,27 @@ const MIN_CLIENT_PX: u32 = 200;
 
 /// A running application, its captured trace, and its window.
 pub struct Session {
-    child: Child,
+    /// ★ `RefCell` so that liveness can be asked with `&self`.
+    ///
+    /// `Child::try_wait` needs `&mut`, and [`Session::trace`] — which every
+    /// check calls, and which is where the liveness guard has to live to be
+    /// unforgettable — takes `&self` at roughly 150 call sites. Threading `&mut`
+    /// through all of them would be a 150-file mechanical diff in service of a
+    /// borrow, and every one of those diffs is a chance to change a check's
+    /// meaning by accident. The cell is the smaller and more honest change:
+    /// nothing here is shared across threads, and the borrow is held for the
+    /// length of one `try_wait`.
+    child: RefCell<Child>,
     pid: u32,
     stderr_path: PathBuf,
     window: Option<WindowHandle>,
     trace_prefix: String,
+    /// Whether this check has said, in as many words, that the process is
+    /// allowed to have exited.
+    ///
+    /// See [`Session::trace`] for what this guards and why it defaults to
+    /// `false`. `Cell` for the same reason the child is a `RefCell`.
+    exit_expected: Cell<bool>,
 }
 
 impl Session {
@@ -174,11 +191,14 @@ impl Session {
         let pid = child.id();
 
         let mut session = Self {
-            child,
+            child: RefCell::new(child),
             pid,
             stderr_path: spec.stderr_path.clone(),
             window: None,
             trace_prefix: trace_prefix.to_owned(),
+            // The safe default: a check that says nothing about exiting is
+            // asserting the program survived it. See `trace`.
+            exit_expected: Cell::new(false),
         };
 
         // Poll for the window rather than sleeping a fixed time. A fixed sleep
@@ -186,7 +206,7 @@ impl Session {
         // crash) or wasted on a fast one, and the harness runs this per check.
         let deadline = Instant::now() + spec.window_timeout;
         while Instant::now() < deadline {
-            if let Some(status) = session.child.try_wait()? {
+            if let Some(status) = session.child.borrow_mut().try_wait()? {
                 return Err(Error::new(format!(
                     "the application exited with {status} before showing a window. Its \
                      stderr is at {}.",
@@ -314,7 +334,78 @@ impl Session {
     /// unbuffered, one line per event, and reading a file another process has
     /// open for writing is permitted on Windows with the share mode Rust's
     /// `File::open` requests.
+    pub fn expect_exit(&self) -> &Self {
+        self.exit_expected.set(true);
+        self
+    }
+
+    /// Read the trace, **and refuse to hand back a trace from a process that
+    /// died unless the check said it might**.
+    ///
+    /// # ★★★ WHY THIS GUARD EXISTS — 2026-09-03 (evening)
+    ///
+    /// An outside reviewer opened `pdfcer ▸ Keyboard shortcuts` on a fresh
+    /// launch and the **process aborted**, taking the operator's unsaved markup
+    /// with it. `dialogs_open_in_their_own_window` drives that exact dialog and
+    /// had been reporting
+    ///
+    /// > ★ Keyboard shortcuts is a real OS window: [[186.0 209.0] - [606.0 689.0]]
+    ///
+    /// **PASS, on the crashing build.** Not by luck: the `viewport-inner` line
+    /// the check reads is written *before* the panic, so by the time the
+    /// process died the evidence the check wanted already existed. The check
+    /// was not wrong about what it asserted. It simply had no opinion about
+    /// whether the program was still alive, and neither did any of the others.
+    ///
+    /// ⇒ **Every trace-reading check in this harness could pass on a build that
+    /// crashes**, provided the crash comes after the line it greps for. That is
+    /// a whole-harness defect, so the fix is in the one function they all call
+    /// rather than in a rule each of them has to remember — a hand-written list
+    /// inside a completeness sweep being exactly the shape this project has now
+    /// been caught by three times.
+    ///
+    /// A check that legitimately expects an exit — `ctrl_s_after_an_edit_saves_and_the_program_is_still_running`
+    /// asks the question directly, and a "does it quit cleanly" check would —
+    /// calls [`Session::expect_exit`] first. That is greppable, and it is a
+    /// statement rather than an omission.
+    ///
+    /// # Errors
+    ///
+    /// The exit is reported as a hard error rather than a SKIP: a process that
+    /// died is a failure of the thing under test, not a missing precondition.
+    /// Callers turn `Err` into SKIP by convention, so the message says plainly
+    /// that this one is different, and the panic line is lifted out of the
+    /// trace into the message because that is the sentence somebody needs.
     pub fn trace(&self) -> Result<Trace> {
+        if !self.exit_expected.get()
+            && let Some(status) = self.child.borrow_mut().try_wait()?
+        {
+            let tail = std::fs::read_to_string(&self.stderr_path).unwrap_or_default();
+            let panic = tail
+                .lines()
+                .find(|l| l.contains("panicked at"))
+                .unwrap_or("(no panic line in the capture)");
+            return Err(Error::new(format!(
+                "THE PROCESS DIED before its trace was read — {status}.\n  {panic}\n\nThis is a FAILURE of the build, not a missing precondition. The trace was still \
+                 readable, and every line the check wanted may well be in it: a crash after \
+                 the evidence is written is invisible to a grep. Full capture: {}\n\nIf this check genuinely expects the program to exit, say so with \
+                 `session.expect_exit()` before reading the trace.",
+                self.stderr_path.display()
+            ))
+            // ★ FATAL, so it is reported RED. Without this it would take the
+            // harness's ordinary `Err` -> SKIPPED route, and a crashed program
+            // reported as "did not run" is barely better than one reported as a
+            // pass. See `Error::fatal`.
+            .fatal());
+        }
+        self.trace_unchecked()
+    }
+
+    /// The trace, with no opinion about whether the process is alive.
+    ///
+    /// Used by [`Self::trace`] once it has decided, and by the few places that
+    /// read a capture for reporting rather than for asserting.
+    pub fn trace_unchecked(&self) -> Result<Trace> {
         Trace::read(&self.stderr_path, &self.trace_prefix)
     }
 
@@ -431,8 +522,8 @@ impl Session {
     /// ★ `&mut self` is why `Session` is held mutably by the one check that
     /// uses it. Reaping here is harmless — `Drop` kills and waits again, and
     /// both tolerate an already-exited child.
-    pub fn has_exited(&mut self) -> Result<bool> {
-        Ok(self.child.try_wait()?.is_some())
+    pub fn has_exited(&self) -> Result<bool> {
+        Ok(self.child.borrow_mut().try_wait()?.is_some())
     }
 }
 
@@ -442,8 +533,9 @@ impl Drop for Session {
     /// See the module docs: the alternative left an invisible window
     /// consuming the operator's pointer input, twice in one session.
     fn drop(&mut self) {
-        let _ = self.child.kill();
-        let _ = self.child.wait();
+        let mut child = self.child.borrow_mut();
+        let _ = child.kill();
+        let _ = child.wait();
     }
 }
 

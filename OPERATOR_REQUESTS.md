@@ -80,6 +80,93 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
+## O114 — ◑ **INTAKE 2026-09-03** — an outside GUI review, twenty findings, one of them a crash
+
+**Ken, 2026-09-03:** *"new feature request in d:/dev/featurerequests/pdfcer-gui.
+I'm not at the PC. it is yours to use."*
+
+An outside review from `D:\Dev\pdfcer-gui-consultant`, against the packaged
+build `pdfcergui-20260903-1605-e27c3b4-49b4b4b-dirty-16a4bb6081b9`. Twenty
+findings ranked by cost to a user, a proposed design direction ("Board"), 80
+screenshots, and a PowerShell driver that never touched this repository.
+
+**Read at** `D:\Dev\FeatureRequests\pdfcer-gui\` — `REVIEW.md`, `HANDOFF.md`,
+`screenshots/INDEX.md`, `mockups/`, `logs/`.
+
+### ✅ A1 — the crash — FIXED THE SAME SESSION
+
+> `pdfcer ▸ Keyboard shortcuts` panicked at `dialogs/host.rs:943`:
+> **"viewport callback ran twice"**, on a fresh launch, taking the open
+> documents with it. Unsaved markup was lost in the reviewer's session.
+
+**Reproduced in twelve seconds** with
+`PDFCER_DIAG_INVOKE=file.shortcuts`. The cause: `Host::show` took the dialog
+body as `FnOnce`, moved it into an `Option`, and `expect`-ed on the second
+call. But `Context::show_viewport_immediate` takes **`impl FnMut`** — egui
+reserves the right to run a viewport's callback more than once per frame and
+exercises it routinely, whenever anything in the body triggers a discarded
+pass to re-size itself.
+
+★★★ **The choice the old comment defended — "crash rather than draw a blank
+dialog" — was a FALSE DICHOTOMY.** The third option is what egui means by a
+second pass: **draw again.** The body is now `FnMut` and is simply re-run, with
+the last result returned, exactly as egui's own implementation keeps the last.
+
+★ **It was not part of a pattern.** A sweep of the whole workspace found only
+**11** panic sites on runtime paths, and every one asserts an invariant of
+*ours* — *"handled above"*, *"dispatch does not own this command"*, *"two shell
+commands claim the same id"* — each of which a test also covers. This one was a
+category error: **a panic asserting a third-party library's contract, on a
+condition that library documents as permitted.**
+
+### ★★★ AND THE HARNESS REPORTED PASS ON THE CRASHING BUILD
+
+The reviewer wrote that *"the suite drives many dialogs but not this one"*. That
+is **wrong, and the truth is worse**: `dialogs_open_in_their_own_window` drives
+`file.shortcuts` and had been reporting
+
+> ★ Keyboard shortcuts is a real OS window: [[186.0 209.0] - [606.0 689.0]]
+
+**PASS.** Not by luck — the `viewport-inner` line it greps for is written
+*before* the panic, so the evidence the check wanted already existed by the time
+the process died. The check was not wrong about what it asserted. It had no
+opinion about whether the program was still alive, **and neither did any of the
+other 152.**
+
+⇒ Every trace-reading check in this harness could pass on a build that crashes,
+provided the crash came after the line it greps for. Fixed **in the one function
+they all call** rather than by a rule each must remember:
+
+- `Session::trace` now refuses to hand back a trace from a process that exited,
+  unless the check said `session.expect_exit()` first — greppable, and a
+  statement rather than an omission. Two checks legitimately expect an exit and
+  now say so.
+- The refusal is **fatal**, not a skip. `Error::fatal` and
+  `CheckReport::from_error` were added and **all 152 `Err` arms rewritten**,
+  because this project's own record is that *a SKIP is not red, so a check can
+  stop running unnoticed*, and a crashed program reported as "did not run" is
+  barely better than one reported as a pass.
+- **Falsified**: with the crash planted back in, the same check that reported
+  PASS now reports **FAIL** and quotes the panic line.
+
+### ◑ A2–A20 — under triage
+
+Four agents are reading the findings against the source in parallel, classifying
+each as confirmed / already known / already decided against / partly wrong, with
+the mechanism at `file:line` and the blast radius counted. **Nothing else is
+being changed until that lands** — several recommendations touch `RIBBON_IA.md`,
+which is settled and is the operator's to amend, not this session's.
+
+★ One is already answered by inspection and is recorded here so it is not
+re-litigated: the **Keyboard shortcuts list does scroll** — 34 commands, 0
+dropped, inside a `ScrollArea::vertical`. What is missing is the *affordance*:
+egui's default scroll style is `floating()`, a 2 pt sliver that fades when the
+pointer is elsewhere, so a capture shows fifteen rows and no bar. The Print
+dialog already carries the fix and the reasoning (`ScrollStyle::solid` +
+`foreground_color`); **4 of 37 `ScrollArea` uses in this crate have it.**
+
+---
+
 ## O113 — ◑ **OPEN, 2026-09-03** — the clipping hatch should cover only what actually falls outside the printable area
 
 **Ken, 2026-09-03:** *"also can you make it so the red pattern you put over the

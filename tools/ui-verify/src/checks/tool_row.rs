@@ -207,7 +207,7 @@ impl Check for TheTextToolTypesOnOneClick {
         match drive_text(ctx, &mut report) {
             Ok(Some(failure)) => report.fail(failure),
             Ok(None) => report.pass(),
-            Err(skip) => report.skip(skip.to_string()),
+            Err(why) => report.from_error(&why),
         }
     }
 }
@@ -290,7 +290,7 @@ impl Check for ThePointsToolShowsPointsOnOneClick {
         match drive_points(ctx, &mut report) {
             Ok(Some(failure)) => report.fail(failure),
             Ok(None) => report.pass(),
-            Err(skip) => report.skip(skip.to_string()),
+            Err(why) => report.from_error(&why),
         }
     }
 }
@@ -416,7 +416,7 @@ impl Check for ShowPointsDrawsAnObjectsPointsWithoutDescending {
         match drive_show_points(ctx, &mut report) {
             Ok(Some(failure)) => report.fail(failure),
             Ok(None) => report.pass(),
-            Err(skip) => report.skip(skip.to_string()),
+            Err(why) => report.from_error(&why),
         }
     }
 }

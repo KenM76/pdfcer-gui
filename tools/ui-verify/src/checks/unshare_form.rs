@@ -363,7 +363,7 @@ impl Check for TheContextMenuGivesThisPageItsOwnCopyOfASharedForm {
         match drive_shared(ctx, &mut report) {
             Ok(Some(failure)) => report.fail(failure),
             Ok(None) => report.pass(),
-            Err(skip) => report.skip(skip.to_string()),
+            Err(why) => report.from_error(&why),
         }
     }
 }
@@ -388,7 +388,7 @@ impl Check for TheUnshareDeclinesWhenNothingElseDrawsTheForm {
         match drive_unshared(ctx, &mut report) {
             Ok(Some(failure)) => report.fail(failure),
             Ok(None) => report.pass(),
-            Err(skip) => report.skip(skip.to_string()),
+            Err(why) => report.from_error(&why),
         }
     }
 }

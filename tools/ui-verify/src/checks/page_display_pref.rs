@@ -154,7 +154,7 @@ impl Check for APageDisplayChoiceSurvivesACloseAndReachesANewDocument {
         match drive(ctx, &mut report) {
             Ok(Some(failure)) => report.fail(failure),
             Ok(None) => report.pass(),
-            Err(skip) => report.skip(skip.to_string()),
+            Err(why) => report.from_error(&why),
         }
     }
 }
@@ -239,7 +239,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     normalise(&exe, report);
 
     // --- process 1: choose, then close immediately ---------------------------
-    let mut session = Session::launch(
+    let session = Session::launch(
         &spec_for(ctx, &exe, &first, "page-display-1.trace.txt"),
         ctx.profile.trace_prefix,
     )?;
@@ -300,6 +300,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             u64::from(CLOSE_FRAMES) * 25 / 1000
         )));
     }
+    // ★ The process is MEANT to be gone by here — Alt+F4 was pressed and the
+    // loop above waited for it. Said out loud so `Session::trace`'s liveness
+    // guard, which otherwise reports a dead process as a red failure, knows
+    // this exit is the subject rather than a crash. See that function.
+    session.expect_exit();
     let trace = session.trace()?;
     match trace.last(FLUSH_EVENT) {
         Some(line) => {

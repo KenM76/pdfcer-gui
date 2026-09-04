@@ -137,7 +137,15 @@ impl OpenDoc {
         }
         // The raster carrying the edit has landed. The document's own picture is
         // correct now, and it is better than this one in every way.
-        if self.page_texture_epoch == self.edit_epoch {
+        //
+        // ★★★ COMPARED AGAINST THE PAGE'S OWN EPOCH, not the document's —
+        // corrected 2026-09-03. See [`Self::page_is_catching_up`] for the full
+        // account; in one line: `page_texture_epoch` has held a `PageEpochs`
+        // value since O74, and `edit_epoch` is a different counter, so the two
+        // can diverge permanently and this early return could stop firing for
+        // the rest of the session — leaving a held preview drawn over a raster
+        // that had already caught up.
+        if self.page_texture_epoch == self.page_epochs.get(self.view.page_index) {
             return None;
         }
         Some(&held.shape)
@@ -216,8 +224,47 @@ impl OpenDoc {
     /// the operator chose between and the one with no failure mode.
     ///
     /// ★ Deliberately silent under [`CATCHING_UP_AFTER`]: see that constant.
+    /// # ★★★ IT COMPARES TWO VALUES FROM THE SAME COUNTER, and until
+    /// # 2026-09-03 it did not
+    ///
+    /// This read `self.page_texture_epoch != self.edit_epoch`, and those are
+    /// **values issued by two independent counters**:
+    ///
+    /// | field | issued by |
+    /// |---|---|
+    /// | `edit_epoch` | `actions::funnel`, `actions::pages`, `actions::extract` — its own `+= 1` |
+    /// | `page_texture_epoch` | `render::settle` — `self.page_epochs.get(page)`, from `PageEpochs::next` |
+    ///
+    /// They were the same quantity once. **`Pass O74` repurposed
+    /// `page_texture_epoch` to carry a per-page epoch** so that an edit on
+    /// sheet 3 would stop re-rasterising the canvas while it showed sheet 7 —
+    /// and `app::state::pageepoch`'s own header lists this field in its table
+    /// of the caches it converted. The correct comparison was written at the
+    /// same time, two hundred lines away in `render::settle`:
+    ///
+    /// ```text
+    /// let stale_edit = doc.page_texture_epoch != doc.page_epochs.get(doc.view.page_index);
+    /// ```
+    ///
+    /// These two readers were not converted with it.
+    ///
+    /// ★★ The consequence is not a flicker, it is a **stuck sentence**. One
+    /// `EditScope::Page(other)` edit advances `edit_epoch` without advancing
+    /// this page's entry, the two numbers pass each other, and nothing brings
+    /// them back — so *"the picture is catching up"* stays on the status bar
+    /// for the rest of the session, over a picture that is perfectly correct.
+    /// Deleting a page guarantees it: `actions::pages` calls `bump_all` and a
+    /// `resize` in the same breath.
+    ///
+    /// ★ The unit tests could not have caught it. They set both fields by hand
+    /// to equal or adjacent values, so they hold under either model and never
+    /// exercise the divergence — the same shape as
+    /// `the_body_width_holds_both_columns`, retired earlier the same day for
+    /// pinning a relationship between quantities that were not the ones the
+    /// mechanism used. `a_page_edit_elsewhere_does_not_strand_the_catching_up_line`
+    /// is the replacement, and it fails on the old comparison.
     pub(crate) fn page_is_catching_up(&self) -> bool {
-        self.page_texture_epoch != self.edit_epoch
+        self.page_texture_epoch != self.page_epochs.get(self.view.page_index)
             && self
                 .last_edit_at
                 .is_some_and(|at| at.elapsed() >= CATCHING_UP_AFTER)

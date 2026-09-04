@@ -45,3 +45,4 @@
 - [A rename can blind an instrument silently](feedback_a_rename_can_blind_an_instrument_silently.md) — a hard-coded external path turns a rename into a green check over an empty scan.
 - [A proxy condition survives one correction](feedback_a_proxy_condition_survives_one_correction.md) — a gate corrected once for a stand-in is usually still using one; ask what the mechanism READS.
 - [A correctly-sourced value used for the wrong role passes every gate](feedback_a_correctly_sourced_value_used_for_the_wrong_role_passes_every_gate.md) — the colour gate forbids invented values, not wrong roles; expose the PAIR behind a purpose-named function.
+- [A trace-grepping check passes on a build that crashed](feedback_a_trace_grepping_check_passes_on_a_build_that_crashed.md) — the oracle line is written before the panic; liveness belongs in the shared reader, and must be RED not SKIP.

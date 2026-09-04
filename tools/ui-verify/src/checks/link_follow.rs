@@ -203,7 +203,7 @@ impl Check for ALinkGoesToThePageItNames {
         match drive_goto(ctx, &mut report) {
             Ok(Some(failure)) => report.fail(failure),
             Ok(None) => report.pass(),
-            Err(skip) => report.skip(skip.to_string()),
+            Err(why) => report.from_error(&why),
         }
     }
 }
@@ -413,7 +413,7 @@ impl Check for ALinkItCannotFollowSaysSo {
         match drive_action(ctx, &mut report) {
             Ok(Some(failure)) => report.fail(failure),
             Ok(None) => report.pass(),
-            Err(skip) => report.skip(skip.to_string()),
+            Err(why) => report.from_error(&why),
         }
     }
 }

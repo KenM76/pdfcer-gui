@@ -213,6 +213,43 @@ pub(super) fn section(
     let listing = model::collect(view, &slots, form);
     trace(&listing);
 
+    // ★★★ NOTHING TO ORDER, SO NO SECTION — R9, added 2026-09-03 on an outside
+    // review.
+    //
+    // The reviewer's observation, on an ordinary CAD drawing: a *"Tab order"*
+    // heading in the Fill-form panel that opens onto nothing. It did. This
+    // header was drawn **unconditionally**, and the no-AcroForm path in
+    // `panels::forms` calls this function with `form = None` — so on every
+    // document with no form fields, which is nearly every drawing the operator
+    // opens, the panel offered a disclosure triangle whose whole content was an
+    // explainer about reordering an empty list.
+    //
+    // ★ R9 in its exact words: an unavailable capability renders **nothing**.
+    // A heading is not exempt from that because it is cheap — a heading is a
+    // claim that something is behind it, and this project's own no-placeholders
+    // rule makes no distinction between an inert button and an inert expander.
+    //
+    // ★★ The irony worth recording: the sibling branch that reaches this
+    // function already invokes R9 by name, three lines above the call, to
+    // explain why it skips *everything else* on the no-fields path — and then
+    // draws this. The rule was applied to the code the author was looking at
+    // and not to the one function it delegated to. **A rule cited at a call
+    // site is not enforced inside the callee.**
+    //
+    // The listing is empty rather than the form being `None`, deliberately: a
+    // document can carry an `/AcroForm` whose fields are all unreachable, and
+    // that is equally nothing to order. The condition is what the section would
+    // SHOW, not what it was handed.
+    // `total_rows` plus the orphan count, because both are things this section
+    // would have had something to say about. Zero of each is the honest
+    // "nothing to order" — and `fields_without_widgets` is deliberately part of
+    // it: a document whose only form content is fields with no widgets has
+    // nothing on any page to reorder, but it DOES have a disclosure this
+    // section is the only place that makes.
+    if listing.total_rows() == 0 && listing.fields_without_widgets == 0 {
+        return;
+    }
+
     let mut go: Option<usize> = None;
     // ★ The header publishes its own rectangle so a driven check can OPEN
     // the section. It ships closed on purpose — the section is a diagnostic

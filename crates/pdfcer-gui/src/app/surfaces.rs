@@ -449,6 +449,24 @@ impl PdfcerApp {
                 let text = crate::text::open_unsupported(path, message);
                 ui.centered_and_justified(|ui| ui.label(text))
             }
+            // ★★★ THE CANVAS SAYS THE SAME THING THE DIALOG IS ASKING, and
+            // for one afternoon it said the OPPOSITE — 2026-09-03.
+            //
+            // `Status::NeedsPassword` has two readers in the same frame: this
+            // one, and `app::frame`'s `ask_for_password`, which opens a real
+            // password dialog. The canvas's sentence still claimed *"this build
+            // cannot yet prompt for a password"* — written when that was true,
+            // never re-read after `dialogs::password` shipped.
+            //
+            // ★ It is kept rather than removed, and that is deliberate. The
+            // dialog is a separate OS window: it can be dragged onto another
+            // monitor, or hidden behind the application by a click on the main
+            // window. A blank canvas behind it would leave an operator who did
+            // exactly that with no statement anywhere about why the document is
+            // not open. The rule this follows is the project's own — the canvas
+            // says what STATE the document is in; the dialog is where the
+            // question is answered — so the two must agree and must not
+            // duplicate the ask.
             Status::NeedsPassword { path } => {
                 let text = crate::text::open_needs_password(path);
                 ui.centered_and_justified(|ui| ui.label(text))

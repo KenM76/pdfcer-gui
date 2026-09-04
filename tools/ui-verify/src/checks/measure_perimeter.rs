@@ -122,7 +122,7 @@ impl Check for MeasurePerimeterTracesAndCloses {
         match drive(ctx, &mut report) {
             Ok(Some(failure)) => report.fail(failure),
             Ok(None) => report.pass(),
-            Err(skip) => report.skip(skip.to_string()),
+            Err(why) => report.from_error(&why),
         }
     }
 }

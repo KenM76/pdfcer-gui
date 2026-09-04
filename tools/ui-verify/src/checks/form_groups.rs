@@ -249,7 +249,7 @@ impl Check for FieldGroupDeleteRemovesTheSubtree {
         match drive_groups(ctx, &mut report) {
             Ok(Some(failure)) => report.fail(failure),
             Ok(None) => report.pass(),
-            Err(skip) => report.skip(skip.to_string()),
+            Err(why) => report.from_error(&why),
         }
     }
 }
@@ -275,7 +275,7 @@ impl Check for StructuralRefusalsAreSentencesNotControls {
         match drive_refusals(ctx, &mut report) {
             Ok(Some(failure)) => report.fail(failure),
             Ok(None) => report.pass(),
-            Err(skip) => report.skip(skip.to_string()),
+            Err(why) => report.from_error(&why),
         }
     }
 }

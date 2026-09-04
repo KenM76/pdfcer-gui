@@ -233,7 +233,7 @@ impl Check for TheAcrobatPasteOrderSwapsWhichChordDoesWhich {
         match drive_order(ctx, &mut report, ACROBAT_ORDER) {
             Ok(Some(failure)) => report.fail(failure),
             Ok(None) => report.pass(),
-            Err(skip) => report.skip(skip.to_string()),
+            Err(why) => report.from_error(&why),
         }
     }
 }
@@ -255,7 +255,7 @@ impl Check for AFormFieldCanBeCopiedAndPastedBothWays {
         match drive_order(ctx, &mut report, PDFCER_ORDER) {
             Ok(Some(failure)) => report.fail(failure),
             Ok(None) => report.pass(),
-            Err(skip) => report.skip(skip.to_string()),
+            Err(why) => report.from_error(&why),
         }
     }
 }

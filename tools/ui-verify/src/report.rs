@@ -147,6 +147,38 @@ impl CheckReport {
         self
     }
 
+    /// **Finish from an `Error`, letting the error decide skip or fail.**
+    ///
+    /// The one line every check's `run` uses for its `Err` arm, so that
+    /// classification lives in one place instead of in 152 identical match
+    /// arms.
+    ///
+    /// # ★★★ Why this is not just `skip`
+    ///
+    /// Because for two years it was, and on 2026-09-03 that let a **crashing
+    /// build report PASS**. `dialogs_open_in_their_own_window` drives
+    /// `pdfcer ▸ Keyboard shortcuts`, which aborted the process on open; the
+    /// `viewport-inner` line the check greps for is written before the panic,
+    /// so the evidence existed and the check was satisfied.
+    ///
+    /// The guard that catches it is in `Session::trace`, and it has to be able
+    /// to produce a **red** result. Routing it through `skip` would have made a
+    /// crashed program report as "did not run" — and this project's own record
+    /// is that *a SKIP is not red, so a check can stop running unnoticed*.
+    ///
+    /// So the `Error` carries the distinction ([`crate::error::Error::fatal`])
+    /// and this method reads it. Everything that was a precondition failure
+    /// still skips; only what the harness positively observed the subject doing
+    /// fails.
+    #[must_use]
+    pub fn from_error(self, err: &crate::error::Error) -> Self {
+        if err.is_fatal() {
+            self.fail(err.message().to_owned())
+        } else {
+            self.skip(err.message().to_owned())
+        }
+    }
+
     /// Print the full report for one check.
     pub fn print(&self) {
         println!("[{}] {}", self.outcome.tag(), self.name);

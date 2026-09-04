@@ -463,7 +463,7 @@ impl Check for OcrSaysHowFarItHasGot {
         match drive_progress(ctx, &mut report) {
             Ok(Some(failure)) => report.fail(failure),
             Ok(None) => report.pass(),
-            Err(skip) => report.skip(skip.to_string()),
+            Err(why) => report.from_error(&why),
         }
     }
 }
@@ -696,7 +696,7 @@ impl Check for StoppingOcrKeepsWhatItHasDone {
         match drive_ending(ctx, &mut report, Ending::Stop) {
             Ok(Some(failure)) => report.fail(failure),
             Ok(None) => report.pass(),
-            Err(skip) => report.skip(skip.to_string()),
+            Err(why) => report.from_error(&why),
         }
     }
 }
@@ -734,7 +734,7 @@ impl Check for CancellingOcrThrowsAwayWhatItHadDone {
         match drive_ending(ctx, &mut report, Ending::Cancel) {
             Ok(Some(failure)) => report.fail(failure),
             Ok(None) => report.pass(),
-            Err(skip) => report.skip(skip.to_string()),
+            Err(why) => report.from_error(&why),
         }
     }
 }

@@ -99,7 +99,7 @@ impl Check for CtrlSAfterAnEditSavesAndTheProgramIsStillRunning {
         match drive(ctx, &mut report) {
             Ok(Some(failure)) => report.fail(failure),
             Ok(None) => report.pass(),
-            Err(skip) => report.skip(skip.to_string()),
+            Err(why) => report.from_error(&why),
         }
     }
 }
@@ -151,7 +151,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
 
-    let mut session = Session::launch(&spec, ctx.profile.trace_prefix)?;
+    let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
     report.note(format!(
         "launched {} as pid {} on a scratch copy",

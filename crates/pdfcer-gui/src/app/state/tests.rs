@@ -273,7 +273,31 @@ fn with_hold(
 ) -> OpenDoc {
     let mut doc = open_local_fixture("polyline-nodes.pdf");
     doc.edit_epoch = edit_epoch;
-    doc.page_texture_epoch = page_texture_epoch;
+    // ★★★ THE TEXTURE'S EPOCH IS SET THROUGH ITS REAL RELATIONSHIP, not by
+    // assignment — corrected 2026-09-03 with the readers it exercises.
+    //
+    // `page_texture_epoch` has carried a **`PageEpochs`** value since O74, and
+    // `render::settle` is the only writer: `self.page_texture_epoch =
+    // self.page_epochs.get(page)`. It is not an `edit_epoch` and has not been
+    // one for weeks.
+    //
+    // Every caller of this helper passes the two arguments EQUAL to mean *"the
+    // raster has caught up"* and unequal to mean *"it is behind"*. That
+    // intention is preserved exactly — but it is now expressed against the
+    // counter the readers actually consult, so a test cannot pass by describing
+    // a model the program stopped using. The previous version assigned both
+    // fields directly, which is precisely why three tests went on passing while
+    // `page_is_catching_up` compared two unrelated counters and could stick on
+    // for a whole session.
+    doc.page_texture_epoch = if page_texture_epoch == edit_epoch {
+        // Caught up: the texture carries this page's current revision.
+        doc.page_epochs.get(doc.view.page_index)
+    } else {
+        // Behind: any value this page's counter has not reached. `wrapping_sub`
+        // rather than `+ 1`, because "behind" is the honest direction and the
+        // counter only ever increases.
+        doc.page_epochs.get(doc.view.page_index).wrapping_sub(1)
+    };
     doc.held_preview = Some(super::HeldPreview {
         shape: crate::canvas::shapes::ShapePreview::default(),
         captured_at_epoch,
@@ -397,7 +421,9 @@ fn retiring_clears_a_dead_hold_and_keeps_a_live_one() {
 fn the_catching_up_line_waits_before_it_speaks() {
     let mut doc = open_local_fixture("polyline-nodes.pdf");
     doc.edit_epoch = 5;
-    doc.page_texture_epoch = 4;
+    // ★ One behind THIS PAGE's epoch — the quantity `page_is_catching_up`
+    // reads. See `with_hold` for why this is not `edit_epoch - 1`.
+    doc.page_texture_epoch = doc.page_epochs.get(doc.view.page_index).wrapping_sub(1);
 
     doc.last_edit_at = Some(std::time::Instant::now());
     assert!(
@@ -425,12 +451,64 @@ fn the_catching_up_line_waits_before_it_speaks() {
 fn the_catching_up_line_stops_when_the_raster_lands() {
     let mut doc = open_local_fixture("polyline-nodes.pdf");
     doc.edit_epoch = 5;
-    doc.page_texture_epoch = 5;
+    // ★ Exactly this page's epoch — the texture carries the current revision.
+    doc.page_texture_epoch = doc.page_epochs.get(doc.view.page_index);
     doc.last_edit_at = Some(std::time::Instant::now() - std::time::Duration::from_secs(30));
     assert!(
         !doc.page_is_catching_up(),
         "the texture carries the edit, so there is nothing to catch up to — and a sentence \
          claiming otherwise over a correct picture is simply false"
+    );
+}
+
+/// **An edit on another sheet must not strand the line on this one** — the
+/// regression test for the epoch type-confusion found on 2026-09-03.
+///
+/// # Why the two tests above could not catch this
+///
+/// They set `edit_epoch` and `page_texture_epoch` by hand, to equal or adjacent
+/// values. That holds under either model, because it never makes the two
+/// counters *diverge* — and divergence is the whole defect.
+///
+/// `page_texture_epoch` has carried a **`PageEpochs`** value since O74;
+/// `edit_epoch` is a different counter with its own `+= 1`. Comparing them was
+/// meaningful only while they were the same quantity. Once an edit lands on a
+/// page the operator is not looking at, `edit_epoch` moves and this page's
+/// entry does not, the two numbers pass each other, and **nothing ever brings
+/// them back**. The status bar then says *"the picture is catching up"* for the
+/// rest of the session, over a picture that is correct.
+///
+/// ★ This test drives the counters through their **own issuers** rather than
+/// assigning both fields, which is what makes it able to fail. Assigning the
+/// fields directly is how the original pair came to describe a model the
+/// program had stopped using.
+#[test]
+fn a_page_edit_elsewhere_does_not_strand_the_catching_up_line() {
+    let mut doc = open_local_fixture("polyline-nodes.pdf");
+    doc.view.page_index = 0;
+
+    // The raster for page 0 has landed and is current: `render::settle` writes
+    // this field from `page_epochs.get(page)`, so that is how the test writes
+    // it too.
+    doc.page_texture_epoch = doc.page_epochs.get(0);
+    doc.last_edit_at = Some(std::time::Instant::now() - std::time::Duration::from_secs(30));
+    assert!(
+        !doc.page_is_catching_up(),
+        "the texture carries this page's current revision, so there is nothing to catch up to"
+    );
+
+    // Now an edit lands somewhere that is NOT the page on screen. Both counters
+    // move, independently — which is exactly what happens on a multi-sheet
+    // drawing, and what `bump_all` plus a resize guarantees on a page delete.
+    doc.edit_epoch = doc.edit_epoch.wrapping_add(1);
+    doc.page_epochs.bump(1);
+
+    assert!(
+        !doc.page_is_catching_up(),
+        "★ an edit on ANOTHER sheet must not put a 'catching up' line over this one. Before \
+         2026-09-03 this compared `page_texture_epoch` against `edit_epoch` — two independent \
+         counters — so this assertion failed, and it failed FOREVER: nothing brings the two \
+         numbers back into step, so the sentence stayed on the bar for the rest of the session."
     );
 }
 

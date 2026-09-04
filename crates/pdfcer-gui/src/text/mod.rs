@@ -529,15 +529,34 @@ pub fn open_unsupported(path: &Path, detail: &str) -> String {
 /// A third thing: neither damaged nor unsupported. pdfcer *can* decrypt this
 /// file and has not been told how.
 ///
-/// S0 has no password prompt, and this message says so plainly instead of
-/// showing an input the shell would then ignore. That is the "no
-/// placeholders" invariant (`PROJECT_PLAN.md` §3): unavailable renders
-/// nothing, and greying is for *temporarily* unavailable. The prompt lands
-/// with the rest of the open/save surface at stage S2.
+/// # ★★★ IT SAID "THIS BUILD CANNOT YET PROMPT FOR A PASSWORD" WHILE PROMPTING
+///
+/// Corrected 2026-09-03, on an outside reviewer's report: the canvas carried
+/// that sentence **in the same frame** as `dialogs::password` asked for the
+/// password. Two surfaces, one `Status::NeedsPassword`, saying opposite things.
+///
+/// The old doc comment is worth keeping because it is the whole diagnosis:
+///
+/// > *S0 has no password prompt, and this message says so plainly instead of
+/// > showing an input the shell would then ignore. That is the "no
+/// > placeholders" invariant (`PROJECT_PLAN.md` §3) [...] The prompt lands with
+/// > the rest of the open/save surface at **stage S2**.*
+///
+/// Every word of that was true when it was written, and it cited R9 correctly.
+/// **Then S2 arrived**, `dialogs::password` shipped, `Action::OpenWithPassword`
+/// shipped — and nothing re-read the sentence whose only justification was that
+/// they did not exist. R9 stopped applying the moment the capability stopped
+/// being unavailable.
+///
+/// ★ This is the sixth time this project has recorded the same shape: **a claim
+/// that was true when written, cited later as evidence, with nothing re-reading
+/// its premise.** It is also the reason the canvas arm in `app::surfaces` no
+/// longer draws anything for this status: the dialog IS the surface now, and a
+/// second surface repeating a superseded fact is how the two came to disagree.
 #[must_use]
 pub fn open_needs_password(path: &Path) -> String {
     format!(
-        "{} is password-protected. This build cannot yet prompt for a password.",
+        "{} is password-protected. Enter its password to open it.",
         path.file_name()
             .unwrap_or(path.as_os_str())
             .to_string_lossy()

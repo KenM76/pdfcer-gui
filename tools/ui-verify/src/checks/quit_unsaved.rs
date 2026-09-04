@@ -116,7 +116,7 @@ impl Check for ClosingTheProgramAsksBeforeLosingUnsavedWork {
         match drive(ctx, &mut report) {
             Ok(Some(failure)) => report.fail(failure),
             Ok(None) => report.pass(),
-            Err(skip) => report.skip(skip.to_string()),
+            Err(why) => report.from_error(&why),
         }
     }
 }
@@ -169,7 +169,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // to establish that the question is CONDITIONAL before the next one
     // establishes that it appears.
     {
-        let (mut session, _) = launch(ctx, "quit-clean.trace.txt")?;
+        let (session, _) = launch(ctx, "quit-clean.trace.txt")?;
         report.note(format!(
             "phase A: pid {} on a clean document",
             session.pid()
@@ -200,6 +200,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                 u64::from(CLOSE_FRAMES) * 25 / 1000
             )));
         }
+        // ★ The process is MEANT to be gone by here — Alt+F4 was pressed and the
+        // loop above waited for it. Said out loud so `Session::trace`'s liveness
+        // guard, which otherwise reports a dead process as a red failure, knows
+        // this exit is the subject rather than a crash. See that function.
+        session.expect_exit();
         let trace = session.trace()?;
         if let Some(held) = trace.last(HELD) {
             return Ok(Some(format!(
@@ -219,7 +224,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
 
     // --- phase B: a DIRTY document holds the close and asks -----------------
-    let (mut session, _) = launch(ctx, "quit-dirty.trace.txt")?;
+    let (session, _) = launch(ctx, "quit-dirty.trace.txt")?;
     report.note(format!(
         "phase B: pid {} — now to make an edit",
         session.pid()
