@@ -178,10 +178,19 @@ key and its text tools both failed exactly this way.
 
 The categories have to come from somewhere. `EditError`'s variants are
 `pdfcer-core`'s, and wording one sentence per variant here would be a second
-catalog that drifts from theirs. **Ask the engine whether `EditError` can expose
-a stable, coarse `kind()`** — "unsupported font", "structure is frozen",
-"nothing matched" — that a front end may switch on without re-deriving
-diagnostic prose. That is a request to file, not a thing to guess.
+catalog that drifts from theirs. **ASKED 2026-09-04** —
+`request_can_edit_errors_expose_a_coarse_kind_a_front_end_may_switch_on.md`
+asks for a coarse, STABLE discriminant ("unsupported font", "structure frozen",
+"not found", "other") a front end may switch on without re-deriving their
+diagnosis. It says plainly why the two shortcuts are refused: matching on their
+variants is a second copy of their taxonomy that drifts and then tells the
+operator the WRONG reason — worse than the silence we have now — and parsing
+the `Display` string is greping prose that is theirs to reword.
+
+★ The request states our fallback rather than waiting indefinitely: if the
+discriminant is far off we ship ONE un-categorised sentence and replace it when
+it lands. **The silence is what has to go first**; better wording is an
+improvement, no wording is the defect.
 
 ### The check that proves it
 
