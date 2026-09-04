@@ -1,6 +1,11 @@
-//! # `build.rs` — put the application icon inside the executable
+//! # `build.rs` — put the application icon inside the executable, and stamp it
+//! with what it is
 //!
-//! One job. The operator asked, on 2026-08-18, for *"a pdf icon to the exe so
+//! Three jobs, in the order they were asked for: the icon, the build
+//! provenance ([`provenance`]), and — since 2026-09-04 — the **release
+//! version** ([`release`]).
+//!
+//! The first job. The operator asked, on 2026-08-18, for *"a pdf icon to the exe so
 //! it shows as the icon when I associate it with pdfs"*, and an icon Explorer
 //! can show is an icon in the executable's `.rsrc` section. Nothing loaded at
 //! run time can satisfy that: the shell reads the icon **without running the
@@ -138,6 +143,11 @@ fn provenance() {
         if dirty { "-dirty" } else { "" }
     );
 
+    // The third job, added 2026-09-04. See [`release`]: this is the number the
+    // About window puts under the product name, and until this call existed
+    // there was nothing anywhere in the tree that carried it.
+    release(dirty);
+
     let lock = std::fs::read_to_string("../../Cargo.lock").unwrap_or_default();
 
     // The engine: version, revision, and the revision's commit time.
@@ -192,6 +202,203 @@ fn provenance() {
         commit_time(&icc_rev, &icc_repo)
     };
     println!("cargo:rustc-env=PDFCER_ICCCE_TIME={icc_time}");
+}
+
+// ===========================================================================
+// The release version — the number an operator would name
+// ===========================================================================
+
+/// **Emit the version this build belongs to, derived from the git tag.**
+///
+/// Sets three `cargo:rustc-env` variables, and nothing else. Each is one
+/// *fact*; none of them is a sentence. The words that go around them live in
+/// `crate::text::about`, because every operator-visible string in this program
+/// does (rule R1, enforced by `tools/gates/check-ui-strings.sh`), and the
+/// decision about which sentence to draw lives in `crate::dialogs::about`,
+/// where it can be unit-tested. A build script cannot be tested by
+/// `cargo test`, so it is deliberately given nothing worth testing.
+///
+/// | Variable | Holds | When it cannot be derived |
+/// |---|---|---|
+/// | `PDFCER_RELEASE_VERSION` | the bare version off the nearest tag, `v` stripped — `0.5.0` | **empty** |
+/// | `PDFCER_RELEASE_DISTANCE` | commits between that tag and `HEAD`, decimal — `0` on the tag itself | **empty** |
+/// | `PDFCER_RELEASE_MODIFIED` | `1` when the working tree had uncommitted changes, else empty | empty |
+///
+/// # ★★★ Why the git TAG, and not `CARGO_PKG_VERSION`
+///
+/// Because in this repository the tag **is** the release, and the crate
+/// version deliberately is not.
+///
+/// `Cargo.toml` says `version = "0.1.0"` and carries a comment explaining that
+/// the crate is versioned by the pdfcer workspace it folds **into**, not by
+/// this staging workspace — at fold-in the line is deleted and
+/// `version.workspace = true` takes its place. **O109 and O110 both record the
+/// decision not to bump it**, in as many words: *"bumping it would have
+/// contradicted a recorded decision to make two numbers agree that are not the
+/// same number."*
+///
+/// So `env!("CARGO_PKG_VERSION")` is not a stale source here, it is the
+/// **wrong** source — it answers a different question, and it answered it into
+/// the About window's headline as `Version 0.1.0` in what shipped as v0.5.0
+/// (review row A11). What a release of this program actually *is*, is a tag
+/// and a GitHub release built from it: `v0.1.0` … `v0.5.0`, all six pushed to
+/// `KenM76/pdfcer-gui` during O110. Reading the tag is reading the release.
+///
+/// ⚠ **Do not "fix" this by writing the number here.** A literal in this file
+/// would be a second place to bump, and the first one to be forgotten — the
+/// exact failure this row exists to close. The value must stay derived.
+///
+/// # ★★ `--long`, so there is only one shape to parse
+///
+/// `git describe --tags` prints a bare `v0.5.0` on a tagged commit and
+/// `v0.5.0-23-g0a8126c` elsewhere — two shapes, and a parser that handles one
+/// of them is a parser that is wrong on release day, which is the one day it
+/// is looked at. `--long` prints `v0.5.0-0-g0a8126c` in **both** cases, so
+/// there is a single shape: `<tag>-<distance>-g<abbrev>`.
+///
+/// `--match v[0-9]*` is passed literally as one argument (there is no shell
+/// here to glob it) and keeps a future non-release tag — `baseline`,
+/// `before-the-rewrite` — from being read as a version.
+///
+/// # ★★★ What happens with no git, no `.git`, or no tag — all three
+///
+/// All three land in the same place: the three variables are **empty**, the
+/// build **succeeds**, and About says it is not from a released version. They
+/// are worth separating anyway, because a reader will hit each of them:
+///
+/// * **No `git` on the machine** — a container, a fresh CI image, a
+///   documentation build. [`git`] cannot spawn the process, returns `None`,
+///   and its own doc comment already carries the rule every caller here
+///   obeys: *"a source tree exported without its `.git` still has to build"*.
+/// * **A tarball, or a `cargo package`/`cargo vendor` copy** — `git describe`
+///   runs and exits non-zero because there is no repository above it. Same
+///   `None`.
+/// * **A repository with no tags at all** — a fresh clone with
+///   `--no-tags`, or a fork. `git describe` exits non-zero saying so. Same
+///   `None`.
+///
+/// ⚠ **What must NOT happen in any of those cases is a number.** The version
+/// is either derived or it is absent; there is no default, no `0.0.0`, and no
+/// falling back to the crate manifest. A stale or invented version in an About
+/// box is worse than no version, because the operator cannot tell it is wrong
+/// — which is precisely how `Version 0.1.0` survived five releases.
+/// `crate::dialogs::about::version_label` is where that promise is kept, and
+/// `the_unavailable_case_invents_no_number` is the test that keeps it.
+///
+/// # ★★ Reproducibility, and the one honest caveat
+///
+/// **The build stays reproducible.** Every input here is committed history:
+/// two builds of the same commit, with the same tags visible, emit
+/// byte-identical values. `--dirty` is deliberately *not* passed to
+/// `git describe`; the modified flag comes from the `git status --porcelain`
+/// [`provenance`] has already run, so there is one producer of that fact
+/// rather than two that could disagree.
+///
+/// ⚠ The caveat, stated rather than hidden: **creating a tag does not
+/// invalidate this build script.** Cargo re-runs a build script when one of
+/// its declared inputs changes, and `git tag v0.6.0` changes no source file.
+/// So a binary built before the tag and not rebuilt after it keeps reporting
+/// the older version. Two things reduce that to a nuisance:
+///
+/// 1. [`rerun_if_present`] declares `.git/refs/tags`, `.git/packed-refs` and
+///    `.git/HEAD` as inputs **when they exist**, so a tag created in an
+///    ordinary checkout does trigger a rebuild. It is guarded on existence
+///    because Cargo treats a declared input that is *missing* as permanently
+///    changed — an unconditional line would re-run this script on every single
+///    build of a tarball, which is a real cost paid for nothing.
+/// 2. The release procedure builds *after* tagging in any case, and the
+///    packaged build's `BUILD-INFO.txt` and this window's Build block both
+///    name the commit, so a mismatch is visible rather than silent.
+///
+/// A git *worktree* has a `.git` **file**, not a directory, so none of the
+/// three paths exist and none is declared. That is a lost rebuild trigger, not
+/// a wrong value: the version still comes from `git describe`, which works
+/// perfectly well in a worktree.
+fn release(modified: bool) {
+    // See the header: guarded on existence, because a declared-but-missing
+    // input makes Cargo re-run this script on every build.
+    rerun_if_present("../../.git/HEAD");
+    rerun_if_present("../../.git/refs/tags");
+    rerun_if_present("../../.git/packed-refs");
+
+    let described =
+        git(&["describe", "--tags", "--long", "--match", "v[0-9]*"], ".").unwrap_or_default();
+    let (version, distance) = parse_describe(&described).unwrap_or_default();
+
+    println!("cargo:rustc-env=PDFCER_RELEASE_VERSION={version}");
+    println!("cargo:rustc-env=PDFCER_RELEASE_DISTANCE={distance}");
+    println!(
+        "cargo:rustc-env=PDFCER_RELEASE_MODIFIED={}",
+        if modified { "1" } else { "" }
+    );
+
+    // ★ Said out loud, once, and only when it is true. A build with no
+    // discoverable release version is a legitimate and common state — every
+    // build from a tarball is one — so this is not a warning about a mistake;
+    // it is the difference between "About says no released version because
+    // there is none" and "About says no released version because this file
+    // stopped working". Without it those two look identical from the outside,
+    // which is the failure mode the icon warning above exists for as well.
+    if version.is_empty() {
+        println!(
+            "cargo:warning=pdfcer-gui: no release version could be derived (`git describe \
+             --tags` found nothing here). The build is fine; the About window will say this \
+             program is not from a released version, which is true. A checkout with its tags \
+             is what supplies one."
+        );
+    }
+}
+
+/// Split `git describe --tags --long` output into `(version, distance)`.
+///
+/// The shape is fixed by `--long` — see [`release`] — so this is a parse of
+/// exactly one form and it refuses anything else rather than guessing:
+///
+/// ```text
+/// v0.5.0-23-g0a8126c   ->  ("0.5.0", "23")
+/// v0.5.0-0-g0a8126c    ->  ("0.5.0", "0")     the tagged commit itself
+/// v0.6.0-rc1-4-gabc123 ->  ("0.6.0-rc1", "4") a tag containing hyphens
+/// ""                   ->  None
+/// ```
+///
+/// It reads from the **right**, which is what makes the third line work: the
+/// abbreviated hash and the distance are the last two hyphen-separated fields
+/// whatever the tag contains, so a pre-release tag with its own hyphens
+/// survives. Reading from the left would have split `v0.6.0-rc1` and reported
+/// the version as `0.6.0` with a distance of `rc1`.
+///
+/// `None` — not a default — for anything that does not match, because the
+/// whole point of [`release`] is that an unavailable version is reported as
+/// unavailable rather than approximated.
+fn parse_describe(described: &str) -> Option<(String, String)> {
+    let (rest, abbrev) = described.rsplit_once('-')?;
+    // `--long` always suffixes `g<hash>`. If that is not there, this is not
+    // the output this function was written for and no field of it is trusted.
+    if !abbrev.starts_with('g') {
+        return None;
+    }
+    let (tag, distance) = rest.rsplit_once('-')?;
+    if distance.is_empty() || !distance.bytes().all(|b| b.is_ascii_digit()) {
+        return None;
+    }
+    let version = tag.strip_prefix('v').unwrap_or(tag);
+    if version.is_empty() {
+        return None;
+    }
+    Some((version.to_owned(), distance.to_owned()))
+}
+
+/// Declare `path` as a rebuild trigger, but only if it is there.
+///
+/// Cargo's contract for `cargo:rerun-if-changed` is that a path which does not
+/// exist counts as *changed*, every time. Declaring one unconditionally is
+/// therefore not the harmless belt-and-braces it looks like: it turns the
+/// build script into one that re-runs on every build, for every reader who
+/// builds from a tarball. See [`release`].
+fn rerun_if_present(path: &str) {
+    if std::path::Path::new(path).exists() {
+        println!("cargo:rerun-if-changed={path}");
+    }
 }
 
 /// When `rev` was committed, formatted the way the build stamp is.

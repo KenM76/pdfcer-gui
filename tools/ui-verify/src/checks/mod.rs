@@ -685,6 +685,11 @@ pub mod text_selection;
 /// operator can see except the mouse pointer — which a window capture does not
 /// carry at all. Its header carries the argument.
 pub mod text_tool;
+/// ★★★ The two theme blind spots `REVIEW_TRIAGE.md` PartC named — the Airy
+/// preset, which nothing in this repository had ever clicked, and the PAGE,
+/// which nothing had ever sampled under a theme. Its header carries why the
+/// page is the one invariant a dark theme in this product must hold.
+pub mod theme_page;
 /// ★ `edit.undo` and `edit.redo` — the pair that was registered, drawn on the
 /// quick-access toolbar in **every** mode and bound to three chords with **no
 /// dispatch arm**, so an operator could author dimensions, seven markup kinds,
@@ -1085,6 +1090,23 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // it the cheapest driving check in the suite, so a run whose ribbon
         // channel is broken says so here without paying for a render.
         Box::new(settings_theme::SettingsThemeTakesEffect),
+        // ★★★ Its sibling, from the same file, and it goes IMMEDIATELY after
+        // for the reason `print_layout` goes after `print_dialog`: every skip
+        // message it can produce defers to the check above it for the
+        // diagnosis. "The three presets painted the same surround" is
+        // `settings_theme_takes_effect`'s subject, not this one's, and a reader
+        // of a failing run should meet the specific cause before the vaguer one.
+        //
+        // It is the more expensive of the two — it opens a document, renders a
+        // page and takes three captures — which is why it is second despite
+        // asserting the more important property. A run whose ribbon or dialog
+        // channel is broken says so above, in seconds, without paying for a
+        // render.
+        //
+        // ★ It closes both halves of `REVIEW_TRIAGE.md` PartC at once: the Airy
+        // preset, which nothing in this repository had ever clicked, and the
+        // PAGE, which nothing had ever sampled under a theme.
+        Box::new(theme_page::EveryThemePresetKeepsThePageWhite),
         // ★ Directly after it, and for the same dependency reason it sits
         // after the markup checks: this one also begins by arming Rectangle and
         // dragging, so a run in which the four-link arm chain is broken should

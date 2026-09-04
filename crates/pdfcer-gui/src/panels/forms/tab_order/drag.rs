@@ -229,15 +229,17 @@ pub(super) const fn lands(from: usize, to_gap: usize) -> bool {
 
 /// Draw the insertion caret.
 ///
-/// The colour is `visuals().selection.stroke.color` — the theme's, never a
-/// literal, and the same source the page rail's caret, the current-page ring
-/// and the canvas guide preview all take, so a preset that changes the accent
-/// changes every one of them together.
+/// The colour is [`egui_shell::theme::Theme::canvas_selection_ink`] — the
+/// theme's, never a literal, and the same source the page rail's caret, the
+/// current-page ring and the canvas guide preview all take, so a preset that
+/// changes the accent changes every one of them together. **Not
+/// `visuals().selection.stroke`**: that is `egui`'s selected-*widget* channel
+/// and reading it here was defect T2 (`REVIEW_TRIAGE.md` §2b).
 pub(super) fn paint(ui: &egui::Ui, drop: Option<&DropTarget>) {
     let Some(drop) = drop else {
         return;
     };
-    let base = ui.visuals().selection.stroke.color;
+    let base = egui_shell::theme::Theme::canvas_selection_ink(ui.ctx());
     let colour = if drop.lands {
         base
     } else {

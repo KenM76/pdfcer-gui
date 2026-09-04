@@ -645,11 +645,46 @@ mod tests {
             "a Finish that is always enabled is a control that does nothing on \
              almost every press, and P3 reserves greying for exactly this"
         );
-        assert!(
-            finish.icon.is_none(),
-            "the recorded refusal: no accept glyph exists, and the `measure` \
-             ruler would draw a fourth identical one for a command that places \
-             nothing"
+        // ★★★ **The refusal this used to assert was DISCHARGED on 2026-09-04,
+        // and only half of it was ever about supply.**
+        //
+        // It read: *"no accept glyph exists, and the `measure` ruler would draw
+        // a fourth identical one for a command that places nothing."* Two
+        // claims, and they aged differently.
+        //
+        // The first — no accept glyph exists — was a fact about the asset
+        // directory, and it stopped being one when `check.svg` was adopted from
+        // the outside review's sheet. Nothing about it was a design position;
+        // the registration said as much, and said the remedy was art.
+        //
+        // ★ The second is still true and is what this assertion now pins. The
+        // worry was never "Finish should have no picture", it was **"Finish
+        // must not draw the measure ruler"** — a fourth control wearing the
+        // glyph of the three tools around it, for a command that places
+        // nothing. So the shape of the check is inverted rather than deleted:
+        // it names the glyph Finish must wear and re-states the one it must
+        // not.
+        //
+        // ★★ `check` and not `finish-shape`, and the split is deliberate.
+        // `markup.finish` carries the identical refusal in its own file and
+        // took `finish-shape` — a polyline closed with a tick — because the
+        // markup band's Finish completes a DRAWN SHAPE. A measurement's Finish
+        // accepts a RESULT: the readout, not the figure. Two commands, two
+        // glyphs, and the set's one-asset-per-role rule holds. Recorded here
+        // because two near-identical commands taking different art is exactly
+        // the thing a later "consistency pass" would undo without this
+        // paragraph.
+        assert_eq!(
+            finish.icon.as_deref(),
+            Some("check"),
+            "Finish accepts a measurement; it should wear the accept glyph"
+        );
+        assert_ne!(
+            finish.icon.as_deref(),
+            Some("measure"),
+            "the surviving half of the recorded refusal: Finish must not wear \
+             the `measure` ruler, which would draw a fourth control identical \
+             to the three tools beside it for a command that places nothing"
         );
     }
 

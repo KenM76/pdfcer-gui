@@ -239,7 +239,6 @@ pub(super) fn draw(
     for view in pages {
         overlay::draw_find_hits(
             &painter,
-            ui.visuals(),
             &view.map,
             find.page_highlights(view.page, doc.edit_epoch),
         );
@@ -260,7 +259,6 @@ pub(super) fn draw(
     for view in pages {
         overlay::draw_text_selection(
             &painter,
-            ui.visuals(),
             &view.map,
             text_selection
                 .as_ref()
@@ -298,7 +296,7 @@ pub(super) fn draw(
         active_tool,
     );
     if let Some(rect) = marquee {
-        overlay::draw_marquee(&painter, ui.visuals(), map, rect);
+        overlay::draw_marquee(&painter, map, rect);
     }
     // The ghost sits ON TOP of the real outline, and both stay visible: the
     // pair is what states the displacement. `ghost` is `Some` only when
@@ -314,7 +312,6 @@ pub(super) fn draw(
     if let Some(delta) = ghost {
         overlay::draw_move_ghost(
             &painter,
-            ui.visuals(),
             map,
             selection,
             delta,
@@ -326,7 +323,7 @@ pub(super) fn draw(
     // `annotdrag::drag` returns `Some` only for a selection whose release will
     // commit, so a locked annotation or a ce dimension draws none.
     if let Some(rect) = annot_ghost {
-        overlay::draw_annot_ghost(&painter, ui.visuals(), map, *rect);
+        overlay::draw_annot_ghost(&painter, map, *rect);
     }
     // ★ The resize ghost, on the same layer and under the same contract: it is
     // `Some` only when `resizing::drag` has established that a release would
@@ -340,7 +337,6 @@ pub(super) fn draw(
     {
         overlay::draw_resize_ghost(
             &painter,
-            ui.visuals(),
             map,
             selection,
             // ★ `pivot`, not `anchor` — the SAME point `canvas::resizing`
@@ -380,7 +376,6 @@ pub(super) fn draw(
     {
         overlay::draw_rotate_ghost(
             &painter,
-            ui.visuals(),
             map,
             selection,
             crate::canvas::handles::Grip::Rotate.pivot(bounds),
@@ -434,7 +429,10 @@ pub(super) fn draw(
         painter.rect_stroke(
             handle,
             0.0,
-            egui::Stroke::new(1.0, ui.visuals().selection.stroke.color),
+            egui::Stroke::new(
+                1.0,
+                egui_shell::theme::Theme::canvas_selection_ink(ui.ctx()),
+            ),
             egui::StrokeKind::Middle,
         );
     }
@@ -476,7 +474,7 @@ pub(super) fn draw(
             preview,
             page,
             map,
-            ui.visuals().selection.stroke.color,
+            egui_shell::theme::Theme::canvas_selection_ink(ui.ctx()),
             // ★ The scale is DERIVED by mapping a unit page vector, not read
             // off the mapping's private zoom. `coords`' standing rule is that a
             // coordinate is produced by exactly one conversion in exactly one
@@ -499,7 +497,10 @@ pub(super) fn draw(
     if let Some(segments) = f.dimension_preview
         && let Some(page) = doc.pages.get(page_index)
     {
-        let stroke = egui::Stroke::new(1.5, ui.visuals().selection.stroke.color);
+        let stroke = egui::Stroke::new(
+            1.5,
+            egui_shell::theme::Theme::canvas_selection_ink(ui.ctx()),
+        );
         for (a, b) in segments {
             let (Some(sa), Some(sb)) = (
                 crate::canvas::measure::page_to_screen(*a, page, map),
@@ -527,7 +528,7 @@ pub(super) fn draw(
         && let Some(screen) = crate::canvas::measure::page_to_screen(candidate.point, page, map)
     {
         let colour = crate::canvas::snap::snap_indicator_tint(ui.ctx())
-            .unwrap_or_else(|| ui.visuals().selection.stroke.color);
+            .unwrap_or_else(|| egui_shell::theme::Theme::canvas_selection_ink(ui.ctx()));
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
             //
@@ -944,5 +945,5 @@ fn draw_anchors(
             }
         }
     }
-    overlay::draw_handles(painter, ui.visuals(), map, &handles, &points);
+    overlay::draw_handles(painter, map, &handles, &points);
 }

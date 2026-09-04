@@ -199,3 +199,62 @@ Inkscape use for the same command is intended and is what makes a ribbon legible
 to somebody arriving from those tools; asset-level copying is forbidden outright
 and none occurred.
 
+
+---
+
+## ★★ Postscript, same day: five of the thirty-six had ROLE homes rather than command homes, and only one of them was wired
+
+The audit found homes for `expand`, `collapse`, `lock`, `put-down` and
+`wheel-flip` in panels and on the status bar rather than in the command
+registry. Looked at individually, four of the five turn out to be **restyles**
+under this document's own rule, and one is a real gap:
+
+| Key | Home | Verdict |
+|---|---|---|
+| `lock` | `panels/layers.rs` — the `/Locked` row | **WIRED.** A genuine gap. |
+| `expand` / `collapse` | the bookmark tree's disclosure triangles | Deferred — restyle. |
+| `put-down` | the Tool panel's "put down" button | Deferred — a text button by design. |
+| `wheel-flip` | the status bar's flip-pages toggle | Deferred — awaits an operator ruling. |
+
+**`lock` closes a defect the code already complains about.** `panels/layers.rs`
+carries a comment saying this row's *"whole problem is that it looks broken"* —
+a check box that will not move, whose reason (§12.5.3 `/Locked`, Table 101) is
+available only on hover. `on_disabled_hover_text` was as far as that fix could
+go, and a tooltip is a thing the operator must already suspect something to go
+looking for. A padlock states the reason before the pointer arrives. Drawn only
+on locked rows (R9: an absent condition renders nothing — a column of open
+padlocks would be noise the eye must filter to find the one that matters), and
+in `text_muted` rather than the accent, because `/Locked` is the producer's
+recorded intent and not a state of the application.
+
+**The other three are restyles, and this document's rule says defer.** The
+bookmark triangles are `⏴⏵⏶⏷` from a face the coverage table records as
+supplied, chosen under a written rule — *two glyphs that mean two states of one
+control must come from one face, or a substitution box and a state are
+indistinguishable*. Replacing them would overturn that, for no reported defect.
+`put-down` is a labelled button in a panel that is labelled by design.
+
+**`wheel-flip` is the one to revisit**, and only the operator can. The review's
+Part B asks for a glyph on **every** status-bar control — Select, Find, the four
+fits, zoom, the page stepper and this toggle — which is a coherent proposal and
+a different decision from adopting one glyph. It is listed in
+`SHELL_LAYOUT_PROPOSAL.md`, not decided here.
+
+⇒ Four assets and four `Icon` variants are therefore present and unclaimed. That
+is the shape `icons/assets/PROVENANCE.md` already blesses (*"the asset stays in
+the directory — deleting his drawing because a button went away is not ours to
+do"*), and `Icon::EditObjects` is the standing precedent. Nothing renders a
+placeholder; the cost is four enum variants that the catalogue's own tests
+still hold to every rule.
+
+### One thing worth looking at, found by looking
+
+The four Save commands now read, left to right: a **rounded square with a bar**,
+then three **floppy disks** with different interiors. `save-as`, `save-copy` and
+`save-compact` were drawn as a family — one shared body, one interior difference
+each — and `save.svg` predates them and is not that body. The family grammar is
+right and `Save` is now the odd member of it.
+
+Not fixed, deliberately: `save.svg` is the operator's own art on the most-used
+control in the application, and redrawing it to match three new siblings is a
+change he should see before it ships rather than after.

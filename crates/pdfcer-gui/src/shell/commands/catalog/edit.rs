@@ -22,6 +22,76 @@
 //! project keeps finding: **a reason that was true when written, is checked by
 //! nobody, and outlives what made it true.**
 //!
+//! ## ★★★ The 2026-09-04 icon pass — this band stops drawing one picture for
+//! several controls
+//!
+//! Until this date the Edit tab carried **two glyph collisions**, and neither
+//! was an economy. Both were the shared-key convention applied where it does
+//! not hold.
+//!
+//! * **The five form-field placers were one glyph.** `form-field` belongs to
+//!   `edit.form_text_field`; `edit.form_check_box`, `edit.form_radio_button`,
+//!   `edit.form_choice` and `edit.form_push_button` each named it as well.
+//!   Those five sit in ONE ribbon group, drawn side by side — so the result
+//!   was five different words under five identical pictures, and the thing the
+//!   picture was supposed to be showing is precisely the field TYPE that
+//!   distinguishes them.
+//! * **The three redaction commands were one glyph.** `edit.redact` arms a
+//!   marking tool, `edit.redact_selection` marks what is already picked, and
+//!   `edit.redact_apply` destroys content irreversibly. Three verbs, not one
+//!   verb over three operands.
+//!
+//! Two further commands in this band had no picture at all, each by a refusal
+//! argued in prose rather than inherited: `edit.reflow_block` and
+//! `edit.attachments`.
+//!
+//! ⇒ All of it is settled by one event — the **thirty-six glyphs adopted from
+//! the outside review of 2026-09-03**, landed on 2026-09-04; see
+//! `crate::icons::assets`' batch note for the provenance, which
+//! `icons/assets/PROVENANCE.md` is unchanged by. Six keys break a borrow
+//! (`check-box`, `radio-button`, `drop-down`, `push-button`,
+//! `redact-selection`, `apply-redactions`) and two discharge a refusal
+//! (`reflow`, `attachment`).
+//!
+//! ★ `edit.select_all`'s refusal is **untouched**, deliberately. It is refused
+//! on the ground that Select All has no conventional glyph in any comparable
+//! program and that a marquee would say "rubber band" — the gesture the
+//! command exists to replace — which is a reason no supply of art discharges.
+//! The batch drew nothing for it and this pass claims nothing about it.
+//!
+//! ⇒ The two refusals are **discharged, not deleted**. Each paragraph below is
+//! rewritten in place to say what spent it and to keep the part that outlives
+//! it: which neighbouring glyph the control must never be redrawn to resemble.
+//! That constraint is the whole reason those paragraphs are still here — it is
+//! exactly what a later "make this group look consistent" pass would break,
+//! and by then the refusal that recorded it would be gone.
+//!
+//! ★★ **This changes an arithmetic that lives elsewhere.** From this band
+//! alone the icon-coverage split moves by **+2 named, −2 refused**, which
+//! `super::super::tests::the_icon_coverage_split_adds_up_to_the_registry`
+//! pins as two literals. Those literals are not this file's to move, and the
+//! same batch is being wired across other bands concurrently, so the number is
+//! the coordinating session's to settle once — noted here so the failure reads
+//! as expected rather than as a surprise.
+//!
+//! ### ★ One correction this pass was asked to make and must not
+//!
+//! The instruction for this work stated that THIS header calls the four form
+//! tools *"distinguishable only by icon and tooltip"*, and asked that the
+//! sentence be made true. **It is not in this file, and the sentence that does
+//! exist is about something else.** `crate::shell::manifest`'s `edit` header
+//! and `crate::text::commands`' header both record that the salvage source's
+//! three content buttons were labelled `Aa`, `I⁺ Aa` and `Obj`, that the first
+//! two returned the *same string literal*, and that they were therefore *"two
+//! adjacent buttons distinguishable only by icon and tooltip"*. That is a
+//! statement about **labels**, about `edit.text` and `edit.add_text`, and the
+//! renames those same headers describe — **Edit text**, **Add text**, **Edit
+//! objects** — already answered it. It is not about the form group, it needs
+//! no correction from this pass, and both files that carry it belong to other
+//! owners. Recorded rather than silently skipped, because *"the header already
+//! says so"* is otherwise a claim the next reader has to re-derive from
+//! scratch.
+//!
 //! ## What is here, and what is not
 //!
 //! The `Command` entries and the argument for each one's label, tooltip,
@@ -54,7 +124,64 @@ pub(super) fn band() -> Vec<Command> {
         // (`mode.edit_content`, see `app::conditions`). Adding a second,
         // enable-time gate would be a duplicate rule that can disagree with the
         // first, which is the shape `conditions`' own header argues against.
-        command("edit.reflow_block", t::edit_reflow_block(), 406).enabled_when("doc.pages"),
+        //
+        // ★★★ **The no-icon refusal is DISCHARGED, 2026-09-04**, by a glyph
+        // drawn for this role and adopted from the outside review of
+        // 2026-09-03. It is not withdrawn and it was not wrong; it is spent,
+        // and what spent it is written here so nobody has to reconstruct it
+        // from a diff.
+        //
+        // The refusal was recorded at the registration count in
+        // [`super::super::tests::the_icon_coverage_split_adds_up_to_the_registry`],
+        // in the note that moved the refused literal 18 → 19 on 2026-08-28:
+        //
+        // > `edit.reflow_block` refuses a glyph. Its three neighbours in the
+        // > Edit ▸ Content group carry one … the operator's own art is the only
+        // > art this build ships, and *"re-wrap this paragraph"* has no
+        // > conventional glyph to borrow — Word gives it a menu line, not a
+        // > picture. A home-made pilcrow-with-arrows would be a symbol nobody
+        // > has been taught.
+        //
+        // ★ **Two claims, and they are spent separately** — which matters,
+        // because only the first is a supply objection and only the first is
+        // discharged by art merely existing.
+        //
+        // 1. *Supply.* Ends with the batch. The glyph was drawn for THIS role,
+        //    from outside, in the directory's own style contract, so
+        //    `icons/assets/PROVENANCE.md` stays true and no machine's hand is
+        //    in it. This is the same route `file.save_compacted`'s refusal
+        //    describes, and it is the route that refusal named as the remedy.
+        // 2. *Convention.* Answered by WHICH mark was chosen, not by the art
+        //    existing, and [`crate::icons::Icon::Reflow`] is where that
+        //    argument belongs: `reflow.svg` is **not the pilcrow the refusal
+        //    rejected**. It is three naked rules, the third stopping short,
+        //    with the wrap arrow hooking down from the right margin and back
+        //    to the left — the carriage return every text editor draws for
+        //    word wrap, which is the one mark for this idea an operator HAS
+        //    been taught. The refusal said no conventional glyph existed to
+        //    borrow; the claim on the record now is that this is one, and it
+        //    is the artist's claim rather than this registration's invention.
+        //
+        // ★★ **What survives the refusal, and is why this paragraph is still
+        // here.** A glyph of bare horizontal rules sits one small edit away
+        // from two others, and both near misses are named by the variant:
+        //
+        // * [`crate::icons::Icon::ManageList`] — `list`, which this very band
+        //   uses two registrations below — puts a small square beside each
+        //   rule, because a list is an inventory of NAMED things. These rules
+        //   must keep nothing beside them: they are prose.
+        // * [`crate::icons::Icon::Properties`] and [`crate::icons::Icon::Text`]
+        //   wrap their rules in a page frame, because they mean "a document".
+        //   This one must stay UNFRAMED: what it acts on is a paragraph, not a
+        //   file.
+        //
+        // ⇒ Adding markers, or adding a sheet outline "so the Content group
+        // matches", is precisely the edit a later consistency pass makes on
+        // sight — and either one silently turns this button into a different
+        // button's picture.
+        command("edit.reflow_block", t::edit_reflow_block(), 406)
+            .with_icon("reflow")
+            .enabled_when("doc.pages"),
         // ★★★ `edit.objects` was HERE until 2026-08-31, and it is DELETED
         // rather than repointed. `OPERATOR_REQUESTS.md` row O69, the operator:
         // *"We shouldn't even need an Edit Objects button."*
@@ -84,20 +211,57 @@ pub(super) fn band() -> Vec<Command> {
         command("edit.insert_image", t::edit_insert_image(), 410)
             .with_icon("insert-image")
             .enabled_when("doc.pages"),
-        // ★ **No icon**, and the refusal is argued rather than inherited. The
-        // conventional glyph for this is a paperclip; `icons/assets/PROVENANCE.md`
-        // makes that directory the operator's own work, so the alternative to
-        // shipping none is not "draw one" but "ask him for one" — the same
-        // judgment `file.save_compacted` and `edit.reflow_block` reached. A
-        // home-made paperclip beside four hand-drawn glyphs is the mismatch a
-        // borrowed icon set exists to avoid, and the label says it plainly.
+        // ★★★ **The no-icon refusal is DISCHARGED, 2026-09-04**, by a glyph
+        // drawn for this role and adopted from the outside review of
+        // 2026-09-03. The refusal stood in this spot and read:
+        //
+        // > **No icon**, and the refusal is argued rather than inherited. The
+        // > conventional glyph for this is a paperclip;
+        // > `icons/assets/PROVENANCE.md` makes that directory the operator's
+        // > own work, so the alternative to shipping none is not "draw one"
+        // > but "ask him for one" — the same judgment `file.save_compacted`
+        // > and `edit.reflow_block` reached. A home-made paperclip beside four
+        // > hand-drawn glyphs is the mismatch a borrowed icon set exists to
+        // > avoid, and the label says it plainly.
+        //
+        // ★ **Read it again and notice what it never argued: nothing in it is
+        // against a paperclip.** It names the paperclip as the RIGHT glyph and
+        // refuses only pdfcer's standing to invent one. That is a supply
+        // objection carrying its own remedy — *"ask him for one"* — and the
+        // asking has happened. So it is spent rather than overturned, and
+        // `attachment.svg` is the very glyph it asked for: one open spiral of
+        // three concentric arcs with two free ends, in the directory's own
+        // style contract, leaving `PROVENANCE.md` true.
+        //
+        // ★★ **What survives it.** Two neighbours this glyph must never be
+        // redrawn toward, both named by [`crate::icons::Icon::Attachment`]:
+        //
+        // * [`crate::icons::Icon::Combine`] — `link.svg`, the chain, and the
+        //   near miss that actually matters, because both pictures mean *a
+        //   thing fastened to a thing*. The chain is two CLOSED interlocking
+        //   rings, symmetric, with no free ends: two files becoming one. The
+        //   clip is a SINGLE open curve, and the openness IS the meaning — an
+        //   attachment is carried separably and can be taken out again, which
+        //   is exactly what the panel behind this button offers (attach one,
+        //   save one out, remove one). Closing the curve for optical balance
+        //   would make the picture say the opposite of what the command does.
+        // * [`crate::icons::Icon::ShapeInk`] — the set's other single unbroken
+        //   stroke, told apart by REGULARITY rather than by shape:
+        //   `shape-ink.svg` is deliberately aperiodic with no baseline because
+        //   it means "the path your hand took"; these arcs are concentric and
+        //   evenly nested, machined rather than drawn.
+        //
+        // ⇒ The `doc.open` argument below is untouched by any of this, and is
+        // still what decides when the control is live.
         //
         // ★ `doc.open`, not `doc.pages`, and the difference is real: a
         // document-level attachment lives in the catalogue and belongs to no
         // page, so a document with an empty page tree can still carry files and
         // still be attached to. Gating on pages would hide the panel for the one
         // document whose attachments are all it has.
-        command("edit.attachments", t::edit_attachments(), 411).enabled_when("doc.open"),
+        command("edit.attachments", t::edit_attachments(), 411)
+            .with_icon("attachment")
+            .enabled_when("doc.open"),
         // `edit.copy_page_text` and `edit.copy_document_text` were here, tokens
         // 420 and 421. They are now `file.copy_page_text` and
         // `file.copy_document_text` in File ▸ Export — operator decision,
@@ -126,17 +290,92 @@ pub(super) fn band() -> Vec<Command> {
         // prints, and an old trace of a "create field" must not read as
         // whichever type took its number — the same rule the comment above
         // applies to 430.
+        //
+        // ★★★ **AND FOUR OF THE FIVE STOP BORROWING — 2026-09-04.** Until
+        // today every one of them named `form-field`. That is one ribbon
+        // group, drawn side by side: five controls, five different words, one
+        // identical picture.
+        //
+        // A shared key IS this catalogue's convention where two controls have
+        // the same SUBJECT and are separated by something else the operator
+        // can see — `edit.paste_duplicate` beside `paste`, the three page
+        // clipboard commands, `format.select_form` beside
+        // `format.unshare_form`. It is the wrong convention here, and the
+        // reason is exact: those pairs are told apart by a tab or by a verb,
+        // and these five are told apart by **the field type the picture was
+        // supposed to be showing**. The one distinction that mattered was the
+        // one the glyph erased.
+        //
+        // ⇒ It is the same fault the text-markup pass refused when it declined
+        // to draw underline, strikeout and squiggly as three copies of
+        // `shape-highlight`. That pass was right; this group was the
+        // counter-example nobody went back for.
+        //
+        // ★ `form-field` is NOT re-pointed. [`crate::icons::Icon::FormField`]
+        // belongs to `edit.form_text_field`, which keeps it; what changed is
+        // that the other four stopped naming another command's glyph.
+        //
+        // ★★ **Each new glyph has a named near miss, and the distinctions are
+        // load-bearing.** They are repeated here rather than left in the icon
+        // catalogue alone, because THIS is where somebody stands when he
+        // decides the group ought to look more consistent:
+        //
+        // * `check-box` — a tick ENCLOSED IN A BOX, and the box is the
+        //   subject: it names a field type, not an accept verb. The variant
+        //   asks that the tick never be lifted out of this file to serve as a
+        //   bare accept glyph, and that ask holds however the `measure.finish`
+        //   and `markup.finish` refusals are eventually settled — those are
+        //   other registrations' to settle, and the same batch carries a
+        //   separate `check` glyph for them. Its other near miss is
+        //   [`crate::icons::Icon::Signatures`], which is forbidden from being
+        //   a checkmark at all (a checkmark reads as VALIDATED, and pdfcer
+        //   verifies nothing); that one is the mark itself on a rule, with no
+        //   frame, where this is a box first and a mark second.
+        // * `radio-button` — two circles about one centre and nothing else,
+        //   which is what separates it from the set's other circles
+        //   ([`crate::icons::Icon::Search`] and the two zooms), each of which
+        //   is a circle with a stem running off it. ★★ The inner mark is a
+        //   RING, not a filled disc, even though a real radio button's
+        //   selected state is filled: [`crate::icons::Icon::Redact`]'s fill is
+        //   the set's one semantic exception AND the icon pipeline's only
+        //   coverage of the fill path, so borrowing it here would cost both.
+        // * `drop-down` — the delicate pair is
+        //   [`crate::icons::Icon::ChevronDown`], which is not another
+        //   command's art but the ribbon's own split-button disclosure marker,
+        //   so it can appear on the chrome of a neighbouring control in this
+        //   very band. The FRAME is the whole cue: a bare chevron means "this
+        //   control opens something below it"; a chevron inside a field
+        //   rectangle means "the control IS a list". The box must never be
+        //   dropped for optical balance. Against `form-field` one item to its
+        //   left: a caret means "type here", a value line with a chevron on it
+        //   means "pick from these".
+        // * `push-button` — rounded on all four corners and standing on a base
+        //   line, against the square-cornered `form-field` and `drop-down`,
+        //   because a field is a hole in the page and a button is an object on
+        //   top of it. Its other collision is
+        //   [`crate::icons::Icon::Stamp`], which shares a base line at the
+        //   same height and separates on proportion alone: stamp is a tall
+        //   stack read vertically, this is a wide slab.
+        //
+        // ★ The `drop-down` key is named for the LABEL and not for the command
+        // id — `edit.form_choice` ships as "Drop-down" — because an icon key
+        // answers to what the operator reads.
+        //
+        // ★ And the greying argument below cuts the same way rather than
+        // against it: a control that spends time dimmed needs its own picture
+        // MORE, not less. Five identical glyphs of which one is grey reads as
+        // a rendering fault, not as an unavailable capability.
         command("edit.form_text_field", t::edit_form_text_field(), 434)
             .with_icon("form-field")
             .enabled_when("doc.pages"),
         command("edit.form_check_box", t::edit_form_check_box(), 435)
-            .with_icon("form-field")
+            .with_icon("check-box")
             .enabled_when("doc.pages"),
         command("edit.form_radio_button", t::edit_form_radio_button(), 436)
-            .with_icon("form-field")
+            .with_icon("radio-button")
             .enabled_when("doc.pages"),
         command("edit.form_choice", t::edit_form_choice(), 437)
-            .with_icon("form-field")
+            .with_icon("drop-down")
             .enabled_when("doc.pages"),
         // ★★ GREYED, ALWAYS, and deliberately not absent — the operator's
         // ruling of 2026-08-26: *"leave push buttons on the ribbon but greyed
@@ -163,7 +402,7 @@ pub(super) fn band() -> Vec<Command> {
         // is the chord every program in the world uses.
         command("edit.select_all", t::edit_select_all(), 402).enabled_when("doc.pages"),
         command("edit.form_push_button", t::edit_form_push_button(), 438)
-            .with_icon("form-field")
+            .with_icon("push-button")
             .enabled_when("forms.push_button_runnable"),
         // `list` is shared with `measure.manage_groups`, and the family it
         // belongs to is one of ACTION rather than of subject: form fields and
@@ -208,6 +447,53 @@ pub(super) fn band() -> Vec<Command> {
         command("edit.redact", t::edit_redact(), 440)
             .with_icon("redact")
             .enabled_when("doc.pages"),
+        // ★★★ **THE REDACTION FAMILY STOPS BEING ONE PICTURE — 2026-09-04.**
+        // All three of these named `redact` until today, and the note that
+        // recorded the last of those borrows — the 109 → 110 entry of
+        // 2026-08-30 in
+        // [`super::super::tests::the_icon_coverage_split_adds_up_to_the_registry`]
+        // — defended it in one sentence: *"Three controls about one operation,
+        // told apart by their labels."*
+        //
+        // ⇒ That is the sentence this pass falsifies, and the reason is one
+        // line: **the redaction family is not one verb over three operands —
+        // it is arm, mark, obliterate.** `edit.redact` arms a tool and changes
+        // nothing in the file. `edit.redact_selection` adds a `/Redact`
+        // annotation over what is already picked, and removes nothing.
+        // `edit.redact_apply` destroys content and does not come back. Three
+        // different promises, two and three rows apart on one tab, is the most
+        // expensive collision this set could carry, because the price of the
+        // wrong press is not a wasted click.
+        //
+        // ★ Note the shape of the mistake, because it is this file's recurring
+        // one: the borrow was justified by what the three commands are ABOUT
+        // rather than by what they DO — the same slip the deleted
+        // `edit.objects` tooltip made when it was written from the button's
+        // NAME instead of its behaviour.
+        //
+        // ★★ **What each new glyph keeps, and what separates it.** Both halves
+        // are load-bearing and both are the artist's, not this registration's:
+        //
+        // * `redact-selection` keeps the solid bar — the family mark — and
+        //   separates on a DASHED marquee around it, this shell's vocabulary
+        //   for "a selection" and the detail that resolves first at 16 px. It
+        //   carries none of `redact`'s two text rules above and below, because
+        //   a selection need not be text. The dash is not decoration:
+        //   [`crate::icons::svg`] says in its own words that without it this
+        //   glyph *is* `redact`, which is why `stroke-dasharray` stopped being
+        //   an ignored attribute.
+        // * `apply-redactions` is the bar with a tick struck against it — the
+        //   mark is no longer a proposal, it has been carried out — and is
+        //   deliberately UNFRAMED where [`crate::icons::Icon::Redact`] wraps
+        //   its bar in a page outline. Arming puts a mark ON a page; applying
+        //   is done to the whole document, so the bar floats free.
+        //
+        // ⇒ Against each other the difference is tick-versus-enclosure, the
+        // strongest pairwise cue available at this size. A later pass that
+        // "unified the family" by restoring the page frame to either one would
+        // undo exactly that, and would do it to the one command in this band
+        // whose mistake cannot be undone.
+        //
         // ★★ The THIRD marking route — O60, 2026-08-30. Gated on
         // `selection.any`, which is exactly its operand: it marks what is
         // selected and there is nothing to mark without one.
@@ -219,10 +505,10 @@ pub(super) fn band() -> Vec<Command> {
         // `edit.redact_apply` is where that second question belongs and where
         // the engine already asks it.
         command("edit.redact_selection", t::edit_redact_selection(), 442)
-            .with_icon("redact")
+            .with_icon("redact-selection")
             .enabled_when("selection.any"),
         command("edit.redact_apply", t::edit_redact_apply(), 441)
-            .with_icon("redact")
+            .with_icon("apply-redactions")
             .enabled_when("doc.pages"),
         // Undo and redo live on the QAT alone. Their predicates are the
         // canonical example of "greying is for temporarily unavailable":

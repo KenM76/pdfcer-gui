@@ -400,7 +400,41 @@ mod tests {
         // click reaches — and `icons/assets/PROVENANCE.md` makes that
         // directory the operator's own drawing, so inventing art for a control
         // he asked for this afternoon would be putting a machine's hand in it.
-        assert_eq!(named, 107, "commands naming an icon");
+        // ★★★ 107 → 119 on 2026-09-04, in ONE move and deliberately so.
+        //
+        // Twelve commands gained a key from the icon batch adopted that day
+        // (`GLYPH_ADOPTION.md`): nine whose refusal was written out at their
+        // registration — `file.new`, `file.new_from_template`, `file.ocr`,
+        // `file.save_as`, `file.save_copy`, `file.save_compacted`,
+        // `file.recent`, `edit.attachments`, `edit.reflow_block` — plus
+        // `measure.finish`, `markup.finish` and `view.close_other_documents`.
+        //
+        // ★ Eleven MORE controls changed picture in the same pass and are
+        // invisible here, which is worth stating so a reader does not conclude
+        // the pass was small. They were already counted as `named` because they
+        // named a BORROWED glyph: four form-field tools sharing `form-field`,
+        // four measure tools sharing `measure` (a five-way share — Linear keeps
+        // it as its documented owner), two redaction verbs sharing `redact`,
+        // two copy-text commands sharing `copy`, two font commands sharing
+        // `fonts`, `pages.merge_into` on `combine`, `measure.manage_groups` on
+        // `list`, `tools.render_diagnostics` on `tools`, and previous/next
+        // DOCUMENT on the previous/next PAGE chevrons.
+        //
+        // ★★ **This counter cannot see a borrow, and that is the interesting
+        // part.** Eight controls rendered as two pictures for weeks with this
+        // assertion green, because `icon.is_some()` is true of a control
+        // wearing someone else's art. The gap is closed elsewhere and on
+        // purpose: `icons::tests::no_two_icons_render_as_the_same_picture`
+        // compares the 16 px RASTERS, which is the only question that can tell
+        // "has a glyph" from "has a glyph of its own".
+        //
+        // ★ Moved as ONE edit rather than twelve. Three concurrent sessions
+        // wired three bands of the ribbon on the same afternoon and each
+        // correctly refused to touch this literal, because a shared counter
+        // bumped three times in a race records the last writer's arithmetic and
+        // none of the reasoning. The bands reported their deltas and the
+        // coordinating session settled it once.
+        assert_eq!(named, 119, "commands naming an icon");
         // ★ 12 → 17 on 2026-08-27: the Format ▸ Font group's five commands
         // all refuse a glyph, and they refuse it for one reason argued once at
         // their registration. Word draws `B` and `I` as glyphs; this build has
@@ -445,8 +479,36 @@ mod tests {
         // Save-As glyph — Word and Acrobat both present it as words — and every
         // reuse would mislead: the disk of `save` says "save", which is the
         // sibling command this one must not be confused with.
+        // ★★★ 22 → 10 on 2026-09-04. Twelve of the refusals argued above were
+        // DISCHARGED by the icon batch, and "discharged" is the right word for
+        // eleven of them rather than "reversed": each named, correctly, a reuse
+        // that would have misled, and each ended with some version of *"the
+        // alternative is not draw one but ASK HIM FOR ONE"* — because
+        // `icons/assets/PROVENANCE.md` declares that directory the operator's
+        // own art and a machine-drawn substitute would make the note false.
+        //
+        // The asking happened. Every constraint those refusals named SURVIVES:
+        // the new art was drawn to stay distinguishable from exactly the
+        // neighbours they warned about, and each registration now records which
+        // ones. **What ended was the supply problem, not the argument.**
+        //
+        // ★ The paragraphs above are kept rather than deleted. A refusal that
+        // was right for six weeks and then stopped applying is a more useful
+        // thing for the next reader to find than a gap where it used to be —
+        // and two of them have NOT been discharged and must not be:
+        //
+        //   · `view.zoom_actual` — argued against BY NAME in the icon ui-spec
+        //     §3.2. No supply of art touches that.
+        //   · `edit.select_all` — refused because no comparable program draws
+        //     one and a marquee glyph would say "rubber band", which is the
+        //     gesture the command exists to replace when it cannot reach. The
+        //     2026-09-03 sheet did offer a `select-all` marquee. It was
+        //     deliberately not adopted, for this paragraph's reason.
+        //
+        // The five Format ▸ Font refusals also stand: the sheet offered no
+        // `B`/`I` art and the argument was never only about supply.
         assert_eq!(
-            refused, 22,
+            refused, 10,
             "commands with no icon, each argued at its registration"
         );
         // Each refusal is argued at its own registration and listed in the

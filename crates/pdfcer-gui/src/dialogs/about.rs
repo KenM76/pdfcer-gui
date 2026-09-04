@@ -34,6 +34,34 @@
 //! That distinction is now a property of the module rather than of this file;
 //! see [`super::DialogsState::show`].
 //!
+//! ## ⚠ What the 2026-09-03 outside review got RIGHT and what it got WRONG
+//!
+//! Both halves are recorded here because they arrived in one sentence, and
+//! adopting the whole sentence would have undone an operator decision.
+//!
+//! **Right, and now fixed (row A11):** the headline read `Version 0.1.0` in the
+//! build published as **v0.5.0**. It was drawing `CARGO_PKG_VERSION`, which is
+//! pinned at `0.1.0` by O109/O110 and is not a release version at all. It now
+//! draws the **git tag**, through `build.rs` — see [`version_label`].
+//!
+//! **Wrong, and deliberately NOT adopted:** the same finding went on to say the
+//! window title *"shows the minute, one or the other"* — i.e. that About and the
+//! title bar disagree about precision and one should be harmonised to the other.
+//!
+//! ★★ The title shows the minute **because the operator asked for the minute**.
+//! O101, 2026-09-02: *"also in the next release add the local compilation time
+//! to the top bar at the end of the date you added."* He was closing a loop his
+//! own bug reports opened — **two backlog rows had already been closed by "you
+//! were running an old build"** (O85, O87) — and on a day with several publishes
+//! a date alone cannot tell two builds apart. See `text::doctabs::build_day`
+//! for the rule and the zone subtlety.
+//!
+//! ⇒ These are not two renderings of one value that drifted. The title answers
+//! *is this the build I just installed*, to the minute, from `PDFCER_BUILD_TIME`.
+//! This window answers *what is this program*, which is a release version, from
+//! a tag. **Do not "harmonise" them.** Anything that makes the title coarser is
+//! a regression against a recorded instruction.
+//!
 //! ## Why it pushes no `Action`
 //!
 //! [`super::DialogsState`]'s header gives the rule: the action funnel exists
@@ -128,10 +156,15 @@ impl AboutDialog {
         let theme = Theme::of(ui.ctx());
 
         ui.label(egui::RichText::new(t::product()).heading());
-        // The version is read from the crate manifest at compile time rather
-        // than written in the catalog, so the two cannot drift. The *word* in
-        // front of it is copy and lives in `text::about`.
-        ui.label(t::version_line(env!("CARGO_PKG_VERSION")));
+        // ★ The RELEASE version, from the git tag by way of `build.rs` — not
+        // the crate manifest. See [`version_label`] for the whole argument;
+        // the short form is that `CARGO_PKG_VERSION` is `0.1.0` on purpose and
+        // this line read `Version 0.1.0` in the build shipped as v0.5.0.
+        ui.label(version_label(
+            env!("PDFCER_RELEASE_VERSION"),
+            env!("PDFCER_RELEASE_DISTANCE"),
+            env!("PDFCER_RELEASE_MODIFIED") == "1",
+        ));
         ui.add_space(6.0);
         ui.label(t::summary());
         ui.add_space(6.0);
@@ -186,6 +219,72 @@ impl AboutDialog {
     }
 }
 
+/// **Which of the three version sentences this build is entitled to.**
+///
+/// Takes the three facts `build.rs` derives — `PDFCER_RELEASE_VERSION`,
+/// `PDFCER_RELEASE_DISTANCE`, `PDFCER_RELEASE_MODIFIED` — and returns the one
+/// line that is true about them. Every word it returns comes out of
+/// [`crate::text::about`]; the only thing decided here is *which*.
+///
+/// # ★★★ The defect this replaced, because it is instructive
+///
+/// This line used to be `t::version_line(env!("CARGO_PKG_VERSION"))`, and its
+/// old comment said the crate manifest was the right source *"so the two
+/// cannot drift"*. The reasoning was sound and the premise was false: there
+/// were never two numbers to keep together. `Cargo.toml` is pinned at `0.1.0`
+/// by a recorded decision — the crate is versioned by the pdfcer workspace it
+/// folds **into**, and O109 and O110 both state that bumping it *"would have
+/// contradicted a recorded decision to make two numbers agree that are not the
+/// same number"* — while the thing an operator calls a release is a **git
+/// tag**, `v0.1.0` through `v0.5.0`. So the headline reported the manifest
+/// faithfully and told the reader something untrue, through five releases, in
+/// the one window whose job is to say what they are running (review row A11).
+///
+/// ⚠ The decision in O110 is about `Cargo.toml`. It was never a decision about
+/// what About displays, and this function is the place that distinction now
+/// lives. **Do not resolve the difference by bumping the manifest.**
+///
+/// # The three cases
+///
+/// | Facts | Line |
+/// |---|---|
+/// | version, distance `0`, clean | `Version 0.5.0` |
+/// | version, any distance or a modified tree | `Version 0.5.0, plus 23 commits — not the released build` |
+/// | no version | `No released version — the build details below identify this program.` |
+///
+/// # ★★ Why the third case says a sentence instead of nothing
+///
+/// Because it is a **report**, not a control, and the same argument
+/// [`crate::text::about::component_absent`] makes for `iccce` applies: an
+/// absent fact stated is more useful than a gap, and a gap where a version
+/// used to be is indistinguishable from a layout fault. The rule R9 actually
+/// imposes is that it must not be a **stub** — and the sentence contains no
+/// number, no `0.0.0`, and no fallback to the manifest, which is asserted by
+/// `tests::the_unavailable_case_invents_no_number` rather than left to
+/// good intentions.
+///
+/// # Why `distance` is a `&str` and parsed here
+///
+/// It arrives as one, because `cargo:rustc-env` carries only strings. It is
+/// parsed rather than passed on so that the *shape* of the fact — a count —
+/// is honoured in the type the catalog receives, and an unparseable value
+/// falls to `0`, which combined with `modified` still cannot produce a false
+/// `Version 0.5.0`: distance `0` on a clean tree is the only route to the
+/// bare line, and an unparseable distance means `git describe` returned
+/// something this build script did not recognise, in which case
+/// `PDFCER_RELEASE_VERSION` is empty too and the third case has already won.
+fn version_label(version: &str, distance: &str, modified: bool) -> String {
+    if version.is_empty() {
+        return t::version_unreleased().to_owned();
+    }
+    let commits: u32 = distance.parse().unwrap_or(0);
+    if commits == 0 && !modified {
+        t::version_line(version)
+    } else {
+        t::version_line_after(version, commits, modified)
+    }
+}
+
 /// **When this was built, and what is inside it.**
 ///
 /// Every value here arrives through `env!` from `build.rs`, so none of it can
@@ -220,12 +319,22 @@ fn build_block(ui: &mut egui::Ui, theme: &Theme) {
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed in the UI.
         format!(
-            "about-build stamp={:?} rev={:?} engine={:?} engine_rev={:?} iccce={:?}",
+            "about-build stamp={:?} rev={:?} engine={:?} engine_rev={:?} iccce={:?} \
+             release={:?} release_distance={:?}",
             env!("PDFCER_BUILD_TIME"),
             env!("PDFCER_GUI_REV"),
             env!("PDFCER_ENGINE_VERSION"),
             env!("PDFCER_ENGINE_REV"),
             env!("PDFCER_ICCCE_VERSION"),
+            // ★ Added with the release version itself, and additive on
+            // purpose: `tools/ui-verify`'s about check reads named keys off
+            // this line and asserts on a fixed list of them, so a new key is
+            // available to a future driven check without disturbing the one
+            // that exists. Traced EMPTY rather than omitted when there is no
+            // release version, for the same reason the stamp is — an absent
+            // key and an unset value would be indistinguishable.
+            env!("PDFCER_RELEASE_VERSION"),
+            env!("PDFCER_RELEASE_DISTANCE"),
         )
     });
     // ★ `.strong()` AND an explicit colour, which is the sanctioned pairing.
@@ -395,6 +504,124 @@ mod tests {
         let stayed_open = dialog.show(&ctx);
         let _ = ctx.end_pass();
         assert!(stayed_open, "a cramped window closed the dialog");
+    }
+
+    // =======================================================================
+    // The version headline (review row A11)
+    // =======================================================================
+
+    /// A clean tree sitting exactly on the tag names the release, bare.
+    ///
+    /// The only state entitled to `Version 0.5.0` with nothing after it.
+    #[test]
+    fn a_build_on_the_tag_names_the_release() {
+        assert_eq!(version_label("0.5.0", "0", false), "Version 0.5.0");
+    }
+
+    /// A build past the tag says so, and does not pass for the release.
+    ///
+    /// ★ The narrower half of A11. `Version 0.1.0` in a v0.5.0 release was the
+    /// loud version of this; `Version 0.5.0` on a build twenty-three commits
+    /// later is the quiet one, and it would tell an operator comparing their
+    /// build against the released one that they match.
+    #[test]
+    fn a_build_past_the_tag_does_not_pass_for_the_release() {
+        let label = version_label("0.5.0", "23", false);
+        assert!(
+            label.contains("0.5.0") && label.contains("23"),
+            "a development build must name both the release it is past and how \
+             far past it is; got {label:?}"
+        );
+        assert_ne!(
+            label,
+            version_label("0.5.0", "0", false),
+            "a build 23 commits past v0.5.0 renders identically to the release itself"
+        );
+    }
+
+    /// An uncommitted change is enough to lose the bare line, at distance 0.
+    ///
+    /// The tag is the release; a tree with edits in it is not, even when the
+    /// commit underneath is exactly the tagged one.
+    #[test]
+    fn a_modified_tree_on_the_tag_is_not_the_release() {
+        let label = version_label("0.5.0", "0", true);
+        assert_ne!(label, "Version 0.5.0");
+        assert!(label.contains("uncommitted"), "got {label:?}");
+    }
+
+    /// ★★★ **With no version available, nothing numeric is drawn.**
+    ///
+    /// This is the assertion that stops the fix regressing into the defect it
+    /// replaced. A tarball with no `.git`, a machine with no `git`, a clone
+    /// with no tags: `build.rs` emits empty strings, and the *only* number
+    /// anywhere in reach at that point is `CARGO_PKG_VERSION` — the number
+    /// that was wrong in the first place. Reaching for it would look like a
+    /// tidy fallback and would reinstate `Version 0.1.0` exactly.
+    ///
+    /// So the property asserted is not "it does not say 0.1.0", which a
+    /// different wrong number would satisfy. It is that the sentence contains
+    /// **no digit at all**.
+    #[test]
+    fn the_unavailable_case_invents_no_number() {
+        let label = version_label("", "", false);
+        assert!(
+            !label.chars().any(|c| c.is_ascii_digit()),
+            "About showed a number when no release version could be derived. \
+             The only numbers in reach there are invented ones — the crate \
+             manifest's {manifest:?}, which is pinned by O110 and is not a \
+             release version, or a literal. Got {label:?}.",
+            manifest = env!("CARGO_PKG_VERSION")
+        );
+        assert!(
+            !label.is_empty(),
+            "an absent release version must be STATED, not left as a gap: a \
+             missing line is indistinguishable from a layout fault"
+        );
+    }
+
+    /// The modified flag cannot resurrect a version that does not exist.
+    ///
+    /// Guards the branch order: the emptiness test has to come first, or a
+    /// dirty tarball build renders `Version , with uncommitted changes`.
+    #[test]
+    fn no_version_beats_every_other_fact() {
+        assert_eq!(version_label("", "7", true), version_label("", "", false));
+    }
+
+    /// **`build.rs` actually emitted the fields, and they are well formed.**
+    ///
+    /// The unit tests above are about the decision; this one is about the
+    /// build input existing at all — a `cargo:rustc-env` line with a typo in
+    /// its name fails no compile and shows up only as a permanently empty
+    /// value, which the decision tests would happily pass on.
+    ///
+    /// Deliberately tolerant of empty: this test must pass in a checkout with
+    /// no tags, which is the state it is asserting the program survives. What
+    /// it refuses is a *malformed* value — a leading `v` that was never
+    /// stripped, a `git describe` suffix that leaked through, a distance that
+    /// is not a number.
+    #[test]
+    fn the_build_script_emitted_a_usable_release_field() {
+        let version = env!("PDFCER_RELEASE_VERSION");
+        let distance = env!("PDFCER_RELEASE_DISTANCE");
+        if version.is_empty() {
+            assert!(
+                distance.is_empty(),
+                "no release version but a distance of {distance:?} — build.rs \
+                 emitted half a fact"
+            );
+            return;
+        }
+        assert!(
+            version.starts_with(|c: char| c.is_ascii_digit()),
+            "the release version is {version:?}; the tag's leading `v` should \
+             have been stripped in build.rs, not shown to an operator"
+        );
+        assert!(
+            distance.bytes().all(|b| b.is_ascii_digit()) && !distance.is_empty(),
+            "the release distance is {distance:?}, which is not a commit count"
+        );
     }
 
     /// The catalog the dialog draws from is not empty.

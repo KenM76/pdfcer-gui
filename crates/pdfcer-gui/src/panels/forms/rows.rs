@@ -118,6 +118,28 @@ pub(super) struct RowContext<'a> {
     /// function of the `Field` it was handed, and that is a property worth
     /// keeping: it is why this module's rules can be unit-tested at all.
     pub doc: Option<&'a OpenDoc>,
+    /// **What the operator is typing into a field ON THE PAGE right now**, as
+    /// `(fully-qualified name, draft)` — see
+    /// [`crate::canvas::forms::live_draft`], which is the one place this is
+    /// decided.
+    ///
+    /// ★★★ The 2026-09 review's row **A12c**: *"the Fill-form panel does not
+    /// update while you type on the page."* Two draft stores, reconciled only
+    /// by a commit, and a commit only on focus loss — so a row sat beside the
+    /// field it describes showing the *previous* value for the whole of a
+    /// typing gesture. [`text_row`] now prefers this over its own draft, which
+    /// is not a synchronisation between two stores but the removal of one of
+    /// them from the answer.
+    ///
+    /// ★★ Asked **once per frame**, in [`super::field_list`], exactly like
+    /// [`Self::page_numbers`] and [`Self::fill_refusal`] and for the same
+    /// reason: it is a fact about the document that is identical for every
+    /// row, and a 400-field form would otherwise read and clone the canvas's
+    /// focus 400 times per frame to learn one field's name.
+    ///
+    /// `None` whenever the page's editor does not hold the keyboard — which
+    /// includes every frame the operator is typing in this panel instead.
+    pub live_canvas_draft: Option<(String, String)>,
     /// Which button's action chooser is open, and what it is set to.
     ///
     /// Held by the panel across frames because a chooser the operator has
@@ -190,7 +212,14 @@ pub(super) fn row(
 
     match (field.field_type, field.button_kind) {
         (Some(FieldType::Text), _) if field.is_rich_text() => rich_text_row(ui, field, out),
-        (Some(FieldType::Text), _) => text_row(ui, field, index, drafts, out),
+        (Some(FieldType::Text), _) => text_row(
+            ui,
+            field,
+            index,
+            mirrored(ctx.live_canvas_draft.as_ref(), fqn),
+            drafts,
+            out,
+        ),
         (Some(FieldType::Button), Some(ButtonKind::Check)) => check_row(ui, field, out),
         (Some(FieldType::Button), Some(ButtonKind::Radio)) => radio_row(ui, field, index, out),
         (Some(FieldType::Choice), _) => choice_row(ui, field, index, out),
@@ -388,18 +417,72 @@ fn rich_text_row(ui: &mut egui::Ui, field: &Field, out: &mut Vec<FormEdit>) {
     }
 }
 
+/// **Is the page's live draft about THIS row?**
+///
+/// `live` is the whole frame's answer — one field, or none
+/// ([`RowContext::live_canvas_draft`]) — and this is the per-row half of the
+/// question: the name has to match, because a live draft for *Address* says
+/// nothing whatever about the *Name* row it is being asked beside.
+///
+/// # ★ A pure function, for the reason [`commit`] is one
+///
+/// The rule it states — *the page wins for the field the page is typing into,
+/// and for no other* — is one line of code and two ways to get it wrong, both
+/// silent: mirror unconditionally and every text row in the form shows one
+/// field's draft; mirror never and A12c is back. Neither is visible in a diff
+/// and neither needs an `egui::Ui` to demonstrate, so it is tested rather than
+/// looked at.
+fn mirrored<'a>(live: Option<&'a (String, String)>, fqn: &str) -> Option<&'a str> {
+    live.filter(|(name, _)| name == fqn)
+        .map(|(_, draft)| draft.as_str())
+}
+
 /// An ordinary `/Tx` field: a draft the operator types into, committed on
 /// focus loss.
+///
+/// `live` is what the operator is typing into this same field **on the page**,
+/// if they are — see [`mirrored`] and [`RowContext::live_canvas_draft`].
 fn text_row(
     ui: &mut egui::Ui,
     field: &Field,
     index: usize,
+    live: Option<&str>,
     drafts: &mut BTreeMap<String, String>,
     out: &mut Vec<FormEdit>,
 ) {
     let fqn = &field.fully_qualified_name;
     let stored = field.value.display_text();
     let draft = drafts.entry(fqn.clone()).or_insert_with(|| stored.clone());
+
+    // ★★★ **THE PAGE WINS WHILE THE PAGE HAS THE KEYBOARD** — the 2026-09
+    // review's row A12c, *"the Fill-form panel does not update while you type
+    // on the page."*
+    //
+    // Two draft stores existed and only a commit reconciled them, so this row
+    // showed the value from before the operator started typing, for as long as
+    // they kept typing — two boxes on screen at once, disagreeing about one
+    // field, with no way for the operator to tell which was the truth.
+    //
+    // ★★ This is an ASSIGNMENT rather than a second store being kept in step.
+    // The row's own draft is simply overwritten with the page's, which means
+    // there is exactly one uncommitted value for this field at any instant and
+    // no reconciliation to get wrong. It is safe because `live` is `Some` only
+    // while the page's editor owns the keyboard (`canvas::forms::live_draft`
+    // checks `egui`'s focus, and `egui` has one focused widget), so this
+    // cannot run on a frame where the operator is typing into the box below.
+    //
+    // ★ Left where it is — after `or_insert_with`, before `/MaxLen` — on
+    // purpose. Before the seeding it would be undone by it; after the
+    // truncation it would smuggle past a limit both surfaces enforce. Here the
+    // mirrored value goes through exactly the same character clamp a typed one
+    // does, which is what keeps the two surfaces' `/MaxLen` behaviour one rule
+    // rather than two.
+    if let Some(live) = live
+        && draft.as_str() != live
+    {
+        draft.clear();
+        draft.push_str(live);
+    }
     let multiline = field.flags.has(FieldFlags::MULTILINE);
     let password = field.flags.has(FieldFlags::PASSWORD);
 
@@ -833,6 +916,28 @@ mod tests {
     fn typing_does_not_commit_until_focus_leaves() {
         assert_eq!(commit(false, "Ann", "Anna"), None);
         assert_eq!(commit(true, "Ann", "Anna"), Some("Ann".to_owned()));
+    }
+
+    /// ★★★ **The page's draft reaches its own row, and reaches no other.**
+    ///
+    /// Row **A12c**. Both halves are asserted because both are silent
+    /// failures: without the first the panel goes on showing the value from
+    /// before the operator started typing on the page — two boxes disagreeing
+    /// about one field — and without the second every text row in the form
+    /// shows whatever is being typed into one of them, which is worse than the
+    /// lag it replaced.
+    #[test]
+    fn the_pages_draft_reaches_its_own_row_and_no_other() {
+        let live = ("Name".to_owned(), "Ann".to_owned());
+
+        assert_eq!(mirrored(Some(&live), "Name"), Some("Ann"));
+        assert_eq!(
+            mirrored(Some(&live), "Address"),
+            None,
+            "another field's draft says nothing about this row"
+        );
+        // Nobody typing on the page: every row keeps its own draft.
+        assert_eq!(mirrored(None, "Name"), None);
     }
 
     /// **Clearing a field is a real edit.**

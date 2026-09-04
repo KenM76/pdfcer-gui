@@ -227,8 +227,46 @@ pub fn image(ui: &egui::Ui, icon: Icon) -> egui::Image<'static> {
 /// paints: the accent tint AND [`IconWeight::Bold`]. That layering is the
 /// standing "selected state is never colour alone" rule surviving the loss
 /// of a text label to embolden.
+///
+/// # ★★★ WHICH BACKGROUND THIS GLYPH IS DRAWN ON, since it is not this
+/// function that paints it
+///
+/// The plate underneath is **`egui`'s selected-widget fill** — the theme's
+/// [`egui_shell::theme::Palette::selected_plate`]. `egui` substitutes it into
+/// both `bg_fill` and `weak_bg_fill` for anything carrying `SELECTED_CLASS`
+/// (`egui-0.35.0/src/widget_style.rs:151-154`), so a toggle drawn with
+/// `Button::image(...).selected(true)` gets that plate whether or not the call
+/// site mentions a colour. This function's only job is to put the ink that
+/// reads on it into the glyph.
+///
+/// [`Theme::selected_widget_ink`] is *defined* as that ink, and
+/// `egui_shell::theme::tests::the_selected_widget_accessors_agree_with_the_style_egui_will_paint`
+/// asserts it equals `visuals.selection.stroke.color` in every preset — so the
+/// pairing is held by an assertion, not by this paragraph.
+///
+/// # ★★ Why not `ui.visuals().selection.stroke.color`, which is the same value
+///
+/// It **was** that read, and it was this file that held
+/// `check-selection-channel.sh`'s one file-level exemption. The exemption is
+/// gone and so is the read.
+///
+/// Same value, different promise. `visuals.selection` is a raw `egui` channel
+/// whose meaning the theme decides and has now re-decided twice in two days —
+/// it carried the canvas's 27 % wash (defect T2), then `accent` + `on_accent`
+/// (which broke the focused-`TextEdit` ring `egui` drives from the *same*
+/// field), and now `selected_plate` + `accent`. Each of those re-pointings
+/// silently changed what this glyph would be tinted with, and nothing here
+/// would have failed. A named accessor cannot drift that way: it is checked
+/// against the shipped style, and a future re-pointing has to walk past a red
+/// test that names this call site.
+///
+/// ★ Note the ink is deliberately NOT [`egui_shell::theme::Theme::accent_pair`]'s
+/// `on_accent`. That pair is the *emphasised action* surface — the full accent
+/// at full strength — and a selected toggle is a quieter thing: a diluted plate
+/// with accent ink. Tinting this glyph `on_accent` would put a near-white mark
+/// on a pale plate, which is `DEFECTS.md` D2 exactly.
 pub fn selected_image(ui: &egui::Ui, icon: Icon) -> egui::Image<'static> {
-    let tint = ui.visuals().selection.stroke.color;
+    let tint = egui_shell::theme::Theme::selected_widget_ink(ui.ctx());
     image_tinted(ui, icon, IconWeight::Bold, tint)
 }
 

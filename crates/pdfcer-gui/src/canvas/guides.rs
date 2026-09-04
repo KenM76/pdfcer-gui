@@ -965,7 +965,11 @@ fn preview(ui: &Ui, geometry: &CanvasGeometry) {
     let Some(p) = ui.ctx().pointer_latest_pos() else {
         return;
     };
-    let base = ui.visuals().selection.stroke.color;
+    // ★ The content-area selection ink, by its role name. Not
+    // `visuals().selection.stroke` — that is `egui`'s selected-WIDGET channel
+    // and reading it here is what defect T2 was (`REVIEW_TRIAGE.md` §2b). Same
+    // colour, named address.
+    let base = egui_shell::theme::Theme::canvas_selection_ink(ui.ctx());
     let painter = ui.painter().with_clip_rect(geometry.viewport);
     match pointer_page(ui.ctx(), geometry) {
         Some((page, map, p)) => {
@@ -1002,7 +1006,10 @@ pub(super) fn draw(ui: &Ui, doc: &OpenDoc, pages: &[PageView], clip: Rect) {
     }
     let stroke = Stroke::new(
         1.0,
-        super::overlay::at_alpha(ui.visuals().selection.stroke.color, GUIDE_ALPHA),
+        super::overlay::at_alpha(
+            egui_shell::theme::Theme::canvas_selection_ink(ui.ctx()),
+            GUIDE_ALPHA,
+        ),
     );
     let painter = ui.painter().with_clip_rect(clip);
     for view in pages {

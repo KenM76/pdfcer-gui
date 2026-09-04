@@ -866,6 +866,21 @@ fn field_list(
         page_numbers: &page_numbers,
         fill_refusal,
         doc: Some(doc),
+        // ★★★ **What the operator is typing ON THE PAGE, asked once for the
+        // whole frame** — the 2026-09 review's row A12c.
+        //
+        // Beside `page_numbers` and `fill_refusal` because it is the same kind
+        // of thing: a fact about the document that is identical for every row,
+        // and one a 400-field form must not ask 400 times. `canvas::forms`
+        // holds one focus, so the answer is one field or none.
+        //
+        // ★ Asked from the PANEL rather than pushed by the canvas, which is
+        // the direction `canvas::forms::placed` already established between
+        // these two modules: the surface that owns the answer publishes it,
+        // and the surface that needs it reads it. The reverse — the canvas
+        // writing into `FormsUi` — would put a second writer on state whose
+        // whole correctness argument is its `(path, epoch)` key.
+        live_canvas_draft: crate::canvas::forms::live_draft(ui.ctx(), doc),
         button_draft: &mut button_draft,
         actions,
     };

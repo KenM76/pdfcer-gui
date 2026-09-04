@@ -111,8 +111,9 @@
 //! # The rendered-pair contrast gate
 //!
 //! [`contrast`] is new, and it is the reason this module was worth
-//! salvaging rather than re-deriving. See `DEFECTS.md` D2 and the tests
-//! at the bottom of this file: the original had two contrast tests, both
+//! salvaging rather than re-deriving. See `DEFECTS.md` D2 and the [`tests`]
+//! module (split out of this file under rule R2, which caps a `.rs` file at
+//! 1500 lines): the original had two contrast tests, both
 //! of which compared *palette entries chosen by a human as a pair*, and
 //! the shipped defect was in the *assignment* — which palette entry ended
 //! up as a foreground and which as a background on the actual
@@ -208,6 +209,59 @@ pub struct Palette {
     pub notice: Color32,
     /// A selected object's fill in the content area (translucent).
     pub selection_fill: Color32,
+    /// **The OPAQUE plate `egui` paints behind a SELECTED WIDGET**, with
+    /// [`Self::accent`] as the ink on it.
+    ///
+    /// This is the value handed to `egui::Visuals::selection.bg_fill`. Every
+    /// `ui.selectable_label(true, …)`, every `Button::selected(true)`, the
+    /// highlight behind selected text in a `TextEdit`, a `ProgressBar`'s fill
+    /// and a `Slider`'s trail are painted with it — `egui` substitutes it at
+    /// paint time (`widget_style.rs:151-154`), so it reaches all of them
+    /// together whether or not any call site mentions it.
+    ///
+    /// # ★★★ WHAT THIS IS NOT: it is not [`Self::selection_fill`]
+    ///
+    /// Read that sentence twice, because merging these two fields back
+    /// together would undo defect **T2**'s entire fix and would do it
+    /// silently.
+    ///
+    /// [`Self::selection_fill`] is the **27 %-alpha CANVAS wash** — the tint
+    /// laid over a selected object *on the document*, where seeing the object
+    /// through the tint is the whole point. It is translucent on purpose, and
+    /// a translucent fill is not a dimmer plate: it is a different colour over
+    /// every background it meets. Pointing `egui`'s widget channel at it is
+    /// what painted nineteen chrome controls with canvas ink on a wash
+    /// (luminance gap 72.5 in Dark, floor 90), and pointing a dialog's
+    /// affirmative button at it is what made the default action render *paler
+    /// than the Cancel beside it*.
+    ///
+    /// So: **this role is chrome and opaque; `selection_fill` is content and
+    /// translucent.** They will often look like relatives — both are the
+    /// accent, diluted — and that resemblance is exactly the trap. They must
+    /// be able to move independently, because the thing behind them is
+    /// different (a panel, whose colour the theme knows; a page, whose colour
+    /// the document decides).
+    ///
+    /// # ★★ Why a plate at all, rather than [`Self::accent`] itself
+    ///
+    /// Because one channel has to serve two roles and `egui` gives no way to
+    /// separate them. `visuals.selection.stroke` is BOTH the ink on this plate
+    /// AND the frame stroke of a **focused, mutable `TextEdit`**
+    /// (`widgets/text_edit/builder.rs:699-706`), which is drawn on
+    /// `text_edit_bg_color()` — [`Self::panel`] in this theme. `TextEdit` has
+    /// no `.frame_stroke()`, so there is no per-widget override to escape with.
+    ///
+    /// With `bg_fill = accent`, the ink had to be [`Self::on_accent`] (a
+    /// near-white plate colour under the light presets) and the focus ring
+    /// therefore became near-white on a near-white panel: gaps of
+    /// **17.9 / 5.0 / 29.1** across Quiet / Airy / Dark. A focused field
+    /// looked unfocused. That is `DEFECTS.md` D2's shape for the fourth time.
+    ///
+    /// Making the *plate* the diluted value instead of the *ink* dissolves the
+    /// conflict, because the ink is then [`Self::accent`] — which is already
+    /// far from the panel by construction. See [`Theme::write_style`] for the
+    /// full six-number derivation.
+    pub selected_plate: Color32,
     /// A label's backdrop, so text stays readable over arbitrary content
     /// (translucent).
     ///
@@ -356,6 +410,19 @@ impl Theme {
                 danger: Color32::from_rgb(0xC0, 0x2A, 0x2A),
                 notice: Color32::from_rgb(0xB0, 0x6A, 0x1A),
                 selection_fill: Color32::from_rgba_unmultiplied(90, 140, 220, 70),
+                // ★ DERIVED, not picked: `accent` at 30 % over `panel`,
+                // composited here so the value that ships is OPAQUE.
+                //
+                //   0.30·(23, 92,196) + 0.70·(232,232,234)
+                //     = (169.3, 190.0, 222.6) → (169, 190, 223)
+                //
+                // luma 187.9. Ink (`accent`, luma 84.8) reads on it at a gap
+                // of **103.1**; it separates from `panel` (232.1) by 44.2, so
+                // the plate is visible as a plate. 30 % is the strongest tint
+                // that still clears the floor with headroom in this preset —
+                // 35 % falls to 95.8 and 40 % to 88.3, i.e. below 90. Airy
+                // shares the ratio and lands easier because its panel is white.
+                selected_plate: Color32::from_rgb(0xA9, 0xBE, 0xDF),
                 label_backdrop: Color32::from_rgba_unmultiplied(250, 250, 250, 220),
                 label_text: Color32::from_rgb(20, 20, 20),
             },
@@ -381,6 +448,18 @@ impl Theme {
                 text: Color32::from_rgb(0x24, 0x26, 0x2B),
                 text_muted: Color32::from_rgb(0x6C, 0x70, 0x78),
                 outline: Color32::from_rgb(0xDC, 0xDE, 0xE3),
+                // ★ Same derivation as Quiet — `accent` at 30 % — over THIS
+                // preset's panel, which is pure white:
+                //
+                //   0.30·(23, 92,196) + 0.70·(255,255,255)
+                //     = (185.4, 206.1, 237.3) → (185, 206, 237)
+                //
+                // luma 203.8; ink gap **118.9**, separation from `panel` 51.2.
+                // The ratio is inherited, the value is not, because a tint is
+                // a relationship to the ground under it and Airy's ground is
+                // fifteen levels lighter than Quiet's. A shared literal would
+                // have been a coincidence rather than a rule.
+                selected_plate: Color32::from_rgb(0xB9, 0xCE, 0xED),
                 ..quiet.palette
             },
             metrics: Metrics {
@@ -421,6 +500,38 @@ impl Theme {
                 outline: Color32::from_rgb(0x44, 0x48, 0x4F),
                 danger: Color32::from_rgb(0xFF, 0x6B, 0x6B),
                 notice: Color32::from_rgb(0xE0, 0xA0, 0x40),
+                // ★★★ THE ONE PRESET WHERE THE LIGHT PRESETS' DERIVATION
+                // CANNOT BE USED, AND THE ARITHMETIC THAT PROVES IT.
+                //
+                // Still derived from `accent`, but from `accent` ALONE:
+                //
+                //   0.15·(76,154,255) = (11.4, 23.1, 38.25) → (11, 23, 38)
+                //
+                // i.e. the accent at 15 % of its own intensity — the same hue,
+                // deepened, rather than the same hue diluted.
+                //
+                // Why not "30 % over `panel`" like the other two. Because in
+                // this preset the accent (luma 144.7) is LIGHTER than the panel
+                // (48.7), so mixing toward the panel moves the plate the wrong
+                // way: it lands BETWEEN ink and panel, and the ink gap collapses
+                // — 81.3 at 15 %, 76.8 at 20 %, 66.9 at 30 %, all under the
+                // floor of 90. The ceiling on that whole family is 96.0, reached
+                // only at 0 % where the "plate" IS the panel and there is no
+                // plate at all. The plate must therefore go past the panel, to
+                // the far side.
+                //
+                // The result: luma 21.5. Ink (`accent`, 144.7) reads on it at a
+                // gap of **123.2** — the widest of the three presets — and it
+                // separates from `panel` by 27.2 and from `surface` (37.9) by
+                // 16.4, so a selected row reads as a recessed well rather than
+                // as a lit one. 20 % was measured too (ink gap 115.7) and
+                // rejected: it buys nothing and halves the separation from the
+                // panel to 19.7.
+                //
+                // ⚠ This is the preset to re-measure first if the accent ever
+                // changes. Its focus ring — `accent` on `panel` — clears the
+                // floor by six (96.0), the tightest number in the theme.
+                selected_plate: Color32::from_rgb(0x0B, 0x17, 0x26),
                 ..quiet.palette
             },
             metrics: quiet.metrics,
@@ -527,15 +638,150 @@ impl Theme {
     /// and under a preset whose accent is dark it would be black on black.
     /// [`Palette::on_accent`] is the theme's own answer and inverts per preset.
     ///
-    /// ★ Deliberately NOT `selection.bg_fill`. That role is translucent on
-    /// purpose and belongs to canvas selection, where seeing the object through
-    /// the tint is the entire point. A translucent chrome fill is not a dimmer
-    /// accent; it is a different colour every time the background behind it
-    /// changes.
+    /// ★ Deliberately NOT `selection.bg_fill`, and the reason has changed
+    /// shape twice without changing conclusion. It was wrong when that channel
+    /// carried [`Palette::selection_fill`] — a 27 % wash, incident 2 above —
+    /// and it is still wrong now that it carries [`Palette::selected_plate`],
+    /// because a plate is a *diluted* accent chosen to be readable under
+    /// `accent` INK. An emphasised action wants the accent at full strength
+    /// with [`Palette::on_accent`] on it. Asking for `selection.bg_fill` gets
+    /// you whichever of those two stories the widget channel is telling this
+    /// month, which is the entire argument for naming the pair.
     #[must_use]
     pub fn accent_pair(ctx: &egui::Context) -> (egui::Color32, egui::Color32) {
         let theme = Self::of(ctx);
         (theme.palette.accent, theme.palette.on_accent)
+    }
+
+    /// **The ink `egui` paints on a selected widget's plate** — the colour a
+    /// selected control's own drawing must match.
+    ///
+    /// Returns [`Palette::accent`], which is what
+    /// `visuals.selection.stroke.color` carries. Use it only where a call site
+    /// hand-draws something *inside* a control `egui` has already styled as
+    /// selected, and therefore has to match a colour it did not choose: a
+    /// tinted glyph on a toggle, a hand-painted chevron, a custom check mark.
+    ///
+    /// # ★★ What to use instead, almost always: nothing
+    ///
+    /// `egui` styles a selected widget correctly on its own — it substitutes
+    /// both fills and the text colour out of this channel at paint time
+    /// (`widget_style.rs:151-154`). A `ui.selectable_label(true, …)` needs no
+    /// colour from anyone. Reach for this **only** when you are drawing an
+    /// extra mark on top of a plate `egui` painted, because that mark is the
+    /// one thing `egui` cannot colour for you.
+    ///
+    /// # What this is NOT
+    ///
+    /// Not [`Theme::canvas_selection_ink`], although today both return
+    /// `accent`. That equality is a coincidence of the current palette and not
+    /// a contract: one is the ink on a chrome plate, the other is the outline
+    /// over a document page, and the whole point of defect T2's fix was that
+    /// those two must be able to move apart. Calling the wrong one is how the
+    /// canvas silently re-tunes when the chrome is re-tuned.
+    ///
+    /// Not [`Theme::accent_pair`] either — that is the *emphasised action*
+    /// pair (`accent` + `on_accent`), a stronger surface than "selected".
+    #[must_use]
+    pub fn selected_widget_ink(ctx: &egui::Context) -> egui::Color32 {
+        Self::of(ctx).palette.accent
+    }
+
+    /// **The plate `egui` paints behind a selected widget and the ink on it**,
+    /// as `(plate, ink)`.
+    ///
+    /// Returns `(selected_plate, accent)` — bit-for-bit what
+    /// [`Theme::write_style`] puts into `visuals.selection`. The pair form
+    /// exists for the same reason [`Theme::accent_pair`] does: the two values
+    /// are only correct *together*, and a call site that paints its own
+    /// selected surface should state both in one breath rather than fetch a
+    /// fill here and a foreground there. That is precisely how D2 happened,
+    /// three times.
+    #[must_use]
+    pub fn selected_widget_pair(ctx: &egui::Context) -> (egui::Color32, egui::Color32) {
+        let theme = Self::of(ctx);
+        (theme.palette.selected_plate, theme.palette.accent)
+    }
+
+    /// **The ink a selected thing in the CONTENT AREA is outlined with.**
+    ///
+    /// Outlines, node marks, grips, rubber-band borders, drop carets, ruler
+    /// span markers, the selected form field's box — everything drawn *over
+    /// the document* to say "this is what you have picked".
+    ///
+    /// # ★★★ Why this is a named function and not `visuals().selection.stroke`
+    ///
+    /// Because that is where it used to be read from, and it was the wrong
+    /// address. `egui::Visuals::selection` is `egui`'s styling channel for
+    /// **selected widgets** — see [`Theme::write_style`], which quotes the
+    /// four lines of `egui-0.35.0/src/widget_style.rs` that substitute it into
+    /// every `Button::selected(true)`. For as long as the theme pointed that
+    /// channel at the canvas, the canvas won and every selected chrome control
+    /// in the application was painted with canvas ink: accent text on a 27 %
+    /// wash, luminance gap 72.5 in the Dark preset against a floor of 90.
+    ///
+    /// The standing lesson this project keeps re-learning, in its own words:
+    /// *a correctly-sourced value used for the wrong role passes every gate —
+    /// expose the PAIR behind a purpose-named function.* [`Theme::accent_pair`]
+    /// is that mechanism for chrome; this and [`Theme::canvas_selection_fill`]
+    /// are it for content. A call site that asks for
+    /// `canvas_selection_ink` cannot accidentally be asking for the chrome
+    /// role, because the two questions now have different spellings.
+    ///
+    /// ★ "Canvas" here means the application's content area — the region
+    /// [`Palette::content_backdrop`] sits behind. The shell has no opinion
+    /// about what is drawn there.
+    ///
+    /// # What this is NOT for
+    ///
+    /// **Never for chrome.** A selected dock tab, a toggled ribbon button, a
+    /// pressed mode chip, a highlighted menu row: those are widgets, `egui`
+    /// already styles them from `visuals.selection`, and if one needs to state
+    /// its own colours the pair is [`Theme::accent_pair`]. Using canvas ink on
+    /// chrome is the *inverse* of the defect above and produces the same
+    /// class of failure — a colour chosen against a background nobody paired
+    /// it with.
+    ///
+    /// It also may not be written into a document. See this module's header:
+    /// if a colour can end up in a saved file it is not a theme colour.
+    #[must_use]
+    pub fn canvas_selection_ink(ctx: &egui::Context) -> egui::Color32 {
+        Self::of(ctx).palette.accent
+    }
+
+    /// **The translucent tint a selected object in the CONTENT AREA is
+    /// washed with**, and the fill of the rubber-band that is picking one.
+    ///
+    /// Returns [`Palette::selection_fill`], which is **27 % alpha on
+    /// purpose**: seeing the object through the tint is the entire point of a
+    /// selection wash over a drawing. That is also precisely why it is unfit
+    /// for chrome — a translucent fill is not a dimmer accent, it is a
+    /// different colour over every background it meets, which is how a
+    /// dialog's default button once rendered paler than the Cancel beside it
+    /// (see [`Theme::accent_pair`], incident 2).
+    ///
+    /// # What this is NOT for
+    ///
+    /// Not a widget fill, not a button, not a tab, not a plate to draw
+    /// [`Palette::on_accent`] on. See [`Theme::canvas_selection_ink`] for the
+    /// full argument and for why reaching into `visuals().selection.bg_fill`
+    /// is now a gate failure (`tools/gates/check-selection-channel.sh`).
+    #[must_use]
+    pub fn canvas_selection_fill(ctx: &egui::Context) -> egui::Color32 {
+        Self::of(ctx).palette.selection_fill
+    }
+
+    /// **Both content-area selection roles at once**, as `(ink, fill)`.
+    ///
+    /// The pair form exists for the same reason [`Theme::accent_pair`] does:
+    /// the two values are only correct *together*, and a call site that draws
+    /// a washed rectangle with an outline around it should state them in one
+    /// breath rather than fetch two unrelated-looking colours. Use it wherever
+    /// both are needed; use the singles where only one is.
+    #[must_use]
+    pub fn canvas_selection_pair(ctx: &egui::Context) -> (egui::Color32, egui::Color32) {
+        let theme = Self::of(ctx);
+        (theme.palette.accent, theme.palette.selection_fill)
     }
 
     /// The `egui::Style` this theme produces, standalone.
@@ -633,7 +879,143 @@ impl Theme {
         v.extreme_bg_color = p.panel;
         v.faint_bg_color = p.panel;
         v.window_stroke = egui::Stroke::new(1.0, p.outline);
-        v.selection.bg_fill = p.selection_fill;
+        // ★★★ `visuals.selection` IS EGUI'S WIDGET CHANNEL. IT IS NOT THE
+        // CANVAS'S. — defect T2, `REVIEW_TRIAGE.md` §2b, fixed 2026-09-04.
+        //
+        // These two lines used to read:
+        //
+        // ```text
+        // v.selection.bg_fill = p.selection_fill;                  // a 27 % wash
+        // v.selection.stroke  = Stroke::new(1.0, p.accent);        // canvas ink
+        // ```
+        //
+        // which handed `egui`'s **selected-widget** styling channel to the
+        // *content area*. That is not a stylistic preference; it is a
+        // documented `egui` contract, and the consequence is mechanical.
+        // `egui-0.35.0/src/widget_style.rs:151-154`, verbatim:
+        //
+        // ```text
+        // if classes.has(SELECTED_CLASS) {
+        //     visuals.weak_bg_fill = self.visuals.selection.bg_fill;
+        //     visuals.bg_fill      = self.visuals.selection.bg_fill;
+        //     visuals.fg_stroke    = self.visuals.selection.stroke;
+        //     ws.text.color        = self.visuals.selection.stroke.color;
+        // }
+        // ```
+        //
+        // So **every** bare `ui.selectable_label(true, …)` and every
+        // `Button::selected(true)` in the application — nineteen of them at
+        // the time of writing, across the ribbon, the menus and eight panels —
+        // painted `accent`-coloured text on a 27 %-alpha wash. Measured
+        // luminance gap in the Dark preset: **72.5**, against this module's
+        // own readable floor of 90 ([`contrast::READABLE_LUMA_GAP`]). Not one
+        // of those call sites is wrong. They ask `egui` for "selected"; the
+        // theme was answering with the wrong pair.
+        //
+        // ★★ Why this was invisible to every gate we own. `check-theme-colors`
+        // forbids **invented** colours, and both values were correctly sourced
+        // from the palette. `contrast::pairs` enumerates the five widget
+        // states × two fills, reading `fg_stroke` against `bg_fill` — and the
+        // selected pair is not in that matrix, because `egui` substitutes it
+        // *after* the style is read. The colours were named, the gate was
+        // green, and the surface was unreadable. That is the third time this
+        // exact shape has shipped (`DEFECTS.md` D2), and it is why
+        // `tools/gates/check-selection-channel.sh` now exists.
+        //
+        // ★ The pair below is `egui`'s own design for the channel — its stock
+        // light theme pairs a pale blue `bg_fill` with a dark blue `stroke`,
+        // i.e. *a plate and the ink that reads on it*, never a translucent
+        // tint. This theme now says the same thing in its own palette's words:
+        // [`Palette::selected_plate`] and [`Palette::accent`].
+        //
+        // ★★★ AND THE CANVAS DID NOT LOSE ANYTHING. The ~33 content-area
+        // readers that used to reach through this channel now call
+        // [`Theme::canvas_selection_ink`] and [`Theme::canvas_selection_fill`],
+        // which return `accent` and `selection_fill` — *the identical values
+        // this channel used to carry*. The canvas renders pixel-for-pixel as
+        // before; what changed is that its colours now arrive by a name that
+        // says what they are for, so re-tuning chrome cannot silently re-tune
+        // the page overlay again.
+        //
+        // ═══════════════════════════════════════════════════════════════════
+        // ★★★ AND THE SECOND ROLE THIS CHANNEL SERVES: THE FOCUSED-TEXTEDIT
+        // RING. THIS IS THE PART THAT MAKES THE PLATE A PLATE.
+        // ═══════════════════════════════════════════════════════════════════
+        //
+        // `egui` reuses `selection.stroke` as the frame stroke of a **focused,
+        // mutable `TextEdit`**. Verbatim, `widgets/text_edit/builder.rs:699-706`:
+        //
+        // ```text
+        // let background_color = background_color
+        //     .unwrap_or_else(|| ui.visuals().text_edit_bg_color());
+        // let (corner_radius, background_color, stroke) = if text_mutable {
+        //     if allocated.response.has_focus() {
+        //         (visuals.corner_radius, background_color,
+        //          ui.visuals().selection.stroke)
+        // ```
+        //
+        // and `Visuals::text_edit_bg_color()` falls back to `extreme_bg_color`,
+        // which this function points at [`Palette::panel`] eight lines up.
+        // `TextEdit` exposes no `.frame_stroke()`, so there is NO per-widget
+        // override: whatever is in this channel is the ring, everywhere.
+        //
+        // ⚠ THE FIRST ATTEMPT AT T2 PUT `on_accent` HERE AND BROKE THAT RING.
+        // `on_accent` is a near-white plate colour under the light presets, so
+        // the ring became near-white on a near-white panel — gaps of
+        // **17.9 / 5.0 / 29.1** (Quiet / Airy / Dark); Airy is white on white
+        // to within five levels of luminance, and a focused field looked
+        // unfocused. `DEFECTS.md` D2's shape for the FOURTH time, and this one
+        // was introduced by the fix for the third.
+        //
+        // ★★ THE ANALYSIS THAT SAID THE TWO ROLES WERE IRRECONCILABLE WAS
+        // ARITHMETICALLY RIGHT AND STRUCTURALLY WRONG. It ran:
+        //
+        //   · an ink readable on `accent`  (luma 84.8) needs luma ≥ 174.8
+        //   · a ring readable on `panel`   (luma 232.1) needs luma ≤ 142.1
+        //   · ⇒ empty intersection, in both light presets.
+        //
+        // Every step holds — but only under the assumption that
+        // `selection.bg_fill` IS `accent`. It does not have to be. Dilute the
+        // PLATE instead of the INK and the same two constraints are satisfied
+        // by one colour, because the ink is then `accent` itself, which is far
+        // from the panel by construction (that is what an accent is for):
+        //
+        //   preset │ selected pair            │ focus ring
+        //          │ accent on selected_plate │ accent on panel
+        //   ───────┼──────────────────────────┼─────────────────
+        //   Quiet  │ 84.8 vs 187.9 →  103.1   │  84.8 vs 232.1 → 147.3
+        //   Airy   │ 84.8 vs 203.8 →  118.9   │  84.8 vs 255.0 → 170.2
+        //   Dark   │ 144.7 vs 21.5 →  123.2   │ 144.7 vs  48.7 →  96.0
+        //
+        // — six numbers, floor 90, tightest 96.0. Both roles, one channel, no
+        // call-site change and no hand-drawn ring. The per-preset derivations
+        // and why Dark needs its own are on [`Palette::selected_plate`] and on
+        // the three preset constructors; the assertion is
+        // `both_roles_the_selection_channel_serves_are_readable_in_every_preset`.
+        //
+        // ★ Three consequences worth stating, since nothing at a call site
+        // will announce them:
+        //
+        //  1. A SELECTED control no longer looks identical to a PRESSED one.
+        //     `widgets.active` keeps the full `accent` + `on_accent` pair
+        //     twenty lines down, so "you are pressing this" is now louder than
+        //     "this one is on". That is the correct hierarchy — the first is
+        //     momentary, the second is a persistent state — and it is what
+        //     `egui`'s stock themes do.
+        //  2. Selected TEXT inside a `TextEdit` improved rather than
+        //     regressed. `text_selection/visuals.rs:39-40` takes its highlight
+        //     from `bg_fill` and its text from `stroke.color`, i.e. the same
+        //     pair, so it clears the floor by the same 103 / 119 / 123.
+        //  3. A `ProgressBar` improved most of all. It fills with `bg_fill`
+        //     but labels with `override_text_color` when set — which this
+        //     theme sets to `text` — so its label used to be `text` on
+        //     `accent`: a gap of 56.7 in Quiet. On the plate it is 159.8.
+        //
+        // ★ The blinking caret (`visuals.text_cursor`, a separate 2 pt stroke
+        // this function does not touch) is unchanged and remains the other
+        // focus cue; the ring is now a real second one rather than a decoration
+        // that happened to be invisible.
+        v.selection.bg_fill = p.selected_plate;
         v.selection.stroke = egui::Stroke::new(1.0, p.accent);
         v.hyperlink_color = p.accent;
         v.error_fg_color = p.danger;
@@ -703,238 +1085,4 @@ impl Default for Theme {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    /// Crude relative luminance, matching [`contrast::luma`].
-    ///
-    /// Duplicated as a one-line local so the palette-level tests below
-    /// read on their own; the rendered-pair gate uses the real one.
-    fn luma(c: Color32) -> f32 {
-        contrast::luma(c)
-    }
-
-    /// **Text is legible on the surface it is drawn on, in every
-    /// preset.**
-    ///
-    /// Salvaged verbatim in intent. A crude relative-luminance gap rather
-    /// than a full WCAG contrast ratio: the point is to catch a preset
-    /// where someone set a light text colour against a light panel — which
-    /// is what a `..quiet` spread does the moment a surface is darkened
-    /// and the text is not — and a coarse check that always fires beats a
-    /// precise one nobody runs.
-    ///
-    /// **This test is kept even though the rendered-pair gate subsumes
-    /// most of it**, because it fails with a better message: it names the
-    /// palette role that is wrong, where the gate names the widget state
-    /// that renders wrong. Both are worth having when a preset is being
-    /// edited.
-    #[test]
-    fn text_contrasts_with_its_background_in_every_preset() {
-        for preset in Preset::ALL {
-            let p = Theme::new(*preset).palette;
-            for (name, bg) in [("surface", p.surface), ("panel", p.panel)] {
-                let gap = (luma(p.text) - luma(bg)).abs();
-                assert!(
-                    gap > 90.0,
-                    "{preset:?}: `text` on `{name}` has a luminance gap of {gap:.0}, \
-                     which is not readable"
-                );
-            }
-            let muted = (luma(p.text_muted) - luma(p.surface)).abs();
-            assert!(
-                muted > 45.0,
-                "{preset:?}: `text_muted` on `surface` is too faint (gap {muted:.0})"
-            );
-        }
-    }
-
-    /// **The label backdrop stays light in every preset, including the
-    /// dark one.**
-    ///
-    /// Salvaged. Labels sit over CONTENT, not over chrome, and the content
-    /// is whatever colour the document says — overwhelmingly white. A dark
-    /// theme that darkened the label backdrop would put dark text on a
-    /// dark plate on a white page, which is unreadable in the one place it
-    /// matters most.
-    ///
-    /// Worth a test because it is precisely the field a careless "make
-    /// everything dark" edit would flip.
-    ///
-    /// **Note what this test does NOT do**, because it is half of why D2
-    /// shipped: it asserts `label_backdrop` is light *and stops there*. It
-    /// says nothing about what is behind `label_backdrop` when something
-    /// draws with it, and in the salvage source something did — the active
-    /// widget state's foreground. A test that pins a colour without
-    /// pinning its pairing is a test that will agree with the bug.
-    #[test]
-    fn label_plates_stay_content_facing_not_chrome_facing() {
-        for preset in Preset::ALL {
-            let p = Theme::new(*preset).palette;
-            assert!(
-                p.label_backdrop.r() > 200 && p.label_backdrop.b() > 200,
-                "{preset:?}: the label backdrop follows the content, not the chrome"
-            );
-            assert!(
-                p.label_text.r() < 80,
-                "{preset:?}: label text must be dark, to sit on that backdrop"
-            );
-        }
-    }
-
-    /// **★ `DEFECTS.md` D2's regression test: every foreground `egui`
-    /// will actually paint is readable on the background it will actually
-    /// paint it on — for all five widget states, both fills, all three
-    /// presets.**
-    ///
-    /// # Why the two tests above could not have caught D2, and this can
-    ///
-    /// This is the important part of this test, and it generalises past
-    /// theming.
-    ///
-    /// D2 was: `widgets.active.fg_stroke` was set to a near-white plate
-    /// colour while `widgets.active.bg_fill` was never assigned the
-    /// accent, so `CollapsingHeader` headers and dock tab labels rendered
-    /// near-white on light grey. Two tests sat directly adjacent to it:
-    ///
-    /// - `text_contrasts_with_its_background_in_every_preset` checked
-    ///   `text` against `surface` and `panel`. It never touched
-    ///   `label_backdrop`, and `label_backdrop` was the foreground that
-    ///   failed.
-    /// - `label_plates_stay_content_facing_not_chrome_facing` **asserted
-    ///   `label_backdrop` stays light** — correct for its stated purpose,
-    ///   and it therefore *agreed with the defect*.
-    ///
-    /// Both are palette-vs-palette tests: they compare two colours a human
-    /// deliberately wrote down next to each other. The defect was not in
-    /// the palette. It was in the **assignment** — which palette entry
-    /// ends up as a foreground and which as a background on the
-    /// `egui::Style` that gets painted. No amount of checking the palette
-    /// against itself can see that, because the pair that renders was
-    /// never a pair anyone wrote down.
-    ///
-    /// A structural gate could not see it either. The project's
-    /// `check-theme-colors.sh` bans raw `Color32` literals outside the
-    /// theme module — a real and useful rule that says nothing about
-    /// whether the named colours are legible together. As `DEFECTS.md`
-    /// puts it: *the gate is structural, not perceptual.*
-    ///
-    /// So this test reads the **rendered style** back and enumerates the
-    /// pairs as `egui` resolves them. Its coverage is defined by the
-    /// widget-state matrix rather than by anyone's list, which means a
-    /// fill someone forgets to assign in a future preset is caught by the
-    /// same assertion that catches a fill someone assigns wrongly. That
-    /// property — *the test enumerates the render surface, not the
-    /// author's intentions* — is the transferable lesson.
-    ///
-    /// # On the threshold
-    ///
-    /// 90 on a 0–255 crude luminance scale, the same figure the salvaged
-    /// text test uses, and for the same reason: a coarse check that always
-    /// fires beats a precise one nobody runs. It is not a WCAG ratio and
-    /// does not claim to be. The values it passes are comfortable — the
-    /// tightest real pair in the shipped presets is `on_accent` on
-    /// `accent` in the dark preset, at roughly 125.
-    #[test]
-    fn every_rendered_widget_pair_is_readable_in_every_preset() {
-        for preset in Preset::ALL {
-            let theme = Theme::new(*preset);
-            if let Err(failures) = theme.check_contrast(contrast::READABLE_LUMA_GAP) {
-                let detail = failures
-                    .iter()
-                    .map(ToString::to_string)
-                    .collect::<Vec<_>>()
-                    .join("\n  ");
-                panic!(
-                    "{preset:?}: {} rendered widget pair(s) are not readable. \
-                     A pair here is a foreground egui WILL paint on a background egui \
-                     WILL paint it on — not two palette entries someone chose together, \
-                     which is the distinction that let DEFECTS.md D2 ship past two \
-                     adjacent tests:\n  {detail}",
-                    failures.len()
-                );
-            }
-        }
-    }
-
-    /// **The gate is not vacuous: it fails on the defect it was written
-    /// for.**
-    ///
-    /// Without this, `every_rendered_widget_pair_is_readable_in_every_preset`
-    /// would pass identically if [`contrast::check`] returned `Ok` for
-    /// everything, and would be asserting nothing at all. So this
-    /// reconstructs D2 exactly — a light foreground on the active state
-    /// with its `bg_fill` left at `egui`'s default — and asserts the gate
-    /// catches it and *names the state*.
-    ///
-    /// This is the same discipline the salvage source applied to its
-    /// script-parser tests: a test that proves a typo is rejected is worth
-    /// nothing beside a test that proves the correct spelling is accepted.
-    #[test]
-    fn the_contrast_gate_catches_the_exact_defect_it_was_written_for() {
-        let mut style = egui::Style::default();
-        // egui's default light `bg_fill` for the active state, i.e. what
-        // D2 left in place because nothing assigned it.
-        style.visuals.widgets.active.bg_fill = Color32::from_gray(0xC8);
-        style.visuals.widgets.active.fg_stroke =
-            egui::Stroke::new(1.0, Color32::from_rgba_unmultiplied(250, 250, 250, 220));
-
-        let failures = contrast::check(&style, contrast::READABLE_LUMA_GAP)
-            .expect_err("near-white on light grey must fail the gate");
-        assert!(
-            failures
-                .iter()
-                .any(|f| f.state == contrast::WidgetState::Active
-                    && f.fill == contrast::FillKind::BgFill),
-            "the gate must name the widget state and the fill that failed, \
-             so the message points at the line to change; got: {failures:?}"
-        );
-    }
-
-    /// **`on_accent` is a role, and the presets prove it has to be.**
-    ///
-    /// If every preset's `on_accent` were the same light colour, the field
-    /// would be a constant wearing a role's clothes and the next editor
-    /// would be right to inline it — reintroducing exactly the coupling
-    /// that made D2 invisible. The dark preset inverts it, and that is the
-    /// standing evidence the separation is load-bearing.
-    #[test]
-    fn on_accent_inverts_where_the_accent_is_light() {
-        let quiet = Theme::new(Preset::Quiet).palette;
-        let dark = Theme::new(Preset::Dark).palette;
-        assert!(
-            luma(quiet.on_accent) > luma(quiet.accent),
-            "a dark accent takes a light foreground"
-        );
-        assert!(
-            luma(dark.on_accent) < luma(dark.accent),
-            "a light accent takes a dark foreground — which a single shared \
-             plate colour could never have expressed, and is why `on_accent` \
-             is a role rather than a constant"
-        );
-    }
-
-    /// Settings keys round-trip, and an unknown key is `None` rather than
-    /// a silent default. Salvaged.
-    #[test]
-    fn preset_keys_round_trip_and_unknown_keys_are_refused() {
-        for preset in Preset::ALL {
-            assert_eq!(Preset::from_key(preset.key()), Some(*preset));
-        }
-        assert_eq!(Preset::from_key("solarized"), None);
-        assert_eq!(Preset::from_key(""), None);
-    }
-
-    /// **An absurd metric produces a sane margin.**
-    ///
-    /// `egui::Margin` is `i8`. A plain cast turns 200 pt of padding into
-    /// −56, which paints content outside its own panel: a silent geometry
-    /// defect produced by a number that looked fine where it was typed.
-    #[test]
-    fn an_out_of_range_panel_padding_saturates_rather_than_wrapping() {
-        assert_eq!(clamp_to_i8(6.0), 6);
-        assert_eq!(clamp_to_i8(200.0), 127);
-        assert_eq!(clamp_to_i8(-200.0), -128);
-        assert_eq!(clamp_to_i8(f32::NAN), 0);
-    }
-}
+mod tests;

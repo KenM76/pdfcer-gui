@@ -113,6 +113,85 @@ pub struct TextAnnotDialog {
 /// magnitude wide.
 const FOCUS_ATTEMPT_FRAMES: u8 = 8;
 
+/// The size the note window opens at, before it is squeezed by a narrow
+/// application window.
+///
+/// Wide enough for a four-line callout at the body text size without the field
+/// wrapping every sentence, and short enough that the window reads as a
+/// question rather than as a second document. The stamp gallery is the taller
+/// of the two bodies and fits inside it.
+const WINDOW_PTS: egui::Vec2 = egui::vec2(420.0, 240.0);
+
+/// The smallest the note window may be, by resize or by squeeze.
+///
+/// The same floor handed to `Host` as its `min_size`, read from one constant so
+/// the two cannot disagree. A dialog squeezed below the size it refuses to be
+/// dragged to would be a window in a state the operator could not return it to.
+const MIN_WINDOW_PTS: egui::Vec2 = egui::vec2(320.0, 200.0);
+
+/// How much of the application window is left clear on either side when the
+/// note window has to be squeezed to fit it.
+///
+/// Purely so a squeezed dialog does not sit edge-to-edge with the window it
+/// belongs to, which reads as a rendering fault rather than as a dialog.
+const SCREEN_MARGIN_PTS: f32 = 40.0;
+
+/// **How big the note window opens**, given the application window's content
+/// rectangle.
+///
+/// Derived from [`WINDOW_PTS`], [`MIN_WINDOW_PTS`] and the *outer* rectangle —
+/// never from anything the body lays out. That is `print/layout.rs`'s rule and
+/// `Host::fit`'s: a size measured from the content it sizes is R128, which this
+/// project has met three times.
+///
+/// ★ The floor is new as of 2026-09-04 and the previous expression had none:
+/// `420.0.min(screen.width() - 40.0)` goes **negative** on an application
+/// window narrower than 40 pt. Unreachable in practice and free to close, and
+/// an unreachable negative size is the kind of thing that becomes reachable
+/// when somebody adds a second monitor at 250 % scaling.
+#[must_use]
+fn window_size(screen: egui::Rect) -> egui::Vec2 {
+    egui::vec2(
+        WINDOW_PTS
+            .x
+            .min(screen.width() - SCREEN_MARGIN_PTS)
+            .max(MIN_WINDOW_PTS.x),
+        WINDOW_PTS.y,
+    )
+}
+
+/// **Where the note window opens**, in the application window's own screen
+/// coordinates.
+///
+/// Centred horizontally and a **third** of the way down, not half — the same
+/// placement the Set-scale dialog uses, and for the same reason: a window
+/// centred vertically sits exactly over the middle of the page, which on a
+/// drawing sheet is where the content is.
+///
+/// # ★★ This is not, and must not become, a click-relative position
+///
+/// The review that found A16c described the discarded computation as
+/// *"click-relative"*. It never was, and making it so would contradict this
+/// module's own header: *"an operator writing a callout is usually looking at
+/// the thing they are calling out, and a window pinned over it would make them
+/// close the window to read what they were annotating."* A dialog that opened
+/// on top of the note would be a worse answer than the corner, not a better
+/// one. What A16c is about is the dialog reaching **the position it computed**
+/// instead of the corner.
+///
+/// ★ The clamp onto the application window lives in
+/// `dialogs::host::placement`, not here. This function's job is to say where
+/// the dialog belongs; keeping it free of edge cases is what lets it be a
+/// three-line expression that can be read at a glance and tested without a
+/// window.
+#[must_use]
+fn opening_position(screen: egui::Rect, size: egui::Vec2) -> egui::Pos2 {
+    egui::pos2(
+        ((screen.width() - size.x).max(0.0) / 2.0).max(0.0),
+        ((screen.height() - size.y).max(0.0) / 3.0).max(0.0),
+    )
+}
+
 impl TextAnnotDialog {
     /// Open for a placed annotation.
     #[must_use]
@@ -141,27 +220,37 @@ impl TextAnnotDialog {
     /// Draw one frame. Returns `false` when it should close.
     pub fn show(&mut self, ctx: &egui::Context, actions: &mut Vec<Action>) -> bool {
         let screen = ctx.input(egui::InputState::content_rect);
-        let size = egui::vec2(420.0_f32.min(screen.width() - 40.0), 240.0);
-        // Centred horizontally and a THIRD of the way down, not half — the
-        // same placement the Set-scale dialog uses, and for the same reason: a
-        // window centred vertically sits exactly over the middle of the page,
-        // which on a drawing sheet is where the content is.
-        let pos = egui::pos2(
-            ((screen.width() - size.x).max(0.0) / 2.0).max(0.0),
-            ((screen.height() - size.y).max(0.0) / 3.0).max(0.0),
-        );
-        // ★ ITS OWN OS WINDOW as of 2026-08-21. A note is typed *about*
-        // something on the page, so the one window that must be movable off
-        // the document is this one. The computed opening position is retired
-        // with the `egui::Window` it fed — see `dialogs::host` for what places
-        // and remembers a dialog now.
-        let _ = pos;
+        let size = window_size(screen);
+        // ★★★ ITS OWN OS WINDOW as of 2026-08-21, AND IT OPENS WHERE IT SAYS —
+        // the second half restored 2026-09-04, review finding A16c.
+        //
+        // A note is typed *about* something on the page, so the one window that
+        // must be movable off the document is this one. When it became an OS
+        // window the computed position had nowhere to go — `Host` placed every
+        // dialog at a fixed inset from the application window's corner — and
+        // this line read:
+        //
+        // > `let _ = pos;` — *"The computed opening position is retired with
+        // > the `egui::Window` it fed."*
+        //
+        // It was not retired. It was **discarded**, and an outside review found
+        // the consequence by opening one note: the dialog appears in the
+        // top-left corner of the window rather than where the operator is
+        // looking. That is a small cost paid on **every note**, and a markup
+        // session places dozens — the dialog is opened and dismissed so often
+        // that it almost never has a remembered position to restore, so the
+        // corner is very nearly the only place it ever appeared.
+        //
+        // ★ [`Host::opening_near`] clamps this onto the application window, so
+        // the arithmetic below may stay a statement about where the dialog
+        // *should* go without also having to be a statement about monitors.
         let (frame, ()) = crate::dialogs::host::Host::new(
             "text-annot", // ui-text-exempt: a viewport key, never displayed.
             t::title(self.kind),
             size,
-            egui::vec2(320.0, 200.0),
+            MIN_WINDOW_PTS,
         )
+        .opening_near(opening_position(screen, size))
         .show(ctx, |ui| {
             crate::diag::ui_rect(REGION_BODY, ui.max_rect());
             self.body(ui);
@@ -359,6 +448,78 @@ mod tests {
             predicted_dt: 1.0 / 60.0,
             ..Default::default()
         }
+    }
+
+    /// The application window this dialog's geometry is computed against.
+    fn screen() -> egui::Rect {
+        egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1280.0, 800.0))
+    }
+
+    /// ★★★ **The note window does not open in the corner** — review finding
+    /// A16c.
+    ///
+    /// The whole of the defect in one assertion. `dialogs/textannot.rs`
+    /// computed this position and then wrote `let _ = pos;`, so the dialog was
+    /// placed by `Host`'s corner inset instead — on every open, dozens of times
+    /// in a markup session, because a dialog dismissed that often almost never
+    /// has a remembered position to restore.
+    ///
+    /// The position is asserted as a **relationship** rather than as two
+    /// numbers: centred across the window and between a fifth and half of the
+    /// way down it. Pinning the exact pixels would fail the next time the
+    /// window's size changed for an unrelated reason, which is how a test stops
+    /// being read and starts being edited.
+    #[test]
+    fn the_note_window_does_not_open_in_the_corner() {
+        let screen = screen();
+        let size = window_size(screen);
+        let at = opening_position(screen, size);
+
+        assert!(
+            at.x > 0.0 && at.y > 0.0,
+            "the note dialog opened at {at:?} — the top-left corner of the window is \
+             precisely what A16c reported"
+        );
+        let centre_gap = (at.x + size.x / 2.0) - screen.center().x;
+        assert!(
+            centre_gap.abs() < 1.0,
+            "the window must be centred across the application window; its centre is \
+             {centre_gap} pt off"
+        );
+        let down = at.y / screen.height();
+        assert!(
+            (0.2..0.5).contains(&down),
+            "a third of the way down, not half and not the top: got {down}"
+        );
+    }
+
+    /// **The window is squeezed to fit a narrow application window, and never
+    /// below the size it refuses to be dragged to.**
+    ///
+    /// The floor is the half that was missing: the expression used to be
+    /// `420.min(width - 40)` with no `max`, which is **negative** for an
+    /// application window under 40 pt wide. Unreachable today and free to
+    /// close.
+    #[test]
+    fn the_note_window_is_squeezed_but_never_below_its_own_floor() {
+        let roomy = window_size(screen());
+        assert_eq!(roomy, WINDOW_PTS, "a wide window gets the size asked for");
+
+        let narrow = window_size(egui::Rect::from_min_size(
+            egui::Pos2::ZERO,
+            egui::vec2(380.0, 800.0),
+        ));
+        assert!(narrow.x < WINDOW_PTS.x, "a narrow window squeezes it");
+        assert!(narrow.x >= MIN_WINDOW_PTS.x);
+
+        let absurd = window_size(egui::Rect::from_min_size(
+            egui::Pos2::ZERO,
+            egui::vec2(10.0, 10.0),
+        ));
+        assert!(
+            absurd.x >= MIN_WINDOW_PTS.x,
+            "a window narrower than the margin must not produce a size of {absurd:?}"
+        );
     }
 
     /// A fresh dialog carries no words and the gallery's default.

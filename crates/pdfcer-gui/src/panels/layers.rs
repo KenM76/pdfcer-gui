@@ -292,6 +292,47 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, _state: &mut PanelsState, actions:
                     // ordinary hover text nor any tooltip at all on a
                     // disabled widget without it, and this row's whole
                     // problem is that it looks broken.
+                    // ★★★ **A padlock beside a locked row, added 2026-09-04.**
+                    //
+                    // The comment above says this row's whole problem is that
+                    // it *looks broken* — a check box that will not move, with
+                    // the reason available only on hover. That was as far as
+                    // the fix could go: `on_disabled_hover_text` is the only
+                    // channel a disabled widget has, and a tooltip is a thing
+                    // the operator must already suspect something to go
+                    // looking for.
+                    //
+                    // ⇒ The padlock is the part that does not need suspecting.
+                    // It states the reason **before** the pointer arrives,
+                    // which is the difference between a control that is
+                    // explained and one that is explicable.
+                    //
+                    // ★ Drawn only when `/Locked` is set (Table 101), never as
+                    // an open padlock on the unlocked rows. R9: an absent
+                    // condition renders NOTHING. A row of open padlocks would
+                    // be sixteen pictures saying "normal", which is noise the
+                    // eye then has to filter to find the one that matters —
+                    // and the one that matters is exactly what this is for.
+                    //
+                    // ★★ `text_muted`, not the accent. This is a STATEMENT
+                    // about the file, not a state of the application and not
+                    // something the operator did. An accented padlock would
+                    // read as "selected" or as a warning, and §12.5.3's
+                    // `/Locked` bit is neither — it is the producer's
+                    // recorded intent, as ordinary as the layer's name.
+                    if l.locked {
+                        let (rect, _) = ui.allocate_exact_size(
+                            egui::Vec2::splat(ui.spacing().icon_width),
+                            egui::Sense::hover(),
+                        );
+                        crate::icons::paint_icon(
+                            ui.painter(),
+                            crate::icons::Icon::Locked,
+                            rect,
+                            egui_shell::Theme::of(ui.ctx()).palette.text_muted,
+                            crate::icons::IconWeight::Regular,
+                        );
+                    }
                     let mut want = effective;
                     let cb = ui
                         .add_enabled(!l.locked, egui::Checkbox::new(&mut want, ""))

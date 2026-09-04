@@ -123,7 +123,13 @@ pub fn draw_anchors(
     points: &[(usize, egui::Pos2)],
     selected: &std::collections::BTreeSet<usize>,
 ) {
-    let stroke = Stroke::new(1.0, visuals.selection.stroke.color);
+    // ★ Hoisted, and read by its ROLE NAME rather than through
+    // `visuals.selection` — see `overlay::ink`, and `REVIEW_TRIAGE.md` T2 for
+    // why that channel is `egui`'s and not this canvas's. Hoisted because the
+    // fill below is inside the per-anchor loop and the lookup takes the
+    // context's data lock.
+    let ink = egui_shell::theme::Theme::canvas_selection_ink(painter.ctx());
+    let stroke = Stroke::new(1.0, ink);
 
     // ★★★ **THE CAP COUNTS WHAT IS ON SCREEN, NOT WHAT EXISTS** —
     // `OPERATOR_REQUESTS.md` O69: *"the nodes are hard to see and click on."*
@@ -232,13 +238,7 @@ pub fn draw_anchors(
         }
         let rect = Rect::from_center_size(*at, egui::vec2(ANCHOR_PX, ANCHOR_PX));
         if is_selected {
-            painter.rect(
-                rect,
-                CornerRadius::ZERO,
-                visuals.selection.stroke.color,
-                stroke,
-                StrokeKind::Middle,
-            );
+            painter.rect(rect, CornerRadius::ZERO, ink, stroke, StrokeKind::Middle);
         } else {
             // ★★★ **FILLED, not hollow** — `OPERATOR_REQUESTS.md` O69, and the
             // single highest-value half of *"the nodes are hard to see"*.
@@ -346,7 +346,6 @@ pub const HANDLE_PX: f32 = 7.0;
 /// and one of the same document saved and reopened differ only in the cursor.
 pub fn draw_handles(
     painter: &Painter,
-    visuals: &Visuals,
     mapping: &PageMapping,
     handles: &[(usize, pdfcer_core::vector::Handle, egui::Pos2)],
     anchors: &[(usize, egui::Pos2)],
@@ -354,7 +353,8 @@ pub fn draw_handles(
     if handles.is_empty() {
         return;
     }
-    let colour = visuals.selection.stroke.color;
+    // ★ The content-area selection ink by name; see `overlay::ink`.
+    let colour = egui_shell::theme::Theme::canvas_selection_ink(painter.ctx());
     let stroke = Stroke::new(1.0, colour);
     let radius = HANDLE_PX / 2.0;
 

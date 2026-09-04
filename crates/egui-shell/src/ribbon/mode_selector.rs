@@ -393,10 +393,30 @@ pub(crate) fn render(
             // A focus ring, so keyboard operation is visible. Drawn
             // outside the plate so it is never confused with the
             // selection border.
+            //
+            // ★★★ `palette.accent`, spelled out — it was
+            // `ui.visuals().selection.stroke` until 2026-09-04, and that read
+            // would have silently inverted this ring.
+            //
+            // `visuals.selection` is `egui`'s SELECTED-WIDGET channel: the
+            // fill a selected control is painted with and the ink that reads
+            // ON that fill. Defect T2 (`REVIEW_TRIAGE.md` §2b) re-pointed it at
+            // the pair it is named for — `accent` and `on_accent` — because
+            // this theme had been handing it to the canvas, which made every
+            // bare `selectable_label(true, …)` in the application unreadable.
+            //
+            // The moment it carries `on_accent`, reading it here is defect D2's
+            // exact shape a fourth time: `on_accent` is a *plate* colour,
+            // near-white under the light presets, and this ring is drawn
+            // OUTSIDE the plate, on the ribbon's own background. Near-white on
+            // near-white — luminance gap 5 under Airy. The ring's real role is
+            // "the accent, on chrome", which is `palette.accent` and always was;
+            // the old spelling merely reached it by an address that has now
+            // moved. Same colour, correct name.
             painter.rect_stroke(
                 rect.expand(1.0),
                 ctx.theme.metrics.corner_radius,
-                ui.visuals().selection.stroke,
+                Stroke::new(1.0, ctx.theme.palette.accent),
                 egui::StrokeKind::Outside,
             );
         }

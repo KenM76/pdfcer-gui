@@ -290,10 +290,14 @@ fn resolve(
 
 /// Draw the caret. §3 — this is the cursor.
 fn paint(ui: &egui::Ui, target: &CanvasDrop) {
-    // The theme's accent, never a literal, and the same source the Pages
-    // grid's caret, the current-page ring and the guide preview all take — so
-    // a preset that changes the accent changes every one of them together.
-    let base = ui.visuals().selection.stroke.color;
+    // The theme's content-area selection ink, never a literal, and the same
+    // source the Pages grid's caret, the current-page ring and the guide
+    // preview all take — so a preset that changes the accent changes every one
+    // of them together.
+    //
+    // ★ By its role name, not through `visuals().selection`: that is `egui`'s
+    // selected-WIDGET channel and reading it from a canvas was defect T2.
+    let base = egui_shell::theme::Theme::canvas_selection_ink(ui.ctx());
     let colour = if target.lands {
         base
     } else {

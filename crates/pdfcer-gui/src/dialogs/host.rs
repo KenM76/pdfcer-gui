@@ -170,15 +170,14 @@
 
 use egui::{Pos2, Vec2, ViewportBuilder, ViewportClass, ViewportId};
 
-/// How far in from the application window a dialog opens when it has no
-/// remembered position.
+/// **Where a dialog's window opens.** See that module's header for the seam and
+/// for A16c, the defect it was split out to fix.
 ///
-/// Not centred on the parent, and not at the OS's own default. Centring puts a
-/// dialog exactly over the thing it is asking about, which is the one place it
-/// must not be for a *print* dialog whose preview the operator is comparing
-/// against the page behind it. A small inset reads as "this belongs to that
-/// window" without covering its middle.
-const OPEN_INSET_PT: f32 = 48.0;
+/// ★ Declared here rather than in `dialogs/mod.rs`, so it lives at
+/// `dialogs/host/placement.rs`. That is not a stylistic choice: `dialogs/mod.rs`
+/// stands at 1,496 lines against R2's limit of 1,500 and has no room for a
+/// module declaration and its doc comment.
+mod placement;
 
 /// How much a dialog's body must overflow its window before the window is
 /// grown to fit it. See [`Host::fit`], whose first version had no such floor
@@ -392,6 +391,16 @@ pub struct Host {
     /// a scrollbar, which is a state with no way back except closing the
     /// dialog and losing what was typed into it.
     min_size: Vec2,
+    /// Where the caller would **prefer** this dialog to open, in the
+    /// application window's own egui screen coordinates. See
+    /// [`Host::opening_near`].
+    ///
+    /// ★ `Option`, and the `None` case is not "no opinion, use zero" — it is
+    /// *"place it the way every dialog without an opinion is placed"*.
+    /// Collapsing the two into a `Pos2` with a sentinel would make "the corner"
+    /// and "somebody asked for the corner" the same value, and the whole of
+    /// A16c is the difference between those two.
+    preferred: Option<Pos2>,
 }
 
 /// What one frame of a hosted dialog reported back.
@@ -459,7 +468,49 @@ impl Host {
             title: title.into(),
             default_size,
             min_size,
+            preferred: None,
         }
+    }
+
+    /// **Open near `at`** — a position in the application window's own egui
+    /// screen coordinates, the space `ctx.input(InputState::content_rect)`
+    /// reports and every `ui_rect` in the main window is published in.
+    ///
+    /// # ★★★ Why this exists: A16c
+    ///
+    /// Because until 2026-09-04 a dialog could not say where it wanted to
+    /// open, so a caller that computed a position had nowhere to put it and
+    /// wrote `let _ = pos;` instead. `dialogs/host/placement.rs`'s header
+    /// carries the full account; the short version is that the sticky-note
+    /// dialog opened in the corner of the window on every one of the dozens of
+    /// times a markup session opens it, having computed a better answer and
+    /// thrown it away.
+    ///
+    /// # What the host promises about the position, and what it does not
+    ///
+    /// * It is honoured **only on the pass the window is created**, and only
+    ///   when there is nothing remembered — a position the operator dragged the
+    ///   dialog to always wins over one the program computed. G6 is unchanged.
+    /// * It is **clamped onto the application window**, so a caller may compute
+    ///   freely without knowing the desktop's size or which monitor the
+    ///   application is on, and cannot open a dialog half off the screen or over
+    ///   the ribbon. See `placement::opening`.
+    /// * It positions the window's **outer** corner, so the dialog lands about
+    ///   one title bar higher than a caller thinking in content coordinates
+    ///   imagines. This is a "roughly here" placement; a child window's
+    ///   decoration height is not knowable before the window exists.
+    ///
+    /// ★ A builder method rather than a fifth argument to [`Host::new`],
+    /// because having an opinion about where you open is the rare case: a
+    /// dialog raised from a menu has no reason to, and only one raised by a
+    /// gesture on the page does. Every dialog that does not care should not
+    /// have to pass `None` to say so. (Deliberately not stating how many do
+    /// care — a count written in prose beside the thing it counts is a claim
+    /// that decays, and this project has spent six corrections on that shape.)
+    #[must_use]
+    pub fn opening_near(mut self, at: Pos2) -> Self {
+        self.preferred = Some(at);
+        self
     }
 
     /// Where this dialog was last left, in desktop coordinates.
@@ -736,17 +787,29 @@ impl Host {
         // it feeds is the *next* opening.
         if placing {
             builder = match self.remembered(ctx) {
-                // G6: back where it was left, including across a close.
+                // G6: back where it was left, including across a close. ★ This
+                // arm is FIRST and stays first: a position the operator dragged
+                // the window to outranks any position the program computed,
+                // including one a caller asked for through
+                // [`Self::opening_near`]. A dialog that re-centred itself on
+                // every open would undo the operator's placement once per
+                // opening, which is G6's original defect wearing a new hat.
                 Some(at) => builder.with_position(at),
-                // First open of the session: inset from the application window
-                // rather than centred on it — see `OPEN_INSET_PT`.
-                None => match ctx.input(|i| i.viewport().outer_rect) {
-                    Some(parent) => builder.with_position(parent.min + Vec2::splat(OPEN_INSET_PT)),
-                    // No parent rect means egui has not been told where the
-                    // application window is, which happens on the first frame
-                    // and in a headless harness. Letting the platform place it
-                    // is the right answer and not a fallback: it is what every
-                    // dialog does when nothing better is known.
+                // First open of the session. Where that is depends on whether
+                // the caller expressed a preference — see
+                // `placement::opening`, which owns the whole of that decision
+                // and is where A16c was fixed.
+                None => match placement::app_window(ctx) {
+                    Some(app) => builder.with_position(placement::opening(
+                        app,
+                        self.default_size,
+                        self.preferred,
+                    )),
+                    // egui has not been told where the application window is,
+                    // which happens on the first frame and in a headless
+                    // harness. Letting the platform place it is the right
+                    // answer and not a fallback: it is what every dialog does
+                    // when nothing better is known.
                     None => builder,
                 },
             };

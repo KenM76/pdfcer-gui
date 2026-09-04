@@ -154,6 +154,32 @@ run "check-strong-text" bash "$HERE/check-strong-text.sh"
 # three defective drawing sites and passes the four correct ones.
 run "check-plate-colour --self-test" bash "$HERE/check-plate-colour.sh" --self-test
 run "check-plate-colour" bash "$HERE/check-plate-colour.sh"
+# ★★★ `check-selection-channel`, added 2026-09-04 — `REVIEW_TRIAGE.md` §2b
+# defect T2, and it is `check-plate-colour`'s twin one channel over.
+#
+# `egui::Visuals::selection` is egui's styling channel for a selected WIDGET:
+# `Style::button_style` takes both fills AND the text colour from it for every
+# `Button::selected(true)` and every `ui.selectable_label(true, …)`
+# (`widget_style.rs:151-154`). This theme had handed that channel to the
+# CANVAS — a 27 % object tint and the canvas outline ink — because 33 readers
+# across 13 files depended on it. The canvas won, so nineteen selected chrome
+# controls painted accent text on a wash: luminance gap 72.5 under Dark,
+# against a floor of 90.
+#
+# ★★ Neither existing gate could see it, and the reason is worth keeping.
+# `check-theme-colors` forbids INVENTED colours and both values were correctly
+# sourced from the palette. `theme::contrast` enumerates five widget states ×
+# two fills, reading `fg_stroke` against `bg_fill` — and the selected pair is
+# in none of them, because egui substitutes it at PAINT time, after the style
+# has been read. A gate that reads a `Style` back cannot reach a pair that was
+# never in the struct. Correctly sourced, gate green, unreadable on screen —
+# for the fourth time (`DEFECTS.md` D2).
+#
+# ★ Its one file-level exemption's premise is pinned by a Rust test rather than
+# by prose, which is T1's lesson taken literally: `check-strong-text.sh` had
+# blessed a site for a reason that had silently stopped being true.
+run "check-selection-channel --self-test" bash "$HERE/check-selection-channel.sh" --self-test
+run "check-selection-channel" bash "$HERE/check-selection-channel.sh"
 run "check-file-size"    bash "$HERE/check-file-size.sh"
 run "check-shell-purity" bash "$HERE/check-shell-purity.sh"
 run "check-shipped-assets" bash "$HERE/check-shipped-assets.sh"

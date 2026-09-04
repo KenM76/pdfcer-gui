@@ -64,18 +64,62 @@ pub(super) fn band() -> Vec<Command> {
         // was never written". It returns with `pages.split`, which is the same
         // dialog with a different operand set. Both are in `manifest::PLANNED`.
         command("tools.font_folders", t::tools_font_folders(), 710).with_icon("font-folders"),
+        // ★★ **The three-way `fonts` share ended 2026-09-04**, with art adopted
+        // from the outside review of 2026-09-03.
+        //
+        // What the borrow was costing: [`crate::icons::Icon::Fonts`] belongs to
+        // the Fonts PANEL, which reports and writes nothing, and both font
+        // commands named it. So a read-only report and two commands that rewrite
+        // the document's font programs were one picture drawn three times,
+        // across two different tabs. **An icon is a claim**, and this one claimed
+        // that looking at a font list and stripping font programs out of a file
+        // were the same kind of act. The destructive half is the worse of the
+        // two: `unembed_fonts`' own action module records that unembedding
+        // "genuinely breaks that guarantee", and it was drawing the same tile as
+        // the panel that merely lists faces.
+        //
+        // ★ **The pair is one drawing with one difference and may not be redrawn
+        // separately.** Both are a capital A sealed inside a frame; the frame is
+        // SOLID for embed and DASHED for unembed, and that dash is the entire
+        // distinction between them. It renders — `icons::svg` parses
+        // `stroke-dasharray` (`Shape::dash`, added 2026-09-04 naming this pair
+        // and `measure-perimeter` as the reason). If a later pass ever
+        // "simplifies" one of these two to a solid frame, the two commands
+        // become one picture again and the destructive one is the one that
+        // disappears into the other.
+        //
+        // Against `fonts` itself the cue is the frame: an A on an open baseline
+        // rule reads as "a typeface, listed"; an A closed inside a box reads as
+        // "the face is held inside this container", which is what embedding IS,
+        // and a broken box reads as the container named with nothing left in it.
+        // Deliberately not from the I-beam family (`add-text`, `text-select`)
+        // and not `edit-text`'s pencil: those act on the WORDS, and these act on
+        // the FACES the words are drawn in.
         command("tools.embed_fonts", t::tools_embed_fonts(), 711)
-            .with_icon("fonts")
+            .with_icon("embed-fonts")
             .enabled_when("doc.open"),
         command("tools.unembed_fonts", t::tools_unembed_fonts(), 712)
-            .with_icon("fonts")
+            .with_icon("unembed-fonts")
             .enabled_when("doc.open"),
+        // ★ **The borrow of `tools` ended 2026-09-04.** What it was costing is
+        // the set's standing argument in miniature: **an icon is a claim.** The
+        // `tools` wrench says *adjust this*, and this command adjusts nothing —
+        // it reports what the renderer had to substitute or leave out. It also
+        // meant the tab's own identity glyph was doing duty as one command's
+        // art, so the tile was indistinguishable from the tab that contained it.
+        // Same argument that keeps `fonts` from being a pencil.
+        //
+        // A folded page carrying a measurement trace across it. Distinct from
+        // [`crate::icons::Icon::Text`]'s folded page by the trace, which is the
+        // only thing on it that is not typography; distinct from
+        // [`crate::icons::Icon::Properties`] because Properties answers *what
+        // the document records* and this answers *what the drawing cost*.
         command(
             "tools.render_diagnostics",
             t::tools_render_diagnostics(),
             720,
         )
-        .with_icon("tools")
+        .with_icon("render-diagnostics")
         .enabled_when("doc.open"),
     ]
 }

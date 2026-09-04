@@ -1011,8 +1011,8 @@ pub(super) fn preview(ui: &Ui, preview: Preview<'_>) {
     let st = read(ctx)
         .filter(|s| s.page_index == page_index)
         .unwrap_or_else(|| MeasureState::for_kind(page_index, kind));
-    let color =
-        snap::snap_indicator_tint(ctx).unwrap_or_else(|| ui.visuals().selection.stroke.color);
+    let color = snap::snap_indicator_tint(ctx)
+        .unwrap_or_else(|| egui_shell::theme::Theme::canvas_selection_ink(ctx));
 
     // ★ The picked POINTS, marked, and drawn on EVERY frame the set is
     // non-empty — not only while the pointer is over the canvas.

@@ -27,14 +27,29 @@
 //! reopened?* With nothing selected, this module paints **nothing at all**,
 //! so the answer is no by construction.
 //!
-//! ## Colours come from the theme, never from a literal
+//! ## Colours come from the theme, never from a literal — and by their ROLE NAME
 //!
-//! Every colour here is read from [`egui::Visuals`] — `selection.stroke` for
-//! the outline and grips, `selection.bg_fill` for the rubber-band's wash.
-//! A hard-coded colour would be correct in one theme and invisible or
-//! shouting in the other, and `panels`' scroll-bar note records that exact
-//! failure already measured once in this project: a control that was present,
-//! opaque, correctly sized and invisible in a capture.
+//! Every colour here is read from the theme through the two purpose-named
+//! accessors at the bottom of this file, [`ink`] and [`fill`]. A hard-coded
+//! colour would be correct in one theme and invisible or shouting in the
+//! other, and `panels`' scroll-bar note records that exact failure already
+//! measured once in this project: a control that was present, opaque,
+//! correctly sized and invisible in a capture.
+//!
+//! ★★★ **They used to be read from `visuals.selection.stroke` and
+//! `visuals.selection.bg_fill`, and that was the wrong address** —
+//! `REVIEW_TRIAGE.md` defect **T2**, fixed 2026-09-04. `egui::Visuals::selection`
+//! is `egui`'s channel for styling **selected widgets**, not a canvas role, and
+//! for as long as this theme handed it to the canvas every selected chrome
+//! control in the application — nineteen `selectable_label` and
+//! `Button::selected` sites — was painted with the colours on this page.
+//! Measured luminance gap in the Dark preset: **72.5**, against a floor of 90.
+//!
+//! The values are unchanged; only their address is. That is the whole lesson
+//! and it is this project's standing one: *a correctly-sourced value used for
+//! the wrong role passes every gate — expose the pair behind a purpose-named
+//! function.* `tools/gates/check-selection-channel.sh` now fails the build for
+//! any file outside the theme module that reads the widget channel.
 //!
 //! ## Why the outline is grown before it is drawn
 //!
@@ -196,7 +211,7 @@ pub fn draw_selection(
     if selection.is_empty() {
         return;
     }
-    let stroke = Stroke::new(1.5, visuals.selection.stroke.color);
+    let stroke = Stroke::new(1.5, ink(painter));
 
     // ★ The selected ANNOTATION, if the selection is one.
     //
@@ -362,7 +377,8 @@ pub fn draw_grips(
     bounds: Rect,
     offer: crate::canvas::handles::GripSet,
 ) {
-    let stroke = Stroke::new(1.0, visuals.selection.stroke.color);
+    let ink = ink(painter);
+    let stroke = Stroke::new(1.0, ink);
     if offer.resize {
         for (_, rect) in handles::grip_rects(bounds) {
             painter.rect(
@@ -396,7 +412,7 @@ pub fn draw_grips(
         let centre = handle.center();
         painter.line_segment(
             [egui::pos2(centre.x, bounds.top()), centre],
-            Stroke::new(1.0, visuals.selection.stroke.color),
+            Stroke::new(1.0, ink),
         );
         painter.circle(
             centre,
@@ -483,20 +499,14 @@ pub const ROTATE_HANDLE_REGION: &str = "canvas.rotate-handle"; // ui-text-exempt
 /// selection, because `annotdrag` has to decide the same rectangle to know
 /// whether a drag is eligible at all. One computation, one answer, and the
 /// preview cannot promise a landing spot the commit disagrees with.
-pub fn draw_annot_ghost(
-    painter: &Painter,
-    visuals: &Visuals,
-    mapping: &PageMapping,
-    rect: egui::Rect,
-) {
-    let stroke = Stroke::new(1.5, ghost(visuals.selection.stroke.color));
+pub fn draw_annot_ghost(painter: &Painter, mapping: &PageMapping, rect: egui::Rect) {
+    let stroke = Stroke::new(1.5, ghost(ink(painter)));
     let screen = visible_outline_rect(mapping.rect_to_screen(rect), MIN_OUTLINE_EXTENT_PX);
     painter.rect_stroke(screen, CornerRadius::ZERO, stroke, StrokeKind::Middle);
 }
 
 pub fn draw_move_ghost(
     painter: &Painter,
-    visuals: &Visuals,
     mapping: &PageMapping,
     selection: &SelectionState,
     delta: egui::Vec2,
@@ -514,7 +524,7 @@ pub fn draw_move_ghost(
     if !outline {
         return;
     }
-    let stroke = Stroke::new(1.5, ghost(visuals.selection.stroke.color));
+    let stroke = Stroke::new(1.5, ghost(ink(painter)));
     for (_, page_rect) in selection.outlines() {
         let screen = visible_outline_rect(
             mapping.rect_to_screen(page_rect.translate(delta)),
@@ -566,13 +576,12 @@ pub fn draw_move_ghost(
 /// preview reads as *"the drag stopped tracking"*.
 pub fn draw_rotate_ghost(
     painter: &Painter,
-    visuals: &Visuals,
     mapping: &PageMapping,
     selection: &SelectionState,
     centre: egui::Pos2,
     radians: f32,
 ) {
-    let stroke = Stroke::new(1.5, ghost(visuals.selection.stroke.color));
+    let stroke = Stroke::new(1.5, ghost(ink(painter)));
     // ★ The quadrilateral, not the rotated bounding box. Drawing the box would
     // show the operator a shape that GREW as they turned it — which is a
     // preview of something the release does not do, and doubly misleading here:
@@ -621,13 +630,12 @@ pub fn draw_rotate_ghost(
 /// stayed still.
 pub fn draw_resize_ghost(
     painter: &Painter,
-    visuals: &Visuals,
     mapping: &PageMapping,
     selection: &SelectionState,
     anchor: egui::Pos2,
     (sx, sy): (f32, f32),
 ) {
-    let stroke = Stroke::new(1.5, ghost(visuals.selection.stroke.color));
+    let stroke = Stroke::new(1.5, ghost(ink(painter)));
     for (_, page_rect) in selection.outlines() {
         let screen = mapping.rect_to_screen(*page_rect);
         // `anchor + (p - anchor) * s`, per corner — the same map the commit
@@ -745,11 +753,11 @@ const CURRENT_ALPHA: u8 = 96;
 /// screen is indistinguishable from a search that did not work.
 pub fn draw_find_hits(
     painter: &Painter,
-    visuals: &Visuals,
     mapping: &PageMapping,
     hits: impl IntoIterator<Item = FindHighlight>,
 ) {
-    let stroke = Stroke::new(2.0, visuals.selection.stroke.color);
+    let (ink, fill) = pair(painter);
+    let stroke = Stroke::new(2.0, ink);
     for hit in hits {
         let screen = visible_outline_rect(mapping.rect_to_screen(hit.rect), MIN_OUTLINE_EXTENT_PX);
         let alpha = if hit.current {
@@ -757,11 +765,7 @@ pub fn draw_find_hits(
         } else {
             HIT_ALPHA
         };
-        painter.rect_filled(
-            screen,
-            CornerRadius::ZERO,
-            at_alpha(visuals.selection.bg_fill, alpha),
-        );
+        painter.rect_filled(screen, CornerRadius::ZERO, at_alpha(fill, alpha));
         if hit.current {
             painter.rect_stroke(screen, CornerRadius::ZERO, stroke, StrokeKind::Middle);
         }
@@ -827,19 +831,14 @@ const TEXT_SELECTION_ALPHA: u8 = 40;
 /// size, or a line so small at the current zoom that it rounds away — and a
 /// selection that puts no pixels on the screen is indistinguishable from a
 /// gesture that did not work.
-pub fn draw_text_selection(
-    painter: &Painter,
-    visuals: &Visuals,
-    mapping: &PageMapping,
-    boxes: &[Rect],
-) {
+pub fn draw_text_selection(painter: &Painter, mapping: &PageMapping, boxes: &[Rect]) {
     for page_rect in boxes {
         let screen =
             visible_outline_rect(mapping.rect_to_screen(*page_rect), MIN_OUTLINE_EXTENT_PX);
         painter.rect_filled(
             screen,
             CornerRadius::ZERO,
-            at_alpha(visuals.selection.bg_fill, TEXT_SELECTION_ALPHA),
+            at_alpha(fill(painter), TEXT_SELECTION_ALPHA),
         );
     }
 }
@@ -877,13 +876,13 @@ pub(super) fn at_alpha(base: Color32, alpha: u8) -> Color32 {
 /// A wash plus an outline. The wash matters on a dense drawing: an
 /// outline-only band over a hatched region is hard to see at all, and a
 /// rubber-band the operator cannot see is a rubber-band they cannot aim.
-pub fn draw_marquee(painter: &Painter, visuals: &Visuals, mapping: &PageMapping, page_rect: Rect) {
+pub fn draw_marquee(painter: &Painter, mapping: &PageMapping, page_rect: Rect) {
     let screen = mapping.rect_to_screen(page_rect);
-    painter.rect_filled(screen, CornerRadius::ZERO, wash(visuals.selection.bg_fill));
+    painter.rect_filled(screen, CornerRadius::ZERO, wash(fill(painter)));
     painter.rect_stroke(
         screen,
         CornerRadius::ZERO,
-        Stroke::new(1.0, visuals.selection.stroke.color),
+        Stroke::new(1.0, ink(painter)),
         StrokeKind::Middle,
     );
 }
@@ -944,17 +943,12 @@ pub fn draw_field_shade(painter: &Painter, visuals: &Visuals, mapping: &PageMapp
 /// over its first and last characters. A middle-aligned stroke on a tight text
 /// box eats the glyphs at both ends, which is worst on exactly the short fields
 /// — a date, a revision letter — where every character matters.
-pub fn draw_field_spotlight(
-    painter: &Painter,
-    visuals: &Visuals,
-    mapping: &PageMapping,
-    rect: Rect,
-) {
+pub fn draw_field_spotlight(painter: &Painter, mapping: &PageMapping, rect: Rect) {
     let screen = mapping.rect_to_screen(rect);
     painter.rect_stroke(
         screen,
         CornerRadius::ZERO,
-        Stroke::new(SPOTLIGHT_WIDTH, visuals.selection.stroke.color),
+        Stroke::new(SPOTLIGHT_WIDTH, ink(painter)),
         StrokeKind::Outside,
     );
 }
@@ -975,6 +969,57 @@ const SPOTLIGHT_WIDTH: f32 = 2.0;
 /// stay readable.
 const FIELD_WASH_ALPHA: u8 = 28;
 
+/// **The ink every outline, grip, ghost and band in this module is drawn
+/// with** — the theme's *content-area* selection role.
+///
+/// # ★★★ Why this is a call and not `visuals.selection.stroke.color`
+///
+/// It used to be exactly that, everywhere in this file, and that address was
+/// wrong — `REVIEW_TRIAGE.md` defect **T2**. `egui::Visuals::selection` is
+/// `egui`'s styling channel for **selected widgets**: `Style::button_style`
+/// takes both fills *and the text colour* from it for anything drawn with
+/// `Button::selected(true)` or `ui.selectable_label(true, …)`. While the theme
+/// pointed that channel at this canvas, the canvas won, and every selected
+/// chrome control in the application was painted with canvas ink — accent text
+/// on a 27 % wash, a luminance gap of 72.5 in the Dark preset against the
+/// project's own readable floor of 90.
+///
+/// Nothing about the *picture* changed when it was fixed:
+/// [`egui_shell::theme::Theme::canvas_selection_ink`] returns `palette.accent`,
+/// which is bit-for-bit what that channel used to carry. What changed is that
+/// the colour now arrives under a name that says which role it is, so
+/// re-tuning chrome can no longer silently re-tune the page overlay.
+/// `tools/gates/check-selection-channel.sh` keeps the old address unreachable.
+///
+/// ★ Takes the [`Painter`] rather than a `&Context` because every drawing
+/// function in this module already holds one and `Painter::ctx` is free. That
+/// is deliberate: a helper whose argument the caller must go and *find* is a
+/// helper people work around.
+fn ink(painter: &Painter) -> Color32 {
+    egui_shell::theme::Theme::canvas_selection_ink(painter.ctx())
+}
+
+/// **The translucent tint a selected or enclosed region is washed with** — the
+/// theme's content-area selection fill, 27 % alpha by design so the operator
+/// can still see what they are picking.
+///
+/// See [`ink`] for the whole argument. This is the other half of the pair that
+/// used to be read from `visuals.selection.bg_fill`, and it returns
+/// `palette.selection_fill` — again, the identical value.
+fn fill(painter: &Painter) -> Color32 {
+    egui_shell::theme::Theme::canvas_selection_fill(painter.ctx())
+}
+
+/// **Both content-area selection roles at once**, as `(ink, fill)`.
+///
+/// For the functions that draw a washed rectangle *and* an outline around it —
+/// [`draw_find_hits`] is the one — where fetching the two separately would
+/// read as two unrelated colours and would take the theme lock twice inside a
+/// loop.
+fn pair(painter: &Painter) -> (Color32, Color32) {
+    egui_shell::theme::Theme::canvas_selection_pair(painter.ctx())
+}
+
 /// The rubber-band's fill: the theme's selection colour at low alpha.
 ///
 /// Derived from the theme rather than named, so it tracks light and dark
@@ -983,8 +1028,9 @@ const FIELD_WASH_ALPHA: u8 = 28;
 /// looking at it*.
 fn wash(base: Color32) -> Color32 {
     // NOT A THEME COLOUR: arithmetic on the theme's own colour, not a choice
-    // of one. The hue arrives from `visuals.selection.bg_fill` and only the
-    // alpha is set here, so a restyle still reaches this band — naming a role
+    // of one. The hue arrives from [`fill`] — the theme's content-area
+    // selection role — and only the alpha is set here, so a restyle still
+    // reaches this band — naming a role
     // for it would freeze the wash to one palette entry and break the
     // "the band is the selection colour" relationship it exists to keep.
     Color32::from_rgba_unmultiplied(base.r(), base.g(), base.b(), 48)
@@ -1003,8 +1049,8 @@ fn wash(base: Color32) -> Color32 {
 fn ghost(base: Color32) -> Color32 {
     let [r, g, b, _] = base.to_srgba_unmultiplied();
     // NOT A THEME COLOUR: the same arithmetic-on-a-themed-colour case as
-    // `wash` — `base` is `visuals.selection.stroke.color` and only the alpha
-    // is chosen here.
+    // `wash` — `base` is the content-area selection ink from [`ink`] and only
+    // the alpha is chosen here.
     Color32::from_rgba_unmultiplied(r, g, b, GHOST_ALPHA)
 }
 

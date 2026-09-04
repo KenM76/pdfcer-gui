@@ -87,8 +87,41 @@ pub(super) fn band() -> Vec<Command> {
         // with `tools.split_files`, which is the same dialog with a different
         // operand set; see that one's note in `catalog::tools` for the whole
         // argument. R9: nothing is drawn until the boundary chooser exists.
+        // ★★ **The borrow of `combine` ended 2026-09-04**, with art adopted from
+        // the outside review of 2026-09-03, and what the borrow was costing is
+        // the clearest case in this file.
+        //
+        // `combine` is [`crate::icons::Icon::Combine`] — `link.svg`, two closed
+        // interlocking rings — and its documented owner is a DIFFERENT command:
+        // `tools.merge_files`, labelled *"Combine files…"*. So the two commands
+        // an operator is most likely to confuse drew one identical picture, on
+        // two different tabs, and the catalogue already knew they were confusable
+        // — each one's tooltip ends by naming the other (*"To combine files into
+        // a new one instead, leaving this document alone, use Tools ▸ Merge
+        // files"*). **A tooltip is the last thing an operator reads and a glyph
+        // is the first**, so the disambiguation was being done in exactly the
+        // wrong order: the picture asserted they were the same operation and the
+        // hover text, seconds later, took it back. The cost of getting it wrong
+        // is not a wasted click either — one of these two writes a new file and
+        // changes neither input, the other consumes files into the document you
+        // have open.
+        //
+        // `merge` is a Y-junction: two streams entering from the left, bending
+        // together, leaving as one line under an arrowhead. The distinction from
+        // `combine` is DIRECTION, and it maps onto the labels exactly. Two closed
+        // rings are symmetric, have no free ends and make no statement about
+        // which input survives — right for "Combine files", which produces a
+        // third thing. Two tails in and one line out says which one survives —
+        // right for "Merge into this document".
+        //
+        // Distinct from [`crate::icons::Icon::ShapeArrow`] because that
+        // arrowhead terminates a single straight shaft (a `/Line` annotation is
+        // a straight drag); here the head terminates a junction and the two
+        // curved tails carry the whole meaning. Distinct from
+        // `page-extract` two entries above, which is the same family's opposite
+        // sense — an arrow LEAVING a page.
         command("pages.merge_into", t::pages_merge_into(), 315)
-            .with_icon("combine")
+            .with_icon("merge")
             .enabled_when("doc.pages"),
         command("pages.rotate_left", t::pages_rotate_left(), 320)
             .with_icon("rotate-ccw")

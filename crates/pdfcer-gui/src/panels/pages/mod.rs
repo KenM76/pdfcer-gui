@@ -611,16 +611,20 @@ const CARET_DIMMED: f32 = 0.35;
 ///
 /// # The colour is the theme's, never a literal
 ///
-/// `visuals().selection.stroke.color` — the same source the current-page ring
-/// and the guide preview take, so a preset that changes the accent changes all
-/// three together. `gamma_multiply` rather than a second, paler constant, for
-/// the same reason: one colour with a stated relationship beats two colours
-/// that have to be kept in step.
+/// [`egui_shell::theme::Theme::canvas_selection_ink`] — the same source the
+/// current-page ring and the guide preview take, so a preset that changes the
+/// accent changes all three together. **Not `visuals().selection.stroke`**:
+/// that is `egui`'s selected-*widget* channel, and a thumbnail rail is showing
+/// document content, not widgets (`REVIEW_TRIAGE.md` T2).
+///
+/// `gamma_multiply` rather than a second, paler constant, for the same reason:
+/// one colour with a stated relationship beats two colours that have to be
+/// kept in step.
 fn paint_caret(ui: &egui::Ui, drop: Option<&DropTarget>) {
     let Some(drop) = drop else {
         return;
     };
-    let base = ui.visuals().selection.stroke.color;
+    let base = egui_shell::theme::Theme::canvas_selection_ink(ui.ctx());
     let colour = if drop.lands {
         base
     } else {
@@ -874,7 +878,13 @@ fn tile(
         painter.rect_filled(
             rect.expand(SELECTION_MAT_PTS),
             2.0,
-            visuals.selection.bg_fill,
+            // ★ The content-area selection wash by its role name. It was
+            // `visuals.selection.bg_fill` until 2026-09-04 — `egui`'s
+            // selected-WIDGET fill, which this theme had pointed at the canvas
+            // tint (`REVIEW_TRIAGE.md` T2). Identical colour, named address;
+            // the widget channel is now the accent plate and painting a
+            // thumbnail mat with it would flood the tile.
+            egui_shell::theme::Theme::canvas_selection_fill(ui.ctx()),
         );
     }
     // The sheet itself: paper, then a hairline, then either the picture or
@@ -946,7 +956,10 @@ fn tile(
         ui.painter().rect_stroke(
             rect,
             2.0,
-            egui::Stroke::new(CURRENT_RING_PTS, visuals.selection.bg_fill),
+            egui::Stroke::new(
+                CURRENT_RING_PTS,
+                egui_shell::theme::Theme::canvas_selection_fill(ui.ctx()),
+            ),
             egui::StrokeKind::Outside,
         );
         crate::diag::ui_rect("panel-pages-current-tile", rect);

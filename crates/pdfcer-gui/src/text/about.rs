@@ -134,14 +134,86 @@ pub fn product() -> &'static str {
     "pdfcer"
 }
 
-/// The version line.
+/// The version line, when this build **is** a released version.
 ///
-/// `version` comes from `CARGO_PKG_VERSION` at the call site rather than
-/// being written here, so it cannot drift from the crate manifest. The word
-/// in front of it is the part that is copy.
+/// # ★★★ Where `version` comes from, and why it is not the crate manifest
+///
+/// From the **git tag**, through `PDFCER_RELEASE_VERSION` — see
+/// `crates/pdfcer-gui/build.rs`'s `release()`, which derives it, and
+/// [`crate::dialogs::about::version_label`], which decides between this
+/// function and the two below.
+///
+/// It used to come from `CARGO_PKG_VERSION`, and that was **wrong rather than
+/// stale**. `Cargo.toml` says `0.1.0` on purpose: the crate is versioned by the
+/// pdfcer workspace it folds into, not by this staging one, and O109 and O110
+/// both record the decision not to bump it. The consequence went unnoticed for
+/// five releases — the About window's headline read *"Version 0.1.0"* in the
+/// build published as **v0.5.0** (review row A11). Two numbers that are not the
+/// same number were being shown as if they were.
+///
+/// The word in front is the part that is copy. Nothing here is ever
+/// hand-written: a version literal in this file would be a second place to
+/// bump and the first to be forgotten.
 #[must_use]
 pub fn version_line(version: &str) -> String {
     format!("Version {version}")
+}
+
+/// The version line when the build is **past** a release rather than at one.
+///
+/// # ★★ Why a development build is not allowed to name a release bare
+///
+/// `Version 0.5.0` on a build twenty-three commits past `v0.5.0` is the same
+/// class of untruth this whole row is about, one step smaller: an operator
+/// comparing their build against the released one would be told they match. So
+/// the distance is stated, and so is the conclusion — *not the released build*
+/// — because a reader should not have to know what "plus 23 commits" implies.
+///
+/// `modified` is the working tree having had uncommitted changes at compile
+/// time. It is reported here as well as in the `-dirty` suffix on the revision
+/// three lines below, and that is not duplication: the revision line answers
+/// *what was this built from*, and this line answers *is this the release*,
+/// and a clean tree sitting exactly on the tag is the only state where the
+/// answer to the second is yes.
+///
+/// Reads *"Version 0.5.0, plus 23 commits — not the released build"*.
+#[must_use]
+pub fn version_line_after(version: &str, commits: u32, modified: bool) -> String {
+    let since = match (commits, modified) {
+        (0, _) => "with uncommitted changes".to_owned(),
+        (1, false) => "plus 1 commit".to_owned(),
+        (1, true) => "plus 1 commit and uncommitted changes".to_owned(),
+        (n, false) => format!("plus {n} commits"),
+        (n, true) => format!("plus {n} commits and uncommitted changes"),
+    };
+    format!("Version {version}, {since} — not the released build")
+}
+
+/// What the headline says when there is **no** release version to show.
+///
+/// # ★★★ Why this says something rather than showing nothing
+///
+/// The no-placeholders rule (R9) forbids rendering a stub, and it would be
+/// satisfied by drawing no line at all. This says a sentence instead, for the
+/// reason [`component_absent`] already records for `iccce`: **that rule governs
+/// controls, and this is a provenance report.** An operator asking what they
+/// are running is owed *"this is not a released build"*, which is a real answer
+/// and a more useful one than a gap where a version used to be — and a gap is
+/// also indistinguishable from a layout fault.
+///
+/// It contains **no number**, and that is load-bearing rather than incidental.
+/// The states that reach it — a tarball with no `.git`, a machine with no
+/// `git`, a clone with no tags — are exactly the states in which any number
+/// shown would be invented. `dialogs::about::tests::the_unavailable_case_invents_no_number`
+/// asserts the absence of digits directly, so the day someone "improves" this
+/// by falling back to the crate manifest, a test says why not.
+///
+/// It points at the Build block rather than ending on the bad news, because
+/// that block *does* identify this executable — a timestamp and a commit — and
+/// an operator who came here to tell two builds apart can still do it.
+#[must_use]
+pub fn version_unreleased() -> &'static str {
+    "No released version — the build details below identify this program."
 }
 
 // ===========================================================================

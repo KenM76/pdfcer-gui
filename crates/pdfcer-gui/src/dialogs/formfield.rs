@@ -100,6 +100,213 @@ pub struct FormFieldDialog {
 /// fight the operator's own click on Cancel.
 const FOCUS_ATTEMPT_FRAMES: u8 = 8;
 
+// ═════════════════════════════════════════════════════════════════════════════
+// HOW BIG THE WINDOW OPENS — review finding A16a, fixed 2026-09-04
+// ═════════════════════════════════════════════════════════════════════════════
+//
+// ★★★ THE REPORT, AND WHY IT WAS HALF RIGHT
+//
+// The review said this dialog *"clips"*. It does not: the body has scrolled
+// since it was written, so every control is reachable. What it does is open at
+// a size that is **too small for its own content**, with the one affordance
+// that would say so — a scrollbar — drawn as egui's default floating sliver:
+// two points wide, allocating no space, and faded out whenever the pointer is
+// somewhere else. So the operator sees a dialog that appears to end after the
+// tooltip box, with nothing on screen suggesting there is more below it. From
+// the outside that is indistinguishable from clipping, which is exactly what
+// the reviewer wrote down.
+//
+// The fix is therefore in two halves, and neither is sufficient alone:
+//
+//   1. the window opens at a size derived from what this kind of field actually
+//      asks — the constants and the inventory below;
+//   2. when it *does* scroll — a push button whose action grows extra rows, an
+//      operator who dragged the window small — the bar is **solid and drawn in
+//      the text colour**, so the affordance exists. That is `print/layout.rs`'s
+//      remedy for its own invisible-scrollbar defect, reached the same way.
+//
+// ★★★ AND IT IS NOT MEASURED FROM THE BODY. R128, and this project has been
+// bitten three times — the fit-zoom loop, the About window growing 560 → 1,624
+// px in a few frames, and the print dialog's two mutually-causing scrollbars.
+// `print/layout.rs`'s header states the rule this section obeys:
+//
+//   > Every width and height is derived from the space OUTSIDE the scroll area
+//   > and from constants. Nothing is measured from inside it.
+//
+// A height taken from `ui.min_rect()` of the laid-out body would be a
+// measurement of content that was laid out to fit the height being computed.
+// It cannot be right, and its wrongness is a loop rather than an offset. So
+// what follows is an **inventory**: a declared count of the rows each kind
+// draws, priced with constants. It can go stale — a row added without a line
+// here opens a window one row too short — and that is a strictly better failure
+// than a window that grows while you look at it. `the_inventory_prices_every_kind`
+// below is what makes staleness visible rather than silent.
+
+/// A caption line above a control, including the spacing under it.
+const LABEL_PTS: f32 = 22.0;
+
+/// One interactive control on its own row — a single-line box, a check box, a
+/// row of radio buttons, a combo — including the spacing under it.
+///
+/// This shell's theme presets draw controls at 28 pt (see `FEATURES.md` on the
+/// status bar's height constant, which was written for 24 and was wrong for
+/// exactly this reason), and the inventory prices the row rather than the
+/// control, so the item spacing is in the number.
+const CONTROL_PTS: f32 = 32.0;
+
+/// A `ui.small` explanatory sentence.
+///
+/// Priced at **three** lines rather than the two most of them take at
+/// [`WINDOW_PTS`]'s width. Deliberately generous: the wrapped height of a
+/// sentence is a function of the font, the preset and the width, none of which
+/// this arithmetic may read without becoming a measurement — so the honest
+/// thing is to over-price it and be a few points tall rather than to price it
+/// exactly at one preset and be a line short in another.
+const NOTE_PTS: f32 = 44.0;
+
+/// A horizontal rule with the 6 pt of air this file puts on each side of one.
+const SEPARATOR_PTS: f32 = 20.0;
+
+/// One `ui.add_space(6.0)`, as the body writes it.
+const GAP_PTS: f32 = 6.0;
+
+/// One row of a multi-line text box.
+const TEXT_ROW_PTS: f32 = 18.0;
+
+/// The border and padding a multi-line text box adds around its rows.
+const TEXT_BOX_CHROME_PTS: f32 = 16.0;
+
+/// Everything drawn ABOVE the scrolling body: the intro sentence and its space.
+///
+/// Priced at two lines because `text::formfield::intro`'s longest — the radio
+/// button's *"One of a set of alternatives — picking one clears the others."* —
+/// wraps to two at this width.
+const INTRO_PTS: f32 = 48.0;
+
+/// Height reserved UNDER the scrolling body for the separator and the button
+/// row.
+///
+/// # ★ It is one constant used twice, and it was a literal `40.0` in one of the
+/// # two places
+///
+/// The body reserves this out of the scroll area's `max_height` because the
+/// buttons are drawn *after* it, and the window's opening height adds it back
+/// because the buttons need somewhere to be. Those two uses must agree — a
+/// reservation smaller than the row pushes Accept off the bottom of a dialog
+/// whose entire purpose is Accept — so they read one number.
+///
+/// 46 pt, matching `print::layout::FOOTER_HEIGHT_PTS`, which reserves the same
+/// thing for the same reason.
+const FOOTER_PTS: f32 = 46.0;
+
+/// The window's opening size before the content inventory and the application
+/// window have their say.
+///
+/// The width is the whole of the horizontal story: the body is a stack of
+/// full-width controls, so nothing here competes for width and the number only
+/// has to be wide enough that the explanatory sentences wrap to two lines
+/// rather than four. 480 rather than the previous 440 buys about ten characters
+/// a line, which is one line off each of the four notes.
+const WINDOW_PTS: egui::Vec2 = egui::vec2(480.0, 420.0);
+
+/// The smallest this window may be, by resize or by squeeze.
+///
+/// What the common rows plus the buttons need. Below it the dialog is a
+/// scrollbar over an empty window rather than a usable form.
+const MIN_WINDOW_PTS: egui::Vec2 = egui::vec2(360.0, 260.0);
+
+/// How much of the application window is left clear above and below when this
+/// dialog's content is taller than the screen it has to open on.
+const SCREEN_MARGIN_PTS: f32 = 60.0;
+
+/// The width a solid scrollbar is drawn at, when the body does scroll.
+///
+/// The same 10 pt `print::layout::SCROLLBAR_WIDTH_PTS` uses, so the two dialogs
+/// that draw one draw the same one.
+const SCROLLBAR_WIDTH_PTS: f32 = 10.0;
+
+/// **How tall the rows this kind draws are**, in points — the declared
+/// inventory.
+///
+/// # What is counted, and the one thing that is not
+///
+/// Everything inside the scroll area, for the dialog **as it opens**: the two
+/// common rows at the top, the kind's own rows, and the two common flags plus
+/// the border row at the bottom.
+///
+/// ★★ A push button's *action* rows are deliberately **excluded**, and that is
+/// the one judgement in this function. `dialogs::buttonaction::rows` draws a
+/// different set of controls for each of seven choices — from nothing at all
+/// for *Do nothing* to a radio pair, a label, a three-row box and a note for
+/// *Show or hide fields* — and the choice is made by the operator **after** the
+/// window has been created. Sizing the opening window for the tallest of them
+/// would open every push-button dialog 160 pt taller than the rows it is
+/// showing, to pre-pay for a branch most operators never take. Those rows are
+/// what the scroll area is for, and they are why the bar is now visible.
+#[must_use]
+fn content_height(kind: FormFieldKind) -> f32 {
+    // The name row, the tooltip row and its note.
+    let name = LABEL_PTS + CONTROL_PTS;
+    let tooltip = GAP_PTS + LABEL_PTS + CONTROL_PTS + NOTE_PTS;
+    // Required, read-only, then the border row behind a gap.
+    let flags = CONTROL_PTS + CONTROL_PTS + GAP_PTS + CONTROL_PTS;
+    let specific = match kind {
+        // Starting value, multiline, password, the max-length row, and comb —
+        // which appears only once a maximum has been set, and is counted
+        // because the window must not start clipping when it does.
+        FormFieldKind::Text => {
+            LABEL_PTS + CONTROL_PTS + GAP_PTS + CONTROL_PTS * 3.0 + GAP_PTS + CONTROL_PTS
+        }
+        // Ticked-by-default, then the export value and what it means.
+        FormFieldKind::CheckBox => CONTROL_PTS + GAP_PTS + LABEL_PTS + CONTROL_PTS + NOTE_PTS,
+        // The group note first — it is the sentence that stops the commonest
+        // form-authoring mistake — then the value and the starts-selected box.
+        FormFieldKind::Radio => {
+            NOTE_PTS + GAP_PTS + LABEL_PTS + CONTROL_PTS + GAP_PTS + CONTROL_PTS
+        }
+        // The options box is four rows tall; then the drop-down/list pair,
+        // one conditional flag, and sort.
+        FormFieldKind::Choice => {
+            LABEL_PTS + TEXT_ROW_PTS * 4.0 + TEXT_BOX_CHROME_PTS + GAP_PTS + CONTROL_PTS * 3.0
+        }
+        // The caption, then `buttonaction::rows`' own opening rows: its space,
+        // its label, the combo, and the reach sentence under it.
+        FormFieldKind::PushButton => {
+            LABEL_PTS + CONTROL_PTS + GAP_PTS + LABEL_PTS + CONTROL_PTS + NOTE_PTS + GAP_PTS
+        }
+    };
+    name + tooltip + SEPARATOR_PTS + specific + SEPARATOR_PTS + flags
+}
+
+/// **How big the window opens** for `kind`, on an application window whose
+/// content rectangle is `screen`.
+///
+/// The height is the inventory plus the chrome outside the scroll area, capped
+/// so the dialog cannot open taller than the screen it has to appear on and
+/// floored at [`MIN_WINDOW_PTS`]. When the cap bites, the body scrolls — with a
+/// visible bar — which is the right answer and the reason the scroll area was
+/// never the defect.
+///
+/// ★ `screen` is the *application* window's content rectangle, used as the
+/// stand-in for the monitor's usable height. It is not the same quantity —
+/// this dialog is an OS window and may legally be taller than its parent — but
+/// it is the only one `eframe 0.35` offers without a work-area query, it is
+/// never larger than the monitor, and erring small here costs a scrollbar
+/// rather than a window with its buttons below the taskbar. The Settings window
+/// makes the same substitution and says so.
+#[must_use]
+fn window_size(kind: FormFieldKind, screen: egui::Rect) -> egui::Vec2 {
+    let wanted = INTRO_PTS + content_height(kind) + FOOTER_PTS;
+    let cap = (screen.height() - SCREEN_MARGIN_PTS).max(MIN_WINDOW_PTS.y);
+    egui::vec2(
+        WINDOW_PTS
+            .x
+            .min(screen.width() - SCREEN_MARGIN_PTS)
+            .max(MIN_WINDOW_PTS.x),
+        wanted.min(cap).max(MIN_WINDOW_PTS.y),
+    )
+}
+
 impl FormFieldDialog {
     /// Open for a control of `draft.kind` about to be placed at `rect`.
     #[must_use]
@@ -156,16 +363,17 @@ impl FormFieldDialog {
         if accept_requested_by_harness() && self.draft.is_authorable() {
             self.accept_requested = true;
         }
-        // Taller than the text-annotation dialog because the kind-specific rows
-        // stack under the common ones; the minimum is what the common rows plus
-        // the buttons need, so a resized-small window still shows a usable
-        // dialog rather than a scrollbar over an empty one.
-        let size = egui::vec2(440.0, 420.0);
+        // ★ Sized to the rows THIS kind draws — see the inventory above and
+        // review finding A16a. It used to be a flat `440 x 420` for all five,
+        // which is too short for every one of them: the operator saw a dialog
+        // that appeared to end after the tooltip box, because the only thing
+        // saying otherwise was egui's two-point floating scrollbar.
+        let size = window_size(self.draft.kind, ctx.input(egui::InputState::content_rect));
         let (frame, ()) = crate::dialogs::host::Host::new(
             "form-field", // ui-text-exempt: a viewport key, never displayed.
             t::title(self.draft.kind),
             size,
-            egui::vec2(360.0, 260.0),
+            MIN_WINDOW_PTS,
         )
         .show(ctx, |ui| {
             crate::diag::ui_rect(REGION_BODY, ui.max_rect());
@@ -219,8 +427,35 @@ impl FormFieldDialog {
         ui.label(t::intro(self.draft.kind));
         ui.add_space(8.0);
 
+        // ★★ SOLID SCROLLBARS, not egui's floating default — the second half of
+        // A16a, and the half that makes the first half honest.
+        //
+        // `ScrollStyle::default()` is `floating()`: a two-point sliver that
+        // allocates no space and fades out whenever the pointer is elsewhere.
+        // The body has always scrolled, so nothing was ever unreachable — but
+        // the reviewer wrote *"clipped"*, and they were reading the screen
+        // correctly. A dialog that ends mid-sentence with no visible bar looks
+        // like a rendering fault, not like a scroll.
+        //
+        // `foreground_color` on top of `solid()` for the reason
+        // `print/layout.rs` records: a solid handle defaults to
+        // `widgets.inactive.bg_fill`, which in a light preset is a near-white
+        // against a near-white panel — measured there as *present, opaque,
+        // correctly sized and invisible*. Drawing it from the same visuals'
+        // TEXT colour inherits whatever contrast the active theme gives text.
+        //
+        // ★ Set on a scoped `style_mut` of the body's `Ui`, so it reaches this
+        // scroll area and nothing else in the program.
+        let mut scroll = egui::style::ScrollStyle::solid();
+        scroll.foreground_color = true;
+        scroll.bar_width = SCROLLBAR_WIDTH_PTS;
+        ui.style_mut().spacing.scroll = scroll;
+
         egui::ScrollArea::vertical()
-            .max_height(ui.available_height() - 40.0)
+            // ★ The SAME constant the opening height adds back for the button
+            // row. It was a literal `40.0` here against nothing at all there,
+            // which is how the two halves of a reservation drift apart.
+            .max_height(ui.available_height() - FOOTER_PTS)
             .show(ui, |ui| {
                 self.name_row(ui);
                 self.tooltip_row(ui);
@@ -497,6 +732,112 @@ mod tests {
             lly: 10.0,
             urx: 170.0,
             ury: 30.0,
+        }
+    }
+
+    /// A roomy application window — 1,280 x 800, this shell's own default plus
+    /// the DPI inflation a real desktop adds — so the screen cap is not the
+    /// thing under test.
+    fn roomy() -> egui::Rect {
+        egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1280.0, 900.0))
+    }
+
+    /// ★★★ **Every kind's window opens tall enough for the rows that kind
+    /// draws** — review finding A16a.
+    ///
+    /// The defect in one assertion. The window was a flat `440 x 420` for all
+    /// five kinds and every one of them needs more than 420, so the dialog
+    /// always opened with content below the fold — behind a two-point floating
+    /// scrollbar nobody could see, which is why it was reported as clipping
+    /// rather than as scrolling.
+    ///
+    /// ★ Both sides of this comparison come from this file's own constants, so
+    /// it does not prove the constants are *right* — no unit test can, because
+    /// the true row heights exist only in a laid-out frame under a theme. What
+    /// it proves is that the window and the inventory cannot drift apart, which
+    /// is the failure that shipped: a size chosen once, by hand, against
+    /// content that then grew. The same shape as
+    /// `print::layout`'s `the_content_floor_is_the_sum_of_the_column_floors`.
+    #[test]
+    fn every_kind_opens_tall_enough_for_its_own_rows() {
+        for kind in FormFieldKind::ALL {
+            let needs = INTRO_PTS + content_height(kind) + FOOTER_PTS;
+            let got = window_size(kind, roomy()).y;
+            assert!(
+                got + f32::EPSILON >= needs,
+                "{kind:?} opens {got} pt tall for {needs} pt of content — the operator sees \
+                 a dialog that appears to end early, which is exactly what A16a reported"
+            );
+        }
+    }
+
+    /// **The inventory prices every kind separately**, so it cannot quietly
+    /// collapse back into one number.
+    ///
+    /// The failure this guards is the one that shipped: a single hand-chosen
+    /// size standing in for five different bodies. A drop-down has a four-row
+    /// options box and three flags; a check box has one tick and one value.
+    /// If those two ever price the same, the inventory has stopped being an
+    /// inventory and is a constant wearing a `match`.
+    #[test]
+    fn the_inventory_prices_every_kind() {
+        let choice = content_height(FormFieldKind::Choice);
+        let check = content_height(FormFieldKind::CheckBox);
+        assert!(
+            choice > check,
+            "a drop-down ({choice} pt) draws more rows than a check box ({check} pt); \
+             pricing them the same means the inventory is not reading the kind"
+        );
+        for kind in FormFieldKind::ALL {
+            assert!(
+                content_height(kind) > 0.0,
+                "{kind:?} priced its rows at nothing"
+            );
+        }
+    }
+
+    /// **A short screen caps the window rather than opening it off the
+    /// bottom**, and the floor still wins under the cap.
+    ///
+    /// The cap is what keeps the inventory from becoming a licence to open a
+    /// window taller than the desktop. When it bites the body scrolls, which is
+    /// what the scroll area is for and why the bar was made visible in the same
+    /// change.
+    #[test]
+    fn a_short_screen_caps_the_window_and_the_body_scrolls() {
+        let short = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1280.0, 400.0));
+        let got = window_size(FormFieldKind::Text, short);
+        assert!(
+            got.y <= short.height() - SCREEN_MARGIN_PTS + f32::EPSILON,
+            "the window ({} pt) must fit the screen it opens on ({} pt)",
+            got.y,
+            short.height()
+        );
+        assert!(
+            got.y >= MIN_WINDOW_PTS.y,
+            "the floor outranks the cap: a window below {} pt is a scrollbar over nothing",
+            MIN_WINDOW_PTS.y
+        );
+
+        let tiny = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(80.0, 80.0));
+        let got = window_size(FormFieldKind::Text, tiny);
+        assert!(got.x >= MIN_WINDOW_PTS.x && got.y >= MIN_WINDOW_PTS.y);
+    }
+
+    /// The window never opens smaller than the size it refuses to be dragged
+    /// to.
+    ///
+    /// A default below the floor is silently clamped by the window manager, so
+    /// the dialog would open at a size no constant in this file names — and the
+    /// operator could never get back to the one that was intended.
+    #[test]
+    fn the_opening_size_is_never_under_the_floor_it_declares() {
+        for kind in FormFieldKind::ALL {
+            let got = window_size(kind, roomy());
+            assert!(
+                got.x >= MIN_WINDOW_PTS.x && got.y >= MIN_WINDOW_PTS.y,
+                "{kind:?} opens at {got:?}, under its own floor {MIN_WINDOW_PTS:?}"
+            );
         }
     }
 

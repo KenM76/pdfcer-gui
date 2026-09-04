@@ -148,6 +148,15 @@ use crate::text::settings as t;
 /// Renaming this constant un-aims that check.
 pub const REGION_BODY: &str = "dialog:settings"; // ui-text-exempt: trace region name, never displayed
 
+/// The Cancel button's rect, so a driven check can press the abort path itself
+/// rather than pressing Escape and assuming the two agree.
+///
+/// ★ The two DO agree — `app::settings_window` documents both as dropping the
+/// draft — but a check that can only reach one of them proves nothing about the
+/// other, and the whole point of the check that wanted this is that the
+/// coupling it guards fails **silently**.
+pub const REGION_CANCEL: &str = "dialog:settings.cancel"; // ui-text-exempt: trace region name, never displayed
+
 /// The region each group heading publishes, suffixed with the group's key.
 ///
 /// One per collapsible header, so the contrast check can measure **each**
@@ -669,11 +678,35 @@ pub fn show(
             if !dirty {
                 save.on_disabled_hover_text(t::save_disabled_tooltip());
             }
-            if ui
-                .button(t::cancel())
-                .on_hover_text(t::cancel_tooltip())
-                .clicked()
-            {
+            // ★★★ **Cancel publishes its own rect, 2026-09-04, and the reason
+            // is a check that could not be written without it.**
+            //
+            // `settings_theme_takes_effect` drives a live theme change and then
+            // proves it is put back — the one-line coupling whose failure is
+            // silent, and the behaviour the outside review praised while noting
+            // nothing guarded it. To press Cancel, a driven check has to know
+            // where Cancel is.
+            //
+            // Without this it could only press **Escape**, which reaches the
+            // same `settings_draft = None` and is documented as contractually
+            // identical — but "identical today" is not the property under test.
+            // An edit that made `Outcome::Cancel` behave differently from the
+            // Escape path would leave the check green.
+            //
+            // ★ And it could not simply aim at the button beside it: that is
+            // **Save**, which writes the operator's real `settings.txt`. A
+            // harness that mis-aims by one control does not fail — it silently
+            // rewrites his preferences, which is the class of harness accident
+            // this project has already paid for once.
+            //
+            // ★★ `ui_rect`, not `ui_rect_visible`: this row is in the dialog's
+            // fixed footer, outside the body's scroll area, so it is never
+            // partly clipped. The visible-fraction filter exists for content
+            // that can scroll out from under the pointer and would report a
+            // sliver a driven click cannot hit.
+            let cancel = ui.button(t::cancel()).on_hover_text(t::cancel_tooltip());
+            crate::diag::ui_rect(REGION_CANCEL, cancel.rect);
+            if cancel.clicked() {
                 outcome = Outcome::Cancel;
             }
             // Separated from the two commit/abort controls, because it is

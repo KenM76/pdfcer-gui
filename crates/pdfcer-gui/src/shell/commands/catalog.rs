@@ -101,16 +101,52 @@
 //! | `view.zoom_actual` | the icon ui-spec §3.2 argues against it by name |
 //! | the five `view.render_*` | their labels are the parameter's whole content; no conventional glyph exists for any of them |
 //! | `view.app_initiative` | any honest drawing pictures what its default forbids |
-//! | `file.recent` | reusing `open` would draw one band control twice |
 //! | `mode.read`/`review`/`edit` | the mode selector renders text segments and has no icon path |
-//! | `measure.finish` | the set has no check/tick/accept glyph, and the `measure` ruler the three tools share would draw a fourth identical one for a command that places nothing |
-//! | `markup.finish` | the same refusal, one tab over: no accept glyph exists, and reusing a shape glyph would draw a fourth near-identical shape in the Shapes band for a command that ends the drawing rather than doing any |
-//! | `file.new` | the same refusal as `file.ocr` below, and for the same reason: the icon directory is declared the operator's **own art**, so a new glyph is not a build session's to add. Every reuse was worse than the word — `document` is Properties, `insert-pages` means *pages into this document*, `upload` is import |
-//! | `file.ocr` | **the refusal with a different reason from all the others**, and worth reading: there is no recognition glyph and every reuse would mislead (`text-select` is the text *tool*, `search` is Find, `convert` is a format change), but the deciding fact is that the alternative is not available either — `icons/assets/PROVENANCE.md` declares that directory the **operator's own art**, which is what exempts it from `check-shipped-assets`, and adding a machine-drawn SVG would make that provenance note false. A false provenance note is a worse defect than a control that draws its own words |
+//!
+//! ## ★★★ Seven of those refusals were DISCHARGED on 2026-09-04, and the
+//! discharge is not a reversal
+//!
+//! Every row struck from the table above — `file.recent`, `file.new`,
+//! `file.ocr`, `measure.finish`, `markup.finish`, and the save family beside
+//! them — refused a glyph for **one reason wearing several coats**, and it is
+//! worth stating once here because the individual registrations state it seven
+//! times:
+//!
+//! > `icons/assets/PROVENANCE.md` declares that directory the operator's
+//! > **own art**. That declaration is what exempts it from
+//! > `check-shipped-assets`, and a machine-drawn SVG dropped into it would make
+//! > the note false. **A false provenance note is a worse defect than a control
+//! > that draws its own words.** So the alternative to a reuse was never
+//! > "draw one" — it was "ask him for one".
+//!
+//! The asking happened. An outside review of 2026-09-03 delivered sixty-five
+//! proposed glyphs and thirty-six were adopted the next day
+//! (`GLYPH_ADOPTION.md`), each drawn from primitives in the directory's own
+//! style contract and covered unchanged by the existing provenance note.
+//!
+//! ★ **The refusals were right and are now spent.** Each one names, correctly,
+//! a reuse that would have misled — `document` is Properties, `upload` is
+//! import, `search` is Find, the `measure` ruler belongs to Linear — and every
+//! one of those constraints SURVIVES the discharge: the new art was drawn to
+//! stay distinguishable from exactly the neighbours the refusals named. What
+//! ended was the supply problem, not the argument.
+//!
+//! ★★ Two refusals in the table are untouched and must stay that way, because
+//! their reason is not supply. `view.zoom_actual` is argued against **by name**
+//! in the icon ui-spec §3.2, and `edit.select_all` is refused on the ground
+//! that no comparable program draws one and a marquee would say "rubber band" —
+//! no amount of art discharges either.
 //!
 //! ★ …and moved a third time on 2026-08-14, when the three text-markup kinds
 //! were registered **with** three new glyphs (`text-underline`,
-//! `text-strikeout`, `text-squiggly`): 79-of-90 became 82-of-93, and the refusal
+//! `text-strikeout`, `text-squiggly`). ⚠ This paragraph carried a
+//! *"79-of-90 became 82-of-93"* until 2026-09-04, by which point the live
+//! figures were far past it — the drift this module's own header warns about,
+//! committed in the header that warns about it. **The numbers are deleted
+//! rather than corrected**, per the rule stated at the top: when prose and a
+//! measurement disagree, delete the prose's copy. The live split is pinned by
+//! `super::tests::the_icon_coverage_split_adds_up_to_the_registry`, which is
+//! the only copy. The refusal
 //! count is unchanged because none of the three refused one. They are new art
 //! rather than a reuse of `shape-highlight` for the reason their registration
 //! records: the four controls in the Text markup band differ only in the mark

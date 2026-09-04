@@ -134,18 +134,73 @@ pub(super) fn band() -> Vec<Command> {
         // clicks this control is live for one tool and greyed for the other. The
         // operator is told the rule before they press, rather than refused after.
         //
-        // # No icon, and it is the same deliberate refusal `measure.finish` makes
+        // # The icon refusal that stood here is DISCHARGED — 2026-09-04
         //
-        // There is no check-mark, tick or accept glyph in the set, and no
-        // existing key means "complete this gesture". Reusing one of the three
-        // shape glyphs would draw a fourth near-identical shape in the same band
-        // for a command that draws nothing — it *ends* the drawing — and would
-        // undermine the pairing argument the polyline/polygon glyphs above rest
-        // on. Naming a key that does not exist draws a visible slashed mark,
-        // which is a placeholder arriving through the back door. So it renders as
-        // its words, which for a completion verb is the clearest thing it could
-        // be.
-        command("markup.finish", t::markup_finish(), 506).enabled_when("markup.finishable"),
+        // This registration and `catalog::measure`'s `measure.finish` carried
+        // the same sentence, word for word, in two files: *"There is no
+        // check-mark, tick or accept glyph in the set, and no existing key means
+        // 'complete this gesture'."* That was a true statement about the
+        // catalogue and it is no longer true — `finish-shape` and `check` were
+        // both adopted from the outside review of 2026-09-03 — so the refusal is
+        // **spent rather than overturned**, the same way
+        // [`crate::icons::Icon::Pages`] and the Attachments paperclip record.
+        // The note is rewritten rather than deleted, because a reader who finds
+        // a bare `.with_icon("finish-shape")` here with no history will
+        // eventually re-derive the wrong lesson from it.
+        //
+        // What in it was load-bearing and still is:
+        //
+        // * **Reusing one of the three shape glyphs would have been wrong, and
+        //   still would be.** It would draw a fourth near-identical shape in
+        //   this band for a command that draws nothing — it *ends* the drawing —
+        //   and would undermine the pairing argument the polyline and polygon
+        //   glyphs above rest on. The new asset is deliberately close to
+        //   [`crate::icons::Icon::ShapePolyline`] and deliberately not it; see
+        //   the count cue below.
+        // * **Naming a key that does not exist draws a visible slashed mark**, a
+        //   placeholder arriving through the back door. Every key added in this
+        //   pass was checked against `Icon::name` in `icons::catalog::mapping`
+        //   before it was written down.
+        // * A completion verb rendering as its words was an honest fallback, not
+        //   a defect — which is why the button was shippable in the meantime.
+        //
+        // ★ **Why `finish-shape` here and `check` on `measure.finish`.** The
+        // review supplied two candidate glyphs for these two near-identical
+        // commands: `finish-shape`, a vertex run with a tick appended, and
+        // `check`, a bare asymmetric tick. They must not share — two commands
+        // whose labels both read "Finish", sitting one tab apart, are the last
+        // pair in the build that could afford one picture, and the Measure tab's
+        // five-way `measure` share is being dissolved in this same pass for
+        // exactly that fault. The split is decided and recorded so nobody
+        // re-litigates it:
+        //
+        // > **A markup's finish closes a FIGURE; a measurement's finish accepts
+        // > a RESULT.** What this command commits is the vertex run Polyline or
+        // > Polygon has laid down — a shape, on the page, that stays there — and
+        // > `finish-shape` shows precisely that: the run, and the tick that ends
+        // > it. A bare tick would say "accepted" without saying accepted WHAT,
+        // > and an accept mark alone belongs to no tool. `measure.finish` takes
+        // > the bare tick because it closes no figure at all; it accepts a
+        // > readout, a best-fit circle's number, and a glyph depicting a vertex
+        // > run would describe the wrong operation there.
+        //
+        // The set's one-asset-per-role rule therefore holds with both commands
+        // iconed and neither borrowing.
+        //
+        // Two marks, because the command is two things at once: it is ABOUT a
+        // vertex run in progress and it ENDS it. The run is the same figure as
+        // `shape-polyline`'s — four vertices over three aperiodic segments —
+        // because this is the control that finishes that tool; it is drawn
+        // shorter and pushed up-left only to make room for the tick. **At 16 px
+        // the surviving cue is the COUNT: one mark in the tile is Polyline, two
+        // marks is Finish.** Do not enlarge the run to fill the tile. And it is
+        // not [`crate::icons::Icon::ShowPoints`], which puts square node boxes
+        // ON its run to mean "these points are aimable"; this run is bare,
+        // because Finish is about the run being over and not about its vertices
+        // being targets.
+        command("markup.finish", t::markup_finish(), 506)
+            .with_icon("finish-shape")
+            .enabled_when("markup.finishable"),
         command("markup.highlight", t::markup_highlight(), 510)
             .with_icon("shape-highlight")
             .enabled_when("doc.pages"),

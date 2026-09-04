@@ -37,10 +37,11 @@
 //! selection too) and
 //! where the hit test lives ([`hit`]).
 
-use egui::{Pos2, Rect, Vec2};
+use egui::{Align, Pos2, Rect, Vec2};
 use pdfcer_core::forms::{AcroForm, ButtonKind, Field, FieldFlags, FieldType, FieldValue, Widget};
 use pdfcer_core::object::ObjId;
 use pdfcer_core::page_tree::Page;
+use pdfcer_core::vartext::Quadding;
 
 use crate::canvas::mapping::PageMapping;
 use crate::canvas::tool::CanvasTool;
@@ -99,6 +100,49 @@ pub enum BoxKind {
         /// [`crate::panels::forms::rows`] gives: a limit discovered at commit
         /// is a limit the operator finds out about by losing text.
         max_len: Option<usize>,
+        /// `/Q` — **which end of the box the field's text is set against**
+        /// (§12.7.4.3, Table 222: `0` left, `1` centre, `2` right), resolved by
+        /// `pdfcer-core` through the field tree and the AcroForm default.
+        ///
+        /// ## ★★★ Why the editor honours this when it honours no other
+        /// appearance property
+        ///
+        /// [`super`]'s §3 refuses to make the editor a facsimile of the
+        /// rendered widget, and that refusal is **arithmetic**: the overlay is
+        /// a font substitution by construction, so a box pretending to be the
+        /// appearance stream would put the caret where the glyph is *not*
+        /// going to land, and would be wrong by more the longer the string.
+        ///
+        /// That argument is about **glyph advances**, and it does not reach
+        /// this. Quadding is not a measurement — it is a statement about which
+        /// end of the box the run of text is anchored to, and it is the same
+        /// statement whatever font draws it. Honouring it costs no accuracy
+        /// claim that could later be falsified: a centred field's editor is
+        /// centred, the committed `/AP` is centred, and the operator's text
+        /// does not jump from one end of the box to the other at the moment
+        /// they tab away. That jump was the actual defect — the editor read
+        /// `/Q` nowhere, so **every** field was typed into left-aligned and a
+        /// centred or right-aligned form re-laid itself out on commit.
+        ///
+        /// ⇒ The rule the two paragraphs together state, for whoever extends
+        /// this: an appearance property may be honoured here when honouring it
+        /// makes no promise about *where a particular glyph will be*. `/Q`
+        /// passes that test. `/DA`'s font and size do not, which is why
+        /// [`editor_font_size`] still derives its number from the box.
+        ///
+        /// ## ★ What is still NOT honoured, and why it is a boundary rather
+        /// than a choice
+        ///
+        /// The widget's **background colour** (`/MK` `/BG`, Table 189) is the
+        /// other half of the same review finding, and it is not reachable:
+        /// `pdfcer_core::forms::Widget` models `/MK` `/CA` and deliberately
+        /// nothing else — `D:\Dev\pdfcer\crates\pdfcer-core\src\forms.rs:429`
+        /// states the reason (R43: pdfcer paints the baked `/AP` and never
+        /// synthesises appearance from `/MK`). So the editor draws in the
+        /// theme's own text-edit colours because that is the only colour it
+        /// can name, not because the question was settled. Reported, not
+        /// guessed at.
+        align: Quadding,
     },
     /// A `/Btn` check box. A click toggles between `on_state` and `Off`.
     Check {
@@ -325,6 +369,14 @@ pub fn classify(field: &Field, widget: &Widget, rotate: u16) -> Result<BoxKind, 
                     .max_len
                     .filter(|m| *m > 0)
                     .and_then(|m| usize::try_from(m).ok()),
+                // Read off the FIELD rather than off the widget, because that
+                // is where `/Q` lives: §12.7.3.3 makes it an entry of the
+                // variable-text field dictionary, and core has already
+                // resolved it up the field tree and through the AcroForm
+                // default (`Field::quadding`, default `Left` per Table 222).
+                // A widget of a centred field is centred; there is no
+                // per-widget override to look for.
+                align: field.quadding,
             })
         }
         (Some(FieldType::Button), Some(kind @ (ButtonKind::Check | ButtonKind::Radio))) => {
@@ -585,6 +637,36 @@ pub fn editor_rect(map: &PageMapping, canvas: Rect) -> Rect {
 #[must_use]
 pub fn editor_font_size(height: f32) -> f32 {
     (height * EDITOR_TEXT_RATIO).clamp(EDITOR_TEXT_RANGE.0, EDITOR_TEXT_RANGE.1)
+}
+
+/// Which end of the editor the operator's text is set against, for a field's
+/// `/Q`.
+///
+/// One line of arithmetic-free translation, given a function of its own for
+/// two reasons that are both about evidence rather than about tidiness:
+///
+/// 1. **It is the whole of the `/Q` decision**, and this file is the half of
+///    the surface a unit test can hold ([the module header](self)). Applying
+///    the mapping inline in [`super::editor`] would put the only statement of
+///    §12.7.4.3's three codes inside a function that needs a laid-out
+///    `egui::Ui`, a live pointer and a page raster to run at all — which is to
+///    say, inside the half that can only be checked by looking.
+/// 2. **The failure it guards is a silent transposition.** `1` is centre and
+///    `2` is right; swapping them compiles, draws, passes every other test in
+///    this file and is visible only as a right-aligned form typed into
+///    centred. [`Quadding`] has already turned the integers into names, and
+///    this keeps the names paired with `egui`'s in one place.
+///
+/// [`Quadding::from_code`] has already applied Table 222's own tolerance — any
+/// `/Q` that is not `1` or `2` is left — so there is no malformed case left
+/// for this to decide.
+#[must_use]
+pub fn editor_align(quadding: Quadding) -> Align {
+    match quadding {
+        Quadding::Left => Align::LEFT,
+        Quadding::Center => Align::Center,
+        Quadding::Right => Align::RIGHT,
+    }
 }
 
 /// Truncate a draft to `/MaxLen`, in **characters**.
@@ -953,6 +1035,7 @@ mod tests {
                     multiline: false,
                     password: false,
                     max_len: None,
+                    align: Quadding::Left,
                 },
                 rect: Rect::from_min_max(Pos2::new(10.0, 10.0), Pos2::new(60.0, 30.0)),
             },
@@ -964,6 +1047,7 @@ mod tests {
                     multiline: false,
                     password: false,
                     max_len: None,
+                    align: Quadding::Left,
                 },
                 rect: Rect::from_min_max(Pos2::new(61.0, 10.0), Pos2::new(110.0, 30.0)),
             },
@@ -1049,6 +1133,53 @@ mod tests {
         let small = editor_font_size(20.0);
         let large = editor_font_size(30.0);
         assert!(small < large, "{small} !< {large}");
+    }
+
+    /// ★★★ **A field's `/Q` reaches the box a click makes, and it reaches it
+    /// per field.**
+    ///
+    /// The half of the quadding fix that lives in [`classify`]. Before
+    /// 2026-09-04 the classification carried no alignment at all, so
+    /// [`super::editor`] had nothing to read and every field — left, centred
+    /// or right — was typed into left-aligned. The value is asserted for all
+    /// three codes rather than for one, because a `field.quadding` that was
+    /// hard-wired to `Left` would pass a single-value test perfectly.
+    #[test]
+    fn a_fields_quadding_reaches_the_box_a_click_makes() {
+        for want in [Quadding::Left, Quadding::Center, Quadding::Right] {
+            let field = Field {
+                quadding: want,
+                ..text_field()
+            };
+            let kind = classify(&field, &drawn_widget(), 0).expect("an ordinary text field");
+            let BoxKind::Text { align, .. } = kind else {
+                panic!("a text field classifies as text");
+            };
+            assert_eq!(align, want, "the box must carry the field's own /Q");
+        }
+    }
+
+    /// ★★ **The three `/Q` codes map to the three ends of the box, and the
+    /// centre one is not an end.**
+    ///
+    /// A silent transposition is the failure this guards: swapping `Center`
+    /// and `Right` compiles, draws a caret, passes every other test in this
+    /// file, and is visible only as a right-aligned form typed into centred.
+    /// Asserted as three separate, distinct answers so a mapping that
+    /// collapsed two codes into one cannot pass either.
+    #[test]
+    fn each_quadding_code_anchors_the_editor_at_its_own_end() {
+        assert_eq!(editor_align(Quadding::Left), Align::LEFT);
+        assert_eq!(editor_align(Quadding::Center), Align::Center);
+        assert_eq!(editor_align(Quadding::Right), Align::RIGHT);
+        // …and no two codes share an answer, which is what a transposition
+        // would otherwise be free to do in one direction.
+        assert_ne!(editor_align(Quadding::Left), editor_align(Quadding::Right));
+        assert_ne!(editor_align(Quadding::Left), editor_align(Quadding::Center));
+        assert_ne!(
+            editor_align(Quadding::Center),
+            editor_align(Quadding::Right)
+        );
     }
 
     /// `/MaxLen` truncates by character, not by byte.

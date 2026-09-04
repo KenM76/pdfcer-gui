@@ -655,16 +655,18 @@ pub fn resolve(
 ///
 /// # The colour is the theme's, never a literal
 ///
-/// `visuals().selection.stroke.color`, the same source the pages caret and the
-/// current-page ring take, so a preset that changes the accent changes all
-/// three together. The two dimmed states are `gamma_multiply` ratios of it
+/// [`egui_shell::theme::Theme::canvas_selection_ink`], the same source the
+/// pages caret and the current-page ring take, so a preset that changes the
+/// accent changes all three together. **Not `visuals().selection.stroke`** —
+/// that is `egui`'s selected-*widget* channel, and reading it from content
+/// chrome was defect T2 (`REVIEW_TRIAGE.md` §2b). The two dimmed states are `gamma_multiply` ratios of it
 /// rather than two more colours, for that module's stated reason: one colour
 /// with a stated relationship beats several that have to be kept in step.
 pub fn paint_caret(ui: &Ui, target: Option<&DropTarget>) {
     let Some(target) = target else {
         return;
     };
-    let base = ui.visuals().selection.stroke.color;
+    let base = egui_shell::theme::Theme::canvas_selection_ink(ui.ctx());
     let colour = match target.landing {
         Landing::Lands => base,
         Landing::NoChange => base.gamma_multiply(CARET_DIMMED),

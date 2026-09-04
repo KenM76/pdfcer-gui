@@ -81,19 +81,13 @@ pub(super) fn spotlight(ui: &egui::Ui, pages: &[PageView], list: &[WidgetBox]) {
         return;
     };
     let painter = ui.painter().clone();
-    let visuals = ui.visuals();
     let mut drawn = 0usize;
     for view in pages {
         for widget_box in list
             .iter()
             .filter(|b| b.page == view.page && b.field == spot.field)
         {
-            crate::canvas::overlay::draw_field_spotlight(
-                &painter,
-                visuals,
-                &view.map,
-                widget_box.rect,
-            );
+            crate::canvas::overlay::draw_field_spotlight(&painter, &view.map, widget_box.rect);
             drawn += 1;
         }
     }

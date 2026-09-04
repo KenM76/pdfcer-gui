@@ -921,7 +921,10 @@ pub(super) fn draw(ui: &Ui, doc: &OpenDoc, gutters: Gutters, geometry: Option<&C
     };
     let scale = Scale::of(doc);
     let ladder = Ladder::for_labels(scale, doc.view.zoom, MIN_MAJOR_PITCH_PTS);
-    let accent = visuals.selection.stroke.color;
+    // ★ The content-area selection ink by its role name; see `overlay::ink`
+    // and `REVIEW_TRIAGE.md` T2 for why `visuals.selection` is not this
+    // canvas's channel to read. Same colour, named address.
+    let accent = egui_shell::theme::Theme::canvas_selection_ink(ui.ctx());
 
     // ★ **The page's own span, as a TINT across the gutter** — and it is a tint
     // rather than the 2-point line it was in the first draft, which is a

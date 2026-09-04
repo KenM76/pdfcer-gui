@@ -112,9 +112,13 @@
 //! button's fill: in `egui` 0.35 a `Button::selected(true)` takes
 //! `visuals.selection.bg_fill` for its frame instead of the widget state's
 //! `weak_bg_fill` (`widget_style.rs`'s `button_style`, `SELECTED_CLASS`
-//! branch). Contrast *ratio* is deliberately not the measure — the two fills
-//! are a light grey and a light blue, about 1.3:1 apart, which a legibility
-//! threshold would call identical. See [`MIN_PRESSED_DELTA`].
+//! branch). Contrast *ratio* is deliberately not the measure — under the
+//! palette this was calibrated against the two fills were a light grey and a
+//! light blue, about 1.3:1 apart, which a legibility threshold would call
+//! identical. Since 2026-09-04 that channel carries an opaque accent and the
+//! pair is far apart, but the measure stays a channel difference so the check
+//! keeps working under every palette this program has had. See
+//! [`MIN_PRESSED_DELTA`], which enumerates all three.
 //!
 //! # Why the check does not simply assert on `selected:markup.rectangle`
 //!
@@ -238,13 +242,19 @@ const UNIMPLEMENTED_EVENT: &str = "command-unimplemented";
 /// How far apart two dominant fills must be to count as "one of these is
 /// pressed", as a maximum absolute per-channel difference in 0–255.
 ///
-/// # ★ Two candidate palettes, because the running build does not use the
-/// one you would expect
+/// # ★ Three candidate palettes, and the threshold is below the smallest
 ///
-/// The obvious derivation is from `egui-shell`'s `quiet` preset: a band
-/// button's unpressed frame fill would be `widgets.inactive.weak_bg_fill` =
-/// `panel` = `#E8E8EA`, and a pressed one `visuals.selection.bg_fill` =
-/// `selection_fill` = `rgba(90, 140, 220, 70)` composited over it —
+/// The number is deliberately derived from every pair the running build could
+/// plausibly produce, rather than from the one somebody assumed. Three have
+/// been true of this program at different times, and the check has to survive
+/// all of them, because a threshold tuned to one palette is a check that goes
+/// red on a restyle and reports it as a broken feature.
+///
+/// **(a) The `quiet` preset as it shipped until 2026-09-04.** A band button's
+/// unpressed frame fill is `widgets.inactive.weak_bg_fill` = `panel` =
+/// `#E8E8EA`; a pressed one takes `visuals.selection.bg_fill`, which that
+/// theme pointed at `selection_fill` = `rgba(90, 140, 220, 70)`, composited
+/// over it —
 ///
 /// ```text
 /// α = 70/255 = 0.2745
@@ -255,35 +265,56 @@ const UNIMPLEMENTED_EVENT: &str = "command-unimplemented";
 ///
 /// — a maximum channel difference of **39**.
 ///
-/// **That is not what the built binary produces.** Measured from a real
-/// capture on 2026-08-14, `pdfcer-gui` draws its unpressed control `#E5E5E5`
-/// and its pressed one `#90D1FF`, a difference of **85**. Those are `egui`'s
-/// own stock light values (`widgets.inactive.weak_bg_fill` = grey 230,
-/// `selection.bg_fill` = 144, 209, 255), and the reason is that nothing in
-/// `crates/pdfcer-gui` calls `egui_shell::theme::Theme::apply` — the theme
-/// module is compiled, contrast-gated and never installed, so the ribbon
-/// reads its *metrics* through `Theme::of`'s default and paints with `egui`'s
-/// stock palette. Recorded here rather than fixed: it is outside this work's
-/// territory, and a check whose threshold silently assumed the theme was
-/// installed would have hidden it.
+/// **(b) `egui`'s own stock light values.** Measured from a real capture on
+/// 2026-08-14: unpressed `#E5E5E5`, pressed `#90D1FF`, a difference of **85**
+/// (`widgets.inactive.weak_bg_fill` = grey 230, `selection.bg_fill` =
+/// 144, 209, 255).
 ///
-/// # Why the threshold is 12, and why it survives both
+/// ⚠ **The sentence that used to explain (b) was false, and is corrected
+/// here** — `REVIEW_TRIAGE.md` **T3**. It said the stock palette was what the
+/// built binary paints with *"because nothing in `crates/pdfcer-gui` calls
+/// `Theme::apply`"*. That was true when it was written and stopped being true
+/// on 2026-08-14, when `DEFECTS.md` D10 was fixed: `app::frame` calls
+/// `theme.apply(&ctx)` every frame, from the operator's own settings. The
+/// capture behind the 85 was taken from a build on the wrong side of that
+/// commit. **The constant is unaffected** — it was chosen to cover both
+/// palettes and says so — so this is a false sentence rather than a wrong
+/// number, which is exactly the kind that survives: nothing recomputes when a
+/// premise expires.
+///
+/// **(c) The `quiet` preset since 2026-09-04** — `REVIEW_TRIAGE.md` **T2**.
+/// `visuals.selection` is `egui`'s SELECTED-WIDGET channel and now carries the
+/// pair it is named for: a pressed control's fill is `accent` = `#175CC4`,
+/// opaque, against the same `#E8E8EA` unpressed fill. Maximum channel
+/// difference **209** — by far the largest of the three, so the check gets
+/// easier rather than harder. (Before that change the theme had handed the
+/// channel to the canvas, which is why (a)'s pressed "fill" was a 27 % wash
+/// that composited *paler than the button beside it*.)
+///
+/// # Why the threshold is 12, and why it survives all three
 ///
 /// Above **0**, which is exactly what a lossless BGRA capture of two
 /// identically filled controls produces — the measured before-click gap
 /// between Rectangle and Ellipse is literally zero, not a small number. Below
-/// **39**, the smaller of the two real differences, by a factor of three. So
-/// the verdict is the same whether the theme is installed or not, and neither
-/// a palette tweak nor a preset change nor a display colour profile flips it.
+/// **39**, the smallest of the three real differences, by a factor of three.
+/// So the verdict is the same under any of them, and neither a palette tweak
+/// nor a preset change nor a display colour profile flips it.
+///
+/// ★ That margin is the whole reason this constant did not have to move when
+/// the theme was installed (b→a) and did not have to move again when the
+/// selection channel was re-pointed (a→c). A threshold derived from ONE
+/// measured pair would have been wrong twice.
 ///
 /// # Why a channel difference and not a contrast ratio
 ///
-/// Because both pairs are near-equal in luminance. The `quiet` pair is about
-/// **1.3:1** and the stock pair about **1.5:1** — both far under
-/// [`crate::pixels::AA_LARGE`]'s 3.0, so a legibility oracle would call a
-/// pressed control and an unpressed one the same colour. Contrast answers
-/// "can this be read"; the question here is "is this a different colour", and
-/// those are not the same measurement.
+/// Because the two older pairs are near-equal in luminance. The pre-2026-09-04
+/// `quiet` pair is about **1.3:1** and the stock pair about **1.5:1** — both
+/// far under [`crate::pixels::AA_LARGE`]'s 3.0, so a legibility oracle would
+/// call a pressed control and an unpressed one the same colour. Contrast
+/// answers "can this be read"; the question here is "is this a different
+/// colour", and those are not the same measurement. (Pair (c) would pass a
+/// contrast oracle comfortably, which is a fact about the fix and not a reason
+/// to change the measure — the check must stay able to fail.)
 const MIN_PRESSED_DELTA: u16 = 12;
 
 /// See the module documentation.

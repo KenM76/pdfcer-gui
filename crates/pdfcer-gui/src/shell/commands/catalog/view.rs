@@ -509,11 +509,42 @@ pub(super) fn band() -> Vec<Command> {
         // present: the chords in the manifest resolve against this registry,
         // so a build without them would have Ctrl+Tab bound to nothing rather
         // than bound to something that silently does nothing.
+        // ★★ **The chevron borrow ended 2026-09-04**, with art adopted from the
+        // outside review of 2026-09-03, and this is the borrow whose cost is
+        // easiest to state in one sentence: **"previous document" and "previous
+        // page" drew the same picture.** `chevron-left` and `chevron-right` are
+        // the PAGE navigation glyphs — the status bar's page stepper wears them,
+        // and they are documented on their variants as *"Previous page"* and
+        // *"Next page"* — so the two verbs an operator most needs to keep apart,
+        // move within this file and move to another file, were one tile each.
+        // Pressing the wrong one does not lose work, but it does lose your
+        // place, and the operator has no way to tell in advance which it will
+        // be.
+        //
+        // The borrow was also against a WRITTEN reservation rather than merely
+        // against taste: `chevron-left.svg`'s own note keeps the bare
+        // two-segment chevron for a STEP through a sequence. Switching documents
+        // is a JUMP between files, and `back.svg` had already settled what a
+        // jump gets — *"straight-with-shaft is the untaken slot"*. So the answer
+        // was reserved in the set before these commands existed, and the borrow
+        // spent a slot that was being held for exactly this.
+        //
+        // A page with a shafted arrow beside it. **The PAGE says what moves** —
+        // a whole document, not a position within one — **and the SHAFT says how
+        // far.** Distinct from [`crate::icons::Icon::Back`], the set's other
+        // shafted left arrow, by that page: Back leaves a surface with nothing
+        // else in frame, this one carries the thing being switched to.
+        //
+        // ★ The two are the SAME drawing mirrored about x=24, and that is the
+        // convention every navigation pair in this set follows —
+        // `chevron-right.svg`'s entire comment is "mirror of chevron-left.svg",
+        // and `upload.svg`/`download.svg` are described as exact mirrors about
+        // y=24. Mirror; never redraw the second one by hand.
         command("view.next_document", t::view_next_document(), 255)
-            .with_icon("chevron-right")
+            .with_icon("document-next")
             .enabled_when("docs.multiple"),
         command("view.previous_document", t::view_previous_document(), 256)
-            .with_icon("chevron-left")
+            .with_icon("document-previous")
             .enabled_when("docs.multiple"),
         // ★ **Close others**, 2026-08-20, with the document tab strip.
         //
@@ -534,14 +565,52 @@ pub(super) fn band() -> Vec<Command> {
         // you right-clicked is already the ✕ on that tab and a middle click on
         // it, which are the two gestures every operator reaches for first.
         //
-        // No icon. `catalog`'s coverage table calls a context-menu row's glyph
-        // decoration: a menu is a list of words, read rather than scanned, and
-        // a half-iconed menu is worse than none.
+        // # The icon refusal that stood here is DISCHARGED IN HALF — 2026-09-04
+        //
+        // It read: *"No icon. `catalog`'s coverage table calls a context-menu
+        // row's glyph decoration: a menu is a list of words, read rather than
+        // scanned, and a half-iconed menu is worse than none."*
+        //
+        // **That reasoning is still correct about the menu**, and it is kept
+        // here rather than deleted for that reason. A tab's context menu is read
+        // top to bottom as a short list of sentences; glyphs down its left edge
+        // are decoration, and a menu where some rows have one and some do not is
+        // worse than a menu where none do.
+        //
+        // ★ **What the refusal missed is that this command is on the ribbon
+        // too.** `manifest::view` places it on View ▸ Window, between two iconed
+        // neighbours, and it is there because
+        // `every_menu_command_is_also_reachable_from_the_ribbon` holds that a
+        // right-click-only command is undiscoverable. On a ribbon the un-iconed
+        // row is the odd one out — the tile is blank where every tile beside it
+        // carries a mark — which is the *same* defect the refusal was trying to
+        // avoid, arrived at from the other side. The note was reasoning about
+        // one of this command's two surfaces and generalising to both.
+        //
+        // ⇒ Recorded rather than quietly reversed: **a reason that was true of
+        // the surface it was written about, and was applied to a surface nobody
+        // re-checked.**
+        //
+        // Two square-on sheets: a complete one in front, untouched, and behind
+        // it a second carrying a small ✕ at its top-right. The front sheet is
+        // the one you keep; the mark is on the others. Which document is kept
+        // depends on the route — the right-clicked tab, or the one on screen —
+        // and the glyph says only "this one stays, those go", which is true from
+        // both, exactly as the tooltip's *"the one you opened this on"* is.
+        //
+        // ★ **The distinction from [`crate::icons::Icon::Close`] is load-bearing
+        // and getting it backwards closes the wrong documents.** `close` is a
+        // bare full-frame ✕ and means *dismiss the thing in front of you*; this
+        // means the opposite — the thing in front of you is the survivor. Scale
+        // and placement carry that entirely: small mark, on the sheet BEHIND.
+        // Distinct from [`crate::icons::Icon::Copy`], also two offset rects, by
+        // the ✕, and from [`crate::icons::Icon::SaveCopy`] by having no shutter.
         command(
             "view.close_other_documents",
             t::view_close_other_documents(),
             257,
         )
+        .with_icon("close-others")
         .enabled_when("docs.multiple"),
     ]
 }
