@@ -1,6 +1,120 @@
 # RESUME — read this, then say "continue"
 
 
+> ★★★ **LAST SESSION: 2026-09-05 (overnight). NINE TRACKS LANDED AND A BUILD
+> SHIPPED.** GitHub `v0.5.0-dev.20260905`; OneDrive **`pdfcer-gui1` is the new
+> build**, `pdfcer-gui2` holds 2026-09-04 12:33 as the fallback.
+>
+> **State:** engine **v0.38.0 at `b01964f`**. `cargo test --workspace` =
+> **3,390 passing, 0 failing**. Gates **29 of 29, 0 skipped**.
+> `compare-mockup-ribbon.py` exits **0**. Commit `a926423`, pushed.
+> **Re-measure before quoting any of these.**
+>
+> ---
+>
+> ★★★ **THE FINDING TO CARRY: NINETY SECONDS OF DRIVING BEAT 2,677 TESTS, 29
+> GREEN GATES AND A MATCHING RIBBON.**
+>
+> Eight tracks had just landed, everything was green, and the release was about
+> to be packaged. Instead the binary was launched **off screen** —
+> `PDFCER_DIAG_VIEWPORT="-4200,-4200,1400,900"`, which sets `with_active(false)`
+> so it takes neither focus nor pointer — with the fixture as `argv[1]`, and its
+> trace read:
+>
+> ```text
+> mode-changed to=read panels=4
+> comments-panel listed=3 with_note=3 authors=3 replies=1
+> ui-rect name=comments.note_edit rect=[[1086.0 347.0] - [1146.9 365.0]]
+> ui-rect name=comments.delete    rect=[[1133.7 368.0] - [1239.0 386.0]]
+> ```
+>
+> **Three Delete buttons and a note editor, in Read.** Twelve controls that
+> write to the document, in the mode whose stated posture is *the document is
+> not yours to alter*. Cause: two questions where only one was asked —
+> `annotation_deletion_refusal` answers *"would the ENGINE refuse this
+> document?"* and says nothing about the operator's stance.
+>
+> ⇒ **Forty-six tests over that panel could not have caught it: none of them
+> enters a mode**, and `canvas::tool::capabilities` falls back to `FULL` for an
+> unset `Context`, so every one ran as though it were in Edit. A predicate test
+> would have been *worse than none* — it would have passed on the build that
+> never called the predicate.
+>
+> ★★ **The smoke launch is cheap and should be routine.** Copy the exe to
+> scratch, `PDFCER_DIAG=1`, viewport off screen, fixture as argv1, read the
+> trace. It does not take his desktop. ⚠ The watchdog Monitor kills it anyway —
+> it cannot tell an off-screen unfocused launch from a driven run seizing the
+> screen — but the trace survives, and the process lives long enough to prove
+> startup, layout, document open and first render.
+>
+> ---
+>
+> ★★★ **HIS REVIEW REPORT WAS AN ABSENCE, NOT A DISCOVERABILITY PROBLEM.**
+>
+> *"I could add a yellow sticky note but even in read mode I don't think I could
+> figure out how to read it."* Three barriers, each sufficient alone: nothing
+> anywhere drew a note's words on the canvas; Read could not open the Comments
+> panel (`markup.comments` is on the Markup tab, and Read is shown
+> `["file","view"]`); and Read's dock did not mount it. Now: a canvas pop-up,
+> the panel mounted in Read, and the toggle on the **rail**.
+>
+> ⚠ **The toggle is on the rail and NOT on View ▸ Panels, and the reason is a
+> trap worth knowing.** `RIBBON_IA.md` P1 — *one command appears on at most one
+> tab* — is enforced by `Shell::validate`. Adding `markup.comments` to the View
+> tab is a **validation failure**, and `Capabilities::for_mode` returns `FULL`
+> when the shell is absent, so an invalid manifest **silently grants every
+> authoring capability to every mode**. Eight mode-gating tests went red at
+> once. The tidier fix is a rename to `view.panel_comments`; its full cost is
+> written at the rail site.
+>
+> ★★ **pdfcer had been writing `/Popup` and `/Open` into his files since sticky
+> notes shipped and nothing ever drew one.**
+>
+> ---
+>
+> ★★ **"ASKED HIM INSTEAD OF BUILDING IT" IS A CLASS, AND THE SWEEP FOUND MORE.**
+> O57's grips (*"the question for him…"* — a week lost on a defect he reported
+> himself), O89's colour route (three candidates listed, none chosen), O47's
+> font substitution. **The tell that a "question" is not one: the candidates are
+> listed.** A session that could rank the options had already done the analysis
+> and was handing back only the choosing.
+>
+> ★★★ **O47 was worse than unbuilt — it had shipped ON.** Standard-14
+> substitution was unconditional since 2026-08-28, and the engine's own CLI has
+> it **off** by default because the bundled faces are BSD-3-Clause: *"embedding
+> one puts it inside a document you then distribute… that is your decision to
+> make."* The GUI was making a **licence** decision for him on every press.
+>
+> ---
+>
+> ⬜ **NOT DRIVEN — the canvas pop-up itself, and twenty other checks.** Twenty
+> driven check modules were written 2026-09-04 → 2026-09-05 and **not one has
+> run**; there is no `evidence/` directory in this tree at all. `FEATURES.md`
+> now marks those rows **⬜ BUILT AND UNDRIVEN** rather than ✅. **The single
+> most valuable next act is to run them when the machine is free.**
+>
+> ⬜ **Only he can do:** turn the trust store on, press *Show what is in it*,
+> read the counts back. No check has ever seen a signature read `trusted`, and
+> his store's mtime is **2024-05-27 — sixteen months stale**.
+>
+> ⚠ **Open at the engine, 6 requests:** added content duplicated by the next
+> content edit (his bug), no route from a text file back into a PDF, no verb
+> authors a reply (`/IRT`), `/State`+`/StateModel` unmodelled, `/Open`
+> unreadable, a sticky note's icon and colour unchangeable after creation, and
+> **`set_encryption` ignores a pending redaction** — arm a removal, then
+> encrypt, and you get an encrypted file holding the un-redacted content and the
+> `/Redact` marks that say where it is.
+>
+> ⚠ **`FEATURES.md`'s state table was wrong in every field** and is rebuilt by
+> measurement. Its line-count method (`git ls-files | xargs wc -l`) reads **one
+> of two batches** on 825 files — 454,385 lines, not 60,699. **Seven
+> operator-visible sentences were false** and are corrected; four more are named
+> and unfixed.
+>
+> ⚠ **Zero headroom:** `app/actions/action.rs` and `app/lifecycle.rs` are both at
+> **exactly 1500**.
+
+
 > ★★★ **LAST SESSION: 2026-09-05 (overnight). SEVEN TRACKS IN FLIGHT AT THE
 > TIME OF WRITING** — read the "what is running" table below BEFORE editing
 > anything, because half the crate is owned by a background agent.

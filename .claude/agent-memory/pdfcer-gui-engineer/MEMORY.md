@@ -50,3 +50,4 @@
 - [Parallelism is the default, and it needs an ownership map](feedback_parallelism_is_the_default_and_it_needs_an_ownership_map.md) — nine tracks in one repo; name the other tracks files, forbid racing on shared counters, and invite the contradiction.
 - [Never ask — just add the feature](feedback_never_ask_just_add_the_feature.md) — placement, wording and scope are yours; five hours were lost waiting on a question whose answer was always going to be yes.
 - [A commit message can describe work that never landed](feedback_a_commit_message_can_describe_work_that_never_landed.md) — a `;` chain let a failed edit be followed by a truthful-looking commit; grep the artifact, not the exit code.
+- [Smoke-launch before EVERY release — it is ninety seconds](feedback_smoke_launch_before_every_release_it_is_ninety_seconds.md) — off-screen, no focus; it beat 2,677 tests and 29 green gates to a live Delete button in Read mode.
