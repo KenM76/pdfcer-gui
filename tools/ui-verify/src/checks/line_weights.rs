@@ -205,9 +205,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     })?;
     let pdf = ctx.pdf.clone().ok_or_else(|| {
         Error::new(
-            "no --pdf. Pass a drawing with real STROKES on it — fixtures/a1-titleblock.pdf, or \
-             the operator's own SW41177.pdf. On a page of text this mode correctly changes \
-             nothing, because only stroked paths are capped.",
+            "no --pdf. Pass a drawing whose STROKES are where the zoom lands. Measured \
+             2026-09-05: `D:/Dev/pdfTests/ncored-benchmark-cad-drawing.pdf` reaches 433 % \
+             with 57,980 ink pixels and PASSES - 82.7 % of the ink goes. \
+             `fixtures/a1-titleblock.pdf` does NOT: its title block is in one corner, the \
+             zoom is anchored at the centre, and the climb lands on blank paper (136 ink \
+             pixels of 286,528). That is a fact about where the ink SITS, not about the \
+             fixture's quality. On a page of text this mode correctly changes nothing, \
+             because only stroked paths are capped.",
         )
     })?;
     if !ctx.allow_input {
@@ -314,11 +319,59 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     report.note(format!(
         "{ink_before} ink pixels in the canvas with real widths"
     ));
-    if ink_before == 0 {
-        return Err(Error::new(
-            "the canvas has no dark pixels at all, so there is no ink for this mode to thin. \
-             Either the page had not rendered or the fixture is blank. SKIPPED.",
-        ));
+    // ★★★ **A FLOOR, NOT A ZERO CHECK — raised 2026-09-05, the first time this
+    // check was ever run.**
+    //
+    // The guard used to be `ink_before == 0`. On its first run it measured
+    // **138 ink pixels in a canvas of roughly 300,000** — four hundredths of one
+    // per cent — because climbing to 394 % on an A1 sheet lands the view on
+    // **blank paper**: the title block is in a corner and the zoom is anchored
+    // at the centre. 138 is above zero, so the guard let it through, and the
+    // check then reported *"the drawing lost 100.0 % of its ink"* and
+    // *"turning line weights back on did not restore the drawing"*.
+    //
+    // ⇒ Both sentences were true of the pixels and **false about the
+    // application.** They are a statement about 138 pixels of nothing, and the
+    // screenshot settles it in one look.
+    //
+    // ★★ This is the third instance of the same shape today, and the rule it
+    // earns is: **a probe whose baseline has no dynamic range cannot produce a
+    // verdict.** `mouse_work_survives_every_render_tier` failed at every rung on
+    // his own drawing until it was re-aimed from blank paper to an object; the
+    // right-edge assertion in `master_detail` read six antialiased pixels as
+    // clipped text. Every one of them was a measurement of a region that had no
+    // subject in it.
+    //
+    // The floor is a **proportion of what was sampled**, not an absolute, so it
+    // survives a different window size and a different display scale. Half a
+    // per cent is far below any drawing the operator would call one and far
+    // above the stray page-edge line this run found.
+    //
+    // ⚠ SKIP and not FAIL, deliberately. A blank canvas says nothing about
+    // whether line weights work; reporting it red would be *"the application is
+    // broken for the check's own reason"*, which this project has now written
+    // down three times in one day.
+    const MIN_INK_SHARE: f64 = 0.005;
+    let sampled = (px.w as f64) * (px.h as f64);
+    #[allow(clippy::cast_precision_loss)]
+    let share = if sampled > 0.0 {
+        ink_before as f64 / sampled
+    } else {
+        0.0
+    };
+    if share < MIN_INK_SHARE {
+        return Err(Error::new(format!(
+            "the canvas carries {ink_before} ink pixel(s) of {sampled:.0} sampled \
+             ({:.3} %), which is below the {:.1} % floor a measurement of this mode \
+             needs. Almost certainly the zoom climb has landed on BLANK PAPER — on \
+             an A1 sheet the drawn content is in one corner and the zoom is anchored \
+             at the centre. Aim the view at content before climbing (the same repair \
+             `mouse_work_survives_every_render_tier` needed on 2026-09-05), or pass a \
+             fixture whose ink is where the zoom lands. SKIPPED, not failed: a blank \
+             canvas says nothing about whether line weights work.",
+            share * 100.0,
+            MIN_INK_SHARE * 100.0,
+        )));
     }
 
     // --- D: press it -------------------------------------------------------
