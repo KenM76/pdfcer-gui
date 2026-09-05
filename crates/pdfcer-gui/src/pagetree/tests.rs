@@ -489,7 +489,18 @@ fn a_document_that_arrived_broken_gets_the_sentence_that_does_not_offer_undo() {
     // unconditionally would pass the assertion above.
     let blamed = refusal_sentence("x.pdf", &audit, None);
     assert!(blamed.contains("Ctrl+Z"), "{blamed}");
-    assert!(blamed.contains("fault in pdfcer"), "{blamed}");
+    // ★★ The distinction is asserted by what each sentence OFFERS, not by whose
+    // fault it says the damage is. Both attributions were deleted on 2026-09-05
+    // when `Pass 251.1` made *"this is a fault in pdfcer"* false — see
+    // `text::pagetree`'s header. **Undo is the discriminator and always was**:
+    // the pre-existing sentence must never offer it, because an operator who
+    // empties his undo stack against a refusal his own tool promised undo would
+    // fix has lost his work as well as his time. Asserting the blame words
+    // instead would have pinned the most perishable clause in the sentence.
+    assert!(
+        !blamed.contains("already disagreed with itself when you opened it"),
+        "an audit with no base file to consult must NOT claim the file arrived          broken — that is a statement it has no evidence for: {blamed}"
+    );
 
     let _ = std::fs::remove_file(&path);
 }
@@ -509,7 +520,16 @@ fn a_healthy_base_file_leaves_the_blame_where_it_belongs() {
     assert!(!audit.is_consistent());
     let said = refusal_sentence("nested-page-tree.pdf", &audit, Some(path.as_path()));
     assert!(said.contains("Ctrl+Z"), "{said}");
-    assert!(said.contains("fault in pdfcer"), "{said}");
+    // Same change, same reason as the control above: the property is that a
+    // healthy base file yields the ORDINARY sentence — the one that offers undo
+    // — rather than the pre-existing one that withholds it. A `refusal_sentence`
+    // that read every base as already-broken would tell him to reopen the file
+    // in another program when one `Ctrl+Z` would have fixed it, and would take
+    // his undo stack with it.
+    assert!(
+        !said.contains("already disagreed with itself when you opened it"),
+        "the base file is HEALTHY, so this refusal must not claim it arrived          broken: {said}"
+    );
 }
 
 /// **The depth a flat tree reports is 2, and a three-level one reports 4.**
