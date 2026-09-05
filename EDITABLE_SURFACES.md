@@ -337,6 +337,30 @@ defect that is not reported is one that stays. **The honest fix is the engine's*
 `set_encryption` should return `RedactionPending` the way its two siblings do,
 and the shell's guard is the belt to that braces.
 
+> ### ✅ THE ENGINE FIXED IT — `Pass 250.3`, released in v0.39.0, 2026-09-05
+>
+> Filed at 02:23 and answered the same day. `set_encryption` now refuses a
+> pending redaction by name, exactly as `to_incremental_bytes` and
+> `to_full_bytes` do.
+>
+> ⚠ **NOT yet in our lock**, and everything above is therefore still true of the
+> build this repository compiles today. It becomes false the moment the bump
+> lands — `RESUME.md` carries it as the first queued job.
+>
+> ★★ **Annotated rather than deleted, and annotated NOW rather than when the
+> bump lands**, because a limitation sentence is a citation with an hours-long
+> shelf life and this project has been caught by exactly this class three times
+> in two days: prose that was true when written, describing an engine that has
+> since moved, read later as a statement about the present. The paragraph above
+> is a **dated measurement**; this note is what stops it being read as a
+> standing fact.
+>
+> ★ The shell-side `protect::Refusal` variant it argues for is **still worth
+> building** — the engine's refusal is the braces and ours is the belt, and the
+> operator meets ours with a sentence in his own terms rather than an error
+> code. It is no longer urgent, and it is no longer the only thing standing
+> between him and an encrypted file full of un-redacted content.
+
 
 ### Not gaps — alternate spellings of a verb the shell already calls
 
