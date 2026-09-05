@@ -149,6 +149,125 @@ pub(super) const MIN_BODY_HEIGHT_PTS: f32 = 200.0;
 /// present, has area, and moves the split needs somewhere to aim.
 pub(super) const REGION_SPLITTER: &str = "print.splitter";
 
+/// The preview column's own rect, for the driven harness.
+///
+/// # ★★★ It exists to be able to GO AWAY
+///
+/// Every other region in this shell is published so that something can be
+/// aimed at, measured or clicked. This one is published so that
+/// `diag::end_ui_frame` can emit `ui-rect-gone name=print.preview.column` on
+/// the frame the operator pops the preview out — which is the only evidence
+/// from outside the process that the column **collapsed** rather than merely
+/// gaining a sibling in another window.
+///
+/// ★★ Without it, the honest-looking check *"a second window appeared"* passes
+/// on a build that opens the pop-out **and keeps drawing the column too** —
+/// two previews of one sheet, which is precisely the shape O112 asked against.
+/// A presence assertion cannot see that; an absence assertion can, and an
+/// absence assertion is only worth anything when the run has first been driven
+/// into the state where the absence is the claim. See `ui-verify`'s
+/// `the_print_preview_pops_into_its_own_window`, which asserts the region is
+/// there before the click and gone after it.
+pub(super) const REGION_PREVIEW_COLUMN: &str = "print.preview.column";
+
+/// **The body's horizontal division, decided once and in one place.**
+///
+/// # Why a type rather than four `let`s
+///
+/// Because there are now **two** layouts — preview beside options, and options
+/// alone with the preview in its own window (O112 ask 2) — and every number in
+/// the second differs from the first: the number of `item_spacing` gaps egui
+/// inserts, the floor the content may not go below, and both column widths.
+/// Four `let`s with an `if` threaded through them is how the two cases come to
+/// disagree about one of the four, and the failure of a width in this file has
+/// twice been a scrollbar the operator could not dismiss.
+///
+/// # ★★★ It is PURE, and that is what makes the collapse falsifiable
+///
+/// The one thing a unit test genuinely can assert about this dialog's layout is
+/// a relationship between numbers we own — `layout::tests`' own header says so,
+/// and says why the *presence of a scrollbar* is not such a relationship. The
+/// collapse **is** one: *"when the preview is popped out, the preview column is
+/// zero wide, there is no splitter, and the options column is the whole
+/// content."* That is an assertion about arithmetic, it needs no window, and a
+/// build that popped the preview out and left the column standing fails it.
+///
+/// ⇒ Which matters here more than usual, because a layout change's only true
+/// oracle is a rendered frame and this session could not render one. Pushing
+/// as much of the claim as possible into arithmetic is what is left.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(super) struct Columns {
+    /// The width the columns are laid out into, after the scrollbar allowance
+    /// and the item gaps have been taken out of the window.
+    pub(super) content: f32,
+    /// The preview column's width. **Exactly zero** when it is popped out.
+    pub(super) preview: f32,
+    /// The options column's width — the whole of [`Self::content`] when the
+    /// preview is elsewhere.
+    pub(super) options: f32,
+    /// How many `item_spacing` gaps egui will insert between the children of
+    /// the body's row: two for three children, none for one.
+    pub(super) gaps: f32,
+    /// The splitter's width, or zero when there is nothing to split.
+    pub(super) splitter: f32,
+}
+
+impl Columns {
+    /// Divide `outer_width` between the two columns.
+    ///
+    /// `gap` is the live `item_spacing.x` — read from the style rather than
+    /// assumed, because this shell's `Metrics::gutter` differs per theme preset
+    /// and a hard-coded gap is right in one preset and reintroduces a scrollbar
+    /// in another.
+    ///
+    /// `preference` is [`PrintDialog::preview_width`] — the width the operator
+    /// dragged the splitter to. It is **clamped for layout and never written
+    /// back**, which is why this function returns a value instead of taking
+    /// `&mut`: writing the clamp back destroyed the operator's chosen width the
+    /// first time a narrow window clamped it, and the fix was to keep the
+    /// preference and the layout apart. See [`PrintDialog::body`].
+    pub(super) fn split(outer_width: f32, gap: f32, preference: f32, popped: bool) -> Self {
+        if popped {
+            // One child, so no gaps; and the only floor still in play is the
+            // options column's own, because there is no second column left to
+            // squeeze. Using `MIN_CONTENT_WIDTH_PTS` here would refuse to lay
+            // the body out below 628 pt when 400 is the truth, and the refusal
+            // presents as a horizontal scrollbar on a comfortable window.
+            let content = (outer_width - SCROLLBAR_ALLOWANCE_PTS).max(OPTIONS_COLUMN_MIN_WIDTH_PTS);
+            return Self {
+                content,
+                preview: 0.0,
+                options: content,
+                gaps: 0.0,
+                splitter: 0.0,
+            };
+        }
+        let gaps = gap * 2.0;
+        let content = (outer_width - SCROLLBAR_ALLOWANCE_PTS - gaps).max(MIN_CONTENT_WIDTH_PTS);
+        let widest_preview = (content - OPTIONS_COLUMN_MIN_WIDTH_PTS - SPLITTER_WIDTH_PTS)
+            .max(PREVIEW_MIN_WIDTH_PTS);
+        let preview = preference.clamp(PREVIEW_MIN_WIDTH_PTS, widest_preview);
+        let options = (content - preview - SPLITTER_WIDTH_PTS).max(OPTIONS_COLUMN_MIN_WIDTH_PTS);
+        Self {
+            content,
+            preview,
+            options,
+            gaps,
+            splitter: SPLITTER_WIDTH_PTS,
+        }
+    }
+
+    /// What the row will actually measure, for the `print-body` trace line.
+    ///
+    /// The columns **plus** the gaps egui inserts between them — never the sum
+    /// of the columns alone. Reporting the sum was the mistake the whole
+    /// two-scrollbar defect was made of, and it is not made twice because there
+    /// is one function that knows how many gaps there are.
+    pub(super) fn laid_out(self) -> f32 {
+        self.preview + self.splitter + self.options + self.gaps
+    }
+}
+
 /// Height reserved under the scrolling body for the footer row.
 ///
 /// The footer is drawn AFTER the scroll area, so the scroll area must be told
@@ -273,8 +392,23 @@ impl PrintDialog {
         // layout defect by removing the layout is how one defect becomes
         // several, and it was visible in the very next capture.
         let gap = ui.spacing().item_spacing.x;
-        let content_width =
-            (outer_width - SCROLLBAR_ALLOWANCE_PTS - gap * 2.0).max(MIN_CONTENT_WIDTH_PTS);
+        // ★★★ THE POPPED-OUT CASE CHANGES THE ARITHMETIC AND NOT ONLY THE
+        // DRAWING — 2026-09-05, operator request O112 ask 2.
+        //
+        // With the preview in its own window the row has **one** child, not
+        // three, so `horizontal_top` inserts **no** gaps and the two column
+        // floors are no longer both in play. Carrying the three-child numbers
+        // into the one-child case would reserve 16 pt of spacing that nothing
+        // consumes and refuse to lay the body out below 628 pt of content when
+        // 400 pt is now the honest floor — i.e. it would raise a horizontal
+        // scrollbar on a dialog narrow enough to be perfectly comfortable.
+        // That is the same class of defect as the one this whole file was
+        // rewritten for, arrived at from the opposite direction.
+        //
+        // ⇒ [`Columns`] is where both cases are decided, together, as a pure
+        // function of three numbers. See its own docs for why that is worth a
+        // type.
+        let split = Columns::split(outer_width, gap, self.preview_width, self.preview_popped);
         let column_height = (body_height - SCROLLBAR_ALLOWANCE_PTS).max(MIN_BODY_HEIGHT_PTS);
 
         // ★ The split, clamped and written back. Written back so a drag cannot
@@ -305,13 +439,14 @@ impl PrintDialog {
         // invisible number and appear to do nothing until it had caught up. See
         // [`Self::splitter`], which is handed the effective width for that
         // reason.
-        let widest_preview = (content_width - OPTIONS_COLUMN_MIN_WIDTH_PTS - SPLITTER_WIDTH_PTS)
-            .max(PREVIEW_MIN_WIDTH_PTS);
-        let preview_width = self
-            .preview_width
-            .clamp(PREVIEW_MIN_WIDTH_PTS, widest_preview);
-        let options_width =
-            (content_width - preview_width - SPLITTER_WIDTH_PTS).max(OPTIONS_COLUMN_MIN_WIDTH_PTS);
+        //
+        // ★ Both numbers now come out of [`Columns::split`] rather than being
+        // derived here, so the popped-out case cannot be given a second,
+        // slightly different arithmetic by whoever adds the next branch. The
+        // clamp-without-write-back described above is inside that function and
+        // is asserted by its own unit tests.
+        let preview_width = split.preview;
+        let options_width = split.options;
 
         // ★ SOLID SCROLLBARS, not egui's floating default.
         //
@@ -360,33 +495,76 @@ impl PrintDialog {
             .id_salt("print-dialog-body")
             .show(ui, |ui| {
                 ui.horizontal_top(|ui| {
-                    ui.allocate_ui_with_layout(
-                        egui::vec2(preview_width, column_height),
-                        egui::Layout::top_down(egui::Align::Min),
-                        |ui| match job.zip(context) {
-                            Some((job, context)) => preview::column(
-                                ui,
-                                &preview::Inputs {
-                                    doc,
-                                    job,
-                                    page_sizes,
-                                    context,
-                                },
-                                self,
-                                column_height,
-                                preview_width,
-                            ),
-                            // The device would not describe itself. Everything
-                            // this column draws — sheet, printable rectangle,
-                            // margins — comes from that description, and a
-                            // guessed rectangle is exactly the confidently
-                            // wrong preview the feature exists to prevent.
-                            None => {
-                                ui.label(t::device_unavailable());
-                            }
-                        },
-                    );
-                    self.splitter(ui, column_height, preview_width);
+                    // ★★★ R9, AND IT IS THE WHOLE OF ASK 2's DESIGN: WHILE THE
+                    // PREVIEW IS POPPED OUT, THIS COLUMN DRAWS NOTHING AT ALL.
+                    //
+                    // Not a greyed rectangle. Not a *"the preview is in another
+                    // window"* placard holding the same 340 pt open. Not a
+                    // dotted outline where it used to be. The column and its
+                    // splitter are **absent**, and the options take every point
+                    // they were using — which is why [`Columns::split`] gives
+                    // `options` the whole content width in that case rather
+                    // than merely giving the preview a width of zero.
+                    //
+                    // A stub here would be the exact thing this project's
+                    // no-placeholders rule exists to forbid: a surface that
+                    // occupies space, answers no question, and teaches the
+                    // operator that the dialog has a dead region in it.
+                    //
+                    // ★ The route back is the popped window's own close button
+                    // — `Frame::closed`, which `popout::popped_preview` turns
+                    // straight into `preview_popped = false`. So there is
+                    // nothing for this branch to draw a control for either: the
+                    // window is in the taskbar, and closing it is the gesture.
+                    if !self.preview_popped {
+                        let placed = ui.allocate_ui_with_layout(
+                            egui::vec2(preview_width, column_height),
+                            egui::Layout::top_down(egui::Align::Min),
+                            |ui| match job.zip(context) {
+                                Some((job, context)) => preview::column(
+                                    ui,
+                                    &preview::Inputs {
+                                        doc,
+                                        job,
+                                        page_sizes,
+                                        context,
+                                    },
+                                    self,
+                                    column_height,
+                                    preview_width,
+                                    preview::Placement::InDialog,
+                                ),
+                                // The device would not describe itself.
+                                // Everything this column draws — sheet,
+                                // printable rectangle, margins — comes from
+                                // that description, and a guessed rectangle is
+                                // exactly the confidently wrong preview the
+                                // feature exists to prevent.
+                                None => {
+                                    ui.label(t::device_unavailable());
+                                }
+                            },
+                        );
+                        // ★★ The column's own rect, and it is published with
+                        // the UNGATED `ui_rect` on purpose.
+                        //
+                        // Its job is to answer *"was this column laid out at
+                        // all"*, and `diag::end_ui_frame` turns the frame it
+                        // stops being laid out into a `ui-rect-gone` line. That
+                        // line is the oracle for the absence half of
+                        // `ui-verify`'s `the_print_preview_pops_into_its_own_
+                        // window` — the half that separates "the pop-out window
+                        // appeared" from "the pop-out window appeared AND the
+                        // column went away", which is the difference between the
+                        // feature and a second copy of the preview.
+                        //
+                        // The visibility-gated form would be wrong here: a
+                        // column scrolled out of view is still laid out, and
+                        // reporting it as gone would make the check pass for a
+                        // reason that has nothing to do with popping out.
+                        crate::diag::ui_rect(REGION_PREVIEW_COLUMN, placed.response.rect);
+                        self.splitter(ui, column_height, preview_width);
+                    }
                     ui.allocate_ui_with_layout(
                         egui::vec2(options_width, column_height),
                         egui::Layout::top_down(egui::Align::Min),
@@ -400,14 +578,23 @@ impl PrintDialog {
         // did it use" is answerable from outside the process, which is the
         // question this defect turned on twice. Costs nothing when
         // `PDFCER_DIAG` is unset.
-        // ★ `content_w` is the LAID-OUT width — the three columns plus the two
-        // item gaps egui inserts between them — not the sum of the columns.
-        // Reporting the sum would report a number that is not what the scroll
-        // area measures, which is the mistake this whole defect was made of.
-        let content = preview_width + SPLITTER_WIDTH_PTS + options_width + gap * 2.0;
+        // ★ `content_w` is the LAID-OUT width — the columns plus the item gaps
+        // egui inserts between them — not the sum of the columns. Reporting the
+        // sum would report a number that is not what the scroll area measures,
+        // which is the mistake this whole defect was made of.
+        //
+        // ★★ `popped=` travels with it since 2026-09-05, and it is not
+        // decoration. `preview_w=0.0` alone is ambiguous — it is also what a
+        // build with a broken clamp would print — whereas `popped=true
+        // preview_w=0.0 options_w=<content>` is the single line that says the
+        // column collapsed *and* the options took the room. A driven check that
+        // could only read the width would pass on a build that zeroed the
+        // preview and left a 340 pt hole where it had been.
+        let content = split.laid_out();
+        let popped = self.preview_popped;
         crate::diag::trace(|| {
             format!(
-                "print-body outer_w={outer_width:.1} content_w={content:.1} \
+                "print-body outer_w={outer_width:.1} content_w={content:.1} popped={popped} \
                  preview_w={preview_width:.1} options_w={options_width:.1} gap={gap:.1} egui_content={:?} egui_view={:?} \
                  body_h={body_height:.1} column_h={column_height:.1}",
                 out.content_size,
@@ -477,6 +664,197 @@ impl PrintDialog {
             stroke,
         );
         crate::diag::ui_rect(REGION_SPLITTER, rect);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // THE FOOTER MOVED HERE FROM `mod.rs` ON 2026-09-05, and the seam is the
+    // one this file was split on rather than a new one.
+    //
+    // `mod.rs` owns what a print job IS — the device, the plan, the commit,
+    // what the operator is told afterwards. This file owns **where things are
+    // drawn and how wide they are**. The footer is a `ui.horizontal` that
+    // places two things in a row and picks no policy: the label it shows is
+    // chosen by `verdicts::ClipClaim::commit_label`, the ordering and the
+    // theme fill are `Host::buttons`', and all it does itself is set two
+    // request flags that `mod.rs` acts on after the frame. That is layout.
+    //
+    // ★ It was moved because `mod.rs` stood at 1,492 lines against R2's 1,500
+    // and the pop-out preview needed a field, a call site and their reasons.
+    // Growing a file past a ceiling to add a feature is how a file gets a
+    // second reason to exist; moving the block whose subject this file already
+    // names — [`FOOTER_HEIGHT_PTS`] has lived here since the split — is how it
+    // keeps one. Nothing about the footer changed in the move; the diff is a
+    // cut and a paste plus two `super::` qualifications on `verdicts`.
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /// The footer: Close, the commit button, and the last outcome.
+    ///
+    /// # ★ The commit button is ABSENT, not greyed, when there is nothing to print
+    ///
+    /// The no-placeholders rule's own distinction: greying is for
+    /// *temporarily* unavailable, and there are two genuinely different
+    /// reasons this button might not act.
+    ///
+    /// - **No device, or no pages selected** — the job does not exist. The
+    ///   button is not drawn. Something else on screen already says why (the
+    ///   preview column's own sentence), so a disabled button would be a
+    ///   second, quieter statement of a fact already made loudly.
+    /// - There is no third case. A job that exists can always be sent; whether
+    ///   it *should* be is the operator's call, and the clip count in the
+    ///   label is how they make it.
+    ///
+    /// # ★★★ The label's count is corrected by what the preview has seen
+    ///
+    /// Operator request O113, 2026-09-04. It used to be [`Job::clipped`] —
+    /// a geometric count of page boxes exceeding the printable rectangle —
+    /// which on a 1:1 CAD sheet read *"Print — 1 sheet will be clipped"* over
+    /// a preview showing nothing hatched and saying the overhang was blank.
+    ///
+    /// It is now the geometric count **minus the sheets the preview has
+    /// examined and found blank**, with every sheet nobody has looked at still
+    /// counted. [`super::verdicts::ClipClaim`] carries both the number and how well
+    /// it is known, and picks the sentence that number can support; this
+    /// function does not choose wording, so the button and the preview's own
+    /// caption cannot come to say different things about one job.
+    ///
+    /// ★ Drawn AFTER the body, which is what makes the sheet on screen count
+    /// as examined on the same frame it is drawn. The alternative — the
+    /// footer reading a cache the preview has not written yet — would make the
+    /// button lag the picture beside it by exactly one frame, which is a
+    /// contradiction that flickers rather than one that persists, and is
+    /// therefore harder to notice and worse.
+    pub(super) fn footer(
+        &mut self,
+        ui: &mut Ui,
+        job: Option<&Job>,
+        page_sizes: &[(f64, f64)],
+        context: Option<&super::verdicts::Context>,
+    ) {
+        ui.horizontal(|ui| {
+            // ★★ G4 — ENTER PRESSES PRINT, AND PRINT LOOKS LIKE THE DEFAULT.
+            //
+            // The operator's second item, and the failure mode
+            // `ui-conventions/dialogs.md` names: *"the operator types into the
+            // last field, presses Enter out of habit, and nothing happens."*
+            // In this dialog the last field is the page range, which is exactly
+            // the box somebody types into and then expects Enter to act on.
+            //
+            // ★ The pair is drawn only when there is a job to send. That is not
+            // a styling decision, it is the no-placeholders invariant: a
+            // default button for a print that cannot happen is a control the
+            // operator would press and be ignored by — and worse, it would make
+            // ENTER silently do nothing while looking like it should do
+            // something, which is the very complaint. With no job, the footer
+            // keeps its plain Close and Enter is honestly inert.
+            //
+            // ★ `Host::buttons` owns the ordering, the theme fill and the Enter
+            // guard, so no dialog can implement two of the three. It puts
+            // Cancel to the LEFT of the affirmative in the right-to-left
+            // layout, which is Windows' order and the order every dialog on
+            // this machine uses.
+            // ★★★ THE OUTCOME IS DRAWN FIRST, AND THE ORDER IS THE BUG FIX.
+            //
+            // Operator report, 2026-08-25: *"when I press print, instead of
+            // closing after printing it just keeps expanding its size in
+            // little steps to infinity."*
+            //
+            // It did, and the cause was this block sitting AFTER the button
+            // block rather than before it. [`Host::buttons`] lays its pair out
+            // with `Layout::right_to_left`, and a right-to-left child inside a
+            // left-to-right `horizontal` is anchored to the RIGHT EDGE of
+            // whatever space it was offered — so its `min_rect` reaches that
+            // edge whether it needed the room or not. Appending anything after
+            // it therefore places that widget **past the edge of the available
+            // width**, by its own width plus one item spacing.
+            //
+            // On its own that is only an overflowing row. What made it
+            // unbounded is [`crate::dialogs::host::Host::fit`], which grows a
+            // dialog whose content is wider than its window:
+            //
+            // 1. the row overflows by the label's width, `w`;
+            // 2. `fit` grows the window by `w`;
+            // 3. the wider window offers a wider row, the RTL block reaches the
+            //    NEW right edge, and the label is placed `w` past it again;
+            // 4. goto 2, for ever, in steps of exactly `w`.
+            //
+            // ★ Note what this is NOT. It is not the once-per-size guard
+            // failing — every size in the sequence is genuinely new, so the
+            // guard is satisfied every time. It is not `FIT_MARGIN` being too
+            // small — the step is a whole label wide. **It is a measurement fed
+            // back into the size that produced it**, which is R128's shape and
+            // the third time this project has met it. `fit`'s own doc comment
+            // asserted the print dialog was immune because it scrolls; that was
+            // true of its BODY and said nothing about its footer.
+            //
+            // Drawing the outcome first fixes it completely and needs no
+            // arithmetic: the label consumes width from the left, the button
+            // block is then offered what remains and anchors to the right edge
+            // of THAT, and the row ends exactly at the edge. It is also the
+            // conventional arrangement — status left, actions right — which is
+            // what every dialog on this machine does, so the fix costs nothing
+            // in layout terms and gains the Windows idiom.
+            //
+            // ★ `truncate()` is not decoration either: `t::failed` carries a
+            // driver's own error text and can be arbitrarily long. Untruncated
+            // it would push the buttons off the row and re-create the overflow
+            // by a different route — a *bounded* one, since the text does not
+            // grow with the window, but bounded overflow is still overflow.
+            // The full text is not lost; it is what the trace records.
+            match &self.outcome {
+                // ★ A SUCCESS DRAWS NOTHING HERE, and the arm is kept rather
+                // than folded into `None` so the reason is where somebody
+                // looking for the missing receipt will find it.
+                //
+                // Since 2026-09-03 a successful commit sets `close_requested`,
+                // so this window is gone by the next frame and anything drawn
+                // here would be shown for at most one. The receipt — the page
+                // count, and the `Synthesised` disclosure when the driver held
+                // settings pdfcer does not model — goes to the application's
+                // disclosure row instead, where it OUTLIVES the dialog. See
+                // `show`'s commit block.
+                //
+                // Drawing it in both places was considered and refused: two
+                // copies of one sentence is how they come to disagree, and the
+                // footer's copy would be the one nobody could act on.
+                Some(Ok(_)) => {}
+                Some(Err(detail)) => {
+                    ui.add(
+                        egui::Label::new(
+                            egui::RichText::new(t::failed(detail))
+                                .color(ui.visuals().error_fg_color),
+                        )
+                        .truncate(),
+                    );
+                }
+                None => {}
+            }
+            match job.filter(|j| !j.plans.is_empty()) {
+                Some(job) => {
+                    // ★ `ClipClaim::None` when there is no context, which
+                    // happens only when there is no job — and this arm has
+                    // one. The plain label is therefore not a fallback that
+                    // could hide a clip; it is what an unclipped job says.
+                    let label = context
+                        .map(|context| self.verdicts.claim(context, job, page_sizes))
+                        .unwrap_or(super::verdicts::ClipClaim::None)
+                        .commit_label()
+                        .unwrap_or_else(|| t::commit().to_owned());
+                    let (accepted, cancelled) =
+                        crate::dialogs::host::Host::buttons(ui, &label, t::close());
+                    if accepted {
+                        self.commit_requested = true;
+                    }
+                    if cancelled {
+                        self.close_requested = true;
+                    }
+                }
+                None => {
+                    if ui.button(t::close()).clicked() {
+                        self.close_requested = true;
+                    }
+                }
+            }
+        });
     }
 }
 
@@ -578,6 +956,115 @@ mod tests {
     /// *"content clipped and unreachable, no bar anywhere"* half of the
     /// operator's report — the half a single screenshot at one size would have
     /// missed entirely.
+    /// **With the preview popped out the column is GONE, not hidden** — O112
+    /// ask 2, and this is the assertion the whole of R9 rests on here.
+    ///
+    /// Three separate claims, and all three have to hold or the operator gets
+    /// something this project's no-placeholders rule forbids:
+    ///
+    /// 1. `preview == 0.0` — no width is reserved for it;
+    /// 2. `splitter == 0.0` — no divider is drawn beside a column that is not
+    ///    there, which would be a control that moves nothing;
+    /// 3. `options == content` — **the room is taken**, which is the half a
+    ///    "hide the column" implementation gets wrong. A build that zeroed the
+    ///    preview and left the options at their old width would leave a 340 pt
+    ///    hole in the dialog, which is a placeholder made of nothing at all and
+    ///    is exactly as bad as a greyed rectangle.
+    ///
+    /// ★ Claim 3 is the one worth the test. Claims 1 and 2 are what anybody
+    /// would write; claim 3 is what makes the difference between *collapsing*
+    /// the column and merely *emptying* it, and it is invisible in a screenshot
+    /// of a wide dialog where the extra room is not obviously anybody's.
+    #[test]
+    fn popping_the_preview_out_collapses_its_column_and_gives_the_room_away() {
+        let split = Columns::split(1000.0, 8.0, PREVIEW_DEFAULT_WIDTH_PTS, true);
+        assert!(
+            (split.preview - 0.0).abs() < f32::EPSILON,
+            "the preview column must be exactly zero wide while the preview is in its own \
+             window, and it was {}. Any positive width is a reserved hole in the dialog.",
+            split.preview
+        );
+        assert!(
+            (split.splitter - 0.0).abs() < f32::EPSILON,
+            "there is nothing to split, so the splitter must be zero wide and it was {}",
+            split.splitter
+        );
+        assert!(
+            (split.options - split.content).abs() < f32::EPSILON,
+            "the options column must take the whole content width ({}) when the preview is \
+             popped out, and it took {}. The difference is a hole the operator can see and \
+             cannot use.",
+            split.content,
+            split.options
+        );
+        assert!(
+            (split.laid_out() - split.content).abs() < f32::EPSILON,
+            "a one-child row has no item gaps, so what is laid out ({}) must equal the content \
+             width ({}); anything more is width the scroll area will raise a bar for",
+            split.laid_out(),
+            split.content
+        );
+    }
+
+    /// **And with it in place, both columns are there** — the other position of
+    /// the same switch.
+    ///
+    /// Asserted beside the one above rather than left implicit, because an
+    /// absence test alone passes on a build that has lost the preview
+    /// altogether. `ui-verify`'s driven check makes the same pairing through
+    /// the OS: the column's region is declared before the click and retired
+    /// after it.
+    #[test]
+    fn with_the_preview_in_place_both_columns_are_laid_out() {
+        let split = Columns::split(1000.0, 8.0, PREVIEW_DEFAULT_WIDTH_PTS, false);
+        assert!(
+            split.preview >= PREVIEW_MIN_WIDTH_PTS,
+            "the preview column must be at least its floor ({}) and was {}",
+            PREVIEW_MIN_WIDTH_PTS,
+            split.preview
+        );
+        assert!(
+            split.options >= OPTIONS_COLUMN_MIN_WIDTH_PTS,
+            "the options column must be at least its floor ({}) and was {}",
+            OPTIONS_COLUMN_MIN_WIDTH_PTS,
+            split.options
+        );
+        assert!(
+            (split.splitter - SPLITTER_WIDTH_PTS).abs() < f32::EPSILON,
+            "the splitter must be drawn between two columns"
+        );
+        assert!(
+            split.laid_out() <= split.content + split.gaps + f32::EPSILON,
+            "the row must not be laid out wider than the content width it was given plus the \
+             gaps that width already accounts for: {} against {} + {}",
+            split.laid_out(),
+            split.content,
+            split.gaps
+        );
+    }
+
+    /// **A narrow window with the preview popped out must not scroll**, which
+    /// is the reason the popped case has a floor of its own.
+    ///
+    /// Carrying [`MIN_CONTENT_WIDTH_PTS`] — both column floors plus the
+    /// splitter — into the one-column case would refuse to lay the body out
+    /// below 628 pt of content, so a dialog dragged to 560 pt would be told its
+    /// content is 628 pt wide and would raise a horizontal scrollbar. That is
+    /// the operator's original complaint, re-entering through the new feature.
+    #[test]
+    fn a_narrow_dialog_with_the_preview_popped_out_still_fits_its_options() {
+        // 560 pt outer: comfortably above the window's own 520 pt floor and
+        // comfortably below `MIN_CONTENT_WIDTH_PTS`.
+        let split = Columns::split(560.0, 8.0, PREVIEW_DEFAULT_WIDTH_PTS, true);
+        assert!(
+            split.laid_out() <= 560.0 - SCROLLBAR_ALLOWANCE_PTS + f32::EPSILON,
+            "with the preview elsewhere, a 560 pt dialog must lay its options out in {} pt or \
+             less and it wanted {}",
+            560.0 - SCROLLBAR_ALLOWANCE_PTS,
+            split.laid_out()
+        );
+    }
+
     #[test]
     fn the_content_floor_is_the_sum_of_the_column_floors() {
         let floor = MIN_CONTENT_WIDTH_PTS;

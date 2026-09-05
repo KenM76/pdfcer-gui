@@ -28,20 +28,27 @@
 //!   Showing them is the lesser wrong, and it is honest — they ARE annotations
 //!   on the document.
 //!
-//! ### The one place this build departs, and why
+//! ### `/TrapNet`, and ★★★ the argument that came BACK on 2026-09-05
 //!
 //! The old shell also excluded **`/TrapNet`**, and its reason was
 //! *delete-shaped*: core refuses a `/TrapNet` deletion by name, so listing one
 //! *"would put a row here whose only possible action is a refusal, which is the
-//! affordance R83 forbids."* **This build has no Delete** (see below), so that
-//! reason does not reach.
+//! affordance R83 forbids."*
 //!
-//! It is still excluded, on the half of the old argument that survives without
-//! a Delete button: a `/TrapNet` is **prepress output state** — it records the
-//! trapping a RIP applied to the page — so it is not a comment, nobody wrote
-//! it, and there is nothing in it for a reviewer to work through. That is the
-//! same shape as the `/Widget` exclusion: not "we cannot act on it" but "this
-//! surface is not about it."
+//! From 2026-08-14 this header said *"This build has no Delete, so that reason
+//! does not reach"*, and excluded `/TrapNet` on the surviving half of the
+//! argument instead: it is **prepress output state** — the trapping a RIP
+//! applied to the page — so it is not a comment, nobody wrote it, and there is
+//! nothing in it for a reviewer to work through. That is the same shape as the
+//! `/Widget` exclusion: not *"we cannot act on it"* but *"this surface is not
+//! about it."*
+//!
+//! **The panel now HAS a Delete** (see below), so the old shell's reasoning is
+//! live again — and, exactly as the paragraph it replaces predicted, *"nothing
+//! needs to change: the row is already absent, for a reason that does not
+//! depend on the button."* Both arguments now hold, independently, for the
+//! same exclusion. Recorded rather than tidied because a prediction that came
+//! true is the cheapest evidence available that the reasoning was sound.
 //!
 //! What the departure buys instead is that **nothing is silently omitted**.
 //! Every exclusion is counted and disclosed by
@@ -50,9 +57,12 @@
 //! arithmetic and where each missing kind went. The old shell stated the rule
 //! only on the empty case; this states the numbers on every case.
 //!
-//! **When a Delete lands here**, the old shell's `/TrapNet` reasoning becomes
-//! live again as well and nothing needs to change: the row is already absent,
-//! for a reason that does not depend on the button.
+//! ★ **A filter is a FOURTH kind of omission**, added 2026-09-05, and it is
+//! disclosed by the same rule — see [`filter`]'s header and
+//! [`crate::text::panels::comments::comments_filtered`]. It is the only one
+//! the operator caused, which makes stating it more important rather than
+//! less: an exclusion is a property of the document a reviewer learns once, a
+//! filter is a switch they set an hour ago and have forgotten.
 //!
 //! ## Ordering: page order, then `/Annots` order
 //!
@@ -69,36 +79,73 @@
 //! without saving first. `crate::panels::forms`' body is the worked example
 //! and carries the same sentence.
 //!
-//! ## Actions, not mutations — and this panel raises exactly one
+//! ## Actions, not mutations — and every one of them is an `Action`
 //!
 //! [`Action::GoToPage`], from a row's **Go to** control, exactly as
-//! `crate::panels::bookmarks` does. The body is handed `&OpenDoc` — a
+//! `crate::panels::bookmarks` does; and [`Action::Annot`] carrying
+//! [`AnnotAction::SetNote`], [`AnnotAction::ClearNote`] and — since
+//! 2026-09-05 — [`AnnotAction::Delete`]. The body is handed `&OpenDoc` — a
 //! **shared** reference, so this is a compile-time fact and not a convention —
 //! it reads, and it pushes. It never touches the document.
 //!
-//! ### ★ There is no Delete, and its absence is a decision rather than a gap
+//! ⚠ **One thing this panel does write directly, and it is not the document.**
+//! A row's **Go to** also opens that comment's canvas pop-up, through
+//! `crate::canvas::notepopup::open::set`, which is `egui::Memory` — interface
+//! state, per document, never saved. It is here rather than behind an `Action`
+//! because an `Action` is drained *after* the frame and the pop-up must be
+//! open on the frame the page arrives, and because the actions-not-mutations
+//! rule is about the **document**: the thing it protects is the undo stack and
+//! the edit epoch, neither of which a floating window touches.
 //!
-//! The old shell's panel could delete an annotation, with a hover-computed
-//! collateral preview, a per-row `Locked` refusal and a document-wide
-//! certification gate. **None of it is carried here**, because
-//! `crate::app::actions::Action` has no variant that could carry the intent
-//! and `app/actions.rs` is not this work's to extend.
+//! ★★ Why it does it at all: jumping to page 14 and leaving the reviewer to
+//! find which of its six clouds the row meant is half a navigation. Acrobat's
+//! Comment pane opens the comment it takes you to, and that is the gesture
+//! being matched.
 //!
-//! So the control renders **nothing at all**, which is the no-placeholders
-//! rule (`HANDOFF.md` §6): *"A capability that is absent renders nothing,
-//! never a greyed control that explains itself badly."* A disabled Delete
-//! whose tooltip said "not built yet" would be the half-built surface
-//! `crate::panels`' own header is about, and the strings for it are
-//! deliberately absent from the catalog too — see
-//! `crate::text::panels::comments`' header.
+//! ### ★★★ THERE IS A DELETE — 2026-09-05, and the paragraph it replaces was
+//! true when written
 //!
-//! What the day it lands needs, so nobody re-derives it, is written up in this
-//! module's report to the shell owner: one `Action` variant, one dispatch arm
-//! calling `EditSession::delete_annotation`, and the three disclosures
-//! `docs/core-api/03-capabilities.md` §3.4 requires — *"delete is not
-//! redaction"*, the deletion preview's collateral **before** the click, and
-//! the fact that the preview *"is not a perfect oracle"* and the real call can
-//! still refuse.
+//! This header said, from 2026-08-14:
+//!
+//! > **There is no Delete, and its absence is a decision rather than a gap.**
+//! > […] `crate::app::actions::Action` has no variant that could carry the
+//! > intent and `app/actions.rs` is not this work's to extend. […] What the
+//! > day it lands needs, so nobody re-derives it: one `Action` variant, one
+//! > dispatch arm calling `EditSession::delete_annotation`, and the three
+//! > disclosures `docs/core-api/03-capabilities.md` §3.4 requires.
+//!
+//! **Every one of those existed by the time anybody looked again.**
+//! `crate::app::actions::annot::AnnotAction::Delete { page, id }` is the
+//! variant, `crate::app::actions::apply` is the arm, and
+//! `crate::app::actions::annots::delete` is the body — already reporting the
+//! engine's collateral through `crate::text::markup::deleted_collateral`. The
+//! canvas Delete key and the Format tab have both been deleting annotations
+//! through it for weeks. **The reviewer's own work list was the last surface
+//! that could not**, which is precisely backwards.
+//!
+//! It took the operator's report of 2026-09-05 — *"the review features should
+//! look and act the same as they do in Acrobat Reader"* — to send somebody to
+//! re-derive the reason rather than re-read the sentence. ⇒ **The sixth
+//! recurrence in this project of a limitation outliving its cause.** Corrected
+//! in place and dated, here and in `crate::text::panels::comments`' header,
+//! rather than left as two answers.
+//!
+//! #### What the Delete carries, and where each piece comes from
+//!
+//! - **R83 — the control is omitted where the engine would refuse.**
+//!   `EditSession::annotation_deletion_refusal` answers the two document-wide
+//!   cases (encrypted, certified) and [`delete_control`] asks it. A locked
+//!   annotation and a ce dimension are withheld by the row itself, for reasons
+//!   the row already states.
+//! - **"Delete is not redaction"**, in the tooltip, per §3.4 — an incremental
+//!   save leaves the previous revision in the file.
+//! - **The collateral is reported after the call, not predicted before it.**
+//!   The old shell computed a hover preview; this does not, and the reason is
+//!   §3.4's own: the preview *"is not a perfect oracle"* and the real call can
+//!   still refuse. `delete_annotation`'s report names what actually went — a
+//!   `/Popup` removed, replies orphaned, group members promoted — and
+//!   `annots::delete` already surfaces it. One statement of record beats a
+//!   guess before and a fact after that can disagree.
 //!
 //! ## Rule 4: everything here is disclosure, and none of it is on the page
 //!
@@ -180,6 +227,12 @@
 //! correctness is entirely arithmetic: a screenshot of this panel cannot tell
 //! you that a widget was excluded, and the trace can.
 
+/// ★ **Narrowing and ordering the work list** — the filter, the sort, and the
+/// disclosure a filtered list owes. Added 2026-09-05 against Acrobat's Comment
+/// pane; its header carries the four things Acrobat offers that this cannot,
+/// and which engine gap each is filed under.
+pub mod filter;
+
 /// Turning a document into a comment list — the classification, testable
 /// without a `Ui`.
 pub mod model;
@@ -258,6 +311,11 @@ pub const REGION_SAVE: &str = "comments.note_save"; // ui-text-exempt: trace reg
 /// The region the open editor's *Remove note* publishes, when there is a note
 /// to remove.
 pub const REGION_REMOVE: &str = "comments.note_remove"; // ui-text-exempt: trace region name, never displayed
+/// The region the FIRST row's *Delete comment* publishes — one name, one row,
+/// for [`REGION_EDIT`]'s stated reason.
+pub const REGION_DELETE: &str = "comments.delete"; // ui-text-exempt: trace region name, never displayed
+/// The region the filter strip's *Show all* publishes, when a filter is set.
+pub const REGION_FILTER_CLEAR: &str = "comments.filter_clear"; // ui-text-exempt: trace region name, never displayed
 
 /// Draw the Comments panel.
 ///
@@ -337,6 +395,36 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
                 .weak(),
         );
     }
+
+    // ★★★ The filter strip, and then the rows it left. `crate::panels::comments::filter`
+    // carries the argument for what is offered and what is not; this is the
+    // control strip and the **disclosure**, which is the half that makes
+    // filtering safe on a surface whose founding rule is that nothing is
+    // silently omitted.
+    //
+    // Drawn from the UNFILTERED listing, deliberately: a chooser built from
+    // the rows that survived the current filter would drop every other author
+    // from the menu the moment one was picked, leaving no route back except
+    // Show all. The operator must be able to move from Ken's comments to Jo's
+    // in one press.
+    let total = listing.rows.len();
+    filter_strip(ui, &listing.rows, &mut state.comments_mut().filter);
+    // Cloned out before the rows are borrowed, so the strip's `&mut` on the
+    // panel state has ended by the time the list is drawn. A `Filter` is three
+    // small fields; the alternative is threading a borrow through the whole
+    // draw for nothing.
+    let narrowing = state.comments_mut().filter.clone();
+    let rows = filter::apply(listing.rows.clone(), &narrowing);
+    if narrowing.is_narrowing() {
+        // ★ ABOVE the list, with every other disclosure and for their reason:
+        // an operator who scrolls a short list and stops has already drawn
+        // their conclusion by the time a footnote would reach them.
+        ui.label(
+            egui::RichText::new(t::comments_filtered(rows.len(), total))
+                .small()
+                .weak(),
+        );
+    }
     ui.separator();
 
     // Collected during the draw and applied after it — the actions-not-
@@ -344,7 +432,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     // `crate::panels::bookmarks` uses. One `Option`, not a `Vec`: two rows
     // cannot be clicked in one frame, and a `Vec` would invite a future reader
     // to push two navigations that would fight.
-    let mut go: Option<usize> = None;
+    let mut go: Option<(usize, Option<ObjId>)> = None;
     // The document verb one row raised, if any. One `Option` for the same
     // reason `go` is one: two rows cannot be pressed in a single frame, and a
     // `Vec` would invite a future reader to queue two edits that would each
@@ -355,6 +443,9 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     // deterministic choice.
     let mut published = false;
     let epoch = doc.edit_epoch;
+    // ★ Asked once per frame — see `RowSink::deletable`. A document-wide
+    // question deserves one answer.
+    let deletable = doc.session.annotation_deletion_refusal().is_none();
     // ★★★ **The annotation the CANVAS has selected** — the other half of the
     // interaction `pdfcer-core` describes, and the half this panel was missing:
     //
@@ -382,8 +473,12 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     egui::ScrollArea::vertical()
         .id_salt("comment-rows")
         .show(ui, |ui| {
-            let last = listing.rows.len() - 1;
-            for (i, comment) in listing.rows.iter().enumerate() {
+            // ★ The FILTERED rows. `last` is derived from the same vector the
+            // loop walks, which is what stops a separator being drawn after
+            // the final row when a filter has shortened the list — the kind of
+            // off-by-one that looks like a rendering fault.
+            let last = rows.len().saturating_sub(1);
+            for (i, comment) in rows.iter().enumerate() {
                 let is_selected = comment.id.is_some() && comment.id == selected;
                 // `push_id` per row, because two rows of the same subtype on
                 // the same page would otherwise give their **Go to** buttons
@@ -399,6 +494,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
                                 go: &mut go,
                                 verb: &mut verb,
                                 published: &mut published,
+                                deletable,
                             },
                             draft,
                             epoch,
@@ -433,8 +529,15 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
         None
     };
 
-    if let Some(page) = go {
+    if let Some((page, id)) = go {
         actions.push(Action::GoToPage(page));
+        // ★★ …and open that comment where it lives. See the module header on
+        // why this is written directly rather than carried as an `Action`: an
+        // `Action` drains after the frame, and the pop-up has to be open on
+        // the frame the page arrives.
+        if let Some(id) = id {
+            crate::canvas::notepopup::open::set(ui.ctx(), &doc.path, id, true);
+        }
     }
     if let Some(verb) = verb {
         // ★ The draft closes here rather than in the row that raised the verb,
@@ -469,14 +572,37 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
 /// a `Vec` would invite a future reader to queue two navigations or two edits
 /// that would each bump the epoch under the other.
 struct RowSink<'a> {
-    /// The page a **Go to** press asks for.
-    go: &'a mut Option<usize>,
+    /// ★ **What a Go to press asks for** — the page, and the annotation on it.
+    ///
+    /// The id travels beside the page because navigating is only half the
+    /// gesture: `crate::canvas::notepopup` opens that comment's pop-up when
+    /// the page arrives, so the reviewer lands on the sheet with the words in
+    /// front of them rather than with six clouds to choose between. `None`
+    /// where the annotation has no object id — a malformed direct dictionary,
+    /// which the row already declines to offer an editor for — in which case
+    /// the navigation still happens and nothing opens.
+    go: &'a mut Option<(usize, Option<ObjId>)>,
     /// The document verb a Save or a Remove raised.
     verb: &'a mut Option<AnnotAction>,
     /// Whether [`REGION_EDIT`] has been published this frame — one name, one
     /// row, and the first row that offers the control is the only deterministic
     /// choice. See that constant.
     published: &'a mut bool,
+    /// ★★ **Whether `delete_annotation` would be refused right now**, asked
+    /// ONCE per frame in [`body`] and carried.
+    ///
+    /// R83: an affordance that cannot be honoured is not drawn. Asked once
+    /// rather than per row because
+    /// `EditSession::annotation_deletion_refusal` is a **document-wide**
+    /// question — encryption and the certification gate — so a per-row call
+    /// would be the same answer computed forty times, and worse, forty places
+    /// it could be forgotten.
+    ///
+    /// ⚠ It is not a perfect oracle and `docs/core-api/03-capabilities.md`
+    /// §3.4 says so: the real call can still refuse, for reasons that belong
+    /// to one annotation. That is why the funnel's worded decline stays the
+    /// answer of record and this is only a filter on the affordance.
+    deletable: bool,
 }
 
 fn row(
@@ -613,12 +739,178 @@ fn row(
     // scanning the list reads downward and stops when they reach a button.
     note_controls(ui, comment, draft, epoch, sink);
 
-    if ui
-        .button(t::comment_row_goto())
-        .on_hover_text(t::comment_row_goto_tooltip(page_number))
-        .clicked()
-    {
-        *sink.go = Some(comment.page_index);
+    ui.horizontal(|ui| {
+        if ui
+            .button(t::comment_row_goto())
+            .on_hover_text(t::comment_row_goto_tooltip(page_number))
+            .clicked()
+        {
+            *sink.go = Some((comment.page_index, comment.id));
+        }
+        delete_control(ui, comment, sink);
+    });
+}
+
+/// ★★★ **Delete this comment** — added 2026-09-05; see the module header on
+/// the paragraph that forbade it and had outlived its reason.
+///
+/// # Four reasons it is not drawn, and every one is R83 rather than R9
+///
+/// R83 — *an affordance that cannot be honoured is not drawn* — rather than
+/// R9's *unavailable renders nothing*, and the distinction is real: the
+/// capability **exists**, and what is missing in each case is the permission
+/// to use it on *this* annotation. None of the four is a build limitation, so
+/// none of them is a sentence about pdfcer.
+///
+/// | not drawn when | why |
+/// |---|---|
+/// | the row has **no object id** | a direct dictionary in `/Annots` is a malformed file (§12.5.2 Table 164 requires an indirect object) and there is nothing to name. The row already says so where its editor would be |
+/// | the document **refuses deletion** | encrypted, or a certification signature forbids the change. `EditSession::annotation_deletion_refusal`, asked once per frame — see [`RowSink::deletable`] |
+/// | it is a **ce dimension** | rule 15. `delete_annotation` would remove the `/Line` and leave the `/PieceInfo` sidecar describing a ce dimension that no longer exists. The Dimension groups panel owns that verb |
+/// | the annotation is **hidden** | ★ deliberately NOT a reason. A hidden annotation is exactly the one a reviewer cannot reach from the canvas, so this panel is the only place it can be removed — which is the whole argument for listing it in the first place |
+///
+/// # ★ No confirmation, and no hover preview
+///
+/// The old shell computed the collateral on hover and showed it before the
+/// press. This does not, and §3.4 is the reason in its own words: the preview
+/// *"is not a perfect oracle"*. What is reported instead is what the engine
+/// **actually did** — `delete_annotation`'s report names the pop-up it
+/// removed, the replies it orphaned and the group members it promoted, and
+/// `crate::app::actions::annots::delete` already surfaces it. One statement of
+/// record beats a guess before and a fact after that can disagree with it.
+///
+/// Undo is the safety net, and it is one press: the deletion is a single
+/// `CommandKind` on the same stack as every other edit.
+fn delete_control(ui: &mut egui::Ui, comment: &CommentRow, sink: &mut RowSink<'_>) {
+    if !sink.deletable || comment.is_ce_dimension {
+        return;
+    }
+    let Some(id) = comment.id else {
+        return;
+    };
+    let button = ui
+        .button(t::comment_row_delete())
+        .on_hover_text(t::comment_row_delete_tooltip());
+    // `ui_rect_visible`, not `ui_rect`: these rows live in a `ScrollArea` and a
+    // control scrolled out of view still reports a rect. See [`REGION_EDIT`].
+    crate::diag::ui_rect_visible(REGION_DELETE, button.rect, ui.clip_rect());
+    if button.clicked() {
+        *sink.verb = Some(AnnotAction::Delete {
+            page: comment.page_index,
+            id,
+        });
+    }
+}
+
+/// **The filter strip** — two choosers, a switch, an ordering and a way back.
+///
+/// # ★★ Built from the UNFILTERED rows, always
+///
+/// A chooser built from what survived the current filter would drop every
+/// other author from the menu the moment one was chosen, leaving no route from
+/// one reviewer's comments to another's except *Show all* and starting again.
+/// The lists are therefore derived from the whole listing and are stable while
+/// the operator works — which is also what makes them a map of the document
+/// rather than a map of the current view.
+///
+/// # ★ Why `ComboBox` and not a row of toggles
+///
+/// Because the number of authors and the number of subtypes are properties of
+/// the **document**, not of this build: a drawing set that went round six
+/// reviewers has six names, and six toggles would be six lines of a 320 pt
+/// dock. A chooser is one line whatever the document contains.
+///
+/// # `Show all` is drawn only when a filter is set
+///
+/// R9's shape applied to a control that would do nothing: with no filter in
+/// force, *Show all* is a button whose entire effect is a repaint. It appears
+/// with the first narrowing and goes when the last one is lifted, which also
+/// makes its presence a second, wordless statement that something is hidden.
+fn filter_strip(ui: &mut egui::Ui, all: &[CommentRow], state: &mut filter::Filter) {
+    let authors = filter::authors(all);
+    let subtypes = filter::subtypes(all);
+    ui.horizontal_wrapped(|ui| {
+        chooser(
+            ui,
+            "comments-filter-author", // ui-text-exempt: internal widget id, never displayed
+            t::comment_filter_author(),
+            &authors,
+            &mut state.author,
+        );
+        chooser(
+            ui,
+            "comments-filter-type", // ui-text-exempt: internal widget id, never displayed
+            t::comment_filter_type(),
+            &subtypes,
+            &mut state.subtype,
+        );
+    });
+    ui.horizontal_wrapped(|ui| {
+        ui.checkbox(&mut state.with_note_only, t::comment_filter_with_note());
+        egui::ComboBox::from_id_salt("comments-sort") // ui-text-exempt: internal widget id, never displayed
+            .selected_text(sort_label(state.sort))
+            .show_ui(ui, |ui| {
+                for sort in filter::Sort::ALL {
+                    ui.selectable_value(&mut state.sort, *sort, sort_label(*sort));
+                }
+            })
+            .response
+            .on_hover_text(t::comment_sort_label());
+        if state.is_narrowing() {
+            let clear = ui.button(t::comment_filter_clear());
+            crate::diag::ui_rect_visible(REGION_FILTER_CLEAR, clear.rect, ui.clip_rect());
+            if clear.clicked() {
+                // ★ The ORDERING survives, and the narrowing does not. They
+                // are different acts: *Show all* is the answer to "what am I
+                // missing", and an operator who asked for the list by author
+                // did not ask for that to be undone as well.
+                state.author = None;
+                state.subtype = None;
+                state.with_note_only = false;
+            }
+        }
+    });
+}
+
+/// One "All, or exactly this one" chooser over a list of document values.
+///
+/// Written once for the author and the type because the two differ only in
+/// their label and their values — and because a second copy is a second place
+/// for the `None` entry to be forgotten, which would leave a filter nobody
+/// could lift.
+fn chooser(
+    ui: &mut egui::Ui,
+    id: &str,
+    label: &str,
+    values: &[String],
+    chosen: &mut Option<String>,
+) {
+    // The chooser's resting text is the LABEL, not "All": a strip reading
+    // `All  All  [ ] With text only` names nothing, and the operator has to
+    // open a menu to find out what the first one was about.
+    let selected = chosen.clone().unwrap_or_else(|| label.to_owned());
+    egui::ComboBox::from_id_salt(id)
+        .selected_text(selected)
+        .show_ui(ui, |ui| {
+            ui.selectable_value(chosen, None, t::comment_filter_all());
+            for value in values {
+                ui.selectable_value(chosen, Some(value.clone()), value);
+            }
+        })
+        .response
+        .on_hover_text(label);
+}
+
+/// The label for one ordering.
+///
+/// A `match` rather than a method on [`filter::Sort`], because a label is copy
+/// and copy lives in `crate::text` — and because the compiler makes this
+/// exhaustive, so a fourth ordering cannot ship without a word for it.
+fn sort_label(sort: filter::Sort) -> &'static str {
+    match sort {
+        filter::Sort::Document => t::comment_sort_document(),
+        filter::Sort::Author => t::comment_sort_author(),
+        filter::Sort::Subtype => t::comment_sort_subtype(),
     }
 }
 
@@ -745,10 +1037,36 @@ fn note_controls(
 /// thing here as it does in the row's own byline, which is drawn by
 /// [`t::comment_row_byline`] under the same rule.
 fn keeps_author(comment: &CommentRow) -> bool {
-    comment
-        .author
-        .as_deref()
-        .is_some_and(|author| !author.trim().is_empty())
+    keeps_author_name(comment.author.as_deref())
+}
+
+/// [`keeps_author`] over the name alone — **the one spelling of the rule**.
+///
+/// # ★★★ Why this is separate, added 2026-09-05
+///
+/// Because there are now **two** editors for one note: this panel's, and the
+/// canvas pop-up's (`crate::canvas::notepopup`), which is the route that works
+/// in Read mode and the answer to the operator's report of that date.
+///
+/// Two editors writing the same key is exactly the shape in which the mistake
+/// `pdfcer-core` named by name gets made in one of them and not the other:
+///
+/// > An implementation writing all three keys unconditionally would silently
+/// > strip the author and date on every correction, leaving a review comment
+/// > from nobody, dated never, looking exactly like a note somebody else had
+/// > mangled.
+///
+/// The pop-up has no [`CommentRow`] — it works from
+/// `crate::canvas::notepopup::model::NoteView` — so the rule had to be
+/// expressible over the name by itself or it would have been re-derived at the
+/// second call site. Re-derived is how two surfaces come to disagree, and this
+/// one's disagreement would be invisible until somebody read a saved file.
+///
+/// [`tests::a_note_with_an_author_keeps_it`] and its two siblings are the
+/// suite, and they exercise this through [`keeps_author`].
+#[must_use]
+pub(crate) fn keeps_author_name(author: Option<&str>) -> bool {
+    author.is_some_and(|author| !author.trim().is_empty())
 }
 
 /// The open editor: the box, the hint, the signature disclosure and the three
@@ -1074,6 +1392,77 @@ mod tests {
             let tip = t::comment_row_goto_tooltip(human);
             assert!(tip.contains(&human.to_string()), "{tip}");
         }
+    }
+
+    /// ★★★ **The Delete this panel now offers actually reaches the engine.**
+    ///
+    /// # Why this is a test and not a paragraph
+    ///
+    /// Because the paragraph it replaces was **wrong for three weeks** and
+    /// nothing could tell. This module's header said *"there is no Delete,
+    /// because `Action` has no variant that could carry the intent"* while the
+    /// variant, the dispatch arm and the engine verb all existed. Prose cannot
+    /// go red.
+    ///
+    /// `RESUME.md` states the rule this is an instance of — *"a sentence about
+    /// what the engine cannot do is a dated citation with a shelf life
+    /// measured in hours … where the claim can be an assertion, make it one"* —
+    /// and it names the day a unit test asserting such a claim went red the
+    /// moment the engine shipped, *"which is the behaviour a paragraph cannot
+    /// have."*
+    ///
+    /// # What it asserts, in the order the panel does it
+    ///
+    /// 1. the fixture carries an addressable annotation — otherwise the rest
+    ///    proves nothing;
+    /// 2. `annotation_deletion_refusal` says the document permits deletion,
+    ///    which is the predicate [`delete_control`] gates the button on;
+    /// 3. `delete_annotation` **succeeds** on it;
+    /// 4. and the annotation is **gone from the session's own view** — not
+    ///    merely that the call returned `Ok`. A verb that reported success and
+    ///    changed nothing is the exact failure a return-value check cannot
+    ///    see, and this project has been bitten by *"the verb did nothing"*
+    ///    twice.
+    #[test]
+    fn the_delete_control_reaches_the_engine() {
+        use crate::panels::objects::test_support::engine_fixture;
+
+        let path = engine_fixture("annot/thread.pdf");
+        let doc = pdfcer_core::document::Document::load(&path).expect("the fixture loads");
+        let pages = pdfcer_core::page_tree::pages(&doc).expect("a page tree");
+        let mut session = pdfcer_core::edit::EditSession::new(doc);
+
+        let listing = model::collect(
+            &session.view(),
+            &pages,
+            &model::ce_dimension_annots(&session),
+        );
+        let target = listing
+            .rows
+            .iter()
+            .find_map(|row| row.id)
+            .expect("the fixture must carry an addressable annotation");
+
+        assert!(
+            session.annotation_deletion_refusal().is_none(),
+            "the fixture refuses deletion document-wide, so this test would \
+             pass on a build with no Delete at all"
+        );
+
+        session
+            .delete_annotation(target)
+            .expect("`delete_annotation` refused the annotation the panel offers Delete on");
+
+        let after = model::collect(
+            &session.view(),
+            &pages,
+            &model::ce_dimension_annots(&session),
+        );
+        assert!(
+            !after.rows.iter().any(|row| row.id == Some(target)),
+            "the engine reported success and the annotation is still listed — \
+             the panel's Delete would leave the row on screen"
+        );
     }
 
     /// **A ce dimension's heading names it as one and keeps the subtype.**

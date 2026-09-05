@@ -16,7 +16,7 @@
 //! ★★ What is NOT asserted here, and is not assertable here: that the
 //! disclosure is drawn *above* the confirm control. This suite proves it
 //! EXISTS in the state where the button is live
-//! ([`super::RedactDialog::undo_disclosure`]); the geometry is
+//! ([`super::RedactDialog::staging_disclosure`]); the geometry is
 //! `tools/ui-verify`'s, which publishes both rects and can compare them.
 
 // ★ The INNER `#![cfg(test)]` is redundant — the module is declared
@@ -97,9 +97,9 @@ fn the_confirm_control_needs_every_gate_that_applies() {
         acknowledged: false,
         residuals_acknowledged: false,
         destination: Destination::NewFile,
-        undo_depth: 0,
         overwrite_acknowledged: false,
         confirm_requested: false,
+        cancel_requested: false,
         close_requested: false,
     };
     assert!(
@@ -185,9 +185,9 @@ fn changing_the_destination_retires_the_overwrite_acknowledgement() {
         acknowledged: true,
         residuals_acknowledged: true,
         destination: Destination::NewFile,
-        undo_depth: 0,
         overwrite_acknowledged: false,
         confirm_requested: false,
+        cancel_requested: false,
         close_requested: false,
     };
 
@@ -393,22 +393,33 @@ fn the_default_destination_writes_nothing() {
     assert!(Destination::ReplaceOriginal.writes_now());
 }
 
-/// ★★★ **The undo consequence is disclosed on the destination that has
+/// ★★★ **The staging consequence is disclosed on the destination that has
 /// it, and only on that one.**
 ///
-/// Our engine request offered to accept a redaction that cannot be undone
-/// *"and we will disclose it on screen before the operator commits"*. This
-/// is the assertion that the promise is kept, and it is made over
-/// [`RedactDialog::undo_disclosure`] — which [`RedactDialog::gates`] draws
-/// **between the destination choice and the confirm control**, so a
-/// disclosure that exists is a disclosure the operator passed on the way to
-/// the button.
+/// ★★★ **REWRITTEN 2026-09-05, and the sentence under test is now the
+/// opposite of the one this test was written for.** It used to be
+/// `the_undo_consequence_is_disclosed_before_the_operator_can_commit` and it
+/// asserted that the disclosure named the number of undo steps the click
+/// would destroy — the price of `Pass 250.1`'s collapsing verb, which the
+/// operator accepted on condition he was told first.
 ///
-/// The negative half matters as much: on the two write-now destinations the
-/// session is untouched and the undo log survives, so a sentence saying it
-/// was cleared would be a false claim about the operator's work.
+/// `Pass 250.2` charges no such price: the undo log survives. What is
+/// disclosed in the same place, in the same warning role, from the same
+/// region, is the fact that replaced it — **the page does not change**, and
+/// the removal happens at the save. That is more surprising rather than
+/// less, and it is the one thing about this destination an operator cannot
+/// work out by looking.
+///
+/// The assertion is made over [`RedactDialog::staging_disclosure`] — which
+/// [`RedactDialog::gates`] draws **between the destination choice and the
+/// confirm control**, so a disclosure that exists is a disclosure the
+/// operator passed on the way to the button.
+///
+/// The negative half matters as much: the two write-now destinations really
+/// do produce a file at the click, so a sentence saying nothing is written
+/// would be a false claim there.
 #[test]
-fn the_undo_consequence_is_disclosed_before_the_operator_can_commit() {
+fn the_staging_consequence_is_disclosed_before_the_operator_can_commit() {
     let session = clean_session();
     let prepared = prepare_redaction_apply(&session).expect("the fixture applies");
     let mut dialog = RedactDialog {
@@ -417,19 +428,21 @@ fn the_undo_consequence_is_disclosed_before_the_operator_can_commit() {
         acknowledged: true,
         residuals_acknowledged: false,
         destination: DEFAULT_DESTINATION,
-        undo_depth: 14,
         overwrite_acknowledged: false,
         confirm_requested: false,
+        cancel_requested: false,
         close_requested: false,
     };
 
     let disclosed = dialog
-        .undo_disclosure()
-        .expect("★★★ the deferred destination clears the undo log and must say so");
+        .staging_disclosure()
+        .expect("★★★ the deferred destination removes nothing at the click and must say so");
+    let lower = disclosed.to_lowercase();
     assert!(
-        disclosed.contains("14"),
-        "the count is the decision — \"this discards 14 steps\" and \"this \
-         discards 1\" are different answers: {disclosed}"
+        lower.contains("nothing is removed") && lower.contains("save"),
+        "★★ the two facts are load-bearing together. \"Nothing is removed\" \
+         alone reads as a failure; \"it happens at Save\" alone leaves him \
+         believing the page in front of him is already redacted: {disclosed}"
     );
     assert!(
         dialog.ready_to_confirm(),
@@ -440,12 +453,78 @@ fn the_undo_consequence_is_disclosed_before_the_operator_can_commit() {
     for other in [Destination::NewFile, Destination::ReplaceOriginal] {
         dialog.choose_destination(other);
         assert_eq!(
-            dialog.undo_disclosure(),
+            dialog.staging_disclosure(),
             None,
-            "★ {other:?} does not touch the session, so its undo log \
-             survives intact and claiming otherwise would be false"
+            "★ {other:?} writes a file at the click, so a sentence saying \
+             nothing is removed would be false there"
         );
     }
+}
+
+/// ★★★ **A document whose removal is already armed gets the staged phase,
+/// with a control that calls it off.**
+///
+/// New 2026-09-05, and it is the assertion behind *a stageable operation
+/// that cannot be un-staged is a trap*. Three things, each with a failure it
+/// is looking for:
+///
+/// 1. **the pipeline refuses by name.** `prepare_redaction_apply` on a
+///    staged session must answer [`RedactApplyRefusal::AlreadyStaged`] and
+///    not `FullRewriteUnavailable`. Without this the operator would be told
+///    *"this document cannot be rewritten in full"* — a true sentence about
+///    the wrong subject, because the engine declines `to_full_bytes` while a
+///    removal is armed;
+/// 2. **the dialog turns that into [`Phase::Staged`]**, which is the only
+///    phase carrying the control that unblocks him;
+/// 3. **the control pushes the cancel action and closes.** A build that
+///    pushed the *stage* action here would re-arm what he asked to call off,
+///    and one that pushed nothing would leave him with a document that
+///    cannot be saved by any ordinary means.
+#[test]
+fn a_staged_document_offers_the_control_that_calls_the_removal_off() {
+    let mut session = clean_session();
+    crate::redact::stage_into_session(&mut session).expect("the fixture stages");
+
+    assert_eq!(
+        prepare_redaction_apply(&session).unwrap_err(),
+        RedactApplyRefusal::AlreadyStaged,
+        "★ the pipeline must name this state rather than letting the \
+         engine's `RedactionPending` surface as a full-rewrite failure"
+    );
+
+    let mut dialog = RedactDialog {
+        source: PathBuf::from("x.pdf"),
+        phase: Phase::Staged,
+        acknowledged: false,
+        residuals_acknowledged: false,
+        destination: DEFAULT_DESTINATION,
+        overwrite_acknowledged: false,
+        confirm_requested: false,
+        // ★ Set directly rather than by clicking: `staged::body` needs an
+        // `egui::Ui` and this suite is headless by design. What is under test
+        // here is what the FLAG does, which is the half a driven check cannot
+        // see; `tools/ui-verify` owns the half where a real pointer presses a
+        // real button.
+        cancel_requested: true,
+        close_requested: false,
+    };
+    assert!(
+        !dialog.ready_to_confirm(),
+        "there is nothing to confirm in this phase — the decision was taken"
+    );
+
+    let mut actions = Vec::new();
+    dialog.take_cancel(&mut actions);
+    assert!(
+        matches!(
+            actions.as_slice(),
+            [crate::app::actions::Action::PendingRedaction(
+                crate::redact::Staging::Cancel
+            )]
+        ),
+        "exactly the cancel, and nothing else: {actions:?}"
+    );
+    assert!(dialog.close_requested);
 }
 
 /// ★★ **Confirming the default destination pushes an action and touches no
@@ -473,9 +552,9 @@ fn confirming_the_default_destination_pushes_an_action_and_writes_no_file() {
         acknowledged: true,
         residuals_acknowledged: false,
         destination: DEFAULT_DESTINATION,
-        undo_depth: 3,
         overwrite_acknowledged: false,
         confirm_requested: false,
+        cancel_requested: false,
         close_requested: false,
     };
 
@@ -486,9 +565,11 @@ fn confirming_the_default_destination_pushes_an_action_and_writes_no_file() {
     assert!(
         matches!(
             actions[0],
-            crate::app::actions::Action::ApplyRedactionsIntoDocument
+            crate::app::actions::Action::PendingRedaction(crate::redact::Staging::Stage)
         ),
-        "the deferred route must raise the apply-into-document verb: {:?}",
+        "the deferred route must raise the STAGE half of the pending-redaction \
+         verb — a build that raised the cancel half here would close the dialog \
+         having armed nothing: {:?}",
         actions[0]
     );
     assert!(
@@ -533,9 +614,9 @@ fn the_overwrite_acknowledgement_is_owed_by_exactly_one_destination() {
         acknowledged: true,
         residuals_acknowledged: false,
         destination: DEFAULT_DESTINATION,
-        undo_depth: 0,
         overwrite_acknowledged: false,
         confirm_requested: false,
+        cancel_requested: false,
         close_requested: false,
     };
     assert!(
@@ -576,7 +657,7 @@ fn the_disclosed_list_is_the_domain_count_plus_promotion() {
     let session = clean_session();
     let mut prepared = prepare_redaction_apply(&session).expect("the fixture applies");
     let count = |p: &PreparedRedaction| {
-        crate::redact::residual_count(&p.report, &p.verification)
+        crate::redact::residual_count(&p.report, Some(&p.verification))
             + usize::from(!p.promoted_by_materialisation.is_empty())
     };
     assert_eq!(residual_lines(&prepared).len(), count(&prepared));

@@ -368,7 +368,43 @@ fn spec(mode_id: &str) -> ModeSpec {
         // "where am I" — down a tab bar in the mode that needs them most.
         "read" => ModeSpec {
             left: vec![vec![pages(), Panel::Bookmarks.command_id()]],
-            right: vec![vec![Panel::Forms.command_id()]],
+            // ★★★ **COMMENTS IS MOUNTED IN READ, and it is the fix for the
+            // report he made on 2026-09-05:**
+            //
+            // > *"I could add a yellow sticky note but even in read mode I
+            // > don't think I could figure out how to read it."*
+            //
+            // He was right, and it was an absence rather than a
+            // discoverability problem. Until this line, Read's dock held
+            // Pages, Bookmarks and Forms — **no comment list at all** — and
+            // the panel's only command sits on the Markup tab, which
+            // `crate::shell::manifest`'s mode table does not show to Read.
+            // Two independent barriers, so neither one alone was the bug and
+            // fixing either alone would have left him exactly where he was.
+            // The other half is `manifest::view`'s Panels group, which now
+            // carries the toggle.
+            //
+            // ★★ **The argument is the Forms argument, and it is STRONGER
+            // here.** Forms is mounted in Read on the operator's 2026-08-14
+            // ruling, and that one had to overcome a real objection: filling
+            // a field *writes to the file*. Reading a comment writes nothing.
+            // If a mode whose stance is *the document is not yours to alter*
+            // may nonetheless set `/V` and regenerate an appearance, it may
+            // certainly read a `/Contents` string somebody else already
+            // wrote.
+            //
+            // ⇒ The stance Read takes is about **authorship**, not about
+            // information. Withholding the comment list confused *reading a
+            // comment* with *writing one* — and Acrobat **Reader**, a
+            // read-only product, is built around exactly this surface.
+            //
+            // Comments FIRST and Forms second, reversing the order Review
+            // uses for the same two panels for the same reason it uses:
+            // a tabbed stack draws only its active tab, so the panel the mode
+            // is *for* goes at the front and the one that writes goes behind
+            // it. In Review the front is the reviewer's work list; in Read the
+            // front is the thing being read.
+            right: vec![vec![comments(), Panel::Forms.command_id()]],
             left_width: NAVIGATOR_WIDTH,
             right_width: INSPECTOR_WIDTH,
         },
@@ -738,8 +774,8 @@ mod tests {
         );
         assert_eq!(
             read.right.panels().map(PanelId::as_str).collect::<Vec<_>>(),
-            [Panel::Forms.command_id()],
-            "Read's inspector side is Forms and nothing else"
+            [comments(), Panel::Forms.command_id()],
+            "Read's inspector side is the comment list, then Forms"
         );
         for absent in [Panel::Objects, Panel::Properties] {
             assert!(
@@ -797,6 +833,81 @@ mod tests {
         assert_eq!(objects.side, DockSide::Right, "Objects is on the right");
     }
 
+    /// ★★★ **Read can read the comments — both halves of it.**
+    ///
+    /// # The report this exists for
+    ///
+    /// Ken, 2026-09-05: *"I could add a yellow sticky note but even in read
+    /// mode I don't think I could figure out how to read it."*
+    ///
+    /// He was right, and it was an **absence**, not a discoverability problem.
+    /// Two independent barriers stood between him and a comment he had just
+    /// written, and each one alone was sufficient:
+    ///
+    /// 1. Read's default dock held Pages, Bookmarks and Forms. **No comment
+    ///    list was mounted at all.**
+    /// 2. The panel's only command, `markup.comments`, sits on the **Markup**
+    ///    tab, and the mode table shows Read `["file", "view"]`. **So the
+    ///    toggle could not be reached to fix (1) by hand.**
+    ///
+    /// ⇒ ★★ **This test asserts BOTH**, deliberately in one place, because
+    /// that is the property that was violated. Two separate tests, each
+    /// passing, would each have been green on a build where he still could
+    /// not read his note — a barrier removed while another remains is
+    /// indistinguishable, from his chair, from nothing having been done. This
+    /// project has a standing lesson for that shape: *an absence claim is a
+    /// claim about EVERY route.*
+    ///
+    /// # What it is NOT
+    ///
+    /// It is not a claim that the popup on the canvas works, or that the
+    /// panel renders the words. It says the surface is **mounted and
+    /// reachable in Read**, which is the barrier this pair of lines removed.
+    /// A rendered screenshot is still the only oracle for the rest.
+    #[test]
+    fn read_mode_can_reach_the_comment_list_by_both_routes() {
+        let read = layout_for("read");
+        assert!(
+            read.contains(&PanelId::new(comments())),
+            "Read's default dock does not mount the comment list, so a note \
+             written in Review cannot be read in Read"
+        );
+
+        // ★★ **Route two is the RAIL, and the reason it is not the View tab
+        // is a rule that bites much harder than it looks.**
+        //
+        // The obvious placement — `markup.comments` beside the other panel
+        // toggles in View ▸ Panels — is a **manifest validation failure**.
+        // `RIBBON_IA.md` P1 says one command appears on at most one tab, and
+        // `Shell::validate` enforces it. Worse, the failure is not local:
+        // `Capabilities::for_mode` returns `FULL` when the shell is absent, so
+        // an invalid manifest silently grants every authoring capability to
+        // every mode. It was tried on 2026-09-05 and eight mode-gating tests
+        // went red at once, one of them reading *"the pen is never picked up
+        // in Read"*.
+        //
+        // The rail is not a tab, so P1 does not reach it — the same permission
+        // four `view.panel_*` toggles and `file.fonts` already rely on there.
+        // It is also present in **every** mode, which a tab is not, and that
+        // is the property this needs.
+        //
+        // Asked of the rail's own definition rather than restated here: a
+        // hand-written copy of the group's contents would be a second spelling
+        // that can drift from the one the shell builds.
+        let on_the_rail = crate::shell::manifest::rail::groups()
+            .into_iter()
+            .flat_map(|g| g.items)
+            .any(|item| {
+                matches!(item, egui_shell::manifest::Item::Command { ref id, .. } if id == comments())
+            });
+        assert!(
+            on_the_rail,
+            "{} is on no rail group, so in Read — which is shown `file` and \
+             `view` alone — the panel cannot be reopened once it is closed",
+            comments()
+        );
+    }
+
     /// A mode with no arm gets the full arrangement rather than an empty
     /// dock — a customized manifest's fourth mode must not look broken.
     #[test]
@@ -843,6 +954,13 @@ mod tests {
             [
                 Panel::Pages.command_id(),
                 Panel::Bookmarks.command_id(),
+                // ★ Comments joined Read's default on 2026-09-05 — his report
+                // that a sticky note could not be read in Read. Listed here
+                // because this assertion is a *literal transcript* of the
+                // arrangement, which is the point of it: the arrangement is
+                // the spec, so a change to it must be restated here by hand
+                // and cannot slip through as an incidental.
+                Panel::Comments.command_id(),
                 Panel::Forms.command_id()
             ]
         );
@@ -856,7 +974,11 @@ mod tests {
         }
         assert_eq!(
             ids(&layout_for_build("read", &without_pages)),
-            [Panel::Bookmarks.command_id(), Panel::Forms.command_id()],
+            [
+                Panel::Bookmarks.command_id(),
+                Panel::Comments.command_id(),
+                Panel::Forms.command_id()
+            ],
             "a panel the catalog does not hold must not be mounted"
         );
 

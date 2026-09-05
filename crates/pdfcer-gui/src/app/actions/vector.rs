@@ -423,7 +423,7 @@ pub enum VectorAction {
     /// Because that is what the shell is holding: `canvas::clipboard` parks an
     /// `ObjectClip::to_bytes` payload in `egui::Memory` so that the same
     /// representation serves the in-process clipboard and the OS one. See
-    /// `Clipped::Content` for the three reasons, and for why the third decides
+    /// `Clipped::Selection` for the three reasons, and for why the third decides
     /// it.
     ///
     /// The deserialisation therefore happens here, in the apply arm, and its
@@ -753,18 +753,33 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
         VectorAction::PasteObjects { page, clip, at } => {
             let mut added = 0_u64;
             let mut pasted = 0_u64;
+            // ★★★ **The ANNOTATION half of the outcome**, read out as of
+            // 2026-09-05. `paste_objects` plants both halves — its content
+            // command, then the private `paste_clip_annotations` — and returns
+            // `PasteOutcome::annotations_pasted` beside `objects_pasted`.
+            //
+            // It is on the trace because it is the number a wrong build gets
+            // wrong **invisibly**: a clip whose annotation payload the
+            // serialiser dropped, or an index list that never reached
+            // `copy_selection`, pastes its content perfectly and reports
+            // `pasted=3` either way. `pasted=` counts content objects only, so
+            // an annotation-only paste traces `pasted=0` — which is
+            // indistinguishable from a paste that did nothing at all unless
+            // this field is beside it.
+            let mut annots = 0_u64;
             vector_edit_on_page(doc, "paste-objects", page, clip.len(), |session| {
                 let clip = pdfcer_core::vector::ObjectClip::from_bytes(&clip)?;
                 session.paste_objects(page, &clip, at).map(|outcome| {
                     added = outcome.resources_added;
                     pasted = outcome.objects_pasted;
+                    annots = outcome.annotations_pasted;
                     outcome.disclosures
                 })
             });
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed.
                 format!(
-                    "paste-objects-applied page={page} pasted={pasted} \
+                    "paste-objects-applied page={page} pasted={pasted} annots={annots} \
                      resources_added={added} at=[{:.4} {:.4} {:.4} {:.4} {:.2} {:.2}]",
                     at.a, at.b, at.c, at.d, at.e, at.f,
                 )

@@ -33,7 +33,7 @@
 //! |---|---|
 //! | `Exact` | a file advertising the name the document spells, tag stripped |
 //! | `Alias` | a **standard-14 family equivalence** — `Helvetica` → `Arial` |
-//! | `Bundled` | a face pdfcer itself ships. **Not offered here** — see below |
+//! | `Bundled` | a face pdfcer itself ships. **Offered only when the operator ticks the box** — see below |
 //!
 //! ★★ The middle rung is what makes this feature work at all on this platform.
 //! Every CAD drawing this project exists for asks for `Helvetica`, and **no
@@ -47,18 +47,36 @@
 //! **filesystem** — `pdfcer-core` must not read a directory — and `pdfcer-render`
 //! is not `pdfcer-core`.
 //!
-//! ## ★★ Why bundled faces are NOT offered
+//! ## ★★ How bundled faces are offered — corrected 2026-09-05, twice over
 //!
-//! The third rung would supply one of pdfcer's own standard-14 substitutes with
-//! no folder configured at all, and it is passed `false` here. `pdfcer`
-//! makes it opt-in behind `--use-bundled-fonts`; this shell has no equivalent
-//! switch, because the Embed window has no settings by design.
+//! This section has now been wrong in **both** directions and the history is
+//! worth two sentences, because the shape recurs.
 //!
-//! ★ That is an **operator decision this session did not take** — filed in
-//! `OPERATOR_REQUESTS.md` — rather than a limitation being papered over.
-//! Embedding a substitute face changes what the letters look like in a document
-//! somebody sends out, and offering it silently because it happened to be
-//! available is precisely the *sneaky* half of rule 4.
+//! It originally read *"Why bundled faces are NOT offered"*, and said this
+//! shell had no equivalent of `pdfcer`'s `--use-bundled-fonts` *"because the
+//! Embed window has no settings by design"*. **That became false on
+//! 2026-08-28**, when `dialogs::embed` was changed to pass `true`
+//! unconditionally — and the paragraph here went on asserting the opposite for
+//! eight days, in the module that owns the argument, while
+//! `ui-verify`'s `embedding_works_with_no_font_folder_at_all` passed against
+//! the behaviour it denied.
+//!
+//! ⇒ The general form, and this project has paid for it six times: **a
+//! paragraph explaining why something is not done outlives the day it is
+//! done.** Nothing compiles differently when it goes stale.
+//!
+//! **What is true now.** The third rung is offered as a **disclosed opt-in**:
+//! `dialogs::embed` scans with `allow_bundled` true so that it can *say* what
+//! pdfcer's own faces would answer for, names them, and commits a request that
+//! includes them only if the operator ticks a box that is **off** when the
+//! window opens. That is `pdfcer`'s own shape — `--use-bundled-fonts`, off by
+//! default — and its own reason, which is not the letterforms but the licence:
+//! the bundled faces are BSD-3-Clause, and embedding one puts it inside a file
+//! the operator distributes.
+//!
+//! ★ Rule 4 is *fuzzy, never sneaky*. It forbids doing this **silently**, not
+//! doing it. The disclosure was already loud from the first day; what was
+//! missing until 2026-09-05 was the operator's ability to decline.
 //!
 //! ## ★★ A stem match is still disclosed, and the engine does not distinguish it
 //!

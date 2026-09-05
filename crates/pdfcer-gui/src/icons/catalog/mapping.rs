@@ -169,10 +169,27 @@ impl Icon {
         Icon::SaveCopy,
         Icon::UnembedFonts,
         Icon::WheelFlip,
-        // The five with no ribbon control yet, 2026-09-04. `ExportImage` is
-        // named by `file.export_image`; the other four are art before button,
-        // and joining this list is what puts them under the catalogue-wide
-        // tests — which is the whole reason a variant exists for each.
+        // ★★★ CORRECTED 2026-09-05. This comment read *"the five with no
+        // ribbon control yet … the other four are art before button"*, and by
+        // the end of 2026-09-04 **all five were named by a registered
+        // command**: `edit.copy_as_vector` (token 408, Edit ▸ Clipboard),
+        // `file.encrypt` and `file.permissions` (126 / 127, File ▸ Security),
+        // `file.export_image` (File ▸ Export) and `file.open_in_acrobat` (the
+        // ribbon's trailing item). The art landed in the morning and the
+        // buttons landed in the afternoon; the sentence describing the gap was
+        // written between them and outlived it by hours.
+        //
+        // ⇒ **A sentence about what has not been built yet is a dated
+        // citation, not a fact**, and on this project its shelf life has twice
+        // been measured in hours rather than days. Where such a claim can be an
+        // assertion it should be one — the reason this correction is possible
+        // at all is that `Icon::ALL` is walked by the catalogue-wide tests, so
+        // the *membership* below never went stale even while the prose did.
+        //
+        // The five stay in the list for the reason they joined it: membership
+        // is what puts a variant under `every_icon_parses`,
+        // `every_icon_rasterizes_to_visible_pixels` and the rest. That reason
+        // is unaffected by whether a button exists.
         Icon::CopyAsVector,
         Icon::Encrypt,
         Icon::ExportImage,

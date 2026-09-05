@@ -37,6 +37,34 @@
 //! and points at incremental as the supported path, which is the same posture
 //! from the other side.
 //!
+//! ### ★★★ 1.1 …EXCEPT while a redaction is staged, 2026-09-05
+//!
+//! There is exactly one state in which this module writes a **single-revision
+//! full rewrite** instead, and it is not a fallback: a staged redaction
+//! (`pdfcer-core` `Pass 250.2`). All three save verbs go through
+//! [`write_copy`], and [`write_copy`] asks `EditSession::has_pending_redaction()`
+//! before it asks anything else.
+//!
+//! Three facts about that, each of which somebody will otherwise rediscover:
+//!
+//! 1. **It is not optional.** While a redaction is staged the engine refuses
+//!    `to_incremental_bytes` **and** `to_full_bytes` by name
+//!    (`WriteError::RedactionPending`, `pdfcer-core/src/edit.rs:8348` and
+//!    `:8374`), because the un-redacted content is still live in the session.
+//!    A build that did not route would not leak — it would simply stop being
+//!    able to save at all, loudly, on every verb.
+//! 2. **It suspends §1's promise, so §1's promise gets a sentence.** The
+//!    previous revision is *deliberately* not carried into the output — that is
+//!    the whole of engine rule R35 — and the operator has been taught by
+//!    `file.save_copy`'s own tooltip to expect the opposite.
+//!    [`crate::text::redact::saved_applying_redaction`] is where he is told.
+//! 3. **The staging survives the save.** `save_applying_redaction` takes
+//!    `&self`; it neither mutates the session nor clears the flag. So the next
+//!    save applies the redaction again, the ordinary modes stay refused, and
+//!    the document on screen still shows the content — which is stated in the
+//!    same sentence, because *"I saved it, so it is done"* is exactly the
+//!    assumption this must not let stand.
+//!
 //! ## 2. Why this needs none of [`crate::app::actions`]' four-step protocol
 //!
 //! Every other document verb in this shell goes through `vector_edit`: cancel
@@ -508,40 +536,57 @@ pub fn has_a_file(doc: &OpenDoc) -> bool {
 /// texture and every live rule-4 disclosure. Two numbers, one question each.
 /// # ★★★ 2026-09-04 — the third term, and the silent loss it closes
 ///
-/// `EditSession::apply_redactions` (`Pass 250.1`) applies a redaction into the
-/// session by **collapsing** it: the redacted bytes become the session's new
-/// base and the edit and undo stacks are emptied. So immediately afterwards
-/// `is_modified()` answers **`false`** — correctly, on its own terms, because
-/// the session no longer differs from its base. Measured against
-/// `pdfcer-core` `8b24a0a` on 2026-09-04: `undo_depth` 1 → 0,
-/// `has_applied_redaction()` `false` → `true`, `is_modified()` `false`.
+/// **Added on 2026-09-04 as `session.has_applied_redaction()`; CORRECTED on
+/// 2026-09-05 to `session.has_pending_redaction()`.** Both halves of that are
+/// recorded rather than the survivor alone, because the reason the term exists
+/// outlived the verb it was first written against and would have been lost with
+/// it.
 ///
-/// With two terms this predicate therefore answered **clean** on a document
-/// whose most consequential edit had not been written. Every consumer is the
-/// same one predicate, so the whole of it failed at once: the tab strip showed
-/// no unsaved marker, Close asked nothing, and Quit asked nothing. The operator
-/// applies a redaction, sees the page change, closes the document — and the
-/// redaction is gone with no prompt.
+/// **What it was for.** `EditSession::apply_redactions` (`Pass 250.1`) applied
+/// a redaction into the session by **collapsing** it: the redacted bytes became
+/// the session's new base and the edit and undo stacks were emptied. So
+/// immediately afterwards `is_modified()` answered **`false`** — correctly, on
+/// its own terms, because the session no longer differed from its base. With
+/// two terms this predicate therefore answered **clean** on a document whose
+/// most consequential edit had not been written: no tab marker, no question on
+/// Close, no question on Quit. Apply a redaction, close the document, and it is
+/// gone with nothing asked.
 ///
-/// `session.has_applied_redaction()` is the term that sees it. It is an OR
-/// beside `is_modified()` rather than a replacement for it, and it stays true
-/// for the life of the session; the `edit_epoch != saved_epoch` term is what
-/// turns it off again once the redaction has actually been written.
+/// **Why the verb changed.** This shell no longer collapses. `Pass 250.2`'s
+/// [`crate::redact::stage_into_session`] leaves base, overlay and undo
+/// untouched and sets one flag, so `has_applied_redaction()` is now **`false`
+/// for the life of every session this shell creates** — a term that can never
+/// be true, which is worse than an absent one because it reads as a guard.
 ///
-/// ★ **The one case it now over-reports**, stated rather than discovered:
-/// redact → save → edit → undo leaves `is_modified()` false, the epochs
-/// differing (an undo bumps the epoch like everything else) and this answering
-/// **dirty** on a document that matches its file. That costs one unnecessary
-/// prompt. The alternative error is a redacted document closed without one, and
-/// between a spurious question and a silent loss there is no contest.
+/// **And the hole it would have left is a real, reachable state**, not a
+/// theoretical one: open a drawing that already carries `/Redact` marks from an
+/// earlier session, press *Review & apply*, choose *this document*. Nothing is
+/// edited — the marks were already in the file — so `is_modified()` is `false`;
+/// the funnel bumps `edit_epoch`, so the epochs differ. With two terms that is
+/// **clean**, and the operator closes a document with an armed removal on it
+/// and is asked nothing.
 ///
-/// ⚠ This is **not** a save gate. The engine's instruction is explicit — *"do
-/// not gate save on `has_applied_redaction()`"* — because the collapse leaves
-/// no un-redacted base for any save mode to leak. This predicate asks whether
-/// there is something to save, never whether saving is permitted.
+/// `session.has_pending_redaction()` is the term that sees it. It is an OR
+/// beside `is_modified()` rather than a replacement for it; the
+/// `edit_epoch != saved_epoch` term is what turns it off again once the
+/// redaction has actually been written.
+///
+/// ★ **It is strictly better behaved than the term it replaces**, in the one
+/// way that matters. `has_applied_redaction()` was permanently sticky — once
+/// true, true for the life of the session — so `redact → save → edit → undo`
+/// answered **dirty** on a document that matched its file, costing a spurious
+/// prompt that could never be cleared. `has_pending_redaction()` is turned off
+/// by [`crate::redact::cancel_staged_redaction`], so a document whose staging
+/// the operator called off goes genuinely clean again.
+///
+/// ⚠ **It is still not a save gate**, and the distinction moved rather than
+/// went away. Saving while a redaction is staged is not merely permitted, it is
+/// the *only* way the redaction ever happens — [`write_copy`] routes it through
+/// `save_applying_redaction`. This predicate asks whether there is something to
+/// save, never whether saving is permitted.
 #[must_use]
 pub fn has_unsaved_edits(doc: &OpenDoc) -> bool {
-    (doc.session.is_modified() || doc.session.has_applied_redaction())
+    (doc.session.is_modified() || doc.session.has_pending_redaction())
         && doc.edit_epoch != doc.saved_epoch
 }
 
@@ -613,18 +658,28 @@ pub fn save_in_place(doc: &OpenDoc) -> bool {
 
     // Step 1 - materialise the whole replacement somewhere else on the same
     // volume. A failure here has touched nothing the operator owns.
-    if let Err(error) = write_copy(doc, &temporary) {
-        let _ = std::fs::remove_file(&temporary);
-        crate::diag::trace(|| {
-            // ui-text-exempt: diagnostic trace, never displayed.
-            format!("save-in-place outcome=failed stage=write detail={error:?}")
-        });
-        // The operator-visible half, and the same sentence Save-a-copy uses: a
-        // write that produced no file and no sentence is indistinguishable from
-        // a control that does nothing.
-        crate::app::status::decline::record_save_failure();
-        return false;
-    }
+    //
+    // ★★ On a staged redaction the "replacement" is a single-revision full
+    // rewrite with the marked content gone (§1.1), and the temp-then-rename
+    // below matters more here than anywhere else in this module: the target is
+    // the operator's own document, and it is the last remaining copy of the
+    // content being removed.
+    let written = match write_copy(doc, &temporary) {
+        Ok(written) => written,
+        Err(error) => {
+            let _ = std::fs::remove_file(&temporary);
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed.
+                format!("save-in-place outcome=failed stage=write detail={error:?}")
+            });
+            // The operator-visible half, and the same sentence Save-a-copy
+            // uses: a write that produced no file and no sentence is
+            // indistinguishable from a control that does nothing.
+            crate::app::status::decline::record_save_failure();
+            redaction_refusal_note(doc, &error);
+            return false;
+        }
+    };
 
     // Step 2 - the atomic act. A rename either happens or does not; on Windows
     // it fails outright if the target is open, which is precisely the guarantee
@@ -665,6 +720,20 @@ pub fn save_in_place(doc: &OpenDoc) -> bool {
     let mut notes = vec![crate::text::files::saved_in_place(&target)];
     notes.extend(signature);
     crate::app::actions::record_notes(doc.edit_epoch, notes);
+    // ★★★ …and, when the save performed a staged redaction, the sentence that
+    // says so — recorded AFTER `record_notes`, deliberately, so it is the
+    // disclosure that stands.
+    //
+    // `record_note` replaces what is in the slot, and the ordering here is a
+    // choice about which fact wins when only one can be shown. "Saved to
+    // sheet.pdf" answers *"did my save happen"*, which the operator can also
+    // read off the tab marker disappearing. "The content is out of the file,
+    // the window still shows it, and the removal is still armed" answers three
+    // questions he has no other way to answer, on the one operation that cannot
+    // be undone. Rule 4 decides it and it points at the second.
+    if let Written::RedactionApplied(report) = &written {
+        redaction_receipt(doc, &target, report);
+    }
     true
 }
 
@@ -680,7 +749,16 @@ fn write_and_report(doc: &OpenDoc, target: &Path) -> bool {
     // Before the write, for [`signature_note`]'s reason.
     let signature = signature_note(doc);
     match write_copy(doc, target) {
-        Ok(report) => {
+        // ★★★ The staged-redaction save — §1.1. A different event with
+        // different fields, so a different trace line and a different sentence.
+        Ok(Written::RedactionApplied(report)) => {
+            redaction_receipt(doc, target, &report);
+            if let Some(note) = signature {
+                crate::app::actions::record_note(doc.edit_epoch, note);
+            }
+            true
+        }
+        Ok(Written::Ordinary(report)) => {
             crate::diag::trace(|| {
                 format!(
                     // ui-text-exempt: diagnostic trace, never displayed.
@@ -752,8 +830,84 @@ fn write_and_report(doc: &OpenDoc, target: &Path) -> bool {
             // and no sentence is indistinguishable from a control that does
             // nothing.
             crate::app::status::decline::record_save_failure();
+            redaction_refusal_note(doc, &error);
             false
         }
+    }
+}
+
+/// **The sentence a staged-redaction save owes, and why it is not the ordinary
+/// receipt.**
+///
+/// §1.1 item 2 and item 3, in one place so that all three save verbs get the
+/// identical wording — and so that a fourth verb added later gets it by calling
+/// one function rather than by remembering three facts.
+///
+/// The trace line is separate from `save-copy`'s on purpose. That line's fields
+/// (`appended=`, `verbatim=`, `identical=`) are properties of an incremental
+/// update and every one of them would be a fabrication here; this line carries
+/// what a full-rewrite removal actually did. A reader of a trace must be able to
+/// tell the two events apart, and `HANDOFF.md` §2's ink-trail rule is that they
+/// are told apart by fields, not by hoping.
+fn redaction_receipt(doc: &OpenDoc, target: &Path, report: &pdfcer_core::redact::RedactionReport) {
+    let residuals = crate::redact::residual_count(report, None);
+    crate::diag::trace(|| {
+        format!(
+            // ui-text-exempt: diagnostic trace, never displayed.
+            //
+            // `path` is Debug-quoted, exactly as `save-copy`'s is: a Windows
+            // path routinely contains a space.
+            //
+            // ★ `still_staged=true` is unconditional and is the field worth
+            // having. `save_applying_redaction` takes `&self` and does not
+            // clear the flag, so the removal is armed again the instant this
+            // returns — and a build that had started clearing it would emit an
+            // otherwise identical line.
+            "redact-saved path={:?} marks={} pages={} glyphs={} residuals={} epoch={} \
+             still_staged=true",
+            target,
+            report.marks_applied,
+            report.pages_redacted,
+            report.glyphs_removed,
+            residuals,
+            doc.edit_epoch,
+        )
+    });
+    crate::app::actions::record_note(
+        doc.edit_epoch,
+        crate::text::redact::saved_applying_redaction(
+            &target.file_name().map_or_else(
+                || target.display().to_string(),
+                |n| n.to_string_lossy().into_owned(),
+            ),
+            report.marks_applied,
+            report.pages_redacted,
+            residuals,
+        ),
+    );
+}
+
+/// **The extra sentence a save refused *because of a staged redaction* owes.**
+///
+/// `record_save_failure` puts *"the file could not be written"* on the bar,
+/// which is right for a full disk and wrong here: nothing is wrong with the
+/// disk, the document, or the operator's folder. What is wrong is that a
+/// removal is armed over marks that no longer exist, and the remedy is a
+/// control in a dialog he would have no reason to open.
+///
+/// ★ It is added **beside** the failure rather than instead of it, on
+/// `crate::text::redact::save_kept_pending_marks`'s standing reason: the save
+/// genuinely did not happen, and replacing that fact with an explanation would
+/// leave an operator unsure whether a file appeared.
+///
+/// ★ Silent for every other [`SaveError`]. A missing folder and a broken
+/// provenance span have their own sentence already and do not want a second.
+fn redaction_refusal_note(doc: &OpenDoc, error: &SaveError) {
+    if let SaveError::RedactionRefused { refusal } = error {
+        crate::app::actions::record_note(
+            doc.edit_epoch,
+            crate::text::redact::save_refused_message(refusal),
+        );
     }
 }
 
@@ -797,11 +951,13 @@ fn write_and_report(doc: &OpenDoc, target: &Path) -> bool {
 ///
 /// # Errors
 ///
-/// [`SaveError`] — the engine refused to serialize, or the file system refused
-/// the write. The two are kept apart because their remedies are: one is a
-/// document pdfcer cannot express as an update, the other is a folder that does
-/// not exist or cannot be written to.
-fn write_copy(doc: &OpenDoc, target: &Path) -> Result<SaveReport, SaveError> {
+/// [`SaveError`] — the engine refused to serialize, the redaction could not be
+/// performed, the proof found removed text still present, or the file system
+/// refused the write. They are kept apart because their remedies are: one is a
+/// document pdfcer cannot express as an update, one is a staging the operator
+/// has to cancel, one is a pdfcer defect, and one is a folder that does not
+/// exist or cannot be written to.
+fn write_copy(doc: &OpenDoc, target: &Path) -> Result<Written, SaveError> {
     // ★ Through the funnel, not `SaveOptions::default()`.
     //
     // Two settings ride on this — the cross-reference entry line ending and the
@@ -817,47 +973,110 @@ fn write_copy(doc: &OpenDoc, target: &Path) -> Result<SaveReport, SaveError> {
     // `/Producer` is a decision about attribution rather than about bytes and
     // no setting governs it.
     use crate::app::settings::SettingsExt;
-    let (bytes, report) = doc
-        .session
-        .to_incremental_bytes(&doc.settings.save_options())?;
-    // ★★★ THE ABSENCE PROOF, between the bytes and the syscall — 2026-09-04.
+    let options = doc.settings.save_options();
+
+    // ★★★ THE FORK — 2026-09-05, `pdfcer-core` `Pass 250.2`. See §1.1.
+    //
+    // Asked of the SESSION rather than of a flag this module keeps, for
+    // `has_a_file`'s reason applied to a different question: a second source of
+    // truth about whether a removal is armed would drift, and the direction it
+    // would drift in is a save that quietly wrote the un-redacted document.
+    //
+    // ★ There is no `else` that could fall back. While the flag is set, both
+    // ordinary save modes return `WriteError::RedactionPending`, so a build
+    // that did not fork here would not leak — it would stop being able to save
+    // at all. That is the engine refusing rather than this module guarding, and
+    // it is why the fork is a route rather than a gate.
+    let (bytes, written, claims) = if doc.session.has_pending_redaction() {
+        let (bytes, report) = crate::redact::save_applying_pending(&doc.session, &options)
+            .map_err(|refusal| SaveError::RedactionRefused { refusal })?;
+        // ★★ The claims that describe THESE bytes are the ones the removal that
+        // produced them made — not the preview the staging recorded on the
+        // document. The engine re-runs the removal over the current state, so
+        // an operator who undid one mark of three between staging and saving
+        // has a shorter list, and proving against the longer one would refuse a
+        // legitimate save over a mark he deliberately took off.
+        let claims = report.redacted_text.clone();
+        (bytes, Written::RedactionApplied(report), claims)
+    } else {
+        let (bytes, report) = doc.session.to_incremental_bytes(&options)?;
+        // The standing claim on the document. Empty on everything that has not
+        // been staged, which is every ordinary save.
+        (
+            bytes,
+            Written::Ordinary(report),
+            doc.redaction_absence_claims.clone(),
+        )
+    };
+
+    // ★★★ THE ABSENCE PROOF, between the bytes and the syscall — 2026-09-04,
+    // and it is the shell's own, independent of the engine, on every save verb.
     //
     // `crate::redact::PreparedRedaction::write_to` makes this check one
     // statement from the write on the two destinations that produce a file
-    // directly. The third destination — the default since today — puts the
-    // redaction in the SESSION and leaves the write to this function, minutes
-    // later, possibly after further edits, through whichever save verb the
-    // operator reached for. So the proof has to be made here or not at all, and
-    // "not at all" is the option our own engine request ruled out in writing:
-    // *"the proof is not negotiable at this end regardless of what the engine
-    // does."*
+    // directly. The deferred destination — the default — arms the removal and
+    // leaves the write to this function, minutes later, possibly after further
+    // edits, through whichever save verb the operator reached for. So the proof
+    // has to be made here or not at all, and "not at all" is the option our own
+    // engine request ruled out in writing: *"the proof is not negotiable at
+    // this end regardless of what the engine does."*
     //
     // ★★ What it is NOT. It is not a save gate on `has_applied_redaction()`,
-    // which the engine asked us not to build and which would refuse a
-    // legitimate incremental save of an already-clean document. The engine's
-    // collapse means this check is expected to pass on every save of every
-    // redacted document, forever — and a check that is expected to pass is
-    // exactly the kind this project keeps discovering was never wired. Its
-    // value is the day it does not: a survivor here means the bytes about to
-    // reach the operator's disk contain text pdfcer told him was gone.
+    // which the engine asked us not to build. It is a sweep over the bytes,
+    // whichever writer produced them, and it is expected to pass forever — a
+    // check that is expected to pass is exactly the kind this project keeps
+    // discovering was never wired, which is why `app::save::tests` falsifies
+    // its bite rather than assuming it.
     //
-    // ★ It costs nothing on an ordinary save. `redaction_absence_claims` is
-    // empty on every document that has not been redacted, and
-    // `prove_saved_bytes` returns without decoding a single stream.
-    if let Err(survivors) = crate::redact::prove_saved_bytes(&bytes, &doc.redaction_absence_claims)
-    {
+    // ★ It costs nothing on an ordinary save: `redaction_absence_claims` is
+    // empty on every document that has not been staged, and `prove_saved_bytes`
+    // returns without decoding a single stream.
+    //
+    // ★ On the staged path it is deliberately the SECOND sweep of the same
+    // bytes — `crate::redact::save_applying_pending` has already run one before
+    // returning them. That is §2.2's rule twice rather than once, and the
+    // reason is the same one it gives: the guarantee must not depend on how the
+    // value was constructed, and this call site cannot see how it was.
+    if let Err(survivors) = crate::redact::prove_saved_bytes(&bytes, &claims) {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
             format!(
                 "save-refused-redaction-leak path={target:?} survivors={} of {}",
                 survivors.len(),
-                doc.redaction_absence_claims.len()
+                claims.len()
             )
         });
         return Err(SaveError::RedactionLeak { survivors });
     }
     std::fs::write(target, &bytes)?;
-    Ok(report)
+    Ok(written)
+}
+
+/// **Which writer produced the bytes that reached the file, and what it
+/// reported.**
+///
+/// Added 2026-09-05 with the staged-redaction route, and it is an enum rather
+/// than `(SaveReport, Option<RedactionReport>)` because the two writers do not
+/// both run: `EditSession::save_applying_redaction` produces no
+/// [`SaveReport`] at all — it returns bytes and a
+/// [`pdfcer_core::redact::RedactionReport`] — so a struct with both would have
+/// to carry a fabricated one, and every field of a fabricated `SaveReport`
+/// (`bytes_appended`, `byte_identical`, `promoted`) is a claim about a save
+/// that did not happen in that shape.
+///
+/// ★ The trace lines differ for the same reason and that is the point. A reader
+/// of a trace must be able to tell a save that appended a revision from one
+/// that rewrote the whole document with content removed, and the two events
+/// have no fields in common worth pretending they share.
+#[derive(Debug)]
+enum Written {
+    /// The ordinary §7.5.6 incremental update — §1, and everything this module
+    /// promises about the previous revision staying intact.
+    Ordinary(SaveReport),
+    /// A staged redaction, performed — §1.1. A single-revision full rewrite
+    /// with the marked content gone, proven absent from the bytes twice before
+    /// they reached the disk.
+    RedactionApplied(pdfcer_core::redact::RedactionReport),
 }
 
 /// Why a save-a-copy produced no file.
@@ -895,6 +1114,29 @@ enum SaveError {
         /// announce that they leaked would leak them again.
         survivors: Vec<String>,
     },
+    /// ★★★ **A redaction is staged and the removal itself was refused, so no
+    /// save of any kind could be built.**
+    ///
+    /// Added 2026-09-05. It is the one variant here the operator can reach by
+    /// doing something perfectly reasonable, and the sequence is worth naming
+    /// because it is the trap the deferred route brings with it:
+    ///
+    /// 1. mark, then *Review & apply* ▸ *this document* — the removal is armed;
+    /// 2. **undo the marks**, which now works, and is the whole point of
+    ///    `Pass 250.2`;
+    /// 3. press `Ctrl+S`.
+    ///
+    /// The staging is still armed and there is nothing left to remove, so
+    /// `save_applying_redaction` refuses with `NothingToApply` — and the
+    /// ordinary save modes are still refused too, so the document cannot be
+    /// saved at all until the staging is cancelled. That is a real corner and
+    /// the sentence for it names the remedy by name rather than reporting a
+    /// failure: `crate::text::redact::save_refused_message`.
+    RedactionRefused {
+        /// Which refusal, so the sentence can name the remedy rather than the
+        /// mechanism.
+        refusal: crate::redact::RedactApplyRefusal,
+    },
 }
 
 impl From<WriteError> for SaveError {
@@ -929,6 +1171,16 @@ impl std::fmt::Display for SaveError {
                 "the save was refused: {} redacted string(s) survived in the bytes about to be \
                  written",
                 survivors.len()
+            ),
+            // `{:?}`, deliberately: `RedactApplyRefusal` has no `Display` on
+            // purpose, because it is rendered to the operator by
+            // `crate::text::redact::refusal_message` and a second,
+            // uncatalogued rendering is how the two drift. See
+            // `crate::app::actions::redact`, which makes the same choice at the
+            // other call site for the same reason.
+            Self::RedactionRefused { refusal } => write!(
+                f,
+                "the staged redaction could not be performed, so no save was built: {refusal:?}"
             ),
         }
     }

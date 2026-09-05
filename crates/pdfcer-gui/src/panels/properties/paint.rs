@@ -1,4 +1,4 @@
-//! # `panels::properties::paint` — **the colour of a selected path**
+//! # `panels::properties::paint` — **the colour of the selected path(s)**
 //!
 //! `OPERATOR_REQUESTS.md` **O89**, and the half that did not exist:
 //!
@@ -46,6 +46,78 @@
 //! stroke is a spot ink is **not** blocked by the channel nobody touched — the
 //! engine has a test for it, and this section relies on it rather than
 //! pre-emptively greying a control that would have worked.
+//!
+//! ═══════════════════════════════════════════════════════════════════════════
+//! # ★★★ MORE THAN ONE OBJECT — built 2026-09-05, O89 piece 2
+//! ═══════════════════════════════════════════════════════════════════════════
+//!
+//! This section drew for **exactly one** object until 2026-09-05, and said so:
+//!
+//! > *"One object at a time, for now. The engine will recolour a whole
+//! > selection; the control does not offer it yet, because when the objects
+//! > disagree there is no honest colour to open on and picking the first one's
+//! > would quietly propose flattening the rest to it."*
+//!
+//! The danger in that sentence is real and the conclusion was wrong.
+//! **Every editor in this product class has already solved it** — Illustrator,
+//! Inkscape, Figma and Word all show an *indeterminate* control over a
+//! disagreeing selection, and applying a value sets every member. This
+//! project's standing rule is that the convergence of the product class **is**
+//! the specification and an invented interaction is a defect even when it
+//! works, so the mixed state is not one option among several; it is the answer.
+//!
+//! [`super::swatch`] is that control. It opens on nothing in particular (PDF
+//! §8.6.8's default, never applied unless the operator moves the picker), it
+//! reads as *no single value* using the marker this shell already writes for
+//! one, and picking a colour applies it to the whole selection.
+//!
+//! ★ **One undo step for the whole gesture** — and that took the swatch being
+//! hand-built rather than `ui.color_edit_button_srgb`. `egui`'s own colour
+//! button marks itself changed on *every frame of a drag inside the picker*, so
+//! acting on `.changed()` authors an edit per frame; [`super::swatch`]'s header
+//! carries the measurement and the fix (commit when the picker closes). ★★ That
+//! defect was present in the single-object control this section shipped with —
+//! it is fixed by the same change, for the same reason, and nothing about it is
+//! new to the multi-object path.
+//!
+//! ## ★★★ A MIXED SELECTION CONTAINING ONE SPOT INK — the decision, and why
+//!
+//! The choice was between refusing the whole apply by name and applying to the
+//! process-colour members while reporting the spot ones off-canvas. **This
+//! section applies and reports**, and the argument is four things rather than a
+//! preference:
+//!
+//! 1. **The guard is held by the engine, structurally, not by this control.**
+//!    `EditSession::set_object_paint` tests every object's paint on every
+//!    channel it is asked to change and returns
+//!    `PaintOutcome { changed, refused }` — a `/Separation` member is refused
+//!    *by the verb*, whatever this panel draws. A shell-side blanket refusal
+//!    would add nothing to the plate's safety and would remove a capability.
+//!    ⇒ There is **no hole**: the single-select path's guard is *"do not offer
+//!    a swatch whose only possible effect is destruction"*, and it still holds,
+//!    because where every member is a named ink no swatch is drawn at all.
+//! 2. **The operator ruled on this exact case**, and it is quoted in
+//!    `crate::text::paint::recoloured_partly`'s own doc comment: *"a selection
+//!    of twelve strokes where three are in a colour space pdfcer will not
+//!    rewrite needs to say 'nine changed', not 'done'."* That is
+//!    apply-and-report, in his words, about this shape.
+//! 3. **Refusing would be unusable on the documents this program is for.** One
+//!    spot-inked line inside a marquee of two hundred would block the gesture,
+//!    and the remedy — find it and deselect it — is being asked of an operator
+//!    who cannot see which line it is. A safe operation would have been traded
+//!    for an impossible one.
+//! 4. **The disclosure arrives BEFORE the gesture, not only after it.**
+//!    `crate::text::paint::mixed_named_inks` names how many members carry an
+//!    ink and what those inks are called, on the row, above the swatch. The
+//!    status line's *"nine changed, three left alone"* is the confirmation, not
+//!    the first news.
+//!
+//! ## Rule 4 — nothing here marks the canvas
+//!
+//! The recoloured objects render exactly as the saved file will render them.
+//! Which members were skipped, which are named inks and whether they disagreed
+//! is disclosed **off-canvas**: on this row, and in the status bar through
+//! `crate::app::actions::disclosure`. No badge, no tint, no outline on the page.
 
 use egui::Ui;
 use pdfcer_core::vector::PathPaint;
@@ -61,6 +133,16 @@ const REGION_FILL: &str = "properties.paint.fill"; // ui-text-exempt: a trace re
 const REGION_STROKE: &str = "properties.paint.stroke"; // ui-text-exempt: a trace region name
 /// The sentence drawn where a swatch cannot be.
 const REGION_UNDECODED: &str = "properties.paint.undecoded"; // ui-text-exempt: a trace region name
+/// The line naming how many objects the controls act on.
+///
+/// ★ Its own region since the multi-object state shipped, because *"the section
+/// drew"* and *"the section told the operator how many things it is about to
+/// change"* are two different claims and a driven check has to be able to
+/// assert the second.
+const REGION_SUBJECT: &str = "properties.paint.subject"; // ui-text-exempt: a trace region name
+/// The line naming the members that carry an ink this control will not
+/// overwrite, drawn **above** a swatch that will still apply to the rest.
+const REGION_PARTIAL_INK: &str = "properties.paint.partial-ink"; // ui-text-exempt: a trace region name
 
 /// **What one frame's interaction asked for**, per channel.
 ///
@@ -75,42 +157,75 @@ struct Recolour {
     stroke: Option<[u8; 3]>,
 }
 
+/// **What one channel looks like across the whole selection.**
+///
+/// The value the control needs and the disclosure the row owes, computed
+/// together because they come from one walk.
+struct Channel {
+    /// What the swatch shows, or `None` when **every** member of the selection
+    /// carries an ink this control will not overwrite — in which case no
+    /// control is drawn at all and the sentence stands in its place.
+    value: Option<super::swatch::Value>,
+    /// The names of the members' inks this control will not overwrite, in
+    /// selection order, `None` where the space carries no name.
+    ///
+    /// Empty when every member can be recoloured. Non-empty *with* a
+    /// [`Self::value`] is the partial case the module header argues.
+    inks: Vec<Option<String>>,
+    /// How many objects contributed to this channel at all.
+    total: usize,
+}
+
 /// Draw the colour section. `true` if anything was drawn.
 ///
-/// Returns `false` for a selection this section has nothing to say about —
-/// several objects, an annotation, a form field — rather than drawing an empty
-/// heading. `geometry::section` states the same rule and for the same reason: a
-/// heading with nothing under it reads as a control that failed to load.
+/// Returns `false` for a selection this section has nothing to say about — an
+/// annotation, a form field, a selection with no path in it — rather than
+/// drawing an empty heading. `geometry::section` states the same rule and for
+/// the same reason: a heading with nothing under it reads as a control that
+/// failed to load.
 pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
     if doc.selection.annot().is_some() {
         return false;
     }
     let page = doc.view.page_index;
     let objects = doc.selection.object_indices_on(page);
-    let [object] = objects.as_slice() else {
-        // ★ One object only, for now. A multi-object selection can be
-        // recoloured — the verb takes a slice — but the CONTROL has no honest
-        // starting value when the objects disagree, and opening a swatch on the
-        // first one's colour would silently propose flattening the rest to it.
-        // That wants a "mixed" state and its own decision.
+    if objects.is_empty() {
         return false;
-    };
-    let object = *object;
+    }
 
-    let Some(provider) = doc.page_objects() else {
+    // ★ Read every selected object's two paints in ONE borrow of the provider,
+    // and drop it before anything is drawn. Holding a `Ref` across a `Ui`
+    // closure is how a panel comes to panic on a re-entrant borrow, and the
+    // single-object version of this function already took care to drop it.
+    let mut paints: Vec<(PathPaint, PathPaint)> = Vec::new();
+    let mut not_paths = 0_usize;
+    {
+        let Some(provider) = doc.page_objects() else {
+            return false;
+        };
+        let Some(model) = provider.page_objects_model(page) else {
+            return false;
+        };
+        for &object in &objects {
+            match model.objects.get(object) {
+                Some(pdfcer_core::vector::VectorObject::Path(path)) => {
+                    paints.push((path.fill_paint.clone(), path.stroke_paint.clone()));
+                }
+                // Text has its own colour controls (`super::text` for a swept
+                // range, `super::textobject` for a clicked shape) and an image
+                // has no paint at all. Counted rather than ignored: a marquee
+                // over a table catches lines AND labels, and an operator who
+                // recolours it needs to be told the labels were not included.
+                _ => not_paths += 1,
+            }
+        }
+    }
+    if paints.is_empty() {
         return false;
-    };
-    let Some(model) = provider.page_objects_model(page) else {
-        return false;
-    };
-    let Some(pdfcer_core::vector::VectorObject::Path(path)) = model.objects.get(object) else {
-        // Not a path. Text has its own colour control in the Text section, and
-        // an image has no paint at all.
-        return false;
-    };
-    let fill = path.fill_paint.clone();
-    let stroke = path.stroke_paint.clone();
-    drop(provider);
+    }
+
+    let fill = channel(paints.iter().map(|(f, _)| f));
+    let stroke = channel(paints.iter().map(|(_, s)| s));
 
     ui.add_space(6.0);
     ui.separator();
@@ -121,14 +236,34 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
     // line in the group that is NOT `.small().weak()`.
     ui.label(t::heading());
 
+    // ★★★ **What the controls are about to act on, before they are used.**
+    // Drawn only for a real multi-selection: with one object the answer is on
+    // screen already (it is outlined on the page and named by the Objects
+    // section), and a line saying "1 shape" is noise that trains the eye to
+    // skip the place the count lives.
+    if paints.len() > 1 || not_paths > 0 {
+        let said = ui.label(
+            egui::RichText::new(t::subject(paints.len(), not_paths))
+                .small()
+                .weak(),
+        );
+        crate::diag::ui_rect_visible(REGION_SUBJECT, said.rect, ui.clip_rect());
+    }
+
     let mut change: Option<Recolour> = None;
-    if let Some(rgb) = swatch(ui, &fill, t::fill_label(), REGION_FILL) {
+    if let Some(rgb) = row(ui, &fill, t::fill_label(), REGION_FILL, "paint-fill") {
         change = Some(Recolour {
             fill: Some(rgb),
             stroke: None,
         });
     }
-    if let Some(rgb) = swatch(ui, &stroke, t::stroke_label(), REGION_STROKE) {
+    if let Some(rgb) = row(
+        ui,
+        &stroke,
+        t::stroke_label(),
+        REGION_STROKE,
+        "paint-stroke",
+    ) {
         change = Some(Recolour {
             fill: None,
             stroke: Some(rgb),
@@ -138,7 +273,13 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
     if let Some(to) = change {
         actions.push(Action::SetObjectPaint {
             page,
-            objects: vec![object],
+            // ★ Every selected PATH, in the selection's own order. The
+            // non-paths are not sent: the engine would refuse them by name
+            // (`PaintRefusalReason::NotAPath`) and the refusal count in the
+            // status line would then mix "not a shape" with "a named ink",
+            // which are two different pieces of news and only one of them is
+            // about the operator's plates.
+            objects: path_indices(doc, page, &objects),
             fill: to.fill,
             stroke: to.stroke,
         });
@@ -146,34 +287,116 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
     true
 }
 
-/// One channel: a swatch when the colour is knowable, its ink's name when not.
+/// The selected indices that are paths, in selection order.
 ///
-/// Returns the newly chosen colour, or `None` when nothing was changed this
-/// frame.
-fn swatch(ui: &mut Ui, paint: &PathPaint, label: String, region: &str) -> Option<[u8; 3]> {
+/// ★ Re-derived rather than collected in the walk above, because the walk's
+/// output is *paints* and pairing them with indices would make one `Vec` whose
+/// two halves have to be kept in step by hand. The provider read is cheap (a
+/// slice index per entry) and the alternative is the class of bug where a
+/// filter and its operand drift.
+fn path_indices(doc: &OpenDoc, page: usize, objects: &[usize]) -> Vec<usize> {
+    let Some(provider) = doc.page_objects() else {
+        return Vec::new();
+    };
+    let Some(model) = provider.page_objects_model(page) else {
+        return Vec::new();
+    };
+    objects
+        .iter()
+        .copied()
+        .filter(|&o| {
+            matches!(
+                model.objects.get(o),
+                Some(pdfcer_core::vector::VectorObject::Path(_))
+            )
+        })
+        .collect()
+}
+
+/// **Fold one channel of a whole selection into a control state.**
+///
+/// ★★★ The ink check comes **before** agreement, not after, and that ordering
+/// is the guard. *"They all agree and one of them is a spot ink"* must never
+/// draw a swatch: agreement between two members of a named-ink selection is not
+/// permission to overwrite them.
+///
+/// ★★ A member whose paint cannot be shown is excluded from the agreement
+/// question entirely rather than counted as a disagreement. It is not a colour
+/// this control can compare, and folding it in would report *"mixed"* for a
+/// selection of one red line and one PANTONE line — implying a value would
+/// unify them, which is exactly what will not happen.
+fn channel<'a>(paints: impl Iterator<Item = &'a PathPaint>) -> Channel {
+    let mut inks: Vec<Option<String>> = Vec::new();
+    let mut agreed: Option<[u8; 3]> = None;
+    let mut mixed = false;
+    let mut total = 0_usize;
+    for paint in paints {
+        total += 1;
+        match paint.rgb() {
+            None => inks.push(ink_name(paint)),
+            Some(rgb) => {
+                let rgb = to_bytes(rgb);
+                match agreed {
+                    None => agreed = Some(rgb),
+                    Some(seen) if seen != rgb => mixed = true,
+                    Some(_) => {}
+                }
+            }
+        }
+    }
+    let value = match agreed {
+        // Every member is an ink this control will not overwrite. No swatch —
+        // the whole of O89's vector ruling, unchanged by the selection size.
+        None => None,
+        Some(_) if mixed => Some(super::swatch::Value::Mixed),
+        Some(rgb) => Some(super::swatch::Value::Agreed(rgb)),
+    };
+    Channel { value, inks, total }
+}
+
+/// One channel's row: its label, its disclosure, and its control — or its
+/// refusal, where no control may be drawn.
+///
+/// Returns the newly chosen colour, or `None` when nothing was committed this
+/// frame. ★ *Committed*, not *changed*: [`super::swatch::show`] answers only on
+/// the frame the picker closes, so one drag through a colour wheel is one
+/// action and one undo entry.
+fn row(
+    ui: &mut Ui,
+    channel: &Channel,
+    label: String,
+    region: &str,
+    id_salt: &str,
+) -> Option<[u8; 3]> {
     let mut chosen = None;
+    // ★★★ The partial-ink disclosure sits ABOVE the control, on this project's
+    // standing rule that *"a caveat below a list arrives after the operator has
+    // already drawn a conclusion."* It is the sentence that makes pressing the
+    // swatch an informed act rather than a surprise reported afterwards.
+    if !channel.inks.is_empty() && channel.value.is_some() {
+        let said = ui.label(
+            egui::RichText::new(t::mixed_named_inks(&channel.inks, channel.total))
+                .small()
+                .weak(),
+        );
+        crate::diag::ui_rect_visible(REGION_PARTIAL_INK, said.rect, ui.clip_rect());
+    }
     ui.horizontal(|ui| {
         ui.label(label);
-        match paint.rgb() {
-            Some(rgb) => {
-                // ★★ `Rgb` is three `f32` in 0..1, which is PDF's own unit;
-                // `egui`'s swatch speaks 8-bit sRGB. The conversion happens
-                // HERE, at the one boundary, rather than being carried through
-                // the action — so the operand that reaches the engine is in the
-                // engine's units and cannot be misread as bytes.
-                let was = to_bytes(rgb);
-                let mut current = was;
-                let response = ui.color_edit_button_srgb(&mut current);
-                crate::diag::ui_rect_visible(region, response.rect, ui.clip_rect());
-                if response.changed() && current != was {
-                    chosen = Some(current);
-                }
+        match channel.value {
+            Some(value) => {
+                // ★ The hint names THIS row's subject — shapes, not words. See
+                // `super::swatch::show`'s note on why the widget takes it as a
+                // parameter rather than reaching for one.
+                chosen = super::swatch::show(ui, id_salt, value, region, &t::mixed_hint());
             }
             // ★★★ NO SWATCH. See the header: one opening on black over a spot
             // ink is one click from destroying a plate, and it would look right
             // while it happened.
             None => {
-                let said = ui.label(egui::RichText::new(t::undecoded(ink_name(paint))).weak());
+                let first = channel.inks.first().cloned().flatten();
+                let said =
+                    ui.label(egui::RichText::new(t::undecoded_across(first, channel.total)).weak());
                 crate::diag::ui_rect_visible(REGION_UNDECODED, said.rect, ui.clip_rect());
             }
         }
@@ -210,7 +433,23 @@ fn ink_name(paint: &PathPaint) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use pdfcer_core::vector::Rgb;
+    use pdfcer_core::vector::{DevicePaintSpace, Rgb};
+
+    fn spot(name: &str) -> PathPaint {
+        PathPaint::Other {
+            space: Some(name.as_bytes().to_vec()),
+            comps: vec![1.0],
+            pattern: false,
+        }
+    }
+
+    fn rgb(r: f32, g: f32, b: f32) -> PathPaint {
+        PathPaint::Device {
+            space: DevicePaintSpace::Rgb,
+            comps: vec![f64::from(r), f64::from(g), f64::from(b)],
+            rgb: Rgb { r, g, b },
+        }
+    }
 
     /// ★★★ **An undecodable paint must never yield a colour to open a swatch
     /// on.**
@@ -221,16 +460,9 @@ mod tests {
     /// entirely normal.
     #[test]
     fn a_spot_ink_offers_no_colour_to_edit() {
-        let spot = PathPaint::Other {
-            space: Some(b"PANTONE 300".to_vec()),
-            comps: vec![1.0],
-            pattern: false,
-        };
-        assert!(
-            spot.rgb().is_none(),
-            "an undecoded space has no RGB to show"
-        );
-        assert_eq!(ink_name(&spot).as_deref(), Some("PANTONE 300"));
+        let ink = spot("PANTONE 300");
+        assert!(ink.rgb().is_none(), "an undecoded space has no RGB to show");
+        assert_eq!(ink_name(&ink).as_deref(), Some("PANTONE 300"));
     }
 
     /// ★★ `Default` and a chosen black both draw a swatch — they are the same
@@ -239,7 +471,7 @@ mod tests {
     fn nobody_chose_and_somebody_chose_black_both_show_black() {
         assert_eq!(PathPaint::Default.rgb(), Some(Rgb::BLACK));
         let chosen = PathPaint::Device {
-            space: pdfcer_core::vector::DevicePaintSpace::Gray,
+            space: DevicePaintSpace::Gray,
             comps: vec![0.0],
             rgb: Rgb::BLACK,
         };
@@ -258,6 +490,82 @@ mod tests {
         assert!(
             ink_name(&pattern).is_none(),
             "an unnamed space names nothing"
+        );
+    }
+
+    /// ★★★ **A selection that disagrees reads as MIXED and still offers a
+    /// control.**
+    ///
+    /// The whole of O89 piece 2. ★ The fixture genuinely disagrees — red and
+    /// green — because a fixture whose members all share one colour would pass
+    /// against an implementation that simply showed the first one's.
+    #[test]
+    fn two_different_colours_read_as_mixed() {
+        let ch = channel([rgb(1.0, 0.0, 0.0), rgb(0.0, 1.0, 0.0)].iter());
+        assert_eq!(ch.value, Some(super::super::swatch::Value::Mixed));
+        assert!(ch.inks.is_empty());
+        assert_eq!(ch.total, 2);
+    }
+
+    /// Agreement across several members opens on the agreed colour, not on
+    /// mixed. The counterpart of the test above: if `mixed` were set
+    /// unconditionally the control would be indeterminate for every selection
+    /// and the mixed test would still pass.
+    #[test]
+    fn a_selection_that_agrees_opens_on_that_colour() {
+        let ch = channel([rgb(1.0, 0.0, 0.0), rgb(1.0, 0.0, 0.0)].iter());
+        assert_eq!(
+            ch.value,
+            Some(super::super::swatch::Value::Agreed([255, 0, 0]))
+        );
+    }
+
+    /// ★★★ **One spot ink among process colours keeps the control AND names
+    /// the ink.**
+    ///
+    /// The decision the module header argues, asserted rather than left to the
+    /// prose: the swatch survives (so the nine reachable strokes can be
+    /// recoloured), and the ink is listed (so the operator knows before
+    /// pressing that one of them will be left alone).
+    #[test]
+    fn one_spot_ink_among_process_colours_keeps_the_swatch_and_names_the_ink() {
+        let ch = channel([rgb(1.0, 0.0, 0.0), rgb(1.0, 0.0, 0.0), spot("PANTONE 300")].iter());
+        assert_eq!(
+            ch.value,
+            Some(super::super::swatch::Value::Agreed([255, 0, 0])),
+            "the process-colour members still have a colour to open on"
+        );
+        assert_eq!(ch.inks, vec![Some("PANTONE 300".to_owned())]);
+        assert_eq!(ch.total, 3);
+    }
+
+    /// ★★★ **Every member a named ink: no control at all.**
+    ///
+    /// The single-object guard, unchanged by the selection size. This is the
+    /// case where a swatch's only possible effect is destruction, and it is the
+    /// reason the partial case above is safe to allow: the two are different
+    /// states and this test is what keeps them different.
+    #[test]
+    fn a_selection_of_named_inks_offers_no_swatch() {
+        let ch = channel([spot("PANTONE 300"), spot("PANTONE 485")].iter());
+        assert!(
+            ch.value.is_none(),
+            "a swatch over a selection of named inks is one click from a destroyed plate"
+        );
+        assert_eq!(ch.inks.len(), 2);
+    }
+
+    /// ★★ A spot ink must not be counted as a *disagreement*.
+    ///
+    /// If it were, one red line plus one PANTONE line would read as "mixed" —
+    /// which tells the operator that picking a colour will unify them, and it
+    /// will not. The honest reading is "red, and one ink I will leave alone".
+    #[test]
+    fn a_spot_ink_does_not_make_the_process_colours_look_mixed() {
+        let ch = channel([rgb(1.0, 0.0, 0.0), spot("PANTONE 300")].iter());
+        assert_eq!(
+            ch.value,
+            Some(super::super::swatch::Value::Agreed([255, 0, 0]))
         );
     }
 }

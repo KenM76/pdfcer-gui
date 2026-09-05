@@ -1,0 +1,56 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << >> /Contents 4 0 R /Annots [5 0 R 6 0 R 8 0 R] >>
+endobj
+4 0 obj
+<< /Length 32 >>
+stream
+1 w 0 0 0 RG 60 60 470 720 re S
+endstream
+endobj
+5 0 obj
+<< /Type /Annot /Subtype /Square /Rect [120 560 320 700] /P 3 0 R /F 4 /T (A. Reviewer) /M (D:20260905090000Z) /Contents (Check this dimension.) /C [1 0 0] /IC [1 1 0] /CA 0.4 /BS << /W 3 /S /S >> >>
+endobj
+6 0 obj
+<< /Type /Annot /Subtype /Text /Rect [360 660 380 680] /P 3 0 R /F 4 /T (B. Reviewer) /M (D:20260905100000Z) /Contents (Agreed, it is wrong.) /Name /Comment /C [1 1 0] /CA 0.4 /AP << /N 7 0 R >> >>
+endobj
+7 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 20 20] /Resources << >> /Length 24 >>
+stream
+0 0 1 rg 0 0 20 20 re f
+endstream
+endobj
+8 0 obj
+<< /Type /Annot /Subtype /FreeText /Rect [120 400 280 440] /P 3 0 R /F 4 /T (C. Reviewer) /M (D:20260905110000Z) /Contents (Revise per RFI 12.) /DA (0 0 0 rg /Helv 9 Tf) /Q 0 /CA 0.5 /AP << /N 9 0 R >> >>
+endobj
+9 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 160 40] /Resources << >> /Length 40 >>
+stream
+0.9 0.9 0.2 rg 0 0 160 40 re f
+0 0 0 rg
+endstream
+endobj
+xref
+0 10
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000121 00000 n 
+0000000253 00000 n 
+0000000334 00000 n 
+0000000549 00000 n 
+0000000762 00000 n 
+0000000900 00000 n 
+0000001120 00000 n 
+trailer
+<< /Size 10 /Root 1 0 R >>
+startxref
+1275
+%%EOF

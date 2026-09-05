@@ -9,14 +9,22 @@
 //! This is the only surface in pdfcer-gui that commits an operation nothing can
 //! take back, and its whole shape follows from that.
 //!
-//! ## The four states
+//! ## The five states
 //!
 //! | state | what the operator sees | what exists |
 //! |---|---|---|
 //! | **prepared** | the measured report, a destination choice, up to three checkboxes, and a control whose label is the consequence | the finished redacted bytes, **in memory** |
+//! | **staged** | that a removal is already armed, what that means, and one control that calls it off | a flag on the session, and nothing else |
 //! | **refused** | a named refusal, and nothing to confirm | nothing |
 //! | **written** | where the file went, whether it replaced the open one, and what is still in it | a file |
 //! | **write failed** | why no file appeared | nothing |
+//!
+//! ★★★ **`staged` is new on 2026-09-05** and it is the state a document is in
+//! after the default destination has been confirmed (`Pass 250.2`). Its body is
+//! [`staged`]'s, and that module's header carries the seam and the one decision
+//! worth reading — that it quotes **no numbers**, because the removal re-runs at
+//! save and a measurement taken at the moment of consent is stale by the time
+//! this phase is drawn.
 //!
 //! There is deliberately no *ready* state. Opening this dialog **runs the whole
 //! removal** — see §2 — so by the time anything is drawn the numbers on screen
@@ -103,17 +111,26 @@
 //!    where the ellipsis promises the picker that really is coming;
 //!    *"… & replace `<name>` now"* on the replace destination, which names the
 //!    file and drops the ellipsis because no further question follows; and
-//!    *"Permanently remove from this document"* on the default, which promises
-//!    nothing further because no file is involved at all. An ellipsis on a
-//!    control that asks nothing more is a lie the operator acts on.
+//!    *"Set up the removal — it happens when I save"* on the default, which
+//!    promises nothing further because no file is involved and **claims no
+//!    immediate removal, because there is none**. An ellipsis on a control that
+//!    asks nothing more is a lie the operator acts on, and so is a label
+//!    claiming a removal that has not happened.
 //!
 //! ★★★ …and, between the destination choice and the button, **a disclosure
-//! rather than a gate**: [`crate::text::redact::undo_will_be_cleared`], drawn
-//! only on the destination that clears the undo log, naming the number of
-//! steps. It is deliberately NOT a fourth checkbox — §3's own argument about
-//! conditional boxes applies to their multiplication too, and four
-//! acknowledgements is a form, which is filled in rather than read. What the
-//! operator is owed here is the FACT, before the click.
+//! rather than a gate**: [`crate::text::redact::removal_happens_at_save`], drawn
+//! only on the deferred destination. It is deliberately NOT a fourth checkbox —
+//! §3's own argument about conditional boxes applies to their multiplication
+//! too, and four acknowledgements is a form, which is filled in rather than
+//! read. What the operator is owed here is the FACT, before the click.
+//!
+//! ★★★ **CORRECTED 2026-09-05.** That sentence used to be
+//! `undo_will_be_cleared`, naming the number of undo steps the click would
+//! destroy, and the paragraph argued at length that he was owed the count
+//! before he committed. He was. `Pass 250.2` preserves the whole undo log, so
+//! there is no count and the sentence would be false — and what has replaced it
+//! is a *more* surprising fact rather than a lesser one: **the page does not
+//! change.** The disclosure's argument is unchanged; only its subject moved.
 //!
 //! And a fourth thing that is an absence: **no keyboard shortcut, and no Enter
 //! binding.** The footer says so in words rather than leaving it to be noticed.
@@ -144,16 +161,24 @@
 //! write-now destinations are unchanged and still push nothing: they produce
 //! bytes on disk and leave the session alone.
 //!
-//! | destination | what it changes | route |
+//! ★★ **2026-09-05: it is now two of five presses, not one of three.** The
+//! deferred destination arms rather than removes (`Pass 250.2`), and the
+//! [`Phase::Staged`] phase's *call the removal off* control disarms — and both
+//! reach `EditSession` through the same funnel for the same reason, which is
+//! that the engine's verbs take `&mut EditSession` and `Arc::get_mut` is the
+//! funnel's second step.
+//!
+//! | press | what it changes | route |
 //! |---|---|---|
-//! | [`Destination::OpenDocument`] | the open session | `Action::ApplyRedactionsIntoDocument` → `crate::app::actions::redact` → `vector_edit` |
-//! | [`Destination::NewFile`] | a file | [`crate::redact::PreparedRedaction::write_to`], here |
-//! | [`Destination::ReplaceOriginal`] | the source file | the same, atomically |
+//! | confirm on [`Destination::OpenDocument`] | the session's pending-redaction flag | `Action::PendingRedaction(Staging::Stage)` → `crate::app::actions::redact` → `vector_edit` |
+//! | *call the removal off*, in [`Phase::Staged`] | the same flag, back off | `Action::PendingRedaction(Staging::Cancel)` → the same arm |
+//! | confirm on [`Destination::NewFile`] | a file | [`crate::redact::PreparedRedaction::write_to`], here |
+//! | confirm on [`Destination::ReplaceOriginal`] | the source file | the same, atomically |
 //!
 //! What the funnel's reasoning demanded and still demands is that irreversible
-//! work not run part-way through a layout pass — and it does not, on any of the
-//! three: the confirm control sets a flag, and the push, the picker and the
-//! write all happen after the window's closure returns.
+//! work not run part-way through a layout pass — and it does not, on any of
+//! them: every control sets a flag, and the push, the picker and the write all
+//! happen after the window's closure returns.
 //!
 //! ★★ **After a replace, the open document is deliberately STALE, and the
 //! outcome sentence says so.** The session was not touched, so the canvas goes
@@ -178,6 +203,8 @@
 //! *these marks* on *this file*, and writing prepared bytes after the operator
 //! has put the document away would produce a redacted file derived from a
 //! document nobody is looking at any more.
+
+mod staged;
 
 use std::path::{Path, PathBuf};
 
@@ -239,15 +266,23 @@ const REGION_DESTINATION_INTO_DOCUMENT: &str = "redact-apply-destination-into-do
 /// move off the default deliberately and needs a rect to move to.
 const REGION_DESTINATION_NEW_FILE: &str = "redact-apply-destination-new-file"; // ui-text-exempt: trace region name, never displayed
 
-/// The undo-loss disclosure, declared **only while it is on screen** — i.e.
-/// only while the deferred destination is selected.
+/// The staging disclosure, declared **only while it is on screen** — i.e. only
+/// while the deferred destination is selected.
 ///
 /// ★ It is a region rather than only a string so a harness can assert that the
 /// sentence is *above the confirm control*, which is the whole of its value:
 /// `tools/ui-verify`'s redaction check can compare this rect's bottom against
 /// [`REGION_CONFIRM`]'s top and fail if the disclosure ever moves below the
 /// button it is meant to precede.
-const REGION_UNDO_NOTE: &str = "redact-apply-undo-note"; // ui-text-exempt: trace region name, never displayed
+///
+/// ★★ **Renamed from `redact-apply-undo-note` on 2026-09-05**, with
+/// `tools/ui-verify/src/checks/redaction.rs` in the same commit. The old name
+/// described the sentence that used to live here — *"this clears your undo
+/// history"* — and `Pass 250.2` made that false; a region name that still said
+/// `undo` would have aimed a harness at a sentence about undo and found one
+/// about staging, which is the shape of a check that passes while measuring
+/// something else. The geometry assertion it carries is unchanged.
+const REGION_STAGING_NOTE: &str = "redact-apply-staging-note"; // ui-text-exempt: trace region name, never displayed
 
 /// Height kept clear below the report for the checkbox and button rows.
 const FOOTER_RESERVE: f32 = 150.0;
@@ -276,6 +311,24 @@ enum Phase {
     Prepared(Box<PreparedRedaction>),
     /// The apply was refused before anything was written.
     Refused(RedactApplyRefusal),
+    /// ★★★ **A removal is already armed on this document** (`Pass 250.2`, new
+    /// 2026-09-05).
+    ///
+    /// A phase of its own rather than a [`Self::Refused`] carrying
+    /// [`RedactApplyRefusal::AlreadyStaged`], and the two questions are why: an
+    /// un-staged document asks *"shall I?"* and a staged one asks *"what did I
+    /// already decide, and can I change my mind?"*. A refusal answers the first
+    /// question badly instead of the second one well, and — critically — a
+    /// refusal has no control on it, which would leave the operator staring at
+    /// the reason he cannot save with nothing to press.
+    ///
+    /// It carries no data. Everything the phase says is true of any staged
+    /// document, and the one thing it might have carried — the preview report —
+    /// is a **stale measurement** by the time this phase is drawn: the removal
+    /// re-runs at the save over whatever the document says then. Quoting it
+    /// here would present yesterday's numbers as today's, which is precisely
+    /// what `crate::redact::StagedRedaction`'s own doc comment warns about.
+    Staged,
     /// The bytes reached this path.
     ///
     /// ★ It carries the three numbers the outcome sentence needs rather than
@@ -379,17 +432,24 @@ enum Destination {
     /// ★★★ **The open document, with nothing written — the default since
     /// 2026-09-04 (evening), and the thing he actually asked for.**
     ///
-    /// `crate::redact::apply_into_session`: the marked content leaves the
-    /// session, the canvas redraws, and `file.save` / `file.save_as` decide
-    /// where the bytes land and when, exactly as they do for every other edit.
+    /// `crate::redact::stage_into_session`: the removal is armed, and
+    /// `file.save` / `file.save_as` / `file.save_copy` carry it out, exactly as
+    /// they carry every other edit to a file.
     ///
     /// It is the **default** because it is the only one of the three that
     /// writes nothing. The old default ([`Self::NewFile`]) was safe because it
     /// never overwrote; this is safer still, because it never writes.
     ///
-    /// ★ Its price, disclosed above the confirm control by
-    /// [`crate::text::redact::undo_will_be_cleared`]: the engine's verb
-    /// **finalizes**, so the whole undo log goes at the moment it runs.
+    /// ★★★ **Its price was inverted on 2026-09-05, and the old price is worth
+    /// recording because it is what the operator agreed to.** Under
+    /// `Pass 250.1` this destination **finalized**: the removal happened at the
+    /// click and the whole undo log went with it, disclosed above the confirm
+    /// control as a step count, on his ruling *"finalizing the document and
+    /// can't be undone is ok **for now**"*. `Pass 250.2` charges nothing —
+    /// base, overlay and the entire undo/redo stack survive — and what is
+    /// disclosed in the same place is the surprise that replaced the price:
+    /// [`crate::text::redact::removal_happens_at_save`], because **the page
+    /// does not change**.
     OpenDocument,
     /// A new file, chosen in the save picker.
     NewFile,
@@ -455,20 +515,6 @@ pub struct RedactDialog {
     /// the operator says otherwise — see that type for the whole argument, and
     /// for why the default moved on 2026-09-04.
     destination: Destination,
-    /// ★★★ **How many undo steps [`Destination::OpenDocument`] will destroy.**
-    ///
-    /// Read from `EditSession::undo_depth()` in [`Self::open`], at the same
-    /// instant as the report, and held rather than re-read per frame for
-    /// [`Self::source`]'s reason applied to a number: nothing can change it
-    /// while this dialog is open — it is modal over its own document and pushes
-    /// no edit — and reading it from a `&OpenDoc` inside the draw would make a
-    /// disclosure depend on a borrow the gate does not otherwise need.
-    ///
-    /// It is captured **before** the apply for the reason the engine's own
-    /// verb makes unavoidable: after it, the answer is 0 on every run, and the
-    /// sentence would say *"nothing was lost"* on exactly the runs where
-    /// something was.
-    undo_depth: usize,
     /// The **third** acknowledgement: that replacing the original destroys the
     /// last copy of the content being removed.
     ///
@@ -493,6 +539,15 @@ pub struct RedactDialog {
     /// this is the irreversible half, and an `rfd` modal opened from inside an
     /// `egui::Window` closure blocks the frame it is being drawn in.
     confirm_requested: bool,
+    /// Set by the *Call the removal off* control in [`Phase::Staged`], consumed
+    /// by [`Self::show`] after the window's closure returns.
+    ///
+    /// A second flag rather than a reuse of [`Self::confirm_requested`], for
+    /// the reason this file keeps its acknowledgement flags apart: the two
+    /// presses are opposite acts on the one operation that cannot be undone
+    /// once it reaches a file, and a shared flag with a phase test would make
+    /// *arm* and *disarm* one code path distinguished by state.
+    cancel_requested: bool,
     /// Set by the Close control; same two-step, because a widget drawn from the
     /// state cannot drop the state it is being drawn from.
     close_requested: bool,
@@ -529,6 +584,26 @@ impl RedactDialog {
                 });
                 Phase::Prepared(Box::new(prepared))
             }
+            // ★★★ The staged state arrives as a REFUSAL from the pipeline and
+            // is turned into a phase here, rather than being detected by asking
+            // `doc.session.has_pending_redaction()` before the call.
+            //
+            // That is deliberate and it is this project's standing preference
+            // for a mechanism over a condition. `prepare_redaction_apply`
+            // refuses `AlreadyStaged` by name because it must — while a removal
+            // is armed the engine declines `to_full_bytes`, and without the
+            // named refusal the operator would read *"this document cannot be
+            // rewritten in full"* — so the fact is established in the pipeline
+            // whatever this dialog does. Asking the session again here would be
+            // a second, independent test of the same condition, and the day the
+            // two disagreed the dialog would be the one that was wrong.
+            Err(RedactApplyRefusal::AlreadyStaged) => {
+                crate::diag::trace(|| {
+                    // ui-text-exempt: diagnostic trace, never displayed.
+                    "redact-already-staged".to_owned()
+                });
+                Phase::Staged
+            }
             Err(refusal) => {
                 crate::diag::trace(|| {
                     // ui-text-exempt: diagnostic trace, never displayed.
@@ -543,9 +618,9 @@ impl RedactDialog {
             acknowledged: false,
             residuals_acknowledged: false,
             destination: DEFAULT_DESTINATION,
-            undo_depth: doc.session.undo_depth(),
             overwrite_acknowledged: false,
             confirm_requested: false,
+            cancel_requested: false,
             close_requested: false,
         }
     }
@@ -587,7 +662,44 @@ impl RedactDialog {
         if std::mem::take(&mut self.confirm_requested) {
             self.commit(actions);
         }
+        // ★ …and the reversible one, which still waits for the closure to
+        // return. See [`Self::take_cancel`].
+        self.take_cancel(actions);
         open && !std::mem::take(&mut self.close_requested)
+    }
+
+    /// **Consume the *call the removal off* press, if there was one.**
+    ///
+    /// A method rather than four lines inside [`Self::show`], and the reason is
+    /// this suite's standing one: [`Self::show`] needs an `egui::Context` and a
+    /// real viewport, so nothing inside it can be asserted headlessly, and the
+    /// one thing worth asserting about this press is **which action it
+    /// raises**. A build that raised [`crate::redact::Staging::Stage`] here
+    /// would re-arm the removal the operator just asked to call off, silently,
+    /// on a control whose label says the opposite.
+    ///
+    /// ★ It pushes an `Action` rather than touching the session. The engine's
+    /// `cancel_pending_redaction` takes `&mut EditSession`, `Arc::get_mut` is
+    /// the funnel's second step, and performing that from inside a dialog's
+    /// draw is exactly what the funnel exists to prevent.
+    ///
+    /// ★ It closes the window. The outcome is reported by the funnel's edit
+    /// disclosure like any other edit, and a window left open beside it would
+    /// be a second account of one event — and, worse, an account of a state the
+    /// document is no longer in, since this phase exists only while a removal
+    /// is armed.
+    fn take_cancel(&mut self, actions: &mut Vec<crate::app::actions::Action>) {
+        if !std::mem::take(&mut self.cancel_requested) {
+            return;
+        }
+        actions.push(crate::app::actions::Action::PendingRedaction(
+            crate::redact::Staging::Cancel,
+        ));
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed.
+            "redact-cancel-requested".to_owned()
+        });
+        self.close_requested = true;
     }
 
     /// Whether the confirm control may be enabled.
@@ -611,27 +723,34 @@ impl RedactDialog {
             && (self.destination != Destination::ReplaceOriginal || self.overwrite_acknowledged)
     }
 
-    /// ★★★ **The undo consequence, or nothing** — the sentence drawn between
+    /// ★★★ **The staging disclosure, or nothing** — the sentence drawn between
     /// the destination choice and the confirm control.
     ///
-    /// Pure, and a method rather than four lines inside [`Self::gates`], for
-    /// [`Self::choose_destination`]'s reason: this is the disclosure that our
-    /// engine request offered in exchange for accepting a redaction that cannot
-    /// be undone, and *"before the operator commits"* is the whole of what was
-    /// promised. A property that load-bearing is asserted headlessly rather
-    /// than left to a reading of the draw order.
+    /// Pure, and a method rather than three lines inside [`Self::gates`], for
+    /// [`Self::choose_destination`]'s reason: this is the disclosure that
+    /// stands between a button labelled *"the removal happens when I save"* and
+    /// an operator who has never used a redaction tool that did not blacken the
+    /// page instantly. A property that load-bearing is asserted headlessly
+    /// rather than left to a reading of the draw order.
+    ///
+    /// ★★★ **What it says was inverted on 2026-09-05.** It used to be
+    /// `undo_will_be_cleared(self.undo_depth)` — the price of `Pass 250.1`'s
+    /// collapsing verb, the number of undo steps the click would destroy — and
+    /// there is no such price any more. What replaced it is not a smaller
+    /// version of the same warning: it is the opposite fact, that **nothing
+    /// happens on screen**, which is more surprising than the loss it replaces
+    /// and is the one thing an operator cannot work out by looking. See
+    /// [`t::removal_happens_at_save`].
     ///
     /// `None` on the two write-now destinations, and that is a claim rather
-    /// than an omission: those routes do not touch the session at all, so the
-    /// undo log survives them intact and a sentence saying it was cleared would
-    /// be false.
-    fn undo_disclosure(&self) -> Option<String> {
+    /// than an omission: those routes do produce a file at the click, so a
+    /// sentence saying nothing is written would be false there.
+    fn staging_disclosure(&self) -> Option<&'static str> {
         // ★ Asked as *"does this write a file?"* rather than by naming the
-        // variant: the undo log is cleared by the destination that mutates the
-        // session, which is precisely the one that does not write, and a fourth
-        // deferred destination would inherit the disclosure rather than have to
-        // be remembered here.
-        (!self.destination.writes_now()).then(|| t::undo_will_be_cleared(self.undo_depth))
+        // variant: the disclosure belongs to the destination that defers, which
+        // is precisely the one that does not write, and a fourth deferred
+        // destination would inherit it rather than have to be remembered here.
+        (!self.destination.writes_now()).then(t::removal_happens_at_save)
     }
 
     /// Whether replacing the open document is an option at all.
@@ -691,6 +810,13 @@ impl RedactDialog {
                 ui.label(t::report_heading());
                 ui.add_space(6.0);
                 ui.label(t::refusal_message(refusal));
+            }
+            // ★★★ The armed-removal phase. Its whole body is in `staged`, which
+            // owns the sentences and the one control, so that this `match`
+            // stays a list of states rather than becoming a place where one of
+            // them is drawn and the others are dispatched.
+            Phase::Staged => {
+                self.cancel_requested |= staged::body(ui, &theme);
             }
             Phase::Written {
                 path,
@@ -903,34 +1029,43 @@ impl RedactDialog {
         ui.separator();
         ui.add_space(4.0);
 
-        // ★★★ **The undo consequence, ABOVE the confirm control.**
+        // ★★★ **The staging disclosure, ABOVE the confirm control.**
         //
-        // The engine's session verb finalizes: applying clears the whole undo
-        // log, not only the redaction. Our own request offered to take it that
-        // way *"and we will disclose it on screen before the operator
-        // commits"*, and this line is the whole of that promise — a sentence
-        // between the choice and the button, in the warning role, naming the
-        // number of steps.
+        // ★★★ CORRECTED 2026-09-05. This block used to draw
+        // `undo_will_be_cleared(depth)` — the price of `Pass 250.1`'s
+        // collapsing verb — and the comment that stood here argued at length
+        // that the operator was owed the step count before he committed. He was.
+        // There is no step count any more: `Pass 250.2` preserves the whole
+        // undo log, so the sentence would be false and the argument for showing
+        // it has become an argument for showing something else.
         //
-        // ★ A sentence and not a fourth checkbox, deliberately. This dialog's
-        // §3 argues that a box which is always there is a box that is always
-        // ticked, and the same erosion applies to boxes that multiply: four
-        // acknowledgements is a form, and a form is filled in rather than read.
-        // The operator is already gated on the permanence box; what he is owed
-        // here is the FACT, before the click, which is what rule 4 asks for and
-        // what "told, not asked" means.
+        // What is drawn instead is the fact that replaces it, and it is more
+        // surprising rather than less: **the page does not change**. He presses
+        // a control about permanent removal and the marks and the content stay
+        // exactly where they are, because the removal happens at the save. The
+        // two readings available to him without this sentence are *"it did not
+        // work"* and *"it worked and the marks are just still drawn"*, and the
+        // second is the one that ships a marked file.
         //
-        // Drawn only for the destination it is true of. On the two write-now
-        // destinations the session is not touched at all and the undo log
-        // survives intact — telling him it was cleared there would be false,
-        // and telling him it was not would be noise about a non-event.
-        if let Some(sentence) = self.undo_disclosure() {
+        // ★ A sentence and not a fourth checkbox, deliberately, and that part
+        // of the old argument is untouched. This dialog's §3 argues that a box
+        // which is always there is a box that is always ticked, and the same
+        // erosion applies to boxes that multiply: four acknowledgements is a
+        // form, and a form is filled in rather than read. The operator is
+        // already gated on the permanence box; what he is owed here is the
+        // FACT, before the click, which is what rule 4 asks for and what
+        // "told, not asked" means.
+        //
+        // Drawn only for the destination it is true of. The two write-now
+        // destinations really do produce a file at the click.
+        if let Some(sentence) = self.staging_disclosure() {
             // `danger`, not `notice`, and the palette's own split decides it:
-            // notice is *"worth knowing and nothing is broken"*, and an undo
-            // log the operator cannot get back is work destroyed.
+            // notice is *"worth knowing and nothing is broken"*, and a
+            // permanent removal an operator has just armed without seeing
+            // anything happen is the sharpest end of this dialog.
             let danger = Theme::of(ui.ctx()).palette.danger;
             let note = ui.label(egui::RichText::new(sentence).color(danger));
-            crate::diag::ui_rect(REGION_UNDO_NOTE, note.rect);
+            crate::diag::ui_rect(REGION_STAGING_NOTE, note.rect);
             ui.add_space(6.0);
         }
         // Shown only when the operator has actually asked to replace the
@@ -1064,17 +1199,20 @@ impl RedactDialog {
         // after this frame, so a sentence written here would be a prediction
         // — and on the one path where the action failed, a false one.
         if !self.destination.writes_now() {
-            actions.push(crate::app::actions::Action::ApplyRedactionsIntoDocument);
+            actions.push(crate::app::actions::Action::PendingRedaction(
+                crate::redact::Staging::Stage,
+            ));
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed.
                 //
-                // `undo_depth=` is the number the operator was shown, recorded
-                // at the moment of consent. The funnel's own line records what
-                // was actually cleared; a build whose disclosure had drifted
-                // from the engine's behaviour would show the two disagreeing.
+                // `marks=` is the number the operator was shown at the moment
+                // of consent. The funnel's own `redact-staged` line records
+                // what the engine's staging preview then measured; a build in
+                // which the report on screen and the removal that gets armed
+                // had drifted apart would show the two disagreeing.
                 format!(
-                    "redact-apply-deferred marks={} undo_depth={}",
-                    prepared.report.marks_applied, self.undo_depth
+                    "redact-apply-deferred marks={}",
+                    prepared.report.marks_applied
                 )
             });
             self.close_requested = true;

@@ -722,6 +722,24 @@ pub struct PanelsState {
     /// program is for. The struct carries a `(page, run, epoch)` stamp and
     /// re-reads only when it moves.
     text_style: properties::text::TextStyleDraft,
+    /// ★★★ The **clicked text object's** run range and colour — O89's object
+    /// route.
+    ///
+    /// Held here for exactly [`Self::text_style`]'s reason and at exactly its
+    /// cost: `properties::textobject` reads the object's runs and their fills
+    /// out of one extraction with provenance capture on, which is 392 ms on the
+    /// operator's benchmark sheet, and a section that re-read it every frame
+    /// would take the application to under three frames a second on the
+    /// drawings this program is for. The struct carries a
+    /// `(page, object, epoch)` stamp and re-reads only when it moves.
+    ///
+    /// ★ Separate from [`Self::text_style`] rather than a second case inside
+    /// it, and the reason is the stamp: that one is keyed on a **run** and this
+    /// on an **object**, and the two selections are different index spaces that
+    /// can both be absent, either be present, and — since the Text tool can be
+    /// armed in Edit — both be present at once. One struct with two stamps is
+    /// one struct with two reset rules.
+    text_object: properties::textobject::TextObjectDraft,
     /// ★ The memoised answer to *what would go with deleting the selected
     /// annotation?* — `EditSession::annotation_deletion_preview`.
     ///
@@ -1048,6 +1066,15 @@ impl PanelsState {
     /// and a caller would have to be handed that as well.
     pub fn text_style_mut(&mut self) -> &mut properties::text::TextStyleDraft {
         &mut self.text_style
+    }
+
+    /// The clicked text object's draft, for `properties::textobject`.
+    ///
+    /// No re-seed argument, like [`Self::text_style_mut`] and for its reason:
+    /// the draft owns its `(page, object, epoch)` stamp and decides for itself
+    /// when what it holds is stale.
+    pub fn text_object_mut(&mut self) -> &mut properties::textobject::TextObjectDraft {
+        &mut self.text_object
     }
 
     /// The selected annotation's memoised deletion collateral, for

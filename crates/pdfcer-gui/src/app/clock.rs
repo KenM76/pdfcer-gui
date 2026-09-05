@@ -85,6 +85,42 @@ pub fn pdf_date_utc() -> Option<String> {
     Some(format_pdf_date(secs))
 }
 
+/// **A moment as `YYYY-MM-DD`, UTC** — the calendar date and nothing else.
+///
+/// Added 2026-09-05 for [`crate::trust`], which has to print the modification
+/// time of the operator's Acrobat trust store so an anchor set that silently
+/// went stale is visible rather than merely old.
+///
+/// # Why a second formatter rather than trimming [`pdf_date_utc`]
+///
+/// Because they answer different questions and the difference is in the
+/// **type**, not the string. `pdf_date_utc` is a PDF date literal — it exists to
+/// be written into a document, it carries the `D:` prefix and the `Z` suffix
+/// that §7.9.4 requires, and it reads the clock itself because the only moment
+/// it can mean is *now*. This one formats a moment the **caller** supplies, for
+/// a human to read, and reads no clock at all.
+///
+/// ★ **Date only, to the day.** The question it answers is *"is this anchor set
+/// current?"* — a question about weeks and months, since AATL refreshes are not
+/// a daily event — and a timestamp to the second would suggest a precision
+/// about staleness that nothing here has.
+///
+/// Both spellings go through the same [`civil_from_days`], so the two can never
+/// disagree about what day a given instant falls on.
+///
+/// # Examples
+///
+/// ```
+/// assert_eq!(pdfcer_gui::app::clock::iso_date_utc(0), "1970-01-01");
+/// // 2024-05-27T00:00:00Z, the date on this operator's own trust store.
+/// assert_eq!(pdfcer_gui::app::clock::iso_date_utc(1_716_768_000), "2024-05-27");
+/// ```
+#[must_use]
+pub fn iso_date_utc(unix_secs: u64) -> String {
+    let (year, month, day) = civil_from_days(unix_secs / 86_400);
+    format!("{year:04}-{month:02}-{day:02}")
+}
+
 /// The pure half, so the formatting can be tested without a clock.
 ///
 /// ★ Split out for exactly that reason and for no other. A function that reads

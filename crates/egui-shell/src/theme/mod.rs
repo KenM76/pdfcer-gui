@@ -852,6 +852,58 @@ impl Theme {
         (theme.palette.accent, theme.palette.on_accent)
     }
 
+    /// **The plate and the ink for a control whose selection DISAGREES** — the
+    /// indeterminate, "mixed", no-single-value state.
+    ///
+    /// Returns `(plate, ink)`: `(`[`Palette::content_backdrop`]`,
+    /// `[`Palette::text_muted`]`)`.
+    ///
+    /// # ★★★ Why this is a named pair and not two field reads
+    ///
+    /// Because **a correctly-sourced colour used for the wrong role passes
+    /// every gate this project has.** `tools/gates/check-theme-colors.sh`
+    /// forbids invented values; it cannot forbid a wrong role, and that gap has
+    /// now shipped a visible defect three times (see [`Self::accent_pair`]'s
+    /// doc comment for all three, including the print dialog's affirmative
+    /// button rendering *paler than the Cancel beside it*).
+    ///
+    /// A caller that needs "a swatch that reads as no particular colour" has to
+    /// choose two roles, and the two roles that *look* right on the day are not
+    /// the two that stay right across three presets. Naming the pair means
+    /// there is one spelling of the question, one place the answer is decided,
+    /// and one thing for a preset author to re-tune.
+    ///
+    /// # Why THESE two roles
+    ///
+    /// * **[`Palette::content_backdrop`] as the plate.** Its own doc comment is
+    ///   the argument: it is *"the area behind the application's main content …
+    ///   the content must read as an object ON something"*, so it is the one
+    ///   role in the palette guaranteed to be distinguishable from
+    ///   [`Palette::panel`], which is what a Properties panel is drawn on. A
+    ///   plate equal to the panel would make the swatch's edge disappear and
+    ///   the control would read as *absent* rather than as *indeterminate* —
+    ///   and "absent" is the exact wrong reading, because the control works.
+    /// * **[`Palette::text_muted`] as the ink.** *"Secondary text: captions,
+    ///   hints, counts."* A mixed marker is a statement about the control, not
+    ///   a value in the document, so it must not be [`Palette::text`] — which
+    ///   is the weight the *values* in the panel are drawn at, and would claim
+    ///   the dash was one of them.
+    ///
+    /// ★ Deliberately **not** [`Palette::on_accent`], and
+    /// `tools/gates/check-plate-colour.sh` is the reason it would have been
+    /// caught: `on_accent` means *ink drawn ON `accent`*, and an indeterminate
+    /// control is the opposite of an emphasised one.
+    ///
+    /// ★ Deliberately **not** greyed-out widget visuals either. A greyed
+    /// control means *you cannot use this* (R9), and a mixed swatch is fully
+    /// usable — picking a colour applies it to the whole selection. Borrowing
+    /// the disabled look would tell the operator the opposite of the truth.
+    #[must_use]
+    pub fn indeterminate_pair(ctx: &egui::Context) -> (egui::Color32, egui::Color32) {
+        let theme = Self::of(ctx);
+        (theme.palette.content_backdrop, theme.palette.text_muted)
+    }
+
     /// **The ink `egui` paints on a selected widget's plate** — the colour a
     /// selected control's own drawing must match.
     ///

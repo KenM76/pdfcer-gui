@@ -33,8 +33,36 @@
 //!
 //! ★ That is a real gap and it is named rather than hidden: clicking a text
 //! object with the Select tool does not raise this section; sweeping across the
-//! text does. The empty state says so in those words, because an operator who
-//! cannot find a control assumes it is missing.
+//! text does.
+//!
+//! ## ★★★ AMENDED 2026-09-05 — the paragraph above is still true of THIS
+//! ## section, and it is no longer true of the panel
+//!
+//! `OPERATOR_REQUESTS.md` **O89**: *"I don't see where I am able to edit the
+//! color of text, vectors, etc."* He had clicked the text and found nothing but
+//! a sentence telling him to sweep.
+//!
+//! [`super::textobject`] now draws a **working colour control** for a clicked
+//! text object, and it does not weaken one word of the argument above: its
+//! operand is not inferred from geometry, it is the object's own `BT`…`ET`
+//! **byte span** joined against each run's show-operator span — an exact
+//! containment, in one buffer, of the same kind the pinned edit path already
+//! stakes every restyle on. `crate::canvas::textedit::pin::object_text` is the
+//! join and carries the argument.
+//!
+//! ⇒ Two consequences for a reader of this file. **(1)** The sentence formerly
+//! ending this paragraph — *"the empty state says so in those words"* — has
+//! moved with the state it describes; `route` and `ROUTE_REGION` are gone from
+//! here, and the block where they stood says where they went and why the region
+//! kept its old spelling. **(2)** This section is now exactly what its heading
+//! claims: the editor for a **swept range**. With nothing swept it returns
+//! `false` and says nothing, because something else is speaking.
+//!
+//! ★ Four of the five controls here are still sweep-only, and that is a
+//! decision rather than a leftover: face, size, bold and italic each need a
+//! reading of **one run** to be honest, and a whole object has no single answer
+//! to any of them. Colour is the one property for which *"they disagree"* is
+//! itself a displayable answer.
 //!
 //! ## ★★ Why the read-back is stamped and not re-read every frame
 //!
@@ -205,16 +233,12 @@ pub const SIZE_REGION: &str = "properties.text.size";
 /// The face chooser's own region.
 // ui-text-exempt: trace region name, never displayed
 pub const FACE_REGION: &str = "properties.text.face";
-/// The region of the sentence shown when text is selected as an **object** and
-/// nothing has been swept — [`route`].
-///
-/// ★ Its own name rather than [`REGION`], because the two are mutually
-/// exclusive states of one section and a driven check has to be able to tell
-/// which one it is looking at. A single region would make *"the panel says
-/// something about this text"* pass in the state where it says *"you cannot
-/// change it from here"*, which is the state the check exists to detect.
-// ui-text-exempt: trace region name, never displayed
-pub const ROUTE_REGION: &str = "properties.text.route";
+// ★★★ `ROUTE_REGION` moved to [`super::textobject`] on 2026-09-05 with the
+// sentence it names, and it kept its SPELLING — `properties.text.route`. The
+// surface did not move, only the module that draws it, and
+// `tools/ui-verify/src/checks/font_group.rs` finds it by that string. A rename
+// would have been a harness break dressed as tidiness, and a driven check that
+// stops finding a region reports the feature as missing.
 
 /// What the selected text looks like now, re-read only when it can have
 /// changed.
@@ -596,12 +620,15 @@ pub fn section(
     // ★ The staleness gate is inside `runs`, not here — a stale run ordinal
     // restyles the WRONG text, so the check lives with the data rather than
     // with each of its readers.
+    // ★ `false`, not a sentence. The object-selection state belongs to
+    // [`super::textobject`] since 2026-09-05 — see the block below where
+    // `route` used to be.
     let Some(selection) = doc.text_selection.as_ref() else {
-        return route(ui, doc);
+        return false;
     };
     let runs = selection.runs(doc.edit_epoch);
     let Some(&first) = runs.first() else {
-        return route(ui, doc);
+        return false;
     };
     let page = selection.page;
 
@@ -629,72 +656,28 @@ pub fn section(
     true
 }
 
-/// **The route, when a piece of text is selected as an OBJECT and nothing has
-/// been swept.**
-///
-/// Returns whether it drew, so [`section`]'s callers see the panel as having
-/// said something about the selection.
-///
-/// # ★★★ The state this exists for, and why silence was the wrong answer
-///
-/// The operator clicks a piece of text. The Select tool picks the *object* —
-/// a paint-order index — and the Format tab appears, and this section, whose
-/// whole subject is how the text looks, drew **nothing**. Which is honest
-/// about the operand (there is no run range, so there is nothing to restyle)
-/// and dishonest about the capability, because an operator who cannot find a
-/// control concludes it is missing. That is O37's report, in his own words:
-/// *"the Tool tab doesn't switch to giving me the editable stuff for that
-/// object."*
-///
-/// This module's header has claimed since it shipped that *"the empty state
-/// says so in those words"*. It did not; there was no empty state. The
-/// sentence is [`t::text_object_route`] and the claim is now true.
-///
-/// # ★★ Why it is gated on the object being TEXT
-///
-/// Because a rectangle is not text, and a panel that offered a route to the
-/// font controls whenever anything at all was selected would be offering it
-/// wrongly nine times in ten. `summary::object_kind` is the same
-/// classification the Objects panel row and the read-only object section use,
-/// so what this section calls text and what the panel beside it calls text
-/// cannot disagree.
-///
-/// ★ **Only when exactly one object is selected**, matching
-/// [`super::geometry::section`]'s rule and for its reason: a mixed
-/// multi-selection has no single subject, and a sentence about *"these words"*
-/// over a selection of eleven shapes and one label would be describing
-/// something the operator did not do.
-fn route(ui: &mut Ui, doc: &OpenDoc) -> bool {
-    // An annotation is never a page-content text run, and its own sections
-    // have already drawn above this one.
-    if doc.selection.annot().is_some() {
-        return false;
-    }
-    let page = doc.view.page_index;
-    let objects = doc.selection.object_indices_on(page);
-    let [object] = objects.as_slice() else {
-        return false;
-    };
-    let object = *object;
-    let is_text = doc.page_objects().is_some_and(|provider| {
-        provider
-            .page_objects()
-            .objects
-            .get(object)
-            .is_some_and(|o| {
-                crate::panels::objects::summary::object_kind(o)
-                    == crate::panels::objects::summary::ObjectKind::Text
-            })
-    });
-    if !is_text {
-        return false;
-    }
-    ui.heading(t::text_heading());
-    ui.label(t::text_object_route());
-    crate::diag::ui_rect_visible(ROUTE_REGION, ui.min_rect(), ui.clip_rect());
-    ui.separator();
-    true
-}
+// ===========================================================================
+// ★★★ `route` LIVED HERE UNTIL 2026-09-05, AND IT WAS ONLY HALF AN ANSWER
+//
+// It drew one sentence — *"press T for the Text tool and sweep across them"* —
+// whenever a text OBJECT was selected and nothing had been swept, and it was
+// `OPERATOR_REQUESTS.md` O89's second candidate, *"the Properties panel naming
+// the missing step where the swatch would be."* Built 2026-08-29, correct, and
+// still not what he asked for: he wanted the colour, and the panel told him
+// where to go and get it.
+//
+// It has moved WHOLE — sentence, region name, `object_kind` gate and the
+// one-object rule — into [`super::textobject`], which draws a **working colour
+// control** for the clicked object and keeps the sentence underneath it for the
+// four properties that genuinely still need the sweep. Moved rather than
+// duplicated: two sections that both claim the object-selection state would
+// draw two headings, and the argument for the `object_kind` gate is worth more
+// than a retyped copy of the code it justifies.
+//
+// ⇒ This section is now exactly what its own header always said it was: the
+// editor for a **swept range**. With nothing swept it returns `false` and says
+// nothing, and `super::textobject` speaks instead.
+// ===========================================================================
 
 /// The face: what this page carries, and what pdfcer can add to the document.
 ///
@@ -994,7 +977,21 @@ pub(crate) fn shorten(base_font: &str) -> &str {
 /// Acrobat does — it stores the space the caller chose — and a control that
 /// undid that on the operator's behalf would make the engine's care pointless.
 /// Gray round-trips exactly, so it is offered.
-fn rgb_of(colour: pdfcer_core::text_extract::TextColor) -> Option<[u8; 3]> {
+///
+/// # ★★★ `pub(super)` since 2026-09-05, and the widening is the point
+///
+/// [`super::textobject`] asks the same question about a **whole text object**,
+/// and it asks it **here** rather than deciding for itself which spaces are
+/// safe. This function IS the spot-ink guard for text: it is what makes a
+/// `TextColor::Other` or a `TextColor::Cmyk` produce no swatch, on either
+/// surface.
+///
+/// A second copy would be two answers to *"may pdfcer overwrite this ink with a
+/// screen colour?"*, and the two would drift the first time a space was added
+/// to the safe list — with the drift showing up as a colour picker opening over
+/// a `/Separation` on one surface and not the other. There is one answer, in one
+/// place, with one doc comment stating why.
+pub(super) fn rgb_of(colour: pdfcer_core::text_extract::TextColor) -> Option<[u8; 3]> {
     use pdfcer_core::text_extract::TextColor;
     let byte = |v: f32| (v.clamp(0.0, 1.0) * 255.0).round() as u8;
     match colour {

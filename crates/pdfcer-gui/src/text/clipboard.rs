@@ -111,9 +111,39 @@ pub fn refusal(reason: Refusal) -> String {
              work."
                 .to_owned()
         }
+        // ★★★ **THE ENGINE REFUSES THAT KIND, AND THE SENTENCE NAMES IT** —
+        // 2026-09-05.
+        //
+        // Three subtypes, three genuinely different reasons, and the operator's
+        // next move differs for each — which is why this is a `match` on the
+        // subtype rather than one sentence about "some annotations".
+        // `canvas::cutgate` already words the same three for the CUT half and
+        // this reuses that catalog rather than writing a second phrasing of one
+        // fact, which is the divergence `UnembedBlocker::reason` delegating to
+        // `Removability::reason` exists to prevent.
+        //
+        // ★ The list is joined rather than reported one at a time because a
+        // future multi-annotation selection can refuse several at once, and
+        // *"and 2 others"* is the shape that makes an operator go looking for
+        // the other two.
+        Refusal::CannotCarry(subtypes) => cannot_carry(&subtypes),
+        // ★★★ THIS SENTENCE WAS RETIRED ON 2026-09-05, and it was reporting a
+        // LIMIT AS AN ABSENCE — the pattern `RESUME.md` records as this
+        // project's most expensive.
+        //
+        // It read: *"That annotation is not one pdfcer authors — a link, a form
+        // field or an attachment — so there is nothing for it to copy."* Every
+        // word was true of a clipboard that copied by re-authoring from a
+        // `MarkupSpec`. A link copies now. An attachment copies. A sticky note
+        // and a stamp copy with their baked appearances, because
+        // `copy_selection` carries the dictionary rather than the model.
+        //
+        // What replaces it is the one job the variant has left, and it is a
+        // different fact with a different next move: the selected annotation is
+        // no longer on the page. See `Refusal::Unreadable`.
         Refusal::Unreadable => {
-            "That annotation is not one pdfcer authors — a link, a form field or an attachment — \
-             so there is nothing for it to copy."
+            "pdfcer cannot find that comment on the page any more — it may have been changed or \
+             removed since you selected it. Click it again."
                 .to_owned()
         }
         Refusal::NothingCopied => {
@@ -172,13 +202,111 @@ pub fn cut_would_not_survive(subtype: &str) -> String {
     }
 }
 
+/// **Why a copy could not carry what was selected**, naming the subtypes.
+///
+/// # ★★ Why each subtype earns its own clause rather than one general refusal
+///
+/// Because the operator's next move differs, and in one case the refusal is
+/// protecting them rather than admitting a limit:
+///
+/// | subtype | what they should do instead |
+/// |---|---|
+/// | `/Widget` | select it in Edit mode — a form field has its own copy, which asks the naming question a blind copy would have to guess at |
+/// | `/Popup` | copy the comment it belongs to; the pop-up travels with it |
+/// | `/Redact` | nothing — and that is the point. A redaction mark is a **pending destructive operation**, and pasting one arms a redaction in a document nobody reviewed |
+///
+/// ★ The `/Redact` line is the one that must not be softened into *"pdfcer
+/// cannot copy this"*. It can; it declines to, and an operator who reads a
+/// capability limit will go looking for a workaround for something that is a
+/// safeguard.
+///
+/// ★★ The catch-all is **named, not guessed**. `pdfcer-core` may refuse a
+/// subtype this shell has never seen — a ce dimension whose sidecar record is
+/// missing is the documented fourth case — and the honest answer says which it
+/// was rather than inventing a reason for it. Same posture as
+/// [`cut_would_not_survive`] one function up, and the same reason.
+fn cannot_carry(subtypes: &[String]) -> String {
+    let mut clauses: Vec<String> = subtypes
+        .iter()
+        .map(|subtype| match subtype.as_str() {
+            "Widget" => "a form field, which is copied from Edit mode so pdfcer can ask what to \
+                         call it in the document you paste it into"
+                .to_owned(),
+            "Popup" => "a comment's pop-up window, which cannot be copied on its own — copy the \
+                        comment it belongs to and the pop-up goes with it"
+                .to_owned(),
+            "Redact" => "a redaction mark, which pdfcer deliberately will not copy: pasting one \
+                         would arm a redaction in a document nobody has reviewed"
+                .to_owned(),
+            other => format!("a {other}, which pdfcer could not put back afterwards"),
+        })
+        .collect();
+    clauses.dedup();
+    format!(
+        "Nothing was copied. You selected {}.",
+        clauses.join("; and ")
+    )
+}
+
+/// **What a copy took, and what it did not** — the one sentence a partial copy
+/// owes before the operator finds out by pasting.
+///
+/// Rule 4, *"fuzzy never sneaky"*: a copy that quietly took three of four
+/// selected things, or took a comment without its author and its opacity, looks
+/// exactly like one that took everything. Nothing errors and nothing is marked,
+/// which is the definition of sneaky.
+///
+/// # ★★ The two halves are different kinds of loss and are said differently
+///
+/// * **`left_behind`** — annotations that will not be on the clipboard at all.
+///   The operator will notice, eventually, and this is what stops it being a
+///   mystery. Worded by [`cannot_carry`], reused rather than re-phrased.
+/// * **`thin`** — annotations that *will* paste, and will paste **without their
+///   author, date, note text and opacity**. This is the one nobody would ever
+///   report: the mark is on the page, it looks right, and what is missing lives
+///   in a pop-up this shell does not draw. It is `pdfcer-core`'s limit, not
+///   this shell's — `paste_clip_annotations` plants a modelled markup with
+///   `add_markup` rather than `add_markup_with` — and the sentence says so
+///   plainly, because an operator who believes it is their mistake will retry.
+///
+/// # ★ Why it is not reachable today, said rather than implied
+///
+/// A lone modelled markup takes the spec-plus-options route, which carries all
+/// four keys, so `thin` is zero for every clip this shell parks; and the three
+/// refused subtypes are either routed elsewhere or refuse the whole copy, so
+/// `left_behind` is empty. Both become live the day the selection model can
+/// hold more than one annotation. The sentence is written now because the
+/// alternative is writing it *after* the first silent partial copy.
+#[must_use]
+pub fn partial_copy(left_behind: &[String], thin: usize) -> String {
+    let mut parts = Vec::new();
+    if !left_behind.is_empty() {
+        parts.push(
+            cannot_carry(left_behind).replace("Nothing was copied. You selected", "It left behind"),
+        );
+    }
+    if thin > 0 {
+        let what = if thin == 1 {
+            "One comment".to_owned()
+        } else {
+            format!("{thin} comments")
+        };
+        parts.push(format!(
+            "{what} will paste without the author, the date, the note text or the see-through \
+             setting — pdfcer rebuilds that kind of mark from its shape, and those are not part \
+             of its shape."
+        ));
+    }
+    format!("Copied, but not all of it. {}", parts.join(" "))
+}
+
 /// What a content copy leaves on the **operating system's** clipboard.
 ///
 /// ★★ It exists because of a toolkit constraint rather than a design wish:
 /// `egui-winit` synthesises `Event::Paste` only when the OS clipboard holds
 /// non-empty text, and swallows the `Ctrl+V` keystroke entirely otherwise — so
 /// without something here, whether paste works depends on what the operator
-/// last copied in another application. `canvas::clipboard::copy_content`
+/// last copied in another application. `canvas::clipboard::copy`
 /// carries the full account.
 ///
 /// # The wording
@@ -191,12 +319,35 @@ pub fn cut_would_not_survive(subtype: &str) -> String {
 /// Singular and plural are spelled out rather than `{n} object(s)`, because a
 /// parenthesised plural is the tell of a program that could not be bothered —
 /// and this string's whole job is to be read by somebody who did not expect it.
+///
+/// # ★★ It took TWO counts as of 2026-09-05, and the second is not cosmetic
+///
+/// The clipboard can now carry annotations, and *"1 object copied from
+/// pdfcer"* pasted into an email about a revision cloud is a sentence about
+/// the wrong thing. The operator's own word for these is **comment** — it is
+/// what the panel is called — so that is the word here, rather than the file
+/// format's *annotation* or the engine's *markup*.
+///
+/// ★ The mixed line reads *"2 objects and 1 comment"* rather than *"3
+/// items"*, because the two halves came from two different selections in the
+/// operator's mind and a total tells them nothing about whether the copy took
+/// what they meant.
 #[must_use]
-pub fn os_marker(count: usize) -> String {
-    if count == 1 {
-        "1 object copied from pdfcer. Paste it back into pdfcer to place it.".to_owned()
+pub fn os_marker(objects: usize, comments: usize) -> String {
+    let what = match (objects, comments) {
+        (0, 1) => "1 comment".to_owned(),
+        (0, n) => format!("{n} comments"),
+        (1, 0) => "1 object".to_owned(),
+        (n, 0) => format!("{n} objects"),
+        (1, 1) => "1 object and 1 comment".to_owned(),
+        (1, c) => format!("1 object and {c} comments"),
+        (o, 1) => format!("{o} objects and 1 comment"),
+        (o, c) => format!("{o} objects and {c} comments"),
+    };
+    if objects + comments == 1 {
+        format!("{what} copied from pdfcer. Paste it back into pdfcer to place it.")
     } else {
-        format!("{count} objects copied from pdfcer. Paste them back into pdfcer to place them.")
+        format!("{what} copied from pdfcer. Paste them back into pdfcer to place them.")
     }
 }
 
@@ -311,18 +462,92 @@ mod tests {
     /// future edit would most plausibly introduce while "tidying".
     #[test]
     fn every_refusal_is_a_sentence() {
+        // ★ `CannotCarry` joined the list on 2026-09-05, and it is the one
+        // that most needed adding: it is built at runtime from the engine's
+        // payload rather than being a literal in this file, so it is the only
+        // arm `check-ui-strings` cannot see and the only one that could become
+        // a fragment without anybody noticing.
+        //
+        // ★★ `.clone()` because `Refusal` stopped being `Copy` when that
+        // variant arrived carrying the subtypes. Cloning in a test costs
+        // nothing and is preferable to taking `&Refusal` in the signature —
+        // every production call site owns its refusal and moves it, and a
+        // by-reference signature would make each of them borrow something they
+        // are about to drop.
         for reason in [
             Refusal::NothingSelected,
             Refusal::EngineRefused,
             Refusal::Unreadable,
             Refusal::NothingCopied,
+            Refusal::CannotCarry(vec!["Redact".to_owned()]),
+            Refusal::CannotCarry(vec!["Widget".to_owned(), "Popup".to_owned()]),
+            // A subtype this shell has never seen — the catch-all must still
+            // produce a sentence rather than a fragment naming nothing.
+            Refusal::CannotCarry(vec!["Movie".to_owned()]),
         ] {
-            let s = refusal(reason);
+            let s = refusal(reason.clone());
             assert!(
                 s.len() > 40,
                 "{reason:?} is too short to be an explanation: {s:?}"
             );
             assert!(s.ends_with('.'), "{reason:?} must be a sentence: {s:?}");
+        }
+    }
+
+    /// ★★ **A partial copy's sentence says BOTH what was left behind and what
+    /// arrived thin**, and never claims the copy failed.
+    ///
+    /// The wording trap here is real and one-directional: *"could not be
+    /// copied"* over a copy that mostly worked sends the operator back to
+    /// press `Ctrl+C` again, which changes nothing and costs them the
+    /// afternoon. It has to open by saying the copy happened.
+    #[test]
+    fn a_partial_copy_says_what_arrived_and_what_did_not() {
+        let both = partial_copy(&["Redact".to_owned()], 2);
+        assert!(
+            both.starts_with("Copied, but not all of it."),
+            "★ it must say the copy HAPPENED first — an operator who reads a failure retries a \
+             gesture that worked: {both:?}"
+        );
+        assert!(
+            both.contains("redaction mark"),
+            "the refused subtype must be named: {both:?}"
+        );
+        assert!(
+            both.contains("2 comments"),
+            "and so must the count that will paste thin: {both:?}"
+        );
+        let thin_only = partial_copy(&[], 1);
+        assert!(
+            thin_only.contains("One comment") && !thin_only.contains("left behind"),
+            "★ with nothing refused it must not invent a second clause: {thin_only:?}"
+        );
+    }
+
+    /// The OS marker names comments as comments, and a mixed copy as both.
+    ///
+    /// ★ `os_marker(0, 1)` was the case that did not exist before 2026-09-05
+    /// and is the one an operator now meets most: a comment copied and pasted
+    /// into an email says *"1 comment copied from pdfcer"*, not *"1 object"*.
+    #[test]
+    fn the_os_marker_counts_objects_and_comments_separately() {
+        assert!(os_marker(0, 1).starts_with("1 comment copied"));
+        assert!(os_marker(1, 0).starts_with("1 object copied"));
+        assert!(os_marker(2, 1).starts_with("2 objects and 1 comment copied"));
+        assert!(os_marker(1, 3).starts_with("1 object and 3 comments copied"));
+        // ★ The trailing pronoun follows the TOTAL, not either count: "Paste
+        // it back" over two things is the tell of a template nobody read.
+        assert!(os_marker(0, 1).contains("Paste it back"));
+        assert!(os_marker(1, 1).contains("Paste them back"));
+        // The substring `clipboard_text`'s driven check greps for must survive
+        // every one of these branches, or that check goes permanently green.
+        for (o, c) in [(0, 1), (1, 0), (3, 0), (0, 4), (2, 2)] {
+            assert!(
+                os_marker(o, c).contains("copied from pdfcer"),
+                "★ ui-verify's `ctrl_c_copies_text_to_the_os_clipboard` greps for this exact \
+                 substring to tell an object copy from a text copy; a branch without it makes \
+                 that check unable to detect the defect it exists for"
+            );
         }
     }
 }

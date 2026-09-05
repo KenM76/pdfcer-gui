@@ -120,6 +120,60 @@ pub fn groups() -> Vec<RailGroup> {
                 Item::command("view.panel_bookmarks"),
                 Item::command("view.panel_layers"),
                 Item::command("view.panel_signatures"),
+                // ★★★ **COMMENTS, and this is the fix for his report of
+                // 2026-09-05:**
+                //
+                // > *"I could add a yellow sticky note but even in read mode I
+                // > don't think I could figure out how to read it."*
+                //
+                // He was right, and it was an **absence** rather than a
+                // discoverability problem. The Comments panel's only command
+                // is `markup.comments`, which lives on the **Markup** tab, and
+                // the mode table shows Read `["file", "view"]` alone — **so in
+                // Read there was no route to the comment list at all**, and
+                // none to reopen it with after closing it.
+                //
+                // ⇒ That is the posture exactly backwards. Acrobat *Reader* is
+                // a read-only product and reading comments is its entire
+                // purpose. Read's stance is about **authorship**, not about
+                // information: a mode that may not write a comment may
+                // certainly read one somebody else wrote.
+                //
+                // ★★★ **On the RAIL and not on View ▸ Panels, and the reason
+                // is a rule, not a preference.** `RIBBON_IA.md` P1 —
+                // *one command appears on at most one tab* — is enforced by
+                // `Shell::validate`, so adding this id to the View tab beside
+                // the other panel toggles is a **validation failure**, not a
+                // duplicate control. And a manifest that fails to validate
+                // does not merely lose the item: `Capabilities::for_mode`
+                // falls back to `FULL` when the shell is absent, so the whole
+                // build silently gains every authoring capability in every
+                // mode. Tried on 2026-09-05; eight mode-gating tests went red
+                // at once and named it, including *"the pen is never picked up
+                // in Read"*. **The failure was not local to the thing being
+                // added, which is why it is written down here.**
+                //
+                // The rail is not a tab, so P1 does not reach it — the same
+                // permission the four toggles above rely on, recorded at the
+                // head of this group: *a shortcut to a known home is not a
+                // second place to hunt.* And unlike a tab, the rail is present
+                // in every mode, which is precisely the property this needs.
+                //
+                // ⬜ **The tidier fix is a RENAME** — `markup.comments` →
+                // `view.panel_comments`, so the panel's id matches its family
+                // and the toggle can sit with the others. `app::modes::defaults`
+                // records that `view.panel_comments` was in fact the original
+                // spelling, discarded on 2026-08-14 as *"an id no code has ever
+                // resolved"* when §7's migration map sent the control to
+                // Markup. That map is what made Read unreachable, so §5.2's
+                // placement was right all along. The rename touches
+                // `Panel::command_id`, the dispatch arm, the catalog, the
+                // token block, the ladder and the mock, and it was NOT done
+                // today because a concurrent track is building the note popup
+                // on top of the current id. **This entry is not a workaround
+                // for that rename — the rail placement is wanted either way;
+                // the rename would only move the second, tab-side control.**
+                Item::command("markup.comments"),
                 // ★ `file.fonts`, NOT `view.panel_fonts` — the Fonts panel's command
                 // is registered on the File tab and there is no second id for
                 // it. `crate::panels::Panel::command_id` is the source of
@@ -291,7 +345,11 @@ mod tests {
         let groups = groups();
         assert_eq!(groups[0].id, "tabs");
         assert_eq!(groups[0].fold, RailFold::Never);
-        assert_eq!(groups[0].items.len(), 5, "all five panels, one click away");
+        assert_eq!(
+            groups[0].items.len(),
+            6,
+            "all six panels, one click away — Comments joined 2026-09-05, on his report"
+        );
         for group in &groups[1..] {
             assert_ne!(
                 group.fold,

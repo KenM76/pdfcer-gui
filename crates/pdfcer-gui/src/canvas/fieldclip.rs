@@ -170,7 +170,7 @@ pub enum Refusal {
 ///
 /// # ★ Why the BYTES and not the live `FieldClip`
 ///
-/// The same three reasons `Clipped::Content` carries bytes, and here the third
+/// The same three reasons `Clipped::Selection` carries bytes, and here the third
 /// is decisive rather than merely convenient:
 ///
 /// 1. `egui::Memory` wants `Clone + Send + Sync + 'static`; bytes are all four

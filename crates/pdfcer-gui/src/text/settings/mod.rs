@@ -540,7 +540,20 @@ mod tests {
     // because O122's four surfaces are one conversation and were filed
     // together; this list reaches across for it, which is what keeps the count
     // honest about a group whose words live elsewhere.
-    const SETTINGS_COUNT: usize = 31;
+    // ★★★ 31 → 33 on 2026-09-05, and it is the only entry in this list
+    // that moved the count by TWO. The trust-store work adds one ENGINE setting
+    // (`acrobat_trust_store`, which the sibling completeness test in
+    // `dialogs::settings` demanded — it was red before this control existed)
+    // and one SHELL preference beside it (`acrobat_trust_store_path`, which no
+    // test could have demanded, because the engine deliberately does not model
+    // where the file is: *"locating the file is the shell's job"*).
+    //
+    // ★★ They are two headers rather than one on purpose. A permission and a
+    // location have different blast radii — one governs the pdfcer command line
+    // as well, the other changes only which file is read — and a single
+    // `radius` line covering both would have to be vague about the one that
+    // matters. `dialogs::settings::signatures`' header carries the argument.
+    const SETTINGS_COUNT: usize = 33;
 
     /// The `(title, silence, radius)` triple for every setting in the window.
     ///
@@ -691,6 +704,28 @@ mod tests {
                 paste_chords_radius(),
             ),
             (chrome_title(), chrome_silence(), chrome_radius()),
+            // ★★★ The two trust-store settings, reached across into
+            // `crate::text::trust` for the reason `crate::text::acrobat`'s
+            // triple is reached across for: the subject's copy is one
+            // conversation and lives in one module, and this list reaching for
+            // it is what keeps the count honest about a group whose words are
+            // written elsewhere.
+            //
+            // The first is an ENGINE setting and the second a SHELL preference.
+            // They sit adjacent here because the obligation this list checks is
+            // a property of a CONTROL IN THIS WINDOW, not of which file its
+            // value happens to be stored in — the same rule the four *Drawing
+            // the page* entries above are here under.
+            (
+                crate::text::trust::use_store_title(),
+                crate::text::trust::use_store_silence(),
+                crate::text::trust::use_store_radius(),
+            ),
+            (
+                crate::text::trust::store_path_title(),
+                crate::text::trust::store_path_silence(),
+                crate::text::trust::store_path_radius(),
+            ),
             // The theme's twin in the Appearance group — the second setting
             // that changes the program rather than the document.
             (ui_scale_title(), ui_scale_silence(), ui_scale_radius()),
@@ -800,6 +835,13 @@ mod tests {
         ),
         ("pages", include_str!("../../dialogs/settings/pages.rs")),
         ("saving", include_str!("../../dialogs/settings/saving.rs")),
+        // ★ Added 2026-09-05 WITH the trust-store controls rather than after
+        // them — `comments`' note above asks for exactly that, and
+        // `every_settings_module_is_counted` is what stops it being a request.
+        (
+            "signatures",
+            include_str!("../../dialogs/settings/signatures.rs"),
+        ),
         ("text", include_str!("../../dialogs/settings/text.rs")),
     ];
 

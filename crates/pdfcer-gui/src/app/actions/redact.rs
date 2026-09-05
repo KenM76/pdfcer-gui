@@ -11,10 +11,10 @@
 //! undo. Moving the arms and leaving the reasoning behind would have been
 //! exactly the split this project's own R2 note warns against.
 //!
-//! ## ★★★ CORRECTED 2026-09-04 (evening) — the removal IS here now, and the
-//! old section said it never could be
+//! ## ★★★ CORRECTED 2026-09-04 (evening), AND AGAIN 2026-09-05 — the removal
+//! is armed here, and the old section said it could never be here at all
 //!
-//! What stood here, verbatim, until this afternoon:
+//! What stood here, verbatim, until the afternoon of 2026-09-04:
 //!
 //! > *"## ★ What is NOT here, and that is the point. **Nothing in this file
 //! > removes anything.** Marking is the reversible half of redaction; the
@@ -25,36 +25,64 @@
 //! > not the tidiness."*
 //!
 //! The middle clause was a **fact about the engine**, not a principle, and it
-//! expired the same day: `EditSession::apply_redactions` (`Pass 250.1`) applies
-//! a redaction into the open session, so the operation now *does* change a
-//! document through the queue and *does* have an epoch to bump. It is
-//! [`Action::ApplyRedactionsIntoDocument`], the fourth arm below, and it goes
-//! through the identical `vector_edit` funnel as the three marking arms.
+//! expired that day: `EditSession::apply_redactions` (`Pass 250.1`) applied a
+//! redaction into the open session, so the operation *did* change a document
+//! through the queue and *did* have an epoch to bump.
 //!
-//! ★ The last sentence — *"routing the one operation that cannot be undone
-//! through a queue that replays would be the defect"* — deserves an answer
-//! rather than a deletion, because it names a real hazard. **This queue does
-//! not replay.** `crate::app::actions` drains it once per frame in order and
-//! discards it; the thing that replays is the engine's *undo log*, and the
-//! apply is not in it — the engine clears the log rather than recording a
-//! command, which is precisely why it cannot be replayed backwards into an
-//! un-redaction. The hazard the sentence feared is structurally absent, and the
-//! epoch bump, the texture invalidation and the page resync that the funnel
-//! performs are all things this verb genuinely needs.
+//! ★★★ **And a day later the engine changed again, in the direction that makes
+//! the ORIGINAL paragraph's instinct look better than its conclusion.**
+//! `Pass 250.2`'s [`crate::redact::stage_into_session`] does not remove
+//! anything and does not touch the session's content: it arms the next save.
+//! So *"nothing in this file removes anything"* is true once more — and it is
+//! still not a principle, which is the whole lesson of having written it as
+//! one. It is a dated property of an engine this project does not build.
+//!
+//! ⇒ The arm below is [`Action::PendingRedaction`], and it goes through the
+//! identical `vector_edit` funnel as the three marking arms, for a reason that
+//! is worth stating because the funnel does more than this verb needs: the
+//! engine's staging and cancelling verbs both take `&mut EditSession`, and
+//! `Arc::get_mut` — which is the funnel's second step and cannot be had any
+//! other way here — is what makes them reachable at all. The epoch bump comes
+//! with it and is wanted for its own reason (below).
+//!
+//! ★ The old paragraph's last sentence — *"routing the one operation that
+//! cannot be undone through a queue that replays would be the defect"* —
+//! deserves an answer rather than a deletion, because it names a real hazard.
+//! **This queue does not replay.** `crate::app::actions` drains it once per
+//! frame in order and discards it. And on `Pass 250.2` the hazard is smaller
+//! still: the arming is not irreversible — [`crate::redact::Staging::Cancel`]
+//! is the second half of this very arm.
+//!
+//! ## ★★★ Why the epoch is bumped for an edit that changes no pixel
+//!
+//! Staging alters nothing a rasteriser would draw (rule 4: no badge, no tint,
+//! no provisional layer — see `crate::redact` §1.0.3), so on the face of it a
+//! funnel that drops every page texture and rebuilds the decomposition is pure
+//! waste. It is bumped anyway, and the reason is one specific consumer:
+//!
+//! `crate::app::save::has_unsaved_edits` is
+//! `(is_modified() || has_pending_redaction()) && edit_epoch != saved_epoch`.
+//! **Without the bump the second term is false**, and a document whose marks
+//! were already in the file when it was opened — arm the removal, change
+//! nothing else — answers *clean*, closes with no prompt, and loses the arming
+//! in silence. The waste is one re-raster of an identical picture. The
+//! alternative is the exact silent loss the third term was added to close.
 //!
 //! ## What is still NOT here
 //!
-//! **The write.** This arm puts the removal in the session and stops. Where the
-//! bytes go, and when, is `file.save` / `file.save_as` / `file.save_copy`'s
-//! decision, exactly as it is for every other edit — which is what the operator
-//! asked for in `OPERATOR_REQUESTS.md` O125. The two *write-now* destinations
-//! still live in `crate::dialogs::redact` and still reach no arm in this file.
+//! **The write.** This arm arms the save and stops. Where the bytes go, and
+//! when, is `file.save` / `file.save_as` / `file.save_copy`'s decision, exactly
+//! as it is for every other edit — which is what the operator asked for in
+//! `OPERATOR_REQUESTS.md` O125. `crate::app::save::write_copy` is what routes
+//! them through the removal. The two *write-now* destinations still live in
+//! `crate::dialogs::redact` and still reach no arm in this file.
 
 use super::Action;
 use super::apply::vector_edit;
 use crate::app::state::OpenDoc;
+use crate::redact::Staging;
 
-/// Apply one of the three marking actions, or the apply-into-document one.
+/// Apply one of the three marking actions, or the staging one.
 ///
 /// Takes the whole `Action` rather than destructured fields, so the match here
 /// is the same shape as the one it was lifted out of and a reader comparing
@@ -243,22 +271,22 @@ pub fn apply(doc: &mut OpenDoc, action: Action) {
             });
         }
         // ===============================================================
-        // ★★★ THE ONE THAT REMOVES — `OPERATOR_REQUESTS.md` O125,
-        // 2026-09-04.
+        // ★★★ THE ONE THAT ARMS A REMOVAL — `OPERATOR_REQUESTS.md` O125,
+        // 2026-09-04, rebuilt on `Pass 250.2` 2026-09-05.
         //
         // Raised by `crate::dialogs::redact` on its default destination,
         // after the operator has read a measured report, ticked the
-        // permanence box and been told how many undo steps this discards.
-        // Nothing is written: the redaction lands in the session and Save
-        // decides where it goes, which is the whole of what he asked for.
+        // permanence box and been told that the page will not change.
+        // Nothing is written and nothing is removed: the next save carries
+        // the removal out, which is the whole of what he asked for.
         //
         // ★★ `vector_edit`, NOT `vector_edit_on_page`. A redaction is a
-        // whole-document change by construction — the engine collapses the
-        // session onto a completely new base, every page of it — so the
-        // page-scoped funnel would be a claim this verb cannot make. The
-        // `page` argument below is the trace's, as it is everywhere.
+        // whole-document change by construction — the removal at save is a
+        // full rewrite, every page of it — so the page-scoped funnel would
+        // be a claim this verb cannot make. The `page` argument below is the
+        // trace's, as it is everywhere.
         // ===============================================================
-        Action::ApplyRedactionsIntoDocument => {
+        Action::PendingRedaction(Staging::Stage) => {
             let page = doc.view.page_index;
             // Set inside the closure and read after it, the same shape the
             // search arm uses for its unreadable-font count and for the same
@@ -267,15 +295,16 @@ pub fn apply(doc: &mut OpenDoc, action: Action) {
             //
             // ★★★ `absence_claims` is the load-bearing one. It is
             // `RedactionReport::redacted_text` — the exact strings the engine
-            // says it removed — and it is what `crate::app::save` greps the
-            // saved bytes for on every subsequent save of this document. Our
-            // engine request promised to keep that proof and to move it to
-            // save time; this is where the promise is kept, and dropping this
-            // assignment would silently retire the shell's only independent
-            // check that a redacted document reaches disk redacted.
+            // says the save will remove — and it is the standing claim
+            // `crate::app::save` greps the bytes for. On the staged path the
+            // save proves against the report the REMOVAL returned rather than
+            // against this list, because an edit in between changes what comes
+            // out; this list is the document's own record, and what it does is
+            // stop an ordinary save from ever being clean-by-omission if the
+            // arming is somehow lost without being cancelled.
             let mut absence_claims: Vec<String> = Vec::new();
-            let mut disclosed: Option<String> = None;
-            vector_edit(doc, "redact-apply-into-document", page, 1, |session| {
+            let mut armed = false;
+            vector_edit(doc, "redact-stage", page, 1, |session| {
                 // ★ `{:?}` rather than a `Display` impl on the refusal, and
                 // deliberately so. `vector_edit` needs `E: Display` to put the
                 // cause on the trace, and `RedactApplyRefusal` has no `Display`
@@ -287,37 +316,84 @@ pub fn apply(doc: &mut OpenDoc, action: Action) {
                 // copy. The operator-facing half of a refusal here is the
                 // funnel's own worded decline; the dialog has already refused
                 // by name for every cause reachable in practice.
-                crate::redact::apply_into_session(session)
+                crate::redact::stage_into_session(session)
                     .map_err(|refusal| format!("{refusal:?}"))
-                    .map(|applied| {
-                        absence_claims = applied.report.redacted_text.clone();
+                    .map(|staged| {
+                        absence_claims = staged.report.redacted_text.clone();
                         // The residual list the DIALOG showed is built from more
                         // sources than the report alone (retained marks, uncut
                         // vector geometry, kept clips, raw-byte residuals). The
                         // sentence here counts the same way, so the number the
                         // operator acknowledged and the number he is told about
                         // afterwards cannot disagree.
-                        let residuals =
-                            crate::redact::residual_count(&applied.report, &applied.verification);
-                        let line = crate::text::redact::applied_into_document(
-                            applied.report.marks_applied,
-                            applied.report.pages_redacted,
+                        //
+                        // ★ `None` for the verification, and it is a statement:
+                        // the staging verb discards its bytes, so no absence
+                        // sweep has run and the raw-byte residuals the dialog
+                        // could list are not among these. Passing a default
+                        // `AbsenceVerification` would have compiled and told
+                        // him a sweep found nothing.
+                        let residuals = crate::redact::residual_count(&staged.report, None);
+                        let line = crate::text::redact::staged_into_document(
+                            staged.report.marks_applied,
+                            staged.report.pages_redacted,
                             residuals,
-                            applied.undo_steps_cleared,
                         );
-                        disclosed = Some(line.clone());
+                        armed = true;
                         vec![line]
                     })
             });
-            // ★ Recorded only on success. `disclosed` is `None` on every
-            // refusal path, and an empty claim list means `crate::app::save`
-            // proves nothing — which is correct, because on a refusal the
-            // session was never redacted and there is nothing to prove about
-            // it. Assigning unconditionally would have armed the save-time
-            // proof with the strings from a removal that did not happen.
-            if disclosed.is_some() {
+            // ★ Recorded only on success. An empty claim list means
+            // `crate::app::save` proves nothing on the ordinary path — which is
+            // correct, because on a refusal nothing is armed and there is
+            // nothing to prove about it. Assigning unconditionally would have
+            // armed the save-time proof with the strings from a removal that
+            // was never set up.
+            if armed {
                 doc.redaction_absence_claims = absence_claims;
             }
+        }
+        // ===============================================================
+        // ★★★ …AND THE ONE THAT DISARMS IT — new 2026-09-05.
+        //
+        // It exists because a stageable operation that cannot be un-staged
+        // is a trap, and this one has teeth: while a removal is armed the
+        // engine refuses BOTH ordinary save modes by name, so an operator
+        // who changed his mind and had no way to say so could not save his
+        // document at all.
+        //
+        // ★ Through the same funnel, and it is not symmetry: the engine's
+        // verb takes `&mut EditSession` and `Arc::get_mut` is the funnel's
+        // second step. The epoch bump that comes with it is wanted for the
+        // module header's reason — `has_unsaved_edits` reads it — and the
+        // re-raster it costs draws an identical picture, because nothing
+        // about the page ever changed.
+        // ===============================================================
+        Action::PendingRedaction(Staging::Cancel) => {
+            let page = doc.view.page_index;
+            let marks = crate::panels::redact::mark_ids(&doc.session).len();
+            vector_edit(doc, "redact-stage-cancel", page, 1, |session| {
+                crate::redact::cancel_staged_redaction(session);
+                // `Ok` unconditionally, and the engine's verb is why rather
+                // than optimism: `cancel_pending_redaction` is a `const fn`
+                // that clears a `bool` and is documented idempotent, so a
+                // cancel on a document with nothing armed is a no-op rather
+                // than an error. There is no failure to model and inventing an
+                // error type for one would be a branch nothing can take.
+                //
+                // The type annotation is needed because nothing in the closure
+                // constrains `E`.
+                Ok::<_, String>(vec![crate::text::redact::staging_cancelled(marks)])
+            });
+            // ★★★ The claims go with it, and this line is the one that must
+            // not be dropped. They are this shell's statement that *every file
+            // it writes for this document has this text removed from it*, and
+            // after a cancel that statement is false — the content is
+            // deliberately still there. Leaving them set would make the next
+            // ordinary save refuse itself, correctly, over a removal the
+            // operator called off on purpose, and there would be no way out of
+            // it but to close the document.
+            doc.redaction_absence_claims.clear();
         }
         _ => {}
     }

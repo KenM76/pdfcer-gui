@@ -258,6 +258,86 @@ here so the next session does not rediscover it, and `remove_encryption` is
 named here so that when the instrument *is* fixed, this row is already written
 and the gate does not go red for a verb that was known about all along.
 
+### ★★★ The four the GATE found, 2026-09-05 — the undo-preserving redaction, and all four are WIRED
+
+The lead bumped the lock to **`pdfcer-core` v0.38.0 (`b01964f`)** and the gate
+went red on the next run with four names, all of one family:
+
+> **197 `EditSession` verbs (lock `b01964f`), 184 named somewhere in the shell,
+> 13 named nowhere** — of which nine already had a row in this file, and
+> `apply_redactions_deferred`, `cancel_pending_redaction`,
+> `has_pending_redaction` and `save_applying_redaction` had nothing anywhere.
+
+**All four are now called**, so none of them needs a row here to keep the gate
+green. They get one anyway, because the *arrangement* is the part worth
+recording and because one of them is the second half of a request this project
+filed — `Pass 250.2`, `41095eb`, the undo-preserving variant our own
+`request_apply_redactions_into_the_session.md` asked for in the first place.
+
+| Verb | Where it is called, and why exactly there |
+|---|---|
+| `apply_redactions_deferred` | `crate::redact::stage_into_session`, and **nowhere else** — pinned by `redact::sealed`. It arms the removal and touches nothing: base, overlay and the whole undo/redo stack survive. |
+| `has_pending_redaction` | Four places, and they are four different questions rather than one repeated: `app::save::write_copy` (which writer runs), `app::save::has_unsaved_edits` (is this document dirty), `redact::prepare_redaction_apply` (refuse the second report by name), `redact::stage_into_session` (refuse the second arming). It is a query, so it is deliberately **not** in the monopoly's table. |
+| `save_applying_redaction` | `crate::redact::save_applying_pending`, and **nowhere else** — pinned. It is the only save that succeeds while a removal is armed, and it takes `&self`, which is what makes undo survive the save. |
+| `cancel_pending_redaction` | `crate::redact::cancel_staged_redaction`, and **nowhere else** — pinned, even though it removes nothing. It *disarms* a removal, which is the same surface seen from behind. |
+
+#### ★★★ …and one verb that STOPPED being called: `has_applied_redaction`
+
+The movement worth recording, because it is the shape this register exists for
+and the gate cannot see it.
+
+`has_applied_redaction` is `Pass 250.1`'s disclosure signal — *"a redaction has
+been collapsed into this session"* — and on 2026-09-04 it was a live term of
+`app::save::has_unsaved_edits`. On 2026-09-05 it stopped being one, because this
+shell stopped collapsing: `Pass 250.2`'s staging replaced `Pass 250.1`'s
+finalizing route entirely rather than joining it, so the flag that verb reads is
+**`false` for the life of every session this shell now creates.** A term that
+can never be true is worse than an absent one, because it reads as a guard.
+
+★ **It is still called, and the call is an assertion rather than a use.**
+`app::save::tests` and `redact::tests` both assert `!has_applied_redaction()`,
+and that is deliberate: it is the tripwire for a build in which something has
+reached the engine's *other* apply verb by a route `redact::sealed`'s call
+counts did not see. If that assertion ever goes red, the monopoly is broken
+somewhere the syntax sweep cannot reach.
+
+⇒ ★ **The gate reads it as `named`, and that is the `remove_encryption`
+blindness two sections above, from the other direction.** A verb whose only
+remaining call sites are negative assertions in a test suite scores a hit on
+`tools/verb-coverage.py` exactly as a verb mentioned once in a doc comment does.
+The instrument is not wrong to report it; the row is here so that the day
+somebody tightens the instrument, the reason is already written down and the
+gate does not go red for a verb that was known about all along.
+
+#### ⚠ AND ONE HAZARD THIS PASS INTRODUCED, NAMED RATHER THAN IMPLIED
+
+**`EditSession::set_encryption` does not consult the pending-redaction flag, and
+`crate::protect::prepare` calls it on the OPEN session.**
+
+`crates/pdfcer-gui/src/protect/mod.rs:675` — `Job::SetPassword` calls
+`doc.session.set_encryption(&settings, &options)`, which serialises base plus
+the dirty set through the encrypting encoder. The engine guards
+`to_incremental_bytes` (`edit.rs:8348`) and `to_full_bytes` (`edit.rs:8374`)
+against a pending redaction and **does not guard this one**. So an operator who
+arms a removal and then uses File ▸ Security ▸ `Encrypt…` gets an encrypted file
+containing the un-redacted content *and* the `/Redact` marks — a marked file
+that looks finished, which is the single most-cited real-world redaction
+failure.
+
+★ **It was not reachable before this pass.** Under `Pass 250.1`'s collapse the
+content was already gone by the time the operator could reach the Security
+window, so this is a hazard the deferred route brings with it.
+
+★ **It was not fixed in this pass, and the reason is scope rather than
+judgement.** The guard belongs as a `protect::Refusal` variant, which is
+`protect/mod.rs`, `dialogs/protect.rs`, `text::security` and two test files —
+four files belonging to no track that was running, edited in a session that owned
+neither. It is written here instead of being fixed quietly, because a boundary
+defect that is not reported is one that stays. **The honest fix is the engine's**:
+`set_encryption` should return `RedactionPending` the way its two siblings do,
+and the shell's guard is the belt to that braces.
+
+
 ### Not gaps — alternate spellings of a verb the shell already calls
 
 | Verb | What the shell calls instead |

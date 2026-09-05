@@ -177,12 +177,43 @@ fn copy_or_cut(app: &mut PdfcerApp, ctx: &egui::Context, id: &str, actions: &mut
     // ★ Copy is permitted in every mode and cut is not, and the split is the
     // operator's own *copying is not authoring* ruling.
     let outcome = if cutting {
-        crate::canvas::clipboard::cut(ctx, doc, actions).map(|_| ())
+        crate::canvas::clipboard::cut(ctx, doc, actions)
     } else {
-        crate::canvas::clipboard::copy(ctx, doc).map(|_| ())
+        crate::canvas::clipboard::copy(ctx, doc)
     };
-    if let Err(refusal) = outcome {
-        crate::app::actions::record_note(doc.edit_epoch, crate::text::clipboard::refusal(refusal));
+    match outcome {
+        Err(refusal) => crate::app::actions::record_note(
+            doc.edit_epoch,
+            crate::text::clipboard::refusal(refusal),
+        ),
+        // ★★★ **A PARTIAL COPY SAYS SO** — rule 4, "fuzzy never sneaky",
+        // applied to the clipboard.
+        //
+        // A copy that took three of four selected things looks *identical* to
+        // one that took all four: nothing errors, the marker goes on the OS
+        // clipboard, and the operator finds out when they paste — or, worse,
+        // does not, because what went missing was a comment's author and
+        // opacity rather than a shape.
+        //
+        // ★ It is said HERE and not in `canvas::clipboard`, whose standing
+        // contract is that it changes no document and words no decline. The
+        // clip carries the facts (`left_behind`, `thin`) and this is the layer
+        // that has a status row.
+        //
+        // ★★ It is said on the status row rather than drawn on the canvas,
+        // which is the other half of rule 4: **the pasted mark must render
+        // exactly as a saved one will**, so a partial paste gets no badge, no
+        // tint and no provisional styling. The disclosure lives off-canvas or
+        // it is a lie about the document.
+        Ok(crate::canvas::clipboard::Clipped::Selection {
+            left_behind, thin, ..
+        }) if !left_behind.is_empty() || thin > 0 => {
+            crate::app::actions::record_note(
+                doc.edit_epoch,
+                crate::text::clipboard::partial_copy(&left_behind, thin),
+            );
+        }
+        Ok(_) => {}
     }
 }
 
@@ -204,7 +235,25 @@ fn paste(
     // look at, so the clipboard is the only honest source.
     let caps = app.capabilities();
     let allowed = match &clipped {
-        Some(crate::canvas::clipboard::Clipped::Content { .. }) => caps.edit_content,
+        // ★★★ **A clip asks for the gate its CONTENTS need**, as of 2026-09-05.
+        //
+        // It used to be `Clipped::Content => caps.edit_content`, which was one
+        // fact when a clip could only hold page objects. A clip can now hold
+        // annotations alone, and demanding `edit_content` for those would make
+        // **Review unable to paste a comment it is allowed to author** — the
+        // mode whose whole purpose is marking up somebody else's drawing.
+        //
+        // ★ The stricter gate wins on a mixed clip, and it has to: pasting one
+        // is one act, so a mode that may not add a line to a drawing may not
+        // add three lines and a cloud either. Asking `author_markup` for the
+        // whole thing would let Review paste geometry.
+        Some(crate::canvas::clipboard::Clipped::Selection { count, .. }) => {
+            if *count > 0 {
+                caps.edit_content
+            } else {
+                caps.author_markup
+            }
+        }
         // ★ A form field is document content, not a comment on it, so it takes
         // the content gate rather than the markup one. Review may annotate a
         // drawing; it may not add a fillable box to it.

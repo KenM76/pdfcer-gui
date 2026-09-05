@@ -1086,13 +1086,14 @@ impl PdfcerApp {
             Action::MarkRedactionsBySearch { .. }
             | Action::MarkPageForRedaction { .. }
             | Action::RemoveRedactionMark { .. }
-            // ★★★ …and, since 2026-09-04, the one that REMOVES. It is routed
-            // here beside the three marking arms rather than into a module of
-            // its own because it is the other half of their subject — the
-            // module's header used to say "nothing in this file removes
-            // anything", and the correction is in that file rather than in a
-            // fourth location a reader would have to find.
-            | Action::ApplyRedactionsIntoDocument => {
+            // ★★★ …and, since 2026-09-04, the one that ARMS a removal (and,
+            // since 2026-09-05, disarms it). It is routed here beside the three
+            // marking arms rather than into a module of its own because it is
+            // the other half of their subject — the module's header used to say
+            // "nothing in this file removes anything", and the correction is in
+            // that file rather than in a fourth location a reader would have to
+            // find.
+            | Action::PendingRedaction(_) => {
                 super::redact::apply(doc, action);
             }
             // ★ Its own module, not a fourth arm in `redact`: it is the only

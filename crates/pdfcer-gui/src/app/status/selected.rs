@@ -173,6 +173,86 @@ pub(super) fn show(ui: &mut Ui, doc: &OpenDoc) {
         None => text,
     };
 
+    let text = with_layer(doc, &text);
+
     let response = ui.label(text);
     crate::diag::ui_rect(REGION, response.rect);
+}
+
+/// ★★★ **Which layer the selection is on, appended to the line that already
+/// names it.**
+///
+/// # Why this is on the status bar and not only in the Layers panel
+///
+/// **The canvas is the primary surface, never a panel.** `pdfcer-core` can now
+/// answer *"which layer is this object on"* (`Pass 250.0`,
+/// `VectorObject::oc()`), so clicking the object has to be able to *reach*
+/// that answer. A capability whose only route is a panel is a capability the
+/// operator must already know exists before they can use it — and this one was
+/// asked for as *"selecting an object highlights that layer"*, which is a
+/// sentence about **clicking**, not about a panel.
+///
+/// The panel is the supplement: it is where the answer can be acted on, by
+/// switching the layer off. This is where it can be *seen*, with nothing open.
+///
+/// # ★★★ Rule 4: nothing is drawn on the drawing
+///
+/// No badge, tint, dashed outline or provisional layer is painted over the
+/// selected content to express its membership. The selection handles are the
+/// cursor and are untouched. **Render normally; report separately. Both.**
+///
+/// # ★★ Silent on a document with no optional content, which is nearly all of
+/// them
+///
+/// The engine measured **0.6 %** of a 500-file corpus carrying optional
+/// content at all. On the other 99.4 % *"which layer"* is not a question the
+/// operator has, and `not on a layer` after every single click would be a
+/// permanent line about a feature the document does not use — the same defect
+/// as narrating "Nothing selected", which this module's header already
+/// refuses.
+///
+/// So the clause appears only once `read_layers` says the document declares
+/// groups. That read walks `/OCProperties` and its `/OCGs` array — a handful
+/// of dictionary lookups, no content stream — and it is behind the
+/// `targets.first()` guard above, so it costs nothing on a frame with nothing
+/// selected. The Layers panel makes the same call every frame it is open.
+fn with_layer(doc: &OpenDoc, line: &str) -> String {
+    let view = doc.session.view();
+    let read = pdfcer_core::layers::read_layers(&view);
+    if read.diagnostics.no_optional_content {
+        return line.to_owned();
+    }
+    let membership = crate::panels::layers::highlight::resolve(doc);
+    // ★ The name comes from the panel's own `row_name`, through
+    // `layer_name_for`. One spelling of what a layer is called: a bar that
+    // read `/Name` itself would print an empty string where the panel prints
+    // its placeholder, for the same layer, on two surfaces visible at once.
+    let name = membership
+        .highlighted()
+        .and_then(|id| crate::panels::layers::layer_name_for(&read, id));
+    let Some(clause) = crate::text::panels::layers::layer_clause(membership, name.as_deref())
+    else {
+        return line.to_owned();
+    };
+    crate::diag::trace(|| {
+        // ★★★ Published for the driven check, and it carries the ANSWER rather
+        // than merely that an answer happened. A trace saying "a layer clause
+        // was drawn" would pass under a build that always names the same
+        // layer — precisely the vacuous shape a fixture whose objects all sit
+        // on one layer would hide, which is why the check's fixture carries
+        // two layers and an object on neither.
+        //
+        // ★ `kind`/`reason` rather than `{:?}`: see `Membership::kind`. The
+        // NAME is quoted last, because it is the one field that may contain a
+        // space and a `key=value` parser must not have to cope with one in the
+        // middle of a line.
+        format!(
+            "layer-membership page={page} answer={} reason={} name={:?}",
+            membership.kind(),
+            membership.reason(),
+            name.as_deref().unwrap_or_default(),
+            page = doc.view.page_index,
+        )
+    });
+    crate::text::panels::layers::selection_with_layer(line, &clause)
 }

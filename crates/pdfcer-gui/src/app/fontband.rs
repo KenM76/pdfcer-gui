@@ -395,7 +395,46 @@ fn colour(
 ) -> bool {
     let Some(current) = draft.colour() else {
         let response = ui.add_enabled(false, egui::Button::new(t::text_colour_label()));
-        response.on_disabled_hover_text(t::text_colour_not_plain());
+        // ★★★ **THE SENTENCE DEPENDS ON WHY THERE IS NO COLOUR, and for
+        // eight days it did not** — `OPERATOR_REQUESTS.md` O89, the third
+        // candidate, which O89 recorded as *"R9's own rule, and it is not
+        // doing it today."*
+        //
+        // `draft.colour()` answers `None` for **two completely different
+        // reasons**, and this arm answered both with one sentence:
+        //
+        // | why | the truth |
+        // |---|---|
+        // | the run is painted in CMYK or a spot colour | the sentence below |
+        // | **nothing is swept, so no run has been read at all** | *"sweep the text first"* |
+        //
+        // The second is the state an operator is in **every time they go
+        // looking for this control** — they have clicked a piece of text with
+        // the Select tool, the Format tab has appeared, and the Font group is
+        // greyed. `resolved` never ran, so the draft holds its `Default` and
+        // `colour()` is `None` — and hovering the greyed swatch answered with
+        // *"Set in CMYK or a spot colour…"*: a confident, specific claim about
+        // text this control had not read one byte of.
+        //
+        // ★★ It is the same defect class as the size field two functions up
+        // (a greyed `DragValue` clamping its `Default` to `1.0 pt` and
+        // reading as a fact about the document), and it is worse in one way:
+        // a wrong number invites a second look, and a plausible sentence
+        // ends the operator's search. He reported not being able to find the
+        // control; the one surface that could have answered him told him the
+        // document was the problem.
+        //
+        // ⇒ `live` is the discriminator and it was already in scope, unused
+        // by this arm. When the control is greyed for want of an operand, the
+        // hover carries the registry's own tooltip — the one
+        // `crate::text::commands`' Font block writes to read correctly with
+        // nothing selected, ending *"Sweeping text with the Text tool (T)
+        // chooses what it applies to."* — which [`draw`] attaches to the
+        // enclosing region. Saying nothing here lets that one through instead
+        // of covering it with a falsehood.
+        if live {
+            response.on_disabled_hover_text(t::text_colour_not_plain());
+        }
         return false;
     };
     let mut rgb = current;

@@ -180,6 +180,17 @@ pub const DIAG_FONT_FOLDER_PATH: &str = "PDFCER_DIAG_FONT_FOLDER"; // ui-text-ex
 /// open picker would make a check that set one accidentally answer the other.
 pub const DIAG_ACROBAT_PATH: &str = "PDFCER_DIAG_ACROBAT_PATH"; // ui-text-exempt: an environment variable name, never displayed
 
+/// The harness seam for [`pick_trust_store`] — the signature-trust work,
+/// 2026-09-05.
+///
+/// ★ Its own variable, and NOT shared with [`DIAG_ACROBAT_PATH`], for the
+/// reason that one gives about the document picker: the two controls sit in
+/// different groups of the same window, and a driven check that set one
+/// variable to answer both would silently make the Acrobat browse button
+/// return an `addressbook.acrodata`. The check would still pass and the thing
+/// it proved would be false.
+pub const DIAG_TRUST_STORE_PATH: &str = "PDFCER_DIAG_TRUST_STORE_PATH"; // ui-text-exempt: an environment variable name, never displayed
+
 /// The environment variable that answers the **save** dialog instead of
 /// opening it.
 ///
@@ -619,6 +630,44 @@ pub fn pick_acrobat() -> Picked {
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         format!("acrobat-picked source=native answer={answer:?}")
+    });
+    answer
+}
+
+/// **Ask where Acrobat's downloaded trust list is** — the Settings ▸ Digital
+/// signatures Browse button.
+///
+/// ★ Offered beside the text field rather than instead of it, exactly as
+/// [`pick_acrobat`] is and for the same reason: the value is a full path buried
+/// four directories inside `%APPDATA%`, which is a path nobody types correctly
+/// from memory, and somebody who already knows it should not have to navigate.
+///
+/// ★★ The filter names `.acrodata` first and everything second. First because
+/// that is what the file is called and a picker showing every file in a
+/// `Security` directory is one the operator has to fight. Second because pdfcer
+/// does **not** require the extension — `pdfcer_core::trust_store` sniffs the
+/// `%PPKLITE-` header rather than the name, and an administrator who handed
+/// somebody a copy called `trust.dat` has given them a perfectly readable store
+/// — so a filter that could not be widened would be this shell overruling the
+/// operator about their own machine.
+#[must_use]
+pub fn pick_trust_store() -> Picked {
+    if let Some(answer) = from_env(std::env::var_os(DIAG_TRUST_STORE_PATH)) {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed.
+            format!("trust-store-picked source=env answer={answer:?}")
+        });
+        return answer;
+    }
+    let answer = rfd::FileDialog::new()
+        .set_title(crate::text::trust::store_path_browse())
+        .add_filter(crate::text::trust::store_path_filter(), &["acrodata"])
+        .add_filter(crate::text::files::filter_all(), &["*"])
+        .pick_file()
+        .map_or(Picked::Cancelled, Picked::Path);
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        format!("trust-store-picked source=native answer={answer:?}")
     });
     answer
 }

@@ -1314,9 +1314,9 @@ pub enum Action {
     // every one of these goes through `vector_edit` exactly as a markup does
     // and `Ctrl+Z` takes it back.
     //
-    // ★★★ CORRECTED 2026-09-04: applying can now change the OPEN document
-    // (`Pass 250.1`), so `ApplyRedactionsIntoDocument` is below. The paragraph
-    // that argued it never could be is quoted and answered in `actions::redact`.
+    // ★★★ CORRECTED 2026-09-05: applying now ARMS the open document's next
+    // save (`Pass 250.2`), so `PendingRedaction` is below — and it, too, is
+    // reversible, which is why it is in this enum. See `actions::redact`.
     // =======================================================================
     /// **Mark every occurrence of some text for redaction.**
     ///
@@ -1414,11 +1414,11 @@ pub enum Action {
         /// The `/Redact` annotation to delete.
         annot_id: pdfcer_core::object::ObjId,
     },
-    /// ★★★ **Apply every redaction mark INTO the open document, writing
-    /// nothing** — `OPERATOR_REQUESTS.md` O125, 2026-09-04. **The whole
-    /// argument — no fields, irreversible, undo cleared — is on the apply arm**
-    /// in `app::actions::redact`, on this file's own R2 rule.
-    ApplyRedactionsIntoDocument,
+    /// ★★★ **Arm the removal of every redaction mark at the next save, or
+    /// disarm it** — O125, corrected 2026-09-05 for `Pass 250.2`. **The whole
+    /// argument — undo-preserving, why Cancel had to exist — is on the apply
+    /// arm** in `app::actions::redact`, on this file's own R2 rule.
+    PendingRedaction(crate::redact::Staging),
     /// **Select everything on the current page**, including anything that
     /// has been moved OFF it.
     ///

@@ -55,13 +55,34 @@
 //!
 //! - **Sentence case, no trailing period on labels; full sentences with
 //!   punctuation for prose.**
-//! - **Never state a capability the build does not have.** Two of the old
-//!   shell's Comments strings were deliberately **not** salvaged for exactly
-//!   this reason: `comment_row_delete` and its five deletion siblings. This
-//!   build's panel has no Delete, because `Action` carries no variant that
-//!   could delete an annotation and inventing one is not this panel's to do.
-//!   A "Delete" label in the catalog with no control behind it is the
-//!   half-built surface `crate::panels`' header is about, one file earlier.
+//! - **Never state a capability the build does not have.**
+//!
+//! ### ★★★ CORRECTED 2026-09-05 — the Delete paragraph had outlived its reason
+//!
+//! This section read, from 2026-08-14 until that date:
+//!
+//! > Two of the old shell's Comments strings were deliberately **not**
+//! > salvaged for exactly this reason: `comment_row_delete` and its five
+//! > deletion siblings. This build's panel has no Delete, because `Action`
+//! > carries no variant that could delete an annotation and inventing one is
+//! > not this panel's to do.
+//!
+//! **The stated reason stopped being true.** `AnnotAction::Delete { page, id }`
+//! exists, `crate::app::actions::annots::delete` calls
+//! `EditSession::delete_annotation` through it, and the canvas Delete key and
+//! the Format tab have both been using it — while this panel, the reviewer's
+//! own work list, was the one surface that could not. The operator's report of
+//! 2026-09-05 (*"the review features should look and act the same as they do
+//! in Acrobat Reader"*) is what sent somebody to check, and a reviewer
+//! deleting their own comment is the plainest thing on that list.
+//!
+//! ⇒ [`comment_row_delete`] and [`comment_row_delete_tooltip`] are below.
+//! **Corrected in place and dated rather than left standing beside the
+//! truth**, which is R5 — and this is the sixth time in this project a
+//! limitation sentence has outlived its reason. *A sentence about what the
+//! build cannot do is a dated citation with a shelf life measured in hours.*
+//! Where the claim can be an assertion, it should be one; the assertion here
+//! is `crate::panels::comments::tests::the_delete_control_reaches_the_engine`.
 
 /// The count line, above the list.
 ///
@@ -551,6 +572,134 @@ pub fn comment_row_note_no_handle() -> &'static str {
 #[must_use]
 pub fn comment_row_selected_heading(heading: &str) -> String {
     format!("> {heading} — selected on the page")
+}
+
+// ---------------------------------------------------------------------------
+// The filter strip, and Delete — added 2026-09-05
+// ---------------------------------------------------------------------------
+
+/// ★★★ **The disclosure a filtered list owes**, above the rows.
+///
+/// This panel's founding discipline is that *"nothing is silently omitted"* —
+/// [`comments_excluded`] already states the arithmetic for widgets, pop-ups
+/// and `/TrapNet`. A filter is a fourth kind of omission and the only one the
+/// operator caused, which makes it **more** important to state rather than
+/// less: an exclusion is a property of the document a reviewer can learn once,
+/// while a filter is a switch they set an hour ago and have since forgotten.
+///
+/// A reviewer who reads six rows off a drawing they know carries forty and
+/// concludes the other thirty-four are gone has been misled by this surface.
+#[must_use]
+pub fn comments_filtered(shown: usize, total: usize) -> String {
+    format!("Showing {shown} of {total}. A filter is hiding the rest.")
+}
+
+/// The control that puts every row back.
+///
+/// One press rather than three menus reset one at a time, because the state a
+/// reviewer wants back is *"all of them"* and reaching it by undoing each
+/// choice is three chances to leave one set.
+#[must_use]
+pub fn comment_filter_clear() -> &'static str {
+    "Show all"
+}
+
+/// The author chooser's label.
+///
+/// *Author*, not *Reviewer*: `/T` is §12.5.6.4 Table 170's *"name of the
+/// person who created the annotation"*, and this panel lists `/Link`s and
+/// stamps as readily as review comments. Calling the column Reviewer would
+/// name a role the file does not record.
+#[must_use]
+pub fn comment_filter_author() -> &'static str {
+    "Author"
+}
+
+/// The type chooser's label. *Type* rather than *Subtype*, because the values
+/// under it are the file's own spellings and the operator does not need the
+/// dictionary key's name to use them.
+#[must_use]
+pub fn comment_filter_type() -> &'static str {
+    "Type"
+}
+
+/// The "no filter" entry in either chooser.
+#[must_use]
+pub fn comment_filter_all() -> &'static str {
+    "All"
+}
+
+/// The switch that hides rows carrying no note text.
+///
+/// ★ It exists because of a property of pdfcer rather than of PDF:
+/// `MarkupSpec` has no contents field on any variant, so **every shape this
+/// program draws arrives with no `/Contents`**. On a drawing marked up here
+/// the list is mostly rows with nothing to read, and this is the switch that
+/// leaves the remarks somebody actually wrote.
+#[must_use]
+pub fn comment_filter_with_note() -> &'static str {
+    "With text only"
+}
+
+/// The ordering chooser's label.
+#[must_use]
+pub fn comment_sort_label() -> &'static str {
+    "Order"
+}
+
+/// The default ordering — page order, then `/Annots` order.
+///
+/// Named *By page* rather than *Document order*, because the operator's
+/// question is *"where is it"* and the sheet number is the answer they act on.
+#[must_use]
+pub fn comment_sort_document() -> &'static str {
+    "By page"
+}
+
+/// Ordering by `/T`.
+#[must_use]
+pub fn comment_sort_author() -> &'static str {
+    "By author"
+}
+
+/// Ordering by `/Subtype`.
+#[must_use]
+pub fn comment_sort_subtype() -> &'static str {
+    "By type"
+}
+
+/// ★★★ **Delete this comment** — the control this panel spent its whole life
+/// without.
+///
+/// # The header that forbade this string was true and stopped being true
+///
+/// `crate::panels::comments`' header said, until 2026-09-05: *"This build has
+/// no Delete, because `crate::app::actions::Action` has no variant that could
+/// carry the intent."* That was correct when written. `AnnotAction::Delete`
+/// has existed since; the canvas Delete key and the Format tab have both been
+/// reaching `EditSession::delete_annotation` through it, and only this panel —
+/// **the reviewer's own work list** — could not. A reviewer deletes their own
+/// comment, and Acrobat has it.
+///
+/// ⇒ The sixth time this project has found a *"we cannot do this"* sentence
+/// outliving its reason. Corrected in place and dated, in that module's header
+/// and in this one's, rather than left as two answers.
+#[must_use]
+pub fn comment_row_delete() -> &'static str {
+    "Delete comment"
+}
+
+/// Its tooltip, carrying the three things `docs/core-api/03-capabilities.md`
+/// §3.4 requires a delete to disclose.
+///
+/// What goes, that **delete is not redaction**, and — implied by the second —
+/// that the words may still be in the file. The collateral (a pop-up removed,
+/// replies orphaned, group members promoted) is reported *after* the call by
+/// [`crate::text::markup::deleted_collateral`], because only the engine knows
+/// what it actually took.
+#[must_use]
+pub fn comment_row_delete_tooltip() -> &'static str {
+    "Remove this markup and its note from the page. This is not redaction: saving without rewriting the whole file leaves the previous revision in place."
 }
 
 #[cfg(test)]

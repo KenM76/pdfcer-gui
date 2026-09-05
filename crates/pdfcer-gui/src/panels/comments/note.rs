@@ -156,6 +156,23 @@ impl NoteDraft {
 pub struct CommentsUi {
     /// The note being typed. See [`NoteDraft`].
     pub draft: NoteDraft,
+    /// ★ **What the reviewer has narrowed the list to**, and how it is
+    /// ordered. Added 2026-09-05; see [`super::filter`].
+    ///
+    /// Deliberately **not** stamped with the edit epoch, unlike [`NoteDraft`],
+    /// and for [`Self::scrolled_to`]'s reason: a draft holds *words that would
+    /// be written into the document*, so a document that moved under it is
+    /// invalidated. This holds only *which rows the operator asked to see*,
+    /// which an edit cannot make wrong — and resetting it on every keystroke
+    /// in a note would throw away the narrowing that made the note findable.
+    ///
+    /// ★★ It survives the panel being closed and reopened, which is correct: a
+    /// reviewer who filtered to their own comments, went to look at the page
+    /// and came back is still doing the same job. What keeps that honest is
+    /// that the filtered list **says so** on every frame — see
+    /// [`crate::text::panels::comments::comments_filtered`] — so a filter
+    /// nobody remembers setting can never be a filter nobody can see.
+    pub filter: super::filter::Filter,
     /// ★★★ **The annotation this panel last scrolled to**, so it scrolls once
     /// per selection *change* rather than once per frame.
     ///

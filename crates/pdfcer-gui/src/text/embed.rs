@@ -5,18 +5,31 @@
 //!
 //! ## ★★★ This window exists to be READ, not to be filled in
 //!
-//! It has no settings. `embed_fonts` takes a request the shell has already
-//! resolved, and the operator's only decision is *yes* or *no* — so every word
-//! here is a **report of what would happen**, and the window is a confirmation
-//! rather than a form.
+//! ⚠ **Corrected 2026-09-05.** This paragraph read *"It has no settings … there
+//! is no useful way to make it configurable either"*, and that sentence was
+//! used in `OPERATOR_REQUESTS.md` **O47** as the reason not to let the operator
+//! decide whether pdfcer's own standard-14 faces may stand in for his. The
+//! window now has exactly one control, and the reasoning that kept it out was
+//! wrong rather than merely outdated — `dialogs::embed`'s header carries the
+//! whole account.
+//!
+//! What survives, and still governs every string in this file: `embed_fonts`
+//! takes a request the shell has already resolved, so almost every word here is
+//! a **report of what would happen** rather than a field to fill in, and the
+//! window is a confirmation rather than a form. The one control is a *consent*,
+//! not a configuration: it changes what the report says, and the report is
+//! still what the operator is reading.
 //!
 //! That shape is chosen because of what an embed is: it puts font **programs**
 //! into a document permanently, changes its size, and can invalidate a PDF/A
-//! claim. There is no honest way to offer that as a one-click ribbon verb, and
-//! there is no useful way to make it configurable either — the configuration is
-//! *which folders*, and that lives in Settings.
+//! claim. There is no honest way to offer that as a one-click ribbon verb.
 //!
 //! ## ★★ The three things it must say, in this order
+//!
+//! ★ Since 2026-09-05 there is a **fourth**, and it comes between 2 and the
+//! buttons: [`own_fonts_offer`], [`own_fonts_consequence`] and
+//! [`own_fonts_checkbox`] — the fonts pdfcer could stand in for, **by name**,
+//! what standing in costs, and the box. See their own docs.
 //!
 //! **1. What will be embedded**, because that is the operator's answer.
 //!
@@ -128,7 +141,7 @@ pub fn cannot_embed(count: usize) -> String {
 /// inventing a reason — the same posture `TextColor::Other` takes. A build
 /// meeting a blocker it cannot name should say so, not guess.
 #[must_use]
-pub fn blocked_row(face: &str, blocker: &EmbedBlocker) -> String {
+pub fn blocked_row(face: &str, blocker: &EmbedBlocker, pdfcer_has_a_copy: bool) -> String {
     let why = match blocker {
         EmbedBlocker::AlreadyEmbedded => "it is already embedded".to_owned(),
         EmbedBlocker::ProgramDeclaredButUnreadable => {
@@ -145,6 +158,27 @@ pub fn blocked_row(face: &str, blocker: &EmbedBlocker) -> String {
         // ⇒ A refusal's wording is a claim about what would fix it, and the
         // things that fix it change under it. This one had been true for
         // exactly one day.
+        //
+        // ★★★ AND IT CHANGED AGAIN ON 2026-09-05, in the direction that makes
+        // it false rather than merely stale.
+        //
+        // Until today pdfcer's own fourteen faces answered unconditionally, so
+        // a font pdfcer carries could never reach this row and the clause *"and
+        // it is not one of the fourteen pdfcer carries itself"* was true of
+        // everything that did. Now that the operator can decline them (O47,
+        // built as the disclosed opt-in), a declined standard-14 face lands
+        // here — and that clause would tell him pdfcer has no copy of a font
+        // pdfcer is holding in its hand.
+        //
+        // So the row is told, and the two sentences are genuinely different
+        // claims about the same document rather than one sentence with a
+        // detail swapped.
+        EmbedBlocker::NoSourceFont if pdfcer_has_a_copy => {
+            "none of your fonts matched it, and pdfcer has its own copy of this one. Tick the \
+             box below to use it — the letters will look different — or add the folder that \
+             has the real font"
+                .to_owned()
+        }
         EmbedBlocker::NoSourceFont => {
             "pdfcer has nowhere to take it from, and it is not one of the fourteen pdfcer \
              carries itself. Under Settings, switch on the fonts installed on this computer, \
@@ -178,6 +212,76 @@ pub fn blocked_row(face: &str, blocker: &EmbedBlocker) -> String {
 
 /// The heading over names that matched nothing at all.
 ///
+/// **The offer: which fonts pdfcer could stand in for, by name.**
+///
+/// # ★★★ A LIST, NEVER A COUNT
+///
+/// *"3 fonts would be substituted"* is a number an operator cannot act on.
+/// *"Helvetica, Helvetica-Bold, Times-Roman"* is a sentence he can read and
+/// answer — *"those are the title block, so no"*, or *"those are notes nobody
+/// reads, so yes"*. The whole reason this control is safe to offer is that the
+/// consequence is stated **before** the press, and a count does not state it.
+///
+/// ★ The document's own spelling, subset tag and all, because that is the
+/// string he saw in the Fonts panel and in whatever told him a font was
+/// missing. Translating it to a tidier family name here would make the window
+/// and the panel disagree about what the document contains.
+#[must_use]
+pub fn own_fonts_offer(faces: &[String]) -> String {
+    format!(
+        "pdfcer carries its own copy of {}: {}.",
+        if faces.len() == 1 {
+            "one font this document is missing".to_owned()
+        } else {
+            format!("{} of the fonts this document is missing", faces.len())
+        },
+        faces.join(", ")
+    )
+}
+
+/// **What using them costs, in his terms** — the two things the list does not
+/// say.
+///
+/// ★★ Both sentences are consequences he cannot see by looking at the drawing,
+/// which is exactly the class rule 4 says an inference owes a report for.
+///
+/// 1. **The letters change on somebody else's screen.** It is his drawing and
+///    his client's monitor, and a stand-in is a different face however good the
+///    metrics match — the page does not reflow, and every letterform differs.
+/// 2. ★★★ **It is a licence he takes on, not just a look he accepts.** pdfcer's
+///    fourteen substitutes are BSD-3-Clause (`THIRD_PARTY_LICENSES.md`,
+///    *"Bundled Foxit substitute faces"*), and embedding one puts it inside a
+///    file he then sends out, carrying that licence's attribution condition
+///    with it. `pdfcer`'s own command line states this as the reason its
+///    equivalent switch is off by default: *"That is your decision to make, so
+///    pdfcer does not make it for you."*
+///
+/// ⇒ The second is why this is a decision rather than a default. Written in
+/// plain words, because "BSD-3-Clause attribution condition" is not a sentence
+/// that helps anybody decide anything.
+#[must_use]
+pub const fn own_fonts_consequence() -> &'static str {
+    "Those letters will look different on the screen of whoever you send this to. pdfcer's \
+     copies also come with a licence that asks to be credited wherever the file goes, which \
+     is why this is your choice and not something pdfcer does on its own."
+}
+
+/// The checkbox itself.
+///
+/// ★ Phrased as what it does, not as what it is. *"Use pdfcer's own copies"*
+/// answers *"what will happen if I tick this"*; a label like *"Bundled fonts"*
+/// names an implementation detail and makes the operator work out the rest.
+///
+/// ★★ *"where none of yours match"* is in the label rather than only in the
+/// prose above, because that clause is what makes the control safe: it is the
+/// **last** rung, so ticking it can never displace a real font he owns. A label
+/// without it reads as *"use substitutes instead of my fonts"*, which is not
+/// what it does and is a reason to refuse it.
+#[must_use]
+pub const fn own_fonts_checkbox() -> &'static str {
+    "Use pdfcer's own copies where none of yours match"
+}
+
 /// ★ Distinct from a blocked font: an unmatched name is one the *request* named
 /// and the document does not have, which is an operator's typo or a stale list
 /// rather than anything about the file.
@@ -384,14 +488,101 @@ mod tests {
             EmbedBlocker::ProgramUnrecognised,
             EmbedBlocker::ProgramIsCollection,
         ] {
-            let line = blocked_row("ArialMT", &blocker);
-            assert!(line.starts_with("ArialMT — "), "names the face: {line}");
-            assert!(line.len() > 20, "says something: {line}");
+            // ★ BOTH positions of the new flag, in the same loop. A sweep run
+            // only at `false` would have left the `pdfcer_has_a_copy` arm —
+            // which is the arm a declined standard-14 font actually lands on —
+            // untested by the completeness check written to make sure no
+            // blocker reads as a dead end.
+            for pdfcer_has_a_copy in [false, true] {
+                let line = blocked_row("ArialMT", &blocker, pdfcer_has_a_copy);
+                assert!(line.starts_with("ArialMT — "), "names the face: {line}");
+                assert!(line.len() > 20, "says something: {line}");
+                assert!(
+                    !line.contains("Blocker") && !line.contains("::"),
+                    "leaks a type name at the operator: {line}"
+                );
+            }
+        }
+    }
+
+    /// **A standard-14 font pdfcer carries is told so, and one it does not is
+    /// not** — the two halves of the same row, asserted together.
+    ///
+    /// ★★★ This is the assertion that catches the wording defect the switch
+    /// created. Before 2026-09-05 pdfcer's own faces answered
+    /// unconditionally, so a font pdfcer carries could never be reported as
+    /// *"pdfcer has nowhere to take it from"*; with the box unticked it can be,
+    /// and the old sentence would have told the operator pdfcer has no copy of
+    /// a font it is holding.
+    ///
+    /// ★ The two are asserted **against each other** rather than against
+    /// literal strings. A test pinning the exact sentence would fail every time
+    /// somebody improved the wording, which trains people to update the
+    /// expected string without reading it. What must never happen is the two
+    /// cases producing the same sentence, and that is what is checked.
+    #[test]
+    fn a_font_pdfcer_carries_is_offered_its_own_copy_and_one_it_does_not_is_not() {
+        let ours = blocked_row("Helvetica", &EmbedBlocker::NoSourceFont, true);
+        let theirs = blocked_row("Helvetica", &EmbedBlocker::NoSourceFont, false);
+        assert_ne!(
+            ours, theirs,
+            "a font pdfcer carries a copy of and one it does not must not get the same remedy; \
+             the whole point of the flag is that the cheap fix exists for one and not the other"
+        );
+        assert!(
+            ours.contains("box"),
+            "the row for a font pdfcer carries must name the checkbox as the remedy, because it \
+             is one click against a folder picker: {ours}"
+        );
+        assert!(
+            !theirs.contains("box"),
+            "the row for a font pdfcer does NOT carry must not offer a box that cannot help it — \
+             that is a press that always fails: {theirs}"
+        );
+    }
+
+    /// **The offer names the fonts**, and does not merely count them.
+    ///
+    /// ★★ The property is that every face in the list appears in the sentence.
+    /// A count is what a hurried implementation produces and it is exactly what
+    /// makes the disclosure useless: an operator cannot decide whether he minds
+    /// a substitution without knowing which font is being substituted.
+    #[test]
+    fn the_offer_names_every_font_it_would_stand_in_for() {
+        let faces = vec![
+            "Helvetica".to_owned(),
+            "Helvetica-Bold".to_owned(),
+            "Times-Roman".to_owned(),
+        ];
+        let line = own_fonts_offer(&faces);
+        for face in &faces {
             assert!(
-                !line.contains("Blocker") && !line.contains("::"),
-                "leaks a type name at the operator: {line}"
+                line.contains(face.as_str()),
+                "the offer must name {face}, and it said: {line}"
             );
         }
+    }
+
+    /// **The consequence states BOTH costs**, and the licence is the one that
+    /// gets forgotten.
+    ///
+    /// The letterform change is obvious enough that anybody writing this
+    /// sentence would include it. The licence condition is the reason
+    /// `pdfcer`'s own CLI keeps the equivalent switch off by default, it is the
+    /// half that binds the operator rather than his reader, and it is the half
+    /// a later edit tightening the wording would drop first.
+    #[test]
+    fn the_consequence_states_the_look_and_the_licence() {
+        let line = own_fonts_consequence();
+        assert!(
+            line.contains("look different"),
+            "the letters change on the recipient's screen, and it must say so: {line}"
+        );
+        assert!(
+            line.contains("licence"),
+            "embedding pdfcer's own face carries its licence into a file the operator sends \
+             out, and that is the half that binds him rather than his reader: {line}"
+        );
     }
 
     /// **A document with no PDF/A claim gets no sentence about PDF/A.**

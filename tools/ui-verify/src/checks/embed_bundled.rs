@@ -1,12 +1,51 @@
 //! `embedding_works_with_no_font_folder_at_all` — **pdfcer's own fourteen faces
-//! answer when nothing of the operator's can.**
+//! answer when nothing of the operator's can, AND only when he asks.**
+//!
+//! # ⚠ THE 2026-09-05 REWRITE HAS NEVER BEEN RUN
+//!
+//! This check passed in its earlier form. It was rewritten on 2026-09-05 with
+//! the operator at his machine, so `ui-verify` could not be run and **the new
+//! assertions have not fired in either direction.** The original oracle is
+//! unchanged and is asserted here as the *ticked* position; what is new is the
+//! unticked position beside it. Treat a red from either as unverified.
 //!
 //! # What this is for
 //!
 //! `OPERATOR_REQUESTS.md` **O47** asked the operator whether pdfcer should embed
 //! the standard-14 faces it ships when none of their folders holds the font a
-//! document names. He answered *"yes"* on 2026-08-28. This is the check that
-//! keeps that answer working.
+//! document names.
+//!
+//! ## ★★★ The answer changed shape on 2026-09-05, and so did this check
+//!
+//! The 2026-08-28 answer was *"always, disclosed loudly"* — no control, the
+//! bundled rung simply on. It is now **the disclosed opt-in**: a checkbox in
+//! the Embed window, **off** when the window opens, with the fonts it would
+//! stand in for named beside it. The deciding reason is not the letterforms,
+//! which were always disclosed; it is that pdfcer's fourteen faces are
+//! BSD-3-Clause and embedding one puts that licence inside a file the operator
+//! then distributes. `pdfcer`'s own CLI keeps `--use-bundled-fonts` off for
+//! exactly that, in those words.
+//!
+//! ## ★★★ WHY THIS CHECK NOW DRIVES BOTH POSITIONS
+//!
+//! > *A check that the switch is off by default passes on a build that ignores
+//! > the switch entirely.*
+//!
+//! That is the shape this project keeps meeting, and it is why *"assert the box
+//! is unticked"* is not a check. Both positions are driven, in one run, in
+//! order:
+//!
+//! | position | asserted |
+//! |---|---|
+//! | as the window opens | `own_fonts_on=false`, and `own_fonts_offered` is **greater than zero** — the offer was made and declined |
+//! | after ticking the box | the commit reaches the engine with `substituted=true` |
+//!
+//! The first half alone passes on a build that has lost the bundled faces
+//! altogether (nothing to offer, nothing offered, box off — all true). The
+//! second half alone is the check as it stood before today, and passes on a
+//! build with no switch at all. Neither is worth anything without the other,
+//! and `own_fonts_offered=` exists on the trace line so that the first half can
+//! be made at all.
 //!
 //! ## ★★★ Why it is a SEPARATE check and not a parameter of the other one
 //!
@@ -113,6 +152,13 @@ const BUTTON: &str = "embed.commit";
 const OPENED: &str = "embed-fonts-opened";
 /// The line the apply arm writes when the engine has embedded.
 const APPLIED: &str = "embed-fonts-applied";
+/// The checkbox that offers pdfcer's own faces. Off when the window opens.
+const OWN_FONTS_BOX: &str = "embed.use-own-fonts";
+/// The line the checkbox writes when it is ticked or unticked.
+const OWN_FONTS_TOGGLED: &str = "embed-fonts-own-fonts";
+/// The line the window writes when the Embed button is pressed, carrying the
+/// position of the switch that chose the request.
+const REQUESTED: &str = "embed-fonts-requested";
 /// The line the dispatcher writes when there is nothing to open.
 ///
 /// ★★★ Since O47 this has exactly ONE meaning — *every font in this document
@@ -129,9 +175,10 @@ impl Check for EmbeddingWorksWithNoFontFolderAtAll {
     }
 
     fn defect(&self) -> &'static str {
-        "with no font folder configured, Embed fonts refuses everything — pdfcer ships the \
-         fourteen standard faces and cannot reach them, so an operator who has not set up a \
-         folder is told to go and find one for a font pdfcer is already carrying"
+        "with no font folder configured, Embed fonts either cannot reach pdfcer's own fourteen \
+         standard faces at all — telling an operator to go and find a font pdfcer is already \
+         carrying — or reaches them WITHOUT being asked, putting a substitute face and its \
+         licence into a document he sends out on a press he thought was a no-op"
     }
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
@@ -219,21 +266,83 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     };
-    if opened.get("targets") == Some("0") {
+    // ── POSITION 1: the offer was made, and it was DECLINED ───────────────────
+    //
+    // ★★★ `targets=0` HERE IS CORRECT SINCE 2026-09-05, and reading it as the
+    // defect is the mistake this rewrite exists to avoid. With no folder
+    // configured and the box unticked, the operator's own fonts answer for
+    // nothing, so nothing will be embedded — which is the whole of the new
+    // default and is exactly what he should see before he decides.
+    //
+    // What replaces that oracle is `own_fonts_offered`: the number of fonts
+    // pdfcer holds a copy of and is OFFERING. Zero there is the bundled rung
+    // being unreachable, which is the original defect, still asserted.
+    if opened.get("own_fonts_on") != Some("false") {
         return Ok(Some(format!(
-            "★★★ THE WINDOW OPENED WITH NOTHING TO EMBED: `{}`.\n\
-             With no folder configured, `targets` counts exactly what pdfcer can supply from its \
-             OWN faces — so zero is the bundled rung not firing. Read `supplied=`: zero means \
-             `Library::donor_for` answered nothing for a standard-14 name, which is \
-             `allow_bundled` not reaching `resolve_for_embedding`. Trace: {}.",
+            "★★★ THE WINDOW OPENED WITH PDFCER'S OWN FACES ALREADY IN THE PLAN: `{}`.\n\
+             The switch must be OFF when the window opens. Embedding one of pdfcer's fourteen \
+             substitutes changes what the letters look like on the screen of whoever the \
+             document is sent to, and carries a BSD-3-Clause attribution condition into a file \
+             the operator distributes — `pdfcer`'s own CLI keeps `--use-bundled-fonts` off for \
+             precisely that, and calls it the operator's decision to make. A press of Embed with \
+             nothing ticked must not make it for him. See `EmbedDialog::open`. Trace: {}.",
+            opened.raw,
+            session.trace_path().display()
+        )));
+    }
+    let offered: usize = opened
+        .get("own_fonts_offered")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(0);
+    if offered == 0 {
+        return Ok(Some(format!(
+            "★★★ THE WINDOW OFFERED NONE OF PDFCER'S OWN FACES: `{}`.\n\
+             With no folder configured, `own_fonts_offered` counts exactly what pdfcer can \
+             supply from its OWN faces for the standard-14 names this document is missing — so \
+             zero is the bundled rung not firing. `Library::donor_for` answered nothing for a \
+             standard-14 name, which is `allow_bundled` not reaching `resolve_for_embedding`, \
+             and the operator is being told to go and find a font pdfcer is holding. \
+             ★ If it is zero because the box is drawn but the trace field was never added, that \
+             is `EmbedDialog::open`'s trace line, not the resolver. Trace: {}.",
             opened.raw,
             session.trace_path().display()
         )));
     }
     report.note(format!(
-        "★★ the window found donors with no folder set: `{}`",
+        "★★ the window offered {offered} of pdfcer's own face(s) with no folder set, and \
+         defaulted to declining them: `{}`",
         opened.raw
     ));
+
+    // ── POSITION 2: tick the box ──────────────────────────────────
+    let Some(checkbox) = stable_rect(&session, ui_rect, OWN_FONTS_BOX, 8)? else {
+        return Ok(Some(format!(
+            "the window offered {offered} of pdfcer's own faces and drew NO CHECKBOX to accept \
+             them: no `{OWN_FONTS_BOX}` region. An offer the operator cannot accept is worse \
+             than no offer — it names a remedy and withholds it. Regions beginning `embed`: {}. \
+             Trace: {}.",
+            list(&declared_names(&trace, ui_rect, "embed")),
+            session.trace_path().display()
+        )));
+    };
+    let trace = session.trace()?;
+    let frame = frame_of(&session, &trace, ui_rect, OWN_FONTS_BOX)?;
+    driver.click_at(frame.declared_center(checkbox))?;
+    session.settle(60);
+    let trace = session.trace()?;
+    if trace
+        .events(OWN_FONTS_TOGGLED)
+        .filter(|line| line.get("on") == Some("true"))
+        .last()
+        .is_none()
+    {
+        return Ok(Some(format!(
+            "the checkbox was clicked and did not change: no `{OWN_FONTS_TOGGLED} on=true` line. \
+             Its rect was declared and aimed at, so this is the click not reaching it. Trace: {}.",
+            session.trace_path().display()
+        )));
+    }
+    report.note("★ the operator ticked the box — pdfcer's own faces are now in the plan");
 
     let Some(button) = stable_rect(&session, ui_rect, BUTTON, 8)? else {
         return Ok(Some(format!(
@@ -247,6 +356,33 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     session.settle(60);
 
     let trace = session.trace()?;
+    match trace.events(REQUESTED).last() {
+        Some(line) if line.get("own_fonts_on") == Some("true") => {
+            report.note(format!(
+                "★ the request sent was the one the box chose: `{}`",
+                line.raw
+            ));
+        }
+        Some(line) => {
+            return Ok(Some(format!(
+                "★★★ THE BOX WAS TICKED AND THE OTHER REQUEST WAS SENT: `{}`.\n\
+                 `EmbedDialog::active` picks the plan the window is showing AND the request the \
+                 button commits, so that the two cannot be chosen by different code. \
+                 `own_fonts_on=false` here means the switch changes what is drawn and not what \
+                 is done — a window showing one thing and doing another, which is the exact \
+                 property `embed_preview` was designed to give this dialog for free. Trace: {}.",
+                line.raw,
+                session.trace_path().display()
+            )));
+        }
+        None => {
+            return Ok(Some(format!(
+                "the Embed button was clicked and the window recorded no request: no \
+                 `{REQUESTED}` line. Trace: {}.",
+                session.trace_path().display()
+            )));
+        }
+    }
     let Some(applied) = trace.events(APPLIED).last() else {
         return Ok(Some(format!(
             "the Embed button was clicked and nothing reached the document: no `{APPLIED}` \

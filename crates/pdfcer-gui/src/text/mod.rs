@@ -80,6 +80,12 @@ pub mod acrobat;
 /// Every word the About dialog shows, plus the structured attribution catalog
 /// naming the third-party material this binary redistributes. Consumed by
 /// `crate::dialogs::about`.
+/// ★★★ **Reading a comment where the comment is** — every word the canvas
+/// note pop-up and its hover tooltip show. Consumed by
+/// `crate::canvas::notepopup`, which is the only route to a note's `/Contents`
+/// that works in Read mode. Its header carries the two capabilities that are
+/// deliberately WORDLESS here, under R9, because the engine cannot reach them.
+pub mod annotpopup;
 /// The attachment clipboard's words, including the one question a paste must
 /// ask before the press: the engine REPLACES a same-named attachment.
 pub mod attachclip;
@@ -368,6 +374,15 @@ pub mod tool;
 /// SENTENCE in [`tool`], its verb in [`tool::put_down_button`] — and its
 /// header tabulates which is which and why none of them was copied.
 pub mod toolstatus;
+/// ★★★ Whether a signature's signer can be trusted — and the four different
+/// sentences for the four ways trust can go unchecked.
+///
+/// Kept apart from [`signature`], which is about a save that would INVALIDATE a
+/// signature, because the two answer opposite questions and share only a noun.
+/// Its header carries the four rules that govern it, and the one worth reading
+/// first is that `NotChecked` renders as itself: never as a soft "no", never as
+/// a grey tick, never omitted.
+pub mod trust;
 /// The words of the question `file.close` had been promising to ask since it
 /// shipped, and did not.
 ///

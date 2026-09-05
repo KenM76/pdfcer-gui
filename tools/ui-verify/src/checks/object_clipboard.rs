@@ -58,9 +58,17 @@ use crate::sys::vk;
 
 /// The mode whose canvas may select and edit content.
 const MODE: &str = "edit";
-/// `clipboard-copy kind=content page=… objects=… bytes=…`.
+/// `clipboard-copy kind=selection page=… objects=… annots=… thin=… bytes=…`.
+///
+/// ★ The `kind=` was `content` until 2026-09-05, when the canvas clipboard's
+/// content variant became a general `ObjectClip` carrier that also holds
+/// annotations and `Clipped::Content` was renamed `Clipped::Selection`. Updated
+/// here in the same change: a driven check filtering on a token the program no
+/// longer prints is a **permanent false red** that reads as a real defect, and
+/// this suite has already paid for that shape twice (`RESUME.md` — the
+/// `PDFCER_LEGACY` profile's four swept names).
 const COPY_EVENT: &str = "clipboard-copy";
-/// `clipboard-paste kind=content page=… from=… objects=… offset=…`.
+/// `clipboard-paste kind=selection page=… from=… objects=… offset=…`.
 const PASTE_EVENT: &str = "clipboard-paste";
 /// `paste-objects page=… pasted=… resources_added=… at=[…]`.
 const APPLIED_EVENT: &str = "paste-objects-applied";
@@ -200,7 +208,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let trace = session.trace()?;
     let copy = trace
         .events(COPY_EVENT)
-        .filter(|l| l.get("kind") == Some("content"))
+        .filter(|l| l.get("kind") == Some("selection"))
         .last();
     let Some(copy) = copy else {
         // ★ Ask what else happened before accusing — the rule three separate
@@ -214,7 +222,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              This is the operator's oldest open request: until 2026-08-20 the shell refused it \
              by name in `canvas::clipboard::copy`, whose `ContentNotAnnotation` arm said pdfcer \
              could not put page content back. `Pass 120.0` made that false. If no \
-             `{COPY_EVENT} kind=content` line appears, either that refusal is back or \
+             `{COPY_EVENT} kind=selection` line appears, either that refusal is back or \
              `copy_content` never ran. Trace: {}.",
             if markup {
                 " It copied a MARKUP instead, so the selection was an annotation rather than \
@@ -244,11 +252,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let trace = session.trace()?;
     let Some(paste) = trace
         .events(PASTE_EVENT)
-        .filter(|l| l.get("kind") == Some("content"))
+        .filter(|l| l.get("kind") == Some("selection"))
         .last()
     else {
         return Ok(Some(format!(
-            "the copy happened and CTRL+V RAISED NOTHING: no `{PASTE_EVENT} kind=content` line. \
+            "the copy happened and CTRL+V RAISED NOTHING: no `{PASTE_EVENT} kind=selection` line. \
              The clip is parked in `egui::Memory` by `clipboard::store` and read back by \
              `clipboard::read`; a paste that finds nothing there raises `NothingCopied` and puts \
              a sentence on the status row instead. Trace: {}.",

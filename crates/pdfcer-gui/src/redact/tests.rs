@@ -18,9 +18,10 @@
 //! is not, and that is worth stating rather than leaving to be noticed:
 //! `redact::sealed` sweeps **every** `.rs` file in the crate, this one
 //! included, and nothing here calls the engine's removal directly. Every test
-//! below goes through [`super::prepare_redaction_apply`] or
-//! [`super::apply_into_session`], which is exactly the property the monopoly
-//! exists to keep true of test code as well as of production code.
+//! below goes through [`super::prepare_redaction_apply`],
+//! [`super::stage_into_session`], [`super::save_applying_pending`] or
+//! [`super::cancel_staged_redaction`], which is exactly the property the
+//! monopoly exists to keep true of test code as well as of production code.
 
 // ★ The INNER `#![cfg(test)]` is redundant — the module is declared
 // `#[cfg(test)] mod tests;` — and it is here anyway, because
@@ -648,167 +649,462 @@ fn the_debug_impl_reports_a_length_rather_than_the_bytes() {
 }
 
 // ===========================================================================
-// ★★★ THE DEFERRED ROUTE — `apply_into_session`, 2026-09-04
+// ★★★ THE DEFERRED ROUTE — `stage_into_session`, `save_applying_pending`,
+// 2026-09-05, `pdfcer-core` `Pass 250.2`
 //
-// `Pass 250.1` shipped `EditSession::apply_redactions`, which applies a
-// redaction INTO the open session and leaves the write to the ordinary save
-// verbs. Everything below exists because that verb declines to do the one
-// thing this shell's engine request asked for by name — refuse an incremental
-// save — and offers a different guarantee instead: that after the collapse
-// there is no un-redacted base left for any save mode to leak.
+// This section REPLACES the one that measured `apply_into_session`'s collapse
+// (`Pass 250.1`), and the replacement is not a rename: the property under test
+// is the opposite one.
 //
-// ★★ A guarantee stated in a doc comment is a claim about somebody else's
-// code. These tests are the measurement. Each one is written so that the
-// failure it is looking for makes it fail LOUDLY rather than making it vacuous
-// — every assertion of absence is paired with a positive control that would
-// catch a build which simply emptied the document.
+//   * The collapse's safety claim was that an incremental save of a redacted
+//     session is CLEAN, because there was no un-redacted base left. Those tests
+//     performed the save and searched the result.
+//   * The staging's safety claim is that an ordinary save is REFUSED BY NAME,
+//     because the un-redacted content is still live in the session. These tests
+//     perform the same save and assert it does not happen.
+//
+// ★★ Both are the same discipline: a guarantee stated in a doc comment is a
+// claim about somebody else's code, and every one of these is the measurement.
+// Each is written so the failure it is looking for makes it fail LOUDLY rather
+// than vacuously — every assertion of absence is paired with a positive control
+// that would catch a build which simply emptied the document.
+//
+// ★★★ And the leak surface is LARGER than the collapse's, which is why there
+// are more of them. Under the collapse the un-redacted document was dropped the
+// moment the operator confirmed; under staging it is still in memory, still in
+// the file on disk, and still reachable by every verb that serialises a
+// session. What stands between it and a file is one engine flag and this
+// shell's routing.
 // ===========================================================================
 
-/// ★★★ **THE HEADLINE: an incremental save of a redacted session cannot leak
-/// the removed text.**
+/// A session with one unsaved mark over the secret, already STAGED.
 ///
-/// This is `request_apply_redactions_into_the_session.md` §4.1, the property
-/// the request marked ★★★ and asked the engine to enforce by refusal. The
-/// engine refused to refuse, on the argument that the hazard is gone at the
-/// root. This test is why that argument is believed.
+/// The state an operator is in between pressing the confirm control and
+/// pressing Save, and the state every test below starts from.
+fn staged_session() -> EditSession {
+    let mut session = session_with_unsaved_mark();
+    let staged = stage_into_session(&mut session).expect("the fixture must stage");
+    assert!(staged.report.marks_applied >= 1);
+    assert!(
+        session.has_pending_redaction(),
+        "the engine must say the removal is armed, or nothing below is a test"
+    );
+    session
+}
+
+/// ★★★ **THE HEADLINE: while a removal is staged, BOTH ordinary save modes are
+/// refused BY NAME.**
 ///
-/// Three states are measured, in the order an operator reaches them:
+/// This is `request_apply_redactions_into_the_session.md` §4.1 — the property
+/// the request marked ★★★ and asked the engine to enforce by refusal. `Pass
+/// 250.1` declined to refuse, on the argument that its collapse removed the
+/// hazard at the root. `Pass 250.2` cannot make that argument, because it
+/// preserves the un-redacted session on purpose, so it ships the refusal — and
+/// this test is why that refusal is believed rather than quoted.
 ///
-/// 1. **Straight after the apply.** `to_incremental_bytes` must contain none of
-///    the removed text, and — the sharper assertion — the output must carry no
-///    `/Prev` at all, because the collapsed session's dirty set is empty and
-///    there is nothing to append.
-/// 2. **After a further ordinary edit.** Now there IS an appended revision and
-///    a `/Prev`, which is exactly the shape the request feared. The revision it
-///    points back to is the **redacted** base, so the removed text is still
-///    absent from the whole file — and the later edit really is in it.
-/// 3. **The positive control.** `KEEPTHIS`, never marked, survives all of it.
-///    Without this a build that emitted an empty page would pass every absence
-///    assertion above.
+/// ★ **The leak is measured as well as the refusal.** It would be possible for
+/// the engine to refuse `to_incremental_bytes` and not `to_full_bytes`, or to
+/// refuse both and for this shell to be reaching for some third serialiser, so
+/// the test does not stop at the error type: it asserts that **no bytes came
+/// back at all** from either mode, which is the only form of "cannot leak"
+/// that does not depend on reading the engine's source.
+///
+/// ★ The positive control is the fixture itself: the same session's staged save
+/// path DOES produce bytes, in `the_staged_save_removes_the_text_and_leaves_no_prior_revision`
+/// below. Without that, this test would pass on a build in which the session
+/// could not be serialised by any means whatsoever.
+#[test]
+fn both_ordinary_save_modes_are_refused_by_name_while_staged() {
+    use pdfcer_core::writer::WriteError;
+
+    let session = staged_session();
+
+    let incremental = session
+        .to_incremental_bytes(&SaveOptions::default())
+        .expect_err(
+            "★★★ an INCREMENTAL save of a staged session must be refused. The \
+             un-redacted content is still live in this session and an \
+             incremental save would append a delta over it — which is the exact \
+             /Prev leak R35 describes and the exact one our request asked to be \
+             made impossible.",
+        );
+    assert!(
+        matches!(incremental, WriteError::RedactionPending),
+        "★★ and refused BY NAME. A generic write failure would be \
+         indistinguishable from a broken document, and this shell's save path \
+         branches on the answer: {incremental}"
+    );
+
+    let full = session.to_full_bytes(&SaveOptions::default()).expect_err(
+        "★★ a FULL save of a staged session must be refused too. It would not \
+         leak — a full rewrite carries no prior revision — but it would emit \
+         the /Redact marks with the content still under them, which is an \
+         UNAPPLIED redaction in a file the operator believes is redacted.",
+    );
+    assert!(
+        matches!(full, WriteError::RedactionPending),
+        "the full mode must refuse by the same name: {full}"
+    );
+}
+
+/// ★★★ **The staged save removes the text, and leaves no prior revision to
+/// walk back to.**
+///
+/// The other half of the headline, and the positive control for it: the save
+/// that IS permitted while a removal is armed must actually produce bytes, must
+/// not contain the removed text, and must be a single revision.
+///
+/// The `/Prev` assertion is the sharp one. A staged save is a full rewrite by
+/// construction (`crate::redact::save_applying_pending`), so a `/Prev` in the
+/// trailer would mean the un-redacted document is reachable one `startxref` hop
+/// away in a file this shell has told the operator is redacted — R35's whole
+/// point.
 ///
 /// ★ The scan is over the **raw bytes** rather than over decoded streams, and
 /// on this fixture that is legitimate: the content stream is uncompressed and
 /// the font is Base-14, so there is no encoding under which the text could be
 /// present-but-unfindable, and no font program in which it could be
-/// present-but-innocent. `a_real_drawing_survives_the_deferred_route` is the
-/// one that answers the compressed, embedded-font case.
+/// present-but-innocent. `a_real_drawing_survives_the_staged_route` answers the
+/// compressed, embedded-font case.
 #[test]
-fn an_incremental_save_of_a_redacted_session_cannot_leak_the_removed_text() {
-    let mut session = session_with_unsaved_mark();
-    let applied = apply_into_session(&mut session).expect("the deferred apply must succeed");
-    assert!(applied.report.marks_applied >= 1);
+fn the_staged_save_removes_the_text_and_leaves_no_prior_revision() {
+    let session = staged_session();
+    let (bytes, report) = save_applying_pending(&session, &SaveOptions::default())
+        .expect("the staged save is the one save that must work");
+
     assert!(
-        applied.report.redacted_text.iter().any(|t| t == SECRET),
+        report.redacted_text.iter().any(|t| t == SECRET),
         "the engine must say it removed the secret, or this test is checking \
          the absence of a string nobody claimed to remove: {:?}",
-        applied.report.redacted_text
-    );
-
-    // -- 1. straight after the apply -------------------------------------
-    let (fresh, _) = session
-        .to_incremental_bytes(&SaveOptions::default())
-        .expect("an incremental save of a redacted session must be possible");
-    assert!(
-        !proof::contains(&fresh, SECRET.as_bytes()),
-        "★★★ the removed text survived an INCREMENTAL save of the redacted \
-         session. The engine's whole answer to our §4.1 was that the collapse \
-         leaves no un-redacted base for a save mode to leak; if this fires, it \
-         does not, and the deferred route must not ship."
+        report.redacted_text
     );
     assert!(
-        Document::from_bytes(fresh.clone())
-            .expect("the incremental output must re-parse")
+        !proof::contains(&bytes, SECRET.as_bytes()),
+        "★★★ the removed text survived in the bytes the operator is about to \
+         receive"
+    );
+    assert_eq!(
+        proof::survivors_in_content_streams(&bytes, &[SECRET.to_owned()]),
+        None,
+        "…and it survived in a decoded stream of them"
+    );
+    assert!(
+        proof::contains(&bytes, b"KEEPTHIS"),
+        "★ the positive control: un-marked text must survive, or this suite \
+         passes on a build that emptied the page"
+    );
+    assert!(
+        Document::from_bytes(bytes)
+            .expect("the staged save must re-parse")
             .trailer()
             .get(b"Prev")
             .is_none(),
-        "immediately after the collapse the dirty set is empty, so there is \
-         nothing to append and no prior revision to point at"
+        "★★ a staged save is a full rewrite: a /Prev would put the \
+         un-redacted document one startxref hop away in a file pdfcer has \
+         called redacted"
     );
+}
+
+/// ★★★ **Staging preserves the undo log — the whole reason `Pass 250.2`
+/// exists.**
+///
+/// The route this replaced cleared the log outright, and the operator accepted
+/// that with a *"for now"* attached. This is the assertion that the *for now*
+/// is over, and it is deliberately three separate claims because a build that
+/// had silently reverted to the collapsing verb would fail a different one of
+/// them depending on how it reverted:
+///
+/// 1. **the depth is unchanged** — the log is not merely non-empty, it is the
+///    same size it was before the staging;
+/// 2. **an undo actually works** and takes the marks back off, which is the
+///    operator-visible form of the same claim;
+/// 3. **`has_applied_redaction()` is false** — this shell never collapses, and
+///    if that verb ever answers true here, something is calling the engine's
+///    other apply and `redact::sealed`'s count has been wrong.
+#[test]
+fn staging_preserves_the_undo_log() {
+    let mut session = session_with_unsaved_mark();
+    let before = session.undo_depth();
     assert!(
-        proof::contains(&fresh, b"KEEPTHIS"),
-        "positive control: un-marked text must survive the apply"
+        before > 0,
+        "the fixture must have something in the log, or this test cannot fail"
     );
 
-    // -- 2. after a further ordinary edit ---------------------------------
+    let staged = stage_into_session(&mut session).expect("the fixture stages");
+
+    assert_eq!(
+        session.undo_depth(),
+        before,
+        "★★★ the undo log lost a step. That is `Pass 250.1`'s collapsing verb \
+         behaving, and this shell must not be calling it — check \
+         `redact::sealed`'s counts before anything else."
+    );
+    assert_eq!(
+        staged.undo_depth_preserved, before,
+        "the reported depth must be the real one, read after the call"
+    );
+    assert!(
+        !session.has_applied_redaction(),
+        "★ nothing in this shell collapses a session any more. A `true` here \
+         means the engine's finalizing verb was reached by some route the \
+         call-site monopoly did not see."
+    );
+    assert!(session.has_pending_redaction(), "…and the removal is armed");
+
+    // (2) the operator-visible form: an undo takes the marks back off.
+    session.undo().expect("the mark must be undoable");
+    assert_eq!(
+        redact::count_redaction_marks(&session.graph()),
+        0,
+        "★★ undoing after a staging must reach the marks. This is the \
+         capability the whole pass was for, and a build in which the log \
+         survived but no longer described the document would pass claim (1) \
+         and fail here."
+    );
+}
+
+/// ★★★ **A staged removal can be called off, and calling it off restores
+/// ordinary saving.**
+///
+/// *A stageable operation that cannot be un-staged is a trap*, asserted. The
+/// trap has teeth here rather than being a matter of taste: while a removal is
+/// armed the engine refuses both ordinary save modes, so an operator who
+/// changed his mind and had no way to say so could not save his document at
+/// all.
+///
+/// The second assertion is the one that makes the first mean something. A
+/// cancel that cleared the flag and left the session unable to serialise would
+/// satisfy *"the flag is off"* and leave him exactly where he was.
+///
+/// ★ And the third: the marks survive. Un-arming is not un-marking, and a
+/// cancel that silently removed the operator's marks would destroy work while
+/// claiming to be the safe button.
+#[test]
+fn a_staged_removal_can_be_called_off_and_saving_works_again() {
+    let mut session = staged_session();
+    let marks_before = redact::count_redaction_marks(&session.graph());
+    assert!(marks_before > 0);
+
+    cancel_staged_redaction(&mut session);
+
+    assert!(
+        !session.has_pending_redaction(),
+        "the flag must be off, or the control does nothing"
+    );
+    let (bytes, _) = session
+        .to_incremental_bytes(&SaveOptions::default())
+        .expect(
+            "★★★ an ordinary save must work again. A cancel that cleared the \
+             flag and left the document unsaveable would leave the operator \
+             exactly where he was, with a control that claimed to help.",
+        );
+    assert!(
+        proof::contains(&bytes, SECRET.as_bytes()),
+        "★★ and the content is still there, which is CORRECT and is the point \
+         of the control: he called the removal off. A build that removed it \
+         anyway would pass every 'is the flag clear' assertion and destroy the \
+         content he decided to keep."
+    );
+    assert_eq!(
+        redact::count_redaction_marks(&session.graph()),
+        marks_before,
+        "★ un-arming is not un-marking. The marks are the operator's work and \
+         a cancel that took them off would destroy it while claiming to be the \
+         safe button."
+    );
+
+    // Idempotent, because a control may be reached from a stale frame.
+    cancel_staged_redaction(&mut session);
+    assert!(!session.has_pending_redaction());
+}
+
+/// ★★★ **A staged document with NO MARKS LEFT can still be called off — the
+/// trap this feature would otherwise close on the operator.**
+///
+/// The sequence, and every step of it is something a reasonable person does:
+///
+/// 1. mark, then *Review & apply* ▸ *this document* — the removal is armed;
+/// 2. change his mind about the marks and take them off in the panel, one
+///    Remove at a time (not an undo — an ordinary edit);
+/// 3. press `Ctrl+S`.
+///
+/// The save is refused, because the armed removal has nothing to remove and
+/// the engine refuses both ordinary modes while it stands. So he goes back to
+/// *Review & apply* to call the removal off — **and if the pipeline asked the
+/// mark census before the pending flag, he would be told `NothingToApply`,
+/// which the dialog draws as a refusal with no control on it.** The document
+/// would then be unsaveable by every route in the program, with the one button
+/// that frees him behind a phase he cannot reach.
+///
+/// ★ Two things keep it open and both are asserted here: `AlreadyStaged` is
+/// answered ahead of the census, and the command that opens the window is
+/// `enabled_when("doc.pages")` rather than on a marks predicate — so the
+/// ribbon control stays live on a document with none.
+#[test]
+fn a_staged_document_with_no_marks_left_can_still_be_called_off() {
+    let mut session = staged_session();
+
+    // Take the marks off the ordinary way — a delete, not an undo, because
+    // that is the route the panel offers and it leaves the arming standing.
+    for mark in redact::redaction_marks(&session.graph()) {
+        session
+            .delete_redaction_mark(mark.annot_id)
+            .expect("the panel's Remove must work while a removal is armed");
+    }
+    assert_eq!(redact::count_redaction_marks(&session.graph()), 0);
+    assert!(session.has_pending_redaction(), "…and the arming stands");
+
+    assert_eq!(
+        prepare_redaction_apply(&session).unwrap_err(),
+        RedactApplyRefusal::AlreadyStaged,
+        "★★★ NOT `NothingToApply`. The dialog draws that one as a refusal with \
+         no control on it, and this document cannot be saved by any other \
+         route — so the operator would be stuck with an armed removal, no way \
+         to save, and no way to call it off."
+    );
+
+    // And the way out really does work.
+    cancel_staged_redaction(&mut session);
+    session
+        .to_incremental_bytes(&SaveOptions::default())
+        .expect("an ordinary save must work again once the removal is off");
+}
+
+/// ★★ **Staging twice is refused by name rather than silently re-arming.**
+///
+/// Two reachable causes and one refusal: the operator opens *Review & apply* a
+/// second time on a document he has already staged, or a second `Stage` action
+/// arrives before the first frame after the first one.
+///
+/// ★ The refusal has to be **this shell's**, not the engine's, and that is the
+/// assertion. `EditSession::apply_redactions_deferred` would happily run a
+/// second preview and set an already-set flag; what makes the second open
+/// legible is `prepare_redaction_apply` naming the state, because otherwise the
+/// engine's `to_full_bytes` refusal would surface as *"this document cannot be
+/// rewritten in full"* — a true sentence about the wrong subject, at the one
+/// surface where a wrong diagnosis costs most.
+#[test]
+fn a_second_staging_and_a_second_report_are_both_refused_by_name() {
+    let mut session = staged_session();
+    assert_eq!(
+        stage_into_session(&mut session).unwrap_err(),
+        RedactApplyRefusal::AlreadyStaged
+    );
+    assert_eq!(
+        prepare_redaction_apply(&session).unwrap_err(),
+        RedactApplyRefusal::AlreadyStaged,
+        "★★ the dialog reopened on a staged document must be told WHICH state \
+         it is in. Without this it reaches `to_full_bytes`, which the engine \
+         refuses while a removal is armed, and the operator reads that a \
+         document that can be rewritten cannot be."
+    );
+}
+
+/// ★ **A refused staging leaves the session exactly as it was.**
+///
+/// The engine's own guarantee — *"on any error the pending flag is NOT set"* —
+/// asserted from this side rather than quoted. `NothingToApply` is the one
+/// refusal a test can produce without breaking the engine, and it is also the
+/// one this shell can actually reach (a mark undone in the frame between the
+/// panel enabling its button and the action running).
+#[test]
+fn a_refused_staging_leaves_the_session_untouched() {
+    let doc = Document::from_bytes(secret_pdf()).unwrap();
+    let mut session = EditSession::new(doc);
+    let err = stage_into_session(&mut session).expect_err("no marks, no staging");
+    assert_eq!(err, RedactApplyRefusal::NothingToApply);
+    assert!(
+        !session.has_pending_redaction(),
+        "a refusal must not leave the session armed"
+    );
+    let (bytes, _) = session
+        .to_incremental_bytes(&SaveOptions::default())
+        .expect("…and the ordinary save must still work");
+    assert!(
+        proof::contains(&bytes, SECRET.as_bytes()),
+        "★ nothing was removed, and the document must still say so"
+    );
+}
+
+/// ★★★ **The staging survives the save, and every later save applies it
+/// again.**
+///
+/// `save_applying_redaction` takes `&self`. It does not mutate the session and
+/// it does not clear the flag, so a saved document is still armed — which is
+/// the fact `crate::text::redact::saved_applying_redaction` tells the operator
+/// and which nothing else on screen would.
+///
+/// The reason it is a test rather than a sentence is the assumption it
+/// contradicts: *"I saved it, so it is done."* A build that cleared the flag on
+/// save would look correct for one save and then quietly write the un-redacted
+/// document on the second one — with no refusal, because the flag would be off.
+///
+/// ★ Undo across the save is asserted in the same test, because the two facts
+/// have the same cause (`&self`) and a build that broke one would break both.
+#[test]
+fn the_staging_and_the_undo_log_both_survive_the_save() {
+    let mut session = staged_session();
+    let depth = session.undo_depth();
+
+    let (first, _) = save_applying_pending(&session, &SaveOptions::default()).expect("first save");
+    assert!(!proof::contains(&first, SECRET.as_bytes()));
+
+    assert!(
+        session.has_pending_redaction(),
+        "★★★ the removal must still be armed after the save. A build that \
+         cleared it here would write the un-redacted document on the NEXT \
+         save, with no refusal, because the flag it depends on would be off."
+    );
+    assert_eq!(
+        session.undo_depth(),
+        depth,
+        "★ and undo survived the save, which is what `&self` buys"
+    );
+
+    // …and a second save is still clean, over a session that has been edited
+    // since the first one.
     session
         .rotate_pages(&[0], 90)
-        .expect("an ordinary edit must still work after a redaction");
-    let (appended, _) = session
-        .to_incremental_bytes(&SaveOptions::default())
-        .expect("and so must an incremental save of it");
-    let back = Document::from_bytes(appended.clone()).expect("it must re-parse");
+        .expect("an ordinary edit must still work while a removal is armed");
+    let (second, _) =
+        save_applying_pending(&session, &SaveOptions::default()).expect("second save");
     assert!(
-        back.trailer().get(b"Prev").is_some(),
-        "★ the control for the assertion below: this save really did append a \
-         revision, so the file really does contain a prior one. Without this, \
-         the absence check underneath would be measuring a single-revision \
-         file and proving nothing about /Prev at all."
+        !proof::contains(&second, SECRET.as_bytes()),
+        "★★ the removal re-runs over the CURRENT state, so an edit between \
+         the two saves must not carry the removed text back into the file"
     );
     assert!(
-        !proof::contains(&appended, SECRET.as_bytes()),
-        "★★★ the removed text is recoverable from the PRIOR REVISION of an \
-         incrementally-saved redacted document. This is the exact leak R35 \
-         describes and the exact one the request asked to be made impossible."
-    );
-    assert!(
-        proof::contains(&appended, b"KEEPTHIS"),
+        proof::contains(&second, b"KEEPTHIS"),
         "positive control, again: the document was not emptied"
     );
+    assert_ne!(
+        first, second,
+        "★ the control for the assertion above: the second save really did \
+         reflect the edit, so the absence check over it is measuring a \
+         different document rather than the same bytes twice"
+    );
 }
 
-/// ★★ **Both save modes of a redacted session are clean, and they agree.**
-///
-/// The companion assertion to the headline. `to_full_bytes` is the mode the
-/// write-now route uses and has always been safe; the point of running both
-/// here is that a build in which only one of them was safe would still pass a
-/// test that checked only the other, and the shell's ordinary save verbs use
-/// the incremental one.
-#[test]
-fn both_save_modes_of_a_redacted_session_are_clean() {
-    let mut session = session_with_unsaved_mark();
-    apply_into_session(&mut session).expect("apply");
-    for (label, bytes) in [
-        (
-            "incremental",
-            session
-                .to_incremental_bytes(&SaveOptions::default())
-                .unwrap()
-                .0,
-        ),
-        (
-            "full",
-            session.to_full_bytes(&SaveOptions::default()).unwrap().0,
-        ),
-    ] {
-        assert!(
-            !proof::contains(&bytes, SECRET.as_bytes()),
-            "the {label} save of a redacted session contains the removed text"
-        );
-        assert_eq!(
-            proof::survivors_in_content_streams(&bytes, &[SECRET.to_owned()]),
-            None,
-            "the {label} save has the removed text in a decoded stream"
-        );
-    }
-}
-
-/// ★★★ **A REAL drawing survives the deferred route** —
+/// ★★★ **A REAL drawing survives the staged route** —
 /// `fixtures/a1-titleblock.pdf`.
 ///
-/// The redaction path was, until 2026-09-04, *"effectively never tested end to
-/// end"*: every other fixture in this file is uncompressed with a Base-14 font,
-/// which is a document with nothing for a coincidence to hide in. This one is a
-/// CAD title block with compressed content streams and an embedded, subsetted
+/// Every other fixture in this file is uncompressed with a Base-14 font, which
+/// is a document with nothing for a coincidence to hide in. This one is a CAD
+/// title block with compressed content streams and an embedded, subsetted
 /// font — and it is the file whose font `name` table describes its ligatures as
 /// *"Classic construction"*, which is what made the shell refuse every real
-/// redaction until the proof was corrected that morning.
+/// redaction until the proof was corrected on 2026-09-04.
 ///
 /// It asserts through pdfcer's own text extraction as well as through the raw
 /// bytes, because on a compressed document the raw scan alone would pass on a
-/// build that had not removed anything at all.
+/// build that had not removed anything at all — and it asserts the refusal of
+/// the ordinary modes on the same document, because the leak surface this pass
+/// introduces is the un-redacted base, and a compressed real document is where
+/// a partial guard would hide.
 #[test]
-fn a_real_drawing_survives_the_deferred_route() {
+fn a_real_drawing_survives_the_staged_route() {
     use pdfcer_core::text_extract::{self, ExtractOptions};
+    use pdfcer_core::writer::WriteError;
 
     // ui-text-exempt: a word in a test fixture, matched against extracted text.
     const TERM: &str = "FOUNDATION";
@@ -828,12 +1124,23 @@ fn a_real_drawing_survives_the_deferred_route() {
         "the fixture must contain {TERM}, or this test proves nothing"
     );
 
-    let applied = apply_into_session(&mut session).expect("a real drawing must apply");
-    assert!(applied.report.glyphs_removed > 0);
+    let staged = stage_into_session(&mut session).expect("a real drawing must stage");
+    assert!(staged.report.glyphs_removed > 0);
 
-    let (bytes, _) = session
-        .to_incremental_bytes(&SaveOptions::default())
-        .expect("and must save");
+    // ★ The refusal, on a real document. This is the assertion that the guard
+    // is not a property of a four-object synthetic fixture.
+    assert!(
+        matches!(
+            session.to_incremental_bytes(&SaveOptions::default()),
+            Err(WriteError::RedactionPending)
+        ),
+        "★★★ an ordinary incremental save of a staged REAL drawing must be \
+         refused. The un-redacted content is compressed inside this file and a \
+         raw scan of an appended revision would not have found it."
+    );
+
+    let (bytes, _) = save_applying_pending(&session, &SaveOptions::default())
+        .expect("and the staged save must work");
     assert!(
         !proof::contains(&bytes, TERM.as_bytes()),
         "the redacted term survived in the raw bytes of a real drawing"
@@ -859,75 +1166,17 @@ fn a_real_drawing_survives_the_deferred_route() {
     );
 }
 
-/// ★★★ **The apply clears the undo log, and says by how much.**
-///
-/// The engine's verb *finalizes*, and the operator's ruling was that this is
-/// acceptable **because it is disclosed**. This test pins the number the
-/// disclosure is built from to the number the engine actually destroys: a build
-/// where `undo_steps_cleared` was read after the call instead of before would
-/// report 0 on every run, and the sentence would say nothing was lost on
-/// exactly the runs where something was.
-#[test]
-fn the_deferred_apply_clears_the_undo_log_and_reports_how_much() {
-    let mut session = session_with_unsaved_mark();
-    let before = session.undo_depth();
-    assert!(
-        before > 0,
-        "the fixture must have something in the log, or this test cannot fail"
-    );
-    let applied = apply_into_session(&mut session).expect("apply");
-    assert_eq!(
-        applied.undo_steps_cleared, before,
-        "the disclosed count must be what was destroyed, measured before the call"
-    );
-    assert_eq!(
-        session.undo_depth(),
-        0,
-        "the engine finalizes: nothing is left to step back to"
-    );
-    assert!(
-        session.has_applied_redaction(),
-        "and the session says so, which is what the shell's unsaved-edits \
-         predicate reads"
-    );
-}
-
-/// ★ **A refused apply leaves the session exactly as it was.**
-///
-/// The engine's own guarantee — *"the session is left UNCHANGED on any error,
-/// so a failed apply never half-redacts"* — asserted from this side rather than
-/// quoted. `NothingToApply` is the one refusal a test can produce without
-/// breaking the engine, and it is also the one this shell can actually reach
-/// (a mark undone in the frame between the panel enabling its button and the
-/// action running).
-#[test]
-fn a_refused_deferred_apply_leaves_the_session_untouched() {
-    let doc = Document::from_bytes(secret_pdf()).unwrap();
-    let mut session = EditSession::new(doc);
-    let err = apply_into_session(&mut session).expect_err("no marks, no apply");
-    assert_eq!(err, RedactApplyRefusal::NothingToApply);
-    assert!(
-        !session.has_applied_redaction(),
-        "a refusal must not leave the session flagged as redacted"
-    );
-    let (bytes, _) = session.to_full_bytes(&SaveOptions::default()).unwrap();
-    assert!(
-        proof::contains(&bytes, SECRET.as_bytes()),
-        "★ nothing was removed, and the document must still say so. A build \
-         that half-applied on the way to a refusal would fail here."
-    );
-}
-
 /// ★★ **The save-time proof costs nothing on an ordinary save and bites on a
 /// planted leak.**
 ///
 /// [`super::prove_saved_bytes`] is the check `crate::app::save` runs between
-/// the bytes and the syscall on every save of a redacted document. It is
-/// expected to pass forever — the engine's collapse makes it so — and a check
-/// that is expected to pass is exactly the kind this project keeps finding was
-/// never wired. So it is falsified here in both directions: an empty claim list
-/// returns `Ok` without decoding anything, and a claim that IS present in a
-/// decoded stream comes back as a survivor.
+/// the bytes and the syscall on every save, and
+/// [`super::save_applying_pending`] runs it once more before handing the bytes
+/// over. It is expected to pass forever, and a check that is expected to pass
+/// is exactly the kind this project keeps finding was never wired. So it is
+/// falsified in both directions: an empty claim list returns `Ok` without
+/// decoding anything, and a claim that IS present in a decoded stream comes
+/// back as a survivor.
 #[test]
 fn the_save_time_proof_is_free_when_there_is_nothing_to_prove_and_bites_when_there_is() {
     let unredacted = secret_pdf();
@@ -948,31 +1197,35 @@ fn the_save_time_proof_is_free_when_there_is_nothing_to_prove_and_bites_when_the
     assert_eq!(survivors, vec![SECRET.to_owned()]);
 
     // And the real article passes.
-    let mut session = session_with_unsaved_mark();
-    let applied = apply_into_session(&mut session).expect("apply");
-    let (saved, _) = session
-        .to_incremental_bytes(&SaveOptions::default())
-        .unwrap();
+    let session = staged_session();
+    let (saved, report) = save_applying_pending(&session, &SaveOptions::default()).unwrap();
     assert_eq!(
-        prove_saved_bytes(&saved, &applied.report.redacted_text),
+        prove_saved_bytes(&saved, &report.redacted_text),
         Ok(()),
         "a genuinely redacted save must not be refused"
     );
 }
 
-/// ★ **The two residual derivations cannot drift.**
+/// ★ **The two residual derivations cannot drift, and the deferred one counts
+/// no verification.**
 ///
 /// `crate::dialogs::redact::residual_lines` builds the list the operator
-/// acknowledges; [`super::residual_count`] produces the number the deferred
-/// outcome sentence quotes. They must count the same things, and the one
-/// difference — promotion, which only the write-now route can observe — is
-/// pinned here rather than left to be rediscovered.
+/// acknowledges; [`super::residual_count`] produces the number the staged
+/// outcome sentence quotes. They must count the same things, and the
+/// differences — promotion, which only the write-now route can observe, and the
+/// absence proof, which the staging route has not run — are pinned here rather
+/// than left to be rediscovered.
+///
+/// ★★ The `None` case is the important half and it is a claim rather than a
+/// convenience: the staging verb discards its bytes, so no sweep has run, and a
+/// caller passing a default `AbsenceVerification` would have told the operator
+/// that one had and found nothing.
 #[test]
 fn the_residual_count_matches_the_disclosed_list_except_for_promotion() {
     let session = session_with_unsaved_mark();
     let mut prepared = prepare_redaction_apply(&session).expect("apply");
     assert_eq!(
-        residual_count(&prepared.report, &prepared.verification),
+        residual_count(&prepared.report, Some(&prepared.verification)),
         0,
         "the fixture has nothing to disclose"
     );
@@ -982,9 +1235,18 @@ fn the_residual_count_matches_the_disclosed_list_except_for_promotion() {
         site: ResidualSite::RawBytes,
     });
     assert_eq!(
-        residual_count(&prepared.report, &prepared.verification),
+        residual_count(&prepared.report, Some(&prepared.verification)),
         1,
         "a raw-byte residual is counted by both"
+    );
+    assert_eq!(
+        residual_count(&prepared.report, None),
+        0,
+        "★★ …and NOT counted when no sweep has run. The staged route passes \
+         `None` because the engine's staging verb discards the bytes there \
+         would have been to sweep; a default verification would have said a \
+         sweep found nothing, which is a different claim from nobody having \
+         looked."
     );
 
     prepared
@@ -994,10 +1256,10 @@ fn the_residual_count_matches_the_disclosed_list_except_for_promotion() {
             generation: 0,
         });
     assert_eq!(
-        residual_count(&prepared.report, &prepared.verification),
+        residual_count(&prepared.report, Some(&prepared.verification)),
         1,
         "★ promotion is the ONE thing the count does not include, because the \
-         deferred route has no materialisation step of its own to observe it \
+         staged route has no materialisation step of its own to observe it \
          in. The dialog's own test asserts the other half — that its list is \
          one longer."
     );

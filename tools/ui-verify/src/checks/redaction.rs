@@ -88,6 +88,33 @@
 //! `crates/pdfcer-gui/src/app/actions/apply.rs`; what is not verified by driving
 //! is the field itself.
 //!
+//! # ⬜ 2026-09-05 — THIS CHECK WAS **NOT RUN** AGAINST THE BUILD IT NOW
+//! DESCRIBES
+//!
+//! Stated at the top rather than in a footnote, because a check whose prose has
+//! been rewritten and whose region name has been changed reads exactly like a
+//! check that has been re-driven, and this one has not been. The session that
+//! rewrote it for `pdfcer-core` `Pass 250.2` was forbidden from launching the
+//! GUI — the operator may have been at his keyboard — so:
+//!
+//! * **no phase below has been observed against the staged build.** Phases A–D
+//!   and F–I are untouched by this pass and were last driven on 2026-09-04
+//!   against the collapsing variant; E3 and E4 assert a region that did not
+//!   exist until this pass, and their assertions have never fired in either
+//!   direction.
+//! * **the region rename is the specific risk.** `redact-apply-undo-note`
+//!   became `redact-apply-staging-note` in the application and here in the same
+//!   pass. If the two ever disagree, `declared` returns `None`, E3 reports THE
+//!   STAGING DISCLOSURE IS MISSING, and the message will be about a sentence
+//!   that is on screen. A reader who sees that failure should compare the two
+//!   constants before believing the application is at fault.
+//! * **the `Phase::Staged` surface is reached by nothing at all.** See phase
+//!   E4's own note: `redact-apply-cancel-staged` is published by the
+//!   application and is clicked by no check in this suite.
+//!
+//! ⇒ **The first job of the next session with the machine to itself is to run
+//! this check.** Everything below is a description of what it would assert.
+//!
 //! # What each phase would fail on
 //!
 //! | phase | fails when |
@@ -98,8 +125,8 @@
 //! | D | the apply report never appears, or reports `verified=false` on a clean fixture |
 //! | E | **the confirm control is live before the acknowledgement is given** — the gate that stands between an operator and the one irreversible operation in the program |
 //! | E2 | *note only* — the *replace the original* choice is not drawn. A note rather than a failure because the application draws it only when the source is still a file on disk |
-//! | E3 | **the default destination is not on screen**, or **the undo-loss disclosure is missing or sits below the confirm control**. Added 2026-09-04 with `Pass 250.1`: applying into the open document clears the WHOLE undo log, and the operator accepted that on the condition he is told before he commits. Geometry is the one thing the headless suite cannot assert |
-//! | E4 | switching to *a new file* leaves the button dead (the overwrite acknowledgement being demanded by a destination that overwrites nothing), or leaves the undo disclosure on screen (a false claim about work that survives on that route) |
+//! | E3 | **the default destination is not on screen**, or **the staging disclosure is missing or sits below the confirm control**. ★★★ Rewritten 2026-09-05 for `Pass 250.2`: the default destination no longer removes anything at the click and no longer clears the undo log — it ARMS the next save, and the page does not change. That is the fact the sentence carries now, and it is the one thing an operator cannot work out by looking. Geometry is the one thing the headless suite cannot assert |
+//! | E4 | switching to *a new file* leaves the button dead (the overwrite acknowledgement being demanded by a destination that overwrites nothing), or leaves the staging disclosure on screen (which claims nothing is written, on the destination that writes) |
 //! | F | no file was written |
 //! | G | **the source file changed** — a redaction that wrote over the document it came from |
 //! | H | the secret survives in the output, or the survivor does not |
@@ -183,14 +210,22 @@ const DESTINATION_INTO_DOCUMENT_REGION: &str = "redact-apply-destination-into-do
 /// on why the check moves off the default deliberately and says so.
 const DESTINATION_NEW_FILE_REGION: &str = "redact-apply-destination-new-file";
 
-/// The dialog's undo-loss disclosure.
+/// The dialog's staging disclosure.
 ///
 /// ★★★ Declared only while the deferred destination is selected, which is what
-/// makes the geometric assertion in phase E2 possible: the sentence must be
-/// **above** the confirm control, because the whole of what this shell offered
-/// in exchange for accepting a redaction that clears the undo log was that the
-/// operator would be told *before* he commits.
-const UNDO_NOTE_REGION: &str = "redact-apply-undo-note";
+/// makes the geometric assertion in phase E3 possible: the sentence must be
+/// **above** the confirm control, because it is the one thing the operator
+/// cannot work out by looking — he presses a control about permanent removal
+/// and *the page does not change*.
+///
+/// ★★ **Renamed from `redact-apply-undo-note` on 2026-09-05**, in the same
+/// commit as `crate::dialogs::redact`. The old name described the sentence that
+/// used to live at this region — *"this clears your undo history"* — and
+/// `pdfcer-core` `Pass 250.2` made that false. A region name that still said
+/// `undo` would have aimed this check at a sentence about undo and found one
+/// about staging: a check that passes while measuring something else, which is
+/// this harness's own stated worst outcome.
+const STAGING_NOTE_REGION: &str = "redact-apply-staging-note";
 
 /// Every region name the redaction surfaces publish, for a SKIP reason.
 const REGION_PREFIX: &str = "redact-";
@@ -852,15 +887,27 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         //    can be redacted into — so its absence has no innocent reading and
         //    is a failure rather than a SKIP.
         //
-        // 2. ★★★ **the undo-loss sentence is ABOVE the confirm control.**
-        //    Applying into the document clears the whole undo log, and this
-        //    shell's answer to the engine's finalizing design was that the
-        //    operator is told BEFORE he commits. A build that drew the sentence
-        //    below the button, or in a collapsed region, or on the wrong
-        //    destination, would satisfy every unit test in `dialogs::redact` —
-        //    those drive `undo_disclosure()` directly and lay nothing out —
-        //    and would break the only promise that made the finalizing variant
-        //    acceptable. Geometry is the one thing a headless test cannot say.
+        // 2. ★★★ **the staging sentence is ABOVE the confirm control.**
+        //
+        //    ★★★ REWRITTEN 2026-09-05 with `Pass 250.2`. This used to assert
+        //    the undo-loss sentence, because the default destination collapsed
+        //    the session and cleared the whole undo log, and the operator had
+        //    accepted that on condition he was told first. He is not told that
+        //    any more, because it is no longer true: the undo log survives.
+        //
+        //    What is asserted instead is the fact that replaced it, and it is
+        //    MORE surprising rather than less: the default destination removes
+        //    nothing at the click. The operator presses a control about
+        //    permanent removal and the page does not change. Without the
+        //    sentence his two readings are "it did not work" and "it worked and
+        //    the marks are just still drawn", and the second one ships a marked
+        //    file.
+        //
+        //    A build that drew the sentence below the button, or in a collapsed
+        //    region, or on the wrong destination, would satisfy every unit test
+        //    in `dialogs::redact` — those drive `staging_disclosure()` directly
+        //    and lay nothing out. Geometry is the one thing a headless test
+        //    cannot say.
         let trace = session.trace()?;
         if declared(&trace, ui_rect, DESTINATION_INTO_DOCUMENT_REGION).is_none() {
             return Ok(Some(format!(
@@ -871,14 +918,16 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                  apply into the open document, and let Save decide where it lands."
             )));
         }
-        let undo_note = declared(&trace, ui_rect, UNDO_NOTE_REGION);
+        let undo_note = declared(&trace, ui_rect, STAGING_NOTE_REGION);
         if undo_note.is_none() {
             return Ok(Some(format!(
-                "★★★ THE UNDO-LOSS DISCLOSURE IS MISSING. `{UNDO_NOTE_REGION}` was not declared \
-                 with the default destination selected. Applying into the open document CLEARS \
-                 THE WHOLE UNDO LOG — not only the redaction — and the operator accepted that \
-                 finalizing behaviour on the condition that he be told before he commits, not \
-                 after. A build that removed this sentence still passes every headless test in \
+                "★★★ THE STAGING DISCLOSURE IS MISSING. `{STAGING_NOTE_REGION}` was not \
+                 declared with the default destination selected. On that destination the removal \
+                 does not happen at the click — it happens at the next Save — so the page does \
+                 not change and NOTHING else on screen says so. Without this sentence the \
+                 operator's two readings are that it did not work, and that it worked and the \
+                 marks are merely still drawn; the second one hands over a marked file. A build \
+                 that removed this sentence still passes every headless test in \
                  `dialogs::redact`."
             )));
         }
@@ -902,19 +951,17 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         let note_rect = undo_note.expect("checked above");
         if note_rect.max.y > confirm.min.y {
             return Ok(Some(format!(
-                "★★★ THE UNDO-LOSS DISCLOSURE IS NOT ABOVE THE CONFIRM CONTROL. \
-                 `{UNDO_NOTE_REGION}` ends at y={:.1} and `{CONFIRM_REGION}` begins at y={:.1}, \
-                 so the sentence saying the undo history will be destroyed sits at or below the \
-                 button that destroys it. \"Disclosed before he commits\" is the whole of what \
-                 this shell offered in exchange for the finalizing variant of \
-                 `EditSession::apply_redactions`.",
+                "★★★ THE STAGING DISCLOSURE IS NOT ABOVE THE CONFIRM CONTROL. \
+                 `{STAGING_NOTE_REGION}` ends at y={:.1} and `{CONFIRM_REGION}` begins at y={:.1}, \
+                 so the sentence saying nothing will be removed yet sits at or below the button \
+                 whose label is about a removal. It has to be read on the way to the control, \
+                 not found afterwards while wondering why the page is unchanged.",
                 note_rect.max.y, confirm.min.y
             )));
         }
         report.note(format!(
-            "phase E3: the default destination applies into the open document and writes \
-             nothing, and the undo-loss disclosure ends at y={:.1}, above the confirm control \
-             at y={:.1}",
+            "phase E3: the default destination arms the removal and writes nothing, and the \
+             staging disclosure ends at y={:.1}, above the confirm control at y={:.1}",
             note_rect.max.y, confirm.min.y
         ));
 
@@ -933,12 +980,23 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         //
         // ⬜ **What this leaves unverified**, named rather than implied: the
         // default destination's own end-to-end behaviour — that confirming it
-        // changes the open document, raises no file, and leaves the session
-        // dirty. That needs a different fixture strategy (apply, then Save,
-        // then read the file), and it is asserted headlessly instead by
-        // `app::save::tests::a_redacted_document_saves_through_the_ordinary_\
-        // writer_with_the_content_gone` and
-        // `…::a_document_with_an_applied_redaction_has_unsaved_edits`.
+        // arms the removal, raises no file, leaves the session dirty, and that
+        // the NEXT Save writes a document with the content gone. That needs a
+        // different fixture strategy (arm, then Save, then read the file), and
+        // it is asserted headlessly instead by
+        // `app::save::tests::a_staged_document_saves_through_the_redaction_\
+        // writer_with_the_content_gone`,
+        // `…::a_document_with_a_staged_redaction_has_unsaved_edits` and
+        // `…::undoing_the_marks_under_an_armed_removal_refuses_the_save_by_name`.
+        //
+        // ⬜ **And the second thing this check does not do, new 2026-09-05:**
+        // it never reaches `Phase::Staged`, so the *call the removal off*
+        // control (`redact-apply-cancel-staged`) is drawn by no driven run.
+        // Reaching it means confirming the default destination, closing the
+        // window and reopening it — which this check cannot do without
+        // abandoning phases F–I, since a staged document refuses the ordinary
+        // saves those phases depend on. It wants a check of its own and does
+        // not have one.
         let new_file = region(
             &session.trace()?,
             ui_rect,
@@ -961,16 +1019,17 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                      tick at a checkbox that is not on screen."
                 ))
             })?;
-        if declared(&session.trace()?, ui_rect, UNDO_NOTE_REGION).is_some() {
+        if declared(&session.trace()?, ui_rect, STAGING_NOTE_REGION).is_some() {
             return Ok(Some(format!(
-                "★ THE UNDO-LOSS DISCLOSURE IS STILL ON SCREEN on the `a new file` destination, \
-                 which does not touch the session and leaves the undo log intact. \
-                 `{UNDO_NOTE_REGION}` is a claim about the operator's work and it is false here."
+                "★ THE STAGING DISCLOSURE IS STILL ON SCREEN on the `a new file` destination, \
+                 which really does write a file at the click. `{STAGING_NOTE_REGION}` says \
+                 nothing is removed yet and nothing is written yet, and both halves of that are \
+                 false here — a disclosure that is wrong is worse than one that is absent."
             )));
         }
         report.note(
-            "phase E4: the destination is switched to `a new file`, and the undo disclosure is \
-             retired with it"
+            "phase E4: the destination is switched to `a new file`, and the staging disclosure \
+             is retired with it"
                 .to_owned(),
         );
 
@@ -1238,7 +1297,7 @@ mod tests {
             DESTINATION_REPLACE_REGION,
             DESTINATION_INTO_DOCUMENT_REGION,
             DESTINATION_NEW_FILE_REGION,
-            UNDO_NOTE_REGION,
+            STAGING_NOTE_REGION,
         ] {
             assert!(
                 name.starts_with(REGION_PREFIX),

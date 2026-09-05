@@ -422,24 +422,29 @@ pub struct OpenDoc {
     /// document** when the operator switches tabs. Panel state would have
     /// leaked one document's warning onto another's.
     pub last_redaction_unreadable_fonts: u64,
-    /// ★★★ **The strings a redaction applied INTO this document claims to have
-    /// removed** — `RedactionReport::redacted_text`, empty on every document
-    /// that has not been redacted.
+    /// ★★★ **The strings a redaction ARMED on this document claims it will
+    /// remove** — `RedactionReport::redacted_text`, empty on every document
+    /// that has no removal armed.
     ///
-    /// Added 2026-09-04 with `Action::ApplyRedactionsIntoDocument`. It exists
-    /// for exactly one consumer: `crate::app::save::write_copy` greps the bytes
-    /// it is about to write for these strings and **refuses the save** if any
-    /// of them survives in a decoded stream. That is the shell's independent
-    /// absence proof, kept alive on the deferred route.
+    /// Added 2026-09-04 with the collapsing apply; **re-based 2026-09-05** onto
+    /// `Action::PendingRedaction(Staging::Stage)` when `pdfcer-core`
+    /// `Pass 250.2` replaced that route with an undo-preserving one. The old
+    /// sentence said *applied INTO this document*, which is no longer what
+    /// happens: nothing is removed until the save.
+    ///
+    /// It exists for one consumer: `crate::app::save::write_copy` greps the
+    /// bytes it is about to write for these strings and **refuses the save** if
+    /// any of them survives in a decoded stream. That is the shell's
+    /// independent absence proof, kept alive on the deferred route.
     ///
     /// ★ Why it has to be carried rather than re-derived. The write-now routes
     /// prove the buffer inside `crate::redact::PreparedRedaction::write_to`,
-    /// one statement from the syscall. The deferred route has no such buffer —
-    /// the bytes are built minutes later, by whichever save verb the operator
-    /// reaches for, possibly after further edits — so the only thing that can
-    /// travel from the apply to the save is *what was removed*.
-    /// `EditSession::has_applied_redaction()` says **that** a redaction
-    /// happened and cannot say **what**, which is not enough to prove anything.
+    /// one statement from the syscall. The deferred route has no such buffer at
+    /// arming time — the bytes are built minutes later, by whichever save verb
+    /// the operator reaches for, possibly after further edits — so the only
+    /// thing that can travel from the arming to the save is *what will be
+    /// removed*. `EditSession::has_pending_redaction()` says **that** a removal
+    /// is armed and cannot say **what**, which is not enough to prove anything.
     ///
     /// ★★ On the DOCUMENT rather than in a global, for
     /// [`Self::last_redaction_unreadable_fonts`]'s reason and more sharply: it
@@ -448,9 +453,14 @@ pub struct OpenDoc {
     /// good file — or, in the direction that matters, a clean pass on a file
     /// nobody checked.
     ///
-    /// It is deliberately **not** cleared by a save. The claims stay true of
-    /// the session for as long as the session exists, and every subsequent save
-    /// of it is proved against them.
+    /// ★★★ **It is not cleared by a save, and IS cleared by a cancel** — the
+    /// second half is new on 2026-09-05 and it is not tidiness. These strings
+    /// are this shell's statement that every file it writes for this document
+    /// has that text removed from it, and after
+    /// `Staging::Cancel` that statement is false: the content is deliberately
+    /// still there. Leaving them set would make the next ordinary save refuse
+    /// itself, correctly, over a removal the operator called off on purpose —
+    /// with no way out but to close the document.
     pub redaction_absence_claims: Vec<String>,
     /// The single-slot background rasterizer.
     pub render_worker: RenderWorker,

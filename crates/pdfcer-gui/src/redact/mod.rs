@@ -29,36 +29,89 @@
 //!
 //! # 1. The three properties carried across from the source
 //!
-//! ## ★★★ 1.0 CORRECTED 2026-09-04 (evening) — there are now TWO apply routes,
-//! and the second one lands in the open document
+//! ## ★★★ 1.0 CORRECTED 2026-09-05 — the third route STAGES, and the
+//! collapsing one it replaces is gone
 //!
 //! Everything from §1.1 down was written on the morning of 2026-09-04, when
 //! [`pdfcer_core::redact::apply_redactions`] took a `&Document` and returned
-//! `Vec<u8>` and there was no way back into an `EditSession`. That is no longer
-//! the shape of the world. The engine shipped
-//! [`pdfcer_core::edit::EditSession::apply_redactions`] the same afternoon
-//! (`Pass 250.1`, `225db51`, `pdfcer-core` v0.35.0), in answer to this shell's
-//! own request, and this module now has two entry points rather than one:
+//! `Vec<u8>` and there was no way back into an `EditSession`. That stopped
+//! being the shape of the world twice in two days, and the second change is the
+//! one this section now describes.
+//!
+//! **2026-09-04 (evening).** The engine shipped
+//! `EditSession::apply_redactions` (`Pass 250.1`, `225db51`, `pdfcer-core`
+//! v0.35.0) and this module gained `apply_into_session`, which applied the
+//! removal into the open document by **collapsing** the session onto a clean
+//! redacted base — and cleared the whole undo log doing it. The operator's
+//! ruling was *"finalizing the document and can't be undone is ok **for
+//! now**"*, and the dialog disclosed the step count above the confirm control
+//! because of that *for now*.
+//!
+//! **2026-09-05.** `Pass 250.2` (`41095eb`, v0.38.0) removed the cost, and
+//! `apply_into_session` is **deleted rather than kept beside its replacement**.
+//! Two apply routes with different undo semantics, on one dialog, on the one
+//! operation that cannot be undone, is a choice an operator would have to
+//! understand in order to make it safely. So there are three routes and they
+//! differ in *where the bytes go*, never in *what undo means*:
 //!
 //! | route | what it produces | what it touches | who calls it |
 //! |---|---|---|---|
 //! | [`prepare_redaction_apply`] | the finished redacted **bytes**, in memory, proven | nothing | the dialog on open — the MEASUREMENT — and the two write-now destinations |
-//! | [`apply_into_session`] | a mutation of the **session**, proven | the open document | the deferred destination, through `crate::app::actions::redact` |
+//! | [`stage_into_session`] | a **staged** removal: a flag, and nothing else | the session's pending-redaction flag; **not** its base, overlay, or undo/redo stack | the deferred destination, through `crate::app::actions::redact` |
+//! | [`save_applying_pending`] | the finished redacted **bytes**, proven, at save time | nothing — it takes `&self` | `crate::app::save::write_copy`, on every save verb, while a redaction is staged |
 //!
-//! Both are kept, and the reason is not symmetry. The measurement has to exist
-//! *before* the confirmation on either path (§2 of [`crate::dialogs::redact`]),
-//! and the deferred route is irreversible at the moment it runs — it clears the
-//! undo log — so the operator must be reading a real report, of a removal that
-//! really ran, before he chooses. The cost is that the removal runs twice on
-//! the deferred path: once to measure, once to land. That is a second full
-//! rewrite of the document on a deliberate click, and it is bought for the one
-//! property that could not be had any other way — that the numbers on screen at
-//! the moment of consent are measurements rather than predictions.
+//! The measurement still has to exist *before* the confirmation on every path
+//! (§2 of [`crate::dialogs::redact`]), so the dialog still runs
+//! [`prepare_redaction_apply`] on open and the numbers on screen at the moment
+//! of consent are still measurements rather than predictions. What changed is
+//! that the click no longer commits anything: it arms a save.
 //!
-//! ★★ **The `to_incremental_bytes` question, which is the whole of §4.1 of our
-//! request, is answered by CONSTRUCTION rather than by a refusal, and it was
-//! verified rather than believed** — see [`apply_into_session`], which carries
-//! the measurement and the test that would catch a regression.
+//! ### ★★★ 1.0.1 The proof MOVED, because the bytes moved
+//!
+//! `apply_redactions_deferred` runs the removal to produce its preview report
+//! and **discards the bytes**. There is therefore nothing for [`proof`] to
+//! sweep at staging time, and this module does not pretend otherwise: nothing
+//! in [`stage_into_session`] says *"verified"*, and
+//! [`crate::text::redact::staged_into_document`] does not either. The word is
+//! earned at the save, by [`save_applying_pending`], over the exact buffer that
+//! is one statement from the file system — which is §2.2's own rule arriving at
+//! the only place the deferred route can still keep it.
+//!
+//! ### ★★★ 1.0.2 The §4.1 guard is REAL now, and it is a refusal
+//!
+//! Our engine request's §4.1 asked that a redacted session refuse an
+//! incremental save by name. `Pass 250.1` answered that the hazard was gone at
+//! the root instead (the collapse left no un-redacted base). `Pass 250.2`
+//! cannot make that answer, because the un-redacted content **is still live in
+//! the session** — that is the whole point of preserving undo — so the engine
+//! ships the guard we asked for:
+//!
+//! * `EditSession::to_incremental_bytes` returns `WriteError::RedactionPending`
+//!   (`pdfcer-core/src/edit.rs:8348-8353`);
+//! * `EditSession::to_full_bytes` returns the same
+//!   (`pdfcer-core/src/edit.rs:8374-8378`);
+//! * the removal happens only through `save_applying_redaction(&self, ..)`
+//!   (`pdfcer-core/src/edit.rs:8569`), which takes `&self`, so undo survives the
+//!   save.
+//!
+//! ⇒ **The leak surface is larger and the guard is stronger, and neither was
+//! taken on trust.** `tests` measures both directions on a synthetic fixture
+//! and on `fixtures/a1-titleblock.pdf`: the two ordinary save modes refuse **by
+//! name**, and the bytes `save_applying_redaction` produces carry no `/Prev`
+//! and none of the removed text, with a positive control on each.
+//!
+//! ### ★ 1.0.3 What a staged redaction does NOT do, and it is the one
+//! surprising thing about it
+//!
+//! **It does not change the page.** The session is untouched, so the content is
+//! still drawn, the `/Redact` marks are still drawn, and a screenshot taken one
+//! frame after the operator presses the confirm control is identical to one
+//! taken a frame before it. That is rule 4 satisfied rather than violated —
+//! this shell adds no badge, tint or provisional layer to say *"awaiting
+//! removal"* — and it is a fact the operator has to be told in words, because
+//! every redaction tool he has ever used changed the picture. The saying is
+//! [`crate::text::redact::staged_into_document`]'s and
+//! [`crate::text::redact::saved_applying_redaction`]'s.
 //!
 //! ## 1.1 Apply is a FULL REWRITE, or it does not happen
 //!
@@ -181,18 +234,36 @@
 //! ## 2.4 The call-site monopoly is asserted from the syntax tree
 //!
 //! `redact::sealed` parses **every `.rs` file in this crate** with `syn` and asserts
-//! that `apply_redactions` is *called* in exactly one FILE — this one. A call
+//! that each of the engine's removal verbs is *called* in exactly one FILE —
+//! this one — and exactly the number of times this module accounts for. A call
 //! from anywhere else is a test failure naming the file.
 //!
-//! ★ 2026-09-04: it is *one file*, not *one call*, and since this afternoon
-//! that distinction is load-bearing rather than pedantic. There are now two
-//! calls in this file — the free function in [`prepare_redaction_apply`] and
-//! the `EditSession` method in [`apply_into_session`] — and `sealed` pins the
-//! number at exactly two so a third cannot arrive quietly. The reader counts
-//! method calls as well as free calls, which it did before either existed,
-//! *"because a future engine that moved it onto a type would otherwise slip the
-//! monopoly silently"*. That future engine arrived; the check was already
-//! pointed at it.
+//! ★★★ 2026-09-05: it is *one file*, not *one call*, and it is now **four
+//! subjects** rather than one. `Pass 250.2` split the removal across a verb
+//! that stages it, a verb that performs it at save time, and a verb that
+//! un-stages it, and a monopoly pinned to one identifier would have watched
+//! three quarters of the feature walk out of the module:
+//!
+//! | subject | calls | where |
+//! |---|---|---|
+//! | `apply_redactions` (the free function) | 1 | [`prepare_redaction_apply`] |
+//! | `apply_redactions_deferred` | 1 | [`stage_into_session`] |
+//! | `save_applying_redaction` | 1 | [`save_applying_pending`] |
+//! | `cancel_pending_redaction` | 1 | [`cancel_staged_redaction`] |
+//!
+//! ★ The count for `apply_redactions` went **down** from two on this pass, and
+//! that is the movement the pin exists to make visible: the second call was
+//! `apply_into_session`'s collapsing route, which is deleted rather than left
+//! beside its replacement (§1.0). A ceiling would have let that deletion pass
+//! unremarked; an exact count made it an edit somebody had to write down.
+//!
+//! ★ `cancel_pending_redaction` is in the table even though it removes nothing
+//! — it *disarms* a removal, which is the same surface seen from behind, and a
+//! second caller that un-staged a redaction the operator had confirmed would be
+//! the quietest possible way to ship a file he believes is redacted. The reader
+//! counts method calls as well as free calls, *"because a future engine that
+//! moved it onto a type would otherwise slip the monopoly silently"* — which is
+//! what happened, twice, and the check was already pointed at it both times.
 //!
 //! It reads the abstract syntax tree rather than the text, for
 //! `crate::shell::commands::reach`'s reasons applied to a different question: a
@@ -234,11 +305,18 @@
 //!
 //! It was a description of an engine surface, dressed as a principle. The
 //! engine surface changed the same afternoon and the principle did not survive
-//! it: [`apply_into_session`] mutates the open document, on purpose, because
-//! the operator asked for exactly that and because deferring the write destroys
-//! nothing — **the original is on disk, untouched, until he chooses to
-//! overwrite it.** What was actually load-bearing in the old sentence is kept
-//! and is now §4.
+//! it, because the operator asked for exactly the thing it forbade and because
+//! deferring the write destroys nothing — **the original is on disk, untouched,
+//! until he chooses to overwrite it.** What was actually load-bearing in the old
+//! sentence is kept and is now §4.
+//!
+//! ★★★ **AND THE SENTENCE CAME BACK TRUE, 2026-09-05, for a different
+//! reason.** [`stage_into_session`] does **not** mutate the open document: it
+//! sets one flag, and base, overlay, undo and redo are all left exactly as they
+//! were. So *"applying does not mutate the open document"* is once again an
+//! accurate description of this shell — and it is still not a principle, which
+//! is the whole lesson of having written it as one. It is a property of
+//! `Pass 250.2`, dated, and it will be re-checked rather than quoted.
 //!
 //! ---
 //!
@@ -365,6 +443,22 @@ pub enum RedactApplyRefusal {
         /// set — only what actually leaked.
         survivors: Vec<String>,
     },
+    /// ★★★ **A redaction is already STAGED on this session** (`Pass 250.2`).
+    ///
+    /// Added 2026-09-05. Reachable two ways, and both are ordinary rather than
+    /// exceptional: the operator opens *Review & apply* a second time on a
+    /// document he has already staged, or a second `Stage` action arrives
+    /// before the first frame after the first one.
+    ///
+    /// ★ It is a **named refusal in the pipeline** rather than a condition the
+    /// dialog checks, and the difference is the one this project keeps paying
+    /// for. Without it the second open would reach
+    /// [`prepare_redaction_apply`]'s `to_full_bytes`, which the engine now
+    /// refuses with `WriteError::RedactionPending`, and the operator would be
+    /// told *"this document cannot be rewritten in full"* — a true sentence
+    /// about the wrong subject, arriving at the one surface where a wrong
+    /// diagnosis costs most.
+    AlreadyStaged,
 }
 
 /// Whether the operator has acknowledged the residuals the report disclosed.
@@ -664,6 +758,29 @@ impl PreparedRedaction {
 pub fn prepare_redaction_apply(
     session: &EditSession,
 ) -> Result<PreparedRedaction, RedactApplyRefusal> {
+    // ★★★ Asked FIRST — before the mark census — and the ORDER is load-bearing
+    // twice over.
+    //
+    // 1. While a redaction is staged the engine refuses `to_full_bytes` by name
+    //    (`edit.rs:8374-8378`), so without this the materialisation below would
+    //    fail and the operator would read *"this document cannot be rewritten
+    //    in full"* on a document that can.
+    //
+    // 2. ★★★ **It is what stops the operator being trapped.** Ask the mark
+    //    census first and a staged document with **no marks left** — he took
+    //    them off in the panel after arming the removal — answers
+    //    `NothingToApply`, which the dialog draws as a refusal with no control
+    //    on it. Meanwhile the engine is refusing both ordinary save modes, so
+    //    that document cannot be saved by any route at all and the one control
+    //    that would free him is behind a phase he cannot reach. Asking the flag
+    //    first sends him to `Phase::Staged`, which carries *call the removal
+    //    off*. `tests::a_staged_document_with_no_marks_left_can_still_be_called_off`
+    //    is the assertion, and `edit.redact_apply`'s `enabled_when("doc.pages")`
+    //    — rather than a marks predicate — is what keeps the command itself
+    //    reachable in that state.
+    if session.has_pending_redaction() {
+        return Err(RedactApplyRefusal::AlreadyStaged);
+    }
     // Read the mark census from the SESSION graph, never the base document:
     // the marks the operator is most likely to be applying are the ones they
     // just made, which the base revision by construction does not have. This is
@@ -717,158 +834,314 @@ pub fn prepare_redaction_apply(
 }
 
 // ===========================================================================
-// ★★★ THE DEFERRED APPLY — 2026-09-04, `Pass 250.1`
+// ★★★ THE DEFERRED REDACTION — 2026-09-05, `Pass 250.2`
+//
+// This section REPLACES the collapsing `apply_into_session` that stood here
+// from 2026-09-04 (evening) until this pass. See §1.0 for why it is a
+// replacement rather than a sibling; the short form is that two apply routes
+// with different undo semantics, on one dialog, on the one operation that
+// cannot be undone, is a choice the operator would have to understand in order
+// to make it safely.
 // ===========================================================================
 
-/// What [`apply_into_session`] did, once it had done it.
+/// **Which half of the staging transaction an action carries.**
+///
+/// An enum rather than two `Action` variants, and rather than a `bool`, for the
+/// reason [`ResidualAcknowledgement`] gives one screen up: `stage(doc, true)`
+/// at a call site says nothing, and the two values here are opposite acts on
+/// the one operation in this program that cannot be undone once it reaches a
+/// file.
+///
+/// ★ It lives in this module rather than beside the `Action` enum because the
+/// vocabulary is this module's. `crate::app::actions::action` carries the
+/// variant and points here, which is that file's own R2 rule — it is 1,500
+/// lines of one enum and the reasoning goes next to the mechanism.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Staging {
+    /// Arm the removal: it happens at the next save, and until then nothing
+    /// changes. [`stage_into_session`].
+    Stage,
+    /// Disarm it. [`cancel_staged_redaction`].
+    ///
+    /// ★★★ This exists because **a stageable operation that cannot be
+    /// un-staged is a trap.** The collapsing route it replaces had no Cancel
+    /// and needed none — there was nothing to cancel, the removal had already
+    /// happened — and the moment the removal became a thing the document
+    /// *carries* rather than a thing it *underwent*, an operator who changed
+    /// his mind had no way out but to close the document and lose his edits.
+    Cancel,
+}
+
+/// What [`stage_into_session`] armed, once it had armed it.
 ///
 /// Distinct from [`PreparedRedaction`] and deliberately **not** a variant of
 /// it: that type's whole shape is *"finished bytes nobody has written yet"*,
-/// and there are no bytes here. The removal is in the session; the file system
-/// has not been touched and will not be until the operator saves.
+/// and there are no bytes here at all. The engine's staging verb runs the
+/// removal to produce its preview and then throws the result away; what is left
+/// is a flag on the session and the numbers below.
 #[derive(Debug)]
-pub struct AppliedRedaction {
-    /// The engine's report — what was removed, per carrier, plus its own
-    /// disclosed residuals. The same value [`PreparedRedaction::report`] holds,
-    /// from the same engine call on the same marks.
+pub struct StagedRedaction {
+    /// The engine's **preview** report — what a save would remove, per carrier,
+    /// plus its own disclosed residuals.
+    ///
+    /// ★ A preview and not a receipt, and the distinction is load-bearing
+    /// enough that the engine states it in `apply_redactions_deferred`'s own
+    /// doc comment: the actual removal re-runs at save over the **then**-current
+    /// state, so an edit made in between changes what is removed. That is why
+    /// [`save_applying_pending`] proves the bytes against the report the SAVE
+    /// produced rather than against this one.
     pub report: RedactionReport,
-    /// This module's independent absence proof, run over the session's own
-    /// serialisation **after** the collapse.
-    pub verification: AbsenceVerification,
-    /// ★★★ **How many undo steps the apply destroyed.**
+    /// ★★★ **How many undo steps this did NOT destroy.**
     ///
-    /// Read from `EditSession::undo_depth()` immediately before the call, and
-    /// it is the number the operator has to be told — *before* he commits, by
-    /// [`crate::text::redact::undo_will_be_cleared`], and again after, in the
-    /// edit disclosure. The engine's verb *finalizes*: it collapses the session
-    /// onto a clean redacted base with an empty edit and undo stack, so every
-    /// step in the log — including the ones that have nothing to do with the
-    /// redaction — is gone.
+    /// `EditSession::undo_depth()`, read after the call — which is safe here
+    /// and was not safe before, and that inversion is the whole of what
+    /// `Pass 250.2` bought. The collapsing route had to read the depth
+    /// **before** the call because the call emptied the log; this one reads it
+    /// after, because reading it after is the assertion: a build that had
+    /// silently gone back to collapsing would report `0` here on every run.
     ///
-    /// A count rather than a `bool` because *"this will discard 14 undo
-    /// steps"* and *"this will discard 1 undo step"* are different decisions,
-    /// and *"0"* is a real and common state that is not worth a sentence.
-    pub undo_steps_cleared: usize,
+    /// It is on the struct rather than derived at the call site so that
+    /// `tests::staging_preserves_the_undo_log` and the trace line read the same
+    /// number, and so that a regression shows up as a count rather than as a
+    /// missing sentence.
+    pub undo_depth_preserved: usize,
 }
 
-/// **Apply every `/Redact` mark INTO the open session, and prove the result.**
+/// **Stage every `/Redact` mark for removal AT SAVE, touching nothing.**
 ///
-/// The half of `OPERATOR_REQUESTS.md` O125 that could not be built this
-/// morning:
+/// `OPERATOR_REQUESTS.md` O125, in the shape the operator asked for and the
+/// engine could not express until `Pass 250.2`:
 ///
 /// > *"why does it have to save to a new file right away? Why can't it just
 /// > wait on saving until I choose to save over the existing file or save as a
 /// > new file?"*
 ///
-/// **Nothing is written.** The redaction becomes part of the document the
-/// operator is looking at, and `file.save`, `file.save_as` and
-/// `file.save_copy` decide where it lands and when, exactly as they do for
-/// every other edit.
+/// **Nothing is written and nothing is removed.** The session's base, its
+/// overlay and its entire undo/redo history are left exactly as they were; one
+/// flag is set, and from then until the redaction is saved or cancelled the
+/// engine refuses both ordinary save modes by name and
+/// [`save_applying_pending`] is the only way bytes leave.
 ///
-/// # ★★★ 1. The property that had to be re-established: an incremental save
-/// cannot leak
+/// # ★★★ 1. What this buys, stated as the cost it removes
 ///
-/// Our engine request's §4.1 asked for this to be enforced by a **refusal** —
-/// a redacted session that declines `to_incremental_bytes` by name, ideally
-/// through `Pass 73.0`'s `requires_full` layer. **The engine did not ship
-/// that, and said so, and it is right.** Its reasoning, from
-/// `EditSession::apply_redactions`' own doc comment:
+/// The route it replaces (`Pass 250.1`'s `EditSession::apply_redactions`)
+/// **finalized**: it collapsed the session onto a clean redacted base and
+/// cleared the whole undo log — not only the redaction, and not only the steps
+/// that touched the redacted region. The operator accepted that, in writing,
+/// with a *"for now"* attached to it, and this shell disclosed the step count
+/// above the confirm control because of the *for now*.
 ///
-/// > *"The request asked that a redacted session refuse incremental save,
-/// > because a redaction left in a dirty set over the original base would leak
-/// > via `/Prev`. This implementation removes that hazard at the root instead:
-/// > after the collapse there IS no un-redacted base — the new base is a
-/// > single-revision full rewrite with the content already gone — so an
-/// > incremental save appends to clean bytes and cannot leak."*
+/// There is no step count to disclose any more. Undo works across the staging;
+/// the operator can undo the marks themselves, or edit on and undo back past
+/// the moment he pressed the button, and [`cancel_staged_redaction`] takes the
+/// staging off without touching anything else.
 ///
-/// That is a stronger guarantee than the refusal we asked for, and it is also
-/// an unfalsifiable-sounding claim, so it was **measured rather than believed**.
-/// Read against `pdfcer-core` at `8b24a0a` (v0.37.0) on 2026-09-04, the verb:
+/// # ★★ 2. Why nothing is proven here, and where the proof went
 ///
-/// 1. serialises the session — base plus every pending edit, marks included —
-///    with `to_full_bytes`;
-/// 2. re-parses it, runs the free-function removal, and re-parses *that*;
-/// 3. `*self = EditSession::new(redacted_base)` — so the un-redacted document
-///    is dropped, not superseded — preserving only `quad_point_order`, and
-///    sets its `redacted` flag;
-/// 4. touches `self` only after every fallible step has succeeded, so a failed
-///    apply leaves the session exactly as it was.
+/// `apply_redactions_deferred` runs the removal only to compute its preview and
+/// **discards the bytes** (`pdfcer-core/src/edit.rs:8517`). There is therefore
+/// no buffer for [`proof`] to sweep, and this function does not invent one — it
+/// would have to call `save_applying_redaction` a second time to get one, which
+/// is a second full rewrite of the document to prove something about bytes
+/// nobody will ever write.
 ///
-/// The measurements that back each claim, and the tests that would catch a
-/// regression in any of them, are in this module's test suite:
+/// The proof lives at the save instead, in [`save_applying_pending`], over the
+/// exact buffer that is one statement from the file system. That is §2.2's rule
+/// unchanged — *"the write proves it"*, rather than *"the constructor proved
+/// it"* — and it is why nothing on this path says **verified**:
+/// [`crate::text::redact::staged_into_document`] says what *will* be removed,
+/// and [`crate::text::redact::saved_applying_redaction`] is the sentence that
+/// earns the word, after the sweep, about a file that exists.
 ///
-/// | claim | test |
-/// |---|---|
-/// | an incremental save of a redacted session contains none of the removed text | `an_incremental_save_of_a_redacted_session_cannot_leak_the_removed_text` |
-/// | …and still cannot after further ordinary edits appended a real revision | same test, second half — the output has a `/Prev`, and the revision it points at is the **redacted** base |
-/// | the two save modes agree | `both_save_modes_of_a_redacted_session_are_clean` |
-/// | it holds on a real document, not only a synthetic one | `a_real_drawing_survives_the_deferred_route` (`fixtures/a1-titleblock.pdf`) |
+/// # ★ 3. The page does not change, and the operator is told so
 ///
-/// ⇒ **The shell therefore does NOT gate saving on `has_applied_redaction()`,**
-/// on the engine's explicit instruction, because doing so would refuse a
-/// legitimate incremental save of a document that is already clean. What the
-/// shell does instead is prove the saved bytes — see [`prove_saved_bytes`],
-/// which `crate::app::save` runs on the way to the file system. A guarantee by
-/// construction plus a check at the boundary is the same posture §2.2 takes
-/// about [`PreparedRedaction::write_to`], and for the same reason: the promise
-/// must not depend on how the value was constructed.
-///
-/// # ★★ 2. It is irreversible the moment it runs, and the surface must say so
-/// FIRST
-///
-/// The engine's verb **finalizes**. The operator can keep editing afterwards
-/// but cannot undo past the redaction, and the undo steps he had *before* it go
-/// too. [`AppliedRedaction::undo_steps_cleared`] carries the number and
-/// [`crate::text::redact::undo_will_be_cleared`] is the sentence
-/// [`crate::dialogs::redact`] draws **above the confirm control**, not after
-/// it. Our own request §4.3 asked for exactly this and the operator's ruling
-/// was *"finalizing the document and can't be undone is ok for now"* — it is
-/// acceptable *because it is disclosed*, and the disclosure is the half we owe.
-///
-/// # 3. The proof still runs, and it runs on the session's own bytes
-///
-/// §1.3's rule is not relaxed for the deferred route. After the collapse the
-/// session is serialised once more with `to_full_bytes` and [`proof::prove`] is
-/// run over it. A decoded-stream survivor is a
-/// [`RedactApplyRefusal::VerificationFailed`] — with the honest caveat, stated
-/// here rather than hidden, that **the session has already been mutated by
-/// then**: unlike [`prepare_redaction_apply`], this route cannot refuse before
-/// the fact, because the engine's verb is the fact. What the caller must do
-/// with that refusal is refuse to *save*, which is what [`prove_saved_bytes`]
-/// enforces at the only place it can still be enforced.
-///
-/// It is not reachable in practice from [`crate::dialogs::redact`], which runs
-/// [`prepare_redaction_apply`] on the identical marks seconds earlier and
-/// refuses there. It is answered anyway, because "unreachable through the one
-/// surface that exists today" is a claim about a caller.
+/// §1.0.3. A screenshot one frame after this returns is identical to one taken
+/// a frame before it: the content is still drawn, the `/Redact` marks are still
+/// drawn, and this shell adds no badge, tint or provisional layer to mark its
+/// own pending state (rule 4). The disclosure is off-canvas, in words, on the
+/// edit-disclosure row the funnel writes.
 ///
 /// # Errors
 ///
-/// [`RedactApplyRefusal`]. Every variant except `VerificationFailed` means the
-/// session was **not touched** — that is the engine's own guarantee, not this
-/// function's inference. `VerificationFailed` means it was, and that no file
-/// derived from it may be written.
-pub fn apply_into_session(
+/// [`RedactApplyRefusal`]. Every variant means the session was **not touched**
+/// and no redaction is staged — the engine's own guarantee (*"on any error the
+/// pending flag is NOT set"*), not this function's inference.
+pub fn stage_into_session(
     session: &mut EditSession,
-) -> Result<AppliedRedaction, RedactApplyRefusal> {
+) -> Result<StagedRedaction, RedactApplyRefusal> {
+    // Idempotence, by refusal rather than by silence. Staging twice is not an
+    // error the engine would report — the flag is already set and the second
+    // call would simply run the removal again for a preview nobody asked for —
+    // so the shell refuses by name and the dialog says which state the document
+    // is in.
+    if session.has_pending_redaction() {
+        return Err(RedactApplyRefusal::AlreadyStaged);
+    }
     // Same census, same graph, same reason as `prepare_redaction_apply`: the
     // marks that matter are the ones the operator just made, and the base
     // revision by construction does not have them.
     if redact::count_redaction_marks(&session.graph()) == 0 {
         return Err(RedactApplyRefusal::NothingToApply);
     }
-    // ★ Taken BEFORE the call, because the call is what destroys it. Reading it
-    // afterwards would report 0 every time and the disclosure would say
-    // "nothing was lost" on exactly the runs where something was.
-    let undo_steps_cleared = session.undo_depth();
 
-    // ★★★ The engine's session-level verb — the second and last call to
-    // `apply_redactions` in this crate. See §2.4: `sealed` pins the count at
-    // two, in this file, and counts this method call as readily as the free
-    // one.
-    let report = session.apply_redactions().map_err(|err| match err {
-        // Same mapping as the byte route, so one refusal taxonomy serves both
-        // and `crate::text::redact::refusal_message` needs no second table.
+    // ★★★ The engine's staging verb — one of the four calls `sealed` pins to
+    // this file. See §2.4.
+    let report = session.apply_redactions_deferred().map_err(map_refusal)?;
+
+    // ★ Read AFTER the call, and that is the assertion rather than an
+    // afterthought. The route this replaces had to read the depth before,
+    // because the call destroyed it; a build that had silently gone back to
+    // collapsing would report 0 here, and `tests` would say so.
+    let undo_depth_preserved = session.undo_depth();
+
+    crate::diag::trace(|| {
+        format!(
+            // ui-text-exempt: diagnostic trace, never displayed.
+            //
+            // `undo_kept=` is on the line for the reason the collapsing route's
+            // `undo_cleared=` was: it is the one consequence of this route that
+            // has no equivalent on the write-now routes, and it is the field
+            // that tells a correct build from a regression to the old verb. A
+            // build that collapsed would emit an otherwise identical line with
+            // `undo_kept=0`.
+            //
+            // `verified=` is deliberately ABSENT, unlike every sibling trace in
+            // this module. Nothing was proven here and there is nothing to
+            // prove — see §2 — and a `verified=` field carrying a placeholder
+            // would be read by a harness as a proof that ran.
+            "redact-staged marks={} pages={} glyphs={} streams={} undo_kept={}",
+            report.marks_applied,
+            report.pages_redacted,
+            report.glyphs_removed,
+            report.content_streams_rewritten,
+            undo_depth_preserved,
+        )
+    });
+
+    Ok(StagedRedaction {
+        report,
+        undo_depth_preserved,
+    })
+}
+
+/// **Take a staged redaction back off.**
+///
+/// The other half of [`Staging`], and the control that stops staging from being
+/// a trap. The session was never mutated by the staging, so this clears one
+/// flag and nothing else changes: the marks are still there, the content is
+/// still there, undo is where it was, and the ordinary save modes start working
+/// again.
+///
+/// It returns nothing because there is nothing to report. The engine's verb is
+/// `const fn cancel_pending_redaction(&mut self)` (`edit.rs:8542`) and is
+/// idempotent, so a cancel on a document with nothing staged is a no-op rather
+/// than an error — which is the right shape for a control a caller may reach
+/// from a stale frame.
+///
+/// ★ **The caller owes one thing beside this call**: clearing
+/// `OpenDoc::redaction_absence_claims`. Those strings are the shell's statement
+/// that *every file it writes for this document has this text removed from it*,
+/// and after a cancel that statement is false — leaving them set would make the
+/// next ordinary save refuse itself, correctly, over a removal the operator
+/// deliberately called off. `crate::app::actions::redact` does it in the same
+/// arm, one line below, and its comment says so.
+pub const fn cancel_staged_redaction(session: &mut EditSession) {
+    session.cancel_pending_redaction();
+}
+
+/// **Perform a staged redaction and hand back proven bytes — the only save
+/// that succeeds while one is staged.**
+///
+/// `crate::app::save::write_copy` calls this instead of
+/// `EditSession::to_incremental_bytes` whenever
+/// `EditSession::has_pending_redaction()` is true, which is what stops all three
+/// of this shell's save verbs from failing by name the moment a redaction is
+/// armed.
+///
+/// # ★★★ 1. This is the boundary, and the proof is at it
+///
+/// The engine's `save_applying_redaction(&self, ..)` (`edit.rs:8569`) runs the
+/// removal over the session's **current** state and returns single-revision
+/// bytes with the content already gone. That is a guarantee about somebody
+/// else's code, and this shell's standing posture — §2.2, and the whole of
+/// [`PreparedRedaction::write_to`] — is that a guarantee must not depend on how
+/// the value was constructed. So the decoded-stream sweep runs here, over the
+/// buffer the caller is about to write, before the caller can see it.
+///
+/// ★ **Against the report the SAVE produced, not the one staging predicted.**
+/// The engine is explicit that the removal re-runs over the then-current state,
+/// so if the operator edited between the staging and the save, the two reports
+/// differ — and the claims that are true of a set of bytes are the ones the
+/// removal that produced *those* bytes made. Proving against the stale preview
+/// would refuse a legitimate save the day an operator undid one mark of three.
+///
+/// # ★★ 2. It takes `&self`, and that is the feature
+///
+/// The session is not mutated, so the operator's undo history survives the
+/// save: he can save, keep editing, undo back past the save, and save again.
+/// The redaction stays staged across all of it — `save_applying_redaction` does
+/// not clear the flag — which means every subsequent save applies it too, and
+/// the ordinary save modes stay refused until he cancels. That is stated in
+/// `crate::text::redact::saved_applying_redaction` rather than left to be
+/// discovered, because *"I saved it, so it is done"* is exactly the assumption
+/// this feature must not let stand.
+///
+/// # Errors
+///
+/// [`RedactApplyRefusal`], and every variant means **no bytes are returned** so
+/// no file can be written from them. `NothingToApply` is the reachable one and
+/// it has a specific cause worth naming: the operator staged a redaction and
+/// then undid the marks. The remedy is Cancel, and
+/// `crate::text::redact::save_refused_message` names it.
+pub fn save_applying_pending(
+    session: &EditSession,
+    options: &SaveOptions,
+) -> Result<(Vec<u8>, RedactionReport), RedactApplyRefusal> {
+    // ★★★ The engine's save-applying verb — one of the four calls `sealed`
+    // pins to this file, and the only one that produces bytes anybody writes.
+    let (bytes, report) = session
+        .save_applying_redaction(options)
+        .map_err(map_refusal)?;
+    // ★ §2.2's proof, moved to the only place the deferred route can still make
+    // it: between the buffer and the caller's syscall.
+    if let Err(survivors) = prove_saved_bytes(&bytes, &report.redacted_text) {
+        return Err(RedactApplyRefusal::VerificationFailed { survivors });
+    }
+    crate::diag::trace(|| {
+        format!(
+            // ui-text-exempt: diagnostic trace, never displayed.
+            //
+            // `verified=true` is unconditional and that is honest rather than
+            // vacuous: the only way to reach this line is through the refusal
+            // above, so a build in which the proof had been removed would emit
+            // this line with the field still saying true — which is why the
+            // field is `claims=` beside it. A proof that checked NOTHING reads
+            // as `claims=0`, and a reader of a trace can tell the two apart.
+            "redact-save-applied marks={} pages={} glyphs={} streams={} claims={} bytes={} \
+             verified=true",
+            report.marks_applied,
+            report.pages_redacted,
+            report.glyphs_removed,
+            report.content_streams_rewritten,
+            report.redacted_text.len(),
+            bytes.len(),
+        )
+    });
+    Ok((bytes, report))
+}
+
+/// The one mapping from the engine's [`RedactError`] to this module's refusal
+/// taxonomy.
+///
+/// Free rather than repeated in each of the three call sites, because three
+/// copies of a `match` over an error enum is how one of them comes to be
+/// missing an arm — and the arm it would be missing is `NothingToApply`, which
+/// is the one refusal the operator can actually reach. One table serves all
+/// three, so `crate::text::redact::refusal_message` needs no second one.
+fn map_refusal(err: RedactError) -> RedactApplyRefusal {
+    match err {
+        // A write failure is the same class of refusal as a failed
+        // materialisation: the full rewrite did not happen.
         RedactError::Write(inner) => RedactApplyRefusal::FullRewriteUnavailable {
             reason: inner.to_string(),
         },
@@ -876,49 +1149,7 @@ pub fn apply_into_session(
         other => RedactApplyRefusal::CoreRefused {
             reason: other.to_string(),
         },
-    })?;
-
-    // §3 — prove what is now in the session, on the session's own
-    // serialisation. `to_full_bytes` and never `to_incremental_bytes`: the
-    // latter is banned inside this directory by `sealed`, and the ban stands
-    // even though the engine has made it safe here, because what makes it safe
-    // is a property of the engine that this directory must not start assuming.
-    let (settled, _) = session
-        .to_full_bytes(&SaveOptions::identity())
-        .map_err(|err| RedactApplyRefusal::FullRewriteUnavailable {
-            reason: err.to_string(),
-        })?;
-    let proven = proof::prove(&settled, &report.redacted_text);
-    if let Some(survivors) = proven.survivors {
-        return Err(RedactApplyRefusal::VerificationFailed { survivors });
     }
-
-    crate::diag::trace(|| {
-        format!(
-            // ui-text-exempt: diagnostic trace, never displayed.
-            //
-            // `undo_cleared=` is on the line because it is the one consequence
-            // of this route that has no equivalent on the write-now route, and
-            // a build that had silently stopped disclosing it would produce an
-            // otherwise identical line.
-            "redact-into-session marks={} pages={} glyphs={} streams={} checked={} \
-             residuals={} verified={} undo_cleared={}",
-            report.marks_applied,
-            report.pages_redacted,
-            report.glyphs_removed,
-            report.content_streams_rewritten,
-            proven.verification.strings_checked,
-            proven.verification.residuals.len(),
-            proven.verification.is_clean(),
-            undo_steps_cleared,
-        )
-    });
-
-    Ok(AppliedRedaction {
-        report,
-        verification: proven.verification,
-        undo_steps_cleared,
-    })
 }
 
 /// **How many items a report and a proof disclose as NOT removed.**
@@ -943,8 +1174,27 @@ pub fn apply_into_session(
 /// would be a claim rather than a measurement.
 /// `crate::dialogs::redact`'s own test pins the two together so the difference
 /// stays exactly one item and cannot drift.
+///
+/// # ★★★ `verification` is an `Option` since 2026-09-05, and the `None` is a
+/// statement rather than a convenience
+///
+/// The collapsing route this replaced proved its own output and always had an
+/// [`AbsenceVerification`] to hand. [`stage_into_session`] has none and cannot
+/// have one — the engine's staging verb discards the bytes (§1.0.1) — so the
+/// caller passes `None`, and what comes back is the count of the residuals the
+/// **engine's report** discloses, with the shell's own raw-byte residuals
+/// simply absent from it.
+///
+/// Passing `Some(&AbsenceVerification::default())` would have compiled, read
+/// identically at the call site, and told the operator that a sweep had run and
+/// found nothing. It has not run. `None` is the difference between *"zero
+/// residuals were found"* and *"nobody has looked yet"*, which on this surface
+/// is the difference the whole feature turns on.
 #[must_use]
-pub fn residual_count(report: &RedactionReport, verification: &AbsenceVerification) -> usize {
+pub fn residual_count(
+    report: &RedactionReport,
+    verification: Option<&AbsenceVerification>,
+) -> usize {
     use pdfcer_core::redact::CarrierAction;
     report
         .carriers
@@ -954,7 +1204,7 @@ pub fn residual_count(report: &RedactionReport, verification: &AbsenceVerificati
         + usize::from(report.marks_retained > 0)
         + usize::from(report.vector_paths_intersecting > 0)
         + usize::from(report.vector_clips_kept > 0)
-        + verification.residuals.len()
+        + verification.map_or(0, |v| v.residuals.len())
 }
 
 /// **The absence proof, run over bytes that are one syscall from a file.**
@@ -962,15 +1212,24 @@ pub fn residual_count(report: &RedactionReport, verification: &AbsenceVerificati
 /// §2.2's argument, moved to the one place the deferred route can still make
 /// it. On the write-now route the proof sits inside
 /// [`PreparedRedaction::write_to`], between the buffer and the syscall. The
-/// deferred route has no such buffer — the bytes are built by
+/// deferred route has no such buffer at staging time — the bytes are built by
 /// `crate::app::save` at save time, minutes later, possibly after further
 /// edits, possibly by a different save verb — so the check has to be made
 /// available *to* that module rather than owned by this one.
 ///
-/// `claims` is [`pdfcer_core::redact::RedactionReport::redacted_text`], carried
-/// on the document since the apply. An empty slice is the overwhelmingly common
-/// case (no redaction has been applied to this document) and returns `Ok`
-/// without decoding anything, so an ordinary save pays nothing.
+/// `claims` is [`pdfcer_core::redact::RedactionReport::redacted_text`]. **Which
+/// report it comes from depends on which writer produced the bytes**, and the
+/// rule is one sentence: *the claims that are true of a set of bytes are the
+/// ones made by the removal that produced them.*
+///
+/// | writer | `claims` | why |
+/// |---|---|---|
+/// | [`save_applying_pending`] | the report that call returned | the removal re-ran over the current state; an edit since staging changes what came out |
+/// | `EditSession::to_incremental_bytes` | `OpenDoc::redaction_absence_claims` | no removal ran at all, so the standing claim on the document is the only one there is |
+///
+/// An empty slice is the overwhelmingly common case (no redaction has been
+/// staged on this document) and returns `Ok` without decoding anything, so an
+/// ordinary save pays nothing.
 ///
 /// # ★ Why the DECODED-stream sweep and not a raw byte scan
 ///

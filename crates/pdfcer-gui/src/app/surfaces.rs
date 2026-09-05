@@ -774,6 +774,23 @@ impl PdfcerApp {
         let find = &self.find;
         if let Status::Open(doc) = &mut self.status {
             let tokens = crate::canvas::show(ui, doc, host.as_ref(), find, sampled, actions);
+            // ★★★ **The note pop-ups, in their own floating layer, after the
+            // canvas has laid itself out.**
+            //
+            // One statement, and it is here rather than inside `canvas::show`
+            // for a reason `crate::canvas::painting`'s header states: that
+            // module's layer order is its content, every position in it is an
+            // argument, and **a pop-up has no position in it** — it is an
+            // `egui::Area`, drawn above the page raster in a layer of its own
+            // and composited into nothing that is ever saved.
+            //
+            // ★ It runs *after* `canvas::show` because it reads that call's
+            // own published mapping (`canvas::zoom::last_frame`), which
+            // `canvas::present` records before it hands the frame to
+            // `interact`. Running it first would draw every window against the
+            // previous frame's zoom and pan — a one-frame lag visible as
+            // windows sliding after the page during a drag.
+            crate::canvas::notepopup::show(ui.ctx(), doc, caps, actions);
             // Dispatched here rather than inside `show`: the canvas reports
             // intent and the application decides, which is the same seam the
             // ribbon and the dock already use.

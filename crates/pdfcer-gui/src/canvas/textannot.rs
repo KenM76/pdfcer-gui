@@ -265,14 +265,69 @@ pub fn spec(
             border: Some(Color::Rgb(r, g, b)),
             border_width: 1.0,
         },
+        // ★★★ **THE ICON IS HARDCODED, and as of 2026-09-05 that is a
+        // measured gap rather than an unexamined default.**
+        //
+        // §12.5.6.4 Table 172 defines **seven** — `/Comment`, `/Key`,
+        // `/Note`, `/Help`, `/NewParagraph`, `/Paragraph`, `/Insert` — and
+        // `pdfcer_core::annot_author::StickyIcon` has modelled all seven since
+        // sticky notes shipped (`annot_author.rs:2311-2327`), written straight
+        // into `/Name` at `annot_author.rs:3206`. Acrobat offers the same
+        // seven on its note tool. **This shell has never asked for any but the
+        // default.**
+        //
+        // # Why it is still hardcoded after being found
+        //
+        // Not an engine gap — the capability is there and free. It is blocked
+        // on **where the operator's choice would travel**, and all three
+        // routes are outside this work's reach:
+        //
+        // 1. a field on `Action::CommitTextAnnot` — `app/actions/action.rs`
+        //    sits at **exactly 1,500 lines**, R2's ceiling, so a field with
+        //    its doc comment means splitting a file seven concurrent tracks
+        //    are editing;
+        // 2. a payload on `TextAnnotKind` — it is also the **tool identity**
+        //    (`canvas::tool::CanvasTool::TextAnnot`), so two stickies with
+        //    different icons would become two different armed tools;
+        // 3. a field on the markup `Pen` — the natural home, since the pen
+        //    already carries the ink and the opacity this same call reads live
+        //    — but the control for it belongs on Markup ▸ Style, and the
+        //    ribbon manifest is a concurrent track's.
+        //
+        // ⇒ Route 3 is the right one and it is one field plus one ribbon
+        // control. Recorded here, in the code, rather than in a document
+        // nobody re-reads — and recorded as a **shell** gap so nobody files it
+        // at the engine, which has already done its half.
+        //
+        // R9 is satisfied meanwhile: no chooser is drawn, no greyed control,
+        // no placeholder. The note gets `/Note`, which is what every sticky
+        // this program has ever authored carries.
         TextAnnotKind::Sticky => TextAnnotSpec::Sticky {
             rect,
             icon: StickyIcon::default(),
             contents: text.to_owned(),
             color: Color::Rgb(r, g, b),
-            // Closed. A popup that opened itself on every sticky would cover
-            // the drawing the note is about — and `MODES_AND_PANELS.md`'s
-            // nothing-floats-over-the-canvas stance is only relaxed for Find.
+            // Closed, and ★ the REASON changed on 2026-09-05 even though the
+            // value did not.
+            //
+            // It used to read: *"a popup that opened itself on every sticky
+            // would cover the drawing the note is about — and
+            // `MODES_AND_PANELS.md`'s nothing-floats-over-the-canvas stance is
+            // only relaxed for Find."* The first half stands. The second half
+            // is now out of date: `crate::canvas::notepopup` floats a window
+            // over the canvas, deliberately, and its header carries the
+            // argument — a pop-up is **chrome**, the same class of thing as a
+            // selection handle, and nothing about it reaches the page.
+            //
+            // So the value survives on the first half alone, which is the
+            // stronger half anyway: pdfcer collects the note's words in a
+            // dialog **before** authoring, so by the time the annotation
+            // exists the operator has already read and typed what it says. A
+            // window opening to show them their own sentence back would be
+            // covering the drawing to tell them nothing. Acrobat authors a
+            // sticky open because Acrobat has no dialog — the pop-up *is* the
+            // text field — and copying the value without the mechanism would
+            // be copying the wrong half.
             open: false,
         },
         // ★ `label: None` — the NAME carries the text.

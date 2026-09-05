@@ -941,9 +941,31 @@ pub const fn text_unreadable() -> &'static str {
 /// because this file has no `MenuHost` to ask. That is a real duplication and
 /// it is bounded: `shell::manifest`'s keymap binds `T` to `view.tool_text`, and
 /// `the_text_route_sentence_names_the_bound_chord` fails if the two ever part.
+///
+/// # ★★★ RE-AIMED 2026-09-05 — it used to say *"how these words look"*, and
+/// # that became false the day it was written
+///
+/// `OPERATOR_REQUESTS.md` **O89**: *"I don't see where I am able to edit the
+/// color of text, vectors, etc."* The answer built for it,
+/// `crate::panels::properties::textobject`, puts a **working colour control on
+/// the clicked text object** — so *"to change how these words look, press T"*
+/// now stands directly above a control that changes how these words look
+/// without pressing anything.
+///
+/// ⇒ Corrected in place rather than left beside the new control, because a
+/// sentence that contradicts the widget under it is worse than no sentence:
+/// this project's own rule is that when prose an earlier session wrote becomes
+/// wrong, it is corrected where it stands and dated, so there are not two
+/// answers on screen.
+///
+/// ★ It now names the four properties that genuinely still need the sweep —
+/// font, size, bold, italic — and `crate::panels::properties::textobject`'s
+/// header carries why those four cannot have a whole-object control and colour
+/// can: each of them needs a reading of **one run** to be honest, and *"they
+/// disagree"* is a displayable answer for a colour and for nothing else.
 #[must_use]
 pub const fn text_object_route() -> &'static str {
-    "To change how these words look, press T for the Text tool and sweep across them. Clicking picks the shape they are drawn in, which is not the same thing."
+    "To change the font, size, bold or italic of these words, press T for the Text tool and sweep across them. Clicking picks the shape they are drawn in, which is not the same thing."
 }
 
 // ★★★ `text_face_label`, `text_face_none` and `text_face_ambiguous` were HERE

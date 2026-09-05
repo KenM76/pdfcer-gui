@@ -178,6 +178,10 @@ kbd{font-family:var(--mono);font-size:.9em;border:1px solid var(--line-strong);b
 .grp .cap{font-size:11px;color:var(--ink-quiet);text-align:center;margin-top:auto;padding:3px 0 5px;line-height:1.1}
 .grp .items{display:flex;gap:2px;align-items:flex-start}
 .grp .col{display:flex;flex-direction:column;gap:1px}
+/* The in-band rule — `Item::Separator`. Full height of the item row, one hair
+   wide, in the ordinary line ink and not the strong one: it divides clusters
+   INSIDE a band, and the band border beside it is the heavier statement. */
+.grp .sep{width:1px;align-self:stretch;background:var(--line);margin:2px 4px}
 .rb{display:flex;align-items:center;gap:6px;padding:3px 6px 3px 4px;border-radius:2px;font-size:12px;white-space:nowrap;border:1px solid transparent;height:22px}
 .rb:hover{background:var(--chrome-3)}
 .rb[aria-pressed="true"]{background:var(--plate);color:var(--accent);border-color:var(--plate)}
@@ -687,11 +691,51 @@ const TABS = [
       set already draws one (`edit.insert_image` wears `image.svg`). It wore
       `export` for about six hours; the reversal is argued in `catalog/file.rs`.
       `Import form data…` heads the second column as the band's one inbound
-      verb, which keeps each column three rows and reads out/in rather than
-      out/out/in. */
-   {cap:'Export', items:[[['Export DXF…','download'],['Export image…','export-image'],['Export form data…','download']],[['Import form data…','upload'],['Copy page text','copy-page-text'],['Copy document text','copy-document-text']]]},
-   /* ★★ SECURITY — a NEW GROUP, proposed, awaiting O119. Both controls are
-      unbuilt; their art ships. Why a new group on FILE rather than a row in
+      verb, which reads out/in rather than out/out/in.
+
+      ★★★ `Export text…` ADDED 2026-09-05 — `file.export_text`, token 125,
+      which shipped on 2026-09-04 and this band did not draw. Third, exactly
+      where the manifest puts it: after the two exports that write a derivative
+      of the page's own content and before the form-data pair, which is a round
+      trip and reads as one.
+
+      ★ Its natural neighbours are the two copy-text verbs at the end of the
+      band, and it is deliberately NOT beside them, because those two write to
+      the **clipboard** and this writes a file. Grouping by destination keeps
+      the band readable in one pass — four file verbs, then the two clipboard
+      ones — where grouping by subject would put a file write between two
+      clipboard writes and leave the band with no order at all. The columns are
+      read **column-major**, so 4 + 3 reproduces the shipped order exactly;
+      the previous 3 + 3 note about "each column three rows" was a description
+      of a six-item band and does not survive a seventh.
+
+      ⚠ It wears `download`, shared with DXF and form data, and that share is
+      the argument `export-image` was carved OUT of: a DXF, a text file and a
+      form-data file have no picture, so the format is a word only a label can
+      say; a raster image has one, and this set already draws it. */
+   {cap:'Export', items:[[['Export DXF…','download'],['Export image…','export-image'],['Export text…','download'],['Export form data…','download']],[['Import form data…','upload'],['Copy page text','copy-page-text'],['Copy document text','copy-document-text']]]},
+   /* ★★★ SECURITY — SHIPPED 2026-09-04. He answered O119 *"yes add encryption
+      and permissions"*, and `file.encrypt` (token 126) and `file.permissions`
+      (127) went in the same day, both `Large`, in exactly this position.
+
+      This comment read *"a NEW GROUP, proposed, awaiting O119. Both controls
+      are unbuilt; their art ships"*, and both controls carried `{soon:1}`,
+      until 2026-09-05. That is the mock claiming a **shipped** feature is
+      unbuilt — the mirror image of the `Thin lines` defect this file's own
+      generator header is written around, and the more dangerous of the two
+      directions: a picture of a deleted feature invites somebody to look for
+      it, while a "not built" label on a built one invites somebody to build
+      it twice. Both were caught by re-reading the mock against the code, which
+      is the labour `tools/compare-mockup-ribbon.py` exists to replace and
+      cannot yet do at item level.
+
+      ★ The placement below was the mock's own proposal and the product
+      adopted it verbatim — `shell::manifest::file` cites *this comment* as its
+      reason. So this is the case the mock is FOR, and it is worth keeping the
+      argument in the tense it was written in: the reasoning below persuaded,
+      the operator ruled, and the build followed.
+
+      Why a new group on FILE rather than a row in
       Edit ▸ Protect, which is where a reader would expect to find them: every
       other command on Edit is an undoable edit to page CONTENT, and these two
       are neither. `EDITABLE_SURFACES.md` calls `set_encryption` "a save
@@ -702,7 +746,7 @@ const TABS = [
       framing of the question: O119 asks "do you want to protect a drawing
       before you send it out?", so it sits immediately after the band that sends
       it out. */
-   {cap:'Security', items:[['Encrypt…','encrypt',{big:1,soon:1}],['Permissions…','permissions',{big:1,soon:1}]]},
+   {cap:'Security', items:[['Encrypt…','encrypt',{big:1}],['Permissions…','permissions',{big:1}]]},
    {cap:'Print', items:[['Print…','printer',{big:1}]]},
    {cap:'Document', items:[['Document','document',{big:1,menu:1}],[['Properties','properties'],['Fonts','fonts']]]},
    /* `Help` removed: there is no Help command, no help dialog and no
@@ -735,19 +779,65 @@ const TABS = [
    {cap:'Transform', items:[['Rotate left','rotate-ccw',{big:1}],['Rotate right','rotate-cw',{big:1}]]},
  ]},
  {id:'edit', label:'Edit', modes:['edit'], groups:[
-   /* `Select all` draws no icon — edit.select_all registers without one and
-      `select-all` was deliberately NOT adopted. */
-   {cap:'Content', items:[[['Select all',null,{noicon:1}],['Reflow paragraph','reflow']],['Edit text','edit',{big:1}],['Add text','add-text',{big:1}]]},
+   /* ★★★ `Select all` DRAWS `select-all`, corrected 2026-09-05. This
+      comment read *"draws no icon — edit.select_all registers without one and
+      `select-all` was deliberately NOT adopted"*, and every clause of it was
+      false by the time it was written: `edit.select_all` carries
+      `.with_icon("select-all")` (token 402) and `select-all.svg` is in
+      `icons/assets/`.
+
+      ★★ The word that did the damage is **"deliberately"**. The glyph was
+      refused by a build session, the refusal was quoted, and the quotation was
+      quoted, until it read as the operator's own ruling. It was not his, and
+      he said so: *"add a select-all glyph. I didn't refuse that"*, and again
+      *"why weren't they made automatically as I have instructed to be done for
+      anything that a glyph is missing for on multiple occasions?"* His
+      standing rule, written into `Icon::Back`'s own doc comment: **a missing
+      glyph is authored, not worked around — "no art exists" is NEVER a valid
+      refusal reason.**
+
+      ★ So the surviving `{noicon:1}` marks in this mock are worth naming, so
+      the next reader does not take them for the same mistake. There are two
+      kinds left and neither is about supply: **no slot** (`Font`, `Size` and
+      `Colour` on the Format tab are custom widgets — a combo box has nowhere
+      to put a glyph; `2.0 pt` and `100 %` on Markup ▸ Style are drag values),
+      and **wrong picture** (`Actual size`, argued against BY NAME in the icon
+      ui-spec §3.2: a numeral read at a glance is clearer than any glyph
+      substitute, and both add a decode step a bare percentage does not need).
+      A supply refusal is now the one reason that never appears here. */
+   {cap:'Content', items:[[['Select all','select-all'],['Reflow paragraph','reflow']],['Edit text','edit',{big:1}],['Add text','add-text',{big:1}]]},
    {cap:'Insert', items:[['Image…','image',{big:1}],['Attachments','attachment',{big:1}]]},
-   /* ★ `Copy as vector` — PROPOSED, not built, art drawn. In the CLIPBOARD
-      group and not in File ▸ Export, because it is a clipboard verb: it puts
+   /* ★★★ `Copy as vector` — **SHIPPED 2026-09-04**, as
+      `edit.copy_as_vector`, token 408, drawn **icon-only**. This comment read
+      *"PROPOSED, not built, art drawn"* and the item carried `{soon:1}` until
+      2026-09-05, which is the mock telling the operator that a control he can
+      press does not exist.
+
+      ★★ That is the SAME class of defect this file's generator header is
+      written around — the reviewer's `Thin lines` toggle, drawn with new art
+      for a capability deleted six weeks earlier — running in the opposite
+      direction, and it is the worse direction of the two. A picture of a
+      deleted feature sends somebody looking for it and they find nothing,
+      which ends the search. A "not built" mark on a built one sends somebody
+      to BUILD it, and this project has already paid for that twice: a stale
+      blocker had the operator asking three times over three weeks for a markup
+      kind that had shipped. ⇒ **Both directions of mock drift cost, and the
+      cheerful one costs more.**
+
+      ★ It is drawn icon-only in the product, which this mock cannot yet
+      express — see the item-level note in `tools/compare-mockup-ribbon.py`.
+      The label is shown here.
+
+      The placement argument below is unchanged and was vindicated: it is in
+      the CLIPBOARD group and not in File ▸ Export, because it is a clipboard
+      verb: it puts
       something on the clipboard, it is reached with a chord, and its result is
       pasted rather than saved. It takes its own column rather than a fourth row
       because those three rows are Cut / Copy / Paste — the one triad in the
       ribbon an operator does not read but reaches for by position — and
       inserting into it would cost exactly that. A column beside Copy reads as a
       variant of Copy, which is what it is. */
-   {cap:'Clipboard', items:[[['Cut','cut'],['Copy','copy'],['Paste','paste']],[['Copy as vector','copy-as-vector',{soon:1}]]]},
+   {cap:'Clipboard', items:[[['Cut','cut'],['Copy','copy'],['Paste','paste']],[['Copy as vector','copy-as-vector']]]},
    /* Four form-field tools, four distinct glyphs since 2026-09-04 — they all
       borrowed `form-field` before. */
    {cap:'Forms', items:[[['Text field','form-field'],['Check box','check-box'],['Radio button','radio-button'],['Drop-down','drop-down']],[['Button','push-button',{dis:1}],['Manage fields','list'],['Flatten','form-flatten']]]},
@@ -779,11 +869,136 @@ const TABS = [
    {cap:'Fonts', items:[['Font folders…','folder',{big:1}],[['Embed fonts','embed-fonts'],['Unembed fonts','unembed-fonts']]]},
    {cap:'Diagnostics', items:[['Render diagnostics','render-diagnostics',{big:1}]]},
  ]},
+ /* ★★★ THE FORMAT TAB WAS REDRAWN FROM THE PRODUCT ON 2026-09-05, and it is
+    the ONE place in this mock where the product was the spec and the mockup
+    was the defect. Everywhere else the rule runs the other way — he approved
+    this mock, so a difference is a gap in the build — and the reversal is
+    stated here rather than assumed, because a silent reversal of that rule is
+    how a mock stops being a spec at all.
+
+    It used to draw two groups, `Arrange` and `Object`, and BOTH were wrong:
+
+    · `Arrange` — *Bring forward* / *Send backward*, drawn `dis:1`. Neither is
+      a registered command. `shell::manifest::registers`' PLANNED list carries
+      `edit.bring_forward` as *"N — needs a content-stream reordering
+      primitive that does not exist"* and `edit.align` as *"N — the whole Edit
+      ▸ Arrange group is unbuilt, so the GROUP is absent too."* The manifest
+      says the group is absent; the mock drew it.
+
+      ⇒ **R9 forbids exactly this picture.** An unavailable capability renders
+      NOTHING; greying is for something *temporarily* unavailable and is
+      always explained on hover. A disabled Bring-forward tells an operator the
+      feature exists and is momentarily out of reach, which is the wrong news
+      — and it is the wrong news in the expensive direction, because the right
+      news ("nothing here reorders objects") is what would have got it
+      scheduled. The mock's own item renderer argues this in the comment on
+      `soon` twenty lines below, and this group ignored it.
+
+      It is not redrawn as `{soon:1}` either. `soon` means *proposed*, and
+      these two are not proposed — they are blocked on a primitive nobody has
+      written. The honest drawing of an absent group is no group.
+
+    · `Object` — *Duplicate · Delete · Properties*. `Delete` and `Properties`
+      are real (`format.delete` 800, `format.properties` 801) and live in the
+      shipped `Selection` band. **`Duplicate` names nothing.** There is no
+      `format.duplicate`; the nearest thing in the tree is
+      `edit.paste_duplicate`, which is a clipboard verb on Edit ▸ Clipboard and
+      pastes a copied form field as a second box for the same field. Drawing it
+      here as an object verb would have been a picture of a command that does
+      something else.
+
+    What the tab actually ships is `Font` then `Selection`, and the ordering,
+    the membership and the two exclusions are all argued at length in
+    `shell::manifest::format` and in `RIBBON_IA.md` §5.8's 2026-08-27
+    amendment. The Font band is the operator's own O37 — *"all the font tools
+    available that Word does"* — and it shipped nine days before this mock's
+    Format tab was drawn. The mock was not describing an older build; it was
+    describing no build.
+
+    ⇒ **The transferable half: a mock is only a spec where it is DERIVED.**
+    This file's own generator header states the rule — the glyph inventory is
+    read out of the product, never typed, so "this glyph ships" is true by
+    construction — and the ribbon is typed. `tools/compare-mockup-ribbon.py`
+    is the derivation the ribbon does not have, which is why it exists and why
+    it must be run rather than read. */
  {id:'format', label:'Format', ctx:true, modes:['review','edit'], groups:[
-   /* Bring forward / send backward are REGISTERED ABSENCES blocked on an
-      engine primitive that does not exist. Drawn disabled, with no art. */
-   {cap:'Arrange', items:[[['Bring forward',null,{noicon:1,dis:1}],['Send backward',null,{noicon:1,dis:1}]]]},
-   {cap:'Object', items:[['Duplicate','copy',{big:1}],['Delete','delete',{big:1}],['Properties','properties',{big:1}]]},
+   /* FONT — first on the tab, ahead of Selection, and the order is the
+      operator's rather than this mock's: §5.8's table lists a text run's
+      groups ending in Delete, so left to right reads "change how this looks",
+      then "describe it", then "destroy it" — increasing commitment. It is
+      also where Word puts it.
+
+      ★ Every control here is `editOnly`, which is this mock's spelling of the
+      shipped `visible_when: "mode.edit_content"`. Read and Review do not have
+      a mislaid ability to restyle text, they do not have the ability, so the
+      band is ABSENT there rather than greyed — R9 in the direction that
+      withholds. Inside Edit the same controls grey on `selection.text`, which
+      is the operand being missing rather than the capability, and that is what
+      greying is for. Switch the mock to Review with something selected and the
+      whole band should vanish, leaving Selection alone on the tab.
+
+      ★★ `Font` and `Size` draw no icon and `Colour` draws a swatch, and none
+      of the three is a supply problem: they are `Item::Custom` in the shipped
+      manifest — a combo box, a drag field and a colour well — and a combo box
+      has nowhere to put a glyph. The swatch's whole face IS the value it
+      reports. All three are in `shell::commands`' icon-less ledger under
+      MISSING SLOT, which is the one refusal reason the operator's
+      draw-it-anyway rule does not answer.
+
+      ★★★ `Bold` and `Italic` DO draw, and this is the correction that pair
+      exists to record. Both were registered with no icon behind a refusal
+      reading *"Word draws B and I as glyphs; a picture would be a worse
+      label"* — and he answered that he had refused no such thing. `bold.svg`
+      is stroked at **4** against the set's 2.5, because the label already says
+      "Bold" and the picture must add what a word cannot; `italic.svg` slants
+      at **28°** rather than a typographically honest 12°, because at 16 px an
+      honest slant is under two pixels and reads as a stroke that failed to
+      snap. Both assets carry the whole account.
+
+      The `sep` between Size and Bold is the shipped `Item::Separator`, and it
+      separates *which typeface* from *how it is set* — the seam Word draws in
+      the same place. An operator scanning the band meets two clusters rather
+      than five controls. */
+   {cap:'Font', items:[
+     ['Font',null,{noicon:1,menu:1,editOnly:1}],
+     ['Size',null,{noicon:1,menu:1,editOnly:1}],
+     ['',null,{sep:1,editOnly:1}],
+     ['Bold','bold',{editOnly:1}],
+     ['Italic','italic',{editOnly:1}],
+     ['Colour',null,{swatch:'#1C1C1C',editOnly:1}],
+   ]},
+   /* SELECTION — what can be done to any selection, whatever it is, ordered
+      least-destructive-first: **describe, then re-aim, then detach, then
+      destroy**. The eye meets Delete last, which is §5.8's menu rule applied
+      to a band.
+
+      ★ The two form verbs are `editOnly` for a blunter reason than the Font
+      band's: `Give this page its own copy` WRITES to the document, so an
+      enabled control in a mode that authors nothing is a promise the dispatch
+      arm must then break in silence — which is the defect class this whole
+      project was founded on, and it was re-created on 2026-09-03 by the fix
+      for a data-loss defect. `Select the form` only moves the selection, and
+      is gated with it because the re-aim is only ever wanted as a prelude to
+      editing.
+
+      ★★ Both wear `pick-form-xobject`, deliberately sharing one picture. They
+      are two halves of one gesture — *what am I looking at*, then *make it
+      mine before I change it* — and the labels carry the difference. This is
+      a share by argument, not a borrow by shortage; see the registrations.
+
+      ★★★ `Delete` is drawn plain and is **withheld, not greyed**, in the one
+      state the mock cannot show: where the engine would refuse the delete — a
+      certification signature, an `/Encrypt`, §12.5.3's `Locked` bit — the
+      control is absent and a sentence in the Properties panel says why,
+      BEFORE the operator reaches for anything. None of those three is
+      temporary and none will change while a cursor hovers, which is what puts
+      it on the withholding side of R9 rather than the greying side. */
+   {cap:'Selection', items:[
+     ['Properties','properties'],
+     ['Select the form','pick-form-xobject',{editOnly:1}],
+     ['Give this page its own copy','pick-form-xobject',{editOnly:1}],
+     ['Delete','delete'],
+   ]},
  ]},
 ];
 
@@ -852,6 +1067,19 @@ function itemHtml(it){
      yet"; the tooltip and the legend say which kind. */
   const soon = o.soon ? ' soon' : (o.building ? ' building' : '');
   const notyet = o.soon ? ' — proposed, not built' : (o.building ? ' — being built now' : '');
+  /* ★ `sep` — the shipped `egui_shell::manifest::Item::Separator`, added
+     2026-09-05 with the Format tab. It is a rule between two clusters of
+     controls inside ONE band, which is a different thing from the band border
+     the `.grp` draws, and until now this mock had no way to say it — so the
+     Font group would have had to be drawn as two columns, which says
+     "these wrap" rather than "these are two clusters".
+     ⚠ It deliberately carries no condition of its own. `Item::Separator`
+     cannot take one, and its docs give the reason: a divider's visibility is a
+     fact about its NEIGHBOURS, and a separator with an independently-set
+     condition is a contradiction that renders. Here the `editOnly` on it is
+     the same flag all five of its neighbours carry, so the whole band appears
+     or none of it does and the rule can never be left standing alone. */
+  if (o.sep) return '<span class="sep" aria-hidden="true"></span>';
   const dis = (o.dis || (o.needsSel && !state.selection)) ? ' disabled' : '';
   const icon = o.swatch ? `<span class="sw" style="background:${o.swatch}"></span>`
              : (o.noicon || !glyph) ? '' : g(glyph, big?'big':'');
@@ -870,6 +1098,16 @@ function renderTabs(){
     const items = gr.items.map(it => Array.isArray(it[0])
       ? `<div class="col">${it.filter(keep).map(itemHtml).join('')}</div>`
       : (keep(it) ? itemHtml(it) : '')).join('');
+    /* ★★ A GROUP WITH NOTHING LEFT IS NOT DRAWN — added 2026-09-05, and it
+       mirrors `egui-shell`'s own `a_group_with_nothing_left_is_not_drawn`
+       rather than inventing a rule. Until the Format tab's Font band arrived,
+       no group in this mock could lose all its items, so the omission had no
+       symptom; the Font band is `editOnly` throughout, so in Review it would
+       have rendered as a captioned empty box — a band that says "Font" and
+       offers nothing, which is worse than a missing band and is not what the
+       product does. ⇒ **An untested branch of a mock is as capable of lying
+       as an untested branch of the build.** */
+    if (!items.trim()) return '';
     return `<div class="grp"><div class="items">${items}</div><div class="cap">${gr.cap}</div></div>`;
   }).join('');
 }
@@ -1498,9 +1736,9 @@ const LEGEND = [
   'You named the lasso yourself and it does not exist — no command, no asset. The rail entry is drawn with <code>shape-ink</code>, the freehand pen\'s own picture, and outlined in the same dashed notice colour every other unbuilt control on this page wears. <em>Inventing a lasso drawing here would put a picture in the mock that the build has no way to render</em>, which is the exact failure this artifact exists to not repeat. When the tool is built it needs art of its own; until then the borrowing is stated rather than pretty.',
   'no `lasso` key in icons/assets · borrowed shape-ink'],
 
- ['noted','A command with no icon cannot live in an icon rail — and two of yours have none',
-  '<code>Select all</code> and <code>Actual size</code> both register with no icon, and both proposed glyphs were deliberately not adopted. That is fine on the ribbon, where a label carries the control. It is disqualifying for the rail, whose rows are a picture with an optional word under it — at the <em>Tight</em> rung and below there is no word left, and a row with neither is a blank. So neither is in the rail here. If you want <code>Select all</code> on the strip, that is a decision to draw it art, not a layout decision.',
-  'GLYPH_ADOPTION.md deferred list'],
+ ['noted','A command with no icon cannot live in an icon rail — and <s>two</s> ONE of yours has none',
+  '<b>Corrected 2026-09-05, and the correction is the interesting half.</b> This line used to name <code>Select all</code> and <code>Actual size</code> together and say both proposed glyphs were "deliberately not adopted". <code>Select all</code> now HAS art — <code>select-all.svg</code>, drawn 2026-09-04 — because the word <em>deliberately</em> was doing work nobody had authorised: a build session refused the glyph, the refusal was quoted, and the quotation was quoted until it read as your ruling. It was not yours. You said so: <em>"add a select-all glyph. I didn't refuse that."</em> So the rail argument this line made against it has <b>expired</b>, and putting <code>Select all</code> on the strip is now a layout decision like any other rather than a decision to draw art first. <code>Actual size</code> is unaffected and stays out: its refusal is a reasoned argument about the <em>picture</em> — a numeral read at a glance beats any glyph substitute, and both add a decode step a bare percentage does not need — which no amount of drawing answers.',
+  'his ruling 2026-09-04 · select-all.svg ships'],
 
  ['noted','The rail\'s tool groups are mode-gated, the same way the ribbon\'s already are',
   '<b>Switch the mode to Read and watch two rail entries go.</b> <code>Points</code> edits the nodes of a path and Read cannot; the lasso picks page content and Read does not do that either. Drawing them there would be authoring controls sitting on a mode whose own dispatch refuses them — which is not hypothetical, it shipped once and was fixed on 2026-09-04. A rail is a permanent surface, so a control that is wrong for the mode is wrong on screen the whole time rather than for one click.',
@@ -1535,12 +1773,12 @@ const LEGEND = [
  ['shipped','<code>Open in Acrobat</code>, top right beside Read / Review / Edit — <em>and it is solid now</em>',
   'Where you asked for it. It is drawn <em>beside</em> the mode selector and not <em>inside</em> it: those three cells are a radio group and every one of them is a mode, so a fourth cell that opened another application would be a button pretending to be a state — and the one press in that control that does not toggle anything is the one your hand will not expect. ★ This line said "being built now, the dash should be solid by the time you next open this" — <em>and it is</em>: <code>file.open_in_acrobat</code> registers as of 2026-09-04, so the dashed outline came off in the same pass that drew O123. A built control drawn as unbuilt is the same defect as the reverse, one direction over. ⚠ The picture is a window with a title bar and a sheet going into it — nothing of Adobe\'s mark is in it, and nothing ever will be.',
   'catalog/file.rs:621 · the button is live'],
- ['proposed','<code>Copy as vector</code>, beside Cut / Copy / Paste on Edit',
-  'Not built. Copy today puts a <em>picture</em> of the selection on the clipboard; this would put the geometry, so what you paste into the next drawing is still editable line-work rather than an image of it. It sits in Clipboard rather than in File ▸ Export because it is a clipboard verb — chord-reachable, and its result is pasted, not saved. It takes a column of its own rather than a fourth row in Cut / Copy / Paste: that triad is the one place in the ribbon you reach by position without reading, and inserting into it would cost you that.',
-  'not scheduled · art drawn so the proposal has a face'],
- ['proposed','<code>Encrypt…</code> and <code>Permissions…</code> — a <em>new</em> Security group on File, not a row in Edit ▸ Protect',
-  'This is <b>O119</b> drawn: the engine can now put a password on a drawing and choose what it permits, and nothing in the GUI reaches any of it. Neither button exists — they are here so the question has a picture. <em>Why a new group, argued rather than assumed:</em> every other command on Edit is an undoable edit to what is on a page, and these two are not edits at all — each rewrites every byte of the file and hands you a different one, which is a <em>save</em>. Redaction, four groups away, removes marks from a page and can be undone until you apply it; putting them on one tab would tell you they are the same kind of act. And the position within File is your own framing of the question — "protect a drawing before you send it out" — so it sits immediately after the band that sends it out. ⚠ Three things you already said change the answer and would be on screen beside these: a permission setting is a <em>request</em> any program may ignore, protecting a signed drawing is refused outright, and changing permissions on a protected file needs the owner password.',
-  'OPERATOR_REQUESTS.md O119 · a new surface: a password box, a permission list, and a full-rewrite save'],
+ ['shipped','<code>Copy as vector</code>, beside Cut / Copy / Paste on Edit — <em>and it is solid now</em>',
+  'Copy today puts a <em>picture</em> of the selection on the clipboard; this puts the geometry, so what you paste into the next drawing is still editable line-work rather than an image of it. It sits in Clipboard rather than in File ▸ Export because it is a clipboard verb — chord-reachable, and its result is pasted, not saved. It takes a column of its own rather than a fourth row in Cut / Copy / Paste: that triad is the one place in the ribbon you reach by position without reading, and inserting into it would cost you that. ★ This row said <em>"not built · not scheduled · art drawn so the proposal has a face"</em> — <em>and the face got it built the next day.</em> <code>edit.copy_as_vector</code> registers as token 408 and draws icon-only. A built control drawn as unbuilt is the same defect as the reverse, one direction over, and it is the direction that gets a thing built twice.',
+  'catalog/edit.rs · edit.copy_as_vector, token 408 · live'],
+ ['shipped','<code>Encrypt…</code> and <code>Permissions…</code> — a <em>new</em> Security group on File, not a row in Edit ▸ Protect',
+  'This was <b>O119</b> drawn, and <b>you answered it: <em>"yes add encryption and permissions"</em>.</b> Both buttons now exist — <code>file.encrypt</code> and <code>file.permissions</code>, tokens 126 and 127, both large, in exactly this position, and <code>shell::manifest::file</code> cites this drawing as its reason for putting them here. ★ This row and the group above it both said <em>"neither button exists — they are here so the question has a picture"</em> until 2026-09-05, which is the mock claiming a shipped feature is unbuilt. <em>The argument below persuaded, you ruled, and the build followed — which is what this artifact is for; it just needed telling.</em> <em>Why a new group, argued rather than assumed:</em> every other command on Edit is an undoable edit to what is on a page, and these two are not edits at all — each rewrites every byte of the file and hands you a different one, which is a <em>save</em>. Redaction, four groups away, removes marks from a page and can be undone until you apply it; putting them on one tab would tell you they are the same kind of act. And the position within File is your own framing of the question — "protect a drawing before you send it out" — so it sits immediately after the band that sends it out. ⚠ Three things you already said change the answer and would be on screen beside these: a permission setting is a <em>request</em> any program may ignore, protecting a signed drawing is refused outright, and changing permissions on a protected file needs the owner password.',
+  'O119 answered · catalog/file.rs tokens 126 / 127 · a password box, a permission list, and a full-rewrite save'],
 
  ['noted','★ The written analysis recommended <em>against</em> part 1, and you overruled it. What it got right and what it got wrong.',
   '<code>SHELL_LAYOUT_PROPOSAL.md</code> §3 ranked the one-line tool strip fourth of four and said do not build it. Its objection was that the strip <em>deletes live controls</em> — the pen\'s font, size and colour, the measure options, the three scale switches — and orphans a disclosure slot that exists because a 47-word refusal sentence had nowhere else to go. <b>That was right about the cost and wrong about the remedy.</b> It took the panel\'s contents as fixed and asked only whether a 26 pt row could hold them; your first sentence dissolves the question, because a font size is not the tool panel\'s to hold in the first place. The controls are in Properties and the refusal sentence is at the top of its body, wrapped, verbatim. ⇒ Recorded here rather than quietly deleted from that file: <em>an overruled recommendation is more useful to the next reader than a gap where it used to be.</em> It is not being re-argued.',
@@ -1548,9 +1786,9 @@ const LEGEND = [
  ['rejected','<code>Thin lines</code> removed from View ▸ Display',
   'Dead art for a command <em>deleted six weeks ago</em>: no such field on <code>RenderOptions</code>, no such command anywhere in the tree. It was carried into the proposal sheet marked "drawn for this mock", which is exactly how a deleted feature comes back — as a picture of itself in a document nobody re-checked against the code.',
   'GLYPH_ADOPTION.md'],
- ['rejected','<code>Select all</code> and <code>Actual size</code> draw no icon',
-  'Both commands register without one and both proposed glyphs were deliberately <em>not</em> adopted. Drawing art there would invent a decision nobody made.',
-  'GLYPH_ADOPTION.md'],
+ ['shipped','<code>Select all</code> DRAWS ONE — this row used to say the opposite',
+  '<b>Reversed 2026-09-05.</b> It read: <em>"both commands register without one and both proposed glyphs were deliberately not adopted. Drawing art there would invent a decision nobody made."</em> The last sentence had it exactly backwards — <em>refusing</em> to draw is what invented a decision nobody made. <code>edit.select_all</code> carries <code>select-all</code> (token 402) and the asset ships. <code>Actual size</code> alone still draws none, and for a reason that survives scrutiny rather than a supply excuse: the icon ui-spec §3.2 argues against iconifying it <em>by name</em>. ⇒ A refusal that has been quoted three times is still a refusal by whoever made it first; verify it at source, not against the document that repeats it.',
+  'his ruling · icons/assets/select-all.svg'],
  ['rejected','No Help button, no first-page / last-page buttons',
   'There is no Help command, no help dialog and no documentation target in the build; and there is no on-screen first- or last-page control — the status bar\'s page group is <code>⏴ n / N ⏵</code> and nothing else. R9: an unavailable capability renders nothing.',
   'GLYPH_ADOPTION.md'],

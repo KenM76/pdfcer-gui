@@ -170,8 +170,20 @@ pub mod info;
 /// operator's own 2026-08-12 decision, quoted from `RIBBON_IA.md` §5.8) and why
 /// every control raises one action carrying one field.
 mod markup;
-/// The colour of a selected path. O89's vector half.
+/// The colour of a selected path. O89's vector half — and since 2026-09-05 the
+/// colour of a whole **selection** of paths, with the indeterminate state the
+/// product class already agrees on.
 mod paint;
+/// ★★★ **One colour control, three honest states** — a swatch, an
+/// indeterminate swatch, and nothing at all over an ink pdfcer will not
+/// overwrite. Shared by [`paint`] and [`textobject`], because O89's two pieces
+/// have to answer the same three questions the same way.
+///
+/// Its header carries the reason it is hand-built rather than
+/// `ui.color_edit_button_srgb`: `egui`'s own colour button marks itself changed
+/// on **every frame of a drag inside the picker**, so a caller acting on
+/// `.changed()` authors one undo entry per frame.
+mod swatch;
 /// ★ The **selected text's** face, size, weight and colour — O37's Font
 /// controls, built panel-first as §5.8 says to.
 ///
@@ -180,6 +192,19 @@ mod paint;
 /// provenance extraction, so it is stamped and kept rather than re-taken every
 /// frame.
 pub mod text;
+/// ★★★ **The colour of the text the operator CLICKED** — `OPERATOR_REQUESTS.md`
+/// O89, piece 1.
+///
+/// Every text colour control in the program was gated on a swept range, and
+/// clicking text selects the *object*, so the swatch he went looking for was
+/// greyed with no guessable way to un-grey it. This section acts on the object,
+/// through the same `Action::TextStyle` a sweep raises, with the operand
+/// derived by **byte-span containment** rather than by any geometric inference
+/// — see its header, and `crate::canvas::textedit::pin::object_text`.
+///
+/// `pub` for [`text`]'s reason: `crate::panels::PanelsState` holds its draft,
+/// because the read-back costs a provenance extraction.
+pub mod textobject;
 /// ★★★ **The armed tool's own settings** — the text pen's face, size and
 /// colour, the circular measure's pick list, and the three resize switches.
 ///
@@ -394,9 +419,24 @@ fn body_sections(
     // order rather than precedence — the restyle controls sit with the other
     // "change how this looks" rows and above the read-only facts.
     let drew_text = text::section(ui, doc, state.text_style_mut(), actions);
+    // ★★★ **The clicked-text colour, directly under the swept-text editor** —
+    // `OPERATOR_REQUESTS.md` O89, piece 1.
+    //
+    // The two are **mutually exclusive by construction**: `textobject::section`
+    // returns false whenever a live text selection exists, which is exactly when
+    // `text::section` draws. So this is a reading-order placement rather than a
+    // precedence one, and the operator meets one Colour control, never two —
+    // which matters here more than anywhere else in the panel, because two
+    // colour swatches with different operands one above the other is a way to
+    // recolour the wrong thing while looking straight at it.
+    //
+    // ★ Above `geometry` for the same reason `text` is: "what you can change
+    // about how this looks" comes before "where it is" and before "what is true
+    // of it", which is the order `RIBBON_IA.md` §5.6 asks a properties surface
+    // to use.
+    let drew_text_object = textobject::section(ui, doc, state.text_object_mut(), actions);
     let drew_geometry = geometry::section(ui, doc, state.geometry_mut(), actions);
     let drew_paint = paint::section(ui, doc, actions);
-    let _ = drew_paint;
     // ★★★ **BOUND, since 2026-08-31** — `OPERATOR_REQUESTS.md` O75.
     //
     // The operator: *"the Properties section is always showing the This
@@ -417,7 +457,26 @@ fn body_sections(
         || drew_annot_delete
         || drew_geometry
         || drew_form_field
-        || drew_text;
+        || drew_text
+        // ★★ Part of the predicate, and not for symmetry. A selected text
+        // object used to make `text::route` speak and therefore counted; that
+        // sentence now belongs to `textobject::section`, so omitting this term
+        // would collapse the panel to "This document" for a selected label —
+        // which is O75 re-created by the fix for O89.
+        || drew_text_object
+        // ★★★ And so is the PAINT section, which was `let _ = drew_paint;`
+        // until 2026-09-05.
+        //
+        // The discard was harmless while `paint::section` drew only for a
+        // single selected path, because `object_section` speaks for that same
+        // selection and `drew_object` is folded in below. It stopped being
+        // harmless when the section grew a **multi-object** state: a selection
+        // of eleven paths makes `object_section` say nothing (it has one
+        // subject) and `paint::section` say something, and with the answer
+        // discarded the panel would draw a live Fill and Line control with the
+        // "This document" heading immediately above it — the exact shape O75
+        // reported.
+        || drew_paint;
     // ★★ …and `object_section`'s own answer is part of the predicate, which is
     // load-bearing rather than tidy. `annotdelete::section` returns false for
     // an ordinary unlocked annotation and `text::route` returns false for a

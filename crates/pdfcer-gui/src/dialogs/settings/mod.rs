@@ -129,6 +129,15 @@ pub mod images;
 pub mod measuring;
 pub mod pages;
 pub mod saving;
+/// ★★★ May pdfcer read the trust list Acrobat has downloaded, and where is it.
+///
+/// The two settings behind `ENGINE_BACKLOG.md`'s trust rows. Its header carries
+/// why it is NOT filed under *Where Acrobat is* — the symptom that brings
+/// somebody here is *"the Signatures panel says it did not check who signed
+/// this"*, and nobody carrying that symptom looks under a group about which
+/// program a button starts — and why the inspect control is absent when there
+/// is no store while the path field stays visible.
+pub mod signatures;
 pub mod text;
 pub mod widgets;
 
@@ -610,6 +619,32 @@ pub fn show(
                     ui.add_space(10.0);
                     pages::missing_as(ui, draft);
                 });
+                // ★★★ LAST of the groups about the DOCUMENT, and first of the
+                // two settings that are about another program's file.
+                //
+                // The window's ordering rule runs from what the program looks
+                // like, through what the document is made of, to what pdfcer
+                // does with it. Reading a document's signatures is squarely the
+                // third, so this sits after Pages and before Drawing the page,
+                // where the shell's own preferences begin.
+                //
+                // ★★ The permission and the location are drawn in that order
+                // and never the other way round. A person who has just typed a
+                // path and finds nothing happens has been shown the two halves
+                // in the order that makes the second look broken; the group's
+                // own module header carries the argument, and the location's
+                // note says out loud that it is only a location.
+                widgets::group(
+                    ui,
+                    "signatures", // ui-text-exempt: a group key, never displayed.
+                    crate::text::trust::group_signatures(),
+                    false,
+                    |ui| {
+                        signatures::use_store(ui, draft);
+                        ui.add_space(10.0);
+                        signatures::store_path(ui, draft);
+                    },
+                );
                 // ★ The shell's own preferences, LAST — after the twelve
                 // that are about the document and before nothing. They are
                 // the only group here whose values live in a different
@@ -847,6 +882,13 @@ mod tests {
         ("pages", include_str!("pages.rs")),
         ("preset", include_str!("preset.rs")),
         ("saving", include_str!("saving.rs")),
+        // ★ Added 2026-09-05 WITH the trust-store controls, in the same edit
+        // rather than ten minutes afterwards — which is `fonts.rs`'s lesson
+        // above, and the reason `every_source_in_this_directory_is_listed`
+        // exists. Its absence would have made the completeness test report
+        // `Settings::acrobat_trust_store` as still uncontrolled after the
+        // control had been written, which is the failure that costs a session.
+        ("signatures", include_str!("signatures.rs")),
         ("text", include_str!("text.rs")),
         ("widgets", include_str!("widgets.rs")),
     ];

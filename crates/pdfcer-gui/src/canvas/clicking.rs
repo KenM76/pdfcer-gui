@@ -279,6 +279,34 @@ pub fn click(
         } else {
             None
         };
+    // ★★★ **A CLICK ON A COMMENT OPENS ITS POP-UP — in every mode, Read
+    // included.** `crate::canvas::notepopup`, 2026-09-05.
+    //
+    // The operator: *"I could add a yellow sticky note but even in read mode I
+    // don't think I could figure out how to read it."*
+    //
+    // # It is not a rung, and that is the whole design
+    //
+    // It sits **above** the ladder and **consumes nothing**: the click goes on
+    // to mean exactly what it meant before this line existed — an annotation
+    // selection in Review and Edit, a text sweep or an image pick in Read.
+    // Adding a reading affordance took nothing away, which is what let a
+    // single click carry it in all three modes rather than a double.
+    //
+    // # Why it does not reuse `annot_hit` above
+    //
+    // Because `annot_hit` is gated on `caps.author_markup` — Review and Edit
+    // only — and **that gate is the report**. In Read it is `None` on every
+    // click, so a rung built on it would do nothing in the one mode the whole
+    // feature exists for. `notepopup` runs its own hit test with its own
+    // exclusions, and its `model` header states where the two differ and why
+    // each is right for its surface.
+    if let Some(id) = crate::canvas::notepopup::clicked_on(ctx, doc, page_index, point, map) {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            format!("note-popup-toggle page={page_index} id={}", id.num)
+        });
+    }
     // ★★ The LINK under the pointer, resolved beside `annot_hit` and for the
     // same reason: the arm that consumes it has to be an `if let`, so a click
     // that hits no link falls through and means exactly what it meant before.

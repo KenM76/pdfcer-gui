@@ -878,6 +878,44 @@ pub const fn preview_pan_hint() -> &'static str {
     "Drag to pan, Ctrl+wheel to zoom"
 }
 
+/// Move the preview into a window of its own — operator request O112.
+///
+/// ★ **"Pop out"** is the phrase the product class has settled on — a browser's
+/// picture-in-picture, an editor's detached panel, a chat client's detached
+/// call window all use it or a near synonym, and the operator used it himself:
+/// *"the option to pop out into its own resizeable window"*. Using his word
+/// rather than a tidier one ("Detach", "Open in new window") costs nothing and
+/// means the control is named the thing he went looking for.
+#[must_use]
+pub const fn preview_pop_out() -> &'static str {
+    "Pop out"
+}
+
+/// Hover text for the pop-out button.
+///
+/// ★★ It states the way BACK, in the same breath as the way out. A control that
+/// moves a surface somewhere else owes the operator the return trip before they
+/// take it — otherwise the first thing they do after popping it out is hunt the
+/// print dialog for a button to put it back, and there is not one, because
+/// closing the window is the gesture.
+#[must_use]
+pub const fn preview_pop_out_tooltip() -> &'static str {
+    "Show the preview in its own window, which you can resize and move to another screen. \
+     Closing that window puts the preview back here."
+}
+
+/// The pop-out window's title bar.
+///
+/// ★ Deliberately **not** the document's name. The title bar's job is to make
+/// this window findable in the taskbar beside the print dialog it came from,
+/// and *"Print preview"* is what a person scanning a task list is looking for.
+/// A file name there would sit beside the main window's file name and the two
+/// would be told apart only by whatever the shell appended.
+#[must_use]
+pub const fn preview_window_title() -> &'static str {
+    "Print preview"
+}
+
 /// The job selects no pages, so there is nothing to preview.
 #[must_use]
 pub const fn no_pages_selected() -> &'static str {

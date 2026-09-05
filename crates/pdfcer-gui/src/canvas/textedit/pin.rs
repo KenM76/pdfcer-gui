@@ -568,3 +568,216 @@ pub struct Operator {
     /// The locator.
     pub pin: Pinned,
 }
+
+// ===========================================================================
+// ★★★ FROM A CLICKED TEXT OBJECT TO THE RUNS A RESTYLE CAN ADDRESS
+//
+// `OPERATOR_REQUESTS.md` **O89**, and the half that had no route:
+//
+// > *"I don't see where I am able to edit the color of text, vectors, etc."*
+//
+// Text colour shipped, gated on a TEXT selection — an operator has to arm the
+// Text tool and sweep the words. Clicking the text selects the *object*, which
+// is a paint-order index into `PageObjects`, and
+// `crate::panels::properties::text`'s header states correctly that the two
+// index spaces are unrelated and that **an inference between them would
+// restyle text the operator did not select**.
+//
+// ★★★ THIS IS NOT AN INFERENCE. It is the one exact join the two models share:
+// a `TextObject` carries the `BT`…`ET` **byte span** in the decoded content
+// buffer (`pdfcer_core::vector::VectorObject::bytes`), and every glyph's
+// `pdfcer_core::text_extract::GlyphProvenance` carries the byte span of the
+// show operator that produced it, **in the same buffer**, together with the
+// name of that buffer. A run belongs to the object exactly when its operator's
+// span lies inside the object's span and both name the page's own stream. No
+// geometry is compared, no bounding box is overlapped, no threshold is chosen.
+//
+// ⇒ The mapping is *containment of byte ranges*, which is the same kind of fact
+// [`of_run`] already relies on to name an operand at all. If it were wrong, a
+// pinned edit would already be editing the wrong text.
+// ===========================================================================
+
+/// **Which runs of the page's extraction a selected text OBJECT is made of**,
+/// and what colour each of them is painted in.
+///
+/// The reading behind the O89 object route. One value, from one extraction,
+/// because the two questions have one answer: the walk that finds the runs is
+/// the walk that reads their fills, and provenance capture is the expensive
+/// thing this shell does (**392 ms** on the operator's benchmark sheet).
+#[derive(Debug, Clone, PartialEq)]
+pub struct ObjectText {
+    /// The first run of the object, in content order.
+    pub first_run: usize,
+    /// The last run of the object, in content order.
+    ///
+    /// ★ A **range**, not a set, and the difference is the operand. The runs
+    /// between `first_run` and `last_run` are exactly what a hand sweep from
+    /// the object's first character to its last would cover —
+    /// `TextSelection::runs` is literally `(start.run..=end.run)` — so taking
+    /// the range makes the object route and the sweep route the *same gesture
+    /// with the same operand*, rather than two things that usually agree.
+    ///
+    /// A set would be the more precise answer to *"which runs did this object
+    /// produce"* and the wrong answer to *"what would he have swept"*. They can
+    /// differ only where another object's show operators interleave with this
+    /// one's inside its own `BT`…`ET`, which the content-stream grammar
+    /// forbids: `Do` is not a permitted text-object operator (§9.4), so no
+    /// form's runs can land in the middle of a page text object's.
+    pub last_run: usize,
+    /// The fill in force at each run of `first_run..=last_run`, in order.
+    ///
+    /// See [`RunFill`] — and in particular why *"no colour operator"* and *"no
+    /// glyphs"* are two variants rather than one `None`.
+    pub fills: Vec<RunFill>,
+}
+
+/// **What one run of a text object is painted in.**
+///
+/// ★★★ Three states, and collapsing the first two is a real defect with no
+/// symptom on the page it is written against.
+///
+/// `GlyphProvenance::fill_color` is an `Option`, and its `None` means *"no
+/// colour operator was in force, so §8.6.8's default — black DeviceGray 0 —
+/// applies"*. A run that produced **no provenance at all** — a derived word
+/// space, a line break, an `/ActualText` replacement — also yields `None` from
+/// the same expression, and it means the opposite: *there is nothing here to
+/// have a colour*.
+///
+/// ⇒ Written as one `Option`, an object whose first run is explicitly red and
+/// whose second run carries no colour operator (and is therefore **black**)
+/// would read as *one colour, red* — and a control that opened on red would
+/// propose flattening the black run to it, silently. That is exactly the
+/// flattening `OPERATOR_REQUESTS.md` O89 refused to ship for multi-object
+/// selections, arriving through the other door.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum RunFill {
+    /// The run carries no glyphs, so it has no colour and cannot disagree with
+    /// one. `crate::app::actions::textstyle::apply` skips these runs for the
+    /// same reason: there is no show operator behind them to restyle.
+    NoGlyphs,
+    /// Glyphs, and **no colour operator in force** — §8.6.8's default, black.
+    /// A real colour, stated by the file's silence rather than by an operator.
+    DefaultBlack,
+    /// Glyphs, painted in a colour the extraction modelled.
+    Painted(TextColor),
+}
+
+/// Read [`ObjectText`] for the page object at `object`, or `None`.
+///
+/// `None` — and every one of these is a legitimate, silent, *not an error*
+/// answer, which is why they are one return value rather than a `Result`:
+///
+/// * the page is not open, or the object model could not be built;
+/// * `object` is not an index into this page's own paint order;
+/// * the object is **not text** (a path, an image, a form);
+/// * the extraction produced no run whose show operator lies inside the
+///   object's span — a text object whose every string failed to decode, which
+///   is a real state on a drawing with a broken font.
+///
+/// # ★★ The cost, stated because a caller must not put this in a paint loop
+///
+/// One `extract_page_view` with `capture_provenance` **on**, plus one block
+/// recognition. That is 392 ms on the operator's benchmark sheet. Every caller
+/// holds it behind a `(page, object, edit epoch)` stamp, exactly as
+/// [`crate::panels::properties::text::TextStyleDraft`] holds [`inspect`], and
+/// for the same measured reason.
+#[must_use]
+pub fn object_text(doc: &OpenDoc, page: usize, object: usize) -> Option<ObjectText> {
+    // The object's own byte span, and the confirmation that it is text at all.
+    // Read first and dropped before the extraction, so the provider's `Ref` is
+    // not held across the expensive half.
+    let span = {
+        // The provider is asked through the trait rather than through its
+        // inherent `page_objects()`, because the trait method is guarded on the
+        // PAGE — the provider decomposes exactly one page, and its inherent
+        // accessor would answer with a different sheet's model without saying
+        // so. Same rule `super::super::target`'s own implementation states.
+        use crate::canvas::target::CanvasTargetProvider as _;
+        let provider = doc.page_objects()?;
+        let model = provider.page_objects_model(page)?;
+        match model.objects.get(object)? {
+            pdfcer_core::vector::VectorObject::Text(t) => t.bytes,
+            // A path has its own colour control (`panels::properties::paint`)
+            // and an image has no text. Answering `None` rather than an empty
+            // reading keeps *"this is not text"* distinguishable from *"this is
+            // text nothing could be read from"*, which are two different
+            // sentences on screen.
+            _ => return None,
+        }
+    };
+
+    let page_ref = doc.pages.get(page)?;
+    use crate::app::settings::SettingsExt;
+    let opts = doc.settings.extract_options().with_provenance(true);
+    let text =
+        pdfcer_core::text_extract::extract_page_view(&doc.session.view(), page_ref, page, &opts)
+            .ok()?;
+    let model = EditableTextModel::recognize(&text, &BlockRecognitionOptions::default());
+
+    let mut first: Option<usize> = None;
+    let mut last: usize = 0;
+    for run in 0..text.runs.len() {
+        let Some(p) = model.provenance(GlyphRef::new(run, 0)) else {
+            // No glyphs: a derived space or an `/ActualText` run. It carries no
+            // operator, so it cannot be attributed to any object — and it must
+            // not be, because attributing one would extend the range past the
+            // object's own last character.
+            continue;
+        };
+        if !operator_is_inside(p, span) {
+            continue;
+        }
+        if first.is_none() {
+            first = Some(run);
+        }
+        last = run;
+    }
+    let first_run = first?;
+
+    // The fills for the whole inclusive range, INCLUDING the glyphless runs the
+    // loop above skipped: the range is the operand, so the reading has to
+    // describe the range. A glyphless run is neither a colour that agrees nor
+    // one that disagrees — `crate::app::actions::textstyle::apply` skips it for
+    // the same reason.
+    let fills = (first_run..=last)
+        .map(|run| match model.provenance(GlyphRef::new(run, 0)) {
+            None => RunFill::NoGlyphs,
+            // ★ §8.6.8: no colour operator in force means black, and black is a
+            // colour. See [`RunFill`] for the flattening this distinction
+            // prevents.
+            Some(p) => p.fill_color.map_or(RunFill::DefaultBlack, RunFill::Painted),
+        })
+        .collect();
+
+    Some(ObjectText {
+        first_run,
+        last_run: last,
+        fills,
+    })
+}
+
+/// **Does this glyph's show operator lie inside `object`'s `BT`…`ET` span?**
+///
+/// Its own function because it is the whole join, and a join written inline is
+/// a join nobody tests. Two conditions, and dropping either one is a defect
+/// with no symptom on the page it was written against:
+///
+/// 1. **The buffer must be the page's own.** A byte offset is meaningless
+///    without the buffer it indexes, and a page that paints a form XObject has
+///    two buffers whose offsets overlap freely. [`target_of`]'s doc comment
+///    carries the same argument for the same reason, and names the case: on the
+///    operator's benchmark sheet the page stream holds 3,007 single-character
+///    show operators, so *"an arbitrary offset happens to name something in the
+///    wrong buffer"* is a dense field of near-misses rather than a theoretical
+///    collision.
+/// 2. **Containment, not overlap.** A show operator is wholly inside one text
+///    object or wholly outside it; a partial overlap would mean the
+///    decomposition and the extraction disagree about where an operator ends,
+///    which is a fault worth declining on rather than rounding into a hit.
+fn operator_is_inside(p: &pdfcer_core::text_extract::GlyphProvenance, object: ByteSpan) -> bool {
+    matches!(
+        p.content_stream,
+        pdfcer_core::text_extract::ContentStreamRef::Page
+    ) && p.operator_span.start >= object.start
+        && p.operator_span.end() <= object.end()
+}

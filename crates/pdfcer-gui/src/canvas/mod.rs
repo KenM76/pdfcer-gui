@@ -162,6 +162,15 @@ pub mod guides;
 // along the seam that module's header already drew: a ruler is chrome beside
 // the canvas that reserves layout space, a grid is chrome over the page that
 // reserves none.
+/// ★★★ **The annotation half of the canvas clipboard** — split out of
+/// `clipboard` on 2026-09-05 under R2, along the annotation-versus-content
+/// seam. Its header carries the finding that made the split worth making:
+/// `pdfcer-core`'s lossless annotation route is **lossy for exactly the
+/// annotations this shell could already copy**, because a markup it models
+/// travels as a `MarkupSpec` and is planted with `add_markup` rather than
+/// `add_markup_with`. The fork between the two routes is read off the
+/// engine's own carrier choice, never off a subtype list here.
+pub mod annotclip;
 /// A placement drag on a selected ce dimension - the operator's report of
 /// 2026-08-20, *"I need to be able to move the dimension after it has been laid
 /// down"*. Reaches `place_dimension`, never `move_dimension`; its header says
@@ -281,6 +290,20 @@ pub mod overlays;
 /// lives in [`crate::pagedrag`], which is what lets a gesture that began in a
 /// panel — possibly in another document — end here.
 pub mod pagedrop;
+
+/// ★★★ **Reading a comment where the comment is** — the pop-up window a click
+/// on a note opens, and the tooltip a hover shows.
+///
+/// The operator, 2026-09-05: *"I could add a yellow sticky note but even in
+/// read mode I don't think I could figure out how to read it."* He was right,
+/// and the measurement was worse than the report: the only route to a comment
+/// was the Comments panel, on the `markup` tab, which Read is not shown.
+///
+/// It lives on the **canvas** rather than on the ribbon precisely so that it
+/// is mode-independent by construction — no future edit to a tab list can take
+/// reading away from Read mode again. Its header carries the whole argument,
+/// including why the pop-up is chrome rather than content under rule 4.
+pub mod notepopup;
 // The wheel as a page turn, under a one-page-at-a-time display mode -- O30.
 mod paging;
 /// ★ Everything the canvas draws, once everything is decided — lifted out of

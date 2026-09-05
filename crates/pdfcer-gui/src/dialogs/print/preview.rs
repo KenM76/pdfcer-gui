@@ -203,6 +203,15 @@ const CANVAS_MIN_HEIGHT_PTS: f32 = 160.0;
 /// size rather than one that allocates a screen-sized rect.
 const CANVAS_MAX_HEIGHT_PTS: f32 = 1400.0;
 
+/// The Pop-out button's region, for the driven harness.
+///
+/// ★ Declared with the **visibility-gated** publisher, unlike the preview
+/// column's own region next door, and the two are opposites on purpose: this
+/// one exists to be clicked, so a rect the operator cannot reach is worse than
+/// no rect at all; that one exists to be seen to disappear, so a rect that is
+/// merely scrolled out of view must still count as present.
+pub(super) const REGION_POP_OUT: &str = "print.preview.popout";
+
 /// The fraction of the canvas the fitted sheet occupies.
 ///
 /// Slightly under 1 so the sheet's own outline is not flush against the
@@ -461,6 +470,32 @@ fn raster_scale(page_pt: (f64, f64)) -> f32 {
     dpi_scale.min(MAX_SIDE_PX / longest)
 }
 
+/// **Where this preview is being drawn** — operator request O112 ask 2.
+///
+/// # ★★ One function, two homes, and the difference is one button
+///
+/// The preview is the same picture and the same arithmetic in the print
+/// dialog's column and in its own OS window. What differs is a single control:
+/// the column offers *"pop this out"*, and the popped window does not, because
+/// the way back is its own close button. Passing that as a parameter rather
+/// than writing a second draw function is the whole reason this feature is
+/// cheap — and a second draw function is how the two copies of a preview come
+/// to disagree about a margin.
+///
+/// ★ There is deliberately **no** "put it back" button in the popped window.
+/// The operator's own words were *"closing the window pops it back into place
+/// on the print window"*, and that is also the convention: a popped-out pane
+/// docks by being closed, everywhere this pattern appears. A second control
+/// that did the same thing as the title bar's X would be an invented
+/// interaction beside a conventional one.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) enum Placement {
+    /// Inside the print dialog, in the column beside the options.
+    InDialog,
+    /// In its own resizable OS window. See [`super::popout`].
+    PoppedOut,
+}
+
 /// Draw the preview column: the canvas, then the fixed strip beneath it.
 pub(super) fn column(
     ui: &mut Ui,
@@ -468,6 +503,7 @@ pub(super) fn column(
     dialog: &mut PrintDialog,
     column_height: f32,
     column_width: f32,
+    placement: Placement,
 ) {
     let job = inputs.job;
     if job.plans.is_empty() {
@@ -533,7 +569,7 @@ pub(super) fn column(
     // Rendered before the strip is laid out, because the strip's Actual-size
     // button needs the scale this frame settled on.
     let (texture, overhang) = paint(ui, inputs, dialog, shown, rect, scale);
-    strip(ui, inputs, dialog, shown, rect, scale);
+    strip(ui, inputs, dialog, shown, rect, scale, placement);
 
     // ★ Read AFTER `paint`, which is what makes the sheet on screen count as
     // examined on the frame it is drawn rather than on the next one — see the
@@ -1041,6 +1077,7 @@ fn strip(
     shown: usize,
     rect: Rect,
     scale: f32,
+    placement: Placement,
 ) {
     let sheets = inputs.job.plans.len();
     // ★★★ `horizontal_wrapped`, NOT `horizontal` — 2026-09-03, and this was the
@@ -1113,6 +1150,44 @@ fn strip(
             && scale > 0.0
         {
             zoom_by(dialog, 1.0 / scale, rect.center(), rect.center());
+        }
+        // ★★★ POP OUT — O112 ask 2, and it is the LAST control in the row.
+        //
+        // Last because the row is `horizontal_wrapped`: on a narrow column the
+        // row becomes two, and the control that wraps first should be the one
+        // the operator reaches for least. Stepping sheets and zooming are what
+        // a preview is for; moving it to another window is a once-per-session
+        // act.
+        //
+        // ★ It is a button and not a checkbox, and not a toggle that stays
+        // pressed. The window IS the state — while it is open the operator can
+        // see it, and while it is closed there is nothing to un-toggle. A
+        // latching control here would be a second place the truth lives, and
+        // the two would disagree the moment the window was closed from its own
+        // title bar, which is the documented way back.
+        //
+        // ★ Absent — not greyed — in the popped window itself. See
+        // [`Placement`]: there is nothing there for it to do, and R9's own
+        // distinction is that greying is for *temporarily* unavailable.
+        if placement == Placement::InDialog {
+            let popout = ui
+                .button(t::preview_pop_out())
+                .on_hover_text(t::preview_pop_out_tooltip());
+            // Visibility-gated, because a driven check clicks this. An ungated
+            // rect publishes the control's *content* position, which inside a
+            // scroll area can be hundreds of points outside the window — the
+            // harness then aims the real pointer at nothing, presses nothing,
+            // and reports the feature as inert. That has happened in this
+            // project before and is written up on `dialogs::formfield`'s
+            // rotation row.
+            crate::diag::ui_rect_visible(REGION_POP_OUT, popout.rect, ui.clip_rect());
+            if popout.clicked() {
+                dialog.preview_popped = true;
+                crate::diag::trace(|| {
+                    // ui-text-exempt: diagnostic trace, never displayed in the UI
+                    "print-preview-popped state=out".to_owned()
+                });
+            }
         }
     });
     // ★ THE REGRESSION TEST FOR THE LAST CAUSE OF THE TWO-SCROLLBAR DEFECT,

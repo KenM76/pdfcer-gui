@@ -305,6 +305,29 @@
 //!    and is therefore recorded rather than assumed. Each is also stated at
 //!    its own registration in `crate::shell::commands`:
 //!
+//!    > ★★★ **THE NUMBER AND THE LIST BELOW ARE HISTORICAL — the live count
+//!    > is SEVEN as of 2026-09-05, and the only place that count is true is
+//!    > the assertion in `crate::shell::commands`' test module, which fails
+//!    > the build when it moves.** This paragraph is a dated block about one
+//!    > pass and is kept in its own tense; do not read it as an inventory.
+//!    > Six of the eleven have left it — the five **Render** knobs and
+//!    > `view.app_initiative` moved off the ribbon into Settings, and
+//!    > `file.recent` became an `Item::Custom` with no command behind it —
+//!    > while `format.font`, `format.font_size` and `format.font_colour`
+//!    > joined it when the Format tab's Font group shipped, and
+//!    > `view.panel_close` joined and then left again on 2026-09-05 when it
+//!    > took `close`.
+//!    >
+//!    > ⇒ **A count written into prose in one file cannot be kept true by any
+//!    > mechanism in another.** This one drifted through at least four
+//!    > separate changes without a single test going red, and what caught it
+//!    > was a human reading two files side by side — which is exactly the
+//!    > labour an assertion exists to replace. The seven that remain divide
+//!    > into six with **no slot to put a glyph in** and one that would be
+//!    > wearing the **wrong picture**; neither kind is about the supply of
+//!    > art, and a session arriving here to draw something will find nothing
+//!    > to draw.
+//!
 //!    * `view.zoom_actual` — ui-spec §3.2 is an explicit, reasoned
 //!      recommendation AGAINST iconifying it ("a numeral read at a glance is
 //!      clearer than any glyph substitute could be… both add a decode step a
@@ -1083,11 +1106,40 @@ pub(super) const PROPERTIES: &str = include_str!("assets/properties.svg");
 pub(super) const SET_SCALE: &str = include_str!("assets/set-scale.svg");
 
 // ══════════════════════════════════════════════════════════════════════════
-// The commands the ribbon does not reach yet — five glyphs, 2026-09-04
+// Five glyphs drawn 2026-09-04 — ★ ALL FIVE NOW HAVE BUTTONS (2026-09-05)
 // ══════════════════════════════════════════════════════════════════════════
 //
-// One of these closes a LIVE BORROW; four exist ahead of the commands that
-// will wear them, and the difference matters when reading what follows.
+// ★★★ THIS HEADING USED TO READ *"the commands the ribbon does not reach
+// yet"*, AND IT WAS FALSE WITHIN THE DAY. Every one of the five is now named
+// by a registered command:
+//
+// | glyph | command | where it is drawn |
+// |---|---|---|
+// | `export-image` | `file.export_image` | File ▸ Export |
+// | `copy-as-vector` | `edit.copy_as_vector` (token 408) | Edit ▸ Clipboard, icon-only |
+// | `encrypt` | `file.encrypt` (126) | File ▸ Security, large |
+// | `permissions` | `file.permissions` (127) | File ▸ Security, large |
+// | `open-in-acrobat` | `file.open_in_acrobat` | the ribbon's trailing item |
+//
+// The art was drawn in the morning of 2026-09-04 and four of the five buttons
+// were wired the same afternoon, by the tracks this block names as future
+// work. The block is corrected rather than deleted because **the shape of the
+// mistake is the transferable part**: a sentence that says a thing is not
+// built is a dated citation whose shelf life on this project has repeatedly
+// been measured in hours, and this one was overtaken by the very tracks it
+// predicted. ⇒ Write such a claim so it can be an assertion; where it cannot,
+// date it and expect to return.
+//
+// ★ What did NOT need correcting is the paragraph at the foot of this block —
+// *"a variant with no command is the SUPPORTED state"* — and the reason is
+// instructive. That claim is about `Icon::ALL` membership and the tests that
+// walk it, so it stayed true through the whole transition in both directions.
+// A claim anchored to a mechanism does not rot; a claim anchored to a schedule
+// does.
+//
+// The original argument for each glyph is kept below, in the tense it was
+// written in, because each carries the reasoning for the picture and that
+// reasoning is unaffected by whether a button exists.
 //
 // ★ `export-image` is the live one. `file.export_image` shipped earlier the
 // same day wearing `export` (`download.svg`) with a paragraph in
@@ -1099,18 +1151,34 @@ pub(super) const SET_SCALE: &str = include_str!("assets/set-scale.svg");
 // horizon means here. The registration is repointed and its comment records
 // the reversal rather than being quietly rewritten.
 //
-// ★★ The other four are ART BEFORE BUTTON, deliberately:
+// ★★ The other four were ART BEFORE BUTTON when drawn — each is annotated
+// with what happened to it, so the prediction and the outcome stay side by
+// side rather than the prediction being quietly deleted:
 //
 // * `open-in-acrobat` — a command being built on another track as this lands.
 //   That track was told not to add icons; this is the icon it will name.
-// * `copy-as-vector` — the clipboard's missing copy-out. Not built, not
-//   scheduled, drawn so the layout mockup can put the proposal in front of the
-//   operator as a picture rather than as a sentence.
+//   ✅ **It named it.** `file.open_in_acrobat` ships as the ribbon's trailing
+//   item, gated on `acrobat.available`. The prediction was exactly right.
+// * `copy-as-vector` — the clipboard's missing copy-out. Drawn so the layout
+//   mockup could put the proposal in front of the operator as a picture rather
+//   than as a sentence.
+//   ✅ **BUILT 2026-09-04** as `edit.copy_as_vector`, token 408, drawn
+//   icon-only beside Cut / Copy / Paste on Edit ▸ Clipboard. This entry said
+//   *"not built, not scheduled"* and was overtaken the same day — the mockup
+//   asking the question is what got it built, which is the mechanism working,
+//   not a mis-prediction. What was wrong was writing "not scheduled" as a fact
+//   about the future rather than as a reading of that morning.
 // * `encrypt` and `permissions` — the engine grew both on 2026-09-04 and
-//   nothing in this GUI reaches either. `OPERATOR_REQUESTS.md` O119 is the
+//   nothing in this GUI reached either. `OPERATOR_REQUESTS.md` O119 is the
 //   question to him, and it is a question about a SURFACE (a password box, a
 //   permission list, a save that rewrites the file), not about a button. The
-//   art does not pre-empt his answer; it lets the mockup ask.
+//   art did not pre-empt his answer; it let the mockup ask.
+//   ✅ **HE ANSWERED — *"yes add encryption and permissions"*** — and both
+//   ship as `file.encrypt` / `file.permissions` on a new File ▸ Security
+//   group, both large, exactly where the mockup drew them. This is the one
+//   entry whose reasoning was vindicated rather than merely overtaken: the art
+//   existed so a question could be asked as a picture, the question was asked,
+//   and the answer arrived within the day.
 //
 // ⇒ A variant with no command is the SUPPORTED state, not a loose end.
 // [`super::Icon::EditObjects`] is the standing precedent — its command was
@@ -1135,14 +1203,17 @@ pub(super) const SET_SCALE: &str = include_str!("assets/set-scale.svg");
 /// `copy-as-vector.svg` — the art for [`super::Icon::CopyAsVector`].
 ///
 /// Copy the selection to the clipboard as vector geometry rather than as a
-/// picture of it. See the asset for which glyph it must stay distinguishable
-/// from and by what cue.
+/// picture of it — `edit.copy_as_vector`, token 408, drawn icon-only beside
+/// Cut / Copy / Paste on Edit ▸ Clipboard since 2026-09-04. See the asset for
+/// which glyph it must stay distinguishable from and by what cue.
 pub(super) const COPY_AS_VECTOR: &str = include_str!("assets/copy-as-vector.svg");
 
 /// `encrypt.svg` — the art for [`super::Icon::Encrypt`].
 ///
-/// Put a password on this document — the engine's `set_encryption`, awaiting
-/// the operator's ruling as `OPERATOR_REQUESTS.md` O119.
+/// Put a password on this document — the engine's `set_encryption`. ★ Worn by
+/// `file.encrypt` (token 126) on File ▸ Security since 2026-09-04; this line
+/// said *"awaiting the operator's ruling as O119"* until 2026-09-05, and he
+/// had answered *"yes add encryption and permissions"* the day before.
 pub(super) const ENCRYPT: &str = include_str!("assets/encrypt.svg");
 
 /// `export-image.svg` — the art for [`super::Icon::ExportImage`].
@@ -1160,8 +1231,9 @@ pub(super) const OPEN_IN_ACROBAT: &str = include_str!("assets/open-in-acrobat.sv
 
 /// `permissions.svg` — the art for [`super::Icon::Permissions`].
 ///
-/// What the document permits — the engine's `set_permissions`, the other half
-/// of `OPERATOR_REQUESTS.md` O119.
+/// What the document permits — the engine's `set_permissions`. ★ Worn by
+/// `file.permissions` (token 127) on File ▸ Security since 2026-09-04; O119 is
+/// answered and closed, and this line described it as open until 2026-09-05.
 pub(super) const PERMISSIONS: &str = include_str!("assets/permissions.svg");
 
 /// `select-all.svg` — the art for [`super::Icon::SelectAll`].

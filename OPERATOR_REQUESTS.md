@@ -80,6 +80,136 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
+## O130 — ◑ **BUILT 2026-09-05, AWAITING YOUR VERDICT** — you can read a sticky note by clicking it, in Read mode, the way Acrobat does
+
+**Your words, 2026-09-05:**
+
+> *"check how the review functions work. unless something has changed I could
+> add a yellow sticky note but even in read mode I don't think I could figure
+> out how to read it. the review features should look and act the same as they
+> do in Acrobat Reader. check that these are fully editable while you are at
+> it."*
+
+**You were right, and it was worse than you thought.** There was no way to read
+a note's words *anywhere on the page*, in any mode. The only place a comment's
+text appeared at all was the Comments panel — which lives on the **Markup**
+tab, and Read mode is shown File and View only. So in Read mode there was **no
+route to a comment at all.** A reading mode that cannot read the comments is a
+PDF reader with its posture exactly backwards.
+
+★★ And pdfcer had been **writing** the pop-up window into your files the whole
+time. Every sticky note it authors carries a `/Popup` companion, with its
+position and its open-or-closed state. Nothing in the program had ever drawn
+one. The data was there; the window was missing.
+
+### What you can do now
+
+* **Click a comment on the page and its window opens** — the author, the date
+  and the words, beside the mark. Click it again and it closes. Works in Read,
+  Review and Edit, because it is canvas behaviour rather than a ribbon button.
+* **Hover a comment and get a tooltip** with the author and the first couple of
+  lines, without opening anything.
+* **A note somebody saved open, opens.** If the file says a comment's window
+  should be showing, it is showing when the document loads — no click. That is
+  a setting in the PDF and pdfcer now reads it instead of ignoring it.
+* **The pop-up shows the conversation.** If a comment has replies, they are
+  under it, each with its own name and date.
+* **Edit the note in the window** — in Review and Edit. Read shows it and says,
+  in one line, that Review is where you change it. No greyed-out box.
+* **Delete a comment**, from the pop-up *and* from the Comments panel. The
+  panel has never had a Delete; it does now.
+* **Narrow the Comments panel** — by author, by type, or to comments that
+  actually have words on them. Sort by page, author or type. When a filter is
+  hiding rows, the panel says how many.
+* **Go to** in the Comments panel now opens that comment when it takes you to
+  the page, instead of leaving you to work out which of six clouds it meant.
+
+### ⬜ What has NOT been verified, and it is the important line
+
+**No window was launched.** You were at your keyboard all session and the test
+harness takes the whole desktop. Everything above is held up by unit tests and
+by a driven check that has been **written and never run**. A change that moves
+a window on screen has exactly one honest oracle — a screenshot — and none was
+taken. ⇒ **This row does not close until you have clicked a sticky note and
+told us what you saw.**
+
+### What could not be built, and why
+
+Three things Acrobat has are missing because **the engine cannot do them yet**,
+not because we ran out of time. Each is filed and the engine session answers
+within the hour:
+
+| | |
+|---|---|
+| **Reply to a comment** | pdfcer can *read* a reply thread and has no way to *write* one. Filed |
+| **Accepted / Rejected / Completed** | Acrobat's review status. The engine has no notion of it at all — not read, not written. Filed |
+| **Change a sticky's icon or colour after placing it** | write-once today: to change either you delete and place another. Filed |
+
+Two smaller ones are **ours**, not the engine's, and are named so they do not
+get lost: pdfcer offers no choice of note icon when you place one (it always
+uses the plain note), and closing a pop-up changes your screen rather than the
+file.
+
+## O129 — ◑ **BUILT 2026-09-05, AWAITING YOUR VERDICT** — pdfcer can now tell you WHO signed a document, using the trust list your Acrobat has already downloaded
+
+**Not something you asked for.** It came off `ENGINE_BACKLOG.md`, where the
+engine had recorded four capabilities this shell did not have and nobody had
+written a sentence about two of them. It is in this file because you are the
+only person who can close a row, and because one thing about it is a decision
+rather than an implementation.
+
+**What it does.** The **Signatures** panel used to tell you what a signature
+*covers* and open by saying pdfcer could not check whether it was valid. It can
+now. Every signature gets three lines:
+
+* **Intact:** were the bytes it covers altered after signing?
+* **Covers:** which parts of the file does it protect? (unchanged)
+* **Signer:** does the certificate chain to somebody you trust?
+
+**They are never merged, and there is no green tick.** A signature can be
+perfectly intact and signed by somebody nobody has heard of; it can be from a
+trusted authority and cover only half the file. Anything that folded those into
+one *"valid ✓"* would be the failure this whole subject exists to avoid.
+
+**The part that is your call.** The third line needs a list of certificates to
+trust, and there is no such list published in a form a program can download.
+The only one on your machine is the one **your Acrobat has already fetched** —
+Adobe's approved list plus the EU trusted lists — and pdfcer can read it, from
+your own disk, with no network and without touching the file.
+
+It is **off until you turn it on**, in Settings ▸ **Digital signatures**,
+because whether relying on Adobe's downloaded list fits your Acrobat licence is
+your decision and not one pdfcer should make for you. Turned off, the Signer
+line says *"not checked"* in those words — never a grey tick, never silence.
+
+★ **Your store is sixteen months old, and pdfcer will say so.** It is at
+`%APPDATA%\Adobe\Acrobat\DC\Security\addressbook.acrodata`, 3.4 MB, last
+written **2024-05-27**. pdfcer never copies it; it reads it fresh each time and
+prints how many certificates it holds **and that date**, in the same sentence,
+every time. An anchor list that has quietly gone stale is worse than one you
+never turned on — so opening Acrobat once and letting it update is worth doing
+before you rely on this.
+
+**What it will NOT tell you: whether a certificate has been revoked.** That
+needs a live look-up on the internet and pdfcer never goes on the internet. A
+certificate withdrawn the day after it was issued still chains perfectly. Every
+*trusted* verdict says that, in the same sentence as the good news, rather than
+in a footnote.
+
+⬜ **NOT VERIFIED, in those words.** The headless tests pass and every one was
+falsified. The driven check
+(`signature_trust_is_reported_as_its_own_fact`) is written, registered and
+**was not run** — you may have been at your keyboard. And **nothing in this
+repository has ever seen a signature come back `trusted`**: that needs a real
+certificate from a real authority, which this project cannot commit and cannot
+keep current. ⇒ **The one thing most worth doing next is on your machine**:
+turn the setting on, press *Show what is in it*, and tell me the numbers it
+reports.
+
+---
+
+
+
 ## O128 — ◑ **HALF SHIPPED 2026-09-04, AND THE OTHER HALF DOES NOT EXIST** — export and import as text
 
 **Ken, 2026-09-04, verbatim:**
@@ -293,7 +423,7 @@ after any edit, and now says so where he will see it.
 
 ---
 
-## O126 — ◑ **OPEN 2026-09-04** — float / close / dock on every panel, search on Layers, selection highlights its layer, and the export list is short
+## O126 — ◑ **OPEN 2026-09-04** — float / close / dock on every panel, search on Layers, selection highlights its layer (✅ **done 2026-09-05**), and the export list is short
 
 **Ken, 2026-09-04, verbatim, after approving the A7 mockup:**
 
@@ -326,41 +456,89 @@ these three is to be built whole, including the parts he did not have to say:
    `pdfcer-core` does not expose the object→layer relation it must be requested,
    not invented. Highlighting the wrong layer is worse than highlighting none.
 
-### ◐ **Item 3 is PART-BLOCKED, 2026-09-04** — the engine cannot answer for a content object
+### ✅ **Item 3 is COMPLETE, 2026-09-05** — and the block lasted less than a day
 
-**The relation is not reachable, and it was requested rather than invented.**
-Filed as
-`D:\Dev\FeatureRequests\pdfce_FeatureRequests\open
-equest_which_layer_is_this_object_on.md`,
-which this row names per rule 4 of this file's contract.
+**This section used to be headed *"Item 3 is PART-BLOCKED — the engine cannot
+answer for a content object"*.** That heading was true when it was written and
+false within a day, which is why the correction is kept in place of the claim
+rather than appended to it.
 
-What the engine has and has not:
+**The relation was requested rather than invented**, filed 2026-09-04 as
+`request_which_layer_is_this_object_on.md`, and `pdfcer-core`'s `Pass 250.0`
+answered it the same session. `oc: Option<ObjId>` now sits on `PathObject`
+(`vector/decompose.rs:386`), `TextObject` (`:484`) and `ImageObject` (`:780`),
+read through `VectorObject::oc()` (`:1064`) and `FormLeaf::oc()` (`:1300`).
+Engine v0.38.0, `b01964f`.
 
-| selection | the relation | why |
-|---|---|---|
-| an **annotation** — a stamp, a note, a cloud, a dimension | **reachable** | `pdfcer_core::annot::Annotation::oc: Option<ObjId>` carries the §8.11.3.3 reference |
-| a **content object** — a path, a text run, an image | **not reachable** | `vector::decompose`'s walk *counts* `/OC` sections and has no `EMC` arm; `pdfcer-render`'s interpreter resolves the group's `ObjId` correctly and then pushes a `bool`, discarding the identity on the next line |
+★★★ **The refusal is what produced the capability.** The shell-side workaround
+— re-tokenize the page, keep our own `/OC` stack, index by
+`VectorObject::tokens()` — was about forty lines of public API and was refused,
+because it would have been a second implementation of `/OC` resolution beside
+the engine's, blind to OCMD `/VE` policy, certain to disagree with the renderer
+one day on a file nobody would debug. **Had it been built, nobody would ever
+have asked, and the engine would still not carry the field.**
 
-⇒ **Shipped: the half that is true.** Selecting an annotation emphasises its
-layer row and scrolls it into view. Selecting a content object renders
-**nothing** — not a highlight, not a "layer unknown" line, not a greyed row —
-because R9 says an unavailable capability renders nothing, and because the
-alternative is a silence that reads as *"this object is on no layer"*, which
-would be the wrong answer rather than a missing one. The panel's own type is
-three-valued so those two can never be confused:
-`crates/pdfcer-gui/src/panels/layers/highlight.rs`.
+### What shipped
 
-★★ **The shell-side workaround was available and was refused.** Re-tokenizing
-the page and keeping our own `/OC` stack is about forty lines of public API. It
-would be a second implementation of `/OC` resolution beside the engine's — the
-"two surfaces drift" failure `pdfcer-core`'s `layers.rs` decision 1 exists to
-prevent — it cannot see OCMD `/VE` policy, and it re-parses a stream the engine
-has already parsed. The request document carries the argument in full.
+| selection | what happens |
+|---|---|
+| a **content object** — path, text run, image | the Layers panel plates its row and scrolls it into view, **and the status bar names the layer on the selection line** |
+| an object inside a **form XObject**, one deep | the same, composing the leaf's own `/OC` with the enclosing form's |
+| an object on **no** layer | *"What you have selected is not on a layer"* — a positive fact, said out loud |
+| a selection spanning **two** layers | no row is plated, and the panel says why |
+| pdfcer genuinely cannot tell | no row is plated, and the panel names **which** of five reasons |
+| an **annotation** | unchanged; it worked from the start |
 
-★ **The reverse — clicking a layer indicating its objects — is not built**, and
-not because it was skipped: it needs an inverse index (`objects_on_layer`) that
-is trivially derivable from the membership above and does not exist without it.
-Named in the request as a second, lower-priority ask.
+★★★ **The status-bar clause is the point, not a bonus.** *"Selecting an object
+highlights that layer"* is a sentence about **clicking**, and the canvas is the
+primary surface, never a panel. A capability whose only route is a panel is one
+he has to know about before he can use it. The panel is where the answer can be
+*acted on*; the bar is where it can be *seen*, with nothing open.
+
+★★ **Rule 4 held throughout: nothing is drawn on the drawing.** No badge, tint,
+dashed outline or provisional layer over the selected content. Both surfaces are
+off-canvas.
+
+### ★★★ …and the second route audited the capability, as it keeps doing
+
+Building the page-object route beside the annotation route found **two engine
+divergences**, both filed on the `ENGINE_BACKLOG.md` row rather than absorbed:
+
+1. **A form leaf does not inherit the `/OC` its `Do` was painted under.** The
+   engine's own doc comment calls it *"a documented partial"*. Everything inside
+   a form on a layer therefore reports `None`, which the field contract defines
+   as **on no layer** — a wrong positive, not a missing answer. The shell repairs
+   the one-deep case by composing two answers the engine already computed;
+   deeper than that it is unrepairable from outside and is reported as unknown
+   rather than guessed.
+2. **`oc_unresolved` is blind to form interiors** — the nested decomposition's
+   diagnostics are discarded — so the counter the engine nominates as *"how a
+   shell tells the two apart"* cannot be consulted for a leaf.
+
+### ★★ One thing he should know rather than discover: the unit of selection
+
+His own finding, from this project's record: **one path object on his drawing
+holds 6,681 anchors across half his sheet**, and the largest on `SW41177.pdf`
+p1 holds **1,194 subpaths**. `/OC` wraps paint operators, so every subpath of
+one object shares one membership — the answer is exact at object granularity
+and **has no finer form to be exact at**. Clicking a circle and being told *"on
+layer Grid"* is therefore a true statement about a thousand other curves too.
+
+⇒ Stated as a **measurement**, off-canvas, and only when the number is greater
+than one: *"The object you selected holds 1,194 separate parts. The layer
+belongs to the whole object, not to the part under your pointer."* A hedge
+printed on every selection would have taught him to skip the line.
+
+★ **The reverse — clicking a layer indicating its objects — is now derivable
+and is still not built.** Indicating them means marking the canvas, which Rule 4
+forbids for an inference. The shape it would have to take (a count, off-canvas,
+in the row's tooltip) is a separate decision.
+
+⚠ **Not verified:** the driven check
+(`ui-verify selecting_an_object_names_its_layer`) is written, registered and
+**has not been run** — the machine was possibly in use. The unit tests, including
+the two that would go red if the answer stopped following the selection, are
+green.
 
 ### ★★ Addendum, same conversation — select-all's glyph, and rotate in the rail
 
@@ -1946,7 +2124,7 @@ is no second computation to drift, and opening the dialog still costs one page.
 
 ---
 
-## O112 — ◑ **HALF DONE 2026-09-03** — the print preview should be resizable, and poppable into its own window
+## O112 — ✅ **DONE 2026-09-05** — the print preview should be resizable, and poppable into its own window
 
 **Ken, 2026-09-03:** *"also the preview should be adjustable size, and even
 better if it has the option to pop out into its own resizeable window - closing
@@ -1995,12 +2173,68 @@ simply shows a bigger sheet.
 - The affordance is a **cursor** and a hover-lift on the divider. Nothing is
   drawn on the previewed sheet — rule 4's pre-commit clause.
 
-### ⬜ Ask 2 not started — the pop-out window
+### ✅ Ask 2 done 2026-09-05 — the pop-out window
 
-Still the right shape and still cheap: a second `Host` keyed `print-preview`,
-with `Frame::closed` already being the return path. Deferred deliberately rather
-than rushed in behind four defect fixes in the same file, which is now split
-across `print/mod.rs` and `print/layout.rs`.
+Press **Pop out**, at the end of the preview's own control strip, and the
+preview moves into a window of its own — resizable, draggable onto a second
+monitor, with its own entry in the taskbar. **Close that window and the preview
+comes back**, which is your sentence and is also the default behaviour rather
+than a feature: `Frame::closed` is what a hosted dialog reports, and Escape and
+the title bar's X are the same gesture (G4).
+
+**While it is out, the print dialog draws no preview column at all.** Not a
+greyed rectangle and not a "the preview is in another window" card — the
+column and its splitter are absent and the options take every point they were
+using. `layout::Columns::split` is where that is decided and it is a pure
+function, so the collapse is a unit test rather than a screenshot:
+`popping_the_preview_out_collapses_its_column_and_gives_the_room_away` asserts
+all three parts — zero preview, zero splitter, **options == content**. The
+third is the one worth the test: emptying a column and collapsing it look the
+same on a wide dialog, and only one of them is the feature.
+
+★ **A narrow dialog with the preview out no longer scrolls.** The popped case
+has a content floor of its own (400 pt, the options column alone) rather than
+the two-column 628 pt, and the row has one child so egui inserts none of the
+two `item_spacing` gaps the three-child arithmetic reserved. Carrying the old
+numbers over would have raised a horizontal scrollbar on a comfortable window
+— O111's defect re-entering through the new feature, from the opposite
+direction.
+
+★★ **The R128 trap was checked rather than assumed.** `Host::fit` grows a
+dialog to fit its content, and the preview's own sheet-to-canvas `fit` is
+recomputed from the current rect every frame — a measurement feeding a size,
+inside a window whose size is fed by a measurement. It does not close, and the
+reason is a direction bound, not a guard: `preview::column` allocates exactly
+what it is handed and is handed `available` minus a constant, so the content is
+never larger than the window and a grow-only function has nothing to chase.
+`popout.rs`'s header carries the argument and names `dialog-fit-runaway` as the
+line a future mistake would announce itself as.
+
+**Decisions taken rather than asked about**, one line each:
+
+* **No "put it back" button in the popped window.** Closing it is the gesture,
+  in your own words and in every product that has this pattern. A second
+  control doing what the title bar already does is two routes that eventually
+  disagree.
+* **No control in the print dialog either** while the preview is out — that
+  space is the options', and the window is in the taskbar.
+* **Pop out is the last control in the strip**, so it is the first to wrap on a
+  narrow column. Stepping sheets and zooming are what a preview is for.
+* **The label is "Pop out"**, your word, not "Detach" or "Open in new window".
+
+### ⚠ What is NOT verified, named rather than implied
+
+**No window was rendered.** You were at the machine, so `ui-verify` was not run
+and no screenshot exists of either the popped window or the collapsed column.
+The arithmetic is unit-tested and falsified; **that it looks right is
+unverified**, and for a layout change a rendered frame is the only real oracle.
+
+`ui-verify`'s `the_print_preview_pops_into_its_own_window` is written and
+registered and **has never been run**. It drives the click, asserts the column's
+region is declared before it and **retired** after it (`ui-rect-gone`), asserts
+the popped window's body drew, asserts `popped=true preview_w=0.0` and
+`options_w == content_w`, then presses Escape and asserts the preview comes
+home. Its header says what a first run is most likely to teach it.
 
 ### Was blocked behind O111 on purpose
 
@@ -3607,7 +3841,7 @@ expect. All five destination kinds are handled, but only `/FitR` is exercised by
 your fixture, and `/XYZ` — the one Acrobat writes most — is the one carrying the
 null-versus-zero rule that is easiest to get backwards.
 
-## O89 — ◑ **"I don't see where I am able to edit the color of text, vectors, etc."** — one half is hidden, the other does not exist
+## O89 — ✅ **"I don't see where I am able to edit the color of text, vectors, etc."** — CLOSED 2026-09-05: the route exists now, and so does the whole-selection recolour
 
 **Ken, 2026-09-01.** Two different answers in one sentence.
 
@@ -3626,14 +3860,49 @@ colour button lights up and applies to exactly what you swept.
 ⇒ That is a real route and a bad one to have to guess. It is also the same shape
 as the last two of these: the capability shipped, the way in did not.
 
-**Not yet decided how to fix the route**, and it should not be improvised. The
-candidates:
+### ✅ **FIXED 2026-09-05 — click the words and the colour is right there**
 
-| | |
+Select a piece of text with the ordinary Select tool. **Properties ▸ Text** now
+carries a **Colour** swatch that acts on *the whole shape you clicked*, with no
+sweep at all. Under it, the sentence that was already there tells you how to
+reach the four things a whole shape has no single answer for — font, size, bold
+and italic — which still need the sweep.
+
+It also says how much it is about to change: *"The text in this shape — 14
+run(s)."* One of your SolidWorks exports puts **every label on the sheet** inside
+one text object, so that number is not decoration.
+
+★★★ **The same spot-ink rule as the vector half.** Where any of the shape's text
+is painted in CMYK or a named ink, there is **no swatch** — a sentence stands
+where it would have been, and it says how many of how many runs are affected and
+that sweeping them individually is how to reach the ones that can be changed.
+
+★ **Where the colour comes from.** The shape's runs and their colours are read
+by matching the shape's own `BT`…`ET` **byte range** in the content stream
+against each run's show operator. That is an exact join, not a guess at which
+words are inside which box — the shell has a standing rule against inferring one
+selection from the other, and this does not break it.
+
+#### The three candidates this replaces — and two of them were already built
+
+The row above used to list three candidates and pick none. Measured on
+2026-09-05, before building anything:
+
+| candidate | what was actually true |
 |---|---|
-| a colour control on a *selected text object* that sweeps it for you | closest to what you tried |
-| the Properties panel naming the missing step where the swatch would be | cheapest, and honest |
-| the greyed button saying *"sweep the text first"* on hover | R9's own rule, and it is not doing it today |
+| a colour control on a selected text object | **not built.** Now built, and it is what this section describes |
+| the Properties panel naming the missing step | **already built**, since 2026-08-29. It is kept, re-aimed, and now sits under a working control instead of instead of one |
+| the greyed button saying so on hover | **already built for four of the five controls.** Every Font command's tooltip has ended *"Sweeping text with the Text tool (T) chooses what it applies to"* since the group shipped |
+
+★★★ **And the fifth was worse than missing — it was wrong.** The ribbon's greyed
+**Colour** swatch answered a hover with *"Set in CMYK or a spot colour — pdfcer
+will not offer to change it here…"*: a confident, specific claim about text it
+had not read one byte of. With nothing swept there is no run to read, and the
+control was reporting the *document* as the reason it was greyed. That is the
+state you were in when you went looking, and the one surface that could have
+answered you told you your drawing was the problem. Fixed: with nothing swept it
+now shows the tooltip that names the sweep, and the CMYK sentence appears only
+when a run really is painted that way.
 
 ### ✅ Vector colour SHIPS — same day, and finding it turned up a real bug
 
@@ -3647,10 +3916,52 @@ because that would look right here and change what prints."* A colour picker
 that opened on black over a spot ink would be one click from destroying a plate,
 and it would look completely normal while it happened.
 
-**One object at a time, for now.** The engine will recolour a whole selection;
+### ✅ **A WHOLE SELECTION, since 2026-09-05**
+
+~~**One object at a time, for now.** The engine will recolour a whole selection;
 the control does not offer it yet, because when the objects disagree there is no
 honest colour to open on and picking the first one's would quietly propose
-flattening the rest to it.
+flattening the rest to it.~~ **Superseded — the worry was right and the
+conclusion was wrong.**
+
+Box-select a dozen lines and the Fill and Line swatches act on all of them, in
+**one undo step**. Where they disagree the swatch shows a dash rather than a
+colour, which is what Illustrator, Inkscape, Figma and Word all do for the same
+state: there is no colour to open on, so it opens on none, and picking one sets
+every member. Your own standing instruction is to use the conventional
+interaction rather than invent one, and this is the conventional one.
+
+The row also says what it is about to change — *"14 shape(s) selected. 3 other
+object(s) are also selected and are not shapes with a fill or a line"* — because
+a box over a table catches its rules **and** its labels, and text staying black
+otherwise reads as the control half-working.
+
+★★★ **One spot ink in the selection does NOT stop the rest, and it is not a hole
+in the plate guard.** The line above the swatch names them first — *"2 of these
+14 are painted in named inks (PANTONE 300, PANTONE 485) and will be left exactly
+as they are"* — and the status line confirms it afterwards: *"Recoloured 12
+object(s). 2 were left alone."* Three reasons that is the honest answer rather
+than refusing the whole gesture:
+
+1. **The engine refuses each named-ink object itself**, per channel, whatever the
+   panel draws. The guard is structural, not a property of this control.
+2. **You ruled on this exact case**: *"a selection of twelve strokes where three
+   are in a colour space pdfcer will not rewrite needs to say 'nine changed', not
+   'done'."*
+3. **Refusing would be unusable on your drawings** — one spot-inked line inside a
+   box of two hundred would block the lot, and finding it to deselect it means
+   spotting a line that looks like every other line.
+
+Where **every** member is a named ink there is still no swatch at all, exactly as
+for one object. That is the case where a control's only possible effect is the
+damage.
+
+★ **One more thing fixed on the way, and it was already there for a single
+object.** Dragging inside the colour picker used to write an edit *every frame* —
+`egui`'s colour button reports itself changed sixty times a second while you
+drag, so a single gesture left dozens of undo steps you could not get back
+through. The swatch now commits when the picker closes: one gesture, one change,
+one `Ctrl+Z`.
 
 ### ★★★ Asking for this found pdfcer writing wrong colours into saved files
 
@@ -3701,8 +4012,22 @@ more often than it recolours type.
 
 </details>
 
-**Status:** ◑ **Vectors SHIP. Text works and is still unfindable** — the route
-question above is undecided and is yours.
+**Status:** ✅ **CLOSED 2026-09-05.** Vectors ship, one shape or a whole box-full;
+text colour is on the shape you click. ~~the route question above is undecided
+and is yours~~ — it was decided rather than asked, per your standing instruction
+of 2026-09-04: *"Always add new features. never ask. just do."* All three
+candidates are now in the build; two of them turned out to be there already, and
+the third had shipped **wrong** for the one control you actually went looking
+for.
+
+⬜ **NOT VERIFIED, named rather than implied.** The driven check
+`clicking_text_offers_its_colour` is written and registered and **has not been
+run** — the session that wrote it was forbidden to take the desktop. Its module
+header carries the falsification table. What *is* verified: sixteen unit tests
+over the two colour readings, two of them falsified by planting the flattening
+defect and watching the named test go red (`left: Some(Agreed([255, 0, 0]))`
+where `Some(Mixed)` was required, and `left: Agreed([0, 0, 0])` over a selection
+containing a spot ink).
 
 ---
 
@@ -7516,7 +7841,7 @@ fail with `1709629` against `1709629` and name the substitution.
 
 ---
 
-## O47 — A question, not a complaint: should pdfcer embed its OWN fonts?
+## O47 — ✅ **ANSWERED PROPERLY 2026-09-05** — should pdfcer embed its OWN fonts?
 
 **Asked 2026-08-28, by me, and it needs your answer before I build either
 side of it.**
@@ -7538,16 +7863,34 @@ is *"add a folder that does"*.
 The alternative is to offer them: press Embed on any drawing and every
 standard-14 font gets one, with no folder configured at all.
 
-### Why I did not just do it
+### Why I did not just do it — ⚠ **THIS PARAGRAPH WAS WRONG, corrected 2026-09-05**
 
-Because embedding a stand-in **changes what the letters look like** in a
-document you send to somebody else, and doing that because a substitute
-happened to be available is the *sneaky* half of rule 4. It is your drawing and
-your client's screen.
+It read, and the words are kept because the mistake is the useful part:
 
-The command-line tool makes it an explicit switch for the same reason. Mine has
-no switch, because that window has no settings by design — so this is a choice
-about what pdfcer does, not a checkbox I can add without asking.
+> *Because embedding a stand-in **changes what the letters look like** in a
+> document you send to somebody else, and doing that because a substitute
+> happened to be available is the sneaky half of rule 4. It is your drawing and
+> your client's screen.*
+>
+> *The command-line tool makes it an explicit switch for the same reason. Mine
+> has no switch, because that window has no settings by design — so this is a
+> choice about what pdfcer does, not a checkbox I can add without asking.*
+
+**It identifies the right constraint and draws the wrong conclusion, twice.**
+
+★★★ **Rule 4 is *fuzzy, never sneaky*. It forbids doing a thing SILENTLY, not
+doing it.** The command line resolves this exactly the way the whole product
+class does — an explicit switch, off by default, with the consequence stated —
+and that was available here from the first day.
+
+★★ **And "that window has no settings by design" is a fact about a window
+being used to settle a question about a capability.** A surface's current shape
+is not a reason to withhold something you are entitled to decide. A window that
+grows one honest, defaulted-off, disclosed control is still an honest window.
+
+★ The last clause — *"not a checkbox I can add without asking"* — is the one
+that cost the most. It asked instead of building, which is the thing you have
+since ruled out by name: ***"Always add new features. never ask. just do."***
 
 ### What I need from you
 
@@ -7565,15 +7908,79 @@ already substitutes Arial for Helvetica and nobody would call that wrong —
 this is the same act one step further out. But it is your call and I am not
 taking it.
 
-**Status:** ★★★ **SHIPPED AND DRIVEN, 2026-08-28** — option 2, always,
-disclosed loudly. With no font folder configured at all, a drawing asking for
-Helvetica now embeds: 3 fonts, 46 KB, every row saying *"none of your fonts
-matched, so pdfcer used its own copy. It is a stand-in, not the font the document
-asks for."* It is the LAST rung — a real font on your machine wins every time —
-and there is a driven check that turning it off makes fail by name.
+### ✅ Status: it is **option 3** — a checkbox, off by default, disclosed
 
-★ No option number was named, so this took the one I recommended: If he meant option 3, say so and it becomes a second
-button in the window rather than a change to the resolver.
+**2026-08-28 shipped option 2** (always, no control). **2026-09-05 moved it to
+option 3**, which the row above had already said was one sentence away: *"If he
+meant option 3, say so and it becomes a second button in the window."* No
+option number was ever named, so this took the reading the evidence supports.
+
+**What you see now.** On a drawing pdfcer cannot fully answer for, the Embed
+window says, above the buttons:
+
+> pdfcer carries its own copy of 3 of the fonts this document is missing:
+> Helvetica, Helvetica-Bold, Times-Roman.
+>
+> *Those letters will look different on the screen of whoever you send this to.
+> pdfcer's copies also come with a licence that asks to be credited wherever the
+> file goes, which is why this is your choice and not something pdfcer does on
+> its own.*
+>
+> ☐ Use pdfcer's own copies where none of yours match
+
+Ticking it embeds them; leaving it does not. Every substituted row still says
+*"none of your fonts matched, so pdfcer used …. It is a stand-in, not the font
+the document asks for."* Nothing is marked on the page.
+
+### ★★★ Why OFF is the default, and it is not about the letters
+
+The letterform argument alone would not have decided it — the disclosure was
+always loud, and rule 4 is satisfied by disclosure.
+
+What decided it is **the licence**, and it was found by reading the engine
+rather than by reasoning about the GUI. pdfcer's fourteen substitute faces are
+**BSD-3-Clause** (`THIRD_PARTY_LICENSES.md`, *"Bundled Foxit substitute
+faces"*), and embedding one puts it **inside a file you then send to a client**,
+carrying that licence's attribution condition with it. `pdfcer`'s own command
+line says so where its `--use-bundled-fonts` flag is declared, and draws the
+conclusion this row now follows:
+
+> *"OFF by default, and not for a technical reason: the bundled faces are
+> BSD-3-Clause … and embedding one puts it inside a document you then
+> distribute — which carries that licence's attribution condition with it.
+> **That is your decision to make, so pdfcer does not make it for you.**"*
+> — `D:\Dev\pdfcer\crates\pdfcer-cli\src\main.rs:1598`
+
+From 2026-08-28 to today this window made that decision for you on every press,
+with no way to decline it. It was never *sneaky* — it said what it did. It was
+simply not yours.
+
+### ★★ What it costs you, honestly
+
+**A press of Embed on a machine with no font folders now embeds nothing** where
+yesterday it embedded pdfcer's stand-ins. That is one tick away, it is named on
+screen with the fonts listed, and the blocked row for each of those fonts now
+says *"pdfcer has its own copy of this one. Tick the box below to use it"*
+rather than sending you to a folder picker.
+
+★ On your own machine, with the OS font folders switched on (O50), **the
+checkbox usually does not appear at all** — a real Arial answers the drawing's
+`Helvetica` on the alias rung before pdfcer's own copy is ever reached. The
+control is drawn only when it would change something.
+
+### ⬜ What is NOT verified
+
+**No window was rendered.** You were at the machine, so `ui-verify` was not run.
+`embedding_works_with_no_font_folder_at_all` was rewritten to drive **both**
+positions — the offer made and declined as the window opens, then the box
+ticked and the commit reaching the engine with `substituted=true` — and **has
+not been run.** A check asserting only that the box is off would pass on a build
+that ignored the box entirely, which is why both are driven; that both fire is
+still unproven.
+
+Falsified by unit test rather than by driving: the two blocked-row sentences,
+the offer naming every font, and the consequence stating both the look and the
+licence.
 
 ★★ **And he added a fourth thing in the same breath, which is O50.** It changes
 what this row is worth: with the OS font folders switched on, pdfcer reaches a

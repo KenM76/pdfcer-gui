@@ -483,6 +483,7 @@
                 Command(id: "view.panel_bookmarks"),
                 Command(id: "view.panel_layers"),
                 Command(id: "view.panel_signatures"),
+                Command(id: "markup.comments"),
                 Command(id: "file.fonts"),
             ],
         ),

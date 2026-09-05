@@ -110,6 +110,20 @@ pub mod face;
 /// rules for that job are written down with them.
 pub mod layersearch;
 
+/// **Every sentence pdfcer says about which layer a selection is on** — the
+/// panel's long form and the status bar's short clause, generated from one
+/// [`crate::panels::layers::highlight::Membership`] so the two surfaces cannot
+/// drift. Its own module under R2 and under `DEFECTS.md` D5; the module header
+/// argues the seam.
+pub mod layers;
+
+/// ★ Re-exported so `t::layer_selection_unlayered()` still resolves at the two
+/// call sites that had it before the vocabulary moved into [`layers`]. The
+/// sentence did not change; only its home did, and a rename of the path would
+/// have been churn in files this landing does not otherwise touch.
+pub use layers::layer_selection_unlayered;
+
+/// The Fonts panel's inventory report.
 pub mod fonts;
 /// The Comments panel — every annotation on the document, listed.
 pub mod formfield;
@@ -117,6 +131,15 @@ pub mod formfield;
 pub mod objects;
 /// The Properties panel.
 pub mod properties;
+/// ★★ The Properties panel's **clicked-text** colour section — O89's object
+/// route.
+///
+/// Its own module rather than more of [`properties`], and the reason is
+/// measured rather than stylistic: that file stood at 1,446 of its 1,500-line
+/// R2 ceiling on the day this was written. Its header carries the seam as well
+/// as the measurement — [`properties`] says *what is selected*, this says
+/// *what a route the operator could not guess will and will not touch*.
+pub mod textobject;
 
 // ---------------------------------------------------------------------------
 // Shared
@@ -188,16 +211,27 @@ pub fn panel_unknown() -> &'static str {
 // Signatures
 // ---------------------------------------------------------------------------
 
-/// The caveat, shown ABOVE the list on every visit.
-///
-/// A panel headed "Signatures" listing byte counts is the likeliest place in
-/// this application for an operator to take away more than was said. The
-/// sentence is first, not a tooltip, because the person who most needs it is
-/// the one who will not hover.
-#[must_use]
-pub fn signatures_not_a_validity_check() -> &'static str {
-    "pdfcer does not check whether these signatures are valid — it cannot yet. What follows is what each signature COVERS: which parts of the file it would protect if it is valid."
-}
+// ★★★ `signatures_not_a_validity_check` STOOD HERE AND WAS DELETED
+// 2026-09-05, with the sentence quoted so the deletion is legible:
+//
+//   > "pdfcer does not check whether these signatures are valid — it cannot
+//   > yet. What follows is what each signature COVERS …"
+//
+// It was true when written and became FALSE the moment
+// `signature::verify_all_with_trust` was wired into
+// `crate::panels::signatures` — which is this project's most expensive
+// recorded failure shape: a claim about what the engine cannot do, with a
+// shelf life measured in hours, sitting inside prose that stayed true.
+//
+// ★ It is DELETED rather than reworded, because the sentence it would have
+// to become is not a caveat at all: the panel now reports three facts and its
+// leading line describes their SHAPE rather than denying one of them. That
+// sentence lives in `crate::text::trust::panel_intro`, beside the other trust
+// copy, because the four rules governing it are that module's.
+//
+// The opener test below now aims at that function, so the "each structure
+// panel leads with its own limitation" property still holds and is measured
+// against the sentence actually on screen.
 
 /// No signature carries a byte range.
 #[must_use]
@@ -991,49 +1025,6 @@ pub fn bookmark_row_unresolved_tooltip() -> &'static str {
     "This bookmark points somewhere pdfcer could not resolve — it may use a destination form pdfcer does not read yet, or name a page that is not in this document."
 }
 
-/// **What the panel says when the selected mark is on no layer.**
-///
-/// Shown for `panels::layers::highlight::Membership::None` and for nothing
-/// else — in particular **not** for `Unknown`, which is today's answer for
-/// every content object and which renders nothing at all (R9).
-///
-/// ## ★★★ Why this sentence exists, when silence would be simpler
-///
-/// It is the disambiguating half of a pair. A selected annotation either
-/// highlights a row or does not, and "does not" has two causes the operator
-/// cannot otherwise tell apart:
-///
-/// | cause | what they see without this line |
-/// |---|---|
-/// | the mark is genuinely on no layer | no highlight |
-/// | pdfcer could not work out which layer | no highlight |
-///
-/// The second is a real and current state — `pdfcer-core` discards the
-/// optional-content group identity while resolving it, so no content object
-/// can answer — and an operator who has just switched a layer off and is
-/// wondering why their note is still on the page needs to know which of the
-/// two they are in. This line is said only in the first case, so its
-/// *presence* is the answer and its absence is not a claim.
-///
-/// ## ★★ "Not on a layer", not "on no layer"
-///
-/// The operator's mental model is that things are *put on* layers. "Not on
-/// a layer" describes the mark; "on no layer" describes a set, and reads
-/// like the beginning of a fault report. The sentence is a statement about
-/// the document, as ordinary as a layer's name, so it is phrased as one.
-///
-/// ## ★ It says "selected", not "this object"
-///
-/// Because what carries an `/OC` today is an **annotation** — a stamp, a
-/// cloud, a note, a dimension — and "object" in this program means a
-/// content object, which is exactly the thing this cannot yet answer for.
-/// Naming the wrong noun would promise a capability the sentence is not
-/// evidence of.
-#[must_use]
-pub fn layer_selection_unlayered() -> &'static str {
-    "What you have selected is not on a layer."
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1049,7 +1040,7 @@ mod tests {
     #[test]
     fn each_structure_panel_leads_with_its_own_limitation() {
         let openers = [
-            signatures_not_a_validity_check(),
+            crate::text::trust::panel_intro(),
             layers_session_only_note(),
             bookmarks_truncated(),
         ];

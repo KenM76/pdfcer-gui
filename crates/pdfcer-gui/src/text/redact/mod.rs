@@ -26,6 +26,32 @@
 //! >    is the one moment that learned expectation is wrong, so the copy
 //! >    corrects it on screen instead of leaving it to be assumed.
 //!
+//! ## ★★★ Rule 3 CORRECTED IN PLACE, 2026-09-05 — it was about the wrong noun
+//!
+//! Rule 3 was written for a world in which an apply was a write, and it survived
+//! `Pass 250.1`'s collapsing verb because that verb destroyed the undo log
+//! outright. `Pass 250.2` makes it false as stated: the deferred route
+//! **preserves undo completely**, and a staged removal can be undone — by
+//! stepping back over the marks, or by calling it off with
+//! [`cancel_button_staged`]. A rule forbidding the word "Undo" near that state
+//! would forbid the true and useful sentence.
+//!
+//! What the rule was actually protecting is the state where undo genuinely does
+//! not help, and that state is now precisely nameable:
+//!
+//! > **3′. Never suggest that Undo can recover content that has reached a
+//! > file.** Before the save, undo works and the copy may say so. After it, no
+//! > sentence may offer undo as a way back — not on the write-now
+//! > destinations, not on the deferred one after
+//! > [`saved_applying_redaction`], not anywhere.
+//!
+//! The distinction is the whole of it: undo reaches the **arming**, and never
+//! reaches the **removal**. `tests::no_post_apply_sentence_mentions_undo_as_a_way_back`
+//! enforces 3′ over the sentences the removal has happened in, and the sweep's
+//! membership list is now the load-bearing half — a sentence about a
+//! *pre*-save state belongs out of it, and one about a post-save state belongs
+//! in it.
+//!
 //! ## ★ The one distinction every string here has to keep alive
 //!
 //! `crate::text::commands::edit_redact`'s shipped tooltip states it in four
@@ -99,7 +125,14 @@ pub fn panel_intro() -> &'static str {
     // — and this sentence is read before that dialog is ever opened, which
     // makes it the worse place to be specific about the destination. The
     // permanence, which does not vary, stays exactly as emphatic as it was.
-    "Mark content, then apply to permanently remove it. Marking is reversible and changes nothing in the file; applying writes a file with the marked content gone, and cannot be undone."
+    //
+    // ★★ 2026-09-05: *"produces a file"* rather than *"writes a file"*, and
+    // *"once it is written"* on the permanence clause. The default destination
+    // no longer writes at the moment of applying — it arms a save
+    // (`Pass 250.2`) — so a sentence promising a file at that click is a
+    // promise the operator can watch not happen. The permanence is unchanged
+    // and stays exactly as emphatic: what varies is *when*, never *whether*.
+    "Mark content, then apply to permanently remove it. Marking is reversible and changes nothing in the file; applying produces a file with the marked content gone, and once it is written that cannot be undone."
 }
 
 /// The heading over the marking controls.
@@ -794,11 +827,12 @@ pub fn confirm_checkbox() -> &'static str {
 // ---------------------------------------------------------------------------
 mod destination;
 pub use destination::{
-    applied_into_document, confirm_button_into_document, confirm_button_replace,
-    destination_heading, destination_new_file, destination_new_file_tooltip,
-    destination_open_document, destination_open_document_tooltip, destination_replace,
-    destination_replace_tooltip, overwrite_acknowledgement_checkbox, permanence_statement_deferred,
-    undo_will_be_cleared,
+    cancel_button_staged, cancel_button_staged_tooltip, confirm_button_into_document,
+    confirm_button_replace, destination_heading, destination_new_file,
+    destination_new_file_tooltip, destination_open_document, destination_open_document_tooltip,
+    destination_replace, destination_replace_tooltip, overwrite_acknowledgement_checkbox,
+    permanence_statement_deferred, removal_happens_at_save, saved_applying_redaction, staged_body,
+    staged_heading, staged_into_document, staging_cancelled,
 };
 
 /// ★ **The confirm control. The label IS the consequence** — never "OK", never
@@ -1020,6 +1054,55 @@ pub fn refusal_message(refusal: &crate::redact::RedactApplyRefusal) -> String {
         R::VerificationFailed { survivors } => format!(
             "Redaction refused — pdfcer applied the removal, then searched the finished file and found {} piece(s) of the supposedly-removed text still in it. Nothing was written. Do not use any file produced from this document until this is investigated.",
             survivors.len()
+        ),
+        // ★ Not a failure, and the sentence must not read as one. This is the
+        // ordinary state of a document whose removal is already armed, and the
+        // only reason it arrives as a refusal at all is that the pipeline
+        // refuses by name rather than letting the engine's `RedactionPending`
+        // surface as "this document cannot be rewritten in full" — a true
+        // sentence about the wrong subject. See `crate::redact` §1.0.2.
+        R::AlreadyStaged => {
+            "A removal is already set up for this document. Nothing has been removed yet; it happens when you save. Use Save or Save As to carry it out, or call it off from this window."
+                .to_owned()
+        }
+    }
+}
+
+/// ★★★ **The sentence for a save that could not be built because the staged
+/// removal was refused.**
+///
+/// New 2026-09-05, and it exists for one reachable sequence rather than for
+/// completeness: the operator arms a removal, then **undoes the marks** — which
+/// works now, and is the whole point of `Pass 250.2` — and then presses
+/// `Ctrl+S`. There is nothing left to remove, so the removal refuses; and the
+/// ordinary save modes are refused too while the arming stands. The document
+/// cannot be saved at all until he calls the removal off.
+///
+/// ★ It is separate from [`refusal_message`] because the moment is different
+/// and so is what the operator is holding. That one is read when he presses
+/// *Review & apply* and nothing has been decided. This is read after he pressed
+/// **Save** and expected a file, so it leads with the fact that no file was
+/// written and ends with the one control that unblocks him — named, because a
+/// refusal an operator cannot act on is a refusal he learns to ignore.
+///
+/// ★★ The `_` arm is not a shrug. Every other [`crate::redact::RedactApplyRefusal`]
+/// reaching this path means the engine declined the removal itself — an
+/// undecodable image, an encrypted document, a hybrid base — and those already
+/// carry [`refusal_message`]'s own worded cause. Repeating the cause here in
+/// different words is how two sentences about one event come to disagree; what
+/// this adds is the part [`refusal_message`] cannot know, which is that the
+/// operator was trying to **save**.
+#[must_use]
+pub fn save_refused_message(refusal: &crate::redact::RedactApplyRefusal) -> String {
+    use crate::redact::RedactApplyRefusal as R;
+    match refusal {
+        R::NothingToApply => {
+            "Nothing was saved. This document has a removal set up, and there are no marks left for it to remove — the marks were taken off after it was set up. Call the removal off from Review & apply, then save; while it is set up, this is the only kind of save pdfcer will do."
+                .to_owned()
+        }
+        other => format!(
+            "Nothing was saved: the removal this document has set up could not be carried out, so pdfcer refused rather than write a file with the content still in it. {}",
+            refusal_message(other)
         ),
     }
 }

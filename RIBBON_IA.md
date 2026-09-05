@@ -17,6 +17,79 @@ on top of everything here).
 
 ---
 
+## ★★★ Amendment, 2026-09-05 — the ribbon and the mockup now AGREE, measured
+
+`python tools/compare-mockup-ribbon.py` exits **0**. The mockup's ribbon and
+`shell/ron/built_in.ron` carry the same 35 captioned bands in the same order,
+across the seven fixed tabs and the contextual one.
+
+### ★★ Read the exit code for what it is, and not for more
+
+The script's own closing lines say it and this section repeats it because the
+inference is irresistible: **structural agreement is not visual agreement, and
+it is not even agreement about the controls.**
+
+| the question | answered by |
+|---|---|
+| the same bands, in the same order? | **the script. Yes, exit 0.** |
+| the same controls in each band — present, ordered, sized, glyphed, labelled? | **nothing.** The mock stores a *label*, the RON stores an *id*, and the map between them is Rust the script deliberately does not build |
+| the same paddings, heights, framing, label placement, type? | **nothing here.** Only a rendered screenshot of the running binary |
+
+⇒ Four real item-level divergences were found **by hand** on 2026-09-05, and
+**not one of them moved the script's verdict**: `Copy as vector` and the two
+Security controls marked unbuilt after they shipped, `Select all` marked
+icon-less while carrying `select-all`, and `Export text…` missing from the mock
+entirely. A green line from an instrument that does not look at items is
+evidence about bands and about nothing else.
+
+### The one place the PRODUCT was the spec, and why that is not a precedent
+
+The standing rule is unchanged and is not being softened: **the operator
+approved the mockup, so where the two disagree the mockup is right by
+definition and the difference is a defect in the build.** The Format tab is the
+single exception, and it earns the exception on grounds that are checkable
+rather than on judgement:
+
+| the mockup drew | the product ships | which side moved, and why |
+|---|---|---|
+| **Arrange** — *Bring forward* / *Send backward*, greyed | nothing | **the mockup.** Neither is a registered command; both sit in `manifest::PLANNED` as **N**, one of them reading *"the whole Edit ▸ Arrange group is unbuilt, so the GROUP is absent too."* R9 forbids the picture the mock drew: an unavailable capability renders **nothing**, and greying is for something *temporarily* unavailable, explained on hover |
+| **Object** — *Duplicate · Delete · Properties* | **Selection** — *Properties · Select the form · Give this page its own copy · Delete* | **the mockup.** `Delete` and `Properties` are the same two commands under a different band name; **`Duplicate` names nothing** — there is no `format.duplicate`, and the nearest id in the tree, `edit.paste_duplicate`, is a clipboard verb on another tab that does something else |
+| *(absent)* | **Font** — face · size · | · Bold · Italic · colour | **the mockup.** §5.8's own 2026-08-27 amendment specifies this band, it shipped that day on O37, and the mock's Format tab was drawn on 2026-09-04 without it |
+
+★ The transferable half, and it is why this section is in the specification
+rather than in a session log: **a mockup is a specification only where it is
+DERIVED.** `mockups/build-pdfcer-shell.py` states that rule about itself — the
+glyph inventory is read out of `icons/assets/`, never typed, so *"this glyph
+ships"* is true by construction — and the ribbon in that mock is **typed**. The
+Format tab was not describing an older build. It was describing no build at
+all, and nothing could have told anyone, because nothing was comparing.
+`tools/compare-mockup-ribbon.py` is the derivation the ribbon does not have.
+
+### ★★ And the instrument itself was reading something that is not the ribbon
+
+Four of the seven differences it reported on 2026-09-05 were **its own**. It
+scanned the whole of `built_in.ron` for `caption:` and the file has captions
+outside the ribbon: the **rail** carries three bands of its own (`Navigate`,
+`Select`, `Rotate`), all three were reported as missing from an approved
+design, and the rail's `Navigate` collides by name with View ▸ Navigate so the
+order line ended in a phantom.
+
+⇒ **Ask what the instrument SAMPLED before believing what it reported.** This
+project has recorded that against `ui-verify` at least four times; it applies
+to a forty-line regex script identically. And note the direction of the
+failure: it *manufactured* work rather than hiding it, so a session obeying it
+would have drawn three bands into the mock that the ribbon does not have — a
+completeness instrument's most expensive failure mode is the confident one.
+
+⚠ **The rail is out of scope for that script and diverges from the mock.** The
+shipped rail's `Select` band holds `edit.select_all`; the mock's holds a
+**Lasso** that has no command and no asset and is drawn with the freehand pen's
+borrowed art. That is a live O123 design question, not a ribbon defect, and it
+is named here so the next reader does not mistake a green ribbon line for a
+statement about the left edge.
+
+---
+
 ## 1. What this document is for
 
 pdfcer's ribbon today has six tabs and twenty groups. The grouping is

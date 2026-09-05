@@ -491,6 +491,8 @@ pub fn grip_rects(bounds: Rect) -> Vec<(Grip, Rect)> {
     debug_assert!(
         anchors.width() + f32::EPSILON >= MIN_BODY_STRIP_PX
             && anchors.height() + f32::EPSILON >= MIN_BODY_STRIP_PX,
+        // ui-text-exempt: a debug_assert message. It names an internal invariant
+        // for a developer and cannot reach a release build, let alone the operator.
         "grip_bounds must guarantee a body strip on both axes; got {anchors:?}"
     );
 

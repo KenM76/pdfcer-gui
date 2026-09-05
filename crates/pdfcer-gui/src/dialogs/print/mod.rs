@@ -126,6 +126,10 @@
 /// routine and pushed `preview.rs` toward R2's 1500-line ceiling.
 pub(crate) mod ink;
 pub(crate) mod layout;
+/// **The preview in a window of its own** — operator request O112 ask 2. Its
+/// header carries why the feature is one call and one line, and why the print
+/// dialog's own column then draws nothing at all.
+mod popout;
 pub(crate) mod preview;
 mod spooler;
 pub(crate) mod tabs;
@@ -327,6 +331,26 @@ pub struct PrintDialog {
     /// ★ Always read back through the clamp in [`Self::body`], never used raw:
     /// the bound depends on the window width, which changes under it.
     preview_width: f32,
+    /// **Whether the preview is in its own OS window** — operator request O112
+    /// ask 2, 2026-09-05.
+    ///
+    /// `false` is in the column beside the options, which is where every
+    /// dialog opens; `true` is the second [`crate::dialogs::host::Host`] that
+    /// [`popout`] draws, and the print dialog's own preview column then
+    /// **renders nothing at all** and the options take its room (R9 — see
+    /// `layout::Columns::split`).
+    ///
+    /// ★ It lives here rather than in `egui::Memory` for the same reason the
+    /// width beside it does: it is part of what the operator has arranged about
+    /// *this* print, and it goes away with the dialog. A remembered pop-out
+    /// state would open a second window on a later print the operator had not
+    /// asked for one on, which is the kind of surprise a dialog is not allowed.
+    ///
+    /// ★★ There is exactly ONE writer of `false`: [`PrintDialog::popped_preview`]
+    /// on `Frame::closed`. Closing the window IS putting the preview back, so a
+    /// second control that set this would be a second route to something the
+    /// title bar already does — and the two would eventually disagree.
+    preview_popped: bool,
     /// How far the sheet is displaced from centred, in egui points.
     ///
     /// Applied AFTER centring, so `Vec2::ZERO` always means "centred at the
@@ -457,6 +481,10 @@ impl PrintDialog {
             // about this one.
             preview_zoom: 1.0,
             preview_width: layout::PREVIEW_DEFAULT_WIDTH_PTS,
+            // In the column. A dialog opens with its preview where every
+            // print dialog on this machine puts it; popping out is the
+            // operator's act, never the program's.
+            preview_popped: false,
             preview_pan: egui::Vec2::ZERO,
             preview_texture: None,
             // Empty, and emptied again by every change of context — see
@@ -559,6 +587,16 @@ impl PrintDialog {
         let context = job
             .as_ref()
             .map(|job| verdicts::Context::new(self.scope, &doc.settings, job.device.printable_pt));
+
+        // ★★★ THE POPPED-OUT PREVIEW, DRAWN BEFORE THIS DIALOG'S OWN WINDOW —
+        // operator request O112 ask 2, 2026-09-05.
+        //
+        // A no-op unless the operator has pressed Pop out. The order matters
+        // and [`PrintDialog::popped_preview`] carries the argument: the commit
+        // button's clip count is corrected by what the preview has examined, so
+        // the preview must paint before the footer reads the claim — an
+        // invariant the body used to satisfy by containing it.
+        self.popped_preview(ctx, doc, job.as_ref(), &page_sizes, context.as_ref());
 
         // ★★ A REAL OS WINDOW, as of 2026-08-20. The operator's report:
         //
@@ -1037,176 +1075,6 @@ impl PrintDialog {
                 tabs::comments_resolution(ui, self, job.map(|j| j.resolution));
             }
         }
-    }
-
-    /// The footer: Close, the commit button, and the last outcome.
-    ///
-    /// # ★ The commit button is ABSENT, not greyed, when there is nothing to print
-    ///
-    /// The no-placeholders rule's own distinction: greying is for
-    /// *temporarily* unavailable, and there are two genuinely different
-    /// reasons this button might not act.
-    ///
-    /// - **No device, or no pages selected** — the job does not exist. The
-    ///   button is not drawn. Something else on screen already says why (the
-    ///   preview column's own sentence), so a disabled button would be a
-    ///   second, quieter statement of a fact already made loudly.
-    /// - There is no third case. A job that exists can always be sent; whether
-    ///   it *should* be is the operator's call, and the clip count in the
-    ///   label is how they make it.
-    ///
-    /// # ★★★ The label's count is corrected by what the preview has seen
-    ///
-    /// Operator request O113, 2026-09-04. It used to be [`Job::clipped`] —
-    /// a geometric count of page boxes exceeding the printable rectangle —
-    /// which on a 1:1 CAD sheet read *"Print — 1 sheet will be clipped"* over
-    /// a preview showing nothing hatched and saying the overhang was blank.
-    ///
-    /// It is now the geometric count **minus the sheets the preview has
-    /// examined and found blank**, with every sheet nobody has looked at still
-    /// counted. [`verdicts::ClipClaim`] carries both the number and how well
-    /// it is known, and picks the sentence that number can support; this
-    /// function does not choose wording, so the button and the preview's own
-    /// caption cannot come to say different things about one job.
-    ///
-    /// ★ Drawn AFTER the body, which is what makes the sheet on screen count
-    /// as examined on the same frame it is drawn. The alternative — the
-    /// footer reading a cache the preview has not written yet — would make the
-    /// button lag the picture beside it by exactly one frame, which is a
-    /// contradiction that flickers rather than one that persists, and is
-    /// therefore harder to notice and worse.
-    fn footer(
-        &mut self,
-        ui: &mut Ui,
-        job: Option<&Job>,
-        page_sizes: &[(f64, f64)],
-        context: Option<&verdicts::Context>,
-    ) {
-        ui.horizontal(|ui| {
-            // ★★ G4 — ENTER PRESSES PRINT, AND PRINT LOOKS LIKE THE DEFAULT.
-            //
-            // The operator's second item, and the failure mode
-            // `ui-conventions/dialogs.md` names: *"the operator types into the
-            // last field, presses Enter out of habit, and nothing happens."*
-            // In this dialog the last field is the page range, which is exactly
-            // the box somebody types into and then expects Enter to act on.
-            //
-            // ★ The pair is drawn only when there is a job to send. That is not
-            // a styling decision, it is the no-placeholders invariant: a
-            // default button for a print that cannot happen is a control the
-            // operator would press and be ignored by — and worse, it would make
-            // ENTER silently do nothing while looking like it should do
-            // something, which is the very complaint. With no job, the footer
-            // keeps its plain Close and Enter is honestly inert.
-            //
-            // ★ `Host::buttons` owns the ordering, the theme fill and the Enter
-            // guard, so no dialog can implement two of the three. It puts
-            // Cancel to the LEFT of the affirmative in the right-to-left
-            // layout, which is Windows' order and the order every dialog on
-            // this machine uses.
-            // ★★★ THE OUTCOME IS DRAWN FIRST, AND THE ORDER IS THE BUG FIX.
-            //
-            // Operator report, 2026-08-25: *"when I press print, instead of
-            // closing after printing it just keeps expanding its size in
-            // little steps to infinity."*
-            //
-            // It did, and the cause was this block sitting AFTER the button
-            // block rather than before it. [`Host::buttons`] lays its pair out
-            // with `Layout::right_to_left`, and a right-to-left child inside a
-            // left-to-right `horizontal` is anchored to the RIGHT EDGE of
-            // whatever space it was offered — so its `min_rect` reaches that
-            // edge whether it needed the room or not. Appending anything after
-            // it therefore places that widget **past the edge of the available
-            // width**, by its own width plus one item spacing.
-            //
-            // On its own that is only an overflowing row. What made it
-            // unbounded is [`crate::dialogs::host::Host::fit`], which grows a
-            // dialog whose content is wider than its window:
-            //
-            // 1. the row overflows by the label's width, `w`;
-            // 2. `fit` grows the window by `w`;
-            // 3. the wider window offers a wider row, the RTL block reaches the
-            //    NEW right edge, and the label is placed `w` past it again;
-            // 4. goto 2, for ever, in steps of exactly `w`.
-            //
-            // ★ Note what this is NOT. It is not the once-per-size guard
-            // failing — every size in the sequence is genuinely new, so the
-            // guard is satisfied every time. It is not `FIT_MARGIN` being too
-            // small — the step is a whole label wide. **It is a measurement fed
-            // back into the size that produced it**, which is R128's shape and
-            // the third time this project has met it. `fit`'s own doc comment
-            // asserted the print dialog was immune because it scrolls; that was
-            // true of its BODY and said nothing about its footer.
-            //
-            // Drawing the outcome first fixes it completely and needs no
-            // arithmetic: the label consumes width from the left, the button
-            // block is then offered what remains and anchors to the right edge
-            // of THAT, and the row ends exactly at the edge. It is also the
-            // conventional arrangement — status left, actions right — which is
-            // what every dialog on this machine does, so the fix costs nothing
-            // in layout terms and gains the Windows idiom.
-            //
-            // ★ `truncate()` is not decoration either: `t::failed` carries a
-            // driver's own error text and can be arbitrarily long. Untruncated
-            // it would push the buttons off the row and re-create the overflow
-            // by a different route — a *bounded* one, since the text does not
-            // grow with the window, but bounded overflow is still overflow.
-            // The full text is not lost; it is what the trace records.
-            match &self.outcome {
-                // ★ A SUCCESS DRAWS NOTHING HERE, and the arm is kept rather
-                // than folded into `None` so the reason is where somebody
-                // looking for the missing receipt will find it.
-                //
-                // Since 2026-09-03 a successful commit sets `close_requested`,
-                // so this window is gone by the next frame and anything drawn
-                // here would be shown for at most one. The receipt — the page
-                // count, and the `Synthesised` disclosure when the driver held
-                // settings pdfcer does not model — goes to the application's
-                // disclosure row instead, where it OUTLIVES the dialog. See
-                // `show`'s commit block.
-                //
-                // Drawing it in both places was considered and refused: two
-                // copies of one sentence is how they come to disagree, and the
-                // footer's copy would be the one nobody could act on.
-                Some(Ok(_)) => {}
-                Some(Err(detail)) => {
-                    ui.add(
-                        egui::Label::new(
-                            egui::RichText::new(t::failed(detail))
-                                .color(ui.visuals().error_fg_color),
-                        )
-                        .truncate(),
-                    );
-                }
-                None => {}
-            }
-            match job.filter(|j| !j.plans.is_empty()) {
-                Some(job) => {
-                    // ★ `ClipClaim::None` when there is no context, which
-                    // happens only when there is no job — and this arm has
-                    // one. The plain label is therefore not a fallback that
-                    // could hide a clip; it is what an unclipped job says.
-                    let label = context
-                        .map(|context| self.verdicts.claim(context, job, page_sizes))
-                        .unwrap_or(verdicts::ClipClaim::None)
-                        .commit_label()
-                        .unwrap_or_else(|| t::commit().to_owned());
-                    let (accepted, cancelled) =
-                        crate::dialogs::host::Host::buttons(ui, &label, t::close());
-                    if accepted {
-                        self.commit_requested = true;
-                    }
-                    if cancelled {
-                        self.close_requested = true;
-                    }
-                }
-                None => {
-                    if ui.button(t::close()).clicked() {
-                        self.close_requested = true;
-                    }
-                }
-            }
-        });
     }
 
     /// Render every planned sheet and hand them to the spooler.

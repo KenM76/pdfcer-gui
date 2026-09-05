@@ -596,7 +596,20 @@ mod tests {
         // name shorter as of this commit. Art waiting for a command is the
         // adoption rule working; a command waiting for art is the refusal this
         // counter's other half exists to make somebody argue for.
-        assert_eq!(named, 130, "commands naming an icon");
+        //
+        // ★★★ 130 → 131 on 2026-09-05: `view.panel_close` takes `close`. This
+        // is a **CORRECTION**, not a discharge, and the distinction argued
+        // twenty lines up is exactly why it is worth a separate entry: the
+        // refusal read *"there is no close art in this set"* and `file.close`
+        // had worn `close` since the set landed. Nothing about the world
+        // changed for this to become right — it was never right. An absence
+        // claim about art is a one-grep question, and this one went three
+        // documents deep without anybody running the grep.
+        //
+        // ⇒ The rule the ledger below already states, earning its keep a second
+        // time: **verify an absence against the source, never against the
+        // document that asserts it.**
+        assert_eq!(named, 131, "commands naming an icon");
         // ★ 12 → 17 on 2026-08-27: the Format ▸ Font group's five commands
         // all refuse a glyph, and they refuse it for one reason argued once at
         // their registration. Word draws `B` and `I` as glyphs; this build has
@@ -782,13 +795,23 @@ mod tests {
             //       below a Float that has a glyph. The same word, twice, one
             //       of them pictured.
             //
-            //   ⇒ ★ The one-line change (`.with_icon("close")` at this
-            //   command's registration in `catalog::view`) is NOT made here.
-            //   `shell/commands/catalog/` belongs to a concurrent track this
-            //   session and a two-agent edit of one registration list is how a
-            //   command gets registered twice. The decision is recorded, the
-            //   count below stays at 8 until it is applied, and the day it is,
-            //   this becomes 8 → 7 and the third discharge in this ledger.
+            //   ⇒ ★★★ **APPLIED 2026-09-05, and this is the third discharge in
+            //   this ledger: 8 → 7.** The one-line change
+            //   (`.with_icon("close")`) now stands at the command's
+            //   registration in `catalog::view`, which carries the full
+            //   argument. It was deferred on 2026-09-04 only because
+            //   `shell/commands/catalog/` belonged to a concurrent track that
+            //   day and a two-agent edit of one registration list is how a
+            //   command gets registered twice; the deferral was about
+            //   ownership, never about the merits, and its condition expired.
+            //
+            //   ★ The refusal it retires was FALSE AT SOURCE — *"there is no
+            //   close art in this set"* while `file.close` had worn `close`
+            //   since the set landed. Recorded here because the ledger is where
+            //   a future session looks for the shape of the mistake: **an
+            //   absence claim is verified against the source, never against the
+            //   document that asserts it.** One grep would have settled it, and
+            //   the claim survived because nobody ran one.
             //
             // ★★★ 10 → 8 on 2026-09-04 — `format.bold` and `format.italic`,
             // **corrected, not discharged**. The `named` note above carries the
@@ -811,16 +834,22 @@ mod tests {
             //   · `view.zoom_actual` — WRONG PICTURE, argued against BY NAME in
             //     the icon ui-spec §3.2 and marked `{noicon:1}` in the approved
             //     mockup. No supply of art touches that.
-            //   · `view.panel_close` — **NO LONGER REFUSED ON THE MERITS**, and
-            //     the only entry in this list whose reason has expired rather
-            //     than survived. It was recorded as MISSING SLOT because this
-            //     build's context menus wired no icon painter; they wire one as
-            //     of 2026-09-04, the slot exists, and the ruling immediately
-            //     above is that `close` is the right picture for it. It is
-            //     still counted below only because the registration lives in a
-            //     file another track owns this session.
+            //   · `view.panel_close` — **DISCHARGED 2026-09-05**, and it is no
+            //     longer in this list at all. It was the only entry whose
+            //     reason had expired rather than survived: recorded as MISSING
+            //     SLOT because this build's context menus wired no icon
+            //     painter, and they wire one as of 2026-09-04. It now carries
+            //     `close`, which is why the count below is 7 and not 8.
+            //
+            // ★ So the seven that remain divide into exactly two kinds, and
+            // neither kind is about the supply of art: **six have nowhere to
+            // put a glyph** (three custom widgets, three mode-selector
+            // segments) and **one would be wearing the wrong picture**
+            // (`view.zoom_actual`). A future session reading this list looking
+            // for something to draw will find nothing to draw, and that is the
+            // point of writing the division down.
             refused,
-            8,
+            7,
             "commands with no icon, each argued at its registration"
         );
         // Each refusal is argued at its own registration and listed in the

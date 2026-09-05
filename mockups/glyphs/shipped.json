@@ -19,6 +19,11 @@
   "body": "<path d=\"M38 24H12\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\"/> <path d=\"M21 15l-9 9 9 9\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>",
   "src": "back.svg"
  },
+ "bold": {
+  "vb": "0 0 48 48",
+  "body": "<path d=\"M15 38V10h11a7 7 0 0 1 0 14H15\" stroke=\"currentColor\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M15 24h13a7 7 0 0 1 0 14H15\" stroke=\"currentColor\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>",
+  "src": "bold.svg"
+ },
  "bookmarks": {
   "vb": "0 0 48 48",
   "body": "<path d=\"M14 8h20a2 2 0 0 1 2 2v30l-12-9-12 9V10a2 2 0 0 1 2-2z\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/>",
@@ -263,6 +268,11 @@
   "vb": "0 0 48 48",
   "body": "<path d=\"M18 6h14l8 8v28H18z\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M32 6v8h8\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M4 24h14\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M13 19l5 5-5 5\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>",
   "src": "insert-pages.svg"
+ },
+ "italic": {
+  "vb": "0 0 48 48",
+  "body": "<path d=\"M25 11h12M11 37h12M31 11 17 37\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\"/>",
+  "src": "italic.svg"
  },
  "keyboard": {
   "vb": "0 0 48 48",
@@ -523,6 +533,11 @@
   "vb": "0 0 48 48",
   "body": "<circle cx=\"21\" cy=\"21\" r=\"10\" stroke=\"currentColor\" stroke-width=\"2.5\"/> <path d=\"M28.5 28.5L38 38\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\"/>",
   "src": "search.svg"
+ },
+ "select-all": {
+  "vb": "0 0 48 48",
+  "body": "<path d=\"M19 17v16l4.5-4 3 6.5 3.5-1.5-3-6.5H33z\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M8 8h32v32H8z\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linejoin=\"round\" stroke-dasharray=\"5 4\"/>",
+  "src": "select-all.svg"
  },
  "set-scale": {
   "vb": "0 0 48 48",

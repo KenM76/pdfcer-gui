@@ -137,6 +137,19 @@ pub mod secret;
 // consumer of `text::{ribbon, commands}`.
 pub mod shell;
 pub mod text;
+/// ★★★ Where signature trust ANCHORS come from, and the three facts they let
+/// this shell state.
+///
+/// The shell half of `pdfcer-core`'s `Pass 10.2`–`10.5`: locating the trust
+/// list an installed Acrobat/Reader has downloaded, reading it (read-only, no
+/// network, opt-in and off by default), and threading it into
+/// `signature::verify_all_with_trust`.
+///
+/// Its header carries the rule that governs the whole subject — **this is the
+/// one place in the product where a wrong answer is worse than no answer** —
+/// and the consequence: integrity, coverage and trust are reported separately,
+/// never folded into one badge, and `NotChecked` renders as itself.
+pub mod trust;
 pub mod viewer;
 
 use std::path::PathBuf;

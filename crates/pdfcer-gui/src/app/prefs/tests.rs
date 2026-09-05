@@ -44,6 +44,10 @@ fn every_preference_round_trips_through_the_file() {
                 // ★ Non-default, like every field here, and with a SPACE in
                 // it — a path a person would really type on Windows. O122.
                 acrobat_path: r"D:\Apps\Acrobat DC\Acrobat.exe".to_owned(),
+                // ★ Non-default, and deliberately a DIFFERENT string from the
+                // field above: two paths that happened to be equal would pass on a
+                // writer that emitted one of them twice.
+                acrobat_trust_store_path: r"D:\Certs\addressbook.acrodata".to_owned(),
                 // ★ Non-default, like every other field here: a `None`
                 // would pass on a build whose writer emitted no
                 // `chosen_standard` key at all.
@@ -514,6 +518,10 @@ fn the_writer_emits_no_key_the_parser_rejects() {
         // value in this file most likely to contain the character that
         // breaks a naive writer.
         acrobat_path: r"D:\Apps\Acrobat DC\Acrobat.exe".to_owned(),
+        // ★ Non-default, and deliberately a DIFFERENT string from the
+        // field above: two paths that happened to be equal would pass on a
+        // writer that emitted one of them twice.
+        acrobat_trust_store_path: r"D:\Certs\addressbook.acrodata".to_owned(),
         // ★ Non-default, with a space and a non-ASCII character. The file
         // is UTF-8 and a name is the one field an operator will put an
         // accent in; a writer or reader that mangled it would put mojibake

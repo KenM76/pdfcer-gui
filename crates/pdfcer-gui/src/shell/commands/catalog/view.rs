@@ -540,7 +540,27 @@ pub(super) fn band() -> Vec<Command> {
         // note on `offers_anything`).
         command("view.panel_float", t::view_panel_float(), 259).with_icon("floating-panels"),
         command("view.panel_dock", t::view_panel_dock(), 260).with_icon("floating-panels"),
-        command("view.panel_close", t::view_panel_close(), 261),
+        // ★★★ `close`, applied 2026-09-05. The ruling was made on 2026-09-04
+        // in `shell::commands`' icon-less ledger and deliberately NOT applied
+        // there, because this file belonged to a concurrent track that day and
+        // a two-agent edit of one registration list is how a command gets
+        // registered twice. The deferral was the right call and its condition
+        // has expired; the ledger's count moves 8 → 7 with this line.
+        //
+        // ★ The refusal it retires was FALSE AT SOURCE, which is why it is
+        // worth a comment rather than a silent edit. It read *"there is no
+        // close art in this set"* — and `file.close` had worn `close` since the
+        // set landed. An absence claim about art is checkable in one grep and
+        // this one was never checked. ⇒ Verify an absence against the source,
+        // never against the document that asserts it.
+        //
+        // The second half of the 2026-09-04 ruling, restated so it is not
+        // re-litigated: `dock.tab` draws this row, and drawing it bare one row
+        // under a Float that has a glyph made the same word appear twice with
+        // only one of them pictured. Sharing `close` with `file.close` is
+        // correct rather than a collision — both close the thing the surface is
+        // about, and the surface says which thing.
+        command("view.panel_close", t::view_panel_close(), 261).with_icon("close"),
         // ★★ **The recovery command**, and the one member of the family that
         // DOES belong on the ribbon — because it is the only one with no
         // operand. Greyed when nothing is floating: that is temporarily

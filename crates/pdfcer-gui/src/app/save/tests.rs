@@ -132,7 +132,11 @@ fn a_saved_copy_begins_with_the_original_file_byte_for_byte() {
     let target = scratch("unedited.pdf");
     let _ = std::fs::remove_file(&target);
 
-    let report = write_copy(&doc, &target).expect("an unedited document must save");
+    let Written::Ordinary(report) =
+        write_copy(&doc, &target).expect("an unedited document must save")
+    else {
+        panic!("an unstaged document must take the incremental writer")
+    };
     let written = std::fs::read(&target).expect("the copy must exist");
 
     assert!(
@@ -189,7 +193,11 @@ fn an_edit_survives_the_round_trip_through_a_saved_copy() {
 
     let target = scratch("rotated.pdf");
     let _ = std::fs::remove_file(&target);
-    let report = write_copy(&doc, &target).expect("an edited document must save");
+    let Written::Ordinary(report) =
+        write_copy(&doc, &target).expect("an edited document must save")
+    else {
+        panic!("an unstaged document must take the incremental writer")
+    };
     assert!(
         report.bytes_appended > 0,
         "an edited document must append a revision; {report:?}"
@@ -295,7 +303,11 @@ fn a_created_document_saves_and_the_copy_opens() {
 
     let target = scratch("created.pdf");
     let _ = std::fs::remove_file(&target);
-    let report = write_copy(&created, &target).expect("a created document must save");
+    let Written::Ordinary(report) =
+        write_copy(&created, &target).expect("a created document must save")
+    else {
+        panic!("an unstaged document must take the incremental writer")
+    };
     assert_eq!(
         report.bytes_written,
         crate::app::blank::TEMPLATE.len(),
@@ -404,65 +416,91 @@ fn a_write_that_cannot_happen_is_a_named_refusal() {
 }
 
 // =======================================================================
-// ★★★ THE DEFERRED REDACTION — 2026-09-04
+// ★★★ THE STAGED REDACTION — 2026-09-05, `pdfcer-core` `Pass 250.2`
+//
+// This section REPLACES the one that measured `Pass 250.1`'s collapse. The
+// tests below are the same questions asked of a different mechanism, and one
+// of them has changed its answer:
+//
+//   * is a document with an armed removal DIRTY?  — still yes, and the term
+//     that sees it changed from `has_applied_redaction` to
+//     `has_pending_redaction` (see `has_unsaved_edits`' own doc comment for
+//     the reachable state that made the change necessary rather than tidy);
+//   * does a save through this module remove the content?  — still yes, and
+//     now through a completely different writer;
+//   * does the proof bite?  — still yes, unchanged;
+//   * …and one new question, because the pass brings a new trap with it: what
+//     happens when the marks are undone under an armed removal.
 // =======================================================================
 
-/// ★★★ **A document with an applied redaction is UNSAVED, and a two-term
-/// predicate said it was clean.**
+/// **Stage a removal of `term` on `open`, the way the funnel does.**
 ///
-/// The defect this closed, and it is the one that would have made the whole
-/// deferred route a silent data loss. `EditSession::apply_redactions`
-/// collapses the session onto the redacted bytes as a new base, so
-/// `is_modified()` — *"does this differ from the base revision?"* — answers
-/// **no** the instant afterwards. Correct on its own terms, and with only
-/// two terms [`has_unsaved_edits`] inherited it: no tab marker, no question
-/// on Close, no question on Quit. Apply a redaction, close the document,
-/// and the redaction is gone with nothing asked.
-///
-/// The test walks the same table the O65 test does, on the redacted branch:
-/// dirty after the apply, clean after the save, dirty again after a further
-/// edit. The middle row is what stops the fix from being *"always answer
-/// dirty once a redaction has happened"*.
-#[test]
-fn a_document_with_an_applied_redaction_has_unsaved_edits() {
-    let mut open = open_local_fixture("a1-titleblock.pdf");
-    assert!(!has_unsaved_edits(&open), "untouched");
-
+/// Three lines in four tests, and it is a helper rather than repetition
+/// because the last line is the one that gets forgotten: `edit_epoch += 1` is
+/// what `crate::app::actions::apply::vector_edit` does after every successful
+/// edit, and [`has_unsaved_edits`] reads it. A test that staged without it
+/// would be asserting over a state the running program never reaches.
+fn stage(open: &mut crate::app::state::OpenDoc, term: &str) {
     let session =
         std::sync::Arc::get_mut(&mut open.session).expect("the session is not shared in a test");
     let created = session
-        // ui-text-exempt: a word in a test fixture.
-        .mark_redactions_by_search("FOUNDATION", false)
+        .mark_redactions_by_search(term, false)
         .expect("the drawing's text is extractable");
     assert!(!created.is_empty(), "the fixture must contain the term");
-    crate::redact::apply_into_session(session).expect("the apply must succeed");
+    let staged = crate::redact::stage_into_session(session).expect("the staging must succeed");
+    open.redaction_absence_claims = staged.report.redacted_text.clone();
     open.edit_epoch += 1;
+}
+
+/// ★★★ **A document with an armed removal is UNSAVED, and the term that sees
+/// it is `has_pending_redaction`.**
+///
+/// The defect this closes is the same one the 2026-09-04 term closed, and the
+/// reachable state is different — which is why the term had to change rather
+/// than merely be renamed:
+///
+/// * **Under `Pass 250.1`** the session *collapsed*, so `is_modified()`
+///   answered false immediately afterwards and the predicate inherited it.
+/// * **Under `Pass 250.2`** nothing is mutated, so `is_modified()` answers
+///   whatever the marks made it — true when the operator has just made them,
+///   and false when the marks were already in the file he opened. That second
+///   case is the one a two-term predicate still gets wrong, and it has a test
+///   of its own directly below.
+///
+/// This one walks the same table the O65 test does, on the staged branch:
+/// dirty after the staging, clean after the save, dirty again after a further
+/// edit. The middle row is what stops the fix from being *"always answer
+/// dirty once a removal has been armed"*.
+#[test]
+fn a_document_with_a_staged_redaction_has_unsaved_edits() {
+    let mut open = open_local_fixture("a1-titleblock.pdf");
+    assert!(!has_unsaved_edits(&open), "untouched");
+
+    // ui-text-exempt: a word in a test fixture.
+    stage(&mut open, "FOUNDATION");
 
     assert!(
-        !open.session.is_modified(),
-        "★ the premise: after the collapse the engine says the session does \
-         NOT differ from its base, because the redacted bytes ARE the base. \
-         If this ever stops being true the assertion below stops being \
-         interesting, and a reader should know which one moved."
+        open.session.has_pending_redaction(),
+        "★ this is the term that sees it"
     );
     assert!(
-        open.session.has_applied_redaction(),
-        "…and this is the term that sees it"
+        !open.session.has_applied_redaction(),
+        "★★ and this one never can again. This shell does not collapse a \
+         session any more; a true here means something reached the engine's \
+         finalizing verb and `redact::sealed`'s counts are wrong."
     );
     assert!(
         has_unsaved_edits(&open),
-        "★★★ a document whose most consequential edit is not on disk must \
-         be dirty. Without the third term this answered CLEAN: no tab \
-         marker, no question on Close, and the redaction discarded in \
-         silence."
+        "★★★ a document whose most consequential intent is not on disk must \
+         be dirty"
     );
 
     // The save catches up, exactly as it does for an ordinary edit.
     open.saved_epoch = open.edit_epoch;
     assert!(
         !has_unsaved_edits(&open),
-        "a redaction that has been written is not still owed — the flag is \
-         sticky, the epochs are what turn the answer off"
+        "a removal that has been written is not still owed — the epochs are \
+         what turn the answer off"
     );
 
     // …and a further edit makes it unsaved work again.
@@ -470,68 +508,138 @@ fn a_document_with_an_applied_redaction_has_unsaved_edits() {
     assert!(has_unsaved_edits(&open));
 }
 
-/// ★★★ **A redacted document saves cleanly through the ordinary
-/// incremental writer — and the proof runs on the bytes.**
+/// ★★★ **The third term is load-bearing on a document the first two call
+/// clean.**
+///
+/// The assertion above is the headline and it would still pass on a two-term
+/// predicate, because marking is itself an edit and `is_modified()` sees it.
+/// This is the state where it would not: a session whose only difference from
+/// its base is an **armed removal**.
+///
+/// It is built by staging and then undoing back to a clean session — which is
+/// possible only because `Pass 250.2` preserves undo, and which reaches
+/// exactly the state an operator gets by opening a drawing that already
+/// carries its `/Redact` marks and arming it. `is_modified()` is false there,
+/// the epochs differ because the funnel bumped one, and without
+/// `has_pending_redaction()` the answer is **clean**: no tab marker, no
+/// question on Close, and the arming discarded in silence.
+#[test]
+fn an_armed_removal_alone_is_enough_to_make_a_document_dirty() {
+    let mut open = open_local_fixture("a1-titleblock.pdf");
+    // ui-text-exempt: a word in a test fixture.
+    stage(&mut open, "FOUNDATION");
+    {
+        let session = std::sync::Arc::get_mut(&mut open.session)
+            .expect("the session is not shared in a test");
+        session.undo().expect("the mark must be undoable");
+    }
+    open.edit_epoch += 1;
+
+    assert!(
+        !open.session.is_modified(),
+        "★ the premise: with the mark undone the session no longer differs \
+         from its base. If this stops being true the assertion below stops \
+         being interesting, and a reader should know which one moved."
+    );
+    assert!(open.session.has_pending_redaction());
+    assert!(
+        has_unsaved_edits(&open),
+        "★★★ WITHOUT the third term this answers CLEAN, and an armed removal \
+         is discarded on Close with nothing asked."
+    );
+}
+
+/// ★★★ **A staged document saves through THIS module with the content gone —
+/// and the ordinary writer is never reached.**
 ///
 /// The end-to-end assertion for `OPERATOR_REQUESTS.md` O125's second half:
-/// the operator applies into the open document, then presses Save, and the
-/// file that lands has the content gone. [`write_copy`] is the one function
-/// every save verb goes through, and it is `to_incremental_bytes` — the
-/// writer whose whole purpose is *keeping the previous revision inside the
-/// file*, which is what made this the property the engine request marked
-/// ★★★.
+/// the operator arms the removal in the open document, then presses Save, and
+/// the file that lands has the content gone. [`write_copy`] is the one
+/// function every save verb goes through, and the fork inside it is the whole
+/// of §1.1.
+///
+/// ★ **The `Written::RedactionApplied` assertion is not decoration.** A build
+/// that failed to fork would not leak — the engine refuses both ordinary
+/// modes — it would simply stop saving, and the failure would arrive as a
+/// refusal rather than as a wrong file. What this pins is the *route*, so a
+/// future "simplification" that removed the fork fails here with a sentence
+/// naming what it removed rather than in three unrelated tests about
+/// `WriteError`.
 ///
 /// `crate::redact::tests` proves the same thing about the session's bytes.
 /// This proves it about **the file on disk**, through the shell's own save
 /// path, with the shell's own settings applied.
 #[test]
-fn a_redacted_document_saves_through_the_ordinary_writer_with_the_content_gone() {
+fn a_staged_document_saves_through_the_redaction_writer_with_the_content_gone() {
     // ui-text-exempt: a word in a test fixture.
     const TERM: &str = "FOUNDATION";
+    // ui-text-exempt: a word in a test fixture that must SURVIVE.
+    const KEEP: &str = "DRAWING NO";
 
     let mut open = open_local_fixture("a1-titleblock.pdf");
-    let session =
-        std::sync::Arc::get_mut(&mut open.session).expect("the session is not shared in a test");
-    session
-        .mark_redactions_by_search(TERM, false)
-        .expect("extractable");
-    let applied = crate::redact::apply_into_session(session).expect("apply");
-    open.redaction_absence_claims = applied.report.redacted_text.clone();
+    stage(&mut open, TERM);
     assert!(
         !open.redaction_absence_claims.is_empty(),
-        "the engine must claim to have removed something, or the save-time \
+        "the engine must claim something will be removed, or the save-time \
          proof below has nothing to prove"
     );
 
-    let target = scratch("redacted-save.pdf");
+    let target = scratch("staged-save.pdf");
     let _ = std::fs::remove_file(&target);
-    write_copy(&open, &target).expect("a redacted document must be savable");
+    let written = write_copy(&open, &target).expect("a staged document must be savable");
+    assert!(
+        matches!(written, Written::RedactionApplied(_)),
+        "★ the staged fork must be the route taken. The incremental writer is \
+         refused by the engine while a removal is armed, so a build that did \
+         not fork would stop saving rather than save wrongly — which is loud, \
+         and is still not what this module promises: {written:?}"
+    );
 
     let bytes = std::fs::read(&target).expect("the file must exist");
     assert!(
         !bytes.windows(TERM.len()).any(|w| w == TERM.as_bytes()),
         "★★★ the removed text is in the file the operator would hand over"
     );
+    // ★★ The positive control, and on a compressed CAD sheet it is the
+    // assertion that does the work: a build that wrote an empty document
+    // would satisfy the absence check above.
+    let reopened = pdfcer_core::document::Document::load(&target).expect("the file must open");
+    let text: String = pdfcer_core::text_extract::extract_document(
+        &reopened,
+        &pdfcer_core::text_extract::ExtractOptions::default(),
+    )
+    .expect("the saved drawing's text is extractable")
+    .pages
+    .iter()
+    .flat_map(|p| p.runs.iter().map(|r| r.text.clone()))
+    .collect();
+    assert!(
+        text.contains(KEEP),
+        "an unmarked word on the same sheet must survive: {text}"
+    );
     let _ = std::fs::remove_file(&target);
 }
 
 /// ★★ **The save-time proof refuses, and writes nothing.**
 ///
-/// The falsification for the check above. `write_copy` is handed a claim
-/// that is demonstrably still in the document — the redaction never
-/// happened — and must refuse **by name** and leave no file behind.
+/// The falsification for the check above. [`write_copy`] is handed a claim
+/// that is demonstrably still in the document — no removal is armed, so the
+/// ordinary writer runs and the claim is a lie — and must refuse **by name**
+/// and leave no file behind.
 ///
-/// It is the check nobody expects to fire: the engine's collapse makes it
-/// safe by construction, so it is expected to pass on every save of every
-/// redacted document forever. A check that is expected to pass is exactly
-/// the kind this project keeps discovering was never wired, which is why
-/// its bite is asserted rather than assumed.
+/// It is the check nobody expects to fire, which is exactly the kind this
+/// project keeps discovering was never wired, which is why its bite is
+/// asserted rather than assumed.
 #[test]
 fn a_save_whose_bytes_still_hold_the_redacted_text_is_refused_and_writes_nothing() {
     let mut open = open_local_fixture("a1-titleblock.pdf");
-    // Never redacted — the claim is a lie, and the proof must catch it.
+    // Never staged — the claim is a lie, and the proof must catch it.
     // ui-text-exempt: a word in a test fixture.
     open.redaction_absence_claims = vec!["FOUNDATION".to_owned()];
+    assert!(
+        !open.session.has_pending_redaction(),
+        "the ordinary writer must be the one under test here"
+    );
 
     let target = scratch("refused-save.pdf");
     let _ = std::fs::remove_file(&target);
@@ -545,5 +653,76 @@ fn a_save_whose_bytes_still_hold_the_redacted_text_is_refused_and_writes_nothing
         !target.exists(),
         "★★ and NOTHING may reach the disk. A refusal that left a partial \
          file would be the same failure with a smaller file."
+    );
+}
+
+/// ★★★ **Undoing the marks under an armed removal refuses the save BY NAME,
+/// rather than writing an un-redacted file.**
+///
+/// The trap `Pass 250.2` brings with it, and the one sequence in this feature
+/// an operator reaches by doing something entirely reasonable:
+///
+/// 1. mark, then *Review & apply* ▸ *this document* — the removal is armed;
+/// 2. **undo the marks**, which now works, and is the point of the whole pass;
+/// 3. press `Ctrl+S`.
+///
+/// There is nothing left to remove, so the removal refuses; and the ordinary
+/// modes are refused too while the arming stands. The document cannot be saved
+/// at all until it is called off.
+///
+/// ★ The failure this test is looking for is the *tempting* repair: falling
+/// back to the ordinary writer when the removal reports `NothingToApply`. That
+/// build saves successfully, looks correct, and writes a document whose
+/// `redaction_absence_claims` still say text was removed from it — so the very
+/// next save of the same session refuses, inexplicably, having already written
+/// the file. The refusal here is the honest outcome, and the sentence names
+/// the remedy.
+#[test]
+fn undoing_the_marks_under_an_armed_removal_refuses_the_save_by_name() {
+    let mut open = open_local_fixture("a1-titleblock.pdf");
+    // ui-text-exempt: a word in a test fixture.
+    stage(&mut open, "FOUNDATION");
+    {
+        let session = std::sync::Arc::get_mut(&mut open.session)
+            .expect("the session is not shared in a test");
+        session
+            .undo()
+            .expect("★ the marks must be undoable — that is the whole pass");
+        assert!(
+            session.has_pending_redaction(),
+            "…and undoing the marks does NOT un-arm the removal, which is why \
+             this state exists at all"
+        );
+    }
+
+    let target = scratch("armed-with-no-marks.pdf");
+    let _ = std::fs::remove_file(&target);
+    let error = write_copy(&open, &target).expect_err(
+        "★★★ a save that cannot carry out the armed removal must refuse. \
+         Falling back to the ordinary writer here would write the document \
+         un-redacted, successfully, with the shell still claiming text had \
+         been removed from it.",
+    );
+    assert!(
+        matches!(
+            error,
+            SaveError::RedactionRefused {
+                refusal: crate::redact::RedactApplyRefusal::NothingToApply
+            }
+        ),
+        "and refuse by NAME, so the sentence can point at the control rather \
+         than at a disk: {error}"
+    );
+    assert!(!target.exists(), "nothing may reach the disk");
+
+    // ★ And the sentence really does name the remedy, because a refusal an
+    // operator cannot act on is one he learns to ignore.
+    let said = crate::text::redact::save_refused_message(
+        &crate::redact::RedactApplyRefusal::NothingToApply,
+    );
+    assert!(
+        said.contains("Review & apply"),
+        "the way out is a control in a window he has no reason to open; the \
+         sentence has to send him there: {said}"
     );
 }

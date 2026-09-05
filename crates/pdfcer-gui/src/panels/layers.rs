@@ -205,6 +205,7 @@ use crate::app::actions::Action;
 use crate::app::state::OpenDoc;
 use crate::panels::PanelsState;
 use crate::text::panels as t;
+use crate::text::panels::layers as tl;
 use crate::text::panels::layersearch as ts;
 
 /// **Narrowing the list as you type** — the predicate, the counts, and the
@@ -212,11 +213,16 @@ use crate::text::panels::layersearch as ts;
 /// a file of its own can be swept with no window open.
 mod search;
 
-/// **Which layer the current selection is on** — the three-valued answer,
-/// and the engine finding that makes it three-valued. Its header carries what
-/// `pdfcer-core` can and cannot say, and the request filed for the half it
-/// cannot.
-mod highlight;
+/// **Which layer the current selection is on** — the five-valued answer, the
+/// join that folds a multi-object selection, and the two engine divergences
+/// building the page-object route found. Its header carries what `pdfcer-core`
+/// can and cannot say, with `file:line` for every symbol.
+///
+/// ★ `pub(crate)` rather than private since 2026-09-05: the status bar reads
+/// it too, because **the canvas is the primary surface, never a panel** — a
+/// capability reachable only from a panel is a capability the operator has to
+/// know about before they can use it.
+pub(crate) mod highlight;
 
 /// The trace name of the search field's rectangle.
 // ui-text-exempt: trace region name, never displayed.
@@ -379,16 +385,57 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     // per row would ask the engine once per layer for an answer that does not
     // vary by layer.
     //
-    // ★★ Three-valued. [`highlight::Membership::Unknown`] — today's answer
-    // for every content object, because `pdfcer-core` discards the OCG
-    // identity while resolving it — renders **nothing**, and is deliberately
-    // not collapsed with `None`. See that module's header, and the filed
-    // request it names.
+    // ★★ Five-valued, and no two of the five render the same. See
+    // [`highlight`]'s header for the lattice and for the two engine
+    // divergences building the page-object route found.
     let membership = highlight::resolve(doc);
-    if membership.owes_a_sentence() {
-        ui.label(egui::RichText::new(t::layer_selection_unlayered()).small());
-    }
     let highlighted = membership.highlighted();
+
+    // ★★★ **Where the answer's row sits relative to what is ON SCREEN**, which
+    // is not the same question as whether the document has such a layer.
+    //
+    // The panel draws `shown` — the search-filtered list — and a plate on a
+    // row the query has narrowed away is a plate nobody can see. That state is
+    // byte-identical, from the operator's chair, to the feature not working:
+    // they select an object and nothing lights up. It was silent until this
+    // block existed.
+    //
+    // Three outcomes, and the second and third have different remedies (clear
+    // the search; nothing, the document does not list the group), so they get
+    // different sentences rather than one hedge covering both.
+    let off_list_name = highlighted.and_then(|id| {
+        if shown.iter().any(|l| l.id == id) {
+            None
+        } else {
+            layer_name_for(&read, id)
+        }
+    });
+    let row = match (highlighted, off_list_name.as_deref()) {
+        (None, _) => tl::RowOfAnswer::NotAGroup,
+        (Some(_), Some(name)) => tl::RowOfAnswer::HiddenBySearch(name),
+        // On screen, or named by page content and absent from
+        // `/OCProperties` — `read_layers` reports the document's registered
+        // groups, so a group it does not know is `NotListed` by construction.
+        (Some(id), None) => {
+            if shown.iter().any(|l| l.id == id) {
+                tl::RowOfAnswer::OnScreen
+            } else {
+                tl::RowOfAnswer::NotListed
+            }
+        }
+    };
+    if let Some(sentence) = tl::layer_selection_report(membership, row) {
+        ui.label(egui::RichText::new(sentence).small());
+    }
+    // ★★★ **The operator's own finding, said back to him.** One path object on
+    // his drawing holds 1,194 subpaths across half a sheet, so *"this is on
+    // layer Grid"* is exact about a thing far larger than the circle he
+    // clicked. Stated as a count rather than as a hedge, and only when the
+    // number is greater than one — see
+    // [`crate::text::panels::layers::layer_selection_granularity`].
+    if let Some(parts) = highlight::parts_in_selected_object(doc) {
+        ui.label(egui::RichText::new(tl::layer_selection_granularity(parts)).small());
+    }
     ui.separator();
 
     // Collected while the read is borrowed, turned into actions after — the
@@ -555,8 +602,16 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
                     }
                 }
                 crate::diag::trace(|| {
+                    // ★★ `highlighted=` is what makes "selecting an object
+                    // highlights that layer" a DRIVABLE claim. Without it a
+                    // check can see that rows were drawn and cannot see which
+                    // one carries the plate, so the only assertion available
+                    // would be that *something* changed — which passes under a
+                    // plant that highlights a constant. It is per row, not one
+                    // summary line, so the check can also assert that exactly
+                    // one row is lit.
                     format!(
-                        "layer-row name={:?} visible={effective} default={} locked={} registered={} intent_view={}",
+                        "layer-row name={:?} visible={effective} default={} locked={} registered={} intent_view={} highlighted={is_highlighted}",
                         l.name, l.visible_by_default, l.locked, l.in_default_config, l.intent_view
                     )
                 });
@@ -593,6 +648,29 @@ fn row_name(l: &pdfcer_core::layers::Layer) -> String {
     } else {
         t::layer_unnamed().to_owned()
     }
+}
+
+/// **What a layer is called, for a surface that is not this panel.**
+///
+/// `None` when the document's registered groups contain no such id — an OCMD
+/// (§8.11.2.2), or an OCG page content refers to and `/OCProperties` never
+/// listed. A caller must say something *different* in that case, never
+/// `on layer ""`: an empty pair of quotes is the placeholder R9 forbids, and
+/// [`crate::text::panels::layers::layer_clause`] has words for it.
+///
+/// # ★★★ Why the status bar comes here rather than reading `/Name` itself
+///
+/// [`row_name`]'s own header states the rule: **one spelling of what a layer
+/// is called.** It was written when the search needed to match what the row
+/// showed, and the reason generalises to every second surface. A bar that read
+/// `Layer::name` directly would print the empty string for an undeclared
+/// `/Name` where the panel prints its placeholder — the same layer, two names,
+/// on two surfaces the operator sees at once.
+///
+/// `DEFECTS.md` D5 in a feature small enough to have been assumed safe. That
+/// is the second time this function has absorbed a would-be copy.
+pub(crate) fn layer_name_for(read: &pdfcer_core::layers::Layers, id: ObjId) -> Option<String> {
+    read.layers.iter().find(|l| l.id == id).map(row_name)
 }
 
 /// Is `id` a group the document marks `/Locked`?

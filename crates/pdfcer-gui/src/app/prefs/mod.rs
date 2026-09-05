@@ -545,6 +545,54 @@ pub struct Prefs {
     /// a text field, and every consumer converts at the point of use anyway —
     /// where the existence check happens.
     pub acrobat_path: String,
+    /// **Where Acrobat's downloaded trust list is**, when this machine does not
+    /// keep it where pdfcer looks. Empty means *"look in the usual places"*.
+    ///
+    /// `ENGINE_BACKLOG.md`'s trust-store rows, 2026-09-05. The list Acrobat
+    /// downloads (AATL + the EU Trusted Lists) lands in
+    /// `%APPDATA%\Adobe\Acrobat\<track>\Security\addressbook.acrodata`, and
+    /// `crate::trust::candidate_paths` tries four tracks in the same order
+    /// `pdfcer-cli` does — so the window and the command line find the same
+    /// file, which is the one support conversation nobody can win when they
+    /// disagree.
+    ///
+    /// # Why a preference exists when discovery works
+    ///
+    /// The same reason [`Self::acrobat_path`] has one, arriving from a
+    /// different direction. That field exists because discovery reads
+    /// *registrations*; this one exists because discovery reads a **list of
+    /// conventional locations**, and a convention is wrong the first time a
+    /// profile is redirected to a network share, an Acrobat track this build
+    /// does not name is installed, or an administrator hands somebody a store
+    /// to use.
+    ///
+    /// ★ **R9's escape hatch, and it is the load-bearing half.** The control
+    /// that inspects a store is ABSENT when there is no store — an unavailable
+    /// capability renders nothing. Somebody in that position therefore sees no
+    /// evidence the feature exists, so the path field is drawn in Settings
+    /// whether or not discovery succeeded. It is the only thing that can fix
+    /// the case where discovery failed.
+    ///
+    /// # A cleared field means "ask this machine", never "there is no store"
+    ///
+    /// Clearing a text box is how a person un-sets it. Reading an empty value
+    /// as a positive choice would suppress the feature permanently with no way
+    /// back except hand-editing this file, which is the trap version of an
+    /// escape hatch — [`Self::acrobat_path`]'s own note, and it applies here
+    /// unchanged.
+    ///
+    /// # Held as a `String`, like its neighbour
+    ///
+    /// Because it is a value the operator TYPES, and a half-typed path is not a
+    /// path. `crate::trust::locate` converts at the point of use, which is
+    /// where the existence check happens and where the answer is knowable.
+    ///
+    /// ⚠ **This is a location, not a permission.** Whether pdfcer may read the
+    /// file at all is `pdfcer_core::settings::AcrobatTrustStore`, which lives in
+    /// the engine's own store because the same choice governs
+    /// `pdfcer verify-signatures`. Filling this in while that is `Off` changes
+    /// nothing, and the Settings group says so where both controls are drawn.
+    pub acrobat_trust_store_path: String,
 }
 
 impl Default for Prefs {
@@ -584,6 +632,10 @@ impl Default for Prefs {
             // ★ Empty = "ask Windows", deliberately. See the field's own note
             // on why a cleared field must not mean "no Acrobat".
             acrobat_path: String::new(),
+            // ★ Empty = "look in the usual places", deliberately, and for the
+            // reason spelled out on the field: a cleared box is how a person
+            // un-sets a path, so it cannot also mean "there is no store".
+            acrobat_trust_store_path: String::new(),
         }
     }
 }
@@ -754,6 +806,15 @@ impl Prefs {
                 // `resolve` trims again at the point of use, because this file
                 // is not the only way the value arrives.
                 "acrobat_path" => prefs.acrobat_path = value.trim().to_owned(),
+                // ui-text-exempt: a file KEY, matched literally.
+                // ★ Trimmed for its neighbour's reason exactly: a path with a
+                // trailing space is a path that does not exist, and the failure
+                // presents as "the trust setting does nothing" rather than as
+                // "that file is not there". `crate::trust::locate` trims again,
+                // because this file is not the only way the value arrives.
+                "acrobat_trust_store_path" => {
+                    prefs.acrobat_trust_store_path = value.trim().to_owned();
+                }
                 // ui-text-exempt: a file KEY, matched literally.
                 // ★ A REPEATED key: every occurrence appends. That is why this
                 // arm pushes where every other arm assigns, and it is the one
@@ -1090,6 +1151,19 @@ impl Prefs {
         // ui-text-exempt: a file KEY, as above.
         out.push_str("acrobat_path = ");
         out.push_str(&self.acrobat_path);
+        out.push('\n');
+        out.push_str(
+            "\n\
+             # Where Acrobat's downloaded trust list is — the AATL + EU Trusted\n\
+             # Lists file Acrobat writes as addressbook.acrodata. Leave this\n\
+             # blank and pdfcer looks in the usual per-user locations. Fill it\n\
+             # in to point at a particular store. This is only a LOCATION:\n\
+             # whether pdfcer may read it at all is acrobat_trust_store in\n\
+             # settings.txt, which is off until you turn it on.\n",
+        );
+        // ui-text-exempt: a file KEY, as above.
+        out.push_str("acrobat_trust_store_path = ");
+        out.push_str(&self.acrobat_trust_store_path);
         out.push('\n');
         out.push_str(
             "\n\

@@ -3,19 +3,32 @@
 //! [`super`] §2.4. One property, asserted over **every `.rs` file in this
 //! crate**:
 //!
-//! > The engine's removal is *called* from exactly one FILE — `redact/mod.rs` —
-//! > and exactly twice in it, and both callers prove their output before
-//! > returning it.
+//! > Every engine verb that stages, performs or disarms a content removal is
+//! > *called* from exactly one FILE — `redact/mod.rs` — and exactly the number
+//! > of times that module accounts for by name.
 //!
-//! ★★★ **CORRECTED 2026-09-04.** The property used to read *"called in exactly
-//! one place — [`super::prepare_redaction_apply`]"*, and it was true until the
-//! afternoon `Pass 250.1` gave the engine a second removal surface. There are
-//! now two: [`pdfcer_core::redact::apply_redactions`] (a free function, which
-//! produces bytes) and `EditSession::apply_redactions` (a method, which mutates
-//! a session). This shell calls each exactly once —
-//! [`super::prepare_redaction_apply`] and [`super::apply_into_session`] — and
-//! the check now pins the file **and the count**, because a file check alone
-//! would let an unproven third call be added inside the proving file.
+//! ★★★ **CORRECTED 2026-09-04, and again 2026-09-05.** The property first read
+//! *"called in exactly one place — [`super::prepare_redaction_apply`]"*, which
+//! was true until `Pass 250.1` gave the engine a second removal surface. It
+//! then read *"exactly twice, and both callers prove"*, which was true until
+//! `Pass 250.2` replaced that second surface with **three**:
+//! `apply_redactions_deferred` (stage), `save_applying_redaction` (perform, at
+//! save) and `cancel_pending_redaction` (disarm).
+//!
+//! ⇒ **A monopoly pinned to one identifier watches the feature walk out of the
+//! module the day the engine splits the verb.** So [`SUBJECTS`] is a table of
+//! (identifier, expected count) rather than a constant, and the argument for
+//! each row is in [`super`] §2.4 beside the function that owns it. The count
+//! for `apply_redactions` went **down** on the 2026-09-05 pass, from two to
+//! one, because the collapsing route was deleted rather than kept — and an
+//! exact count is what made that deletion an edit somebody had to write down
+//! instead of a number that quietly still fitted under a ceiling.
+//!
+//! ★ `cancel_pending_redaction` is pinned even though it removes nothing. It
+//! *disarms* a removal, which is the same surface seen from behind: a second
+//! caller that un-staged a redaction the operator had confirmed would be the
+//! quietest possible way to hand him a file he believes is redacted, and it
+//! would be four characters in a `match` arm.
 //!
 //! ## Why this exists at all, when the bytes are already private
 //!
@@ -80,15 +93,39 @@
 
 use std::path::{Path, PathBuf};
 
-/// The identifier whose call sites are counted.
+/// **The identifiers whose call sites are counted, and how many of each this
+/// module accounts for.**
 ///
 /// The **last path segment**, not the whole path, because the path is a
 /// spelling decision (`pdfcer_core::redact::apply_redactions` today, a `use`
 /// away from a bare `apply_redactions` tomorrow) and the function is the fact.
 /// The same reduction `reach.rs` makes for its guard functions, for the same
 /// reason.
-// ui-text-exempt: a Rust function name, matched against the parsed syntax tree.
-const SUBJECT: &str = "apply_redactions";
+///
+/// ★ Each count is **exact**, not a ceiling, on this module's own fail-closed
+/// reasoning: a range would let a call be ADDED and a call be REMOVED in the
+/// same edit and report nothing, and *"the proof pipeline no longer calls the
+/// engine"* is the failure this file exists to catch. When a legitimate route
+/// lands or leaves, the number changes in the same commit as the route.
+///
+/// ★★ Note that `apply_redactions` and `apply_redactions_deferred` are separate
+/// rows and cannot be confused for one another: [`calls_in`] compares the
+/// identifier for **equality**, not by prefix, which is why the deferred verb
+/// needed a row of its own rather than being absorbed into the first one's
+/// count.
+// ui-text-exempt: Rust function names, matched against the parsed syntax tree.
+const SUBJECTS: [(&str, usize); 4] = [
+    // The free function: `prepare_redaction_apply`, which produces bytes and
+    // proves them before returning.
+    ("apply_redactions", 1),
+    // `stage_into_session` — arms the removal and touches nothing else.
+    ("apply_redactions_deferred", 1),
+    // `save_applying_pending` — performs it at save time and proves the buffer.
+    ("save_applying_redaction", 1),
+    // `cancel_staged_redaction` — disarms it. See the header for why a verb
+    // that removes nothing is pinned as hard as the three that do.
+    ("cancel_pending_redaction", 1),
+];
 
 /// The engine verb this module's own files must **never** call.
 ///
@@ -266,95 +303,102 @@ mod tests {
     /// this was written.
     const MIN_FILES_SWEPT: usize = 100;
 
+    /// The subject the self-test fixtures below are written around.
+    ///
+    /// [`SUBJECTS`]'s first row rather than a fourth string literal, so the
+    /// fixtures cannot drift away from a name the real check uses. Which of
+    /// the four it is does not matter — the self-tests prove the *reader* and
+    /// the *walker*, not the table — and taking it from the table means a
+    /// rename of that row updates them for free.
+    const FIXTURE_SUBJECT: &str = SUBJECTS[0].0;
+
     // =====================================================================
     // THE CHECK
     // =====================================================================
 
-    /// ★★ **`apply_redactions` is called in exactly one file, and it is the
-    /// one that proves.**
+    /// ★★ **Every removal verb is called in exactly one file — the one that
+    /// proves — and exactly as many times as [`SUBJECTS`] accounts for.**
     ///
-    /// The assertion this module exists to make. A failure here means either a
-    /// second path to the engine's removal has appeared — the `Pass 72.0`
-    /// artefact, an unverified redaction that will not know it is one — or the
-    /// one legitimate call has moved and nothing has been told.
+    /// The assertion this module exists to make. A failure here means one of
+    /// three things, and the message says which: a second path to the engine's
+    /// removal has appeared (the `Pass 72.0` artefact, an unverified redaction
+    /// that will not know it is one); a legitimate call has moved out of the
+    /// proving file; or a route has been added or deleted and this table has
+    /// not been told.
+    ///
+    /// ★ It sweeps once per subject rather than once, and pays four directory
+    /// walks for it. That is deliberate: a single sweep counting four
+    /// identifiers together would report *"seven calls in one file"* and be
+    /// satisfied by three of one and none of another, which is precisely the
+    /// arithmetic that lets a deletion hide behind an addition.
     #[test]
-    fn the_engines_removal_is_called_from_exactly_one_place() {
+    fn every_removal_verb_is_called_from_exactly_one_place() {
         let root = crate_src();
-        let swept = sweep(&root, SUBJECT).expect("the crate's own source must sweep");
+        for (subject, expected) in SUBJECTS {
+            let swept = sweep(&root, subject).expect("the crate's own source must sweep");
 
-        // Fail closed #1: a walker that read almost nothing.
-        assert!(
-            swept.files_read >= MIN_FILES_SWEPT,
-            "the sweep read only {} file(s) under {}. That is not a monopoly \
-             holding, it is a walker that stopped — and 'found nothing' must \
-             never print the same as 'looked at nothing'",
-            swept.files_read,
-            root.display()
-        );
+            // Fail closed #1: a walker that read almost nothing.
+            assert!(
+                swept.files_read >= MIN_FILES_SWEPT,
+                "the sweep for `{subject}` read only {} file(s) under {}. That \
+                 is not a monopoly holding, it is a walker that stopped — and \
+                 'found nothing' must never print the same as 'looked at \
+                 nothing'",
+                swept.files_read,
+                root.display()
+            );
 
-        // Fail closed #2: zero call sites is not a pass.
-        assert!(
-            !swept.call_sites.is_empty(),
-            "no call to `{SUBJECT}` was found anywhere in this crate. Either it \
-             has been renamed and this check has not been told, or the apply \
-             pipeline has stopped calling the engine — and a redaction feature \
-             that does not redact is the worse of the two. Reading this as \
-             'the monopoly holds' is the vacuous pass this module exists to \
-             refuse."
-        );
+            // Fail closed #2: zero call sites is not a pass.
+            assert!(
+                !swept.call_sites.is_empty(),
+                "no call to `{subject}` was found anywhere in this crate. \
+                 Either it has been renamed and this check has not been told, \
+                 or the apply pipeline has stopped calling the engine — and a \
+                 redaction feature that does not redact is the worse of the \
+                 two. Reading this as 'the monopoly holds' is the vacuous pass \
+                 this module exists to refuse."
+            );
 
-        let offenders: Vec<&PathBuf> = swept
-            .call_sites
-            .iter()
-            .map(|(path, _)| path)
-            .filter(|path| !path.ends_with(OWNER.iter().collect::<PathBuf>()))
-            .collect();
-        assert!(
-            offenders.is_empty(),
-            "★ `{SUBJECT}` is called outside `redact/mod.rs`: {offenders:?}\n\
-             \n\
-             That call obtains the redacted bytes without the absence proof, \
-             which is exactly what `SALVAGE.md`'s Pass 72.0 note describes: a \
-             shell that ships an unverified redaction and will not know. Route \
-             it through `redact::prepare_redaction_apply` and write through \
-             `PreparedRedaction::write_to`, which proves the buffer between it \
-             and the syscall."
-        );
-        assert_eq!(
-            swept.call_sites.len(),
-            1,
-            "exactly one file may call it: {:?}",
-            swept.call_sites
-        );
+            let offenders: Vec<&PathBuf> = swept
+                .call_sites
+                .iter()
+                .map(|(path, _)| path)
+                .filter(|path| !path.ends_with(OWNER.iter().collect::<PathBuf>()))
+                .collect();
+            assert!(
+                offenders.is_empty(),
+                "★ `{subject}` is called outside `redact/mod.rs`: {offenders:?}\n\
+                 \n\
+                 That call reaches the engine's removal without the absence \
+                 proof, which is exactly what `SALVAGE.md`'s Pass 72.0 note \
+                 describes: a shell that ships an unverified redaction and will \
+                 not know. Route it through `redact::prepare_redaction_apply`, \
+                 `redact::stage_into_session` or `redact::save_applying_pending` \
+                 — each of which either proves its own bytes or has none to \
+                 prove and says so."
+            );
+            assert_eq!(
+                swept.call_sites.len(),
+                1,
+                "exactly one file may call `{subject}`: {:?}",
+                swept.call_sites
+            );
 
-        // ★★★ …and exactly TWICE inside that file, since 2026-09-04.
-        //
-        // Until that afternoon the number was one and the file check carried
-        // the whole guarantee. `Pass 250.1` gave the engine a second removal
-        // surface — `EditSession::apply_redactions`, a METHOD — and this shell
-        // calls both: the free function from `prepare_redaction_apply` (which
-        // produces bytes and proves them) and the method from
-        // `apply_into_session` (which mutates the open session and proves
-        // that). Both prove; neither may be joined by a third that does not.
-        //
-        // Pinned at an exact number rather than a ceiling, on this module's own
-        // fail-closed reasoning: a range would let a call be ADDED and a call be
-        // REMOVED in the same edit and report nothing, and "the proof pipeline
-        // no longer calls the engine" is the failure this file exists to catch.
-        // If a legitimate third route ever lands, this number changes in the
-        // same commit as the route, which is the point.
-        let (owner, calls) = &swept.call_sites[0];
-        assert_eq!(
-            *calls,
-            2,
-            "★ `{SUBJECT}` is called {calls} time(s) in {}, and exactly two are \
-             accounted for: the free function in `prepare_redaction_apply`, and \
-             the `EditSession` method in `apply_into_session`. Both prove their \
-             output. A third call is either an unproven route to the engine's \
-             removal — `SALVAGE.md`'s Pass 72.0 artefact — or a route that has \
-             been removed and this check has not been told.",
-            owner.display()
-        );
+            let (owner, calls) = &swept.call_sites[0];
+            assert_eq!(
+                *calls,
+                expected,
+                "★ `{subject}` is called {calls} time(s) in {}, and {expected} \
+                 is what `SUBJECTS` accounts for. A call too many is either an \
+                 unproven route to the engine's removal — `SALVAGE.md`'s \
+                 Pass 72.0 artefact — or a second way to disarm one the \
+                 operator confirmed. A call too few is a route that has been \
+                 removed and this table has not been told, which is how the \
+                 collapsing `apply_into_session` would have left in silence on \
+                 2026-09-05 had this been a ceiling rather than a count.",
+                owner.display()
+            );
+        }
     }
 
     /// ★ **Nothing in `redact/` reaches for the incremental writer.**
@@ -370,19 +414,28 @@ mod tests {
     /// one directory where it would leave the un-redacted content in a prior
     /// revision of a file the operator has been told is redacted.
     ///
-    /// # ★★★ The exception, added 2026-09-04, and why it is two assertions
-    /// rather than a narrower one
+    /// # ★★★ The exception, added 2026-09-04 and RE-ARGUED 2026-09-05
     ///
     /// `redact/tests.rs` **does** call the forbidden verb, deliberately and
-    /// repeatedly, and it must. `Pass 250.1`'s whole answer to this shell's
-    /// §4.1 is that an incremental save of a *collapsed* session is safe — and
-    /// the only way to hold the engine to that is to perform exactly the save
-    /// the ban forbids and prove the removed text is not in the result. A ban
-    /// that also forbade the measurement would leave the guarantee resting on
-    /// the engine's doc comment.
+    /// repeatedly, and it must. What it is proving changed completely on
+    /// 2026-09-05 and the exception survived the change, which is worth
+    /// recording because the two arguments are opposites:
     ///
-    /// So the ban is scoped to the **production** files of the directory, and
-    /// the exception is pinned rather than merely allowed:
+    /// * **Until `Pass 250.2`**, the suite performed exactly the save the ban
+    ///   forbids and asserted the removed text was **not in the result** —
+    ///   because the collapsing verb's whole answer to our §4.1 was that an
+    ///   incremental save of a collapsed session is safe, and the only way to
+    ///   hold the engine to that was to make the save and look.
+    /// * **Since `Pass 250.2`**, the suite performs the same call and asserts it
+    ///   is **refused by name** (`WriteError::RedactionPending`) — because the
+    ///   un-redacted content is now still live in the session, so the guarantee
+    ///   is a refusal rather than a property of the bytes.
+    ///
+    /// ⇒ Either way, *"the guarantee is the engine's; the measurement is ours"*,
+    /// and a ban that also forbade the measurement would leave the whole
+    /// deferred route resting on a doc comment. So the ban is scoped to the
+    /// **production** files of the directory, and the exception is pinned
+    /// rather than merely allowed:
     ///
     /// 1. no production file under `redact/` calls it — unchanged, and it is
     ///    the assertion that was always the point;
@@ -422,9 +475,10 @@ mod tests {
             measured >= 2,
             "★★★ `redact/tests.rs` calls `{FORBIDDEN_IN_REDACT}` {measured} \
              time(s), and the deferred route's entire safety argument is that \
-             an incremental save of a collapsed session is clean. That claim is \
-             the engine's; the measurement is ours, and it is gone. Restore \
-             `an_incremental_save_of_a_redacted_session_cannot_leak_the_removed_text` \
+             an ordinary save of a STAGED session is refused by name. That \
+             claim is the engine's; the measurement is ours, and it is gone. \
+             Restore \
+             `both_ordinary_save_modes_are_refused_by_name_while_staged` \
              before shipping anything that depends on it."
         );
     }
@@ -461,7 +515,7 @@ fn real() {
     #[test]
     fn the_reader_finds_a_real_call() {
         assert_eq!(
-            calls_in(FIXTURE, SUBJECT).expect("the fixture parses"),
+            calls_in(FIXTURE, FIXTURE_SUBJECT).expect("the fixture parses"),
             1,
             "the reader missed a plain call expression"
         );
@@ -486,7 +540,7 @@ fn real() {
             "the plant must actually change the fixture"
         );
         assert_eq!(
-            calls_in(&mentions_only, SUBJECT).expect("the fixture parses"),
+            calls_in(&mentions_only, FIXTURE_SUBJECT).expect("the fixture parses"),
             0,
             "a doc comment, a line comment, a string literal and a `use` are \
              not calls; counting any of them would report a monopoly broken \
@@ -507,7 +561,7 @@ fn real() {
              pdfcer_core::redact::apply_redactions(&d, &o); }}; f(); }}\n"
         );
         assert_eq!(
-            calls_in(&planted, SUBJECT).expect("the fixture parses"),
+            calls_in(&planted, FIXTURE_SUBJECT).expect("the fixture parses"),
             2,
             "a call inside a closure was not seen — 'anywhere' has to mean \
              anywhere, or the monopoly is one nested block deep"
@@ -521,7 +575,7 @@ fn real() {
     #[test]
     fn a_method_call_of_the_same_name_counts() {
         let src = "fn f() { let _ = engine.apply_redactions(&opts); }";
-        assert_eq!(calls_in(src, SUBJECT).expect("parses"), 1);
+        assert_eq!(calls_in(src, FIXTURE_SUBJECT).expect("parses"), 1);
     }
 
     /// **E. A source that does not parse is refused rather than counted as
@@ -531,7 +585,7 @@ fn real() {
     /// module that matters must stop the check, not remove that module from it.
     #[test]
     fn an_unparsable_source_is_refused() {
-        let err = calls_in("fn f( {{{ ", SUBJECT).expect_err("this is not Rust");
+        let err = calls_in("fn f( {{{ ", FIXTURE_SUBJECT).expect_err("this is not Rust");
         assert!(!err.is_empty());
     }
 
@@ -546,7 +600,7 @@ fn real() {
     fn a_missing_tree_is_an_error() {
         let missing = crate_src().join("no-such-directory-exists-here");
         assert!(
-            sweep(&missing, SUBJECT).is_err(),
+            sweep(&missing, FIXTURE_SUBJECT).is_err(),
             "an unscanned tree is not a clean tree"
         );
     }
@@ -569,7 +623,7 @@ fn real() {
         std::fs::write(root.join("notes.txt"), "apply_redactions(&d, &o)").expect("write");
         std::fs::write(nested.join("planted.rs"), FIXTURE).expect("write");
 
-        let swept = sweep(&root, SUBJECT).expect("the fixture tree must sweep");
+        let swept = sweep(&root, FIXTURE_SUBJECT).expect("the fixture tree must sweep");
         assert_eq!(
             swept.files_read, 2,
             "two `.rs` files and no `.txt`: {swept:?}"

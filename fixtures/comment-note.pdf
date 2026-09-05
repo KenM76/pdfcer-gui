@@ -1,0 +1,56 @@
+%PDF-1.7
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 9 0 R >> >> /Contents 4 0 R /Annots [5 0 R 6 0 R 7 0 R 8 0 R] >>
+endobj
+4 0 obj
+<< /Length 259 >>
+stream
+q
+0.2 0.2 0.2 RG
+2 w
+36 36 540 720 re
+S
+BT /F1 14 Tf 60 730 Td (pdfcer review fixture - two notes and one reply) Tj ET
+BT /F1 10 Tf 130 606 Td (<- open note, with words, an author and a date) Tj ET
+BT /F1 10 Tf 130 306 Td (<- closed note, with words) Tj ET
+Q
+endstream
+endobj
+5 0 obj
+<< /Type /Annot /Subtype /Text /Rect [100 600 120 620] /Name /Note /F 4 /Contents (Check this weld before rev C) /T (Ken Mantle) /M (D:20260905143000Z) /C [1 0.82 0.2] /Open true /Popup 6 0 R >>
+endobj
+6 0 obj
+<< /Type /Annot /Subtype /Popup /Rect [300 520 450 620] /Parent 5 0 R /Open true >>
+endobj
+7 0 obj
+<< /Type /Annot /Subtype /Text /Rect [104 604 124 624] /Name /Comment /F 4 /Contents (Done - rev C issued 5 Sep) /T (Jo Smith) /M (D:20260905161500Z) /IRT 5 0 R /RT /R /Open false >>
+endobj
+8 0 obj
+<< /Type /Annot /Subtype /Text /Rect [100 300 120 320] /Name /Note /F 4 /Contents (Dimension missing on this view) /T (Ken Mantle) /M (D:20260905143500Z) /Open false >>
+endobj
+9 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 10
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000275 00000 n 
+0000000584 00000 n 
+0000000794 00000 n 
+0000000893 00000 n 
+0000001091 00000 n 
+0000001275 00000 n 
+trailer
+<< /Size 10 /Root 1 0 R >>
+startxref
+1345
+%%EOF

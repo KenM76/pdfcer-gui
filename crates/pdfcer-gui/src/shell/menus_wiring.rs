@@ -208,17 +208,34 @@ mod tests {
     /// is exercised in `egui_shell::menu`'s own tests, which is the right
     /// place for it.
     ///
-    /// The two blanks are both refusals argued at their command's own
-    /// registration, and neither is a gap waiting to be filled:
+    /// ★★★ **TWO BLANKS BECAME ONE ON 2026-09-05, and the survivor is the
+    /// interesting one.**
     ///
-    /// * `view.zoom_actual` in `canvas.empty` — argued against BY NAME in
-    ///   the icon ui-spec §3.2 and marked `{noicon:1}` in the approved
-    ///   mockup. No supply of art touches that.
-    /// * `view.panel_close` in `dock.tab` — see that command's entry in
-    ///   `crate::shell::commands`, whose reasoning this pass had to
-    ///   rewrite: the refusal previously rested on this surface having no
-    ///   icon column, which stopped being true the moment the painter was
-    ///   wired.
+    /// * `view.panel_close` in `dock.tab` — **GONE.** It took `close`, so
+    ///   `dock.tab` reads 4 glyph / 0 blank where it read 3 / 1. The
+    ///   refusal that kept it bare had already been rewritten once by the
+    ///   pass that wired the icon painter (it had rested on this surface
+    ///   having no icon column, which stopped being true that day), and
+    ///   what was left underneath was *"there is no close art in this
+    ///   set"* — false since the day the set landed, because `file.close`
+    ///   has worn `close` throughout. The row was drawing a bare label one
+    ///   line under a Float that had a picture, which is the same word
+    ///   twice with only one of them drawn.
+    /// * `view.zoom_actual` in `canvas.empty` — **STAYS**, and it is now
+    ///   the only blank row in the build. Argued against BY NAME in the
+    ///   icon ui-spec §3.2 and marked `{noicon:1}` in the approved mockup:
+    ///   a numeral read at a glance is clearer than any glyph substitute,
+    ///   and both add a decode step a bare percentage does not need.
+    ///
+    /// ⇒ ★★ The two blanks looked alike in this list for weeks and were not
+    /// alike at all. One named a **wrong picture** — an argument no amount
+    /// of drawing answers — and the other named a **missing picture**,
+    /// which under the operator's standing rule is not a reason but a work
+    /// item. Grouping them under one sentence (*"both refusals argued at
+    /// their command's own registration, and neither is a gap waiting to be
+    /// filled"*) is what let the false one ride along on the true one's
+    /// credibility. **When a list of exceptions shares a justification,
+    /// check that they share a KIND.**
     ///
     /// ★ The counts are of the **documents'** rows, not of one frame's.
     /// A `shown_when` row is counted whether or not its condition holds, so
@@ -261,9 +278,13 @@ mod tests {
             report.push_str(&format!("{context}: {g} glyph, {b} blank\n"));
         }
 
+        // ★ 25 / 2 → 26 / 1 on 2026-09-05: `view.panel_close` in `dock.tab`
+        // moved from the blank column to the glyph column. `absent` stays 0
+        // and that is the load-bearing third number — it says no menu in this
+        // build is drawn without an icon column at all.
         assert_eq!(
             (glyph, blank, absent),
-            (25, 2, 0),
+            (26, 1, 0),
             "menu rows by icon slot state; per-menu breakdown:\n{report}"
         );
         assert_eq!(
