@@ -219,7 +219,37 @@ pub fn selectable_on<G: ObjectGraph + ?Sized>(
 ) -> Vec<Candidate> {
     let mut out = Vec::new();
     for annot in page_annotations(graph, page.id) {
-        if annot.is_widget() || annot.is_popup || annot.flags.hidden() {
+        // ★★★ **`suppressed_on_screen`, not `hidden`** — corrected 2026-09-05.
+        //
+        // `hidden()` is `/F` bit 2 alone. `suppressed_on_screen()` is the
+        // engine's own screen predicate, `hidden() || no_view()` (§12.5.3,
+        // Table 165), and it is what the RENDERER asks before painting.
+        //
+        // ⇒ Until this line changed, a `/NoView` annotation was **selectable
+        // with nothing drawn under the pointer**: an outline appeared around
+        // blank paper, handles and all, on a mark the operator cannot see and
+        // did not know was there. Found by the note pop-up track, which uses
+        // `suppressed_on_screen` correctly and so **disagreed with the
+        // selection layer about which annotations exist on screen** — reported
+        // rather than fixed at the time because this file belonged to another
+        // track that afternoon.
+        //
+        // ★★ The rule is that **the selection layer must ask the same question
+        // the painter asked.** Two predicates over the same flags is exactly
+        // the shape this project has been bitten by repeatedly: each half is
+        // self-consistent, so no test of either half can see the disagreement.
+        // Calling the engine's own predicate rather than spelling
+        // `hidden() || no_view()` here is what keeps them from drifting again
+        // when Table 165 gains a third bit.
+        //
+        // ⚠ A `/NoView` annotation is **not** invisible to the operator
+        // altogether, and that is why this is a correction and not a
+        // concealment: it still prints, the Comments panel still lists it, and
+        // `app::status::notes` still counts it. R50's rule holds — *"a page
+        // carrying content the operator cannot see is a fact they are entitled
+        // to know"*. What it must not be is **clickable on a canvas that is not
+        // drawing it.**
+        if annot.is_widget() || annot.is_popup || annot.flags.suppressed_on_screen() {
             continue;
         }
         let subtype = String::from_utf8_lossy(&annot.subtype).into_owned();
@@ -613,5 +643,164 @@ mod tests {
         )];
         let hit = hit(&candidates, Pos2::new(10.0, 10.0), TOL).expect("a hit");
         assert_eq!(hit.target.kind, AnnotKind::CeDimension);
+    }
+    /// ★★★ **The selection layer asks the SAME question the painter asked.**
+    ///
+    /// # The defect
+    ///
+    /// `selectable_on` filtered on `flags.hidden()` — `/F` bit 2 alone — while
+    /// the renderer and the note pop-up both ask
+    /// `AnnotFlags::suppressed_on_screen()`, which is `hidden() || no_view()`
+    /// (§12.5.3, Table 165). So a **`/NoView`** annotation was **selectable
+    /// with nothing drawn under the pointer**: click blank paper and an outline
+    /// appears, with handles, around a mark the operator cannot see and did not
+    /// know was there.
+    ///
+    /// Found by the note-pop-up work, which noticed the two layers disagreeing
+    /// about which annotations exist on screen, and reported rather than fixed
+    /// because this file belonged to another track that afternoon.
+    ///
+    /// # Why no existing test could have caught it
+    ///
+    /// ★★ **Two predicates over the same flags, each self-consistent.** Every
+    /// test of the selection layer used the selection layer's own notion of
+    /// visible, and every test of the painter used the painter's. A
+    /// disagreement between two correct halves is invisible to any test of
+    /// either half — which is why this one asserts them **against each other**
+    /// rather than against a constant, and why the fix calls the engine's
+    /// predicate instead of re-spelling `hidden() || no_view()` here.
+    ///
+    /// # What it deliberately does NOT assert
+    ///
+    /// ⚠ That a `/NoView` annotation is unreachable. It is not, and must not be
+    /// — it still prints, the Comments panel still lists it, and the page's
+    /// notes still count it. R50: *"a page carrying content the operator cannot
+    /// see is a fact they are entitled to know."* The claim is narrower and
+    /// exact: **it is not clickable on a canvas that is not drawing it.**
+    #[test]
+    fn an_annotation_the_canvas_does_not_draw_cannot_be_clicked() {
+        use pdfcer_core::annot::AnnotFlags;
+        use pdfcer_core::object::{Dict, Name, Object};
+
+        // The three states, spelled from the engine's own bit constants so a
+        // renumbering cannot leave this test asserting about the wrong flag.
+        let plain = AnnotFlags(0);
+        let hidden = AnnotFlags(AnnotFlags::HIDDEN);
+        let no_view = AnnotFlags(AnnotFlags::NO_VIEW);
+
+        // The positive control. Without it, a filter that rejected EVERYTHING
+        // would satisfy the two assertions below and this test would be a
+        // statement about nothing.
+        assert!(
+            !plain.suppressed_on_screen(),
+            "an ordinary annotation must remain selectable, or this test is \
+             asserting that the canvas selects nothing at all"
+        );
+
+        assert!(
+            hidden.suppressed_on_screen(),
+            "Hidden was already excluded and must stay excluded"
+        );
+        assert!(
+            no_view.suppressed_on_screen(),
+            "NoView is drawn by nothing, so a click on it would put an outline \
+             and handles around blank paper — this is the case `hidden()` alone \
+             let through"
+        );
+
+        // ★ And the identity that keeps the two layers from drifting apart
+        // again: the predicate this file filters on IS the predicate the
+        // painter filters on. Asserted as an equality of derivations rather
+        // than by repeating the expression, so a third bit added to Table 165
+        // moves both at once.
+        for flags in [plain, hidden, no_view] {
+            assert_eq!(
+                flags.suppressed_on_screen(),
+                flags.hidden() || flags.no_view(),
+                "the screen predicate must stay the engine's, not a copy"
+            );
+        }
+
+        // ★★★ **AND THE CALL SITE, which is the half that actually catches a
+        // regression here.** Everything above is a contract test on
+        // `AnnotFlags`, and every line of it passes on a build where
+        // `selectable_on` still filters on `hidden()` alone — which is exactly
+        // the vacuous shape this project keeps meeting. So drive the real
+        // function over a real `/Annots` list.
+        //
+        // Hand-built graph rather than a fixture, for `notepopup::model`'s
+        // stated reason: the subject is **one flag**, and a fixture would make
+        // the assertion depend on a file, a page tree and an `/Annots` walk —
+        // three things that can fail for reasons this assertion is not about.
+        // There is also no fixture in either corpus carrying `/NoView`, which
+        // is the deeper reason the defect survived.
+        let square = |num: u32, flags: u32| {
+            let mut d = Dict::new();
+            d.insert(Name::from(b"Type"), Object::Name(Name::from(b"Annot")));
+            d.insert(Name::from(b"Subtype"), Object::Name(Name::from(b"Square")));
+            d.insert(Name::from(b"F"), Object::Integer(i64::from(flags)));
+            d.insert(
+                Name::from(b"Rect"),
+                Object::Array(vec![
+                    Object::Integer(10),
+                    Object::Integer(10),
+                    Object::Integer(60),
+                    Object::Integer(60),
+                ]),
+            );
+            (ObjId::new(num, 0), Object::Dict(d))
+        };
+
+        let page_id = ObjId::new(1, 0);
+        let mut page_dict = Dict::new();
+        page_dict.insert(Name::from(b"Type"), Object::Name(Name::from(b"Page")));
+        page_dict.insert(
+            Name::from(b"Annots"),
+            Object::Array(vec![
+                Object::Reference(ObjId::new(2, 0)),
+                Object::Reference(ObjId::new(3, 0)),
+            ]),
+        );
+
+        let graph = Loose(vec![
+            (page_id, Object::Dict(page_dict)),
+            square(2, 0),                   // ordinary
+            square(3, AnnotFlags::NO_VIEW), // drawn by nothing
+        ]);
+        let page = Page {
+            id: page_id,
+            resources: Dict::new(),
+            media_box: pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, 612.0, 792.0),
+            crop_box: pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, 612.0, 792.0),
+            rotate: 0,
+            contents: Vec::new(),
+            contents_flattened: 0,
+            contents_unresolved: 0,
+        };
+
+        let ids: Vec<u32> = selectable_on(&graph, &page, 0, &BTreeSet::new(), &BTreeMap::new())
+            .into_iter()
+            .map(|c| c.target.id.num)
+            .collect();
+
+        assert_eq!(
+            ids,
+            vec![2],
+            "the ordinary square must be selectable and the /NoView one must \
+             not — a click on it would put an outline and handles around blank \
+             paper. Got {ids:?}"
+        );
+    }
+
+    /// A graph of loose objects, for the call-site half of the test above.
+    struct Loose(Vec<(ObjId, pdfcer_core::object::Object)>);
+
+    impl pdfcer_core::graph::ObjectGraph for Loose {
+        fn value(&self, id: ObjId) -> Option<&pdfcer_core::object::Object> {
+            self.0.iter().find(|(o, _)| *o == id).map(|(_, v)| v)
+        }
+        fn trailer_entry(&self, _key: &[u8]) -> Option<&pdfcer_core::object::Object> {
+            None
+        }
     }
 }
