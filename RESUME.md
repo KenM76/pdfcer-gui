@@ -1,6 +1,110 @@
 # RESUME — read this, then say "continue"
 
 
+> ★★★ **LAST SESSION: 2026-09-05 (overnight). SEVEN TRACKS IN FLIGHT AT THE
+> TIME OF WRITING** — read the "what is running" table below BEFORE editing
+> anything, because half the crate is owned by a background agent.
+>
+> ★★★ **THE ENGINE MOVED TO v0.38.0 AND TWO GATES CAUGHT IT WITHIN THE MINUTE.**
+> `cargo update` took `pdfcer-core` from v0.37.0 (`8b24a0a`) to **v0.38.0
+> (`b01964f`)** — Pass 10.5 (full signature trust validation) and Pass 250.2
+> (undo-preserving deferred redaction). `check-verb-coverage` immediately went
+> red naming four verbs this shell has never mentioned
+> (`apply_redactions_deferred`, `cancel_pending_redaction`,
+> `has_pending_redaction`, `save_applying_redaction`), and
+> `check-engine-backlog` named two trust-store rows. **That is the case both
+> gates were written for**, and it worked on the first arrival after they
+> shipped. ⇒ **Run `cargo update` for the three engine crates before every
+> build.** The engine session runs in parallel and answers within the hour.
+>
+> ★★★ **THE FINDING TO CARRY: "ASKED HIM INSTEAD OF BUILDING IT" IS A CLASS,
+> NOT AN INCIDENT.** His directive of 2026-09-04 — ***"Always add new features.
+> never ask. just do."*** — was applied to one row, and then the request log
+> was grepped for the *shape* (`"the question for him"`, `"his call"`, `"not
+> yet decided"`, `"for now"`). It found more rows in exactly that state, each
+> with the analysis complete and nothing built:
+>
+> · **O57** ended *"The question for him: should a selection too small for its
+>   grips draw them outside the box, as other editors do?"* — his answer already
+>   existed twice over, and the asking cost a **week** on a defect **he reported
+>   himself**. Now built; see below.
+> · **O89** — *"I don't see where I am able to edit the color of text"* — listed
+>   **three** candidate fixes and chose none, and deferred multi-object recolour
+>   on *"there is no honest colour to open on"*, which every editor in the class
+>   solves with an indeterminate "mixed" state.
+> · **O47** withheld standard-14 font embedding because substitution is *"the
+>   sneaky half of rule 4"* — which identifies the right constraint and draws
+>   the wrong conclusion. Rule 4 forbids doing it **silently**, not doing it.
+>
+> ⇒ ★★ **The tell that a "question" is not one: the candidates are listed.** If
+> a session could enumerate the options and note which is cheapest, it had
+> already done the analysis and was handing back only the choosing. That is the
+> part he does not want back.
+>
+> ★★★ **AN OBJECT 0.85 pt ACROSS CAN NOW BE MOVED — O57 closed.** His report:
+> *"zoom in on the atoms of the banana pdf file and see what happens when you
+> try to draw a box around a molecule and move it."* Every press gave
+> `resize-declined reason=Degenerate`. Two constants, each right alone: a corner
+> grip reaches **6 pt** into its box and there are two per axis, and
+> `MIN_OUTLINE_EXTENT_PX` **floors the drawn box at 6 pt** — so the objects with
+> least body to spare were floored to a size at which they had none.
+> `handles::grip_bounds` now pushes the grip ANCHOR box outward by
+> `max(0, (MIN_BODY_STRIP_PX - extent)/2)` per side. **Above the threshold the
+> push is exactly zero and every grip lands byte for byte where it did**, which
+> is what makes it safe unconditionally. Painter and hit test both follow,
+> because both read `grip_rects`.
+>
+> ★★ **And yesterday's fix was DELETED rather than kept beside it.** The
+> perpendicular-axis filter can never be false once the push exists, and **a
+> condition that cannot fail is not a guard — it is decoration that reads like
+> one.** A `debug_assert` naming the invariant took over.
+>
+> ★★ **R2 fired on `dialogs/mod.rs` (1,535) and the seam was already there.**
+> The `impl DialogsState` block held two families sharing a receiver and nothing
+> else: `open_*` **build** a dialog and decide whether it may exist;
+> `ask_*`/`take_*_answer`/`show` carry a **question and its answer**. Openers
+> moved to `dialogs/open.rs`, and the two guards every one of them applies are
+> now stated once in that header instead of re-argued at twenty-one sites.
+> **1,535 → 1,068 + 539.** ⚠ `app/actions/action.rs` and `app/lifecycle.rs` sit
+> at **exactly 1500 — zero headroom.**
+>
+> ⚠ **Disk was at 98 % with seven compilers running.** Reclaimed ~8 GB from
+> `D:\Dev\pdfceGUI\target` — the **pre-rename duplicate** of this project, dead
+> since 2026-09-03. Its source tree was left alone. `target/debug` here is 29 GB
+> and grows unbounded; clear `debug` and `doc`, **never** `release`.
+>
+> ### What was running when this was written (seven background tracks)
+>
+> | track | owns |
+> |---|---|
+> | signature trust (import store, evaluate, persist) | `dialogs/settings/**`, `panels/signatures*`, `trust/**` |
+> | deferred redaction (replaces the collapsing route) | `redact/**`, `dialogs/redact*`, `app/actions/redact.rs`, `app/save*`, `EDITABLE_SURFACES.md` |
+> | ribbon = mockup, structurally | `mockups/**`, `shell/manifest/**`, `shell/ron/built_in.ron`, `icons/**`, `RIBBON_IA.md` |
+> | object → layer highlight (page objects) | `panels/layers/**`, `canvas/select*` |
+> | lossless annotation clipboard | `canvas/clipboard.rs`, `clipboard/**`, `app/dispatch/clipboard.rs` |
+> | O89 colour route + multi-object recolour | `panels/properties/**`, `app/actions/textstyle.rs`, `app/conditions/**` |
+> | O112 pop-out preview + O47 standard-14 embedding | `dialogs/print*`, `dialogs/preview*`, `dialogs/embed*`, `dialogs/host.rs` |
+>
+> **State at the last clean measurement (commit `9f3e3d2`):** engine **v0.38.0
+> at `b01964f`**. `cargo test -p pdfcer-gui --lib` = **2,546 passed, 3 failed**
+> — all three owned by running tracks (`dialogs::settings::…acrobat_trust_store`
+> and two icon-coverage counts mid-edit). Gates **26 of 29**, the three red ones
+> being `check-file-size` (now fixed), `check-verb-coverage` and
+> `check-engine-backlog`, both of which fired on the engine bump and are
+> assigned. **Re-measure before quoting any of these.**
+>
+> ⬜ **NOT DRIVEN — the whole of 2026-09-04 and 2026-09-05.** No window has been
+> launched since the operator said he was back at his keyboard. Roughly a dozen
+> driven checks have been written and left unrun, each saying so in its own
+> header. R1 still defines what "works" means and **a green test count is not a
+> substitute for it.**
+>
+> ⬜ **STILL OPEN AT THE ENGINE, both filed 2026-09-04 and unanswered:** added
+> content duplicated by the next content edit (his bug — `add_text` appends a
+> stream, the extras-sweep runs only on the session's first content rewrite),
+> and no route from a text file back into a PDF.
+
+
 > ★★★ **LAST SESSION: 2026-09-03 (evening). HIS PRINT DIALOG — four defects,
 > and the two scrollbars alone needed four separate fixes.** Long form at the
 > top of [`CONTINUE.md`](CONTINUE.md); the ledger rows are O111 (closed), O112
