@@ -80,6 +80,485 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
+## O136 — ◑ **BUILT 2026-09-05, AWAITING YOUR VERDICT** — the document's own properties have their own tab now, and the Properties tab is only ever about what you picked
+
+**Your words, 2026-09-05:**
+
+> *"the document properties are still always visible in the properties tab. it
+> needs to get out of there and be in its own document properties tab."*
+
+**What you see now.** Two tabs where there was one.
+
+* **Properties** shows the thing you have selected and nothing else — the mark,
+  the text, the shape, the form field, the armed tool's settings. With nothing
+  selected it says so in one line and stops.
+* **Document properties** is a new tab beside it, holding the file's own title,
+  author, subject and keywords, plus what pdfcer read about the file: its name,
+  its size on disk, its PDF version, how many sheets and what size they are,
+  whether it is encrypted, and — when it applies — the note saying pdfcer had to
+  rebuild the file's index to open it at all.
+
+**Where to find it:** **File ▸ Document ▸ Document properties**, the first
+control in that band, ahead of Properties and Fonts. It is a toggle: press it
+again and the tab closes.
+
+**Which modes have it: all three.** Reading a document's title is reading, so
+Read gets it as well as Review and Edit. In each one it is the **last** tab of
+the right-hand stack — one click away, and not in front of the thing you opened
+the mode to do.
+
+### Why this was worth doing rather than just tidying
+
+It is the same complaint you made on 2026-08-31 (O75), and that time it was
+answered by making the section fold itself shut. That was not enough, and the
+reason is the request *behind* the request: **O123 asked for Objects and
+Properties to become one master–detail column** — pick a row, see that row's
+detail. A permanent block of document metadata at the bottom of the detail pane
+was the one thing in that column that was not the detail of anything. It is out
+now, and the rule left behind in the source is that a section added to the
+Properties panel must read the selection or it does not belong there.
+
+### What was verified, and what was not
+
+* **Unit tests:** the arrangement of all three modes is restated by hand in two
+  tests that transcribe the panel lists literally, so this change could not slip
+  through as an incidental; the two panels cannot share one command; the new
+  panel is reachable from the ribbon and registered.
+* ⬜ **NOT DRIVEN.** No window was launched. The two driven checks that cover
+  this surface — `properties_metadata_round_trips` and
+  `the_inspector_is_one_master_detail_column` — were **updated and not run**,
+  and each says so in its own header. Another track had the machine's pointer.
+  Both were passing before this change.
+
+## O135 — ◑ **BUILT 2026-09-05, AWAITING YOUR VERDICT** — read mode was a room with no visible door
+
+**Your words, 2026-09-05:**
+
+> *"I didn't see a way to get back out of read mode. if there is a shortcut for
+> this it should have a note what the key combo is in the top bar that holds the
+> window controls."*
+
+**You were right, and the reason is worse than a missing label.** Read mode
+(`Ctrl+H`) hides the ribbon and the panels — and the only control that turns it
+off, View ▸ Window ▸ Read mode, **is on the ribbon**. So the moment it is on,
+the control that undoes it is hidden by the thing it toggles. The only route
+left was a chord that nothing on screen named.
+
+### ★★★ The source already claimed this was handled, and the claim had a hole
+
+`app/window.rs` answered it in writing: *"`Ctrl+H` again, and the tooltip on the
+control states the chord before the operator presses it — which is the one
+moment they can still see the control."*
+
+Both halves of that are true and the conclusion does not follow. It assumes you
+**arrived by pressing that control** and therefore hovered it. `Ctrl+H` is a
+bound chord: it can be pressed from memory, or hit by accident reaching for
+something next to it, having pointed at nothing. And a click is not a hover.
+
+⇒ **A tooltip is not a disclosure. It is a disclosure available to somebody who
+already knows where to point** — and this mode's whole job is to remove the
+thing you would point at. The paragraph is corrected in place, dated, with the
+reasoning kept: it was right about what Acrobat does and wrong about what that
+guarantees.
+
+### What you will see
+
+**The moment read mode turns on, the window title becomes:**
+
+```
+Read mode — Ctrl+H to exit — SW41177.pdf — pdfcer — 2026-09-05 06:24 UTC
+```
+
+— the strip you pointed at. pdfcer draws no title bar of its own (those window
+controls are Windows'), but the **text** in it is ours, so that is where the
+answer goes. It leads rather than trails, because a taskbar button truncates
+from the right and a hint at the end is the first thing the ellipsis eats.
+
+**And on the bar at the bottom of the window:**
+
+```
+Read mode — press Ctrl+H to bring the ribbon and the panels back.
+```
+
+Two places for one fact, deliberately, and the reason is that **read mode
+composes with full screen**: with both on there is no ribbon *and* no title bar,
+so a title-only note would be missing in exactly the state with the least left
+on screen. The bottom bar is the one piece of chrome read mode deliberately
+keeps. In that combined state the line names both keys — and only in that state.
+
+Both disappear the moment read mode is off. A permanent hint would be furniture,
+and it would be a false statement for every minute the mode is not on.
+
+### The key in the note cannot drift from the key on the keyboard
+
+The sentence never spells `Ctrl+H`. The chord is read from the **same key table
+that dispatches it**, once a frame, and both surfaces print that one value. If
+the binding is ever changed, the note changes with it — and if nothing is bound
+at all, the bar draws a **button** instead of naming a key that does not exist,
+because a note naming a dead key is worse than silence when you are already
+stuck.
+
+### Full screen — checked, and not the same trap
+
+`F11` hides no chrome of ours: the ribbon stays, its control stays, and it
+renders pressed. A second click is right there. So no permanent `F11` hint was
+added. The one case where it *is* a trap is `F11` **with read mode**, and that
+is the combined line above.
+
+### What Escape does not do, and why
+
+Escape was considered again and stays declined. It already has four claimants on
+the canvas (a focused form field, the selection ladder, an in-flight gesture, the
+page box's draft), and pressing it to abandon a half-drawn box and getting the
+whole application's chrome back instead is a surprise from the one key that
+means *no* everywhere else. If that should change, it should change as a ruling
+about Escape, not as a fifth claimant.
+
+**Status:** BUILT 2026-09-05. **Verified:** unit tests only — the title in all
+four forms including with no document open, the bar's line, R128 (it cannot
+change the bar's height), and the identity between the advertised chord and the
+manifest's binding. A driven check,
+`read_mode_says_how_to_get_back_out`, is **written and NOT RUN**; it needs no
+pointer and no keystroke, so it can be run at any time. Its own header says so
+in its first section.
+
+## O134 — ◑ **GUARDED 2026-09-05, AWAITING THE ENGINE FIX AND YOUR VERDICT** — deleting pages gave you a file with blank pages at the end
+
+**Your words, 2026-09-05:**
+
+> *"I tested deleting pages from a pdf. when I open the document in Acrobat
+> there are blank pages at the end of the document equalling the number of
+> pages I deleted."*
+
+### What is wrong, and it is not in this program
+
+A PDF says how many pages it has **twice**: once as a list of the pages, and
+once as a number written above that list. A well-formed file has the two agree,
+and a reader may believe either one. pdfcer reads the list. **Acrobat reads the
+number.**
+
+`pdfcer-core` — the engine underneath this shell — removes the pages from the
+list correctly and does not update the number on every level above it. On your
+`SW41177.pdf`, deleting two pages left a file whose list holds 34 pages and
+whose number still says 36. pdfcer opens it and sees a perfectly healthy
+34-page document. Acrobat opens it, believes the 36, and draws two pages that
+are not there. **That is exactly your "equalling the number of pages I
+deleted".**
+
+★★★ **Every test we have was structurally unable to catch this**, and that is
+the part worth knowing. They all read the same half of the file that pdfcer
+reads — the half that is correct. A program checking its own work with its own
+reader cannot see this kind of fault at all. You found it because you opened the
+file in a different program, which is the only thing that could have.
+
+### What was built here, today
+
+**pdfcer will not hand you a damaged file.** Every save now walks the page tree
+before any byte reaches the disk and refuses the write if the two numbers
+disagree. You get a sentence in the status bar naming both numbers, the number
+of blank pages Acrobat would have shown, and the fact that **your edits are
+still open and nothing was lost** — and it names the one thing that works:
+undo the page removal (`Ctrl+Z`) and the document saves normally.
+
+★ **It refuses; it does not repair.** We could patch the number and hand you the
+file. We are deliberately not doing that: the engine owns that structure, and a
+shell that quietly rewrote it would be a second program editing the same thing
+with nobody checking that the two agree. A fault you can see beats a fault we
+papered over.
+
+### The rest of your page commands were tested, not assumed
+
+All seven page verbs were run on a purpose-built three-level document and every
+level checked. **Deleting pages and cutting pages are affected; inserting,
+extracting, reordering, pasting and merging are all correct** — and the paste
+and merge paths demonstrably do update every level, which is why the engine fix
+should be small.
+
+**Status:** the guard is **shipped and unit-tested (23 assertions, falsified
+three ways)**. The engine fix is filed as
+`request_delete_pages_leaves_ancestor_count_stale_on_a_nested_page_tree.md`
+with the full measurement and our fixture offered to them.
+
+⬜ **NOT DRIVEN.** The driven check `a_save_that_would_produce_blank_pages_is_refused`
+is written and registered and **has not been run** — another track owned the
+screen. In those words rather than implied, per rule 3 of this file.
+
+⚠ **What this means for you today, stated plainly because you will hit it.**
+Until the engine ships the fix, **deleting pages from one of your SolidWorks
+drawing sets and then saving will be refused.** That is the correct behaviour —
+the alternative is the file you already found — and it is also an inconvenience.
+It only happens on documents whose page list is built in groups, which is what
+SolidWorks and most drawing exporters produce; a simple flat document is
+unaffected and never was. The engine session answers within the hour; the moment
+it does, deleting pages works and saves normally, and this guard goes quiet
+forever without anything else changing.
+
+★ And one thing pdfcer will now also refuse, which is new and is deliberate: a
+document that **arrived** with this fault, written by some other program. You
+get a different sentence for that one — it says pdfcer did not do it, that undo
+will not help, and that opening the file in another PDF program and saving it
+from there repairs the page list.
+
+## O133 — ◑ **FIXED 2026-09-05, AWAITING YOUR VERDICT** — a comment you drew could be turned but not moved or resized, because its own note window was sitting on top of it
+
+**Not your words — this one came out of the first full driven sweep**, and it
+is on this list because it is a thing you would have hit within a minute of
+marking up a drawing. It is the single most common review gesture there is:
+put a comment where it belongs.
+
+### What was wrong, and it was two separate faults wearing one symptom
+
+Draw a rectangle in Review, click it to select it, then drag it. Nothing
+happened — it snapped back, and nothing on screen said why. Drag a corner grip
+to resize it: same. But grab the round handle above it and **rotate**, and that
+worked perfectly. One shape, three gestures, one of them alive.
+
+**1. The note pop-up was landing on top of the comment it belonged to.** The
+canvas note window that shipped yesterday (O130) opens beside a comment when
+you click it — to the right. If there is no room on the right, it used to be
+slid back to the left until it fitted, which on a sheet with the panels open
+means *straight over the comment*. It is a window, so it takes every press
+inside it, and your drag never reached the canvas at all. Measured: the shape
+at `[[464 464] - [551 550]]`, its own note window at `[[498 465] - [772 565]]`.
+
+It now **flips** instead of sliding — right, then left, then below or above,
+whichever side has the room — and it never covers its own comment. A window
+that already fits beside its note is left exactly where it was, so nothing you
+have seen working moves.
+
+**2. A resize grip is not inside the box it resizes, and the code assumed it
+was.** The eight little squares are drawn *centred on* the corners, so half of
+each one is outside the shape. A press on that outer half was tested against
+"is this inside the annotation?", answered no, and fell through to a branch
+that only runs in Edit — so in Review, the mode markup is authored in, it did
+nothing at all. Rotation escaped because its handle is obviously clear of the
+box and was given its own route the day it shipped. The same fault was sitting on
+form-field boxes.
+
+### How it was verified
+
+Driven, twice, on the real binary: `dragging_a_markup_moves_it` now moves the
+shape 104.6 × 150.6 pt and the engine writes it; `the_line_weight_switch_
+reaches_the_resize` now reaches the resize. Both **failed** before the change
+in the same session, on the same fixture, with the same command.
+
+### ⬜ What is NOT fixed, named rather than implied
+
+A comment with **no words in it** still opens an empty note window when you
+click it. That is noise on a shape you only meant to select, and it is not
+addressed here — it is a question about when a pop-up should open, not about
+where it goes. Say the word and it becomes its own row.
+
+### ★★ And two other things the same sweep blamed on the program were the tests
+
+Both were filed as defects on 2026-09-05 and neither is one. They are recorded
+here because a wrong bug report costs as much as a bug.
+
+**"The canvas stops seeing the mouse after a long scroll."** It does not. The
+test turned the wheel forty notches on a **one-page** document, scrolled the
+sheet clean off the top of the window, and then complained that pointing at
+blank space produced nothing. The program had said so in the same breath —
+`canvas-unavailable reason=nothing-visible` — and the test's own failure
+message claimed *"the page is still drawn"* without ever having looked. Driven
+properly, with a page still under the pointer at a scroll offset of **1,182
+points**, the canvas answers every movement. ⇒ This also clears the
+**pasteboard (O23)** of the blame it had been carrying: an offset you *reach*
+with the wheel breaks nothing.
+
+**"Mouse work dies at every zoom."** It does not. The test was grabbing the
+**centre of the bounding box** of an open zigzag — twelve points of blank paper
+above the line — and blank paper inside a box is a marquee, which is what you
+asked for yourself (O72). Pressing on the line instead, the object moves at
+**104 %, 942 %, 2,096 %, 2,559 %, 6,957 %, 62,790 %, 139,743 %, 170,682 % and
+2,298,019 %** — the whole range you asked about on the banana file, through
+both places where the renderer changes strategy. Two further complaints in that
+report (*"no anchor marks above 942 %"*, *"the pan published nothing"*) were the
+test ignoring a field the program prints and reading a change-log as a snapshot.
+
+⇒ ★★★ The rule this earns, and it is now written into the tests themselves:
+**a failure at every rung of a sweep is evidence about the instrument, not
+about the thing being swept.**
+
+## O132 — ◑ **HALF BUILT 2026-09-05, AND THE OTHER HALF IS AT THE ENGINE** — you cannot edit or delete the nodes of a shape you have drawn
+
+**Your words, 2026-09-05:**
+
+> *"I also can't edit or delete nodes of a markup shape once it is drawn."*
+
+One sentence, and when it was measured it turned out to be **three different
+things**, wearing one complaint. Two of them are fixed today. The third cannot
+be fixed here at all, and it is filed rather than fudged.
+
+### 1. ✅ A measurement you have drawn can now gain and lose corners
+
+Draw a perimeter or a length with the Measure tools and its corners have always
+been draggable. What they could not do was **change in number** — you could
+move a corner and you could not add one or take one away. That was our gap, not
+the engine's: `pdfcer-core` has had all three verbs since August and this
+program was calling only one of them.
+
+Now, with a shape selected:
+
+| gesture | what happens |
+|---|---|
+| drag a corner | it moves, and the measurement is re-taken (unchanged) |
+| **Ctrl-drag** a corner | a **new corner is added** just after it, and follows your pointer until you drop it |
+| **Ctrl+Shift-drag** a corner | that corner is **taken away** |
+
+The two new gestures need the **Points** tool armed first (press `A`). That is
+deliberate: Ctrl already means *take this out of the selection* everywhere else
+on the canvas, so if Ctrl alone could delete a corner, an ordinary nudge with a
+finger on the wrong key would destroy work. Arming the tool is the thing that
+says you mean it, and the tool's own line in the right-hand strip tells you
+what the two chords do.
+
+Each one is a single `Ctrl+Z`, and each one tells you what changed —
+*"A corner was added — 5 corners now, and 12.40 m is now 13.85 m."* You cannot
+recover the old number any other way once the shape has moved, which is why it
+is in the sentence.
+
+**If a shape has as few corners as it can have** — three for a closed shape, two
+for an open one — taking one away is refused, and now it *says so* on the status
+bar instead of doing nothing. That silence is what made you report this.
+
+### 2. ✅ The Points tool now works in Review, which is where you draw
+
+The Points tool was withheld in every mode except Edit. Review — the mode you
+mark up and measure in — could not arm it, and pressing `A` there answered
+*"Editing points needs Edit mode."*
+
+That was half right and half misleading. The tool has **two** subjects: the
+anchors of the drawing's own lines, which genuinely do need Edit, and the
+corners of a measurement **you** drew, which do not — reshaping your own
+measurement is a measuring job, not a drawing-editing job. The gate now asks
+the right question, and the drawing's own anchors stay just as unreachable in
+Review as they were.
+
+⚠ **One rough edge, named rather than hidden.** In Review the tool is reachable
+by the `A` key and **not** from the ribbon or the rail, because the button that
+arms it is still hidden outside Edit. That button lives in a file another job
+was working in today. Say the word and it gets a row of its own.
+
+### 3. ⬜ A markup shape — a cloud, a polygon, an ink stroke — still cannot be edited, and that one is not ours
+
+This is the literal thing you asked about, and it stops at the engine.
+`pdfcer-core` does not model a markup annotation's geometry at all: there is no
+way to *read* where a cloud's corners are, let alone move one. So we cannot
+even draw the little squares, never mind let you grab one.
+
+We could have guessed at it by re-reading the raw file ourselves. We did not,
+and that is a deliberate refusal: it would be a second, weaker copy of
+something the engine owns, and it would go wrong the first time a new shape was
+added. The last time this project refused a workaround like that, the engine
+shipped the real answer within hours.
+
+**Filed as** `request_a_markup_shapes_vertices_cannot_be_read_or_edited.md`,
+asking for three things in the order we would use them: read the corners, move
+one, then add and remove.
+
+### And one thing we would build next if you want it
+
+The natural way to add or remove a corner is a **right-click on the shape** —
+*"add a point here"*, *"remove this point"* — which is how the engine itself
+describes these two operations. The chords above are a stopgap. The right-click
+menu lives in a file another job was working in today, so it is written down
+here rather than half-built.
+
+**Verified:** 14 unit tests, six of them new and every one **falsified** — the
+guard was removed, the test was watched go red, and the code was put back.
+Three of them run against the real engine on a real document rather than a
+stand-in.
+⬜ **NOT DRIVEN.** `a_corner_can_be_added_and_taken_away` is written,
+registered and has never seen a running window; the machine's pointer belonged
+to another job all day. Its own header says so.
+
+---
+
+## O131 — ◑ **FIXED 2026-09-05, AWAITING YOUR VERDICT** — you could copy a comment in Review and had nowhere to put it, and the Objects rows were all cut short
+
+**Not your words.** Both of these came out of the first full driven sweep of
+the harness, on 2026-09-05, and both are things you would have hit within a
+minute of using the modes as intended. Recorded here anyway, because the ledger
+is the place a thing gets a verdict.
+
+### 1. Review could copy and could not paste
+
+`Ctrl+C` worked in Review. `Ctrl+V` did nothing at all — no message, no
+refusal, nothing. So in the mode whose entire purpose is marking up somebody
+else's drawing, you could take a copy of a comment and then have nowhere to put
+it. Two separate checks hit the same line in the trace.
+
+The cause was a rule about **where a button lives** being used to decide **what
+a mode may do**: Paste sits in the Edit tab's Clipboard group, Review is not
+shown the Edit tab, so the keystroke was thrown away before anything looked at
+what was on the clipboard. Copy had been let out of that rule five days
+earlier, for the same reason, and cut and paste had been left behind.
+
+**Now:** the four clipboard keystrokes reach the program in every mode, and the
+program decides per press, on what you actually copied:
+
+| you copied | Read | Review | Edit |
+|---|:-:|:-:|:-:|
+| a comment or a markup shape | refused, with a sentence | **pastes** | pastes |
+| a drawing's own lines, text or shapes | refused, with a sentence | refused, with a sentence | pastes |
+| a form field | refused, with a sentence | refused, with a sentence | pastes |
+
+⚠ **And every refusal now says so on the status bar**, in the `⊗` slot that
+means *nothing happened* — naming what was on the clipboard and which mode can
+do it. That is the half that matters as much as the fix: before this, a
+keystroke the program declined was silent.
+
+**Still keyboard-only in Review**, and said rather than hidden: there is no
+Paste *button* in Review, because the Clipboard group lives on the Edit tab and
+a command may appear on only one tab. Copy has been keyboard-only in Review
+since it was let out, so the two are at least consistent. If you want the
+buttons there, say so and they get their own row.
+
+**Verified:** ten unit tests, including one that drives the real dispatcher.
+⬜ **NOT driven.** The machine was in use by another job.
+`a_paste_review_may_not_do_says_so` is written and registered and has never
+been run.
+
+### 2. Every row in the Objects panel was cut short
+
+You asked for Objects and Properties as one master–detail column
+(**O123 / A7**), and you got it — with every single row elided. Not the long
+ones; all of them, on your own A1 sheet.
+
+The numbers, because they are the whole argument: the panel had **296 pt** of
+room for a row's text, and its rows wanted between **306 pt** and **474 pt**. A
+dock wide enough for the widest would be about **526 pt** — half the window.
+So widening it could not have worked, and the note in the source that said
+360 pt would fix "the common row" has been retracted where it was written.
+
+What changed is what a row **says**. It was a full description:
+
+```
+#26  Text · "SIZE" · JetBrainsMono-Regular 4.50 pt · bounds from metrics
+```
+
+It is now an identity, with a ⚠ where there is something to disclose:
+
+```
+#26  Text · "SIZE" ⚠
+```
+
+The paint style, the line width, the font and the wording of the ⚠ have not
+been lost — they are **on the row's hover**, on every row now rather than only
+on a cut one, and in the Properties pane an inch below it. That is what
+master–detail means, and it is the arrangement you asked for: the row tells you
+*which* object, the pane below tells you *about* it.
+
+Longest row on your A1 sheet is now **208 pt** of the 296 available. A row
+quoting a genuinely long string still ellipsises with the full text on hover,
+which is the behaviour you asked for in the same request and which had to
+survive.
+
+**Verified:** four unit tests, two of which measure the real fixture with the
+real font. ⬜ **NOT driven** — same reason.
+`the_inspector_is_one_master_detail_column` should now pass and has not been
+re-run.
+
 ## O130 — ◑ **BUILT 2026-09-05, AWAITING YOUR VERDICT** — you can read a sticky note by clicking it, in Read mode, the way Acrobat does
 
 **Your words, 2026-09-05:**
@@ -570,6 +1049,63 @@ standing "Read authors nothing" invariant.
 view-only rotation in Read and a real one elsewhere — would be two behaviours
 wearing one button, which is worse than either. If he wants view-only rotation
 instead, it is a different control and should say so.
+
+### ★★★ Item 1 (float / close / dock) — 2026-09-05: the reported defect was the CHECK, and the shell now carries the number that would have caught a real one
+
+**The 2026-09-05 driven sweep filed this as A5:** *"a floated panel opens an
+empty window, and Dock all recovers nothing"* — `panels_float_close_and_dock`
+reporting no viewport-tagged `ui-rect` and `panels-dock-all docked=0`. The
+same check had also been failing with `moved=false` for days.
+
+**All three findings were the check's, and the evidence is its own four
+traces read in launch order** (`D:\temp\uvdrive\A\`, 04:51:34 → 04:51:40):
+
+```text
+float     panel-float moved=true      → saved: layers FLOATING
+dock      panel-float moved=false     ← already floating
+          panel-dock  moved=true      → saved: layers DOCKED
+close     panel-float moved=true
+          panel-close closed=true     → saved: layers ABSENT
+dock-all  panel-float moved=false     ← nothing left to float
+          panels-dock-all docked=0    ← HONEST
+```
+
+Each of the check's four sections launches the binary afresh, and the
+application **persists the dock layout**. So the check was feeding its own
+next launch, and `docked=0` was a true statement about a state the harness had
+created. ★★ *A count that reads as failure when there was nothing to count* is
+the mirror of this project's usual hazard and has the same defence: assert the
+precondition rather than assume it. Every section now begins with
+`view.reset_layout` and **asserts the reset landed**.
+
+**The "empty window" finding was a blind oracle.** It asked for *any* `ui-rect`
+carrying a `viewport=` tag, and nothing in the build published one:
+`egui_shell::dock::floatwin` publishes no regions (R7 — the shell has no
+diagnostic channel and must not grow one), and the Layers panel publishes only
+its search field, which it draws only on a document with two or more
+optional-content groups. **No fixture in `fixtures/` carries an
+`/OCProperties`.** The check could not have passed against a working build
+either.
+
+⇒ ★★★ **What was genuinely missing is the number, not the window.** Nothing in
+the dock could tell an open window with a panel in it from an open window with
+nothing in it — `drawn`, `real_windows`, `floats_undrawn` and the
+`viewport-inner` line are all satisfied by a blank one. A blank window is R9
+broken at the scale of a whole window: an operator can read an absent button,
+and nobody can read a blank window with a title bar. Now:
+
+* `FloatFrameReport::empty_bodies` — the dock's own measurement, the body
+  `Ui`'s `min_rect` after the body returns;
+* `float.body.<panel>` and `float.content.<panel>` — regions the
+  **application** publishes from inside the float body, where the
+  `ViewportScope` is, so the coordinates mean something;
+* `empty=` on the `float-windows` trace line.
+
+Two independent witnesses, falsified in both directions by four unit tests
+across two crates.
+
+⬜ **NOT DRIVEN.** The repaired check has **not been run** — the pointer
+belonged to another track for the whole session. The row stays ◑ until it is.
 
 ### ★ The export list: he is right, and the missing one is EMF
 

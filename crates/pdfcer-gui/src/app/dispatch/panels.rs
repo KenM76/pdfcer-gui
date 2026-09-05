@@ -92,7 +92,12 @@ use crate::app::PdfcerApp;
 pub(crate) fn claims(id: &str) -> bool {
     matches!(
         id,
-        "view.panel_float" | "view.panel_dock" | "view.panel_close" | "view.dock_all_panels"
+        "view.panel_float"
+            | "view.panel_dock"
+            | "view.panel_close"
+            | "view.dock_all_panels"
+            | "view.ribbon_auto_hide"
+            | "view.rail_auto_hide"
     )
 }
 
@@ -222,6 +227,43 @@ impl PdfcerApp {
                 crate::diag::trace(|| {
                     // ui-text-exempt: diagnostic trace, never displayed.
                     format!("panels-dock-all docked={docked}")
+                });
+                true
+            }
+            // ★★★ THE TWO AUTO-HIDE TOGGLES — 2026-09-05, his second and
+            // fifth asks. See `egui_shell::peek` for the interaction model and
+            // for the R128 bound that keeps it out of a feedback loop.
+            //
+            // ★★ Each writes the PREFERENCE and lets the frame loop push it
+            // into the shell, rather than calling `set_auto_hide` here. The two
+            // routes would otherwise disagree the moment a preferences file is
+            // reloaded: `RibbonState::sync_auto_hide` runs every frame and
+            // would immediately undo a shell-only change. One source of truth,
+            // and it is the one that survives a restart.
+            //
+            // ★ `save_prefs` rather than a dirty flag, for the reason
+            // `view.smart_select`'s arm gives: a setting the operator changed
+            // from a control and lost on a crash is a control that reports
+            // having done something it did not do.
+            "view.ribbon_auto_hide" => {
+                let _ = self.take_menu_panel();
+                self.prefs.ribbon_auto_hide = !self.prefs.ribbon_auto_hide;
+                let on = self.prefs.ribbon_auto_hide;
+                let _ = self.prefs.save();
+                crate::diag::trace(|| {
+                    // ui-text-exempt: diagnostic trace, never displayed.
+                    format!("ribbon-auto-hide on={on}")
+                });
+                true
+            }
+            "view.rail_auto_hide" => {
+                let _ = self.take_menu_panel();
+                self.prefs.rail_auto_hide = !self.prefs.rail_auto_hide;
+                let on = self.prefs.rail_auto_hide;
+                let _ = self.prefs.save();
+                crate::diag::trace(|| {
+                    // ui-text-exempt: diagnostic trace, never displayed.
+                    format!("rail-auto-hide on={on}")
                 });
                 true
             }

@@ -80,9 +80,78 @@
 //!
 //! ## Getting back out
 //!
-//! `Ctrl+H` again, and the tooltip on the control states the chord *before* the
-//! operator presses it — which is the one moment they can still see the
-//! control. That is Acrobat's contract too.
+//! **The chord, said out loud on two surfaces for as long as the mode is on.**
+//! [`publish_exit_chord`] resolves `view.read_mode` against the live keymap
+//! once a frame; `text::doctabs::window_title` puts it at the FRONT of the
+//! window title, and [`crate::app::status::readmode`] puts it on the status bar
+//! — the one piece of chrome §2 above deliberately keeps.
+//!
+//! ### ★★★ The paragraph this replaces was wrong, and the operator fell
+//! straight through the hole — corrected 2026-09-05
+//!
+//! It read, in full:
+//!
+//! > *`Ctrl+H` again, and the tooltip on the control states the chord* before
+//! > *the operator presses it — which is the one moment they can still see the
+//! > control. That is Acrobat's contract too.*
+//!
+//! His report:
+//!
+//! > *"I didn't see a way to get back out of read mode. if there is a shortcut
+//! > for this it should have a note what the key combo is in the top bar that
+//! > holds the window controls."*
+//!
+//! **Both halves of the old sentence are still true and the conclusion did not
+//! follow.** Acrobat really does put the chord on the control's tooltip, and
+//! the tooltip really is shown before the press. What the argument assumed,
+//! without ever saying so, is that the operator **arrived here by pressing that
+//! control** and therefore hovered it. `Ctrl+H` is a *bound chord*: it can be
+//! pressed from memory, or hit by accident reaching for `Ctrl+G`, having never
+//! pointed at anything. And even the operator who does use the control has not
+//! necessarily rested the pointer on it long enough for a tooltip to appear —
+//! a click is not a hover.
+//!
+//! ⇒ ★★ **A tooltip is not a disclosure. It is a disclosure available to
+//! somebody who already knows where to point.** The whole of what this mode
+//! does is remove the thing they would point at, so the one surface the old
+//! argument relied on is the surface the mode deletes. That is not a
+//! discoverability nicety; it is a room whose only door is hidden by the act of
+//! entering it.
+//!
+//! The general rule, worth carrying past this file: **a hint that lives on a
+//! control cannot explain how to undo a state that hides that control.** The
+//! statement has to live somewhere the state cannot reach. Two such places
+//! survive read mode, and each covers the other's blind spot:
+//!
+//! | surface | survives | blind when |
+//! |---|---|---|
+//! | the **window title** | read mode — the strip is the operating system's and this mode cannot touch it | full screen, where there is no title bar at all; and a maximised window whose title nobody looks at |
+//! | the **status bar** | read mode *and* full screen — §2 keeps it deliberately | never, for these two states |
+//!
+//! Normally two surfaces for one fact is a smell. It is not one here, and the
+//! reason is in the table: **read mode composes with full screen**, and in the
+//! combined state the title bar is not drawn, so a title-only hint would be
+//! absent in exactly the state with the least chrome left. Conversely the title
+//! is legible from the taskbar and from Alt-Tab, which the status bar is not.
+//! Neither alone covers the state space. Both derive from one published value
+//! ([`exit_chord`]), so they cannot disagree with each other, and that value is
+//! read from the keymap that dispatches, so neither can disagree with the key.
+//!
+//! ### ★ Full screen was checked and is NOT the same trap
+//!
+//! `view.fullscreen` hides no chrome of ours: the ribbon stays drawn, its
+//! control stays on View ▸ Window, and `app::conditions` renders it *pressed*.
+//! A second click is right there. So no permanent `F11` hint is added — it
+//! would be the noise this file's own §2 argues against, and it would be wrong
+//! the moment the mode is off.
+//!
+//! **The one state where it IS a trap is the combination**, and it is handled:
+//! with read mode on as well, the ribbon is gone, so `view.fullscreen`'s
+//! control is gone with it and `F11` has become undiscoverable too. The status
+//! line names *both* chords in that state and only in that state. It cannot be
+//! the title's job, because full screen is precisely when the title is not
+//! drawn — which is the same argument for the status bar, arriving from the
+//! other end.
 //!
 //! **Escape was considered and declined.** `canvas::keys` already ranks four
 //! claimants for Escape (a focused form field, the selection ladder's rungs, an
@@ -157,6 +226,134 @@ use egui::{Id, ViewportCommand};
 /// twice that stops agreeing produces **silence** — a toggle that writes one
 /// slot and a composition step that reads another — rather than an error.
 const READ_MODE_ID: &str = "pdfcer-read-mode"; // ui-text-exempt: widget id, never displayed
+
+/// The command id whose chord the two exit statements name.
+///
+/// ★ **Spelled once in this crate for this purpose.** The failure this guards
+/// against is not a compile error: a second literal `"view.read_mode"` at the
+/// title site and a third at the status-bar site would each keep working while
+/// slowly meaning different things, and the day one of them was renamed the
+/// other would resolve to `None` and the surface would go *silent* — which is
+/// indistinguishable from an operator who has read mode off. The same argument
+/// [`READ_MODE_ID`] makes about its memory key, one level up.
+const READ_MODE_COMMAND: &str = "view.read_mode"; // ui-text-exempt: command id, never displayed
+
+/// The full-screen command id, named here for the same reason as its sibling.
+///
+/// Used only for the combined state — see the module header's *Full screen was
+/// checked* section.
+const FULLSCREEN_COMMAND: &str = "view.fullscreen"; // ui-text-exempt: command id, never displayed
+
+/// `egui::Memory` key for **the chord that turns read mode off**, as the live
+/// keymap holds it this session.
+const EXIT_CHORD_ID: &str = "pdfcer-read-mode-exit-chord"; // ui-text-exempt: memory key, never displayed
+
+/// `egui::Memory` key for the full-screen chord. See [`fullscreen_chord`].
+const FULLSCREEN_CHORD_ID: &str = "pdfcer-fullscreen-chord"; // ui-text-exempt: memory key, never displayed
+
+/// The chord a keymap binds to a command, choosing exactly as a menu chooses.
+///
+/// # ★★★ Why this is derived and never written down
+///
+/// The statement on the title bar and the statement on the status bar are
+/// **claim-bearing**: they tell an operator which key to press to get their
+/// application back. `RIBBON_IA.md` and `shell::manifest` bind `Ctrl+H` today,
+/// and `SHELL_FRAMEWORK.md` §5 lets an operator rebind keys. A hard-coded
+/// `"Ctrl+H"` in `crate::text` would therefore be correct until the first
+/// rebind and then **worse than silence** — a sentence naming a key that does
+/// nothing, on the one surface an operator turns to when they are already
+/// stuck. `egui_shell::menu::shortcut`'s header states the general form:
+///
+/// > *A hand-written second copy of a key binding is wrong the first time an
+/// > operator rebinds anything, and it is wrong silently: the menu says
+/// > `Ctrl+C`, the key does something else, and the interface is now actively
+/// > lying to the person it was supposed to be teaching.*
+///
+/// So this reads the **same map `app::keyboard` dispatches from** — the shell's
+/// `keymap` — and there is no second table anywhere.
+///
+/// # Why the reverse lookup is written here rather than via `Shortcuts`
+///
+/// [`egui_shell::Shortcuts`] inverts the *whole* keymap into a `BTreeMap`,
+/// which is right for a menu drawing forty rows and wasteful for one command
+/// asked once a frame. This is the same rule — `egui_shell::menu::shortcut::prefer`,
+/// literally the same function — applied by a scan with one allocation.
+///
+/// ★ Sharing `prefer` is not tidiness either. A command bound twice would
+/// otherwise be advertised as one chord in a context menu and a *different*
+/// chord in the title, both true, and an operator comparing the two would have
+/// no way to know that either was.
+#[must_use]
+pub fn chord_for<'a>(
+    keymap: Option<&'a egui_shell::manifest::Keymap>,
+    command: &str,
+) -> Option<&'a str> {
+    let keymap = keymap?;
+    let mut best: Option<&str> = None;
+    for (chord, bound) in keymap.iter() {
+        if bound != command {
+            continue;
+        }
+        match best {
+            Some(incumbent)
+                if egui_shell::menu::shortcut::prefer(chord, incumbent)
+                    != std::cmp::Ordering::Less => {}
+            _ => best = Some(chord),
+        }
+    }
+    best
+}
+
+/// **Publish this frame's exit chords**, before anything that states them
+/// draws.
+///
+/// One writer, at a known point in the frame, exactly as
+/// `crate::pagedrag::publish_active` and `modes::capability::publish_edit_content`
+/// are — and for the reason `app::frame`'s step 0 block gives: the alternative
+/// is threading `&Shell` through two call chains that have no other use for it,
+/// one of which (`app::status::show`) already takes seven parameters.
+///
+/// ★ The **shell** is the argument rather than the chord, so the resolution
+/// happens once and both readers get the identical `String`. Handing each
+/// surface the keymap instead would put two resolutions in the program, and two
+/// resolutions can drift the moment one of them acquires a fallback.
+pub fn publish_exit_chord(ctx: &egui::Context, shell: Option<&egui_shell::manifest::Shell>) {
+    let keymap = shell.and_then(|s| s.keymap.as_ref());
+    let put = |id: &str, command: &str| {
+        let chord = chord_for(keymap, command).map(str::to_owned);
+        ctx.data_mut(|d| d.insert_temp(Id::new(id), chord));
+    };
+    put(EXIT_CHORD_ID, READ_MODE_COMMAND);
+    put(FULLSCREEN_CHORD_ID, FULLSCREEN_COMMAND);
+}
+
+/// The chord that turns read mode off, as published this session.
+///
+/// `None` means **no key in this build does it** — a manifest that bound none,
+/// or a context nothing has published into (every headless `egui::Context` in
+/// the test suite). Both readers treat that as *say nothing about a key*, which
+/// is the only honest option: a sentence naming a chord that is not bound is
+/// the exact failure this whole mechanism exists to prevent.
+///
+/// ★ It is deliberately **not** defaulted to `Ctrl+H`. A default here would be
+/// a second spelling of the binding wearing a fallback's clothes, and it would
+/// be wrong in precisely the case it was reached for.
+#[must_use]
+pub fn exit_chord(ctx: &egui::Context) -> Option<String> {
+    ctx.data(|d| d.get_temp::<Option<String>>(Id::new(EXIT_CHORD_ID)))
+        .flatten()
+}
+
+/// The chord that leaves full screen, as published this session.
+///
+/// Read **only** while read mode is also on — see the module header. Full
+/// screen on its own keeps the ribbon and therefore keeps its own control, so
+/// naming its chord unconditionally would be furniture.
+#[must_use]
+pub fn fullscreen_chord(ctx: &egui::Context) -> Option<String> {
+    ctx.data(|d| d.get_temp::<Option<String>>(Id::new(FULLSCREEN_CHORD_ID)))
+        .flatten()
+}
 
 /// Whether the ribbon and the docks are drawn this frame.
 ///
@@ -441,6 +638,77 @@ mod tests {
         assert!(
             next_fullscreen(Some(false), Some((10, true)), 10 + PENDING_FRAMES + 1),
             "an unanswered request must stop being believed"
+        );
+    }
+
+    /// ★★★ **The chord the operator is told to press is the chord the manifest
+    /// binds** — asserted against the real manifest, not against a literal.
+    ///
+    /// The vacuous shape this refuses: `assert_eq!(chord, "Ctrl+H")`. That test
+    /// passes on a build whose keymap has moved on and whose surfaces are
+    /// therefore lying, because it is a second copy of the very fact under
+    /// test. What is asserted instead is an **identity between two
+    /// derivations** — the one the surfaces use, and the keymap read the other
+    /// way round — so a rebind either moves both or fails here.
+    #[test]
+    fn the_published_chord_is_the_one_the_manifest_binds() {
+        let shell = crate::shell::manifest::built_in();
+        let keymap = shell
+            .keymap
+            .as_ref()
+            .expect("the built-in manifest has a keymap");
+        let chord = chord_for(Some(keymap), READ_MODE_COMMAND).expect("read mode has a chord");
+        assert_eq!(
+            keymap.get(chord),
+            Some(READ_MODE_COMMAND),
+            "the reverse lookup must land on the same binding the dispatcher resolves"
+        );
+
+        let ctx = egui::Context::default();
+        publish_exit_chord(&ctx, Some(&shell));
+        assert_eq!(exit_chord(&ctx).as_deref(), Some(chord));
+
+        let full = chord_for(Some(keymap), FULLSCREEN_COMMAND).expect("full screen has a chord");
+        assert_eq!(fullscreen_chord(&ctx).as_deref(), Some(full));
+        assert_ne!(chord, full, "two commands, two keys");
+    }
+
+    /// **An unbound command yields no chord, and no default is invented.**
+    ///
+    /// A fallback of `Ctrl+H` here would be a second spelling of the binding
+    /// wearing a fallback's clothes: correct exactly when it is not needed, and
+    /// wrong in the one case it is reached for. The surfaces treat `None` as
+    /// *say nothing about a key* — see `app::status::readmode`.
+    #[test]
+    fn an_unbound_command_yields_no_chord_and_no_guess() {
+        let empty = egui_shell::manifest::Keymap::default();
+        assert_eq!(chord_for(Some(&empty), READ_MODE_COMMAND), None);
+        assert_eq!(chord_for(None, READ_MODE_COMMAND), None);
+
+        let ctx = egui::Context::default();
+        publish_exit_chord(&ctx, None);
+        assert_eq!(exit_chord(&ctx), None);
+        assert_eq!(fullscreen_chord(&ctx), None);
+    }
+
+    /// **One command bound twice advertises the same chord a menu would show.**
+    ///
+    /// It shares `egui_shell::menu::shortcut::prefer` rather than picking the
+    /// first match, and the failure that prevents is quiet: a command bound to
+    /// two keys would otherwise be advertised as one chord in a context menu and
+    /// a *different* chord on the status bar, both true, with no way for an
+    /// operator comparing them to know that either was.
+    #[test]
+    fn a_command_bound_twice_advertises_what_a_menu_advertises() {
+        let mut map = std::collections::BTreeMap::new();
+        map.insert("Ctrl+Shift+H".to_owned(), READ_MODE_COMMAND.to_owned());
+        map.insert("F9".to_owned(), READ_MODE_COMMAND.to_owned());
+        let keymap = egui_shell::manifest::Keymap(map);
+        assert_eq!(chord_for(Some(&keymap), READ_MODE_COMMAND), Some("F9"));
+        assert_eq!(
+            egui_shell::Shortcuts::from_keymap(&keymap).get(READ_MODE_COMMAND),
+            chord_for(Some(&keymap), READ_MODE_COMMAND),
+            "the two derivations must agree, or the menu and the bar teach different keys"
         );
     }
 

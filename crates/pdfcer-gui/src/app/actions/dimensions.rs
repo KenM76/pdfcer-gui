@@ -440,6 +440,128 @@ pub enum DimensionAction {
         dy: f64,
     },
 
+    /// ★★★ **Add a corner to a perimeter ce dimension** — 2026-09-05, and the
+    /// half of the operator's report this shell could close.
+    ///
+    /// > *"I also can't edit or delete nodes of a markup shape once it is
+    /// > drawn."*
+    ///
+    /// Raised by `crate::canvas::dimdrag::count_edit` on the release of a
+    /// Ctrl-drag from a corner handle with the Points tool armed, and by
+    /// nothing else.
+    ///
+    /// # ★★ `after` is a SEGMENT, not a position in a list
+    ///
+    /// `insert_dimension_vertex(dimension, after, at)`
+    /// (`D:/Dev/pdfcer/crates/pdfcer-core/src/edit.rs:37927`) puts the new
+    /// corner **between** `after` and the one following it, which is why the
+    /// engine's own doc comment describes the gesture as *"what a right-click
+    /// on a segment offers"*: `after` names that segment by its first corner.
+    ///
+    /// `after == len - 1` is meaningful rather than out of range, and both
+    /// readings are correct: on a **closed** perimeter it names the closing
+    /// segment back to corner 0, which is drawn and measured like any other and
+    /// must therefore be able to take a point; on an **open** path the same
+    /// call extends the path past its end.
+    ///
+    /// # This RE-MEASURES, like [`Self::MoveVertex`] and unlike [`Self::Place`]
+    ///
+    /// A new corner changes the shape, so it changes the printed number. The
+    /// same disclosure obligation applies and the same engine material
+    /// discharges it — `VertexOutcome` carries `previous_label` beside `label`
+    /// because the old value cannot be reconstructed once the geometry that
+    /// produced it is gone — with the **corner count** added, because that is
+    /// the fact this verb exists to change and the one a mis-aimed gesture
+    /// would get wrong invisibly.
+    ///
+    /// # Blast radius
+    ///
+    /// **One annotation**, redrawn with its new shape and its new label. Its
+    /// baked `/AP` and the sidecar catalog are rewritten together inside one
+    /// engine `Command`, so this is one Ctrl+Z (`drag-moves` D4).
+    /// [`Self::regenerates_the_whole_group`] answers `false`.
+    InsertVertex {
+        /// The perimeter to reshape.
+        dimension: DimensionId,
+        /// The first corner of the segment the new one is dropped onto.
+        after: usize,
+        /// Where the new corner goes, page space, points — the snapped
+        /// position the preview showed, so what commits is what was on screen.
+        at: pdfcer_core::vector::Point,
+    },
+
+    /// ★★★ **Take a corner off a perimeter ce dimension** — the literal half of
+    /// *"or delete nodes"*, 2026-09-05.
+    ///
+    /// Raised by `crate::canvas::dimdrag::count_edit` on the release of a
+    /// Ctrl+Shift-drag from a corner handle with the Points tool armed, and by
+    /// nothing else.
+    ///
+    /// # ★★ The refusal is preflighted, so this variant never carries one
+    ///
+    /// `remove_dimension_vertex` (`edit.rs:37955`) refuses rather than leaving
+    /// a degenerate record — an open path keeps two corners, a closed one keeps
+    /// three — and the engine's own advice is to *"grey the menu item from
+    /// `vertex_edit_preview` rather than catch the error"*, in the
+    /// `adopt_widget` requester's words: *"a verb with no preflight makes the
+    /// UI find out by pressing."* This shell has no menu item to grey, so it
+    /// applies the same rule to the gesture: `dimdrag` asks
+    /// `vertex_edit_preview` on every frame, the preview shows the shape
+    /// unchanged when the answer is no, and **this action is never raised**.
+    ///
+    /// ⇒ So an arm here that mapped `EditError` to a sentence would be dead
+    /// code describing a state the caller guarantees cannot arrive. The
+    /// refusal's sentence lives where the refusal is detected —
+    /// `app::status::decline::record_vertex_edit_refused`.
+    ///
+    /// # Blast radius
+    ///
+    /// **One annotation**, exactly as [`Self::InsertVertex`]. One engine
+    /// command, one undo entry.
+    RemoveVertex {
+        /// The perimeter to reshape.
+        dimension: DimensionId,
+        /// Which corner goes, by index into its points.
+        index: usize,
+    },
+
+    /// ★★★ **Say, in words, why a corner could not be added or taken away.**
+    ///
+    /// Raised by `crate::canvas::dimdrag::count_edit` on the release frame of a
+    /// count-editing drag whose preflight refused. It edits nothing and is not
+    /// an edit — no funnel, no epoch, no undo entry — and that is the whole
+    /// point of it.
+    ///
+    /// # ★★ Why a refusal travels as an ACTION rather than being recorded on
+    /// the spot
+    ///
+    /// Because of a module boundary that is deliberate. `app::status::decline`
+    /// is `pub(super)` inside `crate::app`, with its reason written on the
+    /// declaration: *"a decline is written by the one dispatcher and read by
+    /// the one bar."* The canvas is outside that boundary and cannot reach the
+    /// store, so a gesture that needs to decline has to hand the fact inward.
+    ///
+    /// [`crate::app::actions::Action::DeclineInsideForm`] is the standing
+    /// precedent for exactly this — an action whose entire body is one
+    /// `decline::record_*` call — and this one rides on `DimensionAction`
+    /// rather than joining it at the top level for a reason that is
+    /// unglamorous and real: `app/actions/action.rs` sits at **exactly 1,500
+    /// lines**, which is R2's ceiling with no headroom, and this file has
+    /// three hundred to spare. The subject is a ce dimension either way.
+    ///
+    /// ⇒ ★ It is deliberately NOT `record_note`. That channel draws
+    /// *"⚑ About your last edit:"*, and `app::status::decline`'s own header
+    /// rules it out for this case in as many words — *"an operator who reads
+    /// 'About your last edit' after a gesture that did nothing has been told a
+    /// small lie confidently"*. Nothing happened; the slot that says so wears
+    /// `⊗`.
+    DeclineVertexEdit {
+        /// Which of the shell's sentences this refusal is. The mapping from
+        /// `EditError` lives at `canvas::dimdrag::refusal_for`, so the engine's
+        /// vocabulary stops at the canvas and never reaches the string catalog.
+        why: crate::text::measure::VertexEditRefusal,
+    },
+
     Place {
         /// The ce dimension to place.
         dimension: DimensionId,
@@ -860,6 +982,64 @@ pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
                                 &outcome.label,
                             )]
                         }
+                    })
+            });
+        }
+        // ★★★ The two verbs that change how many corners a measured shape has
+        // — 2026-09-05, closing the ce-dimension half of the operator's *"I
+        // also can't edit or delete nodes"*.
+        //
+        // Both re-measure, so both owe the disclosure `MoveVertex` owes, plus
+        // the corner count: that is the fact the gesture exists to change, and
+        // an insert that landed on the wrong segment looks exactly like one
+        // that landed on the right one until you read the number.
+        //
+        // ★ Unlike `MoveVertex` above, the disclosure is NOT suppressed when
+        // the label is unchanged, and the asymmetry is deliberate. A corner
+        // dragged along its own segment changes the shape and not the length,
+        // so "13.85 m -> 13.85 m" there is noise. Here the operator changed the
+        // corner COUNT, which always changed even when the length happens not
+        // to have — a corner added exactly on a segment adds no length — and a
+        // gesture that altered the shape and said nothing is the silence this
+        // whole piece of work is about.
+        //
+        // Page `0` with the note every document-scoped verb in this file passes
+        // it with (a `DimensionId` names a sidecar record, not a page), and the
+        // strip is deliberately NOT cleared: exactly one annotation moved.
+        // ★ The one arm in this file that touches no document. See the variant:
+        // it exists because the canvas cannot reach `app::status::decline`, and
+        // a corner drag that is refused with no sentence is the founding defect
+        // of this project wearing a new grip.
+        DimensionAction::DeclineVertexEdit { why } => {
+            crate::app::status::decline::record_vertex_edit_refused(why);
+        }
+        DimensionAction::InsertVertex {
+            dimension,
+            after,
+            at,
+        } => {
+            super::apply::vector_edit(doc, "insert-dimension-vertex", 0, 1, |session| {
+                session
+                    .insert_dimension_vertex(dimension, after, at)
+                    .map(|outcome| {
+                        vec![crate::text::measure::vertex_inserted(
+                            outcome.vertices,
+                            &outcome.previous_label,
+                            &outcome.label,
+                        )]
+                    })
+            });
+        }
+        DimensionAction::RemoveVertex { dimension, index } => {
+            super::apply::vector_edit(doc, "remove-dimension-vertex", 0, 1, |session| {
+                session
+                    .remove_dimension_vertex(dimension, index)
+                    .map(|outcome| {
+                        vec![crate::text::measure::vertex_removed(
+                            outcome.vertices,
+                            &outcome.previous_label,
+                            &outcome.label,
+                        )]
                     })
             });
         }

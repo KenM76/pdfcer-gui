@@ -200,6 +200,29 @@ pub(crate) struct Ctx<'a> {
     pub tab_menu: Option<&'a mut TabMenuHandler<'a>>,
     /// What the operator did, in the order they did it.
     pub intents: Vec<Intent>,
+    /// **Whether this side's rail was actually drawn this frame**, set by
+    /// [`super::rail::draw`] before any stack on the side is laid out.
+    ///
+    /// ★★★ It exists for exactly one consumer — [`super::Dock::tabs_suppressed`]
+    /// — and the reason it is a *fact* rather than a *configuration* is the
+    /// whole safety argument for suppressing a dock's tab strip. The rail is
+    /// **absent rather than squeezed**: `rail::resolve_width` returns zero when
+    /// reserving 52 pt would leave the panel body below `plan::MIN_COLUMN_WIDTH`.
+    /// A build that asked *"is a rail configured for this side"* would therefore
+    /// suppress the tab strip on exactly the narrow windows where the rail is
+    /// not there — leaving a stack of panels with no switch of any kind, which
+    /// is the unreachable-panel defect this project has shipped three times.
+    ///
+    /// So the question asked is *"was it drawn"*, answered after the fact by the
+    /// code that drew it.
+    pub rail_drawn: bool,
+    /// **What the rail did about auto-hide this frame** — set by
+    /// [`super::rail::draw`], copied onto the frame report.
+    ///
+    /// Published rather than inferred from `rail_drawn`, because
+    /// [`crate::peek::Show::Overlay`] and [`crate::peek::Show::Inline`] both
+    /// draw the strip and are a different fact about the operator's window.
+    pub rail_show: crate::peek::Show,
 }
 
 impl Ctx<'_> {
@@ -252,6 +275,8 @@ mod tests {
             id_salt: Id::new("dock-test"),
             tab_menu: None,
             intents: Vec::new(),
+            rail_drawn: false,
+            rail_show: crate::peek::Show::Inline,
         }
     }
 
@@ -302,6 +327,8 @@ mod tests {
             id_salt: Id::new("dock-test"),
             tab_menu: None,
             intents: Vec::new(),
+            rail_drawn: false,
+            rail_show: crate::peek::Show::Inline,
         };
         let (label, name) = c.describe(&PanelId::new("pages"));
         assert_eq!(label, "Pages");

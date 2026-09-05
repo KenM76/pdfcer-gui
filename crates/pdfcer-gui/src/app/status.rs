@@ -318,6 +318,19 @@ mod fit;
 /// the reachability clause that makes shedding legitimate. Added 2026-08-26.
 pub(super) mod fitting;
 mod page_box;
+/// ★★★ **How to get the application back** — the read-mode exit statement.
+///
+/// Added 2026-09-05 for `OPERATOR_REQUESTS.md` O115: *"I didn't see a way to
+/// get back out of read mode."* Read mode hides the ribbon, and the only
+/// control that turns it off is on the ribbon — so the mode hides its own exit.
+///
+/// It is on **this** bar because this bar is the one piece of chrome §2 of
+/// `app::window` deliberately keeps, and because read mode composes with full
+/// screen: in the combined state there is no ribbon *and* no title bar, so the
+/// window title — which carries the same statement — is absent in exactly the
+/// state with the least chrome left. Its header carries the full argument for
+/// why two surfaces is not duplication here.
+mod readmode;
 /// **What is selected, said in words** — the readout that turns *"all I get is
 /// the page selected"* into a diagnosis. Added 2026-08-27; see its header.
 mod selected;
@@ -674,6 +687,27 @@ pub fn show(
         // a caller who forgot to use it. Two independent defences, and this
         // is the one that lives in the code being defended.
         ui.set_min_height(ROW_HEIGHT_PTS);
+
+        // ★★★ **FIRST of everything, and BEFORE the no-document guard: how to
+        // get the application back.**
+        //
+        // Read mode hides the ribbon and the docks, and the only control that
+        // turns it off lives on the ribbon — so from the moment it is on, this
+        // bar is the only piece of chrome left that can say how to leave. The
+        // operator reported exactly that on 2026-09-05 (O115).
+        //
+        // Ahead of the page-drag caption, which the block below says outranks
+        // the disclosures, which outrank the narrator. The rule that puts this
+        // above all three generalises: **a sentence about how to reach the
+        // interface outranks every sentence about the document**, because an
+        // operator who cannot reach the interface cannot act on the others.
+        //
+        // ★ Above the `Status::Open` guard, deliberately. Read mode is per
+        // WINDOW rather than per document (`app::window` §3), so the last file
+        // can be closed while it is on — and a bar that explained the way out
+        // only when a document happened to be open would go silent in the state
+        // where the window has the least in it.
+        readmode::show(ui);
 
         // With nothing open there is no page to number, no zoom to report
         // and no raster to have notes about. The bar still occupies its

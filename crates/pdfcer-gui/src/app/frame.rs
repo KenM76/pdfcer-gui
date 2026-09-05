@@ -501,8 +501,46 @@ impl eframe::App for PdfcerApp {
         // `crate::text::doctabs::window_title` for the three forms and for why
         // the count is in it.
         //
+        // ★★★ Step 0f′ — **the way out of read mode, resolved once**, before
+        // either surface that states it draws.
+        //
+        // `OPERATOR_REQUESTS.md` O115: *"I didn't see a way to get back out of
+        // read mode."* Read mode hides the ribbon, and the only control that
+        // turns it off is on the ribbon — so the mode hides its own exit and the
+        // chord is the whole of what is left.
+        //
+        // ★ One writer, here, from `self.shell` — which is the same map
+        // `keyboard::commands` dispatches from twenty lines below. The title and
+        // the status bar then both read `window::exit_chord`, so the two
+        // statements cannot disagree with each other, and neither can disagree
+        // with the key. See `app::window`'s "Getting back out" section for why a
+        // hard-coded `Ctrl+H` in the catalog would be worse than saying nothing.
+        //
+        // Costs one keymap scan (~60 entries, no allocation unless bound) and
+        // two `insert_temp`s per frame. It is unconditional rather than gated on
+        // `read_mode(&ctx)` for the reason `store_capabilities` above it is:
+        // **a value stored only when a state is entered has no value before the
+        // first entry**, and the failure mode of publishing too little here is a
+        // silent surface in the one state it was written for.
+        crate::app::window::publish_exit_chord(&ctx, self.shell.as_ref());
+
         // Sent only when it changes — see `last_window_title`.
-        let title = crate::text::doctabs::window_title(self.active_path(), self.document_count());
+        //
+        // ★ The read-mode statement is threaded in rather than appended by this
+        // caller: `crate::text::doctabs::window_title` owns where it goes (the
+        // front, so the taskbar's ellipsis cannot eat it) and R1 puts the joined
+        // string an operator reads in the catalog, not in a `format!` here.
+        let read_mode_exit = crate::app::window::read_mode(&ctx).then(|| {
+            crate::app::window::exit_chord(&ctx).map_or_else(
+                || crate::text::window::title_read_mode_unbound().to_owned(),
+                |chord| crate::text::window::title_read_mode(&chord),
+            )
+        });
+        let title = crate::text::doctabs::window_title(
+            self.active_path(),
+            self.document_count(),
+            read_mode_exit.as_deref(),
+        );
         if title != self.last_window_title {
             ctx.send_viewport_cmd(egui::ViewportCommand::Title(title.clone()));
             crate::diag::trace(|| {

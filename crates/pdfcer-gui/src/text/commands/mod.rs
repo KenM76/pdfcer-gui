@@ -456,12 +456,56 @@ pub const fn file_print() -> CommandText {
 }
 
 /// `file.properties`
+///
+/// ## ★★★ The tooltip lost its first half on 2026-09-05, and that is the point
+///
+/// It read: *"The document's own title, author, subject and keywords, and the
+/// properties of whatever is selected on the page."* One command, two subjects
+/// — and the panel drew both, the document half permanently, at the foot of a
+/// surface whose subject is the selection. The operator: *"the document
+/// properties are still always visible in the properties tab. it needs to get
+/// out of there and be in its own document properties tab."*
+///
+/// So the second subject is [`file_document_properties`], and this sentence now
+/// describes exactly one panel. ★ Corrected rather than merely shortened: the
+/// old wording is the sentence three modules quoted as their commission, and
+/// leaving it here would have kept a control promising something a different
+/// control does.
+///
+/// ★ It names the three kinds of thing that can be selected, because the panel
+/// is empty until one of them is and an operator hovering an empty panel's
+/// control deserves to know what would fill it.
 #[must_use]
 pub const fn file_properties() -> CommandText {
     CommandText::new(
         "Properties",
-        "The document's own title, author, subject and keywords, and the properties of \
-         whatever is selected on the page.",
+        "The properties of whatever is selected on the page — an object, a mark you have \
+         placed, or a form field.",
+    )
+}
+
+/// `file.document_properties`
+///
+/// ★★★ **The operator's own words for the surface**, 2026-09-05: *"it needs to
+/// get out of there and be in its own **document properties** tab."* The label
+/// is what names the dock tab — `PdfcerApp::new` builds every `PanelInfo` from
+/// its command's label — so this string is the tab he asked for, spelled the
+/// way he asked for it.
+///
+/// ★ *"Document properties"* rather than *"This document"* (the panel's own
+/// heading) or *"Metadata"* (the format's word). A tab has to be recognisable
+/// in a strip of five and legible out of context; a heading sits under a tab
+/// that has already said which document. The two are deliberately different
+/// strings, and `text::panels::docprops`' own test asserts they stay different.
+///
+/// The tooltip names the four fields, because they are the reason an operator
+/// opens this, and then the facts, because they are what they get for free.
+#[must_use]
+pub const fn file_document_properties() -> CommandText {
+    CommandText::new(
+        "Document properties",
+        "This document's own title, author, subject and keywords — stored in the file and \
+         travelling with it — and the facts pdfcer read about it.",
     )
 }
 

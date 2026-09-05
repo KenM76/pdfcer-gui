@@ -299,6 +299,43 @@ pub fn field_shade(ui: &mut Ui, prefs: &mut Prefs) {
     );
 }
 
+/// **The two auto-hide settings** — 2026-09-05.
+///
+/// ★★ One header over both, because they are one decision the operator makes
+/// twice: *"how much of the window do I want the drawing to have?"* Two
+/// separate sections would ask it twice and would put the sentence that makes
+/// the feature safe — the drawing does not move — under only one of them.
+///
+/// ★ In *Display* beside the page chrome, and not in *Appearance*: Appearance
+/// is about how pdfcer LOOKS (its preset, its colours), and this is about how
+/// much of the window the drawing gets. `field_shade` was filed here by the
+/// same test and the operator put it here himself.
+///
+/// The Settings window is also where the **state** of these two lives, which
+/// is why they are checkboxes here and plain commands on View ▸ Window: see
+/// `shell::commands::catalog::view`'s note on why neither ribbon control
+/// renders pressed, and on what Office does.
+pub fn auto_hide(ui: &mut Ui, prefs: &mut Prefs) {
+    widgets::header(
+        ui,
+        t::auto_hide_title(),
+        t::auto_hide_silence(),
+        t::auto_hide_radius(),
+    );
+    widgets::toggle(
+        ui,
+        &mut prefs.ribbon_auto_hide,
+        t::auto_hide_ribbon_label(),
+        Some(t::auto_hide_ribbon_note()),
+    );
+    widgets::toggle(
+        ui,
+        &mut prefs.rail_auto_hide,
+        t::auto_hide_rail_label(),
+        Some(t::auto_hide_rail_note()),
+    );
+}
+
 pub fn page_chrome(ui: &mut Ui, prefs: &mut Prefs) {
     widgets::header(
         ui,

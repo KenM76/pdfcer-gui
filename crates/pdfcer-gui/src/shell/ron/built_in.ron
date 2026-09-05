@@ -102,6 +102,7 @@
                     id: "document",
                     caption: "Document",
                     items: [
+                        Command(id: "file.document_properties"),
                         Command(id: "file.properties"),
                         Command(id: "file.fonts"),
                     ],
@@ -202,6 +203,8 @@
                         Command(id: "view.read_mode"),
                         Command(id: "view.fullscreen"),
                         Command(id: "view.dock_all_panels"),
+                        Command(id: "view.ribbon_auto_hide"),
+                        Command(id: "view.rail_auto_hide"),
                         Command(id: "view.reset_layout"),
                     ],
                     collapse: 1,
@@ -496,6 +499,7 @@
                 Command(id: "view.tool_node", visible_when: "mode.edit_content"),
                 Command(id: "view.tool_text"),
                 Command(id: "view.tool_hand"),
+                Command(id: "view.smart_select", visible_when: "mode.edit_content"),
             ],
         ),
         (

@@ -168,6 +168,140 @@ pub fn vertex_remeasured(previous: &str, current: &str) -> String {
     format!("That corner changed the measurement: {previous} is now {current}.")
 }
 
+/// ★★ **The disclosure an ADDED corner owes** — 2026-09-05.
+///
+/// Same obligation as [`vertex_remeasured`] and one fact more. Adding a corner
+/// re-measures the shape, so the two labels are owed for that function's
+/// reason: the operator can see the new number and cannot see the old one,
+/// because the geometry it was measured from no longer exists.
+///
+/// # ★ Why the COUNT is in the sentence and the move's is not
+///
+/// Because the count is what the operator asked to change, and it is the one
+/// thing a mis-aimed gesture gets wrong *invisibly*. A corner dropped on the
+/// wrong segment still looks like a corner; a shape that now has seven corners
+/// when the operator meant to add one to six is a fact only a number can
+/// carry. A drag that MOVES a corner cannot change the count at all, which is
+/// why its sentence does not carry one — a constant in a status line is noise
+/// that trains the operator to stop reading it.
+///
+/// # Why it is off-canvas
+///
+/// Rule 4 as narrowed by decision 059, verbatim from [`vertex_remeasured`]:
+/// the reshaped ce dimension renders exactly as it will render after Save — no
+/// tint, no badge, no "recently changed" marking — and the change is stated on
+/// the status row, where it does not become a second rendering path for the
+/// same content.
+#[must_use]
+pub fn vertex_inserted(corners: usize, previous: &str, current: &str) -> String {
+    format!("A corner was added — {corners} corners now, and {previous} is now {current}.")
+}
+
+/// ★★ **The disclosure a REMOVED corner owes** — [`vertex_inserted`]'s twin,
+/// and the sentence the operator's own report of 2026-09-05 was about:
+///
+/// > *"I also can't edit or delete nodes of a markup shape once it is drawn."*
+///
+/// Worded as its own sentence rather than sharing one with the insert, because
+/// the two are the acts an operator most needs to tell apart after the fact:
+/// both change the shape, both change the number, and a single sentence
+/// reading "the corners changed" would leave them checking the drawing to see
+/// which happened.
+#[must_use]
+pub fn vertex_removed(corners: usize, previous: &str, current: &str) -> String {
+    format!("A corner was removed — {corners} corners now, and {previous} is now {current}.")
+}
+
+/// **Why a corner could not be added or taken away** — the shell's own reading
+/// of the engine's refusals, 2026-09-05.
+///
+/// # ★ A `Copy` enum rather than a `String`, and the reason is structural
+///
+/// `crate::app::status::decline::Declined` is `Copy` and its `line()` returns
+/// `&'static str`. Both properties are load-bearing there — see that type — and
+/// carrying the engine's own `Display` prose would break the second and would
+/// also violate `check-ui-strings.sh`' exclusion 3, which says in as many words
+/// that an error type's `Display` being exempt *"is not permission to route UI
+/// text through an error type"*. This is [`crate::text::status::TextStyleRefusal`]'s
+/// shape, adopted rather than re-argued.
+///
+/// # ★★ Why every one of these is worded, including the two that should be
+/// unreachable
+///
+/// Because a corner handle is a **grip**, and this project's founding defect
+/// shape is a grip that is dragged, released and does nothing with no
+/// explanation. The operator's report that produced this whole surface was
+/// exactly that shape one level up: he could not delete a node and nothing
+/// anywhere said why. A refusal with a sentence is a limitation; a refusal
+/// without one is a broken program.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum VertexEditRefusal {
+    /// `EditError::PerimeterWouldBeDegenerate` — the shape has the fewest
+    /// corners it can have.
+    ///
+    /// The reachable one, and the one an operator meets by doing something
+    /// perfectly reasonable: a triangle they want to make into a line. The
+    /// minimums are the engine's and they differ by shape — an open path keeps
+    /// **two**, because one corner has no segment and therefore no length; a
+    /// closed one keeps **three**, because two closed corners trace a line
+    /// there and back and would print twice the distance between two points,
+    /// attached to something that does not look like it.
+    WouldLeaveTooFew,
+    /// `EditError::DimensionVertexCountFixed` — a **linear** ce dimension is
+    /// structurally two points.
+    ///
+    /// Its ends can be moved and their number cannot change: a length between
+    /// three points is not a length. Reachable the moment a linear ce
+    /// dimension grows corner handles, which it has not yet — see this
+    /// module's note and `canvas::dimdrag::vertices`.
+    CountFixed,
+    /// `EditError::VertexNotPlaceable` — the coordinate is not a usable page
+    /// value.
+    ///
+    /// A non-finite or absurd number, which on this canvas means the
+    /// page-space conversion produced something the format cannot hold. Not an
+    /// operator mistake, and the sentence does not imply one.
+    Unplaceable,
+    /// Everything else the engine can say no with: an unknown record, a stale
+    /// group id, an index that names nothing, an encrypted document, an
+    /// enforced certification, a sidecar written by a newer build.
+    ///
+    /// One sentence for all of them rather than six, because they divide into
+    /// *cannot happen from a handle this shell drew* and *is a property of the
+    /// file that no wording about corners would help with*, and neither class
+    /// gives the operator a next act about corners. What they do get is the
+    /// knowledge that the press was heard.
+    Refused,
+}
+
+impl VertexEditRefusal {
+    /// The sentence, for `Declined::line`.
+    ///
+    /// Each names what is true rather than what the engine called it, and the
+    /// first names a remedy — which is `resize_not_rebuildable`'s rule and the
+    /// one `node_tool_needs_edit_mode` states: at the moment it is read the
+    /// operator has just released a drag and seen nothing happen, and what
+    /// they need is the next act, not a diagnosis.
+    #[must_use]
+    pub const fn line(self) -> &'static str {
+        match self {
+            Self::WouldLeaveTooFew => {
+                "That shape has as few corners as it can have. Delete the whole \
+                 measurement instead, or add a corner before taking one away."
+            }
+            Self::CountFixed => {
+                "A straight measurement is two points. You can move either end, \
+                 but not add or remove one."
+            }
+            Self::Unplaceable => {
+                "That corner cannot go there — the position is off the page's \
+                 usable range."
+            }
+            Self::Refused => "The corner could not be changed. The drawing is unchanged.",
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

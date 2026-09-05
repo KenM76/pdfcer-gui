@@ -63,6 +63,41 @@
 //! A form field is content: cutting or pasting one takes `edit_content`, the
 //! same predicate the Delete key reads, because a form field is part of the
 //! document rather than a comment on it.
+//!
+//! ### ★★★ …and since 2026-09-05 every one of those gates SAYS SO
+//!
+//! `app::modes::capability::offers_command` used to refuse `edit.cut`,
+//! `edit.paste` and `edit.paste_duplicate` in any mode that does not show the
+//! **Edit tab** — which is where the Clipboard group is drawn. That was a rule
+//! about where a button lives being used to answer a question about what a mode
+//! may do, and the driven sweep of 2026-09-05 found what it cost:
+//!
+//! ```text
+//! chord-command      chord="Ctrl+C" id=edit.copy  via=clipboard-event
+//! chord-command      chord="Ctrl+V" id=edit.paste via=clipboard-event
+//! chord-not-offered  id=edit.paste mode=review
+//! ```
+//!
+//! **Copy was offered in Review and paste was not**, so the mode whose entire
+//! purpose is marking up somebody else's drawing could copy a comment and had
+//! nowhere to put it. The gates in *this* file were already right; they had
+//! simply never been reached from Review.
+//!
+//! ⇒ The four ids now escape their tab
+//! (`app::modes::capability::GATED_BY_THEIR_DISPATCHER`) and this module is the
+//! only thing standing between a mode and a verb it may not do. **That makes a
+//! silent `return` here a keypress that does nothing and says nothing** — the
+//! project's founding defect class — where before it was at least a
+//! `chord-not-offered` line. So both mode gates below call
+//! `app::status::decline::record_mode_refusal`, which draws in the `⊗` slot
+//! that means *this did not happen*.
+//!
+//! ⚠ **`app::actions::record_note` is the wrong slot for these and must not be
+//! used**: it draws under `⚑ About your last edit:`, which claims an edit
+//! happened. `app::status::decline::clipboard`'s header carries the argument.
+//! The clipboard's **other** refusals — `canvas::clipboard::Refusal`, which are
+//! about the operand rather than about the stance — still go through
+//! `record_note`, and that is named there as unfinished rather than principled.
 
 use eframe::egui;
 
@@ -132,6 +167,13 @@ fn copy_or_cut(app: &mut PdfcerApp, ctx: &egui::Context, id: &str, actions: &mut
                 // ui-text-exempt: diagnostic trace, never displayed.
                 format!("command-declined id={id} reason=mode-cannot-remove-field")
             });
+            // ★★★ …and the operator is TOLD, since 2026-09-05. See the header's
+            // "Mode gating" section: the chord now reaches this function from
+            // every mode, so a `return` here is a keypress that does nothing,
+            // and a trace line is not a surface.
+            crate::app::status::decline::record_mode_refusal(
+                crate::text::clipboard::ModeRefusal::CutField,
+            );
             return;
         }
         let outcome = if cutting {
@@ -171,6 +213,14 @@ fn copy_or_cut(app: &mut PdfcerApp, ctx: &egui::Context, id: &str, actions: &mut
                 "command-declined id={id} reason=mode-cannot-remove-{}",
                 if content { "content" } else { "markup" }
             )
+        });
+        // ★★★ Worded, since 2026-09-05 — and it carries the SAME fork the gate
+        // above just made rather than re-deriving it, so the sentence cannot
+        // name a different operand from the one that was refused.
+        crate::app::status::decline::record_mode_refusal(if content {
+            crate::text::clipboard::ModeRefusal::CutContent
+        } else {
+            crate::text::clipboard::ModeRefusal::CutMarkup
         });
         return;
     }
@@ -234,7 +284,15 @@ fn paste(
     // cut's follows what is selected: a paste has no operand on the page to
     // look at, so the clipboard is the only honest source.
     let caps = app.capabilities();
-    let allowed = match &clipped {
+    // ★★ The gate and the SENTENCE are decided in one match, since 2026-09-05.
+    //
+    // It used to yield a bare `bool` and the refusal below traced a fixed
+    // string. Both halves have to know the same thing — *which* operand was
+    // refused decides *which* mode the operator is told to switch to — and two
+    // matches on `clipped` would be two derivations free to disagree. The
+    // `ModeRefusal` is computed here whether or not it is used, which costs a
+    // discriminant and removes the possibility.
+    let (allowed, refusal) = match &clipped {
         // ★★★ **A clip asks for the gate its CONTENTS need**, as of 2026-09-05.
         //
         // It used to be `Clipped::Content => caps.edit_content`, which was one
@@ -249,26 +307,49 @@ fn paste(
         // whole thing would let Review paste geometry.
         Some(crate::canvas::clipboard::Clipped::Selection { count, .. }) => {
             if *count > 0 {
-                caps.edit_content
+                (
+                    caps.edit_content,
+                    crate::text::clipboard::ModeRefusal::PasteContent,
+                )
             } else {
-                caps.author_markup
+                (
+                    caps.author_markup,
+                    crate::text::clipboard::ModeRefusal::PasteMarkup,
+                )
             }
         }
         // ★ A form field is document content, not a comment on it, so it takes
         // the content gate rather than the markup one. Review may annotate a
         // drawing; it may not add a fillable box to it.
-        Some(crate::canvas::clipboard::Clipped::FormField(_)) => caps.edit_content,
+        Some(crate::canvas::clipboard::Clipped::FormField(_)) => (
+            caps.edit_content,
+            crate::text::clipboard::ModeRefusal::PasteField,
+        ),
         // An empty clipboard takes the markup gate, so the refusal an operator
         // gets in Read is the mode's rather than "nothing has been copied" —
         // which would be true and useless, because copying something would not
         // help.
-        _ => caps.author_markup,
+        _ => (
+            caps.author_markup,
+            crate::text::clipboard::ModeRefusal::PasteMarkup,
+        ),
     };
     if !allowed {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
             format!("command-declined id={id} reason=mode-cannot-paste-here")
         });
+        // ★★★ **AND IT SAYS SO** — 2026-09-05, the second half of the driven
+        // sweep's finding A1.
+        //
+        // Until today this `return` was the whole answer: a trace line, and
+        // nothing on any surface. It was *reachable only in Read*, because
+        // `offers_command` refused the chord in Review before it got here — so
+        // the silence was hidden behind a different defect. Opening the chord
+        // to every mode makes this the path an operator actually takes when
+        // they paste a drawing's geometry into Review, and a keypress that does
+        // nothing and says nothing is this project's founding defect class.
+        crate::app::status::decline::record_mode_refusal(refusal);
         return;
     }
 

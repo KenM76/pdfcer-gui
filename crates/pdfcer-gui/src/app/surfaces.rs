@@ -202,6 +202,18 @@ impl PdfcerApp {
         // stale.
         let mut icons = crate::icons::paint_ribbon_icon;
 
+        // ★★★ AUTO-HIDE (2026-09-05, his second ask), pushed from the
+        // preference once per frame. `sync_auto_hide` and not `set_auto_hide`:
+        // the second clears the reveal, which is right when the operator
+        // changes the setting and wrong sixty times a second — see that
+        // method's own note, which is where the whole argument lives.
+        //
+        // ★ Pushed rather than read the other way because the PREFERENCE is the
+        // source of truth: it is what `view.ribbon_auto_hide` writes and what
+        // survives a restart. The shell holds only the per-frame reveal.
+        self.ribbon
+            .sync_auto_hide(crate::app::prefs::auto_hide(self.prefs.ribbon_auto_hide));
+
         let tokens = egui::Panel::top("ribbon")
             .show(ui, |ui| {
                 egui_shell::ribbon::Ribbon::new()
@@ -270,6 +282,46 @@ impl PdfcerApp {
     /// no diagnostic channel of its own, so the scope is entered here,
     /// inside the body, from the very id the shell used — recovered
     /// through `floatwin::viewport_id`, which is public for this.
+    ///
+    /// # ★★★ The draw-order invariant, checked 2026-09-05 — and it HOLDS
+    ///
+    /// `D:/dev/rag/egui/moving_a_surface_into_a_child_viewport_breaks_the_draw_order_invariant_containment_gave_it_free.md`
+    /// records the hazard this change is the exact shape of: *"containment
+    /// silently provides a draw order, and moving a surface into a sibling
+    /// viewport turns that invariant into the order of your two call
+    /// sites."* A panel that writes into shared state while it draws, and
+    /// something drawn **after** it that reads that state, is ordered for
+    /// free while both are inside one window and by nothing at all once one
+    /// of them is a child viewport.
+    ///
+    /// It was checked here rather than assumed, and the answer is that
+    /// **tear-out cannot change any reader's side of the fence**, because
+    /// every parent reader is ordered before *both* halves of the dock:
+    ///
+    /// | `PdfcerApp::ui` line | what it does |
+    /// |---:|---|
+    /// | 132 | the ribbon's Font group takes `panels.text_style_mut()` |
+    /// | 668 | the ribbon band draws |
+    /// | 691 | `dimension_groups.take_scale_request()` |
+    /// | **831** | **`docks` — the DOCKED panel bodies** |
+    /// | 938 | the dialogs (which read no panel state) |
+    /// | **970** | **`floating_panels` — the FLOATED panel bodies** |
+    ///
+    /// A panel that moves from 831 to 970 is still after 132, 668 and 691,
+    /// so a reader that saw last frame's write when the panel was docked
+    /// sees last frame's write when it is floating. The one-frame lag is
+    /// pre-existing, identical in both states, and not this capability's.
+    ///
+    /// ⚠ **That is a fact about the current call order, not a guarantee.**
+    /// Move any reader of panel-written state to between `docks` and here
+    /// and the two states diverge — the docked panel would be read this
+    /// frame and the floated one next frame, which presents as a control
+    /// that is correct until you tear its panel out. The status bar's layer
+    /// clause is deliberately NOT such a reader:
+    /// `app::status::selected::with_layer` recomputes through
+    /// `panels::layers::highlight::resolve(doc)`, a pure function of the
+    /// document, rather than reading anything the Layers panel cached while
+    /// drawing.
     pub(super) fn floating_panels(&mut self, ctx: &egui::Context, actions: &mut Vec<Action>) {
         if self.dock.layout().floating.is_empty() {
             return;
@@ -360,6 +412,50 @@ impl PdfcerApp {
                 if let Some(inner) = ui.ctx().input(|i| i.viewport().inner_rect) {
                     crate::diag::viewport_inner(vp, inner);
                 }
+                // ★★★ **THE TWO REGIONS THAT MAKE AN EMPTY WINDOW
+                // DISTINGUISHABLE FROM A FULL ONE — added 2026-09-05.**
+                //
+                // The 2026-09-05 driven sweep reported *"a floated panel
+                // opens an OS window and draws nothing inside it"*, and the
+                // check that said so asserted the presence of **any**
+                // `ui-rect` carrying a `viewport=` tag. Nothing published
+                // one. Neither `egui_shell::dock::floatwin` — which has no
+                // diagnostic channel and must not grow one (R7) — nor the
+                // Layers panel it floated, whose only regions are its search
+                // field and that field's clear button, and which draws
+                // NEITHER on a document with no optional content. **No
+                // fixture in `fixtures/` carries an `/OCProperties`**, so
+                // that check could not have passed against a working build
+                // either: it was a blind oracle, not a defect detector.
+                //
+                // ⇒ These two lines are the fix in the instrument. They are
+                // published here, from inside the body closure, because this
+                // is the only place in the program where all three facts are
+                // in scope at once: the panel's identity, its `Ui`, and the
+                // `ViewportScope` that makes the coordinates mean something.
+                //
+                // | region | answers |
+                // |---|---|
+                // | `float.body.<panel>` | the shell gave the panel a compartment, and **where** — the float twin of `dock.body.<panel>` |
+                // | `float.content.<panel>` | how much of it the panel FILLED. A window whose body allocated nothing publishes a **zero-sized** rect here, and that is the empty-window defect stated as a number |
+                //
+                // ★★ `float.content` is published AFTER the body draws, and
+                // it must be: `min_rect` before the draw is the empty
+                // rectangle the `Ui` was built with, so publishing it early
+                // would report every window empty. The docked path has no
+                // equivalent because a docked panel that draws nothing leaves
+                // a compartment the operator can see is blank, next to the
+                // panel's own tab; a blank OS WINDOW names nothing and reads
+                // as a crash.
+                //
+                // ★ Named and formatted only when the channel is on, for
+                // `egui_shell::dock::report::Reporter::is_listening`'s
+                // reason: this runs per float per frame for ever.
+                let listening = crate::diag::enabled();
+                if listening {
+                    // ui-text-exempt: diagnostic region name, never displayed.
+                    crate::diag::ui_rect(&format!("float.body.{panel_id}"), ui.max_rect());
+                }
                 match crate::panels::Panel::from_command_id(panel_id.as_str()) {
                     Some(panel) => {
                         tokens.extend(
@@ -372,6 +468,10 @@ impl PdfcerApp {
                     None => {
                         ui.label(crate::text::panels::panel_unknown());
                     }
+                }
+                if listening {
+                    // ui-text-exempt: diagnostic region name, never displayed.
+                    crate::diag::ui_rect(&format!("float.content.{panel_id}"), ui.min_rect());
                 }
             });
 
@@ -390,12 +490,22 @@ impl PdfcerApp {
             let layout = self.dock.layout().clone();
             self.modes.record_layout(&layout, &mut self.layout);
         }
+        // ★★★ `empty=` is the shell's own answer to *"is a window open with
+        // nothing in it"*, and it is here rather than left to the region
+        // stream because the two are independent witnesses of the same fact:
+        // `float.content.<panel>` is measured by the APPLICATION from the
+        // `Ui` it drew into, and `empty_bodies` is measured by the DOCK from
+        // the `Ui` it handed over. A defect that silenced one would have to
+        // silence the other separately, which is the property that makes the
+        // pair worth its two lines. See
+        // `egui_shell::dock::floatwin::FloatFrameReport::empty_bodies`.
         crate::diag::trace_changed("float-windows", || {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed.
-                "float-windows drawn={} real={} closed={:?} docked={:?}",
+                "float-windows drawn={} real={} empty={} closed={:?} docked={:?}",
                 report.drawn.len(),
                 report.real_windows,
+                report.empty_bodies.len(),
                 report
                     .closed
                     .as_ref()
@@ -415,6 +525,11 @@ impl PdfcerApp {
         // Conditions are computed before the destructure, because building
         // them needs `&self` and the destructure takes it apart.
         let conditions = self.conditions(ui.ctx());
+        // Read before the destructure, like `conditions` above and for the same
+        // reason: `prefs` is not in the pattern below and the borrow checker
+        // will not let it be reached through `self` afterwards. A `bool`, so
+        // the copy costs nothing and cannot go stale within one frame.
+        let rail_auto_hide = self.prefs.rail_auto_hide;
 
         let Self {
             status,
@@ -593,8 +708,43 @@ impl PdfcerApp {
                 rail_tokens.extend(crate::app::rail::show(ui, rail, commands, &conditions));
             }
         };
+        // ★★★ **WHICH PANELS THE RAIL CAN RAISE** — his fourth ask of
+        // 2026-09-05, *"we also don't need tabs in the left side bar when the
+        // left rail is visible."*
+        //
+        // The dock suppresses a stack's tab strip only when this answers `true`
+        // for EVERY panel in it; the three conditions and the reachability
+        // argument are on `Dock::with_rail_reach`. The mapping is application
+        // knowledge and cannot be anywhere else — R7 — because the rail carries
+        // command ids and the dock carries panel ids, and the two agree only by
+        // way of `crate::panels::Panel::command_id` (the Fonts panel is
+        // `file.fonts`, the Comments panel `markup.comments`; no `view.panel_*`
+        // pattern finds either).
+        //
+        // ★ Derived from `shell.rail` — the live manifest, including any
+        // operator overlay — rather than from a list written here. A rail an
+        // operator customized would otherwise keep suppressing tab strips over
+        // panels they had just removed from it.
+        let rail_ids: std::collections::BTreeSet<String> = rail_data
+            .as_ref()
+            .map(|rail| {
+                rail.groups()
+                    .iter()
+                    .flat_map(|g| g.items.iter())
+                    .filter_map(|item| match item {
+                        egui_shell::manifest::Item::Command { id, .. } => Some(id.clone()),
+                        _ => None,
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
+        let mut rail_reach = |panel: &egui_shell::dock::PanelId| rail_ids.contains(panel.as_str());
+        // The rail's own auto-hide, from the preference, for the ribbon's
+        // reason above.
+        dock.sync_rail_auto_hide(crate::app::prefs::auto_hide(rail_auto_hide));
         let report = egui_shell::dock::Dock::new()
             .with_registry(panel_registry)
+            .with_rail_reach(&mut rail_reach)
             .with_tab_menu(&mut tab_menu)
             .with_side_banner(
                 egui_shell::dock::DockSide::Right,
@@ -1167,6 +1317,84 @@ mod float_window_tests {
             docked,
             vec!["pages".to_string()],
             "only the panel still in a stack may be drawn by the docked half"
+        );
+    }
+
+    /// ★★★ **A float window whose panel says ONE SENTENCE is not reported
+    /// empty — and in THIS crate a sentence has a size.**
+    ///
+    /// Two claims in one test, and the second is the one worth the words.
+    ///
+    /// 1. `FloatFrameReport::empty_bodies` distinguishes an open window with
+    ///    a panel in it from an open window with nothing in it. That is the
+    ///    number the 2026-09-05 sweep's *"a floated panel opens an OS window
+    ///    and draws nothing inside it"* needed and did not have.
+    /// 2. **`ui.label` measures a real rectangle here**, which is *not* true
+    ///    one crate down. `egui-shell` pins `egui` with
+    ///    `default-features = false` — its `Cargo.toml` says so, "so this
+    ///    crate does not silently acquire fonts" — and in its tests every
+    ///    galley is empty and every label is a **zero-sized** rect. The
+    ///    twin of this test over there had to be written with
+    ///    `allocate_space` for exactly that reason, and it says so at the
+    ///    call. This crate links `eframe`, which brings the default fonts,
+    ///    so the sentence an R9-correct empty panel draws is real content
+    ///    and is measured as such.
+    ///
+    /// ⇒ Keeping both tests, one per crate, is deliberate: the pair is what
+    /// says the measurement means the same thing in the shell's unit tests
+    /// and in the running program, which is the only place it matters.
+    #[test]
+    fn a_float_window_whose_panel_says_one_sentence_is_not_reported_empty() {
+        let ctx = egui::Context::default();
+        let mut state = floated();
+        let mut empty = vec!["unset".to_owned()];
+        let _ = ctx.run_ui(input(), |ui| {
+            let report = Dock::new().show_floating(ui.ctx(), &mut state, |_panel, ui| {
+                // The sentence an R9-correct panel draws when the document
+                // gives it nothing to list.
+                ui.label("This document has no layers.");
+            });
+            empty = report
+                .empty_bodies
+                .iter()
+                .map(|p| p.as_str().to_owned())
+                .collect();
+        });
+        assert!(
+            empty.is_empty(),
+            "one sentence is content, and it must measure as content in the crate that has \
+             fonts; got {empty:?}"
+        );
+    }
+
+    /// ★★★ **…and a float window whose panel draws NOTHING is named.**
+    ///
+    /// The falsification of the test above, in the crate the operator
+    /// actually runs. Every other number the frame produces still reports
+    /// success — the window is in `drawn`, `floats_undrawn` is zero — which
+    /// is precisely why the empty case needed a number of its own.
+    #[test]
+    fn a_float_window_with_an_empty_body_is_named_rather_than_counted_a_success() {
+        let ctx = egui::Context::default();
+        let mut state = floated();
+        let mut empty: Vec<String> = Vec::new();
+        let mut drawn = 0usize;
+        let _ = ctx.run_ui(input(), |ui| {
+            let report = Dock::new().show_floating(ui.ctx(), &mut state, |_panel, _ui| {
+                // The defect: a window is opened and the panel draws nothing.
+            });
+            drawn = report.drawn.len();
+            empty = report
+                .empty_bodies
+                .iter()
+                .map(|p| p.as_str().to_owned())
+                .collect();
+        });
+        assert_eq!(drawn, 1, "the window was still opened, which is the trap");
+        assert_eq!(
+            empty,
+            vec!["layers".to_string()],
+            "and the panel with nothing in its window must be named"
         );
     }
 

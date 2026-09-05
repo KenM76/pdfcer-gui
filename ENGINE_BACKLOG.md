@@ -247,7 +247,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
-| Move, insert or remove a vertex on a placed perimeter/path ce … | **Move is wired, insert and remove are not.** `app::actions::dimensions` calls `move_dimension_vertex`; `insert_dimension_vertex` and `remove_dimension_vertex` appear once each, in a `canvas::measure::perimeter` comment that says a menu could be greyed from `vertex_edit_preview`. So a placed perimeter can be dragged into a new shape but cannot gain or lose a corner — and the engine's row says this **exceeds Acrobat**, which cannot do it at all. |
+| Move, insert or remove a vertex on a placed perimeter/path ce … | **✅ CLOSED 2026-09-05. All three verbs are wired.** `app::actions::dimensions` calls `move_dimension_vertex`, `insert_dimension_vertex` and `remove_dimension_vertex`, raised by `canvas::dimdrag::count_edit` on a Ctrl-drag and a Ctrl+Shift-drag from a corner handle with the Points tool armed. `vertex_edit_preview` is asked on every frame — the engine's own advice, *"grey the menu item from `vertex_edit_preview` rather than catch the error"*, applied to a gesture rather than to a menu — so the preview never promises a shape the release would refuse, and a refusal is a sentence (`Declined::VertexEditRefused`) rather than a silence. ⬜ The DISCOVERABLE form is still missing: the engine describes both verbs as *"what a right-click on a segment/vertex offers"*, and `canvas::menus` has no such items. See `OPERATOR_REQUESTS.md` O132. |
 
 ### Annotations & markup
 

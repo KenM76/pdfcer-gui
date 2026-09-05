@@ -1340,3 +1340,58 @@ pub fn preset_weight(sourced: usize, inferred: usize, chosen: usize) -> String {
         "Of its answers: {sourced} stated by the standard, {inferred} inferred from it, {chosen} chosen by pdfcer where it is silent."
     )
 }
+
+/// **Getting the ribbon and the left strip out of the way** — his instruction
+/// of 2026-09-05, *"we should also add the capability to auto hide the ribbon
+/// until we hover over top of it… left rail should also have the option to auto
+/// hide as well."*
+///
+/// ★★ The radius line carries the fact that decides whether an operator dares
+/// turn this on: **the drawing does not move.** Every program in the class that
+/// gets this wrong reflows the document as the strip comes and goes, and an
+/// operator who has met that once will not try it again. Saying it here is what
+/// makes the setting choosable.
+///
+/// ★ The title says *"getting out of the way"* rather than *"auto-hide"*,
+/// because the operator is looking for room on their drawing, not for a feature
+/// name.
+#[must_use]
+pub const fn auto_hide_title() -> &'static str {
+    "Give the drawing more room"
+}
+
+/// What happens if you never touch it.
+#[must_use]
+pub const fn auto_hide_silence() -> &'static str {
+    "Both strips stay where they are, all the time. That is how pdfcer has always worked and nothing about it changes unless you switch one of these on."
+}
+
+/// What it costs, and what it does not affect.
+#[must_use]
+pub const fn auto_hide_radius() -> &'static str {
+    "With one of these on, the strip appears OVER the drawing when you move the pointer onto its edge, so nothing you were about to click moves. There is always somewhere to put the pointer: the ribbon keeps its row of tab names, and the left strip keeps a narrow marked band."
+}
+
+/// The ribbon toggle's own label.
+#[must_use]
+pub const fn auto_hide_ribbon_label() -> &'static str {
+    "Hide the ribbon buttons until I point at the tabs"
+}
+
+/// The note under the ribbon toggle.
+#[must_use]
+pub const fn auto_hide_ribbon_note() -> &'static str {
+    "The row of tab names — File, View, Pages and the rest — stays on screen. Only the buttons under it go, and they come back the moment the pointer reaches that row."
+}
+
+/// The rail toggle's own label.
+#[must_use]
+pub const fn auto_hide_rail_label() -> &'static str {
+    "Shrink the left strip until I point at it"
+}
+
+/// The note under the rail toggle.
+#[must_use]
+pub const fn auto_hide_rail_note() -> &'static str {
+    "The strip of panel and tool buttons down the left edge shrinks to a narrow band with a small arrow on it. Move the pointer onto the band and the strip comes back over the panel beside it."
+}

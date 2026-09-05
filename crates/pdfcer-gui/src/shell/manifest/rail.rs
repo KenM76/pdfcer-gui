@@ -15,12 +15,12 @@
 //! `mockups/pdfcer-shell.html` draws this and he approved it. This file is the
 //! list; [`egui_shell::dock::rail`] is the geometry and the fold ladder.
 //!
-//! ## The three groups, and the one that is deliberately last
+//! ## The four groups, and the one that is deliberately last
 //!
 //! | group | fold | why |
 //! |---|---|---|
 //! | the five **panel tabs** | [`RailFold::Never`] | *"all five panels one click away"* is the rail's entire argument for existing |
-//! | **navigate** | [`RailFold::PinArmed`] | four mutually exclusive modal tools; at the floor the strip must still say which one you are holding |
+//! | **navigate** | [`RailFold::PinArmed`] | four mutually exclusive modal tools **and the smart selector**; at the floor the strip must still say which TOOL you are holding, which is why the pin never goes to the toggle |
 //! | **select** | [`RailFold::Whole`] | the specialist gestures; nothing in it is reached by habit |
 //! | **rotate** | [`RailFold::Whole`] | O126, and see the ⚠ below about Read |
 //!
@@ -199,10 +199,50 @@ pub fn groups() -> Vec<RailGroup> {
         // for the mode would be wrong on screen for the whole session rather
         // than for one click.
         //
-        // ★ `view.smart_select` is deliberately absent. It is a TOGGLE that
-        // changes what the arrow selects, not a tool you can be holding, so it
-        // has no armed state for `PinArmed` to pin and it would be the one row
-        // in this group that does not answer *"what does a drag do?"*.
+        // ★★★ `view.smart_select` IS HERE, and this paragraph used to say the
+        // opposite. **Corrected 2026-09-05 on the operator's instruction**,
+        // verbatim: *"our smart selector should be visible with the other
+        // navigate controls in our left rail."*
+        //
+        // What it used to say, so the record shows what changed and why:
+        //
+        // > *"`view.smart_select` is deliberately absent. It is a TOGGLE that
+        // > changes what the arrow selects, not a tool you can be holding, so
+        // > it has no armed state for `PinArmed` to pin and it would be the
+        // > one row in this group that does not answer 'what does a drag
+        // > do?'."*
+        //
+        // ⇒ **That argument was right about the PIN and wrong about the
+        // MEMBERSHIP, and it conflated the two.** Being unpinnable at the
+        // floor of the ladder is not a reason to be absent from the strip at
+        // every rung above it — by that reasoning `edit.select_all` could not
+        // be in the rail either, and it is. `super::view`'s Navigate group has
+        // carried this exact toggle beside these exact four tools since O70,
+        // with its own paragraph arguing the placement: *"it changes what the
+        // arrow at the head of this row selects when you click with it… this
+        // changes what a gesture MEANS."* The rail mirrors that group row for
+        // row; leaving one member out made the two surfaces disagree, which is
+        // the thing the order note above this list exists to prevent.
+        //
+        // ★★ **WHAT HAPPENS AT THE FOLD, stated rather than discovered.**
+        // [`RailFold::PinArmed`] pins the row whose `selected:<id>` condition
+        // holds, taking the FIRST such row in list order. `app::conditions::
+        // armed` sets `selected:view.smart_select` whenever the preference is
+        // on, so at `Rung::Cramped` with the arrow armed and smart select on
+        // there are two candidates — and the tool wins, because it is listed
+        // first. **That is the decision, and it is the one the old comment's
+        // sound half implies:** the pinned row answers *"what does a drag
+        // do?"*, a toggle cannot answer that, so a toggle never takes the pin.
+        // The smart selector then joins `folded` with the rest of the group
+        // and is one click away behind the chevron — it does not vanish, and
+        // its state is still legible on View ▸ Navigate, which is on screen in
+        // every mode that shows the row at all.
+        //
+        // ★ It carries `shown_when("mode.edit_content")`, the same gate the
+        // ribbon item carries, for `view.tool_node`'s reason two paragraphs
+        // up: the command also carries `enabled_when("mode.edit_content")`, so
+        // a rail row without the gate would be a permanently greyed control on
+        // a permanent surface in Read.
         //
         // ★★★ `RailFold::PinArmed`: at the floor of the ladder this group
         // becomes ONE row showing whatever is armed — including a tool armed
@@ -218,6 +258,7 @@ pub fn groups() -> Vec<RailGroup> {
                 Item::command("view.tool_node").shown_when("mode.edit_content"),
                 Item::command("view.tool_text"),
                 Item::command("view.tool_hand"),
+                Item::command("view.smart_select").shown_when("mode.edit_content"),
             ],
         )
         .with_caption(t::group_view_navigate())
@@ -376,6 +417,102 @@ mod tests {
                 "rotate is available in every mode including Read — O126"
             );
         }
+    }
+
+    /// ★★★ The smart selector is on the rail, in `navigate`, **last**.
+    ///
+    /// His instruction of 2026-09-05 — *"our smart selector should be visible
+    /// with the other navigate controls in our left rail"* — pinned as data.
+    /// The position matters and is not cosmetic: [`RailFold::PinArmed`] takes
+    /// the **first** selected row, so a toggle placed ahead of the four tools
+    /// would take the pin away from the tool the operator is holding whenever
+    /// the preference was on. See the module-level note beside this group.
+    #[test]
+    fn the_smart_selector_is_the_last_row_of_navigate() {
+        let group = groups()
+            .into_iter()
+            .find(|g| g.id == "navigate")
+            .expect("the navigate group");
+        let ids: Vec<&str> = group
+            .items
+            .iter()
+            .filter_map(|i| match i {
+                Item::Command { id, .. } => Some(id.as_str()),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(
+            ids,
+            [
+                "view.tool_select",
+                "view.tool_node",
+                "view.tool_text",
+                "view.tool_hand",
+                "view.smart_select",
+            ],
+            "the rail's Navigate group mirrors View ▸ Navigate row for row"
+        );
+        let smart = group
+            .items
+            .iter()
+            .find(|i| matches!(i, Item::Command { id, .. } if id == "view.smart_select"))
+            .expect("the smart selector");
+        assert_eq!(
+            smart.visible_condition(),
+            Some("mode.edit_content"),
+            "the command is `enabled_when(\"mode.edit_content\")`, so an ungated rail row \
+             would be a permanently greyed control on a permanent surface in Read"
+        );
+    }
+
+    /// ★★★ **At the fold the pin goes to the TOOL, never to the toggle** —
+    /// even when both are `selected`.
+    ///
+    /// This is the assertion that carries the decision recorded in the module
+    /// header, and it is written against the real fold planner rather than
+    /// against the list, because the property is a consequence of
+    /// [`RailFold::PinArmed`]'s first-match rule and the list's *order*. A
+    /// future edit that moved the smart selector up the list would leave every
+    /// other test in this file green and would silently make the strip answer
+    /// *"smart select is on"* where the operator asked *"what am I holding?"*.
+    ///
+    /// The folded set is asserted too: the toggle must be **behind the
+    /// chevron**, not gone. A row that is neither drawn nor folded is the
+    /// unreachable-control defect this whole surface was built against.
+    #[test]
+    fn at_the_floor_the_pinned_row_is_the_armed_tool_and_the_toggle_is_merely_folded() {
+        use egui_shell::commands::ConditionSet;
+        use egui_shell::dock::rail::{self, RailRow, Rung};
+
+        let rail: egui_shell::manifest::Rail = groups().into_iter().collect();
+        // Edit mode, the arrow armed, and the smart selector ON — the state in
+        // which the two candidates collide.
+        let conditions = ConditionSet::default()
+            .with("mode.edit_content")
+            .with(egui_shell::ribbon::selected_condition("view.tool_select"))
+            .with(egui_shell::ribbon::selected_condition("view.smart_select"));
+
+        let plan = rail::build(&rail, &conditions, Rung::Cramped);
+        let pinned: Vec<&str> = plan
+            .rows
+            .iter()
+            .filter_map(|r| match r {
+                RailRow::Entry {
+                    id, pinned: true, ..
+                } => Some(id.as_str()),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(
+            pinned,
+            ["view.tool_select"],
+            "the pinned row answers `what does a drag do?`, and a toggle cannot answer it"
+        );
+        assert!(
+            plan.folded.iter().any(|id| id == "view.smart_select"),
+            "the toggle folds behind the chevron rather than vanishing; folded = {:?}",
+            plan.folded
+        );
     }
 
     /// The Points tool is withheld outside Edit, on the rail as on the ribbon.

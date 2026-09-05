@@ -297,6 +297,22 @@ pub fn tool_rail(side: DockSide) -> String {
     format!("{PREFIX}.{}.toolrail", side.key())
 }
 
+/// **The rail's auto-hide trigger** — the rectangle whose hover reveals a
+/// hidden rail, and the rail itself when it is not hiding.
+///
+/// ★★★ Published in BOTH settings, and that is what makes it the reachability
+/// oracle. A rail that is hiding publishes `toolrail` only on the frames it is
+/// revealed, so a check reading `toolrail` alone cannot distinguish *"the rail
+/// is hidden and one pointer-move away"* from *"the rail is gone and the panels
+/// it switches between are unreachable"*. This region is present on every frame
+/// the side is drawn, at [`super::rail::PEEK_WIDTH_PTS`] wide when hidden and
+/// [`super::rail::WIDTH_PTS`] when not, so **its absence is the defect** and its
+/// width is the answer to "is it hittable".
+#[must_use]
+pub fn rail_trigger(side: DockSide) -> String {
+    format!("{PREFIX}.{}.railtrigger", side.key())
+}
+
 /// The splitter between a side and the central area.
 #[must_use]
 pub fn side_splitter(side: DockSide) -> String {

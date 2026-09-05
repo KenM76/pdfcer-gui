@@ -648,6 +648,44 @@ pub(super) fn band() -> Vec<Command> {
         command("file.properties", t::file_properties(), 140)
             .with_icon("properties")
             .enabled_when("doc.open"),
+        // ★★★ **Document properties** — the operator, 2026-09-05: *"the
+        // document properties are still always visible in the properties tab.
+        // it needs to get out of there and be in its own document properties
+        // tab."*
+        //
+        // # Token 142, and it is a new number rather than a reused one
+        //
+        // 140 and 141 are the two commands it sits between; 142 was free. A
+        // token is what a trace prints, so a retired one is never recycled —
+        // `file.export_text`'s note four registrations up records the day that
+        // rule was demonstrated rather than argued.
+        //
+        // # ★ The icon is SHARED with `file.properties`, and that is the
+        // convention rather than an economy
+        //
+        // Both controls are *properties*; what differs is **whose**, and that
+        // is a word only a label can say. This module's header states the
+        // shared-key convention and `format.unshare_form`, `edit.paste_duplicate`
+        // and the three page-clipboard verbs are its worked precedents. Drawing
+        // a second page-with-a-corner glyph so that two adjacent controls could
+        // look slightly different would be a distinction the operator has to
+        // learn for no gain — and `icons/assets/PROVENANCE.md` makes that
+        // directory his own art, so the alternative is not "draw one" but "ask
+        // him for one" over a difference the labels already carry.
+        //
+        // # `doc.open`, like both its neighbours
+        //
+        // There is no document metadata without a document. R9's other branch
+        // does not apply: this is *temporarily* unavailable in the plainest
+        // sense — open a file and it works — which is exactly what greying is
+        // reserved for.
+        command(
+            "file.document_properties",
+            t::file_document_properties(),
+            142,
+        )
+        .with_icon("properties")
+        .enabled_when("doc.open"),
         command("file.fonts", t::file_fonts(), 141)
             .with_icon("fonts")
             .enabled_when("doc.open"),

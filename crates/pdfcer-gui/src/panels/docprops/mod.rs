@@ -1,16 +1,79 @@
-//! # `panels::properties::info` — the document's own title, author, subject
-//! and keywords
+//! # `panels::docprops` — the **Document properties** panel: this file's own
+//! title, author, subject and keywords, and the facts pdfcer read about it
 //!
-//! ## The half of this panel that has been commissioned since S3
+//! ## ★★★ Why this is a panel of its own — the operator, 2026-09-05
 //!
-//! `Panel::command_id`'s doc comment has said so all along, and the sentence
-//! is the *tooltip an operator reads on the ribbon*:
+//! > *"the document properties are still always visible in the properties tab.
+//! > it needs to get out of there and be in its own document properties tab."*
 //!
-//! > **Properties is `file.properties`**, whose tooltip commissions both
-//! > halves: *"The document's own title, author, subject and keywords, and the
-//! > properties of whatever is selected on the page."* Only the second half is
-//! > built here; the first needs a `/Info` accessor that `pdfcer-core` does not
-//! > expose on `Document` at all.
+//! Until this commit every line below was the **last section of the selection
+//! inspector** (`crate::panels::properties`), drawn under the armed tool's
+//! settings, the markup restyle controls, the ce-dimension section and the
+//! focused object's read-only facts. It was the only one of those with no
+//! condition attached to it at all, so the *"This document"* heading was on
+//! screen every frame of every session, at the bottom of a panel whose subject
+//! is what you have selected.
+//!
+//! ★★ **The previous arrangement was DESIGNED, not accidental, and this is a
+//! supersession rather than a bug fix.** `file.properties`' shipped tooltip
+//! commissioned both halves in one sentence — *"The document's own title,
+//! author, subject and keywords, and the properties of whatever is selected on
+//! the page."* — and `RIBBON_IA.md` §5.1 put that one command in File ▸
+//! Document. One command, two subjects, one panel. That reading was coherent
+//! and it is the operator's to overrule; he has.
+//!
+//! ★★★ **And it was the last thing in the inspector that was not the detail of
+//! anything.** `OPERATOR_REQUESTS.md` O123 / A7 is his: *"I never understood
+//! why there is a tool dock when everything can be in object and properties."*
+//! Objects and Properties became one master–detail column so that picking a row
+//! shows that row's detail — `app::modes::defaults`' Edit arm builds exactly
+//! that shape, two adjacent stacks in one column with a draggable split. A
+//! permanent document-metadata block at the foot of the detail pane is the one
+//! block in that column that answers no selection, so it made the master–detail
+//! reading false for every operator who scrolled to the bottom. That is why the
+//! move is worth the churn, and it is the whole of the justification.
+//!
+//! O75 is the same complaint arriving a fortnight earlier and being answered
+//! with a **collapse** — *"the Properties section is always showing the This
+//! document properties instead of just the properties of the objects I am
+//! editing."* The section learned to fold itself shut whenever a
+//! selection-scoped section above it had spoken. That machinery is deleted with
+//! this move rather than kept: there is nothing above this section any more, so
+//! `anything_above` would be permanently `false` and the edge-triggered
+//! `set_open`/`store` dance would be a mechanism whose input never changes. The
+//! reasoning it recorded — why neither `default_open` nor `open(Some(_))` can
+//! express a collapse the operator may override — is preserved in
+//! `crate::panels::properties`' header, because it is a finding about egui 0.35
+//! and not about this panel.
+//!
+//! ## What it is, and what it is not
+//!
+//! | | |
+//! |---|---|
+//! | **subject** | the file: `/Info`, its size, its version, its sheet count and size, its encryption, and whether pdfcer had to rebuild its index to open it |
+//! | **command** | `file.document_properties`, on **File ▸ Document**, beside Properties and Fonts — *"inspection, not action"*, per `shell::manifest::ladder` |
+//! | **modes** | all three. Reading a document's title is **reading**, and Read is shown the `file` tab |
+//! | **not here** | anything scoped to a selection. Every one of those sections stayed in `crate::panels::properties`, which is now purely the detail of what is picked |
+//!
+//! ## ★ R9 — what it shows with no document open
+//!
+//! Nothing of its own. [`crate::panels::Panel::show`] answers the empty case
+//! **once**, for every panel, before any body runs: it forgets the panel state
+//! and draws `crate::text::panels::panel_no_document`. So this module is never
+//! called without a document and has no empty state to get wrong — which is
+//! also why there is no "no document" sentence written here to drift from the
+//! other eleven.
+//!
+//! An empty *field* is a different matter and is answered below: a PDF with no
+//! `/Info` dictionary at all renders four empty boxes, because absent is a
+//! value and an empty box is how absent is spelled.
+//!
+//! ## ★ The blocker this module's own header used to quote
+//!
+//! It opened, for months, by quoting `Panel::command_id`:
+//!
+//! > Only the second half is built here; the first needs a `/Info` accessor
+//! > that `pdfcer-core` does not expose on `Document` at all.
 //!
 //! ## ★ That last clause was TRUE when written and false when read
 //!
@@ -108,9 +171,19 @@ use pdfcer_core::edit::{InfoField, InfoText};
 
 use crate::app::actions::Action;
 use crate::app::state::OpenDoc;
-use crate::text::panels::properties as t;
+use crate::text::panels::docprops as t;
 
-/// The region this section publishes.
+/// The region this panel publishes.
+///
+/// ★★ **Unchanged by the move to a panel of its own, deliberately.** The name
+/// is a harness interface: `ui-verify`'s `properties_metadata_round_trips`
+/// finds the section by this string and finds each editor by
+/// [`REGION_FIELD_PREFIX`], and that check **cannot be run by the session that
+/// made this move** — the machine's pointer belongs to another track. Renaming
+/// the regions would put an unverifiable change into the one instrument that
+/// could confirm the panel still works, on top of a verifiable one (which tab
+/// the check must bring to the front). One change at a time is what keeps the
+/// next run's verdict readable.
 pub const REGION: &str = "properties.info"; // ui-text-exempt: trace region name, never displayed
 /// The prefix of the per-field editor regions; the field's index in
 /// `InfoField::all()` is appended.
@@ -131,7 +204,7 @@ pub const REGION_FIELD_PREFIX: &str = "properties.info."; // ui-text-exempt: tra
 /// **This is the protection the LABEL function cannot have.** `InfoField` is
 /// `#[non_exhaustive]`, so a `match` on it in this crate needs a `_` arm and
 /// compiles for ever whatever is added — see
-/// `crate::text::panels::properties::properties_info_label`. Here the
+/// `crate::text::panels::docprops::info_label`. Here the
 /// dependency is on the array's *length*, which is a type-level fact
 /// `#[non_exhaustive]` does not weaken.
 const FIELDS: usize = InfoField::all().len();
@@ -156,14 +229,6 @@ const FIELDS: usize = InfoField::all().len();
 /// It also covers the case nobody thinks of: a field changed by some *other*
 /// surface. There is only one today (this panel), and the reload means there
 /// does not have to be a rule about it.
-/// The persistent id the document section's collapsed state is stored under.
-///
-/// A named constant rather than a literal at the call site, because the state
-/// is written in one place and read in another two lines later and the two
-/// must agree — an id typo would produce a header that collapses and instantly
-/// reopens, once per frame, which reads as a flicker rather than as a bug.
-const COLLAPSE_ID: &str = "properties-info-section"; // ui-text-exempt: an egui widget id, never displayed
-
 #[derive(Default)]
 pub struct InfoDrafts {
     /// One draft per `InfoField::all()` position.
@@ -177,28 +242,6 @@ pub struct InfoDrafts {
     /// indistinguishable, which is the state this panel spends most of its
     /// life in.
     seeded_at: Option<u64>,
-    /// ★★★ **Whether something above this section was speaking on the previous
-    /// frame** — `OPERATOR_REQUESTS.md` O75. `None` before the first frame.
-    ///
-    /// It exists so the collapse can be **edge-triggered**: written only on
-    /// the frame the answer flips, never every frame. That is what lets the
-    /// operator expand the document section by hand and keep it expanded while
-    /// the same object stays selected.
-    ///
-    /// # ★★ Why neither obvious egui mechanism works
-    ///
-    /// - `CollapsingHeader::default_open` is consulted through
-    ///   `load_with_default_open`, which returns the STORED state whenever one
-    ///   exists. It is dead after frame one, so it can set the initial answer
-    ///   and can never change it.
-    /// - `CollapsingState::open(Some(_))` forces the state every frame — and
-    ///   moves click handling into an `else` branch, so the header stops
-    ///   responding to the operator entirely. It would be correct and unusable.
-    ///
-    /// ⇒ The shape that works is `set_open` + `store`, run only on the
-    /// transition. Checked against the vendored egui 0.35 source rather than
-    /// remembered.
-    last_anything: Option<bool>,
 }
 
 impl std::fmt::Debug for InfoDrafts {
@@ -211,7 +254,6 @@ impl std::fmt::Debug for InfoDrafts {
         f.debug_struct("InfoDrafts")
             .field("lengths", &self.drafts.each_ref().map(String::len))
             .field("seeded_at", &self.seeded_at)
-            .field("last_anything", &self.last_anything)
             .finish()
     }
 }
@@ -238,80 +280,57 @@ impl InfoDrafts {
     }
 }
 
-/// Draw the document-metadata section.
+/// **Draw the Document properties panel.**
 ///
-/// # Why this section has no "nothing to show" state
+/// # Why there is no "nothing to show" state
 ///
 /// Every PDF has these four fields, in the sense that matters: absent is a
 /// value, and an empty box is how absent is spelled. A document with no
 /// `/Info` dictionary at all renders four empty boxes, which is the truth and
 /// is also exactly what the operator needs in order to add one — `set_info_field`
 /// **creates `/Info` if it is absent**.
-pub fn section(
-    ui: &mut Ui,
-    doc: &OpenDoc,
-    drafts: &mut InfoDrafts,
-    // ★★★ **Whether any section above this one is describing the selection** —
-    // `OPERATOR_REQUESTS.md` O75: *"the Properties section is always showing
-    // the This document properties instead of just the properties of the
-    // objects I am editing."*
-    //
-    // The document form is never HIDDEN — R9 forbids that, because the
-    // capability is available and the operator may well want it — but it stops
-    // being the first thing in the panel whenever something is speaking about
-    // what he has selected.
-    //
-    // ★ The rule is *"collapse when something else is speaking about the
-    // selection"*, not *"collapse when something is selected"*. The two differ
-    // for exactly the case that matters: several of the sections above return
-    // false for an ordinary image or path, which is why the caller folds
-    // `object_section`'s own answer in.
-    anything_above: bool,
-    actions: &mut Vec<Action>,
-) {
-    let id = ui.make_persistent_id(COLLAPSE_ID);
-    // ★★ EDGE-TRIGGERED. Written only on the frame the answer flips, so the
-    // operator can expand this by hand and it stays expanded while the same
-    // object remains selected. See `InfoDrafts::last_anything` for why neither
-    // `default_open` nor `open(Some(_))` can do this.
-    //
-    // The memo write happens BEFORE the closure below is constructed, because
-    // `drafts` is borrowed mutably inside it too.
-    if drafts.last_anything != Some(anything_above) {
-        drafts.last_anything = Some(anything_above);
-        let mut state =
-            egui::collapsing_header::CollapsingState::load_with_default_open(ui.ctx(), id, true);
-        state.set_open(!anything_above);
-        state.store(ui.ctx());
-    }
-    let state =
-        egui::collapsing_header::CollapsingState::load_with_default_open(ui.ctx(), id, true);
-    state
-        .show_header(ui, |ui| {
-            // No `.strong()` — R84 / DEFECTS.md D11: egui resolves it to the
-            // accent-filled widget foreground, which on an ordinary panel is
-            // pale text on pale ground.
-            ui.label(t::properties_document_heading());
-        })
-        .body(|ui| info_body(ui, doc, drafts, actions));
-    // ★ `ui_rect_visible`, and published AFTER the body — O75.
-    //
-    // A collapsed section's `max_rect` is the whole remaining panel, so the
-    // old `ui_rect(REGION, ui.max_rect())` would have had a driven check click
-    // into empty space and report a dead control. That is the failure
-    // `geometry::section` already paid for once, and its answer is copied
-    // rather than re-derived.
-    crate::diag::ui_rect_visible(REGION, ui.min_rect(), ui.clip_rect());
+///
+/// The *no document at all* case never reaches here; see the module header's R9
+/// section.
+///
+/// # ★ One scroll area, round everything, and it is here rather than in the
+/// dock
+///
+/// The four editors, the seven facts and the recovery note together are taller
+/// than a 320 pt inspector at most window sizes, and a dock pane does not
+/// scroll its body for a panel. `crate::panels::properties::body` carries the
+/// same wrapper and the measurement behind it: before it existed, the one
+/// control that commits an edit was laid out below the window with no scrollbar
+/// and no gesture that would reach it, and it was reported as a dead button.
+///
+/// ★ No nested scroll area anywhere inside: a scroll area inside a scroll area
+/// steals the wheel from its parent depending on where the pointer happens to
+/// sit, which is a worse surface than the one being fixed.
+///
+/// # ★ No collapsing header any more
+///
+/// The section used to be a `CollapsingState` that folded itself shut whenever
+/// a selection-scoped section above it had spoken (O75). Nothing is above it
+/// now. A header that can only ever be open is a control that does nothing,
+/// and the panel's own tab is where an operator closes this surface.
+pub fn body(ui: &mut Ui, doc: &OpenDoc, drafts: &mut InfoDrafts, actions: &mut Vec<Action>) {
+    egui::ScrollArea::vertical()
+        .id_salt("docprops-body")
+        .auto_shrink([false, false])
+        .show(ui, |ui| info_body(ui, doc, drafts, actions));
 }
 
-/// The section's contents, unchanged — lifted out so the collapsing header's
-/// body closure is one line.
+/// The panel's contents, inside the scroll area [`body`] wraps them in.
+///
+/// Split out so the scroll area is impossible to forget: content added to this
+/// function is inside it by construction, where content appended to [`body`]
+/// after the `.show(..)` call would silently be outside it again.
 fn info_body(ui: &mut Ui, doc: &OpenDoc, drafts: &mut InfoDrafts, actions: &mut Vec<Action>) {
-    ui.label(
-        egui::RichText::new(t::properties_document_note())
-            .small()
-            .weak(),
-    );
+    // No `.strong()` — R84 / DEFECTS.md D11: egui resolves it to the
+    // accent-filled widget foreground, which on an ordinary panel is pale text
+    // on pale ground.
+    ui.label(t::heading());
+    ui.label(egui::RichText::new(t::note()).small().weak());
     recovery_note(ui, doc);
     ui.add_space(4.0);
 
@@ -330,6 +349,14 @@ fn info_body(ui: &mut Ui, doc: &OpenDoc, drafts: &mut InfoDrafts, actions: &mut 
         };
         row(ui, index, field, draft, current.as_ref(), actions);
     }
+
+    // ★ `ui_rect_visible` rather than `ui_rect`, and published LAST — the
+    // reason survives the move even though the collapse that prompted it did
+    // not. This body is inside a `ScrollArea`, and a rect published for a
+    // scrolled-out control gets CLICKED by the harness at a coordinate the
+    // operator can never reach. `geometry::section` paid for that once; its
+    // answer is copied rather than re-derived.
+    crate::diag::ui_rect_visible(REGION, ui.min_rect(), ui.clip_rect());
 }
 
 /// The read-only facts about the file itself.
@@ -345,7 +372,7 @@ fn info_body(ui: &mut Ui, doc: &OpenDoc, drafts: &mut InfoDrafts, actions: &mut 
 /// What is deliberately absent is anything pdfcer would have to **infer** —
 /// producer and creator strings are not in `InfoField`, so they are neither
 /// read nor written here; permissions are discussed at
-/// [`t::properties_encryption_note`]; and page-level facts beyond the sheet
+/// [`t::encryption_note`]; and page-level facts beyond the sheet
 /// size belong to the object half of this panel.
 ///
 /// # ★ Every value is read through `session.document()`, and one of them lies
@@ -361,41 +388,37 @@ fn info_body(ui: &mut Ui, doc: &OpenDoc, drafts: &mut InfoDrafts, actions: &mut 
 fn facts(ui: &mut Ui, doc: &OpenDoc) {
     let base = doc.session.document();
 
-    fact(ui, t::properties_file_label(), &file_name(doc));
+    fact(ui, t::file_label(), &file_name(doc));
     fact(
         ui,
-        t::properties_size_label(),
+        t::size_label(),
         &crate::text::panels::byte_size(base.bytes().len()),
     );
     if doc.session.is_modified() {
-        ui.weak(t::properties_size_is_base());
+        ui.weak(t::size_is_base());
     }
+    fact(ui, t::version_label(), &base.version().to_string());
     fact(
         ui,
-        t::properties_version_label(),
-        &base.version().to_string(),
-    );
-    fact(
-        ui,
-        t::properties_pages_label(),
+        t::pages_label(),
         &crate::text::pages::pages_count(doc.pages.len()),
     );
     if let Some(size) = sheet_size(doc) {
-        fact(ui, t::properties_page_size_label(), &size);
+        fact(ui, t::page_size_label(), &size);
     }
 
     let encrypted = base.encryption().is_some();
     fact(
         ui,
-        t::properties_encryption_label(),
+        t::encryption_label(),
         if encrypted {
-            t::properties_encrypted()
+            t::encrypted()
         } else {
-            t::properties_not_encrypted()
+            t::not_encrypted()
         },
     );
     if encrypted {
-        ui.weak(t::properties_encryption_note());
+        ui.weak(t::encryption_note());
     }
 }
 
@@ -417,7 +440,7 @@ fn fact(ui: &mut Ui, label: &str, value: &str) {
 /// that.
 fn file_name(doc: &OpenDoc) -> String {
     if doc.origin == crate::app::state::Origin::Created {
-        return t::properties_file_unsaved().to_owned();
+        return t::file_unsaved().to_owned();
     }
     doc.path.file_name().map_or_else(
         || doc.path.display().to_string(),
@@ -444,9 +467,9 @@ fn sheet_size(doc: &OpenDoc) -> Option<String> {
         (ow / PTS_PER_MM - w_mm).abs() >= 1.0 || (oh / PTS_PER_MM - h_mm).abs() >= 1.0
     });
     Some(if mixed {
-        t::properties_page_size_mixed(w_mm, h_mm)
+        t::page_size_mixed(w_mm, h_mm)
     } else {
-        t::properties_page_size(w_mm, h_mm)
+        t::page_size(w_mm, h_mm)
     })
 }
 
@@ -469,7 +492,7 @@ fn row(
     actions: &mut Vec<Action>,
 ) {
     ui.horizontal(|ui| {
-        ui.label(t::properties_info_label(field));
+        ui.label(t::info_label(field));
         let response = ui.add(egui::TextEdit::singleline(draft).desired_width(200.0));
         crate::diag::ui_rect(
             // ui-text-exempt: trace region name, never displayed
@@ -525,7 +548,7 @@ fn row(
     // ordinary document is never — a note on every row would be noise that
     // trains the operator to skip the one that matters.
     if current.is_some_and(|info| !info.exact) {
-        ui.weak(t::properties_info_not_exact());
+        ui.weak(t::info_not_exact());
     }
 }
 
@@ -610,10 +633,7 @@ mod tests {
     /// which is worse than a missing one because it looks like it works.
     #[test]
     fn every_info_field_is_labelled_and_no_label_repeats() {
-        let labels: Vec<&str> = InfoField::all()
-            .into_iter()
-            .map(t::properties_info_label)
-            .collect();
+        let labels: Vec<&str> = InfoField::all().into_iter().map(t::info_label).collect();
         let unique: std::collections::BTreeSet<&str> = labels.iter().copied().collect();
         assert_eq!(
             unique.len(),

@@ -111,15 +111,56 @@ pub const fn put_down_hint() -> &'static str {
 /// calls the point; `SelectionLevel::Node` is what this program calls the
 /// state, and the panel speaks the first vocabulary — `text::commands`' rule
 /// that a label is the operator's word and an id is the format's.
+///
+/// ## ★★★ The second sentence, added 2026-09-05, and why it is unconditional
+///
+/// This tool has **two** subjects, not one — see
+/// `canvas::tool::retire_forbidden`'s Node arm for the table. The first is an
+/// anchor of a path on the page and needs `edit_content`; the second is a
+/// corner of a measurement pdfcer authored, needs `author_measure`, and is
+/// therefore the tool's only subject in Review.
+///
+/// The sentence names both in every mode rather than being swapped by
+/// capability, and that is a decision with a cost attached. The precedent for
+/// swapping is [`text_select_takes_the_press`], which is rendered only where it
+/// is true — but the fact *that* sentence states is a **change** ("arming this
+/// takes the press away from…"), which is either true or false. This one states
+/// **where to aim**, and an operator in Edit who is shown only the anchor
+/// sentence would never learn that his measurements have corners at all. R9
+/// governs drawing a control that does nothing; naming a second subject that
+/// exists in the mode the operator is in is the opposite of that.
+///
+/// ⇒ The wording therefore says *a measurement you have drawn*, which is true
+/// in both modes and locates the subject without a mode word in it.
 #[must_use]
 pub const fn node_instruction() -> &'static str {
-    "Click a shape to show its points. Click a point to select it, then drag to move it."
+    "Click a shape to show its points. Click a point to select it, then drag to \
+     move it. On a measurement you have drawn, drag a corner to reshape it."
 }
 
-/// The line under it: how to take more than one.
+/// The line under it: how to take more than one, and how to change how many
+/// corners a measurement has.
+///
+/// ## ★★★ This is where the two chords are spelled, and it is the ONLY place
+///
+/// `canvas::dimdrag` gates adding and removing a corner on this tool being
+/// armed — deliberately, so that a stray Ctrl during an ordinary corner drag
+/// cannot destroy a corner. The cost of that safety is that the gesture is
+/// invisible to anyone who has not armed the tool, and the payment is this
+/// line: arm the tool, and the sentence under it tells you what the modifiers
+/// do.
+///
+/// ★★ It is a **stopgap and is recorded as one.** The discoverable form of
+/// these two verbs is a right-click menu on the shape — *"add a point here"*,
+/// *"remove this point"* — which is the shape `pdfcer-core`'s own doc comments
+/// describe them in (`edit.rs:37927`, `edit.rs:37955`). That surface is
+/// `canvas::menus`, and the session that built these two verbs did not own that
+/// file. Reported rather than half-built; see `OPERATOR_REQUESTS.md` O132.
 #[must_use]
 pub const fn node_shift() -> &'static str {
-    "Shift-click to add more points. A point on a curve also shows its handles."
+    "Shift-click to add more points. A point on a curve also shows its handles. \
+     On a measurement: Ctrl-drag a corner to add one after it, Ctrl+Shift-drag \
+     to take it away."
 }
 
 /// The Hand tool's instruction.
@@ -695,6 +736,27 @@ pub const fn form_kind_hint(kind: crate::canvas::formfield::FormFieldKind) -> &'
 /// `text::status` is at 1,482 lines against R2's 1,500, and its own header
 /// records the seam being noticed rather than trimmed. This module already
 /// owns the tool panel's sentences, and this sentence is about a tool.
+///
+/// # ★★★ WHERE THIS NOW FIRES, corrected 2026-09-05 — and it had become a
+/// misdirection
+///
+/// The gate above it changed. `retire_forbidden`'s Node arm and
+/// `app::dispatch::navigate`'s `view.tool_node` arm both read
+/// `edit_content || author_measure` now, because the tool's second subject is a
+/// ce dimension's corners and reshaping one is a **measure** edit. So this
+/// sentence is reachable in **Read alone**, where nothing is editable, and
+/// naming Edit is the correct next act.
+///
+/// ⚠ It was **actively wrong in Review**, which is the state that made the
+/// correction urgent rather than tidy. Review is the mode a measurement is
+/// drawn in; an operator there who pressed `A` was told to switch to Edit —
+/// and switching would not have helped him, because what he was reaching for
+/// was either a corner he already had (his own measurement, draggable in
+/// Review all along) or a markup shape's points, which **Edit cannot edit
+/// either**: `pdfcer-core` models no `/Vertices` or `/InkList`, filed as
+/// `request_a_markup_shapes_vertices_cannot_be_read_or_edited.md`. A refusal
+/// that names a remedy which does not work is worse than one that names none,
+/// because it spends the operator's time before it fails.
 #[must_use]
 pub fn node_tool_needs_edit_mode() -> &'static str {
     "Switch to Edit to work on points."

@@ -198,6 +198,15 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // `markup_rectangle`'s failure first.
         Box::new(markup_style::MarkupStyleGroupIsDrawn),
         Box::new(measure_perimeter::MeasurePerimeterTracesAndCloses),
+        // ★★★ Immediately after it, and the ordering is a dependency rather
+        // than a preference: this check DRAWS a perimeter before it reshapes
+        // one, so if the tracing gesture is broken the run should say so under
+        // the name of the check whose subject that is. Its own early steps
+        // decline with "run that one first" for the same reason.
+        //
+        // ⬜ REGISTERED AND NEVER RUN — written 2026-09-05 while another track
+        // held the pointer. See its module header.
+        Box::new(dimension_corner_count::ACornerCanBeAddedAndTakenAway),
         // ★ Early, and deliberately: it is the cheapest possible statement of
         // "can this program open the file at all", and a failure here changes
         // what every later failure on an encrypted document would mean.
@@ -269,6 +278,16 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(embed_fonts::EmbeddingFontsPutsAProgramInTheDocument),
         Box::new(embed_bundled::EmbeddingWorksWithNoFontFolderAtAll),
         Box::new(compact_save::ACompactedCopyIsActuallySmaller),
+        // ★★★ The page-tree guard, wired 2026-09-05 from the operator's own
+        // report. Placed immediately after `compact_save` because the two are
+        // the same subject from opposite ends: that one asserts a save
+        // PRODUCES the file it promised, this one asserts a save REFUSES to
+        // produce a file it knows is damaged. A reader comparing the two
+        // verdicts is reading both halves of "what may leave this program".
+        //
+        // ⚠ It pins its own fixture and ignores `--pdf`, so it needs nothing
+        // from the sweep's aim table — and it is UNDRIVEN. Its header says so.
+        Box::new(pagetree_guard::ASaveThatWouldProduceBlankPagesIsRefused),
         // ★★★ The signature warning, wired 2026-08-28. Beside the save checks
         // because it is the fourth thing this shell can do to a file somebody
         // else will open — and the only one whose subject is what the file
@@ -444,6 +463,14 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // aimed at a document that lacks the strings it scans for.
         Box::new(object_clipboard::CopyAndPastePageContent),
         Box::new(clipboard_annotation::CopyingAStickyNoteCarriesTheWholeComment),
+        // ★★★ Its complement, added 2026-09-05 with the fix for the driven
+        // sweep's finding A1. The check above owns the GRANT — a comment
+        // copied in Review pastes in Review. This one owns the REFUSAL: a
+        // clip of page CONTENT must still be refused there, and the refusal
+        // must be a sentence rather than a silent return. Opening the chord
+        // gate is only safe with both, and only this one can fail on the
+        // half that opening it puts at risk.
+        Box::new(clipboard_mode::APasteReviewMayNotDoSaysSo),
         Box::new(clipboard_text::CtrlCCopiesTextToTheOsClipboard),
         Box::new(select_filter::SelectFilterChangesWhatAClickHits),
         Box::new(scroll_input::ScrollingFarKeepsTheCanvasItsPointerInput),
@@ -711,6 +738,20 @@ pub fn all() -> Vec<Box<dyn Check>> {
         //
         // Cheap otherwise: two ribbon clicks, two captures, no canvas gesture
         // and no keystroke.
+        // ★★★ Immediately BEFORE its neighbour, and the two are the two halves
+        // of one subject: that one asserts read mode **hides** the chrome, this
+        // one asserts it **says how to get it back**. A reader scanning a run
+        // wants those two verdicts together.
+        //
+        // First of the two for the reason the cheaper check always goes first:
+        // it sends no pointer and no keystroke — `PDFCER_DIAG_INVOKE` rings the
+        // command through the dispatcher — so it costs nothing, takes no focus,
+        // and can run on a machine somebody is using. If both go red, the one
+        // that needed no input is the one whose diagnosis to believe.
+        //
+        // ⬜ NOT RUN by the session that wrote it (2026-09-05); its own header
+        // says so in its first section.
+        Box::new(read_mode_exit::ReadModeSaysHowToGetBackOut),
         Box::new(read_mode_chrome::ReadModeHidesTheChrome),
         Box::new(settings_headings::SettingsHeadingsLegible),
         // ★ LAST, and for a reason that is the mirror of the one above.

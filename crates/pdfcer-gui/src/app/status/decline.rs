@@ -531,6 +531,49 @@ pub(crate) enum Declined {
     /// the arm. A key that does nothing has no control to hover, which makes
     /// it the case that most needs a sentence rather than the least.
     NodeToolNeedsEditMode,
+    /// ★★★ **A corner of a ce dimension could not be added or taken away** —
+    /// the operator's report of 2026-09-05, in his own words:
+    ///
+    /// > *"I also can't edit or delete nodes of a markup shape once it is
+    /// > drawn."*
+    ///
+    /// The payload is [`crate::text::measure::VertexEditRefusal`], modelled on
+    /// [`Self::TextStyle`]'s and [`Self::Rotate`]'s and for the identical two
+    /// reasons: a `Copy` enum keeps this type `Copy` and [`Declined::line`]
+    /// `&'static str`, and it keeps the engine's own diagnostic prose off the
+    /// status bar.
+    ///
+    /// # ★ Why a gesture with a preflight still needs a decline
+    ///
+    /// `canvas::dimdrag::count_edit` asks `EditSession::vertex_edit_preview`
+    /// before it draws anything, so a refused edit is never previewed and never
+    /// raised as an action — the engine is never asked to refuse. That is the
+    /// right design and it makes this sentence **the only report of the
+    /// refusal that exists**: no action, no funnel, no `EditRefused`. Without
+    /// it the operator drags a corner of a triangle out of the shape, releases,
+    /// and the triangle is still a triangle with nothing anywhere saying why.
+    /// That silence is precisely the shape of the report this whole surface
+    /// answers.
+    ///
+    /// # Recorded from the gesture, before any verb
+    ///
+    /// From `canvas::dimdrag` on the release frame — the placement
+    /// [`record_flatten_certified`] uses and for its stated reason: the
+    /// condition is a **query** the shell can answer itself, so it is answered
+    /// where the gesture is rather than inside a funnel the gesture never
+    /// enters.
+    ///
+    /// # Retired by the operator's next act
+    ///
+    /// [`Self::still_true`] answers `true`, joining the group whose reason is
+    /// *nothing happened*: the edit was refused before it began, so the epoch
+    /// did not move, the sidecar is as it was, and there is no state for a
+    /// later frame to find the sentence stale against. Deliberately **not**
+    /// re-asked through `vertex_edit_preview` — that is a sidecar read, and
+    /// putting it in the per-frame path that decides whether a status line is
+    /// still true would pay for it sixty times a second to learn an answer that
+    /// cannot change without a command.
+    VertexEditRefused(crate::text::measure::VertexEditRefusal),
     /// **The field-group deletion PREVIEW refused**, so the operator was never
     /// offered the confirmation.
     ///
@@ -734,6 +777,43 @@ pub(crate) enum Declined {
     /// create new lines?"* and was answered by an edit finishing under him.
     /// See `decline/textedit.rs`.
     EnterCannotSplit,
+    /// ★★★ **A cut or a paste the active MODE does not do** — 2026-09-05, and
+    /// it is the second half of the defect the driven sweep found as A1.
+    ///
+    /// The first half was that `edit.paste` could not be *reached* in Review at
+    /// all: `app::modes::capability::offers_command` refused the chord because
+    /// Paste lives on the Edit tab, so an operator in the mode whose entire
+    /// purpose is marking up somebody else's drawing could copy a comment and
+    /// had nowhere to put it. Two independent driven checks traced
+    /// `chord-not-offered id=edit.paste mode=review`.
+    ///
+    /// ⇒ The chord now reaches the dispatcher, which was **already** gating the
+    /// effect correctly on what is on the clipboard. This variant is what makes
+    /// that safe: the moment a chord is allowed through blind, every refusal it
+    /// can meet has to be worded, or the fix trades *"the key does nothing and
+    /// the trace says why"* for *"the key does nothing and nothing says why"* —
+    /// which is worse, because the second has no trace line either.
+    ///
+    /// ★ It carries [`crate::text::clipboard::ModeRefusal`] rather than being
+    /// six variants, on [`Self::Rotate`]'s and [`Self::Reflow`]'s precedent: the
+    /// catalog owns the wording and this enum owns only which sentence.
+    ///
+    /// ## Retirement: the `retire`-only class, on the TENSE argument
+    ///
+    /// [`Self::still_true`] answers `true`, and the reason is
+    /// [`Self::EditRefused`]'s rather than [`Self::SaveFailed`]'s. It **cannot**
+    /// claim stability — the operator can change the mode, and changing the mode
+    /// is precisely the remedy the sentence names, so the condition it reports
+    /// is one they are being invited to falsify. Nor can it be re-asked through
+    /// a live predicate: the fact recorded is *what the clipboard held at the
+    /// moment of the press*, and the clipboard can change under it.
+    ///
+    /// ⇒ What earns the `true` is that the sentence is a **report of a past
+    /// moment** — *that press did nothing, and the document is unchanged* — and
+    /// it was true when it was written whatever the next frame does. An
+    /// operator who reads it, moves the selector and presses again retires it
+    /// with that press, through [`retire`], which is the honest lifetime.
+    ClipboardMode(crate::text::clipboard::ModeRefusal),
 }
 
 impl Declined {
@@ -865,7 +945,8 @@ impl Declined {
             | Self::FieldGroupPreviewRefused
             | Self::FieldGroupDeleteRefused
             | Self::BookmarkMoveIntoOwnSubtree
-            | Self::BookmarkMoveRefused => true,
+            | Self::BookmarkMoveRefused
+            | Self::VertexEditRefused(_) => true,
             // ★ Same ruling, third and fourth cases. A name is not going to
             // stop being taken, and a widget is not going to grow a `/T`,
             // between one frame and the next. Both are corrected by the
@@ -923,6 +1004,11 @@ impl Declined {
             // so `EditRefused`'s reasoning applies rather than its neighbours'.
             // The sentence reports the press; `retire` owns stale.
             Self::Reflow(_) | Self::EnterCannotSplit => true,
+            // ★ On the TENSE argument too, and here it is the ONLY argument
+            // available: the condition this reports is the one the sentence
+            // asks the operator to change. A live predicate would retire the
+            // explanation at the instant they acted on it.
+            Self::ClipboardMode(_) => true,
         }
     }
 
@@ -1001,6 +1087,17 @@ impl Declined {
             Self::TextStyle(why) => why.line(),
             Self::Rotate(why) => why.line(),
             Self::Unshare(why) => why.line(),
+            // ★ Reaches across to `crate::text::clipboard` on the same rule the
+            // arms above use: a string lives with the surface that owns its
+            // subject, and this one's subject is the clipboard — where the
+            // other three clipboard refusals already live, so a fourth wording
+            // of "that did not happen" cannot grow up beside them.
+            Self::ClipboardMode(why) => why.line(),
+            // ★ Reaches across to `crate::text::measure` on the same rule: a
+            // string lives with the surface that owns its subject, and this
+            // one's subject is what a ce dimension measures — where the
+            // vertex-move disclosure it is the refusal twin of already lives.
+            Self::VertexEditRefused(why) => why.line(),
         }
     }
 }
@@ -1052,306 +1149,6 @@ thread_local! {
 // ---------------------------------------------------------------------------
 // The store — written by the dispatcher, read by the bar
 // ---------------------------------------------------------------------------
-
-/// Record what a framing zoom did, so the bar can say so if it declined.
-///
-/// **Written unconditionally**, including for a grant, which stores `None`.
-/// That mirrors `crate::app::actions::record_edit_disclosure`'s discipline:
-/// the slot never holds a sentence whose only defence against being shown is a
-/// filter somewhere else. A zoom that *worked* silences a decline immediately,
-/// on the same call, rather than relying on [`retire`] having been reached.
-///
-/// Called from `crate::app::dispatch`'s `view.zoom_selection` arm — which is
-/// still routing rather than computing: it hands over the value the verb
-/// returned and decides nothing about it.
-pub(crate) fn record(outcome: ZoomOutcome) {
-    let declined = Declined::of(outcome);
-    LAST.with_borrow_mut(|slot| *slot = declined);
-}
-
-/// Record that `file.save_copy` was given a destination and produced no file.
-///
-/// Called from `crate::app::save::write_and_report`, which is in the **apply**
-/// phase rather than in the dispatcher — the one difference from [`record`]'s
-/// call site, and it is why this is a separate entry point rather than a second
-/// argument to that one. [`retire`] runs at the top of `dispatch_command`, so a
-/// sentence recorded during the apply of the *same* frame survives it: the
-/// order is dispatch (retire, raise the action) → apply (write, record) → next
-/// frame (the bar draws it) → the operator's next command (retire).
-///
-/// Unconditional, and there is deliberately no matching "the save worked" call
-/// that stores `None`. A successful save-a-copy produces a file at a path the
-/// operator typed into a dialog they were looking at, which is the most visible
-/// confirmation this application has; adding a sentence for it would narrate
-/// what they just did. Two saves in a row, one failing and one succeeding, are
-/// still handled — the second press retires the first's sentence through
-/// [`retire`] before its own arm runs.
-/// Record that a push button was asked for and pdfcer cannot make a working one.
-///
-/// Called from `crate::app::dispatch`'s form arm, in the **dispatch** phase
-/// like [`record`] rather than in apply — the command never reaches a document,
-/// so there is no apply to decline in.
-///
-/// ★ It exists as its own function rather than joining [`record`] for the
-/// reason that one's neighbours already show: [`record`] converts a
-/// `ZoomOutcome`, and this has no outcome to convert. A constructor per source
-/// of truth is what keeps the enum from acquiring a `From` impl for every type
-/// in the crate.
-/// Record that a restyle of existing text refused, and why.
-///
-/// Called from `crate::app::actions::textstyle`, in the **apply** phase like
-/// [`record_save_failure`] rather than in the dispatcher — the refusal comes
-/// from the engine, which is only reached once the action is being applied.
-///
-/// ★ A constructor of its own rather than a second argument to [`record`], for
-/// the reason [`record_push_button_inert`]'s docs give: [`record`] converts a
-/// `ZoomOutcome` and this has no outcome to convert. One constructor per source
-/// of truth is what keeps this enum from acquiring a `From` impl for every type
-/// in the crate.
-pub(crate) fn record_text_style(why: crate::text::status::TextStyleRefusal) {
-    LAST.with_borrow_mut(|slot| *slot = Some(Declined::TextStyle(why)));
-}
-
-/// Record that a flatten was refused by the document's certification.
-///
-/// Called from the dispatch arm rather than from the apply phase, unlike
-/// [`record_save_failure`], because the refusal is knowable **before** the
-/// action is raised — `flatten_refusal` is a query — and raising an action the
-/// apply arm would then have to refuse would put the same rule in two places.
-pub(crate) fn record_flatten_certified() {
-    LAST.with_borrow_mut(|slot| *slot = Some(Declined::FlattenCertified));
-}
-
-/// Record that a **form-field or widget delete** was refused by the document's
-/// structure gate.
-///
-/// Called from `crate::app::actions::forms::delete`, in the **apply** phase —
-/// which is unusual for a refusal that is knowable from a query, and is the
-/// honest place for it here. [`record_flatten_certified`] is called from the
-/// dispatch arm precisely so that no action is raised for a refusal already
-/// known; these two verbs have **four** doors instead of one, every one of
-/// which already asks `formfield::refuses_delete` before offering anything.
-/// What is left for the verb to say is the residue those four cannot cover — a
-/// chord, a stale frame, an engine guard the query does not forecast, and a
-/// delete arriving with no field selected — and the verb is the one place all
-/// of it passes through.
-///
-/// ★★★ Without it that residue was a **silence**, because
-/// `crate::app::actions::apply::vector_edit`'s `Err` arm wrote a trace line and
-/// said nothing to the operator by its own recorded decision. It now words
-/// [`Declined::EditRefused`] (O116), which is a floor rather than a
-/// replacement: it cannot say *form fields* or *certification*. R83's rule is
-/// not *gate the controls*; it is *a refusal must be a sentence*. See
-/// [`Declined::FieldDeleteRefused`].
-/// Record that a field-group deletion **preview** was refused.
-///
-/// ★★★ These two replace `record_note` calls, and the swap is the point.
-/// `record_note` renders under **`⚑ About your last edit:`**, which
-/// `crate::text::status`' own rule forbids for a decline — *"an operator who
-/// reads 'About your last edit' after a gesture that did nothing has been told
-/// a small lie confidently."* Nothing happened; the slot that says so is this
-/// one, and it wears `⊗`.
-///
-/// The sibling verb in the same commit — `unshare_form` — used the right
-/// channel from the start, which is what made the mismatch findable: two verbs
-/// shipped together, one wording its refusal as a disclosure and one not.
-pub(crate) fn record_field_group_preview_refused() {
-    LAST.with_borrow_mut(|slot| *slot = Some(Declined::FieldGroupPreviewRefused));
-}
-
-/// Record that a field-group deletion was refused after confirmation.
-/// See [`record_field_group_preview_refused`].
-pub(crate) fn record_field_group_delete_refused() {
-    LAST.with_borrow_mut(|slot| *slot = Some(Declined::FieldGroupDeleteRefused));
-}
-
-/// Record that the **Points tool** was asked for in a mode that cannot change
-/// page content — [`Declined::NodeToolNeedsEditMode`].
-///
-/// Called from `PdfcerApp::dispatch_command`'s `view.tool_node` arm, beside the
-/// trace it already wrote. The trace stays: it names the id and the reason for
-/// a reader of a machine they cannot see, and this names the remedy for the
-/// operator in front of it. Two audiences, two lines, one event.
-pub(crate) fn record_node_tool_needs_edit_mode() {
-    LAST.with_borrow_mut(|slot| *slot = Some(Declined::NodeToolNeedsEditMode));
-}
-
-pub(crate) fn record_field_delete_refused() {
-    LAST.with_borrow_mut(|slot| *slot = Some(Declined::FieldDeleteRefused));
-}
-
-/// Record that a **bookmark move** did not happen, and which of the two
-/// sentences it owes.
-///
-/// ★★★ The whole point of the function, stated for whoever adds the next
-/// refusal to this gesture: **a refusal must be a sentence, never a silence.**
-/// A drag that is released and does nothing is this project's founding defect
-/// shape, and a bookmark drag is the worst instance of it — the row leaves the
-/// operator's pointer during the gesture, so a silence reads as *"it moved and
-/// I cannot find it"*, which is a state this very feature can genuinely
-/// produce.
-///
-/// ★★ Called from **inside** the `vector_edit` closure, one position rather
-/// than [`record_rotate`]'s two, and the difference is worth stating: the
-/// shell-side condition that gesture words from the canvas — *"this landing is
-/// inside the thing you are dragging"* — is one the **engine** also refuses by
-/// name, so there is nothing left for the panel to say and nothing gained by a
-/// second door. The panel's forecast of it drives the caret and stops there.
-/// See [`Declined::BookmarkMoveIntoOwnSubtree`].
-///
-/// `own_subtree` chooses between the two variants. A `bool` rather than the
-/// `EditError` itself, so this module stays free of the engine's error type —
-/// the same shape [`record_resize_not_rebuildable`] takes, and for the same
-/// reason: what reaches the bar is a sentence, and which sentence is the only
-/// fact that has to cross the boundary.
-pub(crate) fn record_bookmark_move_refused(own_subtree: bool) {
-    LAST.with_borrow_mut(|slot| {
-        *slot = Some(if own_subtree {
-            Declined::BookmarkMoveIntoOwnSubtree
-        } else {
-            Declined::BookmarkMoveRefused
-        });
-    });
-}
-
-/// Record that a resize was refused because the artwork cannot be rebuilt.
-///
-/// ★★ Called from **inside** the `vector_edit` closure, which is unusual and is
-/// the honest place for it: whether an appearance is pdfcer's own is not
-/// knowable before the call, so — unlike [`record_flatten_certified`], whose
-/// refusal is a query — this one can only be recognised from the error the verb
-/// returns. `record_save_failure` is called from the apply phase for the same
-/// reason.
-pub(crate) fn record_resize_not_rebuildable(uniform: bool) {
-    LAST.with_borrow_mut(|slot| *slot = Some(Declined::ResizeNotRebuildable { uniform }));
-}
-
-/// Record that a **rotation** did not happen, and why.
-///
-/// ★★★ The whole point of the function, stated for whoever adds the next
-/// refusal to `RotateRefusal`: **a refusal must be a sentence, never a
-/// silence.** A rotate handle that is dragged, released, and does nothing with
-/// no explanation is this project's founding defect shape, and it is exactly
-/// what the eight resize grips did for the whole life of this shell.
-///
-/// ★★ Called from **two positions**, deliberately, and the split is the same
-/// one this module already draws twice:
-///
-/// | caller | when | precedent |
-/// |---|---|---|
-/// | `canvas::rotating` | before any verb, for `NoDimensionRecord` — a condition the shell can **query** | [`record_flatten_certified`] |
-/// | `app::actions::annots` | inside the `vector_edit` closure, for what the **engine** returns | [`record_resize_not_rebuildable`] |
-///
-/// A shell-side condition raised from the apply phase would put the same rule
-/// in two places; an engine-side one raised from the dispatcher would be a
-/// guess about a call that has not happened yet.
-pub(crate) fn record_rotate(why: crate::text::rotating::RotateRefusal) {
-    LAST.with_borrow_mut(|slot| *slot = Some(Declined::Rotate(why)));
-}
-
-/// Record that *"give this page its own copy"* did not happen.
-///
-/// ★★ Called from **three positions**, extending [`record_rotate`]'s split:
-/// `app::dispatch::format` records `NothingInAForm` from the **selection**
-/// ([`record_inside_form`]'s placement); `app::actions::xobject::fanout`
-/// records `NotShared` from the **document**, after one page walk on the press
-/// and before `vector_edit`; and `xobject::unshare` records what the **engine**
-/// returns from inside the closure ([`record_resize_not_rebuildable`]'s).
-///
-/// ★★★ **There is deliberately no matching "it worked" call**, unlike
-/// [`record`], which writes `None` on a grant. This verb's success is narrated
-/// instead — `crate::text::unshare::unshared`, carried out through
-/// `vector_edit`'s **disclosure** list rather than through this store, because
-/// a disclosure and a decline are different speech acts and this module's
-/// header forbids sharing a slot between them.
-pub(crate) fn record_unshare(why: crate::text::unshare::UnshareRefusal) {
-    LAST.with_borrow_mut(|slot| *slot = Some(Declined::Unshare(why)));
-}
-
-pub(crate) fn record_save_failure() {
-    LAST.with_borrow_mut(|slot| *slot = Some(Declined::SaveFailed));
-}
-
-/// Record that the Settings window's Save reached no disk.
-///
-/// Called from `crate::app::settings_window::save_settings`, and **only** on
-/// the failure path — there is deliberately no matching "the settings saved"
-/// call. A successful settings save is not narrated for the same reason a
-/// successful save-a-copy is not: the operator pressed a button in a window
-/// they were looking at, the window closed, and a sentence telling them so
-/// would narrate what they just did.
-///
-/// # ★ What must be true at the call site before this is reached
-///
-/// The configuration has **already been adopted**. That ordering is the whole
-/// meaning of [`Declined::SettingsNotSaved`]'s sentence, and calling this
-/// before the adoption — or instead of it — would make the sentence a lie in
-/// the more damaging direction: the operator would be told their choice is
-/// in force for this session when it is not.
-pub(crate) fn record_settings_not_saved() {
-    LAST.with_borrow_mut(|slot| *slot = Some(Declined::SettingsNotSaved));
-}
-
-/// Record that `edit.undo` or `edit.redo` arrived with an empty stack.
-///
-/// Called from `crate::app::actions::apply`'s history arm — the **apply**
-/// phase, exactly as [`record_save_failure`] is, and for the same reason: the
-/// arm that can tell is the one holding the session, and [`retire`] runs at the
-/// top of `dispatch_command`, so a sentence recorded during the apply of the
-/// same frame survives it.
-///
-/// # ★ Why the dispatcher does not decide this
-///
-/// It could: `PdfcerApp` has the session, and `view.zoom_selection` sets the
-/// precedent of a dispatch arm recording an outcome. It must not, because the
-/// dispatcher's arms **route** (`HANDOFF.md` §6), and "is there anything to
-/// undo?" is a question about the document that the apply phase has to ask
-/// anyway before it touches the session. Asking it in both places is how the
-/// greyed control and the sentence come to disagree.
-///
-/// **`Declined` is the parameter rather than a `bool`**, so the call site reads
-/// as the state it is reporting and a third stack would not silently become a
-/// fourth meaning of `true`. Only the two history variants are constructible
-/// here in practice; passing anything else records a decline the arm did not
-/// mean, which is why the two callers are one arm apart in one function.
-pub(crate) fn record_history_empty(declined: Declined) {
-    LAST.with_borrow_mut(|slot| *slot = Some(declined));
-}
-
-/// Record that `adopt_widget` refused, and which of its two correctable
-/// refusals it was.
-///
-/// Called from `crate::app::actions::forms`, the apply phase, exactly as
-/// [`record_history_empty`] is and for the same reason: the arm holding the
-/// session is the one that can tell.
-///
-/// # ★ Why only two of the engine's five refusals reach here
-///
-/// `adopt_widget` refuses five ways. Three of them cannot happen from this
-/// surface and wording them would be wording states the operator cannot be in:
-///
-/// | refusal | why it is unreachable here |
-/// |---|---|
-/// | `NotAWidget` | the ids come from `page_annotations(..).is_widget()`, in this document |
-/// | `WidgetAlreadyOwned` | the ids are exactly the ones no field claimed, from the same walk |
-/// | `FieldNameEmpty` | the box is trimmed and an empty one sends `None`, not `Some("")` |
-///
-/// They still reach the trace through [`super::super::actions::apply::vector_edit`]'s
-/// error branch, which is where an impossible refusal's *reason* belongs:
-/// visible to whoever is debugging, and never on the status bar in the engine's
-/// own words.
-///
-/// ★ **Corrected 2026-09-04 (O116):** this used to end *"absent from the status
-/// bar an operator reads"*, and that is no longer true. Those three now reach
-/// the bar as [`Declined::EditRefused`] — *"That change was refused, and the
-/// document is unchanged."* — because the funnel's floor words every refusal no
-/// verb claimed. That is the right outcome rather than a leak: an unreachable
-/// refusal that somehow happened is still a gesture that did nothing, and the
-/// operator is owed a sentence about it. What stays off the bar is the engine's
-/// *prose*, which was always the property this paragraph was defending.
-pub(crate) fn record_adopt_refusal(declined: Declined) {
-    LAST.with_borrow_mut(|slot| *slot = Some(declined));
-}
 
 /// Forget any live decline — **the operator's next act**.
 ///
@@ -1491,6 +1288,33 @@ mod textedit;
 /// about where the code lives, and a call site should not have to learn that a
 /// submodule exists.
 pub(crate) use textedit::{record_enter_cannot_split, record_reflow};
+
+/// ★★★ **Every writer of the decline slot**, split out under R2 on 2026-09-05
+/// when this file reached 1,497 lines against the ceiling for the third time —
+/// see `decline/record.rs`'s header for the seam. It is the same seam `floor`
+/// and `textedit` already stand on: this file answers *what a decline is and
+/// how long it owes its sentence*, and a recorder answers *who says one*.
+mod record;
+/// Re-exported with a glob, uniquely among the three submodules, and that is a
+/// deliberate exception rather than a shortcut. `floor` and `textedit` name
+/// their two or three items because each is a small, closed set with an
+/// argument attached; this is the whole recording surface — twenty-odd
+/// constructors that grow by one every time a verb learns to decline — and a
+/// hand-written list of them here would be a second register of the same
+/// family, free to fall out of step with the file it mirrors. Every name it
+/// exports is `pub(crate) fn record_*` and nothing else, so the glob cannot
+/// leak anything a reader would not expect to find under `decline::`.
+pub(crate) use record::*;
+
+/// ★★★ **The mode's refusal of a cut or a paste**, 2026-09-05. Its own file
+/// rather than a function in `record` for `textedit`'s reason: it carries an
+/// argument of its own — why a chord pushed blind at the gate obliges the
+/// dispatcher to word every refusal it can now meet — and that argument would
+/// be buried among twenty siblings.
+mod clipboard;
+/// Re-exported so the two call sites in `app::dispatch::clipboard` say
+/// `decline::record_mode_refusal(..)`. `floor`'s rule.
+pub(crate) use clipboard::record_mode_refusal;
 
 /// See `decline/tests.rs`.
 #[cfg(test)]

@@ -279,6 +279,9 @@ pub mod widget_rotate;
 /// nothing.
 pub mod bookmark_clipboard;
 pub mod cut_gate;
+/// ★★★ **A shape the operator drew can gain and lose a corner** — his own
+/// report of 2026-09-05. ⬜ WRITTEN AND NOT DRIVEN; see the module header.
+pub mod dimension_corner_count;
 pub mod field_clipboard;
 pub mod form_selection;
 /// ★★ **Clicking a `/Link`** — the two checks for a capability that did not
@@ -357,6 +360,19 @@ pub mod page_clipboard;
 /// program has never seen.
 pub mod page_display_pref;
 pub mod page_ops;
+/// ★★★ **A save that would produce blank pages in Acrobat is refused** —
+/// the operator's report of 2026-09-05. `pdfcer-core`'s `delete_pages` leaves
+/// every ancestor's `/Count` above the immediate parent stale, so pdfcer's own
+/// `/Kids`-walking reader sees a healthy document and Acrobat, which reads the
+/// root `/Count`, shows the removed pages as blanks. The shell refuses the
+/// write.
+///
+/// Its header carries the two things a reader has to know before touching it:
+/// the fixture is **pinned** and nested, because on a flat page tree the defect
+/// cannot occur and this check would pass against a build carrying it in full;
+/// and it has **NOT BEEN RUN** — written 2026-09-05 while another track owned
+/// the pointer.
+pub mod pagetree_guard;
 /// The capability the security audit found missing: an encrypted PDF could not
 /// be opened at all. Its phase D reads the harness's own captured trace and
 /// asserts the password is not in it.
@@ -469,6 +485,7 @@ pub mod bezier_handle;
 /// Written that day and **NOT RUN**; its module header says so in its own
 /// words rather than leaving an absent result to imply it.
 pub mod clipboard_annotation;
+pub mod clipboard_mode;
 pub mod clipboard_text;
 /// ★★★ **O89's object route** — the colour control on the text you CLICKED,
 /// where `font_group` asserts only the sentence telling you to sweep. ⚠ **NOT
@@ -563,6 +580,16 @@ pub mod reach_out;
 /// ribbon and the docks stop being drawn). `app::window` §1 carries the
 /// argument for why those are two commands rather than a duplicate.
 pub mod read_mode_chrome;
+/// ★★★ **The way back OUT of read mode**, which the check above deliberately
+/// does not cover: its own header says *"the return trip is not driven here"*,
+/// because the exit is a chord and it drives the mouse only.
+///
+/// The operator fell through exactly that gap on 2026-09-05 — *"I didn't see a
+/// way to get back out of read mode"* — and the answer is a statement on the
+/// window title and on the status bar naming the chord the **keymap** holds.
+/// This reads that statement from a trace: no pointer, no keystroke, so unlike
+/// its neighbour it can run beside somebody working.
+pub mod read_mode_exit;
 pub mod redact_selection;
 pub mod redaction;
 /// **Paragraph reflow, driven.** The one check whose operand is a caret in
@@ -576,6 +603,9 @@ pub mod resize;
 /// three links of the chain in front of it have no other instrument.
 pub mod restyle_text;
 pub mod ribbon_captions;
+/// The zoom ladder and the closed-loop aim `scale_sweep` drives its battery
+/// with. Split out under R2 on 2026-09-05; its header carries the seam.
+pub mod scale_aim;
 pub mod scale_sweep;
 // The band's PROPORTIONS against `mockups/pdfcer-shell.html`, and the two
 // claims about it that only a rendered screenshot can settle: a resting

@@ -458,3 +458,90 @@ and Affinity user documentation. **No Inkscape source was read or
 downloaded** — the licence position in Part 2's header is binding, and
 observation of the running 1.4 build plus published documentation
 answered every question asked.
+
+---
+
+## ★★★ Amendment, 2026-09-05 — auto-hide, and the tab strip the rail replaces
+
+Four changes to this document's subject matter, all from one operator message:
+
+> *"we should also add the capability to auto hide the ribbon until we hover over
+> top of it. our smart selector should be visible with the other navigate
+> controls in our left rail. also we don't need tabs in the left side bar when
+> the left rail is visible. left rail should also have the option to auto hide as
+> well."*
+
+### The model, and which product it is taken from
+
+**Microsoft Office's *Show Tabs***, the middle of its three *Ribbon Display
+Options*. The tab strip stays on screen permanently and only the band goes;
+touching the strip brings the band back **over** the document; it goes when the
+pointer leaves. The rail's version is VS Code's activity bar one surface over: a
+permanent narrow edge, and a wide body that overlays rather than displaces.
+
+Three properties are carried across deliberately, each answering a way this is
+usually got wrong:
+
+| Property | The failure it prevents |
+|---|---|
+| the trigger is **permanent** — a tab strip, a 10 pt sliver — and never hides | Office's full *Auto-hide Ribbon* is the setting people get stuck in, because the thing you must touch to leave it is invisible. **A mode you cannot leave is a trap.** |
+| the body **overlays**, it does not displace | a canvas that resizes on hover moves every coordinate under the pointer as the pointer approaches |
+| a reveal can only be **started** by the trigger | R128. See `egui_shell::peek`'s invariant: `revealed(n+1) = in(trigger) ∨ (revealed(n) ∧ in(overlay(n)))`. The overlay term is conjoined with last frame's state, so it can only *keep* a reveal — it cannot start one, and there is no cycle to oscillate around. |
+
+Both settings are **off by default**, are persisted in `settings.txt`
+(`ribbon_auto_hide`, `rail_auto_hide`), are checkboxes in Settings ▸ Display
+under one heading, and have a command each on View ▸ Window.
+
+### ⚠ Failure mode #13 — a rail that hides while it is the only route to a panel
+
+This document's Part 2 lists twelve failure modes to design against. This
+amendment adds one, because the two features above create it between them:
+
+> **#13 — chrome that can hide, beside a switch that has been suppressed.** The
+> rail is the *only* route to `markup.comments` in Read mode (that command is on
+> the Markup tab, which Read does not show, and `RIBBON_IA.md` P1 forbids a
+> second tab placement). Suppressing the dock's tab strip removes the other
+> switch. If the rail could then *disappear*, the panel behind another in that
+> stack would be reachable by nothing at all.
+
+**Three mechanisms hold it, and all three are asserted:**
+
+1. A hiding rail is never *gone*. It reserves `rail::PEEK_WIDTH_PTS` = **10 pt**
+   of permanent, chevron-marked edge — above `Peek::MIN_TRIGGER_PTS` = 8 — and
+   publishes it as `dock.<side>.railtrigger` on **every** frame, hiding or not.
+   `a_hiding_rail_always_publishes_a_trigger_wide_enough_to_hit` asserts the
+   published rectangle's width, not the constant, at six side widths.
+2. The tab strip is suppressed only when **all three** of: a rail is configured
+   for that side; the rail was **actually drawn** this frame (`resolve_width`
+   returns zero on a side too narrow, so the rail is *absent rather than
+   squeezed*); and the application's `with_rail_reach` predicate answers `true`
+   for **every** panel in the stack — not the active one, not most of them.
+   `a_side_too_narrow_for_the_rail_keeps_its_tab_strip_at_every_width` walks a
+   width series and asserts the implication *suppressed ⇒ a rail was drawn*, and
+   asserts that the series actually straddled the threshold.
+3. Raising a specific panel still works: a rail row dispatches the panel's own
+   command, `PdfcerApp::toggle_panel` asks `is_on_screen`, and that is `false`
+   for a panel mounted **behind** another tab — so the press activates it rather
+   than closing it. Closing is the same control pressed again.
+
+### The reach predicate is an extension point, not a pattern match
+
+R7: `egui-shell` may not learn what a PDF is. The dock holds opaque `PanelId`s
+and the rail holds opaque command ids, and the map between them is application
+knowledge — the Fonts panel is `file.fonts` and the Comments panel is
+`markup.comments`, neither of which a `view.panel_*` pattern finds. The
+application supplies `Dock::with_rail_reach`, derived from the **live manifest**
+including any operator overlay, so a rail somebody customized stops suppressing
+strips over panels they removed from it.
+
+### The smart selector
+
+`view.smart_select` is now the **last** row of the rail's `navigate` group,
+mirroring View ▸ Navigate row for row. The comment that said it was
+*"deliberately absent"* was right about the **pin** and wrong about the
+**membership**, and conflated the two; it is corrected in place and dated at
+`shell::manifest::rail`. At `Rung::Cramped` the group folds to the row whose
+`selected:` condition holds, **first match wins**, and the four tools are listed
+first — so the pin goes to the armed tool and the toggle folds behind the
+chevron, one click away. A test asserts both halves against the real fold
+planner.

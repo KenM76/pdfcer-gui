@@ -163,6 +163,7 @@ pub mod float;
 /// **The window a floated panel is drawn in.** [`Dock::show_floating`],
 /// the viewport, and the header strip that offers the way back.
 pub mod floatwin;
+pub mod frame_report;
 pub mod model;
 pub mod plan;
 /// The permanent vertical strip down a side's outer edge — the left rail.
@@ -172,6 +173,8 @@ pub mod splitter;
 pub mod tab_menu;
 pub mod tabs;
 
+#[cfg(test)]
+mod railhide_tests;
 #[cfg(test)]
 mod width_tests;
 
@@ -212,94 +215,14 @@ use splitter::Axis;
 pub use banner::BannerHandler;
 pub use float::{DockHome, FloatingPanel};
 pub use floatwin::FloatFrameReport;
+pub use frame_report::DockFrameReport;
 pub use model::{
     AnyPanel, Column, DockLayout, DockSide, PanelAddress, PanelCatalog, PanelId, PanelInfo,
     PanelRegistry, SideLayout, Stack,
 };
-pub use rail::{RailHandler, RailPlan, RailRow, Rung};
+pub use rail::{RailHandler, RailPlan, RailReach, RailRow, Rung};
 pub use report::{RectReport, RectSink};
 pub use tab_menu::{TabMenu, TabMenuHandler};
-
-/// What one frame of the dock drew and what the operator did to it.
-///
-/// Returned by [`Dock::show`] and also kept on [`DockState`], because two
-/// different callers want it: the frame's own caller, and a diagnostic
-/// surface that runs later in the same frame and has no access to the
-/// return value.
-#[derive(Debug, Clone, Default, PartialEq)]
-pub struct DockFrameReport {
-    /// Every panel whose body was drawn — the active tab of every stack
-    /// on every visible side.
-    ///
-    /// **This is the honest answer to "what is on screen".** A panel
-    /// behind another tab is not in this list, and neither is one on a
-    /// hidden side. An application deriving a toolbar toggle's selected
-    /// state should read this rather than keeping a boolean of its own;
-    /// the previous implementation records a `properties_open` flag that
-    /// *"could disagree with what was on screen"*, which is the defect
-    /// the field exists to make unnecessary.
-    pub panels_drawn: Vec<PanelId>,
-    /// How many tabs were moved into an overflow menu, across every
-    /// stack.
-    pub panels_overflowed: usize,
-    /// How many overflow affordances were drawn.
-    pub overflow_menus: usize,
-    /// Which sides drew anything.
-    pub sides_drawn: Vec<DockSide>,
-    /// The panel whose tab the operator selected this frame, if any.
-    pub activated: Option<PanelId>,
-    /// The panel the operator closed this frame, if any.
-    pub closed: Option<PanelId>,
-    /// The panel the operator floated this frame, if any.
-    pub floated: Option<PanelId>,
-    /// The panel the operator docked back this frame, if any.
-    pub docked: Option<PanelId>,
-    /// Every panel the layout says is floating — whether or not a window
-    /// was drawn for it.
-    ///
-    /// The *claim*. [`FloatFrameReport::drawn`] is the *fact*, and
-    /// [`Self::floats_undrawn`] is the difference.
-    pub floating: Vec<PanelId>,
-    /// ★★★ **How many floating panels nothing drew last frame.**
-    ///
-    /// Zero in a correct application. Non-zero means panels are in the
-    /// layout, are reported as on screen, and **are not on screen** —
-    /// because [`Dock::show_floating`] was never called.
-    ///
-    /// # Why this field exists at all
-    ///
-    /// Floating is the one capability in this dock that needs **two**
-    /// calls per frame instead of one: [`Dock::show`] for the docked
-    /// panels, and [`Dock::show_floating`] for the windows. The second is
-    /// separate because a child viewport must be opened from the
-    /// application's top-level frame rather than from inside a side
-    /// panel's layout closure.
-    ///
-    /// ⇒ That makes forgetting it a *silent* failure of exactly the class
-    /// this project has already shipped: three panels that were laid out,
-    /// published a rectangle, and could not be reached, with every gate
-    /// green. `crate::dock::report`'s header records the response —
-    /// *a rect proves layout, not visibility* — and this field is the same
-    /// response for a surface that has no rect at all because its window
-    /// was never opened.
-    ///
-    /// An application asserts this is zero in its own frame test. It is
-    /// measured against the **previous** frame's float report, because
-    /// `show` runs before `show_floating`; so a genuine first frame
-    /// reports the floats it is about to draw, and the value settles on
-    /// the next one. A test therefore drives two frames — which is what a
-    /// harness does anyway.
-    pub floats_undrawn: usize,
-    /// Whether the layout changed this frame and is therefore worth
-    /// saving.
-    ///
-    /// An application persists on this rather than on a timer: writing a
-    /// layout file on every frame is what makes the benchmarked
-    /// application's own layout file *"rewritten on every exit"* and its
-    /// community's workaround — copying the file aside and back — as
-    /// awkward as `MODES_AND_PANELS.md` records it being.
-    pub layout_changed: bool,
-}
 
 /// The dock's live state: the arrangement, plus what the last frame did.
 ///
@@ -317,6 +240,14 @@ pub struct DockState {
     /// exactly the property that makes it the *claim* rather than the
     /// *fact*.
     floats_drawn: usize,
+    /// **The left rail's auto-hide state.** See [`crate::peek`].
+    ///
+    /// On [`DockState`] rather than on [`Dock`] because a `Dock` is built fresh
+    /// every frame and this has to survive between them — the same reason
+    /// [`Self::floats_drawn`] lives here. The *setting* half is an operator
+    /// preference the application restores through [`Self::set_rail_auto_hide`];
+    /// the *revealed* half is per-frame and is never persisted.
+    rail_peek: crate::peek::Peek,
 }
 
 impl DockState {
@@ -338,6 +269,7 @@ impl DockState {
             layout,
             last_frame: DockFrameReport::default(),
             floats_drawn: 0,
+            rail_peek: crate::peek::Peek::new(),
         }
     }
 
@@ -345,6 +277,38 @@ impl DockState {
     #[must_use]
     pub fn layout(&self) -> &DockLayout {
         &self.layout
+    }
+
+    /// **Whether the rail hides itself until the pointer reaches its edge.**
+    ///
+    /// See [`crate::peek`] for the model, and [`rail::PEEK_WIDTH_PTS`] for the
+    /// sliver that is reserved in its place — the strip never disappears
+    /// entirely, because it is the only route to some panels and a rail that
+    /// vanished would take them with it.
+    #[must_use]
+    pub fn rail_auto_hide(&self) -> crate::peek::AutoHide {
+        self.rail_peek.mode()
+    }
+
+    /// Turn the rail's auto-hide on or off.
+    pub fn set_rail_auto_hide(&mut self, mode: crate::peek::AutoHide) {
+        self.rail_peek.set_mode(mode);
+    }
+
+    /// Push a stored preference in once per frame without disturbing the
+    /// reveal. See [`crate::ribbon::RibbonState::sync_auto_hide`], which
+    /// carries the whole argument for why the frame-loop call is a different
+    /// method from the operator-action one.
+    pub fn sync_rail_auto_hide(&mut self, mode: crate::peek::AutoHide) {
+        if self.rail_peek.mode() != mode {
+            self.rail_peek.set_mode(mode);
+        }
+    }
+
+    /// Whether the rail was drawn at its full width on the last frame.
+    #[must_use]
+    pub fn rail_is_revealed(&self) -> bool {
+        self.rail_peek.is_revealed()
     }
 
     /// The current arrangement, mutably.
@@ -408,6 +372,9 @@ pub struct Dock<'a> {
     banner: Option<(DockSide, f32, &'a mut BannerHandler<'a>)>,
     /// The rail. Built by [`Dock::with_side_rail`]; see [`rail`].
     rail: Option<(DockSide, &'a mut RailHandler<'a>)>,
+    /// **Which panels the rail can raise.** Built by
+    /// [`Dock::with_rail_reach`]; see [`Dock::tabs_suppressed`].
+    rail_reach: Option<&'a mut RailReach<'a>>,
 }
 
 impl<'a> Dock<'a> {
@@ -426,6 +393,93 @@ impl<'a> Dock<'a> {
     pub fn with_registry(mut self, registry: &'a PanelRegistry) -> Self {
         self.registry = Some(registry);
         self
+    }
+
+    /// **Tell the dock which panels the rail can raise**, so a stack whose
+    /// every panel is on the rail draws no tab strip of its own.
+    ///
+    /// # ★★★ The measurement that produced this — 2026-09-05
+    ///
+    /// The operator: *"we also don't need tabs in the left side bar when the
+    /// left rail is visible."* A live trace of the shipped build says why, in
+    /// three lines:
+    ///
+    /// ```text
+    /// ui-rect name=rail.tabs.view.panel_pages      rect=[[3.0 130.0] - [49.0 164.0]]
+    /// ui-rect name=dock.tab.view.panel_pages       rect=[[52.0 129.7] - [100.3 153.7]]
+    /// ui-rect name=dock.tab.view.panel_bookmarks   rect=[[102.3 129.7] - [180.8 153.7]]
+    /// ```
+    ///
+    /// Two rows of the same switch, three points apart, at the same height.
+    ///
+    /// # ⚠⚠ THE SAFETY ARGUMENT, because this is how panels ship unreachable
+    ///
+    /// A tab strip is not decoration: on a stack of several panels it is the
+    /// **only** way to bring a background one forward. Suppressing it is safe
+    /// only when something else can do that job for *every* panel in the stack,
+    /// and three independent conditions have to hold together — all of them
+    /// checked in [`Self::tabs_suppressed`], none of them assumed:
+    ///
+    /// 1. **A rail is configured for this side.** Otherwise there is no second
+    ///    switch at all.
+    /// 2. **The rail was actually DRAWN this frame** — `Ctx::rail_drawn`, set
+    ///    by [`rail::draw`] after the fact. `rail::resolve_width` returns zero
+    ///    when 52 pt would leave the panel body below
+    ///    [`plan::MIN_COLUMN_WIDTH`], so the rail is *absent rather than
+    ///    squeezed* on a narrow side. Asking "is a rail configured" instead
+    ///    would drop the tab strip on exactly the widths where the rail is not
+    ///    there.
+    /// 3. **This predicate answers `true` for every panel in the stack.** Not
+    ///    for the active one, not for most of them — the one that is behind is
+    ///    precisely the one that needs the second route.
+    ///
+    /// ★★ **The rail's auto-hide does not weaken this**, and the reason is
+    /// [`rail::PEEK_WIDTH_PTS`]: a hiding rail still reserves a permanent
+    /// sliver wider than [`crate::peek::Peek::MIN_TRIGGER_PTS`], publishes it
+    /// as `dock.<side>.railtrigger` on every frame, and draws a chevron in it.
+    /// There is no state in which the rail is *gone*.
+    ///
+    /// ★ **Closing** a panel is reachable too, and by the same control. The
+    /// rail's entries are the application's panel commands, which are toggles:
+    /// pressing the row of a panel that is in front closes it. The tab's own ✕
+    /// is a second route to a verb that has one, not the only one.
+    ///
+    /// # Borrowing
+    ///
+    /// Called during `show`, so it cannot capture anything the `body` closure
+    /// also captures — [`Dock::with_tab_menu`]'s rule. In practice it reads a
+    /// static mapping and captures nothing.
+    #[must_use]
+    pub fn with_rail_reach(mut self, reach: &'a mut (impl FnMut(&PanelId) -> bool + 'a)) -> Self {
+        self.rail_reach = Some(reach);
+        self
+    }
+
+    /// Whether `stack`'s tab bar is suppressed because the rail switches
+    /// between exactly these panels. See [`Self::with_rail_reach`] for the
+    /// three conditions and for why each one is checked.
+    fn tabs_suppressed(&mut self, ctx: &Ctx<'_>, side: DockSide, stack: &Stack) -> bool {
+        let Some((rail_side, _)) = self.rail.as_ref() else {
+            return false;
+        };
+        if *rail_side != side || !ctx.rail_drawn {
+            return false;
+        }
+        let Some(reach) = self.rail_reach.as_deref_mut() else {
+            return false;
+        };
+        // ★ An EMPTY stack is not suppressed. `all` over an empty list is
+        // `true`, which would be the wrong answer for the wrong reason — and
+        // although `DockLayout::normalize` forbids an empty stack, a predicate
+        // whose correctness depends on a normalization performed elsewhere is
+        // the shape this project keeps paying for.
+        // ⚠ `.all(reach)` and NOT `.all(|p| reach(p))`, which clippy calls a
+        // redundant closure and is right about. Named here because the two
+        // spellings are not interchangeable to a reader: `reach` is `&mut dyn
+        // FnMut`, so this is a mutable call through a trait object, and the
+        // borrow it takes is what stops the predicate also being captured by
+        // the body closure — `Dock::with_tab_menu`'s rule.
+        !stack.tabs.is_empty() && stack.tabs.iter().all(reach)
     }
 
     /// Publish every drawn rectangle to a sink. See [`report`].
@@ -594,7 +648,15 @@ impl<'a> Dock<'a> {
             // build one per frame, which every caller does.
             tab_menu: self.tab_menu.take(),
             intents: Vec::new(),
+            rail_drawn: false,
+            rail_show: crate::peek::Show::Inline,
         };
+
+        // The rail's auto-hide state, moved out for the frame and put back at
+        // the end — `Ribbon::render`'s pattern and for its reason: `ctx` holds
+        // borrows that outlive the closures below, so a second `&mut state`
+        // through them would not compile.
+        let mut rail_peek = std::mem::take(&mut state.rail_peek);
 
         for side in DockSide::ALL {
             let s = snapshot.side(side);
@@ -608,7 +670,16 @@ impl<'a> Dock<'a> {
             if s.visible {
                 report.sides_drawn.push(side);
                 let width = snapshot.drawn_side_width(side, window_width);
-                self.draw_side(ui, &mut ctx, &snapshot, side, width, &mut report, &mut body);
+                self.draw_side(
+                    ui,
+                    &mut ctx,
+                    &snapshot,
+                    side,
+                    width,
+                    &mut rail_peek,
+                    &mut report,
+                    &mut body,
+                );
             } else {
                 // ★★ The RAIL — the way back from a collapsed side.
                 //
@@ -638,6 +709,8 @@ impl<'a> Dock<'a> {
             .map(|f| f.panel.clone())
             .collect();
         report.floats_undrawn = report.floating.len().saturating_sub(state.floats_drawn);
+        report.rail_show = ctx.rail_show;
+        state.rail_peek = rail_peek;
         state.last_frame = report.clone();
         report
     }
@@ -651,6 +724,7 @@ impl<'a> Dock<'a> {
         layout: &DockLayout,
         side: DockSide,
         width: f32,
+        rail_peek: &mut crate::peek::Peek,
         report: &mut DockFrameReport,
         body: &mut impl FnMut(&PanelId, &mut egui::Ui),
     ) {
@@ -696,7 +770,7 @@ impl<'a> Dock<'a> {
                 // [`banner`]'s header for why it is chrome and not a stack.
                 let area = banner::draw(ui, ctx, side, area, self.banner.as_mut());
                 // Reserved off the OUTER edge, for the banner's reason.
-                let area = rail::draw(ui, ctx, side, area, self.rail.as_mut());
+                let area = rail::draw(ui, ctx, side, area, self.rail.as_mut(), rail_peek);
                 self.draw_side_contents(ui, ctx, layout, side, area, report, body);
                 // ★ The collapse chevron, drawn LAST and OVER the columns.
                 //
@@ -890,15 +964,28 @@ impl<'a> Dock<'a> {
         report: &mut DockFrameReport,
         body: &mut impl FnMut(&PanelId, &mut egui::Ui),
     ) {
-        let bar_height = plan::TAB_BAR_HEIGHT.min(rect.height());
+        // ★★★ The tab strip is suppressed when the rail is the switch — the
+        // operator's fourth ask of 2026-09-05. See [`Self::with_rail_reach`]
+        // for the three conditions and for the reachability argument, which is
+        // the load-bearing half.
+        let suppressed = self.tabs_suppressed(ctx, side, stack);
+        let bar_height = if suppressed {
+            0.0
+        } else {
+            plan::TAB_BAR_HEIGHT.min(rect.height())
+        };
         let bar_rect = Rect::from_min_size(rect.min, Vec2::new(rect.width(), bar_height));
         let body_rect =
             Rect::from_min_max(egui::pos2(rect.left(), rect.top() + bar_height), rect.max);
 
-        let outcome = tabs::tab_bar(ui, ctx, side, column, index, stack, bar_rect);
-        report.panels_overflowed += outcome.hidden;
-        if outcome.overflow_drawn {
-            report.overflow_menus += 1;
+        if suppressed {
+            report.tab_strips_suppressed += 1;
+        } else {
+            let outcome = tabs::tab_bar(ui, ctx, side, column, index, stack, bar_rect);
+            report.panels_overflowed += outcome.hidden;
+            if outcome.overflow_drawn {
+                report.overflow_menus += 1;
+            }
         }
 
         // ★ ONE body, the active tab's. Failure mode #3's design rule —

@@ -132,7 +132,7 @@ pub const REGION_INSERT: &str = "insert-image.insert"; // ui-text-exempt: trace 
 ///
 /// A PDF user-space unit is 1/72 inch by definition (§8.3.2.3) and an inch is
 /// 25.4 mm. Spelled here rather than imported for the reason
-/// `panels::properties::info` gives for its own copy: a two-term definition
+/// `panels::docprops` gives for its own copy: a two-term definition
 /// restated is cheaper to read than an import that sends the reader to another
 /// module for a number they already know.
 const PTS_PER_MM: f64 = 72.0 / 25.4;

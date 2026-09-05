@@ -1,11 +1,37 @@
 //! `properties_metadata_round_trips` — typing a title reaches the document,
 //! and undo takes it back out of the box as well as out of the file.
 //!
-//! # The gap this closes
+//! # ⚠ NOT RUN by the session that last edited this file — 2026-09-05
 //!
-//! `file.properties`' own tooltip has commissioned this since S3: *"The
-//! document's own title, author, subject and keywords, and the properties of
-//! whatever is selected on the page."* Only the second half existed, on a
+//! It was **passing** before that session and it has **not been re-run since**:
+//! the machine's pointer and keyboard belonged to another track, and a driven
+//! run cannot share them. What changed here is which control opens the surface
+//! (see [`open_document_properties`]); nothing about the four assertions moved.
+//! ⇒ A reader looking for evidence that the metadata panel still works after
+//! the move will not find it in this file. Run it.
+//!
+//! # ★★★ The surface MOVED — the operator, 2026-09-05
+//!
+//! > *"the document properties are still always visible in the properties tab.
+//! > it needs to get out of there and be in its own document properties tab."*
+//!
+//! The four `/Info` editors were the last section of the **Properties** panel
+//! and are now a panel of their own, `crate::panels::docprops`, opened by
+//! `file.document_properties` on File ▸ Document. So this check clicks a
+//! different ribbon item and brings a different dock tab to the front. It
+//! asserts the same four things about the same four boxes.
+//!
+//! ★ **The region names did not change** — `properties.info` and
+//! `properties.info.N`. That was the moving session's decision and it is stated
+//! at the constants: one change at a time, so that the next run's verdict is
+//! readable rather than being a race between two edits neither of which was
+//! driven.
+//!
+//! # The gap this closed originally
+//!
+//! `file.properties`' own tooltip commissioned this from S3 until the split:
+//! *"The document's own title, author, subject and keywords, and the properties
+//! of whatever is selected on the page."* Only the second half existed, on a
 //! recorded blocker — *"needs a `/Info` accessor that `pdfcer-core` does not
 //! expose on `Document` at all"* — which was true when written and false when
 //! read.
@@ -58,11 +84,24 @@ use crate::sys::vk;
 /// The mode this runs in. `file` is in every mode's tab list, so Review is
 /// chosen only because the rest of the harness uses it.
 const MODE: &str = "review";
-/// The section's own region.
+/// The panel's own region.
+///
+/// ★ Still `properties.info` after the section became the Document properties
+/// panel on 2026-09-05 — see `crate::panels::docprops`'s `REGION`, which
+/// carries the reason the name was left alone.
 const SECTION: &str = "properties.info";
 /// The prefix of the per-field editor regions; the field's index in
 /// `InfoField::all()` is appended. Index 0 is `/Title`, index 1 is `/Author`.
 const FIELD: &str = "properties.info.";
+/// The ribbon item that opens the panel, and the dock tab it mounts as.
+///
+/// ★★ It is a **toggle**, unlike the `file.properties` control this check used
+/// to press: its question is *"is this panel open?"*, so it falls through
+/// `app::dispatch`'s guard arm to `toggle_panel`. That is why the click below
+/// is guarded by *"only if the section is not already on screen"* — pressing it
+/// with the panel up would close the thing under test. The guard predates the
+/// move and was written for the same hazard.
+const COMMAND: &str = "file.document_properties";
 /// The trace the panel emits when it decides to commit a draft.
 const COMMITTED: &str = "info-field-commit";
 /// The label `vector_edit` traces when `set_info_field` succeeded.
@@ -79,7 +118,7 @@ impl Check for PropertiesMetadataRoundTrips {
     }
 
     fn defect(&self) -> &'static str {
-        "the Properties panel shows no document metadata, or shows boxes that do not reach the \
+        "the Document properties panel shows no metadata, or shows boxes that do not reach the \
          file — so a title typed into one is written again on every focus change, or survives \
          an undo that removed it from the document, leaving the panel and the file disagreeing \
          about what the operator's document is called"
@@ -152,16 +191,23 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 1: the panel on screen --------------------------------------------
     //
-    // Only if it is not already, because `file.properties` is a panel TOGGLE
-    // and pressing it when the panel is open would close the thing under test.
+    // Only if it is not already, because `file.document_properties` is a panel
+    // TOGGLE and pressing it when the panel is open would close the thing under
+    // test. In Review's default arrangement the panel is mounted as the LAST
+    // tab of the inspector stack, so on a fresh profile it is mounted, behind
+    // a sibling, and publishing nothing — which is the case this click is for.
     if declared(&session.trace()?, ui_rect, SECTION).is_none() {
-        open_properties(&session, &driver, ui_rect)?;
+        open_document_properties(&session, &driver, ui_rect)?;
     }
     let trace = session.trace()?;
     if declared(&trace, ui_rect, SECTION).is_none() {
         return Ok(Some(format!(
-            "no `{SECTION}` region after opening the Properties panel, so the \
-             document-metadata section did not draw. Regions beginning `properties`: {}.",
+            "no `{SECTION}` region after opening the Document properties panel, so the \
+             metadata form did not draw. ★ Since 2026-09-05 this surface is a panel of its \
+             own (`{COMMAND}`) rather than a section of the Properties panel: if the ribbon \
+             item was pressed and nothing came up, check that `Panel::DocumentProperties` is \
+             mounted by this mode's arrangement, not only that the section still draws. \
+             Regions beginning `properties`: {}.",
             list(&declared_names(&trace, ui_rect, "properties"))
         )));
     }
@@ -320,12 +366,19 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     Ok(None)
 }
 
-/// Bring the Properties panel up from the ribbon.
+/// Bring the Document properties panel up from the ribbon.
 ///
-/// `file.properties` rather than a `view.panel_*` id: `RIBBON_IA.md` §7 puts
-/// Properties on **File ▸ Document**, because it answers *"what is inside this
-/// file"* rather than *"what is on my screen"*.
-fn open_properties(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
+/// `file.document_properties`, on **File ▸ Document** — the band `RIBBON_IA.md`
+/// §5.1 heads *"inspection of what is inside the file"*, which is where Fonts
+/// and Properties already sit. A document's title is inside the file.
+///
+/// ★ It was `ribbon.item.file.properties` until 2026-09-05, when the operator
+/// asked for the metadata to leave the selection inspector. The **first**
+/// control in the Document band is now the one whose label is the phrase he
+/// used, which is also why the check aims at a specific id rather than at "the
+/// first item in the band": an item-position search would have silently kept
+/// passing against the old control.
+fn open_document_properties(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
     let trace = session.trace()?;
     let tab = declared(&trace, ui_rect, "ribbon.tab.file").ok_or_else(|| {
         Error::new(format!(
@@ -335,13 +388,17 @@ fn open_properties(session: &Session, driver: &Driver, ui_rect: &str) -> Result<
     })?;
     driver.click_at(session.frame()?.declared_center(tab))?;
     session.settle(14);
-    let Some(item) =
-        declared_or_in_overflow(session, driver, ui_rect, "ribbon.item.file.properties")?
-    else {
-        return Err(Error::new(
-            "the File tab declares no `ribbon.item.file.properties`, on the band or in the \
-             overflow, so the Properties panel cannot be opened.",
-        ));
+    let item_region = format!("ribbon.item.{COMMAND}");
+    let Some(item) = declared_or_in_overflow(session, driver, ui_rect, &item_region)? else {
+        return Err(Error::new(format!(
+            "the File tab declares no `{item_region}`, on the band or in the overflow, so the \
+             Document properties panel cannot be opened. Items the File tab did declare: {}.",
+            list(&declared_names(
+                &session.trace()?,
+                ui_rect,
+                "ribbon.item.file."
+            ))
+        )));
     };
     driver.click_at(session.frame()?.declared_center(item))?;
     session.settle(20);

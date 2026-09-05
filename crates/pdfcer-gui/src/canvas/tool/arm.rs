@@ -571,15 +571,51 @@ pub fn retire_forbidden(ctx: &egui::Context, caps: Capabilities) -> bool {
         // its own, so that a future reader adding a fifth tool has to decide which
         // of the two groups it joins.
         CanvasTool::Select | CanvasTool::Hand | CanvasTool::Text => true,
-        // ★ **Node is on the OTHER side of the line the paragraph above draws.**
+        // ★★★ **Node is on the OTHER side of the line the paragraph above
+        // draws, and it answers to TWO capabilities** — corrected 2026-09-05.
         //
         // It is the first tool in this enum whose whole purpose is to *change*
-        // the document — an anchor is selected in order to be dragged — so
-        // unlike Select, Hand and Text it must retire when the mode forbids
-        // content editing. Leaving it armed in Review would put anchor marks on
-        // a page whose every drag is refused, which is the "visible control,
-        // silently inert" defect in its most literal form.
-        CanvasTool::Node => caps.edit_content,
+        // the document — a point is selected in order to be dragged — so unlike
+        // Select, Hand and Text it retires when the mode forbids the change.
+        // What the old single-disjunct form got wrong is that it named only one
+        // of the two things this tool changes:
+        //
+        // | subject | verb | capability | drawn by |
+        // |---|---|---|---|
+        // | an anchor of a **path on the page** | `move_nodes`, `move_handle` | `edit_content` | `canvas::painting::draw_anchors` |
+        // | a corner of a **ce dimension** | `move_dimension_vertex`, and since 2026-09-05 `insert_dimension_vertex` / `remove_dimension_vertex` | **`author_measure`** | `canvas::painting`'s vertex-handle loop |
+        //
+        // The second row is the one Review has. `canvas::gesture::press_kind`
+        // has gated the ce-dimension rung on `author_measure` since 2026-08-20,
+        // on the ruling that *reshaping a ce dimension is a measure edit — it
+        // writes the sidecar and one annotation and touches no page content* —
+        // and `canvas::dimdrag` now gates **adding and removing** a corner on
+        // this tool being armed, which is what makes the arming mean something
+        // here rather than being a widened gate for its own sake.
+        //
+        // ★★ **The old comment's fear is still honoured, and it is worth
+        // spelling out how, because it is the thing that must not regress.** It
+        // said that leaving the tool armed in Review *"would put anchor marks
+        // on a page whose every drag is refused"*. It would not, and three
+        // independent gates say so, none of which this change touches:
+        //
+        // 1. `canvas::clicking`'s node-tool branch is `is_node() &&
+        //    caps.edit_content`, so a Node-tool click in Review picks no
+        //    anchor;
+        // 2. `press_kind`'s content rung is gated on `edit_content`, so no
+        //    anchor drag can start;
+        // 3. `draw_anchors` needs `selection.entered_object()` or a selected
+        //    content outline, and Review can produce neither — content cannot
+        //    be selected there at all — so it declines with `not-entered` and
+        //    paints nothing.
+        //
+        // ⇒ In Review the tool draws exactly what R9 says an unavailable
+        // capability draws: **nothing** on page content, and the ce dimension's
+        // own corner handles, which were already on screen and are already
+        // draggable. What changes is that the operator can now reach the tool
+        // whose sentence explains them — and that a Ctrl-drag on one of those
+        // corners can add or remove one.
+        CanvasTool::Node => caps.edit_content || caps.author_measure,
         // ★ Authoring a form field is a change to the DOCUMENT's content, not
         // an annotation over it — a `/Widget` and its field are page objects
         // the operator is adding. So it answers to `edit_content` and retires

@@ -553,7 +553,17 @@ mod tests {
     // as well, the other changes only which file is read — and a single
     // `radius` line covering both would have to be vague about the one that
     // matters. `dialogs::settings::signatures`' header carries the argument.
-    const SETTINGS_COUNT: usize = 33;
+    //
+    // ★★ 33 → 34 on 2026-09-05: **one** header over the two auto-hide
+    // toggles, and the singular is the decision rather than a shortcut. They
+    // are one question the operator answers twice — *"how much of the window
+    // do I want the drawing to have?"* — and the sentence that makes the
+    // feature safe to try, that the drawing does not move when a strip comes
+    // and goes, is true of both. Two headers would have to say it twice or
+    // leave it off one of them, which is the trust-store pair's test applied
+    // and answered the other way: those two have different blast radii, these
+    // two have the same one.
+    const SETTINGS_COUNT: usize = 34;
 
     /// The `(title, silence, radius)` triple for every setting in the window.
     ///
@@ -704,6 +714,14 @@ mod tests {
                 paste_chords_radius(),
             ),
             (chrome_title(), chrome_silence(), chrome_radius()),
+            // ★★ The two auto-hide toggles under ONE triple, 2026-09-05,
+            // because they are drawn under one header — see SETTINGS_COUNT's
+            // note. This list counts HEADERS, not controls: the obligation it
+            // checks is that every heading in the window says what happens if
+            // the operator does nothing and what the setting cannot reach,
+            // and a heading answers those once however many switches sit
+            // under it.
+            (auto_hide_title(), auto_hide_silence(), auto_hide_radius()),
             // ★★★ The two trust-store settings, reached across into
             // `crate::text::trust` for the reason `crate::text::acrobat`'s
             // triple is reached across for: the subject's copy is one

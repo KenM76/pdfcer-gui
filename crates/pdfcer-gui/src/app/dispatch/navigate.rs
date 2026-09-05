@@ -83,13 +83,22 @@ pub(crate) fn dispatch(app: &mut crate::app::PdfcerApp, ctx: &egui::Context, id:
             let _ = crate::canvas::tool::toggle_text(ctx);
         }
         "view.tool_node" => {
-            // Declines by name in a mode that cannot author, exactly as
-            // `edit.text` does and for the identical reason: an anchor is
-            // selected in order to be dragged, and a mode that refuses the drag
-            // must refuse the tool rather than arm it and then say no to every
-            // gesture. `tool::retire_forbidden` closes the same gap from the
-            // other end when the mode changes underneath.
-            if app.capabilities().edit_content {
+            // Declines by name in a mode that can author neither of this tool's
+            // two subjects, exactly as `edit.text` does and for the identical
+            // reason: a point is selected in order to be dragged, and a mode
+            // that refuses the drag must refuse the tool rather than arm it and
+            // then say no to every gesture.
+            //
+            // ★★★ **Two capabilities, corrected 2026-09-05, and this predicate
+            // must stay identical to `tool::retire_forbidden`'s Node arm** —
+            // which carries the table and the argument. In one line: the tool
+            // edits the anchors of a path on the page (`edit_content`) AND the
+            // corners of a ce dimension (`author_measure`), and Review has the
+            // second. `retire_forbidden` closes the same gap from the other end
+            // when the mode changes underneath, so a disagreement between the
+            // two would show as a tool that arms and is retired on the next
+            // frame — a flicker with no sentence attached.
+            if app.capabilities().edit_content || app.capabilities().author_measure {
                 crate::canvas::tool::select(ctx, crate::canvas::tool::CanvasTool::Node);
             } else {
                 decline(id);

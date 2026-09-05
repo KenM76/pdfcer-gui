@@ -50,6 +50,17 @@ pub struct RibbonState {
     pub(super) active_tab: Option<String>,
     pub(super) mode: Option<String>,
     pub(super) last_frame: FrameReport,
+    /// **Auto-hide.** Whether the band hides itself, and whether it is
+    /// currently revealed. See [`crate::peek`].
+    ///
+    /// ★ It belongs here for the same reason the active tab does — it is a
+    /// fact the *ribbon itself* decided and would lose if this value were
+    /// dropped. The **setting** half of it is an operator preference the
+    /// application persists and pushes in through [`RibbonState::set_auto_hide`]
+    /// on start-up; the **revealed** half is per-frame and must not be
+    /// persisted, which is why they live in one type that only exposes the
+    /// first for writing.
+    pub(super) peek: crate::peek::Peek,
 }
 
 impl Default for RibbonState {
@@ -71,7 +82,61 @@ impl RibbonState {
             active_tab: None,
             mode: None,
             last_frame: FrameReport::default(),
+            peek: crate::peek::Peek::new(),
         }
+    }
+
+    /// **Whether the band hides itself until the pointer reaches the tab
+    /// strip** — Office's *Show Tabs*. See [`crate::peek`] for the model and
+    /// for why the tab strip never hides with it.
+    #[must_use]
+    pub fn auto_hide(&self) -> crate::peek::AutoHide {
+        self.peek.mode()
+    }
+
+    /// Turn auto-hide on or off.
+    ///
+    /// Called by the application when it restores the operator's preference at
+    /// start-up and when it dispatches the command that toggles it. Takes
+    /// effect on the next frame, like every other setting on this struct.
+    ///
+    /// ★ Turning it **off** always shows the band, immediately — that is the
+    /// way back, and it is why the command exists as well as the setting. See
+    /// [`crate::peek::Peek::set_mode`].
+    pub fn set_auto_hide(&mut self, mode: crate::peek::AutoHide) {
+        self.peek.set_mode(mode);
+    }
+
+    /// **Push a stored preference in, once per frame, without disturbing the
+    /// reveal.**
+    ///
+    /// ★★★ This exists because [`Self::set_auto_hide`] is *not* idempotent and
+    /// must not be: it clears the reveal, which is exactly right when the
+    /// operator changes the setting and exactly wrong when an application calls
+    /// it every frame to keep the shell in step with its own preferences store.
+    /// Called unconditionally in a frame loop, `set_auto_hide` would clear
+    /// `revealed` on every frame, so the band would be re-decided from the
+    /// pointer alone and the keyboard keep-term of [`crate::peek::Peek`] would
+    /// never hold. **The band would close under a keyboard user on the frame
+    /// after they reached it, and nothing would look wrong.**
+    ///
+    /// So the frame-loop call is this one, and the difference between the two
+    /// is one comparison written down once rather than a `if state.auto_hide()
+    /// != prefs.x` at every call site — the second of which is the one that
+    /// gets it wrong.
+    pub fn sync_auto_hide(&mut self, mode: crate::peek::AutoHide) {
+        if self.peek.mode() != mode {
+            self.peek.set_mode(mode);
+        }
+    }
+
+    /// Whether the band was drawn on the last frame — inline **or** revealed.
+    ///
+    /// For a status surface that wants to say so; a layout decision must read
+    /// [`FrameReport::band_show`] from the frame it is about.
+    #[must_use]
+    pub fn band_is_revealed(&self) -> bool {
+        self.peek.is_revealed()
     }
 
     /// Use a different base `egui::Id`.

@@ -17,7 +17,181 @@ on top of everything here).
 
 ---
 
-## ★★★ Amendment, 2026-09-05 — the ribbon and the mockup now AGREE, measured
+## ★★★ Amendment, 2026-09-05 (LATER THE SAME DAY) — the visual half was checked for the first time, and the band was TWO ROWS where the mockup is THREE
+
+Everything in the amendment below this one is still true and is still not
+enough. It says, in bold, that *"the visual half has never been checked once"*
+and that its only oracle is a rendered screenshot. That screenshot was taken on
+2026-09-05, and it found three things.
+
+### ★★★ 1. THE MOCKUP HAD BEEN DEAD FOR A DAY — a single apostrophe
+
+`mockups/pdfcer-shell.html` rendered **nothing**: no ribbon, no rail, no panels,
+no dock, no status bar, no legend. The whole file is one `<script>` that builds
+every region from data, and on 2026-09-05 a note added to the legend contained
+the words *"I didn't refuse that."* inside a **single-quoted** JavaScript string.
+The apostrophe closed the string; the parse failed; `renderAll()` never ran.
+
+```text
+Uncaught SyntaxError: Unexpected identifier 't'   (line 1740)
+```
+
+⇒ **The artifact the operator was comparing the product against was a blank
+window frame.** Both the template and the generated file are fixed, and the
+apostrophe is escaped.
+
+⚠ **Its own generator has a smoke test, and the smoke test passed.**
+`build-pdfcer-shell.py` prints *"smoke test OK — 3 regions rendered"* and printed
+it on the broken file. Its DOM-size figure moved by **71 KB** between the broken
+and the fixed build and it reported OK both times. A smoke test that cannot
+distinguish a page that renders from a page that renders nothing is the vacuous
+shape this project keeps finding; the reliable oracle is
+`node --check` over the extracted `<script>`, which fails in half a second and
+names the line.
+
+### ★★★ 2. THE BAND IS THREE ROWS. It was two, and the mockup's own arithmetic says so
+
+The operator: *"it looks like the edits to the ribbon got halfway done."* This is
+the half that was left.
+
+On 2026-09-04 the mockup's vertical numbers were adopted into
+`egui_shell::theme::Metrics` — `ribbon_rows: 68`, `ribbon_pad_top: 6`, an 11 pt
+caption, a 56 pt Large control. **The row count that produces 68 was not.** The
+mockup's stylesheet says what 68 is made of:
+
+```css
+.rb        { height: 22px }     /* a small control          */
+.grp .col  { gap: 1px }         /* between its rows         */
+                                /* 3 × 22 + 2 × 1  =  68    */
+```
+
+`plan::GROUP_ROWS` was **2**, and a band 68 pt tall holding two 24 pt rows is not
+the mockup's band — it is the old band with twelve points of air in it. Measured
+side by side at 1400 px on the `View` tab:
+
+| group | mockup | product before | product now |
+|---|---|---|---|
+| Page display | 2 × 2 | 2 × 2 | 2 × 2 (`prefer_rows: 2`) |
+| Zoom | 2 cols × 3 rows | 3 × 2 | 2 × 3 |
+| Display | 2 × 3 | 3 × 2 | 2 × 3 |
+| Panels | 3 × 3 | 5 × 2 | 3 × 3 |
+| Window | 2 × 3 | 3 × 2 | 3 × 3 (nine items — see below) |
+
+The mockup fills 1,379 px of a 1,400 px window with those six bands. At two rows
+the same six need roughly 460 px more than they are given, **so groups the mock
+shows on the band were collapsing or scrolling at his window width.** That is
+what "halfway done" looked like.
+
+`GROUP_ROWS` is now **3**, and the third row costs *nothing*: the band's height is
+`ribbon_rows`, a fixed budget the rows are laid into, so 68 pt before and 68 pt
+after. The old refusal of three rows was written when the band was two rows tall
+*by definition* and its screen-budget argument lapsed with that change; the whole
+refusal, and why each half of it lapsed, is preserved at the constant.
+
+### ★ 3. Item-level divergences, four of them, all corrected
+
+Found by reading the two sides by hand — which is exactly what the instrument
+does **not** do, and its green exit had never had anything to say about them:
+
+| divergence | which side moved | why |
+|---|---|---|
+| the `pdfcer` band drew `Settings…` alone | **the mock** gained `Shortcuts` and `About` | the manifest has carried all three since `file.about` shipped, 2026-08-14 |
+| `Copy as vector` was labelled in the mock, icon-only in the product | **the mock** | the product's choice is the considered one; a fifth long label widens the group past its neighbours |
+| `Dock all panels` absent from the mock's Window group | **the mock** | shipped 2026-09-04, after the mock was drawn |
+| `Auto-hide ribbon` / `Auto-hide left strip` absent | **the mock** | shipped 2026-09-05; see below |
+
+**Where a capability shipped after the mock was drawn, the mock moved. Where they
+simply disagreed, the product moved.** Said explicitly because the standing rule
+is *the mockup is right by definition*, and three of these four are the exception
+that rule already names.
+
+### The two new commands, and why the Window group is now nine items
+
+`view.ribbon_auto_hide` and `view.rail_auto_hide` — his instruction of
+2026-09-05: *"we should also add the capability to auto hide the ribbon until we
+hover over top of it… left rail should also have the option to auto hide as
+well."* They sit in **View ▸ Window**, after `Dock all panels` and before
+`Reset layout`, on that group's established two-tier order: the reversible
+remedies first, the one that discards the operator's arrangement last.
+
+**Neither renders pressed**, and that is the convention rather than an omission —
+Office's own ribbon-display control is a caret that opens a menu, not a lit
+toggle. The surface that carries the *state* is the Settings window, where both
+are checkboxes. The `selected:` convention would light them and is one six-line
+block in `app::conditions::armed`, a file a concurrent track owned on the day
+this was written; that is the only reason it is not done.
+
+### ★★★ 4. `compare-mockup-ribbon.py` NOW COMPARES ITEMS — and it exits 1
+
+The amendment below says, in bold, that the script *"does not compare the items
+inside a group"* and gives the reason: the mock stores a **label** and the RON
+stores an **id**, and the map between them is Rust the script will not build.
+**That reason was true of labels and was never true of icons.** Both sides spell
+the icon key in plain text, in files the script already reads:
+
+```text
+mockups/…-template.html      ['Copy as vector','copy-as-vector']
+shell/commands/catalog/…     command("edit.copy_as_vector", …).with_icon("copy-as-vector")
+```
+
+So the script grew a second phase that compares **item presence and order, per
+group, by icon key**, and its exit code now carries the result. Size and label
+are still not compared and it says so.
+
+★★ The first run found **sixteen groups** whose item sequences differ, so
+`python tools/compare-mockup-ribbon.py` now **exits 1**, where every prior note
+in this document records it exiting 0. *That is the instrument starting to work,
+not a regression* — the structural phase is still clean at 0 differences. The
+list is the measured backlog and most of it is one shape:
+
+| group | mockup | product |
+|---|---|---|
+| File ▸ File | `folder`, and a `recent` control | `open`; no `recent` glyph in the band |
+| File ▸ Export | `download`, `upload` | `export`, `import-form-data` |
+| File ▸ Print | `printer` | `print` |
+| File ▸ Document | leads with a `document` glyph | starts at `properties` |
+| View ▸ Navigate | `pointer`, `show-points` | `cursor`, `cursor-node` |
+| View ▸ Panels | nine controls, incl. Properties, Comments, Fonts | six — the other three are on File and Markup, and `RIBBON_IA.md` P1 forbids a second placement |
+| Pages ▸ Insert | `image` | `insert-image` |
+| Edit ▸ Clipboard (Review) | `scissors` | `cut` |
+| Edit ▸ Clipboard (Edit) | four items | five — the product has a second paste |
+| Edit ▸ Organise | `merge` third | `merge` last |
+| Edit ▸ Content | `reflow` second | `reflow` last, and `edit` is `edit-text` |
+| Measure ▸ Dimension | `ruler` | `measure` |
+| Tools ▸ Batch | `convert` | `combine` |
+| Tools ▸ Fonts | `folder` | `font-folders` |
+| Format ▸ Style / Font | four and six glyphless entries | two and none |
+
+★ **Most of these are not cosmetic.** `folder` vs `open`, `printer` vs `print`,
+`scissors` vs `cut`, `ruler` vs `measure` mean the two sides are drawing
+**different pictures on the same button** — precisely the class the operator was
+looking at when he said the ribbon does not follow the mockup's format. Which
+side moves is a per-row judgement (the mock is the spec; a P1 violation is not)
+and **none of it was done in this session** — the instrument was built, run, and
+its output recorded here.
+
+### ⬜ What is STILL unmeasured, named rather than implied
+
+**Every number above is from the mockup's side.** The reference PNGs and the
+per-element rectangle dumps are at `D:\temp\uvdrive\mockref\`, at 1400, 1100
+and 900 px. **The product's own rectangles were NOT captured**, because
+`pdfcer-gui.exe` and `ui-verify.exe` were running for another track for the whole
+of the session and this project's rule is that a driven run needs the machine.
+So the three-row change is argued from the *mock's* geometry and from the
+product's own theme metrics and unit tests, and **not** from a screenshot of the
+running binary. That capture is the first job of the next session with a free
+machine: launch off screen with `PDFCER_DIAG_VIEWPORT`, read `ribbon.item.*` out
+of the trace, and compare the row tops against `mock-1400.png`'s.
+
+★ And one thing the mockup itself cannot show: it has a fixed minimum width and
+**no collapse behaviour at all**, so its geometry is identical at 1400, 1100 and
+900 — it scrolls rather than reflowing. The nine-item Window group now runs past
+the right edge of a 1400 px mock window. That is the mock's limitation, not a
+specification for the product, whose ladder collapses groups instead.
+
+---
+
+## ★★★ Amendment, 2026-09-05 (EARLIER) — the ribbon and the mockup now AGREE, measured
 
 `python tools/compare-mockup-ribbon.py` exits **0**. The mockup's ribbon and
 `shell/ron/built_in.ron` carry the same 35 captioned bands in the same order,

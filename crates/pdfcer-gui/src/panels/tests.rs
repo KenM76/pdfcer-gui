@@ -78,11 +78,17 @@ fn every_panel_is_reachable_from_the_ribbon() {
 ///
 /// A shared id would make the reachability test above pass for both
 /// while only one of them could ever be opened — the failure hiding
-/// inside the fix. It is a live hazard rather than a hypothetical: two
-/// of the nine panels are commissioned by one `RIBBON_IA.md` sentence
-/// (`file.properties` names both the document's metadata and the
-/// selection's properties), and the temptation to hang both off that one
-/// id is exactly what this refuses.
+/// inside the fix.
+///
+/// ★★★ **It was a live hazard and on 2026-09-05 it became the live case.**
+/// `file.properties`' tooltip commissioned two subjects in one sentence — the
+/// document's own metadata and the selection's properties — and the temptation
+/// this refuses was to hang the second panel off that same id when the operator
+/// asked for the metadata to *"be in its own document properties tab"*. It has a
+/// new id, `file.document_properties`, and this test is what would have caught
+/// the shortcut: with one id claimed twice, whichever panel
+/// [`Panel::from_command_id`] found first would be the only one ever openable,
+/// and the other would sit in the arrangement drawing nothing.
 #[test]
 fn no_two_panels_share_a_command() {
     let mut seen: Vec<&str> = Vec::new();
@@ -95,6 +101,169 @@ fn no_two_panels_share_a_command() {
         );
         seen.push(id);
     }
+}
+
+/// ★★★ **The document's own properties have a panel of their own, in every
+/// mode, and the selection inspector still exists** — `OPERATOR_REQUESTS.md`
+/// O136.
+///
+/// The operator, 2026-09-05: *"the document properties are still always visible
+/// in the properties tab. it needs to get out of there and be in its own
+/// document properties tab."*
+///
+/// # ★★★ Why this is one test and not three
+///
+/// Because the interesting assertion is **negative** — *the metadata is not in
+/// the Properties panel any more* — and a negative about a panel is satisfied
+/// by every way of having no panel at all. Three of the failing builds it must
+/// exclude:
+///
+/// | build | what the naive assertion does |
+/// |---|---|
+/// | the metadata form deleted outright | passes |
+/// | the new panel written but mounted by no mode | passes |
+/// | the new panel hung off `file.properties`, so only one of the two can open | passes |
+///
+/// ⇒ So the positive controls are in the same test, deliberately: the new panel
+/// is **mounted by all three modes**, the old panel is **still mounted** where
+/// it was, and the two hold **different commands that each resolve back to
+/// their own panel**. Split into three green tests, any one of them could pass
+/// on a build where the operator has lost the metadata entirely — and this
+/// project has a standing lesson about exactly that shape (`read_mode_can_reach
+/// _the_comment_list_by_both_routes`, whose header argues it at length).
+///
+/// # ★ What it does NOT assert
+///
+/// That the Properties panel's *body* no longer draws the metadata. There is no
+/// headless frame runner in this crate, so the only oracle for what a body
+/// draws is `ui-verify` — `the_inspector_is_one_master_detail_column`'s
+/// assertion 2b, which was written for this and, as its own header says, **has
+/// not been run**. This test pins the structure; that one pins the pixels.
+#[test]
+fn the_documents_own_properties_are_their_own_panel_in_every_mode() {
+    use crate::app::modes::defaults::layout_for;
+    use egui_shell::dock::PanelId;
+
+    let doc_props = PanelId::new(Panel::DocumentProperties.command_id());
+    let selection = PanelId::new(Panel::Properties.command_id());
+
+    // The two are different commands, and each resolves back to its own panel.
+    // A build that hung both panels off `file.properties` fails here first.
+    assert_ne!(
+        Panel::DocumentProperties.command_id(),
+        Panel::Properties.command_id()
+    );
+    assert_eq!(
+        Panel::from_command_id(Panel::DocumentProperties.command_id()),
+        Some(Panel::DocumentProperties)
+    );
+    assert_eq!(
+        Panel::from_command_id(Panel::Properties.command_id()),
+        Some(Panel::Properties)
+    );
+
+    // Mounted by all three modes: reading a document's title is reading.
+    for mode in ["read", "review", "edit"] {
+        assert!(
+            layout_for(mode).contains(&doc_props),
+            "`{mode}` does not mount the Document properties panel, so in that mode the \
+             file's own title and author are reachable from nowhere"
+        );
+    }
+
+    // ★ The positive control for the selection inspector. Read never mounted
+    // it (its verbs live on tabs Read is not shown), so the two modes that did
+    // are the ones asserted — a build that moved the metadata by deleting the
+    // panel it was in would satisfy every assertion above and fail here.
+    for mode in ["review", "edit"] {
+        assert!(
+            layout_for(mode).contains(&selection),
+            "`{mode}` lost the Properties panel; the document's metadata was supposed to \
+             move OUT of it, not take it with them"
+        );
+    }
+    assert!(
+        !layout_for("read").contains(&selection),
+        "Read has gained the selection inspector, which it has no verb for — see \
+         `app::modes::defaults`' Read arm"
+    );
+}
+
+/// ★★★ **Every mode can actually reach the Document properties command** — the
+/// control is on the `file` tab, and the mode gate offers it there.
+///
+/// # ⚠ TWO vacuity holes, and the first one was found by falsifying this test
+///
+/// **1. An unknown shell.** `app::modes::capability::offers_command` falls
+/// through to `true` when it is handed `None` — deliberately, because the mode
+/// selector is an interface-complexity control and not a permissions system,
+/// and failing closed would produce a keyboard that silently does nothing. A
+/// test passing `None` therefore asserts that every command is offered in every
+/// mode, including commands that do not exist. So the built-in shell is passed
+/// explicitly, and the offer assertion is **paired with a refusal**:
+/// `edit.redact` must NOT be offered in Read.
+///
+/// **2. ★★★ An unknown COMMAND falls through to `true` as well, and this test
+/// was written not knowing that.** Its first version asserted only the three
+/// offers plus the refusal. It was falsified on 2026-09-05 by deleting
+/// `command("file.document_properties")` from `shell::manifest::file`'s Document
+/// band — the control gone from the ribbon entirely — and **it passed**. The
+/// gate had nothing to look the command up in, and a command on no tab is not a
+/// command any mode refuses.
+///
+/// ⇒ So the tab is asserted first, out of the manifest's own
+/// `command_references()`, and the two halves together say the thing the name
+/// claims: *the control exists, it is on the `file` tab, and every mode is shown
+/// that tab.* `every_panel_is_reachable_from_the_ribbon` catches the deletion
+/// too — it was the test that failed under that plant — but it asks *"is this
+/// referenced anywhere at all"*, which a QAT slot or a key binding satisfies,
+/// and a QAT slot is not a tab.
+#[test]
+fn document_properties_is_offered_in_every_mode_and_redact_is_not() {
+    use crate::app::modes::capability::offers_command;
+
+    let shell = manifest::built_in();
+    let id = Panel::DocumentProperties.command_id();
+
+    // ★ The half that closes hole 2: the control is on the `file` tab, which is
+    // the one tab every mode's list contains.
+    let tabs: BTreeSet<String> = shell
+        .command_references()
+        .into_iter()
+        .filter(|(_, referenced)| referenced == id)
+        .filter_map(|(site, _)| match site {
+            egui_shell::manifest::Site::Group { tab, .. } => Some(tab),
+            _ => None,
+        })
+        .collect();
+    assert!(
+        tabs.contains("file"),
+        "`{id}` is on no `file` tab group — it is on {tabs:?}. Every mode is shown the `file` \
+         tab and Read is shown ONLY `file` and `view`, so anywhere else is a mode that mounts \
+         a panel it cannot reopen."
+    );
+    // ★ P1, restated where it bites: one command, at most one tab. Two would
+    // be a `Shell::validate` failure, and an invalid manifest makes
+    // `Capabilities::for_mode` return FULL — every authoring capability granted
+    // to every mode, silently.
+    assert_eq!(
+        tabs.len(),
+        1,
+        "`{id}` appears on more than one tab: {tabs:?}"
+    );
+
+    for mode in ["read", "review", "edit"] {
+        assert!(
+            offers_command(Some(&shell), Some(mode), id),
+            "`{id}` is not offered in `{mode}`, so the panel cannot be opened or reopened \
+             there even though its control is on a tab that mode is shown."
+        );
+    }
+    assert!(
+        !offers_command(Some(&shell), Some("read"), "edit.redact"),
+        "the gate offers Read a marking command, so it is answering `true` for everything \
+         and the assertions above prove nothing"
+    );
 }
 
 /// **The hand-written catalog is exhaustive.**
@@ -123,6 +292,7 @@ fn the_panel_catalog_is_complete() {
             Panel::Redact => 9,
             Panel::DimensionGroups => 10,
             Panel::Attachments => 11,
+            Panel::DocumentProperties => 12,
         }
     }
     let mut ordinals: Vec<usize> = Panel::ALL.iter().copied().map(ordinal).collect();

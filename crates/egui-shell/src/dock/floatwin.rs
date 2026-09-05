@@ -38,6 +38,39 @@
 //! application asserts is zero — and its field documentation carries the
 //! whole argument.
 //!
+//! ## ★★★ …and forgetting is not the only way a float window ends up blank
+//!
+//! **Added 2026-09-05, after a driven sweep reported *"a floated panel opens
+//! an OS window and draws nothing inside it"*.**
+//!
+//! [`super::DockFrameReport::floats_undrawn`] catches the application that
+//! never called [`super::Dock::show_floating`]. It cannot catch the case
+//! one step along: the call IS made, the window IS opened, the background
+//! IS painted, the header IS drawn — and `body` allocates nothing. Every
+//! number this module produced before that date reports that frame as a
+//! success, because every one of them is satisfied the moment the loop runs.
+//!
+//! ⚠ **A blank window is R9 broken at the scale of a whole window.** The
+//! rule — *an unavailable capability renders nothing* — is about a control
+//! inside a surface. An operator can read an absent button. Nobody can read
+//! a blank window with a title bar; it is indistinguishable from a crash.
+//!
+//! ⇒ [`FloatFrameReport::empty_bodies`] is the second number, measured from
+//! the body `Ui`'s [`egui::Ui::min_rect`] **after** `body` returns. Its
+//! field documentation carries what it can and cannot see, and two tests in
+//! this file falsify it in both directions.
+//!
+//! ★★ **The sweep's verdict was about the harness, not about this module.**
+//! The check asserted *"a `ui-rect` tagged with the float's viewport"*, and
+//! neither this module nor the panel it floated publishes one on the fixture
+//! it was given — so the oracle could not have succeeded against a working
+//! build either. The application publishes the tagged regions (see
+//! `crate::app::surfaces::floating_panels` in the consuming crate); this
+//! crate has no diagnostic channel and must not grow one, so what it can
+//! honestly offer is a **value in a report**, which is this field. The
+//! general lesson is in
+//! `D:/dev/rag/egui/a_float_windows_emptiness_is_not_observable_from_any_number_the_dock_already_publishes.md`.
+//!
 //! ## ★★ The one-dispatcher rule survives, and that is the finding this
 //! whole capability rests on
 //!
@@ -143,6 +176,42 @@ pub struct FloatFrameReport {
     /// main window because there is no window system" are distinguishable
     /// in a report rather than only in a screenshot.
     pub real_windows: usize,
+    /// ★★★ **Every panel whose window was drawn and whose BODY laid out
+    /// nothing** — an open window with an empty panel in it.
+    ///
+    /// # Why this is a second number and not an implication of the first
+    ///
+    /// [`Self::drawn`] answers *"was a window opened for this panel"*, and
+    /// [`super::DockFrameReport::floats_undrawn`] answers *"is a panel in
+    /// the layout with no window at all"*. Neither of them can tell an
+    /// **empty** window from a full one, because both are satisfied the
+    /// moment [`Dock::show_floating`] runs — the window opens, the
+    /// background is painted, the header draws, and `body` is called. If
+    /// `body` then draws nothing, every count above still reports success
+    /// and the operator is looking at a blank rectangle with a title bar.
+    ///
+    /// ⚠ That is R9 (*an unavailable capability renders **nothing***)
+    /// broken by accident in its worst possible form: the rule says a panel
+    /// with nothing to say must draw nothing, and this is a **whole
+    /// window** with nothing in it. The rule was written about a control
+    /// inside a surface, not about the surface itself, and a window is not
+    /// something an operator can read as "deliberately blank".
+    ///
+    /// # What is measured, exactly, and what it cannot see
+    ///
+    /// The body `Ui`'s [`egui::Ui::min_rect`] after `body` returns — the
+    /// extent of everything the panel **allocated**. A `Ui` that has been
+    /// handed to a body and had nothing allocated in it keeps the empty
+    /// rectangle it was constructed with, so a zero width or height is
+    /// exact rather than heuristic.
+    ///
+    /// ★ It measures **allocation**, not paint. A body that only calls
+    /// `ui.painter()` without allocating is reported here as empty even
+    /// though pixels reached the window. That is the honest bound of a
+    /// layout-level measurement, and it is the right direction to be wrong
+    /// in: it over-reports rather than under-reports, so it can never call
+    /// a genuinely blank window full.
+    pub empty_bodies: Vec<PanelId>,
     /// The panel whose window the operator closed this frame, if any.
     pub closed: Option<PanelId>,
     /// The panel the operator docked back this frame, if any.
@@ -253,6 +322,10 @@ impl Dock<'_> {
             let mut closed = false;
             let mut dock_back = false;
             let mut geometry: Option<(Option<[f32; 2]>, [f32; 2])> = None;
+            // ★★ Set inside the callback, read after it, for `geometry`'s
+            // reason: `egui` may run a viewport callback twice in one frame,
+            // and the LAST run is the one whose answers the frame keeps.
+            let mut body_extent = Vec2::ZERO;
 
             let class = ctx.show_viewport_immediate(id, builder, |ui, class| {
                 // The callback's return value is `show_viewport_immediate`'s,
@@ -321,6 +394,16 @@ impl Dock<'_> {
                 );
                 child.set_clip_rect(body_rect);
                 body(&f.panel, &mut child);
+                // ★★★ **How much of the window the panel actually filled.**
+                //
+                // `min_rect` on a `Ui` nothing has allocated into is the
+                // empty rectangle it was built with, so this is an exact
+                // answer to *"did the body draw"* rather than a threshold.
+                // See [`FloatFrameReport::empty_bodies`] for why the
+                // question needs asking at all: every other number this
+                // module produces is already satisfied by an open, blank
+                // window.
+                body_extent = child.min_rect().size();
 
                 if class == ViewportClass::Immediate {
                     let (outer, inner_rect) = ui
@@ -345,6 +428,9 @@ impl Dock<'_> {
             });
 
             report.drawn.push(f.panel.clone());
+            if body_extent.x <= 0.0 || body_extent.y <= 0.0 {
+                report.empty_bodies.push(f.panel.clone());
+            }
             if class == ViewportClass::Immediate {
                 report.real_windows += 1;
             }
@@ -654,6 +740,102 @@ mod tests {
         assert!(
             !apply_float_intents(&mut l, std::slice::from_ref(&geometry), &mut report),
             "the second must not be, or the layout file is rewritten every frame"
+        );
+    }
+
+    /// A `DockState` with `layers` floated out of a two-tab left stack, and
+    /// a window-sized frame to draw it in.
+    fn floated_state() -> DockState {
+        let mut layout = sample();
+        assert!(layout.float(&id("layers")), "the fixture must float");
+        DockState::new(layout)
+    }
+
+    fn frame_input() -> egui::RawInput {
+        egui::RawInput {
+            screen_rect: Some(Rect::from_min_size(Pos2::ZERO, Vec2::new(1280.0, 800.0))),
+            ..Default::default()
+        }
+    }
+
+    /// ★★★ **A float window whose panel allocates nothing is REPORTED, not
+    /// silently counted as a success.**
+    ///
+    /// This is the falsification of [`FloatFrameReport::empty_bodies`]
+    /// written as a test rather than performed by hand: the same fixture,
+    /// the same call, and a body that does nothing at all. Every other
+    /// number the frame produces still says the window is fine —
+    /// `drawn` holds the panel and `DockFrameReport::floats_undrawn` is
+    /// zero — which is exactly why this field had to exist.
+    ///
+    /// ⚠ If this ever reports an empty list, the guard has stopped
+    /// guarding and a floated panel can ship as a blank window with a
+    /// title bar, which is R9 broken at the scale of a whole window.
+    #[test]
+    fn a_float_window_whose_panel_draws_nothing_is_reported_empty() {
+        let ctx = egui::Context::default();
+        let mut state = floated_state();
+        let mut empty: Vec<String> = Vec::new();
+        let _ = ctx.run_ui(frame_input(), |ui| {
+            let report = Dock::new().show_floating(ui.ctx(), &mut state, |_panel, _ui| {
+                // Deliberately nothing. This is the defect.
+            });
+            assert_eq!(report.drawn.len(), 1, "a window was still opened for it");
+            empty = report
+                .empty_bodies
+                .iter()
+                .map(|p| p.as_str().to_owned())
+                .collect();
+        });
+        assert_eq!(
+            empty,
+            vec!["layers".to_string()],
+            "a window drawn around a body that allocated nothing must be named"
+        );
+    }
+
+    /// ★★ **…and a panel that allocates one small rectangle is not
+    /// reported**, which is what keeps the test above from being a check
+    /// that always fires.
+    ///
+    /// One allocation deliberately, not a full panel: the honest floor is
+    /// *anything at all was allocated*, because a panel with nothing to say
+    /// is required by R9 to say so in a **sentence** rather than to draw a
+    /// blank — so one sentence is the minimum legitimate content, and a
+    /// measurement that called it empty would fail every correct panel on a
+    /// document that gives it nothing to list.
+    ///
+    /// ★★★ The sentence cannot be spelled as a sentence *here*; see the
+    /// comment at the allocation for the reason, which cost the first
+    /// version of this test a red run against a working dock.
+    #[test]
+    fn a_float_window_whose_panel_allocates_anything_is_not_empty() {
+        let ctx = egui::Context::default();
+        let mut state = floated_state();
+        let mut empty = 1usize;
+        let _ = ctx.run_ui(frame_input(), |ui| {
+            let report = Dock::new().show_floating(ui.ctx(), &mut state, |_panel, ui| {
+                // ★★★ NOT `ui.label(...)`, and the reason is a trap this
+                // crate is deliberately built into. `Cargo.toml` pins `egui`
+                // with `default-features = false` precisely "so this crate
+                // does not silently acquire fonts" — so in every test in
+                // this crate a galley is EMPTY and `ui.label("anything")`
+                // returns a **zero-sized** rect. A test written with a label
+                // here would fail against a perfectly working dock, and,
+                // worse, the mirror test would pass for the wrong reason.
+                //
+                // ⇒ The honest headless spelling of "the body drew" is an
+                // allocation with a size of its own. In the application,
+                // which links `eframe` and therefore real fonts, one label is
+                // one real rectangle and the same measurement holds.
+                // `D:/dev/rag/egui/` carries this as its own entry.
+                let _ = ui.allocate_space(Vec2::new(120.0, 18.0));
+            });
+            empty = report.empty_bodies.len();
+        });
+        assert_eq!(
+            empty, 0,
+            "a body that allocated a rectangle must not be reported as an empty window"
         );
     }
 

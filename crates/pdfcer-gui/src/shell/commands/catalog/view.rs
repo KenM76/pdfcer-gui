@@ -514,6 +514,35 @@ pub(super) fn band() -> Vec<Command> {
         // Building it would mean building the behaviour first, and the
         // behaviour is the thing the operator objected to. It goes back on the
         // list the day something wants to float unasked, and not before.
+        // ★★★ **THE TWO AUTO-HIDE COMMANDS**, 2026-09-05, and they are on the
+        // ribbon rather than in Settings alone because R8 says so: registering
+        // a command is the only way this shell may learn a capability exists,
+        // and it is what puts the pair in the keymap, in the menu document and
+        // under the operator's own customization. A setting reachable only from
+        // a Settings window is a capability most operators never find.
+        //
+        // ★★ **Neither renders PRESSED, and that is the convention rather than
+        // an omission.** Office's own ribbon-display control is a caret that
+        // opens a three-item menu; it does not sit lit while *Show Tabs* is
+        // chosen. The surface that carries the *state* is the Settings window,
+        // where both are checkboxes that show it, and the strips themselves say
+        // it plainly — a ribbon with no band under its tabs, and a rail
+        // shrunken to a chevroned band, are not states an operator can be
+        // uncertain about.
+        //
+        // ⬜ **What that costs, named rather than implied.** The `selected:`
+        // convention would make them render lit, and it is one six-line block
+        // in `app::conditions::armed` — a file a CONCURRENT track owns as of
+        // 2026-09-05, which is the only reason it is not written. If the pair
+        // should light up, that block is the whole change; nothing here moves.
+        //
+        // ★ `collapse` and `sidebar` were both unused by this catalog:
+        // `collapse` is the chevron the bookmark tree uses, and `sidebar` was
+        // freed when `view.sidebar` was unregistered on 2026-08-31. Two
+        // pictures that already mean "this strip folds away" and "this is the
+        // strip down the side".
+        command("view.ribbon_auto_hide", t::view_ribbon_auto_hide(), 263).with_icon("collapse"),
+        command("view.rail_auto_hide", t::view_rail_auto_hide(), 264).with_icon("sidebar"),
         command("view.reset_layout", t::view_reset_layout(), 254).with_icon("reset-layout"),
         // ★★★ **The three per-panel layout verbs**, 2026-09-04.
         //

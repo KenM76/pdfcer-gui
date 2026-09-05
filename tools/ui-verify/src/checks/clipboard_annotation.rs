@@ -405,6 +405,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         // ⇒ A failure message that names a mechanism the trace can rule out is
         // a confident failure about the wrong subject. Read the gate line, and
         // say so when it is there.
+        //
+        // ⚠ **THE GATE WAS OPENED LATER THE SAME DAY.** `edit.paste` now
+        // escapes its tab with the rest of the Clipboard group, so this branch
+        // should no longer fire in Review — and it is kept because it is one of
+        // only two witnesses that would notice the escape list being narrowed
+        // again. `a_paste_review_may_not_do_says_so` is the other and owns the
+        // refusal side. ★ Neither has been re-run against the fixed build: the
+        // session that made the fix worked headlessly.
         let refusal = trace
             .events(CHORD_NOT_OFFERED)
             .find(|l| l.get("id") == Some(PASTE_COMMAND));

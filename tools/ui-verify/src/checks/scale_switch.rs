@@ -190,10 +190,22 @@ const IDLE_TRIES: usize = 5;
 /// check's own guard then declined to read — the guard was right each time,
 /// and this constant was the thing that was wrong.
 ///
-/// ★ The check asserts `uniform=true` off the trace rather than trusting this
+/// ★ The check asserts the two scale factors AGREE off the trace rather than
 /// arithmetic, which is what turned two silent mis-measurements into two
 /// specific, self-describing skips.
 const GRIP_TRAVEL_OF_SHAPE: f64 = 0.25;
+
+/// How far the two scale factors may disagree and still count as one uniform
+/// drag.
+///
+/// ★★ It is **pointer quantisation**, not a fudge. The pointer is delivered at
+/// integer screen pixels; the shape is about 86 px on a side at fit zoom on
+/// this fixture, so one pixel of rounding on a 25 % travel moves a scale factor
+/// by about `1 / 86` ≈ 0.012. Twice that is the ceiling used here, which leaves
+/// room for a slightly smaller shape and is still an order of magnitude below
+/// any distortion an operator would call one. Measured on the first run that
+/// ever reached this line: `sx=1.2508 sy=1.2449`, a disagreement of **0.0059**.
+const SCALE_AXIS_TOLERANCE: f64 = 0.025;
 
 /// See the module documentation.
 pub struct TheLineWeightSwitchReachesTheResize;
@@ -533,16 +545,52 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     }
-    if applied.get("uniform") != Some("true") {
+    // ★★★ **UNIFORM TO WITHIN ONE SCREEN PIXEL, not `uniform=true`** —
+    // corrected 2026-09-05, the first time this check ever got far enough to
+    // read this line.
+    //
+    // The travel is expressed as a fraction of the shape, so both scale factors
+    // are `1 + GRIP_TRAVEL_OF_SHAPE` **in arithmetic**. What the application
+    // sees is not that: a pointer is delivered at integer screen pixels, and the
+    // shape is 87.8 px wide and 85.2 px tall at fit zoom on this fixture, so a
+    // 25 % travel is 21.9 px on one axis and 21.3 on the other — 22 and 21 once
+    // the OS has rounded them. Measured: `sx=1.2508 sy=1.2449 uniform=false`.
+    //
+    // ⇒ **No harness can deliver an exactly uniform drag on a shape whose two
+    // screen extents differ**, so `uniform=true` was a condition this check
+    // could not satisfy. It went unnoticed because it was **unreachable**: the
+    // grip drag had never once reached the engine (the grips of an annotation
+    // were live only where they overlapped its own box, `canvas::pressing`),
+    // so this guard had never run in the life of the feature.
+    //
+    // ★ The subject is unaffected and is asserted above: `stroke=true` means the
+    // operator's switch reached the engine. What this guard is for is the
+    // *other* reading of a failure there — that the drag was so lopsided the
+    // engine treated it as a distortion — and one pixel of rounding is not that.
+    let sx: f64 = applied
+        .get("sx")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(0.0);
+    let sy: f64 = applied
+        .get("sy")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(0.0);
+    if (sx - sy).abs() > SCALE_AXIS_TOLERANCE {
         return Err(Error::new(format!(
-            "the drag came out NON-uniform (`{}`), and this check drags equal amounts in both \
-             axes on purpose so that it is about the switch rather than about the distortion \
+            "the drag came out LOPSIDED (`{}`): sx={sx:.4} against sy={sy:.4}, a disagreement of \
+             {:.4} where one pixel of pointer quantisation accounts for at most \
+             {SCALE_AXIS_TOLERANCE}. This check drags equal FRACTIONS OF THE SHAPE in both axes \
+             on purpose, so that it is about the switch rather than about the distortion \
              refusal. Reported as SKIPPED rather than failed: the assertion above passed, and a \
-             non-uniform drag means the harness's two axes disagree — probably a page whose \
-             aspect ratio makes equal page-fraction travel unequal in points.",
-            applied.raw
+             lopsided drag means the harness's two axes disagree by more than rounding.",
+            applied.raw,
+            (sx - sy).abs()
         )));
     }
-    report.note("★ the resize was uniform and the engine wrote a new border width");
+    report.note(format!(
+        "★ the resize was uniform to within pointer rounding (sx={sx:.4}, sy={sy:.4}; the shell \
+         calls it uniform={}) and the engine wrote a new border width",
+        applied.get("uniform").unwrap_or("?")
+    ));
     Ok(None)
 }

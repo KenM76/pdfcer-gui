@@ -114,6 +114,7 @@ pub mod plan;
 pub mod qat;
 pub mod render;
 pub mod report;
+pub mod rhythm;
 // How much room one control asks for, and what it shows -- the three item
 // sizes, the earned-icon-only rule, and the visible_when filter.
 // RIBBON_SCALING.md.

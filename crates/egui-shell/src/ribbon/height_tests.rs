@@ -1,4 +1,14 @@
-//! Layout tests for the band's **two rows** and its **constant height**.
+//! Layout tests for the band's **rows** and its **constant height**.
+//!
+//! ★ It said *"two rows"* until 2026-09-05, when `plan::GROUP_ROWS` became
+//! **three** to match `mockups/pdfcer-shell.html`'s own arithmetic
+//! (`.rb { height: 22px }` + `.grp .col { gap: 1px }` = the theme's 68 pt row
+//! area). Nothing about the CLAIMS below moved: the band is still one height on
+//! every tab, the captions still share one baseline, and the padding is still
+//! asserted against drawn rectangles. Only the row count did, and the
+//! precondition guards in three of these tests now read `plan::GROUP_ROWS`
+//! rather than a literal `2`, so the next change to it fails them loudly
+//! instead of leaving them comparing two identical one-row bands.
 //!
 //! # Why this is a file of its own
 //!
@@ -33,7 +43,7 @@
 //!
 //! | Test | Claim |
 //! |---|---|
-//! | [`the_band_is_the_same_height_on_every_tab`] | **R128.** A one-row tab and a two-row tab produce one height. |
+//! | [`the_band_is_the_same_height_on_every_tab`] | **R128.** A one-row tab and a full-height tab produce one height. |
 //! | [`the_band_keeps_its_height_at_widths_where_every_group_overflows`] | …including where the band draws no group at all. |
 //! | [`a_group_wider_than_the_cap_is_drawn_on_two_rows`] | The renderer obeys [`super::plan::wrap_group`], and the group gets narrower for it. |
 //! | [`every_caption_in_a_band_shares_one_baseline`] | The mockup's `justify-content: space-between`. |
@@ -74,7 +84,7 @@ use super::width_tests::{SLACK, render_shell_with};
 ///
 /// `Theme::apply` writes `spacing.interact_size.y = control_height`, which
 /// is what makes a band control exactly as tall as the metric
-/// [`super::band::rows_height`] budgets for it. Without it `egui`'s default
+/// [`super::rhythm::rows_height`] budgets for it. Without it `egui`'s default
 /// `interact_size.y` is 18 pt against a 24 pt `control_height`, and **every
 /// row carries 6 pt of slack that a spacing error can hide in**.
 ///
@@ -266,8 +276,8 @@ fn the_band_is_the_same_height_on_every_tab() {
     );
     assert_eq!(
         row_tops(&wide.all("ribbon.item.")).len(),
-        2,
-        "the wide tab's group was NOT wrapped onto a second row, so this test is \
+        super::plan::GROUP_ROWS,
+        "the wide tab's group was NOT wrapped onto its full row count, so this test is \
          comparing two one-row bands and would pass against the very layout it \
          exists to refuse"
     );
@@ -446,8 +456,11 @@ fn every_caption_in_a_band_shares_one_baseline() {
     // The fixture is only meaningful if the two groups really differ.
     assert_eq!(
         row_tops(&frame.all("ribbon.item.")).len(),
-        2,
-        "the mixed band must contain a two-row group and a one-row one"
+        super::plan::GROUP_ROWS,
+        "the mixed band must contain a FULL-height group beside a one-row one, or the \
+         baseline claim below is made about two identical groups. Written against \
+         GROUP_ROWS rather than a literal, because the eight-item fixture wraps to \
+         whatever the shipped ceiling is"
     );
 
     let captions: Vec<(&str, Rect)> = frame
@@ -796,16 +809,49 @@ fn every_preset_reserves_room_for_its_own_rows() {
     let rows = super::plan::GROUP_ROWS as f32;
     for &preset in crate::theme::Preset::ALL {
         let m = crate::theme::Theme::new(preset).metrics;
-        let needed = (m.control_height + m.gutter) * rows;
+
+        // The height the band actually draws a small control at. The same
+        // arithmetic `band::band_row_height` performs, restated in the test's
+        // own terms rather than by calling it — an assertion that invokes the
+        // implementation it is checking agrees with itself by construction.
+        let control = m.ribbon_rows / rows - super::rhythm::BAND_ROW_SPACING;
+
+        // (a) The rows fit the area they are laid into, counting the gap
+        //     between them AND the one `egui` adds after the last. Arithmetic
+        //     on the line above, so it cannot fail while (b) holds — and that
+        //     is the point: it is the equation the preset table has to satisfy,
+        //     written where a reader looking for it will find it.
+        let occupied = rows.mul_add(control, rows * super::rhythm::BAND_ROW_SPACING);
         assert!(
-            m.ribbon_rows >= needed,
-            "preset {preset:?} budgets {} pt of band row area, but {} of its own rows \
-             cost {needed} pt ({} control + {} gutter, {rows} rows). The second row \
-             would be drawn over the group caption",
-            m.ribbon_rows,
-            super::plan::GROUP_ROWS,
-            m.control_height,
-            m.gutter
+            occupied <= m.ribbon_rows + 0.01,
+            "preset {preset:?} budgets {} pt of band row area and its {rows} rows \
+             occupy {occupied} pt, so the last row would be drawn over the group \
+             caption",
+            m.ribbon_rows
+        );
+
+        // (b) ★★★ THE HALF THAT CAN ACTUALLY FAIL, and the reason this test
+        //     survived the 2026-09-05 row-count change rather than going with
+        //     the invariant it used to state.
+        //
+        //     `band_row_height` floors the control at `icon_pts`, because a
+        //     control that cannot show its icon is not a smaller control, it is
+        //     a clipped one. The floor is a **safety, not a target**: the moment
+        //     it binds, (a) stops holding, the band grows on every tab, and the
+        //     canvas beneath it moves — R128, arriving through the theme table.
+        //     A preset whose `ribbon_rows` was tightened or whose `icon_pts` was
+        //     raised would trip this and **nothing else in the crate would
+        //     notice**, because a taller band is not an error anywhere.
+        //
+        //     Margins as shipped: `Quiet` 68/3 − 1 = 21.67 against a 16 pt icon;
+        //     `Airy` 84/3 − 1 = 27 against 17.
+        assert!(
+            control >= m.icon_pts,
+            "preset {preset:?} draws a band row {control} pt tall and its icons are \
+             {} pt, so `band_row_height`'s floor would bind and the band would grow \
+             past its own {} pt budget",
+            m.icon_pts,
+            m.ribbon_rows
         );
     }
 }
@@ -912,4 +958,188 @@ fn the_band_draws_clear_space_above_its_first_control() {
          above it",
         group.top()
     );
+}
+
+// =====================================================================
+// AUTO-HIDE — 2026-09-05. The operator: *"we should also add the capability
+// to auto hide the ribbon until we hover over top of it."*
+//
+// ★★★ These belong in this file rather than beside `peek`'s own tests, and
+// the reason is the file's own subject. `peek` is arithmetic over rectangles
+// and is tested exhaustively there; what CANNOT be asserted there is the one
+// property the operator will actually feel, which is **vertical and belongs
+// to the ribbon**: the number the canvas below sees must not change when the
+// band comes and goes. That is R128 for a surface that appears and
+// disappears, and R128 is what this whole file pins.
+// =====================================================================
+
+/// A one-tab shell with a group in it, for the auto-hide tests.
+fn hideable_shell() -> Shell {
+    Shell::new()
+        .with_mode(Mode::new("edit", "Edit", ["only"]))
+        .with_tab(
+            Tab::new("only", "Only").with_groups([Group::new("g", "Group")
+                .with_items([Item::command("wide.c0"), Item::command("wide.c1")])]),
+        )
+}
+
+/// Render one auto-hidden ribbon, optionally with the pointer somewhere.
+///
+/// Two frames, like `render_shell_with`, and for one more reason besides its:
+/// [`crate::peek::Peek`] answers from the pointer AND from last frame's state,
+/// so the frame that reveals and the frame that draws the revealed band are
+/// different frames.
+fn render_auto_hidden(
+    ctx: &egui::Context,
+    pointer: Option<egui::Pos2>,
+    width: f32,
+) -> (Option<f32>, crate::peek::Show, Vec<(String, Rect)>) {
+    let shell = hideable_shell();
+    let registry = wide_registry();
+    let mut state = crate::ribbon::RibbonState::new();
+    state.set_active_tab("only");
+    state.set_auto_hide(crate::peek::AutoHide::OnHover);
+
+    let mut height = None;
+    let mut rects: Vec<(String, Rect)> = Vec::new();
+    let conditions = ConditionSet::new();
+    for _ in 0..2 {
+        rects.clear();
+        height = None;
+        let mut sink = |name: &str, rect: Rect| rects.push((name.to_owned(), rect));
+        let input = egui::RawInput {
+            screen_rect: Some(Rect::from_min_size(
+                egui::Pos2::ZERO,
+                egui::Vec2::new(width, 400.0),
+            )),
+            events: pointer.map(egui::Event::PointerMoved).into_iter().collect(),
+            ..Default::default()
+        };
+        let _ = ctx.run_ui(input, |ui| {
+            let _ = crate::ribbon::Ribbon::new()
+                .with_conditions(&conditions)
+                .reporting_rects_to(&mut sink)
+                .render(ui, &shell, &registry, &mut state);
+            // The number the canvas below the ribbon actually sees.
+            height = Some(ui.min_rect().height());
+        });
+    }
+    (height, state.last_frame().band_show, rects)
+}
+
+/// ★★★ **THE CANVAS DOES NOT MOVE.** An auto-hidden ribbon takes the same room
+/// whether its band is showing or not.
+///
+/// This is the property that decides whether the setting is usable. The band is
+/// drawn into an `egui::Area` when it is revealed, which allocates nothing, so
+/// the `Ui` the application handed the ribbon is exactly as tall as the tab
+/// strip in both states. The plausible wrong implementation draws the band
+/// inline and simply skips it when hidden — every test in this file would still
+/// pass, and the operator's drawing would jump by ninety points every time the
+/// pointer crossed the tab row.
+///
+/// ⚠ Both states are DRIVEN rather than assumed. An absence test that never
+/// reached the revealed state would be satisfied by a build that never reveals
+/// anything, which is the vacuous shape this project has shipped twice; so the
+/// second reading asserts `Show::Overlay` before comparing, and says so if the
+/// plant did not land.
+#[test]
+fn an_auto_hidden_ribbon_takes_the_same_room_whether_its_band_shows_or_not() {
+    let ctx = context();
+
+    let (hidden_h, hidden_show, hidden_rects) = render_auto_hidden(&ctx, None, 900.0);
+    assert_eq!(
+        hidden_show,
+        crate::peek::Show::Hidden,
+        "with no pointer in the frame the band must be at rest"
+    );
+    let hidden_h = hidden_h.expect("the measuring closure never ran");
+
+    // The trigger is the tab strip, and the pointer is put in the middle of it
+    // — read out of the published region rather than guessed, because a guessed
+    // coordinate that happens to miss produces exactly this test passing for
+    // the wrong reason.
+    let trigger = hidden_rects
+        .iter()
+        .rev()
+        .find(|(n, _)| n == "ribbon.autohide.trigger")
+        .map(|(_, r)| *r)
+        .expect("a hidden ribbon must publish its trigger, or there is no way back");
+    assert!(
+        trigger.height() >= crate::peek::Peek::MIN_TRIGGER_PTS,
+        "the way back to the band is {} pt tall, under the {} pt floor",
+        trigger.height(),
+        crate::peek::Peek::MIN_TRIGGER_PTS
+    );
+
+    let (shown_h, shown_show, shown_rects) =
+        render_auto_hidden(&ctx, Some(trigger.center()), 900.0);
+    assert_eq!(
+        shown_show,
+        crate::peek::Show::Overlay,
+        "the plant did not land: the pointer is on the tab strip and the band is \
+         still hidden, so the comparison below is between two identical frames"
+    );
+    let shown_h = shown_h.expect("the measuring closure never ran");
+
+    assert!(
+        (hidden_h - shown_h).abs() < 0.01,
+        "the ribbon occupied {hidden_h} pt with its band hidden and {shown_h} pt \
+         with it revealed, so the canvas beneath jumped by {} pt as the pointer \
+         crossed the tab row",
+        (hidden_h - shown_h).abs()
+    );
+
+    // …and the band really was drawn on the second reading. Without this the
+    // equality above is satisfied by a build that reveals nothing at all.
+    assert!(
+        shown_rects
+            .iter()
+            .any(|(n, _)| n == "ribbon.autohide.overlay"),
+        "no overlay rectangle was published, so nothing was drawn over the document"
+    );
+    assert!(
+        !hidden_rects
+            .iter()
+            .any(|(n, _)| n == "ribbon.autohide.overlay"),
+        "an overlay was published on the frame the band is supposed to be hidden"
+    );
+}
+
+/// ★★ **The tab strip is the same height either way**, which is what makes it
+/// a legal trigger.
+///
+/// `peek`'s direction bound rests on the trigger being independent of the
+/// surface it reveals. Here that is a claim about *this* ribbon rather than
+/// about `peek`: the strip is drawn by [`super::strip::render`] before the band
+/// exists, so nothing the band does can reach it. Asserted across a width
+/// series rather than at one width, because the strip's own overflow machinery
+/// changes what it contains and a single width could agree by luck.
+#[test]
+fn the_tab_strip_is_the_same_height_with_the_band_shown_and_hidden() {
+    let ctx = context();
+    for width in [1400.0_f32, 1100.0, 900.0, 700.0, 520.0] {
+        let (_, _, hidden) = render_auto_hidden(&ctx, None, width);
+        let trigger = hidden
+            .iter()
+            .rev()
+            .find(|(n, _)| n == "ribbon.autohide.trigger")
+            .map(|(_, r)| *r)
+            .unwrap_or_else(|| panic!("no trigger published at {width} pt"));
+        let (_, show, shown) = render_auto_hidden(&ctx, Some(trigger.center()), width);
+        assert_eq!(show, crate::peek::Show::Overlay, "at {width} pt");
+        let revealed = shown
+            .iter()
+            .rev()
+            .find(|(n, _)| n == "ribbon.autohide.trigger")
+            .map(|(_, r)| *r)
+            .unwrap_or_else(|| panic!("no trigger published at {width} pt while revealed"));
+        assert!(
+            (trigger.height() - revealed.height()).abs() < 0.01,
+            "at {width} pt the tab strip is {} pt tall hidden and {} pt revealed — \
+             the trigger moves with the thing it triggers, which is R128's loop",
+            trigger.height(),
+            revealed.height()
+        );
+    }
 }

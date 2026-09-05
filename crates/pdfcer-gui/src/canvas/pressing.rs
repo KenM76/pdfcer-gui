@@ -588,6 +588,48 @@ pub fn look(
     let widget_body =
         origin.is_some_and(|p| widgetdrag::grab_box(ctx, doc, map).is_some_and(|b| b.contains(p)));
 
+    // ★★★ **A RESIZE GRIP IS NOT INSIDE THE BOX IT RESIZES** — 2026-09-05.
+    //
+    // `handles::grip_rects` centres each grip **on** a corner of the anchor
+    // box, so half of every corner grip's live area is outside the box by
+    // construction — `GRIP_SIZE_PX / 2 + GRIP_GRAB_SLACK_PX` = 6 pt of it — and
+    // `handles::grip_bounds` pushes the whole anchor box further out again on a
+    // small selection (O57). A press on that outer half answers `Some(Grip::NE)`
+    // and `markup_body == false`.
+    //
+    // `gesture::press_kind`'s annotation arm was gated on the **body** alone, so
+    // that press fell through to the `caps.edit_content` branch — which is
+    // **false in Review, the mode markup is authored in** — and the gesture was
+    // eaten: no resize, no decline, no line in the trace. That is the second
+    // half of what the 2026-09-05 sweep reported as *"an annotation can be
+    // ROTATED and cannot be MOVED or RESIZED"*, measured by
+    // `the_line_weight_switch_reaches_the_resize` pressing at screen (532, 493)
+    // on a box declared `[[443.3 493.1] - [531.0 578.8]]`: one point right of
+    // its edge and one tenth of a point above it, dead centre of the NE grip.
+    //
+    // ★★ ROTATION SURVIVED, and that asymmetry is the whole diagnosis. The
+    // rotate handle sits well clear of the box, so it could never have been
+    // reached through a body test — it was given its own arm keyed on
+    // `grip == Some(Grip::Rotate)`. The eight scale grips were left keyed on the
+    // body because they *look* as though they are on it. ⇒ **A control drawn at
+    // the edge of a rectangle is not inside that rectangle**, and any gate that
+    // assumes it is will pass every test written from a picture.
+    //
+    // ★ Content selections never had this defect: `press_kind`'s content branch
+    // matches on `grip` directly with no body test, which is why
+    // `resize_scales_a_shape` has passed throughout. The bug is in the two arms
+    // that were added later and copied the body test from the *move* they were
+    // written for.
+    //
+    // The ownership question — *whose* grip is this? — is answered by the same
+    // two functions `grabbable` consults, in the same priority order, so a grip
+    // cannot be attributed to a box that is not the one `grabbable` measured.
+    let markup_grip =
+        grip.is_some_and(handles::Grip::is_resize) && annotdrag::grab_box(map, selection).is_some();
+    let widget_grip = grip.is_some_and(handles::Grip::is_resize)
+        && annotdrag::grab_box(map, selection).is_none()
+        && widgetdrag::grab_box(ctx, doc, map).is_some();
+
     let meaning = gesture::press_kind(
         gesture::Press {
             tool: active_tool,
@@ -596,7 +638,9 @@ pub fn look(
             dimension,
             annot_rotate,
             markup_body,
+            markup_grip,
             widget_body,
+            widget_grip,
             zoom_armed: zoom::region_zoom_armed(ctx),
         },
         caps,

@@ -13,14 +13,75 @@
 //! arrangement `app::modes::defaults` intends; nothing but a driven run can say
 //! that the dock drew it.
 //!
-//! # ★★★ The four things it asserts, and why none of them is redundant
+//! # ★★★ The five things it asserts, and why none of them is redundant
 //!
 //! | # | assertion | the build it fails on |
 //! |---|---|---|
 //! | 1 | Objects' body and Properties' body are **both** on screen | one behind the other in a tabbed stack, which is what "one panel" would become if somebody merged the two stacks into one |
 //! | 2 | Objects sits **above** Properties, in the same x range | a side-by-side split, or the two in different columns |
+//! | 2b | the detail pane holds **no document metadata**, *and* the document's own properties are a mounted tab | the arrangement the operator reported on 2026-09-05 — and, through the second half, every build that "fixed" it by drawing nothing |
 //! | 3 | a **splitter** publishes between them | a fixed split — the thing part 3 says the pair must not be |
-//! | 4 | **no row is elided at the default width** on this fixture | 320 pt, or a regression that stopped widening Edit |
+//! | 4 | **no row is elided at the width the dock opens at** on this fixture | the row form that shipped until 2026-09-05, on which every row was elided |
+//!
+//! ## ★★★ Why 2b is here rather than in a check of its own
+//!
+//! Because it is a claim about **this pane**, and this is the check that
+//! already has the pane's rectangle in hand. The operator's report — *"the
+//! document properties are still always visible in the properties tab"* — is
+//! precisely a statement that something which is not the detail of the
+//! selection was drawn inside the detail half of this master–detail column, so
+//! the assertion belongs with the one that establishes the column exists.
+//!
+//! ⚠ **And it is a PAIR, deliberately.** The obvious assertion — *the metadata
+//! region is not inside the Properties body* — passes on a build where the
+//! Properties panel draws nothing at all, where the docprops panel failed to
+//! mount, and where the dock failed to draw. So it is read together with the
+//! presence of `dock.tab.file.document_properties`, which says the metadata
+//! went **somewhere** rather than merely leaving. That shape — a negative
+//! paired with the positive control that stops it being vacuous — is the one
+//! this suite keeps having to relearn.
+//!
+//! # ⚠ NOT RUN by the session that last edited this file — 2026-09-05
+//!
+//! ★ Twice over now. It was **passing** before the document-properties move and
+//! it has **not been re-run since**, for the same reason as before: the
+//! machine's pointer and keyboard belong to another track and a driven run
+//! cannot share them. Assertion 2b has therefore never executed once.
+//!
+//! The four original assertions are unchanged in substance; assertion 4's
+//! **failure message** was rewritten because it named two causes that turned
+//! out to be the wrong two. This check has **not been re-run against the fixed
+//! build**: the machine's pointer and keyboard were held by another track, and
+//! a driven run cannot share them. The headless half of the same question is
+//! `panels::objects::tests::every_object_row_of_the_a1_sheet_fits_the_measured_pane`,
+//! which passes.
+//!
+//! ## ★★★ What the first run actually found, and what its message got wrong
+//!
+//! It reported **`8 OF 8 OBJECT ROWS DO NOT FIT`** and offered two
+//! explanations: *"either the width regressed to 320 or the rows grew."*
+//! Neither was true.
+//!
+//! - The trace's own `objects-rows` line read `pane=314.0 overflow=473.6` —
+//!   the widest row wanted **473.6 pt** where the pane offered **296 pt** of
+//!   text room. Re-measured headlessly, the *narrowest* row of this fixture
+//!   wanted **306.3 pt**. Every row was over, so no width was going to fix it:
+//!   a dock wide enough is about 526 pt, half of an 1,100 pt window.
+//! - And the pane was **not the default**. The same trace reads
+//!   `mode-changed from=Some("read") to=edit remembered=true` — a **restored
+//!   workspace**, which never consults `EDIT_INSPECTOR_WIDTH` at all. So the
+//!   message's first candidate ("the width regressed to 320") named a constant
+//!   the failing run had not read.
+//!
+//! ⇒ The fix was in the **row**: `panels::objects` draws a headline (index,
+//! kind, the facts that identify the object, one disclosure mark) and hovers
+//! the full description. See that module's header §1b.
+//!
+//! ★ The lesson for this file, and it is the suite's own recurring one: **a
+//! failure message that lists candidate causes is a hypothesis, and it goes
+//! stale exactly like a comment.** The rewritten message below names the
+//! measurement (`overflow=` against `pane=`) instead of guessing, because the
+//! trace already carries the number that decides between the candidates.
 //!
 //! ★ Assertion 4 is the one that needed a channel built for it, and the channel
 //! is the application's own `objects-rows` line. That is the app marking its own
@@ -65,6 +126,20 @@ const FIXTURE: &str = "fixtures/a1-titleblock.pdf";
 const OBJECTS_BODY: &str = "dock.body.view.panel_objects";
 /// The detail's body compartment.
 const PROPERTIES_BODY: &str = "dock.body.file.properties";
+/// The region the document's own `/Info` form publishes.
+///
+/// ★ Named `properties.info` even though it belongs to
+/// `crate::panels::docprops` now: the region name was deliberately left alone
+/// when the section became a panel, and that module's `REGION` carries the
+/// reason. **This check is the one that would notice if it drifted**, so the
+/// constant is here and the string is written once.
+const DOC_METADATA: &str = "properties.info";
+/// The Document properties panel's tab in the dock's strip.
+///
+/// The positive control for assertion 2b. A mounted tab publishes this whether
+/// or not it is the active one, which is what lets *"the metadata moved"* be
+/// asserted rather than only *"the metadata is not here"*.
+const DOC_PROPERTIES_TAB: &str = "dock.tab.file.document_properties";
 /// The splitter between the right side's two stacks.
 ///
 /// ★ Column 0, boundary 0 — the only stack boundary Edit's right side has, and
@@ -91,9 +166,10 @@ impl Check for TheInspectorIsOneMasterDetailColumn {
 
     fn defect(&self) -> &'static str {
         "the right dock does not show the object list over that object's properties in one \
-         column with a draggable split, or it shows them at a width that cuts the rows — which \
-         is invisible to every unit test, because the arrangement a module intends and the \
-         arrangement a dock draws are two different facts"
+         column with a draggable split, or it shows them at a width that cuts the rows, or the \
+         detail pane is still carrying the document's own metadata under everything else — all \
+         of which are invisible to every unit test, because the arrangement a module intends \
+         and the arrangement a dock draws are two different facts"
     }
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
@@ -210,6 +286,60 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
+    // --- 2b: ★★★ the detail pane is the detail of the SELECTION, and of
+    // nothing else — the operator, 2026-09-05 -------------------------------
+    //
+    // > *"the document properties are still always visible in the properties
+    // > tab. it needs to get out of there and be in its own document properties
+    // > tab."*
+    //
+    // The file's own `/Info` form was drawn at the foot of this pane on every
+    // frame, under everything, with no condition of any kind. It is
+    // `crate::panels::docprops` now. This asserts that it is no longer INSIDE
+    // the detail pane's rectangle.
+    //
+    // ★★★ **The negative alone is vacuous, and the pairing is the point.**
+    // `properties.info` is published through `ui_rect_visible`, so a panel that
+    // is mounted behind a sibling tab publishes nothing at all — which means
+    // "the region is not inside the detail pane" is satisfied by a build that
+    // deleted the metadata form outright, by one where the panel failed to
+    // mount, and by one where the whole dock failed to draw. Every one of those
+    // is worse than the defect being fixed.
+    //
+    // ⇒ So the tab strip is read for the panel's own tab. `dock.tab.<id>` is
+    // published for a mounted tab whether or not it is the active one — the
+    // strip draws every tab, only the BODY is the active one — so this says
+    // *the metadata moved*, where the negative alone says only *the metadata is
+    // not here*.
+    if let Some(metadata) = declared(&trace, ui_rect, DOC_METADATA) {
+        let inside = metadata.min.x >= properties.min.x - 1.0
+            && metadata.max.x <= properties.max.x + 1.0
+            && metadata.min.y >= properties.min.y - 1.0
+            && metadata.max.y <= properties.max.y + 1.0;
+        if inside {
+            return Ok(Some(format!(
+                "★★★ THE DOCUMENT'S OWN PROPERTIES ARE STILL IN THE SELECTION INSPECTOR. \
+                 `{DOC_METADATA}` drew at {metadata:?}, inside `{PROPERTIES_BODY}` at \
+                 {properties:?} — so the file's title, author, subject and keywords are on \
+                 screen in the pane whose subject is what the operator picked, which is the \
+                 report this assertion exists for. The metadata belongs to \
+                 `{DOC_PROPERTIES_TAB}`."
+            )));
+        }
+    }
+    let tabs = driving::declared_names(&trace, ui_rect, "dock.tab.");
+    if !tabs.iter().any(|name| name == DOC_PROPERTIES_TAB) {
+        return Ok(Some(format!(
+            "★★★ THE DOCUMENT PROPERTIES PANEL IS NOT MOUNTED. No `{DOC_PROPERTIES_TAB}` tab \
+             was published in `{MODE}`, so the metadata form the operator asked to be moved \
+             OUT of the inspector has not been moved anywhere he can reach — and the \
+             assertion above passes trivially on exactly that build, which is why the two are \
+             read together. Dock tabs that did publish: {}.",
+            list(&tabs)
+        )));
+    }
+    report.note("the document's own properties are a tab of their own, not a block in the detail");
+
     // --- 3: the split is DRAGGABLE, which means a splitter was drawn ---------
     let Some(splitter) = declared(&trace, ui_rect, STACK_SPLITTER) else {
         return Ok(Some(format!(
@@ -245,7 +375,16 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .get("visible")
         .and_then(|v| v.parse().ok())
         .ok_or_else(|| Error::new(format!("`{ROWS_EVENT}` carries no `visible=` count")))?;
-    report.note(format!("{visible} rows drawn, {elided} shortened"));
+    // ★ `pane=` and `overflow=` go in the NOTE, not only in the failure
+    // message, so a PASS records the margin it passed by. A run that passes at
+    // 295 pt of a 296 pt room is one edit from failing and looks identical, in
+    // a report, to one that passes at half the width.
+    let pane = rows.get("pane").unwrap_or("?").to_owned();
+    let overflow = rows.get("overflow").unwrap_or("?").to_owned();
+    report.note(format!(
+        "{visible} rows drawn, {elided} shortened; pane={pane} pt, widest shortened row \
+         overflow={overflow} pt"
+    ));
     if visible == 0 {
         return Err(Error::new(format!(
             "the object list drew zero rows on {FIXTURE}, so there is nothing to measure. \
@@ -255,11 +394,16 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     if elided > 0 {
         return Ok(Some(format!(
-            "★★★ {elided} OF {visible} OBJECT ROWS DO NOT FIT at the default width. O123 part 6 \
-             widened Edit's inspector to 360 pt precisely so the common row would fit; a \
-             non-zero count here means either the width regressed to 320 or the rows grew. \
-             The shortened rows are still readable on hover — this is a legibility failure, \
-             not a lost capability. Trace: {}.",
+            "★★★ {elided} OF {visible} OBJECT ROWS DO NOT FIT. The pane offered {pane} pt and \
+             the widest shortened row wanted {overflow} pt. \
+             ★ READ THOSE TWO NUMBERS BEFORE FORMING A THEORY: if the overshoot is small the \
+             row form grew a clause; if it is half as much again, something put the FULL \
+             object description back on the row, which is the state that shipped until \
+             2026-09-05 and which no dock width can fix (the widest description on this \
+             fixture is 473.6 pt). ⚠ Do NOT reach for `EDIT_INSPECTOR_WIDTH`: check the trace \
+             for `remembered=true` first — a restored workspace never reads it. \
+             The shortened rows are still readable on hover, so this is a legibility failure \
+             and not a lost capability. Trace: {}.",
             session.trace_path().display()
         )));
     }

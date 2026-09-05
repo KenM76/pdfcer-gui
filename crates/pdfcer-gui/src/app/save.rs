@@ -831,6 +831,11 @@ fn write_and_report(doc: &OpenDoc, target: &Path) -> bool {
             // nothing.
             crate::app::status::decline::record_save_failure();
             redaction_refusal_note(doc, &error);
+            // Mutually exclusive with the line above — one `SaveError` value
+            // reaches both, and each is silent for the other's variant. See
+            // `page_tree_refusal_note` for why it is a second function rather
+            // than a second arm.
+            page_tree_refusal_note(doc, &error);
             false
         }
     }
@@ -909,6 +914,53 @@ fn redaction_refusal_note(doc: &OpenDoc, error: &SaveError) {
             crate::text::redact::save_refused_message(refusal),
         );
     }
+}
+
+/// **The extra sentence a save refused by the page-tree guard owes** —
+/// 2026-09-05.
+///
+/// [`redaction_refusal_note`]'s shape exactly, for its reasons, one variant
+/// along: `record_save_failure` puts *"the copy was not written — check that
+/// the folder exists and can be written to"* on the bar, which is right for a
+/// full disk and wrong here. Nothing is wrong with the disk, the folder, or
+/// anything the operator did. What is wrong is that the document no longer
+/// agrees with itself about how many pages it has, and a file written from it
+/// would open elsewhere with blank pages in it.
+///
+/// ★ Added **beside** the failure rather than instead of it, on the same
+/// standing reason [`redaction_refusal_note`] gives: the save genuinely did not
+/// happen, and replacing that fact with an explanation would leave an operator
+/// unsure whether a file appeared.
+///
+/// ★ A **separate function** rather than a second arm inside
+/// [`redaction_refusal_note`], and the reason is territorial rather than
+/// aesthetic: that function belongs to the deferred-redaction work, which is in
+/// flight in another track, and a shared `match` is a merge conflict in a file
+/// two tracks are editing. The two are mutually exclusive by construction — one
+/// [`SaveError`] value reaches both — so calling both costs nothing and neither
+/// can overwrite the other's note.
+///
+/// ★★ **Which of the two sentences** is decided from structured data, never
+/// from a message: [`crate::pagetree::Audit::root_disagreement`]. A root that
+/// disagrees has an exact symptom the operator can verify (*n* blank pages at
+/// the end); an interior-only disagreement does not, and promising one would be
+/// the sneaky half of rule 4. See [`crate::text::pagetree`]'s header.
+///
+/// ★ Silent for every other [`SaveError`], exactly as its sibling is.
+fn page_tree_refusal_note(doc: &OpenDoc, error: &SaveError) {
+    let SaveError::PageTreeStale { audit } = error else {
+        return;
+    };
+    let name = doc.path.file_name().map_or_else(
+        || doc.path.display().to_string(),
+        |n| n.to_string_lossy().into_owned(),
+    );
+    // ★ The choice of sentence — including the re-audit of the file on disk
+    // that answers *"was it already like this when he opened it?"* — belongs to
+    // `crate::pagetree`, beside the audit it reasons about. This function is
+    // the delivery: one name, one audit, one note.
+    let sentence = crate::pagetree::refusal_sentence(&name, audit, doc.stored_under());
+    crate::app::actions::record_note(doc.edit_epoch, sentence);
 }
 
 /// **Serialize the open document as an incremental update and write it to
@@ -1048,6 +1100,78 @@ fn write_copy(doc: &OpenDoc, target: &Path) -> Result<Written, SaveError> {
         });
         return Err(SaveError::RedactionLeak { survivors });
     }
+
+    // ★★★ THE STRUCTURAL GUARD, 2026-09-05 — the second proof this shell keeps
+    // at this boundary, and it is here for the identical reason the first one
+    // is. `crate::pagetree` carries the whole argument, the measured cost, and
+    // the lesson; the three facts a reader of THIS function needs are:
+    //
+    // 1. **It is on the funnel, not on the delete-pages arm.** The defect is a
+    //    writer's invariant, and `page-copy --cut` was measured producing
+    //    byte-for-byte the same corruption as `delete-pages`. A guard on one
+    //    verb would pass every other one straight through and would have to be
+    //    remembered again for each verb added later.
+    // 2. **It refuses; it does not repair.** `pdfcer-core` owns the page tree
+    //    and is the only writer of `/Count`. A shell that patched the same key
+    //    would be a second writer of one structure and the two would drift.
+    // 3. **It cannot see the defect through this shell's own reader**, so it
+    //    does not use it: `page_tree::pages` walks `/Kids` and reports a
+    //    healthy 34-page document while the root still declares 36. The audit
+    //    reads `/Count` raw and compares.
+    //
+    // ★ Ungated, and NOT free: 1.78 ms on his 1.8 MB drawing set, 3.51 ms on
+    // the 129,758-object CAD sheet — which on the first of those is MORE than
+    // `to_incremental_bytes` cost to build the bytes it is checking. Measured
+    // rather than assumed, and the first draft of this comment guessed and was
+    // wrong. It stays on every save because a few milliseconds is invisible
+    // inside a gesture that opens a file dialog and writes megabytes to disk.
+    // `crate::pagetree` §9 has the table and the argument for why a *"has the
+    // page count changed this session?"* gate was rejected on correctness
+    // grounds as well as on cost.
+    let audit = crate::pagetree::audit_saved_bytes(&bytes);
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        //
+        // ★ `walked=` is the field worth having and is why this line is emitted
+        // on the SUCCESS path too. A clean audit and an audit that never ran
+        // produce the same `bad=0`, and this project's most-repeated failure
+        // shape is a check that reported success having looked at nothing.
+        format!(
+            "save-pagetree walked={} pages={} declared={:?} levels={} bad={} nocount={} cycles={} deep={}",
+            audit.walked,
+            audit.reachable_pages,
+            audit.declared_pages,
+            // ★ `levels=` because a flat tree (2) CANNOT exhibit the defect
+            // this guard is for, and a reader of a trace who does not know
+            // that will read a clean line as evidence the writer is sound.
+            audit.depth,
+            audit.disagreements.len(),
+            audit.nodes_without_count,
+            audit.cycles,
+            audit.too_deep,
+        )
+    });
+    if !audit.is_consistent() {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed.
+            //
+            // The node ids, which the operator is never shown. A reader of a
+            // trace needs to know HOW FAR UP the disagreement goes: the
+            // immediate parent being correct and everything above it stale is
+            // the signature of "there is no upward walk at all", which is a
+            // different engine defect from "the walk stops one short".
+            format!(
+                "save-refused-pagetree path={target:?} nodes={:?}",
+                audit
+                    .disagreements
+                    .iter()
+                    .map(|d| (d.node.num, d.declared, d.reachable, d.root))
+                    .collect::<Vec<_>>()
+            )
+        });
+        return Err(SaveError::PageTreeStale { audit });
+    }
+
     std::fs::write(target, &bytes)?;
     Ok(written)
 }
@@ -1137,6 +1261,32 @@ enum SaveError {
         /// mechanism.
         refusal: crate::redact::RedactApplyRefusal,
     },
+    /// ★★★ **The bytes were built and their page tree does not agree with
+    /// itself, so writing them would hand the operator a damaged file.**
+    ///
+    /// Added 2026-09-05, from his own report: *"I tested deleting pages from a
+    /// pdf. when I open the document in Acrobat there are blank pages at the
+    /// end of the document equalling the number of pages I deleted."*
+    ///
+    /// Like [`Self::RedactionLeak`] this reports a **pdfcer defect** rather
+    /// than a property of the document or of the disk — and unlike it, this one
+    /// is reachable today and he reached it. `pdfcer-core` v0.38.0's
+    /// `delete_pages` decrements `/Count` on the removed page's immediate
+    /// parent and on no ancestor above it (measured; the appended revision
+    /// defines exactly one object), so on any document whose page tree has more
+    /// than one level the root goes on declaring the pre-delete page count.
+    /// `page-copy --cut` produces byte-for-byte the same corruption. Filed as
+    /// `request_delete_pages_leaves_ancestor_count_stale_on_a_nested_page_tree.md`.
+    ///
+    /// ★ The whole [`crate::pagetree::Audit`] is carried, not a pair of
+    /// numbers, because the sentence differs by *which* node disagrees (see
+    /// [`crate::text::pagetree`]) and because the trace wants the node ids —
+    /// and because `crate::app::lifecycle`'s rule is that a branch is made on
+    /// structured error data, never by inspecting a message.
+    PageTreeStale {
+        /// What the walk found. Never rendered verbatim: it names object ids.
+        audit: crate::pagetree::Audit,
+    },
 }
 
 impl From<WriteError> for SaveError {
@@ -1181,6 +1331,18 @@ impl std::fmt::Display for SaveError {
             Self::RedactionRefused { refusal } => write!(
                 f,
                 "the staged redaction could not be performed, so no save was built: {refusal:?}"
+            ),
+            // The numbers and the node count, never the operator's sentence:
+            // `crate::text::pagetree` owns that and a second, uncatalogued
+            // rendering is how the two drift — the same choice
+            // `RedactionRefused` makes one arm above.
+            Self::PageTreeStale { audit } => write!(
+                f,
+                "the save was refused: the page tree declares {:?} pages over {} reachable, \
+                 and {} node(s) disagree",
+                audit.declared_pages,
+                audit.reachable_pages,
+                audit.disagreements.len()
             ),
         }
     }

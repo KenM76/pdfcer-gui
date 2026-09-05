@@ -107,6 +107,18 @@ pub mod ocr;
 /// resets the panels' state, and switching documents is exactly what a
 /// cross-document drag has to do on its way. See the module header.
 pub mod pagedrag;
+/// ★★★ **Does this document's page tree still agree with itself?** — the
+/// structural guard every save goes through, added 2026-09-05 after the
+/// operator found pages in a saved file that pdfcer did not believe were there.
+///
+/// It reads `/Count` **raw** off each `/Pages` node and compares it against the
+/// leaves actually beneath it, because the lesson this module exists to carry
+/// is that a GUI checking its own work with its own parser cannot see this
+/// class of defect at all: `page_tree::pages` walks `/Kids` and reports a
+/// healthy document while Acrobat, which builds its page list from the root
+/// `/Count`, shows blank pages. See the module header — it also says why the
+/// guard refuses rather than repairs, and why the fixture has to be nested.
+pub mod pagetree;
 pub mod panels;
 /// Putting a password on a document, changing what it allows, and taking the
 /// protection off — `OPERATOR_REQUESTS.md` **O119**, approved 2026-09-04.

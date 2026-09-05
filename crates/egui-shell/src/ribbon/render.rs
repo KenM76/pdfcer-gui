@@ -230,6 +230,26 @@ impl<'a> Ribbon<'a> {
         let mut band_outcome = band::BandOutcome::default();
         let mut strip_outcome = strip::StripOutcome::default();
 
+        // ★★★ AUTO-HIDE. Office's *Show Tabs*, and the whole of the operator's
+        // second ask of 2026-09-05. See [`crate::peek`] for the model, for
+        // which product it was taken from, and for the R128 direction bound
+        // that stops "visible because the pointer is here" from becoming a
+        // loop.
+        //
+        // The state is moved OUT of `state` for the duration of the frame
+        // rather than borrowed, because `Ctx` already holds borrows that live
+        // as long as the closures below and a second `&mut state` would not
+        // compile. It is put back at the end of this function, unconditionally.
+        let mut peek = std::mem::take(&mut state.peek);
+        let mut show = crate::peek::Show::Inline;
+        // ★ The TRIGGER, and the one property that matters about it: it is the
+        // tab strip, whose height is decided by the theme's control metrics and
+        // by the mode selector, and **not by the band**. Nothing the band does
+        // — appearing, disappearing, changing tab, growing a row — can move it.
+        // That is what makes `in(trigger)` a safe way to *start* a reveal; see
+        // `peek`'s invariant.
+        let mut trigger = egui::Rect::NOTHING;
+
         ui.vertical(|ui| {
             strip_outcome = strip::render(
                 ui,
@@ -243,10 +263,67 @@ impl<'a> Ribbon<'a> {
 
             tabs::strip_underline(ui, &ctx);
 
-            if let Some(tab) = active {
+            trigger = egui::Rect::from_min_max(
+                entitled.min,
+                egui::pos2(entitled.right(), ui.cursor().top()),
+            );
+            show = peek.resolve(
+                trigger,
+                ui.ctx().pointer_latest_pos(),
+                band_holds_keyboard_focus(ui.ctx(), &peek),
+            );
+            ctx.reporter
+                .report(trigger, super::report::auto_hide_trigger);
+
+            if show.takes_room()
+                && let Some(tab) = active
+            {
                 band_outcome = band::render_band(ui, &mut ctx, &tab.id, tab.groups(), entitled);
             }
         });
+
+        // ★★ THE OVERLAY. Drawn as an `egui::Area` **after** the vertical
+        // closure has ended, so it is outside the layout entirely: it allocates
+        // nothing, so the application's top panel is exactly as tall as the tab
+        // strip, so the canvas beneath does not move when the band comes and
+        // goes. That is the second of `peek`'s three carried-across properties
+        // and it is not negotiable — a canvas that resized on hover would move
+        // every coordinate under the pointer as the pointer approached.
+        if show == crate::peek::Show::Overlay
+            && let Some(tab) = active
+        {
+            let anchor = egui::pos2(entitled.left(), trigger.bottom());
+            let width = entitled.width();
+            let area = egui::Area::new(ctx.base_id.with("band-overlay"))
+                .order(egui::Order::Foreground)
+                .fixed_pos(anchor)
+                // The band is as wide as the window and is anchored to a strip
+                // that is already on screen, so `egui`'s screen-constraining —
+                // which would shove a too-wide area left — can only move it
+                // away from the strip it belongs to.
+                .constrain(false);
+            let drawn = area
+                .show(ui.ctx(), |ui| {
+                    ui.set_min_width(width);
+                    ui.set_max_width(width);
+                    // ★ A fill and a stroke, from the theme's own roles rather
+                    // than from numbers — `check-theme-colors.sh`. The stroke
+                    // is what says "this is floating over the document"; an
+                    // unstroked panel-filled rectangle over a white page reads
+                    // as part of the page.
+                    let fill = ui.visuals().panel_fill;
+                    let stroke = ui.visuals().widgets.noninteractive.bg_stroke;
+                    egui::Frame::new().fill(fill).stroke(stroke).show(ui, |ui| {
+                        band_outcome =
+                            band::render_band(ui, &mut ctx, &tab.id, tab.groups(), entitled);
+                    });
+                })
+                .response
+                .rect;
+            peek.record_overlay(drawn);
+            ctx.reporter.report(drawn, super::report::auto_hide_overlay);
+        }
+        state.peek = peek;
 
         // Applied after drawing, so they land on the next frame — see the
         // module header on why a mid-frame mode change would produce a
@@ -281,9 +358,49 @@ impl<'a> Ribbon<'a> {
             overflow_visible: band_outcome.overflow_visible,
             overflow_id: band_outcome.overflow_id,
             commands_invoked: invoked.len(),
+            band_show: show,
         };
         invoked
     }
+}
+
+/// Whether the keyboard is currently inside the **revealed overlay**.
+///
+/// The `holds_focus` keep-term of [`crate::peek::Peek::resolve`]. Without it a
+/// keyboard user who tabs into a revealed band loses it on the next frame,
+/// because the pointer is nowhere near — a control that is drawn and then
+/// withdrawn from under the focus is the same defect class as one that is drawn
+/// and unclickable.
+///
+/// # ★ Why it is answered geometrically rather than by id
+///
+/// The obvious implementation asks whether the focused `egui::Id` is one the
+/// ribbon derived from [`super::ctx::Ctx::id`]. It cannot: an `Id` is a hash
+/// and does not decompose, so there is no way to ask "did this come from my
+/// salt". What *is* available is the focused widget's own rectangle —
+/// `Context::read_response` — and whether it lies inside the rectangle the
+/// overlay occupied last frame. The overlay is the only thing drawn there, so
+/// containment answers the question exactly.
+///
+/// ★★ It reads **last frame's** overlay, which is the only one that exists at
+/// the moment the question is asked, and that is not a staleness bug: it is the
+/// same rectangle this frame will draw unless the theme changed, and the term
+/// is a *keep* rather than a *start*, so the worst a stale rectangle can do is
+/// hold a band open for one extra frame. It cannot open one.
+///
+/// Returns `false` when nothing has focus, when the focused widget has no
+/// recorded response yet (its first frame), and when auto-hide has never drawn
+/// an overlay — all three being "the keyboard is not in there".
+fn band_holds_keyboard_focus(egui_ctx: &egui::Context, peek: &crate::peek::Peek) -> bool {
+    let Some(overlay) = peek.overlay() else {
+        return false;
+    };
+    let Some(focused) = egui_ctx.memory(egui::Memory::focused) else {
+        return false;
+    };
+    egui_ctx
+        .read_response(focused)
+        .is_some_and(|r| overlay.intersects(r.rect))
 }
 
 impl std::fmt::Debug for Ribbon<'_> {

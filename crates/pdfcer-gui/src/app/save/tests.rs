@@ -726,3 +726,253 @@ fn undoing_the_marks_under_an_armed_removal_refuses_the_save_by_name() {
          sentence has to send him there: {said}"
     );
 }
+
+// ==========================================================================
+// The page-tree structural guard — 2026-09-05
+//
+// ★★★ Added because the operator opened a file pdfcer had just written and
+// found pages in it pdfcer did not believe were there:
+//
+//   "I tested deleting pages from a pdf. when I open the document in Acrobat
+//    there are blank pages at the end of the document equalling the number of
+//    pages I deleted."
+//
+// Everything about how the guard DECIDES is asserted in `crate::pagetree`.
+// What is asserted HERE is the only thing that file cannot say: that the guard
+// is actually WIRED into the funnel, that it refuses BY NAME, and that it
+// leaves no file behind. A guard nobody called is the failure shape this
+// project keeps rediscovering, and `check-verb-coverage`'s whole existence is
+// the standing evidence that a note is not a mechanism.
+// ==========================================================================
+
+/// Open a PDF from an arbitrary path as an `OpenDoc`.
+///
+/// `open_local_fixture`'s body against a path the test wrote, because one of
+/// the assertions below needs a document that is **not** in `fixtures/` — a
+/// deliberately damaged one, which must never be committed.
+fn open_at(path: &std::path::Path) -> crate::app::state::OpenDoc {
+    let doc = pdfcer_core::document::Document::load(path).expect("the document loads");
+    let pages = pdfcer_core::page_tree::pages(&doc).expect("a page tree");
+    crate::app::state::OpenDoc::new(
+        path.to_path_buf(),
+        pdfcer_core::edit::EditSession::new(doc),
+        pages,
+    )
+}
+
+/// **A healthy document still saves.**
+///
+/// The negative control, and it is not a formality: a guard wired the wrong way
+/// round — or one whose `is_consistent` is inverted — refuses every save in the
+/// program, and every *other* assertion about the guard would still pass. The
+/// fixture is the nested one on purpose, so the control is taken on the shape
+/// the guard was written for rather than on the flat shape it is trivially
+/// right about.
+#[test]
+fn a_healthy_nested_document_still_saves() {
+    let open = open_local_fixture("nested-page-tree.pdf");
+    let target = scratch("pagetree-healthy.pdf");
+    let _ = std::fs::remove_file(&target);
+    write_copy(&open, &target).expect("★ a document that agrees with itself must save");
+    assert!(target.exists());
+    let _ = std::fs::remove_file(&target);
+}
+
+/// ★★★ **A document whose page tree does not agree with itself is refused, by
+/// name, and nothing reaches the disk.**
+///
+/// The bite. The corruption is planted in the **base file's own bytes** rather
+/// than produced by an engine verb, and that is deliberate for two reasons:
+///
+/// 1. **It cannot rot.** The day `pdfcer-core` fixes `delete_pages` this test
+///    keeps testing the same thing, because an incremental save keeps the base
+///    revision verbatim (§7.5.6) and appends — so a base whose root `/Count` is
+///    wrong produces an output whose root `/Count` is wrong, whatever the
+///    writer does. A test built on the engine's *current defect* would invert
+///    on good news, which is the one thing an assertion must never do.
+/// 2. **It proves the guard reads the OUTPUT.** The session is never asked to
+///    change a page here. A guard that only inspected what an edit did would
+///    see nothing and pass.
+///
+/// The plant is one digit: the root node's `/Count 12` becomes `/Count 13`,
+/// the same byte length, so every cross-reference offset in the file stays
+/// valid and the document still opens. Twelve pages are reachable, the root
+/// claims thirteen, and Acrobat would show a blank thirteenth.
+#[test]
+fn a_document_whose_page_tree_disagrees_with_itself_is_refused_and_writes_nothing() {
+    let source = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../fixtures/nested-page-tree.pdf");
+    let bytes = std::fs::read(&source).expect("the fixture is readable");
+    // ★ A BYTE substitution, not a `String` one. `from_utf8_lossy` turns the
+    // binary-comment bytes every PDF carries after its header (§7.5.2 —
+    // `%\xe2\xe3\xcf\xd3`, four bytes that make FTP clients treat the file as
+    // binary) into four replacement characters of three bytes each, moving
+    // every cross-reference offset in the file by eight. The first draft of
+    // this test did exactly that, and the length assertion below is what
+    // caught it.
+    const OLD: &[u8] = b"/Count 12";
+    const NEW: &[u8] = b"/Count 13";
+    let hits: Vec<usize> = bytes
+        .windows(OLD.len())
+        .enumerate()
+        .filter_map(|(i, w)| (w == OLD).then_some(i))
+        .collect();
+    assert_eq!(
+        hits.len(),
+        1,
+        "★ THE PLANT MUST LAND. The root is the only node declaring 12 pages; \
+         if the fixture is regenerated with a different shape this substitution \
+         silently stops corrupting anything and the assertions below pass for \
+         the wrong reason."
+    );
+    let mut damaged = bytes.clone();
+    damaged[hits[0]..hits[0] + OLD.len()].copy_from_slice(NEW);
+    assert_eq!(
+        damaged.len(),
+        bytes.len(),
+        "the plant must not move a byte, or the cross-reference table stops \
+         resolving and this becomes a test about a broken file rather than \
+         about a stale count"
+    );
+
+    let path = scratch("pagetree-stale-base.pdf");
+    std::fs::write(&path, &damaged).expect("the damaged copy is writable");
+    let open = open_at(&path);
+    assert_eq!(
+        open.pages.len(),
+        12,
+        "★★ and pdfcer's OWN reader is not fooled — it walks /Kids and reports \
+         a healthy twelve-page document. That is the whole reason this guard \
+         exists and the reason it cannot be built out of `page_tree::pages`."
+    );
+
+    let target = scratch("pagetree-refused.pdf");
+    let _ = std::fs::remove_file(&target);
+    let error = write_copy(&open, &target).expect_err(
+        "★★★ a document that declares more pages than it has must not be \
+         written — the file would open elsewhere with blank pages in it",
+    );
+    let SaveError::PageTreeStale { audit } = &error else {
+        panic!("a stale page tree must be reported as one, not as a disk failure: {error}");
+    };
+    assert_eq!(audit.declared_pages, Some(13));
+    assert_eq!(audit.reachable_pages, 12);
+    let root = audit
+        .root_disagreement()
+        .expect("the ROOT is the node that disagrees, and it is the one Acrobat reads");
+    assert_eq!((root.declared, root.reachable), (13, 12));
+    assert!(
+        !target.exists(),
+        "★★ and NOTHING may reach the disk. A refusal that left a partial file \
+         would be the same failure with a smaller file."
+    );
+
+    // ★ And the sentence he is shown carries his own symptom back to him — a
+    // refusal he cannot recognise is one he learns to ignore.
+    let said = crate::text::pagetree::save_refused_root("x.pdf", root.declared, root.reachable);
+    assert!(said.contains("1 blank page at the end"), "{said}");
+
+    let _ = std::fs::remove_file(&path);
+}
+
+/// ★★★ **The operator's own operation, end to end through this shell's save.**
+///
+/// `delete_pages` on the nested fixture, then a save through `write_copy` — the
+/// exact path `file.save_copy` takes. This is the assertion that says the guard
+/// catches the defect *he reported*, rather than a shape chosen because it was
+/// easy to construct.
+///
+/// ★★ It **skips loudly** rather than failing if `pdfcer-core` is ever fixed.
+/// The day the engine walks the ancestor chain this save succeeds, and a test
+/// that went red on the repair would turn good news into a broken build. The
+/// guard's own bite stays under permanent assertion in
+/// `a_document_whose_page_tree_disagrees_with_itself_is_refused_and_writes_nothing`,
+/// which depends on no engine behaviour at all. That split is the standing
+/// answer to `check-stale-blockers`' subject: a claim about what the engine
+/// cannot do has a shelf life measured in hours, so it goes where its expiry is
+/// harmless.
+#[test]
+fn deleting_a_page_from_a_nested_document_is_caught_at_the_save() {
+    let mut open = open_local_fixture("nested-page-tree.pdf");
+
+    // ★★★ THE FIXTURE MUST BE NESTED, AND IT IS ASSERTED RATHER THAN NAMED.
+    //
+    // Falsified 2026-09-05 by pointing this line at `fixtures/four-pages.pdf`
+    // — a flat tree. The delete then came out clean (on a flat tree the
+    // immediate parent IS the root, so the defect cannot occur), the `Ok` arm
+    // below printed *"pdfcer-core now decrements /Count on every ancestor"* —
+    // a false statement about a build carrying the defect in full — and the
+    // test PASSED. That is precisely the vacuous shape this whole piece of
+    // work exists to avoid, reached by editing one identifier.
+    //
+    // `depth` is the number of `/Pages` levels above a leaf. Anything below 3
+    // cannot exhibit an ancestor-above-the-parent going stale, so the test
+    // refuses to run rather than reporting a verdict it cannot have reached.
+    let before = crate::pagetree::audit(&open.session.graph());
+    assert!(
+        before.depth >= 3,
+        "★★★ this test is meaningless on a page tree shallower than three \
+         levels — a build with no upward walk at all produces a correct file. \
+         Regenerate the fixture with tools/gen-nested-page-tree-fixture.py: \
+         {before:?}"
+    );
+    assert!(
+        before.is_consistent(),
+        "the fixture starts clean: {before:?}"
+    );
+    {
+        let session =
+            std::sync::Arc::get_mut(&mut open.session).expect("the session is not shared");
+        session
+            .delete_pages(&[1])
+            .expect("page 2 (0-based 1) deletes");
+    }
+
+    let target = scratch("pagetree-after-delete.pdf");
+    let _ = std::fs::remove_file(&target);
+    match write_copy(&open, &target) {
+        Err(SaveError::PageTreeStale { audit }) => {
+            // The measured shape, v0.38.0 `b01964f`: eleven pages reachable,
+            // the root still declaring twelve, and the grandparent stale too —
+            // which is what says there is no upward walk at all rather than one
+            // that stops one level short.
+            assert_eq!(audit.reachable_pages, 11);
+            assert_eq!(audit.declared_pages, Some(12));
+            assert!(audit.disagreements.len() >= 2, "{audit:?}");
+            assert!(!target.exists(), "nothing may reach the disk");
+        }
+        Ok(_) => {
+            // ★★★ THE SKIP HAS TO EARN ITSELF, and the first draft of this
+            // test did not make it. A bare `println!("SKIP")` here passes for
+            // two completely different builds: one where `pdfcer-core` was
+            // fixed, and one where **the guard was removed from `write_copy`**.
+            // Falsified 2026-09-05 by unwiring the guard — this test went
+            // GREEN while the shell wrote the damaged file to disk.
+            //
+            // So the skip is conditional on the written FILE being clean, read
+            // back independently. A save that succeeded because nobody looked
+            // fails here, loudly, naming what is in the file it produced.
+            let written = std::fs::read(&target).expect("a successful save wrote a file");
+            let audit = crate::pagetree::audit_saved_bytes(&written);
+            assert!(
+                audit.walked,
+                "the file this save produced must at least be walkable: {audit:?}"
+            );
+            assert!(
+                audit.is_consistent(),
+                "★★★ THE SAVE SUCCEEDED AND THE FILE IT WROTE IS DAMAGED. This \
+                 is not the engine being fixed — it is the page-tree guard not \
+                 running at the save. {audit:?}"
+            );
+            println!(
+                "SKIP: pdfcer-core now decrements /Count on every ancestor, and \
+                 the file this save wrote was verified consistent. The guard is \
+                 still asserted by \
+                 a_document_whose_page_tree_disagrees_with_itself_is_refused_and_writes_nothing; \
+                 close the engine request and delete this test's engine half."
+            );
+            let _ = std::fs::remove_file(&target);
+        }
+        Err(other) => panic!("unexpected refusal: {other}"),
+    }
+}

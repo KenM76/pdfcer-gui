@@ -1230,6 +1230,13 @@ mod tests {
                 // ★ Before Reset layout: the cheap remedy above the
                 // destructive one. See the manifest's own note at the item.
                 "view.dock_all_panels",
+                // The two auto-hide toggles, 2026-09-05. Before Reset
+                // layout and after the float recovery, which is the
+                // two-tier order that pair established: reversible
+                // remedies first, the one that discards the operator's
+                // arrangement last.
+                "view.ribbon_auto_hide",
+                "view.rail_auto_hide",
                 "view.reset_layout",
             ]
         );

@@ -626,7 +626,7 @@ impl PdfcerApp {
                     // repaired lives in a panel the operator may never open,
                     // and a support conversation about a drawing that "looks
                     // wrong" has nothing to go on. See
-                    // `panels::properties::info::recovery_note` for the
+                    // `panels::docprops::recovery_note` for the
                     // operator-facing half and for why it is not a page badge.
                     let recovered = d
                         .session

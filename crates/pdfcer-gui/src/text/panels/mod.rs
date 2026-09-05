@@ -93,6 +93,16 @@ pub mod comments;
 /// printing beside it, and a panel previewing the two by concatenation
 /// disagrees with the bytes in the page.
 pub mod dimension;
+/// ★★★ **The Document properties panel's copy** — the file's own title, author,
+/// subject and keywords, the seven facts pdfcer read about it, and the two
+/// disclosures it can owe.
+///
+/// Split out of [`properties`] on 2026-09-05 when the section became a panel of
+/// its own, on the operator's instruction. Its header carries both reasons for
+/// the split — the surface moved, and `properties.rs` stood at 1,469 of its
+/// 1,500-line R2 ceiling — and why every function lost its `properties_`
+/// prefix in the move.
+pub mod docprops;
 /// ★ The **face chooser**, which is one control drawn on two surfaces — the
 /// Properties panel's *This text* section and the ribbon's Format ▸ Font group.
 ///

@@ -43,7 +43,9 @@ fn probe(tool: CanvasTool) -> Press {
         dimension: None,
         annot_rotate: None,
         markup_body: false,
+        markup_grip: false,
         widget_body: false,
+        widget_grip: false,
         zoom_armed: false,
     }
 }
@@ -145,7 +147,9 @@ fn an_armed_markup_tool_outranks_the_grips_and_the_region_zoom() {
                         dimension: None,
                         annot_rotate: None,
                         markup_body: false,
+                        markup_grip: false,
                         widget_body: false,
+                        widget_grip: false,
                         zoom_armed: zoom
                     },
                     Capabilities::FULL
@@ -173,7 +177,9 @@ fn without_a_markup_tool_the_press_precedence_is_unchanged() {
                 dimension: None,
                 annot_rotate: None,
                 markup_body: false,
+                markup_grip: false,
                 widget_body: false,
+                widget_grip: false,
                 zoom_armed: false
             },
             full
@@ -189,7 +195,9 @@ fn without_a_markup_tool_the_press_precedence_is_unchanged() {
                 dimension: None,
                 annot_rotate: None,
                 markup_body: false,
+                markup_grip: false,
                 widget_body: false,
+                widget_grip: false,
                 zoom_armed: false
             },
             full
@@ -205,7 +213,9 @@ fn without_a_markup_tool_the_press_precedence_is_unchanged() {
                 dimension: None,
                 annot_rotate: None,
                 markup_body: false,
+                markup_grip: false,
                 widget_body: false,
+                widget_grip: false,
                 zoom_armed: true
             },
             full
@@ -221,7 +231,9 @@ fn without_a_markup_tool_the_press_precedence_is_unchanged() {
                 dimension: None,
                 annot_rotate: None,
                 markup_body: false,
+                markup_grip: false,
                 widget_body: false,
+                widget_grip: false,
                 zoom_armed: false
             },
             full
@@ -238,7 +250,9 @@ fn without_a_markup_tool_the_press_precedence_is_unchanged() {
                 dimension: None,
                 annot_rotate: None,
                 markup_body: false,
+                markup_grip: false,
                 widget_body: false,
+                widget_grip: false,
                 zoom_armed: true
             },
             full
@@ -305,7 +319,9 @@ fn read_mode_gives_a_content_press_no_meaning_but_keeps_the_region_zoom() {
                 dimension: None,
                 annot_rotate: None,
                 markup_body: false,
+                markup_grip: false,
                 widget_body: false,
+                widget_grip: false,
                 zoom_armed: false,
             },
             read,
@@ -332,7 +348,9 @@ fn read_mode_gives_a_content_press_no_meaning_but_keeps_the_region_zoom() {
                 dimension: None,
                 annot_rotate: None,
                 markup_body: false,
+                markup_grip: false,
                 widget_body: false,
+                widget_grip: false,
                 zoom_armed: false
             },
             read
@@ -352,7 +370,9 @@ fn read_mode_gives_a_content_press_no_meaning_but_keeps_the_region_zoom() {
                 dimension: None,
                 annot_rotate: None,
                 markup_body: false,
+                markup_grip: false,
                 widget_body: false,
+                widget_grip: false,
                 zoom_armed: false
             },
             read
@@ -370,7 +390,9 @@ fn read_mode_gives_a_content_press_no_meaning_but_keeps_the_region_zoom() {
                 dimension: None,
                 annot_rotate: None,
                 markup_body: false,
+                markup_grip: false,
                 widget_body: false,
+                widget_grip: false,
                 zoom_armed: true
             },
             read
@@ -426,7 +448,9 @@ fn no_press_offers_both_a_text_sweep_and_a_content_marquee() {
                     dimension: None,
                     annot_rotate: None,
                     markup_body: false,
+                    markup_grip: false,
                     widget_body: false,
+                    widget_grip: false,
                     zoom_armed: false
                 },
                 caps
@@ -443,7 +467,9 @@ fn no_press_offers_both_a_text_sweep_and_a_content_marquee() {
                     dimension: None,
                     annot_rotate: None,
                     markup_body: false,
+                    markup_grip: false,
                     widget_body: false,
+                    widget_grip: false,
                     zoom_armed: false
                 },
                 caps
@@ -467,7 +493,9 @@ fn no_press_offers_both_a_text_sweep_and_a_content_marquee() {
                         dimension: None,
                         annot_rotate: None,
                         markup_body: false,
+                        markup_grip: false,
                         widget_body: false,
+                        widget_grip: false,
                         zoom_armed: false
                     },
                     caps
@@ -509,7 +537,9 @@ fn the_text_tool_sweeps_in_edit_and_retiring_it_gives_the_marquee_back() {
                 dimension: None,
                 annot_rotate: None,
                 markup_body: false,
+                markup_grip: false,
                 widget_body: false,
+                widget_grip: false,
                 zoom_armed: false
             },
             edit
@@ -529,7 +559,9 @@ fn the_text_tool_sweeps_in_edit_and_retiring_it_gives_the_marquee_back() {
                 dimension: None,
                 annot_rotate: None,
                 markup_body: false,
+                markup_grip: false,
                 widget_body: false,
+                widget_grip: false,
                 zoom_armed: false
             },
             edit
@@ -548,7 +580,9 @@ fn the_text_tool_sweeps_in_edit_and_retiring_it_gives_the_marquee_back() {
                 dimension: None,
                 annot_rotate: None,
                 markup_body: false,
+                markup_grip: false,
                 widget_body: false,
+                widget_grip: false,
                 zoom_armed: false
             },
             edit
@@ -584,7 +618,9 @@ fn a_region_zoom_outranks_the_text_tool_but_not_a_pen() {
                     dimension: None,
                     annot_rotate: None,
                     markup_body: false,
+                    markup_grip: false,
                     widget_body: false,
+                    widget_grip: false,
                     zoom_armed: true
                 },
                 caps
@@ -606,7 +642,9 @@ fn a_region_zoom_outranks_the_text_tool_but_not_a_pen() {
                 dimension: None,
                 annot_rotate: None,
                 markup_body: false,
+                markup_grip: false,
                 widget_body: false,
+                widget_grip: false,
                 zoom_armed: true
             },
             Capabilities::FULL
@@ -654,7 +692,9 @@ fn a_vertex_markup_tool_takes_the_click_and_offers_no_drag() {
                                 dimension: None,
                                 annot_rotate: None,
                                 markup_body: false,
+                                markup_grip: false,
                                 widget_body: false,
+                                widget_grip: false,
                                 zoom_armed: zoom
                             },
                             caps
@@ -676,7 +716,9 @@ fn a_vertex_markup_tool_takes_the_click_and_offers_no_drag() {
                     dimension: None,
                     annot_rotate: None,
                     markup_body: false,
+                    markup_grip: false,
                     widget_body: false,
+                    widget_grip: false,
                     zoom_armed: false
                 },
                 Capabilities::NONE
@@ -698,7 +740,9 @@ fn a_vertex_markup_tool_takes_the_click_and_offers_no_drag() {
                 dimension: None,
                 annot_rotate: None,
                 markup_body: false,
+                markup_grip: false,
                 widget_body: false,
+                widget_grip: false,
                 zoom_armed: false
             },
             Capabilities::FULL
@@ -727,7 +771,9 @@ fn review_mode_places_markup_but_refuses_content() {
                 dimension: None,
                 annot_rotate: None,
                 markup_body: false,
+                markup_grip: false,
                 widget_body: false,
+                widget_grip: false,
                 zoom_armed: false
             },
             review
@@ -748,7 +794,9 @@ fn review_mode_places_markup_but_refuses_content() {
                     dimension: None,
                     annot_rotate: None,
                     markup_body: false,
+                    markup_grip: false,
                     widget_body: false,
+                    widget_grip: false,
                     zoom_armed: false
                 },
                 review
@@ -767,7 +815,9 @@ fn review_mode_places_markup_but_refuses_content() {
                 dimension: None,
                 annot_rotate: None,
                 markup_body: false,
+                markup_grip: false,
                 widget_body: false,
+                widget_grip: false,
                 zoom_armed: false
             },
             review
@@ -890,6 +940,7 @@ fn the_handle_outranks_the_content_branch_in_edit() {
                 // outside the `/Rect` — which is precisely why the markup rung
                 // below cannot claim this press and why this rung had to exist.
                 markup_body: false,
+                markup_grip: false,
                 ..probe(CanvasTool::Select)
             },
             Capabilities::FULL
@@ -916,5 +967,158 @@ fn without_an_annotation_the_handle_is_still_the_content_rotate() {
         .drag,
         Some(DragKind::Rotate),
         "the content rotate is unchanged; what is new is a second route to the same DragKind"
+    );
+}
+
+/// ★★★ **A press on one of a markup's RESIZE GRIPS scales it — in Review,
+/// where the content branch does not run.**
+///
+/// The 2026-09-05 defect, as an assertion. `markup_grip` is the press
+/// `canvas::pressing` measures on the outer half of a corner grip: `grip` says
+/// NE and `markup_body` says false, because the grip is *centred on* the box's
+/// corner and only half of its live area is inside. With the arm gated on the
+/// body alone that press fell through to `caps.edit_content` — absent in
+/// Review — and produced **no drag at all**: no resize, no decline, no trace
+/// line. `the_line_weight_switch_reaches_the_resize` failed on it, and its own
+/// message blamed `resize_annotation` refusing.
+///
+/// ★ Driven at screen (532, 493) against a box declared
+/// `[[443.3 493.1] - [531.0 578.8]]` — one point outside its right edge and a
+/// tenth of a point above its top.
+#[test]
+fn a_grip_outside_a_markups_box_still_resizes_it_in_review() {
+    let review = Capabilities {
+        edit_content: false,
+        author_markup: true,
+        author_measure: true,
+    };
+    for grip in [
+        Grip::NorthEast,
+        Grip::NorthWest,
+        Grip::SouthEast,
+        Grip::SouthWest,
+        Grip::North,
+        Grip::East,
+    ] {
+        assert_eq!(
+            press_kind(
+                Press {
+                    grip: Some(grip),
+                    markup_body: false,
+                    markup_grip: true,
+                    ..probe(CanvasTool::Select)
+                },
+                review
+            )
+            .drag,
+            Some(DragKind::Resize(grip)),
+            "a press on the {grip:?} grip of a selected markup, outside its box, in the mode \
+             markup is authored in"
+        );
+    }
+}
+
+/// ★★ **…and the body still means MOVE**, which is what makes the two flags
+/// two rather than one.
+///
+/// A build that repaired the grip by widening `markup_body` would pass the
+/// test above and turn every corner press into a translation — a working
+/// gesture aimed at the wrong verb, which this canvas has produced four times
+/// and which `Grip::Rotate` was given its own arm to prevent.
+#[test]
+fn the_body_of_a_markup_still_means_move_not_resize() {
+    let review = Capabilities {
+        edit_content: false,
+        author_markup: true,
+        author_measure: true,
+    };
+    assert_eq!(
+        press_kind(
+            Press {
+                grip: Some(Grip::Move),
+                markup_body: true,
+                markup_grip: false,
+                ..probe(CanvasTool::Select)
+            },
+            review
+        )
+        .drag,
+        Some(DragKind::Move)
+    );
+}
+
+/// ★★ **A grip flag alone does not license a drag: the capability still
+/// gates it.**
+///
+/// Read authors no markup, so a press that somehow arrived with `markup_grip`
+/// set there must not become a resize. Without this, the repair above would
+/// have widened the arm's reach past its own gate, which is the shape of every
+/// mode-gating defect this project has shipped.
+#[test]
+fn a_markup_grip_in_a_mode_that_authors_no_markup_resizes_nothing() {
+    assert_ne!(
+        press_kind(
+            Press {
+                grip: Some(Grip::NorthEast),
+                markup_body: false,
+                markup_grip: true,
+                ..probe(CanvasTool::Select)
+            },
+            Capabilities::NONE
+        )
+        .drag,
+        // ★ `assert_ne!` against the resize rather than `assert_eq!` against
+        // `None`, and the difference is a real fact about Read: a press there
+        // is a **text sweep**, so the honest assertion is *"it is not a
+        // resize"*, not *"it means nothing"*. Writing the stronger form first
+        // failed with `Some(TextSelect)` — the reading branch answering
+        // correctly — which would have been a test forcing the mode to stop
+        // selecting text in order to go green.
+        Some(DragKind::Resize(Grip::NorthEast)),
+        "Read may not author markup, so it may not scale one either"
+    );
+}
+
+/// ★★ **The same repair for a form field's box, and the same gate.**
+///
+/// `widget_grip` is `markup_grip`'s twin and was broken identically: a widget
+/// is only selectable in Edit, so the press fell into the content branch,
+/// which found no content selection and marqueed the page behind the field.
+/// `a_resized_check_box_is_redrawn_not_stretched` SKIPPED rather than failing
+/// on it, because the field it drives is too small to aim a corner grip at —
+/// so this rung had **no driven witness at all**, which is why it gets one
+/// here.
+#[test]
+fn a_grip_outside_a_form_fields_box_still_resizes_it_in_edit() {
+    assert_eq!(
+        press_kind(
+            Press {
+                grip: Some(Grip::SouthEast),
+                widget_body: false,
+                widget_grip: true,
+                ..probe(CanvasTool::Select)
+            },
+            Capabilities::FULL
+        )
+        .drag,
+        Some(DragKind::Resize(Grip::SouthEast))
+    );
+    assert_ne!(
+        press_kind(
+            Press {
+                grip: Some(Grip::SouthEast),
+                widget_body: false,
+                widget_grip: true,
+                ..probe(CanvasTool::Select)
+            },
+            Capabilities {
+                edit_content: false,
+                author_markup: true,
+                author_measure: true,
+            }
+        )
+        .drag,
+        Some(DragKind::Resize(Grip::SouthEast)),
+        "a field's box is an Edit-only surface — Review may not scale one"
     );
 }

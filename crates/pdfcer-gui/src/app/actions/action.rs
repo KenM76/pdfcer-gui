@@ -851,14 +851,14 @@ pub enum Action {
     /// ★ **Set or clear one of the document's own information fields** —
     /// `/Title`, `/Author`, `/Subject`, `/Keywords`.
     ///
-    /// Raised by `crate::panels::properties::info` and by nothing else.
+    /// Raised by `crate::panels::docprops` and by nothing else.
     ///
     /// ★ **`Option<String>` is not a defaulted `String`** — `None` REMOVES the
     /// key from `/Info` and `Some("")` writes an empty string object, which are
     /// different files. And it goes through the funnel for the undo log rather
     /// than for size: the panel re-seeds its text drafts on an epoch bump, which
     /// is what makes `Ctrl+Z` visibly restore the old value in the box. Both
-    /// arguments in full: [`crate::panels::properties::info`].
+    /// arguments in full: [`crate::panels::docprops`].
     SetInfoField {
         /// Which field. The engine's own enum, carried unchanged, so a field
         /// added to `pdfcer-core` reaches this variant without a translation

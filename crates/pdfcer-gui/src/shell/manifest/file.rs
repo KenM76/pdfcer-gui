@@ -332,11 +332,61 @@ pub(super) fn tab() -> Tab {
             // visible in a way worth noting: a band called Document that
             // cannot tell you whether a document is encrypted is doing
             // half its job, and the status bar carries that fact today.
+            //
+            // ★★★ **THREE controls since 2026-09-05, and the new one is first**
+            // — the operator: *"the document properties are still always
+            // visible in the properties tab. it needs to get out of there and
+            // be in its own document properties tab."*
+            //
+            // `file.document_properties` opens `crate::panels::docprops`, which
+            // was the last section of the Properties panel until that sentence.
+            //
+            // # Why this band, with no argument of its own needed
+            //
+            // `manifest::ladder` calls this band *"inspection, not action"*, and
+            // §5.1 heads it *inspection of what is inside the file*. A
+            // document's title, author, subject and keywords are inside the
+            // file, in the plainest sense the band admits — they are literally
+            // a dictionary in it. Fonts is here on exactly that reasoning
+            // (*"the Fonts panel answers 'what is inside this file', not 'what
+            // is on my screen'"*), and this is the same claim about a smaller
+            // dictionary.
+            //
+            // # ★ FIRST in the band, ahead of the control it was cut out of
+            //
+            // Two reasons, and the second is the one that decided it.
+            //
+            // A band is read top to bottom and this one is called **Document**:
+            // the control whose subject is the document belongs at the head of
+            // it, and `file.properties` — whose subject is a *selection* — is
+            // the odd member. It stays because P1 gives a command exactly one
+            // tab and moving it is a separate decision with saved layouts and a
+            // driven check hanging off it.
+            //
+            // And an operator looking for *document properties* is looking for
+            // a phrase; the first control in the Document band now IS that
+            // phrase, where before the band offered "Properties" and left him
+            // to guess which sense was meant. That guess is the defect being
+            // fixed, and putting the new control second would have preserved it
+            // at the one moment he is scanning for it.
+            //
+            // ⚠ `mockups/pdfcer-shell.html` draws this band with two controls.
+            // The mockup is the spec side and this is a deliberate divergence
+            // from it, taken on the operator's instruction, which is the one
+            // thing that outranks it. `tools/compare-mockup-ribbon.py` compares
+            // the band INVENTORY and order and not the items inside a band —
+            // its own docstring is emphatic about that — so it stays green, and
+            // the divergence is recorded here rather than left for whoever next
+            // reads the two files side by side.
             // ---------------------------------------------------------------
             group(
                 "document",
                 ribbon::group_file_document(),
-                [command("file.properties"), command("file.fonts")],
+                [
+                    command("file.document_properties"),
+                    command("file.properties"),
+                    command("file.fonts"),
+                ],
             ),
             // ---------------------------------------------------------------
             // pdfcer — the application's own settings, help and identity.

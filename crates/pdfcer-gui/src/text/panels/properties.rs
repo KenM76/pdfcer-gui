@@ -68,17 +68,23 @@
 
 /// Heading over the selected object's properties.
 ///
-/// Says **object**, and it matters. `RIBBON_IA.md` §5.1 gives `file.
-/// properties` the tooltip *"The document's own title, author, subject and
-/// keywords, and the properties of whatever is selected on the page"* — two
-/// scopes under one command. An unheaded field list invites the reading
-/// "these are the document's properties", which is exactly wrong for a fill
-/// colour, and would be exactly wrong in the other direction for `/Title`.
+/// Says **object**, and it matters — for a reason that has now changed twice
+/// and is worth carrying rather than re-deriving.
 ///
-/// The document half of that command is a separate surface and is not built
-/// here; there is no `/Info` accessor on `Document` at all (the core API map
-/// §12.6 calls that "the honest gap"), so it is a task rather than a
-/// forgotten row.
+/// It was written because `file.properties` had *two* scopes under one command
+/// — `RIBBON_IA.md` §5.1 gave it the tooltip *"The document's own title,
+/// author, subject and keywords, and the properties of whatever is selected on
+/// the page"* — so an unheaded field list invited the reading "these are the
+/// document's properties", which is exactly wrong for a fill colour and exactly
+/// wrong in the other direction for `/Title`.
+///
+/// ★ **Since 2026-09-05 the two scopes are two panels** — `file.properties` and
+/// `file.document_properties`, the second being [`super::docprops`] — so this
+/// panel has one subject again and that argument has expired. The heading stays
+/// anyway, for a different and smaller reason: this panel draws **several**
+/// sections at once (*This markup*, *This text*, *Position and size*), each
+/// headed with what it is about, and one unheaded field list among them would
+/// read as the continuation of whichever section happened to be above it.
 #[must_use]
 pub fn properties_object_heading() -> &'static str {
     "Object properties"
@@ -96,230 +102,26 @@ pub fn properties_nothing_focused() -> &'static str {
     "Pick a row in the Objects panel to see what it is made of."
 }
 
-/// The heading over the document-metadata section.
-///
-/// ★ **"This document" rather than "Document properties"**, because the panel
-/// now has two subjects and the operator has to be able to tell which half
-/// they are reading. The section above it is about *the thing they clicked*;
-/// this one is about *the file*, and the two would be told apart by position
-/// alone if the panel were never scrolled.
-#[must_use]
-pub const fn properties_document_heading() -> &'static str {
-    "This document"
-}
-
-/// What is editable here, and what an empty box means.
-///
-/// ★ The second sentence is the one that could not be guessed. Clearing a box
-/// **removes the key from the file** rather than storing an empty string —
-/// `set_info_field(field, None)` against `Some("")` — and they are different
-/// documents. It is also the only action in this section that removes
-/// anything, which is why it is stated at the top rather than left to be
-/// discovered.
-#[must_use]
-pub const fn properties_document_note() -> &'static str {
-    "These are stored in the file and travel with it. Type to change one; \
-     empty a box to remove it from the document altogether."
-}
-
-/// The label on one document-information field.
-///
-/// Takes the engine's `InfoField` rather than a string, so the panel
-/// enumerates `InfoField::all()` and this maps the result — which is the
-/// discipline that enum's own doc comment asks for: *"so a front end
-/// enumerates the real list instead of hard-coding one that drifts when a
-/// field is added."*
-///
-/// The words are the PDF spec's own field names in ordinary English. "Subject"
-/// and "Keywords" are not obvious, and neither is improved by inventing
-/// something friendlier: an operator who has met these fields in any other PDF
-/// tool has met them under these names, and a novel word would be a novel
-/// thing to learn for no gain.
-///
-/// # ★ `InfoField` is `#[non_exhaustive]`, so the compiler CANNOT catch a new
-/// field here
-///
-/// This function was first written as a `const fn` with four arms and no
-/// wildcard, on the assumption that a fifth variant would break the build. It
-/// would not: `#[non_exhaustive]` forces a downstream crate to write `_`, and
-/// with a `_` arm the match compiles for ever no matter what the engine adds.
-/// The protection people expect from an exhaustive match is **not available
-/// across a crate boundary** when the enum is marked that way, and assuming it
-/// is available is how a new field ends up silently unlabelled.
-///
-/// So the safety is built two other ways instead, and both are needed:
-///
-/// 1. **The fallback is the field's own PDF key**, taken from
-///    `InfoField::key()` — the engine's answer, not a guess. A field added
-///    upstream appears in the panel labelled `Producer` or `Creator` rather
-///    than disappearing or reading "Unknown". Imperfect English, correct, and
-///    reachable, which beats all three alternatives.
-/// 2. **A test asserts none of the four known fields reaches the fallback.**
-///    That is the alarm the compiler cannot raise: if the mapping is ever
-///    broken the four named fields start rendering as their raw keys, and the
-///    test says which.
-#[must_use]
-pub fn properties_info_label(field: pdfcer_core::edit::InfoField) -> &'static str {
-    match field {
-        pdfcer_core::edit::InfoField::Title => "Title",
-        pdfcer_core::edit::InfoField::Author => "Author",
-        pdfcer_core::edit::InfoField::Subject => "Subject",
-        pdfcer_core::edit::InfoField::Keywords => "Keywords",
-        // A field this build does not know a word for. `key()` is
-        // `&'static [u8]` of ASCII, so the decode cannot fail — and it is
-        // spelled `unwrap_or` rather than `expect` because a panic in a label
-        // takes the window with it, and a blank box is a less bad outcome than
-        // no window. // ui-text-exempt: the fallback is the engine's own PDF key, not authored copy
-        _ => core::str::from_utf8(field.key()).unwrap_or(""),
-    }
-}
-
-/// ★ **The value shown is pdfcer's reading of bytes it could not fully
-/// decode.**
-///
-/// Drawn under a field whose `InfoText::exact` is `false`. That flag means
-/// re-encoding the displayed text would **not** reproduce the file's own
-/// bytes, so what is on screen is a rendering with substitutions in it, not a
-/// copy.
-///
-/// This is rule 4's surviving half in its purest form: an inference the
-/// operator **cannot see**. A replacement character in a metadata field looks
-/// like a character rather than like a gap, and without this sentence the
-/// operator's only clue that pdfcer is guessing would be a glyph they might
-/// read as the document's own.
-///
-/// Worded as a fact about the **document**, not as a pdfcer failure — the file
-/// really does carry bytes in an encoding it does not declare well enough to
-/// resolve — and it says what to do about it, which is the part that makes it
-/// actionable rather than alarming: leaving it alone is safe.
-#[must_use]
-pub const fn properties_info_not_exact() -> &'static str {
-    "Some characters in this value could not be read with certainty and are \
-     shown as substitutes. Leave the box alone and the file keeps its own \
-     bytes; type in it and what you type replaces them."
-}
-
-/// The label on the file row.
-#[must_use]
-pub const fn properties_file_label() -> &'static str {
-    "File"
-}
-
-/// A document that has never been written to disk.
-///
-/// `OpenDoc::has_file` is `false` for a document `file.new` created, and its
-/// `path` in that state is a *name*, not a location. Showing the name as
-/// though it were a file would tell the operator their work is somewhere it is
-/// not.
-#[must_use]
-pub const fn properties_file_unsaved() -> &'static str {
-    "not saved to a file yet"
-}
-
-/// The label on the size row.
-#[must_use]
-pub const fn properties_size_label() -> &'static str {
-    "Size on disk"
-}
-
-/// ★ The size shown is the file as it was OPENED, not as it would be saved.
-///
-/// `Document::bytes()` is documented as *"the base revision, not the edited
-/// state"*, so with unsaved edits this number is the file on disk and not what
-/// a save would produce. Shown only while edits are pending, because on an
-/// unedited document the two are the same and the sentence would be noise that
-/// trains the operator to skip it.
-///
-/// "Size on disk" rather than "File size" for the same reason: the label
-/// itself carries most of the distinction, and the sentence carries the rest
-/// when it matters.
-#[must_use]
-pub const fn properties_size_is_base() -> &'static str {
-    "This is the file as it was opened. Your unsaved changes are not counted."
-}
-
-/// The label on the PDF-version row.
-#[must_use]
-pub const fn properties_version_label() -> &'static str {
-    "PDF version"
-}
-
-/// The label on the page-count row.
-#[must_use]
-pub const fn properties_pages_label() -> &'static str {
-    "Pages"
-}
-
-/// The label on the sheet-size row.
-#[must_use]
-pub const fn properties_page_size_label() -> &'static str {
-    "Sheet size"
-}
-
-/// One sheet size, in millimetres.
-///
-/// Millimetres rather than points, because a drafter knows an A3 by
-/// `420 × 297` and nobody's intuition is in 72nds of an inch. The page tile's
-/// tooltip made the same choice for the same reason.
-#[must_use]
-pub fn properties_page_size(width_mm: f32, height_mm: f32) -> String {
-    format!("{width_mm:.0} × {height_mm:.0} mm")
-}
-
-/// ★ A document whose sheets are not all the same size.
-///
-/// **The common case for this operator**, not an edge case: a drawing set is
-/// an A1 general arrangement with A3 details behind it. Reporting page one's
-/// size alone would be a true number that reads as a claim about the document,
-/// so the mixed case says so and gives the first sheet's size as an example
-/// rather than as the answer.
-#[must_use]
-pub fn properties_page_size_mixed(width_mm: f32, height_mm: f32) -> String {
-    format!("mixed — page 1 is {width_mm:.0} × {height_mm:.0} mm")
-}
-
-/// The label on the encryption row.
-#[must_use]
-pub const fn properties_encryption_label() -> &'static str {
-    "Encryption"
-}
-
-/// An encrypted document.
-#[must_use]
-pub const fn properties_encrypted() -> &'static str {
-    "Encrypted"
-}
-
-/// An unencrypted document.
-///
-/// ★ Stated rather than left blank. This panel's posture is that its silences
-/// must be as legible as its numbers, and an absent encryption row is
-/// indistinguishable from a panel that does not check — which on this
-/// particular question is exactly the wrong impression to leave.
-#[must_use]
-pub const fn properties_not_encrypted() -> &'static str {
-    "Not encrypted"
-}
-
-/// ★ What pdfcer does NOT tell you about an encrypted document.
-///
-/// The Signatures panel's discipline applied here: *say what you cannot tell
-/// you, first*. A row reading "Encrypted" invites the operator to conclude
-/// something about what the document permits, and pdfcer reports nothing about
-/// permissions in this panel.
-///
-/// The reason is in `pdfcer-core`'s own `DocumentEncryption::perms` doc: `/Perms`
-/// is *"the only integrity check in PDF encryption"*, it is a `should` rather
-/// than a `shall`, and it is `NotApplicable` for every `/R` ≤ 4 document —
-/// which is *"the ordinary answer, not a failed check, and a front end must
-/// not render it as one."* Reporting permissions properly means reporting that
-/// distinction properly, and this build does not.
-#[must_use]
-pub const fn properties_encryption_note() -> &'static str {
-    "pdfcer opened it, so it could read it. This panel does not report what the \
-     encryption permits — printing, copying, changing — and an encrypted \
-     document may restrict any of them."
-}
+// ★★★ **The document's own copy MOVED to [`super::docprops`] on 2026-09-05**,
+// with the section it belongs to — the operator: *"the document properties are
+// still always visible in the properties tab. it needs to get out of there and
+// be in its own document properties tab."*
+//
+// Seventeen functions went: the "This document" heading and its note, the four
+// `/Info` field labels, the inexact-decode disclosure, and the seven read-only
+// facts about the file (name, size, version, page count, sheet size,
+// encryption, and its note). The three `recovered_*` functions went with them.
+//
+// ★ Moved rather than re-exported. A `pub use` here would have kept
+// `t::properties_document_heading()` resolving from a module that no longer
+// draws it, which is precisely the stale route this project keeps finding — and
+// there was exactly one caller of each, so the move cost one import line.
+//
+// ★★ It also bought R2 headroom that was about to be needed anyway: this file
+// stood at **1,469 lines against the 1,500 ceiling** on the day of the move,
+// and `super::textobject` records having been split off at 1,446 for the same
+// gate. The seam is a subject boundary rather than an arithmetic one — what is
+// left here describes **what is selected**; what left describes **the file**.
 
 /// The line stating that this panel reports and does not change.
 ///
@@ -831,42 +633,10 @@ pub const fn geometry_too_small() -> &'static str {
      value would collapse the object onto a line."
 }
 
-/// Heading for the recovered-file disclosure.
-///
-/// ★ Plain, and about the FILE rather than about pdfcer. "pdfcer had to repair
-/// this file" would read as pdfcer struggling; the file is the thing that is
-/// damaged, and the operator's next question is about the file.
-#[must_use]
-pub const fn recovered_heading() -> &'static str {
-    "This file's index was damaged, and pdfcer rebuilt it to open it"
-}
-
-/// The detail line: what the rebuild involved.
-///
-/// ★★ Three numbers, and only the middle one is a warning. Objects recovered
-/// says how big the job was; **objects defined more than once** is the one that
-/// can put a line in the wrong place, because pdfcer had to choose; and repaired
-/// says how much else needed inference. Naming them separately lets an operator
-/// tell "large but clean" from "small and ambiguous", which a single "recovered
-/// N objects" cannot.
-#[must_use]
-pub fn recovered_detail(objects: usize, collisions: usize, repaired: usize) -> String {
-    format!(
-        "{objects} objects were recovered by scanning the file. {collisions} were defined more than once, so pdfcer chose one of each. {repaired} needed repairing."
-    )
-}
-
-/// The hover explanation.
-///
-/// ★★★ States the consequence in the operator's terms and stops. It does not
-/// tell them to do anything, because there is nothing reliable to tell them:
-/// the file may be perfectly fine, and the only real remedy is a good copy from
-/// whoever produced it. Inventing an action would be worse than naming the
-/// uncertainty.
-#[must_use]
-pub const fn recovered_tooltip() -> &'static str {
-    "Every PDF carries an index saying where its contents are. This one's was wrong or missing — usually an interrupted download, a crashed writer, or a tool that appended to it badly — so pdfcer scanned the whole file and rebuilt the index from what it found. The document opens and prints normally. Where something was defined more than once pdfcer had to pick one, so if anything looks out of place, check it against the original before relying on it."
-}
+// ★ `recovered_heading`, `recovered_detail` and `recovered_tooltip` were here
+// and are now in [`super::docprops`]. A rebuilt cross-reference table is a fact
+// about the FILE, so it moved with the rest of the file's own copy; see the
+// note above the read-only line for the whole move.
 
 // ===========================================================================
 // The selected TEXT's style — `format_text`, O37

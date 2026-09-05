@@ -522,8 +522,19 @@ pub struct Press {
     pub annot_rotate: Option<RotatableAnnot>,
     /// Whether it landed inside a selected **markup** annotation's box.
     pub markup_body: bool,
+    /// Whether it landed on one of that annotation's **resize grips**, which
+    /// lie half outside its box.
+    ///
+    /// ★★ A second flag rather than a wider `markup_body`, and the distinction
+    /// is load-bearing: the arm below reads them for **different verbs** — the
+    /// body means Move, a grip means Resize — so collapsing them would make a
+    /// press on a corner ambiguous exactly where the precedence matters. See
+    /// `canvas::pressing` for why a grip is outside the box at all.
+    pub markup_grip: bool,
     /// Whether it landed inside the selected **form field's** box.
     pub widget_body: bool,
+    /// Whether it landed on one of that field's box's **resize grips**.
+    pub widget_grip: bool,
     /// Whether a one-shot region zoom is armed.
     pub zoom_armed: bool,
 }
@@ -537,7 +548,9 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
         dimension,
         annot_rotate,
         markup_body,
+        markup_grip,
         widget_body,
+        widget_grip,
         zoom_armed,
     } = press;
     // ★ A measure tool takes the click and leaves the drag alone.
@@ -930,7 +943,29 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
     // `canvas::dragroute` a dead end for its whole life: the modules were
     // reachable and never reached, because no press on a markup or a widget
     // ever became a `DragKind::Move` to route.
-    } else if (caps.author_markup && markup_body) || (caps.edit_content && widget_body) {
+    // ★★★ **…AND ON ONE OF THEIR GRIPS, WHICH IS NOT THE SAME AS INSIDE THEIR
+    // BOX** — 2026-09-05.
+    //
+    // `markup_body` is `grab_box().contains(p)`. A corner grip is *centred on*
+    // a corner of that box, so half of its live area is outside it, and
+    // `handles::grip_bounds` pushes the anchors further out again on a small
+    // selection. A press on that outer half therefore had `grip == Some(NE)`
+    // and `markup_body == false`, fell past this arm into `caps.edit_content`
+    // — **false in Review** — and vanished. No resize, no decline, nothing in
+    // the trace: `the_line_weight_switch_reaches_the_resize` FAILED on it for
+    // the whole life of the feature, and `dragging_a_markup_moves_it` was
+    // failing beside it for an unrelated reason, which is what made the pair
+    // read as *"the annotation branch eats every gesture"*.
+    //
+    // ★★ The rotate handle is the control that shows why this was missed: it
+    // sits obviously clear of the box and so was obviously given its own arm
+    // above. The eight scale grips look as though they are on the edge, so a
+    // body test looks sufficient — and it is, for every press an operator makes
+    // one pixel too far in. `canvas::pressing` computes the two grip flags and
+    // its comment carries the measurement.
+    } else if (caps.author_markup && (markup_body || markup_grip))
+        || (caps.edit_content && (widget_body || widget_grip))
+    {
         // ★★★ A resize grip OUTRANKS the body, and the arm has to say so
         // itself rather than inherit it.
         //
@@ -943,10 +978,22 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
         // `Grip::Rotate` was given its own arm below to prevent.
         //
         // ★★ `is_resize()` rather than "not Move", enumerated for that same
-        // reason. `Grip::Rotate` is not a resize and must not fall in here —
-        // annotations are offered no rotate handle (`GripSet::scale_only`), so
-        // it cannot arrive, and matching on the positive property means that
-        // stays true if one ever is.
+        // reason. `Grip::Rotate` is not a resize and must not fall in here.
+        //
+        // ⚠ **The reason given here was stale and is corrected 2026-09-05.** It
+        // said *"annotations are offered no rotate handle (`GripSet::scale_only`),
+        // so it cannot arrive"* — false since `rotate_annotation` shipped on
+        // Pass 155.0: `pressing::grabbable` hands a markup `GripSet::all()`,
+        // and a rotate handle is exactly what it draws. What actually keeps
+        // `Rotate` out of this arm is the **rotate arm above**, which claims
+        // every `grip == Some(Grip::Rotate)` its capability allows, plus the
+        // positive `is_resize()` test here — which is why matching on the
+        // property rather than on "not Move" was right for a reason better than
+        // the one written down.
+        //
+        // ★ `markup_grip` and `widget_grip` are `is_resize()`-gated at their
+        // source (`canvas::pressing`), so a rotate press cannot enter this arm
+        // through the new route either.
         match grip {
             Some(g) if g.is_resize() => Some(DragKind::Resize(g)),
             _ => Some(DragKind::Move),

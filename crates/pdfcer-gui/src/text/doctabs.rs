@@ -126,18 +126,61 @@ pub const fn tab_reason_needs_password() -> &'static str {
 ///
 /// The active document leads in every form, because that is what every
 /// application in the class does and what a truncated taskbar button keeps.
+///
+/// # ★★★ …unless read mode is on, in which case the WAY OUT leads — 2026-09-05
+///
+/// The operator's report:
+///
+/// > *"I didn't see a way to get back out of read mode. if there is a shortcut
+/// > for this it should have a note what the key combo is in the top bar that
+/// > holds the window controls."*
+///
+/// This application draws no custom title bar — the window controls beside it
+/// are the operating system's — but **the title is ours**, and it is literally
+/// the text in the strip he pointed at. `read_mode` (the `Option<&str>`
+/// parameter) is the exit statement when the mode is on and `None` the rest of
+/// the time, so the hint exists for exactly as long as the state it explains.
+///
+/// ★ It goes **first**, ahead of the file name, and that overrides the
+/// paragraph above for one state only. The argument is this module's own, from
+/// the unsaved marker three functions up: *a trailing marker is the first thing
+/// the ellipsis eats.* A taskbar button showing `SW41177.pdf — pdfcer — 2…` has
+/// already discarded everything after the name, and an operator who has just
+/// hidden their whole chrome is not the operator with a roomy title bar. The
+/// document name is still there and still ahead of everything else that is not
+/// this.
+///
+/// ★ The build stamp stays **last**, untouched, because
+/// `ui-verify`'s `the_title_bar_carries_the_build_time` finds it by splitting
+/// the title from the right. Prefixing costs that check nothing; appending
+/// would have silently re-aimed it at this sentence and left the stamp
+/// unguarded.
+///
+/// The chord inside the statement is resolved by
+/// [`crate::app::window::exit_chord`] from the live keymap, never spelled here
+/// — see [`crate::text::window`].
 #[must_use]
-pub fn window_title(active: Option<&Path>, count: usize) -> String {
+pub fn window_title(active: Option<&Path>, count: usize, read_mode: Option<&str>) -> String {
     let base = crate::text::window_title();
     let stamp = build_day();
+    // ★ One join, in one place. The alternative — four `format!`s each with the
+    // prefix threaded in — is four chances for one of them to drop it, and the
+    // one that dropped it would be the no-document form, which is exactly the
+    // state an operator reaches by closing a file *while in read mode*.
+    let lead = |rest: String| match read_mode {
+        Some(exit) => format!("{exit} — {rest}"),
+        None => rest,
+    };
     let Some(active) = active else {
-        return format!("{base} — {stamp}");
+        return lead(format!("{base} — {stamp}"));
     };
     let name = tab_label(active, false);
     if count > 1 {
-        format!("{name} — {count} documents open — {base} — {stamp}")
+        lead(format!(
+            "{name} — {count} documents open — {base} — {stamp}"
+        ))
     } else {
-        format!("{name} — {base} — {stamp}")
+        lead(format!("{name} — {base} — {stamp}"))
     }
 }
 
@@ -477,5 +520,81 @@ mod title_stamp_tests {
         let out = stamp_for_title("2026-09-02 06:25 +0100");
         assert!(out.starts_with("2026-09-02"));
         assert!(out.contains("06:25"), "the time is the whole point: {out}");
+    }
+}
+
+/// The read-mode prefix on the window title — `OPERATOR_REQUESTS.md` O115.
+#[cfg(test)]
+mod title_read_mode_tests {
+    use super::window_title;
+    use std::path::Path;
+
+    /// ★★★ **The ordinary title says nothing about read mode**, and this is the
+    /// assertion the obvious wrong implementation fails.
+    ///
+    /// A hint that were always present would be furniture nobody reads, and it
+    /// would be a *false statement* for every minute the mode is off — the
+    /// window title being the one surface that reaches an operator who is not
+    /// looking at the application at all.
+    #[test]
+    fn an_ordinary_title_carries_no_hint() {
+        let title = window_title(Some(Path::new("C:/jobs/SW41177.pdf")), 1, None);
+        assert!(!title.contains("Read mode"), "{title}");
+        assert!(title.starts_with("SW41177.pdf"), "{title}");
+    }
+
+    /// **In read mode the way out leads the title.**
+    ///
+    /// First, not last, and the argument is this module's own about the unsaved
+    /// marker: a taskbar button truncates from the right, so a trailing hint is
+    /// the first thing the ellipsis eats — and the operator who has just hidden
+    /// all their chrome is not the one with a roomy title bar.
+    #[test]
+    fn read_mode_puts_the_way_out_first() {
+        let exit = crate::text::window::title_read_mode("Ctrl+H");
+        let title = window_title(Some(Path::new("C:/jobs/SW41177.pdf")), 3, Some(&exit));
+        assert!(
+            title.starts_with(&exit),
+            "the exit must survive a truncated taskbar button: {title}"
+        );
+        assert!(title.contains("SW41177.pdf"), "{title}");
+        assert!(title.contains("3 documents open"), "{title}");
+    }
+
+    /// ★★ **The build stamp is still last**, in every form.
+    ///
+    /// `ui-verify`'s `the_title_bar_carries_the_build_time` finds the stamp by
+    /// splitting the title from the right. Prefixing costs that check nothing;
+    /// appending would have silently re-aimed it at this sentence and left the
+    /// stamp — which has already closed two "you were running an old build"
+    /// reports — unguarded.
+    #[test]
+    fn the_build_stamp_is_still_the_last_field() {
+        let exit = crate::text::window::title_read_mode("Ctrl+H");
+        for title in [
+            window_title(None, 0, Some(&exit)),
+            window_title(Some(Path::new("a.pdf")), 1, Some(&exit)),
+            window_title(Some(Path::new("a.pdf")), 4, Some(&exit)),
+        ] {
+            let tail = title.rsplit('—').next().unwrap_or_default().trim();
+            assert!(
+                tail.starts_with(|c: char| c.is_ascii_digit()) || tail == super::build_day(),
+                "the trailing field must still be the build stamp: {title}"
+            );
+            assert!(title.starts_with(&exit), "{title}");
+        }
+    }
+
+    /// ★ **With no document open the hint is still there.**
+    ///
+    /// Read mode is per window, not per document, so an operator can close
+    /// their last file while in it. That is the form a four-branch
+    /// implementation drops, and it is the state with the least on screen.
+    #[test]
+    fn closing_the_last_document_does_not_lose_the_hint() {
+        let exit = crate::text::window::title_read_mode("Ctrl+H");
+        let title = window_title(None, 0, Some(&exit));
+        assert!(title.starts_with(&exit), "{title}");
+        assert!(title.contains(crate::text::window_title()), "{title}");
     }
 }

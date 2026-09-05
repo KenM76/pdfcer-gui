@@ -186,6 +186,25 @@ fn format_percent(value: f32) -> String {
 // ui-text-exempt: a file name, never displayed.
 pub const PREFS_FILE: &str = "preferences.txt";
 
+/// **A stored `bool` as the shell's own auto-hide setting.**
+///
+/// One conversion, named, rather than an `if … { OnHover } else { Off }` at
+/// each of the two call sites. The two settings are stored as `bool` because
+/// `settings.txt` is a `key = true | false` file an operator edits by hand and
+/// a third spelling of the same fact would be a third thing to get wrong; the
+/// shell's [`egui_shell::peek::AutoHide`] is an enum because it has room to
+/// grow a third position (Office has three). This function is the seam where
+/// that difference is absorbed, and it is the place a third position would be
+/// mapped.
+#[must_use]
+pub fn auto_hide(on: bool) -> egui_shell::peek::AutoHide {
+    if on {
+        egui_shell::peek::AutoHide::OnHover
+    } else {
+        egui_shell::peek::AutoHide::Off
+    }
+}
+
 /// The shell's own preferences.
 ///
 /// ## `PartialEq` but not `Eq` — and it was `Eq` until [`Self::ui_scale`] landed
@@ -391,6 +410,32 @@ pub struct Prefs {
     /// the checkbox exists so the behaviour can be turned OFF, and the
     /// behaviour is what every drawing program in the class does.
     pub smart_select: bool,
+    /// **Does the ribbon band hide itself until the pointer reaches the tab
+    /// strip?** — his instruction of 2026-09-05, *"we should also add the
+    /// capability to auto hide the ribbon until we hover over top of it."*
+    ///
+    /// The persisted half of [`egui_shell::peek`]. Pushed into
+    /// `RibbonState::sync_auto_hide` once per frame; the *revealed* half is
+    /// per-frame state the shell owns and is deliberately not stored — a
+    /// restart that reopened with the band stuck open would be a setting that
+    /// had silently changed itself.
+    ///
+    /// ★ **Off by default.** An operator who has never heard of the feature
+    /// gets the ribbon they have always had, and the two ways to it are the
+    /// Settings window and `view.ribbon_autohide` on View ▸ Window. The tab
+    /// strip never hides with it — see [`egui_shell::peek`] on why Office's
+    /// full *Auto-hide Ribbon* is the setting people get stuck in.
+    pub ribbon_auto_hide: bool,
+    /// **Does the left rail hide itself until the pointer reaches its edge?** —
+    /// the same instruction, *"left rail should also have the option to auto
+    /// hide as well."*
+    ///
+    /// ★ Off by default, for [`Self::ribbon_auto_hide`]'s reason. When it is on
+    /// the rail still reserves `egui_shell::dock::rail::PEEK_WIDTH_PTS` of
+    /// permanent, chevron-marked edge, so the panels that are reachable ONLY
+    /// from the rail — `markup.comments` in Read, which is on no tab that mode
+    /// shows — stay reachable in every state of this setting.
+    pub rail_auto_hide: bool,
     /// **Which chord means which form-field paste** — `OPERATOR_REQUESTS.md`
     /// **O58**, operator ruling 2026-08-29.
     ///
@@ -623,6 +668,8 @@ impl Default for Prefs {
             // `MODES_AND_PANELS.md`'s per-mode rule. See the field.
             default_page_display: None,
             smart_select: true,
+            ribbon_auto_hide: false,
+            rail_auto_hide: false,
             chrome: PageChrome::default(),
             ui_scale: DEFAULT_UI_SCALE,
             chosen_standard: None,
@@ -989,6 +1036,26 @@ impl Prefs {
                         line,
                     }),
                 },
+                // The two auto-hide settings, 2026-09-05. One arm each rather
+                // than a shared pattern: they are two independent surfaces and
+                // a reader meeting one inside a joint arm would reasonably
+                // expect the other to move with it.
+                "ribbon_auto_hide" => match opening::bool_from_key(value) {
+                    Some(on) => prefs.ribbon_auto_hide = on,
+                    None => notes.push(PrefNote::BadValue {
+                        key: key.to_owned(),
+                        value: value.to_owned(),
+                        line,
+                    }),
+                },
+                "rail_auto_hide" => match opening::bool_from_key(value) {
+                    Some(on) => prefs.rail_auto_hide = on,
+                    None => notes.push(PrefNote::BadValue {
+                        key: key.to_owned(),
+                        value: value.to_owned(),
+                        line,
+                    }),
+                },
                 "show_rulers" | "show_grid" | "show_guides" => {
                     let target = match key {
                         "show_rulers" => &mut prefs.chrome.rulers,
@@ -1246,6 +1313,23 @@ impl Prefs {
         // ui-text-exempt: a file KEY, as above.
         out.push_str("smart_select = ");
         out.push_str(opening::bool_key(self.smart_select));
+        out.push('\n');
+        out.push_str(
+            "\n\
+             # ribbon_auto_hide / rail_auto_hide: true | false. With one of\n\
+             # these on, that strip stays out of the way until you move the\n\
+             # pointer onto it, and then it appears OVER the drawing rather\n\
+             # than pushing it down or sideways -- so nothing you were about\n\
+             # to click moves. The ribbon keeps its row of tab names either\n\
+             # way, and the rail keeps a narrow marked edge, so there is\n\
+             # always somewhere to put the pointer to get the strip back.\n",
+        );
+        // ui-text-exempt: file KEYS, as above.
+        out.push_str("ribbon_auto_hide = ");
+        out.push_str(opening::bool_key(self.ribbon_auto_hide));
+        out.push('\n');
+        out.push_str("rail_auto_hide = "); // ui-text-exempt: a file KEY, as above.
+        out.push_str(opening::bool_key(self.rail_auto_hide));
         out.push('\n');
         out.push_str(
             "\n\

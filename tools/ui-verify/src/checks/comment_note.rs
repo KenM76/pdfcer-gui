@@ -474,6 +474,17 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         // note?"* genuinely cannot be answered while the paste is refused. But
         // the reason must name the gate: a reason may only assert what the
         // check actually looked at.
+        //
+        // ⇒ ⚠ **THE GATE WAS OPENED LATER THE SAME DAY** — `edit.cut`,
+        // `edit.paste` and `edit.paste_duplicate` joined `edit.copy` in
+        // `app::modes::capability::GATED_BY_THEIR_DISPATCHER`, so this branch
+        // should no longer be reachable in Review. It is kept, unchanged, for
+        // two reasons: it is one of only two witnesses that would notice the
+        // escape list being narrowed again, and this check has NOT been re-run
+        // against the fixed build — the session that made the fix worked
+        // headlessly. If it still skips here, the fix regressed; if it skips
+        // for the other reason below, that is the original, unrelated harness
+        // weakness.
         let refused = trace
             .events(CHORD_NOT_OFFERED)
             .any(|l| l.get("id") == Some(PASTE_COMMAND));

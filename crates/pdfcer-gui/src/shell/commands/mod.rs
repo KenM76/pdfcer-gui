@@ -372,7 +372,22 @@ mod tests {
         // besides: the operator did not know pdfcer could do this, which is why
         // he asked, so a keyboard-only route would have answered the request
         // with something he still could not find.
-        assert_eq!(registry().len(), 138);
+        // ★★ 138 → 140 on 2026-09-05: `view.ribbon_auto_hide` and
+        // `view.rail_auto_hide`. Ken: *"we should also add the capability to
+        // auto hide the ribbon until we hover over top of it… left rail should
+        // also have the option to auto hide as well."* Two commands rather than
+        // one three-position control, because they govern two independent
+        // surfaces and Office — which HAS the three-position version — puts all
+        // three of its positions on ONE surface. The count moves WITH the list,
+        // in the same commit, which is this file's standing rule.
+        // ★★ 140 → 141 on 2026-09-05: `file.document_properties`. The operator:
+        // *"the document properties are still always visible in the properties
+        // tab. it needs to get out of there and be in its own document
+        // properties tab."* It opens `crate::panels::docprops` — a panel that
+        // already existed as the last section of the Properties panel — so this
+        // is a **surface being separated**, not a capability arriving, and the
+        // count moves anyway because a separated surface needs its own control.
+        assert_eq!(registry().len(), 141);
     }
 
     /// ★ **The icon-coverage split adds up to the registry.**
@@ -609,7 +624,25 @@ mod tests {
         // ⇒ The rule the ledger below already states, earning its keep a second
         // time: **verify an absence against the source, never against the
         // document that asserts it.**
-        assert_eq!(named, 131, "commands naming an icon");
+        // ★ 131 → 133 on 2026-09-05: `view.ribbon_auto_hide` (`collapse`) and
+        // `view.rail_auto_hide` (`sidebar`). Neither is new art. `collapse` is
+        // the chevron the bookmark tree already draws, and `sidebar` was freed
+        // when `view.sidebar` was unregistered on 2026-08-31 — a picture of a
+        // strip down the side of a window, drawn for exactly this surface and
+        // orphaned by that retirement. Both are reused under the header's
+        // shared-key convention rather than commissioned, which is the test
+        // this ledger applies to every increment.
+        // ★ 133 → 134 on 2026-09-05: `file.document_properties` NAMES a glyph,
+        // and it is entitled to one for `format.unshare_form`'s reason — it is
+        // not new art. It **shares** `properties` with `file.properties`, the
+        // control it was cut out of and the control it now sits beside, under
+        // the header's shared-key convention. Two controls whose entire subject
+        // is *properties*, told apart by whose, is exactly the case that
+        // convention is for; a second page-and-corner glyph would be a
+        // distinction to learn for no gain, and `icons/assets/PROVENANCE.md`
+        // makes that directory the operator's own work, so the alternative was
+        // never "draw one" but "ask him for one".
+        assert_eq!(named, 134, "commands naming an icon");
         // ★ 12 → 17 on 2026-08-27: the Format ▸ Font group's five commands
         // all refuse a glyph, and they refuse it for one reason argued once at
         // their registration. Word draws `B` and `I` as glyphs; this build has
@@ -1123,8 +1156,16 @@ mod tests {
             "view.panel_close",
             "view.panel_dock",
             "view.panel_float",
+            // ★ The two auto-hide toggles are document-free ON PURPOSE. They
+            // are settings about the application's own chrome, and a chrome
+            // setting that could only be changed with a drawing open would be
+            // unreachable in the state the application STARTS in — which is
+            // defect D1's shape, and is what `enabled_when("doc.pages")` on a
+            // view command has to justify each time it is written.
+            "view.rail_auto_hide",
             "view.read_mode",
             "view.reset_layout",
+            "view.ribbon_auto_hide",
         ]
         .into_iter()
         .collect();

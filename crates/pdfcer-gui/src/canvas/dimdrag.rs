@@ -115,8 +115,16 @@
 //! - D3 escape-cancels: WAIVED — the gesture machine owns Escape and drops the
 //!   drag before this module is reached. Nothing is written until `Complete`, so
 //!   an abandoned drag leaves the document untouched by construction.
-//! - D4 one-undo-entry: `place_dimension` and `move_dimension_vertex` are each
-//!   one engine command, so one gesture is one Ctrl+Z.
+//! - D4 one-undo-entry: `place_dimension`, `move_dimension_vertex`,
+//!   `insert_dimension_vertex` and `remove_dimension_vertex` are each one
+//!   engine command, so one gesture is one Ctrl+Z. ★ For the three vertex
+//!   verbs that is not an accident of granularity — they share one body,
+//!   `EditSession::apply_vertex_edit` (`D:/Dev/pdfcer/crates/pdfcer-core/src/
+//!   edit.rs:38002`), which plans the edit, rewrites the record, regenerates
+//!   the annotation **and its baked `/AP`**, rewrites the sidecar catalog, and
+//!   commits all of it as a single `Command`. A shell that raised two actions
+//!   for one gesture would break that, which is why each gesture below pushes
+//!   exactly one.
 //! - D5 modifiers-constrain: **Shift locks both drags to one axis**, applied
 //!   by `canvas::interact` before either reaches this module —
 //!   [`crate::canvas::constrain::translate`] for the label, whose outcome is a
@@ -147,6 +155,87 @@
 //!   label before and after — the "before" cannot be reconstructed once the
 //!   geometry that produced it is gone. `Place` writes fields the value function
 //!   does not read, so it has nothing to disclose and says nothing.
+//!   `InsertVertex` and `RemoveVertex` re-measure too, and disclose the same
+//!   pair **plus the corner count**, because the count is the thing the
+//!   operator asked to change and the thing a mis-aimed gesture would get
+//!   wrong.
+//!
+//! ## ★★★ ADDING AND REMOVING A CORNER — 2026-09-05, the operator's report
+//!
+//! > *"I also can't edit or delete nodes of a markup shape once it is drawn."*
+//!
+//! That sentence is three separate facts. The one this module can close is the
+//! **ce dimension** half: `pdfcer-core` has had
+//! `insert_dimension_vertex` (`edit.rs:37927`) and `remove_dimension_vertex`
+//! (`edit.rs:37955`) since `Pass 107.0`, beside the `move_dimension_vertex`
+//! (`edit.rs:37892`) this module already drove, and **this shell called
+//! neither**. So *"delete a node"* was unbuilt on our side for the one shape
+//! where the engine can do it. The other two facts are not ours: a **markup**
+//! shape's `/Vertices` and `/InkList` are not modelled at all, which is filed
+//! (`request_a_markup_shapes_vertices_cannot_be_read_or_edited.md`) and
+//! deliberately **not** worked around here — re-parsing the annotation
+//! dictionary in the shell would be a second, weaker implementation of geometry
+//! the engine owns.
+//!
+//! ### The gesture, and why both verbs are DRAGS
+//!
+//! | gesture on a corner handle | means |
+//! |---|---|
+//! | drag | **move** that corner (unchanged since 2026-08-20) |
+//! | **Points tool armed** + `Ctrl` + drag | **add** a corner immediately after it, dropped where the pointer lands |
+//! | **Points tool armed** + `Ctrl`+`Shift` + drag | **remove** that corner |
+//!
+//! ★★ **A click cannot reach this module, and that is a fact about the gesture
+//! machine rather than a preference.** [`crate::canvas::gesture::GestureState::update`]
+//! starts a drag on `frame.drag_started` — egui's drag recognition, past its
+//! travel threshold — and a press released before that threshold never becomes
+//! a `DragKind`; it becomes `GestureOutcome::Click`, which is routed by
+//! `canvas::clicking`. So the engine's own framing of these two verbs
+//! (*"what a right-click on a segment offers"*, *"what a right-click on a
+//! vertex offers"*) describes a surface that lives in `canvas::menus`, and the
+//! drag is what this module can actually be handed. The right-click menu is the
+//! discoverable form and is **reported rather than faked**.
+//!
+//! ★★★ **The Points tool is the safety, and that is what earns it its place in
+//! Review.** Ctrl alone, with the Select tool, still moves the corner. An
+//! operator has to have deliberately armed the tool whose whole subject is
+//! points before a drag can change how many there are — so a mis-held modifier
+//! during an ordinary corner drag cannot destroy a corner. It is also the
+//! answer to *"what does the Points tool do in a mode that cannot edit page
+//! content"*, which is the question [`crate::canvas::tool::retire_forbidden`]'s
+//! Node arm now answers with `edit_content || author_measure`.
+//!
+//! ### ★★ The modifiers are read LIVE, and here that is the honest form
+//!
+//! Every *sampled* property of this drag — which vertex, which grip, which
+//! marquee intent — is fixed at the press, because a gesture means what it
+//! meant when it started and re-deriving a hidden choice per frame lets a drag
+//! hop onto something the operator never aimed at. **A modifier whose effect is
+//! continuously previewed is the opposite case.** Releasing Ctrl mid-drag turns
+//! the gesture back into a move *and the preview says so on that very frame*,
+//! so nothing is hidden and nothing can be committed that was not on screen
+//! when the button came up. That is the identical argument Alt (snap suspend)
+//! already ships under, six rows above, and it is why neither needs a
+//! per-drag memory slot that an Escape-cancelled drag could leave stale.
+//!
+//! ### ★★ The preflight, and why the shell asks before it acts
+//!
+//! `EditSession::vertex_edit_preview` (`edit.rs:37987`) is the engine's own
+//! refusal predicate — *"`vertex_edit_preview(id, edit).err()` is
+//! `Option<EditError>`: exactly the narrower `*_refusal` shape a shell needs"*
+//! — and it shares **one body** with the mutating verbs
+//! (`vertex_edit_plan`), so it cannot disagree with them. It is asked on every
+//! frame of a count-editing drag, for the reason the engine gives in the
+//! `adopt_widget` lesson it cites: *"a verb with no preflight makes the UI find
+//! out by pressing."*
+//!
+//! What it buys, concretely, is that **the preview never promises a shape the
+//! release would refuse**. A closed perimeter with three corners cannot lose
+//! one — [`EditError::PerimeterWouldBeDegenerate`], because two closed vertices
+//! trace a line there and back and print twice the distance between two points
+//! — so the preview shows the shape *unchanged* and the release records a
+//! worded decline instead of raising an action. Silence there is exactly what
+//! produced the operator's report.
 
 use egui::{Rect, Vec2};
 use pdfcer_core::dimension::{DimensionId, DimensionKind};
@@ -560,6 +649,66 @@ pub struct VertexFrame<'a> {
     pub alt_held: bool,
 }
 
+/// **What a corner drag is asking for** — move that corner, add one after it,
+/// or take it away.
+///
+/// Derived from the armed tool and the modifiers held on the frame being drawn;
+/// see [`intent`] for the decision and the module header for why it is read
+/// live rather than sampled at the press.
+///
+/// ★ Three variants rather than a `bool` pair, for [`DimensionPress`]'s own
+/// reason one module over: the three reach **three different engine verbs**,
+/// and the one thing that must never happen on this canvas is a gesture aimed
+/// at the wrong verb. A pair of booleans has a fourth state that means nothing
+/// and would have to be resolved somewhere.
+///
+/// [`DimensionPress`]: crate::canvas::gesture::DimensionPress
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum VertexIntent {
+    /// Reshape: the corner follows the pointer. `move_dimension_vertex`.
+    #[default]
+    Move,
+    /// Add a corner immediately **after** the grabbed one, at the drop point.
+    /// `insert_dimension_vertex`.
+    Insert,
+    /// Take the grabbed corner away. The drop point is ignored — a removal has
+    /// no destination. `remove_dimension_vertex`.
+    Remove,
+}
+
+/// **What this frame's corner drag means**, from the armed tool and the live
+/// modifiers.
+///
+/// # ★★ The Points tool is a gate and not a shortcut
+///
+/// With any other tool armed this returns [`VertexIntent::Move`] whatever is
+/// held, so a Ctrl that the operator was using for something else — subtracting
+/// from a selection, say, which is what `canvas::marquee::Combine` spells it as
+/// everywhere else on this canvas — cannot destroy a corner of a shape they
+/// were merely nudging. Changing how many corners a measured shape has is a
+/// deliberate act and it costs one deliberate arming.
+///
+/// It is also what gives the Points tool a subject in a mode that cannot edit
+/// page content. See [`crate::canvas::tool::retire_forbidden`]'s Node arm.
+///
+/// # Why `command` and not `ctrl`
+///
+/// On Windows they are the same key and on macOS `command` carries this
+/// meaning; `canvas::interact` reads the same field for the same reason and
+/// says so at its own call site.
+#[must_use]
+pub fn intent(ctx: &egui::Context) -> VertexIntent {
+    if !crate::canvas::tool::active(ctx).is_node() {
+        return VertexIntent::Move;
+    }
+    let (ctrl, shift) = ctx.input(|i| (i.modifiers.command, i.modifiers.shift));
+    match (ctrl, shift) {
+        (true, false) => VertexIntent::Insert,
+        (true, true) => VertexIntent::Remove,
+        (false, _) => VertexIntent::Move,
+    }
+}
+
 /// What one frame of a vertex drag produced.
 ///
 /// ★ Two fields rather than one, because the preview and the snap indicator are
@@ -656,6 +805,30 @@ fn inner(
     // and not two.
     let (target, snap) =
         crate::canvas::measure::snap_point(ctx, doc.view.page_index, free, alt_held, targets, map);
+
+    // ★★★ THE COUNT EDITS BRANCH OFF HERE, ABOVE THE MOVE — 2026-09-05.
+    //
+    // They share everything up to this line — the grab, the delta, the page
+    // conversion, the snap — because a corner being added is placed by exactly
+    // the same arithmetic as a corner being moved, and a second derivation of
+    // "where would this land" is the defect `measure::Resolved` exists to
+    // prevent. What differs is only which engine verb the release reaches and
+    // what the preview draws, and both of those live in [`count_edit`].
+    let intent = intent(ctx);
+    if intent != VertexIntent::Move {
+        return count_edit(CountEdit {
+            id,
+            intent,
+            index,
+            target,
+            points,
+            closed,
+            phase,
+            session: &doc.session,
+            snap,
+            actions,
+        });
+    }
     *moved.get_mut(index)? = target;
 
     if phase == Phase::Complete {
@@ -701,6 +874,231 @@ fn inner(
             },
         )),
         snap,
+    })
+}
+
+/// Everything one frame of an **add-a-corner** or **remove-a-corner** drag
+/// needs.
+///
+/// A struct for [`VertexFrame`]'s reason and one more: five of its ten members
+/// are already in scope at the one call site under names that would be trivial
+/// to transpose positionally — `index` and the two `usize`-adjacent values, and
+/// two point-shaped things in the same space.
+struct CountEdit<'a> {
+    /// The ce dimension being reshaped.
+    id: DimensionId,
+    /// Add or remove. [`VertexIntent::Move`] never reaches here.
+    intent: VertexIntent,
+    /// The corner the drag grabbed: the one to remove, or the one the new
+    /// corner goes after.
+    index: usize,
+    /// Where the pointer is, in page space, **after** snapping — the same
+    /// `target` a move would have used, which is the whole reason the two
+    /// paths share their arithmetic.
+    target: Point,
+    /// The shape's current corners.
+    points: &'a [Point],
+    /// Whether the shape closes — needed by the preview, and by the engine's
+    /// minimum-count rule (open keeps two, closed keeps three).
+    closed: bool,
+    /// Draw, or commit.
+    phase: Phase,
+    /// The read side of the document, for the preflight.
+    session: &'a pdfcer_core::edit::EditSession,
+    /// What the new corner is snapping to, if anything. Carried through for an
+    /// insert and dropped for a remove, which has no destination to snap.
+    snap: Option<pdfcer_core::vector::snap::SnapCandidate>,
+    /// Where the release's one action goes.
+    actions: &'a mut Vec<Action>,
+}
+
+/// The page-space segments a perimeter with these corners would be drawn as.
+///
+/// Through `dimension_preview_segments`, this module's standing rule: what is
+/// previewed and what is committed come from one function, so a corner cannot
+/// be shown in one place and written to another. `offset` and `text_along` are
+/// zero because the preview draws the *shape*, and the label's placement is not
+/// what this gesture changes.
+fn preview_of(points: &[Point], closed: bool) -> Vec<(Point, Point)> {
+    super::measure::pick::dimension_preview_segments(&DimensionKind::Perimeter {
+        points: points.to_vec(),
+        closed,
+        offset: 0.0,
+        text_along: 0.0,
+    })
+}
+
+/// Which of the shell's three sentences an engine refusal is.
+///
+/// ★ The mapping lives here rather than in `crate::text::measure` for
+/// `app::actions::annots::refusal_for`'s reason, which is this project's
+/// standing division: the engine's error enum is a *shell* concern, and the
+/// catalog holds operator prose only. A `crate::text::` module that matched on
+/// `EditError` would put the engine's vocabulary into the string catalog and
+/// give the catalog a reason to change every time the engine adds a variant.
+///
+/// The `_` arm is not laziness. The remaining refusals —
+/// `DimensionNotFound`, `DimensionGroupNotFound`, `VertexIndexOutOfRange`,
+/// `DimensionHasNoVertices`, `DocumentEncrypted`, the certification guard and
+/// `SidecarWrittenByNewerBuild` — are either unreachable from a handle the
+/// painter drew from this same model, or are properties of the FILE that no
+/// wording about corners could help with. They get the general sentence rather
+/// than a fabricated specific one.
+fn refusal_for(error: &pdfcer_core::edit::EditError) -> crate::text::measure::VertexEditRefusal {
+    use crate::text::measure::VertexEditRefusal as R;
+    use pdfcer_core::edit::EditError as E;
+    match error {
+        E::PerimeterWouldBeDegenerate { .. } => R::WouldLeaveTooFew,
+        E::DimensionVertexCountFixed { .. } => R::CountFixed,
+        E::VertexNotPlaceable { .. } => R::Unplaceable,
+        _ => R::Refused,
+    }
+}
+
+/// Advance one frame of an **add-a-corner** or **remove-a-corner** drag.
+///
+/// # ★★★ The preflight is asked FIRST, and the preview is derived from its
+/// answer
+///
+/// `vertex_edit_preview` shares one body with the mutating verb
+/// (`EditSession::vertex_edit_plan`), so it cannot disagree with what the
+/// release would do. Asking it before drawing anything is what makes this
+/// gesture obey the honesty contract the label drag states at [`drag`]: **the
+/// preview is a shape the release would commit, or it is the shape that is
+/// already there.** A build that drew the corner vanishing and then refused on
+/// release would be showing the operator an edit that never happens — the
+/// worst reading of a gesture, because it looks like it worked until the next
+/// frame repaints.
+///
+/// ★ It costs one `read_dimension_model` per frame of a count-editing drag.
+/// That is a sidecar read on a gesture that lasts a second or two and is
+/// deliberate: the alternative is a second copy of the minimum-count rule in
+/// this shell, which is the *"two things that must agree and eventually will
+/// not"* the engine's own doc comment argues against by name.
+///
+/// # The decline is recorded on the RELEASE and not on every frame
+///
+/// A refused frame in flight is not an event — the operator is still holding
+/// the button and can drop the gesture by moving off, or by letting Ctrl go.
+/// What is an event is releasing on a refusal, and that is the one frame that
+/// writes a sentence. Recording per frame would rewrite the same slot sixty
+/// times a second and would fire on gestures the operator abandoned.
+fn count_edit(edit: CountEdit<'_>) -> Option<VertexDrag> {
+    let CountEdit {
+        id,
+        intent,
+        index,
+        target,
+        points,
+        closed,
+        phase,
+        session,
+        snap,
+        actions,
+    } = edit;
+    let planned = match intent {
+        // Filtered by the caller. Returning `None` rather than asserting: an
+        // unreachable arm that draws nothing is a frame with no preview, which
+        // is recoverable, and a panic here would take the window with it during
+        // a drag.
+        VertexIntent::Move => return None,
+        VertexIntent::Insert => pdfcer_core::edit::VertexEdit::Insert {
+            after: index,
+            at: target,
+        },
+        VertexIntent::Remove => pdfcer_core::edit::VertexEdit::Remove { index },
+    };
+    if let Err(why) = session.vertex_edit_preview(id, planned) {
+        if phase == Phase::Complete {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                format!(
+                    "dimension-vertex-declined id={} index={index} intent={intent:?} reason={why:?}",
+                    id.0
+                )
+            });
+            // ★ Handed INWARD as an action rather than recorded here: the
+            // decline store is `pub(super)` inside `crate::app` and the canvas
+            // is outside that boundary. See `DimensionAction::DeclineVertexEdit`
+            // for the argument, and for why this is not `record_note`.
+            actions.push(Action::Dimension(DimensionAction::DeclineVertexEdit {
+                why: refusal_for(&why),
+            }));
+            // Nothing is previewed on the frame the gesture ends, refused or
+            // not: the annotation is on screen already, drawn by
+            // `pdfcer-render` from its own appearance stream, and a preview of
+            // the identical shape laid over it is a second copy of one line.
+            return Some(VertexDrag::default());
+        }
+        // The shape exactly as it is. See this function's header: a preview
+        // that showed the edit would be promising a release that refuses.
+        return Some(VertexDrag {
+            segments: Some(preview_of(points, closed)),
+            snap: None,
+        });
+    }
+
+    let mut shape: Vec<Point> = points.to_vec();
+    match intent {
+        // ★ `index + 1`, and `index + 1 == len` is an APPEND rather than a
+        // panic — which is the case the engine went out of its way to make
+        // meaningful: on a closed perimeter `after == len - 1` names the
+        // closing segment back to corner 0, and on an open path it extends the
+        // path past its end. Both are the point on the segment the operator
+        // grabbed the near end of.
+        VertexIntent::Insert => shape.insert(index + 1, target),
+        VertexIntent::Remove => {
+            shape.remove(index);
+        }
+        VertexIntent::Move => {}
+    }
+
+    if phase == Phase::Complete {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            //
+            // ★ `corners=` carries the count AFTER the edit, which is the one
+            // number a wrong build gets wrong: an insert that landed on the
+            // wrong segment, a remove that took the neighbour, and a working
+            // gesture all move the shape. Only the count and the index
+            // together say which of the three happened. Same argument
+            // `dimension-vertex`'s `snap=` makes one function up.
+            format!(
+                "{} id={} index={index} corners={} x={:.2} y={:.2}",
+                match intent {
+                    VertexIntent::Insert => "dimension-vertex-insert",
+                    _ => "dimension-vertex-remove",
+                },
+                id.0,
+                shape.len(),
+                target.x,
+                target.y
+            )
+        });
+        actions.push(Action::Dimension(match intent {
+            VertexIntent::Insert => DimensionAction::InsertVertex {
+                dimension: id,
+                after: index,
+                at: target,
+            },
+            _ => DimensionAction::RemoveVertex {
+                dimension: id,
+                index,
+            },
+        }));
+        // Nothing is previewed on the frame that commits, for [`drag_vertex`]'s
+        // reason: the annotation is about to be regenerated and drawn for real,
+        // and a preview over it would be a second copy of the same shape, one
+        // frame stale.
+        return Some(VertexDrag::default());
+    }
+
+    Some(VertexDrag {
+        segments: Some(preview_of(&shape, closed)),
+        // A removal has no destination, so there is nothing for a snap marker
+        // to describe and drawing one would point at a corner that is about to
+        // stop existing.
+        snap: (intent == VertexIntent::Insert).then_some(snap).flatten(),
     })
 }
 
@@ -775,141 +1173,4 @@ pub fn annot_shapes(
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use pdfcer_core::vector::AxisConstraint;
-
-    fn horizontal() -> DimensionKind {
-        DimensionKind::Linear {
-            a: Point::new(100.0, 200.0),
-            b: Point::new(300.0, 200.0),
-            constraint: AxisConstraint::Horizontal,
-            offset: 0.0,
-            text_along: 0.0,
-        }
-    }
-
-    /// A horizontal dimension's frame is `u = +x`, `n = +y`. So a drag straight
-    /// up is pure standoff and a drag sideways is pure text slide — the two
-    /// components do not contaminate each other.
-    #[test]
-    fn a_delta_splits_into_standoff_and_slide_along_the_axis() {
-        let (_, offset, along) = placed(&horizontal(), 0.0, 30.0).expect("linear places");
-        assert!((offset - 30.0).abs() < 1e-9, "straight up is all standoff");
-        assert!(along.abs() < 1e-9, "and none of it slides the text");
-
-        let (_, offset, along) = placed(&horizontal(), 25.0, 0.0).expect("linear places");
-        assert!(offset.abs() < 1e-9, "sideways changes no standoff");
-        assert!(
-            (along - 25.0).abs() < 1e-9,
-            "and slides the text by the drag"
-        );
-    }
-
-    /// ★ The property the whole design rests on: **placement never touches what
-    /// is measured.** Whatever the drag, `a` and `b` come out unchanged, so the
-    /// printed number cannot move.
-    #[test]
-    fn no_drag_can_move_the_measured_points() {
-        let before = horizontal();
-        for (dx, dy) in [(0.0, 0.0), (500.0, -900.0), (-12.5, 7.25), (1e6, 1e6)] {
-            let (after, _, _) = placed(&before, dx, dy).expect("linear places");
-            let (DimensionKind::Linear { a, b, .. }, DimensionKind::Linear { a: a0, b: b0, .. }) =
-                (&after, &before)
-            else {
-                panic!("both are linear");
-            };
-            assert!(
-                (a.x - a0.x).abs() < 1e-9 && (a.y - a0.y).abs() < 1e-9,
-                "point a moved on a drag of {dx},{dy}"
-            );
-            assert!(
-                (b.x - b0.x).abs() < 1e-9 && (b.y - b0.y).abs() < 1e-9,
-                "point b moved on a drag of {dx},{dy}"
-            );
-        }
-    }
-
-    /// Placement accumulates: two drags of ten leave the dimension where one
-    /// drag of twenty would. The delta form is what makes this true — an
-    /// absolute `placement_from_point` would put it wherever the pointer last
-    /// was, which is a different gesture.
-    #[test]
-    fn two_drags_compose_into_one() {
-        let (once, _, _) = placed(&horizontal(), 0.0, 10.0).expect("places");
-        let (twice, offset, _) = placed(&once, 0.0, 10.0).expect("places");
-        let (_, direct, _) = placed(&horizontal(), 0.0, 20.0).expect("places");
-        assert!((offset - direct).abs() < 1e-9);
-        let DimensionKind::Linear { offset: o, .. } = twice else {
-            panic!("linear")
-        };
-        assert!((o - 20.0).abs() < 1e-9);
-    }
-
-    /// An aligned dimension whose two picks coincide has no axis, so there is
-    /// nothing to resolve a delta against. Refused rather than fabricated — see
-    /// `axis_frame`, which makes the same call one level down.
-    #[test]
-    fn a_degenerate_dimension_has_no_frame_and_is_refused() {
-        let degenerate = DimensionKind::Linear {
-            a: Point::new(50.0, 50.0),
-            b: Point::new(50.0, 50.0),
-            constraint: AxisConstraint::Aligned,
-            offset: 0.0,
-            text_along: 0.0,
-        };
-        assert!(placed(&degenerate, 5.0, 5.0).is_none());
-    }
-    fn square_perimeter() -> DimensionKind {
-        DimensionKind::Perimeter {
-            points: vec![
-                Point::new(0.0, 0.0),
-                Point::new(100.0, 0.0),
-                Point::new(100.0, 100.0),
-                Point::new(0.0, 100.0),
-            ],
-            closed: true,
-            offset: 0.0,
-            text_along: 0.0,
-        }
-    }
-
-    /// ★★ **A perimeter's label goes where it is dropped**, in both axes.
-    ///
-    /// The property that separates it from a linear dimension, and the one the
-    /// engine went out of its way to point out: a perimeter's placement is in
-    /// PAGE axes, so a diagonal drag is expressible. A linear dimension's
-    /// diagonal drag is flattened onto its own axis, which is correct there and
-    /// would be wrong here.
-    #[test]
-    fn a_perimeter_label_takes_the_delta_in_both_axes() {
-        let (_, offset, along) = placed(&square_perimeter(), 25.0, -40.0).expect("places");
-        assert!((along - 25.0).abs() < 1e-9, "x goes to text_along");
-        assert!((offset + 40.0).abs() < 1e-9, "y goes to offset");
-    }
-
-    /// ★ And the same guarantee the linear case has, which is the whole reason
-    /// this gesture is safe to be the default: **the measured shape is never
-    /// touched**, so the number cannot change no matter where the label lands.
-    #[test]
-    fn no_drag_moves_a_perimeter_vertex() {
-        let before = square_perimeter();
-        let (after, _, _) = placed(&before, 900.0, -700.0).expect("places");
-        let (
-            DimensionKind::Perimeter { points, closed, .. },
-            DimensionKind::Perimeter {
-                points: p0,
-                closed: c0,
-                ..
-            },
-        ) = (&after, &before)
-        else {
-            panic!("both are perimeters");
-        };
-        assert_eq!(points.len(), p0.len());
-        for (a, b) in points.iter().zip(p0) {
-            assert!((a.x - b.x).abs() < 1e-9 && (a.y - b.y).abs() < 1e-9);
-        }
-        assert_eq!(closed, c0, "and the ring is still a ring");
-    }
-}
+mod tests;

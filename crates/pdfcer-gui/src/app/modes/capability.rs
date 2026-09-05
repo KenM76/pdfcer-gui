@@ -248,12 +248,31 @@ impl Default for Capabilities {
     }
 }
 
-/// The one command a chord reaches from **every** mode, whichever tab draws it.
+/// ★★★ **The commands whose chord reaches every mode because their own
+/// dispatcher gates them** — 2026-09-05.
 ///
-/// See [`offers_command`] for the argument. A constant rather than a literal in
-/// the comparison so the exception has a name, and so a reader grepping for
-/// `edit.copy` finds the rule as well as the registration.
-const COPY_IN_EVERY_MODE: &str = "edit.copy"; // ui-text-exempt: a registered command id, never displayed
+/// See [`offers_command`]'s §"The one class that escapes its tab" for the whole
+/// argument. In short: the tab gate is a *proxy* for *"may this mode do this?"*,
+/// and where a dispatcher asks the real question — of the operand, per press —
+/// the proxy is not merely redundant, it answers a **different** question and
+/// gets it wrong.
+///
+/// A named constant rather than literals in the comparison so the class has a
+/// name, and so a reader grepping for `edit.paste` finds the rule as well as
+/// the registration.
+///
+/// ⚠ **Membership is not a decoration.** Every id here must be one
+/// `app::dispatch::clipboard` gates on `PdfcerApp::capabilities`, or this list
+/// hands a mode a verb nothing stops.
+/// [`tests::every_dispatcher_gated_command_is_one_the_clipboard_dispatcher_owns`]
+/// binds the two ends mechanically rather than by this paragraph.
+const GATED_BY_THEIR_DISPATCHER: [&str; 4] = [
+    // ui-text-exempt: registered command ids, never displayed.
+    "edit.copy",
+    "edit.cut",
+    "edit.paste",
+    "edit.paste_duplicate",
+];
 
 /// **Whether the active mode offers `command_id` at all.**
 ///
@@ -319,6 +338,76 @@ const COPY_IN_EVERY_MODE: &str = "edit.copy"; // ui-text-exempt: a registered co
 /// `view.panel_forms` was the first instance, this is the second, and the fix
 /// was the same both times.
 ///
+/// # ★★★ The one class that escapes its tab — and why it is a class, not a list
+///
+/// The rule above states a **proxy**. "Does this mode show the tab that owns
+/// this command?" stands in for "may this mode do this?", and it is a good
+/// proxy because a mode is *defined* by its tabs and because a command an
+/// operator cannot see is one they should not be able to press.
+///
+/// It is the wrong question for a verb whose answer depends on **what the
+/// operator is pointing at rather than on which mode they are in**, and
+/// `app::dispatch::clipboard` contains four:
+///
+/// | verb | what its dispatcher gates on |
+/// |---|---|
+/// | `edit.copy` | nothing — *copying is not authoring*, the operator's ruling |
+/// | `edit.cut` | **what is selected**: an annotation takes `author_markup`, page content takes `edit_content` |
+/// | `edit.paste`, `edit.paste_duplicate` | **what is on the clipboard**, by the same split |
+///
+/// All four live in the Edit tab's Clipboard group, which is the right home for
+/// them — a tab is a place to *find* a command — and Review is not shown that
+/// tab. So the proxy refused all four in Review, and for cut and paste it
+/// refused something the mode is **allowed to do**:
+///
+/// > ```text
+/// > chord-command      chord="Ctrl+C" id=edit.copy  via=clipboard-event
+/// > clipboard-copy     kind=selection page=0 objects=0 annots=1 thin=0 bytes=395
+/// > chord-command      chord="Ctrl+V" id=edit.paste via=clipboard-event
+/// > chord-not-offered  id=edit.paste mode=review
+/// > ```
+///
+/// **In the mode whose entire purpose is marking up somebody else's drawing, an
+/// operator could copy a comment and had nowhere to put it.** Two independent
+/// driven checks hit that line
+/// (`copying_a_sticky_note_carries_the_whole_comment` failed on it,
+/// `a_note_can_be_written_onto_a_shape_that_exists` skipped on it), and O71 had
+/// found the identical shape one layer over for copy five days earlier.
+///
+/// ## ★★ Why this is NOT the taxonomy evidence the section above describes
+///
+/// The paragraph above says a chord refused where the operator plainly needs it
+/// is evidence the command's **tab is wrong**, and that the fix is to move it.
+/// That was right for `edit.form_fill` → `view.panel_forms` and for the two
+/// text-copy verbs, and it is **not** right here, which is why this is an
+/// escape rather than a third tab move:
+///
+/// - Paste **is** authoring. Those two moves worked because the command turned
+///   out not to belong on an authoring tab at all; Paste belongs on one.
+/// - `RIBBON_IA.md` P1 — one command on at most one tab — means moving Paste to
+///   Markup would *take it away from Edit*, where it plainly belongs, and
+///   Review needs cut and paste for **markup** while Edit needs them for
+///   **content**. No single tab is the answer, because the tab is not what
+///   varies.
+///
+/// ⇒ So the exception is stated as the class it is: **a command whose own
+/// dispatcher asks the mode question per press does not need this one asked for
+/// it, and is harmed by it.** That is checkable — every member of
+/// [`GATED_BY_THEIR_DISPATCHER`] is a command
+/// `app::dispatch::clipboard::handles` claims — where "a list of ids somebody
+/// added" is not.
+///
+/// ## ★★★ The debt this takes on, and it is paid in `dispatch::clipboard`
+///
+/// A chord refused *here* traces `chord-not-offered id=… mode=…`. A chord that
+/// reaches a dispatcher which silently `return`s traces **nothing on any
+/// surface**. Pushing the chord through blind therefore obliges the dispatcher
+/// to word every refusal it can now meet, and on the same day it did: both mode
+/// gates in `app::dispatch::clipboard` now call
+/// `app::status::decline::record_mode_refusal`, which draws in the `⊗` slot
+/// that means *this did not happen*. Without that half this change would have
+/// traded a defect for a quieter one.
+///
 /// **Contextual tabs are treated as no tab**, deliberately. The Format tab is
 /// not in any mode's list — it is governed by its own `visible_when`, which is
 /// `selection.any`. In a mode that cannot select there is no selection, so the
@@ -348,27 +437,12 @@ pub fn offers_command(shell: Option<&Shell>, mode_id: Option<&str>, command_id: 
     let Some(owning_tab) = owning_tab else {
         return true;
     };
-    // ★★★ **COPY ESCAPES ITS TAB**, 2026-08-31 — `OPERATOR_REQUESTS.md` O71.
-    //
-    // The rule above is right and this is the one exception to it: a chord
-    // reaches a command only where the mode shows the tab that owns it, so an
-    // operator in Read cannot press a key belonging to a tab they cannot see.
-    // `edit.copy` lives on the Edit tab because that is where the Clipboard
-    // group belongs, and copying is available in **every** mode by the
-    // operator's own ruling — *copying is not authoring*, 2026-08-14, which
-    // already moved both text-copy verbs off the authoring tab.
-    //
-    // ⇒ Without this, `Ctrl+C` in Read traced `chord-not-offered id=edit.copy
-    // mode=read` and did nothing, which is exactly what O71 reported: a picture
-    // that can be selected while reading and not copied. Found by driving it —
-    // `dispatch::clipboard` permits copy in every mode and had never been
-    // reached from one that could not open the Edit tab.
-    //
-    // ★ **Copy only.** `edit.cut` and `edit.paste` change the document and stay
-    // behind their tab, which is the same asymmetry `dispatch::clipboard`'s
-    // rung 3 already enforces one layer down: the gate follows what the verb
-    // DOES, not which group it is drawn in.
-    if command_id == COPY_IN_EVERY_MODE {
+    // ★★★ **THE WHOLE CLIPBOARD ESCAPES ITS TAB**, 2026-09-05 — and it was
+    // `edit.copy` alone from 2026-08-31 (`OPERATOR_REQUESTS.md` O71) until the
+    // driven sweep proved that half of it was the defect. See
+    // [`GATED_BY_THEIR_DISPATCHER`] and this function's §"The one class that
+    // escapes its tab".
+    if GATED_BY_THEIR_DISPATCHER.contains(&command_id) {
         return true;
     }
     let Some(mode) = shell.modes().iter().find(|m| m.id == mode_id) else {
@@ -617,6 +691,132 @@ mod tests {
         }
     }
 
+    /// ★★★ **Review offers the whole clipboard** — the driven sweep's finding
+    /// A1, as a headless assertion.
+    ///
+    /// > *In the mode whose entire purpose is marking up somebody else's
+    /// > drawing, an operator could copy a comment and had nowhere to put it.*
+    ///
+    /// `edit.copy` was offered and `edit.paste` was not, and two independent
+    /// driven checks traced `chord-not-offered id=edit.paste mode=review`. All
+    /// four are asserted rather than paste alone, because the defect was an
+    /// **asymmetry**: a build that fixed paste and left cut behind would put the
+    /// same trap one keystroke away.
+    ///
+    /// # ⚠ The four ids are LITERALS here, and that is the whole test
+    ///
+    /// It was written as `for id in GATED_BY_THEIR_DISPATCHER` and **the
+    /// falsification caught it**: planting the pre-fix state — shrinking that
+    /// constant back to `["edit.copy"]` — left this test *passing*, because it
+    /// then asserted "the one thing in the list is offered", which was true.
+    ///
+    /// ⇒ **A test that iterates the mechanism it is testing cannot fail by that
+    /// mechanism being narrowed**, which is the exact regression this test
+    /// exists to catch. The property is about *these four commands in this
+    /// mode*, so these four commands are written out; the constant is asserted
+    /// separately, below, so the two cannot drift without a named failure.
+    #[test]
+    fn review_offers_every_clipboard_chord() {
+        let shell = built_in();
+        for id in [
+            "edit.copy",
+            "edit.cut",
+            "edit.paste",
+            "edit.paste_duplicate",
+        ] {
+            assert!(
+                offers_command(Some(&shell), Some("review"), id),
+                "`{id}` must reach Review: the mode authors markup, and \
+                 `dispatch::clipboard` decides per press what the clipboard holds. \
+                 `edit.paste` refused here is the driven sweep's finding A1 — an operator \
+                 who copied a comment with nowhere to put it"
+            );
+            // …and it is offered *because it is on the escape list*, not by
+            // some other accident. Named separately so a build that made every
+            // command reachable everywhere would still be caught by the
+            // negative tests, and a build that dropped the list would be caught
+            // here with the id printed.
+            assert!(
+                GATED_BY_THEIR_DISPATCHER.contains(&id),
+                "`{id}` reaches Review, and it is not on the escape list — so something \
+                 else is granting it and this test is measuring the wrong mechanism"
+            );
+        }
+    }
+
+    /// ★★ **…and Read still refuses all four — but in `dispatch::clipboard`,
+    /// not here.**
+    ///
+    /// The other half of the change above, and it is asserted at the layer that
+    /// now owns the answer rather than at this one. `Capabilities::NONE` is what
+    /// Read gets, and that is what both of the dispatcher's gates read:
+    /// `edit_content` for content and a field, `author_markup` for markup and
+    /// for an empty clipboard. So every operand Read can present is refused.
+    ///
+    /// ★ It asserts the **capability**, not the gate's code, because the gate is
+    /// a match on `Clipped` that this module cannot construct without a
+    /// document. What it pins is the premise the gate rests on: if Read ever
+    /// gained either flag, this fails and names it — which is the warning worth
+    /// having, since the dispatcher would then quietly permit the paste.
+    #[test]
+    fn read_mode_still_refuses_the_clipboard_verbs_it_should() {
+        let shell = built_in();
+        let read = Capabilities::for_mode(Some(&shell), Some("read"));
+        assert_eq!(
+            read,
+            Capabilities::NONE,
+            "Read grants neither gate `dispatch::clipboard` reads, so every cut and \
+             every paste is refused there — with a sentence, which is more than the \
+             chord gate gave"
+        );
+        // …and Review grants exactly one of the two, which is what makes the
+        // paste it may do different from the paste it may not.
+        let review = Capabilities::for_mode(Some(&shell), Some("review"));
+        assert!(
+            review.author_markup && !review.edit_content,
+            "Review pastes a comment and not a drawing's geometry: {review:?}"
+        );
+    }
+
+    /// ⚠ **Every id that escapes its tab is one the clipboard dispatcher owns.**
+    ///
+    /// The list in [`super::GATED_BY_THEIR_DISPATCHER`] is safe only because
+    /// each member's effect is gated somewhere else. This binds the two ends
+    /// mechanically: an id added to that list that no dispatcher claims would be
+    /// a command handed to every mode with nothing standing under it, and the
+    /// symptom would be silence rather than a failure.
+    #[test]
+    fn every_dispatcher_gated_command_is_one_the_clipboard_dispatcher_owns() {
+        for id in GATED_BY_THEIR_DISPATCHER {
+            assert!(
+                crate::app::dispatch::clipboard::handles(id),
+                "`{id}` escapes its tab and `app::dispatch::clipboard` does not claim it, \
+                 so nothing asks the mode question for it at all"
+            );
+        }
+    }
+
+    /// ★ **…and it is not simply every id that dispatcher owns**, which is the
+    /// direction that would make the list vacuous.
+    ///
+    /// `edit.copy_as_vector` is routed by the same dispatcher and is **not** on
+    /// the escape list, because it needs no escape: it takes no mode gate at all
+    /// (*copying is not authoring*) and it lives on the Edit tab, where its
+    /// button is absent outside Edit — visibility doing the work, which is the
+    /// rule `app::modes` states. A list that had simply been derived from
+    /// `handles` would have included it and would have been documenting nothing.
+    #[test]
+    fn the_escape_list_is_narrower_than_the_dispatchers_own() {
+        assert!(
+            crate::app::dispatch::clipboard::handles("edit.copy_as_vector"),
+            "the precondition"
+        );
+        assert!(
+            !GATED_BY_THEIR_DISPATCHER.contains(&"edit.copy_as_vector"),
+            "the escape list is a judgement about which verbs need it, not a copy of `handles`"
+        );
+    }
+
     /// ★ **…and a command on a tab the mode hides is not offered.**
     ///
     /// The other half, without which the test above passes on a build where
@@ -733,62 +933,41 @@ mod tests {
         assert_eq!(
             refused,
             [
-                // ★ The object clipboard, added 2026-08-19. Refused in Read
-                // because all three sit on the **Edit tab**, which Read does not
-                // show — the structural gate, not a special case.
-                //
-                // ★★ This does NOT take text copying away from Read, and the
-                // distinction matters because Acrobat Reader copies text and
-                // this mode is measured against it. `Ctrl+C` over a swept range
-                // is `canvas::textsel::clipboard`'s, read before the command
-                // dispatcher sees the key at all. What Read refuses is copying
-                // an *annotation*, which it could not paste anywhere.
-                // Authoring the page's own content — correctly refused.
+                // ★ Authoring the page's own content — correctly refused. Read
+                // is the mode that does not author.
                 "edit.add_text",
-                // ★★★ `edit.copy` was HERE until 2026-08-31, and its removal is
-                // the one exception `offers_command` carries —
-                // `OPERATOR_REQUESTS.md` O71.
+                // ★★★ THE WHOLE CLIPBOARD LEFT THIS LIST, in two steps.
                 //
-                // The paragraph above says Read still copies TEXT, and that was
-                // true and sufficient while text was the only thing Read could
-                // select. O71 made a picture selectable in Read so it could be
-                // pasted into Word, and then `Ctrl+C` traced
-                // `chord-not-offered id=edit.copy mode=read` and did nothing:
-                // the command was permitted by the dispatcher and unreachable by
-                // the keyboard. Found by driving it, not by reading it.
+                // `edit.copy` went on 2026-08-31 (O71): a picture became
+                // selectable in Read so it could be pasted into Word, and
+                // `Ctrl+C` traced `chord-not-offered id=edit.copy mode=read` and
+                // did nothing — permitted by the dispatcher, unreachable by the
+                // keyboard. Found by driving it.
                 //
-                // ⇒ Copy escapes its tab; **cut and paste do not**, and the
-                // asymmetry is the operator's own *copying is not authoring*
-                // ruling applied one layer up from where
-                // `dispatch::clipboard`'s rung 3 already applies it.
-                "edit.cut",
-                "edit.paste",
-                // ★ Added 2026-08-29 with `edit.paste_duplicate` (O58). Read
-                // refuses it for the same structural reason as its three
-                // siblings: the whole Clipboard group lives on the **Edit
-                // tab**, which Read does not show. Nothing special-cases the
-                // new chord — it inherits the gate by being in the group.
-                "edit.paste_duplicate",
-                // ★ Read refuses it because it selects CONTENT, and Read is the
-                // mode that does not edit content. Text selection has its own
-                // Ctrl+A and is unaffected — which is the distinction this list is
-                // for.
+                // `edit.cut`, `edit.paste` and `edit.paste_duplicate` went on
+                // 2026-09-05, and the note that stood here said the opposite in
+                // as many words: *"Copy escapes its tab; **cut and paste do
+                // not**, and the asymmetry is the operator's own copying-is-not-
+                // authoring ruling."* That reasoning was about **Read**, where
+                // it is still true, and it was applied as a rule about the
+                // **command**, where it is false — so it also refused paste in
+                // **Review**, which authors markup and is the mode the whole
+                // feature exists for. Two driven checks hit
+                // `chord-not-offered id=edit.paste mode=review`.
+                //
+                // ⇒ The three chords now reach `dispatch::clipboard`, which
+                // gates the EFFECT on the operand and refuses them in Read
+                // anyway — in words, on the `⊗` slot, which is more than this
+                // list ever gave. `read_mode_still_refuses_the_clipboard_verbs_
+                // it_should` is the test that keeps that true, and it asserts
+                // the outcome rather than the route, which is the only form of
+                // the claim that survives the gate moving.
+                //
+                // ★ Read refuses `edit.select_all` because it selects CONTENT.
+                // Text selection has its own Ctrl+A and is unaffected — which is
+                // the distinction this list is for.
                 "edit.select_all",
                 "edit.text",
-                // ★ The object clipboard, added 2026-08-19 — listed after the
-                // two text verbs because this array is SORTED (the assertion
-                // sorts and dedups), not grouped by subject.
-                //
-                // Refused in Read because all three sit on the **Edit tab**,
-                // which Read does not show: the structural gate, not a special
-                // case.
-                //
-                // ★★ It does NOT take text copying away from Read, and that
-                // distinction matters because Acrobat Reader copies text and
-                // this mode is measured against it. `Ctrl+C` over a swept range
-                // belongs to `canvas::textsel::clipboard`, which reads the key
-                // before the command dispatcher sees it. What Read refuses is
-                // copying an ANNOTATION, which it could not paste anywhere.
                 // Structural page verbs. Read shows no Pages tab, which is
                 // `MODES_AND_PANELS.md`'s own decision, not this gate's.
                 "pages.move_down",

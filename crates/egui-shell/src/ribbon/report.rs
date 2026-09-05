@@ -102,6 +102,32 @@ pub fn group_caption(tab_id: &str, group_id: &str) -> String {
     format!("{PREFIX}.group.{tab_id}.{group_id}.caption")
 }
 
+/// **The auto-hide trigger** — the tab strip, taken as the rectangle whose
+/// hover reveals a hidden band.
+///
+/// ★★ Published even when auto-hide is OFF, and that is deliberate. The
+/// question a driven check asks of this region is *"is the way back to the
+/// ribbon on screen and big enough to hit"*, and the honest answer has to be
+/// available in both settings — otherwise the check can only run in the state
+/// it is trying to prove safe. It is reported through the visibility-gated
+/// channel like every other ribbon region, so a trigger that laid out off
+/// screen publishes nothing.
+#[must_use]
+pub fn auto_hide_trigger() -> String {
+    format!("{PREFIX}.autohide.trigger")
+}
+
+/// **The revealed band's overlay rectangle**, on the frames auto-hide draws
+/// one.
+///
+/// Absent whenever the band is inline or hidden, which is what makes it an
+/// oracle: `ribbon.band` exists in all three states and this exists in exactly
+/// one.
+#[must_use]
+pub fn auto_hide_overlay() -> String {
+    format!("{PREFIX}.autohide.overlay")
+}
+
 /// The name under which the whole **mode selector** is published.
 #[must_use]
 pub fn mode_selector() -> &'static str {

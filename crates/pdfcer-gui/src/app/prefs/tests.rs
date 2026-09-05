@@ -28,6 +28,8 @@ fn every_preference_round_trips_through_the_file() {
                 // the shipped default is `true` and a writer that emitted a
                 // constant would otherwise pass.
                 smart_select: false,
+                ribbon_auto_hide: false,
+                rail_auto_hide: false,
                 // ★ Non-default for the identical reason — O96 ships `true`,
                 // so a writer emitting a constant `true` would round-trip a
                 // preference the operator had turned OFF and this test would
@@ -496,6 +498,8 @@ fn the_writer_emits_no_key_the_parser_rejects() {
     let prefs = Prefs {
         // ★ Non-default, for this test's stated reason. O70.
         smart_select: false,
+        ribbon_auto_hide: false,
+        rail_auto_hide: false,
         // ★ …and O96, which also ships `true`.
         shade_form_fields: false,
         // ★ Non-default, and the only OPTIONAL key in the file. O80.

@@ -752,11 +752,27 @@ const TABS = [
    /* `Help` removed: there is no Help command, no help dialog and no
       documentation target anywhere in the build. A control with nothing
       behind it is exactly what R9 forbids. */
-   {cap:'pdfcer', items:[['Settings…','settings',{big:1}]]},
+   /* ★★ `Shortcuts` and `About` JOINED on 2026-09-05, and they were a
+      DIVERGENCE rather than a design: `shell::manifest::file`'s pdfcer group has
+      carried all three since `file.about` shipped on 2026-08-14, and this line
+      drew one of them. Found by reading the two files side by side, which is
+      exactly what `tools/compare-mockup-ribbon.py` says it does NOT do — it
+      compares bands and their order, never the items inside one — so its green
+      exit had never had anything to say about this. The item-level comparison it
+      grew the same day is what will catch the next one. */
+   {cap:'pdfcer', items:[['Settings…','settings',{big:1}],[['Shortcuts','keyboard'],['About','info']]]},
  ]},
  {id:'view', label:'View', modes:['read','review','edit'], groups:[
    {cap:'Page display', items:[[['Single','page-single',{radio:'pd'}],['Scroll','page-continuous',{radio:'pd',on:1}]],[['Facing','page-facing',{radio:'pd'}],['Facing scroll','page-facing-continuous',{radio:'pd'}]]]},
-   {cap:'Navigate', items:[['Select','pointer',{big:1,radio:'tool',on:1}],['Points','show-points',{big:1,radio:'tool',editOnly:1}],['Text','text-select',{big:1,radio:'tool'}],['Hand','hand',{big:1,radio:'tool'}]]},
+   /* ★★ `Smart select` JOINED on 2026-09-05. It has been the fifth member of
+      View ▸ Navigate in the product since O70 — a TOGGLE among four modal
+      tools, which is not a category error because it changes what the arrow
+      at the head of the row selects — and this line drew four. `editOnly`
+      because the command carries `enabled_when("mode.edit_content")`.
+
+      Not `big`: it is a checkbox-shaped thing beside four tool buttons, and
+      the product registers it `icon_only`. */
+   {cap:'Navigate', items:[['Select','pointer',{big:1,radio:'tool',on:1}],['Points','show-points',{big:1,radio:'tool',editOnly:1}],['Text','text-select',{big:1,radio:'tool'}],['Hand','hand',{big:1,radio:'tool'}],['Smart select','show-points',{toggle:1,editOnly:1}]]},
    /* `Actual size` draws no icon: view.zoom_actual registers without one and
       the `actual-size` art was DEFERRED, not adopted. */
    {cap:'Zoom', items:[[['Actual size',null,{noicon:1}],['Fit page','fit-page'],['Fit width','fit-width']],[['Fit height','fit-height'],['Zoom to selection','zoom-selection',{needsSel:1}],['Zoom to region','zoom-region']]]},
@@ -764,7 +780,22 @@ const TABS = [
       field on RenderOptions, no such command in the tree. */
    {cap:'Display', items:[[['Comments','comment',{toggle:1,on:1}],['Points','show-points',{toggle:1}]],[['Rulers','rulers',{toggle:1,rulers:1}],['Grid','grid',{toggle:1}],['Guides','guides',{toggle:1}]]]},
    {cap:'Panels', items:[[['Pages','pages',{toggle:1,on:1}],['Bookmarks','bookmarks',{toggle:1}],['Layers','layers',{toggle:1}]],[['Objects','edit-objects',{toggle:1,on:1}],['Properties','properties',{toggle:1,on:1}],['Comments','comment',{toggle:1}]],[['Fill form','forms',{toggle:1}],['Signatures','signatures',{toggle:1}],['Fonts','fonts',{toggle:1}]]]},
-   {cap:'Window', items:[[['Previous document','document-previous'],['Next document','document-next'],['Close others','close-others']],[['Read mode','read-mode'],['Full screen','fullscreen'],['Reset layout','reset-layout']]]},
+   /* ★★★ THREE COMMANDS JOINED THIS GROUP AFTER THE MOCK WAS DRAWN, and all
+      three are moved on the MOCK side because the mock predates the capability
+      rather than disagreeing with it.
+
+      • `Dock all panels` — 2026-09-04, with `dock::float`/`::floatwin`. The one
+        member of the panel-layout family with no operand, which is why it is the
+        one on the ribbon.
+      • `Auto-hide ribbon` and `Auto-hide left strip` — 2026-09-05, his
+        instruction: *"we should also add the capability to auto hide the ribbon
+        until we hover over top of it… left rail should also have the option to
+        auto hide as well."*
+
+      The order is the two-tier shape the group already used: the remedies that
+      cost the operator nothing they arranged, then the one that discards the
+      arrangement. Nine items, so the group is 3 × 3 like Panels beside it. */
+   {cap:'Window', items:[[['Previous document','document-previous'],['Next document','document-next'],['Close others','close-others']],[['Read mode','read-mode'],['Full screen','fullscreen'],['Dock all panels','floating-panels']],[['Auto-hide ribbon','collapse'],['Auto-hide left strip','sidebar'],['Reset layout','reset-layout']]]},
  ]},
  {id:'pages', label:'Pages', modes:['review','edit'], groups:[
    /* `insert-pages` was given art of its own on 2026-09-04; it drew upload.svg
@@ -837,7 +868,16 @@ const TABS = [
       ribbon an operator does not read but reaches for by position — and
       inserting into it would cost exactly that. A column beside Copy reads as a
       variant of Copy, which is what it is. */
-   {cap:'Clipboard', items:[[['Cut','cut'],['Copy','copy'],['Paste','paste']],[['Copy as vector','copy-as-vector']]]},
+   /* ★ `Copy as vector` is drawn ICON-ONLY here since 2026-09-05, because
+      that is what `shell::manifest::edit` builds — `icon_only("edit.copy_as_vector")`,
+      beside the four labelled clipboard verbs. The label was in this mock and not
+      in the product, which is the one direction this file is normally right in;
+      it is corrected on the MOCK side because the product's choice is the
+      considered one (the tooltip carries the whole sentence, and a fifth long
+      label would have widened the group past its neighbours). Recorded rather
+      than silently flipped: this is the mock following the build, which happens
+      only where the build has an argument the mock predates. */
+   {cap:'Clipboard', items:[[['Cut','cut'],['Copy','copy'],['Paste','paste']],[['Copy as vector','copy-as-vector',{noLabel:1}]]]},
    /* Four form-field tools, four distinct glyphs since 2026-09-04 — they all
       borrowed `form-field` before. */
    {cap:'Forms', items:[[['Text field','form-field'],['Check box','check-box'],['Radio button','radio-button'],['Drop-down','drop-down']],[['Button','push-button',{dis:1}],['Manage fields','list'],['Flatten','form-flatten']]]},
@@ -1737,7 +1777,7 @@ const LEGEND = [
   'no `lasso` key in icons/assets · borrowed shape-ink'],
 
  ['noted','A command with no icon cannot live in an icon rail — and <s>two</s> ONE of yours has none',
-  '<b>Corrected 2026-09-05, and the correction is the interesting half.</b> This line used to name <code>Select all</code> and <code>Actual size</code> together and say both proposed glyphs were "deliberately not adopted". <code>Select all</code> now HAS art — <code>select-all.svg</code>, drawn 2026-09-04 — because the word <em>deliberately</em> was doing work nobody had authorised: a build session refused the glyph, the refusal was quoted, and the quotation was quoted until it read as your ruling. It was not yours. You said so: <em>"add a select-all glyph. I didn't refuse that."</em> So the rail argument this line made against it has <b>expired</b>, and putting <code>Select all</code> on the strip is now a layout decision like any other rather than a decision to draw art first. <code>Actual size</code> is unaffected and stays out: its refusal is a reasoned argument about the <em>picture</em> — a numeral read at a glance beats any glyph substitute, and both add a decode step a bare percentage does not need — which no amount of drawing answers.',
+  '<b>Corrected 2026-09-05, and the correction is the interesting half.</b> This line used to name <code>Select all</code> and <code>Actual size</code> together and say both proposed glyphs were "deliberately not adopted". <code>Select all</code> now HAS art — <code>select-all.svg</code>, drawn 2026-09-04 — because the word <em>deliberately</em> was doing work nobody had authorised: a build session refused the glyph, the refusal was quoted, and the quotation was quoted until it read as your ruling. It was not yours. You said so: <em>"add a select-all glyph. I didn\'t refuse that."</em> So the rail argument this line made against it has <b>expired</b>, and putting <code>Select all</code> on the strip is now a layout decision like any other rather than a decision to draw art first. <code>Actual size</code> is unaffected and stays out: its refusal is a reasoned argument about the <em>picture</em> — a numeral read at a glance beats any glyph substitute, and both add a decode step a bare percentage does not need — which no amount of drawing answers.',
   'his ruling 2026-09-04 · select-all.svg ships'],
 
  ['noted','The rail\'s tool groups are mode-gated, the same way the ribbon\'s already are',

@@ -518,3 +518,133 @@ fn a_worded_decline_does_not_change_the_bar_height() {
 
     retire();
 }
+
+// =======================================================================
+// The clipboard's mode refusal — 2026-09-05, the driven sweep's finding A1
+// =======================================================================
+
+/// ★★★ **A cut or a paste the mode does not do reaches the `⊗` slot**, and
+/// the operator's next command takes it down.
+///
+/// Both halves matter and the first is the one that closes the defect. Once
+/// `app::modes::capability::offers_command` stopped refusing the clipboard
+/// chords by tab, `app::dispatch::clipboard`'s two mode gates became the
+/// path an operator in Read or Review actually walks — and until this
+/// landed they were a bare `return` with a trace line. A chord refused at
+/// the gate at least traced `chord-not-offered`; a chord that reaches a
+/// dispatcher and returns traced nothing on any surface, which would have
+/// made the fix a quieter defect rather than a fix.
+///
+/// ★ Recorded through [`record_mode_refusal`] rather than by writing `LAST`
+/// directly, so this exercises the same function the dispatcher calls.
+#[test]
+fn a_clipboard_verb_the_mode_refuses_is_worded_and_then_retired() {
+    use crate::text::clipboard::ModeRefusal;
+
+    record_mode_refusal(ModeRefusal::PasteContent);
+    assert_eq!(
+        LAST.with_borrow(|slot| *slot),
+        Some(Declined::ClipboardMode(ModeRefusal::PasteContent)),
+        "a paste the mode does not do must be recorded, not merely traced"
+    );
+
+    // ★ The store is a slot, not a queue: the operator who presses again
+    // before moving the selector must get the second press's sentence, and
+    // an operand that changed under them must change the sentence with it.
+    record_mode_refusal(ModeRefusal::PasteMarkup);
+    assert_eq!(
+        LAST.with_borrow(|slot| *slot),
+        Some(Declined::ClipboardMode(ModeRefusal::PasteMarkup))
+    );
+
+    // …and it is in the `retire`-only class, so the next command clears it.
+    // See the variant's docs for why the tense argument is the only one
+    // available here: the condition it reports is the one the sentence asks
+    // the operator to change.
+    retire();
+    assert_eq!(LAST.with_borrow(|slot| *slot), None);
+}
+
+/// ★★ **The six mode refusals are six sentences, and none of them is any
+/// other decline's.**
+///
+/// `no_two_declines_share_a_sentence` above makes this claim for four
+/// variants and cannot reach these, because they carry a payload the
+/// catalog words. The cross-family half is what this adds: a mode refusal
+/// that read like `EditRefused`'s *"that change was refused"* would tell
+/// the operator the engine said no, when what said no is a control two
+/// inches away that they can move.
+#[test]
+fn a_mode_refusal_reads_like_no_other_decline() {
+    use crate::text::clipboard::ModeRefusal;
+
+    let mine = [
+        ModeRefusal::PasteContent,
+        ModeRefusal::PasteMarkup,
+        ModeRefusal::PasteField,
+        ModeRefusal::CutContent,
+        ModeRefusal::CutMarkup,
+        ModeRefusal::CutField,
+    ]
+    .map(Declined::ClipboardMode);
+    let others = [
+        Declined::NothingToFrame,
+        Declined::CanvasNotDrawn,
+        Declined::SaveFailed,
+        Declined::EditRefused,
+    ];
+    for a in &mine {
+        for b in &others {
+            assert_ne!(a.line(), b.line(), "{a:?} and {b:?} read the same");
+        }
+        // …and each still describes the application after the frame that
+        // raised it: a report of a past press cannot become false.
+        assert!(
+            a.still_true(false, false, History::default(), false),
+            "{a:?} must survive to be read"
+        );
+    }
+}
+
+/// ★★★ **The paste's mode gate reaches the bar, through the real
+/// dispatcher** — the call site, not the recorder.
+///
+/// `a_clipboard_verb_the_mode_refuses_is_worded_and_then_retired` above
+/// proves the store works; it would pass unchanged on a build where
+/// `app::dispatch::clipboard` never called it, which is precisely the state
+/// that shipped until 2026-09-05. This drives `dispatch_command` for real,
+/// so deleting the `record_mode_refusal` call in that module fails **here**
+/// and names it.
+///
+/// ★ Read with an empty clipboard is the operand, and it is the cheapest
+/// honest one: `dispatch::clipboard`'s paste gate sends an empty clipboard
+/// down the **markup** branch on purpose — *"the refusal an operator gets in
+/// Read is the mode's rather than 'nothing has been copied', which would be
+/// true and useless"* — so `PasteMarkup` is the sentence that must arrive,
+/// and asserting the variant rather than merely `is_some()` is what catches a
+/// gate that refused for the wrong reason.
+///
+/// ⚠ It does **not** cover the content branch, which needs a real clip on a
+/// real OS clipboard. `a_paste_review_may_not_do_says_so` owns that, drives
+/// it in Review, and has not been run — said here so the gap is stated rather
+/// than implied by this test's confidence.
+#[test]
+fn a_paste_the_mode_refuses_reaches_the_bar_through_the_dispatcher() {
+    use crate::text::clipboard::ModeRefusal;
+
+    let ctx = Context::default();
+    let mut app = crate::app::tests::opened();
+    app.dispatch_command(&ctx, "mode.read", &mut Vec::new());
+    retire();
+
+    app.dispatch_command(&ctx, "edit.paste", &mut Vec::new());
+    let Status::Open(doc) = &app.status else {
+        unreachable!("the fixture is open")
+    };
+    assert_eq!(
+        live(&ctx, doc),
+        Some(Declined::ClipboardMode(ModeRefusal::PasteMarkup)),
+        "Read authors no markup, so the paste is refused — and a refusal that \
+         reaches only the trace is a keystroke that does nothing and says nothing"
+    );
+}

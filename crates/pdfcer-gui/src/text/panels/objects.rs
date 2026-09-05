@@ -558,6 +558,140 @@ pub fn object_row(index: usize, summary: &ObjectSummary) -> String {
     }
 }
 
+/// ★★★ **The mark a row wears when the object it names carries a
+/// disclosure** — added 2026-09-05 with [`object_row_headline`].
+///
+/// One character in place of a phrase between nineteen and thirty characters
+/// long, and the trade is stated rather than assumed: the row loses *which*
+/// doubt applies and keeps *that* one does, and the which is one hover and one
+/// pane away (see [`object_row_headline`] §3). A column of identical marks is
+/// also scannable in a way a column of varied phrases is not — an operator
+/// looking for "the objects pdfcer is unsure about" reads down the right edge
+/// instead of reading eight different sentences.
+///
+/// U+26A0 rather than an exclamation mark or an asterisk: those two are
+/// ordinary text and appear inside font names and quoted document strings, so a
+/// row could wear one it did not mean.
+pub const OBJECT_ROW_DISCLOSURE_MARK: char = '\u{26a0}';
+
+/// ★★★ **The MASTER row's label — what the Objects tree actually draws**,
+/// since 2026-09-05. `OPERATOR_REQUESTS.md` **O123** part 6, defect 2.
+///
+/// [`object_row`] is the full description and stays exactly as it was; this is
+/// the same record said shorter, and the panel draws this one while attaching
+/// [`object_row`] on hover. Both are one rendering of one [`ObjectSummary`], so
+/// the short form can never disagree with the long one about a fact — it can
+/// only carry fewer of them.
+///
+/// # ★★★ 1. Why a second form exists: every row was elided, on every fixture
+///
+/// The driven check `the_inspector_is_one_master_detail_column` reported
+/// **8 of 8 object rows do not fit at the default width**, and the panel's own
+/// `objects-rows overflow=` field — added for exactly this question — said how
+/// far: the widest row wanted **473.6 pt** in a **314 pt** pane. At O123's
+/// 360 pt Edit inspector the pane is ~354 pt, so the dock would have to open at
+/// roughly **526 pt** — half of an 1,100 pt window — for that row to fit.
+///
+/// ⇒ **No width closes this**, which is what the `overflow=` field was added to
+/// be able to say. Widening the inspector to follow the content would also be a
+/// measurement fed back into a size (**R128**), and this change deliberately
+/// feeds nothing back: the width is a constant, the row is what changed.
+///
+/// # ★★ 2. What is dropped, and where each dropped fact went
+///
+/// | dropped from the row | still shown |
+/// |---|---|
+/// | the paint-style phrase (*"filled (even-odd) and stroked"*, up to 40 chars) | the hover, and the Properties pane's own fields |
+/// | the stroke width (*", 0.80 pt wide"*) | the hover, and Properties |
+/// | the font name and size (*"JetBrainsMono-Regular 4.50 pt"*, ~30 chars) | the hover, Properties, and the Fonts panel |
+/// | the worded disclosure (*"bounds from metrics"*) | the hover, and Properties' disclosure list — the row keeps [`OBJECT_ROW_DISCLOSURE_MARK`] in its place |
+///
+/// **This is what master–detail means**, and it is the arrangement the same
+/// request asked for: *"Objects and Properties become master–detail in one
+/// panel."* The detail pane is on screen, in the same column, an inch below the
+/// row. A master row that restates it is spending the operator's width twice on
+/// one fact and eliding the identity — the index and the words — that only the
+/// master carries.
+///
+/// # ★ 3. What is kept, and why each earns its characters
+///
+/// - **the index**, verbatim: it is the operand `pdfcer object-list`,
+///   `object-delete` and `node-move` all take, and nothing else on screen
+///   carries it;
+/// - **the kind word**: the one classification that decides which verbs apply;
+/// - **the quoted text preview** for a text object — the only way to tell one
+///   run from another, and the reason a text row is findable at all;
+/// - **the visible colour and the node count** for a path — the two facts that
+///   distinguish two otherwise identical rules, and the pair the operator's own
+///   drawings are read by (a path carrying 4,405 anchors is a different animal
+///   from one carrying 2);
+/// - **the pixel size** for an image;
+/// - **[`OBJECT_ROW_DISCLOSURE_MARK`]** when the object carries any note at
+///   all.
+///
+/// ★★ The mark is raised by `!notes.is_empty()` rather than by
+/// [`headline_note`], and the difference is load-bearing: `headline_note` skips
+/// `ObjectNote::PaintsNothing` **because [`paint_style_label`] already says
+/// it**, and this form no longer prints that label. Using `headline_note` here
+/// would leave a clip path — an object that is real, addressable and paints
+/// nothing — wearing no mark at all, which is the one disclosure on this panel
+/// that explains a box the operator can see and cannot find ink for.
+///
+/// # ★ 4. A long row still elides, and that is the mechanism working
+///
+/// The quoted preview is capped at [`ROW_TEXT_CHARS`] characters, so a row
+/// quoting a full-length string plus a mark can still exceed a narrow pane —
+/// and `panels::elide_to_width` shortens it with the whole string on hover,
+/// exactly as O123 asked. What this function fixes is that **every** row needed
+/// that, not that any row does.
+#[must_use]
+pub fn object_row_headline(index: usize, summary: &ObjectSummary) -> String {
+    let kind = object_kind_label(summary.kind);
+    let mut head = format!("#{index}  {kind}");
+    let identity = headline_identity(summary);
+    if !identity.is_empty() {
+        head.push_str(" · ");
+        head.push_str(&identity);
+    }
+    if !summary.notes.is_empty() {
+        head.push(' ');
+        head.push(OBJECT_ROW_DISCLOSURE_MARK);
+    }
+    head
+}
+
+/// The clauses that tell one object of a kind from another of the same kind.
+///
+/// Deliberately **not** [`object_detail`] with clauses removed: that function
+/// answers *"describe this object"* and this one answers *"which one is it?"*,
+/// and expressing the second as a filtered version of the first would make
+/// every future clause added to the description silently widen the row again.
+/// The two lists are independent on purpose, and
+/// [`tests::the_headline_is_the_description_with_the_describing_clauses_dropped`]
+/// is what keeps them from disagreeing about a fact.
+fn headline_identity(summary: &ObjectSummary) -> String {
+    let mut parts: Vec<String> = Vec::new();
+    if let Some(text) = summary.text.as_deref() {
+        parts.push(quoted_text_preview(
+            text,
+            summary.text_truncated,
+            ROW_TEXT_CHARS,
+        ));
+    }
+    if let Some(colour) = summary.colour {
+        parts.push(rgb_hex(colour));
+    }
+    if let Some(nodes) = summary.nodes {
+        parts.push(format!("{nodes} node(s)"));
+    }
+    if let Some((w, h)) = summary.pixels {
+        // "px" rather than "pt", for [`object_detail`]'s stated reason: these
+        // are samples, and the size clause elsewhere is in points.
+        parts.push(format!("{w} × {h} px"));
+    }
+    parts.join(" · ")
+}
+
 /// The one note worth putting on a single line beside an object's detail
 /// clause, if any.
 ///
@@ -1030,5 +1164,93 @@ mod tests {
         );
         assert!(row.contains("4 node(s)"));
         assert!(objects_dock_row_tooltip().contains("paint order"));
+    }
+
+    /// Decompose one content stream and describe its first object.
+    fn described(content: &[u8]) -> ObjectSummary {
+        use crate::panels::objects::summary::describe_object;
+        use pdfcer_core::content::ContentStream;
+        use pdfcer_core::vector::{Matrix, NoXObjects, decompose};
+
+        let cs = ContentStream::parse(content.to_vec()).expect("parse");
+        let objects = decompose(&cs, Matrix::IDENTITY, &NoXObjects);
+        describe_object(&objects.objects[0])
+    }
+
+    /// ★★★ **The headline keeps the identity and drops the description** —
+    /// O123 defect 2, asserted clause by clause.
+    ///
+    /// Both directions, and both are needed. Asserting only what survives
+    /// passes on a build that changed nothing; asserting only what is gone
+    /// passes on a build that returns the empty string.
+    #[test]
+    fn the_headline_is_the_description_with_the_describing_clauses_dropped() {
+        let summary = described(b"0 0 1 rg 1 0 0 RG 0.5 w 10 20 m 300 20 l B*");
+        let head = object_row_headline(412, &summary);
+        let full = object_row(412, &summary);
+
+        // Kept: the operand, the kind, and the two facts that tell one rule
+        // from another.
+        assert!(head.starts_with("#412"), "{head}");
+        assert!(head.contains("Path"), "{head}");
+        assert!(head.contains("#0000FF"), "the visible colour: {head}");
+        assert!(head.contains("2 node(s)"), "{head}");
+
+        // Dropped: everything the detail pane an inch below already states.
+        assert!(
+            !head.contains("filled"),
+            "the paint-style phrase belongs to the detail pane: {head}"
+        );
+        assert!(
+            !head.contains("pt wide"),
+            "the stroke width belongs to the detail pane: {head}"
+        );
+        // …and it is still in the long form, which the row hovers.
+        assert!(
+            full.contains("filled") && full.contains("pt wide"),
+            "{full}"
+        );
+        assert!(
+            head.chars().count() < full.chars().count(),
+            "the headline must be shorter than what it summarises: {head} / {full}"
+        );
+    }
+
+    /// ★★ **An object that paints nothing wears the mark**, which
+    /// [`headline_note`] alone would not give it.
+    ///
+    /// `headline_note` skips `ObjectNote::PaintsNothing` because
+    /// [`paint_style_label`] spells it out — and the headline no longer prints
+    /// that label. So the mark is raised by *any* note, and this is the case
+    /// that proves the difference: a clipping path is real, addressable, and
+    /// invisible, and a row that said nothing about it would be the panel
+    /// failing at the one question it exists to answer.
+    #[test]
+    fn a_path_that_paints_nothing_still_wears_the_mark() {
+        let summary = described(b"10 10 100 100 re n");
+        assert!(
+            headline_note(&summary).is_none(),
+            "the precondition: the only note here is the one `headline_note` skips"
+        );
+        let head = object_row_headline(7, &summary);
+        assert!(
+            head.contains(OBJECT_ROW_DISCLOSURE_MARK),
+            "an invisible path must be marked: {head}"
+        );
+    }
+
+    /// …and an ordinary object with nothing to disclose wears no mark.
+    ///
+    /// Without this the test above passes on a build that marks every row,
+    /// which would make the mark mean nothing.
+    #[test]
+    fn an_object_with_nothing_to_disclose_wears_no_mark() {
+        let summary = described(b"0 0 1 rg 10 10 80 80 re f");
+        assert!(summary.notes.is_empty(), "the precondition");
+        let head = object_row_headline(1, &summary);
+        assert!(
+            !head.contains(OBJECT_ROW_DISCLOSURE_MARK),
+            "a mark on every row is a mark that says nothing: {head}"
+        );
     }
 }

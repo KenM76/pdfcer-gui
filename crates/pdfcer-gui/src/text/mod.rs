@@ -60,6 +60,7 @@
 //! | [`redact`] | marking, review, and the apply report. **The strictest wording rules in the catalog** — the one surface where a comfortable sentence is a security defect, and the only one entitled to the word *verified* |
 //! | [`rotating`] | the ninth handle — four refusals and two disclosures, including the one the engine commissioned by name about a dimension's axis lock |
 //! | [`status`] | the status bar — the render-notes disclosure, the fit/zoom mirrors, and the editable page box |
+//! | [`window`] | **the way back out of read mode** — the exit statement the window title and the status bar both carry. The one catalog whose entries take a chord as a parameter, because a key it spelled itself would be worse than silence |
 //!
 //! The split between `ribbon` and `commands` follows the seam in the data
 //! itself: `crate::shell::manifest` consumes [`ribbon`] and
@@ -225,6 +226,13 @@ pub mod ocr;
 /// sharpest case.
 pub mod pageclip;
 pub mod pages;
+/// ★★ The two sentences a save refused by [`crate::pagetree`]'s structural
+/// guard says — *"this document says it has 36 pages and only 34 are really
+/// there"*. Consumed by `crate::app::save`. Its header carries the wording
+/// rule that makes them recognisable to the operator who reported the defect:
+/// name the symptom the **other** reader will show, because pdfcer's own
+/// reader cannot see anything wrong.
+pub mod pagetree;
 /// Every string the Pages panel shows — the counts, the tile tooltip, the
 /// four sentences an *undrawn* thumbnail can say, and the preview control.
 /// Consumed by `crate::panels::pages`.
@@ -410,6 +418,16 @@ pub mod unsaved;
 /// Consumed by `crate::app::actions::xobject`,
 /// `crate::app::dispatch::format` and the `CommitTextEdit` apply arm.
 pub mod unshare;
+
+/// **The way back out of a mode that hides its own control** — the read-mode
+/// exit, said on the window title and on the status bar.
+///
+/// The one catalog in the crate whose entries are *claim-bearing about a
+/// keyboard*: each takes the chord as a parameter, resolved from the keymap
+/// that dispatches, and no chord is spelled anywhere inside it. Its header
+/// carries the operator report that produced it and the argument for why a
+/// tooltip on the hidden control was never a disclosure.
+pub mod window;
 
 use std::path::Path;
 

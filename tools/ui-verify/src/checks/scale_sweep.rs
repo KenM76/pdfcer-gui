@@ -70,6 +70,29 @@
 //! 2026-08-22, *"Right now you are just zooming into a blank area on the
 //! canvas."*
 //!
+//! # ★★★ THIS CHECK'S FIRST FINDING WAS ITS OWN — repaired 2026-09-05
+//!
+//! The 2026-09-05 sweep filed it as application defect **A4**: *"mouse work
+//! degrades with the render tier — no traced drag outcome between 104 % and
+//! 6,957 %, and no anchor marks published above 942 %."* Four separate probes
+//! were wrong, and none of them was the application:
+//!
+//! | probe | what it reported | what was true |
+//! |---|---|---|
+//! | the **drag** | *"nothing at all — no move, no decline, no resize"* at every rung | it pressed the CENTRE OF THE BOUNDING BOX of an open polyline, twelve points off the stroke; O72 makes that a marquee, and there was no arm reading `marquee-mode`. Pressed on the ink, the object moves at every rung |
+//! | the **anchors** | *"6 anchors and the overlay published no mark for any of them"* above 942 % | the same line carried `on_screen=0`. `canvas.anchor.N` is published for the culled set by design (O69), and the field that says so was ignored |
+//! | the **click** | *"clicking directly on the content selected nothing"* above 6,957 % | the closed-loop aim had lost the target — 312 screen px away — because the pan probe scrolled the view and never scrolled it back. See `scale_aim::re_aim` |
+//! | the **pan** | *"the canvas published no coverage line after the wheel"* at every rung including 104 % | `canvas-coverage` is a CHANGE LOG. No new line means the coverage did not move, which is the healthy answer |
+//!
+//! ⇒ ★★ **A uniform failure at every rung of a scale sweep is evidence about
+//! the probe, not about scale.** The baseline rung is the control, and a
+//! control that fails is the finding. The repaired check now drives every
+//! gesture successfully from 104 % to **2,298,019 %**, with an aim residual of
+//! 0.0000 canvas points at the deepest rungs — so the `f32` `screen_to_page`
+//! hypothesis above is **falsified by measurement**, twice, and this header's
+//! description of the risk is kept because the risk is real and the outcome is
+//! not.
+//!
 //! # Configuration
 //!
 //! `--doc-point PAGE,X,Y` names the content to zoom into (**0-based page**).
@@ -80,6 +103,10 @@
 use std::fmt::Write as _;
 
 use crate::checks::driving::{self, SHELL_DIAG_ENV, arm_select_from_ribbon, click_mode_segment};
+// ★ The aiming half, split out under R2 on 2026-09-05 — see `scale_aim`'s
+// header for the seam. The three trace names come from there too, so one
+// rename in the application cannot leave the two files disagreeing.
+use crate::checks::scale_aim::{CANVAS_EVENT, aim_residual, reported_page_point, tier_of, zoom_to};
 use crate::checks::{Check, CheckContext};
 use crate::coords::{CanvasMapping, DocPoint, PageGeometry, ScreenPoint};
 use crate::error::{Error, Result};
@@ -90,10 +117,6 @@ use crate::sys::vk;
 
 /// The mode whose canvas may select page content.
 const MODE: &str = "edit";
-/// `canvas rect=… zoom=… page=…`.
-const CANVAS_EVENT: &str = "canvas";
-/// `canvas-pointer screen=(x,y) page=(x,y) pdf=(x,y) zoom=…`.
-const POINTER_EVENT: &str = "canvas-pointer";
 /// `canvas-selection via=… mod=… sel=… level=… first=…`.
 const SELECTION_EVENT: &str = "canvas-selection";
 /// `canvas-move page=… level=… action=…`.
@@ -142,14 +165,16 @@ const RENDER_EVENT: &str = "render-async-done";
 /// The scrollable viewport the page sits inside.
 const VIEWPORT_REGION: &str = "canvas-viewport";
 /// `marquee-mode crossing=… mode=… hits=… …` — the band's own line.
-const MARQUEE_EVENT: &str = "marquee-mode";
-/// `canvas-pos at=… tier=… region=… want=… ext=…`.
 ///
-/// ★ `region=none` is the whole-page tier and anything else is the region tier,
-/// so this line — not an arithmetic guess — is what says which tier a rung
-/// actually reached. `tier=` names the POSITION model, which is the third
-/// boundary.
-const POSITION_EVENT: &str = "canvas-pos";
+/// ★★★ It is also **the drag outcome that had no arm** until 2026-09-05, and
+/// its absence produced this check's whole headline. A press on blank paper
+/// inside a selection's bounding box draws a band rather than moving the
+/// selection (`OPERATOR_REQUESTS.md` O72); with nothing reading this line
+/// during the drag probe, that registered as *"nothing at all — no move, no
+/// decline, no resize"*, and the sweep filed *"mouse work dies at every render
+/// tier"* against a build in which the same drag moves the object every time it
+/// is pressed on the ink. See [`drag_selection`].
+const MARQUEE_EVENT: &str = "marquee-mode";
 /// What a marquee-committed selection calls itself.
 const VIA_MARQUEE: &str = "pv.marquee";
 /// `canvas-coverage covered=… sharp=… textured=… backdrop=…`.
@@ -205,6 +230,22 @@ const PROBE_FLOOR: f32 = 0.05;
 
 /// How far a drag moves the subject, in logical points, on each axis.
 const DRAG_PX: f32 = 40.0;
+
+/// How far the pointer may be from the sweep's target and still be treated as
+/// on it, in **screen pixels**.
+///
+/// ★★ Screen pixels, not canvas points: what every probe below needs is that
+/// the press lands on the same ink, and "the same ink" is a screen distance.
+/// The canvas's own pick tolerance is of this order, so a residual under it
+/// cannot change what a click hits; in canvas points the same tolerance would
+/// be meaninglessly tight at 100 % and meaninglessly loose at 200,000 %.
+///
+/// ★ Above this the rung's pointer probes are **not run**, and the rung says
+/// so in its own words. The 2026-09-05 sweep ran them anyway and filed
+/// *"clicking directly on the content the zoom is anchored to selected
+/// nothing"* at five rungs — measured with the pointer **312 px** away from
+/// that content.
+const AIM_TOLERANCE_PX: f32 = 6.0;
 
 /// How many wheel notches the pan probe scrolls, and then scrolls back.
 const PAN_NOTCHES: i32 = 3;
@@ -440,6 +481,51 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         }
 
         probe_pointer(&session, &driver, aim, &mut rung)?;
+
+        // ★★★ **IS THE AIM STILL ON THE TARGET?** — asked, and answered, from
+        // 2026-09-05. Everything below this line presses at `aim` and reads the
+        // result as a statement about the application; if `aim` is not on the
+        // document coordinate the sweep chose, every one of those readings is a
+        // statement about the harness wearing the application's clothes.
+        //
+        // # The limit this measures, and it is the harness's own
+        //
+        // `re_aim` corrects by **moving the pointer**. That works while the
+        // residual error, multiplied by the zoom, is smaller than the viewport
+        // — past that there is no pointer position inside the window that maps
+        // to the target, and the correction clamps at the edge and stops
+        // improving. Measured at 2,298,020 %: the pointer reports canvas y
+        // 538.52 against a target of 532.00, and moving it 274 px changes that
+        // reading by **0.01** — the whole 484 pt viewport spans 0.021 canvas
+        // points there.
+        //
+        // The 2026-09-05 sweep reported the consequence as an application
+        // defect at five rungs — *"clicking directly on the content the zoom is
+        // anchored to selected nothing"* — when what the click landed on was
+        // blank paper 6.5 points away from the content. Correcting the rest of
+        // the way needs the view PANNED, which this check does not do; naming
+        // that is honest and inventing a defect is not.
+        if let Some(residual) = aim_residual(&session, &driver, aim, target_canvas)? {
+            let off_px = residual * reached;
+            if off_px > AIM_TOLERANCE_PX {
+                rung.lines.push(format!(
+                    "★ THE AIM COULD NOT BE HELD: the pointer is {residual:.4} canvas pt from \
+                     the target, which at {reached:.0}x is {off_px:.0} screen px — past the \
+                     {AIM_TOLERANCE_PX:.0} px this check treats as on-target. `re_aim` corrects \
+                     by MOVING THE POINTER, and Ctrl+wheel holds the point under the pointer \
+                     fixed, so an error the correction cannot close is magnified by every \
+                     further notch rather than reduced. Every pointer probe below this rung \
+                     would be pressing on blank paper, so they are NOT run — closing this needs \
+                     the view PANNED, which this check does not do"
+                ));
+                findings.push(rung);
+                continue;
+            }
+            rung.lines.push(format!(
+                "aim residual: {residual:.4} canvas pt ({off_px:.1} screen px) — on target"
+            ));
+        }
+
         let selected = click_select(&session, &driver, ui_rect, aim, &mut rung)?;
         if selected {
             drag_selection(&session, &driver, ui_rect, aim, &mut rung)?;
@@ -494,6 +580,48 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         problems.push(format!("{failed} raster(s) failed across the sweep"));
     }
 
+    // ★★★ **A SWEEP THAT MEASURED NOTHING IS NOT A PASS** — added 2026-09-05
+    // with the aim guard above, because the two are the same decision.
+    //
+    // A rung whose aim could not be held records a line and no problem, so it
+    // neither fails nor claims anything. That is right for one rung and would
+    // be catastrophic for all of them: a build in which the closed-loop
+    // correction broke at the first notch would report **zero problems** and
+    // this function would answer `Ok(None)` — a green result meaning *"nothing
+    // was tried"*, which is this harness's own stated worst outcome and the
+    // reason `--no-input` reports SKIPPED rather than passing.
+    //
+    // ★ The oracle is the `click-select:` line rather than a counter kept
+    // alongside, so it cannot drift from what was actually run: a rung that
+    // reached the battery emitted one, and a rung that was skipped for aim did
+    // not.
+    let measured = findings
+        .iter()
+        .filter(|r| r.lines.iter().any(|l| l.starts_with("click-select:")))
+        .count();
+    if measured == 0 {
+        return Err(Error::new(format!(
+            "not one of the {} rungs could be measured: the aim was lost at every zoom, so no \
+             click, drag, marquee or node gesture was ever performed. SKIPPED rather than \
+             passed — a sweep that tried nothing has said nothing about the application. The \
+             per-rung lines above say how far the pointer was from the target at each rung; if \
+             they are large from the first rung, suspect `scale_aim::re_aim` or a `--doc-point` \
+             that is not on the page. Trace: {}.",
+            findings.len(),
+            session.trace_path().display()
+        )));
+    }
+    let total = findings.len();
+    report.note(if measured == total {
+        format!("★ all {total} rungs reached the full gesture battery")
+    } else {
+        format!(
+            "★ {measured} of {total} rungs reached the full gesture battery; the other \
+             {} could not be aimed at and say so on their own line",
+            total - measured
+        )
+    });
+
     if problems.is_empty() {
         return Ok(None);
     }
@@ -505,19 +633,22 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     let _ = write!(
         message,
-        "★★★ READ THE `grip box:` LINES FIRST. Measured over this sweep, the grip box is \
-         what decides whether an object can be moved at all, and the boundary is \
-         {NO_BODY_BELOW_PX} pt — `handles::grip_at` gives each corner grip `GRIP_SIZE_PX / 2 + \
-         GRIP_GRAB_SLACK_PX` = 6 pt of the box, so four corners meet in the middle of anything \
-         smaller and `Grip::Move` becomes unreachable. `overlay::MIN_OUTLINE_EXTENT_PX` then \
-         floors the box at 6 pt, so the SMALLEST selections are exactly the ones with no body \
-         at all. That is `OPERATOR_REQUESTS.md` O57's open half — which said of itself \
-         \"Not driven\" — and these lines are the driving.\n  \
-         ★ It is NOT the coordinate conversion: the `pointer:` lines above are linear at every \
-         rung this sweep reached, including 2,346,176 %, and a drag that finds the body lands \
-         within a tenth of a point of where it was dropped there. `viewer::screen_to_page`'s \
-         `(pos.x − image_rect.min.x) / zoom` was the suspect and it is exonerated by \
-         measurement. Trace: {}.",
+        "★★★ **ASK FIRST WHETHER THE PROBLEMS ARE AT EVERY RUNG.** If they are, this is a \
+         statement about the probe and not about scale — the 104 % rung is the control, and a \
+         control that fails is the finding. That mistake has been made once here already and \
+         cost a filed defect (see this module's header, 2026-09-05).\n  \
+         ★★ If the problems begin at one rung and not before, read the `grip box:` lines: on a \
+         box at or under {NO_BODY_BELOW_PX} pt the four corner grips meet in the middle — \
+         `handles::grip_at` gives each `GRIP_SIZE_PX / 2 + GRIP_GRAB_SLACK_PX` = 6 pt — so \
+         `Grip::Move` is unreachable and every press on the object is a grip. \
+         `overlay::MIN_OUTLINE_EXTENT_PX` floors the drawn box at 6 pt, so the SMALLEST \
+         selections are exactly the ones with no body at all. That is `OPERATOR_REQUESTS.md` \
+         O57's half.\n  \
+         ★ It is NOT the coordinate conversion, and that is now measured twice over rather \
+         than argued: the `pointer:` lines are linear at every rung, and with the aim held \
+         (`aim residual` under {AIM_TOLERANCE_PX:.0} screen px) every gesture in this battery \
+         has been driven successfully to 2,298,019 %. `viewer::screen_to_page`'s \
+         `(pos.x − image_rect.min.x) / zoom` was the suspect and it is exonerated. Trace: {}.",
         session.trace_path().display()
     );
     Ok(Some(message))
@@ -540,194 +671,6 @@ fn wanted_rungs() -> Vec<f32> {
         }
         Err(_) => DEFAULT_RUNGS.to_vec(),
     }
-}
-
-/// The zoom the application last reported.
-fn current_zoom(session: &Session) -> Result<f32> {
-    Ok(session
-        .trace()?
-        .events(CANVAS_EVENT)
-        .last()
-        .and_then(|l| l.get_f32("zoom"))
-        .unwrap_or(0.0))
-}
-
-/// **What tier the application says it is in**, from its own position line.
-///
-/// `region=none` is the whole-page raster; anything else is the region tier.
-/// `tier=` is the *position* model, the third boundary. Read rather than
-/// computed, because a boundary this check derived itself would be a second
-/// copy of arithmetic that lives in `render::strategy` and `viewer::ceiling`.
-fn tier_of(session: &Session) -> Result<String> {
-    let trace = session.trace()?;
-    let Some(line) = trace.events(POSITION_EVENT).last() else {
-        return Ok("no `canvas-pos` line".to_owned());
-    };
-    let raster = if line.get("region").is_none_or(|r| r == "none") {
-        "whole-page raster"
-    } else {
-        "REGION raster"
-    };
-    Ok(format!(
-        "{raster}, position tier `{}`",
-        line.get("tier").unwrap_or("?")
-    ))
-}
-
-/// **Steer the pointer back onto the target**, using the application's own
-/// report of where it thinks the pointer is.
-///
-/// # ★★★ Why the aim is a loop and not a calculation
-///
-/// The subject of this sweep is a **0.85 pt** pair of cells on a US Letter
-/// sheet. A single conversion at the opening zoom places the pointer to within
-/// one screen pixel, which is about one page point there — larger than the
-/// thing being aimed at. Every rung after that would then be measuring blank
-/// paper beside the cells rather than the cells.
-///
-/// So the aim is corrected before every wheel batch from `canvas-pointer`,
-/// which publishes the canvas-space point the application believes the pointer
-/// is on. Because zoom-to-cursor keeps that point fixed, each correction is
-/// applied at a higher magnification than the last and the error halves with
-/// every doubling: one screen pixel of residual error is one page point at
-/// 100 %, and 5 × 10⁻⁵ of one at twenty thousand percent.
-///
-/// ★★ It is also, incidentally, a **second** reading of the conversion under
-/// test — if `screen_to_page` were lying, this loop would diverge rather than
-/// converge, and the caller would see the aim wander. That is why the corrected
-/// aim is reported at every rung.
-///
-/// The correction is capped at a third of the viewport per step: a larger jump
-/// means the target has left the window entirely, and chasing it with one
-/// enormous pointer move would land somewhere arbitrary. Capped, the loop still
-/// converges over the following steps.
-fn re_aim(
-    session: &Session,
-    driver: &Driver,
-    at: ScreenPoint,
-    target_canvas: (f32, f32),
-    zoom: f32,
-    cap: f32,
-    viewport: Option<crate::geom::LRect>,
-) -> Result<ScreenPoint> {
-    driver.move_to(at)?;
-    std::thread::sleep(std::time::Duration::from_millis(70));
-    let Some(got) = reported_page_point(session)? else {
-        return Ok(at);
-    };
-    let dx = (target_canvas.0 - got.0) * zoom;
-    let dy = (target_canvas.1 - got.1) * zoom;
-    if !dx.is_finite() || !dy.is_finite() {
-        return Ok(at);
-    }
-    let dx = dx.clamp(-cap, cap);
-    let dy = dy.clamp(-cap, cap);
-    if dx.abs() < 0.5 && dy.abs() < 0.5 {
-        return Ok(at);
-    }
-    let frame = session.frame()?;
-    let moved = frame.offset_from(at, dx, dy);
-    // ★★★ CLAMPED INTO THE CANVAS VIEWPORT, and the sweep ran away without it.
-    //
-    // The pan probe scrolls the view, so the next rung's first correction is a
-    // large one; two rungs of that walked the aim off the top of the window
-    // (measured: y = 304, then 184, then −56). A pointer outside the window
-    // gets no `canvas-pointer` line, so the loop then steers from a stale
-    // reading and the Ctrl+wheel lands on nothing — the zoom stalled at 21x and
-    // three rungs reported a 100 % conversion error about an application that
-    // was never asked anything. An aim that leaves the canvas is not a
-    // correction, it is a lost target, and it must be held at the edge where the
-    // next reading can still improve it.
-    let Some(vp) = viewport else {
-        return Ok(moved);
-    };
-    // ★ Expressed as a FRACTION of the viewport and rebuilt through
-    // `declared_at`, because `ScreenPoint` has no public constructor — by
-    // design, so that every screen coordinate in this harness comes from a
-    // conversion rather than from arithmetic somebody did by hand.
-    let p0 = frame.declared_at(vp, 0.0, 0.0);
-    let p1 = frame.declared_at(vp, 1.0, 1.0);
-    let span_x = (p1.x() - p0.x()) as f32;
-    let span_y = (p1.y() - p0.y()) as f32;
-    if span_x.abs() < 1.0 || span_y.abs() < 1.0 {
-        return Ok(moved);
-    }
-    let fx = (moved.x() - p0.x()) as f32 / span_x;
-    let fy = (moved.y() - p0.y()) as f32 / span_y;
-    Ok(frame.declared_at(vp, fx.clamp(0.03, 0.97), fy.clamp(0.03, 0.97)))
-}
-
-/// Ctrl+wheel at `aim` until the reported zoom reaches `wanted`.
-///
-/// Returns the zoom actually reached, and leaves `aim` corrected onto the
-/// target — see [`re_aim`]. Rolls in small batches and re-reads, because one
-/// notch's factor is egui's and not this harness's to know.
-fn zoom_to(
-    session: &Session,
-    driver: &Driver,
-    aim: &mut ScreenPoint,
-    target_canvas: (f32, f32),
-    wanted: f32,
-    viewport: Option<crate::geom::LRect>,
-) -> Result<f32> {
-    let cap = session.frame()?.client_logical().width() / 3.0;
-    let mut zoom = current_zoom(session)?;
-    let mut spins = 0;
-    *aim = re_aim(session, driver, *aim, target_canvas, zoom, cap, viewport)?;
-    while zoom < wanted && spins < 240 {
-        // Bigger steps while far away, one notch when close, so the rung is
-        // approached from below rather than jumped over.
-        let ratio = wanted / zoom.max(0.001);
-        let notches = if ratio > 8.0 {
-            6
-        } else if ratio > 2.0 {
-            2
-        } else {
-            1
-        };
-        driver.scroll_at_held(*aim, &[vk::CONTROL], 1, notches)?;
-        session.settle(8);
-        let now = current_zoom(session)?;
-        if (now - zoom).abs() < f32::EPSILON {
-            break; // the ceiling, or the wheel is not landing
-        }
-        zoom = now;
-        *aim = re_aim(session, driver, *aim, target_canvas, zoom, cap, viewport)?;
-        spins += 1;
-    }
-    while zoom > wanted * 1.35 && spins < 300 {
-        driver.scroll_at_held(*aim, &[vk::CONTROL], -1, 1)?;
-        session.settle(8);
-        let now = current_zoom(session)?;
-        if (now - zoom).abs() < f32::EPSILON {
-            break;
-        }
-        zoom = now;
-        *aim = re_aim(session, driver, *aim, target_canvas, zoom, cap, viewport)?;
-        spins += 1;
-    }
-    // The region raster is slow; let it land before anything is measured.
-    session.settle(60);
-    let zoom = current_zoom(session)?;
-    *aim = re_aim(session, driver, *aim, target_canvas, zoom, cap, viewport)?;
-    Ok(zoom)
-}
-
-/// Parse `(1.23,4.56)` — the shape `canvas-pointer` prints its two spaces in.
-fn parse_paren_pair(s: &str) -> Option<(f32, f32)> {
-    let inner = s.trim().strip_prefix('(')?.strip_suffix(')')?;
-    let (a, b) = inner.split_once(',')?;
-    Some((a.trim().parse().ok()?, b.trim().parse().ok()?))
-}
-
-/// The canvas point the application says the pointer is on, right now.
-fn reported_page_point(session: &Session) -> Result<Option<(f32, f32)>> {
-    Ok(session
-        .trace()?
-        .events(POINTER_EVENT)
-        .last()
-        .and_then(|l| l.get("page"))
-        .and_then(parse_paren_pair))
 }
 
 /// **The linearity probe** — see the module header.
@@ -875,15 +818,59 @@ fn click_select(
 
 /// Drag whatever is selected and say what the gesture actually became.
 ///
-/// # ★★★ The three outcomes, and why counting only `canvas-move` hid the real one
+/// # ★★★ The FOUR outcomes, and why counting only `canvas-move` hid the real one
 ///
 /// A drag on a selected object can become a **move**, a **resize** (the press
-/// landed on a grip), or nothing. The first version of this counted
-/// `canvas-move` alone, so a drag that was routed to the resize machinery and
-/// then refused by it reported as *"the gesture was thrown away"* — true, and
-/// silent about the mechanism. `resize-declined reason=Degenerate` is the line
-/// that says what happened, and it is the finding this sweep exists to have
-/// made.
+/// landed on a grip), a **marquee** (the press landed on empty paper), or
+/// nothing. The first version of this counted `canvas-move` alone, so a drag
+/// that was routed to the resize machinery and then refused by it reported as
+/// *"the gesture was thrown away"* — true, and silent about the mechanism.
+/// `resize-declined reason=Degenerate` is the line that says what happened.
+///
+/// The **marquee** arm was added 2026-09-05 and is the one that mattered; see
+/// below.
+///
+/// # ★★★ THE PRESS IS THE AIM POINT — corrected 2026-09-05, and this is the
+/// whole of the sweep's headline finding
+///
+/// It used to be **the centre of the published grip box**, on this reasoning,
+/// which is quoted rather than deleted because it is the reasoning a reader
+/// will reconstruct:
+///
+/// > *"Grab it in the middle and move it" is the gesture the operator
+/// > described, and the middle of the object is a fact only the application
+/// > knows. It publishes it as `canvas.selection-outline`; aiming anywhere else
+/// > is the harness inventing a coordinate.*
+///
+/// **The middle of a bounding box is not the middle of an object.** The sweep
+/// fixture `polyline-nodes.pdf` is one open path — a zigzag and two Béziers
+/// from (100, 200) to (580, 320) — whose bounding box is 480 × 120 and whose
+/// centre, (340, 260), is **twelve points of blank paper above the stroke**.
+///
+/// And a press on blank paper inside a selection's bounding box is a
+/// **marquee**, deliberately, since `OPERATOR_REQUESTS.md` **O72**:
+///
+/// > *"Click and hold shouldn't select an object - it should allow me to draw a
+/// > box around objects to select."*
+///
+/// `canvas::pressing` downgrades `Grip::Move` to `None` unless `body_under`
+/// finds ink at the press point, and `(None, None)` is `DragKind::Marquee`. So
+/// this probe was measuring the operator's own feature and reporting it as
+/// *"dragging a selected object produced no traced outcome of any kind"* — at
+/// **every** rung including 104 %, which is what made it read as a
+/// zoom-dependent defect. Driven with the press moved to the aim point, the
+/// same build MOVES the object at 104 %, 942 %, 2,096 % and 2,559 %.
+///
+/// ⇒ ★★ **A uniform failure at every rung of a scale sweep is evidence about
+/// the probe, not about scale.** The one rung that is not the subject — the
+/// baseline — is the control, and a control that fails is the finding.
+///
+/// ★ The aim point is the document coordinate the caller supplied and the one
+/// the click immediately before this selected the object from, so it is on the
+/// object by the same evidence that produced the selection. The old comment's
+/// worry — that the aim can sit on a **grip** — is answered rather than
+/// ignored: the resize arms below report which grip, and a resize at the aim
+/// point is a statement about where the aim is, not about the mouse.
 fn drag_selection(
     session: &Session,
     driver: &Driver,
@@ -897,24 +884,11 @@ fn drag_selection(
         trace.events(MOVE_DECLINED_EVENT).count(),
         trace.events(RESIZE_DECLINED_EVENT).count(),
         trace.events(RESIZE_COMMIT_EVENT).count(),
+        trace.events(MARQUEE_EVENT).count(),
     );
     let box_before = outline_box(session, ui_rect)?;
     let frame = session.frame()?;
-    // ★★★ THE PRESS IS THE MIDDLE OF THE GRIP BOX, not the aim point, and the
-    // difference is the whole difference between a finding and a false one.
-    //
-    // The aim is a fixed document coordinate; the object the click picked is
-    // whatever was nearest to it, and its box is very often *beside* that point
-    // rather than centred on it. Driven at 174,259 % the aim sat a few
-    // thousandths of a point past object 140's right edge — which is its
-    // SouthEast corner, so the drag was a perfectly correct resize and the first
-    // version of this check called it a defect.
-    //
-    // ★★ "Grab it in the middle and move it" is the gesture the operator
-    // described, and the middle of the object is a fact only the application
-    // knows. It publishes it as `canvas.selection-outline`; aiming anywhere else
-    // is the harness inventing a coordinate.
-    let press = box_before.map_or(aim, |b| frame.declared_center(b));
+    let press = aim;
     let to = frame.offset_from(press, DRAG_PX, DRAG_PX);
     driver.drag(press, to)?;
     session.settle(36);
@@ -936,25 +910,30 @@ fn drag_selection(
         .events(RESIZE_COMMIT_EVENT)
         .nth(before.3)
         .map(|l| l.raw.clone());
+    let marqueed = trace
+        .events(MARQUEE_EVENT)
+        .nth(before.4)
+        .map(|l| l.raw.clone());
 
     // ★★★ A COMMITTED RESIZE IS CHECKED FIRST, because it is the only outcome
     // that changes the document, and a build that both resized and (somehow)
     // moved must report the resize.
     if let Some(r) = resize_commit {
+        let boxed = box_before.map_or_else(
+            || "unpublished".to_owned(),
+            |b| format!("{:.1} x {:.1} pt", b.width(), b.height()),
+        );
         rung.lines
             .push(format!("drag: SILENTLY RESIZED the object — `{r}`"));
         rung.problems.push(format!(
-            "★★★ a drag pressed at the exact CENTRE of the published grip box silently \
-             RESIZED the object: \
-             `{r}`. Its grip box was {}; `handles::grip_at` gives each corner grip \
-             `GRIP_SIZE_PX / 2 + GRIP_GRAB_SLACK_PX` = 6 pt of the box, so on a box this small \
-             the four corners meet in the middle and `Grip::Move` is unreachable. This is not a \
-             refused gesture — it is the operator's artwork scaled by a factor they did not ask \
-             for, with no decline and nothing on screen to say so",
-            box_before.map_or_else(
-                || "unpublished".to_owned(),
-                |b| format!("{:.1} x {:.1} pt", b.width(), b.height())
-            )
+            "★★★ a drag pressed on the object at the aim point silently RESIZED it: `{r}`. Its \
+             grip box was {boxed}. Two readings, and the box size tells them apart: on a box \
+             at or under {NO_BODY_BELOW_PX} pt the four corner grips meet in the middle — \
+             `handles::grip_at` gives each of them `GRIP_SIZE_PX / 2 + GRIP_GRAB_SLACK_PX` = 6 \
+             pt — so `Grip::Move` is unreachable and the operator's artwork is scaled by a \
+             factor they did not ask for; on a box much larger than that, the AIM POINT is \
+             sitting on a corner of this particular object and the resize is correct behaviour \
+             reported at a badly chosen coordinate."
         ));
         return Ok(());
     }
@@ -981,9 +960,38 @@ fn drag_selection(
         rung.problems
             .push(format!("a drag on the selected object was declined: `{d}`"));
         return Ok(());
+    } else if let Some(m) = marqueed {
+        // ★★★ THE ARM THAT WAS MISSING, and its absence produced the sweep's
+        // headline finding about a build that was working.
+        //
+        // O72: a press on empty paper INSIDE a selection's bounding box draws a
+        // marquee rather than moving the selection — the operator asked for it
+        // by name. So a marquee here is the application answering correctly
+        // about a press that was not on the object, and the useful thing to
+        // report is *where the press was*, not that the mouse is broken.
+        //
+        // It stays a **problem** rather than a bare line because the press was
+        // aimed at the caller's `--doc-point`, which the click one step earlier
+        // used to select this object: if that coordinate is on the object's ink
+        // then a marquee IS the defect, and the message has to let a reader
+        // decide which they are looking at rather than deciding for them.
+        rung.lines.push(format!("drag: became a MARQUEE — `{m}`"));
+        rung.problems.push(format!(
+            "a drag pressed at the aim point drew a MARQUEE instead of moving the object it had \
+             just selected: `{m}`. `canvas::pressing` downgrades `Grip::Move` to nothing unless \
+             `body_under` finds ink at the press point (O72), so this says the aim coordinate is \
+             inside the object's bounding box and beside its ink. If the `--doc-point` for this \
+             fixture IS on the ink, that is the defect; if it is merely near it, this is correct \
+             behaviour and the aim point is wrong. The grip box was {}",
+            box_before.map_or_else(
+                || "unpublished".to_owned(),
+                |b| format!("{:.1} x {:.1} pt", b.width(), b.height())
+            )
+        ));
+        return Ok(());
     } else {
         rung.lines
-            .push("drag: nothing at all — no move, no decline, no resize".to_owned());
+            .push("drag: nothing at all — no move, no decline, no resize, no marquee".to_owned());
         rung.problems
             .push("dragging a selected object produced no traced outcome of any kind".to_owned());
         return Ok(());
@@ -1236,15 +1244,41 @@ fn nodes_and_handles(
         return Ok(());
     };
     let total = anchors.get_usize("total").unwrap_or(0);
-    rung.lines
-        .push(format!("nodes: the part has {total} anchor(s)"));
+    // ★★★ `on_screen=`, and reading it is the difference between a finding and
+    // a false one — 2026-09-05.
+    //
+    // `canvas::overlay::anchors` publishes `canvas.anchor.N` for the **culled**
+    // set: the anchors that are actually inside the viewport, and only those.
+    // That is O69, and deliberate — *"a rect that is off screen is a click
+    // aimed at nothing, reported as a defect in whatever the click did
+    // instead."* Its own comment says the census carries `on_screen=` so that
+    // *"the cap fired"* and *"the operator has scrolled away from the points"*
+    // stop being the same line.
+    //
+    // This probe read `total` and ignored `on_screen`, so at every rung above
+    // 942 % — where the six anchors of a 480 pt path are thousands of pixels
+    // apart and none is in a 484 pt viewport — it reported *"the entered part
+    // has 6 anchors and the overlay published no mark for any of them, the
+    // operator has nothing to click"*. Measured: `canvas-anchors total=6
+    // on_screen=0`. The application had answered the question in the same line
+    // the check was reading.
+    let on_screen = anchors.get_usize("on_screen").unwrap_or(0);
+    rung.lines.push(format!(
+        "nodes: the part has {total} anchor(s), {on_screen} of them inside the viewport"
+    ));
     let Some(first) = driving::declared(&trace, ui_rect, "canvas.anchor.0") else {
         rung.lines
             .push("nodes: no anchor mark was published, so there is no grip to aim at".to_owned());
-        if total > 0 {
+        if on_screen > 0 {
             rung.problems.push(format!(
-                "the entered part has {total} anchors and the overlay published no mark for any \
-                 of them — the operator has nothing to click"
+                "the entered part has {total} anchors, the overlay says {on_screen} of them are \
+                 inside the viewport, and it published a mark for none — the operator has \
+                 nothing to click"
+            ));
+        } else if total > 0 {
+            rung.lines.push(format!(
+                "nodes: …and none of the {total} is on screen at this zoom, so having no mark to \
+                 aim at is correct (O69). This rung says nothing about node editing"
             ));
         }
         return Ok(());
@@ -1345,14 +1379,69 @@ fn pan_and_watch_the_edges(
     // as after.
     session.settle(90);
     let trace = session.trace()?;
+    // ★★★ **PUT THE VIEW BACK** — 2026-09-05, and its absence is what ended the
+    // sweep's reach at 2,559 %.
+    //
+    // This probe is the last thing a rung does, so the view it leaves behind is
+    // the view the NEXT rung's `re_aim` starts from. Three notches at 2,559 %
+    // is a few hundred screen pixels, which puts the sweep's target OUTSIDE the
+    // viewport — and `re_aim` corrects by moving the pointer, so a target
+    // outside the viewport is a target it can never reach again. Measured: the
+    // aim residual was 0.02 canvas pt at the end of the 2,559 % rung and
+    // **4.32** at the start of the next, and stayed there for every rung above,
+    // magnified by each Ctrl+wheel into thousands of pixels.
+    //
+    // ★ Scrolled back rather than re-aimed around, because the wheel is exactly
+    // invertible and a correction is not: the same notch count the other way is
+    // the only recovery that leaves no residue for the next rung to inherit.
+    // It is read AFTER the coverage lines above so the measurement is of the
+    // pan, not of the restoration.
+    driver.scroll_at(at, PAN_NOTCHES)?;
+    session.settle(40);
     let after: Vec<f32> = trace
         .events(COVERAGE_EVENT)
         .skip(before)
         .filter_map(|l| l.get_f32("sharp"))
         .collect();
     if after.is_empty() {
-        rung.lines
-            .push("pan: the canvas published no coverage line after the wheel".to_owned());
+        // ★★★ `canvas-coverage` IS A CHANGE LOG — corrected 2026-09-05.
+        //
+        // The canvas writes it when the coverage **changes**, so "no new line
+        // after the wheel" means *the coverage did not move*, which is the
+        // healthy answer and the one this probe wants. Read as "the canvas
+        // published nothing", it produced the line *"pan: the canvas published
+        // no coverage line after the wheel"* at **every rung of every run**,
+        // 104 % included — a uniform non-answer that made the pan probe
+        // permanently silent.
+        //
+        // ⇒ The same class as `driving::declared`'s own headline: **a change
+        // log read as a snapshot.** That one cost eighteen false ribbon
+        // defects; this one cost a probe that never reported anything. The fix
+        // is the same shape — carry the last known value forward.
+        let last_known = trace
+            .events(COVERAGE_EVENT)
+            .filter_map(|l| l.get_f32("sharp"))
+            .last();
+        match last_known {
+            Some(sharp) => {
+                rung.lines.push(format!(
+                    "pan: the coverage did not change over the scroll — `canvas-coverage` is a \
+                     change log, and it still stands at sharp={sharp:.3}"
+                ));
+                if sharp < 0.999 {
+                    rung.problems.push(format!(
+                        "the sharp raster covers only {sharp:.3} of the viewport and a pan did \
+                         not change that — the rest is `canvas::backdrop`'s low-resolution \
+                         stand-in, which is the fade the operator reported"
+                    ));
+                }
+            }
+            None => rung.lines.push(
+                "pan: the canvas has published no `canvas-coverage` line at all in this run, so \
+                 nothing is known about the raster's reach"
+                    .to_owned(),
+            ),
+        }
         return Ok(());
     }
     let worst = after.iter().copied().fold(f32::INFINITY, f32::min);

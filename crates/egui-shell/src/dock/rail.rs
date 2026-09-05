@@ -107,6 +107,19 @@ use super::{Ctx, report};
 /// arranged to make unwritable.
 pub type RailHandler<'a> = dyn FnMut(&mut egui::Ui) + 'a;
 
+/// **Which panels the rail can raise** — the predicate an application supplies
+/// through [`Dock::with_rail_reach`].
+///
+/// ★★★ R7, in one line: the dock cannot answer this itself. It is handed
+/// opaque [`PanelId`]s and a [`crate::manifest::Rail`] of opaque command ids,
+/// and **the map between them is application knowledge** — in `pdfcer-gui` the
+/// Fonts panel's id is `file.fonts` and the Comments panel's is
+/// `markup.comments`, neither of which a `view.panel_*` pattern would find. A
+/// shell that guessed at that mapping by string shape would suppress a tab
+/// strip over a panel the rail cannot reach, which is the unreachable-panel
+/// defect.
+pub type RailReach<'a> = dyn FnMut(&super::PanelId) -> bool + 'a;
+
 /// **The rail's width, in points. A constant at every rung.**
 ///
 /// 52 pt, which is `mockups/pdfcer-shell.html`'s own value and wide enough for
@@ -131,6 +144,25 @@ pub const CHEVRON_PTS: f32 = 22.0;
 
 /// The strip's own padding, top and bottom together.
 pub const PADDING_PTS: f32 = 12.0;
+
+/// **The sliver reserved in the rail's place when its auto-hide is on** — the
+/// trigger, in [`crate::peek`]'s terms.
+///
+/// ★★★ Ten points, and the number is chosen against two floors rather than for
+/// looks. [`crate::peek::Peek::MIN_TRIGGER_PTS`] is 8 and is the point below
+/// which `Peek` refuses to hide the surface at all; Windows gives a window's
+/// resize border 8 and VS Code's collapsed sidebar edge about the same. Ten
+/// clears the first with margin and matches the second, and is wide enough to
+/// draw a chevron in so the strip **says** it is there rather than being a
+/// stripe the operator has to discover.
+///
+/// ⚠ **It is reserved whether the rail is revealed or not**, and that is the
+/// whole of the no-reflow guarantee: the panel body beside it is
+/// `side_width − PEEK_WIDTH_PTS` in the hidden state and in the revealed state,
+/// because the revealed strip is painted *over* the panel rather than beside
+/// it. A build that reclaimed the sliver on reveal would resize the panel under
+/// the pointer that revealed it, which is R128 exactly.
+pub const PEEK_WIDTH_PTS: f32 = 10.0;
 
 /// One rung of the fold ladder. Widest first.
 ///
@@ -498,6 +530,7 @@ pub(super) fn draw(
     side: DockSide,
     area: Rect,
     rail: Option<&mut (DockSide, &mut RailHandler<'_>)>,
+    peek: &mut crate::peek::Peek,
 ) -> Rect {
     let Some((wanted_side, handler)) = rail else {
         return area;
@@ -510,33 +543,126 @@ pub(super) fn draw(
         return area;
     }
 
+    // ★★★ AUTO-HIDE — the operator's fifth ask of 2026-09-05, *"left rail
+    // should also have the option to auto hide as well"*. Same model as the
+    // ribbon's; see [`crate::peek`].
+    //
+    // The reservation is decided FIRST and from the SETTING alone, so the
+    // strip's own geometry never depends on whether it is revealed: hiding
+    // reserves [`PEEK_WIDTH_PTS`], not hiding reserves [`WIDTH_PTS`]. Nothing
+    // below can change it, which is the direction bound one layer up from
+    // `Peek`'s own.
+    let hiding = peek.mode().is_on();
+    let reserved = if hiding { PEEK_WIDTH_PTS } else { width };
+
     // The strip hugs the OUTER edge — the window edge, away from the document
     // — because that is where a permanent activity bar goes in every program
     // that has one, and because the inner edge already carries the side
     // splitter. Two draggable-looking things on one edge is failure mode #1.
-    let (strip, rest) = match side {
+    let split = |w: f32| match side {
         DockSide::Left => (
-            Rect::from_min_max(area.min, egui::pos2(area.left() + width, area.bottom())),
-            Rect::from_min_max(egui::pos2(area.left() + width, area.top()), area.max),
+            Rect::from_min_max(area.min, egui::pos2(area.left() + w, area.bottom())),
+            Rect::from_min_max(egui::pos2(area.left() + w, area.top()), area.max),
         ),
         DockSide::Right => (
-            Rect::from_min_max(egui::pos2(area.right() - width, area.top()), area.max),
-            Rect::from_min_max(area.min, egui::pos2(area.right() - width, area.bottom())),
+            Rect::from_min_max(egui::pos2(area.right() - w, area.top()), area.max),
+            Rect::from_min_max(area.min, egui::pos2(area.right() - w, area.bottom())),
         ),
     };
+    let (trigger, rest) = split(reserved);
+    let (strip, _) = split(width);
+
+    let show = peek.resolve(trigger, ui.ctx().pointer_latest_pos(), false);
+    ctx.rail_show = show;
+
+    // ★★ The TRIGGER is published whether the rail is hiding or not, and it is
+    // the region a driven check asks *"is the way back on screen, and big
+    // enough to hit"* of. When the rail is inline the trigger and the strip are
+    // the same rectangle, which is the truthful answer: the way back is the
+    // rail itself.
+    ctx.reporter
+        .report(ui, trigger, || report::rail_trigger(side));
+
+    if show == crate::peek::Show::Hidden {
+        // ★ R9 in a ten-point column. The sliver is not a placeholder for a
+        // rail — the rail exists and is one pointer-move away — so it draws the
+        // one thing it can honestly say: a chevron pointing at where the strip
+        // will come from. A blank stripe would be indistinguishable from a
+        // layout fault, and an operator who did not know the setting was on
+        // would have no reason to move the pointer there.
+        let painter = ui.painter_at(trigger);
+        let colour = ctx.theme.palette.text_muted;
+        let c = trigger.center();
+        let (dx, dy) = (2.5_f32, 4.0_f32);
+        let (tip_x, back_x) = match side {
+            DockSide::Left => (c.x + dx, c.x - dx),
+            DockSide::Right => (c.x - dx, c.x + dx),
+        };
+        let tip = egui::pos2(tip_x, c.y);
+        let stroke = egui::Stroke::new(1.2, colour);
+        painter.line_segment([egui::pos2(back_x, c.y - dy), tip], stroke);
+        painter.line_segment([egui::pos2(back_x, c.y + dy), tip], stroke);
+        ctx.rail_drawn = false;
+        return rest;
+    }
+
+    // ★★★ WHERE THE STRIP IS PAINTED, and why the two cases differ.
+    //
+    // Inline: into the `Ui` the side owns, inside the reservation it took.
+    // Revealed: into an `Area` at [`egui::Order::Foreground`], anchored to the
+    // same edge and OVER the panel body — which allocates nothing, so the panel
+    // keeps the width it had while the rail was hidden. See [`PEEK_WIDTH_PTS`].
+    let fill = ctx.theme.palette.panel;
+    let rule = egui::Stroke::new(1.0, ctx.theme.palette.outline);
     ctx.reporter.report(ui, strip, || report::tool_rail(side));
 
-    let mut child = ui.new_child(
-        UiBuilder::new()
-            .max_rect(strip)
-            .layout(Layout::top_down(egui::Align::Center)),
-    );
-    // Set explicitly rather than inherited, for `banner::draw`'s reason: a
-    // child built from `max_rect` alone keeps its parent's clip, so a row
-    // wider than 52 pt would paint over the panel body — visible, unclickable,
-    // and indistinguishable in a screenshot from a layout fault.
-    child.set_clip_rect(strip.intersect(ui.clip_rect()));
-    handler(&mut child);
+    if show == crate::peek::Show::Overlay {
+        let painted = egui::Area::new(ctx.id("railoverlay", side, 0, 0))
+            .order(egui::Order::Foreground)
+            .fixed_pos(strip.min)
+            .constrain(false)
+            .show(ui.ctx(), |ui| {
+                ui.painter().rect_filled(strip, 0.0, fill);
+                let seam = match side {
+                    DockSide::Left => [strip.right_top(), strip.right_bottom()],
+                    DockSide::Right => [strip.left_top(), strip.left_bottom()],
+                };
+                ui.painter().line_segment(seam, rule);
+                // The overlay's own `Ui` starts at `strip.min` with the whole
+                // screen for a clip; giving it the strip keeps the rows inside
+                // the 52 pt column they were planned for.
+                ui.set_clip_rect(strip);
+                let mut child = ui.new_child(
+                    UiBuilder::new()
+                        .max_rect(strip)
+                        .layout(Layout::top_down(egui::Align::Center)),
+                );
+                child.set_clip_rect(strip);
+                handler(&mut child);
+            })
+            .response
+            .rect;
+        // The rectangle the pointer may stay inside without closing the strip.
+        // The union, not the `Area`'s response rect alone: a body that paints
+        // more than it allocates reports the smaller of the two, and a
+        // remembered overlay that is smaller than the visible one closes the
+        // rail under a pointer that is still on it.
+        peek.record_overlay(strip.union(painted));
+    } else {
+        let mut child = ui.new_child(
+            UiBuilder::new()
+                .max_rect(strip)
+                .layout(Layout::top_down(egui::Align::Center)),
+        );
+        // Set explicitly rather than inherited, for `banner::draw`'s reason: a
+        // child built from `max_rect` alone keeps its parent's clip, so a row
+        // wider than 52 pt would paint over the panel body — visible,
+        // unclickable, and indistinguishable in a screenshot from a layout
+        // fault.
+        child.set_clip_rect(strip.intersect(ui.clip_rect()));
+        handler(&mut child);
+    }
+    ctx.rail_drawn = true;
 
     rest
 }

@@ -254,22 +254,64 @@ pub(crate) const GROUP_PADDING: f32 = 6.0;
 /// unavoidable: it is a deliberate, global, one-off event, not something
 /// that happens when the operator clicks a tab.
 ///
-/// # Why two, and why not three
+/// # ★★★ Why THREE — and the whole of the argument that said two
 ///
-/// Two is what `mockups/ribbon.html` specifies — `.gcmds` wraps
-/// (`flex-wrap: wrap`) inside a band with a fixed `min-height: 86px`, which
-/// is one control row plus a second plus a caption.
+/// **It was `2` until 2026-09-05.** The operator's report that day was
+/// *"it looks like the edits to the ribbon got halfway done… the mockup GUI
+/// pdfcer-shell.html looks much cleaner and we should follow it's format
+/// exactly"*, and this constant is the largest single thing that was half
+/// done: `mockups/pdfcer-shell.html`'s numbers were adopted into
+/// [`crate::theme::Metrics`] on 2026-09-04 — `ribbon_rows: 68`,
+/// `ribbon_pad_top: 6`, an 11 pt caption, a 56 pt Large control — **and the
+/// row count that produces 68 was left at two.** The mockup's own arithmetic
+/// says what 68 is made of: `.rb { height: 22px }` and `.grp .col { gap: 1px }`
+/// give `3 × 22 + 2 × 1 = 68`. A band 68 pt tall holding two 24 pt rows is not
+/// the mockup's band; it is the old band with twelve points of air in it.
 ///
-/// Three was considered and refused on two grounds. **Screen budget:** a
-/// third row costs another `control_height + gutter` — 28 pt at the quiet
-/// preset, 36 at the airy one — off the top of the canvas on every tab,
-/// permanently, and `MODES_AND_PANELS.md` failure mode #4 is precisely a
-/// chrome minimum that ate *"up to a third of my screen width"*. **The
-/// caption:** the caption is what makes a group legible as a group (see
-/// [`super::band`]'s header), and it is drawn `small()` and `weak()`; three
-/// rows of controls put it far enough from the top row that it stops
-/// reading as that row's label.
-pub(crate) const GROUP_ROWS: usize = 2;
+/// Measured against the mock at 1400 px, `View` alone: the mock lays Zoom
+/// 2 × 3, Display 2 × 3, Panels 3 × 3 and Window 2 × 3, filling 1379 px of a
+/// 1400 px window. At two rows those four groups need roughly 460 px more than
+/// they are given, so groups that the mock shows on the band were **collapsing
+/// or scrolling** at his window width. That is what "halfway done" looked like.
+///
+/// ## The refusal that used to be written here, and why each half lapsed
+///
+/// > *"Two is what `mockups/ribbon.html` specifies… Three was considered and
+/// > refused on two grounds. **Screen budget:** a third row costs another
+/// > `control_height + gutter` — 28 pt at the quiet preset, 36 at the airy one
+/// > — off the top of the canvas on every tab, permanently… **The caption:**
+/// > the caption is what makes a group legible as a group, and it is drawn
+/// > `small()` and `weak()`; three rows of controls put it far enough from the
+/// > top row that it stops reading as that row's label."*
+///
+/// 1. **The specification named is the wrong file.** `mockups/ribbon.html` is
+///    the 320-line ribbon study; `mockups/pdfcer-shell.html` is the whole-shell
+///    mockup the operator approved under O123 and has now cited twice. Where
+///    they disagree the approved one wins, and this is a place they disagree.
+/// 2. **Screen budget: the third row is FREE.** It was true that a third row
+///    costs `control_height + gutter` *while the band was two rows tall by
+///    definition*. Since 2026-09-04 the band's height is
+///    [`crate::theme::Metrics::ribbon_rows`] — a fixed budget the rows are laid
+///    into — so the third row costs **nothing at all**: 68 pt before, 68 pt
+///    after, and the controls come down from 24 pt to 21.67 to suit. See
+///    [`super::band::band_row_height`]. Failure mode #4 is untouched.
+/// 3. **The caption: the mock answers it by measurement.** Its third row ends
+///    at y = 138 and its caption sits at y = 138.9. The caption was never in
+///    danger of drifting from the rows; it hangs off the bottom of the same
+///    fixed area whether the group used one row or three, which is the baseline
+///    invariant `height_tests::every_caption_in_a_band_shares_one_baseline`
+///    asserts.
+///
+/// ★ Three is also what the product class does. Word's ribbon lays small
+/// buttons three rows deep at every width; so does Acrobat's. The convergence
+/// of the class is the specification, and two was the outlier.
+///
+/// ## What did NOT change
+///
+/// The constant is still a **constant** — the table above is unaltered, and
+/// every reason it gives for refusing a per-group, per-tab or per-theme row
+/// count holds exactly as written. What moved is the number, not its scope.
+pub(crate) const GROUP_ROWS: usize = 3;
 
 /// **The most rows a group may be re-wrapped onto** when the band runs short of
 /// width — S5's ceiling.
@@ -987,9 +1029,22 @@ mod tests {
         assert!(single > GROUP_WRAP_WIDTH, "the fixture must trip the cap");
 
         let rows = wrap_group(&widths, 4.0, GROUP_ROWS, GROUP_WRAP_WIDTH, None);
-        assert_eq!(rows.rows(), 2, "two rows, not three and not one");
-        assert_eq!(rows.counts, vec![4, 3], "4 + 3 is the even split of seven");
-        assert_eq!(rows.width, 4.0f32.mul_add(75.0, 3.0 * 4.0));
+        assert_eq!(
+            rows.rows(),
+            GROUP_ROWS,
+            "the ceiling this ships with, not a number typed here — the expectations \
+             below moved from 4 + 3 to 3 + 2 + 2 on 2026-09-05 when GROUP_ROWS became 3"
+        );
+        assert_eq!(
+            rows.counts,
+            vec![3, 3, 1],
+            "seven over three rows. NOT [3, 2, 2]: `wrap_group` minimises the WIDEST \
+             row, and once three is the widest a fourth row-mate cannot help — both \
+             splits are 233 pt wide and this is the one the search reaches first. The \
+             claim being tested is the width below, and the counts are pinned only so \
+             that a change of algorithm has to be deliberate"
+        );
+        assert_eq!(rows.width, 3.0f32.mul_add(75.0, 2.0 * 4.0));
         assert!(
             rows.width < single * 0.6,
             "a wrapped group must cost the band far less than an unwrapped one: \
@@ -1083,8 +1138,8 @@ mod tests {
         let rows = wrap_group(&widths, 4.0, GROUP_ROWS, GROUP_WRAP_WIDTH, None);
         assert_eq!(
             rows.counts,
-            vec![1, 4],
-            "the oversized control takes a row and the other four share the second"
+            vec![1, 2, 2],
+            "the oversized control takes a row and the other four share the rest"
         );
         assert_eq!(
             rows.width, 500.0,

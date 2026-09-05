@@ -462,6 +462,22 @@ pub(super) fn tab() -> Tab {
                     // gentler remedy is *below* the harsher one trains people
                     // to reach past it.
                     command("view.dock_all_panels"),
+                    // ★★ The two auto-hide commands, 2026-09-05, immediately
+                    // before Reset layout and after the float recovery — the
+                    // same two-tier order that pair already established: the
+                    // remedies that cost the operator nothing they arranged
+                    // come before the one that costs them the arrangement.
+                    // Hiding a strip is reversible by the control beside it;
+                    // Reset layout is not reversible at all.
+                    //
+                    // ⚠ This takes View ▸ Window from six items to eight, so
+                    // the group goes from 2 × 3 to 3 × 3 and `mockups/
+                    // pdfcer-shell.html` was updated to match — the mock is the
+                    // spec where the two disagree, EXCEPT where a capability
+                    // shipped after the mock was drawn, which this is. Moved on
+                    // the mock side, said here.
+                    command("view.ribbon_auto_hide"),
+                    command("view.rail_auto_hide"),
                     command("view.reset_layout"),
                 ],
             ),

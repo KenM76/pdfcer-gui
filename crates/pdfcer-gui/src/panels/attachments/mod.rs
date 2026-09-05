@@ -142,7 +142,7 @@ pub const REGION_REMOVE: &str = "attachments.remove"; // ui-text-exempt: trace r
 /// here versus what may live behind interior mutability on `OpenDoc`.
 ///
 /// ★ Reset with the document by `PanelsState::forget_document`, and that
-/// matters here for `properties::info::InfoDrafts`' reason rather than for
+/// matters here for `docprops::InfoDrafts`' reason rather than for
 /// tidiness: a half-typed description carried into a second file would be
 /// written into **that** file's `/Desc` by the next attach, describing one
 /// operator's spreadsheet with another document's note.
@@ -162,7 +162,7 @@ impl std::fmt::Debug for AttachmentsUi {
     ///
     /// A description is the operator's own words about their own file, and this
     /// reaches a trace file a harness keeps. `panels::bookmarks::BookmarksUi`
-    /// and `panels::properties::info` make the same choice for the same reason.
+    /// and `panels::docprops` make the same choice for the same reason.
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("AttachmentsUi")
             .field("description_len", &self.description.len())

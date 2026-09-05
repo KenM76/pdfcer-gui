@@ -59,9 +59,18 @@
 //!
 //! | Mode | Left | Right |
 //! |---|---|---|
-//! | **Read** | Pages, Bookmarks | Forms |
-//! | **Review** | Pages, Bookmarks | Comments, Properties |
-//! | **Edit** | Pages, Bookmarks / Layers, Signatures, Fonts | Objects / Properties, Comments |
+//! | **Read** | Pages, Bookmarks | Comments, Forms, **Document properties** |
+//! | **Review** | Pages, Bookmarks | Comments, Properties, Forms, Dimension groups, **Document properties** |
+//! | **Edit** | Pages, Bookmarks, Layers, Signatures, Fonts | Objects / Properties, Comments, Forms, Redact, Dimension groups, Attachments, **Document properties** |
+//!
+//! ★★★ **Document properties is in all three, and it is the only panel besides
+//! Pages that is** — 2026-09-05, the operator: *"the document properties are
+//! still always visible in the properties tab. it needs to get out of there and
+//! be in its own document properties tab."* Reading a document's title is
+//! reading, so no mode is withheld from it; its command sits on File ▸ Document
+//! and every mode is shown the `file` tab, so no mode can mount it without
+//! being able to reopen it. The arms below carry the placement within each
+//! stack.
 //!
 //! Read is the point of the whole feature — *"a PDF viewer, with pdfcer's
 //! inspection panels available but nothing that authors anything"* — so its
@@ -293,6 +302,28 @@ const INSPECTOR_WIDTH: f32 = 320.0;
 /// tooltip — see `crate::panels::objects`' row work, which is the other half of
 /// O123 and the half that actually closes the defect.
 ///
+/// ## ⚠ RETRACTED, 2026-09-05: 360 did NOT stop the common row being cut
+///
+/// The paragraph above was written before anything drove the panel. When
+/// `the_inspector_is_one_master_detail_column` first ran it reported **8 of 8
+/// object rows elided**, and the panel's `objects-rows overflow=` field named
+/// the numbers: the widest row of `fixtures/a1-titleblock.pdf` wanted
+/// **473.6 pt**, the narrowest **306.3 pt**, against **296 pt** of text room.
+/// *Every* row of that sheet was over — so "the common row" was the case the
+/// width failed at, not the case it handled.
+///
+/// ⚠ And that run traced `mode-changed … remembered=true`: the dock restored a
+/// saved workspace and this constant was never consulted. **A default width
+/// cannot reach an operator who has ever dragged the dock**, which is the
+/// second and more permanent reason the lever was the wrong one.
+///
+/// ⇒ The fix landed in the row rather than in the width, and this number is
+/// deliberately left where it is: `crate::panels::objects`' row work now draws
+/// a headline (widest on that sheet: 207.6 pt) and hovers the full
+/// description. **Nothing here follows the content** — R128 — and a future
+/// reader tempted to raise this constant because a row does not fit should
+/// read that module's §1b first, and the `overflow=` field second.
+///
 /// ⚠ **Widening this is a harness re-baseline.** The canvas rect moves when the
 /// right dock widens, so every canvas-relative click coordinate in
 /// `tools/ui-verify` shifts. `SHELL_LAYOUT_PROPOSAL.md` §2.4 calls it *"the
@@ -404,7 +435,28 @@ fn spec(mode_id: &str) -> ModeSpec {
             // is *for* goes at the front and the one that writes goes behind
             // it. In Review the front is the reviewer's work list; in Read the
             // front is the thing being read.
-            right: vec![vec![comments(), Panel::Forms.command_id()]],
+            // ★★★ **Document properties is mounted in READ**, 2026-09-05, and
+            // the argument is one clause long: **reading a document's title is
+            // reading.** It authors nothing, it writes nothing, and the panel's
+            // four boxes are the same four boxes Acrobat Reader shows under
+            // File ▸ Properties in a product with no editing at all.
+            //
+            // ★★ It is also the one panel in Read's dock that can be reopened
+            // with no argument about tabs. Its command is
+            // `file.document_properties`, on File ▸ Document, and Read is shown
+            // `["file", "view"]` — so the trap `Panel::Forms` had to move off
+            // the Edit tab to escape, and that `Panel::Comments` needed the
+            // rail to escape, does not arise here at all.
+            //
+            // LAST in the stack, behind the comment list and the form. A tabbed
+            // stack draws only its active tab, so the end of one is *reachable
+            // in a click and invisible until asked for* — and what somebody in
+            // Read is doing is reading the page, not auditing its keywords.
+            right: vec![vec![
+                comments(),
+                Panel::Forms.command_id(),
+                Panel::DocumentProperties.command_id(),
+            ]],
             left_width: NAVIGATOR_WIDTH,
             right_width: INSPECTOR_WIDTH,
         },
@@ -471,6 +523,14 @@ fn spec(mode_id: &str) -> ModeSpec {
                     // reachable in one click and invisible until asked for. Group
                     // setup is not what a reviewer opens Review to do.
                     Panel::DimensionGroups.command_id(),
+                    // ★ Document properties, last, for the reason the two
+                    // entries above it are where they are: the tail of this
+                    // stack is the "asked for, not offered" end, and a
+                    // reviewer's subject is the drawing rather than its
+                    // keywords. See Read's arm for why the panel is mounted at
+                    // all — the argument is the same one and it is weaker in no
+                    // respect here, because Review may already author.
+                    Panel::DocumentProperties.command_id(),
                 ],
             ],
             left_width: NAVIGATOR_WIDTH,
@@ -577,6 +637,27 @@ fn spec(mode_id: &str) -> ModeSpec {
                     // closing it, which is the trap `crate::panels::Panel::Forms`
                     // had to move off Edit to escape.
                     Panel::Attachments.command_id(),
+                    // ★★ Document properties, last of the detail stack.
+                    //
+                    // It is in Edit because *"Edit is everything"* is this
+                    // module's rule and
+                    // `the_three_defaults_are_the_specified_arrangements`
+                    // enforces it panel by panel — but the placement is a
+                    // decision and it is the same one Redact and Attachments
+                    // got: the end of the stack that is asked for rather than
+                    // offered.
+                    //
+                    // ★★★ **And it must not be the FIRST tab of this stack.**
+                    // These two stacks are the master–detail pair O123 asked
+                    // for — Objects above, its detail below — and a tabbed
+                    // stack draws only its active tab. Putting this panel at
+                    // the front would open Edit with the document's keywords
+                    // where the selected object's properties belong, and
+                    // `ui-verify`'s `the_inspector_is_one_master_detail_column`
+                    // would report `dock.body.file.properties` missing: the
+                    // detail one tab away from the master, which is the failure
+                    // master–detail is defined against.
+                    Panel::DocumentProperties.command_id(),
                 ],
             ],
             left_width: NAVIGATOR_WIDTH,
@@ -774,8 +855,18 @@ mod tests {
         );
         assert_eq!(
             read.right.panels().map(PanelId::as_str).collect::<Vec<_>>(),
-            [comments(), Panel::Forms.command_id()],
-            "Read's inspector side is the comment list, then Forms"
+            [
+                comments(),
+                Panel::Forms.command_id(),
+                // ★ Document properties joined Read on 2026-09-05. Restated
+                // here by hand, like every other member: this assertion is a
+                // *literal transcript* of the arrangement, and the arrangement
+                // is the spec, so a change to it cannot slip through as an
+                // incidental.
+                Panel::DocumentProperties.command_id(),
+            ],
+            "Read's inspector side is the comment list, then Forms, then the \
+             document's own properties"
         );
         for absent in [Panel::Objects, Panel::Properties] {
             assert!(
@@ -797,6 +888,7 @@ mod tests {
                 Panel::Properties.command_id(),
                 Panel::Forms.command_id(),
                 Panel::DimensionGroups.command_id(),
+                Panel::DocumentProperties.command_id(),
             ],
             "Review's inspector side, in order, and nothing else"
         );
@@ -961,7 +1053,8 @@ mod tests {
                 // the spec, so a change to it must be restated here by hand
                 // and cannot slip through as an incidental.
                 Panel::Comments.command_id(),
-                Panel::Forms.command_id()
+                Panel::Forms.command_id(),
+                Panel::DocumentProperties.command_id(),
             ]
         );
 
@@ -977,7 +1070,8 @@ mod tests {
             [
                 Panel::Bookmarks.command_id(),
                 Panel::Comments.command_id(),
-                Panel::Forms.command_id()
+                Panel::Forms.command_id(),
+                Panel::DocumentProperties.command_id(),
             ],
             "a panel the catalog does not hold must not be mounted"
         );
@@ -1006,6 +1100,7 @@ mod tests {
                 Panel::Properties.command_id(),
                 Panel::Forms.command_id(),
                 Panel::DimensionGroups.command_id(),
+                Panel::DocumentProperties.command_id(),
             ],
             "every panel Review's default names now exists, so none is filtered"
         );

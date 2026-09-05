@@ -149,7 +149,32 @@
 //! it is this frame's map and not the previous one — which is what keeps the
 //! window from lagging a pan by a frame.
 //!
+//! ## ★★★ A pop-up NEVER covers the annotation it belongs to — the invariant
+//! this module gained on its second day
+//!
+//! It shipped 2026-09-05 without one, and within hours the first full driven
+//! sweep filed *"an annotation can be ROTATED and cannot be MOVED or
+//! RESIZED"* against the canvas. The canvas was fine. `Area::constrain_to`
+//! had slid a pop-up that did not fit to the right of its note **back on top
+//! of that note**, and an `egui::Area` at `Order::Middle` takes every press
+//! inside it — so the move drag and the grip drag never reached the canvas at
+//! all, while the rotate handle, which is drawn clear of the box, kept
+//! working.
+//!
+//! [`popup_origin`] now flips rather than slides, and [`clear_of_anchor`]
+//! carries the candidate order, the measurement and the one case that has no
+//! answer. ⇒ **A window that describes a thing must not be laid over the
+//! thing**, and on an immediate-mode canvas that is not a cosmetic rule: the
+//! window is an input surface, and the thing underneath becomes unreachable.
+//!
 //! ## ⚠ Known limit, named rather than left to be found
+//!
+//! ★ A comment with **no words in it** still opens an empty pop-up on a
+//! click, because [`model::under`] answers for every annotation that *can*
+//! carry a note rather than for those that do. On a shape an operator only
+//! meant to select that is noise. It is a question about *when* a pop-up
+//! should open rather than about *where* it goes, so it is named here and not
+//! fixed here; `OPERATOR_REQUESTS.md` O133 records it as open.
 //!
 //! Under a continuous or facing display mode, pop-ups are drawn for the
 //! **acting page's** annotations only. That is not a decision of this module:
@@ -392,10 +417,22 @@ fn popup(
     }
 }
 
+/// The pop-up's **outer** width — the box `Area::constrain_to` has to fit —
+/// as distinct from [`POPUP_WIDTH`], which is the width of its *contents*.
+///
+/// `popup` sets `ui.set_max_width(POPUP_WIDTH)` twice: once on the `Area`'s
+/// own `Ui` and once inside `egui::Frame::popup`, whose inner margin and
+/// stroke sit **outside** the contents. Measured on a real build the drawn
+/// window is 274 pt for a 260 pt content width — fourteen points of frame.
+/// Sixteen is used here rather than fourteen because the frame is a *style*
+/// value and a theme with a fatter popup margin must not silently reintroduce
+/// the overlap [`popup_origin`] exists to prevent. Erring wide costs at most a
+/// two-point gap; erring narrow costs the gesture.
+const POPUP_BOX_WIDTH: f32 = POPUP_WIDTH + 16.0;
+
 /// **Where a pop-up's top-left corner goes**, in screen space.
 ///
-/// Two cases, in priority order, and the priority is the whole of the
-/// decision:
+/// Two sources of a *preferred* origin, in priority order:
 ///
 /// 1. **The `/Popup`'s own `/Rect`**, when the file gives a usable one. The
 ///    producer said where the window belongs and honouring it is what makes a
@@ -405,6 +442,73 @@ fn popup(
 ///    puts one (`annot_author.rs:3217-3222`) and where every reader in the
 ///    class puts one.
 ///
+/// …and then one **invariant that outranks both**, added 2026-09-05:
+///
+/// > ### ★★★ A pop-up must never be laid over the annotation it belongs to
+///
+/// # The defect this is the fix for, because the reasoning is not obvious
+///
+/// The first driven sweep (2026-09-05) reported *"an annotation can be ROTATED
+/// and cannot be MOVED or RESIZED"* — `dragging_a_markup_moves_it` and
+/// `the_line_weight_switch_reaches_the_resize` both FAILED with **no line
+/// containing `drag` anywhere in the trace**, while `rotating_a_markup_turns_it`
+/// PASSED. Three gestures on one shape, one working. The diagnosis those checks
+/// offered — a fork in `canvas::interact` eating the gesture — named a real
+/// mechanism and was about nothing.
+///
+/// What actually happened is in two lines of the trace:
+///
+/// ```text
+/// ui-rect name=canvas.selection-outline rect=[[464.0 464.5] - [551.7 550.2]]
+/// ui-rect name=notepopup.window         rect=[[498.0 465.0] - [772.0 565.0]]
+/// ```
+///
+/// The window is **on top of the shape it describes**, and an `egui::Area` at
+/// `Order::Middle` takes every press inside it: egui resolves interaction on the
+/// topmost layer, so the canvas response never sees the press at all. The drag
+/// was not consumed by a canvas fork — it never reached the canvas. Rotation
+/// survived only because the rotate handle is drawn *above* the box's top edge,
+/// clear of the window.
+///
+/// # …and the cause was the clamp, which read as harmless
+///
+/// `beside` puts the origin at `anchor.max.x + POPUP_GAP` = 559.7. The canvas
+/// viewport ends at 772, so a 274 pt window does not fit; `Area::constrain_to`
+/// then slid it **left** to 498 — back over the anchor. The clamp was doing
+/// exactly what it was written to do, and *sliding is the wrong recovery*: the
+/// one direction a pop-up must not be pushed is onto its own subject.
+///
+/// ⇒ **Flip, do not slide.** The candidates below are tried in order and the
+/// first that clears the anchor wins:
+///
+/// | # | candidate | separation |
+/// |---|---|---|
+/// | 1 | the preferred origin (file, else right of the note) | taken as-is when the box it implies does not intersect the anchor |
+/// | 2 | **left** of the note, right-aligned to its left edge | horizontal |
+/// | 3 | **below** or **above**, whichever side of the anchor has more room, x pinned into the viewport | vertical |
+///
+/// ★ Candidates 1 and 2 separate on **x alone**, which makes them independent
+/// of the window's height — and the height is the one dimension this function
+/// cannot know, because it is decided by the note's own words during layout.
+/// A placement that needed the height would have to read the *previous*
+/// frame's measured rect, and `D:/dev/rag/egui/` records what that costs: a
+/// surface whose position depends on its own size oscillates, and the
+/// oscillation is invisible to unit tests and to screenshots alike. Candidate
+/// 3 needs a vertical decision and takes it from the **room available**
+/// (`clip.max.y - anchor.max.y` against `anchor.min.y - clip.min.y`) rather
+/// than from the window's height, for the same reason: room is a property of
+/// the page and the viewport, and nothing about it moves when the window does.
+///
+/// # ⚠ The case that has no answer, named rather than hidden
+///
+/// When the anchor is wider than the viewport minus a pop-up **and** taller
+/// than half of it — an annotation zoomed until it fills the screen — no
+/// candidate clears it, and the preferred origin is used unchanged. That is
+/// honest: at that zoom every position covers part of the subject, and the
+/// operator has the whole rest of the shape to press on. It is stated because
+/// the alternative — refusing to draw the pop-up at all — would make a note
+/// unreadable at exactly the zoom an operator uses to read one.
+///
 /// ★ Only the **origin** comes from the file; the size does not. See
 /// [`POPUP_WIDTH`] for why, and note the consequence: a pop-up whose `/Rect`
 /// is 150 pt wide is drawn 260 pt wide from the same top-left corner, so it
@@ -412,25 +516,28 @@ fn popup(
 /// rectangle is where the window *is*, and how big a window needs to be is a
 /// property of the reader's typeface.
 ///
-/// # ★★ The clamp is a fallback, not the placement
+/// ★★ The file's own rectangle is a *preference*, not a licence to overlap.
+/// A producer that placed a `/Popup` over its own note is asking for a window
+/// the annotation cannot be grabbed through, and honouring that would be
+/// honouring a defect. Candidate 1 keeps the file's origin whenever it clears
+/// the anchor, which is what every `/Popup` a real producer writes does.
 ///
-/// `Area::constrain_to` already keeps the window inside the canvas, so this
-/// does not have to. What it *does* have to do is not hand egui a position off
-/// in the millions: at deep zoom a page point maps to a screen coordinate far
-/// outside any viewport, and an `Area` positioned there is constrained back to
-/// the edge — every pop-up on the sheet stacked in one corner. Clamping the
-/// origin into a slightly-grown viewport first means an off-screen note's
-/// window arrives at the edge *nearest to it*, which is at least a direction.
+/// # ★★ The clamp is still here, and still a fallback
+///
+/// Whatever candidate wins is clamped into a viewport grown by the window's
+/// own size, so that an `Area` is never handed a position off in the millions:
+/// at deep zoom a page point maps to a screen coordinate far outside any
+/// viewport, and an `Area` positioned there is constrained back to the edge —
+/// every pop-up on the sheet stacked in one corner. Clamping into a
+/// slightly-grown viewport first means an off-screen note's window arrives at
+/// the edge *nearest to it*, which is at least a direction.
 fn popup_origin(note: &NoteView, map: &PageMapping, clip: Rect) -> Pos2 {
-    let from_file = note
-        .popup
-        .and_then(|p| p.rect)
-        .map(|rect| map.rect_to_screen(rect).min);
-    let beside = || {
-        let anchor = map.rect_to_screen(note.anchor);
-        Pos2::new(anchor.max.x + POPUP_GAP, anchor.min.y)
-    };
-    let raw = from_file.unwrap_or_else(beside);
+    let anchor = map.rect_to_screen(note.anchor);
+    let preferred = note.popup.and_then(|p| p.rect).map_or_else(
+        || Pos2::new(anchor.max.x + POPUP_GAP, anchor.min.y),
+        |rect| map.rect_to_screen(rect).min,
+    );
+    let raw = clear_of_anchor(preferred, anchor, clip);
     // Grown by the width so a window whose origin is just off the right edge
     // is not slammed to the left edge. `constrain_to` does the real work.
     let room = clip.expand2(egui::vec2(POPUP_WIDTH, POPUP_MAX_BODY));
@@ -438,6 +545,88 @@ fn popup_origin(note: &NoteView, map: &PageMapping, clip: Rect) -> Pos2 {
         raw.x.clamp(room.min.x, room.max.x),
         raw.y.clamp(room.min.y, room.max.y),
     )
+}
+
+/// Move `preferred` off `anchor` if the window it implies would cover it.
+///
+/// Separated from [`popup_origin`] so it can be tested without a
+/// `PageMapping` — the decision is pure rectangle arithmetic and every
+/// interesting case is a specific arrangement of three rectangles, which is
+/// exactly the shape a unit test can state and a driven check cannot.
+///
+/// See [`popup_origin`]'s header for the candidate order and for why the
+/// first two separate on **x alone**. `width` is [`POPUP_BOX_WIDTH`]; the
+/// height is deliberately not a parameter, because this function must not
+/// depend on a quantity that is decided by the window's own contents.
+fn clear_of_anchor(preferred: Pos2, anchor: Rect, clip: Rect) -> Pos2 {
+    // ★★★ **An anchor that is not on screen cannot be covered**, and the
+    // invariant is about a visible one. A note scrolled out of the viewport, or
+    // one at 300,000 % zoom whose rect maps into the millions, gets its
+    // preferred origin unchanged — because the placement that matters for it is
+    // the *direction* it lies in, which `a_note_far_off_screen_is_clamped_
+    // towards_itself` asserts and which pinning the window into the viewport
+    // would destroy. Two rules, and this one comes first because the other has
+    // nothing to protect here.
+    //
+    // ★ The intersection, not the anchor, is what the rest of this function
+    // separates from: for a mark half off the left edge, the half an operator
+    // can actually press on is the half inside the clip, and reserving room
+    // beside the part they cannot see would push the window off the other side
+    // for nothing.
+    let anchor = anchor.intersect(clip);
+    if !anchor.is_positive() {
+        return preferred;
+    }
+    // A window's x-range, given its left edge. Two windows that do not
+    // overlap horizontally cannot overlap at all, whatever their heights.
+    let covers_x = |x: f32| x < anchor.max.x && x + POPUP_BOX_WIDTH > anchor.min.x;
+    // ★★★ …and it is not enough to clear the anchor: the window must also FIT,
+    // because a window that does not is one `Area::constrain_to` will SLIDE —
+    // and sliding is the whole defect. `beside` puts the origin to the right of
+    // the note, which clears it by construction and then, on any note within a
+    // pop-up's width of the right edge, gets pushed straight back on top of it.
+    // Testing `covers_x` alone accepted exactly those placements, which is what
+    // the first two runs of `a_note_against_the_right_edge_puts_its_window_on_
+    // the_left` measured: origin x = 768 in a viewport ending at 772.
+    let fits = |x: f32| x >= clip.min.x && x + POPUP_BOX_WIDTH <= clip.max.x;
+    let usable = |x: f32| !covers_x(x) && fits(x);
+    // 1 — the preferred origin, when it already clears the anchor and fits.
+    if usable(preferred.x) {
+        return preferred;
+    }
+    // 2 — flip to the LEFT of the note, right edge against its left edge.
+    let left = anchor.min.x - POPUP_GAP - POPUP_BOX_WIDTH;
+    if usable(left) {
+        return Pos2::new(left, preferred.y);
+    }
+    // …and the right, which candidate 1 reaches only when the file supplied an
+    // origin of its own or when the right-hand placement did not fit. Written
+    // out rather than assumed away: with no `/Popup` rect `preferred` IS this
+    // position, so the arm is a no-op there and a real choice otherwise.
+    let right = anchor.max.x + POPUP_GAP;
+    if usable(right) {
+        return Pos2::new(right, preferred.y);
+    }
+    // 3 — no horizontal separation is available. Go under the note, or over
+    // it, whichever side of the anchor has more room. `x` is pinned into the
+    // viewport so the window is not immediately slid back by `constrain_to`.
+    let x = preferred
+        .x
+        .min(clip.max.x - POPUP_BOX_WIDTH)
+        .max(clip.min.x);
+    let below = clip.max.y - anchor.max.y;
+    let above = anchor.min.y - clip.min.y;
+    if below >= above {
+        Pos2::new(x, anchor.max.y + POPUP_GAP)
+    } else {
+        // The **top of the viewport**, not "the anchor's top minus the window's
+        // height", and the difference is the header's rule: the height is
+        // decided by the note's own words and must not feed back into the
+        // note's position. Starting at the top uses every point of the room
+        // there is; when the window is shorter than that room it clears the
+        // anchor, and when it is longer nothing could have.
+        Pos2::new(x, clip.min.y)
+    }
 }
 
 /// The pop-up's contents: the title row, the byline, the note, the thread and
@@ -944,6 +1133,190 @@ fn load_draft(ctx: &egui::Context, path: &std::path::Path) -> NoteDraft {
 /// Store the canvas pop-up's note draft.
 fn store_draft(ctx: &egui::Context, path: &std::path::Path, draft: &NoteDraft) {
     ctx.data_mut(|d| d.insert_temp(draft_key(path), draft.clone()));
+}
+
+#[cfg(test)]
+mod placement_tests {
+    use super::*;
+
+    /// A canvas viewport of the shape the driven sweep measured: the central
+    /// panel with a dock on the right, `[[288 174] - [772 758]]`.
+    const CLIP: Rect = Rect {
+        min: Pos2::new(288.0, 174.0),
+        max: Pos2::new(772.0, 758.0),
+    };
+
+    /// The rectangle the pop-up would occupy, given the origin under test.
+    ///
+    /// Height is a stand-in: [`clear_of_anchor`] is specified to separate on
+    /// **x alone** for its first two candidates, so a test that asserted with a
+    /// real height would be asserting something weaker than the contract.
+    fn window(origin: Pos2, height: f32) -> Rect {
+        Rect::from_min_size(origin, egui::vec2(POPUP_BOX_WIDTH, height))
+    }
+
+    /// ★★★ **The 2026-09-05 defect, as an assertion.**
+    ///
+    /// The exact geometry from `dragging_a_markup_moves_it`'s trace: a markup
+    /// selected at `[[464.0 464.5] - [551.7 550.2]]`, whose pop-up was drawn at
+    /// `[[498.0 465.0] - [772.0 565.0]]` — on top of it, so every press meant
+    /// for the shape went to the window instead and neither the move nor the
+    /// resize ever reached the canvas.
+    ///
+    /// With the anchor at x 464–551.7 there is no room on the right
+    /// (551.7 plus 8 plus 276 = 835.7, past the viewport's 772) and none on the
+    /// left (464 minus 8 minus 276 = 180, before the viewport's 288), so this
+    /// exercises candidate 3.
+    #[test]
+    fn the_popup_that_ate_the_drag_is_placed_clear_of_its_annotation() {
+        let anchor = Rect::from_min_max(Pos2::new(464.0, 464.5), Pos2::new(551.7, 550.2));
+        let preferred = Pos2::new(anchor.max.x + POPUP_GAP, anchor.min.y);
+        let origin = clear_of_anchor(preferred, anchor, CLIP);
+        // The measured window was 100 pt tall for a note with no words.
+        let drawn = window(origin, 100.0);
+        assert!(
+            !drawn.intersects(anchor),
+            "the pop-up at {drawn:?} still covers the annotation at {anchor:?} — this is the \
+             state in which a markup could be rotated and could not be moved or resized"
+        );
+        // 290.5 pt above the note against 207.8 below it, so the rule the
+        // header states — the side of the anchor with more room — puts the
+        // window above. Asserted as the *rule*, not as "above": a viewport a
+        // hundred points taller would legitimately answer the other way, and a
+        // test that pinned the direction would fail on a resize rather than on
+        // a regression.
+        let (above, below) = (anchor.min.y - CLIP.min.y, CLIP.max.y - anchor.max.y);
+        assert!(
+            if below >= above {
+                origin.y > anchor.max.y
+            } else {
+                origin.y == CLIP.min.y
+            },
+            "the window went to the side with LESS room: {above:.1} pt above the note, \
+             {below:.1} pt below it, and the origin is {origin:?}"
+        );
+    }
+
+    /// ★ **Candidate 1: a preference that already clears the anchor is kept.**
+    ///
+    /// This is the ordinary case and the one that must not move: a note near
+    /// the left of the sheet has room on its right, and the window goes there,
+    /// byte for byte where it went before this function existed.
+    #[test]
+    fn a_note_with_room_beside_it_keeps_the_placement_it_always_had() {
+        let anchor = Rect::from_min_max(Pos2::new(300.0, 300.0), Pos2::new(360.0, 340.0));
+        let preferred = Pos2::new(anchor.max.x + POPUP_GAP, anchor.min.y);
+        assert_eq!(
+            clear_of_anchor(preferred, anchor, CLIP),
+            preferred,
+            "the right-hand placement fits here, so nothing may be second-guessed"
+        );
+    }
+
+    /// ★★ **Candidate 2: no room on the right, and the flip is to the LEFT —
+    /// not a slide.**
+    ///
+    /// The anchor is pushed against the right edge of the viewport, where
+    /// `Area::constrain_to` used to slide the window back over it. Room on the
+    /// left is 700 − 8 − 276 = 416 ≥ 288, so the left-hand placement is
+    /// available and must be taken.
+    #[test]
+    fn a_note_against_the_right_edge_puts_its_window_on_the_left() {
+        let anchor = Rect::from_min_max(Pos2::new(700.0, 300.0), Pos2::new(760.0, 340.0));
+        let preferred = Pos2::new(anchor.max.x + POPUP_GAP, anchor.min.y);
+        let origin = clear_of_anchor(preferred, anchor, CLIP);
+        assert!(
+            origin.x + POPUP_BOX_WIDTH <= anchor.min.x,
+            "the window at x={} is not clear of an anchor beginning at x={}",
+            origin.x,
+            anchor.min.x
+        );
+        assert!(
+            origin.x >= CLIP.min.x,
+            "…and it must still be inside the canvas viewport"
+        );
+        assert!(
+            !window(origin, 400.0).intersects(anchor),
+            "a horizontal separation has to hold for ANY height — that is why the first two \
+             candidates are decided on x alone"
+        );
+    }
+
+    /// ★★ **Candidate 3 the other way up: more room above than below.**
+    ///
+    /// A note low on the sheet, too wide for either side. The window goes to
+    /// the top of the viewport, which is where every point of the available
+    /// room is.
+    #[test]
+    fn a_wide_note_low_on_the_sheet_puts_its_window_above() {
+        let anchor = Rect::from_min_max(Pos2::new(300.0, 700.0), Pos2::new(760.0, 740.0));
+        let preferred = Pos2::new(anchor.max.x + POPUP_GAP, anchor.min.y);
+        let origin = clear_of_anchor(preferred, anchor, CLIP);
+        assert_eq!(
+            origin.y,
+            CLIP.min.y,
+            "there are {} pt above this note and {} pt below it, so above is the side with room",
+            anchor.min.y - CLIP.min.y,
+            CLIP.max.y - anchor.max.y
+        );
+        assert!(
+            origin.x >= CLIP.min.x && origin.x + POPUP_BOX_WIDTH <= CLIP.max.x,
+            "the x is pinned into the viewport so `constrain_to` has nothing left to slide"
+        );
+    }
+
+    /// ★★ **The file's `/Popup` rectangle is honoured — until it overlaps.**
+    ///
+    /// Two documents, one function. The first names a rectangle beside its
+    /// note and gets exactly that; the second names one on top of its note and
+    /// is overruled, because honouring it would be honouring a defect.
+    #[test]
+    fn a_producers_popup_rectangle_is_kept_unless_it_covers_the_note() {
+        let anchor = Rect::from_min_max(Pos2::new(400.0, 300.0), Pos2::new(440.0, 340.0));
+        let beside = Pos2::new(460.0, 290.0);
+        assert_eq!(
+            clear_of_anchor(beside, anchor, CLIP),
+            beside,
+            "a `/Popup` rect that clears its note is the producer's statement and stands"
+        );
+        let over = Pos2::new(410.0, 305.0);
+        let moved = clear_of_anchor(over, anchor, CLIP);
+        assert_ne!(
+            over, moved,
+            "a `/Popup` rect laid over its own note is overruled"
+        );
+        assert!(
+            !window(moved, 100.0).intersects(anchor),
+            "…and the replacement clears it"
+        );
+    }
+
+    /// ★ **The outer box is wider than the contents, and the gap depends on it.**
+    ///
+    /// [`POPUP_BOX_WIDTH`] exists because `egui::Frame::popup`'s margin sits
+    /// outside `ui.set_max_width(POPUP_WIDTH)`. If the two were ever collapsed
+    /// into one constant the separation would be short by the frame and the
+    /// overlap would come back at the margin — silently, on exactly the notes
+    /// nearest the edge.
+    /// ★ A `const` assertion rather than a runtime one, and the change is not
+    /// cosmetic: clippy refuses `assertions_on_constants` because a runtime
+    /// `assert!` over two constants **can never fail at runtime** — it is
+    /// decided when the crate is compiled, and a test that cannot fail is not
+    /// evidence. `const _: () = assert!(..)` states the same fact where it is
+    /// actually checked: the build stops, with this message, and no test has to
+    /// run at all.
+    ///
+    /// Kept as an assertion rather than deleted because the relationship is
+    /// real and load-bearing — a pop-up's outer box is its contents plus
+    /// `Frame::popup`'s margin and stroke, and the placement arithmetic that
+    /// keeps a window clear of its own annotation is computed from the OUTER
+    /// width. Were the two ever made equal, every placement would be short by
+    /// the frame and the window would creep back over the mark it belongs to,
+    /// which is the defect this module was rewritten to close on 2026-09-05.
+    const _: () = assert!(
+        POPUP_BOX_WIDTH > POPUP_WIDTH,
+        "the box a pop-up occupies is its contents plus `Frame::popup`'s margin and stroke"
+    );
 }
 
 #[cfg(test)]

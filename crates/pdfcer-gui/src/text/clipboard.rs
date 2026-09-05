@@ -455,6 +455,113 @@ fn clipboard_refusal(err: &native_clipboard::PlaceError) -> String {
     }
 }
 
+// ---------------------------------------------------------------------------
+// ★★★ The MODE's refusal — 2026-09-05
+// ---------------------------------------------------------------------------
+//
+// A third family, and it is deliberately not folded into `refusal` above. The
+// two are different kinds of "no" and the operator's next move differs, which
+// is this file's own stated rule for splitting a refusal out:
+//
+// - `Refusal` is the **clipboard's** answer — *nothing is selected*, *nothing
+//   was copied*, *this cut would not survive*. It is about the operand.
+// - `ModeRefusal` is the **stance's** answer — *this mode does not do that*.
+//   Nothing is wrong with the operand at all; the operator has told pdfcer
+//   which interface they want and this verb is not in it. The remedy is a
+//   two-inch move of the mode selector, and the sentence has to say so or the
+//   press looks broken.
+//
+// ⇒ It reaches the operator through `app::status::decline`, which wears `⊗`
+// and means *nothing happened* — NOT through `app::actions::record_note`,
+// which draws under `⚑ About your last edit:` and would report a press where
+// nothing happened as an edit. `app::status::decline::textedit`'s header
+// carries the full argument for that distinction; this is its fourth
+// application.
+
+/// **Which clipboard verb the active mode refused, and what it was about.**
+///
+/// # ★★★ Why the operand is in the variant and not only the verb
+///
+/// Because the remedy differs by operand, and the remedy is the whole point of
+/// saying anything. In **Review** a paste of a comment is permitted and a paste
+/// of page content is not, so *"this mode cannot paste"* would be false half
+/// the time and useless the other half. The six sentences below name the mode
+/// that CAN do it, which is a fact only the operand determines.
+///
+/// # ★★ The mode names are literals here, and a test pins them
+///
+/// `line` returns `&'static str` because [`crate::app::status::decline`]'s own
+/// `line` does, and threading a `String` through that enum for one family would
+/// change nineteen arms. So *"Edit"* and *"Review"* are written out rather than
+/// built from [`crate::text::ribbon::mode_edit`] — and
+/// [`tests::every_mode_refusal_names_a_mode_the_selector_actually_offers`]
+/// asserts they are the selector's own words, so a rename of a mode fails here
+/// instead of leaving the operator directed at a control that no longer exists.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ModeRefusal {
+    /// `edit.paste` with **page content** on the clipboard, in a mode that does
+    /// not author page content.
+    PasteContent,
+    /// `edit.paste` with a **comment or markup** on the clipboard — or with
+    /// nothing on it — in a mode that authors no markup.
+    ///
+    /// ★ The empty clipboard lands here on purpose: in Read, *"nothing has been
+    /// copied"* would be true and useless, because copying something would not
+    /// help. `app::dispatch::clipboard`'s paste gate says the same thing in the
+    /// same words at the point it makes the choice.
+    PasteMarkup,
+    /// `edit.paste` with a **form field** on the clipboard, in a mode that does
+    /// not author page content. A field is part of the document rather than a
+    /// comment on it.
+    PasteField,
+    /// `edit.cut` over **page content**, in a mode that does not change it.
+    CutContent,
+    /// `edit.cut` over a **comment or markup**, in a mode that authors none.
+    CutMarkup,
+    /// `edit.cut` over a **form field**, in a mode that does not change page
+    /// content.
+    CutField,
+}
+
+impl ModeRefusal {
+    /// The sentence for this refusal.
+    ///
+    /// Each one does three things, in this order, and the order is the design:
+    /// it names **what was on the clipboard or under the pointer**, so the
+    /// operator knows pdfcer understood the gesture; it states **the stance**
+    /// rather than an error, because nothing went wrong; and it names **the
+    /// mode that can do it**, because that is the operator's next move and it
+    /// is one control away.
+    ///
+    /// ★ The three cut sentences add *"Nothing has been removed"*. A cut that
+    /// is refused after the operator has watched a selection sit there is the
+    /// one case in this family where they might reasonably fear the document
+    /// changed, and rule 4 says the disclosure goes where the doubt is.
+    #[must_use]
+    pub fn line(self) -> &'static str {
+        match self {
+            Self::PasteContent => {
+                "The clipboard holds page content — a line, a shape or a piece of text — and this mode does not change what is on the page. Switch to Edit to paste it."
+            }
+            Self::PasteMarkup => {
+                "This mode does not add comments or markup to a document. Switch to Review to paste this, or to Edit."
+            }
+            Self::PasteField => {
+                "The clipboard holds a form field, which is part of the document rather than a comment on it, and this mode does not change what is on the page. Switch to Edit to paste it."
+            }
+            Self::CutContent => {
+                "That is page content, and this mode does not change what is on the page. Nothing has been removed — switch to Edit to cut it."
+            }
+            Self::CutMarkup => {
+                "This mode does not remove comments or markup. Nothing has been removed — switch to Review to cut this, or to Edit."
+            }
+            Self::CutField => {
+                "That is a form field, which is part of the document rather than a comment on it, and this mode does not change what is on the page. Nothing has been removed — switch to Edit to cut it."
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -552,6 +659,71 @@ mod tests {
                 "★ ui-verify's `ctrl_c_copies_text_to_the_os_clipboard` greps for this exact \
                  substring to tell an object copy from a text copy; a branch without it makes \
                  that check unable to detect the defect it exists for"
+            );
+        }
+    }
+
+    /// ★★★ **Every mode refusal names a mode the selector actually offers.**
+    ///
+    /// `ModeRefusal::line` returns `&'static str`, so *"Edit"* and *"Review"*
+    /// are written out rather than built from `crate::text::ribbon`. This is
+    /// what stops that being a quiet duplication: rename a mode and this fails
+    /// and names the sentence, instead of leaving the operator directed at a
+    /// control that no longer exists.
+    #[test]
+    fn every_mode_refusal_names_a_mode_the_selector_actually_offers() {
+        use crate::text::ribbon;
+        let edit = ribbon::mode_edit();
+        let review = ribbon::mode_review();
+        for (why, must_name) in [
+            (ModeRefusal::PasteContent, edit),
+            (ModeRefusal::PasteMarkup, review),
+            (ModeRefusal::PasteField, edit),
+            (ModeRefusal::CutContent, edit),
+            (ModeRefusal::CutMarkup, review),
+            (ModeRefusal::CutField, edit),
+        ] {
+            let line = why.line();
+            assert!(
+                line.contains(must_name),
+                "{why:?} must send the operator to `{must_name}`: {line}"
+            );
+        }
+    }
+
+    /// ★★ **Every one of the six is a distinct sentence**, and the three cut
+    /// sentences say the document is unchanged.
+    ///
+    /// Six variants exist only because the remedy differs by operand; two
+    /// wearing the same words would be five variants pretending to be six. And
+    /// a refused CUT is the one case in this family where an operator might
+    /// reasonably fear something was removed, so rule 4 puts the disclosure
+    /// where the doubt is.
+    #[test]
+    fn the_six_mode_refusals_are_six_sentences_and_the_cuts_reassure() {
+        let all = [
+            ModeRefusal::PasteContent,
+            ModeRefusal::PasteMarkup,
+            ModeRefusal::PasteField,
+            ModeRefusal::CutContent,
+            ModeRefusal::CutMarkup,
+            ModeRefusal::CutField,
+        ];
+        let mut lines: Vec<&str> = all.iter().map(|w| w.line()).collect();
+        lines.sort_unstable();
+        let distinct = lines.len();
+        lines.dedup();
+        assert_eq!(distinct, lines.len(), "two refusals share a sentence");
+
+        for why in [
+            ModeRefusal::CutContent,
+            ModeRefusal::CutMarkup,
+            ModeRefusal::CutField,
+        ] {
+            assert!(
+                why.line().contains("Nothing has been removed"),
+                "a refused cut must say the document is unchanged: {}",
+                why.line()
             );
         }
     }

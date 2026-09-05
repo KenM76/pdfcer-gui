@@ -237,7 +237,7 @@ impl super::DimensionGroupsUi {
     /// re-seeded because... it is not, and this is the honest limitation.
     ///
     /// ★ **The draft does NOT follow the document while it is being typed**,
-    /// deliberately, and that differs from `panels::properties::info`'s
+    /// deliberately, and that differs from `panels::docprops`'s
     /// epoch-reseed. The difference is what the two fields are: a metadata box
     /// commits on focus loss and is otherwise idle, so re-seeding it costs
     /// nothing; a rename box is typed into and then committed by a button, and

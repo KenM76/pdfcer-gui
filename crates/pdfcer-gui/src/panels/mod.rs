@@ -1,6 +1,6 @@
 //! # `panels` — the dock's panel bodies
 //!
-//! Ten panels, each a **function the dock can call**. This module owns the
+//! **Thirteen** panels, each a **function the dock can call**. This module owns the
 //! set, the dispatch, the little state the bodies share, and the two layout
 //! rules that every one of them has to get right.
 //!
@@ -13,6 +13,7 @@
 //! | [`fonts`] | `file.fonts` | `panels_structure.rs` |
 //! | [`objects`] | `view.panel_objects` | `main.rs` + `object_provider.rs` + `object_summary.rs` |
 //! | [`properties`] | `file.properties` | **new** — `RIBBON_IA.md` §5.8 |
+//! | [`docprops`] | `file.document_properties` — **new 2026-09-05**; see that variant | **new** — was the last section of [`properties`] |
 //! | [`forms`] | `view.panel_forms` — moved off Edit so Read can reach it | `panels_forms.rs` |
 //! | [`pages`] | `view.panel_pages` — **not registered; see that module** | `main.rs::thumbnail_rail` + `raster::ThumbnailCache` |
 //! | [`comments`] | `markup.comments` — **not** a `view.panel_*` id; see that variant | `main.rs::comments_panel` |
@@ -157,6 +158,10 @@ pub mod attachments;
 pub mod bookmarks;
 pub mod comments;
 pub mod dimension_groups;
+/// ★★★ **The document's own properties**, a panel since 2026-09-05 — the
+/// operator: *"it needs to get out of there and be in its own document
+/// properties tab."* Was `properties::info`; its header carries the move.
+pub mod docprops;
 pub mod fonts;
 pub mod forms;
 pub mod layers;
@@ -190,8 +195,51 @@ pub enum Panel {
     Fonts,
     /// Everything drawn on the current page.
     Objects,
-    /// The read-only facts about one object.
+    /// The read-only facts about one object — **and about nothing else**.
+    ///
+    /// ★★ Since 2026-09-05 that clause is the variant's whole scope, where
+    /// before it was half of it. `file.properties`' tooltip commissioned two
+    /// subjects in one sentence — *"The document's own title, author, subject
+    /// and keywords, and the properties of whatever is selected on the page"* —
+    /// and the panel drew both, the second permanently. The operator ruled
+    /// otherwise; the document half is [`Self::DocumentProperties`].
     Properties,
+    /// **The document's own title, author, subject and keywords**, and the
+    /// facts pdfcer read about the file — `file.document_properties`.
+    ///
+    /// ★★★ **The operator, 2026-09-05:** *"the document properties are still
+    /// always visible in the properties tab. it needs to get out of there and
+    /// be in its own document properties tab."*
+    ///
+    /// It is the seventh panel whose command is not on View ▸ Panels, and the
+    /// placement needed no argument of its own: `RIBBON_IA.md` §5.1's **File ▸
+    /// Document** band is *"inspection of what is inside the file"* and already
+    /// holds Properties and Fonts. A document's title is inside the file.
+    ///
+    /// ★★ **A new id rather than a second meaning for `file.properties`.**
+    /// [`Self::command_id`] is the single binding between a command and a
+    /// panel, and `crate::app::dispatch` resolves toggles through
+    /// [`Self::from_command_id`] — so one id cannot open two panels, and a
+    /// second spelling of an existing id would have been a second thing to keep
+    /// in step. `crate::app::modes::defaults`' own `comments()` and `pages()`
+    /// record what that costs when it is got wrong: an id no code has ever
+    /// resolved is a guess, and that one was wrong for weeks.
+    ///
+    /// ★ **A toggle, unlike [`Self::Properties`].** It falls through
+    /// `dispatch`'s guard arm to `toggle_panel` because its control asks *"is
+    /// this panel open?"*, which is the question `file.fonts` and the whole
+    /// `view.panel_*` family ask. `file.properties` is show-only for a reason
+    /// that does not apply here: it is offered by the **Objects row context
+    /// menu** to describe the row just clicked, and a second invocation that
+    /// closed the description would be hostile. Nothing offers this command to
+    /// describe anything.
+    ///
+    /// **Mounted by all three modes.** Reading a document's title is reading,
+    /// and Read is shown the `file` tab — so unlike [`Self::Redact`] and
+    /// [`Self::Attachments`], a mode that mounts this panel can always reopen
+    /// it after closing it, which is the trap [`Self::Forms`] had to move off
+    /// the Edit tab to escape.
+    DocumentProperties,
     /// The document's form fields, for **filling** — not for authoring.
     ///
     /// The distinction is the panel's whole scope and is worth stating at
@@ -303,7 +351,7 @@ impl Panel {
     /// is added — so [`tests::the_panel_catalog_is_complete`] pins its
     /// length against a match that the compiler *does* check, which is the
     /// only way to make a hand-written catalog self-defending.
-    pub const ALL: [Self; 12] = [
+    pub const ALL: [Self; 13] = [
         Self::Attachments,
         Self::Bookmarks,
         Self::Layers,
@@ -311,6 +359,7 @@ impl Panel {
         Self::Fonts,
         Self::Objects,
         Self::Properties,
+        Self::DocumentProperties,
         Self::Forms,
         Self::Pages,
         Self::Comments,
@@ -333,11 +382,15 @@ impl Panel {
     /// - **Fonts is `file.fonts`.** §7's migration map moves it from View ▸
     ///   Panels to File ▸ Document, because the Fonts panel answers "what is
     ///   inside this file", not "what is on my screen".
-    /// - **Properties is `file.properties`**, whose tooltip commissions both
-    ///   halves: *"The document's own title, author, subject and keywords,
-    ///   and the properties of whatever is selected on the page."* Only the
-    ///   second half is built here; the first needs a `/Info` accessor that
-    ///   `pdfcer-core` does not expose on `Document` at all.
+    /// - **Properties is `file.properties`.** ★★ Its tooltip used to commission
+    ///   both halves of one panel — *"The document's own title, author, subject
+    ///   and keywords, and the properties of whatever is selected on the
+    ///   page."* Since 2026-09-05 those are two panels and two commands, on the
+    ///   operator's instruction, and the tooltip says only what its own panel
+    ///   does. See [`Self::DocumentProperties`].
+    /// - **Document properties is `file.document_properties`**, beside it in
+    ///   File ▸ Document for the reason Fonts is there: it answers *"what is
+    ///   inside this file"*.
     #[must_use]
     pub fn command_id(self) -> &'static str {
         match self {
@@ -356,6 +409,12 @@ impl Panel {
             Self::Fonts => "file.fonts",
             Self::Objects => "view.panel_objects",
             Self::Properties => "file.properties",
+            // ★ The seventh id that is not a `view.panel_*`, and the one that
+            // needed no argument: File ▸ Document is the band for *"what is
+            // inside this file"*, and it already holds Properties and Fonts.
+            // See the variant for why it is a NEW id rather than a second
+            // meaning for the one above it.
+            Self::DocumentProperties => "file.document_properties",
             // ★ **On View ▸ Panels since 2026-08-14**, and it was on Edit
             // before that. `RIBBON_IA.md`'s placement was the Edit tab, on
             // the argument that a form panel answers "what can I fill in
@@ -531,6 +590,7 @@ impl Panel {
             Self::Fonts => fonts::body(ui, doc, state, actions),
             Self::Objects => return objects::body(ui, doc, state, host, actions),
             Self::Properties => properties::body(ui, doc, state, actions),
+            Self::DocumentProperties => docprops::body(ui, doc, state.docprops_mut(), actions),
             Self::Forms => forms::body(ui, doc, state, actions),
             // The second panel with a menu, and the second `return` for the
             // same reason: it has tokens to hand back.
@@ -666,7 +726,7 @@ pub struct PanelsState {
     /// about not confusing the operator rather than about not marking the
     /// wrong document.
     layers_search: String,
-    /// The Properties panel's half-typed document metadata.
+    /// The **Document properties** panel's half-typed metadata.
     ///
     /// Here for [`Self::pages`]' reason and one of its own: a `TextEdit` needs
     /// a `&mut String` that survives the frame, and a panel body is handed
@@ -677,7 +737,13 @@ pub struct PanelsState {
     /// more here than for a search term: a half-typed `/Author` carried into a
     /// second file would be written into **that** file's metadata by the next
     /// focus change, silently, in a field nobody looks at twice.
-    properties: properties::info::InfoDrafts,
+    ///
+    /// ★★ Named `properties` until 2026-09-05, when the section became
+    /// [`Panel::DocumentProperties`]. Renamed with it rather than left: a field
+    /// named after the panel that no longer draws it is how the next reader
+    /// looks in the wrong place, and this struct already holds a `geometry`, a
+    /// `text_style` and a `text_object` that ARE the Properties panel's.
+    docprops: docprops::InfoDrafts,
     /// The form-field rename draft, and which field it is for. See
     /// [`Self::field_rename_mut`] for why the key is stored beside it.
     field_rename: String,
@@ -1014,13 +1080,16 @@ impl PanelsState {
         &mut self.redact
     }
 
-    /// The Properties panel's document-metadata drafts.
+    /// The **Document properties** panel's metadata drafts.
     ///
     /// Same shape as [`Self::pages_mut`] and [`Self::redact_mut`]: the body is
     /// handed `&mut PanelsState` and reaches its own state through an
     /// accessor, so the field stays private and no other panel can write it.
-    pub fn properties_mut(&mut self) -> &mut properties::info::InfoDrafts {
-        &mut self.properties
+    ///
+    /// ★ Was `properties_mut` until 2026-09-05. Renamed with the panel, and the
+    /// rename is what makes the compiler point at every caller — there was one.
+    pub fn docprops_mut(&mut self) -> &mut docprops::InfoDrafts {
+        &mut self.docprops
     }
 
     /// **The Comments panel's note draft.**

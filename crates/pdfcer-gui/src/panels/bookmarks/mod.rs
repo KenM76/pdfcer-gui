@@ -249,7 +249,7 @@ pub struct BookmarksUi {
 impl std::fmt::Debug for BookmarksUi {
     /// The drafts' **lengths**, not their text: a bookmark's name is the
     /// operator's own words about their drawing, and this reaches a trace file
-    /// a harness keeps. `panels::properties::info` makes the same choice for
+    /// a harness keeps. `panels::docprops` makes the same choice for
     /// `/Info`.
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("BookmarksUi")
@@ -294,7 +294,7 @@ impl BookmarksUi {
     /// *Stale* means **held for a different bookmark** - see [`Self::rename`].
     ///
     /// ★ **The draft does NOT follow the document while it is being typed**,
-    /// deliberately, and that differs from `panels::properties::info`'s
+    /// deliberately, and that differs from `panels::docprops`'s
     /// epoch-reseed. The difference is what the two fields are: a metadata box
     /// commits on focus loss and is otherwise idle, so re-seeding it costs
     /// nothing; a rename box is typed into and then committed, and an epoch

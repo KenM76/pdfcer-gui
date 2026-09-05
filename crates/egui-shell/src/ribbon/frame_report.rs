@@ -108,4 +108,23 @@ pub struct FrameReport {
     pub overflow_id: Option<egui::Id>,
     /// How many commands the operator invoked.
     pub commands_invoked: usize,
+    /// **What the band did about auto-hide this frame** —
+    /// [`crate::peek::Show`].
+    ///
+    /// [`crate::peek::Show::Inline`] is the ordinary ribbon: the band is part
+    /// of the layout and the application's top panel is as tall as it.
+    /// [`crate::peek::Show::Overlay`] means the operator has auto-hide on and
+    /// the pointer is over the tab strip, so the band is painted *over* the
+    /// document and the top panel is only the strip.
+    /// [`crate::peek::Show::Hidden`] is the resting state of that setting.
+    ///
+    /// ★★ Published because the three are **indistinguishable from the other
+    /// counts on this report**. `groups_rendered` is the same for an inline
+    /// band and an overlaid one, and zero for a hidden band and for a tab
+    /// whose every group went into the overflow menu. A driven check that
+    /// asserted "the band drew nothing" could not tell auto-hide working from
+    /// a ribbon that had lost its groups —
+    /// `D:/dev/rag/egui/a_driven_checks_oracle_must_be_able_to_distinguish_the_defect_from_the_fix.md`
+    /// is that exact failure, on this exact surface.
+    pub band_show: crate::peek::Show,
 }

@@ -780,6 +780,34 @@ pub const fn view_dock_all_panels() -> CommandText {
     )
 }
 
+/// **Auto-hide the ribbon** — his instruction of 2026-09-05.
+///
+/// The wording says what he will SEE, not what the setting is called: the tab
+/// names stay, the buttons go until the pointer arrives, and the drawing does
+/// not move. The last clause is there because it is the property that makes the
+/// setting usable rather than nauseating, and an operator deciding whether to
+/// turn it on cannot know it otherwise.
+#[must_use]
+pub const fn view_ribbon_auto_hide() -> CommandText {
+    CommandText::new(
+        "Auto-hide ribbon",
+        "Keep the row of tab names and hide the buttons under it until you move the pointer \
+         onto that row. The buttons then appear OVER the drawing, so nothing you were about to \
+         click moves. Press this again to keep them showing.",
+    )
+}
+
+/// **Auto-hide the left strip** — the same instruction, the other surface.
+#[must_use]
+pub const fn view_rail_auto_hide() -> CommandText {
+    CommandText::new(
+        "Auto-hide left strip",
+        "Shrink the strip of panel and tool buttons down the left edge to a narrow marked band, \
+         and bring it back when you move the pointer onto that band. It appears OVER the panel \
+         beside it, so the panel does not change width. Press this again to keep it showing.",
+    )
+}
+
 #[must_use]
 pub const fn view_reset_layout() -> CommandText {
     CommandText::new(

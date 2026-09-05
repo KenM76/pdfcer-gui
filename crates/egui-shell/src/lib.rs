@@ -126,6 +126,7 @@ pub mod dock;
 pub mod layout;
 pub mod manifest;
 pub mod menu;
+pub mod peek;
 pub mod ribbon;
 /// **The document tab strip** — the row of tabs an application draws when the
 /// operator has several documents open at once.
@@ -147,5 +148,6 @@ pub use layout::{
 };
 pub use manifest::{Group, Item, Keymap, Mode, Qat, Shell, Tab};
 pub use menu::{ContextMenu, Menu, MenuLookup, Menus, Shortcuts};
+pub use peek::{AutoHide, Peek, Show};
 pub use ribbon::{FrameReport, Ribbon, RibbonState};
 pub use theme::{Metrics, Overlays, Palette, Preset, Theme};
