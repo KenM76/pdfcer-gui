@@ -9,27 +9,33 @@
 > to save up for. ⚠ **One driven run at a time** — the harness moves the real
 > cursor; check `tasklist | grep -icE "^(pdfcer-gui|ui-verify)\.exe"` first.
 >
-> **State at `fe488b2`:** engine **v0.38.0 `b01964f`** ⚠ *(v0.39.0 exists and is
-> NOT yet pulled — see below)*. `cargo test --workspace` **3,470 passing, 0
-> failing**; gates **29 of 29**. **Re-measure before quoting any of these.**
+> **State: engine v0.40.0 at `03f6004`** — read from `Cargo.lock`, which is the
+> only thing here worth trusting without re-running it. **Every count below and
+> throughout this file is stale by construction: MEASURE, do not quote.** The
+> commands are further down.
 >
 > ---
 >
-> ⬜ **DO THIS FIRST: bump the engine to v0.39.0.** It carries three fixes to
-> defects *we* reported today — his `add_text` duplication (`Pass 251.0`), the
-> reflow that silently deleted added text, and `set_encryption` ignoring a
-> pending redaction. **Not done yet only because a driven sweep was in flight
-> and the bump would have changed the binary under it.**
+> ✅ **The two "DO THIS FIRST" items that stood here are DONE, and this line
+> replaces them because a completed instruction left standing is worse than no
+> instruction.** A cold session read them, went to do the work, and found it
+> already in the tree.
 >
-> ⚠ **And the bump makes one of our own guards obsolete — delete it in the same
-> commit.** `ReflowRefusal::PageAlreadyEdited`
-> (`app/actions/textstyle.rs:657`, raised in `app/dispatch/text.rs`) is an
-> **over-broad forecast**: it refuses reflow on any page edited this session,
-> because `reflow_block` used to check only `contents[0]` and would silently
-> DELETE text added to an appended stream. v0.39.0 refuses that case **by name**
-> — the engine's reply says in as many words *"you can drop your over-broad
-> forecast gate"*. A workaround kept past its cause rots, and this one costs him
-> reflow on pages that are now fine.
+> - The engine bump: asked for v0.39.0, and the lock is at **v0.40.0**, two
+>   releases past it.
+> - `ReflowRefusal::PageAlreadyEdited`'s over-broad forecast: **deleted
+>   2026-09-05.** The variant still exists and should — it is now raised *from
+>   the engine's answer* rather than ahead of it, which is the whole point.
+>   `app/actions/textstyle.rs:657` and `text/textedit.rs:265` carry the
+>   reasoning.
+>
+> ⚠ **This is the second time this file has aged into a falsehood at the head,
+> and the mechanism is worth naming.** A `⬜ DO THIS FIRST` block is written
+> when it is the most urgent thing in the project, so it is placed where it
+> cannot be missed — and then discharged by whoever does the work *in the code*,
+> where this file cannot see it. **Nothing closes the loop but a person.** When
+> you finish something this block names, strike it in the same commit as the
+> code, not at session end.
 >
 > ---
 >
