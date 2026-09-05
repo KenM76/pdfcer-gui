@@ -21,6 +21,16 @@
 > pending redaction. **Not done yet only because a driven sweep was in flight
 > and the bump would have changed the binary under it.**
 >
+> ⚠ **And the bump makes one of our own guards obsolete — delete it in the same
+> commit.** `ReflowRefusal::PageAlreadyEdited`
+> (`app/actions/textstyle.rs:657`, raised in `app/dispatch/text.rs`) is an
+> **over-broad forecast**: it refuses reflow on any page edited this session,
+> because `reflow_block` used to check only `contents[0]` and would silently
+> DELETE text added to an appended stream. v0.39.0 refuses that case **by name**
+> — the engine's reply says in as many words *"you can drop your over-broad
+> forecast gate"*. A workaround kept past its cause rots, and this one costs him
+> reflow on pages that are now fine.
+>
 > ---
 >
 > ★★★ **THE FINDING OF THE DAY: A DRIVEN FAIL IS A CLAIM ABOUT THE CHECK TOO.**
