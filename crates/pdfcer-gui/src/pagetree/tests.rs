@@ -402,24 +402,42 @@ fn the_real_corrupt_file_is_caught() {
         "one page was removed from the structure: {audit:?}"
     );
 
-    if audit.is_consistent() {
-        println!(
-            "SKIP: pdfcer-core now updates every ancestor's /Count. \
-             the guard's own behaviour is still asserted by \
-             a_stale_root_above_a_correct_parent_is_caught; delete this test's \
-             engine half and the request file with it."
-        );
-        return;
-    }
-
-    // The measured shape, v0.38.0 `b01964f`: the immediate parent is correct
-    // and EVERY node above it is stale. Root declares 12 over 11 reachable —
-    // one blank page at the end in Acrobat, which is the operator's report.
-    let root = audit.root_disagreement().expect("the root is stale");
-    assert_eq!((root.declared, root.reachable), (12, 11), "{audit:?}");
+    // ★★★ **THE SKIP FIRED, AND IS NOW AN ASSERTION — 2026-09-05.**
+    //
+    // This branch used to `println!("SKIP: …")` and return the moment the engine
+    // began updating every ancestor. It did, within hours of being reported —
+    // `Pass 251.1`, `e4cefcd` — and on the bump to `pdfcer-core b1033ab` this
+    // test walked the **real written bytes** and found every node consistent.
+    //
+    // ⇒ So the hopeful skip becomes a **standing assertion that the fix is
+    // still there.** A `println!` inside a passing test is not evidence of
+    // anything, and this project's own rule says why: *a SKIP is not red, so a
+    // check can stop running unnoticed.* A skip that has served its purpose is
+    // the clearest case of it — left alone, an engine regression would re-open
+    // his defect while this test reported `ok` and printed a sentence nobody
+    // reads.
+    //
+    // What it pins is his own reported symptom, end to end: delete one page
+    // from a **three-level** tree through the real `EditSession`, serialise it,
+    // re-read the bytes, and every `/Pages` node agrees with the leaves beneath
+    // it. Two levels cannot make this claim — with the parent's parent being
+    // the root, "no upward walk" and "a walk that stops one short" are the same
+    // observation, which is why the fixture is three deep.
+    //
+    // ⚠ The broken shape, recorded because the numbers are the diagnosis and
+    // the file that carried them is not in git: on v0.38.0 `b01964f` the
+    // immediate parent was correct and **every node above it was stale** — the
+    // root declaring **12 against 11 reachable**, i.e. one blank page at the end
+    // in Acrobat, which is exactly what he reported. `audit.disagreements` held
+    // at least two, because there was no upward walk at all rather than one that
+    // stopped short.
     assert!(
-        audit.disagreements.len() >= 2,
-        "the grandparent is stale too — there is no upward walk at all: {audit:?}"
+        audit.is_consistent(),
+        "★★★ REGRESSION: pdfcer-core has stopped decrementing /Count on every \
+         page-tree ancestor. That is the defect the operator reported on \
+         2026-09-05 — `blank pages at the end of the document equalling the \
+         number of pages I deleted` — fixed in Pass 251.1 and now back. \
+         {audit:?}"
     );
 }
 
