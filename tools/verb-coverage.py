@@ -166,21 +166,83 @@ def engine_verbs_from(text: str) -> list[str]:
     return sorted(set(out))
 
 
+# A `//` line comment, to end of line, and a `/* */` block comment.
+#
+# ⚠ Deliberately naive about `//` inside a string literal — a URL in a `&str`
+# swallows the rest of that line. **That direction of error is the safe one:**
+# swallowing code can only make a verb look UNCALLED, which turns this gate red
+# and sends someone to look. The opposite error — counting prose as a call — is
+# the one that hides a capability for days, and it is what this function was
+# changed to stop.
+LINE_COMMENT = re.compile(r"//[^\n]*")
+BLOCK_COMMENT = re.compile(r"/\*.*?\*/", re.S)
+
+
+def strip_comments(text: str) -> str:
+    """Blank out comments, preserving length and line structure.
+
+    Each comment becomes the same number of spaces rather than being deleted,
+    so the regex that runs next cannot accidentally join two identifiers that
+    sat on either side of one.
+    """
+    text = BLOCK_COMMENT.sub(lambda m: " " * len(m.group(0)), text)
+    return LINE_COMMENT.sub(lambda m: " " * len(m.group(0)), text)
+
+
 def gui_hits(names: list[str], root: pathlib.Path) -> dict[str, int]:
-    """How many times each identifier appears across the shell's sources.
+    """How many times each verb is CALLED across the shell's sources.
 
     One pass over the tree holding every file in memory once, rather than a
     grep per name: 177 names over ~400 files is 70,000 file reads the naive
     way, which took long enough that the first version of this script was
     unusable on Windows.
+
+    ## ★★★ Why this is no longer "the name appears anywhere" — 2026-09-05
+
+    It was, and on 2026-09-05 the new `tools/gates/check-engine-api-drift.py`
+    caught what that cost. `pdfcer-core` had shipped **`pdfcer_core::sign`** —
+    101 public items, an entire digital-signing subsystem, written in answer to
+    *this shell's own* 2026-09-03 request. This gate scored `EditSession::sign`
+    **consumed**, because the word `sign` occurs 42 times under
+    `crates/pdfcer-gui/src` and the first two are in `app/actions/bookmarks.rs`,
+    in a doc table about **the arithmetic sign of `/Count`**.
+
+    ⇒ A capability the operator asked for was discharged by a comment about
+    positive and negative numbers.
+
+    This is the shape the project keeps meeting: **a proxy condition that
+    survives one correction.** Name-appears-anywhere was chosen because it is
+    cheap and it *reads* like "does the shell know this verb exists". What it
+    measures is "does this English word occur", so every verb whose name is
+    also an ordinary word — `sign`, `merge`, `split`, `count`, `set`, `move`,
+    `insert`, `close`, `open` — was permanently and silently exempt.
+
+    ## What counts as a hit now
+
+    The name must be **call-shaped**: followed by `(`, with no identifier
+    character before it. That admits `session.sign(`, `EditSession::sign(` and
+    a bare `sign(`; it rejects the word `sign` in a sentence.
+
+    And comments are blanked first, so a doc comment that *mentions*
+    `session.sign(…)` while describing work not yet done cannot discharge the
+    verb either. Both filters are needed and neither subsumes the other: the
+    first kills prose, the second kills aspirational examples, and this project
+    has been fooled by both.
+
+    ⚠ A hit remains WEAK evidence. A name being called somewhere is not a live
+    route to the operator — that is `ui-verify`'s question, not this gate's.
+    All this measurement now refuses to do is call prose a call.
     """
     blobs = [
-        p.read_text(encoding="utf-8", errors="replace")
+        strip_comments(p.read_text(encoding="utf-8", errors="replace"))
         for p in root.rglob("*.rs")
     ]
     counts = {}
     for name in names:
-        pattern = re.compile(r"\b" + re.escape(name) + r"\b")
+        # `(?<![A-Za-z0-9_])` rather than `\b`, because the intent is stated
+        # directly: nothing that could be part of a longer identifier may
+        # precede the name. `\s*\(` is what makes it a CALL and not a word.
+        pattern = re.compile(r"(?<![A-Za-z0-9_])" + re.escape(name) + r"\s*\(")
         counts[name] = sum(len(pattern.findall(b)) for b in blobs)
     return counts
 

@@ -87,7 +87,12 @@ set -u
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT" || exit 1
 
-REGISTER="EDITABLE_SURFACES.md"
+# Overridable so this gate can be PROVEN FALLIBLE without editing the committed
+# register — the same affordance `check-engine-backlog.sh` gives via
+# `PDFCER_ENGINE_BACKLOG`, and for the same reason: a falsification that needs a
+# `git checkout` to undo is one that will discard another track's uncommitted
+# work the first time it is run during parallel sessions.
+REGISTER="${PDFCER_EDITABLE_SURFACES:-EDITABLE_SURFACES.md}"
 INSTRUMENT="tools/verb-coverage.py"
 
 if [ ! -f "$REGISTER" ]; then
@@ -135,9 +140,32 @@ COUNT=0
 while IFS= read -r verb; do
   [ -z "$verb" ] && continue
   COUNT=$((COUNT + 1))
-  # Fixed-string, backticked. A bare name would match prose about a different
-  # topic; the backticks are how this register names a verb everywhere.
-  if ! grep -qF -- "\`${verb}\`" "$REGISTER"; then
+  # Fixed-string, backticked, AND ONLY INSIDE A TABLE ROW.
+  #
+  # ★★★ **The row restriction was added 2026-09-05, after prose switched this
+  # gate off by accident.**
+  #
+  # It used to search the whole file. A session writing the register's rows
+  # opened its section with a paragraph naming, in backticks, the five verbs
+  # that were **deliberately out of scope** — saying plainly that they were NOT
+  # accounted for. This gate read those backticks, and went from naming five
+  # unexplained verbs to `PASS: all 41`, on a change that wired nothing.
+  #
+  # ⇒ **Prose ABOUT a verb is indistinguishable from prose ACCOUNTING FOR a
+  # verb**, to an instrument that cannot read English. The header of this file
+  # already calls that inability a deliberate weakness; what nobody had written
+  # down is that the weakness runs in **both directions** — it can hide a gap
+  # just as easily as it can report one.
+  #
+  # A row is the unit the register actually uses to discharge a verb: `| verb |
+  # pass | status |`. Restricting the match to lines beginning with `|` means an
+  # explanation must be *entered in the table* to count, and a sentence in an
+  # introduction — however emphatic — cannot silence anything.
+  #
+  # ⚠ Still fixed-string and still row-level, not first-cell. The register has a
+  # legitimate table of ALTERNATE SPELLINGS whose reason cell names the verb the
+  # shell calls instead, and a first-cell rule would reject those.
+  if ! grep '^|' "$REGISTER" | grep -qF -- "\`${verb}\`"; then
     printf '%s\n' "$verb" >> "$UNEXPLAINED_FILE"
   fi
 done <<EOF

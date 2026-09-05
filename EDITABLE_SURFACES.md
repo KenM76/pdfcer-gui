@@ -135,7 +135,15 @@ operator's machine.
 
 ## The misses, each with its reason
 
-**Currently 12, at lock `04f7ec0` (2026-09-04).** This heading used to carry the
+**Currently 41, at lock `03f6004` (2026-09-05, and read the next sentence
+before comparing it with anything).** ⚠ **That number is not comparable with the
+12 this line carried at lock `04f7ec0`**, and not because the engine grew by
+twenty-nine verbs: `tools/verb-coverage.py` was tightened on 2026-09-05 to count
+only **call-shaped** matches with comments blanked, so verbs that had always been
+uncalled stopped being scored as consumed by prose about them. Roughly half the
+jump is the instrument getting better eyesight rather than the shell falling
+behind — the section at the foot of this file accounts for the twenty-six that
+had no row at all. This heading used to carry the
 number — *"The 13 remaining misses"* — and the number went stale twice while the
 prose under it stayed true, which is the failure this file warns about in its
 own opening: **re-run the instrument before quoting a count.** So the count now
@@ -370,6 +378,9 @@ and the shell's guard is the belt to that braces.
 | `search_and_mark_redactions` | `search_and_mark_redactions_styled` — the styled variant, because a redaction mark whose appearance the operator cannot choose is a mark they cannot see against their own drawing. |
 | `mark_redactions_by_pattern` | `mark_redactions_by_pattern_styled`, for the same reason. |
 | `copy_annotations` | ⚠ **This one is a real fidelity gap and is listed again below.** The shell calls `copy_objects`, which does not carry annotations, and round-trips a copied markup through `MarkupSpec` instead. |
+| `move_annotation_vertex` | `reshape_annotation(id, VertexEdit::Move { .. }, modified)` — and the third argument is the whole reason. The three wrappers are one line each and pass `modified: None`, so **none of them can stamp `/M`**: the engine reads no clock on purpose (determinism — the same edit on the same file produces the same bytes) and says the shell that knows the time supplies it. A reviewer's comment whose shape changed and whose modification date did not is a comment that lies about when it was last touched, so `app::actions::annots::reshape` calls the planner directly with `app::clock::pdf_date_utc()`. ★ `AnnotationReshape::mod_date_written` reports whether the stamp landed, and it is in the trace. |
+| `insert_annotation_vertex` | `reshape_annotation(id, VertexEdit::Insert { .. }, modified)`, for the reason above. |
+| `remove_annotation_vertex` | `reshape_annotation(id, VertexEdit::Remove { .. }, modified)`, for the reason above. |
 
 ### ★★ The preview and refusal queries — six closed 2026-08-29, one declined
 
@@ -575,6 +586,123 @@ reports the four terminals, `list-signatures` reports
 | `copy_annotations` | ⬜ **Open, and narrowed.** The object clipboard copied a markup by reading it into a `MarkupSpec` and authoring a new one, so everything a spec cannot express was lost — and on 2026-08-28 that came to include the note, the author, the date and the opacity, all of which this shell had just learned to author. `carried_options` closes those four. The general fix (`copy_annotations` → `ObjectClip` → `paste_objects`) is **asked of the engine rather than assumed**, because it is not known whether a `/Popup`, an `/IRT` reply chain or an `/RC` rich-text body survive that path either, and a paste that silently orphans a reply is worse than the loss it replaces. ⇒ The general form: **a copy implemented as a re-author loses ground every time the authoring side gains a key**, silently, in a direction no screenshot can see. |
 | `add_named_destination` | ⛔ **Not a gap — a deliberate absence, and the engine agrees.** Nothing in this shell constructs a `Destination`: the one authoring call passes `Destination::Page { view: DestView::Fit }` and cannot pass anything else, because there is no destination chooser. The engine's own note says why that is right: *"a destination chooser offering fits pdfcer cannot write would be a control whose options are mostly refusals."* The **reading** side already resolves named destinations, so the Bookmarks panel navigates them in CAD and Word exports today. |
 | `field_defaults` | ⛔ **Not a gap.** *"Make another field like this one"* is already how this shell behaves — `FormDefaults::next` carries the previous field's settings forward, with the **name** the one thing that deliberately does not carry. What the verb adds is copying from *any named* field rather than the last one placed, which is a chooser. An operator call, not a hole. |
+
+---
+
+## ★★★ The twenty-one the TIGHTENED gate found, 2026-09-05 — an argument in a comment is not an entry in the register
+
+`tools/verb-coverage.py`'s `gui_hits` scored a verb consumed when its **name
+appeared anywhere** under `crates/pdfcer-gui/src`, comments included. The
+`remove_encryption` section above named that blindness and deliberately did not
+fix it, on the grounds that tightening an instrument is a change to make and
+measure on its own. It was made on 2026-09-05, and the case that forced it is
+the worst one yet: `pdfcer-core` shipped **`pdfcer_core::sign`**, 101 public
+items, an entire digital-signing subsystem written in answer to *this shell's
+own* request, and this gate scored `EditSession::sign` **consumed** because the
+word *sign* occurs in `app/actions/bookmarks.rs` in a doc table about the
+arithmetic **sign of `/Count`**. A capability the operator asked for was
+discharged by a comment about positive and negative numbers.
+
+A hit must now be **call-shaped** — the name followed by `(`, no identifier
+character before it — with comments blanked first. Both filters are needed and
+neither subsumes the other: the first kills prose, the second kills aspirational
+examples. Read `gui_hits`' own docstring before re-litigating either.
+
+The gate then said:
+
+> **203 `EditSession` verbs (lock `03f6004`), 162 named somewhere in the shell,
+> 41 named nowhere.**
+
+Twenty-three of the forty-one had no row anywhere when this section was started.
+(It was twenty-six an hour earlier: the track wiring the markup-vertex verbs
+landed three rows for its own verbs in the *alternate spellings* table above
+while this was being written, which is the register working as intended and is
+why a count in this file always names the moment it was taken.)
+
+**Twenty-one of the twenty-three are below. The other two are deliberately not
+here, and are deliberately not spelled in backticks anywhere on this page:**
+
+- **delete\_node** is being wired to a real gesture by the same vertex track.
+  Writing it off as declined would have been false within the hour.
+- **sign** is a 101-item subsystem this build does not even compile:
+  `crates/pdfcer-gui/Cargo.toml` takes `pdfcer-core` with
+  `default-features = false` and forwards only `jpx`/`ocrs`, stripping the
+  default-on `signing` feature. It gets an `ENGINE_BACKLOG.md` row, which is a
+  different document's job.
+
+⚠ ★★★ **The backtick discipline in those two bullets is load-bearing, and the
+first draft of this section got it wrong.** `check-verb-coverage.sh`'s rule is
+*"`EDITABLE_SURFACES.md` must mention it by name, in backticks"* — a fixed-string
+`grep -qF` for the backticked name, anywhere in the file. So a paragraph written
+to say *"this verb is somebody else's and has no row here"* **discharges the gate
+for it** if it spells the name the way this register spells verbs. The first
+version of the six lines above did exactly that, and the gate went from naming
+five unexplained verbs to `PASS: all 41`, on a change that wired nothing. Two
+names left the failure list because a sentence disclaiming them was written.
+
+⇒ **The gate cannot read English and must not pretend to** — its own header says
+so, and calls that weakness deliberate. The corollary nobody had written down is
+that **the weakness runs in both directions**: prose *about* a verb is
+indistinguishable from prose *accounting for* a verb, so a register can silence
+the instrument by discussing what it is not covering. Spelling the two names in
+bold rather than in backticks keeps them on the failure list where their own
+tracks will meet them.
+
+### ★★★ What the split says, and it is not what a gate failure usually says
+
+**Four are gaps. Seventeen are verbs this shell should not call.** That ratio is
+the finding, because of *where* the seventeen reasons already were: **twenty of
+the twenty-one had their argument written out, in full, in a doc comment inside
+this crate.** `cut_pages`' is a paragraph in `app/dispatch/pageclip.rs` ending
+*"Recorded here so the next reader does not rediscover the constraint by
+trying"*. `find_text`'s is a table under the heading *"The trap, stated first
+because it is the whole reason this module is written the way it is"*.
+`transform_preview`'s is a note whose first line is **"THE PREFLIGHT IS NOT
+BUILT, AND THIS IS THE NOTE THAT SAYS SO."**
+
+⇒ ★★ So the tightening did not mostly find unconsidered verbs. It found
+**considered verbs whose consideration was filed where the register could not
+see it** — and, because the old instrument counted that prose as a call, filed
+in the one place that also switched the gate off. The three "not built" notes in
+that set had been true and unactioned for days precisely because writing them
+down felt like discharging them.
+
+★★★ **And the exception is the whole point.** `set_media_boxes` is the one verb
+of the twenty-one with **no sentence anywhere in this crate about why it is not
+called** — and it is the largest of the four gaps. The verb nobody had written a
+sentence about is the capability nobody had noticed. That is the gate's own
+message, arriving as data rather than as advice.
+
+### ⬜ The four gaps
+
+| Verb | Engine Pass | Status |
+|---|---|---|
+| `delete_text_run` | 32.0 | ⬜ **A gap, and it is the one on his own drawing.** The Part rung selects a text **run** and cannot remove one: `canvas::selection::mod.rs:415` says so in as many words — *"`pdfcer-core` has the verbs for the deeper rungs … They are their own actions and their own change; refusing here is the honest interim"* — so Delete over a selected label traces `canvas-delete-declined … reason=no-verb-for-rung` and nothing happens. The engine built the verb for exactly his file: *"on the operator's drawing **one text object holds all 237 dimension labels**, so deleting 'a label' deleted every one of them."* `RIBBON_IA.md` §5.8 already lists Delete on a Text-run selection. ★ The R83 pre-condition is **built and dead**: `panels::objects::provider::text_run_delete_would_move_next` (`provider/mod.rs:618`) has no caller. What is missing is a `VectorAction` variant and a control, not an engine capability. |
+| `delete_subpath` | — (`move_subpath`, Pass 28.0, calls it *"the companion to `delete_subpath`"*) | ⬜ **A gap whose twin is shipped.** A subpath can be entered, selected and **dragged** — `move_subpath` through `VectorAction::MoveSubpath` — and cannot be removed; the same `no-verb-for-rung` decline, from the same guard, for the same reason. On the measured CAD export where **one path object holds 1,194 subpaths**, *"delete this line"* is the operation an operator means, and the only Delete this shell offers at that moment removes the whole drawing view. ★ It is the sole `EditSession` verb in `edit.rs` with **no doc comment at all**, which is a plausible account of why it has been read past for a fortnight. |
+| `set_media_boxes` | — (shipped 2026-08-18 beside `set_media_box` and `pdfcer_core::paper`) | ⬜ **A gap: an open drawing's sheets cannot be resized, at all.** `set_media_box` is called exactly once, on a brand-new blank document's page 0 (`app/blank.rs:334`). The plural verb — written for the drawing-set case, *"a sheet set is resized as a set"*, one undo entry however many sheets, refusals raised before anything is committed — is called nowhere, because there is no `pages.resize` command: the Pages tab has insert, cut, copy, paste, delete, extract, move and rotate, and no size. ★ The chooser is **already built and unreachable**: `dialogs::new_document` offers `PaperSize::ALL`, both orientations and a custom size, and can only be opened while creating a file. This is the row that had no sentence anywhere. |
+| `transform_preview` | 113.1 | ⬜ **A gap this shell has already written the confession for**, at `canvas/resizing.rs:172` — *"THE PREFLIGHT IS NOT BUILT, AND THIS IS THE NOTE THAT SAYS SO."* The engine distinguishes two refusals and gives the shell an instruction for each: `SingularTransform` means *this drag* is degenerate (offer the handle, refuse on release — `is_usable` does this), and `DegenerateCtm` means the object can never be transformed **at all**, for which the instruction is *do not offer a handle*. The shell offers one, and the operator finds out by dragging it. Small — a singular CTM is a producer emitting `0 0 0 0 x y cm` — and real. Not built because the preview **decomposes the page**: ~4 s on the 129,758-object benchmark in a debug build, so the engine's own advice is to call it on selection change and gesture start, which means a cache keyed on `(page, edit epoch, selection)` in `app::cache::FormRunCache`'s shape rather than a line of code. |
+
+### ⛔ The seventeen this shell should not call
+
+| Verb | Engine Pass | Status |
+|---|---|---|
+| `add_text_annotation` | 6.2 | ⛔ **Alternate spelling, and the plain door can never be the right one here.** `app/actions/textannot.rs:172` calls `add_text_annotation_with`, because this shell has a `MarkupNote` (the operator's author name, a UTC `/M`) **and** the pen's opacity to pass on every sticky note, text box and stamp — and the plain verb is `_with` under `MarkupOptions::default()`. Exactly the relation `add_markup`/`add_markup_with` has two tables up, where the `_with` door is the one that shipped. |
+| `cut_pages` | 171.0 | ⛔ **Declined, argued in code at `app/dispatch/pageclip.rs:48`, and the constraint is structural rather than stylistic:** the clipboard lives in `egui::Memory` and the action applier has no `egui::Context`, *"so a single-call cut could not put its own clip anywhere."* `pages.cut` is `copy_pages` then `PageAction::DeletePages` — one extra page-tree walk, and the undo entry count stays at **one**, which is the property the engine's verb exists to guarantee. ★ The copy runs first and unconditionally, so a cut whose delete is refused leaves the sheets on the clipboard rather than losing them. |
+| `cut_outline_item` | 172.0 | ⛔ **Declined for the identical reason, stated at the site** — `panels/bookmarks/clip.rs:74`. The engine's verb *is* `copy_outline_item` followed by `delete_outline_item`; the panel performs those two in that order, and `BookmarkAction::Delete` already drops the selection, warns how many descendants travel and lands one undo entry. The copy's success **gates** the delete (`take(…) && cut.clicked()`), so a cut whose copy half failed cannot silently become a delete — the failure an operator would discover by pasting. |
+| `cut_selection` | 168.0 | ⛔ **Declined — `cut_objects`' argument, already in this register, extended to the mixed selection.** `canvas::clipboard::cut` is `copy_selection` + `Action::DeleteSelection`; the copy is `&self` and commits nothing, so *"the cut is one undo entry because only one half of it is an edit"* (`canvas/clipboard.rs:936`). ★ The engine's refuse-before-deleting contract is honoured **ahead of** the copy rather than inside it, by `canvas::cutgate::blocker` (`clipboard.rs:990`), and that ordering is stronger than the verb's: it is what lets `Ctrl+X` over an annotation the clipboard cannot carry refuse the *whole gesture*, instead of leaving the operator with the annotation still on the page and a copy of it on the clipboard. |
+| `paste_pages` | 171.0 | ⛔ **Declined so the disclosures have exactly one wording.** The verb is `Document::from_bytes(clip.bytes)` then `insert_pages`; `app/actions/pages.rs:1080` does precisely that and hands the result to `insert_from_view` — the one function that reports `orphaned_widgets`, `orphaned_widgets_unrecoverable`, the dropped source outline and the two page-label facts, and then moves the view to what landed. Its own comment says why a fourth copy was refused: it *"would have been a second wording of the most consequential disclosure in this file"* — the orphaned widgets the engine flagged as *"the one that produces a document that looks right and is not."* |
+| `delete_object` | decision 011 §2.5 op 2 | ⛔ **The singular of a verb this shell only ever needs plural, and looping it is a documented hazard.** `app/actions/vector.rs:77`: `delete_objects` resolves **every** index before planning, so one stale or duplicated entry refuses the whole call rather than deleting the prefix that happened to resolve. A loop would be N undo entries for one Delete and — the correctness half — each call re-splices the content stream, so the second index is planned against byte offsets the first already invalidated. `docs/core-api/02` states it in a box: *"Never loop the singular verbs over a selection."* |
+| `move_object` | decision 011 §2.5 op 1 | ⛔ **The same ruling, one verb along** — `app/actions/vector.rs:106`. A released move-drag raises `MoveObjects` and reaches `move_objects(page, &objects, dx, dy)` with the whole selection, for the identical two reasons. ★ And there is no second claimant: the Object rung's resize and rotate both go to `transform_objects`, and the deeper rungs have `move_subpath`, `move_node` and `move_nodes` of their own. |
+| `delete_dimension` | 25.6 | ⛔ **It is called — by the engine, on this shell's behalf.** `delete_annotation` **routes** a **ce dimension** to `delete_dimension` (`edit.rs:25327`, `AnnotationDeletionRoute::Dimension`) exactly so a front end needs no `match`: *"a `/PieceInfo` sidecar record backs it; leaving it would keep a dimension the annotation no longer supports."* So `format.delete` and the canvas Delete key over a selected ce dimension reach it through `app/actions/annots.rs:66`, and `annots.rs:16` records that `delete` is the one verb in that file carrying **no** ce-dimension routing obligation of its own. ★ One consequence worth knowing: a delegated route runs the **destination's** gate, and `delete_dimension` keeps the strict one because it also rewrites the catalog sidecar — so on a `/P 3` document a ce dimension is refused while every other annotation deletes. The standard's answer, not pdfcer's preference, delivered to the operator by the funnel's decline channel. |
+| `move_dimension` | 25.5 | ⛔ **Declined for the drag on the engine's own instruction** — `canvas/dimdrag.rs:16` carries the two-row table. Dragging a **ce dimension** is `place_dimension`, which writes `offset` and `text_along` only, so **no drag, however far, can alter the printed number**; `move_dimension` translates the measured points and would take the ce dimension off the feature it annotates. ⚠ **The residual, named rather than left inside a half-promise:** that header ends *"remains available only where the operator has said they mean it"*, and **no such surface exists**. Nothing in this shell translates a ce dimension's measured points, so a ce dimension does not travel with page objects moved under it. Declined verb, real remainder; whoever builds the *"move the ce dimension with the geometry"* gesture should correct that sentence in the same commit. |
+| `delete_dimension_group` | — (the safe door over `delete_dimension_group_with`) | ⛔ **Alternate spelling, and this shell always holds the argument the plain door lacks.** `app/actions/dimensions.rs:935` calls `delete_dimension_group_with(group, policy)` for **both** policies, `Refuse` included — which is exactly what the no-argument verb does internally. One call site rather than two, *"because the difference between them is a value this variant already carries, and a `match` here would be a second place for the default policy to be decided"* (`dimensions.rs:901`). The engine's pair exists for callers with no policy to express; the ce-dimension-group dialog always has one, because what happens to the members is the operator's decision and it is asked before the press. |
+| `find_text` | — | ⛔ **Refused deliberately, and two tests keep it refused.** It passes `with_wildcards(true)`, so `#` matches any ASCII digit and `?` matches **every character on the page** — the defect the old shell's Find bar shipped with, fixed in the front end because the verb's pattern behaviour is its documented contract. `find/mod.rs:12` carries the table, and `tests::the_default_search_is_literal` and `tests::a_wildcard_search_is_only_ever_asked_for_explicitly` fail the moment anybody reaches for the shorter verb. |
+| `find_text_with` | — | ⛔ **Superseded by a strict superset, and the header naming it is now its only mention.** The Find bar called it until `pdfcer-core` v0.11.0 shipped `search_text` — which `find_text_with` now delegates to, so the scan and the hits are identical — and which additionally returns the extraction diagnostics that say whether a zero-result answer can be trusted. `find/mod.rs:815`; `Results::unsearchable_fonts` is built from them, and the only cost is holding a `TextDiagnostics` that was previously computed and thrown away. |
+| `mark_redactions_by_search_with` | — | ⛔ **Subsumed twice over.** The shell calls `search_and_mark_redactions_styled` (`app/actions/redact.rs:193`) **with** a `TextSearchOptions`, so the options this verb exists to accept are already being passed; and that verb is a superset of this one on the appearance and the diagnostics as well. |
+| `mark_redactions_by_search_styled` | — (the `_styled` verbs, `a7210a4`, 2026-08-17, shipped in answer to this shell's filing) | ⛔ **Declined for the one verb that also hands back the diagnostics, and on this operation that is not a nicety** — `app/actions/redact.rs:166`. Both run the identical scan and author the identical marks. Only `search_and_mark_redactions_styled` distinguishes the two causes of an empty result: *the term is not in the document*, and *the document's text was never recoverable as Unicode, so no term could ever have matched it*. For a search that ambiguity wastes a minute; **for a redaction it fails in the direction nobody catches** — the operator asked for every occurrence of a name to be removed, the run reported success, the file still contains it, and both populations render perfectly. |
+| `embed_refusal` | 67.0 phase E | ⛔ **Declined as a duplicate guard, argued at `app/actions/fonts.rs:34`:** `embed_fonts` runs it itself *"before any mutation"* and returns the refusal as an `Err`, so a pre-flight here would be a second implementation of a guard the engine already owns. ⚠ **The residual, named:** it is a pure query safe to call every frame, so a *window* gated on it would be R83 work this surface has not done — on an encrypted or certified drawing the Embed-fonts window still opens, the operator chooses donor faces, and the decline arrives from the funnel afterwards. Quality work on an existing surface, not a missing capability. |
+| `unembed_refusal` | 67.0 phase B | ⛔ **The same ruling, the same file (`fonts.rs:72`), the same residual.** ★ And note what the engine deliberately leaves **out** of it: PDF/A. Unembedding genuinely breaks ISO 19005 conformance, *"but it is a consequence the operator may knowingly accept, not a structural impossibility. The core reports it and the shells gate on it."* This shell's gate on that is the sentence in `dialogs::unembed`, read before the press — so even wired, this query would not be where the PDF/A decision lives. |
+| `info_bytes` | — | ⛔ **Session query, superseded by the sibling that carries the disclosure.** `panels::docprops` reads every `/Info` field through `info_text` (`docprops/mod.rs:269`), which returns `InfoText { text, exact }`, and `exact` is the whole reason: when it is `false`, re-encoding the string would **not** reproduce the document's own bytes, so the panel must not write the field back and says so on the row. Raw bytes have no operator meaning and would discard the one flag stopping this shell from replacing a `/Title` with pdfcer's guess at it. ★ The name has been in this crate all along — in that module's header, arguing that an old blocker had cleared — which is precisely the prose the tightened instrument stopped counting as a call. |
 
 ---
 
