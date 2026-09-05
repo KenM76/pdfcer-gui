@@ -64,6 +64,33 @@ program will *let* you do.
 something away. If a command you expect is missing, you are probably a mode too
 low.
 
+### Read *mode* and read *view* are different things
+
+The selector above changes what you are **allowed to do**. **Ctrl+H** changes
+what is **on screen**: it hides the ribbon and the side panels so the drawing
+has the whole window.
+
+★ **While it is on, the title bar says how to get out** — `Read mode — Ctrl+H to
+exit — …` — and so does the bar along the bottom. That is deliberate: the
+control that turns it off lives on the ribbon, and the ribbon is the thing it
+just hid.
+
+**F11** is full screen and is separate; its button stays on screen, so it needs
+no such note.
+
+### Making the chrome get out of the way on its own
+
+**Settings ▸ Display** offers to auto-hide the **ribbon** and the **left rail**.
+Both are off unless you turn them on, and both work the way Word's *Show Tabs*
+does:
+
+- the row of tab names never disappears — **the thing you have to point at is
+  always there**;
+- the buttons appear **over** the drawing rather than pushing it down, so
+  nothing you were about to click moves;
+- the rail leaves a narrow marked edge, and the panel beside it does not change
+  width.
+
 ---
 
 ## Moving around a drawing
@@ -141,6 +168,12 @@ A selected object gets handles: drag inside to **move**, drag a corner to
 The **Format** tab appears when something is selected, with its properties and
 Delete. **Properties** also opens on a right-click.
 
+★ **The document's own title, author, subject and keywords have their own tab** —
+**File ▸ Document ▸ Document properties**, beside Fonts, and open in all three
+modes. They used to sit permanently at the bottom of the Properties panel, which
+made them the one thing in that panel that was not a property of what you had
+selected.
+
 ---
 
 ## Measuring
@@ -156,6 +189,23 @@ through one.
 ★ Measurements pdfcer writes are its own and are stored so it can read them back.
 Dimensions that came from your CAD package are *content* and pdfcer will not
 quietly change them.
+
+### Changing a measurement's corners after you have drawn it
+
+Select a perimeter or path measurement and arm the **Points** tool (**A**):
+
+- **drag** a corner to move it;
+- **Ctrl+drag** adds a new corner just after the one you grabbed, where you let
+  go;
+- **Ctrl+Shift+drag** removes that corner.
+
+Each is one **Ctrl+Z**, and each says what changed — *"A corner was added — 5
+corners now, and 12.40 m is now 13.85 m."* A shape already at its minimum
+(three corners closed, two open) says so instead of doing nothing.
+
+★ **The corners of a markup shape** — a cloud, a polygon, freehand ink — cannot
+be edited yet. pdfcer's engine does not expose their geometry, so there is
+nothing to take hold of. Reported; nothing was faked in the meantime.
 
 ---
 
@@ -176,6 +226,39 @@ abandons the one in progress.
 removed without touching the drawing underneath. That is why underline and
 highlight live here rather than with the text tools.
 
+### Reading a comment somebody left you
+
+**Click a sticky note on the page** and it opens where it sits, showing who
+wrote it, when, and what it says. Click it again to close it. Hovering gives you
+the gist without opening anything.
+
+★ **This works in Read as well as Review and Edit.** Reading a comment is
+reading. A note that the file itself was saved *open* opens with the document.
+
+The **Comments** panel is the whole list — every annotation on every page. Use
+it to work through a review rather than hunting the sheet:
+
+- **Filter** by who wrote it, by what kind it is, or to just the ones that
+  actually carry words. Most shapes pdfcer draws carry none.
+- **Sort** by page, author or type.
+- **Go to** takes you to the comment *and opens it*.
+- **Delete** removes a comment. Available in Review and Edit; Read shows the
+  words and offers no way to change them.
+- Replies appear as a thread, gathered from wherever they live — a reply may
+  legally sit on a different sheet from the comment it answers.
+
+Reach it from the **left rail**, which every mode shows, or from
+**Markup ▸ Comments**.
+
+### Copying a comment to another place
+
+**Ctrl+C** and **Ctrl+V** carry an annotation whole — sticky note, stamp, text
+box, link, attachment, cloud — with its appearance, its author and its date
+intact, within a document or across two open ones.
+
+★ Paste works in **Review** as well as Edit. Review may paste a *comment*; it
+may not paste *page content*, and it says so by name rather than doing nothing.
+
 ---
 
 ## Pages
@@ -190,6 +273,24 @@ split, merge, and rotate (**[** and **]**).
 
 ★ A document will not let you remove its last page — there is no such thing as
 a PDF with no pages.
+
+### ⚠ Deleting pages from a drawing set may refuse to save, and that is on purpose
+
+**If you delete pages and the save is refused, nothing has gone wrong with your
+document and nothing has been lost.** Your edits are still open in front of you.
+
+The reason: on a document whose pages are stored in groups — which is how
+SolidWorks and most CAD exporters write a multi-sheet set — removing pages
+currently updates the group they were in but not the total the file declares at
+the top. The file then says it has more pages than it really has, and **Acrobat
+shows the difference as blank pages at the end**.
+
+pdfcer will not write a file it knows is damaged. It tells you the two numbers,
+and **Ctrl+Z** puts the pages back and lets the document save normally.
+
+★ This is a fault in pdfcer's engine, it has been reported, and the fix is
+expected shortly. Until then: a single-sheet document is unaffected, and so is
+inserting, extracting, reordering or merging — **only removal**.
 
 ---
 
@@ -230,8 +331,28 @@ missing and pdfcer is not failing — the *file* does not carry the information.
 **Edit ▸ Protect ▸ Redact**, in Edit mode.
 
 Mark what should go — by drawing boxes, or by searching for a word and marking
-every match — and then apply. Applying is the point at which content is
-actually removed, and **it cannot be undone**.
+every match — and then apply.
+
+### ★ Applying arms the removal; **saving** carries it out
+
+This changed on 2026-09-05 and it is the opposite of what it used to be, so it
+is worth reading once.
+
+**Pressing Apply does not change the page.** It *arms* the removal, and your
+whole undo history survives — you can still undo everything you did before it.
+The content leaves the document when you **save**.
+
+While a removal is armed:
+
+- an ordinary **Save** or **Save As** carries it out;
+- if anything else tries to write the file, it is **refused by name** rather
+  than quietly producing a half-redacted document;
+- **Cancel** un-arms it, because a decision you cannot take back is a trap;
+- the document counts as unsaved, so closing it asks.
+
+★ It used to remove the content the moment you pressed Apply, and clear your
+entire undo history doing it. That was the only way the engine could do it at
+the time. It is not any more.
 
 ### Where the redacted document goes — three choices, and the first is the default
 
