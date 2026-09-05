@@ -379,6 +379,54 @@ fn canvas_rect(rect: pdfcer_core::page_tree::Rect, page: &Page) -> Option<Rect> 
 /// would make the note on a hollow rectangle reachable only by clicking its
 /// hairline border.
 #[must_use]
+/// **Whether this annotation has a pop-up worth opening at all.**
+///
+/// # The defect this closes
+///
+/// Until 2026-09-05 a click opened a pop-up for *every* annotation that **could**
+/// carry a note, not for those that **do**. So clicking a revision cloud you
+/// only meant to select produced an empty window over the drawing — and, until
+/// the placement fix landed the same day, one that sat on top of the shape and
+/// swallowed the drag as well. It was recorded as a known limit in [`super`]'s
+/// header and on `OPERATOR_REQUESTS.md` O133 as *"a question about WHEN a pop-up
+/// opens rather than where it goes"*. This is that question, answered.
+///
+/// # The rule, and why it is not simply "has words"
+///
+/// ★★ **A sticky note is a note whether or not anybody typed in it.** Opening it
+/// empty is not noise — it is the annotation's entire purpose, it is what
+/// Acrobat does, and an operator who placed one and has not written in it yet
+/// needs the window in order to write. The same is true of a free-text box,
+/// whose words *are* its appearance.
+///
+/// ⇒ So the subtype decides for the two whose **purpose** is the note, and the
+/// **content** decides for everything else. A square, a circle, a line, a
+/// cloud, a polygon, freehand ink and a text-markup highlight are all *marks
+/// on a drawing* that may additionally carry a comment; where they carry none,
+/// there is nothing to show and the click belongs to selection.
+///
+/// ★ A byline with no words is deliberately **not** enough. Knowing that
+/// B. Reviewer drew this cloud is a fact about the drawing, and the Comments
+/// panel lists it — putting a window over the page to say only that would be
+/// the noise this function exists to remove. The panel is where facts live;
+/// the pop-up is where a *message* lives.
+///
+/// ⚠ Whitespace does not count. A `/Contents` of `"   "` renders as an empty
+/// window just as surely as an absent one, and a file that carries it was not
+/// trying to say anything.
+#[must_use]
+pub fn has_something_to_read(note: &NoteView) -> bool {
+    // The two whose purpose IS the note. `subtype_label` is the engine's own
+    // spelling, which is why these are compared as strings rather than against
+    // an enum this crate would have to keep in step.
+    if matches!(note.subtype.as_str(), "Text" | "FreeText") {
+        return true;
+    }
+    note.contents
+        .as_deref()
+        .is_some_and(|c| !c.trim().is_empty())
+}
+
 pub fn under(notes: &[NoteView], point: Pos2, tolerance: f32) -> Option<&NoteView> {
     notes
         .iter()
@@ -788,6 +836,71 @@ mod tests {
             replies_to(&view, &pages, closed.id).is_empty(),
             "a note with no replies must produce an empty thread, or the \
              transitive walk is claiming unrelated annotations"
+        );
+    }
+    /// ★★★ **A mark with nothing to say opens no window; a note does even when
+    /// it is empty.**
+    ///
+    /// # What this is really asserting
+    ///
+    /// Not "has words". The rule has two halves and a test that only checked
+    /// the content half would pass on a build that had dropped the subtype
+    /// exemption — and that build would refuse to open a sticky note the
+    /// operator had just placed and was trying to type into. **Both halves are
+    /// asserted here, in one test, because a build that gets either wrong is
+    /// broken in a way the operator meets immediately.**
+    ///
+    /// ★ The byline case is the one worth having by name. An annotation signed
+    /// by a reviewer but carrying no message is a *fact about the drawing*, and
+    /// the Comments panel is where facts live. Putting a window over the page to
+    /// say only "B. Reviewer drew this" is the noise this predicate exists to
+    /// remove, and it is easy to talk yourself into showing it.
+    #[test]
+    fn only_a_mark_with_something_to_say_opens_a_window() {
+        let note = |subtype: &str, contents: Option<&str>, author: Option<&str>| NoteView {
+            authored_open: false,
+            id: ObjId {
+                num: 1,
+                generation: 0,
+            },
+            subtype: subtype.to_owned(),
+            contents: contents.map(str::to_owned),
+            author: author.map(str::to_owned),
+            modified: None,
+            anchor: Rect::from_min_size(Pos2::ZERO, egui::vec2(10.0, 10.0)),
+            popup: None,
+            locked: false,
+            in_reply_to: None,
+        };
+
+        // The two whose PURPOSE is the note, empty or not.
+        assert!(
+            has_something_to_read(&note("Text", None, None)),
+            "an empty sticky note is still a note, and opening it is how you \
+             write in one"
+        );
+        assert!(
+            has_something_to_read(&note("FreeText", None, None)),
+            "a free-text box's words are its appearance"
+        );
+
+        // A mark that merely MAY carry a comment.
+        assert!(
+            !has_something_to_read(&note("Square", None, None)),
+            "a shape with no comment must fall through to selection"
+        );
+        assert!(
+            has_something_to_read(&note("Square", Some("check this dimension"), None)),
+            "a shape that DOES carry a comment must open"
+        );
+        assert!(
+            !has_something_to_read(&note("Polygon", Some("   "), None)),
+            "whitespace renders as an empty window just as surely as nothing does"
+        );
+        assert!(
+            !has_something_to_read(&note("Circle", None, Some("B. Reviewer"))),
+            "a byline is a fact for the Comments panel, not a message worth a \
+             window over the drawing"
         );
     }
 }

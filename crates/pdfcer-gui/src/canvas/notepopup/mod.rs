@@ -169,12 +169,18 @@
 //!
 //! ## ⚠ Known limit, named rather than left to be found
 //!
-//! ★ A comment with **no words in it** still opens an empty pop-up on a
-//! click, because [`model::under`] answers for every annotation that *can*
-//! carry a note rather than for those that do. On a shape an operator only
-//! meant to select that is noise. It is a question about *when* a pop-up
-//! should open rather than about *where* it goes, so it is named here and not
-//! fixed here; `OPERATOR_REQUESTS.md` O133 records it as open.
+//! ★ **CLOSED 2026-09-05, the same day it was named.** A comment with no words
+//! used to open an empty pop-up on a click, because [`model::under`] answers
+//! for every annotation that *can* carry a note rather than for those that do —
+//! noise on a shape the operator only meant to select. It was recorded here and
+//! on `OPERATOR_REQUESTS.md` O133 as *"a question about WHEN a pop-up opens
+//! rather than about where it goes"*, which was the right description and is
+//! now answered: [`model::has_something_to_read`] is asked at the click site.
+//!
+//! The rule is **not** simply "has words" — a sticky note is a note whether or
+//! not anybody has typed in it, and an operator who has just placed one needs
+//! the window in order to write. Subtype decides for the two whose purpose is
+//! the note; content decides for every mark that merely *may* carry one.
 //!
 //! Under a continuous or facing display mode, pop-ups are drawn for the
 //! **acting page's** annotations only. That is not a decision of this module:
@@ -1062,6 +1068,22 @@ pub fn clicked_on(
     #[allow(clippy::cast_possible_truncation)]
     let tolerance = map.tolerance() as f32;
     let note = model::under(&notes, point, tolerance)?;
+    // ★★★ **A mark with nothing to say does not open a window.** The press
+    // falls through to selection, which is what the operator meant by clicking
+    // a cloud that carries no comment. `model::under` answers for every
+    // annotation that *can* carry a note; `has_something_to_read` is the one
+    // that asks whether this one *does*. See its doc comment for why a sticky
+    // note is exempt (an empty one is still a note, and is how you write in it)
+    // and why a byline alone is not enough.
+    //
+    // ⚠ Asked HERE and not inside `model::under`, deliberately. `under` is also
+    // the painter's answer to *"which note is the pointer over"*, and the same
+    // list feeds the hover tooltip; narrowing it there would make a commentless
+    // cloud stop reporting itself to the trace as well, and the harness would
+    // lose the only evidence that the pointer was over anything at all.
+    if !model::has_something_to_read(note) {
+        return None;
+    }
     // ★ TOGGLE, not open. Clicking the icon again closes the window, which is
     // what every reader in the class does and what an operator who has just
     // opened one by accident will try.
