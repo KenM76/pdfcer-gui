@@ -142,13 +142,17 @@ pub const MIN_MID_GRIP_EXTENT_PX: f32 = GRIP_SIZE_PX * 3.0;
 /// the grips that survive a small box, and the ones a resize actually wants —
 /// are all that is offered.
 ///
-/// ⇒ ★★ This is a **partial** answer, and the rest is recorded rather than
-/// implied: on a box that is small in **both** axes the corner grips cover it
-/// too, and the body survives only in the gaps between their x-ranges. The
-/// conventional fix is the one Illustrator, Inkscape and Figma all take —
-/// **draw the grips outside the box when the box is too small to hold them** —
-/// and that is a change to the painter as well as the hit test.
-/// `OPERATOR_REQUESTS.md` carries it.
+/// ⇒ ★★ **This was a partial answer until 2026-09-05, and the rest is now
+/// built rather than recorded.** Withholding the mid-edge pair fixed the short
+/// *strip*; it did nothing for a box that is small in **both** axes, where the
+/// four corner grips cover the body between them and there is no mid-edge pair
+/// left to withhold. That case is not exotic — it is the operator's own
+/// molecular-structure fixture, whose cells are **0.85 pt across**. See
+/// [`grip_bounds`], which pushes the grips OUTWARD instead of dropping them.
+///
+/// This constant keeps its job: it is the width of body a box must have before
+/// the grips can sit on its own edges, and [`grip_bounds`] is the function that
+/// guarantees it by construction rather than by a filter.
 pub const MIN_BODY_STRIP_PX: f32 = GRIP_SIZE_PX + 2.0 * (GRIP_SIZE_PX / 2.0 + GRIP_GRAB_SLACK_PX);
 
 /// One grip on the selection's bounding box.
@@ -381,7 +385,88 @@ pub const ROTATE_STEM_PX: f32 = 20.0;
 /// Drawn as a circle at this rect's centre; see [`Grip::Rotate`].
 #[must_use]
 pub fn rotate_rect(bounds: Rect) -> Rect {
-    Rect::from_center_size(Grip::Rotate.anchor(bounds), Vec2::splat(GRIP_SIZE_PX))
+    // Anchored to the pushed box for the same reason the eight scale grips are:
+    // on a tiny selection the rotate handle would otherwise sit *inside* the
+    // body it is supposed to hover above. See [`grip_bounds`].
+    Rect::from_center_size(
+        Grip::Rotate.anchor(grip_bounds(bounds)),
+        Vec2::splat(GRIP_SIZE_PX),
+    )
+}
+
+/// The box the **grips** are anchored to, which is the selection's own box
+/// grown outward when the selection is too small to hold them.
+///
+/// # ★★★ The defect this closes, in the operator's own words
+///
+/// He asked, on 2026-09-04: *"zoom in on the atoms of the banana pdf file and
+/// see what happens when you try to draw a box around a molecule and move it,
+/// or select the ion and move it."* The answer, measured by driving the binary
+/// on that fixture: **an object smaller than 12 pt on screen could not be moved
+/// at all.** Every press landed in a grip, the drag was routed to the resize
+/// machinery, and the engine refused it by name — `resize-declined
+/// reason=Degenerate`. The banana's cells are 0.85 pt across, and the fixture's
+/// own text says reading their labels takes about 12,000 %.
+///
+/// Two constants, each correct in isolation, made it:
+///
+/// - every corner grip reaches `GRIP_SIZE_PX / 2 + GRIP_GRAB_SLACK_PX` = **6 pt**
+///   into the box it is drawn on, and there are two of them per axis;
+/// - [`crate::canvas::overlay::MIN_OUTLINE_EXTENT_PX`] **floors the drawn box at
+///   6 pt**, so an object with the least body to spare is floored to a size at
+///   which it has none.
+///
+/// ⇒ The objects that most needed a body to grab were guaranteed not to have
+/// one. Above 12 pt the body was a *hole* rather than a region: at 13.4 × 12.5 pt
+/// the four corners leave a 1.4 × 0.5 pt gap that a harness hits by computing
+/// the exact centre and a hand does not.
+///
+/// # Why outward, and why this is not an invention
+///
+/// The conventional answer across the whole product class is the same one:
+/// **when the box is too small to hold its handles, the handles go outside the
+/// box.** Inkscape draws its scale arrows outside the bounding box
+/// unconditionally; Figma moves a small frame's handles out; Illustrator's
+/// move gesture aims at the path rather than the bounding-box interior. The
+/// convergence of the product class *is* the specification here — an invented
+/// interaction would be a defect even if it worked, because the operator
+/// already knows this one from every other drawing program on his machine.
+///
+/// # The rule
+///
+/// Per axis, grow by exactly enough to reach [`MIN_BODY_STRIP_PX`] and no more:
+///
+/// ```text
+/// push = max(0, (MIN_BODY_STRIP_PX - extent) / 2)     on each side
+/// ```
+///
+/// ★ **Above the threshold the push is exactly zero and every grip lands byte
+/// for byte where it did before.** That property is what makes this safe to
+/// apply unconditionally: there is no second layout to keep in step, no mode to
+/// be in, and no zoom at which behaviour changes discontinuously — the push
+/// grows smoothly from 0 as the box shrinks through 20 pt.
+///
+/// # What this costs, stated rather than discovered later
+///
+/// A pushed grip can overlap a **neighbouring** object. On a dense drawing at
+/// low zoom that means the grips of one tiny object may sit over another one.
+/// That is the trade every program in the class makes, and it is the right way
+/// round: the alternative is an object that cannot be moved at all, which is
+/// the defect being fixed. It also cannot mislead — grips are drawn as the
+/// cursor's own furniture, never as content, so Rule 4 is untouched.
+///
+/// ⚠ This deliberately does **not** grow the body. [`grip_at`] still tests
+/// `bounds.contains(pointer)` for [`Grip::Move`], so the region that means
+/// "drag this object" is exactly the object's own drawn outline. Growing that
+/// too would make a 0.85 pt cell claim 20 pt of the canvas and steal presses
+/// aimed at its neighbours.
+#[must_use]
+pub fn grip_bounds(bounds: Rect) -> Rect {
+    let push = Vec2::new(
+        ((MIN_BODY_STRIP_PX - bounds.width()) / 2.0).max(0.0),
+        ((MIN_BODY_STRIP_PX - bounds.height()) / 2.0).max(0.0),
+    );
+    bounds.expand2(push)
 }
 
 /// The grips to draw for a screen-space selection box, with their squares.
@@ -396,29 +481,46 @@ pub fn rotate_rect(bounds: Rect) -> Rect {
 /// line, which is both unaimable and a fair description of nothing.
 #[must_use]
 pub fn grip_rects(bounds: Rect) -> Vec<(Grip, Rect)> {
-    let wide = bounds.width() >= MIN_MID_GRIP_EXTENT_PX;
-    let tall = bounds.height() >= MIN_MID_GRIP_EXTENT_PX;
-    // ★★★ TWO conditions per mid-edge grip, not one. See [`MIN_BODY_STRIP_PX`].
+    // ★★★ Everything below anchors to the PUSHED box, never to `bounds`.
     //
-    // Its own axis decides whether it would pile onto its corner neighbours;
-    // the **perpendicular** axis decides whether it would swallow the body. The
-    // second was missing, and a 160 × 20 pt form field at fit zoom is 5.9 px
-    // tall against a North grip that reaches 6 px in — so the centre of the
-    // field was inside its own grip and dragging it to move produced a
-    // degenerate resize.
-    let has_body_vertically = bounds.height() >= MIN_BODY_STRIP_PX;
-    let has_body_horizontally = bounds.width() >= MIN_BODY_STRIP_PX;
+    // [`grip_bounds`] grows the anchor box outward when the selection is too
+    // small to hold its own grips, which is what makes the body of a 0.85 pt
+    // cell reachable at all. Above [`MIN_BODY_STRIP_PX`] the push is exactly
+    // zero and this is the same computation it always was.
+    let anchors = grip_bounds(bounds);
+    debug_assert!(
+        anchors.width() + f32::EPSILON >= MIN_BODY_STRIP_PX
+            && anchors.height() + f32::EPSILON >= MIN_BODY_STRIP_PX,
+        "grip_bounds must guarantee a body strip on both axes; got {anchors:?}"
+    );
+
+    // Only ONE condition per mid-edge grip now, and it is about piling.
+    //
+    // There used to be two. The second — *"does the perpendicular axis have a
+    // body left after this grip eats 6 pt of it?"* — was the 2026-09-04 fix for
+    // a 160 × 20 pt form field whose centre sat inside its own North grip. It is
+    // gone because [`grip_bounds`] now makes it **unfalsifiable**: the pushed box
+    // always has a body strip, so the condition could never be false and a
+    // condition that cannot fail is not a guard, it is decoration that reads
+    // like one. The `debug_assert` above is what took over its job, and it names
+    // the invariant instead of silently depending on it.
+    //
+    // ★ The piling condition stays, and stays measured against the PUSHED box:
+    // whether a mid-edge grip lands on top of its corner neighbours is a
+    // question about the spacing it is actually drawn at.
+    let wide = anchors.width() >= MIN_MID_GRIP_EXTENT_PX;
+    let tall = anchors.height() >= MIN_MID_GRIP_EXTENT_PX;
     Grip::RESIZE
         .into_iter()
         .filter(|g| match g {
-            Grip::North | Grip::South => wide && has_body_vertically,
-            Grip::East | Grip::West => tall && has_body_horizontally,
+            Grip::North | Grip::South => wide,
+            Grip::East | Grip::West => tall,
             _ => true,
         })
         .map(|g| {
             (
                 g,
-                Rect::from_center_size(g.anchor(bounds), Vec2::splat(GRIP_SIZE_PX)),
+                Rect::from_center_size(g.anchor(anchors), Vec2::splat(GRIP_SIZE_PX)),
             )
         })
         .collect()
@@ -880,25 +982,178 @@ mod body_strip_tests {
         );
     }
 
-    /// ★★ …and the mid-edge grips are WITHHELD there rather than merely losing
-    /// the hit test.
+    /// ★★ …and on a short box **no grip's grab region reaches into the body at
+    /// all**, which is the promise that replaced "the mid-edge pair is withheld".
     ///
-    /// Asserted separately because the two are different promises: one is about
-    /// where a press lands, the other about what the operator is shown. A grip
-    /// painted where it cannot be aimed is the affordance R9 forbids, and the
-    /// painter reads this same list.
+    /// # Why this assertion changed on 2026-09-05, stated rather than quietly edited
+    ///
+    /// The original wording asserted that North and South were *dropped* from
+    /// the offered list on a 5.9 px-tall field. That was the right assertion for
+    /// the mechanism that existed at the time — a filter — and it is the wrong
+    /// one for the mechanism that exists now. [`grip_bounds`] pushes the grips
+    /// outward instead of dropping them, so on this field North and South are
+    /// offered **and drawn 7.05 px clear of the box**, where they can be aimed
+    /// at and where they eat nothing. Withholding them would now be a
+    /// regression: they are the two grips that resize a short field's height,
+    /// which is the one thing an operator is likely to want from it.
+    ///
+    /// So the promise is restated at the level it was always really about:
+    /// **the body belongs to the body.** That is falsifiable against both
+    /// mechanisms, which the old wording was not.
+    ///
+    /// Asserted separately from `the_centre_of_a_short_field_is_the_body`
+    /// because the two are different promises: one is about where a press lands,
+    /// the other about what the operator is shown. A grip painted where it
+    /// cannot be aimed is the affordance R9 forbids, and the painter reads this
+    /// same list.
     #[test]
-    fn a_short_box_is_offered_corners_only() {
+    fn a_short_box_keeps_its_whole_body_and_its_grips_sit_outside_it() {
         let field = Rect::from_min_size(Pos2::new(849.0, 957.3), Vec2::new(47.3, 5.9));
-        let offered: Vec<Grip> = grip_rects(field).into_iter().map(|(g, _)| g).collect();
+        let offered = grip_rects(field);
+
+        // Six, not eight, and the arithmetic is worth writing down because the
+        // number is not obvious. The field is 47.3 wide and 5.9 tall, so only
+        // the vertical axis is pushed: the anchor box is 47.3 x 20. North and
+        // South survive because 47.3 clears MIN_MID_GRIP_EXTENT_PX (24). East
+        // and West do not, because 20 does not — they are withheld for PILING
+        // onto their corner neighbours, which is a different rule from the one
+        // this test is about and one the push does not and should not touch.
+        let names: Vec<Grip> = offered.iter().map(|(g, _)| *g).collect();
         assert!(
-            !offered.contains(&Grip::North) && !offered.contains(&Grip::South),
-            "mid-edge grips survived on a box thinner than they are: {offered:?}"
+            names.contains(&Grip::North) && names.contains(&Grip::South),
+            "the mid-edge pair that resizes a short field's HEIGHT was withheld: {names:?}"
         );
         assert!(
-            offered.contains(&Grip::NorthWest) && offered.contains(&Grip::SouthEast),
-            "the corners must survive — they are the grips a small box still needs: {offered:?}"
+            !names.contains(&Grip::East) && !names.contains(&Grip::West),
+            "East/West would pile onto the corners at 20 pt of pushed height: {names:?}"
         );
+
+        // ★ The load-bearing assertion. Every grip's GRAB region — the drawn
+        // square plus its slack, which is what `grip_at` tests — must miss the
+        // horizontal strip through the middle of the field. Sampled across the
+        // width rather than at the centre alone, because the old defect left a
+        // 1.4 x 0.5 pt hole at dead centre and a centre-only test walks straight
+        // through it.
+        for i in 0..=20 {
+            let x = field.left() + field.width() * (i as f32 / 20.0);
+            let p = Pos2::new(x, field.center().y);
+            assert_eq!(
+                grip_at(field, p, GripSet::all()),
+                Some(Grip::Move),
+                "a grip claimed the body at x offset {i}/20 of a 5.9 px-tall field"
+            );
+        }
+    }
+
+    /// ★★★ **His banana. An object 0.85 pt across can be moved.**
+    ///
+    /// The report, verbatim: *"zoom in on the atoms of the banana pdf file and
+    /// see what happens when you try to draw a box around a molecule and move
+    /// it, or select the ion and move it."* Driving it produced
+    /// `resize-declined reason=Degenerate` on every press, because the box was
+    /// floored to [`crate::canvas::overlay::MIN_OUTLINE_EXTENT_PX`] = 6 pt and
+    /// four corner grips reaching 6 pt each covered all of it.
+    ///
+    /// The fixture is the **floored** box, not the 0.85 pt one, because the
+    /// floor is what the operator's pointer actually meets — testing the
+    /// un-floored rect would test a rectangle nothing on screen corresponds to.
+    #[test]
+    fn the_smallest_object_the_shell_can_draw_is_still_grabbable() {
+        let cell = Rect::from_min_size(
+            Pos2::new(640.0, 480.0),
+            Vec2::splat(crate::canvas::overlay::MIN_OUTLINE_EXTENT_PX),
+        );
+        // Every point of it, corners included — there is no part of a 6 pt box
+        // an operator could be expected to aim at more carefully than another.
+        for i in 0..=6 {
+            for j in 0..=6 {
+                let p = Pos2::new(
+                    cell.left() + cell.width() * (i as f32 / 6.0),
+                    cell.top() + cell.height() * (j as f32 / 6.0),
+                );
+                assert_eq!(
+                    grip_at(cell, p, GripSet::all()),
+                    Some(Grip::Move),
+                    "a grip claimed ({i}/6, {j}/6) of a 6 pt cell: the banana defect"
+                );
+            }
+        }
+    }
+
+    /// ★ …and the grips are still *there*, outside it, so the cell can be
+    /// resized as well as moved.
+    ///
+    /// Asserted because the cheap way to pass the test above is to stop offering
+    /// grips on a small box, which trades one lost capability for another.
+    #[test]
+    fn the_smallest_object_still_offers_grips_to_resize_it_by() {
+        let cell = Rect::from_min_size(
+            Pos2::new(640.0, 480.0),
+            Vec2::splat(crate::canvas::overlay::MIN_OUTLINE_EXTENT_PX),
+        );
+        let offered = grip_rects(cell);
+        assert!(
+            offered.iter().any(|(g, _)| *g == Grip::NorthWest),
+            "a small box must keep its corners: {:?}",
+            offered.iter().map(|(g, _)| *g).collect::<Vec<_>>()
+        );
+        for (g, r) in &offered {
+            assert!(
+                !cell.contains(r.center()),
+                "{g:?} is still anchored inside the 6 pt cell at {:?}",
+                r.center()
+            );
+            assert!(
+                grip_at(cell, r.center(), GripSet::all()) == Some(*g),
+                "{g:?} is drawn where it cannot be aimed: the R9 failure"
+            );
+        }
+    }
+
+    /// ★★ **The push is exactly zero above the threshold**, which is what makes
+    /// applying it unconditionally safe.
+    ///
+    /// If this ever fails, every comfortable selection in the product has moved
+    /// its grips, and nothing else in the suite would say so in those words.
+    #[test]
+    fn a_box_with_a_body_is_not_pushed_at_all() {
+        for (w, h) in [
+            (MIN_BODY_STRIP_PX, MIN_BODY_STRIP_PX),
+            (MIN_BODY_STRIP_PX, 400.0),
+            (400.0, MIN_BODY_STRIP_PX),
+            (300.0, 200.0),
+        ] {
+            let r = Rect::from_min_size(Pos2::new(100.0, 200.0), Vec2::new(w, h));
+            assert_eq!(
+                grip_bounds(r),
+                r,
+                "a {w} x {h} box was pushed, and it did not need to be"
+            );
+        }
+    }
+
+    /// ★ The push reaches the threshold and stops there, and never runs
+    /// backwards as the box shrinks — so there is no zoom at which the
+    /// affordance jumps.
+    #[test]
+    fn the_push_reaches_the_threshold_and_stops_there() {
+        let mut previous = f32::INFINITY;
+        for step in 0..=40 {
+            let extent = MIN_BODY_STRIP_PX * (step as f32 / 40.0);
+            let r = Rect::from_min_size(Pos2::new(0.0, 0.0), Vec2::splat(extent));
+            let pushed = grip_bounds(r);
+            assert!(
+                (pushed.width() - MIN_BODY_STRIP_PX).abs() < 1e-3,
+                "a {extent} pt box was grown to {} rather than to the threshold",
+                pushed.width()
+            );
+            let push = (pushed.width() - extent) / 2.0;
+            assert!(
+                push <= previous + 1e-3,
+                "the push went UP as the box grew, at extent {extent}"
+            );
+            previous = push;
+        }
     }
 
     /// ★ A comfortable box is unchanged, which is what says the rule is a floor

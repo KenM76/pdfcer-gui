@@ -6506,7 +6506,7 @@ verdict.** Nothing is open on this row and no question is outstanding.
 
 ---
 
-## O57 — ⬜ The grips swallow small objects, and half of it is still open
+## O57 — ✅ The grips swallow small objects — BOTH halves closed 2026-09-05
 
 **Not his report — found by a driven check on 2026-08-29**, and filed here
 because the remaining half is a design decision that is his to make.
@@ -6536,24 +6536,78 @@ checked a grip against its *own* axis, so it stopped grips piling onto each
 other and never stopped one swallowing the body. Corners survive, because they
 are the grips a small box actually needs. Two tests, falsified.
 
-### ★★★ The half that is open, and it is his call
+### ★★★ The half that WAS open — built 2026-09-05, and the asking was the mistake
 
-On a box that is small in **both** axes, the four corner grips cover it too, and
-the body survives only in the gaps between their x-ranges. There is no threshold
-that fixes that, because the grips genuinely do not fit.
+On a box small in **both** axes the four corner grips cover it too, and the body
+survives only in the gaps between their x-ranges. There is no threshold that
+fixes that, because the grips genuinely do not fit.
 
 **Every program in the class solves it the same way: when the box is too small
 to hold them, the grips are drawn OUTSIDE it.** Illustrator, Inkscape and Figma
-all do this. His standing tie-breaker is *"make it work the way other programs
-do"*, which points straight at it — but it is a change to the **painter** as
-well as the hit test, it changes what a selection looks like on every dense CAD
-sheet, and the rotate handle already sits outside and would need to move further
-out to stay clear.
+all do this.
 
-⇒ Not done unilaterally at 08:00 after a build. **The question for him:** should
-a selection too small for its grips draw them outside the box, as other editors
-do — accepting that a dense drawing at fit zoom will show grips overlapping
-neighbouring objects?
+★★ **This section previously ended with a question for him**, on the reasoning
+that it changes what a selection looks like on every dense CAD sheet and so was
+his call. That reasoning was wrong, and his own words on 2026-09-04 say why:
+
+> ***"Always add new features. never ask. just do."***
+
+He had just watched a capability sit unbuilt for five hours while a question
+waited for him, and the answer when it came was *"yes"*. His standing
+tie-breaker — *"make it work the way other programs do"* — had already decided
+this one before the question was written. **Asking cost a week.**
+
+### What was built
+
+`canvas::handles::grip_bounds` grows the box the grips are **anchored** to, per
+axis, by exactly enough to reach `MIN_BODY_STRIP_PX` and no more:
+
+```text
+push = max(0, (MIN_BODY_STRIP_PX - extent) / 2)     on each side
+```
+
+★ **Above the threshold the push is exactly zero and every grip lands byte for
+byte where it did before.** That is what makes it safe to apply
+unconditionally: no second layout to keep in step, no mode to be in, and no
+zoom at which behaviour changes discontinuously — the push grows smoothly from
+0 as the box shrinks through 20 pt.
+
+One function covers the painter and the hit test together, because
+`overlay::draw_grips` and `handles::grip_at` both read `grip_rects`. The rotate
+handle anchors to the pushed box too, so on a tiny selection it still hovers
+clear instead of landing inside the body.
+
+★★ **The perpendicular-axis filter added on 2026-09-04 was DELETED, not kept
+alongside.** With the push in place that condition can never be false — the
+pushed box always has a body strip — and a condition that cannot fail is not a
+guard, it is decoration that reads like one. A `debug_assert` naming the
+invariant took over its job.
+
+⚠ **What this costs, stated rather than discovered later:** a pushed grip can
+overlap a **neighbouring** object, so on a dense drawing at low zoom the grips
+of one tiny object may sit over another. That is the trade every program in the
+class makes and it is the right way round — the alternative is an object that
+cannot be moved at all. It cannot mislead, either: grips are the cursor's own
+furniture, never content, so Rule 4 is untouched.
+
+### Tests, all falsified against a plant that removes the push
+
+`the_smallest_object_the_shell_can_draw_is_still_grabbable` walks a 7×7 grid
+over a 6 pt cell — the floored size his banana's 0.85 pt cells actually meet —
+and requires `Grip::Move` at every one of the 49 points. Four more:
+`the_smallest_object_still_offers_grips_to_resize_it_by` (the cheap way to pass
+the first is to stop offering grips at all),
+`a_short_box_keeps_its_whole_body_and_its_grips_sit_outside_it` (21 samples
+across the width, because the old defect left a 1.4 × 0.5 pt hole at dead centre
+that a centre-only test walks straight through),
+`a_box_with_a_body_is_not_pushed_at_all`, and
+`the_push_reaches_the_threshold_and_stops_there`. Planting `bounds` in place of
+`bounds.expand2(push)` turned **five** of them red, each by its own
+`test result: FAILED` line.
+
+⬜ **NOT DRIVEN.** The window was not launched. `ui-verify --check
+mouse_work_survives_every_render_tier` is the check that found this and it has
+not been re-run against the fix.
 
 ### ★★★ It IS driven now — 2026-09-04, on his own banana sheet
 
