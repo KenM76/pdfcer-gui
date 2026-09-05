@@ -178,6 +178,37 @@ impl Check for RibbonMatchesTheMockupGeometry {
 /// (`Metrics::corner_radius`, 3 pt in `Quiet`), so the literal corner pixel of
 /// the rectangle is outside the painted shape even when a frame IS drawn, and
 /// a one-pixel probe would report every framed control as frameless.
+///
+/// # ★★★ `ground` is the load-bearing argument, and a wrong one makes this
+/// # function measure NOTHING while looking exactly like a working oracle
+///
+/// Every verdict here is a comparison against `ground`, and both branches use
+/// it: `far(outside)` **discards** the pair, `far(inside)` **convicts** it. So
+/// a `ground` sampled from anything that is not the band makes `far` true
+/// almost everywhere, every pair is discarded, `judged` reaches zero and the
+/// function returns `None` for the entire band.
+///
+/// That happened on 2026-09-05 and it is written up at the caller, where the
+/// sampling point lives: the reference was taken from inside a **collapsed
+/// group's plate**, `#E8E8EA` against the band's `#F2F2F3` — a channel-sum
+/// distance of **29 against this function's threshold of 24.** Ten points of
+/// grey, and the check went from PASS to *"0 resting band controls were judged
+/// for a frame"*.
+///
+/// ⇒ **The `None` return is what made that visible at all**, and it is worth
+/// keeping for that reason alone. A version answering `true` when nothing could
+/// be measured would have reported the band frameless — the very claim the
+/// check exists to establish — on a run that had measured no pixels.
+///
+/// ★ A hypothesis that was **falsified by driving**, recorded because the
+/// reasoning was plausible and wrong: when the band began stacking controls
+/// into columns one point apart, the diagonal outside probe looked certain to
+/// land on the neighbour above. It does not — the diagonal steps sideways as
+/// well as up, out of the control's own x range and into the group's padding,
+/// which is band. Reverted to the diagonal after a driven run with the fixed
+/// `ground` judged **11** controls either way. *A layout change is not
+/// automatically the cause of a probe that stopped measuring; find the
+/// reference first.*
 #[must_use]
 pub fn is_frameless(image: &Image, rect: PixRect, ground: Rgb, inset: u32) -> Option<bool> {
     let far = |c: Rgb| {
@@ -321,18 +352,47 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     let mut failures: Vec<String> = Vec::new();
 
     // --- rows 1-3: geometry, from what the process published ---------------
+    // ★★★ **`.collapsed` is excluded, and leaving it in cost this check every
+    // verdict it had — 2026-09-05.**
+    //
+    // A group the collapse ladder folded publishes
+    // `ribbon.group.<tab>.<id>.collapsed`: a captioned BUTTON, with a plate
+    // painted under it and **no items inside it at all**. It is a `ribbon.group`
+    // region by name and it is not a band group by nature, and this `find` took
+    // the first match.
+    //
+    // Both things below then went quietly wrong, in different ways:
+    //
+    // * The 6 pt clearance assertion found no items inside the rect, so
+    //   `first_item` was infinite and the whole check simply **did not run** —
+    //   no note, no failure, no skip. An assertion that vanishes when its
+    //   subject is absent is the shape this harness exists to remove.
+    // * The band ground was sampled from inside the collapsed group's **plate**
+    //   — `#E8E8EA` against the band's own `#F2F2F3`, a channel-sum distance of
+    //   **29 against a `far` threshold of 24.** Every real band pixel was then
+    //   "not the background", every probe pair was discarded, and the check
+    //   reported *"0 resting band controls were judged for a frame"* — a pixel
+    //   oracle measuring nothing, on a run that had PASSED the sweep before.
+    //
+    // ⇒ **Ten points of grey.** The failure is not that the reference was
+    // wrong by a lot; it is that a reference sampled from *whatever region
+    // happened to be first* has no reason to be the band at all.
     let group = regions
         .iter()
         .find(|r| {
             r.name.starts_with(&format!("ribbon.group.{RESTING_TAB}."))
                 && !r.name.ends_with(".caption")
+                && !r.name.ends_with(".collapsed")
         })
         .ok_or_else(|| {
             Error::new(format!(
-                "no `ribbon.group.{RESTING_TAB}.*` region — the {RESTING_TAB} tab is not the \
-                 active one, so every measurement below would be about a different band"
+                "no OPEN `ribbon.group.{RESTING_TAB}.*` region — either the {RESTING_TAB} tab \
+                 is not the active one, so every measurement below would be about a different \
+                 band, or every group on it is collapsed, in which case there are no resting \
+                 controls to judge"
             ))
         })?;
+    report.note(format!("measuring against `{}`", group.name));
     let first_item = regions
         .iter()
         .filter(|r| r.name.starts_with("ribbon.item.") && group.rect.contains_rect(r.rect))
@@ -553,6 +613,70 @@ mod tests {
             Some(false),
             "a framed control flush against the left edge must still read as framed from \
              its right-hand corners"
+        );
+    }
+
+    /// ★★★ **A `ground` that is not the band's colour makes this REFUSE, and
+    /// the margin is ten points of grey.**
+    ///
+    /// The incident, 2026-09-05: [`assess`] sampled its reference from the
+    /// first `ribbon.group.file.*` region it found, and on that run the first
+    /// one was `…export.collapsed` — a captioned button with a **plate** under
+    /// it and no items inside it. The plate is `#E8E8EA`; the band is
+    /// `#F2F2F3`; the channel-sum distance is **29** against `far`'s threshold
+    /// of 24. Every probe pair was then discarded as "not the background",
+    /// `judged` fell to zero for the whole band, and the check reported
+    /// *"0 resting band controls were judged for a frame"* — a PASS the day
+    /// before, and nothing measured the day after.
+    ///
+    /// This pins the consequence rather than the cause, deliberately: the
+    /// cause is one `find` predicate in [`assess`] and would be re-broken by
+    /// any future region name that is a `ribbon.group.*` and not a band group.
+    /// What must never change is that a wrong reference **refuses** instead of
+    /// answering — `None`, not `Some(true)`. An oracle that certified the band
+    /// frameless while sampling zero pixels is the exact failure this file's
+    /// header says it exists to remove.
+    ///
+    /// The two figures are the measured ones, so a theme change that narrows
+    /// the gap below `far`'s threshold turns this test red rather than turning
+    /// the check silently vacuous.
+    #[test]
+    fn a_ground_taken_from_a_collapsed_groups_plate_produces_no_verdict() {
+        // The two colours measured off the capture on the day, and their
+        // distance in this function's own metric. `board(false)` paints a
+        // uniform field within 2 of `PLATE`, so it stands for the plate; the
+        // reference handed in is the band. The incident ran the other way
+        // round — plate as reference, band as pixels — and the property is
+        // symmetric in exactly the way that makes the direction not matter.
+        const PLATE: Rgb = Rgb::new(0xE8, 0xE8, 0xEA);
+        const BAND: Rgb = Rgb::new(0xF2, 0xF2, 0xF3);
+        let distance = |a: Rgb, b: Rgb| {
+            let d = |x: u8, y: u8| i32::from(x).abs_diff(i32::from(y));
+            d(a.r, b.r) + d(a.g, b.g) + d(a.b, b.b)
+        };
+        assert_eq!(
+            distance(PLATE, BAND),
+            29,
+            "the measured distance between a collapsed group's plate and the band. If a \
+             theme change brings this under `far`'s threshold of 24 the incident stops \
+             being reachable — and this line is where that is noticed, rather than in a \
+             check that has quietly gone vacuous"
+        );
+
+        let rect = PixRect::new(10, 8, 19, 13);
+        assert_eq!(
+            is_frameless(&board(false), rect, GROUND, 2),
+            Some(true),
+            "the control is frameless when the reference IS the surface it sits on"
+        );
+        assert_eq!(
+            is_frameless(&board(false), rect, BAND, 2),
+            None,
+            "with a reference {distance} points from the pixels — a plate against a band, \
+             or a band against a plate — every probe pair must be discarded and the \
+             function must REFUSE. Returning `Some(true)` here would certify the whole \
+             band as frameless while measuring no pixels at all",
+            distance = distance(PLATE, BAND)
         );
     }
 }

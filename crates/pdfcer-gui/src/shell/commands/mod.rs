@@ -642,6 +642,23 @@ mod tests {
         // distinction to learn for no gain, and `icons/assets/PROVENANCE.md`
         // makes that directory the operator's own work, so the alternative was
         // never "draw one" but "ask him for one".
+        //   ⇒ ★★★ **CORRECTED the same day, and the count does not move.**
+        //   `file.document_properties` names `document`, not `properties`. The
+        //   paragraph above is kept verbatim because it is the exhibit: it is
+        //   the SIXTH instance of this ledger's own rule — *verify an absence
+        //   against the source, never against the document that asserts it* —
+        //   and it was written four lines under that sentence. `document.svg`
+        //   shipped, [`crate::icons::Icon::Document`] carried it, and that
+        //   variant's doc said in bold that no command named it. So *"ask him
+        //   for one"* was asking for a drawing this repository already held.
+        //   Two further checkable clauses failed with it: `catalog/edit.rs`
+        //   scopes the shared-key convention to controls *with the same
+        //   SUBJECT*, and these two have different subjects (the file, and
+        //   whatever is selected on the page); and the approved mockup draws
+        //   `document` on that button. **This assertion could not have caught
+        //   any of it** — `named` counts commands that name *an* icon, and both
+        //   spellings do. What caught it was `tools/compare-mockup-ribbon.py`'s
+        //   item phase, which compares *which* one.
         assert_eq!(named, 134, "commands naming an icon");
         // ★ 12 → 17 on 2026-08-27: the Format ▸ Font group's five commands
         // all refuse a glyph, and they refuse it for one reason argued once at

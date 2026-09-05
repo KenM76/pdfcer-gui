@@ -68,6 +68,38 @@ fn group_rect(rendered: &[(String, Rect)]) -> Option<Rect> {
         .map(|(_, r)| *r)
 }
 
+/// **The area the group's ITEMS occupy** — the union of every `ribbon.item.*`
+/// rect the frame published, in square points.
+///
+/// ★★★ **THE ORACLE FOR "SPACE IS RECLAIMED", AND THE GROUP'S WIDTH IS NOT.**
+///
+/// The two reclaim tests below used to compare `group_rect(..).width()`, and
+/// that oracle is only valid while a group lays its items out on ONE ROW. On
+/// 2026-09-05 `band::measure_group_rows` began asking every group for the
+/// band's full row ceiling, so two equal-width controls stack into a column of
+/// two — and the column is exactly as WIDE with one item as with two. Both
+/// tests failed printing `126.71875 vs 126.71875`: **the same number on both
+/// sides, which is the tell that the measurement had stopped being able to see
+/// the property rather than that the property had gone.**
+///
+/// A hole — an item measured but not drawn — is still a hole under either
+/// layout, and under either layout it shows up as **area**: two items occupy
+/// twice one item's area whether they sit side by side or one above the other.
+/// So the assertion is layout-independent, which is what the original was
+/// silently not.
+///
+/// ⇒ **When a layout change turns a passing assertion red, ask whether the
+/// assertion was measuring the rule or the arrangement.** This project has
+/// recorded the same shape against `ui-verify` repeatedly (*ask what the check
+/// SAMPLED*); it applies to a unit test's choice of dimension identically.
+fn item_area(rendered: &[(String, Rect)]) -> f32 {
+    rendered
+        .iter()
+        .filter(|(name, _)| name.starts_with("ribbon.item."))
+        .map(|(_, r)| r.width() * r.height())
+        .sum()
+}
+
 /// One item's rect.
 fn item_rect(rendered: &[(String, Rect)], id: &str) -> Option<Rect> {
     let want = format!("ribbon.item.{id}");
@@ -225,13 +257,18 @@ fn a_hidden_item_is_not_drawn_and_its_space_is_reclaimed() {
         "its neighbour is unaffected"
     );
 
-    let wide = group_rect(&both).expect("group drew");
-    let narrow = group_rect(&one).expect("group drew");
+    // The GROUP still draws in both cases; what must shrink is the space its
+    // items take. See `item_area` for why that, and not the group's width, is
+    // the oracle a stacking layout leaves standing.
     assert!(
-        narrow.width() < wide.width(),
-        "the group must give the hidden item's width back: {} vs {}",
-        narrow.width(),
-        wide.width()
+        group_rect(&both).is_some() && group_rect(&one).is_some(),
+        "group drew"
+    );
+    let wide = item_area(&both);
+    let narrow = item_area(&one);
+    assert!(
+        narrow < wide,
+        "the group must give the hidden item's space back: {narrow} vs {wide} sq pt"
     );
 }
 
@@ -423,10 +460,32 @@ fn a_hidden_custom_item_is_never_offered_to_the_renderer_and_gives_its_width_bac
 
     let render_counting = |conditions: &ConditionSet| -> (usize, Rect) {
         let ctx = context();
-        let shell = shell([
-            Item::command("a.one"),
-            Item::custom("swatch").shown_when("mode.editing"),
-        ]);
+        // ★★★ `with_prefer_rows(1)` since 2026-09-05, and it is the FIXTURE
+        // pinning the layout so that WIDTH is a valid oracle — not a change to
+        // what is being tested.
+        //
+        // A custom item publishes no `ribbon.item.*` rect (that is this test's
+        // own first paragraph), so `item_area` cannot see it and the only
+        // observable is the group's box. Once `band::measure_group_rows` began
+        // asking every group for the band's row ceiling, the group's two items
+        // STACKED — and a column is as wide with one item as with two whenever
+        // the hidden one is not the widest. `CUSTOM_ITEM_WIDTH` is 96 and
+        // `a.one` labelled is ~115, so it never was. The test failed printing
+        // `126.71875 vs 126.71875`: the same number twice, which says the
+        // measurement stopped being able to see the property.
+        //
+        // One row is a state a manifest can legally declare, it is what makes
+        // "gives its budgeted width back" a statement about width at all, and
+        // it leaves the property under test — `sizing::visible` running BEFORE
+        // measurement — exactly where it was.
+        let shell = Shell::new()
+            .with_mode(Mode::new("only", "Only", ["t"]))
+            .with_tab(Tab::new("t", "Tab").with_groups([
+                Group::new("g", "Group").with_prefer_rows(1).with_items([
+                    Item::command("a.one"),
+                    Item::custom("swatch").shown_when("mode.editing"),
+                ]),
+            ]));
         let registry = registry();
         let mut state = crate::ribbon::RibbonState::new();
         state.set_active_tab("t");

@@ -230,7 +230,38 @@ fn three_placements_then_one_move_leave_three_runs() {
 ///
 /// # This test asserts the DEFECT, and here is what to do when it fails
 ///
-/// It is written to **pass on the broken engine and fail on the fixed one**,
+/// ★★★ **INVERTED 2026-09-05, and this paragraph is the record of why.**
+///
+/// It *was* written to pass on the broken engine and fail on the fixed one. It
+/// went red the moment the lock moved to `pdfcer-core` `b1033ab`, which is
+/// exactly what it was for — **a test asserting somebody else's limitation is
+/// the only thing that notices when the limitation ends.** Confirmed at source
+/// before inverting, as the instructions below required: `edit.rs`'s
+/// `text_edit_command` now sweeps on **every** surgery (`Pass 251.0`), reading
+/// `self.value` — the overlay-or-base current payload — and emptying every
+/// non-empty entry of `page.contents[1..]` rather than only on the first
+/// rewrite.
+///
+/// The three expectations are now `1`, `1`, `1`. What they assert has not
+/// changed shape: one placement, one copy; a second placement after an edit,
+/// still one copy; **and a further edit does not add another** — that last is
+/// the half of his report that said *"a duplicate for every new text box you
+/// added"*, and a fix that emptied the extras only sometimes would still fail
+/// it. The two assertions mean different things and both are kept.
+///
+/// ⚠ The `ZZFIRST` expectation was **already `1` and is unchanged**. It is the
+/// operator's own exception — *"if you make a text box, switch tools and make
+/// another one, the first one doesn't start making duplicates"* — and it is
+/// what localised the defect to the `first_edit` gate in the first place. It
+/// asserted correct behaviour before the fix and asserts it after, which is
+/// why it did not move.
+///
+/// ---
+///
+/// The original instructions, kept verbatim because the next person to invert a
+/// tripwire will want the shape of it:
+///
+/// It was written to **pass on the broken engine and fail on the fixed one**,
 /// which is the shape `engine_overlay_skew.rs` established for a claim about a
 /// crate this project may not change. If you are reading this because the test
 /// went red:
@@ -289,11 +320,10 @@ fn text_added_after_an_earlier_edit_is_duplicated_by_the_next_one() {
 
     assert_eq!(
         copies_of(&s, "ZZSECOND"),
-        2,
-        "★ THE ENGINE MAY HAVE BEEN FIXED. This test asserts a DEFECT: text added after a \
-         session's first content edit is folded into contents[0] by the next edit AND left \
-         in its own /Contents entry, so it renders twice. If this now reports 1, read this \
-         test's doc comment — invert both expectations and close the ENGINE_BACKLOG row."
+        1,
+        "★ text added AFTER the session's first content edit must be folded into \
+         contents[0] exactly once. Two copies is the operator's original report — the \
+         defect this file was written to reproduce, fixed at the engine in Pass 251.0"
     );
     assert_eq!(
         copies_of(&s, "ZZFIRST"),
@@ -328,15 +358,19 @@ fn each_further_edit_adds_another_copy() {
     add(&mut s, "ZZSECOND", 680.0);
     let object = last_object(&mut s);
     nudge(&mut s, object);
-    assert_eq!(copies_of(&s, "ZZSECOND"), 2, "one edit, one duplicate");
+    assert_eq!(
+        copies_of(&s, "ZZSECOND"),
+        1,
+        "one edit, and still one copy — the sweep now runs on every surgery"
+    );
 
     nudge(&mut s, first);
     assert_eq!(
         copies_of(&s, "ZZSECOND"),
-        3,
-        "★ THE ENGINE MAY HAVE BEEN FIXED — see \
-         `text_added_after_an_earlier_edit_is_duplicated_by_the_next_one`. Until it is, a \
-         second edit re-folds the still-live extra a second time and the operator's text \
-         accumulates one copy per gesture."
+        1,
+        "★ AND IT MUST NOT COMPOUND. This is the half of his report that said `a duplicate \
+         for every new text box you added` — a fix that emptied the extras only SOMETIMES \
+         would leave this red while its neighbour went green, and the two failures would \
+         mean different things"
     );
 }

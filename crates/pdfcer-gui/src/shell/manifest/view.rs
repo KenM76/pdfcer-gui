@@ -373,8 +373,35 @@ pub(super) fn tab() -> Tab {
                     command("view.panel_pages"),
                     command("view.panel_bookmarks"),
                     command("view.panel_layers"),
-                    command("view.panel_signatures"),
+                    // ★★★ **Objects and Signatures SWAPPED, 2026-09-05**, and
+                    // the reason is which side had an argument.
+                    //
+                    // The order was `… layers, signatures, objects, forms` and
+                    // nothing anywhere said why signatures came fourth — the
+                    // only positional claim this group ever carried is the one
+                    // below, about Forms being last. The approved mockup's
+                    // Panels band puts **Objects** in the fourth slot and
+                    // Signatures after it, and where the product has no
+                    // argument and the mock has a position, the mock is the
+                    // spec. `tools/compare-mockup-ribbon.py`'s item phase is
+                    // what surfaced it; nothing before it compared item order
+                    // at all.
+                    //
+                    // ⚠ The mockup's own Panels band ALSO holds Properties,
+                    // Comments and Fonts, and those three did **not** move the
+                    // product. Each already appears on another tab
+                    // (`format.properties` on Format ▸ Selection,
+                    // `markup.comments` on Markup ▸ Comments, `file.fonts` on
+                    // File ▸ Document), so adding them here violates
+                    // `RIBBON_IA.md` P1 — one command on at most one tab —
+                    // which `Shell::validate` enforces. And an invalid manifest
+                    // is not a local failure: `Capabilities::for_mode` answers
+                    // `FULL` when the shell is absent, so the whole build
+                    // would silently grant every authoring capability to every
+                    // mode. Those three moved on the MOCK side; see
+                    // `RIBBON_IA.md`'s 2026-09-05 divergence ledger.
                     command("view.panel_objects"),
+                    command("view.panel_signatures"),
                     // ★ Last, and on this tab at all, because the operator
                     // answered `crate::app::modes`' open question on
                     // 2026-08-14: Read fills forms. Read is shown `file` and

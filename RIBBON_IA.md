@@ -17,6 +17,216 @@ on top of everything here).
 
 ---
 
+## ★★★ Amendment, 2026-09-05 (LATEST) — the band was DRIVEN, and the three-row change had reached nothing on screen
+
+The amendment below this one ends with a block headed **"⬜ What is STILL
+unmeasured, named rather than implied"**, which says that every number in it
+came from the mockup's side and that *"the product's own rectangles were NOT
+captured"*. They have been now. This section is what they said.
+
+### ★★★ 1. AT 1400 PX, NOT ONE GROUP ON THE BAND USED A SECOND ROW
+
+Release binary, launched off screen with
+`PDFCER_DIAG_VIEWPORT="-4200,-4200,1400,900"` and `PDFCER_DIAG=1`, File tab in
+Edit mode, `ribbon.item.*` and `ribbon.group.*` read out of its own trace:
+
+```text
+file.file                x=8..401    (393 pt)  items=4  rows=1  tops=[41.0]
+file.recognise.collapsed x=415..494  ( 79 pt)                         <- collapsed
+file.save                x=508..944  (435 pt)  items=4  rows=1  tops=[41.0]
+file.export.collapsed    x=958..1016 ( 59 pt)                         <- collapsed
+file.security            x=1030..1196(166 pt)  items=2  rows=1  tops=[41.0]
+file.print               x=1210..1274( 64 pt)  items=1  rows=1  tops=[41.0]
+```
+
+**Six groups, every one of them one row, two of them collapsed into captioned
+buttons — with 126 pt of band still unspent.** The band's row area is 68 pt and
+it was carrying a single 21.7 pt row: forty-six points of air under every
+control, exactly the picture the amendment below describes as *"the old band
+with twelve points of air in it"*, only worse, because the budget had since
+been raised to three rows and nothing consumed it.
+
+★★ **`GROUP_ROWS` was 2 and became 3, and that was not the constant that
+decides anything.** `plan::wrap_group` short-circuits on
+*"it fits within `GROUP_WRAP_WIDTH` (440 pt) on one row, so leave it"*, and
+**no File-tab group is 440 pt wide on one row** — the widest was 435. So the
+row ceiling could have been three, or ten, and the band would have drawn one
+row either way. The table in the amendment below (*"Zoom 2 × 3"*, *"Panels
+3 × 3"*) describes a layout the running binary did not produce; it was computed
+from the mock's rectangles and this shell's unit tests, and its own report said
+so.
+
+⇒ **The fix is one argument at one call site**, `band::measure_group_rows`:
+a group now asks for the row ceiling it is being planned against unless its
+manifest asks for something else. `wrap_group` still returns the *narrowest*
+packing within that ceiling, so this demands nothing — a pair whose 1 × 2 is
+narrowest still gets two rows, a single item still gets one, and O97's
+`prefer_rows: 2` on View ▸ Page display still wins. What it removes is only the
+short-circuit, which `prefer_rows`'s own doc already calls *"exactly the right
+to skip the fits-already test"*.
+
+### ★★★ 2. WHAT THE SAME MEASUREMENT SAYS AFTER — two more commands reachable
+
+Same binary, same command line, rebuilt:
+
+| | before | after |
+|---|---|---|
+| groups **on the band** at 1400 | 6 | **8** |
+| File ▸ File | 393 pt, 1 row | **279 pt, 3 rows** |
+| File ▸ Save | 435 pt, 1 row | **241 pt, 3 rows** |
+| Recognise (`file.ocr`) | **collapsed** | **on the band, drawn** |
+| Document, pdfcer | past the overflow | on the band |
+| row tops in a 3-row group | — | **41.0 · 63.7 · 86.3** (22.7 pt pitch) |
+
+The pitch is the mockup's: `.rb { height: 22px }` over `.grp .col { gap: 1px }`,
+which is where `3 × 22 + 2 × 1 = 68` comes from. At 1700 px the whole File tab
+fits with all eight groups open and Export drawing seven controls in 344 pt.
+
+★ **The width series was walked, not sampled at its ends** — 1700, 1400, 1300,
+1200, 1100, 1000, 900, 800, because two samples either side of a transition look
+exactly like no transition. Distinct controls drawn and groups open, per width,
+after the change:
+
+| width | 1700 | 1400 | 1300 | 1200 | 1100 | 1000 | 900 | 800 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| groups open | **8** | 5 | 5 | 5 | 4 | 3 | 2 | 2 |
+| groups collapsed | 0 | 3 | 3 | 3 | 2 | 2 | 2 | 2 |
+| controls drawn | 25 | 12 | 12 | 12 | 11 | 10 | 8 | 8 |
+
+The ladder still engages, monotonically, all the way down. ⚠ There is no BEFORE
+column and it is not reconstructed: the launcher writes one trace per width and
+the second run overwrote the first. What survives of the before state is the
+1400 table above, quoted while it was in front of me. Traces are in
+`D:\temp\pdfcer-scratch\geo\trace-<width>.txt`; `analyse.py` and `series.py`
+beside them print these from the **last** frame of each run.
+
+### ⬜ 3. WHAT IS STILL DIFFERENT, AND IT IS AN ALGORITHM, NOT A NUMBER
+
+**The mockup is COLUMN-major and the product is ROW-major.** The mock stores a
+group's items as an array of columns —
+`{cap:'Panels', items:[[Pages,Bookmarks,Layers],[Objects,Signatures,Fill form]]}`
+— and its CSS lays each column out as a flex column, so an operator reads *down*
+the first column and then *down* the second. `wrap_group` partitions the same
+items into contiguous **rows**, so the operator reads *across*. Both produce a
+2 × 3 block of the same footprint; the item in each cell differs.
+
+Not changed, and the reason is a schema fact rather than a preference: **the
+column split does not exist in `built_in.ron`.** Matching the mock faithfully
+means the manifest carrying columns, which is a change to
+`egui_shell::manifest::Group`, to the RON generator, to `measure_group` and to
+`captioned_group` — and the mock is not self-consistent about it either (its
+Edit ▸ Content draws the small column *before* the Large run, where every other
+band and the shell's own renderer put Large first). Named here rather than
+implied; it is the largest open ribbon question.
+
+⬜ **Also unmeasured: item SIZE.** The mock draws `Edit text` and `Add text` as
+Large; the manifest registers both Small. `compare-mockup-ribbon.py` does not
+compare size and says so.
+
+---
+
+## ★★★ Amendment, 2026-09-05 — the sixteen item divergences, and NINE OF THEM WERE THE INSTRUMENT
+
+The amendment below records sixteen groups whose item sequences differ and
+calls that list *"the measured backlog"*. **Seven of the sixteen were the
+script comparing two private vocabularies, and two more were its parser
+recognising one of three item kinds.** The residue was nine real ones, and this
+is the ledger of which side moved for each.
+
+### ★★★ The correction, because it is worth more than the fix
+
+The item phase compared **icon KEY strings**, and the amendment below states
+its finding in bold:
+
+> ~~*"`folder` vs `open`, `printer` vs `print`, `scissors` vs `cut`, `ruler` vs
+> `measure` mean the two sides are drawing **different pictures** on the same
+> button."*~~
+
+**Six of those eight name the same picture.** `icons/catalog/mapping.rs` says so
+on one line each:
+
+```rust
+Icon::Open | Icon::FontFolders => assets::FOLDER,   // keys "open", "font-folders"
+Icon::Print                    => assets::PRINTER,  // key  "print"
+Icon::Measure                  => assets::RULER,    // key  "measure"
+Icon::Export                   => assets::DOWNLOAD, // key  "export"
+Icon::InsertImage              => assets::IMAGE,    // key  "insert-image"
+Icon::EditText                 => assets::EDIT,     // key  "edit-text"
+Icon::ImportFormData           => assets::UPLOAD,   // key  "import-form-data"
+```
+
+The mock's key is the **asset basename** — its generator reads the inventory out
+of `icons/assets/`, which is what makes *"this glyph ships"* true by
+construction there. The product's key is the **role**, and
+`icons/catalog/mod.rs`'s header declares that deliberately: *"a distinct key
+over shared art"*, so that `Open` and `FontFolders` can both be the folder and
+remain two commands. Comparing the two key schemes asks a question **neither
+side is answering**.
+
+⇒ The script now resolves both sides to the **asset each control draws**
+(`asset_by_icon_key`), and teaches its RON parser the other two item kinds
+(`Custom`, `Separator` — see `ron_groups`). 16 → 9.
+
+★★ **Both errors ran in the expensive direction: the instrument MANUFACTURED
+work.** Obeying it would have re-pointed `file.open` at a key spelled `folder`,
+changed nothing on screen, and closed a defect that never existed. That is the
+third time this has been recorded about this one script, from the same cause —
+*ask what the instrument SAMPLED.*
+
+### The nine real divergences, and which side moved
+
+| # | group | the difference | side that moved | why |
+|---|---|---|---|---|
+| 1 | File ▸ Document | mock `document`, product `properties` — **two adjacent buttons drawing the same picture** | **product** | `document.svg` shipped and was an ORPHAN, kept only so `every_icon_parses` would keep walking it. `catalog/edit.rs` scopes the shared-key convention to controls *with the same SUBJECT*; this pair has different subjects (the file, and whatever is selected on the page). The registration's *"the alternative is not 'draw one' but 'ask him for one'"* was written four lines under this document's own rule about verifying absences against the source |
+| 2 | File ▸ File — Recent | mock draws an icon **and** a word; product drew a bare `menu_button` | **product** | `file.recent` has carried `.with_icon("recent")` since the glyph landed, and its registration named the exact file where the other half of the work lived. It sat unactioned. `app::recent::menu` now calls `menu_image_text_button` |
+| 3 | View ▸ Panels — Objects / Signatures | mock puts Objects fourth | **product** | the group's only positional argument is about Forms being **last** (*"the operator meets the read-only surfaces first"*); nothing said why Signatures came fourth. Where the product has no argument and the mock has a position, the mock is the spec |
+| 4 | View ▸ Panels — Properties, Comments, Fonts | mock has three extra controls | **mock** | ⚠ **each already appears on another tab** (`format.properties`, `markup.comments`, `file.fonts`), so adding them violates **P1** — which `Shell::validate` enforces, and an invalid manifest is not a local failure: `Capabilities::for_mode` returns `FULL` when the shell is absent, silently granting every authoring capability to every mode. Note the mock draws Comments in Markup ▸ Comments **as well**, so it violates P1 on its own face |
+| 5 | View ▸ Navigate | mock: `pointer` for Select and `show-points` for **both** Points and Smart select | **mock** | `pointer.svg`'s own comment says it is *the Tool panel's* glyph — *"what you are holding"*; `cursor.svg` is the Select tool's arrow, *"the single most standardised glyph in the whole product class"*. And one band drawing `show-points` twice is the exact fault this project refused for the five form-field controls |
+| 6 | Pages ▸ Clipboard | mock `scissors`, product `cut` | **mock** | `scissors.svg`'s own comment calls it *"placeholder"*; `cut.svg` is the authored glyph with a paragraph on why the blades cross above the rings. The mock's **own** Edit ▸ Clipboard already used `cut`, so it disagreed with itself |
+| 7 | Pages ▸ Organise | mock puts Merge third | **mock** | §5.3 of this document lists the order — Delete, Extract, [Replace], Move up/down, [Split], **Merge** — and the product is that list with the unbuilt rows absent. The mock is the only one of the three that disagrees |
+| 8 | Edit ▸ Clipboard | product has a second paste | **mock** | `edit.paste_duplicate`, O58, 2026-08-29. It shares `paste` deliberately: *"a second paste glyph would be a distinction the operator has to learn for no gain — the two are told apart by their labels and by the chord in the tooltip, which is how Word and Acrobat tell their paste variants apart too."* The mock gained the control, not a new glyph |
+| 9 | Edit ▸ Content | mock puts Reflow second | **mock** | the product's order carries a causal argument — *"an operator reflows a paragraph because they have just retyped a sentence in it, so it follows the tool that does the retyping"* — and the mock's has none |
+| 10 | Markup ▸ Style | mock draws a fourth control, `100 %` | **mock** | annotation opacity is `/CA`, which `pdfcer-core` does not write. **R9**: an affordance for something that cannot happen is the worst kind of placeholder — the mark would be authored fully opaque and the operator would have no way to tell |
+| 11 | Tools ▸ Batch | mock `convert`, product `combine` (`link.svg`) | **mock** | the mock's own comment two groups above calls `convert.svg` *"an orphan variant so the art stays under test"* and its former alias *"a false claim"*. Merging files is two links joined |
+
+*(Eleven rows for nine groups: View ▸ Panels carried two independent
+differences, and File ▸ File's Recent control was found by READING, not by the
+instrument — a `Custom` item carries no command id, so nothing on the data side
+could say what it draws. It is held by the instrument now, through
+`CUSTOM_GLYPHS`, which is a hand-maintained claim and says so at the table.)*
+
+**Where a capability shipped after the mock was drawn, or the product's choice
+carries a written argument and the mock's does not, the mock moved. Where they
+simply disagreed, the product moved. Where the mock's picture would break a P1
+invariant, the mock moved and the reason is recorded above rather than left to
+be rediscovered.**
+
+### The instrument, and its falsification
+
+`python tools/compare-mockup-ribbon.py` exits **0** on both phases.
+
+It was falsified against all four sources it reads — a byte copy taken first,
+the plant asserted to have landed by reading the file back, and the script's own
+`DIFFER` line required rather than its exit code alone:
+
+| plant | result |
+|---|---|
+| `file.document_properties` icon back to `properties` | exit 1, names `'Document'` |
+| `Custom(kind: "recent_files")` deleted from the RON | exit 1, names `'File'` |
+| the mock's `Print…` glyph changed to `save` | exit 1, names `'Print'` |
+| `Icon::Print => assets::SAVE` in `mapping.rs` | exit 1, names `'Print'` |
+
+Restored, and green again. The fourth is the one that matters: it proves the
+**asset bridge** is load-bearing rather than decorative — a comparison that had
+quietly fallen back to key strings would still have been green there.
+
+⚠ **What it still cannot see**, unchanged and now longer: item **size**, item
+**label**, and the **column split** described in the geometry amendment above.
+`CUSTOM_GLYPHS` in that script is a hand-maintained claim about what each
+`Item::Custom` paints, and it says so at the table.
+
+---
+
 ## ★★★ Amendment, 2026-09-05 (LATER THE SAME DAY) — the visual half was checked for the first time, and the band was TWO ROWS where the mockup is THREE
 
 Everything in the amendment below this one is still true and is still not

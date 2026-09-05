@@ -654,7 +654,7 @@ fn refusal_of(error: &FormatError) -> t::TextStyleRefusal {
 ///
 /// | the engine's case | reachable here? |
 /// |---|---|
-/// | *"the page's content was already edited this session"* | **no** — [`reflow`]'s own forecast declines first, with [`ReflowRefusal::PageAlreadyEdited`] |
+/// | *"the page's content was already edited this session"* | **yes, since 2026-09-05.** [`reflow`]'s over-broad forecast used to decline first; it is gone, because `Pass 251.0` refuses the case the forecast was really guarding — a page carrying a **non-empty appended content stream** — by name. [`ReflowRefusal::PageAlreadyEdited`] is now raised from the engine's answer rather than ahead of it |
 /// | *"the page set was changed this session"* | **yes**, and it is the one this arm is for |
 /// | *"the page has no `/Contents` to reflow"* | **no** — the operand is a caret in existing text, and a page with no content has no text to put a caret in |
 ///
@@ -712,45 +712,46 @@ pub(super) fn reflow(doc: &mut OpenDoc, page: usize, block: usize) {
     //
     // ⇒ The engine's own refusal remains the backstop and is traced by the
     // funnel. This is the wording, not the gate.
-    if doc.edit_epoch != 0 {
-        // ★★★ THE SLOT CHANGED ON 2026-09-04 (O127) AND THE GATE DID NOT, and
-        // the second half of that sentence is the surprising one — so it is
-        // written down rather than left as an absence.
-        //
-        // This forecast reads as over-broad, and by the ENGINE's own gate it
-        // is: `reflow_block` refuses only when *this page's first content
-        // object* has been rewritten this session, while `edit_epoch != 0` is
-        // true after any edit to anything. The obvious remedy — delete the
-        // forecast, let the engine decide, word its refusal — was drafted and
-        // **rejected**, because the engine's gate does not cover the case the
-        // operator was actually in.
-        //
-        // `EditSession::add_text` appends a NEW content stream to the page's
-        // `/Contents` and never touches the first one, so it does not trip the
-        // engine's guard. `reflow_block` then plans from the BASE document,
-        // writes the result into the first content object, and — through
-        // `text_edit_command`'s first-edit branch — **empties every other
-        // `/Contents` entry**. The added text is in one of those entries.
-        //
-        // ⇒ A reflow permitted after an add-text would silently delete text the
-        // operator can see on the page. This forecast is the only thing
-        // preventing that, it is filed as an engine request beside O127's
-        // duplication defect, and it stays until the engine can be asked.
-        //
-        // What DID change is the channel. It used to call `super::record_note`,
-        // which draws under `⚑ About your last edit:` — a slot that says an
-        // edit happened, for a press where none did. See
-        // `app::dispatch::text::decline`, whose four siblings moved for the
-        // same reason on the same day.
-        crate::app::status::decline::record_reflow(
-            crate::text::textedit::ReflowRefusal::PageAlreadyEdited,
-        );
-        crate::diag::trace(|| {
-            // ui-text-exempt: diagnostic trace, never displayed
-            format!("reflow-declined page={page} block={block} reason=session-has-edits")
-        });
-        return;
-    }
+    // ★★★ **THE OVER-BROAD FORECAST IS GONE — deleted 2026-09-05 when the engine
+    // closed the defect it existed to hide from.**
+    //
+    // Until today this refused reflow whenever `doc.edit_epoch != 0`, i.e. after
+    // **any** edit to **anything** in the document. The comment that stood here
+    // said so, called itself over-broad, and defended it — correctly at the
+    // time:
+    //
+    // > `EditSession::add_text` appends a NEW content stream to the page's
+    // > `/Contents` and never touches the first one, so it does not trip the
+    // > engine's guard. `reflow_block` then plans from the BASE document …
+    // > and **empties every other `/Contents` entry**. The added text is in one
+    // > of those entries. ⇒ A reflow permitted after an add-text would silently
+    // > delete text the operator can see on the page.
+    //
+    // That was true, it was filed, and the engine has answered it. `Pass 251.0`
+    // (`edit.rs:9599`) refuses a page carrying a non-empty appended stream **by
+    // name**, in a sentence naming the remedy — *"text was added to this page
+    // this session (in a new content stream); reflow is planned against the base
+    // content and would drop the added run, so save and reopen before reflowing
+    // this page"*. Their reply says it in as many words: *"that is the option
+    // you offered in §7, so you can drop your over-broad forecast gate."*
+    //
+    // ⇒ **A workaround kept past its cause rots, and this one was not inert
+    // while it rotted.** It cost the operator reflow on every page he had
+    // touched this session, including the ones that were always safe — and a
+    // guard whose reason nobody remembers reads as a limitation of the product.
+    //
+    // ★★ Deleted rather than narrowed. Narrowing it — asking here whether *this*
+    // page carries a non-empty appended stream — would be a **second
+    // implementation of the engine's own predicate**, in a second crate, over
+    // the same `/Contents` list. That is the shape that made an invisible
+    // annotation clickable earlier today: two predicates over one model, each
+    // self-consistent, and no test of either able to see them disagree. The
+    // engine owns the question; the shell words the answer.
+    //
+    // ⚠ What replaces it is **nothing** — deliberately. The call below already
+    // routes the engine's refusal through `record_reflow`, so the operator now
+    // meets the specific sentence instead of the blanket one, and gets it only
+    // when it applies.
     // ★★★ **The cropbox is supplied, and supplying it is the whole of the
     // overflow disclosure.**
     //

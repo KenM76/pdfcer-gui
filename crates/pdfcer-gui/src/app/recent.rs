@@ -523,11 +523,45 @@ impl RecentFiles {
 /// is **not** greyed: the answer would depend on how a network share happens
 /// to be feeling, and a control that greys itself out because a drive is slow
 /// teaches the operator it is broken. It opens, and says so in a row.
+///
+/// # ★★★ The glyph, 2026-09-05 — and the sentence that predicted this edit
+///
+/// `catalog::file`'s registration for `file.recent` carries `.with_icon("recent")`
+/// and, beside it, a paragraph saying in as many words what was true until
+/// today:
+///
+/// > *"this command's ribbon control is not a `Button`, it is the
+/// > `recent_files` custom item, and `app::recent::menu` draws it with
+/// > `ui.menu_button(text.label, …)` — application code that reads the
+/// > command's LABEL and never consults its icon key. … what the operator sees
+/// > in File ▸ File does not change until that custom item is taught to paint
+/// > it — which is a change in `app::recent`, not here."*
+///
+/// This is that change. It was found by driving rather than by reading: the
+/// approved mockup draws the control as `['Recent','recent',{menu:1}]` — an
+/// icon **and** a word — and `tools/compare-mockup-ribbon.py` could not see the
+/// difference, because a `Custom` item carries no command id for it to resolve
+/// an icon key from. What made it visible was resolving both sides to the
+/// **asset** each one draws and giving the custom kinds a declared glyph.
+///
+/// ⇒ ★★ **A comment that names the file where the rest of the work lives is
+/// the best available substitute for a mechanism, and it is still not one.**
+/// That sentence was correct, precise, and sat unactioned; what moved it was an
+/// instrument that compares the two pictures.
+///
+/// [`egui::Ui::menu_image_text_button`] rather than a hand-built
+/// `Button::image_and_text`: the menu behaviour — the popup, the close
+/// semantics, the submenu arrow when nested — is `egui`'s and must not be
+/// re-implemented for the sake of an icon.
 pub fn menu(ui: &mut egui::Ui, recent: &mut RecentFiles, now: Instant) -> Option<PathBuf> {
     let text = crate::text::commands::file_recent();
     let mut chosen: Option<PathBuf> = None;
     ui.add_enabled_ui(!recent.is_empty(), |ui| {
-        let button = ui.menu_button(text.label, |ui| {
+        // ★ `icons::image` takes its tint from THIS `Ui`'s `text_color()`, so
+        // inside `add_enabled_ui(false, …)` the glyph fades in lockstep with
+        // the word beside it and no disabled-state branch is needed here.
+        let glyph = crate::icons::image(ui, crate::icons::Icon::Recent);
+        let button = ui.menu_image_text_button(glyph, text.label, |ui| {
             // Inside the popup body, which `egui` runs only while the menu is
             // OPEN — the first half of what keeps the presence sweep off the
             // per-frame path. See the module header.

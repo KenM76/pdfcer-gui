@@ -320,10 +320,24 @@ fn the_band_measures_real_text_and_not_a_floor() {
         .rect(&report::group("view", "render"))
         .expect("the band publishes its groups");
 
+    // ★★★ The floor is DERIVED, since 2026-09-05. It read `> 100.0`, and 100
+    // was the width of these three controls **laid out on one row** — a number
+    // taken from the arrangement, not from the rule. When
+    // `band::measure_group_rows` began asking every group for the band's row
+    // ceiling the three stacked, the group measured its widest control at
+    // 86.94 pt, and the test accused a correct build of having lost its font.
+    //
+    // What the test is actually for is that real glyph metrics reach the
+    // ribbon's measurement path. With no font every control collapses to
+    // [`super::plan::MIN_ITEM_WIDTH`], so THAT is the floor to clear — under
+    // any arrangement, because a stacked group is at least one control wide and
+    // a row of three is wider still. The `assert_ne!` below carries the other
+    // half and is untouched.
+    let floor = super::plan::MIN_ITEM_WIDTH;
     assert!(
-        page_display.width() > 100.0,
-        "a group of three labelled controls measured {} pt — that is the \
-         no-font floor, not real text",
+        page_display.width() > floor * 2.0,
+        "a group of three labelled controls measured {} pt against a no-font \
+         floor of {floor} pt per control — that is the floor, not real text",
         page_display.width()
     );
     assert_ne!(
@@ -580,9 +594,23 @@ fn a_band_narrower_than_the_affordance_still_shows_it() {
 /// Checked at three widths: one where a group still fits beside the
 /// affordance, one where none does, and one narrower than the affordance
 /// itself.
+///
+/// ★★ **The first was 400 pt and is 300 since 2026-09-05**, and the reason is
+/// a result rather than a fudge: `band::measure_group_rows` now asks every
+/// group for the band's row ceiling, so the View tab's groups stack into
+/// columns and **all three fit inside 400 pt where they used to overflow**.
+/// The test's own precondition caught it — `overflow_visible` was false, and it
+/// says in as many words that it would then no longer be exercising the
+/// affordance. That guard is why this shows up as a red test naming its own
+/// vacuity rather than as a green test asserting nothing, which is what the
+/// same change would have done to a version without it.
+///
+/// ⚠ The number is a property of the fixture manifest and the synthetic face.
+/// If it goes red again the question is *"do the groups still not fit?"*, and
+/// the answer is a measurement, not a smaller literal.
 #[test]
 fn the_affordance_is_hit_testable_under_real_metrics() {
-    for width in [400.0_f32, 180.0, 40.0] {
+    for width in [300.0_f32, 180.0, 40.0] {
         let ctx = context();
         let frame = render_view_tab(&ctx, width);
         let report = frame.state.last_frame().clone();

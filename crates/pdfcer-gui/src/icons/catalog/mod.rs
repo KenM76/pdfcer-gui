@@ -1355,28 +1355,37 @@ pub enum Icon {
     /// sheet: that one carries three ruled lines and means *a page about which
     /// something is true*. This one carries a direction.
     WheelFlip,
-    // ── two assets orphaned by breaking their aliases, 2026-09-04 ─────────
-    /// A document, as a subject — `document.svg`.
+    // ── assets orphaned by breaking their aliases, 2026-09-04 ────────────
+    // ★ `Document` rejoined the ribbon on 2026-09-05; `Convert` below is the
+    // one still unbound.
+    /// A document, as a subject — `document.svg`. **`file.document_properties`
+    /// since 2026-09-05.**
     ///
-    /// ★★★ **No command names this key today, and the variant exists anyway.**
+    /// ★★★ **It was an orphan for one day, and the orphan is the lesson.**
     /// Until 2026-09-04 this art was reached only through [`Icon::Properties`],
-    /// which aliased onto it because Properties had no drawing of its own.
-    /// Properties now has one, and the page is nobody's.
+    /// which aliased onto it because Properties had no drawing of its own;
+    /// Properties got one, and the page became nobody's. What stood here said
+    /// so in bold — *"No command names this key today"* — while, one directory
+    /// away, `catalog::file`'s `file.document_properties` registration was
+    /// arguing at length for sharing `properties` and closing with *"the
+    /// alternative is not 'draw one' but 'ask him for one'."* Neither comment
+    /// could see the other. What found it was
+    /// `tools/compare-mockup-ribbon.py`'s item phase, reporting the band as
+    /// `properties properties fonts` against the mockup's `document properties
+    /// fonts`.
     ///
-    /// Deleting the constant would have been the smaller edit and it is the
-    /// wrong one. `assets/PROVENANCE.md` makes this directory the operator's
-    /// own art and says in as many words that an asset stays when the button
-    /// that used it goes — *"deleting his drawing because a button went away is
-    /// not ours to do"*. But an asset with no constant is an asset **no test
-    /// walks**: `every_icon_parses`, `every_icon_rasterizes_to_visible_pixels`,
-    /// `fill_is_semantic_and_the_set_that_uses_it_is_closed` and
-    /// `crlf_line_endings_parse_identically` all iterate [`Icon::ALL`]. Art
-    /// that is kept but untested rots quietly and is discovered by someone
-    /// wiring it up months later.
+    /// ⇒ **An orphan variant is a standing invitation and its doc comment
+    /// should read as one**, because the next session to want this picture will
+    /// be reading a *registration*, not this file. Hence the first line names
+    /// the command instead of asserting an absence.
     ///
-    /// ⇒ The variant is how the art stays covered. [`Icon::EditObjects`] is the
-    /// standing precedent — its command was deleted on 2026-08-31 and its
-    /// variant remains.
+    /// Keeping the constant while it WAS unbound was still right:
+    /// `assets/PROVENANCE.md` makes this directory the operator's own art and
+    /// says an asset stays when its button goes — *"deleting his drawing
+    /// because a button went away is not ours to do"* — while an asset with no
+    /// constant is an asset **no test walks** (`every_icon_parses` and its
+    /// three siblings all iterate [`Icon::ALL`]). [`Icon::EditObjects`] is the
+    /// standing precedent: command deleted 2026-08-31, variant kept.
     ///
     /// Distinct from [`Icon::Properties`], which took the role: that is three
     /// slider rules, because Properties is about the VALUES of what is

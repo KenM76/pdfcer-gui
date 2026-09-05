@@ -199,17 +199,33 @@ pub(super) fn band() -> Vec<Command> {
         // is not being contradicted here. It is simply no longer the ONLY
         // answer available. Note what naming the key does and does not do
         // today: this command's ribbon control is not a `Button`, it is the
-        // `recent_files` custom item, and `app::recent::menu` draws it with
-        // `ui.menu_button(text.label, …)` — application code that reads the
-        // command's LABEL and never consults its icon key. So the key is
-        // declared here and is correct here (it is the one place the icon
-        // vocabulary is bound to a command, and a keymap or a customized
+        // `recent_files` custom item, and `app::recent::menu` draws it — so the
+        // key is declared here and is correct here (it is the one place the
+        // icon vocabulary is bound to a command, and a keymap or a customized
         // quick-access toolbar reaching this command finds it), but what the
-        // operator sees in File ▸ File does not change until that custom item
-        // is taught to paint it — which is a change in `app::recent`, not here.
+        // operator sees in File ▸ File is decided one module away.
         // Said plainly rather than implied, because a comment claiming a
         // pixel-level result this file cannot deliver is the drift this module
         // keeps recording.
+        //
+        // ★★★ **DISCHARGED 2026-09-05.** What stood here added *"…and
+        // `app::recent::menu` draws it with `ui.menu_button(text.label, …)` …
+        // what the operator sees in File ▸ File does not change until that
+        // custom item is taught to paint it — which is a change in
+        // `app::recent`, not here."* It is now taught: that function calls
+        // `menu_image_text_button` with [`crate::icons::Icon::Recent`], and the
+        // approved mockup's `['Recent','recent',{menu:1}]` — an icon AND a word
+        // — is what File ▸ File draws.
+        //
+        // ⇒ ★★ The sentence was accurate, named the exact file, and sat
+        // unactioned for a day. **A comment that names where the other half of
+        // the work lives is the best available substitute for a mechanism and
+        // is still not one** — the same finding `RESUME.md` records about
+        // "read that Pass's note before anything else next session". What moved
+        // it was `tools/compare-mockup-ribbon.py` learning to resolve BOTH
+        // sides to the asset each control draws, at which point a control the
+        // mock glyphs and the product does not became a printed difference
+        // rather than a paragraph.
         command(FILE_RECENT, t::file_recent(), 102).with_icon("recent"),
         // ★★★ **Save**, 2026-08-20. See `text::commands::file_save` for the
         // argument that used to keep it out, and why that argument was aimed at
@@ -660,18 +676,47 @@ pub(super) fn band() -> Vec<Command> {
         // `file.export_text`'s note four registrations up records the day that
         // rule was demonstrated rather than argued.
         //
-        // # ★ The icon is SHARED with `file.properties`, and that is the
-        // convention rather than an economy
+        // # ★★★ The icon was SHARED with `file.properties` and is now `document`
+        // — CORRECTED 2026-09-05 (later the same day), and the correction is
+        // the interesting half
         //
-        // Both controls are *properties*; what differs is **whose**, and that
-        // is a word only a label can say. This module's header states the
-        // shared-key convention and `format.unshare_form`, `edit.paste_duplicate`
-        // and the three page-clipboard verbs are its worked precedents. Drawing
-        // a second page-with-a-corner glyph so that two adjacent controls could
-        // look slightly different would be a distinction the operator has to
-        // learn for no gain — and `icons/assets/PROVENANCE.md` makes that
-        // directory his own art, so the alternative is not "draw one" but "ask
-        // him for one" over a difference the labels already carry.
+        // What stood here said the shared key was *"the convention rather than
+        // an economy"*, and closed with: *"`icons/assets/PROVENANCE.md` makes
+        // that directory his own art, so the alternative is not 'draw one' but
+        // 'ask him for one'."*
+        //
+        // **Both clauses were checkable and both were false.**
+        //
+        // 1. **The art already exists and is an ORPHAN.** `document.svg` ships,
+        //    [`crate::icons::Icon::Document`] carries it, and that variant's own
+        //    doc says in as many words that *"no command names this key today,
+        //    and the variant exists anyway"* — it is kept so
+        //    `every_icon_parses` and its three siblings keep walking the art.
+        //    So there was never anything to draw and nobody to ask; there was a
+        //    drawing with no button, one directory away.
+        // 2. **The shared-key convention does not reach this pair.**
+        //    `catalog/edit.rs` states the rule exactly: a shared key is the
+        //    convention *"where two controls have the same SUBJECT and are
+        //    separated by something else the operator can see"* — `edit.paste`
+        //    beside `edit.paste_duplicate`, the three page-clipboard verbs.
+        //    Those pairs share a subject and differ in a verb. **These two do
+        //    not share a subject at all**: `file.properties` describes
+        //    *whatever is selected on the page*, and this describes *the file*.
+        //    Applying the convention here erased the one distinction the
+        //    picture had to carry, which is the identical fault that same
+        //    module records against the five form-field controls that all drew
+        //    `form-field`.
+        // 3. **And the mockup — the approved design — draws `document` here.**
+        //    `mockups/pdfcer-shell-template.html`'s File ▸ Document band is
+        //    `['Document','document'], ['Properties','properties'],
+        //    ['Fonts','fonts']`. `tools/compare-mockup-ribbon.py` reported the
+        //    pair as `properties properties fonts` against the mock's
+        //    `document properties fonts` on the first run of its item phase.
+        //
+        // The two glyphs separate the way [`crate::icons::Icon::Document`]'s
+        // own doc says they do: `properties` is three slider rules, because it
+        // is about the VALUES of what is selected; `document` is the page
+        // itself, because this command's subject *is* the page.
         //
         // # `doc.open`, like both its neighbours
         //
@@ -684,7 +729,7 @@ pub(super) fn band() -> Vec<Command> {
             t::file_document_properties(),
             142,
         )
-        .with_icon("properties")
+        .with_icon("document")
         .enabled_when("doc.open"),
         command("file.fonts", t::file_fonts(), 141)
             .with_icon("fonts")

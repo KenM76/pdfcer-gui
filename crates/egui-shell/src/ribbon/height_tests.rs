@@ -233,9 +233,15 @@ fn row_tops(rects: &[Rect]) -> Vec<f32> {
 /// --workspace` compile with different `egui` features**, and a layout test
 /// can be entirely vacuous under one of them. Two things could go quiet
 /// here — a `None` ribbon height (the measuring closure never ran) and a
-/// band that never wrapped (both tabs one row, so "the same height" is true
-/// and says nothing). Both are asserted as facts before the equality is
-/// asserted at all.
+/// band that never wrapped (both tabs the SAME row count, so "the same
+/// height" is true and says nothing). Both are asserted as facts before the
+/// equality is asserted at all.
+///
+/// ★ The second guard used to read *"the narrow tab's group must stay on one
+/// row"*, which is a fact about the fixture and not about the rule. It went
+/// red on 2026-09-05 against a build that wraps more eagerly and still holds
+/// the band's height fixed — i.e. it accused a correct change. It now asserts
+/// the two row counts DIFFER, which is the actual precondition.
 #[test]
 fn the_band_is_the_same_height_on_every_tab() {
     let ctx = context();
@@ -281,11 +287,23 @@ fn the_band_is_the_same_height_on_every_tab() {
          comparing two one-row bands and would pass against the very layout it \
          exists to refuse"
     );
-    assert_eq!(
-        row_tops(&narrow.all("ribbon.item.")).len(),
-        1,
-        "the narrow tab's group must stay on one row, or there is no difference in \
-         content for the fixed height to absorb"
+    // ★★★ **`== 1` until 2026-09-05, and the literal was the fixture rather
+    // than the rule.** This test's claim is that the band's height does not
+    // follow its content, so its precondition is that the two tabs' content
+    // DIFFERS in row count — not that the narrow one happens to be one row.
+    // When `band::measure_group_rows` started asking every group for the
+    // band's full row ceiling (see the note at that call site, and the driven
+    // measurement that prompted it), the narrow tab's two controls stacked into
+    // two rows: still different from the wide tab's three, still exactly the
+    // difference the fixed height has to absorb, and the assertion went red on
+    // a build that had got *better* at the thing it guards.
+    let narrow_rows = row_tops(&narrow.all("ribbon.item.")).len();
+    let wide_rows = row_tops(&wide.all("ribbon.item.")).len();
+    assert!(
+        narrow_rows < wide_rows,
+        "the narrow tab used {narrow_rows} row(s) and the wide tab {wide_rows}. \
+         They must differ, or there is no difference in content for the fixed \
+         height to absorb and the equality below holds vacuously"
     );
 
     // --- the claim ----------------------------------------------------

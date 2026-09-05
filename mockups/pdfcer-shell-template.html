@@ -772,14 +772,14 @@ const TABS = [
 
       Not `big`: it is a checkbox-shaped thing beside four tool buttons, and
       the product registers it `icon_only`. */
-   {cap:'Navigate', items:[['Select','pointer',{big:1,radio:'tool',on:1}],['Points','show-points',{big:1,radio:'tool',editOnly:1}],['Text','text-select',{big:1,radio:'tool'}],['Hand','hand',{big:1,radio:'tool'}],['Smart select','show-points',{toggle:1,editOnly:1}]]},
+   {cap:'Navigate', items:[['Select','cursor',{big:1,radio:'tool',on:1}],['Points','cursor-node',{big:1,radio:'tool',editOnly:1}],['Text','text-select',{big:1,radio:'tool'}],['Hand','hand',{big:1,radio:'tool'}],['Smart select','show-points',{toggle:1,editOnly:1}]]},
    /* `Actual size` draws no icon: view.zoom_actual registers without one and
       the `actual-size` art was DEFERRED, not adopted. */
    {cap:'Zoom', items:[[['Actual size',null,{noicon:1}],['Fit page','fit-page'],['Fit width','fit-width']],[['Fit height','fit-height'],['Zoom to selection','zoom-selection',{needsSel:1}],['Zoom to region','zoom-region']]]},
    /* ★ `Thin lines` REMOVED. Art for a command deleted six weeks ago: no such
       field on RenderOptions, no such command in the tree. */
    {cap:'Display', items:[[['Comments','comment',{toggle:1,on:1}],['Points','show-points',{toggle:1}]],[['Rulers','rulers',{toggle:1,rulers:1}],['Grid','grid',{toggle:1}],['Guides','guides',{toggle:1}]]]},
-   {cap:'Panels', items:[[['Pages','pages',{toggle:1,on:1}],['Bookmarks','bookmarks',{toggle:1}],['Layers','layers',{toggle:1}]],[['Objects','edit-objects',{toggle:1,on:1}],['Properties','properties',{toggle:1,on:1}],['Comments','comment',{toggle:1}]],[['Fill form','forms',{toggle:1}],['Signatures','signatures',{toggle:1}],['Fonts','fonts',{toggle:1}]]]},
+   {cap:'Panels', items:[[['Pages','pages',{toggle:1,on:1}],['Bookmarks','bookmarks',{toggle:1}],['Layers','layers',{toggle:1}]],[['Objects','edit-objects',{toggle:1,on:1}],['Signatures','signatures',{toggle:1}],['Fill form','forms',{toggle:1}]]]},
    /* ★★★ THREE COMMANDS JOINED THIS GROUP AFTER THE MOCK WAS DRAWN, and all
       three are moved on the MOCK side because the mock predates the capability
       rather than disagreeing with it.
@@ -804,9 +804,9 @@ const TABS = [
       borrowing that has stopped is the same defect as a blessing that outlived
       its subject. */
    {cap:'Insert', items:[['Insert from file…','insert-pages',{big:1}]]},
-   {cap:'Clipboard', items:[['Cut pages','scissors',{big:1}],['Copy pages','copy',{big:1}],['Paste pages','paste',{big:1}]]},
+   {cap:'Clipboard', items:[['Cut pages','cut',{big:1}],['Copy pages','copy',{big:1}],['Paste pages','paste',{big:1}]]},
    /* Move up/down draw the chevrons — their own role, not borrowed art. */
-   {cap:'Organise', items:[[['Delete pages','delete'],['Extract…','page-extract'],['Merge into this document…','merge']],[['Move up','chevron-up'],['Move down','chevron-down']]]},
+   {cap:'Organise', items:[[['Delete pages','delete'],['Extract…','page-extract'],['Move up','chevron-up']],[['Move down','chevron-down'],['Merge into this document…','merge']]]},
    {cap:'Transform', items:[['Rotate left','rotate-ccw',{big:1}],['Rotate right','rotate-cw',{big:1}]]},
  ]},
  {id:'edit', label:'Edit', modes:['edit'], groups:[
@@ -836,7 +836,7 @@ const TABS = [
       ui-spec §3.2: a numeral read at a glance is clearer than any glyph
       substitute, and both add a decode step a bare percentage does not need).
       A supply refusal is now the one reason that never appears here. */
-   {cap:'Content', items:[[['Select all','select-all'],['Reflow paragraph','reflow']],['Edit text','edit',{big:1}],['Add text','add-text',{big:1}]]},
+   {cap:'Content', items:[['Select all','select-all'],['Edit text','edit',{big:1}],['Add text','add-text',{big:1}],['Reflow paragraph','reflow']]},
    {cap:'Insert', items:[['Image…','image',{big:1}],['Attachments','attachment',{big:1}]]},
    /* ★★★ `Copy as vector` — **SHIPPED 2026-09-04**, as
       `edit.copy_as_vector`, token 408, drawn **icon-only**. This comment read
@@ -877,7 +877,7 @@ const TABS = [
       label would have widened the group past its neighbours). Recorded rather
       than silently flipped: this is the mock following the build, which happens
       only where the build has an argument the mock predates. */
-   {cap:'Clipboard', items:[[['Cut','cut'],['Copy','copy'],['Paste','paste']],[['Copy as vector','copy-as-vector',{noLabel:1}]]]},
+   {cap:'Clipboard', items:[[['Cut','cut'],['Copy','copy'],['Paste','paste']],[['Paste as duplicate','paste'],['Copy as vector','copy-as-vector',{noLabel:1}]]]},
    /* Four form-field tools, four distinct glyphs since 2026-09-04 — they all
       borrowed `form-field` before. */
    {cap:'Forms', items:[[['Text field','form-field'],['Check box','check-box'],['Radio button','radio-button'],['Drop-down','drop-down']],[['Button','push-button',{dis:1}],['Manage fields','list'],['Flatten','form-flatten']]]},
@@ -889,7 +889,7 @@ const TABS = [
    {cap:'Notes', items:[['Text box','text-freetext',{big:1}],['Sticky note','text-sticky',{big:1}],['Stamp','stamp',{big:1}]]},
    /* Colour is not a command and cannot take an icon; line width and opacity
       are drag values with no icon slot. All four proposed glyphs deferred. */
-   {cap:'Style', items:[[['Stroke',null,{swatch:'#C8451E'}],['Fill',null,{swatch:'#F2D64B'}]],[['2.0 pt',null,{menu:1,noicon:1}],['100 %',null,{menu:1,noicon:1}]]]},
+   {cap:'Style', items:[[['Stroke',null,{swatch:'#C8451E'}],['Fill',null,{swatch:'#F2D64B'}]],[['2.0 pt',null,{menu:1,noicon:1}]]]},
    {cap:'Comments', items:[['Comments','comment',{big:1,toggle:1}]]},
  ]},
  {id:'measure', label:'Measure', modes:['review','edit'], groups:[
@@ -905,7 +905,7 @@ const TABS = [
  ]},
  {id:'tools', label:'Tools', modes:['edit'], groups:[
    /* `merge-files` was DEFERRED — the command already has dedicated art. */
-   {cap:'Batch', items:[['Merge files…','convert',{big:1}]]},
+   {cap:'Batch', items:[['Merge files…','link',{big:1}]]},
    {cap:'Fonts', items:[['Font folders…','folder',{big:1}],[['Embed fonts','embed-fonts'],['Unembed fonts','unembed-fonts']]]},
    {cap:'Diagnostics', items:[['Render diagnostics','render-diagnostics',{big:1}]]},
  ]},

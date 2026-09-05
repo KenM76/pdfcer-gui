@@ -261,7 +261,8 @@ pub const fn reflow_no_block() -> &'static str {
 ///
 /// | | decided by | variants |
 /// |---|---|---|
-/// | **before** the engine is called | the shell, from the caret | [`Self::NeedsCaret`], [`Self::NeedsExistingText`], [`Self::NoBlock`], [`Self::PageAlreadyEdited`] |
+/// | **before** the engine is called | the shell, from the caret | [`Self::NeedsCaret`], [`Self::NeedsExistingText`], [`Self::NoBlock`] |
+/// | **from the engine's answer**, since 2026-09-05 | `Pass 251.0` | [`Self::PageAlreadyEdited`] — it moved out of this column when the shell's over-broad `edit_epoch != 0` forecast was deleted; the engine now refuses the case that mattered (a page carrying a non-empty appended content stream) by name, and this variant words that answer |
 /// | **by** the engine | `pdfcer-core` | [`Self::PageSetChanged`], [`Self::Encrypted`], [`Self::CannotTrace`], [`Self::Other`] |
 ///
 /// The engine half used to reach the operator as

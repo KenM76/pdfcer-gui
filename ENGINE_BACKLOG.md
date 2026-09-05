@@ -199,11 +199,11 @@ retracted out of it.
 | verdict | rows |
 |---|---|
 | `shipped` — the engine's `[ ]` is stale | **79** |
-| `wanted` — a real gap | **11** |
+| `wanted` — a real gap | **12** |
 | `declined` — deliberately no surface | **5** |
 | `blocked` — waiting on something named | **2** |
 | `unknown` | **0** |
-| **total** | **97** |
+| **total** | **98** |
 
 ⚠ **The engine-side figure moved too, and in the other direction.** The gate now
 measures **34** rows reading `[x] core / [ ] gui` in the engine's file, against
@@ -299,6 +299,7 @@ from here and no box in it is ticked by this pass.
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
+| **"Line weights off" hairline display mode** — `RenderOptions::stroke_display: StrokeDisplay { Actual, Hairline }` … | ★★★ **`wanted`, and it is HIS, by name.** *"awhile ago you told me you removed the button to show all lines without their thickness — thin lines or something like cad has. The button never worked but I do want that display option!"* (O137). `view.thin_lines` was registered, drawn on the View tab and **inert**, and was unregistered on 2026-08-17 with six other `view.*` settings because *"thin lines and antialiasing have no `RenderOptions` field at all"*. That deletion was right; treating it as closing the question was not. ★★ **Filed 2026-09-05 and SHIPPED the same day** — `Pass 254.0`, `8f9fb3e` — which is why this row is `wanted` rather than `blocked`: the field exists and nothing here reaches it. ⚠ **Which convention, because the two are opposites and shipping the wrong one is worse than shipping nothing:** this caps every stroke's DEVICE width at one pixel whatever the file declares (AutoCAD `LWDISPLAY` off, **thick → thin**), and is **not** Acrobat's *enhance thin lines*, which thickens sub-pixel strokes (**thin → thick**). ★ The engine held every constraint the request asked for and added one: **fills untouched** (only `S`/`s`/`B`/`B*` reach `stroke_params`, so a hatch of thin fills cannot vanish); an **enum not a bool**, leaving room for the other convention as a third variant; and **deliberately no CLI flag** — its own row says *"every export path renders the document's REAL widths … do not 'complete' this box."* **What wiring it takes here:** a Settings toggle and a View control, `RenderOptions::stroke_display` threaded through `app::settings`' funnel (the one place render options are built), and the off-canvas disclosure while it is on — because the canvas then deliberately does not show what will print. Print, print preview and every export must be untouched; that is the constraint O137 fixed in writing before the field existed, and it is the one thing worse than not having the feature. |
 
 
 ---
