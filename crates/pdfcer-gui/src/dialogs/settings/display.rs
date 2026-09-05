@@ -18,8 +18,18 @@
 //! - **Render strategy** — there is no tiled-progressive path in this shell.
 //!   `pdfcer_render::render_page_region` exists, so it is buildable, but that is
 //!   a rendering architecture and not a setting.
-//! - **Thin lines** and **Antialiasing** — `RenderOptions` has neither field.
+//! - **Thin lines** and **Antialiasing** — `RenderOptions` had neither field.
 //!   `interpret.rs` sets `anti_alias: true` as a literal at two call sites.
+//!   ⚠ **The thin-lines half expired on 2026-09-05** and is corrected here
+//!   rather than left standing: the operator asked for that control back by
+//!   name (`OPERATOR_REQUESTS.md` **O137**), the engine shipped
+//!   `RenderOptions::stroke_display` the same day (`Pass 254.0`), and it is now
+//!   `view.line_weights` on **View ▸ Display** — deliberately not a setting in
+//!   this window. It is a reading aid he flips several times while reading one
+//!   sheet, which is an activity, and it is per **document** so two open
+//!   drawings can disagree. `crate::text::commands::view_line_weights` carries
+//!   the whole argument and says where a persisted default would go if he asks
+//!   for one. Antialiasing is still real and still unasked-for.
 //! - **Floating panels** — `egui-shell`'s dock has no floating mode.
 //! - **App initiative** — *nothing in this build opens a surface unasked*. The
 //!   specified default is **Never**, and it is already true by construction, so

@@ -1186,6 +1186,13 @@ impl OpenDoc {
             raster_scale,
             self.annotations,
             self.layers.generation,
+            // ★★★ O137. Through `ViewState::stroke_display`, which is also what
+            // `render_request_for` hands the worker — one conversion, so "what
+            // I want" and "what I have" cannot disagree about whether line
+            // weights were on. Omit it and the toggle looks inert: the cache
+            // reports a hit and serves the picture drawn under the other
+            // answer.
+            self.view.stroke_display(),
         )
         .with_region(self.region_for(page_index))
     }
@@ -1233,6 +1240,12 @@ impl OpenDoc {
             page_index,
             raster_scale,
             annotations: self.annotations,
+            // ★★★ O137 — `view.line_weights`, canvas only. The same conversion
+            // the key above uses; see `ViewState::stroke_display` for why it is
+            // a function and not two `if`s. `render_on_worker` is the only
+            // place this is read, and no export or print path builds a
+            // `RenderRequest` at all.
+            stroke_display: self.view.stroke_display(),
             layers: self.layer_visibility(),
             layers_generation: self.layers.generation,
             // ★ The SNAPSHOT, not a live read — see the field's own docs.

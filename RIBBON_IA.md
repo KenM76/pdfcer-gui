@@ -730,13 +730,13 @@ it is not greyed out with a tooltip, it is absent.
 | **Render** | Strategy: Whole page · Tiled progressive | **N** |
 | | Raster scale ⌄ (quality) | **partial G** — exists as a constant |
 | | Settle delay | **partial G** — `ZOOM_SETTLE` is a constant |
-| | Thin lines | **N** |
+| | Thin lines | ✅ **BUILT 2026-09-05** — see View ▸ Display below; it landed there rather than in a Render group, because it is flipped while reading a sheet rather than set once (P2). |
 | | Antialias ⌄ (text / vector) | **N** |
 | **Rotate view** | Rotate view left / right | **N** |
 | **Zoom** | Zoom to selection | **N** |
 | | Zoom to region (marquee) | **N** |
 | | Actual size · Fit page · Fit width | **G** *(status bar; P1a mirror)* |
-| **Display** | Thin lines | **N** |
+| **Display** | Thin lines | ✅ **BUILT 2026-09-05 as `view.line_weights`** — his ask (O137), engine field `RenderOptions::stroke_display` shipped the same day. **Canvas only**: print, preview and every export render real widths, asserted three ways. |
 | | Show annotations | **G** |
 | | Show points | **G** |
 | | Rulers · Grid · Guides | **N** |

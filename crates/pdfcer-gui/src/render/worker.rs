@@ -303,6 +303,39 @@ pub struct RenderKey {
     /// genuinely distinct state from "an override that hides nothing" (core
     /// API trap T-12.9).
     layers_generation: u64,
+    /// ★★★ **Whether strokes were drawn at their declared widths or capped at
+    /// one device pixel** — `view.line_weights`, `OPERATOR_REQUESTS.md` O137.
+    ///
+    /// # Why this HAD to join the key, and what breaks without it
+    ///
+    /// It is the first View ▸ Display toggle that changes the **raster** rather
+    /// than what the canvas paints over one. Rulers, grid, guides and
+    /// show-points are all overlay marks; a cached texture is equally correct
+    /// under any of them. A texture drawn under `Actual` is simply a
+    /// **different picture** from one drawn under `Hairline`.
+    ///
+    /// Leave it out and the failure is silent and exactly the operator's
+    /// complaint: he presses the button, the cache reports a hit, the old
+    /// picture is served, and *"the button never worked"* — the sentence O137
+    /// exists to answer — is true again for a second reason. Nothing errors,
+    /// no test that only checks the plumbing goes red, and the control looks
+    /// inert. `the_render_key_moves_when_line_weights_are_turned_off` is what
+    /// makes that a build failure instead.
+    ///
+    /// # ★ Why the engine's enum and not a `bool`
+    ///
+    /// `StrokeDisplay` derives `Eq` and `Hash` (checked at
+    /// `pdfcer-render/src/font/mod.rs:943`), so it is a key component as it
+    /// stands. It is `#[non_exhaustive]` with room for a third variant — the
+    /// **opposite** convention, Acrobat's *enhance thin lines* — and a `bool`
+    /// here would silently collapse that third state onto one of these two the
+    /// day it arrives, which is a stale-raster bug that would look like a
+    /// rendering fault.
+    ///
+    /// A **discrete** input ([`Self::discrete_inputs`]): it is changed by
+    /// pressing a button, so there is no gesture in flight and nothing to
+    /// debounce.
+    stroke_display: pdfcer_render::font::StrokeDisplay,
     /// The page-space rectangle this raster covers, by bit pattern, or
     /// `None` for a whole-page raster.
     ///
@@ -331,17 +364,27 @@ impl RenderKey {
     /// Two constructors doing the same arithmetic is how the two sides of the
     /// staleness comparison drift.
     #[must_use]
+    ///
+    /// ★★ `stroke_display` is a **positional parameter and not a builder**,
+    /// unlike [`Self::with_region`], and the difference is deliberate. A
+    /// builder may be omitted, and an omission here would silently mean
+    /// `Actual` — which is the stale-raster bug this field exists to prevent,
+    /// wearing the shape of a call site that simply forgot. As a parameter,
+    /// every one of the five sites that computes a key has to answer the
+    /// question, and the compiler asks it.
     pub fn new(
         page_index: usize,
         raster_scale: f32,
         annotations: bool,
         layers_generation: u64,
+        stroke_display: pdfcer_render::font::StrokeDisplay,
     ) -> Self {
         Self {
             page_index,
             raster_scale_bits: raster_scale.to_bits(),
             annotations,
             layers_generation,
+            stroke_display,
             region_bits: None,
         }
     }
@@ -479,8 +522,19 @@ impl RenderKey {
     /// benefit — and for a page change there is not even a stale picture
     /// worth showing, because it is a picture of a different page.
     #[must_use]
-    pub fn discrete_inputs(&self) -> (usize, bool, u64) {
-        (self.page_index, self.annotations, self.layers_generation)
+    pub fn discrete_inputs(&self) -> (usize, bool, u64, pdfcer_render::font::StrokeDisplay) {
+        (
+            self.page_index,
+            self.annotations,
+            self.layers_generation,
+            // ★ Discrete, not debounced: `view.line_weights` is a button press,
+            // so there is no intermediate value on the way to the one the
+            // operator wanted and nothing to wait out. Waiting would make the
+            // toggle feel broken for `ZOOM_SETTLE` milliseconds, which for a
+            // control whose whole complaint history is "it never worked" is the
+            // worst available latency.
+            self.stroke_display,
+        )
     }
 
     /// The one input that is **debounced** rather than committed at once.
@@ -513,6 +567,7 @@ impl RenderKey {
             request.raster_scale,
             request.annotations,
             request.layers_generation,
+            request.stroke_display,
         )
         .with_region(request.region)
     }
@@ -587,6 +642,43 @@ pub struct RenderRequest {
     /// reproduces the content-only raster, which is what View ▸ Display's
     /// `view.show_annotations` exists to ask for.
     pub annotations: bool,
+    /// ★★★ **Whether to draw strokes at the widths the file declares, or to cap
+    /// every one of them at one device pixel** —
+    /// [`pdfcer_render::RenderOptions::stroke_display`], engine `Pass 254.0`.
+    ///
+    /// `view.line_weights`, `OPERATOR_REQUESTS.md` **O137**, in his words:
+    /// *"the button to show all lines without their thickness — thin lines or
+    /// something like cad has … I do want that display option!"*
+    ///
+    /// # ★★★ This is the ONLY place in the crate that carries it, and that is
+    /// the whole export guarantee
+    ///
+    /// The rule the request was built around: **canvas only.** Print, print
+    /// preview and every export — PDF, DXF, PNG, JPEG, SVG, EMF, form data,
+    /// text — render the document's real widths. *The one thing worse than not
+    /// having this feature is having it follow him into a file he sends a
+    /// client.* The engine holds the same line from its side and shipped
+    /// deliberately **without** a CLI flag for the same reason.
+    ///
+    /// Here that rule is not prose. `crate::app::settings`' funnel builds every
+    /// `RenderOptions` in the crate and never touches this field;
+    /// `render_on_worker` — which serves the canvas and nothing else — is the
+    /// one function that assigns it, from this request; and
+    /// `crate::app::settings::tests::only_the_canvas_worker_sets_stroke_display`
+    /// parses every `.rs` in the crate with `syn` and fails the build if a
+    /// second site appears. A grep would not do, for the reason that test's
+    /// neighbour already gives: the identifier appears in a dozen doc comments,
+    /// including this one, and a syntax tree contains no comments at all.
+    ///
+    /// ★ It IS a staleness key, unlike [`Self::settings`] beside it, and the
+    /// difference is that a settings change drops every cached raster
+    /// explicitly while this changes several times a minute during ordinary
+    /// reading. See [`RenderKey::stroke_display`].
+    ///
+    /// A snapshot, like everything else here: the worker may finish after the
+    /// operator has flipped the toggle again, and what it must report is the
+    /// picture it actually drew.
+    pub stroke_display: pdfcer_render::font::StrokeDisplay,
     /// ★ The operator's configuration, as of the frame this request was built.
     ///
     /// **Five of the thirteen settings change what a rasterization looks
@@ -899,6 +991,20 @@ fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
     let mut options = request.settings.render_options();
     options.cancel = Some(cancel.clone());
     options.annotations = request.annotations;
+    // ★★★ **The canvas's stroke-width display convention, and the ONE
+    // assignment of this field in the whole crate** — O137,
+    // `RenderOptions::stroke_display`, engine `Pass 254.0`.
+    //
+    // This function draws the interactive canvas and nothing else. Print, print
+    // preview and every export build their options through the same funnel and
+    // never reach this line, so they render the document's REAL widths — which
+    // is the constraint the feature was designed around and the one that makes
+    // it safe to ship at all. `Actual` is `RenderOptions::default()`'s value, so
+    // an export path does not have to remember to say anything.
+    //
+    // The rule is enforced rather than asserted: see the request field's docs
+    // and `crate::app::settings::tests::only_the_canvas_worker_sets_stroke_display`.
+    options.stroke_display = request.stroke_display;
     // Cloned rather than moved because the worker takes the request by
     // reference — a `BTreeSet<ObjId>` per render, against a rasterization
     // measured in seconds. `None` here is not the same as an empty set: it
@@ -994,6 +1100,7 @@ fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pdfcer_render::font::StrokeDisplay;
 
     /// A `RenderKey` for the default render of a page at a scale:
     /// annotations on (what a reader shows), no layer override.
@@ -1001,7 +1108,7 @@ mod tests {
     /// The two-argument shorthand the geometry cases use, so a test about
     /// page and scale is not obscured by two constants it does not vary.
     fn key(page_index: usize, scale: f32) -> RenderKey {
-        RenderKey::new(page_index, scale, true, 0)
+        RenderKey::new(page_index, scale, true, 0, StrokeDisplay::Actual)
     }
 
     /// Two renders of the same thing must compare EQUAL.
@@ -1044,26 +1151,26 @@ mod tests {
     /// line here in the same commit.
     #[test]
     fn changing_any_single_render_input_makes_a_different_key() {
-        let base = RenderKey::new(3, 2.0, true, 7);
+        let base = RenderKey::new(3, 2.0, true, 7, StrokeDisplay::Actual);
         assert_ne!(
             base,
-            RenderKey::new(4, 2.0, true, 7),
+            RenderKey::new(4, 2.0, true, 7, StrokeDisplay::Actual),
             "page index must be compared"
         );
         assert_ne!(
             base,
-            RenderKey::new(3, 2.5, true, 7),
+            RenderKey::new(3, 2.5, true, 7, StrokeDisplay::Actual),
             "raster scale must be compared"
         );
         assert_ne!(
             base,
-            RenderKey::new(3, 2.0, false, 7),
+            RenderKey::new(3, 2.0, false, 7, StrokeDisplay::Actual),
             "annotation visibility must be compared, or View ▸ Display's \
              `view.show_annotations` toggles a bool and redraws nothing"
         );
         assert_ne!(
             base,
-            RenderKey::new(3, 2.0, true, 8),
+            RenderKey::new(3, 2.0, true, 8, StrokeDisplay::Actual),
             "the layer-override generation must be compared, or the Layers \
              panel's visibility control ticks and redraws nothing — which is \
              the exact defect that kept the checkbox out of the build"
@@ -1084,7 +1191,7 @@ mod tests {
     #[test]
     fn a_region_is_part_of_the_key() {
         use pdfcer_core::page_tree::Rect;
-        let whole = RenderKey::new(3, 2.0, true, 7);
+        let whole = RenderKey::new(3, 2.0, true, 7, StrokeDisplay::Actual);
         let left = whole.with_region(Some(Rect::from_corners(0.0, 0.0, 100.0, 100.0)));
         let right = whole.with_region(Some(Rect::from_corners(100.0, 0.0, 200.0, 100.0)));
 
@@ -1123,14 +1230,103 @@ mod tests {
     /// exactly as it must to the test above.
     #[test]
     fn every_render_input_is_either_discrete_or_the_scale() {
-        let base = RenderKey::new(3, 2.0, true, 7);
+        let base = RenderKey::new(3, 2.0, true, 7, StrokeDisplay::Actual);
         let moved = |k: RenderKey| {
             k.discrete_inputs() != base.discrete_inputs() || k.scale_bits() != base.scale_bits()
         };
-        assert!(moved(RenderKey::new(4, 2.0, true, 7)), "page index");
-        assert!(moved(RenderKey::new(3, 2.5, true, 7)), "raster scale");
-        assert!(moved(RenderKey::new(3, 2.0, false, 7)), "annotations");
-        assert!(moved(RenderKey::new(3, 2.0, true, 8)), "layers generation");
+        assert!(
+            moved(RenderKey::new(4, 2.0, true, 7, StrokeDisplay::Actual)),
+            "page index"
+        );
+        assert!(
+            moved(RenderKey::new(3, 2.5, true, 7, StrokeDisplay::Actual)),
+            "raster scale"
+        );
+        assert!(
+            moved(RenderKey::new(3, 2.0, false, 7, StrokeDisplay::Actual)),
+            "annotations"
+        );
+        assert!(
+            moved(RenderKey::new(3, 2.0, true, 8, StrokeDisplay::Actual)),
+            "layers generation"
+        );
+        assert!(
+            moved(RenderKey::new(3, 2.0, true, 7, StrokeDisplay::Hairline)),
+            "stroke display"
+        );
+    }
+
+    /// **Turning line weights off makes every cached raster stale** —
+    /// `OPERATOR_REQUESTS.md` **O137**, and the assertion without which the
+    /// whole feature can ship inert.
+    ///
+    /// # The vacuous test this replaces, and it is the likeliest mistake here
+    ///
+    /// A test that `view.line_weights` is *plumbed* — that the request carries
+    /// it and the worker assigns it — **passes on a build where the cache
+    /// serves the old picture.** The operator presses the button, the strip
+    /// reports a hit, the texture drawn under `Actual` is drawn again, and
+    /// nothing anywhere reports an error. From his chair that is *"the button
+    /// never worked"*, which is the sentence O137 exists to answer, arriving
+    /// for a second reason.
+    ///
+    /// So the property asserted is not "the field reaches the renderer". It is
+    /// **the key moves**, in both of the ways the shell compares keys:
+    ///
+    /// * `RenderKey` equality, which `render::strip` uses to decide whether a
+    ///   cached raster may be served at all; and
+    /// * [`RenderKey::discrete_inputs`], which `render::settle` uses to decide
+    ///   whether to re-rasterize **at once** rather than after `ZOOM_SETTLE`.
+    ///
+    /// The second matters on its own: a stroke display that landed in the
+    /// *scale* category would make the toggle take 150 ms to do anything, on a
+    /// control whose entire complaint history is that it did nothing.
+    ///
+    /// And the reverse, so the test cannot pass by making every key unequal:
+    /// two keys that agree about line weights and about everything else must
+    /// still be equal.
+    #[test]
+    fn the_render_key_moves_when_line_weights_are_turned_off() {
+        let shown = RenderKey::new(3, 2.0, true, 7, StrokeDisplay::Actual);
+        let hairline = RenderKey::new(3, 2.0, true, 7, StrokeDisplay::Hairline);
+
+        assert_ne!(
+            shown, hairline,
+            "a raster drawn with real widths would be served for a hairline view, so the \
+             toggle would look exactly as inert as the dead button it replaces"
+        );
+        assert_ne!(
+            shown.discrete_inputs(),
+            hairline.discrete_inputs(),
+            "the stroke display is not a DISCRETE input, so the toggle would wait out the \
+             zoom debounce before doing anything"
+        );
+        assert_eq!(
+            shown.scale_bits(),
+            hairline.scale_bits(),
+            "turning line weights off is not a zoom"
+        );
+        assert_eq!(
+            shown,
+            RenderKey::new(3, 2.0, true, 7, StrokeDisplay::Actual),
+            "two keys agreeing about everything must still be equal — otherwise the assertion \
+             above is satisfied by a key that is never equal to anything"
+        );
+        // The region builder must carry it too, because the region tier is
+        // exactly where a dense CAD sheet is read at 200-400 % — which is the
+        // zoom this feature exists for.
+        let region = pdfcer_core::page_tree::Rect {
+            llx: 0.0,
+            lly: 0.0,
+            urx: 100.0,
+            ury: 100.0,
+        };
+        assert_ne!(
+            shown.with_region(Some(region)),
+            hairline.with_region(Some(region)),
+            "the region tier lost the stroke display, so the toggle would be inert at exactly \
+             the zooms the operator asked for it"
+        );
     }
 
     /// **The scale is the ONLY debounced input.**
@@ -1144,17 +1340,17 @@ mod tests {
     /// `ZOOM_SETTLE` exists to remove.
     #[test]
     fn only_the_raster_scale_is_debounced() {
-        let base = RenderKey::new(3, 2.0, true, 7);
+        let base = RenderKey::new(3, 2.0, true, 7, StrokeDisplay::Actual);
         // A scale change moves the scale category and NOT the discrete one.
-        let rescaled = RenderKey::new(3, 2.5, true, 7);
+        let rescaled = RenderKey::new(3, 2.5, true, 7, StrokeDisplay::Actual);
         assert_ne!(rescaled.scale_bits(), base.scale_bits());
         assert_eq!(rescaled.discrete_inputs(), base.discrete_inputs());
         // …and each discrete change moves the discrete category and NOT the
         // scale.
         for changed in [
-            RenderKey::new(4, 2.0, true, 7),
-            RenderKey::new(3, 2.0, false, 7),
-            RenderKey::new(3, 2.0, true, 8),
+            RenderKey::new(4, 2.0, true, 7, StrokeDisplay::Actual),
+            RenderKey::new(3, 2.0, false, 7, StrokeDisplay::Actual),
+            RenderKey::new(3, 2.0, true, 8, StrokeDisplay::Actual),
         ] {
             assert_eq!(changed.scale_bits(), base.scale_bits());
             assert_ne!(changed.discrete_inputs(), base.discrete_inputs());
@@ -1210,9 +1406,10 @@ mod tests {
 mod region_accessor_tests {
     use super::RenderKey;
     use pdfcer_core::page_tree::Rect;
+    use pdfcer_render::font::StrokeDisplay;
 
     fn key() -> RenderKey {
-        RenderKey::new(0, 1.5, true, 0)
+        RenderKey::new(0, 1.5, true, 0, StrokeDisplay::Actual)
     }
 
     /// A whole-page raster has no region, and must say so rather than

@@ -340,6 +340,91 @@ pub struct ViewState {
     /// not get them. `crate::app::prefs` can make that an opening preference
     /// the day somebody wants one.
     pub show_points: bool,
+    /// ★★★ **`view.line_weights` — are strokes drawn at the widths the file
+    /// declares, or every one of them at one device pixel?**
+    ///
+    /// `OPERATOR_REQUESTS.md` **O137**, in his words, 2026-09-05:
+    ///
+    /// > *"awhile ago you told me you removed the button to show all lines
+    /// > without their thickness — thin lines or something like cad has. The
+    /// > button never worked but I do want that display option!"*
+    ///
+    /// # ★★★ Which convention this is, because the two are opposites
+    ///
+    /// | | | precedent |
+    /// |---|---|---|
+    /// | **this, turned OFF** | every stroke drawn at **one device pixel**, whatever the file declares | AutoCAD `LWDISPLAY` off |
+    /// | *not* this | sub-pixel strokes bumped **up** to one pixel so they do not vanish | Acrobat's *enhance thin lines* |
+    ///
+    /// **One makes thick things thin. The other makes thin things thick.** He
+    /// said *"without their thickness"* and named CAD, so this is the first.
+    /// Shipping the second would be worse than shipping nothing, because it
+    /// would look like the feature working while doing the opposite.
+    ///
+    /// # ★★ Why the field is named for the WEIGHTS and `true` is the default
+    ///
+    /// Every other toggle in this group is `false` by default and means *draw
+    /// something extra*. This one is `true` and means *keep drawing the
+    /// document faithfully* — so a fresh `ViewState` renders exactly what
+    /// every build before this one rendered, and the operator's gesture is
+    /// **turning something off**.
+    ///
+    /// That is also both precedents' spelling: Acrobat's menu item is
+    /// **View ▸ Line Weights**, checked by default; AutoCAD's system variable
+    /// is `LWDISPLAY`, and *off* is what a draughtsman asks for. Naming it
+    /// `hairline: bool` would have made the pressed state mean *"the document
+    /// is not being drawn faithfully"*, which is the harder sentence to read
+    /// off a ribbon button.
+    ///
+    /// # ★★★ It is the ONLY member of this group that changes the RASTER
+    ///
+    /// Rulers, grid, guides and show-points are all drawn by the canvas
+    /// **over** a finished page texture; none of them can make a cached raster
+    /// wrong. This one is a [`pdfcer_render::RenderOptions`] field
+    /// (`stroke_display`, engine `Pass 254.0`), so a texture drawn while it was
+    /// on is a *different picture* from one drawn while it was off — and a
+    /// cache that served the old one would make the toggle look inert, which is
+    /// precisely the defect O137 reports about its predecessor.
+    ///
+    /// ⇒ It is therefore a **staleness key**:
+    /// [`crate::app::state::OpenDoc::render_key_for`] feeds
+    /// [`Self::stroke_display`] into [`crate::render::worker::RenderKey::new`],
+    /// and `the_render_key_moves_when_line_weights_are_turned_off` is what
+    /// stops that being forgotten.
+    ///
+    /// # ★★★ Canvas only — the constraint decided in writing before the engine
+    /// field existed
+    ///
+    /// Print, print preview and **every** export — PDF, DXF, PNG, JPEG, SVG,
+    /// EMF, form data, text — render the document's **real** widths. This field
+    /// is read by exactly one place, `crate::render::worker::render_on_worker`,
+    /// and `crate::app::settings::tests::only_the_canvas_worker_sets_stroke_display`
+    /// parses every file in the crate to keep it that way.
+    ///
+    /// > **The one thing worse than not having this feature is having it follow
+    /// > him into a file he sends a client.**
+    ///
+    /// The engine holds the same line from its side and says so on its own
+    /// backlog row: there is deliberately **no CLI flag**, because a hairline
+    /// export would be an unfaithful file.
+    ///
+    /// # ★ Fills are untouched
+    ///
+    /// Only `S`/`s`/`B`/`B*`-painted strokes reach the engine's `stroke_params`
+    /// (`pdfcer-render/src/interpret.rs:8806-8812`), so a hatch built out of
+    /// thin *fills* cannot vanish. Said here because an operator whose hatching
+    /// is fill-based would otherwise expect it to thin out with everything
+    /// else.
+    ///
+    /// # ★ Per document, not global
+    ///
+    /// It lives here, beside `zoom` and `rulers`, so two open drawings can
+    /// disagree: comparing a hairline read of a dense sheet against a faithful
+    /// read of the sheet beside it is the actual job. There is deliberately no
+    /// persisted default in `crate::app::prefs` — see
+    /// `crate::text::commands::view_line_weights` for that decision and where a
+    /// preference would go if he asks for one.
+    pub line_weights: bool,
 }
 
 impl Default for ViewState {
@@ -385,11 +470,54 @@ impl Default for ViewState {
             // operator who has not asked for hollow squares over their drawing
             // should not get them.
             show_points: false,
+            // ★★★ **ON**, and it is the one member of this group whose default
+            // is not `false` — because `true` here means *draw the document as
+            // it says it should be drawn*, not *draw something extra*. A fresh
+            // view therefore rasterizes byte for byte what every build before
+            // O137 rasterized, and the operator's gesture is turning line
+            // weights OFF. See the field's own docs for why the toggle is
+            // named for the weights rather than for the hairline.
+            line_weights: true,
         }
     }
 }
 
 impl ViewState {
+    /// ★★★ **[`Self::line_weights`] as the engine spells it** — the one place
+    /// this shell's `bool` becomes a [`pdfcer_render::font::StrokeDisplay`].
+    ///
+    /// # Why the conversion is a named function and not an `if` at the call
+    /// site
+    ///
+    /// There are two call sites and they must not be able to disagree: the
+    /// **render key** ([`crate::app::state::OpenDoc::render_key_for`]) says
+    /// *what picture I want*, and the **render request** (built next to it, read
+    /// by `crate::render::worker::render_on_worker`) says *what picture this
+    /// is*. Two hand-written `if`s is exactly how a cache comes to serve a
+    /// raster drawn under the opposite answer — the failure mode that makes a
+    /// toggle look inert, which is the defect O137 reports about the button
+    /// this replaces.
+    ///
+    /// # ★★ Why the return type is the engine's ENUM and not a `bool`
+    ///
+    /// `StrokeDisplay` is `#[non_exhaustive]` with two variants today —
+    /// `Actual` and `Hairline` — and the engine made it an enum deliberately so
+    /// that Acrobat's *enhance thin lines* (the **opposite** convention: thin
+    /// things made thick) can arrive as a third variant. A `hairline: bool`
+    /// anywhere in this shell would, that day, come to mean *"one of the two"*.
+    /// So the boolean stops here and the engine's vocabulary starts here.
+    ///
+    /// ★ `Hairline` is the **off** position. `true` means faithful widths; see
+    /// the field.
+    #[must_use]
+    pub const fn stroke_display(&self) -> pdfcer_render::font::StrokeDisplay {
+        if self.line_weights {
+            pdfcer_render::font::StrokeDisplay::Actual
+        } else {
+            pdfcer_render::font::StrokeDisplay::Hairline
+        }
+    }
+
     /// Move to `index`, clamped into `0..page_count`.
     ///
     /// Clamping rather than erroring is right for a *view*: the only

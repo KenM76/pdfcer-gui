@@ -64,6 +64,36 @@
 //! 3. **Redaction's `SaveOptions::identity()`.** Deliberately NOT funnelled,
 //!    and this is the interesting one — see [`Settings::save_options`].
 //!
+//! ## ★★★ The funnel also guards a field it deliberately never SETS — O137
+//!
+//! [`Settings::render_options`] does not mention `stroke_display`, and that
+//! silence is the feature. `RenderOptions::default()` is
+//! `StrokeDisplay::Actual` — faithful widths — so every path that builds its
+//! options here (image export, DXF, print, print preview, the page thumbnails,
+//! the clipboard) renders the document as it says it should be rendered,
+//! without any of them having to remember to say so.
+//!
+//! `view.line_weights` — the CAD *line weights off* display mode the operator
+//! asked for by name — is therefore **not** routed through this funnel. It is
+//! carried on the `RenderRequest` and assigned in exactly one function,
+//! `render::worker::render_on_worker`, which draws the interactive canvas and
+//! nothing else.
+//!
+//! > **The one thing worse than not having that feature is having it follow him
+//! > into a file he sends a client.**
+//!
+//! ⇒ So this module holds **two** rules rather than one, and they point in
+//! opposite directions:
+//!
+//! | rule | check |
+//! |---|---|
+//! | nobody but the funnel BUILDS these option structs | [`tests::no_call_site_builds_its_own_options`] |
+//! | nobody but the canvas worker SETS `stroke_display` | [`tests::only_the_canvas_worker_sets_stroke_display`] |
+//!
+//! Both are `syn` scans over every `.rs` in the crate, for the same reason: the
+//! identifier appears in a dozen doc comments — including this paragraph — and
+//! a syntax tree contains no comments at all.
+//!
 //! ## What is deliberately not here
 //!
 //! **A watcher on the settings file.** `pdfcer-core` refuses one, and the
@@ -733,6 +763,261 @@ mod tests {
                 .map(|(file, hits)| format!("  {file}: {}", hits.join(", ")))
                 .collect::<Vec<_>>()
                 .join("\n")
+        );
+    }
+
+    /// ★★★ **ONLY THE CANVAS WORKER MAY SET `stroke_display`** — the mechanism
+    /// behind O137's one non-negotiable constraint.
+    ///
+    /// > **Canvas only.** Print, print preview and every export — PDF, DXF,
+    /// > PNG, JPEG, SVG, EMF, form data, text — render the document's REAL
+    /// > widths. *The one thing worse than not having this feature is having it
+    /// > follow him into a file he sends a client.*
+    ///
+    /// That was decided in writing on 2026-09-05, **before the engine field
+    /// existed**, and the engine held the same line from its side: its own
+    /// backlog row records that there is deliberately no CLI flag, because *"a
+    /// hairline export would be an unfaithful file, the one outcome the request
+    /// forbids"*.
+    ///
+    /// # ★★★ Why this is a check and not a paragraph
+    ///
+    /// Because the paragraph already exists, at four sites, and this project
+    /// has spent several corrections proving that a rule written next to the
+    /// code it governs is not a mechanism. The concrete danger has a name and
+    /// it is one line long: `app::actions::export`'s image export deliberately
+    /// reads the *document's* annotation stance and layer overrides, arguing —
+    /// correctly — that an export should be **"a picture of what you can
+    /// see"**. Extending that reasoning by one field, in good faith, next year,
+    /// silently ships the operator a client deliverable whose line weights are
+    /// gone. It would be correct in isolation and would survive review, which
+    /// is the exact shape [`no_call_site_builds_its_own_options`] was written
+    /// for.
+    ///
+    /// ⇒ So the export paths are left saying **nothing** about the field — the
+    /// funnel's `RenderOptions::default()` is already `StrokeDisplay::Actual` —
+    /// and the **assignment** is what is policed.
+    ///
+    /// # What it looks for, and why an assignment rather than a name
+    ///
+    /// Any `….stroke_display = …`. Reads are fine and are everywhere:
+    /// `ViewState::stroke_display()` is a method, `RenderRequest`'s field
+    /// initialiser is a `FieldValue` and not an assignment, and `RenderKey`
+    /// stores one. What can send a hairline somewhere it must not go is exactly
+    /// one syntactic act — writing it into a `RenderOptions` — and there is
+    /// precisely one legitimate instance of that act in the crate.
+    ///
+    /// `RenderOptions` is `#[non_exhaustive]`, so a struct literal cannot be
+    /// written outside `pdfcer-render`, and there is no `with_stroke_display`
+    /// builder to smuggle it through — checked against
+    /// `pdfcer-render/src/font/mod.rs`, which publishes none. Assignment is the
+    /// whole surface.
+    ///
+    /// # The one exemption
+    ///
+    /// `render/worker.rs`'s `render_on_worker`, which rasterizes the
+    /// interactive canvas and is called by nothing else. `#[cfg(test)]` modules
+    /// are skipped for the reason its neighbour gives.
+    ///
+    /// ⚠ **If this test fails, the fix is almost never to add a file to the
+    /// exemption list.** Ask first whether the new site can reach a printer, a
+    /// file on disk, or the clipboard. If it can, the answer is no.
+    #[test]
+    fn only_the_canvas_worker_sets_stroke_display() {
+        use syn::visit::Visit;
+
+        struct Finder {
+            hits: usize,
+        }
+
+        impl<'ast> Visit<'ast> for Finder {
+            fn visit_item_mod(&mut self, node: &'ast syn::ItemMod) {
+                let is_test_mod = node.attrs.iter().any(|a| {
+                    a.path().is_ident("cfg")
+                        && matches!(&a.meta, syn::Meta::List(l)
+                            if l.tokens.to_string().contains("test"))
+                });
+                if !is_test_mod {
+                    syn::visit::visit_item_mod(self, node);
+                }
+            }
+
+            fn visit_expr_assign(&mut self, node: &'ast syn::ExprAssign) {
+                if let syn::Expr::Field(field) = &*node.left
+                    && let syn::Member::Named(name) = &field.member
+                    && name == "stroke_display"
+                {
+                    self.hits += 1;
+                }
+                syn::visit::visit_expr_assign(self, node);
+            }
+        }
+
+        /// Assignments in `path`, or `0` for a file gated out of release
+        /// builds.
+        ///
+        /// ★★★ **The `#![cfg(test)]` exemption is recognised from the AST, not
+        /// from a filename** — the same rule [`no_call_site_builds_its_own_options`]
+        /// writes for itself, and for the same stated reason: the property that
+        /// earns the exemption is *"not in the shipped binary"*, and a filename
+        /// is a restatement of that which goes stale the moment a second such
+        /// module is written.
+        ///
+        /// ★★ It went stale within the hour. This check was written, run green,
+        /// and then `render::hairline` — the `#![cfg(test)]` file that measures
+        /// whether the mode actually thins a drawing — was added, and the check
+        /// **immediately reported it as a violation**. It has to set
+        /// `stroke_display` twice: that is the whole of what it measures, and it
+        /// reaches no printer, no file and no clipboard because it does not
+        /// exist in a release build.
+        ///
+        /// ⇒ That is the check working, on its first encounter with a legitimate
+        /// second site, and the exemption is written the way the neighbour's
+        /// already argued rather than by adding a path.
+        fn scan(path: &Path) -> usize {
+            let Ok(text) = std::fs::read_to_string(path) else {
+                return 0;
+            };
+            let Ok(parsed) = syn::parse_file(&text) else {
+                return 0;
+            };
+            let file_is_test_only = parsed.attrs.iter().any(|attr| {
+                matches!(attr.style, syn::AttrStyle::Inner(_))
+                    && attr.path().is_ident("cfg")
+                    && matches!(&attr.meta, syn::Meta::List(l)
+                        if l.tokens.to_string().contains("test"))
+            });
+            if file_is_test_only {
+                return 0;
+            }
+            let mut finder = Finder { hits: 0 };
+            finder.visit_file(&parsed);
+            finder.hits
+        }
+
+        fn walk(dir: &Path, out: &mut Vec<String>) {
+            let Ok(entries) = std::fs::read_dir(dir) else {
+                return;
+            };
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_dir() {
+                    walk(&path, out);
+                    continue;
+                }
+                if path.extension().and_then(|e| e.to_str()) != Some("rs") {
+                    continue;
+                }
+                let name = path.to_string_lossy().replace('\\', "/");
+                if name.ends_with("render/worker.rs") {
+                    continue;
+                }
+                let hits = scan(&path);
+                if hits > 0 {
+                    out.push(format!("  {name}: {hits} assignment(s)"));
+                }
+            }
+        }
+
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+        let mut violations = Vec::new();
+        walk(&root, &mut violations);
+        assert!(
+            violations.is_empty(),
+            "`stroke_display` is set outside the canvas worker. O137's whole safety argument \
+             is that line weights never leave the screen — print, print preview and every \
+             export render the document's REAL widths. If the new site can reach a printer, a \
+             file or the clipboard, remove the assignment: the funnel's default is already \
+             `StrokeDisplay::Actual`.\n{}",
+            violations.join("\n")
+        );
+
+        // ★★ And the other half, so this cannot pass on a build where the
+        // legitimate assignment was deleted along with the illegitimate ones —
+        // which would leave every export correct and the toggle inert, i.e. a
+        // green test over a dead feature. That is the exact failure O137
+        // reports about the button this replaces.
+        assert_eq!(
+            scan(&root.join("render/worker.rs")),
+            1,
+            "the canvas worker must assign `stroke_display` exactly once — zero means \
+             `view.line_weights` reaches no renderer at all"
+        );
+    }
+
+    /// ★★★ **Every export and every print renders the document's real widths,
+    /// while the canvas is showing hairlines** — O137, asserted rather than
+    /// promised.
+    ///
+    /// # The vacuous shape this deliberately avoids
+    ///
+    /// A test that "exports are unaffected" passes trivially if it never turns
+    /// the mode on. So this turns it on — through the real
+    /// [`crate::viewer::ViewState`], on a real opened document — and then asks
+    /// the **funnel** what an export would be given. The funnel is what
+    /// `app::actions::export`, `dialogs::print`, `clipboard::place` and
+    /// `panels::pages::thumbnails` all build from, so one assertion covers
+    /// every one of them without four copies that could each be got wrong.
+    ///
+    /// The companion assertion is the load-bearing one: the same document's
+    /// **canvas** request must carry `Hairline` at the same moment, and its
+    /// render key must agree with it. Without those this test would also pass
+    /// on a build where the feature does nothing at all.
+    ///
+    /// ★ It also runs the two builders the print and export paths actually
+    /// chain onto the funnel's output — `with_annotation_scope` and
+    /// `with_backdrop` — because a builder that reset the field would defeat
+    /// everything above and is invisible from this side otherwise.
+    #[test]
+    fn every_export_path_renders_real_widths_with_line_weights_off() {
+        use pdfcer_render::font::StrokeDisplay;
+
+        let mut doc = crate::app::state::open_local_fixture("a1-titleblock.pdf");
+        doc.view.line_weights = false;
+
+        let request = doc
+            .render_request_for(0, 2.0)
+            .expect("the fixture has a first page");
+        assert_eq!(
+            request.stroke_display,
+            StrokeDisplay::Hairline,
+            "the canvas request did not carry the operator's choice, so this test could not \
+             have detected an export carrying it either"
+        );
+        assert_eq!(
+            doc.render_key_for(0, 2.0),
+            crate::render::worker::RenderKey::new(
+                0,
+                2.0,
+                doc.annotations_visible(),
+                0,
+                StrokeDisplay::Hairline,
+            ),
+            "the key the shell asks for disagrees with the request it sends"
+        );
+
+        // The one funnel every export and print path builds its options from.
+        let exported = doc.settings.render_options();
+        assert_eq!(
+            exported.stroke_display,
+            StrokeDisplay::Actual,
+            "an export would have been rendered with line weights OFF — the one outcome O137 \
+             forbids outright"
+        );
+        assert_eq!(
+            exported
+                .with_annotation_scope(pdfcer_render::AnnotationScope::DocumentAndMarkups)
+                .stroke_display,
+            StrokeDisplay::Actual,
+            "the print path's builder chain reintroduced the hairline mode"
+        );
+        assert_eq!(
+            doc.settings
+                .render_options()
+                .with_backdrop(pdfcer_render::PageBackdrop::Transparent)
+                .stroke_display,
+            StrokeDisplay::Actual,
+            "the image-export path's builder chain reintroduced the hairline mode"
         );
     }
 }

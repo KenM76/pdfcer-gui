@@ -139,6 +139,14 @@ pub(super) fn tab() -> Tab {
             //
             //   strategy    no tiled-progressive path exists in this shell
             //   thin lines  `RenderOptions` has no such field
+            //               ⚠ TRUE THEN, FALSE SINCE 2026-09-05. The engine
+            //               shipped `stroke_display` (`Pass 254.0`) the day this
+            //               shell asked, because the operator asked for the
+            //               control back by name (O137). It is BACK — but in the
+            //               **Display** group below, not here, and the move is the
+            //               interesting part: this group was settings, and a
+            //               stroke-width display convention is a thing he flips
+            //               while reading. Deleting the group was still right.
             //   antialias   `interpret.rs` sets `anti_alias: true` as a literal
             //   quality     REAL — moved to Settings ▸ Drawing the page
             //   settle      REAL — moved to Settings ▸ Drawing the page
@@ -287,8 +295,12 @@ pub(super) fn tab() -> Tab {
                 ],
             ),
             // ---------------------------------------------------------------
-            // Display — what is drawn over and beside the page. Thin lines
-            // lives in Render (see header).
+            // Display — what is drawn over and beside the page, and (since
+            // O137, 2026-09-05) whether strokes are drawn at the widths the
+            // file declares. The old `view.thin_lines` was a Render-group
+            // entry and was inert; its successor `view.line_weights` is HERE,
+            // because it is a thing the operator flips while reading rather
+            // than a value set once — see that command's own note.
             //
             // ★ **Rulers, grid and guides were N and are now built**, which
             // completes `RIBBON_IA.md` §5.2's Display row and the last unbuilt
@@ -319,6 +331,20 @@ pub(super) fn tab() -> Tab {
                     icon_only("view.rulers"),
                     icon_only("view.grid"),
                     icon_only("view.guides"),
+                    // ★★★ **O137, and the one entry here that changes the
+                    // RASTER rather than drawing over it.** Every toggle above
+                    // paints a mark on a finished page texture; this one asks
+                    // the renderer for a different texture
+                    // (`RenderOptions::stroke_display`). It sits with them
+                    // anyway because from the operator's chair it is the same
+                    // kind of switch — *what am I looking at?* — and because
+                    // Acrobat files its own as **View ▸ Line Weights**.
+                    //
+                    // LAST in the group, after the three chrome overlays: those
+                    // add furniture, this one changes the drawing itself, and
+                    // the order puts the most consequential switch where a
+                    // reader arrives at it having understood the cheap ones.
+                    icon_only("view.line_weights"),
                 ],
             ),
             // ---------------------------------------------------------------

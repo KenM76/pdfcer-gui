@@ -109,7 +109,7 @@ pub(super) fn band() -> Vec<Command> {
         // whatever they had put on it.
         //
         // Three of the five had nothing behind them: there is no
-        // tiled-progressive path in this shell, and `RenderOptions` has neither
+        // tiled-progressive path in this shell, and `RenderOptions` had neither
         // a thin-lines nor an antialiasing field (`interpret.rs` sets
         // `anti_alias: true` as a literal). The other two were real and became
         // **settings** — Settings ▸ Drawing the page — because a value an
@@ -121,6 +121,15 @@ pub(super) fn band() -> Vec<Command> {
         // that a capability exists*. Three of these named no capability, and
         // the other two are no longer reached by a command at all.
         // `crate::app::prefs`' header carries the evidence per verdict.
+        //
+        // ⚠ **CORRECTED 2026-09-05 (O137): the thin-lines verdict expired.**
+        // The sentence above is written in the past tense now because the
+        // engine shipped `RenderOptions::stroke_display` (`Pass 254.0`,
+        // `8f9fb3e`) the day this shell asked for it, and the control is back
+        // as `view.line_weights` in the Display group below — a **display**
+        // toggle, not a Render setting, for the reason its own note gives. Four
+        // of the five verdicts still hold; `view.antialiasing` is the one that
+        // is still true, and nobody has asked for it.
         // ★ **No icon, on the icon ui-spec's own explicit instruction.**
         //
         // §3.2 is a whole section devoted to this one control: "Recommend
@@ -379,6 +388,51 @@ pub(super) fn band() -> Vec<Command> {
             .enabled_when("doc.pages"),
         command("view.guides", t::view_guides(), 234)
             .with_icon("guides")
+            .enabled_when("doc.pages"),
+        // ★★★ **`view.line_weights` — O137, and it is the one entry in this
+        // file that was DELETED and is now back.**
+        //
+        // Ken, 2026-09-05: *"awhile ago you told me you removed the button to
+        // show all lines without their thickness — thin lines or something like
+        // cad has. The button never worked but I do want that display
+        // option!"* Both halves of that are correct.
+        //
+        // Its predecessor `view.thin_lines` was token **213**, was drawn on
+        // this tab, and was **inert**; it was unregistered on 2026-08-17 with
+        // the rest of the Render group because *"`RenderOptions` has neither a
+        // thin-lines nor an antialiasing field"*. That deletion was right —
+        // R8, and a control that does nothing is exactly the defect he
+        // reported. Treating it as closing the question was not: **a capability
+        // nobody can reach is not a capability nobody wants.**
+        //
+        // ★★ It may exist now **because the field exists now**:
+        // `RenderOptions::stroke_display: StrokeDisplay { Actual, Hairline }`,
+        // engine `Pass 254.0` (`8f9fb3e`), in this repo's lock at `b1033ab`.
+        // R8 again, in the other direction — registering the command is how
+        // this shell says the capability arrived.
+        //
+        // ⚠ **Token 235, not 213.** The retired tokens 210-214 stay retired: a
+        // token is an operator's saved keybinding, and handing 213 back would
+        // silently rebind whatever they had put on it. 235 is contiguous with
+        // rulers/grid/guides (232-234), which is where this control belongs.
+        //
+        // ★★★ **Which convention, because the two are opposites and shipping
+        // the wrong one is worse than shipping nothing.** Off means every
+        // stroke is capped at ONE DEVICE PIXEL whatever the file declares —
+        // AutoCAD `LWDISPLAY` off, **thick → thin**. It is NOT Acrobat's
+        // *enhance thin lines*, which bumps sub-pixel strokes UP (**thin →
+        // thick**). He said *"without their thickness"* and named CAD.
+        //
+        // ★ **It is a toggle whose ON is the shipped behaviour**, unlike every
+        // other member of this group — see
+        // `crate::viewer::ViewState::line_weights` for why the label names the
+        // weights rather than the hairline, and `t::view_line_weights` for why
+        // it has no Settings twin.
+        //
+        // `doc.pages`, with the rest of the Display group: a stroke-width
+        // display convention with no page under it governs nothing.
+        command("view.line_weights", t::view_line_weights(), 235)
+            .with_icon("line-weights")
             .enabled_when("doc.pages"),
         // The sidebar is the application's own furniture and toggles with
         // or without a document; the panels inside it need one to describe.

@@ -1260,3 +1260,18 @@ pub(super) const BOLD: &str = include_str!("assets/bold.svg");
 /// same reason. See the asset for why the slant is exaggerated and why the
 /// serifs are offset rather than centred.
 pub(super) const ITALIC: &str = include_str!("assets/italic.svg");
+
+/// `line-weights.svg` — the art for [`super::Icon::LineWeights`].
+///
+/// ★★★ Authored 2026-09-05 for `view.line_weights` (O137), a control that had
+/// been **deleted** on 2026-08-17 for want of an engine field. The field
+/// arrived (`RenderOptions::stroke_display`, `Pass 254.0`), so the button came
+/// back and the glyph was drawn for it — the operator's standing ruling is that
+/// a missing glyph is authored, not worked around.
+///
+/// ★★ The **only** asset in this directory that does not stroke at a uniform
+/// 2.5, and the asset's own comment carries why: the varying weight IS the
+/// subject, so a glyph drawn at one width would be a picture of the feature
+/// switched off. It also carries the 16 px measurement behind the thinnest
+/// bar's 1.6, and the two axes that keep it clear of `list.svg`.
+pub(super) const LINE_WEIGHTS: &str = include_str!("assets/line-weights.svg");

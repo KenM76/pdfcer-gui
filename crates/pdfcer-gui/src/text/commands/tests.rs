@@ -59,6 +59,7 @@ fn all() -> Vec<CommandText> {
         view_rulers(),
         view_grid(),
         view_guides(),
+        view_line_weights(),
         view_sidebar(),
         view_panel_pages(),
         view_panel_bookmarks(),

@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Generic lineweight-ladder shape — three ruled bars of decreasing thickness.
+       Universal in CAD (it is AutoCAD's own Show/Hide Lineweight mark, and every
+       drafting package draws some version of it); no vendor art was traced and
+       nothing here is anybody's asset. No trademark risk.
+
+       ★★★ WHY THIS ASSET EXISTS. `view.line_weights` — OPERATOR_REQUESTS.md O137,
+       asked for by name on 2026-09-05: "the button to show all lines without their
+       thickness — thin lines or something like cad has. The button never worked but
+       I do want that display option!" Its predecessor `view.thin_lines` had no icon
+       and no field behind it and was unregistered on 2026-08-17. The field arrived
+       (pdfcer-render Pass 254.0, `RenderOptions::stroke_display`), so the control
+       came back, and under the operator's standing ruling of 2026-08-06 (quoted at
+       `Icon::Back`) a missing glyph is AUTHORED — "no art exists" has never been a
+       reason to ship a bare button here.
+
+       ★★★ IT BREAKS THE §1 STYLE CONTRACT ON PURPOSE, AND IT IS THE ONLY ONE THAT
+       DOES. Every other asset in this directory strokes at a uniform 2.5, so that
+       the set reads as one hand. Here the VARYING WEIGHT IS THE SUBJECT: the
+       control governs whether a stroke is drawn at the width the file declares, so
+       an icon drawn at one width would be a picture of the thing switched off. The
+       deviation is the meaning, which is the only ground on which the contract is
+       ever bent.
+
+       ★★★ EVERY NUMBER HERE IS PIXEL-ALIGNED FOR THE 16 px RASTER, AND THAT IS A
+       MEASUREMENT RATHER THAN A TASTE. Icons rasterize at ICON_PTS (16) x
+       pixels_per_point, so the worst case is a 16 px pixmap and a scale of exactly
+       1/3. Widths 9 / 6 / 3 are therefore 3 / 2 / 1 WHOLE pixels, and the centres
+       10.5 / 24 / 37.5 put each bar on whole pixel rows (2-4, 7-8, 12). Rasterized
+       and READ BY EYE at 16 px, not only measured against a look-alike metric:
+       every bar comes out fully opaque with no antialiased fringe at all, so the
+       ladder is 3 : 2 : 1 exactly as drawn.
+
+       The first attempt was 6.5 / 3.4 / 1.6 on centres 13 / 24 / 35 -- a
+       reasonable-looking 4 : 2 : 1 that rasterized to 2.2 / 1.13 / 0.53 px, none of
+       them on a pixel boundary. Every bar smeared across two rows at partial alpha,
+       and the bottom two became a pair of grey smudges distinguishable only by
+       shade. IT LOOKED FINE IN THE FILE AND WRONG ON THE SCREEN, which is the whole
+       reason the check is done by eye on the raster.
+
+       ★ 1 px is the floor for the thinnest bar and it is not arbitrary either: it
+       is the same floor the FEATURE uses. Turning line weights off draws every
+       stroke at one device pixel, so the bottom rung of this ladder is a picture of
+       exactly what the operator gets.
+
+       ★★ DISTINCT FROM list.svg, THE NEAREST SHAPE IN THE SET, on two axes at
+       once. That glyph is three EQUAL 2.5 rules in the RIGHT HALF of the box (x22
+       to x40) with a square marker beside each; this is three UNEQUAL bars running
+       the FULL WIDTH (x9 to x39) with nothing beside them. So the silhouettes
+       differ in composition as well as in weight, and neither reduces to the other
+       at 16 px. They also never share a band -- list.svg is Edit and Measure, this
+       is View > Display.
+
+       Distinct from rulers.svg and grid.svg, its actual neighbours in View >
+       Display: both of those are FRAMED (a rect encloses them) and regular, which
+       is what says "furniture ruled at even intervals". This has no frame and no
+       regularity at all; the whole information is in the three different weights.
+       Distinct from layers.svg by being orthogonal bars rather than parallelograms
+       in perspective, and from text.svg's ruled page by having no page.
+
+       ★ Butt caps, not the set's usual round. A round cap on a 9-wide stroke adds a
+       4.5-unit dome at each end, which at 16 px turns the top bar into a lozenge and
+       makes the three bars different LENGTHS as well as different weights -- two
+       variables where the glyph means to show one. Flat ends also keep the pixel
+       alignment above exact, which round ends would spoil at both extremities. -->
+  <path d="M9 10.5h30" stroke="currentColor" stroke-width="9" stroke-linecap="butt"/>
+  <path d="M9 24h30" stroke="currentColor" stroke-width="6" stroke-linecap="butt"/>
+  <path d="M9 37.5h30" stroke="currentColor" stroke-width="3" stroke-linecap="butt"/>
+</svg>

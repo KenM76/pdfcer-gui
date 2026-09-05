@@ -47,6 +47,35 @@ pub enum ViewChrome {
     /// else in the suite would notice."* Both directions are asserted, so this
     /// one could not be added that way.
     ShowPoints,
+    /// `view.line_weights` — **are strokes drawn at the widths the file
+    /// declares, or every one of them at one device pixel?**
+    ///
+    /// `OPERATOR_REQUESTS.md` **O137**, asked for by name:
+    /// *"the button to show all lines without their thickness — thin lines or
+    /// something like cad has … I do want that display option!"*
+    ///
+    /// ★★★ **The fifth variant, and the only one that is not chrome DRAWN OVER
+    /// the page.** The other four add a mark the canvas paints on top of a
+    /// finished texture; this one changes what the texture *is*
+    /// ([`pdfcer_render::font::RenderOptions::stroke_display`], engine
+    /// `Pass 254.0`). It is in this enum anyway, and the reason is worth
+    /// stating rather than leaving to be re-litigated: what this enum models is
+    /// **View ▸ Display's independent toggles** — a set of switches an operator
+    /// flips while reading, each of which renders pressed and each of which is
+    /// dispatched by the same action. A fifth mechanism for the fifth switch
+    /// would have been a second `Action`, a second `selected:` publisher and a
+    /// second id mapping, to express the same gesture.
+    ///
+    /// ⚠ What it DOES need beyond the other four is a **stale raster**. See
+    /// [`crate::viewer::ViewState::line_weights`]: the answer is part of
+    /// [`crate::render::worker::RenderKey`], because a cache that served the
+    /// texture drawn under the opposite answer would make this toggle look
+    /// exactly as inert as the dead button it replaces.
+    ///
+    /// ★ `true` (the default) is *faithful widths*. This is the one variant
+    /// whose "on" is the shipped behaviour rather than an addition — the
+    /// operator's gesture is turning it **off**.
+    LineWeights,
 }
 
 impl ViewChrome {
@@ -62,6 +91,7 @@ impl ViewChrome {
         ViewChrome::Grid,
         ViewChrome::Guides,
         ViewChrome::ShowPoints,
+        ViewChrome::LineWeights,
     ];
 
     /// Read this toggle out of a view state.
@@ -72,6 +102,7 @@ impl ViewChrome {
             ViewChrome::Grid => view.grid,
             ViewChrome::Guides => view.guides,
             ViewChrome::ShowPoints => view.show_points,
+            ViewChrome::LineWeights => view.line_weights,
         }
     }
 
@@ -86,6 +117,7 @@ impl ViewChrome {
             ViewChrome::Grid => view.grid = on,
             ViewChrome::Guides => view.guides = on,
             ViewChrome::ShowPoints => view.show_points = on,
+            ViewChrome::LineWeights => view.line_weights = on,
         }
     }
 }

@@ -1,5 +1,46 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-  <!-- Generic document/page shape — placeholder, not a vendor trademark logo -->
+  <!-- Generic document/page shape — placeholder, not a vendor trademark logo.
+
+       A document, as a SUBJECT — the picture behind `file.document_properties`.
+       A rounded sheet with three ruled lines, the last one short so the block
+       reads as text that stopped rather than as a fixed pattern.
+
+       ★★★ THE RULING MOVED HERE ON 2026-09-05, under `catalog/OVERVIEW.md`'s
+       stated seam — "the ruling lives with the art, and the variant carries a
+       one-line role plus a pointer to it" — because `catalog/mod.rs` was at
+       R2's 1,500-line ceiling and the next variant (`line-weights.svg`, O137)
+       could not be added without moving one out. This is the first migration
+       that seam was written for; it is a MIGRATION, not a deletion, and not one
+       sentence of the account below was dropped.
+
+       ★★★ IT WAS AN ORPHAN FOR ONE DAY, AND THE ORPHAN IS THE LESSON. Until
+       2026-09-04 this art was reached only through Icon::Properties, which
+       aliased onto it because Properties had no drawing of its own; Properties
+       got one, and the page became nobody's. The variant's doc comment said so
+       in bold — "No command names this key today" — while, one directory away,
+       `catalog::file`'s `file.document_properties` registration was arguing at
+       length for sharing `properties` and closing with "the alternative is not
+       'draw one' but 'ask him for one'." Neither comment could see the other.
+       What found it was `tools/compare-mockup-ribbon.py`'s item phase,
+       reporting the band as `properties properties fonts` against the mockup's
+       `document properties fonts`.
+
+       ⇒ AN ORPHAN VARIANT IS A STANDING INVITATION AND ITS DOC COMMENT SHOULD
+       READ AS ONE, because the next session to want this picture will be
+       reading a REGISTRATION, not the catalogue. Hence the variant's first line
+       now names the command instead of asserting an absence.
+
+       Keeping the constant while it WAS unbound was still right:
+       `assets/PROVENANCE.md` makes this directory the operator's own art and
+       says an asset stays when its button goes — "deleting his drawing because
+       a button went away is not ours to do" — while an asset with no constant
+       is an asset NO TEST WALKS (`every_icon_parses` and its three siblings all
+       iterate Icon::ALL). Icon::EditObjects is the standing precedent: command
+       deleted 2026-08-31, variant kept.
+
+       Distinct from properties.svg, which took the role: that is three slider
+       rules, because Properties is about the VALUES of what is selected. This
+       is the page itself. -->
   <rect x="10" y="4" width="28" height="40" rx="2" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
   <path d="M16 16h16M16 24h16M16 32h10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
 </svg>

@@ -387,7 +387,17 @@ mod tests {
         // already existed as the last section of the Properties panel — so this
         // is a **surface being separated**, not a capability arriving, and the
         // count moves anyway because a separated surface needs its own control.
-        assert_eq!(registry().len(), 141);
+        // ★★★ 141 → 142 on 2026-09-05: `view.line_weights` — `OPERATOR_REQUESTS.md`
+        // O137, and the only entry in this ledger that RESTORES a command.
+        // *"awhile ago you told me you removed the button to show all lines
+        // without their thickness … I do want that display option!"*
+        // `view.thin_lines` was unregistered on 2026-08-17 because
+        // `RenderOptions` had no field behind it; the engine shipped
+        // `stroke_display` (`Pass 254.0`) the day this shell asked, so the
+        // capability exists and R8 says registering the command is how the GUI
+        // learns it. A **new token (235)**, not the retired 213 — see the
+        // registration for why a retired token is never handed back.
+        assert_eq!(registry().len(), 142);
     }
 
     /// ★ **The icon-coverage split adds up to the registry.**
@@ -659,7 +669,17 @@ mod tests {
         //   any of it** — `named` counts commands that name *an* icon, and both
         //   spellings do. What caught it was `tools/compare-mockup-ribbon.py`'s
         //   item phase, which compares *which* one.
-        assert_eq!(named, 134, "commands naming an icon");
+        // ★ 134 → 135 on 2026-09-05: `view.line_weights` names `line-weights`,
+        // which is NEW art rather than a shared key. There was no lineweight
+        // glyph in the set and no honest neighbour to share with — the three
+        // toggles beside it are a ruler pair, a framed lattice and two
+        // overshooting guides, none of which is a picture of stroke width. So
+        // it was AUTHORED (operator's standing ruling of 2026-08-06: a missing
+        // glyph is drawn, not worked around), and it is the one asset in the
+        // directory that deliberately breaks the uniform 2.5 stroke, because
+        // the varying weight is the subject. `line-weights.svg` carries the
+        // ruling and the 16 px measurement behind every number in it.
+        assert_eq!(named, 135, "commands naming an icon");
         // ★ 12 → 17 on 2026-08-27: the Format ▸ Font group's five commands
         // all refuse a glyph, and they refuse it for one reason argued once at
         // their registration. Word draws `B` and `I` as glyphs; this build has

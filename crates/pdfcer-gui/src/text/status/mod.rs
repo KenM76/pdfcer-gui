@@ -109,7 +109,7 @@ pub use refused::edit_declined_by_engine;
 /// everything else in this catalog: a STATE rather than an event, with no
 /// retirement rule. Its header carries the distinction.
 pub mod waiting;
-pub use waiting::page_catching_up;
+pub use waiting::{line_weights_off, page_catching_up};
 
 pub use selection::{
     TextStyleRefusal,

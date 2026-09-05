@@ -60,6 +60,14 @@
 /// `render_page_region` accepts a rectangle outside the `/CropBox` by
 /// construction and is untested there; a shell feature built on an unexercised
 /// engine path is one whose first failure looks like a shell defect.
+/// **The pixel proof for O137's "line weights off" display mode** — that the
+/// mode really thins a drawing, and thins it in the direction the operator
+/// asked for rather than the opposite one.
+///
+/// `#![cfg(test)]`, so it compiles to nothing in a release build. Its own
+/// header carries why four passing wiring tests were not enough.
+mod hairline;
+
 pub mod offpage;
 pub mod raster;
 /// ★★★ **Whole page, or just the window?** — O24's one decision, made from

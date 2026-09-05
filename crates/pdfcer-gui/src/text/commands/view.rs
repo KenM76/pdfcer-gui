@@ -475,6 +475,74 @@ pub const fn view_guides() -> CommandText {
     )
 }
 
+/// `view.line_weights`
+///
+/// ★★★ **`OPERATOR_REQUESTS.md` O137, asked for by name** — *"the button to
+/// show all lines without their thickness — thin lines or something like cad
+/// has. The button never worked but I do want that display option!"*
+///
+/// # ★★★ Every clause of this tooltip is doing a job, and three of them are
+/// defences against a specific misreading
+///
+/// **The label is "Line weights", not "Thin lines" or "Hairlines".** It names
+/// the thing the switch governs, so its two positions read as *on* and *off* —
+/// which is Acrobat's spelling (**View ▸ Line Weights**, checked by default)
+/// and AutoCAD's (`LWDISPLAY`). A label naming the *off* state would render
+/// pressed when line weights were being shown, which is backwards. It is also
+/// the phrase a draughtsman already has: he asked for "lines without their
+/// thickness", and thickness on a drawing is a *weight*.
+///
+/// **"Turn this off"** leads, because turning it off is the whole feature. On
+/// is what pdfcer already did.
+///
+/// **"one pixel wide"**, not "thin" or "hairline". Thin is relative and invites
+/// the opposite reading — Acrobat's *enhance thin lines*, which makes thin
+/// things THICKER — and this is the other convention entirely. One device
+/// pixel is what it actually does, and it is checkable.
+///
+/// **"however wide the file says they are"** says the ceiling applies to
+/// everything, so an operator does not expect only the fat ones to change.
+///
+/// **"Filled shapes and hatching are not affected"** is not padding. Only
+/// stroked paths reach the engine's stroke width; a region built out of thin
+/// *fills* keeps every pixel. Without the sentence, an operator whose hatch is
+/// fill-based would turn this on, see the hatch unchanged, and conclude the
+/// control is half-broken.
+///
+/// **"Printing, exporting and the print preview always use the real
+/// widths"** is the constraint the whole feature was built around, and it is
+/// stated *here* rather than only in the status bar because this is where he
+/// decides whether to press it. The status line says the same thing while it is
+/// on; a disclosure the operator meets only after acting is half a disclosure.
+///
+/// # ★ Why there is no Settings entry for it (a decision, not an omission)
+///
+/// The 2026-08-17 sweep moved the two surviving `view.*` settings into
+/// Settings ▸ Drawing the page on the argument that *"a value set once and
+/// forgotten is not an activity"*. This is the other case: it is a **reading
+/// aid he flips several times while reading one sheet** — turn it off to see
+/// whether two lines are coincident, turn it back on to check a drafting
+/// weight — so it is an activity, and P2 says a ribbon tab picks those. It is
+/// also per **document** ([`crate::viewer::ViewState`]), so two open drawings
+/// can disagree, which is what comparing a sheet against its neighbour needs.
+///
+/// A *persisted* default would additionally mean pdfcer opening every drawing
+/// for the rest of time showing something the file does not say, because of a
+/// switch set weeks earlier — one step removed from the failure O137 forbids
+/// outright. If he asks for it to stick, it belongs in
+/// `crate::app::prefs::opening::PageChrome` beside the other three view
+/// toggles, seeded by `Prefs::seed_view`, and that is the whole of the work.
+#[must_use]
+pub const fn view_line_weights() -> CommandText {
+    CommandText::new(
+        "Line weights",
+        "Turn this off to draw every line one pixel wide, however wide the file says they are \
+         — the CAD way of reading a dense drawing, so lines that sit close together stop \
+         merging into one black bar when you zoom in. Filled shapes and hatching are not \
+         affected. Printing, exporting and the print preview always use the real widths.",
+    )
+}
+
 /// `view.sidebar`
 #[must_use]
 pub const fn view_sidebar() -> CommandText {

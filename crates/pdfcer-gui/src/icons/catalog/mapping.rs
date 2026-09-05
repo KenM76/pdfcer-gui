@@ -197,6 +197,7 @@ impl Icon {
         Icon::Permissions,
         Icon::Bold,
         Icon::Italic,
+        Icon::LineWeights,
     ];
 
     /// The asset's SVG source.
@@ -275,6 +276,7 @@ impl Icon {
             Icon::SelectAll => assets::SELECT_ALL,
             Icon::Bold => assets::BOLD,
             Icon::Italic => assets::ITALIC,
+            Icon::LineWeights => assets::LINE_WEIGHTS,
             Icon::Markup => assets::MARKUP,
             Icon::Text => assets::TEXT,
             Icon::EditText => assets::EDIT,
@@ -438,6 +440,8 @@ impl Icon {
             Icon::SelectAll => "select-all",
             Icon::Bold => "bold",
             Icon::Italic => "italic",
+            // ui-text-exempt: icon catalogue key, never displayed
+            Icon::LineWeights => "line-weights",
             Icon::Markup => "markup",
             Icon::Text => "text",
             Icon::EditText => "edit-text",

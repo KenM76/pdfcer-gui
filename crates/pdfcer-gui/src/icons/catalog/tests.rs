@@ -64,9 +64,14 @@ fn all_is_exhaustive_and_free_of_duplicates() {
     // which is a statement about SUPPLY, and the operator's standing ruling
     // (2026-08-06, quoted in `Icon::Back`) is that a missing glyph is AUTHORED.
     // He asked for this pair by name. The two assets carry the account.
+    // ★ 139 → 140 on 2026-09-05: `line-weights`. O137 — the operator asked for
+    // the deleted "show all lines without their thickness" control by name, the
+    // engine shipped the field it had been missing (`Pass 254.0`), and the
+    // glyph was AUTHORED for it. The same correction shape as `bold`/`italic`
+    // the day before: the absence was about supply, and supply is ours.
     assert_eq!(
         Icon::ALL.len(),
-        139,
+        140,
         "the catalogue changed size: add the new variant to Icon::ALL and update this count"
     );
 }

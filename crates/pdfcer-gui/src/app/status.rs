@@ -581,6 +581,16 @@ pub(super) const REGION_BLEND_SPACE: &str = "status-group:blend-space"; // ui-te
 /// check reading it is asking *"is the page behind right now"* and not *"did an
 /// edit disclose something"*.
 pub(super) const REGION_CATCHING_UP: &str = "status-group:catching-up"; // ui-text-exempt: trace region name, never displayed
+/// ★★★ The "line weights are off, so this is not what will print" line —
+/// `OPERATOR_REQUESTS.md` **O137**.
+///
+/// The **second** state region, and the one a driven check must be able to find
+/// by name, because the whole safety argument for the feature rests on the
+/// disclosure being **on screen and legible** rather than merely constructed.
+/// A `line_weights` toggle whose disclosure was built into a zero-width rect
+/// would be the feature shipping without the thing that makes it safe, and
+/// nothing but a published rect can tell those apart.
+pub(super) const REGION_LINE_WEIGHTS: &str = "status-group:line-weights"; // ui-text-exempt: trace region name, never displayed
 
 /// `Actual size · Fit width · Fit page`.
 const REGION_FIT: &str = "status-group:fit"; // ui-text-exempt: trace region name, never displayed

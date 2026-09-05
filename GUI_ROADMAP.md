@@ -419,7 +419,7 @@ is genuinely undetermined, state it and let the operator choose.
 | **Strategy** | whole page, hard-coded | Whole page *(default)* · Tiled progressive |
 | **Raster scale** | derived from zoom × `pixels_per_point` | exposed as a quality multiplier |
 | **Settle delay** | `ZOOM_SETTLE = 150 ms` constant | exposed; lower on fast machines, higher on huge sheets |
-| **Thin lines** | — | CAD hairline rendering, one pixel per stroke at any zoom |
+| **Thin lines** | ✅ **2026-09-05** | CAD hairline rendering, one pixel per stroke at any zoom. **View ▸ Display ▸ Line weights**, on by default. AutoCAD's `LWDISPLAY` convention (thick → thin), NOT Acrobat's *enhance thin lines* (thin → thick) — they are opposites. Canvas only; every export keeps the real widths. |
 | **Antialias** | — | text and vector, independently |
 
 > ### ⛔ Corrected 2026-08-13 — the answer came back, and it is not tiling

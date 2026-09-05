@@ -1361,35 +1361,11 @@ pub enum Icon {
     /// A document, as a subject — `document.svg`. **`file.document_properties`
     /// since 2026-09-05.**
     ///
-    /// ★★★ **It was an orphan for one day, and the orphan is the lesson.**
-    /// Until 2026-09-04 this art was reached only through [`Icon::Properties`],
-    /// which aliased onto it because Properties had no drawing of its own;
-    /// Properties got one, and the page became nobody's. What stood here said
-    /// so in bold — *"No command names this key today"* — while, one directory
-    /// away, `catalog::file`'s `file.document_properties` registration was
-    /// arguing at length for sharing `properties` and closing with *"the
-    /// alternative is not 'draw one' but 'ask him for one'."* Neither comment
-    /// could see the other. What found it was
-    /// `tools/compare-mockup-ribbon.py`'s item phase, reporting the band as
-    /// `properties properties fonts` against the mockup's `document properties
-    /// fonts`.
-    ///
-    /// ⇒ **An orphan variant is a standing invitation and its doc comment
-    /// should read as one**, because the next session to want this picture will
-    /// be reading a *registration*, not this file. Hence the first line names
-    /// the command instead of asserting an absence.
-    ///
-    /// Keeping the constant while it WAS unbound was still right:
-    /// `assets/PROVENANCE.md` makes this directory the operator's own art and
-    /// says an asset stays when its button goes — *"deleting his drawing
-    /// because a button went away is not ours to do"* — while an asset with no
-    /// constant is an asset **no test walks** (`every_icon_parses` and its
-    /// three siblings all iterate [`Icon::ALL`]). [`Icon::EditObjects`] is the
-    /// standing precedent: command deleted 2026-08-31, variant kept.
-    ///
-    /// Distinct from [`Icon::Properties`], which took the role: that is three
-    /// slider rules, because Properties is about the VALUES of what is
-    /// selected. This is the page itself.
+    /// ★ Ruling in `document.svg`: the one-day orphan and what found it, why an
+    /// unbound variant's comment must read as an invitation, why the asset was
+    /// kept while nothing named it, and the separation from [`Icon::Properties`].
+    /// **First variant migrated under `OVERVIEW.md`'s seam** (2026-09-05), to
+    /// make room for [`Icon::LineWeights`].
     Document,
 
     /// Change one form into another — `convert.svg`.
@@ -1490,6 +1466,19 @@ pub enum Icon {
     /// ★ Ruling in `italic.svg`: the slant, the offset serifs that clear
     /// [`Icon::TextSelect`], and the refusal both of this pair correct.
     Italic,
+
+    /// Draw every stroke at one device pixel — `view.line_weights`, O137.
+    /// Three horizontal bars, thick to thin, the CAD lineweight glyph.
+    ///
+    /// ★ Ruling in `line-weights.svg`: why this is the ONE asset in the set
+    /// that breaks the 2.5-stroke style contract (the varying weight IS the
+    /// subject), what keeps it clear of `list.svg`, and the 16 px floor the
+    /// thinnest bar was measured against.
+    ///
+    /// ★★ Authored 2026-09-05 for a control that had been **deleted** — the
+    /// operator's standing ruling (2026-08-06, quoted at [`Icon::Back`]) is
+    /// that a missing glyph is AUTHORED, never worked around.
+    LineWeights,
 }
 
 // ★ The mapping lives next door. `Icon::ALL`, `Icon::source` and `Icon::name`

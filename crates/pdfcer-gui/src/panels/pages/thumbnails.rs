@@ -597,6 +597,21 @@ impl ThumbnailCache {
         // nothing this panel does can vary them.
         options.annotations = true;
         options.layers = None;
+        // ★★ …and `stroke_display` is deliberately NOT set, which leaves the
+        // funnel's `StrokeDisplay::Actual` — O137's `view.line_weights` does not
+        // reach the rail.
+        //
+        // Same argument as the two lines above, and one of its own. A thumbnail
+        // is a fixed overview, so a View ▸ Display toggle must not change it.
+        // And at thumbnail scale the point is moot in the operator's favour:
+        // every stroke on a page drawn 90 points wide is already under a device
+        // pixel, so the engine's §8.4.3.2 floor has put it at one pixel before
+        // the hairline ceiling could. Turning it on here would cost a whole
+        // second raster of every visible page for a picture nobody could tell
+        // apart.
+        //
+        // ⚠ It follows that the rail is NOT a place to check what the toggle
+        // does. The canvas is.
 
         let cancel = RenderCancel::new();
         // 1. The watchdog. `tx` stays here; dropping it at the end of this
@@ -637,8 +652,16 @@ impl ThumbnailCache {
                     // with what was intended. `annotations: true` and
                     // `layers_generation: 0` are the fixed reader defaults set
                     // above; stating them here keeps the key honest rather than
-                    // convenient.
-                    key: RenderKey::new(page_index, scale, true, 0),
+                    // convenient. `StrokeDisplay::Actual` joins them for the
+                    // same reason and under the same rule: it is what this
+                    // render actually used, stated rather than defaulted into.
+                    key: RenderKey::new(
+                        page_index,
+                        scale,
+                        true,
+                        0,
+                        pdfcer_render::font::StrokeDisplay::Actual,
+                    ),
                     // The same measurement this function was already taking for
                     // its own trace, now carried on the value rather than only
                     // written out — so a thumbnail and a canvas raster report

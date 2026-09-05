@@ -529,7 +529,18 @@ mod tests {
     use super::*;
 
     fn key(page: usize, scale: f32) -> RenderKey {
-        RenderKey::new(page, scale, true, 0)
+        RenderKey::new(
+            page,
+            scale,
+            true,
+            0,
+            // ★ Faithful widths — the default, and the only answer these
+            // cache-behaviour tests care about. `view.line_weights` (O137) is a
+            // key component, so a test that varied it would be testing the key
+            // rather than the strip; `the_render_key_moves_when_line_weights_are_turned_off`
+            // in `render::worker` is where that property is pinned.
+            pdfcer_render::font::StrokeDisplay::Actual,
+        )
     }
 
     /// A failure is cached, so a page that will not draw is not re-attempted

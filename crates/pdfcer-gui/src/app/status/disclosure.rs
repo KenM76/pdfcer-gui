@@ -32,7 +32,7 @@ use egui::{Align, Layout, Vec2};
 
 use super::{
     NOTES_WIDTH_FRACTION, REGION_BLEND_SPACE, REGION_CATCHING_UP, REGION_EDIT_DISCLOSURE,
-    REGION_FILL_DISCLOSURE, REGION_RECOVERED, ROW_HEIGHT_PTS,
+    REGION_FILL_DISCLOSURE, REGION_LINE_WEIGHTS, REGION_RECOVERED, ROW_HEIGHT_PTS,
 };
 use crate::app::state::OpenDoc;
 use crate::text::forms as t_forms;
@@ -353,7 +353,66 @@ fn blend_space_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
     disclosure_line(ui, REGION_BLEND_SPACE, &t::blend_space_status_line());
 }
 
-/// Draw all three, in the order the parent expects.
+/// ★★★ **The canvas is deliberately not showing what will print** —
+/// `OPERATOR_REQUESTS.md` **O137**, and the line that makes the whole feature
+/// safe to ship.
+///
+/// # What it is disclosing
+///
+/// `view.line_weights` is off, so `pdfcer-render` is capping every stroke's
+/// device width at one pixel (`RenderOptions::stroke_display =
+/// StrokeDisplay::Hairline`, engine `Pass 254.0`) — the CAD "line weights off"
+/// convention the operator asked for by name. The document is untouched;
+/// printing, print preview and every export render the real widths.
+///
+/// # ★★★ Why it exists, and why "he asked for it" is not an answer
+///
+/// The three lines above are rule 4's usual shape: pdfcer inferred something
+/// the operator cannot see. This one is not — he pressed a button and got what
+/// the button promised. The obligation comes from somewhere else, and it is
+/// worth stating exactly, because the tempting conclusion is that a requested
+/// display mode owes nothing:
+///
+/// **The canvas's standing claim is that what is drawn is what will be saved
+/// and printed.** Every other feature in this program is built to keep that
+/// claim (`canvas::form_marks`' wash argues its own exemption at length on
+/// precisely this ground — it is a *control's* affordance, not content). This
+/// mode suspends the claim, on purpose, for the page content itself. A
+/// suspended claim is stated, or the next surprising thing the operator sees is
+/// a plot that does not match his screen.
+///
+/// ⇒ ★★ And the surprise is realistic rather than theoretical: this is a
+/// **reading** aid, so it is on precisely while he is absorbed in reading, for
+/// as long as he likes, across documents and sheets. There is no gesture to
+/// remember it by and no mark on the page. Nothing else in the program persists
+/// a divergence like that.
+///
+/// # It is a STATE, like [`catching_up`], not an event
+///
+/// Live for exactly as long as the toggle is off. No `edit_epoch` key, nothing
+/// to clear, and no way for it to be shown against a document it is not true
+/// of — it reads the same `doc.view` the renderer was handed. The two state
+/// lines can be live together (a slow page, hairline on) and that is bounded
+/// the same way every other pair here is; see [`disclosure_line`].
+///
+/// ★ Drawn through the shared [`disclosure_line`] so it inherits all four R128
+/// defences at once — bounded width, fixed row height, truncation rather than
+/// wrapping, and the whole sentence on hover. **It does not make the bar
+/// taller**, which for a line that can be up for an hour is not a nicety: a bar
+/// that grew would re-fit the page underneath it.
+///
+/// ★ Off-canvas, never a badge on the page — the same constraint
+/// [`edit_disclosure`] argues, and here it is doubly binding, because a mark
+/// drawn over the drawing to say *"this drawing is being drawn unfaithfully"*
+/// would itself be an unfaithful mark on the drawing.
+fn line_weights_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
+    if doc.view.line_weights {
+        return;
+    }
+    disclosure_line(ui, REGION_LINE_WEIGHTS, t::line_weights_off());
+}
+
+/// Draw all of them, in the order the parent expects.
 pub(super) fn all(ui: &mut egui::Ui, doc: &OpenDoc) {
     // ★ First, and the order is the argument: the other three describe what an
     // edit DID, and this one describes whether the operator is looking at the
@@ -364,4 +423,15 @@ pub(super) fn all(ui: &mut egui::Ui, doc: &OpenDoc) {
     edit_disclosure(ui, doc);
     recovered_disclosure(ui, doc);
     blend_space_disclosure(ui, doc);
+    // ★★★ LAST, and the position is the argument. Every line above is about
+    // something that HAPPENED — a fill, an edit, how the file was assembled, a
+    // buffer that would not fit. This one is about a stance the operator is
+    // holding, which outlives all of them; putting a durable state ahead of the
+    // transient events would push a sentence he has already read in front of
+    // the one he has not.
+    //
+    // ★ It is also the line most likely to be up at the same time as another,
+    // because it can be up for an hour — so it is the one that should yield
+    // rightmost when the bar runs short, and last is where that happens.
+    line_weights_disclosure(ui, doc);
 }
