@@ -78,7 +78,9 @@ const TEXT: &str = "canvas-text-selection"; // ui-text-exempt: a trace event nam
 const PAGE_REGION: &str = "page"; // ui-text-exempt: a trace region name, never displayed
 
 /// The operator's own recognised scan.
-const FIXTURE: &str = r"C:\Users\Ken\OneDrive\pdfTests\KEN-recognised.pdf";
+/// The operator's recognised scan, **by file name** — see [`crate::fixture::operator_file`]
+/// for why this stopped being an absolute path on 2026-09-05.
+const FIXTURE: &str = "KEN-recognised.pdf";
 
 /// Where the recognised words are, in page points.
 ///
@@ -132,14 +134,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    let source = std::path::PathBuf::from(FIXTURE);
-    if !source.is_file() {
+    let Some(source) = crate::fixture::operator_file(FIXTURE) else {
         return Err(Error::new(format!(
-            "no recognised scan at {FIXTURE}. This check needs a page that is ONE image with an \
-             invisible OCR layer over it; a document with ordinary text would not reproduce the \
-             precedence question at all."
+            "{}. This check needs a page that is ONE image with an invisible OCR layer over it; a document with ordinary text would not reproduce the precedence question at all.",
+            crate::fixture::operator_file_complaint(FIXTURE)
         )));
-    }
+    };
     let pdf = ctx.out("ocr-text-select.pdf");
     if let Some(dir) = pdf.parent() {
         std::fs::create_dir_all(dir).map_err(|e| Error::new(e.to_string()))?;

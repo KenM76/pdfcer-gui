@@ -84,7 +84,9 @@
 //! `ScrollArea` — so the aim comes from the `bookmark-row … rect=` line the
 //! panel traces per row. See [`ROW`].
 
-use crate::checks::driving::{SHELL_DIAG_ENV, click_mode_segment, declared, declared_names, list};
+use crate::checks::driving::{
+    self, SHELL_DIAG_ENV, click_mode_segment, declared, declared_names, list,
+};
 use crate::checks::{Check, CheckContext};
 use crate::error::{Error, Result};
 use crate::input::Driver;
@@ -92,10 +94,44 @@ use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 use crate::sys::vk;
 
-/// The mode the Bookmarks panel is reached in.
-const MODE: &str = "read";
-/// Supplied at launch so the panel is open before anything is aimed at it.
-const INVOKE: &str = "view.panel_bookmarks";
+/// The mode the Bookmarks panel is **authored** in.
+///
+/// ★★★ **Was `read`, and that made this check permanently unrunnable —
+/// corrected 2026-09-05 on the first sweep that ever executed it.**
+///
+/// Read's dock does carry Bookmarks (see `app::modes::defaults` — *Read: Pages,
+/// Bookmarks*), so the panel is on screen and `dock.body.view.panel_bookmarks`
+/// is published. What Read does **not** carry is the *authoring row*: the
+/// application deliberately withholds `bookmarks.new_title` and `bookmarks.add`
+/// there, and `bookmark_add`'s second half —
+/// `read_mode_offers_no_bookmark_authoring` — asserts that absence and passes.
+///
+/// So this check's phase A, which types a title into that box to give itself a
+/// bookmark to rename, could never begin. Its SKIP reason was accurate and
+/// unhelpful: *"no `bookmarks.new_title` region … Regions beginning
+/// `bookmarks`: none."* Nothing was broken; the check was asking Read for a
+/// control Read is specified not to offer.
+///
+/// ⇒ **Review**, which is the mode `bookmark_add` authors in and the one whose
+/// whole posture is marking up somebody else's drawing. Its default dock also
+/// carries Bookmarks, so no extra toggle is needed — which is why [`INVOKE`]
+/// stopped toggling the panel at the same time.
+///
+/// ★★ The general shape, and it is this project's commonest: **a check that
+/// SKIPs is not red, so a check aimed at a surface the application has since
+/// been specified not to have can sit there for ever looking like an ordinary
+/// wrong-fixture skip.** The tell here was two checks disagreeing — one
+/// asserting the row is absent in Read and passing, three others requiring it
+/// in Read and skipping.
+const MODE: &str = "review";
+/// Supplied at launch. **Nothing**, deliberately.
+///
+/// ★★ It used to be `view.panel_bookmarks`, which is a **toggle**, over a mode
+/// whose default layout already mounts the panel — so it was as likely to close
+/// the panel as to open it, and which it did depended on `userdata/layout.ron`
+/// written by whichever run went before. [`MODE`]'s default dock mounts
+/// Bookmarks, so the correct number of toggles is zero.
+const INVOKE: &str = "";
 /// The title box on the authoring row.
 const TITLE_BOX: &str = "bookmarks.new_title";
 /// The Add button.
@@ -224,6 +260,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     session.settle(40);
     let driver = Driver::new(session.window());
     click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    // ★★ The dock draws only the ACTIVE tab's body, and in this mode's default
+    // layout Bookmarks shares a stack with Pages. See
+    // [`crate::checks::driving::raise_dock_tab`].
+    driving::raise_dock_tab(&session, &driver, ui_rect, "view.panel_bookmarks")?;
 
     // --- A: author the bookmark this check then edits -----------------------
     let trace = session.trace()?;

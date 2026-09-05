@@ -128,6 +128,19 @@ const COPY_EVENT: &str = "clipboard-copy";
 const PASTE_EVENT: &str = "clipboard-paste";
 /// `paste-objects-applied page=… pasted=… annots=… resources_added=… at=[…]`.
 const APPLIED_EVENT: &str = "paste-objects-applied";
+/// `annot-select page=… id=… kind=… subtype=… locked=… rect=…`.
+///
+/// **The annotation selection's own line**, and the only one that reports one:
+/// `canvas-selection` is silent for an annotation. See the precondition in
+/// [`drive`] for the incident that put it here.
+const ANNOT_SELECT: &str = "annot-select";
+/// The `/Subtype` this check's operand must have.
+const WANTED_SUBTYPE: &str = "Text";
+/// `chord-not-offered id=… mode=…` — the shell's own line for a chord that
+/// arrived and was refused by the mode gate. See the paste branch in [`drive`].
+const CHORD_NOT_OFFERED: &str = "chord-not-offered";
+/// The command `Ctrl+V` resolves to.
+const PASTE_COMMAND: &str = "edit.paste";
 
 fn fixture_path() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -243,23 +256,54 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     driver.click_at(frame.to_screen(window_point))?;
     session.settle(16);
 
+    // ★★★ THE PRECONDITION READS `annot-select`, NOT `canvas-selection` —
+    // corrected 2026-09-05, on the first run this check ever had.
+    //
+    // It read `canvas-selection sel=` and SKIPPED with *"the click at PDF (370,
+    // 670) selected nothing … either the fixture was regenerated with different
+    // geometry or an annotation hit test regressed."* Both suggestions were
+    // wrong and the message was confident. The trace of that very run carried:
+    //
+    // ```text
+    // pdfcer-diag annot-select page=0 id=ObjId { num: 6, generation: 0 }
+    //     kind=Markup subtype=Text locked=false rect=[[360.0 162.0] - [380.0 182.0]]
+    // ```
+    //
+    // The sticky note was selected, first time, exactly where this check aimed.
+    // `canvas::clicking` publishes `canvas-selection` for an **object**
+    // selection and `annot-select` for an **annotation** one — they are
+    // different selections in different fields of the model — so a check whose
+    // whole subject is an annotation was reading the line that is silent for
+    // annotations by construction. It could never have passed, and a SKIP is
+    // not red, so it would have sat there looking like an ordinary aim problem.
+    //
+    // ⇒ **Ask what the check SAMPLED before asking what is broken.**
+    //
+    // ★ Reading `subtype=` is a strength the old oracle did not have: it proves
+    // the click took the **/Text** annotation and not the /Square at `/Annots`
+    // 0, which is the aim error this fixture was built to expose. `sel=1` would
+    // have been equally happy with either.
     let trace = session.trace()?;
-    let selected = trace
-        .last(vocab.canvas_event)
-        .and_then(|l| l.get_usize(vocab.canvas_selection_field));
-    if selected == Some(0) || selected.is_none() {
+    let selection = trace.events(ANNOT_SELECT).last();
+    let subtype = selection.as_ref().and_then(|l| l.get("subtype"));
+    if subtype != Some(WANTED_SUBTYPE) {
         return Err(Error::new(format!(
-            "the click at PDF ({:.0}, {:.0}) selected nothing. That point is the centre of the \
-             fixture's /Text annotation at /Rect [360 660 380 680]; if it selects nothing, \
-             either the fixture was regenerated with different geometry or an annotation hit \
-             test regressed. SKIPPED rather than failed, because a check that cannot get its \
-             operand selected is not judging its own subject. Trace: {}.",
+            "the click at PDF ({:.0}, {:.0}) did not select the sticky note. That point is the \
+             centre of the fixture's /Text annotation at /Rect [360 660 380 680]. The last \
+             `{ANNOT_SELECT}` line was {}; this check needs `subtype={WANTED_SUBTYPE}`. If it \
+             names Square the aim is off by the /Annots-0 rectangle; if there is no line at \
+             all, either the fixture was regenerated with different geometry or an annotation \
+             hit test regressed. SKIPPED rather than failed, because a check that cannot get \
+             its operand selected is not judging its own subject. Trace: {}.",
             NOTE_POINT.0,
             NOTE_POINT.1,
+            selection
+                .as_ref()
+                .map_or_else(|| "absent".to_owned(), |l| format!("`{}`", l.raw)),
             session.trace_path().display()
         )));
     }
-    report.note("the click selected the sticky note");
+    report.note("the click selected the sticky note (`annot-select … subtype=Text`)");
 
     // --- 3: Ctrl+C ----------------------------------------------------------
     driver.press_chord(&[vk::CONTROL], vk::C)?;
@@ -338,9 +382,51 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     let trace = session.trace()?;
     let Some(paste) = trace.events(PASTE_EVENT).last() else {
+        // ★★★ **ASK THE MODE GATE FIRST — added 2026-09-05 after this branch's
+        // first real run blamed the wrong mechanism.**
+        //
+        // The message below suspects the OS-clipboard marker, which is the
+        // right first suspect for a *new copy site*. On the run this check
+        // finally got, it was wrong in a way that would have cost a session:
+        // the marker was fine, `Event::Paste` was synthesised, `Ctrl+V` reached
+        // the shell — and the shell REFUSED it:
+        //
+        // ```text
+        // chord-command chord="Ctrl+V" id=edit.paste via=clipboard-event
+        // chord-not-offered id=edit.paste mode=review
+        // ```
+        //
+        // `edit.paste` is not offered in **Review**, while `edit.copy` is. So
+        // the mode whose whole purpose is marking up somebody else's drawing
+        // can copy a comment and cannot paste it — which is precisely the
+        // failure this check's own header predicted and named as its reason for
+        // driving Review rather than Edit.
+        //
+        // ⇒ A failure message that names a mechanism the trace can rule out is
+        // a confident failure about the wrong subject. Read the gate line, and
+        // say so when it is there.
+        let refusal = trace
+            .events(CHORD_NOT_OFFERED)
+            .find(|l| l.get("id") == Some(PASTE_COMMAND));
+        if let Some(refusal) = refusal {
+            return Ok(Some(format!(
+                "★★★ CTRL+V REACHED THE SHELL AND THE MODE GATE REFUSED IT: `{}`.\n\
+                 The copy worked — `{}` — so the clipboard, the marker and the chord are all \
+                 fine. `{PASTE_COMMAND}` is simply not offered in this mode, and `edit.copy` \
+                 is, so an operator in the mode whose entire purpose is marking up somebody \
+                 else's drawing can copy a comment and has nowhere to put it. This is an \
+                 APPLICATION finding, not a clipboard one: look at the command's \
+                 `visible_when`/capability gate for the mode, not at `canvas::clipboard`. \
+                 Trace: {}.",
+                refusal.raw,
+                copy.raw,
+                session.trace_path().display()
+            )));
+        }
         return Ok(Some(format!(
-            "the copy happened and CTRL+V RAISED NOTHING: no `{PASTE_EVENT}` line.\n\
-             ★ Suspect the OS-CLIPBOARD MARKER first, not the paste. `egui-winit` synthesises \
+            "the copy happened and CTRL+V RAISED NOTHING: no `{PASTE_EVENT}` line, and no \
+             `{CHORD_NOT_OFFERED}` line for `{PASTE_COMMAND}` either.\n\
+             ★ Suspect the OS-CLIPBOARD MARKER next. `egui-winit` synthesises \
              `Event::Paste` only when the OS clipboard holds non-empty text and returns before \
              pushing a key event either way, so a copy site that did not call `ctx.copy_text` \
              makes this chord vanish completely. That is a documented trap this project has \

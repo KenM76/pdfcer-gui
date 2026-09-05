@@ -137,6 +137,11 @@ const SHAPE: ((f64, f64), (f64, f64)) = ((0.35, 0.35), (0.55, 0.50));
 const WORD: [u16; 4] = [vk::T, vk::A, vk::I, vk::L];
 /// The apply arm's line for a paste, carrying whether the note survived.
 const PASTED: &str = "paste-markup-requested";
+/// `chord-not-offered id=… mode=…` — the shell's line for a chord that arrived
+/// and was refused by the mode gate. See the phase-G branch in [`drive`].
+const CHORD_NOT_OFFERED: &str = "chord-not-offered";
+/// The command `Ctrl+V` resolves to.
+const PASTE_COMMAND: &str = "edit.paste";
 /// The line the canvas writes when a click selects an annotation.
 const SELECTED: &str = "annot-select";
 
@@ -446,10 +451,50 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     let trace = session.trace()?;
     let Some(pasted) = trace.events(PASTED).last() else {
+        // ★★★ **READ THE MODE GATE BEFORE BLAMING THE CHORD — 2026-09-05.**
+        //
+        // The message below blamed "chords with a dock panel raised", which is a
+        // real and measured harness weakness and was not what happened. On the
+        // first run this check ever had, the trace read:
+        //
+        // ```text
+        // chord-command chord="Ctrl+C" id=edit.copy via=clipboard-event
+        // clipboard-copy kind=markup carrier=spec page=0 annots=1
+        // chord-command chord="Ctrl+V" id=edit.paste via=clipboard-event
+        // chord-not-offered id=edit.paste mode=review
+        // ```
+        //
+        // Both chords arrived. `edit.copy` ran. `edit.paste` is **not offered in
+        // Review**, so the paste this phase needs cannot happen in the mode this
+        // check drives — and `copying_a_sticky_note_carries_the_whole_comment`
+        // met the identical gate on the identical frame of the identical build,
+        // by a different clipboard route. Two witnesses, one gate.
+        //
+        // ⇒ Still a SKIP, because the question *"does the paste carry the
+        // note?"* genuinely cannot be answered while the paste is refused. But
+        // the reason must name the gate: a reason may only assert what the
+        // check actually looked at.
+        let refused = trace
+            .events(CHORD_NOT_OFFERED)
+            .any(|l| l.get("id") == Some(PASTE_COMMAND));
+        if refused {
+            return Err(Error::new(format!(
+                "★★★ `{PASTE_COMMAND}` IS NOT OFFERED IN THIS MODE. Ctrl+C ran and Ctrl+V \
+                 reached the shell and was refused by the mode gate — \
+                 `{CHORD_NOT_OFFERED} id={PASTE_COMMAND}` is in the trace. So this phase's \
+                 question cannot be asked here, and that is an APPLICATION finding rather than \
+                 a harness one: Review can copy a comment and cannot paste one. \
+                 `copying_a_sticky_note_carries_the_whole_comment` meets the same gate and \
+                 FAILS on it; this check SKIPs because its own subject is whether the paste is \
+                 faithful, which is unanswerable while there is no paste. Trace: {}.",
+                session.trace_path().display()
+            )));
+        }
         return Err(Error::new(format!(
-            "Ctrl+C then Ctrl+V produced no `{PASTED}` line. Both are chords and a chord with a \
-             dock panel raised is the harness primitive this suite has measured as unreliable, \
-             so this is reported as a SKIP: it says nothing about whether the paste is faithful. \
+            "Ctrl+C then Ctrl+V produced no `{PASTED}` line, and no `{CHORD_NOT_OFFERED}` line \
+             for `{PASTE_COMMAND}` either. Both are chords and a chord with a dock panel raised \
+             is the harness primitive this suite has measured as unreliable, so this is \
+             reported as a SKIP: it says nothing about whether the paste is faithful. \
              Trace: {}.",
             session.trace_path().display()
         )));

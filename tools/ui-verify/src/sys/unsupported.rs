@@ -165,3 +165,11 @@ pub fn clear_clipboard() -> bool {
 pub fn clipboard_formats() -> Option<Vec<(u32, String)>> {
     None
 }
+
+/// Always `false` off Windows: there is no keyboard to have a latch on, and
+/// [`key_stroke_with`] here is a no-op. See the Windows implementation for what
+/// this is for.
+#[must_use]
+pub const fn caps_lock_is_on() -> bool {
+    false
+}

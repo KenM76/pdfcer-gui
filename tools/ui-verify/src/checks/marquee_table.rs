@@ -71,7 +71,9 @@ const SELECTION: &str = "canvas-selection"; // ui-text-exempt: a trace event nam
 const PAGE_REGION: &str = "page"; // ui-text-exempt: a trace region name, never displayed
 
 /// The operator's drawing.
-const FIXTURE: &str = r"C:\Users\Ken\OneDrive\pdfTests\TR-0461-1500-copy.pdf";
+/// The operator's drawing, **by file name** — see [`crate::fixture::operator_file`]
+/// for why this stopped being an absolute path on 2026-09-05.
+const FIXTURE: &str = "TR-0461-1500-copy.pdf";
 /// Its page, in points — 1224 × 792, measured off a 1.2× raster.
 const FIXTURE_PAGE: PageGeometry = PageGeometry {
     width_pt: 1224.0,
@@ -163,13 +165,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    let source = std::path::PathBuf::from(FIXTURE);
-    if !source.is_file() {
+    let Some(source) = crate::fixture::operator_file(FIXTURE) else {
         return Err(Error::new(format!(
-            "the operator's drawing is not at {FIXTURE}. This check is about a table in THAT \
-             file; a substitute would be measuring a different document."
+            "{}. This check is about a table in THAT file; a substitute would be measuring a different document.",
+            crate::fixture::operator_file_complaint(FIXTURE)
         )));
-    }
+    };
     // A scratch copy. A marquee writes nothing, but the application persists
     // layout and recent-file state beside what it opens.
     let pdf = ctx.out("marquee-table.pdf");

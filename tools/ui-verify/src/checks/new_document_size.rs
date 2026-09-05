@@ -241,12 +241,39 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
              choose from."
         ))
     })?;
-    driver.click_at(session.frame()?.declared_center(size))?;
-    session.settle(12);
+    // ★★★ **OPEN THE POPUP, THEN LOOK — up to three times, 2026-09-05.**
+    //
+    // One click and a 12-frame settle SKIPPED reproducibly with *"Entries
+    // declared: none"*, on three consecutive runs of the same build. An
+    // `egui::ComboBox`'s list is painted into a separate layer on the frame
+    // AFTER the click is processed, and this shell repaints on demand rather
+    // than continuously — so twelve frames is a coin toss on a busy machine and
+    // the check was reporting a timing question in language that reads like a
+    // missing control.
+    //
+    // ★ A retry rather than a longer settle, because a longer settle is a magic
+    // number tuned against one machine: this asks *"is the popup open yet?"* and
+    // presses again only if the answer is no, so it costs nothing when the first
+    // click worked and it says how many attempts it took when it did not.
+    let target = format!("{SIZE_ITEM_PREFIX}{A3_INDEX}");
+    let mut opened = None;
+    for attempt in 0..3 {
+        driver.click_at(dialog_frame(&session, ui_rect, SIZE)?.declared_center(size))?;
+        session.settle(20);
+        if let Some(rect) = declared(&session.trace()?, ui_rect, &target) {
+            if attempt > 0 {
+                report.note(format!(
+                    "the size popup took {} click(s) to open",
+                    attempt + 1
+                ));
+            }
+            opened = Some(rect);
+            break;
+        }
+    }
 
     let trace = session.trace()?;
-    let target = format!("{SIZE_ITEM_PREFIX}{A3_INDEX}");
-    let Some(entry) = declared(&trace, ui_rect, &target) else {
+    let Some(entry) = opened else {
         let entries = declared_names(&trace, ui_rect, SIZE_ITEM_PREFIX);
         return Err(Error::new(format!(
             "the click on `{SIZE}` published no `{target}`. The popup did not open, or opened and \
@@ -255,7 +282,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
             list(&entries)
         )));
     };
-    driver.click_at(session.frame()?.declared_center(entry))?;
+    driver.click_at(dialog_frame(&session, ui_rect, &target)?.declared_center(entry))?;
     session.settle(12);
 
     // --- D. turn it landscape -----------------------------------------------
@@ -265,7 +292,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
             "the dialog published no `{LANDSCAPE}` region, so there is no orientation control."
         ))
     })?;
-    driver.click_at(session.frame()?.declared_center(landscape))?;
+    driver.click_at(dialog_frame(&session, ui_rect, LANDSCAPE)?.declared_center(landscape))?;
     session.settle(12);
 
     // --- E. create ----------------------------------------------------------
@@ -282,7 +309,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
              drawn."
         )));
     };
-    driver.click_at(session.frame()?.declared_center(create))?;
+    driver.click_at(dialog_frame(&session, ui_rect, CREATE)?.declared_center(create))?;
     // Longer than a widget settle: this parses a template, rewrites the whole
     // file, re-parses it, and then adopts a new document — which drops the
     // render worker's texture and rebuilds every panel.
@@ -338,4 +365,44 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     }
 
     Ok(None)
+}
+
+/// **The frame a New-document dialog region must be converted against.**
+///
+/// # ★★★ The defect this closes — 2026-09-05, first run of this check
+///
+/// This check clicked every one of its dialog controls through
+/// `session.frame()`, which is the **application's main window**. The dialog is
+/// its own OS viewport:
+///
+/// ```text
+/// ui-rect  name=new-document.size rect=[[12.0 58.0] - [155.2 82.0]] viewport="F7DA"
+/// viewport-inner id="F7DA" rect=[[836.0 119.0] - [1296.0 639.0]]
+/// ```
+///
+/// So a click aimed at `(84, 70)` in the dialog was delivered at `(84, 70)` of
+/// the main window — roughly 800 px away, on the ribbon. The size popup
+/// therefore never opened, no `new-document.size.item.N` region was ever
+/// published (they exist only inside `ComboBox::show_ui`), and the check
+/// SKIPPED with *"the popup did not open, or opened and closed within the
+/// settle … this is a harness timing question"*. It was not a timing question.
+/// Three clicks and a 20-frame settle apiece changed nothing, which is the tell:
+/// **a retry that does not help means the aim, not the wait.**
+///
+/// ★★ `RESUME.md` records the identical fault in `checks::ocr::click_region` on
+/// 2026-08-27, and its conclusion verbatim: *"If you convert a check to drive a
+/// dialog, use `driving::frame_of`; it is safe on a main-window region and costs
+/// nothing."* That check was fixed; this one was written afterwards without it.
+/// A note is not a mechanism.
+///
+/// # Errors
+///
+/// If the trace cannot be read or the viewport frame cannot be resolved.
+fn dialog_frame(
+    session: &Session,
+    ui_rect: &str,
+    region: &str,
+) -> Result<crate::coords::WindowFrame> {
+    let trace = session.trace()?;
+    crate::checks::driving::frame_of(session, &trace, ui_rect, region)
 }

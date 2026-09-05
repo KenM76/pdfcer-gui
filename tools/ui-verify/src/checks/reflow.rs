@@ -84,6 +84,9 @@ const DECLINED_EVENT: &str = "text-edit-declined";
 /// check that clicked one control and asserted about another would pass or fail
 /// for reasons unrelated to either.
 const REFLOW_ITEM: (&str, &str) = ("ribbon.item.edit.reflow_block", "edit.reflow_block");
+/// The ribbon tab that carries [`REFLOW_ITEM`]. A mode is not a tab — see the
+/// click in [`drive`].
+const EDIT_TAB: &str = "ribbon.tab.edit";
 /// `reflow-resolved page=… run=… block=…` — the caret became a block index.
 const RESOLVED_EVENT: &str = "reflow-resolved";
 /// `reflow-declined reason=…` — it did not, and the shell said which way.
@@ -214,6 +217,29 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
     session.settle(40);
     let driver = Driver::new(session.window());
+
+    // ★★★ **SELECT THE EDIT TAB — added 2026-09-05, on the first run this check
+    // ever had.**
+    //
+    // `PDFCER_DIAG_INVOKE=mode.edit,edit.text` sets the MODE and arms the tool,
+    // and neither of those selects a ribbon TAB. The band was still showing
+    // File, so `ribbon.item.edit.reflow_block` was not declared and this check
+    // SKIPPED with *"the Reflow control is not on the Edit tab"* — a sentence
+    // about a control that is on the Edit tab, from a run that was looking at
+    // the File one. Its own reason listed what it saw and every entry began
+    // `ribbon.item.file.`, which is the tell.
+    //
+    // ⇒ A mode is not a tab. Same seam `add_text` and `adopt_widget` already
+    // click through; this check was written without it.
+    let trace = session.trace()?;
+    let tab = declared(&trace, ui_rect, EDIT_TAB).ok_or_else(|| {
+        Error::new(format!(
+            "no `{EDIT_TAB}` region, so the ribbon cannot be put on the tab that carries Reflow. Tabs declared: {}.",
+            list(&declared_names(&trace, ui_rect, "ribbon.tab."))
+        ))
+    })?;
+    driver.click_at(session.frame()?.declared_center(tab))?;
+    session.settle(20);
 
     if declared(&session.trace()?, ui_rect, PAGE_REGION).is_none() {
         return Err(Error::new(format!(

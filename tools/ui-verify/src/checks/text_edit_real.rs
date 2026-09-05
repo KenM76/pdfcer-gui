@@ -415,7 +415,30 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         session.settle(4);
     }
     session.settle(10);
-    driver.press(vk::ENTER)?;
+    // ★★★ **CTRL+ENTER, NOT ENTER — corrected 2026-09-05, on the first sweep
+    // that ran this check after the chord changed under it.**
+    //
+    // `enter_makes_a_second_line_and_control_enter_commits` is the check that
+    // owns this contract, and it passes: in a text draft **Enter means NewLine
+    // and Ctrl+Enter commits**. This check still pressed a bare Enter, and on a
+    // title-block run the shell answered exactly as it should:
+    //
+    // ```text
+    // text-edit-enter means=CannotSplit
+    // text-edit-enter-declined reason=run-cannot-hold-a-newline
+    // ```
+    //
+    // — no commit, no refusal of the *edit*, and this check then reported *"the
+    // caret took keystrokes and NO commit was raised at all … the shell built no
+    // plan."* It had built no plan because it had not been asked to. A confident
+    // failure about the wrong subject, produced by a check that had gone stale
+    // against a deliberate, tested change in the program.
+    //
+    // ★ The tell was in the trace and not in the message: `text-edit-enter` is
+    // present, so the key arrived and was *understood*. A commit that never
+    // reached the shell and a commit that was never requested are different
+    // states, and only one of them is a defect.
+    driver.press_chord(&[vk::CONTROL], vk::ENTER)?;
     session.settle(30);
 
     let trace = session.trace()?;

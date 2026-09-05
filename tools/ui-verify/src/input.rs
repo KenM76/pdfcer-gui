@@ -646,15 +646,42 @@ impl Driver {
     ///
     /// If a character has no mapping, or a keystroke cannot be delivered.
     pub fn type_ascii(&self, text: &str) -> Result<()> {
+        // ★★★ **CAPSLOCK INVERTS SHIFT, AND THE OPERATOR'S MACHINE HAD IT ON —
+        // 2026-09-05.**
+        //
+        // The whole incident is written up on [`crate::sys::caps_lock_is_on`].
+        // In one line: with the latch on, "press the letter key with no Shift"
+        // types a CAPITAL, so this function was silently typing `USERPW` when
+        // its caller asked for `userpw` — and the one check that compared what
+        // it typed against anything reported the application as rejecting a
+        // correct password.
+        //
+        // ★ Read once, before the loop, rather than per character: the latch
+        // cannot change during a synthetic burst, and reading it per key would
+        // make the cost linear in the string for no gain.
+        //
+        // ★★ Compensating rather than clearing is deliberate. CapsLock belongs
+        // to the operator; a harness that toggles it leaves his keyboard in a
+        // state he did not put it in, and this suite runs unattended.
+        let caps = crate::sys::caps_lock_is_on();
         for ch in text.chars() {
             match ch {
                 'a'..='z' => {
                     // VK codes for letters are the ASCII codes of their
-                    // UPPERCASE forms; Shift is what distinguishes the case.
-                    self.press(ch.to_ascii_uppercase() as u16)?;
+                    // UPPERCASE forms; Shift is what distinguishes the case —
+                    // and CapsLock swaps which way round that is.
+                    if caps {
+                        self.press_chord(&[crate::sys::vk::SHIFT], ch.to_ascii_uppercase() as u16)?;
+                    } else {
+                        self.press(ch.to_ascii_uppercase() as u16)?;
+                    }
                 }
                 'A'..='Z' => {
-                    self.press_chord(&[crate::sys::vk::SHIFT], ch as u16)?;
+                    if caps {
+                        self.press(ch as u16)?;
+                    } else {
+                        self.press_chord(&[crate::sys::vk::SHIFT], ch as u16)?;
+                    }
                 }
                 '0'..='9' => {
                     self.press(ch as u16)?;

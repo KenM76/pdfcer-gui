@@ -905,6 +905,12 @@ pub fn click_mode_segment(
     Ok(())
 }
 
+// ★ The reachability family lives in [`super::reaching`] and is re-exported
+// here so `driving::scroll_to`, `driving::raise_dock_tab` and
+// `driving::bring_into_body` keep resolving at every call site. See that
+// module's header for the seam and for R2.
+pub use super::reaching::{bring_into_body, raise_dock_tab, scroll_to};
+
 /// The select tool's ribbon control, on View ▸ Navigate.
 pub const SELECT_TOOL_REGION: &str = "ribbon.item.view.tool_select";
 /// The command id the shell reports for it on [`INVOKE_EVENT`].
@@ -1043,97 +1049,6 @@ fn select_invokes(session: &Session) -> Result<usize> {
         .events(INVOKE_EVENT)
         .filter(|l| l.get("id") == Some(SELECT_TOOL_ID))
         .count())
-}
-
-/// **Scroll a pane until `wanted` is on screen, and answer where it is.**
-///
-/// # ★★★ Why this is a helper and not two copies of a loop
-///
-/// It was two copies for about ten minutes, and the second copy is what forced
-/// the extraction: the field-scoped controls sit below the fold of the
-/// Properties slot, and the widget-scoped controls sit below *those*. A check
-/// that scrolled once found the first and reported the second missing — which
-/// is the failure this function's existence prevents, and it is worth naming
-/// because the message it produced was confident and wrong (*"the section is
-/// not being called"*, about a section that was in the same trace).
-///
-/// ★★★ **It scrolls at the DOCK PANE, not at the content**, and that took three
-/// wrong anchors to arrive at.
-///
-/// A wheel event has to land inside the scroll area, so the anchor's centre has
-/// to be **on screen**. Three candidates were tried and each failed differently:
-///
-/// | anchor | why it failed |
-/// |---|---|
-/// | `properties.widget_edit` (a section's `min_rect`) | published ungated, so it exists even when the section is entirely off screen. The wheel went outside the window |
-/// | `properties.form_field` published as `max_rect` | that is the space the `Ui` was ALLOWED, not the space it took — it named a rect over the **Objects** panel, and six notches scrolled the object list |
-/// | `properties.form_field` published as `min_rect` | correct about where the section is, and the section is 741 pt tall in a 180 pt slot, so its **centre is below the window** |
-///
-/// ⇒ The generalisation: **content rects are not scroll anchors.** Any region
-/// belonging to scrolled content can have its centre outside the viewport, by
-/// definition, because that is what scrolling means. What is always visible is
-/// the **pane**, and `egui_shell::dock` publishes it as
-/// `dock.body.<panel command id>`.
-///
-/// `D:/dev/rag/egui/` carries the family this belongs to: harness coordinates
-/// go stale when a layout changes, and a wheel aimed at a remembered position
-/// scrolls whatever is there now.
-///
-/// Returns `None` when the region never appears — the caller decides whether
-/// that is a failure or a skip, because only the caller knows what it means.
-///
-/// # ★★ `attempts` is the caller's, and it is not a tuning knob
-///
-/// It is *how far the caller is willing to say it looked*, and it belongs in
-/// the caller because the failure message does. A properties pane is a few
-/// notches deep; a settings dialog with seven collapsed groups is more. A
-/// constant here would make every caller's "I looked and it was not there"
-/// mean a different distance without saying so.
-pub fn scroll_to(
-    session: &crate::launch::Session,
-    driver: &crate::input::Driver,
-    ui_rect: &str,
-    anchor: &str,
-    wanted: &str,
-    attempts: usize,
-    report: &mut crate::report::CheckReport,
-) -> crate::error::Result<Option<crate::geom::LRect>> {
-    for attempt in 0..attempts {
-        let trace = session.trace()?;
-        if let Some(rect) = declared(&trace, ui_rect, wanted) {
-            if attempt > 0 {
-                report.note(format!(
-                    "`{wanted}` was below the panel's fold; {attempt} scroll notch(es) brought \
-                     it into view"
-                ));
-            }
-            return Ok(Some(rect));
-        }
-        let Some(at) = declared(&trace, ui_rect, anchor) else {
-            return Err(crate::error::Error::new(format!(
-                "`{anchor}` stopped being visible while scrolling for `{wanted}`, so there is \
-                 nothing left to aim the wheel at. Trace: {}.",
-                session.trace_path().display()
-            )));
-        };
-        let point = session.frame()?.declared_center(at);
-        driver.scroll_at(point, -1)?;
-        session.settle(12);
-        // ★ Instrumentation, kept rather than removed. When this loop fails the
-        // question is always the same — *did the wheel move anything?* — and a
-        // note answering it is the difference between "the controls are
-        // missing" and "the wheel landed somewhere that does not scroll".
-        // Three wrong anchors were diagnosed by reading exactly this.
-        if let Some(after) = declared(&session.trace()?, ui_rect, anchor) {
-            report.note(format!(
-                "scroll {attempt}: wheel at ({}, {}), `{anchor}` now {:?}",
-                point.x(),
-                point.y(),
-                after
-            ));
-        }
-    }
-    Ok(None)
 }
 
 /// How many times [`press_until_traced`] will send a keystroke before

@@ -166,6 +166,10 @@ pub mod embed_bundled;
 pub mod embed_fonts;
 pub mod export_dxf;
 pub mod export_form_data;
+/// Putting a control where the pointer can hit it — scrolling a pane, raising a
+/// dock tab, bringing a control inside its panel's body. Split from
+/// [`driving`] on 2026-09-05 under R2; its header carries the seam.
+pub mod reaching;
 // O120's fourth export format, and the one a driven check is worth most for:
 // EMF is the ONLY vector route LibreOffice 24.x and Word's Paste Special have,
 // so a radio that draws and does not bind hands the operator a file those
@@ -835,9 +839,53 @@ pub struct CheckContext {
 }
 
 impl CheckContext {
-    /// A path under the run's output directory.
+    /// A path under the run's output directory — **and the directory is made
+    /// to exist before the path is handed back.**
+    ///
+    /// # ★★★ Why the `create_dir_all` is here and not at every call site —
+    /// 2026-09-05
+    ///
+    /// It was at *some* call sites. [`crate::launch`] creates the parent of the
+    /// trace file it is about to open, and [`crate::image`] creates the parent
+    /// of a PNG it is about to save, so every check whose first use of this
+    /// directory was a launch or a screenshot worked. Five checks write a
+    /// **fixture** into it *before* they launch anything —
+    /// `save_writes_over_the_file_you_opened` copies the document it is going to
+    /// overwrite, `redaction_removes_and_proves_it` writes the PDF it will
+    /// redact, `insert_image_places_a_picture`,
+    /// `the_insert_window_steps_aside_so_you_can_point` and
+    /// `a_dropped_image_reaches_the_placement_window` each write a PNG to drop —
+    /// and every one of them failed with
+    ///
+    /// ```text
+    /// cannot write …\insert_image_fixture.png: The system cannot find the
+    /// path specified. (os error 3)
+    /// ```
+    ///
+    /// on the first sweep that ever ran them (2026-09-05, `--out` pointed at a
+    /// fresh per-check directory). They **SKIPPED**, which is not red, so the
+    /// suite reported its usual cheerful INCOMPLETE and five checks that have
+    /// never once driven the application looked like ordinary
+    /// wrong-fixture skips.
+    ///
+    /// ★★ That is the same shape as the `repo_fixture` defect fixed earlier the
+    /// same day: *a path that cannot resolve produces a SKIP, and a SKIP is not
+    /// a failure, so the check can be dead for ever while the suite looks
+    /// healthy.* The durable fix for that shape is a funnel, not a fifth
+    /// `create_dir_all` — every path into this directory now comes from here.
+    ///
+    /// # Why the error is swallowed
+    ///
+    /// The return type is a path, not a result, and forty call sites read it in
+    /// expression position. A directory that genuinely cannot be created — a
+    /// read-only volume, a name that is not a directory — still produces an
+    /// error at the moment of the write, from the code that knows what it was
+    /// writing and can say so. Making this fallible would trade a precise
+    /// message at the write for a vague one here.
     #[must_use]
     pub fn out(&self, name: &str) -> PathBuf {
+        // Best effort, deliberately: see the doc comment.
+        let _ = std::fs::create_dir_all(&self.out_dir);
         self.out_dir.join(name)
     }
 

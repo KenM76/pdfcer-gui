@@ -58,7 +58,9 @@
 //! And the **dropped-destination warning**, which needs a clip whose deepest
 //! page exceeds the destination's page count. Same reason: two documents.
 
-use crate::checks::driving::{SHELL_DIAG_ENV, declared, declared_names, list};
+use crate::checks::driving::{
+    self, SHELL_DIAG_ENV, click_mode_segment, declared, declared_names, list,
+};
 use crate::checks::{Check, CheckContext};
 use crate::error::{Error, Result};
 use crate::input::Driver;
@@ -67,10 +69,10 @@ use crate::report::CheckReport;
 use crate::sys::vk;
 use crate::trace::Trace;
 
-/// Open the bookmarks panel. **Read mode**, like every other bookmark check.
+/// Supplied at launch. **Nothing**, deliberately — see [`MODE`].
 ///
-/// ★★★ Two things were got wrong here in succession and both are worth keeping,
-/// because the second explains why the first *looked* like it worked.
+/// ★★★ Two things were got wrong here in succession, a third was got wrong for
+/// longer, and all three are worth keeping.
 ///
 /// **1. `view.panel_bookmarks` is a TOGGLE.** Invoking it does not "open the
 /// panel", it flips it — so whether the panel is on screen afterwards depends
@@ -87,12 +89,31 @@ use crate::trace::Trace;
 /// even the order `panel-then-mode` loses the panel — which is what the first
 /// version did, and its symptom was the same missing authoring row.
 ///
-/// ⇒ The three bookmark checks that already work all use **read**, and this one
-/// now does too. Not cargo-culting: read is the mode whose default layout does
-/// not carry this panel, so the toggle reliably turns it **on**, and nothing
-/// this check does needs Edit — authoring a bookmark is an outline edit, not a
-/// page-content one, and the panel offers it in every mode.
-const INVOKE: &str = "view.panel_bookmarks";
+/// **3. ★★★ And the conclusion drawn from 1 and 2 was FALSE — corrected
+/// 2026-09-05, on the first sweep that ever ran this check.** It read: *"read is
+/// the mode whose default layout does not carry this panel, so the toggle
+/// reliably turns it on, and nothing this check does needs Edit — the panel
+/// offers [authoring] in every mode."* Both halves are wrong.
+/// `app::modes::defaults` mounts Bookmarks in **Read** as well (*Read: Pages,
+/// Bookmarks*), so the toggle was as likely to close it as to open it; and Read
+/// deliberately offers **no** bookmark authoring at all — `bookmark_add`'s
+/// second half, `read_mode_offers_no_bookmark_authoring`, asserts that absence
+/// and passes.
+///
+/// So this check ran, found no `bookmarks.new_title`, and SKIPPED — accurately,
+/// unhelpfully, and for ever, because a SKIP is not red. Its own header was the
+/// thing sending readers to the wrong file.
+///
+/// ⇒ No toggle at all, and [`MODE`] does the work.
+const INVOKE: &str = "";
+
+/// The mode this check authors in.
+///
+/// **Review**, because Review is the mode that offers the authoring row (see
+/// [`INVOKE`] point 3) and the mode `bookmark_add` uses for the same reason.
+/// Its default dock mounts Bookmarks, so the panel needs raising to the front
+/// of its stack and not toggling into existence.
+const MODE: &str = "review";
 
 /// The authoring row's text box and button, owned by `bookmark_add`.
 const TITLE_BOX: &str = "bookmarks.new_title";
@@ -279,6 +300,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // defect.
     session.settle(70);
     let driver = Driver::new(session.window());
+    // ★★★ The mode that offers the authoring row. See [`MODE`].
+    click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    // ★★ The dock draws only the ACTIVE tab's body, and in this mode's default
+    // layout Bookmarks shares a stack with Pages. See
+    // [`crate::checks::driving::raise_dock_tab`].
+    driving::raise_dock_tab(&session, &driver, ui_rect, "view.panel_bookmarks")?;
     // ★★ SETTLE BEFORE READING THE REGIONS, and this cost a run.
     //
     // The mode click re-lays out the whole window, so the bookmarks panel
@@ -450,6 +477,22 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     };
+    // ★★★ The Paste control appears at the BOTTOM of a list that has just grown
+    // by an authoring block, so on a short panel it is declared below the fold —
+    // the whole of the incident recorded on
+    // [`crate::checks::driving::bring_into_body`], which is where the argument
+    // lives. A click at a centre outside the panel body reported
+    // `paste_outline_item` as refusing, and it had never been asked.
+    let paste = driving::bring_into_body(
+        &session,
+        &driver,
+        ui_rect,
+        PANEL_BODY,
+        PASTE_REGION,
+        6,
+        report,
+    )?
+    .unwrap_or(paste);
     driver.click_at(session.frame()?.declared_center(paste))?;
     session.settle(30);
 

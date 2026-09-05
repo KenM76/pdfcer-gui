@@ -86,6 +86,80 @@ fn parse_first_mediabox(text: &str) -> Option<PageGeometry> {
     })
 }
 
+/// **Where the operator's own test drawings live, in the order to look.**
+///
+/// # ★★★ Why this is a search and not a constant — 2026-09-05
+///
+/// Three checks pinned one absolute path apiece:
+///
+/// ```text
+/// C:\Users\Ken\OneDrive\pdfTests\TR-0461-1500-copy.pdf
+/// C:\Users\Ken\OneDrive\pdfTests\KEN-recognised.pdf
+/// ```
+///
+/// On the first full sweep this project ever ran, all three SKIPPED with *"the
+/// operator's drawing is not at …"*. The files exist. They had been moved one
+/// directory down, into `pdfTests\Moved\`, by the operator tidying his own
+/// folder — which he is entitled to do and which no check can be expected to be
+/// told about.
+///
+/// ★★ The cost of getting this wrong is the shape this project keeps meeting: a
+/// **SKIP is not red**, so three checks whose subjects are a table marquee, a
+/// nested `/FitR` bookmark and text over a scan sat reporting nothing, for ever,
+/// while the suite showed its ordinary cheerful INCOMPLETE. Nobody was going to
+/// look, because "the operator's file is not there" reads as a fact about the
+/// machine rather than as a defect in the harness.
+///
+/// ⇒ A search over the places those files are actually kept, in one function,
+/// so that a fourth check inherits the behaviour rather than the constant. The
+/// list is ordered by how canonical the location is, and every entry is a real
+/// directory on this machine as of the date above.
+///
+/// ★ It still returns `None` rather than guessing when the name is nowhere: a
+/// check that could not find its subject must SKIP saying so, and
+/// [`operator_file_complaint`] builds the sentence that lists where it looked —
+/// because a reason that names only the first candidate is what produced the
+/// misdiagnosis in the first place.
+const OPERATOR_DIRS: [&str; 4] = [
+    r"C:\Users\Ken\OneDrive\pdfTests",
+    r"C:\Users\Ken\OneDrive\pdfTests\Moved",
+    r"D:\Dev\pdfTests",
+    r"D:\Dev\pdfTests\SW41177",
+];
+
+/// Find one of the operator's own test drawings by file name.
+///
+/// See [`OPERATOR_DIRS`] for the argument. Pass a bare file name, not a path.
+#[must_use]
+pub fn operator_file(name: &str) -> Option<std::path::PathBuf> {
+    OPERATOR_DIRS
+        .iter()
+        .map(|d| Path::new(d).join(name))
+        .find(|p| p.is_file())
+}
+
+/// The sentence a check prints when [`operator_file`] found nothing.
+///
+/// Lists **every** place that was looked, because a reason may only assert what
+/// the check actually looked at — `checks/mod.rs` rule 5.
+#[must_use]
+pub fn operator_file_complaint(name: &str) -> String {
+    format!(
+        "the operator's `{name}` is in none of the places this harness looks: {}",
+        OPERATOR_DIRS
+            .iter()
+            .map(|d| format!("`{d}`"))
+            .collect::<Vec<_>>()
+            .join(", ")
+    )
+}
+
+// The test module goes LAST, and that is a lint rather than a taste: clippy
+// refuses `items after a test module`, because an item below `mod tests` is
+// easy to read as part of the tests and is not. It was moved here on
+// 2026-09-05 when `OPERATOR_DIRS` was added above it during the driven
+// sweep -- the const is production code and belongs with production code.
+
 #[cfg(test)]
 mod tests {
     use super::*;

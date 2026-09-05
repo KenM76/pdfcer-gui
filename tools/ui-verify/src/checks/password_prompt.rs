@@ -65,6 +65,9 @@ use crate::report::CheckReport;
 const BODY: &str = "dialog:password";
 /// Its Open button.
 const OPEN: &str = "password.open";
+/// The password box itself. Clicked before the second attempt is typed — see
+/// phase C in [`drive`] for the incident.
+const FIELD: &str = "password.field";
 /// The fixture, pinned: this check's subject is *an encrypted PDF*, and
 /// `--pdf` will be an ordinary one.
 const FIXTURE: &str = "fixtures/encrypted-aes-128.pdf";
@@ -206,6 +209,35 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     report.note("a wrong password was refused and the prompt stayed up");
 
     // --- C: the right one opens it -----------------------------------------
+    //
+    // ★★★ **CLICK THE FIELD FIRST — corrected 2026-09-05, on this check's first
+    // run.** Phase B pressed the Open button, and pressing a button moves
+    // keyboard focus to it. `PasswordPrompt::reject` then clears the box (it
+    // does, and correctly — the operator must not have to select and delete a
+    // wrong password), so phase C typed `userpw` into a field that was no longer
+    // focused, submitted an EMPTY password, and read the second rejection as the
+    // right password being refused:
+    //
+    // ```text
+    // password-rejected attempt=1 reason=wrong
+    // password-rejected attempt=2 reason=wrong
+    // ```
+    //
+    // The failure message offered *"the fixture's user password … if it has
+    // changed, this check is aimed at the wrong string"*, which is a plausible,
+    // articulate account of something that did not happen. The `attempt=2` line
+    // is the tell: the submit reached the engine, so the chord and the button
+    // were fine and only the field's contents were wrong.
+    //
+    // ★ The first type works without this because the prompt focuses its field
+    // when it opens — which is why the defect only appears after a rejection,
+    // i.e. only in the branch nothing had ever driven.
+    let trace = session.trace()?;
+    if let Some(field) = declared(&trace, ui_rect, FIELD) {
+        let frame = crate::checks::driving::frame_of(&session, &trace, ui_rect, FIELD)?;
+        driver.click_at(frame.declared_center(field))?;
+        session.settle(8);
+    }
     driver.type_ascii(RIGHT)?;
     session.settle(8);
     let trace = session.trace()?;

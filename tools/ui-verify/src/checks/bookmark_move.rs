@@ -91,7 +91,9 @@
 //!
 //! [`OutlinePlacement::LastChild`]: https://docs.rs/pdfcer-core
 
-use crate::checks::driving::{SHELL_DIAG_ENV, click_mode_segment, declared, declared_names, list};
+use crate::checks::driving::{
+    self, SHELL_DIAG_ENV, click_mode_segment, declared, declared_names, list,
+};
 use crate::checks::{Check, CheckContext};
 use crate::error::{Error, Result};
 use crate::input::Driver;
@@ -100,10 +102,19 @@ use crate::report::CheckReport;
 use crate::sys::vk;
 use crate::trace::{Trace, TraceLine};
 
-/// The mode the Bookmarks panel is reached in.
-const MODE: &str = "read";
-/// Supplied at launch so the panel is open before anything is aimed at it.
-const INVOKE: &str = "view.panel_bookmarks";
+/// The mode the Bookmarks panel is **authored** in.
+///
+/// ★★★ **Was `read`, and that made this check permanently unrunnable —
+/// corrected 2026-09-05 on the first sweep that ever executed it.** The full
+/// argument is on `bookmark_edit::MODE`; in one line: Read mounts the panel and
+/// deliberately withholds the authoring row, and `bookmark_add`'s second half
+/// asserts that absence and passes, so this check's set-up phase — which
+/// authors three bookmarks to drag — could never begin. Review authors.
+const MODE: &str = "review";
+/// Supplied at launch. **Nothing**, deliberately: [`MODE`]'s default dock
+/// already mounts Bookmarks, and `view.panel_bookmarks` is a TOGGLE, so
+/// invoking it over an already-mounted panel closes the thing under test.
+const INVOKE: &str = "";
 /// The title box on the authoring row.
 const TITLE_BOX: &str = "bookmarks.new_title";
 /// The Add button.
@@ -307,6 +318,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     session.settle(40);
     let driver = Driver::new(session.window());
     click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    // ★★ The dock draws only the ACTIVE tab's body, and in this mode's default
+    // layout Bookmarks shares a stack with Pages. See
+    // [`crate::checks::driving::raise_dock_tab`].
+    driving::raise_dock_tab(&session, &driver, ui_rect, "view.panel_bookmarks")?;
 
     // --- A: two top-level bookmarks this check then reorganises -------------
     //

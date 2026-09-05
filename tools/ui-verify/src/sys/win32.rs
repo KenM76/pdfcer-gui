@@ -42,8 +42,8 @@ use windows_sys::Win32::Graphics::Gdi::{
 use windows_sys::Win32::System::Threading::{AttachThreadInput, GetCurrentThreadId};
 use windows_sys::Win32::UI::HiDpi::GetDpiForWindow;
 use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
-    KEYEVENTF_KEYUP, MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP, MOUSEEVENTF_RIGHTDOWN,
-    MOUSEEVENTF_RIGHTUP, MOUSEEVENTF_WHEEL, keybd_event, mouse_event,
+    GetKeyState, KEYEVENTF_KEYUP, MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP, MOUSEEVENTF_RIGHTDOWN,
+    MOUSEEVENTF_RIGHTUP, MOUSEEVENTF_WHEEL, VK_CAPITAL, keybd_event, mouse_event,
 };
 use windows_sys::Win32::UI::WindowsAndMessaging::{
     BringWindowToTop, EnumWindows, GA_ROOT, GetAncestor, GetClassNameW, GetClientRect,
@@ -1137,4 +1137,42 @@ pub fn clipboard_formats() -> Option<Vec<(u32, String)>> {
         }
         out
     })
+}
+
+/// **Is CapsLock currently latched on?**
+///
+/// # ★★★ The run this exists for — 2026-09-05
+///
+/// `an_encrypted_document_can_be_opened_with_its_password` typed the fixture's
+/// documented user password, `userpw`, and the application answered:
+///
+/// ```text
+/// password-submitted chars=6 non_ascii=0
+/// password-rejected  attempt=2 reason=wrong
+/// ```
+///
+/// Six characters, all ASCII, and wrong. The check's own failure message —
+/// *"the fixture's user password is published in its PROVENANCE file; if it has
+/// changed, this check is aimed at the wrong string"* — sent a reader to a
+/// provenance file that was correct, and the fixture was byte-identical to the
+/// engine's copy. **CapsLock was on.** `Driver::type_ascii` spells a lowercase
+/// letter by pressing that letter's virtual key with no Shift, which under a
+/// latched CapsLock produces `USERPW`.
+///
+/// ★★ The damage is not confined to one check: every check that types letters
+/// was silently typing the wrong case, and most of them do not compare what
+/// they typed against anything, so they passed. The one that DID compare failed
+/// and blamed the document. **A machine state nobody set is the hardest kind of
+/// wrong answer to see**, and this is the second recorded instance on this
+/// project after the locked workstation that made the foreground unreachable.
+///
+/// ⇒ Read the state and compensate, rather than clearing it: CapsLock belongs
+/// to the operator, and a harness that toggles his keyboard's latches is a
+/// harness that leaves his machine changed. See `Driver::type_ascii`.
+#[must_use]
+pub fn caps_lock_is_on() -> bool {
+    // SAFETY: no pointers, no allocation. `GetKeyState` reads the calling
+    // thread's view of the keyboard state and cannot fail; the low bit of the
+    // return is the TOGGLE state, which is what a latch is.
+    (unsafe { GetKeyState(VK_CAPITAL as i32) } & 1) != 0
 }

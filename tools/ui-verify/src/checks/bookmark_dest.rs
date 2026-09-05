@@ -57,7 +57,9 @@ const CANVAS: &str = "canvas"; // ui-text-exempt: a trace event name, never disp
 /// The page region, so a failure can say whether a sheet was drawn at all.
 const PAGE_REGION: &str = "page"; // ui-text-exempt: a trace region name, never displayed
 /// The operator's own drawing package.
-const FIXTURE: &str = r"C:\Users\Ken\OneDrive\pdfTests\TR-0461-1500-copy.pdf";
+/// The operator's drawing package, **by file name** — see [`crate::fixture::operator_file`]
+/// for why this stopped being an absolute path on 2026-09-05.
+const FIXTURE: &str = "TR-0461-1500-copy.pdf";
 /// The nested bookmark to click — a detail on page 1, not the page itself.
 const DETAIL: &str = "Drawing View64";
 /// How much bigger a detail must be than the page fit to count as arrival.
@@ -112,14 +114,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    let source = std::path::PathBuf::from(FIXTURE);
-    if !source.is_file() {
+    let Some(source) = crate::fixture::operator_file(FIXTURE) else {
         return Err(Error::new(format!(
-            "the operator's drawing package is not at {FIXTURE}. This check needs a document \
-             whose nested bookmarks carry `/FitR` destinations; one with page-only bookmarks \
-             cannot tell the fix from the defect."
+            "{}. This check needs a document whose nested bookmarks carry `/FitR` destinations; one with page-only bookmarks cannot tell the fix from the defect.",
+            crate::fixture::operator_file_complaint(FIXTURE)
         )));
-    }
+    };
     let pdf = ctx.out("bookmark-dest.pdf");
     if let Some(dir) = pdf.parent() {
         std::fs::create_dir_all(dir).map_err(|e| Error::new(e.to_string()))?;
