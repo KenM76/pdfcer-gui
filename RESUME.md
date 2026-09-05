@@ -1,6 +1,96 @@
 # RESUME — read this, then say "continue"
 
 
+> ★★★ **LAST SESSION: 2026-09-05. THE OPERATOR IS AWAY AND THE MACHINE IS
+> YOURS UNTIL 2026-09-08** — his words: *"I'm not at the keyboard unless I tell
+> you I am there… the PC is free for you to use until Tuesday."*
+>
+> ⇒ **DRIVE.** `ui-verify` is the ordinary way to answer a question, not a thing
+> to save up for. ⚠ **One driven run at a time** — the harness moves the real
+> cursor; check `tasklist | grep -icE "^(pdfcer-gui|ui-verify)\.exe"` first.
+>
+> **State at `fe488b2`:** engine **v0.38.0 `b01964f`** ⚠ *(v0.39.0 exists and is
+> NOT yet pulled — see below)*. `cargo test --workspace` **3,470 passing, 0
+> failing**; gates **29 of 29**. **Re-measure before quoting any of these.**
+>
+> ---
+>
+> ⬜ **DO THIS FIRST: bump the engine to v0.39.0.** It carries three fixes to
+> defects *we* reported today — his `add_text` duplication (`Pass 251.0`), the
+> reflow that silently deleted added text, and `set_encryption` ignoring a
+> pending redaction. **Not done yet only because a driven sweep was in flight
+> and the bump would have changed the binary under it.**
+>
+> ---
+>
+> ★★★ **THE FINDING OF THE DAY: A DRIVEN FAIL IS A CLAIM ABOUT THE CHECK TOO.**
+>
+> The first full 175-check sweep produced **7 harness defects** and six apparent
+> application defects. **Three of the six were the check.** One relaunched the
+> binary and inherited the dock layout its own previous launch had saved (so
+> `docked=0` was *honest*); one asserted a marker nothing in the codebase emits
+> (**it could never have passed**); one pressed blank paper inside a polyline's
+> bounding box, which is a marquee and correct behaviour. **Triage before
+> fixing.** And one check had failed for two days because **CapsLock was on**.
+>
+> ★★ **And a regression I shipped that morning was the real cause of one of
+> them:** the new sticky-note pop-up is placed right of its note, and
+> `Area::constrain_to` **slides** a window that will not fit back over its own
+> anchor — an `egui::Area` takes every press inside it, so the drag never
+> reached the canvas. *An annotation could be rotated and not moved.* It flips
+> sides now.
+>
+> ★★ **Mouse work does NOT die at high zoom** — 9 of 9 rungs to **2,298,019 %**,
+> aim residual **0.0000 canvas pt**. The `f32` precision hypothesis is falsified
+> for the second time.
+>
+> ---
+>
+> ★★★ **HIS PAGE-DELETE CORRUPTION — engine-side, guarded here.** Deleting pages
+> from a **nested** page tree updates the immediate parent's `/Count` and no
+> ancestor, so Acrobat shows the removed pages as blanks. **Only the removal
+> direction** (`delete_pages`, `page-copy --cut` — byte-identical output);
+> insertion already walks to the root correctly. Invisible on every flat
+> fixture, present in every real CAD export. The save now **refuses** rather
+> than writing a file it knows is damaged. ⚠ **Until the engine ships, deleting
+> pages from one of his SolidWorks sets and saving WILL be refused.**
+>
+> ★★ **The mockup had been rendering NOTHING for a day** — one JS syntax error,
+> an apostrophe in *"I didn't refuse that."* inside a single-quoted string. Its
+> own smoke test passed on the broken file. **Oracle: `node --check` over the
+> extracted `<script>`.** And the ribbon was **two rows where the mock is
+> three** (`3×22 + 2×1 = 68`) — the mock's measurements were adopted on
+> 2026-09-04 and its row count was not, which is the *"halfway done"* he
+> reported.
+>
+> ★ **`compare-mockup-ribbon.py` now compares ITEMS and exits 1** — structural 0,
+> item-level **16 groups**. Its docstring had said items *"are not
+> commensurable"*; true of labels, **never true of icons**, which both sides
+> spell in plain text. **That is the instrument starting to work.**
+>
+> ---
+>
+> **Landed 2026-09-05, all committed and pushed:** the note pop-up (readable in
+> Read); Comments panel with delete/filter/sort/go-to; deferred redaction that
+> keeps undo; signature trust; encryption and permissions; lossless annotation
+> clipboard; colour on a clicked text object + multi-object recolour;
+> object → layer; pop-out print preview; standard-14 embedding made an **opt-in**
+> (it had been silently making a *licence* decision for him); paste restored in
+> Review; Document properties given its own tab; ce-dimension corners
+> add/remove; read mode says how to leave; ribbon + rail auto-hide; grips that
+> work on a 0.85 pt object.
+>
+> ⬜ **OPEN AT THE ENGINE (4):** the page-tree ancestor count; markup vertices
+> unreadable (`/Vertices`, `/InkList` unmodelled — **nothing was faked**); no
+> verb authors a reply (`/IRT`); `/State` unmodelled; and **O137 — a
+> line-weights-off display mode**, which he asked for by name. ⚠ The last is
+> AutoCAD's `LWDISPLAY` off (**thick → thin**), *not* Acrobat's "enhance thin
+> lines" (**thin → thick**). They are opposites.
+>
+> ⚠ **Zero headroom:** `app/actions/action.rs` and `app/lifecycle.rs` at exactly
+> **1500**.
+
+
 > ★★★ **LAST SESSION: 2026-09-05 (overnight). NINE TRACKS LANDED AND A BUILD
 > SHIPPED.** GitHub `v0.5.0-dev.20260905`; OneDrive **`pdfcer-gui1` is the new
 > build**, `pdfcer-gui2` holds 2026-09-04 12:33 as the fallback.
