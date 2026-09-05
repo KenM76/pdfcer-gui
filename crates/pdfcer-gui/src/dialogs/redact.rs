@@ -1155,9 +1155,21 @@ impl RedactDialog {
     ///
     /// The operator overruled it, and the reasoning is in [`Destination`]. What
     /// survives of the old ruling is the part that was a *mechanism* rather than
-    /// a *prohibition*: [`Destination::NewFile`] is still the default, and
-    /// [`suggested_path`] still never proposes the source file. What is gone is
-    /// the refusal to write the branch at all.
+    /// a *prohibition*: [`suggested_path`] still never proposes the source file.
+    /// What is gone is the refusal to write the branch at all.
+    ///
+    /// ⚠ **Corrected 2026-09-05.** This paragraph said *"[`Destination::NewFile`]
+    /// is still the default"* — and by then [`DEFAULT_DESTINATION`] two hundred
+    /// lines above it read [`Destination::OpenDocument`], moved on 2026-09-04.
+    /// **One file asserting two different defaults about itself**, which is
+    /// worse than a stale sentence in a document nobody reads: this is the
+    /// paragraph a future session consults *before* changing the default.
+    ///
+    /// ★ The claim it was making is still true of the mechanism, and that is
+    /// why it survived a rewrite of the surrounding argument: both defaults are
+    /// safe, for **different reasons** — `NewFile` never *overwrote*,
+    /// `OpenDocument` never *writes*. A sentence that is right about the
+    /// principle and wrong about the value is the hardest kind to notice.
     ///
     /// So there are now two paths, and the asymmetry between them is the whole
     /// safety argument:
