@@ -14,6 +14,25 @@ metadata:
 take the screen. He will say when he is there — and only then does the
 no-driving posture apply.
 
+## ★★ 2026-09-05, made concrete and open-ended
+
+> ***"10 minutes and PC is free for you to use until Tuesday."***
+
+**The machine is his gift until 2026-09-08.** Drive without asking, run the full
+175-check sweep as often as it is worth running, take screenshots, launch
+Acrobat and Word as reference apps, and treat `ui-verify` as the ordinary way
+to answer a question rather than a thing to save up for.
+
+⇒ ★ The corollary that is easy to miss: **there is no longer any excuse for a
+"built and undriven" row.** Twenty of them accumulated in a single day under the
+opposite assumption. If a check exists and has not run, that is now a choice.
+
+⚠ **Only ONE driven run at a time.** The harness moves the real cursor and types
+into the real window; two concurrent runs corrupt each other. When several
+tracks are in flight, exactly one owns the pointer and the rest are told so
+explicitly and work headlessly. Check with
+`tasklist | grep -icE "^(pdfcer-gui|ui-verify)\.exe"` before driving.
+
 ## ★★★ What this cost before it was said
 
 On 2026-09-04 he said *"I'm back using the PC"* and, later, *"my screen is still

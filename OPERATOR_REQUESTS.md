@@ -13359,3 +13359,86 @@ list of universal chords rather than this one line.
 # CLOSED
 
 *(Nothing yet. A row lands here only when you have said it works.)*
+
+---
+
+## O137 — ◑ **HE WANTS THE THIN-LINES DISPLAY BACK, AND HE IS RIGHT THAT IT NEVER WORKED**
+
+**Ken, 2026-09-05:**
+
+> *"awhile ago you told me you removed the button to show all lines without
+> their thickness — thin lines or something like cad has. The button never
+> worked but I do want that display option!"*
+
+Both halves of that are correct, which is worth saying plainly.
+
+### What was removed, and why
+
+`view.thin_lines` was one of **seven `view.*` settings resolved on 2026-08-17 —
+two built, five deleted.** All seven were registered, drawn on the View tab, and
+**inert**. `FEATURES.md` carries the finding verbatim: *"**thin lines** and
+**antialiasing** have no `RenderOptions` field at all."* Unregistered rather than
+hidden, on R8.
+
+⇒ So the deletion was right *as a deletion* — a control that does nothing is the
+defect he is describing — and wrong as a *conclusion*, because it closed the
+question. **A capability nobody can reach is not the same as a capability nobody
+wants**, and the record kept only the first.
+
+### Re-checked today, not trusted
+
+The 2026-08-17 note is three weeks old and this project's standing rule is that a
+limitation sentence is a citation with an hours-long shelf life. Re-measured
+against `pdfcer-render` v0.38.0 (`b01964f`): `RenderOptions` carries `fonts`,
+`annotations`, `subpixel_culling`, `annotation_scope`, `cancel`, `layers`
+(`font/mod.rs:432-559`) and nothing about stroke width; `render-page --help`
+offers no such flag. The rasteriser handles hairlines
+(`display_list.rs:1210-1222`) but cannot be told to treat every stroke as one.
+**The note still holds.**
+
+### ★★★ Which convention — they are opposites and confusing them ships the wrong feature
+
+| | | precedent |
+|---|---|---|
+| **Line weights OFF ← his ask** | every stroke drawn at **one device pixel**, whatever the file declares | AutoCAD `LWDISPLAY` off |
+| Enhance thin lines | sub-pixel strokes bumped **up** to one pixel so they do not vanish | Acrobat's preference of that name |
+
+**One makes thick things thin; the other makes thin things thick.** He said
+*"without their thickness"* and named CAD.
+
+### Why it earns its place on his documents
+
+On a dense A1 sheet a 0.7 mm stroke is ~2 pt — harmless at page fit, and **4–8 px
+of solid black at the 200–400 % where he actually reads a title block or traces
+a service run**, at which point adjacent geometry merges. Turning line weights
+off is how a draughtsman reads a busy drawing, and it is the only quick way to
+answer *"are these two lines coincident, or 0.3 mm apart?"*
+
+### Status
+
+**Filed at the engine**, 2026-09-05:
+`request_a_line_weights_off_display_mode_for_dense_cad_drawings.md` — asking for
+a `StrokeDisplay` enum on `RenderOptions` (an enum rather than a `bool`, so
+"enhance thin lines" can be a third variant later without `hairline: bool`
+coming to mean *one of the two*).
+
+⬜ **No control will be registered until the field exists** — R8, and re-shipping
+the dead button is precisely the thing he is complaining about. It appears the
+day it can work.
+
+### ★★ The constraint the shell will hold when it lands, decided now rather than later
+
+- **Canvas only.** Print, print preview and every export — PDF, PNG, JPEG, SVG,
+  EMF, DXF — use the document's real widths. **The one thing worse than not
+  having this is having it follow him into a file he sends a client.**
+- **Disclosed while it is on**, off-canvas, because the canvas then deliberately
+  does not show what will print. Not Rule 4's *"pdfcer marking its own
+  uncertainty"* case — this is the operator choosing a reading aid — but the
+  screen/paper divergence still owes a statement.
+- **Fills untouched.** A filled region is geometry, not a drafting weight; a
+  hatch built from thin fills must not vanish.
+
+★ `view.antialiasing` was cut in the same sweep for the same reason and is
+**not** being asked for. Named in the request only so that if `RenderOptions` is
+being opened anyway, the second dead control is visible on the same trip.
+
