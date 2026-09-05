@@ -37,12 +37,12 @@
 //!
 //! | Phase | Does | Expected |
 //! |---|---|---|
-//! | A | Review, Markup tab, Comments panel | a `comments-panel listed=N` baseline |
-//! | B | arm Rectangle, drag on the page | `markup-tool`, `markup-commit kind=Rectangle`, `add-markup`, and `listed=N+1` |
+//! | A | Review, Comments panel brought to the front | a `comments-panel listed=N` baseline, published **after** the `mode-changed` line |
+//! | B | arm Rectangle, drag on the page | `markup-tool`, `markup-commit kind=Rectangle`, `add-markup`, and a census published **after** `add-markup` reading `listed=N+1` with `with_note` and `authors` unmoved |
 //! | C | File tab, **Save a copy** | `save-copy … appended=>0`, and a file at the named path |
 //! | D | re-read the **source** | byte-identical to before the run |
 //! | E | compare the copy's prefix with the source | the source's bytes are the copy's prefix, verbatim |
-//! | F | **launch a second process on the copy** | `comments-panel listed=N+1` |
+//! | F | **launch a second process on the copy** | `comments-panel listed=N+1`, again with `with_note` and `authors` unmoved |
 //!
 //! # ★ Three falsifying phases, and the build each one catches
 //!
@@ -126,10 +126,33 @@
 //! saved file from disk, so `listed=` there is a statement about the *file*,
 //! made by the engine, in a process that never saw the first one.
 //!
-//! In Review the panel is the first tab of the right stack and is therefore
-//! active on the first frame — but a persisted layout beside the binary can say
-//! otherwise, so both sessions click `markup.comments` rather than assuming.
-//! `app/panels.rs` makes that idempotent: it *shows*, it does not toggle.
+//! ## ★★★ Every census here is ANCHORED, and the day that started mattering
+//!
+//! This paragraph used to say that in Review the panel is the first tab of the
+//! right stack and *"is therefore active on the first frame"*, with a click on
+//! `markup.comments` as belt and braces. Both halves went wrong at once on
+//! 2026-09-05. The belt-and-braces click had already been removed on a finding
+//! about band overflow that has since stopped being true; and a persisted
+//! `userdata/layout.ron` put Document properties in front of Comments, so the
+//! panel **stopped tracing entirely** — a dock draws only its active tab.
+//!
+//! The check then read the census the panel had published in the *previous
+//! mode*, twice, and subtracted it from itself: *"it listed 12 before the drag
+//! and 12 after it."* It reported a working panel as broken, and
+//! `undo_redo_round_trip` — carrying a copy of the same helper — reported the
+//! same thing in the same words on the same sweep, which read as corroboration.
+//!
+//! ⇒ Every census this check takes now comes from
+//! [`crate::checks::comments_census`], which (a) requires the line to have been
+//! published **after** a named cause — the mode change, or the engine's own
+//! `add-markup` — so a fossil cannot answer, (b) **brings the panel forward**
+//! when it has gone quiet, by its dock tab or by `markup.comments`, which
+//! `app/panels.rs` makes a *show* rather than a toggle, and (c) reports SKIP,
+//! never FAIL, when it cannot: *"the panel said nothing"* is a layout fact and
+//! *"the panel said the wrong number"* is a defect, and they are not the same
+//! verdict. Driven against a deliberately seeded hostile layout on 2026-09-05
+//! and seen to recover; driven against a planted frozen census and seen to
+//! fail.
 //!
 //! # The picker is answered, not driven
 //!
@@ -182,8 +205,9 @@
 
 use std::path::Path;
 
+use crate::checks::comments_census::{self, Census};
 use crate::checks::driving::{
-    self, INVOKE_EVENT, ITEM_PREFIX, SHELL_DIAG_ENV, TAB_EVENT, UNIMPLEMENTED_EVENT, declared,
+    INVOKE_EVENT, ITEM_PREFIX, SHELL_DIAG_ENV, TAB_EVENT, UNIMPLEMENTED_EVENT, declared,
     declared_names, list, list_str, shell_trace,
 };
 use crate::checks::text_selection::aim;
@@ -219,10 +243,6 @@ pub(crate) const FILE_TAB: (&str, &str) = ("ribbon.tab.file", "file");
 /// and this check's subject is the save, not the tool.
 const RECTANGLE: (&str, &str) = ("ribbon.item.markup.rectangle", "markup.rectangle");
 
-/// The Comments panel's control. `app/panels.rs` makes this a **show**, not a
-/// toggle, so pressing it when the panel is already up is a no-op.
-const COMMENTS: (&str, &str) = ("ribbon.item.markup.comments", "markup.comments");
-
 /// **The command under test.**
 pub(crate) const SAVE: (&str, &str) = ("ribbon.item.file.save_copy", "file.save_copy");
 
@@ -237,20 +257,6 @@ const COMMIT_EVENT: &str = "markup-commit";
 
 /// `add-markup page=… n=… epoch=… …` — the **engine** authored it.
 const APPLY_EVENT: &str = "add-markup";
-
-/// `comments-panel pages=… listed=N …` — the oracle, in both processes.
-const COMMENTS_EVENT: &str = "comments-panel";
-
-/// The field on [`COMMENTS_EVENT`] that counts the rows the panel drew.
-const LISTED_FIELD: &str = "listed";
-
-/// The field on [`COMMENTS_EVENT`] that counts annotations the panel left out.
-///
-/// Read to turn a confusing failure into a SKIP: widgets, popups and trap nets
-/// are excluded by editorial rule, so on a fixture full of form fields the
-/// listed count would not move by one for a reason that has nothing to do with
-/// saving.
-const EXCLUDED_FIELD: &str = "excluded_total";
 
 /// `save-copy path=… bytes=… appended=… …` — the write happened.
 const SAVED_EVENT: &str = "save-copy";
@@ -330,15 +336,6 @@ fn invokes(session: &Session, id: &str) -> Result<usize> {
         .events(INVOKE_EVENT)
         .filter(|l| l.get("id") == Some(id))
         .count())
-}
-
-/// The most recent `comments-panel` line's `listed=` count.
-///
-/// `None` when the panel has not drawn at all, which the caller reports as a
-/// SKIP rather than as a failure: a panel that is not on screen is a layout
-/// fact, not a save one.
-fn listed(trace: &Trace) -> Option<usize> {
-    trace.last(COMMENTS_EVENT)?.get_usize(LISTED_FIELD)
 }
 
 /// Click a ribbon tab and confirm the shell reported it.
@@ -441,80 +438,36 @@ pub(crate) fn click_command(
 }
 
 /// Put a launched session into Review with the Comments panel showing, and
-/// report how many annotations the panel can see.
+/// report the census it publishes there.
 ///
 /// Used **twice** — once on the fixture and once on the saved copy in a second
-/// process — which is the whole reason it is a function: the two counts have to
-/// be produced by the identical sequence, or the comparison at the end is
-/// between two different measurements.
+/// process — which is the whole reason it is a call rather than four lines: the
+/// two censuses have to be produced by the identical sequence, or the
+/// comparison at the end is between two different measurements.
 ///
-/// # ★ The panel is reached by the MODE, not by its ribbon control
+/// # ★★★ It used to be a private copy of this, and the copy was WRONG
 ///
-/// `app::modes::defaults`' `review` arrangement mounts Comments as the first tab
-/// of the right stack, so it is active and tracing from the first Review frame.
-/// The obvious belt-and-braces — click `markup.comments` as well, since
-/// `app/panels.rs` makes that a *show* rather than a toggle — was tried and
-/// **removed**, because it does not work on this build and the reason is a
-/// finding rather than a harness problem: on a 2384 pt-wide sheet the Markup
-/// tab's bands overflow and the Comments group is not drawn at all, so
-/// `ribbon.item.markup.comments` is never declared and there is nothing to aim
-/// at. (The groups that do publish rects are Shapes, Text and Notes.)
+/// Until 2026-09-05 this file carried its own `comments_count`, its own
+/// `listed()`, and its own excluded-annotation refusal — and
+/// [`crate::checks::undo_redo`] carried a second copy of all three. Both read
+/// the census with `Trace::last`, which searches the whole capture, so when the
+/// panel went to the back of its dock and **stopped tracing**, both read the
+/// line it had published in the previous mode and reported a working panel as
+/// broken, in the same words, on the same sweep. The sweep report called them
+/// *"two independent witnesses"*.
 ///
-/// So the control is a **fallback**, attempted only when the mode alone did not
-/// produce the panel — which is the state a persisted layout beside the binary
-/// could produce — and its absence is reported as part of one SKIP rather than
-/// as a failure of the save.
+/// The shared module's header carries the whole finding. What belongs here is
+/// the consequence for this file: **there is no local census reader any more,
+/// deliberately.** A repair that lands in one of two copies is the defect this
+/// check just spent a sweep demonstrating.
 fn comments_count(
     session: &Session,
     driver: &Driver,
     ui_rect: &str,
     report: &mut CheckReport,
     what: &str,
-) -> Result<usize> {
-    driving::click_mode_segment(session, driver, ui_rect, MODE)?;
-    session.settle(16);
-
-    if listed(&session.trace()?).is_none() {
-        // The mode's default arrangement did not bring the panel up. Try its
-        // control; if that is not on screen either, say both things at once.
-        report.note(format!(
-            "the `{MODE}` arrangement did not mount the Comments panel for {what}; trying its \
-             ribbon control"
-        ));
-        click_tab(session, driver, ui_rect, MARKUP_TAB)?;
-        click_command(session, driver, ui_rect, COMMENTS, 18)?;
-    }
-
-    let trace = session.trace()?;
-    let count = listed(&trace).ok_or_else(|| {
-        Error::new(format!(
-            "the Comments panel never traced `{COMMENTS_EVENT}` for {what}, so this check has no \
-             oracle. Either the panel is not mounted (check `app::modes::defaults`' `{MODE}` \
-             arrangement, which is supposed to put it first in the right stack) or it is drawing \
-             without tracing. Trace: {}.",
-            session.trace_path().display()
-        ))
-    })?;
-    let excluded = trace
-        .last(COMMENTS_EVENT)
-        .and_then(|l| l.get_usize(EXCLUDED_FIELD))
-        .unwrap_or(0);
-    if excluded > 0 {
-        return Err(Error::new(format!(
-            "the Comments panel excluded {excluded} annotation(s) on {what} — widgets, popups or \
-             trap nets, which it leaves out by editorial rule. This check's verdict is that \
-             `{LISTED_FIELD}` moves by exactly one when one rectangle is authored, and on a \
-             document with excluded annotations that arithmetic is measuring the panel's rules \
-             rather than the save. Point --pdf at a drawing without form fields."
-        )));
-    }
-    report.note(format!(
-        "{what}: the Comments panel lists {count} annotation(s) — `{}`",
-        trace
-            .last(COMMENTS_EVENT)
-            .map_or_else(String::new, |l| l.raw.clone())
-    ));
-    Ok(count)
+) -> Result<Census> {
+    comments_census::baseline(session, driver, ui_rect, MODE, what, "the save", report)
 }
 
 /// Launch one process with both diagnostic channels armed and the save seam set.
@@ -716,21 +669,59 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         // trip, and it is what makes phase F's number meaningful: without it, a
         // build whose panel could not see a freshly authored annotation would
         // fail phase F for a reason that has nothing to do with saving.
+        //
+        // ★★★ ANCHORED ON THE ENGINE'S OWN LINE. The census that answers this
+        // must have been published AFTER `add-markup`, or it is not evidence
+        // about the annotation at all — it is the last thing the panel said
+        // before something sent it to the back of its dock. That mistake, made
+        // here and in `undo_redo` on 2026-09-05, produced two identically
+        // worded false defect reports against a panel that was working.
         session.settle(10);
-        let listed_after = listed(&session.trace()?).unwrap_or(listed_before);
-        if listed_after != listed_before + 1 {
+        let caused_at = session
+            .trace()?
+            .last(APPLY_EVENT)
+            .map_or(commit.lineno, |l| l.lineno);
+        let Some(listed_after) =
+            comments_census::refresh(&session, &driver, ui_rect, caused_at, report)?
+        else {
+            return Err(Error::new(format!(
+                "the rectangle was authored (`{}`) and the Comments panel has published no census \
+                 since — not because the count did not move, but because the panel is not on \
+                 screen, and a dock draws only its active tab. Neither its own tab nor its ribbon \
+                 control could bring it forward, so there is no oracle for the in-memory half of \
+                 the round trip and phase F's number would be unattributable. That is a LAYOUT \
+                 fact rather than a save one: clear the `userdata/` directory beside the binary \
+                 and run again. Trace: {}.",
+                commit.raw,
+                session.trace_path().display()
+            )));
+        };
+        if !listed_after.describes_one_more(&listed_before) {
             return Ok(Some(format!(
-                "THE COMMENTS PANEL DOES NOT SEE THE ANNOTATION THAT WAS JUST AUTHORED: it listed \
-                 {listed_before} before the drag and {listed_after} after it. The engine traced \
-                 `{APPLY_EVENT}`, so the annotation IS on the session — which makes this the \
-                 panel's finding rather than the save's, and it also means phase F's oracle would \
-                 be measuring the panel. Reported here rather than at the end, where it would read \
-                 as a save that lost the edit."
+                "THE COMMENTS PANEL DOES NOT SEE THE ANNOTATION THAT WAS JUST AUTHORED. The \
+                 fixture's starting census was {} listed / {} with words / {} with an author, and \
+                 after the drag the panel published `{}`. The engine traced `{APPLY_EVENT}`, and \
+                 this census was published AFTER that line — so the panel drew a frame with the \
+                 annotation already on the session and did not count it.\n\n\
+                 {}\n\n\
+                 That makes it the panel's finding rather than the save's, and it also means \
+                 phase F's oracle would be measuring the panel. Reported here rather than at the \
+                 end, where it would read as a save that lost the edit. Look at \
+                 `panels::comments`' `body`: it must read `doc.session.view()` on every frame \
+                 rather than any listing cached against an epoch.",
+                listed_before.listed,
+                listed_before.with_note,
+                listed_before.authors,
+                listed_after.raw,
+                listed_after.disagreement(&listed_before),
             )));
         }
         report.note(format!(
-            "the Comments panel now lists {listed_after}, one more than before the drag — the \
-             annotation is on the session in memory"
+            "the Comments panel now lists {}, one more than before the drag, and the new row \
+             carries neither words nor an author — the annotation is on the session in memory. \
+             The census was published after the engine's own `{APPLY_EVENT}` line, so it is a \
+             measurement and not a leftover: `{}`",
+            listed_after.listed, listed_after.raw
         ));
 
         // --- PHASE C: save a copy -------------------------------------------
@@ -881,12 +872,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         comments_count(&session, &driver, ui_rect, report, "the SAVED COPY")?
     };
 
-    if listed_reopened != listed_before + 1 {
+    if !listed_reopened.describes_one_more(&listed_before) {
         return Ok(Some(format!(
-            "★ THE EDIT IS NOT IN THE SAVED FILE. The fixture listed {listed_before} \
-             annotation(s); a rectangle was authored and the panel listed {} in the process that \
-             authored it; and a SECOND process, opening the saved copy from disk through the same \
-             `Document::load` an operator's File ▸ Open uses, lists {listed_reopened}.\n\n\
+            "★ THE EDIT IS NOT IN THE SAVED FILE. The fixture listed {} annotation(s); a \
+             rectangle was authored and the panel listed {} in the process that authored it; and \
+             a SECOND process, opening the saved copy from disk through the same \
+             `Document::load` an operator's File ▸ Open uses, published `{}`.\n\n\
+             {}\n\n\
              A save that writes a file is not the same claim as a save that writes the EDIT, and \
              this is the second one. The plausible build this catches writes the **base \
              document's** bytes rather than the session's incremental update: it produces a valid \
@@ -894,14 +886,19 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              trivially begins with the original's bytes (phase E passes, because it IS them). \
              Look at `app::save::write_copy` and at what it hands \
              `EditSession::to_incremental_bytes`.",
-            listed_before + 1
+            listed_before.listed,
+            listed_before.listed + 1,
+            listed_reopened.raw,
+            listed_reopened.disagreement(&listed_before),
         )));
     }
     report.note(format!(
         "★★ ROUND TRIP PROVEN: a second process opened the saved copy from disk and its Comments \
-         panel lists {listed_reopened} annotation(s), one more than the fixture's \
-         {listed_before}. The rectangle an OS-injected drag authored in the first process is in \
-         the file the second one read"
+         panel lists {} annotation(s), one more than the fixture's {}, and the extra row carries \
+         neither words nor an author — which is the shape of a canvas-drawn rectangle rather than \
+         of any other row the count could have gained. The rectangle an OS-injected drag authored \
+         in the first process is in the file the second one read",
+        listed_reopened.listed, listed_before.listed
     ));
 
     report.note(
@@ -936,7 +933,7 @@ mod tests {
     /// a check that matches nothing passes vacuously.
     #[test]
     fn the_selectors_match_the_shells_own_spelling() {
-        for (region, id) in [RECTANGLE, COMMENTS, SAVE] {
+        for (region, id) in [RECTANGLE, SAVE] {
             assert_eq!(region, format!("ribbon.item.{id}"));
             assert!(region.starts_with(ITEM_PREFIX), "{region}");
         }
@@ -1043,7 +1040,7 @@ mod tests {
                     appended=412 objects=3 verbatim=2 reserialized=1 promoted=0 deleted=0 \
                     identical=false delinearized=false epoch=1 origin=Opened";
         let app = Trace::parse(text, "pdfcer-diag");
-        let shell = Trace::parse(text, driving::SHELL_TRACE_PREFIX);
+        let shell = Trace::parse(text, crate::checks::driving::SHELL_TRACE_PREFIX);
 
         assert!(app.started("start"));
         assert!(
@@ -1055,12 +1052,14 @@ mod tests {
                 .events(INVOKE_EVENT)
                 .any(|l| l.get("id") == Some(SAVE.1))
         );
-        assert_eq!(listed(&app), Some(3));
-        assert_eq!(
-            app.last(COMMENTS_EVENT)
-                .and_then(|l| l.get_usize(EXCLUDED_FIELD)),
-            Some(0)
-        );
+        // ★ Read through the SHARED census reader and anchored at 0, which is
+        // "anything in this capture" — the one place a zero anchor is right,
+        // because the capture is three synthetic lines rather than a run.
+        let census = comments_census::Census::since(&app, 0)
+            .expect("a census with no filter field reads as unfiltered")
+            .expect("the census line is in this capture");
+        assert_eq!(census.listed, 3);
+        assert_eq!(census.excluded, 0);
 
         // ★ The save line's fields survive a path with SPACES in it. The
         // application Debug-quotes the path for exactly this reason, and a

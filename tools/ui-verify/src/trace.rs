@@ -225,6 +225,64 @@ impl Trace {
         self.lines.iter().find(|l| l.event == name)
     }
 
+    /// The last line with this event name that the application traced **after**
+    /// `after` — where `after` is a [`TraceLine::lineno`] taken earlier.
+    ///
+    /// # ★★★ Why this exists: [`Trace::last`] cannot tell "unchanged" from
+    /// "stopped"
+    ///
+    /// A trace is an append-only log, so `last` answers *"what is the newest
+    /// line this run ever produced?"* — which is the right question only while
+    /// the thing producing it is still producing. The moment a surface stops
+    /// emitting, its final line stands for ever, and a check that keeps reading
+    /// it sees **a number that never changes** and reports the feature behind
+    /// it as inert.
+    ///
+    /// That is not hypothetical, and it is the third recurrence of one shape in
+    /// this crate. [`crate::checks::driving::declared_since`] carries the first
+    /// two (a drop caret gone by the time it was read; a deleted row still
+    /// counted). The third, on 2026-09-05, cost a full sweep two false defect
+    /// reports:
+    ///
+    /// > `save_copy_round_trip` and `undo_redo_round_trip` both read
+    /// > `comments-panel … listed=` with `last`, and both reported *"THE
+    /// > COMMENTS PANEL DOES NOT SEE THE ANNOTATION THAT WAS JUST AUTHORED"*.
+    /// > The panel saw it perfectly. It had been sent to the back of a tabbed
+    /// > dock by a persisted layout, a dock draws only its active tab, and so
+    /// > the panel had stopped tracing three hundred frames before the drag.
+    /// > `last` handed both checks the census it published in the *previous
+    /// > mode*.
+    ///
+    /// ⇒ **If a check compares a number to what that number was earlier, the
+    /// later read must be anchored.** `after` is normally the `lineno` of the
+    /// event that is supposed to have caused the change — a commit line, a
+    /// gesture's start — so a value published before the cause cannot satisfy
+    /// it, and `None` means *"the surface said nothing since"*, which is a
+    /// different verdict from *"the surface said the same thing"* and must be
+    /// reported differently.
+    ///
+    /// `TraceLine::lineno` is the line's position in the capture, so marks
+    /// taken from any event are directly comparable with any other — the same
+    /// property `declared_since` relies on.
+    #[must_use]
+    pub fn last_after(&self, name: &str, after: usize) -> Option<&TraceLine> {
+        self.lines
+            .iter()
+            .rev()
+            .take_while(|l| l.lineno > after)
+            .find(|l| l.event == name)
+    }
+
+    /// The line number of the newest line in the capture, for use as an anchor
+    /// with [`Trace::last_after`].
+    ///
+    /// Zero on an empty capture, which is the correct anchor for "everything
+    /// from here on": no line can have `lineno` 0.
+    #[must_use]
+    pub fn mark(&self) -> usize {
+        self.lines.last().map_or(0, |l| l.lineno)
+    }
+
     /// Did the application emit anything at all under the prefix?
     ///
     /// The distinction this answers is the one that cost pdfcer's investigation
@@ -463,5 +521,66 @@ mod tests {
     fn rejected_script_steps_are_findable() {
         let t = Trace::parse("pdfcer-diag script-step-UNPARSEABLE step=nav:home", PREFIX);
         assert_eq!(t.rejected_steps().len(), 1);
+    }
+
+    /// The exact shape of the 2026-09-05 false report, in five lines.
+    ///
+    /// A surface publishes a census, something else happens, and the surface
+    /// **stops publishing**. `last` still answers with the stale census — which
+    /// is what made two checks report a working panel as broken — and
+    /// `last_after`, anchored on the cause, correctly answers `None`.
+    #[test]
+    fn last_reads_a_fossil_where_last_after_reports_silence() {
+        let t = Trace::parse(
+            "pdfcer-diag comments-panel listed=12\n\
+             pdfcer-diag mode-changed to=review\n\
+             pdfcer-diag markup-commit kind=Rectangle\n\
+             pdfcer-diag add-markup page=0\n\
+             pdfcer-diag frame n=70",
+            PREFIX,
+        );
+        let cause = t.last("add-markup").unwrap().lineno;
+        assert_eq!(
+            t.last("comments-panel").and_then(|l| l.get_usize("listed")),
+            Some(12),
+            "`last` reads the census the panel published before it went quiet — the fossil"
+        );
+        assert!(
+            t.last_after("comments-panel", cause).is_none(),
+            "anchored on the edit that should have moved it, the panel said NOTHING — which is a \
+             different verdict from `it said 12` and must not be reported as one"
+        );
+    }
+
+    #[test]
+    fn last_after_finds_the_newest_line_past_the_anchor() {
+        let t = Trace::parse(
+            "pdfcer-diag comments-panel listed=12\n\
+             pdfcer-diag add-markup page=0\n\
+             pdfcer-diag comments-panel listed=13\n\
+             pdfcer-diag comments-panel listed=13",
+            PREFIX,
+        );
+        let cause = t.last("add-markup").unwrap().lineno;
+        assert_eq!(
+            t.last_after("comments-panel", cause)
+                .and_then(|l| l.get_usize("listed")),
+            Some(13)
+        );
+        assert!(
+            t.last_after("comments-panel", 9_999).is_none(),
+            "an anchor past the end of the capture can never be satisfied"
+        );
+    }
+
+    #[test]
+    fn mark_is_the_newest_line_and_zero_on_an_empty_capture() {
+        assert_eq!(Trace::parse("", PREFIX).mark(), 0);
+        let t = Trace::parse("noise\npdfcer-diag start argv1=None\nmore noise", PREFIX);
+        assert_eq!(t.mark(), 2, "the anchor is the position in the FILE");
+        assert!(
+            t.last_after("start", t.mark()).is_none(),
+            "a mark taken now must exclude every line that already exists"
+        );
     }
 }

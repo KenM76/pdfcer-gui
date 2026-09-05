@@ -173,6 +173,17 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // climbs with Ctrl+wheel and a wheel that does not reach the canvas is
         // `zoom_gallery`'s failure to report, not this one's.
         Box::new(blend_space::BlendSpaceFallbackIsDisclosed),
+        // ★ Beside `blend_space`, because they are the same shape of check on
+        // the same two surfaces: both climb the zoom with Ctrl+wheel, both read
+        // pixels out of the canvas, and both end at a status-bar disclosure. A
+        // run in which the wheel does not reach the canvas should report that
+        // as `zoom_gallery`'s failure, and a reader who has just seen
+        // `blend_space` SKIP for want of a climb knows to expect this one to as
+        // well.
+        //
+        // ★★ It goes SECOND of the two because it also presses a ribbon item,
+        // so it has one more candidate cause than its neighbour.
+        Box::new(line_weights::LineWeightsOffThinsTheDrawingAndSaysSo),
         // ★ Immediately after `pan_refresh`, because they are the two halves of
         // one gesture: that one asserts the new area RENDERS, this one asserts
         // the page is not blank WHILE it renders. A failure of the first should

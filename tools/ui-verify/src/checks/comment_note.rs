@@ -92,6 +92,7 @@
 //! word out of what is already there is cheaper than adding two constants to
 //! type something prettier.
 
+use crate::checks::comments_census;
 use crate::checks::driving::{SHELL_DIAG_ENV, declared, declared_names, list};
 use crate::checks::text_selection::aim;
 use crate::checks::{Check, CheckContext};
@@ -112,6 +113,22 @@ use crate::sys::vk;
 /// as a broken feature rather than as a stale coordinate.
 const INVOKE: &str = "mode.review,markup.comments,markup.rectangle";
 /// The panel's per-frame census.
+///
+/// ★★★ **Every comparison read of it below is ANCHORED — 2026-09-05.** A docked
+/// pane that is not the front tab of its stack draws nothing and so traces
+/// nothing, which means `Trace::last(CENSUS)` goes on answering with the line
+/// the panel published before it went quiet. On the sweep of that morning
+/// `save_copy_round_trip` and `undo_redo_round_trip` each read such a fossil
+/// and reported a working panel as broken, in identical words — which read as
+/// corroboration, because each carried its own copy of the same helper.
+///
+/// This file carried a third copy of the pattern and passed that sweep only
+/// because the layout happened to be favourable. Its phase F would otherwise
+/// have printed *"THE WORDS WENT INTO THE DOCUMENT AND THE PANEL CANNOT SEE
+/// THEM"* about a panel that had merely gone behind another tab. The two reads
+/// that compare now go through [`crate::checks::comments_census`], which
+/// requires the line to postdate a named cause and brings the panel forward
+/// when it has stopped speaking.
 const CENSUS: &str = "comments-panel";
 /// The line the apply arm writes once the engine has written the note.
 ///
@@ -266,14 +283,22 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
 
     // --- B: the census before, which is what makes F mean anything ----------
-    let Some(before) = trace.last(CENSUS) else {
-        return Ok(Some(format!(
-            "the panel stopped tracing `{CENSUS}` after a shape was drawn, so it is no longer \
-             reading the document."
+    // ★ Anchored on the engine's own line, and recovered if the panel has gone
+    // behind another tab — see [`CENSUS`]. A census from before the shape
+    // existed says nothing about a panel that can see it.
+    let drawn_at = trace.events(MARKUP_APPLIED).last().map_or(0, |l| l.lineno);
+    let Some(before) = comments_census::refresh(&session, &driver, ui_rect, drawn_at, report)?
+    else {
+        return Err(Error::new(format!(
+            "the panel has published no `{CENSUS}` since the shape was authored, and neither \
+             its dock tab nor its ribbon control could bring it forward — so it is off screen \
+             rather than no longer reading the document, and a dock draws only its active tab. \
+             SKIPPED, not failed: that is a layout fact. Clear the `userdata/` directory beside \
+             the binary and run again."
         )));
     };
-    let listed = before.get_usize("listed").unwrap_or(0);
-    let with_note_before = before.get_usize("with_note").unwrap_or(0);
+    let listed = before.listed;
+    let with_note_before = before.with_note;
     if listed == 0 {
         return Ok(Some(format!(
             "the engine authored the shape and the panel lists NOTHING: `{}`. The panel reads \
@@ -372,12 +397,16 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     report.note(format!("★ the engine wrote the note: `{}`", applied.raw));
 
     // --- F: the panel reads it back ----------------------------------------
-    let Some(after) = trace.last(CENSUS) else {
-        return Ok(Some(format!(
-            "the panel stopped tracing `{CENSUS}` after the note was written."
+    let Some(after) = comments_census::refresh(&session, &driver, ui_rect, applied.lineno, report)?
+    else {
+        return Err(Error::new(format!(
+            "the panel has published no `{CENSUS}` since the engine wrote the note, and it could \
+             not be brought forward. That is the panel being OFF SCREEN, not the panel failing \
+             to read the words back — the distinction this check was unable to make until \
+             2026-09-05. SKIPPED, not failed."
         )));
     };
-    let with_note_after = after.get_usize("with_note").unwrap_or(0);
+    let with_note_after = after.with_note;
     if with_note_after == 0 {
         return Ok(Some(format!(
             "THE WORDS WENT INTO THE DOCUMENT AND THE PANEL CANNOT SEE THEM. The engine \
@@ -436,7 +465,16 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // a word inside a heading string, so a trace cannot see it and a screenshot
     // can only confirm it if the reader already knows which row to look at.
     // `selected=` in the census is the only oracle there is.
-    let census_now = session.trace()?.last(CENSUS).map(|l| l.raw.clone());
+    //
+    // ★ Anchored on the selection itself, for [`CENSUS`]' reason: the census
+    // that answers *"did the panel find what the canvas selected?"* must be one
+    // the panel drew AFTER the canvas selected it. The unanchored form fails
+    // both ways — a fossil from before the click carries `selected=0` and would
+    // report a working panel as blind, and a fossil from an earlier selection
+    // carries `selected=1` and would hide a real one.
+    let trace = session.trace()?;
+    let selected_at = trace.events(SELECTED).last().map_or(0, |l| l.lineno);
+    let census_now = trace.last_after(CENSUS, selected_at).map(|l| l.raw.clone());
     if let Some(line) = &census_now
         && !line.contains("selected=1")
     {

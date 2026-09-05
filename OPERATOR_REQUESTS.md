@@ -13424,7 +13424,7 @@ list of universal chords rather than this one line.
 
 ---
 
-## O137 — ◑ **HE WANTS THE THIN-LINES DISPLAY BACK, AND HE IS RIGHT THAT IT NEVER WORKED**
+## O137 — ◑ **HE WANTS THE THIN-LINES DISPLAY BACK, AND HE IS RIGHT THAT IT NEVER WORKED** — BUILT, AWAITING HIS VERDICT
 
 **Ken, 2026-09-05:**
 
@@ -13456,7 +13456,7 @@ against `pdfcer-render` v0.38.0 (`b01964f`): `RenderOptions` carries `fonts`,
 (`font/mod.rs:432-559`) and nothing about stroke width; `render-page --help`
 offers no such flag. The rasteriser handles hairlines
 (`display_list.rs:1210-1222`) but cannot be told to treat every stroke as one.
-**The note still holds.**
+**The note still held — for about six hours.** ⚠ Superseded the same day: the engine shipped `RenderOptions::stroke_display` in `Pass 254.0` (`8f9fb3e`). The paragraph is kept unedited above because it is the exhibit — this project's standing rule is that *a sentence about what the engine cannot do is a dated citation with a shelf life measured in HOURS*, and here is one that was re-derived from the source, was correct when written, and expired before the day did. The verdict below is what changed.
 
 ### ★★★ Which convention — they are opposites and confusing them ships the wrong feature
 
@@ -13476,7 +13476,7 @@ a service run**, at which point adjacent geometry merges. Turning line weights
 off is how a draughtsman reads a busy drawing, and it is the only quick way to
 answer *"are these two lines coincident, or 0.3 mm apart?"*
 
-### Status
+### Status — ✅ BUILT 2026-09-05, the same day it was asked for
 
 **Filed at the engine**, 2026-09-05:
 `request_a_line_weights_off_display_mode_for_dense_cad_drawings.md` — asking for
@@ -13484,11 +13484,73 @@ a `StrokeDisplay` enum on `RenderOptions` (an enum rather than a `bool`, so
 "enhance thin lines" can be a third variant later without `hairline: bool`
 coming to mean *one of the two*).
 
-⬜ **No control will be registered until the field exists** — R8, and re-shipping
-the dead button is precisely the thing he is complaining about. It appears the
-day it can work.
+★★★ **The engine shipped it the same day** — `Pass 254.0`, `8f9fb3e`,
+already in this repo's lock at `b1033ab`. So the paragraph that used to stand
+here — *"no control will be registered until the field exists"* — has been
+discharged rather than reworded, and the control is back.
 
-### ★★ The constraint the shell will hold when it lands, decided now rather than later
+### What he does, in his words
+
+**View ▸ Display ▸ Line weights.** It is on by default and drawn pressed; he
+presses it and it goes out. Every line on the sheet is then drawn **one pixel
+wide**, however wide the file says it is — so at the 200-400 % where he reads a
+title block or traces a service run, lines that were 4-8 px of solid black stop
+merging into one bar and he can see whether two of them are coincident or
+0.3 mm apart. Pressing it again puts the weights back.
+
+The status bar says, while it is off:
+
+> *Line weights are off — every line is drawn one pixel wide. Printing and
+> exporting still use the real widths.*
+
+Measured on `fixtures/a1-titleblock.pdf` at 400 %: **484,078 dark pixels become
+398,578**, a 17.7 % drop. The rest of the page's ink is text and fills, which
+this correctly does not touch.
+
+### ★★★ The constraint, and what makes it a guarantee rather than a promise
+
+> **The one thing worse than not having this feature is having it follow him
+> into a file he sends a client.**
+
+Print, print preview and **every** export — PDF, DXF, PNG, JPEG, SVG, EMF, form
+data, text — render the document's real widths. That is not held by a comment.
+`stroke_display` is assigned in **one function in the crate**,
+`render::worker::render_on_worker`, which rasterizes the interactive canvas and
+is called by nothing else; `app::settings`' funnel, which every export and print
+path builds its options from, never mentions the field, and
+`RenderOptions::default()` is `Actual`. A `syn` scan over every `.rs` in the
+crate fails the build if a second assignment appears — **and it caught a real
+one within the hour**, in the test file written to measure the mode.
+
+★ The concrete danger has a name: `app::actions::export` deliberately takes the
+*document's* annotation stance and layer overrides, arguing — correctly — that
+an export should be *"a picture of what you can see"*. Extending that by one
+field, in good faith, next year, would silently ship him a client deliverable
+with no line weights on it. The scan is what stops that; the paragraph would not
+have.
+
+### What is not done
+
+⬜ **The driven check `line_weights` is written and has never been run.**
+Another track held the machine's pointer; two driven runs at once corrupt each
+other. It climbs to 250 %, presses the item, and compares canvas pixels either
+side, so it is the only assertion that the *button* is reachable rather than
+that the *plumbing* is right.
+
+⬜ **No Settings entry, and that is a decision rather than an omission.** The
+2026-08-17 sweep moved the two surviving `view.*` settings into Settings ▸
+Drawing the page on the argument that *"a value set once and forgotten is not an
+activity"*. This is the other case: it is a reading aid he flips several times
+while reading one sheet, so it is an activity, which is what P2 says a ribbon
+tab picks. It is also per **document**, so two open drawings can disagree —
+which is what comparing a sheet against its neighbour needs. A *persisted*
+default would mean pdfcer opening every drawing showing something the file does
+not say, because of a switch set weeks earlier, which is one step removed from
+the outcome this row forbids. If he wants it to stick, it belongs in
+`app::prefs::opening::PageChrome` beside the other three view toggles, seeded by
+`Prefs::seed_view`, and that is the whole of the work.
+
+### ★★ The constraint the shell WOULD hold when it landed — decided before the field existed, and every clause of it held
 
 - **Canvas only.** Print, print preview and every export — PDF, PNG, JPEG, SVG,
   EMF, DXF — use the document's real widths. **The one thing worse than not
@@ -13558,3 +13620,78 @@ Same footprint, different cell for each control. The column split is not in
 `built_in.ron` at all, so matching it means the manifest carrying columns — a
 schema change — and the mock is not self-consistent about it either. Named on
 `RIBBON_IA.md`'s geometry amendment as the largest open ribbon question.
+
+
+---
+
+## O139 — ✅ **"YOU DRAW A CLOUD AND THE COMMENT LIST DOES NOT SHOW IT" WAS THE TEST, NOT THE PROGRAM — and the two witnesses were one witness copied**
+
+**Not a request. The triage of the two application defects
+`driven-sweep-2.md` reported on 2026-09-05**, closed with driven evidence.
+Nothing about the Comments panel needed fixing; three checks did.
+
+### What the sweep reported
+
+Two driven checks — `save_copy_round_trip` and `undo_redo_round_trip` — failed
+in the same words:
+
+> *"THE COMMENTS PANEL DOES NOT SEE THE ANNOTATION THAT WAS JUST AUTHORED: it
+> listed 12 before the drag and 12 after it. The engine traced `add-markup`, so
+> the annotation IS on the session."*
+
+The sweep called it *"one application defect with two independent witnesses"*.
+
+### What was actually happening
+
+The panel saw the annotation perfectly. It had **stopped drawing** — a
+persisted `userdata/layout.ron` beside the binary named `file.document_properties`
+as the front tab of Review's right stack, and a dock draws only its active
+tab, so the panel published nothing from the moment the mode changed. Both
+checks read `Trace::last("comments-panel")`, which searches the whole capture
+and therefore kept answering with the census the panel had published **three
+hundred frames earlier, in a different mode.** Each check then subtracted that
+one number from itself.
+
+The proof it was never the program, from the same failing trace: the canvas
+pop-up model, reading the same session on the same frames, traced
+`note-popup notes=13` — thirteen, not twelve — while the panel was silent.
+
+★★ **The two witnesses were not independent.** Each carried its own **copy** of
+the same eight-line reader. Duplication is what made one mistake look like
+corroboration, and it is the finding worth keeping: two checks sharing a helper
+can share a defect; two checks sharing a *copy* of one are worse.
+
+### What changed
+
+- One shared `comments_census` module: every census must postdate a named
+  cause (the `mode-changed` line, or the engine's own `add-markup`), the panel
+  is **brought back to the front** if it has gone quiet, and *"the panel said
+  nothing"* now reports SKIP where *"the panel said the wrong number"* reports
+  FAIL. A third copy of the same pattern in `comment_note` went too.
+- The assertion is no longer *"a number went up"*: the census must gain exactly
+  one row **and** gain neither a note nor an author, which is the shape of a
+  freshly drawn shape and of nothing else.
+- The panel's own trace line now carries `filtered=` and `shown=`. Filtering
+  landed the same morning, and the panel's founding rule — *nothing is
+  silently omitted* — held on the screen and not on the diagnostic channel:
+  `listed=` had quietly stopped being the number of rows drawn.
+
+### Driven, and falsified
+
+Both witnesses PASS with the layout cleared; **both PASS against the hostile
+layout seeded by hand**, printing *"the panel came forward on a press of
+`markup.comments`"*; and **both FAIL, exit 1**, against a planted build whose
+listing is frozen at its first frame — *"`listed` 12 → 12 … (expected 12 →
+13)"*. `a_comment_can_be_read_on_the_page_in_read_mode`,
+`copying_a_sticky_note_carries_the_whole_comment` and
+`a_note_can_be_written_onto_a_shape_that_exists` all pass alongside.
+
+### ⬜ One thing for you, and it is small
+
+In **Review**, at a 1400 pt window, the right dock mounts five panels and its
+tab strip fits three: Dimension groups and Document properties sit behind a
+chevron. That is by design and it is disclosed. What is not obviously right is
+that a layout you left behind on some earlier day can put **Comments** behind
+that chevron too — and Comments is the surface Review exists for. Nothing is
+lost and one click brings it back; say the word if you would rather Review
+always opened on the comment list.

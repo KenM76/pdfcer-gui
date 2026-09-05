@@ -499,7 +499,7 @@ fn a_document_that_arrived_broken_gets_the_sentence_that_does_not_offer_undo() {
     // instead would have pinned the most perishable clause in the sentence.
     assert!(
         !blamed.contains("already disagreed with itself when you opened it"),
-        "an audit with no base file to consult must NOT claim the file arrived          broken — that is a statement it has no evidence for: {blamed}"
+        "an audit with no base file to consult must NOT claim the file arrived broken — that is a statement it has no evidence for: {blamed}"
     );
 
     let _ = std::fs::remove_file(&path);
@@ -528,7 +528,7 @@ fn a_healthy_base_file_leaves_the_blame_where_it_belongs() {
     // his undo stack with it.
     assert!(
         !said.contains("already disagreed with itself when you opened it"),
-        "the base file is HEALTHY, so this refusal must not claim it arrived          broken: {said}"
+        "the base file is HEALTHY, so this refusal must not claim it arrived broken: {said}"
     );
 }
 

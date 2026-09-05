@@ -45,7 +45,7 @@
 //!
 //! | Phase | Does | Expected |
 //! |---|---|---|
-//! | A | Review, Comments panel | a `comments-panel listed=N` baseline, and an `objects` line to key phase D on |
+//! | A | Review, Comments panel brought to the front | a `comments-panel listed=N` baseline published **after** the `mode-changed` line, and an `objects` line to key phase D on |
 //! | B | click **Undo** with an empty log | **no** `ribbon-command-invoked`: the control is correctly greyed |
 //! | C | arm Rectangle, drag on the page | `add-markup`, and `listed=N+1` |
 //! | D | click **Undo** | `undo kind=AddAnnotation`, `undo-applied … epoch=`, `listed=N`, **a new `objects` line**, **a new `render-spawn`** |
@@ -169,8 +169,9 @@
 //! * the fixture carries annotations the Comments panel excludes, so `listed=`
 //!   would not move by exactly one.
 
+use crate::checks::comments_census::{self, Census};
 use crate::checks::driving::{
-    self, INVOKE_EVENT, ITEM_PREFIX, SHELL_DIAG_ENV, TAB_EVENT, UNIMPLEMENTED_EVENT, declared,
+    INVOKE_EVENT, ITEM_PREFIX, SHELL_DIAG_ENV, TAB_EVENT, UNIMPLEMENTED_EVENT, declared,
     declared_names, list, list_str, shell_trace,
 };
 use crate::checks::text_selection::aim;
@@ -200,9 +201,6 @@ const MARKUP_TAB: (&str, &str) = ("ribbon.tab.markup", "markup");
 /// Rectangle, because it is the shortest gesture that authors anything: one
 /// drag, one release, no ending to press.
 const RECTANGLE: (&str, &str) = ("ribbon.item.markup.rectangle", "markup.rectangle");
-
-/// The Comments panel's control, used only as a fallback — see [`comments_count`].
-const COMMENTS: (&str, &str) = ("ribbon.item.markup.comments", "markup.comments");
 
 /// **The commands under test**, on the quick-access toolbar.
 ///
@@ -245,15 +243,6 @@ const UNDO_DECLINED_EVENT: &str = "undo-declined";
 
 /// `redo-declined reason=empty-stack`.
 const REDO_DECLINED_EVENT: &str = "redo-declined";
-
-/// `comments-panel pages=… listed=N …` — the count oracle.
-const COMMENTS_EVENT: &str = "comments-panel";
-
-/// The field on [`COMMENTS_EVENT`] that counts the rows the panel drew.
-const LISTED_FIELD: &str = "listed";
-
-/// The field on [`COMMENTS_EVENT`] that counts annotations the panel left out.
-const EXCLUDED_FIELD: &str = "excluded_total";
 
 /// ★ `objects n=… page=… …` — **the epoch oracle**.
 ///
@@ -327,11 +316,6 @@ fn invokes(session: &Session, id: &str) -> Result<usize> {
         .events(INVOKE_EVENT)
         .filter(|l| l.get("id") == Some(id))
         .count())
-}
-
-/// The most recent `comments-panel` line's `listed=` count.
-fn listed(trace: &Trace) -> Option<usize> {
-    trace.last(COMMENTS_EVENT)?.get_usize(LISTED_FIELD)
 }
 
 /// The two invalidation signals, as a pair, at one moment.
@@ -470,60 +454,37 @@ fn click_qat(
     Ok(invokes(session, id)? > before)
 }
 
-/// Put the session into Review with the Comments panel showing, and report how
-/// many annotations the panel can see.
+/// Put the session into Review with the Comments panel showing, and report the
+/// census it publishes there.
 ///
-/// `crate::checks::save_copy`'s function, and its finding is carried across
-/// rather than rediscovered: the mode's own arrangement mounts the panel, and
-/// the ribbon control is a **fallback** only, because on a wide sheet the Markup
-/// tab's bands overflow and the Comments group is not drawn at all.
+/// # ★★★ This used to be a COPY of `save_copy`'s, and the copy was wrong
+///
+/// Both files carried the same eight lines and therefore the same defect: the
+/// census was read with `Trace::last`, which searches the whole capture, so a
+/// panel that had been sent to the back of its dock and had **stopped tracing**
+/// kept answering with the count it published in the previous mode. On the
+/// driven sweep of 2026-09-05 that made this check and `save_copy_round_trip`
+/// fail in identical words against a panel that was working, and the sweep
+/// report read the duplication as corroboration: *"two independent witnesses"*.
+///
+/// The reader now lives in [`crate::checks::comments_census`], once, and its
+/// header carries the whole finding. Nothing in this file reads the census
+/// directly any more, deliberately.
 fn comments_count(
     session: &Session,
     driver: &Driver,
     ui_rect: &str,
     report: &mut CheckReport,
-) -> Result<usize> {
-    driving::click_mode_segment(session, driver, ui_rect, MODE)?;
-    session.settle(16);
-
-    if listed(&session.trace()?).is_none() {
-        report.note(
-            "the `review` arrangement did not mount the Comments panel; trying its ribbon control"
-                .to_owned(),
-        );
-        click_tab(session, driver, ui_rect, MARKUP_TAB)?;
-        click_command(session, driver, ui_rect, COMMENTS, 18)?;
-    }
-
-    let trace = session.trace()?;
-    let count = listed(&trace).ok_or_else(|| {
-        Error::new(format!(
-            "the Comments panel never traced `{COMMENTS_EVENT}`, so this check has no oracle. \
-             Either the panel is not mounted (check `app::modes::defaults`' `{MODE}` arrangement) \
-             or it is drawing without tracing. Trace: {}.",
-            session.trace_path().display()
-        ))
-    })?;
-    let excluded = trace
-        .last(COMMENTS_EVENT)
-        .and_then(|l| l.get_usize(EXCLUDED_FIELD))
-        .unwrap_or(0);
-    if excluded > 0 {
-        return Err(Error::new(format!(
-            "the Comments panel excluded {excluded} annotation(s) — widgets, popups or trap nets, \
-             which it leaves out by editorial rule. This check's verdict is that `{LISTED_FIELD}` \
-             moves by exactly one in each direction, and on a document with excluded annotations \
-             that arithmetic is measuring the panel's rules rather than the undo. Point --pdf at a \
-             drawing without form fields."
-        )));
-    }
-    report.note(format!(
-        "baseline: the Comments panel lists {count} annotation(s) — `{}`",
-        trace
-            .last(COMMENTS_EVENT)
-            .map_or_else(String::new, |l| l.raw.clone())
-    ));
-    Ok(count)
+) -> Result<Census> {
+    comments_census::baseline(
+        session,
+        driver,
+        ui_rect,
+        MODE,
+        "the fixture",
+        "the undo",
+        report,
+    )
 }
 
 /// Launch one process with both diagnostic channels armed.
@@ -681,7 +642,7 @@ fn history_step(
              before the click and {} after.\n\n\
              THIS IS THE ASSERTION NO COUNT IN THIS CHECK CAN MAKE. The Comments panel walks the \
              session's annotations afresh every frame, so a build that mutated the session and \
-             skipped `vector_edit`'s epoch bump satisfies every `{LISTED_FIELD}=` reading here — \
+             skipped `vector_edit`'s epoch bump satisfies every `listed=` reading here — \
              while the operator's decomposition, page-text cache, font inventory and canvas \
              selection all go on describing the revision they just left.\n\
              Look at `app::actions::apply`'s `vector_edit`, step 3.",
@@ -707,19 +668,37 @@ fn history_step(
     ));
 
     // --- the surface the operator reads moved with it ----------------------
-    let now = listed(&session.trace()?);
-    if now != Some(step.expect_listed) {
+    //
+    // ★★★ ANCHORED ON THE ENGINE'S OWN `…-applied` LINE, for the reason
+    // `comments_census` exists: a census published BEFORE the history step
+    // says nothing about the history step, and reading one as though it did is
+    // how this check reported a working panel as broken on 2026-09-05.
+    let Some(now) = comments_census::refresh(session, driver, ui_rect, applied.lineno, report)?
+    else {
+        return Err(Error::new(format!(
+            "{} ran — the engine traced `{}` — and the Comments panel has published no census \
+             since. Not a count that failed to move: the panel is not on screen, and a dock draws \
+             only its active tab. Neither its own tab nor its ribbon control could bring it \
+             forward, so this step has no reader. That is a LAYOUT fact rather than a history \
+             one; clear the `userdata/` directory beside the binary and run again. Trace: {}.",
+            step.what,
+            applied.raw,
+            session.trace_path().display()
+        )));
+    };
+    if now.listed != step.expect_listed {
         return Ok(Some(format!(
-            "★ THE COMMENTS PANEL DOES NOT AGREE. After {}, `{LISTED_FIELD}` should read {} and \
-             it reads {:?}. The engine traced `{}`, so the command DID run — which makes this a \
-             disagreement between the session and the panel rather than a history step that did \
-             not happen.",
-            step.what, step.expect_listed, now, applied.raw
+            "★ THE COMMENTS PANEL DOES NOT AGREE. After {}, `listed` should read {} and the panel \
+             published `{}`. The engine traced `{}`, so the command DID run, and this census was \
+             published AFTER that line — which makes it a disagreement between the session and \
+             the panel rather than a history step that did not happen.",
+            step.what, step.expect_listed, now.raw, applied.raw
         )));
     }
     report.note(format!(
-        "{}: the Comments panel now lists {} annotation(s)",
-        step.what, step.expect_listed
+        "{}: the Comments panel now lists {} annotation(s), in a census it published after the \
+         engine's own `{}` line",
+        step.what, now.listed, applied.event
     ));
     Ok(None)
 }
@@ -877,21 +856,50 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             commit.raw
         )));
     }
+    // ★★★ ANCHORED ON `add-markup` — see `comments_census`. A census published
+    // before the engine authored anything is not evidence that the panel saw
+    // it, and treating one as though it were is what produced this check's
+    // false FAIL of 2026-09-05.
     session.settle(10);
-    let listed_after = listed(&session.trace()?).unwrap_or(listed_before);
-    if listed_after != listed_before + 1 {
+    let caused_at = session
+        .trace()?
+        .last(APPLY_EVENT)
+        .map_or(commit.lineno, |l| l.lineno);
+    let Some(listed_after) =
+        comments_census::refresh(&session, &driver, ui_rect, caused_at, report)?
+    else {
+        return Err(Error::new(format!(
+            "the rectangle was authored (`{}`) and the Comments panel has published no census \
+             since — not a count that failed to move, but a panel that is not on screen, because \
+             a dock draws only its active tab. Neither its own tab nor its ribbon control could \
+             bring it forward, so every later phase would have no reader. That is a LAYOUT fact: \
+             clear the `userdata/` directory beside the binary and run again. Trace: {}.",
+            commit.raw,
+            session.trace_path().display()
+        )));
+    };
+    if !listed_after.describes_one_more(&listed_before) {
         return Ok(Some(format!(
-            "THE COMMENTS PANEL DOES NOT SEE THE ANNOTATION THAT WAS JUST AUTHORED: it listed \
-             {listed_before} before the drag and {listed_after} after it. The engine traced \
-             `{APPLY_EVENT}`, so the annotation IS on the session — which makes this the panel's \
-             finding rather than undo's, and it also means every later phase would be measuring \
-             the panel."
+            "THE COMMENTS PANEL DOES NOT SEE THE ANNOTATION THAT WAS JUST AUTHORED. The fixture's \
+             starting census was {} listed / {} with words / {} with an author, and after the \
+             drag the panel published `{}`. The engine traced `{APPLY_EVENT}`, and this census \
+             came AFTER that line — so the panel drew a frame with the annotation already on the \
+             session and did not count it.\n\n\
+             {}\n\n\
+             That makes it the panel's finding rather than undo's, and it also means every later \
+             phase would be measuring the panel.",
+            listed_before.listed,
+            listed_before.with_note,
+            listed_before.authors,
+            listed_after.raw,
+            listed_after.disagreement(&listed_before),
         )));
     }
     report.note(format!(
-        "the rectangle was authored (`{}`) and the Comments panel lists {listed_after}, one more \
-         than the baseline — there is now exactly one change to take back",
-        commit.raw
+        "the rectangle was authored (`{}`) and the Comments panel lists {}, one more than the \
+         baseline, the new row carrying neither words nor an author — there is now exactly one \
+         change to take back",
+        commit.raw, listed_after.listed
     ));
 
     // --- ★ PHASE D: UNDO ---------------------------------------------------
@@ -905,7 +913,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             event: UNDO_EVENT,
             applied: UNDO_APPLIED_EVENT,
             declined: UNDO_DECLINED_EVENT,
-            expect_listed: listed_before,
+            expect_listed: listed_before.listed,
             what: "the undo",
         },
     )? {
@@ -923,7 +931,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             event: REDO_EVENT,
             applied: REDO_APPLIED_EVENT,
             declined: REDO_DECLINED_EVENT,
-            expect_listed: listed_before + 1,
+            expect_listed: listed_before.listed + 1,
             what: "the redo",
         },
     )? {
@@ -955,12 +963,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
     report.note(format!(
-        "★★ ROUND TRIP PROVEN: {listed_before} → {} authored → {listed_before} undone → {} redone, \
+        "★★ ROUND TRIP PROVEN: {0} → {1} authored → {0} undone → {1} redone, \
          with a fresh `{OBJECTS_EVENT}` line and a fresh `{RENDER_SPAWN_EVENT}` at each step — so \
-         the epoch moved and the page was re-rasterized, not merely the session mutated. `{}` was \
-         greyed before the edit and `{}` is greyed after the redo",
-        listed_before + 1,
-        listed_before + 1,
+         the epoch moved and the page was re-rasterized, not merely the session mutated. `{2}` \
+         was greyed before the edit and `{3}` is greyed after the redo",
+        listed_before.listed,
+        listed_before.listed + 1,
         UNDO.0,
         REDO.0
     ));
@@ -997,10 +1005,9 @@ mod tests {
     /// a check that matches nothing passes vacuously.
     #[test]
     fn the_selectors_match_the_shells_own_spelling() {
-        for (region, id) in [RECTANGLE, COMMENTS] {
-            assert_eq!(region, format!("ribbon.item.{id}"));
-            assert!(region.starts_with(ITEM_PREFIX), "{region}");
-        }
+        let (region, id) = RECTANGLE;
+        assert_eq!(region, format!("ribbon.item.{id}"));
+        assert!(region.starts_with(ITEM_PREFIX), "{region}");
         // ★ The two commands under test are on the QAT and on NO tab, which is
         // why they are addressed under a different prefix. A build that moved
         // either onto a tab would break this — and it would also silently take
@@ -1072,7 +1079,7 @@ pdfcer-diag undo-applied page=0 n=1 epoch=2 disclosures=none\n\
 pdfcer-diag comments-panel pages=1 listed=12 with_note=0 excluded_total=0\n\
 pdfcer-diag objects-unavailable page=0 reason=decompose-failed detail=\"bad stream\"\n";
         let app = Trace::parse(text, "pdfcer-diag");
-        let shell = Trace::parse(text, driving::SHELL_TRACE_PREFIX);
+        let shell = Trace::parse(text, crate::checks::driving::SHELL_TRACE_PREFIX);
 
         assert!(app.started("start"));
         assert!(
@@ -1094,7 +1101,10 @@ pdfcer-diag objects-unavailable page=0 reason=decompose-failed detail=\"bad stre
             Some("2"),
             "the engine's line is what carries the epoch the undo produced"
         );
-        assert_eq!(listed(&app), Some(12));
+        let census = comments_census::Census::since(&app, 0)
+            .expect("a census with no filter field reads as unfiltered")
+            .expect("the census line is in this capture");
+        assert_eq!(census.listed, 12);
 
         // ★ `objects` and `objects-unavailable` are two events, and the epoch
         // oracle must not count the second as the first. `Trace::events`

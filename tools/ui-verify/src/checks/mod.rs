@@ -140,6 +140,10 @@ pub mod checkbox_resize;
 /// pop-up, driven in READ mode, which is the mode the operator reported he could
 /// not read a sticky note in. ⬜ NOT RUN; see the module's own header.
 pub mod comment_popup;
+/// Not a check — the Comments panel's census, read the one way that is honest.
+/// Shared by `save_copy` and `undo_redo`, which each carried a copy of it and
+/// therefore each carried the same defect. See its header.
+pub mod comments_census;
 pub mod compact_save;
 pub mod delete_key;
 /// The Manage-dimension-groups window: it opens, it creates a group, and the
@@ -166,6 +170,11 @@ pub mod embed_bundled;
 pub mod embed_fonts;
 pub mod export_dxf;
 pub mod export_form_data;
+/// ★★★ **The CAD "line weights off" display mode** — `OPERATOR_REQUESTS.md`
+/// O137, asked for by name. The pixel assertion is SIGNED (strictly LESS ink),
+/// because the convention he asked for and the one it is confused with are
+/// opposites. ⬜ NOT RUN; see the module's own header.
+pub mod line_weights;
 /// Putting a control where the pointer can hit it — scrolling a pane, raising a
 /// dock tab, bringing a control inside its panel's body. Split from
 /// [`driving`] on 2026-09-05 under R2; its header carries the seam.

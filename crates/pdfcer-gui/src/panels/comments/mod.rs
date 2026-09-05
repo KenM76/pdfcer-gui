@@ -356,7 +356,12 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     let view = doc.session.view();
     let listing = model::collect(&view, &doc.pages, &ce_dimensions);
 
-    trace(doc, &listing);
+    // Read BEFORE the strip is drawn, so the trace can state whether a filter
+    // is narrowing the list — see [`trace`] for why that field exists and for
+    // the one-frame lag this read implies. Cloned rather than borrowed because
+    // `state` is `&mut` for the rest of the draw.
+    let filter_now = state.comments_mut().filter.clone();
+    trace(doc, &listing, &filter_now);
 
     let excluded = t::comments_excluded(
         listing.excluded.widgets,
@@ -415,6 +420,12 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     // panel state has ended by the time the list is drawn. A `Filter` is three
     // small fields; the alternative is threading a borrow through the whole
     // draw for nothing.
+    //
+    // ★ Re-read rather than reusing `filter_now` from the top of the draw, and
+    // that is not redundancy: `filter_strip` may have CHANGED the filter on
+    // this very frame, and a chooser whose effect waited for the next repaint
+    // would read as a control that does not work. The trace's copy is the
+    // pre-strip one deliberately — see [`trace`].
     let narrowing = state.comments_mut().filter.clone();
     let rows = filter::apply(listing.rows.clone(), &narrowing);
     if narrowing.is_narrowing() {
@@ -1257,7 +1268,41 @@ fn editor(
 /// exclusion counts decide the exclusion line, and `ce_dimensions`,
 /// `suppressed`, `unresolved`, `replies` and `group_members` each decide a row
 /// caption. If a number here is wrong, something on screen is wrong with it.
-fn trace(doc: &OpenDoc, listing: &Listing) {
+///
+/// # ★★★ `listed` is the CENSUS, `shown` is what is on screen — 2026-09-05
+///
+/// Until the filter landed this morning the two were the same number and this
+/// comment said `listed` was *"the rows the panel drew"*. That sentence became
+/// false the moment [`filter::apply`] was inserted between [`model::collect`]
+/// and the draw, and it became false **silently**: a reader outside the
+/// process saw a census shrink and had no way to tell a filtered list from a
+/// document that had lost annotations.
+///
+/// That is exactly the omission this panel's founding discipline forbids —
+/// *"nothing is silently omitted"* — held on the diagnostic channel as well as
+/// on the screen, because two driven checks (`save_copy_round_trip` and
+/// `undo_redo_round_trip`) use this line as their **only** oracle for whether
+/// an annotation reached the document.
+///
+/// So the line now carries both, and they answer different questions:
+///
+/// | field | question | source |
+/// |---|---|---|
+/// | `listed` | how many annotations does this document have that a reviewer may work through | [`model::collect`], unfiltered — the census |
+/// | `shown` | how many rows is the operator actually looking at | the same rows after [`filter::apply`] |
+/// | `filtered` | is the operator's filter narrowing the list right now | [`filter::Filter::is_narrowing`] |
+///
+/// `listed` deliberately keeps its old meaning so no existing reader changes
+/// verdict; what is new is that `filtered=1` now tells one what it never
+/// could, and `shown` says by how much.
+///
+/// ⚠ **The filter is read one frame late**, and that is deliberate rather than
+/// overlooked: this runs *before* [`filter_strip`] draws, so a filter the
+/// operator changes on frame *N* appears here on frame *N+1*. The panel
+/// repaints continuously, so a filter that is on is reported as on within a
+/// frame; what the lag rules out is reading a single frame's line as evidence
+/// about a filter set in that same frame, which nothing does.
+fn trace(doc: &OpenDoc, listing: &Listing, filter: &filter::Filter) {
     crate::diag::trace(|| {
         let ce = listing.rows.iter().filter(|r| r.is_ce_dimension).count();
         let suppressed = listing.rows.iter().filter(|r| r.suppressed).count();
@@ -1301,7 +1346,8 @@ fn trace(doc: &OpenDoc, listing: &Listing) {
             "comments-panel pages={} listed={} with_note={} descriptions={} authors={} \
              ce_dimensions={ce} suppressed={suppressed} unresolved={unresolved} \
              replies={replies} group_members={group_members} selected={selected} \
-             excluded_widgets={} excluded_popups={} excluded_trapnet={} excluded_total={}",
+             excluded_widgets={} excluded_popups={} excluded_trapnet={} excluded_total={} \
+             filtered={} shown={}",
             doc.pages.len(),
             listing.rows.len(),
             listing.with_note_text(),
@@ -1311,6 +1357,8 @@ fn trace(doc: &OpenDoc, listing: &Listing) {
             listing.excluded.popups,
             listing.excluded.trap_nets,
             listing.excluded.total(),
+            u8::from(filter.is_narrowing()),
+            listing.rows.iter().filter(|r| filter.keeps(r)).count(),
         )
     });
 }
