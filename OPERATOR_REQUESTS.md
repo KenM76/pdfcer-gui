@@ -849,6 +849,37 @@ Silence is this project's founding defect class.
 
 #### 1 — the accumulating list is `/Contents`, and it is in the engine
 
+> ### ✅ FIXED AT THE ENGINE — `Pass 251.0`, released in v0.39.0, 2026-09-05
+>
+> Filed 2026-09-04 22:02, answered the next morning. `text_edit_command` no
+> longer sweeps `contents[1..]` only on the first rewrite; it now empties **every
+> extra whose current payload is non-empty**, per surgery. A run appended after
+> the first rewrite is folded into `contents[0]` and its extra emptied on the
+> very next surgery — no second copy, and **it does not compound**.
+>
+> ★ Their reply confirms the diagnosis including its oddest part: *"your
+> diagnosis was exact — including that the operator's 'switch tools, make another
+> one' exception localises it to the `first_edit == true` sweep."* **His
+> exception is what found it**, and it was the only clue that distinguished this
+> from a dozen plausible wrong theories.
+>
+> ★★ **`reflow_block` is fixed in the same pass**, and by refusing rather than
+> guessing: it now names the case — *"text was added to this page this session
+> (in a new content stream); reflow is planned against the base content and would
+> drop the added run, so save and reopen before reflowing this page"* — which is
+> the option this shell offered rather than one they invented.
+>
+> ⚠ **NOT yet in our lock.** Everything below is still true of the build this
+> repository compiles today, and becomes false the moment the bump lands.
+> Annotated now rather than then, because a limitation sentence is a citation
+> with an hours-long shelf life and this is the third of three answered today.
+>
+> ⇒ **The bump also deletes one of our own guards**: `ReflowRefusal::PageAlreadyEdited`
+> refuses reflow on *any* page edited this session — an over-broad forecast that
+> exists only because `reflow_block` used to delete silently. The engine's reply
+> says in as many words *"you can drop your over-broad forecast gate."* It comes
+> out in the same commit; `RESUME.md` carries it.
+
 `add_text` appends a **new content stream object** to the page's `/Contents` and
 never touches `contents[0]`. Every content surgery — `transform_objects` (which
 is the verb a text drag reaches; `move_objects` is path-only), `edit_text`,
