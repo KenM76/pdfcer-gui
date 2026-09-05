@@ -378,7 +378,6 @@ fn canvas_rect(rect: pdfcer_core::page_tree::Rect, page: &Page) -> Option<Rect> 
 /// highlight's span or inside a cloud's box opens its note. Narrowing to ink
 /// would make the note on a hollow rectangle reachable only by clicking its
 /// hairline border.
-#[must_use]
 /// **Whether this annotation has a pop-up worth opening at all.**
 ///
 /// # The defect this closes
@@ -427,6 +426,7 @@ pub fn has_something_to_read(note: &NoteView) -> bool {
         .is_some_and(|c| !c.trim().is_empty())
 }
 
+#[must_use]
 pub fn under(notes: &[NoteView], point: Pos2, tolerance: f32) -> Option<&NoteView> {
     notes
         .iter()
