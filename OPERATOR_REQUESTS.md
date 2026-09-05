@@ -80,6 +80,227 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
+## O141 — ⬜ **"IF THE CHARACTER ISN'T AVAILABLE IN A PDF ARE WE ABLE TO CHANGE TO A DIFFERENT FONT?" — YES. It already works, pdfcer just never offers it to you**
+
+> *"if the character isn't available in a pdf are we able to change to a
+> different font?"*
+>
+> — 2026-09-05, asked while you were trying to fix the `clien` typo
+
+**Yes.** Changing the font is not merely one way to type a character the
+document's own font does not carry — it is the **only** way, and pdfcer can
+already do it. What is missing is that pdfcer never mentions it at the moment
+you hit the wall. It tells you the character is not in the font and stops there,
+as though that were the end of the sentence.
+
+⚠ **This is a different question from the one that stopped you on the apartment
+file, and both are real.** The typo (O140) is refused because that document is
+written one letter per piece — the font has nothing to do with it, and no font
+change fixes it. The question you asked here is about a real, separate wall you
+will meet on other documents. It is answered on its own below rather than closed
+with the correction.
+
+### What the wall actually is
+
+When a program makes a PDF it usually embeds a **subset** of each font — only
+the letters that appear on the page, to keep the file small. Your apartment
+quote carries `Arimo-Bold` as 8,640 bytes holding about thirty letters — the ones
+your headings happened to use.
+
+★★ **It is narrower than "no accents and no symbols", and this is the part worth
+seeing.** Measured on your file today, that font will not take a `€`, a `%`, an
+`@` — **or a plain lowercase `q`**, because no word in those headings has one in
+it. Nothing about the font is foreign or exotic. Whatever was not printed is
+simply not in the file.
+
+So if you put your cursor in that line and type a `€`, pdfcer refuses, and it
+names the character:
+
+> *"this font has no glyph for '€', and pdfcer cannot add one to a font that is
+> already embedded. Keep this edit to characters the font already uses, or
+> choose a font that covers it."*
+
+That last clause is the answer to your question, and it is buried in an error
+message.
+
+### The two ways out, and pdfcer can only do one of them
+
+1. **Put the missing letter into the document's own font.** This is what a full
+   PDF editor does eventually and pdfcer cannot do it yet — it means rebuilding
+   the embedded font program with an extra glyph in it. The engine calls this
+   font subsetting and has it deferred.
+2. **Write those characters in a different face.** pdfcer can do this today,
+   either with a font already somewhere in your document or with one of the
+   fourteen standard PDF fonts (Helvetica, Times, Courier and their bold and
+   italic forms) that every PDF reader on earth is required to have.
+
+**Route 2 is built.** Select the text, go to **Properties ▸ This text**, and the
+face chooser lists the faces that will work. That control has been there since
+2026-08-27. Nothing in the program connects it to the refusal you just met.
+
+### Proved end to end on your own file before this row was written
+
+Not reasoned about — run, with the engine's own command line, on
+`apartment work - signed.pdf`:
+
+```
+edit-text --page 2 --find "n" --replace "€"
+  → refused: this font has no glyph for '€'                      (exit 9)
+
+format-text --page 2 --find "n" --set-font Helvetica-Bold
+  → set_font=AAAAAA+Arimo-Bold->Helvetica-Bold
+
+edit-text --page 2 --find "n" --replace "€"
+  → OK, base_font=Helvetica-Bold
+
+extract-text --pages 2
+  →  4. I€terior Door Package
+```
+
+The `€` went in. It took two steps and a command line, and that is the whole of
+what is wrong with it.
+
+### ★★★ What you would see change on the page, stated plainly because you should decide with it in front of you
+
+**The letters change shape.** That is what a font substitution *is*. Three things
+follow from it and none of them is hidden:
+
+- **How visible it is depends entirely on the document.** Your apartment quote
+  uses `Arimo`, which is a metric-compatible clone of Arial, and Arial shares its
+  letter widths with Helvetica. Swapping that run to `Helvetica-Bold` moved the
+  line by **0.005 pt** and would be nearly impossible to see. A document set in
+  something distinctive — a logo face, a condensed drawing font — would show the
+  swap immediately.
+- **It is scoped to the piece of text you are editing**, not to the page or the
+  document. In the program that is the show operator your cursor is pinned in:
+  usually a word, a title-block cell or a line. Everything around it is
+  untouched.
+- **★★ The substituted characters are NOT embedded in your file.** A standard-14
+  face is a *name* in the PDF, not a font program — the reader supplies the
+  letterforms. So it will look right on your machine and be drawn with whatever
+  Helvetica your client's reader happens to have. **This is the part you cannot
+  see by looking at your own screen**, and it is the reason the disclosure below
+  is not optional.
+- **★ It does NOT raise the licence question you settled in O47**, and that is
+  worth saying so you do not have to re-open it. O47 is about *embedding*
+  pdfcer's own copies of those faces — putting BSD-3-Clause font programs
+  **inside** a file you then send out, which carries an attribution condition
+  with it, which is why that is a checkbox and is off by default. Naming a
+  standard-14 face is the opposite act: nothing of pdfcer's goes into your
+  document. The engine says so itself on the run above: *"pdfcer ADDED one as
+  `/pdfceF6` — a standard-14 face … so **no font program is embedded and no bytes
+  of glyph outline were added**."* A dictionary entry naming a face, not a copy
+  of one.
+
+### Rule 4 — this is the case its surviving half was written for
+
+The standing rule is *fuzzy, never sneaky*: pdfcer may make an inference, and it
+may **never** make one silently. It forbids **marking the drawing** — no tint, no
+badge, no dashed outline on a substituted letter, because the editing canvas must
+look exactly like the saved file — and it **requires** the inference to be
+reported **off** the canvas, in the status bar or a panel.
+
+A font swap is squarely the second half. It is a change you asked for, so it is
+not sneaky by being made; it becomes sneaky by being made **without saying which
+letters changed face, to what, and that the new face is not carried in the
+file**. The apartment case is the sharpest version: a swap you would be unable to
+detect by looking at your own screen, on a document you are about to send to a
+client.
+
+So what gets built says it twice — once when you choose the face, once when the
+edit lands — and draws nothing on the page. Half of that already exists: the
+chooser's own rows already say *"pdfcer can add this one; the reader's copy draws
+it"*.
+
+### ⬜ What is left to build, and it is shell work, not engine work
+
+**The offer.** When an edit is refused because a character is not in the font,
+pdfcer should say the character by name — *"the `€` is not one of the letters
+this font carries"* — and put the face chooser right there, instead of leaving
+you to find it in a panel and work out that it is the same problem. Everything
+needed is already in the refusal the engine hands back: which character, which
+font, and why.
+
+**⚠ One honest limit on that offer, and it is filed rather than hidden.** The
+chooser's list is tested against the characters **already in** the text, not
+against the character you are about to type. So it can offer a face that then
+refuses your `€`, and the refusal is a sentence rather than a greyed-out row.
+That is the standing ruling on this surface (*offer it and say what happened*,
+same as the Bold button) and it is a coherent way to ship — it is simply less
+exact than it could be. Filed as
+`request_font_preflight_tests_the_text_that_is_there_not_the_text_about_to_be_typed.md`,
+asking for a coverage query that takes the text you intend to write. **Nothing is
+blocked on the reply.**
+
+### ⚠ And one thing that would have made this row wrong if it had gone unchecked
+
+**On the apartment file specifically, this whole route is unreachable from your
+cursor**, and not for a font reason. That page is written one letter per piece,
+so the caret refuses before the font question is ever asked (O140). The two-step
+above worked because the command line searches the whole page. Any claim that
+"you can fix this by changing the font" would be false **on the one document you
+asked the question about**, and true on most others.
+
+### ⬜ NOT VERIFIED
+
+No window was rendered. The engine behaviour above is driven on your own file
+through `pdfcer.exe` 0.39.0; the face chooser's on-screen behaviour is covered by
+unit tests and by `the_face_chooser_offers_a_face_the_document_does_not_contain`,
+which has **not** been run against this build. The offer described under *What is
+left to build* does not exist yet — it is a design, and it is named as one.
+
+### While measuring this, two engine defects turned up and are filed
+
+- `request_classify_font_reads_fontdescriptor_from_the_type0_parent_where_it_never_is.md`
+  — pdfcer tells you an embedded font is **not** embedded on most real
+  documents, so the sentence about whose letterforms your client will see is the
+  wrong way round. Your apartment file shows all three of its own reports
+  disagreeing about one font.
+- `request_hit_test_has_no_distance_bound_so_a_click_on_blank_paper_finds_text.md`
+  — unrelated to fonts; see the note on O142 below.
+
+---
+
+## O142 — ⬜ **A CLICK ON EMPTY PAPER CANNOT START NEW TEXT, AND IT IS YOUR OWN 2026-08-19 REQUEST QUIETLY NOT WORKING**
+
+**Not something you reported.** It was found on 2026-09-05 while looking for
+blank paper on your file, recorded in this project's own feature register, and
+**re-measured from scratch today before being filed**, because two requests this
+week were sent to the engine on diagnoses that did not survive re-measurement.
+It is on your list because the request it breaks is yours.
+
+> *"How do I make new text when I click on the canvas and expect to edit there?
+> Same problem as the previous."* — 2026-08-19
+
+That was built: one text tool, click in text to edit it, click in blank space to
+start some. It cannot work on any page that has text on it, and it never could.
+
+**Why.** The engine's *where did I click* query has no distance limit. Asked
+about a point with nothing near it, it does not answer *"nothing here"* — it
+finds the nearest line of text and answers with that, at any distance. Measured
+today rather than assumed: on your apartment quote, a click **100,000 points to
+the right** of a 612-point-wide page still lands in the same run. On `SW41177`,
+the same. Across both documents and thirty probes it answered *"nothing here"*
+**zero times**.
+
+So the branch that turns an empty click into new text is unreachable, and pdfcer
+answers a click on blank paper by putting your cursor in whatever text was
+nearest.
+
+**What you can do meanwhile:** Add text still works — it is the other of the two
+doors and it never asks that question. What is broken is that the two doors were
+supposed to be one, and nothing tells you which one you are at.
+
+**Filed at the engine** as
+`request_hit_test_has_no_distance_bound_so_a_click_on_blank_paper_finds_text.md`,
+with the measurement and a copy-pasteable reproduction. Deliberately **not**
+worked around here: from outside, a cursor that lands 3 points past the end of a
+line (correct, and you use it) and one that lands 215 points away are the same
+answer, so any distance limit invented here would be a second opinion about the
+engine's own geometry and would drift from it.
+
+---
+
 ## O140 — ◑ **FIXED 2026-09-05, AWAITING YOUR VERDICT** — you tried to fix a typo, the program ignored you, and it now tells you why in your own words
 
 > *"on page 2 there is a spelling mistake — clien instead of client. if I try to
