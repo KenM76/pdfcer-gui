@@ -28,3 +28,9 @@ Thumbs.db
 
 # Cygwin/MSYS crash dumps, produced by the shell rather than by this project.
 *.stackdump
+
+# Python bytecode from the gate instruments. Importing `verb-coverage.py` to
+# spot-check its matcher on 2026-09-05 left a `tools/__pycache__/` behind that
+# `git status` then reported as untracked source.
+__pycache__/
+*.pyc
