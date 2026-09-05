@@ -91,6 +91,20 @@
 //! | [`DOCK_TAB`] | a panel tab in the dock | `view.reset_layout` | The only registered command that acts on the dock. The **command** is wired (`PdfcerApp::dispatch_command` calls `Modes::reset` with `ResetScope::All`); the **menu** still cannot be attached — see the warning below. |
 //! | [`OBJECTS_ROW`] | a row in the Objects panel | `file.properties` | The Properties panel is *where an object row is described*; right-clicking a row focuses it and this is the command that puts the description on screen — which it now does: `PdfcerApp::show_panel` activates the panel, mounting it first if the operator's arrangement no longer holds it. |
 //!
+//! ## ★ `dock.tab` — the note below described a gap that CLOSED
+//!
+//! ⚠ **The heading and the paragraph under it were true until the
+//! tab-menu seam landed, and are kept only for the record.**
+//! `egui_shell::dock::Dock::with_tab_menu` exists,
+//! `crate::app::surfaces::docks` supplies a handler, and this menu is
+//! attached on every drawn panel tab — with its conditions corrected per
+//! tab, so `view.panel_float` and `view.panel_dock` are never both offered.
+//! It is additionally attached to a **floating** panel's header strip by
+//! `crate::app::surfaces::floating_panels`, which is why one menu
+//! definition serves two surfaces.
+//!
+//! The original note, unedited:
+//!
 //! ## ★ `dock.tab` is defined and **cannot be attached from this crate**
 //!
 //! `egui-shell`'s dock draws its own tabs and already owns their secondary
@@ -132,7 +146,7 @@
 //! never interprets — the same kind of string a command id is.
 
 use egui_shell::manifest::{Item, Shell};
-use egui_shell::menu::{ContextMenu, Menu, Menus};
+use egui_shell::menu::{Menu, Menus};
 use egui_shell::{CommandRegistry, ConditionSet, HandlerToken};
 
 // ===========================================================================
@@ -200,6 +214,21 @@ pub const CANVAS_FIELD: &str = "canvas.field";
 ///
 /// Defined but not attachable from this crate — see the module header.
 pub const DOCK_TAB: &str = "dock.tab";
+
+/// **The panel under this tab is docked**, so it can be floated.
+///
+/// Set per drawn tab by `crate::app::surfaces`, never by
+/// `PdfcerApp::conditions` — because it is a fact about *one tab*, and the
+/// frame's condition set describes the frame. `MenuHost::with_conditions`
+/// is the sanctioned way to correct a condition to a value the caller has
+/// just computed, and its docs carry the argument for why that is not a
+/// second source of truth.
+pub const PANEL_DOCKED: &str = "panel.docked";
+
+/// **The panel under this tab is in a window of its own**, so it can be
+/// docked back. The complement of [`PANEL_DOCKED`]; exactly one of the two
+/// holds for any panel that is being drawn at all.
+pub const PANEL_FLOATING: &str = "panel.floating";
 
 /// Right-click on an object row in the Objects panel.
 pub const OBJECTS_ROW: &str = "objects.row";
@@ -535,7 +564,33 @@ pub fn built_in() -> Menus {
         // View ▸ Window as well — which a menu is allowed to mirror, because
         // context menus are not tabs.
         // -------------------------------------------------------------------
-        .with(Menu::new(DOCK_TAB).with_items([Item::command("view.reset_layout")]))
+        // ★★★ **The three per-panel layout verbs joined it on 2026-09-04.**
+        //
+        // Each is `shown_when` a condition the tab handler sets PER TAB — see
+        // `crate::app::surfaces`, which corrects the frame's condition set
+        // once per drawn tab through `MenuHost::with_conditions`. So the menu
+        // on a docked panel's tab offers Float and Close; the menu on a
+        // floating panel's header strip offers Dock and Close; and neither
+        // ever shows a row that would do nothing.
+        //
+        // ★★ `shown_when` and not `enabled_when`, which is R9 exactly: an
+        // unavailable capability renders NOTHING. "Dock" on a panel that is
+        // already docked is not temporarily unavailable — it is meaningless —
+        // and a greyed row would make the operator wonder what they had to do
+        // to earn it.
+        //
+        // ★ Order: the two verbs that MOVE the panel first, the one that
+        // takes it away last, and Reset layout below them because its
+        // operand is the whole dock rather than this panel. Close is not
+        // adjacent to Float, deliberately, so a mis-aimed click on the row
+        // above Close costs a window rather than a panel.
+        .with(Menu::new(DOCK_TAB).with_items([
+            Item::command("view.panel_float").shown_when(PANEL_DOCKED),
+            Item::command("view.panel_dock").shown_when(PANEL_FLOATING),
+            Item::command("view.panel_close"),
+            Item::Separator,
+            Item::command("view.reset_layout"),
+        ]))
         // -------------------------------------------------------------------
         // objects.row — a row in the Objects panel.
         //
@@ -852,48 +907,18 @@ impl<'a> MenuHost<'a> {
         context_id: &str,
         conditions: &ConditionSet,
     ) -> Vec<HandlerToken> {
-        // ★★★ **The rows publish where they were drawn**, since 2026-08-28.
+        // ★★★ The two optional capabilities every pdfcer context menu is
+        // built with — the rect sink that makes a row clickable by a driven
+        // check, and the icon painter that makes a row draw the glyph its
+        // command already names — live in [`super::menus_wiring`], with the
+        // full account of why each exists and what its absence cost.
         //
-        // This was `Menu::attach(…)` — the convenience constructor that takes
-        // *no optional capabilities at all* — so pdfcer's context menus drew
-        // rows and told the diagnostic channel nothing about them. The
-        // consequence was narrow and total: **no driven check could click a
-        // context-menu row**, ever, because there was no coordinate to aim at.
-        //
-        // `right_clicking_a_form_field_opens_its_menu` is the evidence. It is
-        // the first driven context menu in this project's history, it asserts
-        // that the right menu *resolved* and that it *offered something*, and
-        // it stops there — because the next step, pressing a row, had nothing
-        // to press. Its own header records the shape: *"a gesture with no
-        // driver is a gesture R1 cannot reach, and the gap left no failing test
-        // behind to advertise itself."* This is the same finding one layer
-        // down: the driver existed and the target did not.
-        //
-        // ★★ Why an `egui` popup makes this the ONLY possible answer, rather
-        // than the tidiest one. `egui_shell::menu::report`'s header states it:
-        // a context menu is drawn at the pointer, and `egui` may flip it to any
-        // of several alignments to keep it on screen. There is no fraction of
-        // the window it can be hard-coded to and no layout a harness could
-        // re-derive. Publishing the rectangle is not the best of three options;
-        // it is the only one.
-        //
-        // ★ The names are `egui_shell::menu::report`'s — `menu.body.<context>`
-        // and `menu.item.<context>.<command id>` — and they go through
-        // `crate::diag::ui_rect`, the same sink the ribbon, the status bar and
-        // the dock already publish to. So a harness filters one channel and one
-        // prefix, and nothing here invents a naming scheme.
-        //
-        // ★ Cost when nobody is listening: `Reporter` does not format a name
-        // unless a sink is present, and `crate::diag::ui_rect` is a no-op
-        // without `PDFCER_DIAG`. A closure per attach, and nothing else.
-        let mut sink = |name: &str, rect: egui::Rect| crate::diag::ui_rect(name, rect);
-        ContextMenu::new().reporting_rects_to(&mut sink).attach(
-            response,
-            self.shell,
-            self.registry,
-            context_id,
-            conditions,
-        )
+        // They are there rather than here because both are properties of
+        // the BUILD, identical on every frame and at every call site, while
+        // this type exists to bind one frame's document, registry and
+        // conditions. Mixing the two put the answer to "why does a menu row
+        // have a glyph?" in the middle of a lifetime-juggling struct.
+        super::menus_wiring::attach(self.shell, self.registry, response, context_id, conditions)
     }
 
     /// **Whether right-clicking this context would produce a menu at all.**
@@ -1290,8 +1315,14 @@ mod tests {
             .into_iter()
             .map(|(_, id)| id)
             .collect();
+        // The exemption register, and the assertion below consults it rather
+        // than being weakened. See `manifest::TAB_SCOPED`.
+        let tab_scoped: BTreeSet<&str> = manifest::TAB_SCOPED.iter().map(|(id, _)| *id).collect();
         for menu in built_in().iter() {
             for id in menu.command_ids() {
+                if tab_scoped.contains(id) {
+                    continue;
+                }
                 assert!(
                     on_a_surface.contains(id),
                     "menu `{}` is the ONLY route to `{id}`. A context menu is a third \
@@ -1389,7 +1420,15 @@ mod tests {
                     "view.zoom_actual",
                 ][..],
             ),
-            (DOCK_TAB, &["view.reset_layout"][..]),
+            (
+                DOCK_TAB,
+                &[
+                    "view.panel_float",
+                    "view.panel_dock",
+                    "view.panel_close",
+                    "view.reset_layout",
+                ][..],
+            ),
             (OBJECTS_ROW, &["file.properties"][..]),
         ] {
             let menu = menus.get(context).expect("defined");
@@ -1398,13 +1437,29 @@ mod tests {
                 ids, expected,
                 "menu `{context}` no longer matches the table in this module's header"
             );
-            // Nothing in this document is a custom item or a separator yet,
-            // and a document of pure commands is what makes the sweeps above
-            // total rather than approximate.
+            // ★★ **No CUSTOM item**, which is what the sweeps above would
+            // miss. Narrowed from "no non-command item" on 2026-09-04, when
+            // `dock.tab` grew a separator.
+            //
+            // The invariant's own stated reason is the test: the sweeps walk
+            // `command_ids()`, so an item carrying a command id they cannot
+            // see is a hole in them. `Item::Separator` carries no id, refers
+            // to no capability and cannot be a route to anything — there is
+            // nothing for a sweep to miss — whereas `Item::Custom` carries a
+            // *kind* the application draws, which can be a control that
+            // invokes something, and `manifest::COLOUR_SWATCH`'s own note
+            // records a custom kind that no renderer ever matched going
+            // unreported for a whole release.
+            //
+            // ⇒ So the assertion names the thing it was protecting against
+            // rather than everything that is not a command. Widening it back
+            // would forbid a separator in every menu in the program to guard
+            // against a case a separator cannot produce.
             assert!(
-                menu.items()
+                !menu
+                    .items()
                     .iter()
-                    .all(|i| matches!(i, Item::Command { .. })),
+                    .any(|i| matches!(i, Item::Custom { .. })),
                 "menu `{context}` holds a non-command item; the sweeps in this file walk \
                  `command_ids()` and would not see it"
             );

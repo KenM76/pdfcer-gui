@@ -506,9 +506,43 @@ pub fn has_a_file(doc: &OpenDoc) -> bool {
 /// And `saved_epoch` must never be reset to make an answer come out right:
 /// `edit_epoch` is the cache key for the decomposition, the page text, the
 /// texture and every live rule-4 disclosure. Two numbers, one question each.
+/// # ★★★ 2026-09-04 — the third term, and the silent loss it closes
+///
+/// `EditSession::apply_redactions` (`Pass 250.1`) applies a redaction into the
+/// session by **collapsing** it: the redacted bytes become the session's new
+/// base and the edit and undo stacks are emptied. So immediately afterwards
+/// `is_modified()` answers **`false`** — correctly, on its own terms, because
+/// the session no longer differs from its base. Measured against
+/// `pdfcer-core` `8b24a0a` on 2026-09-04: `undo_depth` 1 → 0,
+/// `has_applied_redaction()` `false` → `true`, `is_modified()` `false`.
+///
+/// With two terms this predicate therefore answered **clean** on a document
+/// whose most consequential edit had not been written. Every consumer is the
+/// same one predicate, so the whole of it failed at once: the tab strip showed
+/// no unsaved marker, Close asked nothing, and Quit asked nothing. The operator
+/// applies a redaction, sees the page change, closes the document — and the
+/// redaction is gone with no prompt.
+///
+/// `session.has_applied_redaction()` is the term that sees it. It is an OR
+/// beside `is_modified()` rather than a replacement for it, and it stays true
+/// for the life of the session; the `edit_epoch != saved_epoch` term is what
+/// turns it off again once the redaction has actually been written.
+///
+/// ★ **The one case it now over-reports**, stated rather than discovered:
+/// redact → save → edit → undo leaves `is_modified()` false, the epochs
+/// differing (an undo bumps the epoch like everything else) and this answering
+/// **dirty** on a document that matches its file. That costs one unnecessary
+/// prompt. The alternative error is a redacted document closed without one, and
+/// between a spurious question and a silent loss there is no contest.
+///
+/// ⚠ This is **not** a save gate. The engine's instruction is explicit — *"do
+/// not gate save on `has_applied_redaction()`"* — because the collapse leaves
+/// no un-redacted base for any save mode to leak. This predicate asks whether
+/// there is something to save, never whether saving is permitted.
 #[must_use]
 pub fn has_unsaved_edits(doc: &OpenDoc) -> bool {
-    doc.session.is_modified() && doc.edit_epoch != doc.saved_epoch
+    (doc.session.is_modified() || doc.session.has_applied_redaction())
+        && doc.edit_epoch != doc.saved_epoch
 }
 
 /// ★★★ **Save. In place. The one every other program has.**
@@ -786,6 +820,42 @@ fn write_copy(doc: &OpenDoc, target: &Path) -> Result<SaveReport, SaveError> {
     let (bytes, report) = doc
         .session
         .to_incremental_bytes(&doc.settings.save_options())?;
+    // ★★★ THE ABSENCE PROOF, between the bytes and the syscall — 2026-09-04.
+    //
+    // `crate::redact::PreparedRedaction::write_to` makes this check one
+    // statement from the write on the two destinations that produce a file
+    // directly. The third destination — the default since today — puts the
+    // redaction in the SESSION and leaves the write to this function, minutes
+    // later, possibly after further edits, through whichever save verb the
+    // operator reached for. So the proof has to be made here or not at all, and
+    // "not at all" is the option our own engine request ruled out in writing:
+    // *"the proof is not negotiable at this end regardless of what the engine
+    // does."*
+    //
+    // ★★ What it is NOT. It is not a save gate on `has_applied_redaction()`,
+    // which the engine asked us not to build and which would refuse a
+    // legitimate incremental save of an already-clean document. The engine's
+    // collapse means this check is expected to pass on every save of every
+    // redacted document, forever — and a check that is expected to pass is
+    // exactly the kind this project keeps discovering was never wired. Its
+    // value is the day it does not: a survivor here means the bytes about to
+    // reach the operator's disk contain text pdfcer told him was gone.
+    //
+    // ★ It costs nothing on an ordinary save. `redaction_absence_claims` is
+    // empty on every document that has not been redacted, and
+    // `prove_saved_bytes` returns without decoding a single stream.
+    if let Err(survivors) = crate::redact::prove_saved_bytes(&bytes, &doc.redaction_absence_claims)
+    {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed.
+            format!(
+                "save-refused-redaction-leak path={target:?} survivors={} of {}",
+                survivors.len(),
+                doc.redaction_absence_claims.len()
+            )
+        });
+        return Err(SaveError::RedactionLeak { survivors });
+    }
     std::fs::write(target, &bytes)?;
     Ok(report)
 }
@@ -807,6 +877,24 @@ enum SaveError {
     /// The bytes were built and the file system refused them: the folder is
     /// gone, the path is read-only, the volume is full.
     Write(std::io::Error),
+    /// ★★★ **The bytes were built and pdfcer found redacted text in them.**
+    ///
+    /// Added 2026-09-04 with the deferred redaction route. It means the save
+    /// was refused *before any byte reached the file system*, and it is the one
+    /// variant here that reports a **pdfcer defect** rather than a property of
+    /// the document or of the disk: the engine's removal and pdfcer's own
+    /// absence proof disagree about whether the content is gone.
+    ///
+    /// It is not expected to be reachable — see [`write_copy`]'s note on why
+    /// the collapse makes every save mode safe by construction. It exists
+    /// because a guarantee that depends on nobody ever changing the writer is
+    /// not a guarantee.
+    RedactionLeak {
+        /// The strings that survived, for the trace. Never rendered verbatim:
+        /// they are the redacted content, and putting them on screen to
+        /// announce that they leaked would leak them again.
+        survivors: Vec<String>,
+    },
 }
 
 impl From<WriteError> for SaveError {
@@ -833,6 +921,15 @@ impl std::fmt::Display for SaveError {
         match self {
             Self::Serialize(e) => write!(f, "the engine could not build the update: {e}"),
             Self::Write(e) => write!(f, "the file could not be written: {e}"),
+            // The COUNT, never the strings. They are the redacted content, and
+            // a diagnostic that announced a leak by printing the leaked text
+            // into a log file would be the same failure at one remove.
+            Self::RedactionLeak { survivors } => write!(
+                f,
+                "the save was refused: {} redacted string(s) survived in the bytes about to be \
+                 written",
+                survivors.len()
+            ),
         }
     }
 }
@@ -969,382 +1066,7 @@ pub fn compacted(doc: &OpenDoc, bytes: &[u8], before: u64) -> bool {
     }
 }
 
+/// What must never be true of a file this shell wrote, in its own file since
+/// 2026-09-04 — see [`tests`]'s header for the seam.
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::app::state::{FOUR_PAGES, Origin, open_fixture};
-
-    /// A scratch path under the OS temporary directory, unique to this test.
-    ///
-    /// `std::env::temp_dir` rather than a path in the repository: a test that
-    /// writes beside the fixtures leaves a file somebody eventually commits,
-    /// which is the exact hazard `tools/ui-verify`'s OCR check records having
-    /// hit.
-    fn scratch(name: &str) -> PathBuf {
-        let dir = std::env::temp_dir().join("pdfcer-gui-save-tests");
-        std::fs::create_dir_all(&dir).expect("the temporary directory must be creatable");
-        dir.join(name)
-    }
-
-    /// ★ **The suggested name is never the file that was opened.**
-    ///
-    /// The shipped tooltip's promise as a **default** rather than as a warning.
-    /// An operator who accepts the suggestion without reading it must not
-    /// overwrite the drawing they were working on, and this is the assertion
-    /// that says so — the tooltip says it in words, and words are not a
-    /// mechanism.
-    #[test]
-    fn the_suggested_name_is_never_the_source_file() {
-        let mut doc = open_fixture(FOUR_PAGES);
-        doc.path = PathBuf::from("D:\\jobs\\4471\\Sheet 1.pdf");
-        doc.origin = Origin::Opened;
-
-        let suggested = suggested_path(&doc);
-        assert_ne!(suggested, doc.path);
-        assert_eq!(suggested, PathBuf::from("D:\\jobs\\4471\\Sheet 1-copy.pdf"));
-        assert_eq!(
-            suggested.parent(),
-            doc.path.parent(),
-            "the copy should land beside the original, where the operator will look for it"
-        );
-    }
-
-    /// ★ **A created document is suggested its own name, with no suffix and no
-    /// folder.**
-    ///
-    /// The other half of `stored_under`, and the interesting failure is not
-    /// "the suffix was skipped" but "the guard was written the wrong way round",
-    /// after which every opened document would be offered its own path as the
-    /// default — turning the tooltip's promise into a trap. Both directions are
-    /// therefore asserted, here and in the test above.
-    #[test]
-    fn a_created_document_is_suggested_its_own_name() {
-        let mut doc = open_fixture(FOUR_PAGES);
-        doc.path = PathBuf::from("Untitled 1.pdf");
-        doc.origin = Origin::Created;
-
-        let suggested = suggested_path(&doc);
-        assert_eq!(suggested, PathBuf::from("Untitled 1.pdf"));
-        assert_eq!(
-            suggested.parent(),
-            Some(Path::new("")),
-            "a document that has never been anywhere names no folder; the picker supplies one"
-        );
-    }
-
-    /// A capitalised extension still produces a `.pdf`, and a path with no stem
-    /// still produces a name.
-    #[test]
-    fn the_suggestion_is_always_a_usable_pdf_name() {
-        for source in ["D:\\scans\\SHEET.PDF", "sheet", "D:\\a.b.pdf"] {
-            let mut doc = open_fixture(FOUR_PAGES);
-            doc.path = PathBuf::from(source);
-            doc.origin = Origin::Opened;
-            let suggested = suggested_path(&doc);
-            assert!(
-                suggested.to_string_lossy().ends_with(".pdf"),
-                "{source} suggested {suggested:?}"
-            );
-            assert_ne!(suggested, doc.path);
-        }
-    }
-
-    /// ★★ **The copy really is an incremental update: the original file's bytes
-    /// are its prefix, verbatim.**
-    ///
-    /// The assertion this whole module exists for, and the one that fails
-    /// against the plausible wrong implementation. A copy produced by
-    /// `to_full_bytes` would satisfy everything else a reader might check — it
-    /// is a valid PDF, it has the right pages, it carries the edit — and it
-    /// would have rewritten the file from scratch, destroying every digital
-    /// signature (§12.8.1) and discarding the previous revision that
-    /// `file.save_copy`'s shipped tooltip promises *"stays intact inside the
-    /// file"*.
-    ///
-    /// A §7.5.6 incremental update cannot do that by construction: the original
-    /// revision is left untouched and the new one is appended after it. So
-    /// `output[..input.len()] == input` is a **property of the save mode**, and
-    /// it is the cheapest possible test that tells the two modes apart.
-    ///
-    /// With no edits made, the engine's own contract goes further and the
-    /// output *is* the input — asserted too, because a build that appended an
-    /// empty revision to an untouched document would still pass the prefix
-    /// check while quietly growing every file an operator copied.
-    #[test]
-    fn a_saved_copy_begins_with_the_original_file_byte_for_byte() {
-        let doc = open_fixture(FOUR_PAGES);
-        let source = std::fs::read(&doc.path).expect("the fixture is readable");
-        let target = scratch("unedited.pdf");
-        let _ = std::fs::remove_file(&target);
-
-        let report = write_copy(&doc, &target).expect("an unedited document must save");
-        let written = std::fs::read(&target).expect("the copy must exist");
-
-        assert!(
-            written.starts_with(&source),
-            "the copy does not begin with the original's bytes, so this is not an incremental \
-             update — a full rewrite destroys every signature in the file and discards the \
-             previous revision the command's own tooltip promises stays intact"
-        );
-        assert_eq!(
-            written, source,
-            "with an empty dirty set `save_incremental`'s contract is that the output IS the \
-             input; a copy that grew is a revision appended for an edit nobody made"
-        );
-        assert!(report.byte_identical);
-        assert_eq!(report.bytes_appended, 0);
-        let _ = std::fs::remove_file(&target);
-    }
-
-    /// ★★ **An edit reaches the file, and it reaches it as an appended
-    /// revision.**
-    ///
-    /// The round trip, in the smallest form a unit test can hold: rotate a page
-    /// through the engine, save a copy, and re-open the copy from disk with a
-    /// fresh `Document::load` — the same call `PdfcerApp::open_path` makes — and
-    /// read the rotation back.
-    ///
-    /// Two assertions and both are load-bearing. **The edit is present**, which
-    /// is what separates "a file was written" from "the operator's work was
-    /// written"; a build that wrote `Document::bytes()` instead of the session's
-    /// update would produce a perfectly good PDF with the edit missing and would
-    /// pass every check that only asks whether a file appeared. **And the
-    /// original's bytes are still its prefix**, which is what separates an
-    /// incremental save from a full rewrite that would also carry the edit.
-    ///
-    /// `set_page_rotation` rather than a markup annotation because it is the
-    /// cheapest engine verb that changes a page object and is readable back
-    /// through `EditSession::pages` without a decomposition — the *shape* of the
-    /// proof is what matters here, and `tools/ui-verify`'s `save_copy_round_trip`
-    /// makes the same claim about a real annotation placed by a real drag.
-    #[test]
-    fn an_edit_survives_the_round_trip_through_a_saved_copy() {
-        use pdfcer_core::document::Document;
-        use pdfcer_core::edit::EditSession;
-
-        let mut doc = open_fixture(FOUR_PAGES);
-        let source = std::fs::read(&doc.path).expect("the fixture is readable");
-        let before = doc.pages[0].rotate;
-        let session = std::sync::Arc::get_mut(&mut doc.session)
-            .expect("nothing else holds the session in a test");
-        session
-            .set_page_rotation(0, 90)
-            .expect("rotating page 1 of the fixture must be expressible");
-        assert_ne!(before, 90, "the fixture must not already be rotated");
-
-        let target = scratch("rotated.pdf");
-        let _ = std::fs::remove_file(&target);
-        let report = write_copy(&doc, &target).expect("an edited document must save");
-        assert!(
-            report.bytes_appended > 0,
-            "an edited document must append a revision; {report:?}"
-        );
-        assert!(
-            !report.byte_identical,
-            "an edited document's copy cannot be byte-identical to its input"
-        );
-
-        let written = std::fs::read(&target).expect("the copy must exist");
-        assert!(
-            written.starts_with(&source),
-            "the edited copy must still begin with the original's bytes — that is what makes it \
-             an update rather than a rewrite"
-        );
-
-        // …and the round trip: re-open the file that was written, from disk,
-        // through the same loader the application uses.
-        let reopened = Document::load(&target).expect("the copy must open");
-        let pages = EditSession::new(reopened)
-            .pages()
-            .expect("the copy's page tree must walk");
-        assert_eq!(
-            pages[0].rotate, 90,
-            "the edit is not in the saved file. A save that writes a file is not the same claim \
-             as a save that writes the EDIT, and this is the second one"
-        );
-        assert_eq!(
-            pages.len(),
-            doc.pages.len(),
-            "the copy must carry every page the original had"
-        );
-        let _ = std::fs::remove_file(&target);
-    }
-
-    /// ★ **Saving does not touch the open document — not its epoch, not its
-    /// identity.**
-    ///
-    /// §3, asserted rather than described. Three failures this catches, each of
-    /// which looks like tidying up:
-    ///
-    /// * bumping `edit_epoch` — dissolves the canvas selection, discards the
-    ///   decomposition and the page-text cache, and retires a rule-4 disclosure
-    ///   the operator may not have read, to record an event that changed nothing
-    ///   on screen;
-    /// * **zeroing** `edit_epoch` — turns off `dialogs::ocr`'s `UnsavedEdits`
-    ///   refusal, whose whole job is to stop OCR producing a recognised copy
-    ///   with the operator's edits silently missing;
-    /// * writing `path`/`origin` — that is Save **As**, a command this build
-    ///   does not have, and doing it here would rename the operator's open
-    ///   document because they asked for a copy.
-    #[test]
-    fn saving_a_copy_changes_nothing_about_the_open_document() {
-        let mut doc = open_fixture(FOUR_PAGES);
-        let session = std::sync::Arc::get_mut(&mut doc.session)
-            .expect("nothing else holds the session in a test");
-        session
-            .set_page_rotation(0, 90)
-            .expect("rotating page 1 of the fixture must be expressible");
-        doc.edit_epoch = 4;
-        let path = doc.path.clone();
-        let origin = doc.origin;
-
-        let target = scratch("untouched.pdf");
-        let _ = std::fs::remove_file(&target);
-        write_copy(&doc, &target).expect("the copy must be written");
-
-        assert_eq!(
-            doc.edit_epoch, 4,
-            "a save changes no revision: the document in memory afterwards is the one that was \
-             there before, so bumping the epoch would discard several caches to record nothing, \
-             and zeroing it would tell OCR the document is unedited when it is not"
-        );
-        assert_eq!(doc.path, path, "Save a COPY is not Save As");
-        assert_eq!(doc.origin, origin);
-        let _ = std::fs::remove_file(&target);
-    }
-
-    /// ★ **A document `file.new` made saves too, and re-opens as a document.**
-    ///
-    /// The case the shipped `file.new` tooltip now promises and that nothing
-    /// else covers: `tools/ui-verify`'s round trip drives an *opened* document,
-    /// because it needs a page with content to drag a rectangle across.
-    ///
-    /// It is worth its own test rather than being assumed from the opened case,
-    /// because a created document is the one whose `path` is **not a file**. A
-    /// save that reached for `doc.path` anywhere — to read base bytes, to
-    /// resolve a directory, to decide anything — would work perfectly on every
-    /// opened document and fail here alone, with `Untitled 1.pdf` as the error.
-    #[test]
-    fn a_created_document_saves_and_the_copy_opens() {
-        use pdfcer_core::document::Document;
-        use pdfcer_core::edit::EditSession;
-
-        let (doc, pages) = crate::app::blank::document().expect("the template parses");
-        let created = crate::app::state::OpenDoc::created(
-            PathBuf::from("Untitled 1.pdf"),
-            EditSession::new(doc),
-            pages,
-        );
-        assert_eq!(created.origin, Origin::Created);
-        assert_eq!(created.stored_under(), None, "it has no file behind it");
-
-        let target = scratch("created.pdf");
-        let _ = std::fs::remove_file(&target);
-        let report = write_copy(&created, &target).expect("a created document must save");
-        assert_eq!(
-            report.bytes_written,
-            crate::app::blank::TEMPLATE.len(),
-            "an unedited created document's copy is the template, unchanged"
-        );
-
-        let reopened = Document::load(&target).expect("the copy must open");
-        let reopened_pages = EditSession::new(reopened)
-            .pages()
-            .expect("the copy's page tree must walk");
-        assert_eq!(reopened_pages.len(), 1, "New makes a one-page document");
-        let _ = std::fs::remove_file(&target);
-    }
-
-    /// ★★★ **The truth table for [`has_unsaved_edits`]** —
-    /// `OPERATOR_REQUESTS.md` O65.
-    ///
-    /// Five states, and each of the two terms is load-bearing in a different
-    /// one of them, which is why the test walks the whole table rather than
-    /// asserting the headline case:
-    ///
-    /// - **edited, then saved → clean** is what a build with only
-    ///   `session.is_modified()` gets wrong. That is the one the operator hit:
-    ///   the tab kept its unsaved dot, and the next Close asked a question
-    ///   whose only save button opened a picker and then closed the document.
-    /// - **edited, then undone → clean** is what a build with only the epoch
-    ///   comparison gets wrong, because an undo bumps `edit_epoch` like every
-    ///   other edit.
-    ///
-    /// So a build that drops either term passes half of this and fails the
-    /// other half, which is exactly what a truth-table test is for.
-    #[test]
-    fn a_saved_document_is_not_dirty_and_an_undone_edit_is_not_either() {
-        use pdfcer_core::document::Document;
-        use pdfcer_core::edit::EditSession;
-
-        let path = std::path::Path::new(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/../../fixtures/four-pages.pdf"
-        ));
-        let doc = Document::load(path).expect("the fixture loads");
-        let session = EditSession::new(doc);
-        let pages = session.pages().expect("the page tree walks");
-        let mut open = crate::app::state::OpenDoc::new(path.to_path_buf(), session, pages);
-
-        assert!(
-            !has_unsaved_edits(&open),
-            "a document nobody has touched is clean"
-        );
-
-        // An edit: the engine's own answer flips, and the epochs diverge.
-        std::sync::Arc::get_mut(&mut open.session)
-            .expect("the session is not shared in a test")
-            .rotate_pages(&[0], 90)
-            .expect("a rotate must succeed on the fixture");
-        open.edit_epoch += 1;
-        assert!(has_unsaved_edits(&open), "an edited document is dirty");
-
-        // ★ The save. `saved_epoch` catches up; `is_modified()` does NOT and
-        // never can, because `to_incremental_bytes` takes `&self`. This is the
-        // line the whole row exists for.
-        open.saved_epoch = open.edit_epoch;
-        assert!(
-            open.session.is_modified(),
-            "the engine still says the session differs from its BASE revision — \
-             that is correct and is exactly why it cannot be the shell's answer"
-        );
-        assert!(
-            !has_unsaved_edits(&open),
-            "a document that has just been saved must be CLEAN. This is O65: \
-             a build asking `is_modified()` alone keeps the tab marker, asks \
-             about unsaved edits on the next Close, and the operator reads \
-             that as Save having closed the document."
-        );
-
-        // …and editing again makes it dirty a second time, which is what stops
-        // the fix from being "always answer clean after any save".
-        open.edit_epoch += 1;
-        assert!(
-            has_unsaved_edits(&open),
-            "an edit after a save is unsaved work again"
-        );
-    }
-
-    /// ★ **A write that cannot happen is reported rather than swallowed.**
-    ///
-    /// A directory that does not exist is the commonest real failure — the
-    /// operator typed a path, or a network share went away between the dialog
-    /// and the write — and it is the one that must not be silent. Asserted as
-    /// the `Write` variant specifically, because the two variants send a reader
-    /// to two different subsystems and collapsing them into one would throw that
-    /// away at the last step.
-    #[test]
-    fn a_write_that_cannot_happen_is_a_named_refusal() {
-        let doc = open_fixture(FOUR_PAGES);
-        let target = scratch("no-such-folder").join("nested").join("copy.pdf");
-        let error = write_copy(&doc, &target).expect_err("a missing folder cannot be written to");
-        assert!(
-            matches!(error, SaveError::Write(_)),
-            "a file-system refusal must not be reported as an engine refusal: {error}"
-        );
-        assert!(
-            !target.exists(),
-            "a failed save must leave nothing behind at the path it was aimed at"
-        );
-    }
-}
+mod tests;

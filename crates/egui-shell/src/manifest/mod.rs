@@ -113,9 +113,17 @@
 //! ```
 
 mod merge;
+/// The left rail — the vertical strip down a dock side's outer edge.
+///
+/// A region introduced as **manifest data**, for the reason
+/// [`Trailing`] was: `SHELL_FRAMEWORK.md` makes the shell one serializable
+/// document, and *"a rail that only `pdfcer-gui` knows about breaks it
+/// quietly."*
+pub mod rail;
 mod validate;
 
 pub use merge::{Layer, MergeInput, MergeReport, Merged, Skip, SkipReason, merge};
+pub use rail::{Rail, RailFold, RailGroup};
 pub use validate::{ManifestError, Site};
 
 use serde::{Deserialize, Serialize};
@@ -189,6 +197,16 @@ pub struct Shell {
     /// the mode selector. See [`Trailing`].
     #[serde(skip_serializing_if = "Option::is_none")]
     pub trailing: Option<Trailing>,
+    /// The **left rail** — the vertical strip down a dock side's outer edge:
+    /// panel tabs, the navigate selectors, the selection tools. See [`Rail`].
+    ///
+    /// ★ Data, not a callback, for the reason `SHELL_FRAMEWORK.md` gives in
+    /// one line: *"a rail that only `pdfcer-gui` knows about breaks it
+    /// quietly."* An operator overlay can reorder it, `merge` can filter it
+    /// and `validate` walks it, exactly as for every other region on this
+    /// struct.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rail: Option<Rail>,
     /// Key chord → command id.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub keymap: Option<Keymap>,
@@ -307,6 +325,23 @@ impl Shell {
         I: IntoIterator<Item = Item>,
     {
         self.trailing = Some(items.into_iter().collect());
+        self
+    }
+
+    /// Set the left rail — the vertical strip down a dock side's outer edge.
+    /// See [`Rail`].
+    ///
+    /// Takes [`RailGroup`]s rather than bare items because the rail's whole
+    /// scaling behaviour is per **group**: what folds, in what order, and what
+    /// never folds. A flat list would have nowhere to say that, and the answer
+    /// would have to be derived from position — which is precisely the
+    /// derivation `RIBBON_SCALING.md` §3.2 measured Word *not* doing.
+    #[must_use]
+    pub fn with_rail<I>(mut self, groups: I) -> Self
+    where
+        I: IntoIterator<Item = RailGroup>,
+    {
+        self.rail = Some(groups.into_iter().collect());
         self
     }
 

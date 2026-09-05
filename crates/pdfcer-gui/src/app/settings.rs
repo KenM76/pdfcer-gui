@@ -655,6 +655,28 @@ mod tests {
                     || name.ends_with("app/blank.rs")
                     || name.ends_with("ocr/fixture.rs")
                     || name.contains("/redact/")
+                    // ★★★ `protect/` — encryption and permissions, added
+                    // 2026-09-04 with O119. The one call it makes is
+                    // `EditSession::new(document)` in `prepare`, and it is
+                    // exempt for a reason this scan cannot see from the token:
+                    // **it builds no options at all.** The scan looks for
+                    // `EditSession::new` because that is how a call site
+                    // *usually* bypasses `SettingsExt` — by making a session and
+                    // then handing it defaults. This one makes a session and
+                    // hands it the operator's own `set_encryption` /
+                    // `set_permissions` arguments; there is no `SaveOptions`,
+                    // no `RenderOptions` and no `FormatOptions` anywhere in the
+                    // module, so there is nothing for a preference to be
+                    // discarded from.
+                    //
+                    // ★ Why a session is built here at all, rather than reusing
+                    // the open one: `prepare` answers *"was this file opened
+                    // with the OWNER password"* against the document on disk,
+                    // and the engine's own version of that answer requires a
+                    // session. The alternative is to ask the engine and get a
+                    // second, differently-worded refusal for a question already
+                    // answered — see the comment at the call.
+                    || name.contains("/protect/")
                 {
                     continue;
                 }

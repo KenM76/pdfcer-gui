@@ -422,6 +422,36 @@ pub struct OpenDoc {
     /// document** when the operator switches tabs. Panel state would have
     /// leaked one document's warning onto another's.
     pub last_redaction_unreadable_fonts: u64,
+    /// ★★★ **The strings a redaction applied INTO this document claims to have
+    /// removed** — `RedactionReport::redacted_text`, empty on every document
+    /// that has not been redacted.
+    ///
+    /// Added 2026-09-04 with `Action::ApplyRedactionsIntoDocument`. It exists
+    /// for exactly one consumer: `crate::app::save::write_copy` greps the bytes
+    /// it is about to write for these strings and **refuses the save** if any
+    /// of them survives in a decoded stream. That is the shell's independent
+    /// absence proof, kept alive on the deferred route.
+    ///
+    /// ★ Why it has to be carried rather than re-derived. The write-now routes
+    /// prove the buffer inside `crate::redact::PreparedRedaction::write_to`,
+    /// one statement from the syscall. The deferred route has no such buffer —
+    /// the bytes are built minutes later, by whichever save verb the operator
+    /// reaches for, possibly after further edits — so the only thing that can
+    /// travel from the apply to the save is *what was removed*.
+    /// `EditSession::has_applied_redaction()` says **that** a redaction
+    /// happened and cannot say **what**, which is not enough to prove anything.
+    ///
+    /// ★★ On the DOCUMENT rather than in a global, for
+    /// [`Self::last_redaction_unreadable_fonts`]'s reason and more sharply: it
+    /// is a fact about this file's content, and proving one document's claims
+    /// against another document's bytes would be a refusal to save a perfectly
+    /// good file — or, in the direction that matters, a clean pass on a file
+    /// nobody checked.
+    ///
+    /// It is deliberately **not** cleared by a save. The claims stay true of
+    /// the session for as long as the session exists, and every subsequent save
+    /// of it is proved against them.
+    pub redaction_absence_claims: Vec<String>,
     /// The single-slot background rasterizer.
     pub render_worker: RenderWorker,
     /// The zoom seen at the end of the previous frame, used to detect that
@@ -988,6 +1018,9 @@ impl OpenDoc {
             render_error: None,
             // Nothing has been marked yet, so there is nothing to disclose.
             last_redaction_unreadable_fonts: 0,
+            // Nothing has been redacted into this document, so there is nothing
+            // for a save to prove the absence of.
+            redaction_absence_claims: Vec::new(),
             render_worker: RenderWorker::default(),
             // In the past, so the first zoom change commits at once rather
             // than waiting out a debounce nobody started.

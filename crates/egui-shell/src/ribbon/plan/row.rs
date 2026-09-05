@@ -59,7 +59,7 @@
 //!
 //! # ★ The one measured number everything here turns on
 //!
-//! [`super::super::band::min_button_width`] records it:
+//! [`super::super::measure::min_button_width`] records it:
 //! **`Button::truncate()` stops shrinking** at padding-plus-ellipsis,
 //! about 19.7 pt with this theme and face. A region granted less than that
 //! does not get a crowded control; it gets a control drawn *outside its
@@ -112,7 +112,7 @@ pub(crate) struct RowDemand {
     /// with the layout's gap between them.
     pub tabs_floor: f32,
     /// The narrowest a **text-only** `egui::Button` can be drawn — see
-    /// [`super::super::band::min_button_width`]. The single most important
+    /// [`super::super::measure::min_button_width`]. The single most important
     /// number on this row: below it, `truncate()` stops shrinking and the
     /// control overflows whatever rectangle it was given.
     ///
@@ -382,7 +382,7 @@ impl StripPlan {
 /// - `overflow_width` — what the affordance wants, from
 ///   [`super::overflow_width`].
 /// - `button_floor` — the narrowest an `egui::Button` can be drawn; see
-///   [`super::super::band::min_button_width`].
+///   [`super::super::measure::min_button_width`].
 ///
 /// # ★ Why the active tab is pinned, and why a band needs no such rule
 ///
@@ -584,7 +584,7 @@ mod tests {
     /// Measured, not invented: `button_floor` is
     /// `button_padding (8) + "…" (11.6875)` against the synthetic face of
     /// [`super::super::super::testfont`], and `gap` is `egui`'s default
-    /// `item_spacing.x`. See [`super::super::super::band::min_button_width`].
+    /// `item_spacing.x`. See [`super::super::super::measure::min_button_width`].
     const FLOOR: f32 = 19.6875;
     const GAP: f32 = 8.0;
 

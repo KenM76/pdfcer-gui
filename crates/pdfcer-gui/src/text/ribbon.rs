@@ -262,6 +262,29 @@ pub fn group_view_navigate() -> &'static str {
     "Navigate"
 }
 
+/// ★ The left rail's **Select** group caption — `OPERATOR_REQUESTS.md` O123.
+///
+/// *"the navigate selectors and some other related selection controls (lasso
+/// tool when we implement one, etc)"*. His word for the group, and the group
+/// it captions is the one the lasso joins when the lasso exists.
+///
+/// Drawn only at the rail's widest rung; see
+/// `egui_shell::dock::rail::Rung::Tight` on why the word is the first thing
+/// the strip gives up.
+#[must_use]
+pub fn group_rail_select() -> &'static str {
+    "Select"
+}
+
+/// ★ The left rail's **Rotate** group caption — `OPERATOR_REQUESTS.md` O126.
+///
+/// *"also add rotate pages to that area, and those should be available in
+/// every mode including read."*
+#[must_use]
+pub fn group_rail_rotate() -> &'static str {
+    "Rotate"
+}
+
 /// View ▸ Zoom.
 #[must_use]
 pub fn group_view_zoom() -> &'static str {

@@ -104,7 +104,7 @@
 #   within a block, including justified alignment." names no symbol at all, and
 #   "Set a page's size (`/MediaBox`)" names a PDF key rather than a verb. And
 #   the symbols themselves get rewritten in bulk: `Pass 247.1` mechanically
-#   renamed `pdfceGUI` → `pdfcer-gui` across the whole file in one filing.
+#   renamed `pdfceGUI` → `pdfcer-gui` across the whole file in one filing.  # old-name-exempt: a note about a rename must spell the name that was renamed
 #
 # ★ **Why SIX words.** Measured on the 90 live rows: at four content words two
 #   rows COLLIDE (`cut-copy-paste-whole`, once for PAGES and once for a

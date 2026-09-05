@@ -67,8 +67,8 @@ const SIDE_PADDING: f32 = 10.0;
 /// paid for twice.
 pub(crate) fn width(ui: &egui::Ui, group: &Group) -> f32 {
     let caption = super::band::caption_text(group);
-    let text = super::band::text_width(ui, caption, &TextStyle::Button);
-    let chevron = super::band::text_width(ui, CHEVRON, &TextStyle::Button);
+    let text = super::measure::text_width(ui, caption, &TextStyle::Button);
+    let chevron = super::measure::text_width(ui, CHEVRON, &TextStyle::Button);
     text.max(chevron) + SIDE_PADDING * 2.0
 }
 
@@ -91,7 +91,12 @@ pub(crate) fn render(
 ) {
     let caption = super::band::caption_text(group);
     let w = width(ui, group);
-    let h = box_.total.max(box_.rows);
+    // `pad_top + rows` rather than `rows` alone since 2026-09-04: the band's
+    // row area now starts BELOW a stated top padding (`GroupBox::pad_top`), so
+    // "as tall as the rows" is the sum of the two. `total` still wins in the
+    // band, where it is the full height; the `max` is for the overflow menu,
+    // whose `GroupBox::NATURAL` makes every term zero.
+    let h = box_.total.max(box_.pad_top + box_.rows);
 
     let (rect, response) = ui.allocate_exact_size(Vec2::new(w, h), egui::Sense::click());
 

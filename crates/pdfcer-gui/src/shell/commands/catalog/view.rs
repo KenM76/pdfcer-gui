@@ -481,6 +481,27 @@ pub(super) fn band() -> Vec<Command> {
         // mode at all — its only `floating` is `egui`'s scroll-bar style — so
         // the first governed a capability that does not exist.
         //
+        // ★★★ **The first half of that stopped being true on 2026-09-04.**
+        // `egui_shell::dock::float` and `::floatwin` landed and panels now
+        // float into real OS windows, so a capability the note calls
+        // non-existent exists. The four commands below are it.
+        //
+        // `view.floating_panels` is STILL not re-registered, and the
+        // distinction is worth stating rather than leaving as an omission.
+        // `MODES_AND_PANELS.md` specifies it as an **Off · Allowed setting**
+        // whose default is Allowed — i.e. a preference, with a persisted
+        // value, a Settings surface and a story about what happens to
+        // already-floating panels when it is switched Off. None of that is
+        // built, the shipped behaviour is its specified default, and a
+        // control registered ahead of the preference behind it is exactly the
+        // inert control this note was written to delete. It goes back the day
+        // there is something for it to switch.
+        //
+        // `view.app_initiative`'s deletion is untouched by any of this: a
+        // panel the operator deliberately floats is not the application
+        // floating something over the canvas unasked, and
+        // `MODES_AND_PANELS.md` draws that line explicitly.
+        //
         // The second is the more interesting deletion, and worth keeping the
         // reasoning for. `view.app_initiative` was a three-position policy —
         // Never · Ask · Allowed — about whether pdfcer may float a surface over
@@ -494,6 +515,40 @@ pub(super) fn band() -> Vec<Command> {
         // behaviour is the thing the operator objected to. It goes back on the
         // list the day something wants to float unasked, and not before.
         command("view.reset_layout", t::view_reset_layout(), 254).with_icon("reset-layout"),
+        // ★★★ **The three per-panel layout verbs**, 2026-09-04.
+        //
+        // They live ONLY in the `dock.tab` context menu and on a floating
+        // panel's header strip — never on the ribbon — and that is forced
+        // rather than chosen: each acts on *the panel the operator
+        // right-clicked*, and a ribbon button has no such operand. A ribbon
+        // "Float" would have to invent one (the active panel? of which
+        // dock?), and an invented operand is how a command comes to act on
+        // something other than what the operator was pointing at.
+        //
+        // ★★ Which of the three a menu offers is decided by `visible_when`
+        // in the manifest, against conditions the tab handler sets per tab —
+        // NOT by `enabled_when`. R9: an unavailable capability renders
+        // nothing. "Dock" on a panel that is already docked is not
+        // temporarily unavailable, it is meaningless, so it is absent rather
+        // than greyed.
+        //
+        // ★ `Enable::Always`, therefore, on all three. The condition that
+        // decides whether they make sense is a *visibility* condition, and
+        // adding an enable predicate as well would grey a row that has
+        // already been filtered out — one gate too many, in the place where
+        // an extra gate silently empties a menu (see `MenuHost::attach`'s
+        // note on `offers_anything`).
+        command("view.panel_float", t::view_panel_float(), 259).with_icon("floating-panels"),
+        command("view.panel_dock", t::view_panel_dock(), 260).with_icon("floating-panels"),
+        command("view.panel_close", t::view_panel_close(), 261),
+        // ★★ **The recovery command**, and the one member of the family that
+        // DOES belong on the ribbon — because it is the only one with no
+        // operand. Greyed when nothing is floating: that is temporarily
+        // unavailable, which is what R9 reserves greying for, and the tooltip
+        // says what it would do.
+        command("view.dock_all_panels", t::view_dock_all_panels(), 262)
+            .with_icon("floating-panels")
+            .enabled_when("panels.floating"),
         // ★ **The two document-switching verbs**, registered 2026-08-19 with
         // the document tab strip.
         //

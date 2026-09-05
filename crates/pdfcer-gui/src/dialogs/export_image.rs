@@ -32,11 +32,36 @@
 //!   makes his own stated example work (*"copy and paste vector graphics into
 //!   word or inkscape"*) is the vector one. A separate `Export SVG…` command
 //!   would put the right answer behind a control he would have to know existed.
+//! * **EMF is offered, and the IA row does not mention that either**, for the
+//!   same reason at one remove: it postdates the row by longer still. It is
+//!   here rather than in a second window because it answers the same single
+//!   question with a *different program* in mind — the operator who has been
+//!   handed an SVG their copy of LibreOffice 24 will not open needs the answer
+//!   in the list they are already looking at, not behind a command they would
+//!   have to know existed. Its hint names the programs; see
+//!   `crate::app::actions::imageexport::ImageFormat::Emf`.
+//!
+//! ## ⚠ The second half of the operator's sentence is NOT in this window
+//!
+//! *"Also I'd like to be able to copy and paste anything to other software"* —
+//! copy-out to the OS clipboard — is deliberately absent, and the reason is
+//! recorded in `crate::clipboard`'s header rather than here. In one line: it
+//! needs `clipboard-win` and `windows` as direct dependencies (both already in
+//! the lockfile, neither in this crate's manifest) and one `unsafe` block that
+//! `#![forbid(unsafe_code)]` will not host, and a copy-out that places only the
+//! raster formats makes Word's paste a flat picture — so half of it is worse
+//! than none of it.
+//!
+//! ★ **The EMF work here is not a consolation prize for that.** It is the same
+//! bytes the clipboard's second entry will carry, produced by the same call,
+//! disclosed by the same sentences. When the placement half is built it reuses
+//! `app::actions::export::emf_bytes`'s options and `text::export_image::
+//! emf_fidelity`'s wording without re-deriving either.
 //!
 //! ## ★★★ The sentence the whole window is arranged around
 //!
 //! *"full support (including transparency where supported!)"* — **the
-//! parenthesis is the instruction.** It concedes that one of the three cannot
+//! parenthesis is the instruction.** It concedes that one of the four cannot
 //! do it and asks pdfcer to be the thing that says which.
 //!
 //! So the Background group is not a checkbox with a hint. It is a checkbox that
@@ -136,8 +161,41 @@ use crate::text::export_image as t;
 
 /// The region this dialog publishes for its body.
 pub const REGION_BODY: &str = "dialog:export-image"; // ui-text-exempt: trace region name, never displayed
-/// The region the format radios publish.
+/// The region the format radio GROUP publishes — all four radios together.
 pub const REGION_FORMAT: &str = "export-image.format"; // ui-text-exempt: trace region name, never displayed
+
+/// ★★ The region ONE format's radio publishes, so a driven check can press a
+/// named format rather than a coordinate.
+///
+/// # Why the group region was not enough, and what it cost to find out
+///
+/// [`REGION_FORMAT`] is the union of the whole group ([`ExportImageDialog::
+/// format_group`] takes `start.union(ui.cursor())`), which is exactly right for
+/// *"where is the format chooser"* and useless for *"press EMF"*. A harness
+/// holding one union rectangle can only guess at a radio inside it by dividing
+/// the height by the number of radios — which is a guess that silently selects
+/// the wrong format the day a hint wraps onto a second line.
+///
+/// ⇒ ★ **A driven check that clicks a computed offset inside a container is a
+/// check that will one day pass while pressing something else.** So each radio
+/// declares its own rectangle, named after the format, and the harness clicks
+/// what it asked for.
+///
+/// The names are trace identifiers rather than prose — they are matched by
+/// `tools/ui-verify`, never displayed — and they are `const` per variant rather
+/// than formatted, so the harness's string and this one cannot drift.
+#[must_use]
+pub const fn region_for_format(format: ImageFormat) -> &'static str {
+    match format {
+        // ui-text-exempt: trace region names, matched by tools/ui-verify and
+        // never displayed. The DISPLAY name of a format is
+        // `crate::text::export_image::format_name`.
+        ImageFormat::Png => "export-image.format.png",
+        ImageFormat::Jpeg => "export-image.format.jpeg",
+        ImageFormat::Svg => "export-image.format.svg",
+        ImageFormat::Emf => "export-image.format.emf",
+    }
+}
 /// The region the resolution field publishes.
 pub const REGION_DPI: &str = "export-image.dpi"; // ui-text-exempt: trace region name, never displayed
 /// The region the transparency checkbox publishes.
@@ -362,13 +420,18 @@ impl ExportImageDialog {
         });
     }
 
-    /// Which of the three writers, and what each one is for.
+    /// Which of the four writers, and what each one is for.
     fn format_group(&mut self, ui: &mut Ui) {
         // No `.strong()` — R84 / DEFECTS.md D11.
         ui.label(t::format_heading());
         let start = ui.cursor();
         for format in ImageFormat::ALL {
-            ui.radio_value(&mut self.format, format, t::format_name(format));
+            let response = ui.radio_value(&mut self.format, format, t::format_name(format));
+            // ★ Each radio's OWN rectangle, so `tools/ui-verify` can press a
+            // named format instead of dividing the group's height by four. See
+            // [`region_for_format`] for why a computed offset inside a
+            // container is a check that eventually presses the wrong control.
+            crate::diag::ui_rect(region_for_format(format), response.rect);
             // The hint under each radio rather than only under the selected
             // one: the operator is CHOOSING, and a hint that appears only after
             // the choice is a hint about a decision already made.
@@ -480,7 +543,7 @@ impl ExportImageDialog {
             // The checkbox is drawn DEAD rather than hidden, deliberately. A
             // control that disappears when JPEG is selected leaves the operator
             // to conclude the option does not exist; one that greys with a
-            // reason under it says which of the three formats to choose
+            // reason under it says which of the other formats to choose
             // instead, which is what they actually need to know.
             ui.label(t::jpeg_has_no_alpha());
         }

@@ -120,8 +120,8 @@ use crate::commands::ConditionSet;
 use crate::manifest::{Shell, Tab};
 
 use super::a11y;
-use super::band;
 use super::ctx::{Ctx, condition_holds};
+use super::measure;
 use super::plan::ItemWidths;
 use super::report;
 
@@ -323,9 +323,9 @@ pub(crate) fn tab_label(tab: &Tab) -> &str {
 pub(crate) fn measure_tab(ui: &egui::Ui, tab: &Tab) -> f32 {
     ItemWidths {
         icon: 0.0,
-        text: band::text_width(ui, tab_label(tab), &TextStyle::Button),
+        text: measure::text_width(ui, tab_label(tab), &TextStyle::Button),
         gap: 0.0,
-        padding: band::button_padding(ui),
+        padding: measure::button_padding(ui),
     }
     .total()
 }

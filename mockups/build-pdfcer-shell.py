@@ -325,10 +325,16 @@ def smoke_test(target: Path) -> int:
         print(f"SKIP smoke test: {exc}")
         return 0
 
+    # ★ STRUCTURAL, not prose. The legend marker was the heading's own wording
+    # until 2026-09-04, when the heading was rewritten for O123 and the build
+    # failed on an artifact that had rendered perfectly — a check that fires on
+    # a legitimate edit teaches the next person to ignore it. A class name the
+    # render loop emits proves the same thing (the script reached the legend
+    # and produced rows) and survives every rewording of what those rows say.
     markers = {
         "the ribbon rendered": 'class="rb',
         "the dock rendered": "Paint order",
-        "the legend rendered": "What changed in this mockup",
+        "the legend rendered": 'class="li ',
     }
     bad = [name for name, needle in markers.items() if needle not in dom]
     if bad:

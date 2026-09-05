@@ -48,3 +48,4 @@
 - [A trace-grepping check passes on a build that crashed](feedback_a_trace_grepping_check_passes_on_a_build_that_crashed.md) — the oracle line is written before the panic; liveness belongs in the shared reader, and must be RED not SKIP.
 - [A harness with a bad input produces defects that do not exist](feedback_a_harness_with_a_bad_input_produces_defects_that_do_not_exist.md) — one wrong page index made six plausible failure reports and four filed defects; check what the check was ASKED to do.
 - [Parallelism is the default, and it needs an ownership map](feedback_parallelism_is_the_default_and_it_needs_an_ownership_map.md) — nine tracks in one repo; name the other tracks files, forbid racing on shared counters, and invite the contradiction.
+- [Never ask — just add the feature](feedback_never_ask_just_add_the_feature.md) — placement, wording and scope are yours; five hours were lost waiting on a question whose answer was always going to be yes.

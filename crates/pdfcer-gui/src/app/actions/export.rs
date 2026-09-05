@@ -563,10 +563,23 @@ pub(super) fn image(doc: &mut OpenDoc, plan: &crate::app::actions::imageexport::
         let target = imageexport::output_path(&chosen, plan.format, page_index, multi);
         let number = page_index.saturating_add(1);
 
-        let produced = if plan.format.is_vector() {
-            svg_bytes(&view, page, &options, plan)
-        } else {
-            raster_bytes(&view, page, scale, &options, plan)
+        // ★★ A `match` on the format, NOT `if plan.format.is_vector()`.
+        //
+        // It was the `if` until EMF arrived, and the `if` would have written
+        // every EMF export as an SVG — a file with the right extension, the
+        // wrong bytes, and nothing anywhere to say so. `is_vector` answers
+        // *"does the resolution mean a recording scale"*, which is a question
+        // about the hint text; it stopped being a synonym for *"which writer"*
+        // the moment there were two vector writers.
+        //
+        // ⇒ Matching means a fifth format is a compile error here rather than
+        // a silent routing into whichever branch a predicate happens to pick.
+        let produced = match plan.format {
+            imageexport::ImageFormat::Svg => svg_bytes(&view, page, &options, plan),
+            imageexport::ImageFormat::Emf => emf_bytes(&view, page, &options, plan),
+            imageexport::ImageFormat::Png | imageexport::ImageFormat::Jpeg => {
+                raster_bytes(&view, page, scale, &options, plan)
+            }
         };
         let produced = match produced {
             Ok(produced) => produced,
@@ -644,6 +657,9 @@ pub(super) fn image(doc: &mut OpenDoc, plan: &crate::app::actions::imageexport::
                 Produced::Vector { ops } => {
                     t::wrote_svg(&target.display().to_string(), number, ops)
                 }
+                Produced::Metafile { ops, rasters } => {
+                    t::wrote_emf(&target.display().to_string(), number, ops, rasters)
+                }
             });
             notes.extend(produced.notes);
         }
@@ -718,6 +734,14 @@ enum Produced {
     /// Geometry — the line names the drawing operations, which is the only
     /// honest size measure a vector file has.
     Vector { ops: usize },
+    /// ★ Geometry **and** pictures, which is what a metafile always is.
+    ///
+    /// A separate variant rather than reusing [`Self::Vector`], because the
+    /// receipt has a second number to give: `ops` is only the part that
+    /// stayed lines, and a metafile that is half `EMR_ALPHABLEND` would
+    /// otherwise be described in exactly the same words as one that is all
+    /// geometry. See `crate::text::export_image::wrote_emf`.
+    Metafile { ops: usize, rasters: usize },
 }
 
 /// One page, encoded as PNG or JPEG.
@@ -763,11 +787,20 @@ fn raster_bytes(
             jpeg.background = pdfcer_render::export::Rgb::WHITE;
             pdfcer_render::export::encode_jpeg(pixmap, &jpeg)
         }
-        // Unreachable — the caller branches on `is_vector` first. Written as an
-        // arm returning the lossless format rather than as `unreachable!`,
-        // because a panic inside an export is never the right answer to a
-        // fourth variant arriving.
-        ImageFormat::Svg => pdfcer_render::export::encode_png(pixmap, Some(plan.dpi)),
+        // Unreachable — the caller matches on the format and sends these two
+        // to `svg_bytes` and `emf_bytes`. Written as arms returning the
+        // lossless format rather than as `unreachable!`, because a panic
+        // inside an export is never the right answer to a fifth variant
+        // arriving, and because a PNG on disk under a wrong extension is a
+        // file the operator can still open.
+        //
+        // ★ Note that these arms cost nothing in safety: the caller's own
+        // `match` is exhaustive, so a fifth format is a compile error THERE —
+        // at the routing decision, which is where it can be answered — and
+        // never silently lands here.
+        ImageFormat::Svg | ImageFormat::Emf => {
+            pdfcer_render::export::encode_png(pixmap, Some(plan.dpi))
+        }
     }
     .map_err(|error| Failed::Encode(error.to_string()))?;
 
@@ -825,6 +858,335 @@ fn svg_bytes(
         kind: Produced::Vector { ops },
         notes,
     })
+}
+
+/// One page, recorded as a Windows Enhanced Metafile ([MS-EMF]).
+///
+/// # Why this is a third function and not a flag on [`svg_bytes`]
+///
+/// The two share a *recording* — `pdfcer_render::emf` walks the same export
+/// display list `pdfcer_render::svg` does — and share nothing else. Different
+/// options type, different outcome type, different disclosure, different
+/// receipt line, and a different answer for every one of the five things EMF
+/// cannot express. A `if metafile { … } else { … }` inside one function would
+/// be two functions sharing a brace.
+///
+/// # ★★ The background follows [`svg_bytes`]'s rule, for the same reason
+///
+/// `EmfOptions::background` is `Option<Rgb>` exactly as `SvgOptions`' is, and
+/// `None` is the transparent state — the engine's CLI calls it *"EMF's
+/// natural state (nothing is drawn where nothing was painted)"*. So the same
+/// flag drives both, and the `RenderOptions` backdrop the caller set is again
+/// **not** what decides it.
+///
+/// ⇒ This is the shape of mistake that ships a window promising a clear
+/// background and a file with a white rectangle at the bottom of it, and it
+/// is worth the second comment because the two option structs are the two
+/// places in this file where the backdrop is a decoy.
+///
+/// # ★★★ Nothing here validates the metafile, and that is a decision
+///
+/// `pdfcer_render::emf::walk_records` exists precisely so a consumer can
+/// check a metafile's record structure before handing it to
+/// `SetEnhMetaFileBits`, and it is deliberately not called on this path. A
+/// **file** export hands the bytes to `std::fs::write`, which cannot be made
+/// to misbehave by a malformed record; the reader that would choke on one is
+/// somebody else's program, tomorrow. Walking every record to produce a
+/// sentence nobody could act on would cost a second pass over the whole
+/// metafile on every export.
+///
+/// ⚠ The **clipboard** path is the one that owes this check, because there
+/// `SetEnhMetaFileBits` is handed a raw buffer and a bad one is a GDI failure
+/// rather than a refusal. See `crate::clipboard`, which is where that call
+/// will live when the placement half is buildable.
+fn emf_bytes(
+    view: &pdfcer_render::DocumentView<'_>,
+    page: &pdfcer_core::page_tree::Page,
+    options: &pdfcer_render::RenderOptions,
+    plan: &crate::app::actions::imageexport::ImagePlan,
+) -> Result<Output, Failed> {
+    let emf_options = pdfcer_render::emf::EmfOptions::default()
+        .with_raster_dpi(plan.dpi)
+        .with_background(if plan.transparent {
+            None
+        } else {
+            Some(pdfcer_render::export::Rgb::WHITE)
+        });
+    let export = pdfcer_render::emf::export_emf_view(view, page, options, &emf_options)
+        .map_err(|error| Failed::Render(error.to_string()))?;
+
+    let mut notes = vec![if plan.transparent {
+        crate::text::export_image::transparency_kept().to_owned()
+    } else {
+        crate::text::export_image::flattened_to_white().to_owned()
+    }];
+    // ★★★ Rule 4's content, through the shell's own `EmfCounts` rather than
+    // the engine's `EmfOutcome`. The reason is testability and it is argued in
+    // full on `EmfCounts` itself: `EmfOutcome` is `#[non_exhaustive]` with no
+    // `Default`, so no test in this crate could ever build one, and the
+    // counters-to-sentences mapping is the part of this path most worth
+    // testing.
+    let counts = crate::app::actions::imageexport::EmfCounts::from(&export.outcome);
+    notes.extend(crate::text::export_image::emf_fidelity(&counts));
+    Ok(Output {
+        bytes: export.emf,
+        kind: Produced::Metafile {
+            ops: counts.ops,
+            rasters: counts.rasters_embedded,
+        },
+        notes,
+    })
+}
+
+/// ★★★ **Write the words on one or more pages out as a plain text file** — the
+/// operator's ask of 2026-09-04, and the fourth member of this module's family.
+///
+/// > *"also the engine can export PDFs as text. we should have export/import
+/// > for that."*
+///
+/// Half of that sentence shipped. `super::exporttext`'s header carries the full
+/// finding on the other half — **`pdfcer-core` has no route from a text file
+/// back into a PDF**, in any of the three senses "import text" could mean, and a
+/// request has been filed rather than a round trip faked. Nothing here mentions
+/// one.
+///
+/// # ★★ It writes the CLIPBOARD's own string
+///
+/// At the plan's defaults, the bytes this writes are exactly what
+/// `file.copy_document_text` puts on the clipboard: the settings funnel's
+/// `ExtractOptions`, `plain_text()`, U+000C between pages, no BOM, no
+/// line-ending rewrite. `app::dispatch::textcopy`'s header makes the argument
+/// for its two verbs sharing one extraction; this is the same argument with a
+/// file on the end of it. **Two answers to "what is the text of this document"
+/// inside one program is worse than either**, because both of them look like
+/// text and nothing on screen would say which one you have.
+///
+/// # ★★★ The order is EXTRACT, REFUSE, ASK, WRITE — and the refusal is the
+/// whole feature
+///
+/// [`dxf`]'s ordering, not [`image`]'s, and for [`dxf`]'s stated rule: *"the
+/// operator is never asked where to put a file that turns out to be empty."*
+///
+/// Here that rule stops being a nicety and becomes the point of the feature.
+/// **A scanned drawing has no text layer**, so extracting it succeeds, returns
+/// nothing, and would write a zero-byte `.txt` — which is indistinguishable
+/// from a successful export of a blank page. The operator finds out when they
+/// open it, or worse, when whoever they sent it to does.
+///
+/// So a zero character count refuses **before the picker opens**, names why (the
+/// page is a picture of its words rather than words — a fact about their file,
+/// not a pdfcer failure) and names the remedy by its ribbon label,
+/// `File ▸ Recognise text`. See `crate::text::export_text::no_text_at_all`.
+///
+/// ⇒ [`image`] can afford the opposite ordering because a render is expensive
+/// and everything that could make *it* empty is already stated in its window.
+/// An extraction is 331–449 ms on this project's fixtures — `crate::find`'s own
+/// measurement — and the thing that makes this one empty is a property of the
+/// document that no window could have known in advance.
+///
+/// # ★ `extract_pages_view`, for every scope, including "every page"
+///
+/// One entry point rather than two. `resolve_pages` already turns *every page*
+/// into `0..count`, so branching to `extract_document_view` for that case would
+/// buy nothing and would introduce the one thing this feature cannot afford: a
+/// second path to the same string, differing in its failure semantics.
+/// (`extract_document_view` swallows a bad index; `extract_pages_view` reports
+/// `NoSuchPage`, which is the honest answer when a page vanished between the
+/// press and the drain.)
+///
+/// `session.view()`, never `session.document()` — the operator is exporting the
+/// document they are looking at, unsaved edits included (decision 018), which
+/// is the same rule the two clipboard verbs and the print preview follow.
+///
+/// # ★★ Rule 4 — the disclosure, off-canvas and afterwards
+///
+/// Nothing is marked on the page. Every sentence goes to [`super::record_notes`]
+/// at the current epoch, and the set is chosen so each one tells the operator
+/// something they could **act** on:
+///
+/// * **the file, the page count and the character count** — the receipt;
+/// * **which pages came out empty**, by number, because an empty page 4 in a
+///   six-page set is a scanned insert they can go and look at;
+/// * **pages that could not be read at all**, kept apart from the above: an
+///   empty page is one pdfcer read and found nothing on, this is one pdfcer
+///   could not read, and rolling them together would let damage present as a
+///   scan;
+/// * **fonts publishing no route to Unicode** — Type 3 without `/ToUnicode`,
+///   Identity-H without `/ToUnicode`. The text renders perfectly and is missing
+///   from the file, which is the standard's own answer (§9.10.2) and is exactly
+///   why it has to be said. Acrobat's answer to this case is silence;
+/// * **characters that fell through the decoding ladder**, as a fraction, so
+///   40-in-200 and 40-in-400,000 do not read as the same event;
+/// * **what pdfcer itself added**, when page markers were asked for.
+pub(super) fn text(doc: &mut OpenDoc, plan: &super::exporttext::TextExportPlan) {
+    use crate::app::settings::SettingsExt;
+    use crate::text::export_text as t;
+
+    if plan.pages.is_empty() {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed
+            "export-text-declined reason=no-pages".to_owned()
+        });
+        super::record_note(doc.edit_epoch, t::no_pages().to_owned());
+        return;
+    }
+
+    // ★ The funnel, never `ExtractOptions::default()` — `app::settings`'
+    // `syn` check fails the build on a bare constructor outside that module,
+    // and the reason binds here hardest of anywhere: the operator's word-gap
+    // and `/ActualText` settings decide what the exported string SAYS, and a
+    // file that disagreed with the clipboard would be two answers again.
+    let options = doc.settings.extract_options();
+    let extracted = match pdfcer_core::text_extract::extract_pages_view(
+        &doc.session.view(),
+        &plan.pages,
+        &options,
+    ) {
+        Ok(extracted) => extracted,
+        Err(error) => {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed
+                format!("export-text-failed reason=extract detail={error}")
+            });
+            super::record_note(doc.edit_epoch, t::extract_failed(&error.to_string()));
+            return;
+        }
+    };
+
+    // One-based page numbers from here on: the only consumers are operator
+    // sentences and the marker lines, and a conversion done at the point of
+    // display is a conversion that gets forgotten at one of several points of
+    // display.
+    let pages: Vec<(usize, String)> = extracted
+        .pages
+        .iter()
+        .map(|page| (page.page_index.saturating_add(1), page.plain_text()))
+        .collect();
+    let assembled = super::exporttext::assemble(&pages, plan.separator);
+
+    // ★★★ THE REFUSAL. Before the picker. See the header.
+    if assembled.characters == 0 {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed
+            format!(
+                "export-text-refused reason=no-text pages={} unreadable={}",
+                pages.len(),
+                extracted.diagnostics.pages_unreadable
+            )
+        });
+        let mut notes = vec![t::no_text_at_all(pages.len())];
+        // The two counters that change what "no text" MEANS, appended to the
+        // refusal rather than replacing it: a document of scans and a document
+        // of Identity-H-without-ToUnicode both come out empty, and they need
+        // different things done to them.
+        notes.extend(honesty_notes(&extracted.diagnostics));
+        super::record_notes(doc.edit_epoch, notes);
+        return;
+    }
+
+    let suggested = super::exporttext::suggested_path(&doc.path);
+    let crate::app::files::Picked::Path(target) =
+        crate::app::files::pick_save_path(&suggested, t::save_dialog_title())
+    else {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed
+            "export-text-cancelled".to_owned()
+        });
+        return;
+    };
+
+    let bytes = super::exporttext::encode(&assembled.text, plan);
+    match std::fs::write(&target, &bytes) {
+        Ok(()) => {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed
+                format!(
+                    "export-text pages={} chars={} bytes={} empty={} separator={:?} \
+                     bom={} crlf={:?}",
+                    pages.len(),
+                    assembled.characters,
+                    bytes.len(),
+                    assembled.empty_pages.len(),
+                    plan.separator,
+                    u8::from(plan.byte_order_mark),
+                    plan.line_endings
+                )
+            });
+            // ★ The receipt goes FIRST — `record_notes`' own rule: *"the first
+            // sentence is the one an operator reads if they read only one."*
+            let mut notes = vec![t::wrote(
+                &target.display().to_string(),
+                pages.len(),
+                assembled.characters,
+            )];
+            // Departures from the clipboard's own bytes, only when they
+            // happened. A bar that narrates non-events stops being read.
+            notes.extend(t::wrote_with(
+                plan.byte_order_mark,
+                matches!(plan.line_endings, super::exporttext::LineEndings::Windows),
+            ));
+            if assembled.markers_added > 0 {
+                notes.push(t::marker_lines_added(assembled.markers_added));
+            }
+            if !assembled.empty_pages.is_empty() {
+                notes.push(t::pages_without_text(&assembled.empty_pages));
+            }
+            notes.extend(honesty_notes(&extracted.diagnostics));
+            super::record_notes(doc.edit_epoch, notes);
+        }
+        Err(error) => {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed
+                format!("export-text-failed reason=write detail={error}")
+            });
+            super::record_note(doc.edit_epoch, t::export_failed(&error.to_string()));
+        }
+    }
+}
+
+/// The three counters from `TextDiagnostics` that change what an operator
+/// should do next, worded — or nothing, when all three are zero.
+///
+/// ★ A helper rather than three inline `if`s at two call sites, because **both**
+/// the refusal path and the success path owe exactly this set. A document whose
+/// every page is Identity-H-without-`/ToUnicode` refuses with a zero character
+/// count that looks identical to a scan, and the counter is the only thing that
+/// tells them apart.
+///
+/// `TextDiagnostics` carries roughly thirty counters and this takes three. The
+/// other twenty-seven are true and are not **actionable**: `spaces_derived` and
+/// `lines_derived` are facts about every extraction ever run, and the window
+/// already said so in `loses_breaks` where an operator can read it before
+/// deciding. A status bar that lists everything measured is one nobody reads,
+/// and rule 4's whole value is in being read.
+fn honesty_notes(diagnostics: &pdfcer_core::text_extract::TextDiagnostics) -> Vec<String> {
+    use crate::text::export_text as t;
+
+    let mut notes = Vec::new();
+    let unreadable_fonts = diagnostics
+        .identity_fonts_without_to_unicode
+        .saturating_add(diagnostics.type3_fonts_without_to_unicode);
+    if unreadable_fonts > 0 {
+        notes.push(t::unreadable_fonts(
+            diagnostics.identity_fonts_without_to_unicode,
+            diagnostics.type3_fonts_without_to_unicode,
+        ));
+    }
+    if diagnostics.ladder_failures > 0 {
+        notes.push(t::undecodable_characters(
+            diagnostics.ladder_failures,
+            diagnostics.codes_total,
+        ));
+    }
+    if diagnostics.pages_unreadable > 0 {
+        // `usize` for the sentence: the counter is a `u64` because a document
+        // may be arbitrarily long, and a page count that does not fit a `usize`
+        // is a document that could not have been opened.
+        notes.push(t::pages_unreadable(
+            usize::try_from(diagnostics.pages_unreadable).unwrap_or(usize::MAX),
+        ));
+    }
+    notes
 }
 
 #[cfg(test)]

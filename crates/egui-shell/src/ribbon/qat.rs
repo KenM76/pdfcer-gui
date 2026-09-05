@@ -66,6 +66,7 @@ use crate::manifest::Qat;
 use super::a11y;
 use super::band;
 use super::ctx::Ctx;
+use super::measure;
 use super::plan::ItemWidths;
 use super::report;
 
@@ -147,9 +148,9 @@ pub(crate) fn measure(ui: &egui::Ui, ctx: &Ctx<'_>, qat: Option<&Qat>) -> f32 {
         return 0.0;
     }
     // (drawn − 1) inter-control gaps, plus the trailing separator with a
-    // gap on each side — the same figure `band::separator_width` computes
+    // gap on each side — the same figure `measure::separator_width` computes
     // for the band's inter-group rule.
-    total + gap * (drawn as f32 - 1.0) + band::separator_width(ui)
+    total + gap * (drawn as f32 - 1.0) + measure::separator_width(ui)
 }
 
 /// The pieces of one QAT control's width, in the shape
@@ -182,7 +183,7 @@ fn control_pieces(ui: &egui::Ui, ctx: &Ctx<'_>, command: &Command) -> ItemWidths
             0.0
         },
         text: if with_label {
-            band::text_width(ui, &command.label, &TextStyle::Button)
+            measure::text_width(ui, &command.label, &TextStyle::Button)
         } else {
             0.0
         },
@@ -191,7 +192,7 @@ fn control_pieces(ui: &egui::Ui, ctx: &Ctx<'_>, command: &Command) -> ItemWidths
         // comfortable density and why under-estimating is the dangerous
         // direction.
         gap: ui.spacing().icon_spacing,
-        padding: band::button_padding(ui),
+        padding: measure::button_padding(ui),
     }
 }
 
@@ -203,7 +204,7 @@ pub(super) fn control_width(ui: &egui::Ui, ctx: &Ctx<'_>, command: &Command) -> 
 /// The narrowest one QAT control can be drawn, with its label truncated
 /// all the way down to the ellipsis.
 ///
-/// [`super::band::min_button_width`] is the text-only case; a QAT control
+/// [`super::measure::min_button_width`] is the text-only case; a QAT control
 /// may also carry an icon slot, which `truncate()` cannot shrink at all.
 /// So the floor is *per control*, and it is what [`render`] tests each
 /// control's remaining room against before drawing it — see that
@@ -212,7 +213,7 @@ pub(super) fn min_control_width(ui: &egui::Ui, ctx: &Ctx<'_>, command: &Command)
     let pieces = control_pieces(ui, ctx, command);
     ItemWidths {
         text: if pieces.text > 0.0 {
-            band::text_width(ui, "…", &TextStyle::Button)
+            measure::text_width(ui, "…", &TextStyle::Button)
         } else {
             0.0
         },
@@ -255,7 +256,7 @@ pub(crate) fn min_width(ui: &egui::Ui, ctx: &Ctx<'_>, qat: Option<&Qat>) -> f32 
 /// truncate, *and the ones that still do not fit are not drawn at all*.
 ///
 /// The second half is not belt-and-braces; it is required, and the reason
-/// is measured in [`super::band::min_button_width`]:
+/// is measured in [`super::measure::min_button_width`]:
 /// **`Button::truncate()` stops shrinking** at padding-plus-ellipsis. Ask
 /// a button to lay itself out in 6 pt and it lays itself out in 19.7 and
 /// overflows — silently, because `egui` does not clip children to a `Ui`'s
@@ -337,7 +338,7 @@ pub(crate) fn render(ui: &mut egui::Ui, ctx: &mut Ctx<'_>, qat: Option<&Qat>) {
     }
 
     // The divider only if there is room for it; see the header.
-    if ui.available_width() >= band::separator_width(ui) {
+    if ui.available_width() >= measure::separator_width(ui) {
         ui.separator();
     }
 }

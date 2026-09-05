@@ -207,7 +207,7 @@ pub(crate) const CUSTOM_ITEM_WIDTH: f32 = 96.0;
 /// | | mockup | this build |
 /// |---|---|---|
 /// | group's own inset | 13 px each side | `GROUP_PADDING` = 6 pt each side |
-/// | the rule between them | `border-right: 1px` — **costs no width** | `ui.separator()` — [`super::band::separator_width`] = 6 pt of line plus one `item_spacing.x` each side |
+/// | the rule between them | `border-right: 1px` — **costs no width** | `ui.separator()` — [`super::measure::separator_width`] = 6 pt of line plus one `item_spacing.x` each side |
 /// | total, group edge to group edge | 13 + 0 + 13 = **26 px** | 6 + 14 + 6 = **26 pt** at the quiet preset |
 ///
 /// So the inter-group breathing room already matches the specification to the

@@ -74,6 +74,36 @@ pub(crate) enum Intent {
     Activate(PanelId),
     /// Remove a panel from the layout.
     Close(PanelId),
+    /// ★★★ **Tear a panel out into a window of its own.**
+    ///
+    /// An intent rather than a direct write for the same reason every
+    /// other one here is — the layout is mutated in exactly one place,
+    /// after the frame has drawn — and for one reason peculiar to this
+    /// one: floating a panel *removes it from the tree*, so a direct write
+    /// mid-frame would pull a compartment out from under a body that had
+    /// already been laid out into it.
+    Float(PanelId),
+    /// **Put a floating panel back where it came from.**
+    ///
+    /// The mirror of [`Self::Float`]. Raised by the float window's own
+    /// header control and by the application's dock command.
+    Dock(PanelId),
+    /// **Remember where the operator has left a float window.**
+    ///
+    /// Raised once per frame per open float window, from the geometry the
+    /// platform reports. Applying it is a no-op when nothing moved — see
+    /// [`crate::dock::DockLayout::set_float_geometry`], whose return value
+    /// is what stops a still window marking the layout dirty sixty times a
+    /// second and saving `layout.ron` on every one of them.
+    FloatGeometry {
+        /// Which floating panel.
+        panel: PanelId,
+        /// Its window's outer position in desktop points, if the platform
+        /// reported one. `None` is *"not placed yet"*, never *"at zero"*.
+        pos: Option<[f32; 2]>,
+        /// Its window's inner size in points.
+        size: [f32; 2],
+    },
     /// ★★ **Collapse a side, or bring it back.**
     ///
     /// The operator's ask of 2026-08-20: *"add the little tabs that allow the

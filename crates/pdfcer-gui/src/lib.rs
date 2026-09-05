@@ -62,6 +62,18 @@
 pub mod acrobat;
 pub mod app;
 pub mod canvas;
+// ⚠ THE **OS** CLIPBOARD, and it is NOT `canvas::clipboard`.
+//
+// `canvas::clipboard` is pdfcer's own internal one — it carries selected page
+// objects from one place in a document to another, in pdfcer's own types, and
+// no other program can see it.
+//
+// THIS one is O120's second half: the bytes another application receives when
+// the operator pastes into Word, Inkscape or LibreOffice, in the formats and
+// the ORDER those programs read. Nothing here places anything yet, and the
+// module header says at length what is missing and why shipping half of it
+// would be worse than shipping none.
+pub mod clipboard;
 pub mod diag;
 // The shell's stationary, screen-anchored surfaces — Print today, Properties
 // and the settings host to come. A dialog is one transaction with a start and
@@ -96,6 +108,17 @@ pub mod ocr;
 /// cross-document drag has to do on its way. See the module header.
 pub mod pagedrag;
 pub mod panels;
+/// Putting a password on a document, changing what it allows, and taking the
+/// protection off — `OPERATOR_REQUESTS.md` **O119**, approved 2026-09-04.
+///
+/// The headless half of the two Security controls: what the document says
+/// today, which jobs it may be offered, which of the engine's three encryption
+/// verbs a choice reaches, and the atomic write at the end. The window is
+/// `crate::dialogs::protect`; the split is `crate::redact`'s, and for the same
+/// reason — every rule on this surface is a rule about the operator's file, and
+/// a rule that can only be exercised by driving a window is one that gets
+/// asserted once, by hand, and then drifts.
+pub mod protect;
 // Redaction: the apply pipeline and its absence proof, salvaged whole from the
 // old shell — the ONE place that proof exists anywhere, `pdfcer-core` included.
 // See REDACT's own header for the two full rewrites, for why the proof is made

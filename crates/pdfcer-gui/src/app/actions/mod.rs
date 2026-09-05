@@ -36,6 +36,17 @@ mod saving;
 /// The verbs that move the operator rather than the document.
 mod view;
 
+/// ★★★ **Placing NEW page text, and the width question** —
+/// `OPERATOR_REQUESTS.md` **O127**, defect 2.
+///
+/// Split out of [`apply`] under R2 on 2026-09-04, along [`funnel`]'s seam: that
+/// file routes, and this one **decides**. A PDF has no paragraph, so a
+/// multi-line add needs a width to wrap against — and once Enter makes a line
+/// break at a *clicked* caret, which has no extent, somebody has to answer
+/// where the second line ends. Its header carries the answer and, more
+/// importantly, why the answer is read off the operator's own sheet rather than
+/// invented.
+mod addtext;
 mod annots;
 /// What applying an [`Action`] does — the interpreter half of this module.
 ///
@@ -312,6 +323,16 @@ pub(crate) fn plant_edit_disclosure_for_test(disclosure: EditDisclosure) {
 /// written, and with the one combination pdfcer refuses named as an enum rather
 /// than as a `bool`. `OPERATOR_REQUESTS.md` O120.
 pub mod imageexport;
+
+/// ★★★ **What a TEXT export is** — which pages, what goes between them, and how
+/// the bytes are encoded — plus the pure parts of making one, and the recorded
+/// finding that the **import** half the operator asked for in the same sentence
+/// does not exist in `pdfcer-core` at all.
+///
+/// Its header carries the three different features "import text" could mean and
+/// the reason none of the three is buildable today. Read it before adding an
+/// import control.
+pub mod exporttext;
 
 #[cfg(test)]
 mod tests;

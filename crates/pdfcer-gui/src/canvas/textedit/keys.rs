@@ -149,6 +149,87 @@ fn take_selection(draft: &mut Draft) -> usize {
     caret::delete_range(&mut draft.text, from, to)
 }
 
+/// **What pressing Enter does**, as three named outcomes.
+///
+/// `OPERATOR_REQUESTS.md` **O127**, defect 2 — the operator: *"can the enter key
+/// create new lines when we are editing or creating text?"*
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EnterMeans {
+    /// Insert a line break at the caret. What Enter means, everywhere it can.
+    NewLine,
+    /// Finish the draft and write it. **`Ctrl+Enter`, in every draft.**
+    Commit,
+    /// A line break cannot go here, and the operator is told so by name. The
+    /// draft is left alive.
+    CannotSplit,
+}
+
+/// **Enter's whole contract, as a pure function.**
+///
+/// | draft | Enter | Ctrl+Enter |
+/// |---|---|---|
+/// | a dragged **box** | a line break | commit |
+/// | a clicked **point** | a line break | commit |
+/// | an existing **run** | a worded decline | commit |
+///
+/// # ★★★ Why this is a function rather than three branches in the arm
+///
+/// Because *"decide the whole interaction, not half of it"* is a claim that has
+/// to be checkable, and a `match` buried inside a 200-line event loop is not.
+/// Every rule in the table above is proved by [`tests`] with no window, no
+/// document, no `egui::Context` and no keyboard — which is the same discipline
+/// `canvas::moving::eligible` and `SelectionState::click` are written to, and
+/// the reason those two have rules a reader can trust.
+///
+/// ★ It is also the trace's operand. `text-edit-enter means=NewLine` says which
+/// branch was taken; the line it replaced said `boxed=1 command=0` and left the
+/// reader to re-run the rule in their head against a build they were debugging.
+///
+/// # ★★ What changed, and the argument that was retired to change it
+///
+/// Enter used to mean *line break* in a box and *commit* everywhere else, and
+/// `Anchor::Box` was documented as being a variant rather than an
+/// `Option<Rect>` on `Origin` **precisely because** Enter could not mean two
+/// things in one draft.
+///
+/// That argument is now retired rather than ignored. Enter means **one** thing:
+/// a new line. The anchors therefore no longer differ on this key at all, and
+/// what still separates them — the WIDTH, which a drag chooses and a click does
+/// not — is settled at the commit in `app::actions::addtext`, where the page's
+/// geometry is in scope.
+///
+/// ⇒ The variant stays, for the reason that outlived the one it was introduced
+/// with: `Anchor::Run` must be distinguishable *here*, and asking the TEXT
+/// (*"does it already contain a newline?"*) would make the first Enter behave
+/// differently from every one after it, which is the worst available answer.
+///
+/// # ★★★ [`EnterMeans::CannotSplit`] is the FILE's rule, not this shell's
+///
+/// `EditSession::edit_text` replaces the string inside **one show operator**,
+/// re-encoding it into that run's own font. `\n` has no code in any standard
+/// encoding, so the engine refuses it by name — `Refusal { trigger:
+/// TargetAbsent, character: Some('\n') }` — rather than dropping it. A PDF has
+/// no paragraph: each visible line is its own operator at its own absolute
+/// position, so splitting a line in two is not an edit to that line, it is
+/// authoring a second one somewhere.
+///
+/// Committing quietly, which is what this did before, hid that from an operator
+/// who had just asked the question with his fingers.
+#[must_use]
+pub const fn enter_means(anchor: &Anchor, command: bool) -> EnterMeans {
+    if command {
+        // ★ Asked FIRST, so the chord is unconditional. An operator should not
+        // have to know which gesture started the draft they are in to know how
+        // to finish it — and O127's brief is explicit that commit must not be
+        // reachable only by mouse.
+        return EnterMeans::Commit;
+    }
+    match anchor {
+        Anchor::Run { .. } => EnterMeans::CannotSplit,
+        Anchor::Origin { .. } | Anchor::Box { .. } => EnterMeans::NewLine,
+    }
+}
+
 /// **Consume this frame's keystrokes into the draft.**
 ///
 /// Returns `true` when the draft was committed by Enter, so the caller knows the
@@ -401,8 +482,46 @@ pub fn typing(
                 egui::Event::Key {
                     key: key @ (egui::Key::ArrowUp | egui::Key::ArrowDown),
                     pressed: true,
+                    modifiers,
                     ..
                 } => {
+                    // ★★★ **THE DRAFT'S OWN LINES COME FIRST** — O127, defect 2.
+                    //
+                    // A multi-line draft is a thing the operator is *looking
+                    // at*, and Up in it means the line above **in the box**,
+                    // not the line above on the sheet. Asked before
+                    // `blocks::step` rather than after, because the two answers
+                    // are both plausible and only one of them is what the
+                    // operator can see.
+                    //
+                    // ★ It is also the cheap one: this is arithmetic on a
+                    // `String`, while `blocks::step` extracts and recognises
+                    // the whole page — 336 ms on the benchmark CAD sheet, on a
+                    // keystroke path. A draft that answers here never pays it.
+                    //
+                    // ⇒ On a single-line draft `super::lines::up` answers
+                    // `None`, so this falls straight through and the page-level
+                    // walk behaves exactly as it did. Nothing about editing an
+                    // existing run changed.
+                    let vertical = if key == egui::Key::ArrowUp {
+                        super::lines::up(&draft.text, draft.caret)
+                    } else {
+                        super::lines::down(&draft.text, draft.caret)
+                    };
+                    if let Some(to) = vertical {
+                        // Rule 4 of the selection set, applied here as
+                        // everywhere: an unshifted movement drops the mark.
+                        // Shift+Up extends the selection through the break,
+                        // which is what a multi-line field does.
+                        draft.mark = caret::moved(
+                            draft.mark,
+                            draft.caret,
+                            caret::shifted(modifiers.shift, frame_shift),
+                        );
+                        draft.caret = to;
+                        changed = true;
+                        continue;
+                    }
                     let dir = if key == egui::Key::ArrowUp {
                         blocks::Vertical::Up
                     } else {
@@ -429,6 +548,21 @@ pub fn typing(
                     // shell cannot commit, and offering it would be a gesture
                     // whose result is a refusal.
                     let shift = caret::shifted(modifiers.shift, frame_shift);
+                    // ★★ A MULTI-LINE DRAFT ANSWERS FOR ITSELF — O127, defect
+                    // 2. Home on the middle line of a three-line box used to
+                    // jump to the top of the whole draft, because the fallback
+                    // below is `caret = 0` and that is only right for one line.
+                    //
+                    // Before `blocks::line`, for the reason the vertical arm
+                    // gives: these are lines the operator typed and is looking
+                    // at, and the page's own lines are a different question
+                    // about a different thing.
+                    if super::lines::is_multi_line(&draft.text) {
+                        draft.mark = caret::moved(draft.mark, draft.caret, shift);
+                        draft.caret = super::lines::start_of_line(&draft.text, draft.caret);
+                        changed = true;
+                        continue;
+                    }
                     if !shift && blocks::line(ctx, doc, &draft, false, actions) {
                         return true;
                     }
@@ -443,6 +577,13 @@ pub fn typing(
                     ..
                 } => {
                     let shift = caret::shifted(modifiers.shift, frame_shift);
+                    // The other half of Home's fix — see its comment.
+                    if super::lines::is_multi_line(&draft.text) {
+                        draft.mark = caret::moved(draft.mark, draft.caret, shift);
+                        draft.caret = super::lines::end_of_line(&draft.text, draft.caret);
+                        changed = true;
+                        continue;
+                    }
                     if !shift && blocks::line(ctx, doc, &draft, true, actions) {
                         return true;
                     }
@@ -487,33 +628,100 @@ pub fn typing(
                     modifiers,
                     ..
                 } => {
+                    // ★★★ The decision is a PURE FUNCTION and this arm only
+                    // carries it out — see [`enter_means`], whose docs are the
+                    // whole of Enter's contract and whose tests prove it
+                    // without a window, a document or a keyboard.
+                    let means = enter_means(&draft.anchor, modifiers.command);
                     crate::diag::trace(|| {
                         // ui-text-exempt: diagnostic trace, never displayed.
                         //
-                        // ★ Enter is the one keystroke in this handler with TWO
-                        // meanings, so its ARRIVAL is worth reporting separately
-                        // from its effect. The multi-line work spent a driven
-                        // run on *"did the key arrive, or did the branch pick
-                        // wrong?"*, which the `text-edit-typing` line cannot
-                        // answer: it reports a length, and both failures leave
-                        // the length unchanged.
-                        format!(
-                            "text-edit-enter boxed={} command={}",
-                            u8::from(matches!(draft.anchor, Anchor::Box { .. })),
-                            u8::from(modifiers.command),
-                        )
+                        // ★ Enter is the one keystroke in this handler with
+                        // THREE meanings, so its ARRIVAL is worth reporting
+                        // separately from its effect. The multi-line work spent
+                        // a driven run on *"did the key arrive, or did the
+                        // branch pick wrong?"*, which the `text-edit-typing`
+                        // line cannot answer: it reports a length, and both
+                        // failures leave the length unchanged.
+                        //
+                        // ★★ It now reports the DECISION rather than the two
+                        // inputs it was derived from. `boxed=1 command=0` left
+                        // a reader to re-run the rule in their head; `means=`
+                        // is the answer, so a harness can assert the branch
+                        // that was taken rather than the facts that fed it.
+                        format!("text-edit-enter means={means:?}")
                     });
-                    if matches!(draft.anchor, Anchor::Box { .. }) && !modifiers.command {
-                        // ★ `newline`, NOT `insert` — see its docs. `insert`
-                        // drops control characters, correctly, and ate this
-                        // exact keystroke for one driven run.
-                        draft.caret = caret::newline(&mut draft.text, draft.caret);
-                        changed = true;
-                    } else {
+                    if means == EnterMeans::Commit {
+                        // ★★★ **Ctrl+Enter ALWAYS commits**, in every draft.
+                        // O127's brief: *"commit must not be reachable only by
+                        // mouse."* It already was for a box; it is now the one
+                        // chord that finishes any draft, so an operator does
+                        // not have to know which gesture started the one they
+                        // are in to know how to end it.
                         commit_into(ctx, &draft, actions);
                         abandon(ctx);
                         return true;
                     }
+                    if means == EnterMeans::CannotSplit {
+                        // ★★★ **A LINE ALREADY ON THE PAGE CANNOT BE SPLIT, AND
+                        // NOW IT SAYS SO** — O127, defect 2.
+                        //
+                        // This used to commit. That is a defensible behaviour
+                        // and it is the wrong one, because it makes Enter mean
+                        // *insert a line break* in two drafts and *finish this
+                        // edit* in the third — so the operator's question
+                        // (*"can the enter key create new lines when we are
+                        // editing?"*) gets a silent, invisible "no" delivered
+                        // as a completed edit.
+                        //
+                        // ⇒ Enter now means one thing everywhere: **a new
+                        // line**. Where the file cannot hold one, the operator
+                        // is told, by name, with both routes out — and the
+                        // draft is left alive so the sentence is about the key
+                        // they just pressed rather than about a box that has
+                        // already closed.
+                        //
+                        // ★★ It is the FILE's rule and not a shortcoming of
+                        // this shell. `EditSession::edit_text` re-encodes the
+                        // replacement into the run's own font, and `\n` has no
+                        // code in any standard encoding — the engine refuses it
+                        // by name (`Refusal`, `TargetAbsent`, `'\n'`). A show
+                        // operator is one line by construction. Committing
+                        // quietly hid a fact the operator is entitled to.
+                        actions.push(crate::app::actions::Action::Text(
+                            crate::app::actions::text::TextAction::EnterCannotSplit,
+                        ));
+                        crate::diag::trace(|| {
+                            // ui-text-exempt: diagnostic trace, never displayed.
+                            "text-edit-enter-declined reason=run-cannot-hold-a-newline".to_owned()
+                        });
+                        continue;
+                    }
+                    // ★★★ **BOTH AUTHORING ANCHORS TAKE A LINE BREAK.**
+                    //
+                    // The box always did. `Anchor::Origin` — a click on bare
+                    // page — did not, and committed instead; that is the half
+                    // of the report that reads *"can the enter key create new
+                    // lines when we are … creating text?"*
+                    //
+                    // ★★ The box was a variant rather than an `Option<Rect>` on
+                    // `Origin` **because Enter could not mean two things in one
+                    // draft**, and that argument is now retired rather than
+                    // ignored: Enter means the same thing in both, so the
+                    // variants no longer differ on this key at all. What still
+                    // separates them is the WIDTH — a drag chooses one and a
+                    // click does not — and that is settled at the commit, in
+                    // `app::actions::addtext`, where the page's own geometry is
+                    // in scope. It is not settled here, because a keystroke
+                    // handler that reached for a crop box would be the second
+                    // place in this shell that decides how wide new text is.
+                    //
+                    // ★ `newline`, NOT `insert` — see its docs. `insert` drops
+                    // control characters, correctly, and ate this exact
+                    // keystroke for one driven run.
+                    draft.caret = take_selection(&mut draft);
+                    draft.caret = caret::newline(&mut draft.text, draft.caret);
+                    changed = true;
                 }
                 _ => {}
             }
@@ -996,5 +1204,112 @@ mod tests {
             None,
             "an unshifted move drops the selection - rule 4"
         );
+    }
+
+    /// ★★★ **Enter means a NEW LINE, and it means it everywhere it can.**
+    ///
+    /// `OPERATOR_REQUESTS.md` **O127**, defect 2, and the whole of the answer to
+    /// *"can the enter key create new lines when we are editing or creating
+    /// text?"* Both authoring anchors take a break: the dragged box always did,
+    /// and the clicked point — which used to commit — now does too.
+    #[test]
+    fn enter_makes_a_new_line_in_both_authoring_drafts() {
+        for anchor in [
+            Anchor::Origin { x: 10.0, y: 20.0 },
+            Anchor::Box {
+                llx: 0.0,
+                lly: 0.0,
+                urx: 100.0,
+                ury: 50.0,
+            },
+        ] {
+            assert_eq!(
+                enter_means(&anchor, false),
+                EnterMeans::NewLine,
+                "{anchor:?} is text being CREATED, so Enter must break the line"
+            );
+        }
+    }
+
+    /// ★★★ **Ctrl+Enter commits every draft there is.**
+    ///
+    /// O127's brief in one assertion: *"commit must not be reachable only by
+    /// mouse."* Asserted across all three anchors rather than on the one that
+    /// changed, because the property being claimed is universality — an operator
+    /// must not have to know which gesture started the draft they are in to know
+    /// how to finish it.
+    #[test]
+    fn control_enter_commits_whatever_the_draft_is() {
+        for anchor in [
+            Anchor::Origin { x: 10.0, y: 20.0 },
+            Anchor::Box {
+                llx: 0.0,
+                lly: 0.0,
+                urx: 100.0,
+                ury: 50.0,
+            },
+            Anchor::Run {
+                run: 3,
+                original: "TITLE".to_owned(),
+            },
+        ] {
+            assert_eq!(
+                enter_means(&anchor, true),
+                EnterMeans::Commit,
+                "Ctrl+Enter must finish {anchor:?} — the chord is the keyboard route out"
+            );
+        }
+    }
+
+    /// ★★★ **Enter in text already on the page DECLINES rather than
+    /// committing.**
+    ///
+    /// The behaviour change O127 turns on, and the one a reader will want to
+    /// argue with. It used to commit — which is defensible, and is the wrong
+    /// answer, because it gives the operator's question a silent "no" dressed as
+    /// a completed edit.
+    ///
+    /// It is the FILE's rule: `edit_text` re-encodes into the run's own font,
+    /// and a line-feed has no code in any standard encoding — so the engine
+    /// refuses it by name rather than dropping it. A show operator is one line
+    /// by construction.
+    #[test]
+    fn enter_in_an_existing_run_declines_instead_of_committing() {
+        let anchor = Anchor::Run {
+            run: 3,
+            original: "TITLE".to_owned(),
+        };
+        assert_eq!(
+            enter_means(&anchor, false),
+            EnterMeans::CannotSplit,
+            "a show operator cannot hold a line break, and the operator is owed the sentence saying so rather than an edit finishing under them"
+        );
+        assert_ne!(
+            enter_means(&anchor, false),
+            EnterMeans::Commit,
+            "committing here is what made the answer invisible — it looks like success"
+        );
+    }
+
+    /// ★★ **The three outcomes are distinct, and the modifier is what separates
+    /// the two that share an anchor.**
+    ///
+    /// A build that collapsed `CannotSplit` into `Commit` would compile, would
+    /// pass a test that only checked the two authoring anchors, and would put
+    /// the shell back exactly where the operator found it.
+    #[test]
+    fn the_modifier_is_the_only_thing_that_changes_a_run_draft() {
+        let anchor = Anchor::Run {
+            run: 0,
+            original: String::new(),
+        };
+        assert_ne!(enter_means(&anchor, false), enter_means(&anchor, true));
+        let boxed = Anchor::Box {
+            llx: 0.0,
+            lly: 0.0,
+            urx: 10.0,
+            ury: 10.0,
+        };
+        assert_ne!(enter_means(&boxed, false), enter_means(&boxed, true));
     }
 }

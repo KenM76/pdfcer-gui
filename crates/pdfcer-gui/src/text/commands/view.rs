@@ -198,6 +198,41 @@ pub const fn edit_paste_duplicate() -> CommandText {
     )
 }
 
+/// `edit.copy_as_vector` — the clipboard's copy-OUT.
+///
+/// **Ken, 2026-09-03** (`OPERATOR_REQUESTS.md` **O120**): *"Also I'd like to be
+/// able to copy and paste anything to other software - like copy and paste
+/// vector graphics into word or inkscape for example if possible."*
+///
+/// ★★★ The tooltip leads with **what arrives at the other end**, because that is
+/// the only thing that distinguishes this from the Copy beside it. Ordinary Copy
+/// puts an internal clip on the clipboard plus a picture; this puts the
+/// *geometry*, so what lands in the next drawing is still line-work rather than
+/// a photograph of line-work. An operator cannot tell those apart by looking at
+/// the paste — they find out when they try to recolour it — so the difference
+/// has to be stated before the press rather than discovered after it.
+///
+/// ★ It names Word and Inkscape by name, which this catalogue does sparingly,
+/// because they are the two applications the operator named and because the
+/// promise is *specifically* about them: the format order was measured against a
+/// real Word paste, and Inkscape's own preference list is where the SVG's
+/// position came from. A vaguer "other programs" would be a weaker claim than
+/// the one that was actually tested.
+///
+/// ★★ It says what the operand is — selection if there is one, page otherwise —
+/// because that is the one thing about this command that is not visible on the
+/// button, and getting a whole sheet when three parts were selected is the
+/// surprise worth spending a clause on.
+#[must_use]
+pub const fn edit_copy_as_vector() -> CommandText {
+    CommandText::new(
+        "Copy as vector",
+        "Copy the selection \u{2014} or this whole page, if nothing is selected \u{2014} as \
+         EDITABLE GEOMETRY rather than as a picture of it. Paste into Word, PowerPoint or \
+         Inkscape and the line-work can still be scaled, recoloured and taken apart.",
+    )
+}
+
 /// `pages.copy` — copy the picked sheets.
 ///
 /// ★ The tooltip names the OPERAND RULE, because it is the one thing an
@@ -626,6 +661,111 @@ pub const fn view_close_other_documents() -> CommandText {
 ///
 /// **Restore both the moment the chooser lands** — the original wording is
 /// quoted above so that is a copy rather than a rewrite.
+/// **Float this panel** — tear it out of the dock into a window of its own.
+///
+/// # The words, and the two that were rejected
+///
+/// *"Float"* rather than *"Undock"* or *"Tear out"*.
+///
+/// **"Undock"** names the thing that stops happening rather than the thing
+/// that starts. An operator reading a menu is looking for what they will
+/// get, and what they get is a window — the fact that it left the dock is
+/// how, not what.
+///
+/// **"Tear out"** is the gesture's name in every product that implements
+/// this as a drag, and this one is not a drag: `MODES_AND_PANELS.md`
+/// specifies *"a stationary Float this panel… command rather than
+/// drag-to-tear"*, and a menu row named after a gesture that does not
+/// exist here would teach the wrong thing about the interface.
+///
+/// ★ **No ellipsis.** It acts; it does not ask. The convention this
+/// catalog follows is that an ellipsis means a dialog is coming.
+#[must_use]
+pub const fn view_panel_float() -> CommandText {
+    CommandText::new(
+        // ★ "Float panel" and not "Float". The label has to be unique across
+        // the whole registry (`no_two_commands_share_a_label`), and the noun
+        // earns its place beyond that test: this row sits in a menu beside
+        // "Reset layout", which acts on the whole dock, so saying which
+        // subject each row has is what stops the two reading as a pair of
+        // options on one thing.
+        "Float panel",
+        "Move this panel into a window of its own, which you can put anywhere - including on \
+         another monitor. Dock puts it back where it came from.",
+    )
+}
+
+/// **Dock this panel** — put a floating panel back where it came from.
+///
+/// The tooltip promises *where it came from* rather than *back in the
+/// dock*, because that is the property the implementation actually holds
+/// and the one an operator would otherwise have to test to find out. See
+/// `egui_shell::dock::float`'s header for why putting it back "somewhere
+/// sensible" was rejected.
+#[must_use]
+pub const fn view_panel_dock() -> CommandText {
+    CommandText::new(
+        "Dock panel",
+        "Put this panel back in the dock, in the same place it was when you floated it.",
+    )
+}
+
+/// **Close this panel** — take it off screen entirely.
+///
+/// ★★ The tooltip names the way back, and that is not padding. Closing is
+/// the only one of the three verbs that leaves no visible trace of the
+/// panel anywhere, so it is the only one where an operator can be left
+/// wondering whether they have lost something. Naming the View tab costs
+/// a clause and removes the whole question.
+#[must_use]
+pub const fn view_panel_close() -> CommandText {
+    CommandText::new(
+        // ★★ "Close panel", not "Close" — and here the noun is load-bearing
+        // rather than merely tidy. `file.close` is already labelled "Close"
+        // and closes the DOCUMENT. Two rows reading "Close", one of which
+        // discards a panel and the other of which can discard unsaved work,
+        // is a collision the operator pays for and not one the registry does.
+        "Close panel",
+        "Take this panel off screen. You can bring it back from the View tab.",
+    )
+}
+
+/// **Dock all floating panels** — the way back to a window you cannot
+/// reach.
+///
+/// # ★★★ Why this exists as a command of its own
+///
+/// A floating panel lives in an OS window at a remembered desktop
+/// position. Unplug the monitor that position was on and the window is
+/// still open, still in the layout, and **unreachable**: it cannot be
+/// dragged, it cannot be closed, and it cannot be floated again because it
+/// already is.
+///
+/// Every other route out of that state needs the operator to act *on the
+/// window*. This one acts on all of them at once, from the application
+/// window, which is the one surface guaranteed to be on a monitor that
+/// exists.
+///
+/// ★★ Reset layout is the other route and it is stronger — it also
+/// restores the arrangement. This one is the *cheap* route: it costs the
+/// operator nothing they arranged. Offering both is the two-tier shape
+/// `MODES_AND_PANELS.md` singles out as the thing the best product in its
+/// benchmark table got right.
+///
+/// ★ Greyed rather than hidden when nothing is floating, and that is R9
+/// applied rather than R9 broken: this is *temporarily* unavailable —
+/// there is simply nothing to dock this second — and the hover says so.
+/// Hiding it would make the remedy invisible exactly until the operator
+/// needs it, which is the wrong half of the cycle to be visible in.
+#[must_use]
+pub const fn view_dock_all_panels() -> CommandText {
+    CommandText::new(
+        "Dock all panels",
+        "Bring every floating panel back into the dock. Use this if a panel window has ended up \
+         on a monitor you no longer have.",
+    )
+}
+
 #[must_use]
 pub const fn view_reset_layout() -> CommandText {
     CommandText::new(

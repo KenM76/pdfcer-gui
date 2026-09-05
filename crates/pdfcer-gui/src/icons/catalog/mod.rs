@@ -1454,6 +1454,33 @@ pub enum Icon {
     /// at all". From [`Icon::Accept`] by scale and enclosure, `check-box.svg` by
     /// count, [`Icon::Encrypt`] by the interior alone — one page, two questions.
     Permissions,
+    /// Select everything on the page — `edit.select_all`.
+    ///
+    /// A dashed marquee enclosing the pointer. ★★★ **This variant exists
+    /// because a refusal was mistaken for a ruling.** Its absence was argued in
+    /// prose by a build session on 2026-09-01, quoted in four places, and had
+    /// begun to be reported to the operator as settled. He corrected it on
+    /// 2026-09-04: *"I didn't refuse that."*
+    ///
+    /// ⇒ The lesson is kept beside the art rather than filed away: **a
+    /// well-argued refusal written by whoever happened to be building that day
+    /// is not an operator decision, and quoting it does not make it one.** The
+    /// two are told apart by asking who said it, and the answer belongs in the
+    /// sentence.
+    ///
+    /// The surviving half of the old argument is drawn into the glyph — see
+    /// `select-all.svg`'s own comment for why the marquee encloses a pointer
+    /// rather than standing alone.
+    SelectAll,
+
+    /// Set the swept run bold — `format.bold`. A capital B, stroked HEAVY.
+    /// ★ The first pair authored under `OVERVIEW.md`'s seam: the ruling lives in
+    /// `bold.svg`, and this is the pointer. Weight, correction, neighbours there.
+    Bold,
+    /// Set the swept run italic — `format.italic`. A slanted capital I.
+    /// ★ Ruling in `italic.svg`: the slant, the offset serifs that clear
+    /// [`Icon::TextSelect`], and the refusal both of this pair correct.
+    Italic,
 }
 
 // ★ The mapping lives next door. `Icon::ALL`, `Icon::source` and `Icon::name`

@@ -97,6 +97,9 @@
 //! | C | marking traces no mark, so nothing after it means anything |
 //! | D | the apply report never appears, or reports `verified=false` on a clean fixture |
 //! | E | **the confirm control is live before the acknowledgement is given** — the gate that stands between an operator and the one irreversible operation in the program |
+//! | E2 | *note only* — the *replace the original* choice is not drawn. A note rather than a failure because the application draws it only when the source is still a file on disk |
+//! | E3 | **the default destination is not on screen**, or **the undo-loss disclosure is missing or sits below the confirm control**. Added 2026-09-04 with `Pass 250.1`: applying into the open document clears the WHOLE undo log, and the operator accepted that on the condition he is told before he commits. Geometry is the one thing the headless suite cannot assert |
+//! | E4 | switching to *a new file* leaves the button dead (the overwrite acknowledgement being demanded by a destination that overwrites nothing), or leaves the undo disclosure on screen (a false claim about work that survives on that route) |
 //! | F | no file was written |
 //! | G | **the source file changed** — a redaction that wrote over the document it came from |
 //! | H | the secret survives in the output, or the survivor does not |
@@ -154,6 +157,40 @@ const ACK_REGION: &str = "redact-apply-ack";
 /// evidence that the gate is closed, rather than the absence of evidence a
 /// disabled-but-drawn control would leave.
 const CONFIRM_REGION: &str = "redact-apply-confirm";
+
+/// The dialog's *replace the open file* destination choice.
+///
+/// ★ Declared by the application **only while the document has an original to
+/// replace** — `RedactDialog::can_replace_original`, which asks the file system
+/// — so its absence is ambiguous between "this build does not draw the control"
+/// and "the fixture is no longer on disk". Phase E2 says so rather than
+/// choosing.
+const DESTINATION_REPLACE_REGION: &str = "redact-apply-destination-replace";
+
+/// The dialog's *this document* destination choice — **the default since
+/// 2026-09-04 (evening)**, and the one the operator asked for by name.
+///
+/// ★ Declared **unconditionally**, unlike its two siblings: every document can
+/// be redacted into, including one created in this session with no file to
+/// replace. So its absence is unambiguous and is a **failure** rather than a
+/// SKIP — there is no innocent reading of it.
+const DESTINATION_INTO_DOCUMENT_REGION: &str = "redact-apply-destination-into-document";
+
+/// The dialog's *a new file* destination choice.
+///
+/// Also unconditional. Phase E2 **clicks** it, because the default no longer
+/// writes a file and phases F–I are entirely about a file — see E2's own note
+/// on why the check moves off the default deliberately and says so.
+const DESTINATION_NEW_FILE_REGION: &str = "redact-apply-destination-new-file";
+
+/// The dialog's undo-loss disclosure.
+///
+/// ★★★ Declared only while the deferred destination is selected, which is what
+/// makes the geometric assertion in phase E2 possible: the sentence must be
+/// **above** the confirm control, because the whole of what this shell offered
+/// in exchange for accepting a redaction that clears the undo log was that the
+/// operator would be told *before* he commits.
+const UNDO_NOTE_REGION: &str = "redact-apply-undo-note";
 
 /// Every region name the redaction surfaces publish, for a SKIP reason.
 const REGION_PREFIX: &str = "redact-";
@@ -763,6 +800,89 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                 .to_owned(),
         );
 
+        // --- PHASE E2: ★ the destination choice is DRAWN ------------------
+        //
+        // Added 2026-09-04 with the destination itself, and deliberately a
+        // **presence** assertion rather than a click: this check's own written
+        // rule is that the safe default must be what an unattended run takes,
+        // and clicking *replace* here would have the harness overwrite its own
+        // fixture — which is a thing the feature is supposed to be able to do
+        // and a terrible thing for a check that then wants to compare the
+        // fixture against the output (phases G–I do exactly that).
+        //
+        // ★ What it is worth: the operator asked for this control by name, and
+        // a build that shipped it as dead code — the field set, the radio never
+        // drawn — would pass every unit test in `dialogs::redact`, because
+        // those drive `choose_destination` directly and never lay anything out.
+        // The region is declared from inside the layout pass, so its presence
+        // is evidence the control reached the screen.
+        //
+        // Its absence is a SKIP rather than a failure for one honest reason:
+        // the region is declared only when `can_replace_original()` is true,
+        // which asks the file system whether the fixture is still on disk. A
+        // harness whose temporary directory has been swept out from under it
+        // would otherwise report a UI defect that is nothing of the kind.
+        if declared(&session.trace()?, ui_rect, DESTINATION_REPLACE_REGION).is_some() {
+            report.note(
+                "phase E2: the destination choice is drawn, so the operator can send the \
+                 redaction to the file he opened instead of a copy"
+                    .to_owned(),
+            );
+        } else {
+            report.note(format!(
+                "phase E2: ⚠ `{DESTINATION_REPLACE_REGION}` was NOT declared. Either this build \
+                 does not draw the destination choice — which is the finding, and it is the \
+                 control the operator asked for on 2026-09-04 — or the fixture is no longer a \
+                 file on disk, which is what `RedactDialog::can_replace_original` asks and which \
+                 a swept temporary directory would change. Recorded as a note rather than a \
+                 failure because this check cannot tell those two apart from the trace alone."
+            ));
+        }
+
+        // --- PHASE E3: ★★★ the DEFAULT destination, and the undo disclosure
+        //                    that has to precede the button -----------------
+        //
+        // Added 2026-09-04 (evening) with `Pass 250.1`. The default destination
+        // is no longer a file at all: it applies the removal INTO the open
+        // document and leaves the write to Save, which is what the operator
+        // asked for in O125. Two assertions, and neither is a note:
+        //
+        // 1. **the choice is on screen.** Unlike the replace row, this region
+        //    is declared unconditionally by the application — every document
+        //    can be redacted into — so its absence has no innocent reading and
+        //    is a failure rather than a SKIP.
+        //
+        // 2. ★★★ **the undo-loss sentence is ABOVE the confirm control.**
+        //    Applying into the document clears the whole undo log, and this
+        //    shell's answer to the engine's finalizing design was that the
+        //    operator is told BEFORE he commits. A build that drew the sentence
+        //    below the button, or in a collapsed region, or on the wrong
+        //    destination, would satisfy every unit test in `dialogs::redact` —
+        //    those drive `undo_disclosure()` directly and lay nothing out —
+        //    and would break the only promise that made the finalizing variant
+        //    acceptable. Geometry is the one thing a headless test cannot say.
+        let trace = session.trace()?;
+        if declared(&trace, ui_rect, DESTINATION_INTO_DOCUMENT_REGION).is_none() {
+            return Ok(Some(format!(
+                "★ THE DEFAULT DESTINATION IS NOT ON SCREEN. `{DESTINATION_INTO_DOCUMENT_REGION}` \
+                 was not declared, and unlike the replace row the application declares it for \
+                 every document — there is no file-system condition on it. So this is a build \
+                 that does not draw the control the operator asked for by name on 2026-09-04: \
+                 apply into the open document, and let Save decide where it lands."
+            )));
+        }
+        let undo_note = declared(&trace, ui_rect, UNDO_NOTE_REGION);
+        if undo_note.is_none() {
+            return Ok(Some(format!(
+                "★★★ THE UNDO-LOSS DISCLOSURE IS MISSING. `{UNDO_NOTE_REGION}` was not declared \
+                 with the default destination selected. Applying into the open document CLEARS \
+                 THE WHOLE UNDO LOG — not only the redaction — and the operator accepted that \
+                 finalizing behaviour on the condition that he be told before he commits, not \
+                 after. A build that removed this sentence still passes every headless test in \
+                 `dialogs::redact`."
+            )));
+        }
+
         let ack = region(&session.trace()?, ui_rect, ACK_REGION, REGION_PREFIX)?;
         click_region(&session, &driver, ack, 16)?;
         let confirm =
@@ -775,6 +895,84 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                      not produce, in which case the second acknowledgement is also required."
                 ))
             })?;
+
+        // The geometry, now that both rects exist in the same layout. Both are
+        // published by the same dialog in the same viewport, so their `y` are
+        // comparable without conversion.
+        let note_rect = undo_note.expect("checked above");
+        if note_rect.max.y > confirm.min.y {
+            return Ok(Some(format!(
+                "★★★ THE UNDO-LOSS DISCLOSURE IS NOT ABOVE THE CONFIRM CONTROL. \
+                 `{UNDO_NOTE_REGION}` ends at y={:.1} and `{CONFIRM_REGION}` begins at y={:.1}, \
+                 so the sentence saying the undo history will be destroyed sits at or below the \
+                 button that destroys it. \"Disclosed before he commits\" is the whole of what \
+                 this shell offered in exchange for the finalizing variant of \
+                 `EditSession::apply_redactions`.",
+                note_rect.max.y, confirm.min.y
+            )));
+        }
+        report.note(format!(
+            "phase E3: the default destination applies into the open document and writes \
+             nothing, and the undo-loss disclosure ends at y={:.1}, above the confirm control \
+             at y={:.1}",
+            note_rect.max.y, confirm.min.y
+        ));
+
+        // --- PHASE E4: move to the write-now destination --------------------
+        //
+        // ★ Deliberate, and said out loud rather than left as a click nobody
+        // explains: phases F–I are entirely about **a file** — that the source
+        // was not touched, that the output lacks the secret, that a second
+        // process can extract nothing from it — and the default destination
+        // produces no file at all. So the check selects *a new file* here.
+        //
+        // It selects the NEW FILE row rather than the replace row for the
+        // reason phase E2 already gives: clicking replace would have the
+        // harness overwrite its own fixture, and phase G then compares that
+        // fixture against the output.
+        //
+        // ⬜ **What this leaves unverified**, named rather than implied: the
+        // default destination's own end-to-end behaviour — that confirming it
+        // changes the open document, raises no file, and leaves the session
+        // dirty. That needs a different fixture strategy (apply, then Save,
+        // then read the file), and it is asserted headlessly instead by
+        // `app::save::tests::a_redacted_document_saves_through_the_ordinary_\
+        // writer_with_the_content_gone` and
+        // `…::a_document_with_an_applied_redaction_has_unsaved_edits`.
+        let new_file = region(
+            &session.trace()?,
+            ui_rect,
+            DESTINATION_NEW_FILE_REGION,
+            REGION_PREFIX,
+        )?;
+        click_region(&session, &driver, new_file, 16)?;
+        // The undo note disappears with the destination, so the layout moves
+        // and the confirm control is somewhere else. Re-read it rather than
+        // clicking a fossil — `declared`'s own header records what happens to a
+        // check that does not.
+        let confirm =
+            region(&session.trace()?, ui_rect, CONFIRM_REGION, REGION_PREFIX).map_err(|e| {
+                Error::new(format!(
+                    "{e}\n\
+                     The destination was changed to `a new file` and the confirm control is no \
+                     longer offered. Changing the destination retires the OVERWRITE \
+                     acknowledgement, which the new-file destination does not require — so if \
+                     the button is dead here, `RedactDialog::ready_to_confirm` is asking for a \
+                     tick at a checkbox that is not on screen."
+                ))
+            })?;
+        if declared(&session.trace()?, ui_rect, UNDO_NOTE_REGION).is_some() {
+            return Ok(Some(format!(
+                "★ THE UNDO-LOSS DISCLOSURE IS STILL ON SCREEN on the `a new file` destination, \
+                 which does not touch the session and leaves the undo log intact. \
+                 `{UNDO_NOTE_REGION}` is a claim about the operator's work and it is false here."
+            )));
+        }
+        report.note(
+            "phase E4: the destination is switched to `a new file`, and the undo disclosure is \
+             retired with it"
+                .to_owned(),
+        );
 
         // --- PHASE F: write ------------------------------------------------
         click_region(&session, &driver, confirm, 24)?;
@@ -1032,7 +1230,16 @@ mod tests {
             COPY_PAGE_TEXT.0,
             format!("{ITEM_PREFIX}{}", COPY_PAGE_TEXT.1)
         );
-        for name in [WHOLE_PAGE_REGION, APPLY_REGION, ACK_REGION, CONFIRM_REGION] {
+        for name in [
+            WHOLE_PAGE_REGION,
+            APPLY_REGION,
+            ACK_REGION,
+            CONFIRM_REGION,
+            DESTINATION_REPLACE_REGION,
+            DESTINATION_INTO_DOCUMENT_REGION,
+            DESTINATION_NEW_FILE_REGION,
+            UNDO_NOTE_REGION,
+        ] {
             assert!(
                 name.starts_with(REGION_PREFIX),
                 "`{name}` is not under the prefix this check lists for its SKIP reasons, so a \

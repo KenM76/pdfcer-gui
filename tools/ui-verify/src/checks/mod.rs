@@ -6,6 +6,7 @@
 //! |---|---|---|
 //! | [`delete_key`] | **D1** — Delete stops working after the first canvas click | the trace |
 //! | [`ribbon_captions`] | group captions rendering illegibly, or not at all | the pixels |
+//! | [`ribbon_mockup`] | the band drawn to different proportions from the mockup, and a resting control drawn in a box | the pixels |
 //! | [`settings_headings`] | **D2** — section headings near-white on light grey | the pixels |
 //!
 //! These are the three `GUI_ROADMAP.md` names as "the smallest useful set",
@@ -161,6 +162,23 @@ pub mod embed_bundled;
 pub mod embed_fonts;
 pub mod export_dxf;
 pub mod export_form_data;
+// O120's fourth export format, and the one a driven check is worth most for:
+// EMF is the ONLY vector route LibreOffice 24.x and Word's Paste Special have,
+// so a radio that draws and does not bind hands the operator a file those
+// programs open as an empty frame. Written 2026-09-04 and NOT RUN — see the
+// module header, which says so in its own words rather than leaving an absent
+// result to imply it.
+/// ★★★ O120's copy-OUT — the only observation of `native-clipboard`'s `unsafe` and of the placement ORDER against a real clipboard, which it REPLACES. Written 2026-09-04, **NOT RUN**; its module header says why.
+pub mod copy_as_vector;
+pub mod export_image_emf;
+/// The fourth export on File ▸ Export, and the one whose interesting assertion
+/// is an exact identity rather than a bound: the characters in the file equal
+/// the characters the shell reported plus one separator per page boundary.
+///
+/// Written 2026-09-04 and **NOT RUN** — another session owned the desktop. The
+/// module header says so in its own words rather than leaving an absent result
+/// to imply it.
+pub mod export_text;
 /// The same defect one `/Subtype` along: a certified document's FORM FIELDS.
 ///
 /// ★★★ [`annot_delete_gate`]'s fix closed one surface of three and left the
@@ -209,11 +227,10 @@ pub mod insert_image;
 /// surface — that one asserts the picture lands, this one asserts the operator
 /// never has to type where.
 pub mod insert_image_place;
+/// The left rail — O123 part 7. ⚠ WRITTEN, NOT RUN: see the module header.
+pub mod left_rail;
 pub mod legibility;
 pub mod markup_move;
-/// ★★★ `OPERATOR_REQUESTS.md` O123's layout claims, driven — Objects over
-/// Properties in one column with a draggable split, at a width whose rows fit.
-pub mod master_detail;
 pub mod markup_rectangle;
 /// ★ The three Phase 6 markup kinds that are **not drag-shaped** — Freehand,
 /// Polyline and Polygon — and the one control in this application whose
@@ -222,6 +239,9 @@ pub mod markup_rectangle;
 /// pointer, and the only falsifier in the suite that needs a control to be
 /// **greyed at a specific moment mid-gesture**. Its header carries the argument.
 pub mod markup_shapes;
+/// ★★★ `OPERATOR_REQUESTS.md` O123's layout claims, driven — Objects over
+/// Properties in one column with a draggable split, at a width whose rows fit.
+pub mod master_detail;
 pub mod progressive;
 /// ★ **Smart-Selector** — a click selects the wrapped drawing, a double-click
 /// goes inside it (`OPERATOR_REQUESTS.md` O70). Reads `canvas-selection …
@@ -270,10 +290,15 @@ pub mod measure_calibrate;
 /// ★ The operator's own report (O105), driven on a fixture built to reproduce
 /// it: one path object holding a small circle and forty unrelated segments.
 pub mod measure_circular_points;
-/// Hovering with a measure tool armed says which line and which node.
 pub mod measure_hover;
 pub mod measure_linear;
 pub mod measure_perimeter;
+/// Hovering with a measure tool armed says which line and which node.
+/// The regression check for the icon painter that was never handed to a
+/// context menu — the twin of [`qat_icons`] on the second surface it
+/// happened on. See its header for why a menu row's own rectangle cannot
+/// express the defect and `menu.icon.*` had to be published for it.
+pub mod menu_icons;
 /// ★ File ▸ New — the first command that makes a document out of **compiled-in
 /// bytes** rather than out of a file the operator named, and the only check in
 /// the suite whose subject is a page that is *supposed* to be blank. That is
@@ -374,7 +399,14 @@ pub mod forms_spotlight;
 /// suite defended the absence of the feature. See the module header.
 /// Drag a page thumbnail to a new position, and see where it will land
 /// before letting go.
+/// **The Layers panel's search field is on screen and reachable** — O126.
+/// Its header carries why the check refuses to pass on an absence.
+pub mod layers_search;
 pub mod pages_drag;
+/// **A panel tears out into a real OS window, comes back, and closes** —
+/// O126. Its header carries the two-line oracle and why one line is not
+/// enough.
+pub mod panel_float;
 pub mod preset_group_reachable;
 /// The commit button's clip count is corrected by what the preview has
 /// already examined — operator request O113. See the module header for why
@@ -386,6 +418,12 @@ pub mod print_paper;
 /// The Properties panel's document-metadata half: a title typed into it
 /// reaches the file, and an undo takes it back out of the box too.
 pub mod properties_metadata;
+/// ★★★ `OPERATOR_REQUESTS.md` O123 part 2, driven — every control the Tool
+/// panel held is on screen in Properties, its new home.
+pub mod properties_tool;
+/// O119, driven — File ▸ Security reports the document's own state and refuses
+/// a signed document instead of drawing a form. ⚠ Written and NOT RUN.
+pub mod protect;
 pub mod qat_icons;
 pub mod read_mode;
 pub mod redact_image_warning;
@@ -425,6 +463,12 @@ pub mod deep_zoom;
 /// without `PDFCER_DIAG_DROP_PATH` this would be the single feature in the shell
 /// that R1 cannot reach.
 pub mod dropped_file;
+/// ★★★ **Enter makes a second line, and Ctrl+Enter finishes it** —
+/// `OPERATOR_REQUESTS.md` O127, defect 2.
+///
+/// ⚠ Written 2026-09-04 and **not executed** — the operator was at his keyboard
+/// and a second run would have fought his pointer. See its header.
+pub mod enter_newline;
 /// ★★★ **Zero clicks.** The only check in this suite that drives no gesture: it
 /// opens a document, enters Edit, and asks what an operator SEES. Every other
 /// test of the tool list asks whether a named command is present — a question
@@ -507,6 +551,13 @@ pub mod resize;
 /// three links of the chain in front of it have no other instrument.
 pub mod restyle_text;
 pub mod ribbon_captions;
+pub mod scale_sweep;
+// The band's PROPORTIONS against `mockups/pdfcer-shell.html`, and the two
+// claims about it that only a rendered screenshot can settle: a resting
+// control drawn with no frame, and a control drawn with no glyph. Written
+// 2026-09-04 with the fix it verifies, and deliberately left UNRUN -- see
+// its header for why, and for the command that runs it.
+pub mod ribbon_mockup;
 /// ★★ **The ninth grip** — the rotate handle above the selection box, and the
 /// third word of the operator's *"reposition, resize, or rotate"*. Its header
 /// carries the three links that would each produce a working gesture aimed at
@@ -815,11 +866,35 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // reason.
         Box::new(field_delete_gate::ACertifiedDocumentWithholdsFieldDelete),
         Box::new(ribbon_captions::RibbonGroupCaptionsLegible),
+        // Immediately after the captions check, and for that check's own stated
+        // reason: both launch, both measure the band, and a reader comparing two
+        // ribbon verdicts wants them adjacent. This one raises the window, so it
+        // is second of the two.
+        Box::new(ribbon_mockup::RibbonMatchesTheMockupGeometry),
         // Reads the trace only — no window is raised and no capture is taken,
         // so it costs nothing and cannot take the operator's focus. Placed
         // after the captions check because both launch, and a reader
         // comparing two ribbon verdicts wants them adjacent.
         Box::new(qat_icons::QatControlsAreIconOnly),
+        // ★ Immediately after the QAT's icon check, because it is the SAME
+        // defect on a second surface — an icon painter that exists and is
+        // never handed to a call site — and a run where both fail says
+        // "the icon set is broken" while a run where only this one fails
+        // says "one wiring line is missing". Ordering them adjacently is
+        // what makes that difference legible in the summary.
+        Box::new(menu_icons::MenuRowsDrawTheirIcons),
+        // ★★ O126's two drivable features. The third — selecting an object
+        // highlighting its layer — has NO check here, and that is not an
+        // omission: the engine cannot report a content object's
+        // optional-content group (the request is filed at
+        // `D:\Dev\FeatureRequests\pdfce_FeatureRequests\open\request_which_layer_is_this_object_on.md`),
+        // so the only drivable half is a selected ANNOTATION on a layer —
+        // which needs a fixture carrying an `/OC` annotation that this suite
+        // does not have. A check written against a fixture that cannot
+        // produce the state would SKIP for ever, and a check that may decline
+        // to judge is a check that cannot fail.
+        Box::new(panel_float::PanelsFloatCloseAndDock),
+        Box::new(layers_search::LayersSearchNarrowsTheList),
         // ★ The first *driving* check, and it goes first among them on
         // purpose: it is the cheapest — two clicks on one always-enabled
         // control, no canvas gesture, no keystroke, no capture — and it is the
@@ -1000,6 +1075,9 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(unembed_fonts::RemovingEmbeddedFontsReachesTheDocument),
         Box::new(export_form_data::ExportingFormDataWritesAFile),
         Box::new(export_dxf::ExportDxfWritesThePagesGeometry),
+        Box::new(export_image_emf::ExportImageWritesAMetafile),
+        Box::new(copy_as_vector::CopyAsVectorPlacesTheMeasuredOrder),
+        Box::new(export_text::ExportTextWritesTheDocumentsWords),
         // Insert an image, wired 2026-08-19. Its last assertion is the one
         // that matters: the promised resolution and the reported one are the
         // same number, which is the shell's half of a single-derivation
@@ -1156,6 +1234,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(max_zoom::TheZoomReadoutOpensTheMaximumZoomPopup),
         Box::new(deep_zoom::ZoomingPastThePixmapCeilingStillRenders),
         Box::new(deep_pan::PanningAtDeepZoomStaysWhereItWasPut),
+        Box::new(scale_sweep::MouseWorkSurvivesEveryRenderTier),
         Box::new(zoom_keeps_place::ZoomingDoesNotThrowAwayWhereTheOperatorPanned),
         // ★ Its inverse. The climb above never rolls the wheel the other way, so
         // the DOWNWARD hand-over between the f32 scroll offset and the f64
@@ -1199,12 +1278,26 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(dropped_file::ADroppedImageReachesThePlacementWindow),
         Box::new(first_frame::TheFirstFrameNamesTheArmedTool),
         Box::new(master_detail::TheInspectorIsOneMasterDetailColumn),
+        // The left rail — `OPERATOR_REQUESTS.md` O123 part 7 and O126.
+        // ⚠ Written on 2026-09-04 and NOT executed: the operator was at his
+        // keyboard and a watchdog kills GUI processes on sight. Registered
+        // anyway, because a check that is not in the list is a check nobody
+        // will ever run.
+        Box::new(left_rail::TheLeftRailIsReachableAndConstantWidth),
         Box::new(properties_tool::TheArmedToolsSettingsAreInProperties),
+        // ⚠ O119 — registered without having been run: an unregistered check
+        // is one nobody will ever run.
+        Box::new(protect::ProtectShowsTheDocumentAndRefusesASignedOne),
         Box::new(redaction::RedactionRemovesAndProvesIt),
         // ★ Beside the text-editing checks and owning its own fixture, like
         // `text_edit` and `redaction` above: its verdict is a LINE COUNT that
         // only `fixtures/paragraph.pdf` produces, so it takes no `--pdf`.
         Box::new(reflow::ReflowingAParagraphRewrapsIt),
+        // ★★★ O127 defect 2 — and ⚠ registered WITHOUT having been run, on the
+        // precedent `left_rail`, `properties_tool` and `protect` above set: a
+        // check that exists and is not registered is a check nobody will ever
+        // run. Whoever runs the suite next is the first thing that executes it.
+        Box::new(enter_newline::EnterMakesASecondLineAndControlEnterCommits),
         // ★ Directly after `redaction`, and before the two selection checks,
         // because it is the second most expensive check in the suite — it
         // launches the binary twice, for the same reason `save_copy` does — and

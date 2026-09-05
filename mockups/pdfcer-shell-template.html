@@ -1,15 +1,35 @@
-<title>pdfcer Shell — the four proposals, revised</title>
+<title>pdfcer Shell — the A7 layout, as ruled in O123</title>
 <!--
   ===================================================================
   pdfcer-shell-template.html — SOURCE for mockups/pdfcer-shell.html
   ===================================================================
 
-  WHAT THIS IS. A mockup of the pdfcer GUI shell, drawn to support ONE
-  scheduling decision: whether, and in what order, to build the four
-  shell-layout proposals analysed in `SHELL_LAYOUT_PROPOSAL.md`. Two
-  placeholders — {{SPRITE}} and {{GLYPHS}} — are filled by
+  WHAT THIS IS. A mockup of the pdfcer GUI shell. It was drawn to support one
+  scheduling decision — whether, and in what order, to build the four
+  shell-layout proposals analysed in `SHELL_LAYOUT_PROPOSAL.md` — and on
+  2026-09-04 THAT DECISION WAS MADE. `OPERATOR_REQUESTS.md` **O123** is the
+  operator's ruling, in his own words, and this file now draws the layout he
+  ruled for rather than the proposal it came from.
+
+  ⇒ So the artifact's job changed with it. It is no longer "here are four
+  options, ranked". It is *"here is the thing you decided, so you can check
+  that it is the thing you meant"* — which is why every knob that flips it back
+  to the arrangement before O123 has been kept and one more has been added.
+
+  Two placeholders — {{SPRITE}} and {{GLYPHS}} — are filled by
   `build-pdfcer-shell.py`. Do not edit `pdfcer-shell.html` directly; edit this
   file and rebuild, or the next rebuild silently discards the edit.
+
+  REBUILD:
+      python mockups/extract-shipped-glyphs.py     # only if icons/assets moved
+      python mockups/build-pdfcer-shell.py         # writes pdfcer-shell.html
+
+  The generator inlines the glyph sprite, refuses to write when the template
+  references art that does not exist, and then RENDERS the result headlessly
+  and fails the build if three region markers did not draw. That last step is
+  not ceremony: one unescaped apostrophe in one legend string throws a
+  SyntaxError, the script never runs, and what lands on disk is a perfectly
+  valid HTML file containing an empty window.
 
   ★★★ WHAT IT IS NOT. It is not the product, and it is not a specification.
   A mock that drifts from the product is how a deleted feature comes back as a
@@ -20,9 +40,28 @@
   one line, in the legend drawer along the bottom of the mock — with its state:
 
       SHIPPED    it is in the build today; the mock is not proposing it
-      PROPOSED   it is not built; the legend line carries the rank and cost
+      RULED      the operator DECIDED it (O123). It is not a proposal any more
+                 and it is not automatically built either — every RULED line
+                 carries, in its reference row, whether the build has caught up
+      PROPOSED   nobody has ruled on it; the line carries the rank and cost
       REJECTED   it was analysed and refused; the line carries the reason
       NOTED      neither, but the operator should see it
+
+  ★★★ RULED IS A FIFTH STATE AND NOT A SYNONYM FOR EITHER NEIGHBOUR, and the
+  reason is worth a paragraph because getting it wrong is the one way this
+  artifact can lie to the person reading it.
+
+    · Calling a ruled item PROPOSED understates it. It says a decision is still
+      open that the operator has already closed, and invites him to re-decide
+      something he decided — which is exactly the "do not re-argue a decided
+      point" failure.
+    · Calling it SHIPPED overstates it, and that is the worse of the two: a
+      mock that draws a control as built is a mock somebody will schedule
+      around. A ruling is an instruction to build. It is not a build.
+
+  So the chip says whose decision it is, and the mono reference row under each
+  line says where the code actually stands — `landed 2026-09-04` or
+  `not started`. Both facts, neither inferred from the other.
 
   A silent difference is the defect. A stated one is the deliverable.
 
@@ -53,7 +92,14 @@
    Palette. Every value below is read from crates/egui-shell/src/theme/mod.rs.
    Roles, never colour names — `accent`, not `blue`.
    --------------------------------------------------------------------------- */
+/* ★ `color-scheme` is set per preset because native form controls — the pen's
+   font <select>, the size <input> — take their chrome from it and NOT from our
+   background declaration. Without this line the dark board draws a light combo
+   box in a dark panel, which is not a theming nicety: the mock's whole job on
+   the dark board is to show that everything follows the preset except the
+   page, and one light control in the middle of it says the opposite. */
 :root, .app[data-board="quiet"]{
+  color-scheme:light;
   --chrome:#F2F2F3;      /* Palette::surface  — the window ground            */
   --chrome-2:#E8E8EA;    /* Palette::panel    — panels, bars, docks          */
   --chrome-3:#DBDBDE;    /* hover, derived                                   */
@@ -68,11 +114,13 @@
   --danger:#C02A2A;      /* Palette::danger                                  */
 }
 .app[data-board="airy"]{
+  color-scheme:light;
   --chrome:#FAFAFB; --chrome-2:#FFFFFF; --chrome-3:#EDEEF1; --bench:#8A8D93;
   --ink:#24262B; --ink-quiet:#6C7078; --line:#DCDEE3; --line-strong:#B9BCC4;
   --accent:#175CC4; --plate:#B9CEED; --warn:#B06A1A; --danger:#C02A2A;
 }
 .app[data-board="dark"]{
+  color-scheme:dark;
   --chrome:#24262A; --chrome-2:#2E3136; --chrome-3:#3A3E45; --bench:#16171A;
   --ink:#E6E8EC; --ink-quiet:#9A9EA6; --line:#44484F; --line-strong:#5C6068;
   --accent:#4C9AFF; --plate:#0B1726; --warn:#E0A040; --danger:#FF6B6B;
@@ -100,7 +148,7 @@ kbd{font-family:var(--mono);font-size:.9em;border:1px solid var(--line-strong);b
    mock-control bar · legend drawer. The last two are NOT the product.
    -------------------------------------------------------------------------- */
 .app{position:fixed;inset:0;display:grid;
-     grid-template-rows:30px 34px 96px 26px minmax(0,1fr) 26px 30px auto;
+     grid-template-rows:30px 34px 96px 26px minmax(0,1fr) 26px auto auto;
      background:var(--chrome);color:var(--ink);font-variant-numeric:tabular-nums;min-width:1100px}
 .titlebar{display:flex;align-items:center;gap:10px;padding:0 4px 0 10px;background:var(--chrome-2);border-bottom:1px solid var(--line);font-size:12px}
 .titlebar .name{flex:1}
@@ -153,6 +201,9 @@ kbd{font-family:var(--mono);font-size:.9em;border:1px solid var(--line-strong);b
 /* Open in Acrobat sits OUTSIDE the mode selector on purpose — see the legend.
    It is not a mode, and a fourth cell in that segmented control would say it is. */
 .openin{display:flex;align-items:center;gap:5px;align-self:center;margin-left:8px;padding:3px 8px;border:1px dashed var(--accent);border-radius:3px;font-size:12px;font-weight:500;color:var(--accent)}
+/* Solid since 2026-09-04: `file.open_in_acrobat` registers, so the dash would
+   now be a lie in the other direction — a built control drawn as unbuilt. */
+.openin.shipped{border-style:solid;border-color:var(--line-strong);color:var(--ink)}
 .openin:hover{background:var(--plate)}
 .openin .g{width:15px;height:15px}
 .sw{width:14px;height:14px;border:1px solid var(--line-strong);border-radius:2px}
@@ -185,13 +236,48 @@ kbd{font-family:var(--mono);font-size:.9em;border:1px solid var(--line-strong);b
 .app[data-dock="360"] .body{grid-template-columns:52px 228px minmax(0,1fr) 360px}
 .app[data-left="tabs"][data-dock="360"] .body{grid-template-columns:0 280px minmax(0,1fr) 360px}
 
-/* the rail. Its width is a CONSTANT — see the legend's R128 line. */
-.rail{grid-column:1;display:flex;flex-direction:column;gap:2px;padding:6px 4px;border-right:1px solid var(--line);background:var(--chrome-2);overflow:hidden}
+/* --------------------------------------------------------------------------
+   THE RAIL — panel tabs, the navigate selectors, and the selection tools.
+
+   ★ Its WIDTH is a constant (52 px here; `exact_size` in the build). That is
+   what discharges the R128 fit-zoom gate by argument, and it is why the fold
+   knob shrinks the rail's HEIGHT BUDGET and never its width: a rail that grew
+   sideways to fit its widest word would make the gate real, and a rail that
+   shrank sideways would just clip its own labels.
+
+   What actually runs out on a vertical strip is rows, and the ladder is
+   `RIBBON_SCALING.md`'s own three rungs one surface over — drop the words,
+   then fold a group, then fold the next — with the panel tabs as the floor.
+   -------------------------------------------------------------------------- */
+/* ★ `overflow-y:auto`, never `hidden`. On a short window the roomy rung does
+   not fit, and a rail that simply cut its last entry off the bottom edge would
+   be losing a control SILENTLY — the same defect as a row clipped
+   mid-character, one surface over. Scrolling is the third rung of
+   `RIBBON_SCALING.md`'s own ladder (re-wrap → collapse → scroll), so it is the
+   answer this project already gives to "it still does not fit". */
+.rail{grid-column:1;display:flex;flex-direction:column;gap:1px;padding:6px 4px;border-right:1px solid var(--line);background:var(--chrome-2);overflow-y:auto;overflow-x:hidden;scrollbar-width:none}
 .app[data-left="tabs"] .rail{display:none}
 .rail button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0 5px;border-radius:2px;font-size:9.5px;color:var(--ink-quiet);border-left:2px solid transparent;text-align:center}
 .rail button:hover{color:var(--ink)}
 .rail button[aria-selected="true"]{color:var(--accent);border-left-color:var(--accent);background:var(--plate)}
-.rail .spacer{flex:1}
+.rail button[aria-pressed="true"]{color:var(--accent);border-left-color:var(--accent);background:var(--plate)}
+.rail .spacer{flex:1;min-height:2px}
+/* A group separator, not a heading, at the tight rungs: with the words gone
+   the only thing telling panel tabs from tools is the gap between them. */
+.rail .rule{height:1px;background:var(--line);margin:5px 5px 4px;flex:none}
+.rail .gl{font-size:7.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-quiet);text-align:center;padding:3px 0 1px;flex:none}
+/* Icon-only rungs: shorter rows, no words. Set by the renderer, not by CSS,
+   because the same rung also decides which GROUPS are drawn at all. */
+.rail button.iconly{padding:5px 0;gap:0}
+/* ★ The overflow chevron NEVER folds. Getting that backwards is Inkscape
+   failure mode #8 — past six tabs the overflow button itself gets hidden —
+   and it is the one control that must survive, because everything the rail
+   dropped is behind it. */
+.rail .chev{border:1px dashed var(--line-strong);border-radius:2px;margin-top:2px;font-family:var(--mono);font-size:9px;padding:4px 0 3px;flex:none}
+.rail .chev:hover{border-color:var(--accent);color:var(--accent)}
+/* A rail entry the BUILD does not have — the lasso. Same dashed-notice
+   vocabulary as `.rb.soon` in the ribbon, so "not built" reads one way. */
+.rail button.soon{border:1px dashed var(--warn);color:var(--warn)}
 
 .panel{grid-column:2;border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;background:var(--chrome-2)}
 /* the cheap 80 %: one stack, five tabs, at 280 pt — and its overflow chevron */
@@ -249,12 +335,27 @@ kbd{font-family:var(--mono);font-size:.9em;border:1px solid var(--line-strong);b
    per-side dock BANNER — chrome drawn over the columns, not a stack, because
    a 28 pt stack is illegal (MIN_STACK_HEIGHT = 80). It is an ADDITION; it
    takes nothing away from the Tool panel below it. */
-.banner{display:flex;align-items:center;gap:7px;padding:4px 8px 4px 10px;border-bottom:1px solid var(--line);font-size:12px;background:var(--chrome);flex:none;height:28px;white-space:nowrap;overflow:hidden}
+/* 26 px, because the shipped constant is `BANNER_HEIGHT_PTS = 26.0` — one row
+   of text plus the padding a button needs around it. It was 28 while this was
+   a proposal and nobody had measured it; a mock that draws a shipped constant
+   two points out is a mock somebody will measure against. */
+.banner{display:flex;align-items:center;gap:7px;padding:3px 8px 3px 10px;border-bottom:1px solid var(--line);font-size:12px;background:var(--chrome);flex:none;height:26px;white-space:nowrap;overflow:hidden}
 .banner b{font-weight:600}
 .banner .st{color:var(--ink-quiet);overflow:hidden;text-overflow:ellipsis}
 .banner.armed{color:var(--accent);background:var(--plate)}
 .banner.armed .st{color:var(--accent)}
-.banner .tagp{margin-left:auto;flex:none}
+.banner .tagp{flex:none}
+/* *Put this tool down* — the third of the three things O123 puts on this line.
+   ★ Drawn ONLY when something is armed. Beside `Select` it would be a control
+   whose press changes nothing, because Select IS the resting state and putting
+   a tool down returns to it — R9 forbids a dead control, and an earlier mock
+   shipped exactly that one. */
+.banner .pd{margin-left:auto;display:inline-flex;align-items:center;gap:5px;flex:none;
+            padding:1px 7px;border:1px solid var(--line-strong);border-radius:2px;font-size:11px}
+.banner.armed .pd{border-color:var(--accent)}
+.banner .pd:hover{background:var(--chrome-3)}
+.banner .pd .g{width:13px;height:13px}
+.banner .grow{flex:1;min-width:0}
 /* An in-place mark on a surface the product does NOT have. The legend says it
    in words; this says it where the operator is looking. Both, deliberately:
    a legend entry nobody scrolls to is the same as no legend entry. */
@@ -262,20 +363,44 @@ kbd{font-family:var(--mono);font-size:.9em;border:1px solid var(--line-strong);b
 .rail .tagp{margin:4px 1px 2px;text-align:center;display:block;font-size:7px;letter-spacing:0;padding:0 1px;overflow:hidden}
 .stack{display:flex;flex-direction:column;min-height:0;overflow:hidden}
 .rows{overflow:auto;flex:1;min-height:0}
-/* Rows are deliberately NOT ellipsised: the shipped panel puts them in a
-   ScrollArea::both() and measures each row's intrinsic width. At 320 pt they
-   run past the pane's right edge and are HARD CLIPPED mid-character — which
-   is the defect the reviewer photographed and read as "ours lists less". */
+/* ★★★ Rows ELLIPSISE, with the full text on hover — O123 part 3, and it
+   reverses `REVIEW_TRIAGE.md` §4 on the operator's own instruction.
+
+   What they did before: `ScrollArea::both()` measured each row's intrinsic
+   width, so at 320 pt a row ran past the pane's right edge and was HARD
+   CLIPPED mid-character — the defect the reviewer photographed and read as
+   "ours lists less". A clip mid-character is silent; an ellipsis is a mark
+   that says *there is more*, and the hover is where the more lives.
+
+   `SALVAGE.md:44`'s actual requirement is no SILENT loss, and this meets it.
+   Flip the layout knob to `before O123` to see the clip come back. */
 .row{display:grid;grid-template-columns:1fr;gap:6px;align-items:center;padding:3px 10px;font-size:12px;border-bottom:1px solid var(--chrome);white-space:nowrap;overflow:hidden}
 .app[data-dock="360"] .row{grid-template-columns:18px 34px 1fr}
 .app[data-dock="320"] .row .g,.app[data-dock="320"] .row .id{display:none}
 .row .id{font-family:var(--mono);color:var(--ink-quiet);font-size:11px}
-.row .t{overflow:hidden}
+.row .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* The one place the ellipsis is NOT drawn: the `before O123` comparison. */
+.app[data-layout="today"] .row .t{text-overflow:clip}
 .row .t i{font-style:normal;color:var(--ink-quiet)}
 .row[aria-selected="true"]{background:var(--plate);color:var(--accent)}
 .row[aria-selected="true"] .id,.row[aria-selected="true"] .t i{color:var(--accent)}
-.split{height:6px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--chrome);cursor:row-resize;display:grid;place-items:center;flex:none}
-.split i{width:28px;height:2px;background:var(--line-strong);border-radius:1px}
+
+/* ★ THE DRAGGABLE SPLIT, and it has to LOOK draggable rather than merely be
+   draggable — a 1 px rule between two panes is what a FIXED split looks like,
+   and the whole of part 3 is that this one is not fixed. So: a grip of dots,
+   a row-resize cursor, a hover that lights the grip in the accent, and a
+   pressed state while the drag is live. `.hardline` below is the fixed
+   divider it is contrasted against. */
+.split{height:11px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--chrome);cursor:row-resize;display:grid;place-items:center;flex:none;touch-action:none}
+.split i{width:46px;height:4px;border-radius:2px;
+         background:repeating-linear-gradient(90deg,var(--line-strong) 0 2px,transparent 2px 5px)}
+.split:hover{background:var(--chrome-3)}
+.split:hover i{background:repeating-linear-gradient(90deg,var(--accent) 0 2px,transparent 2px 5px)}
+.split.dragging{background:var(--plate)}
+.split.dragging i{background:repeating-linear-gradient(90deg,var(--accent) 0 2px,transparent 2px 5px)}
+/* The FIXED divider — what the left dock had before part 5, and what the
+   right dock's splits must not look like. One rule, no grip, no cursor. */
+.hardline{height:1px;background:var(--line-strong);flex:none}
 .props{overflow:auto;flex:1;min-height:0;font-size:12px}
 .sec{padding:7px 10px 3px;font-size:10.5px;color:var(--ink-quiet);text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:4px}
 .sec .g{width:12px;height:12px}
@@ -291,6 +416,33 @@ kbd{font-family:var(--mono);font-size:.9em;border:1px solid var(--line-strong);b
 .field{display:grid;grid-template-columns:1fr;gap:3px;padding:6px 10px}
 .field label{font-size:11px;color:var(--ink-quiet)}
 .field input{font:inherit;padding:3px 6px;border:1px solid var(--line);background:var(--paper);color:#1C1C1E}
+
+/* --------------------------------------------------------------------------
+   ★★★ THE ARMED TOOL'S OWN CONTROLS, INSIDE PROPERTIES — O123 part 2.
+
+   This block is the whole reason part 1 is safe. `SHELL_LAYOUT_PROPOSAL.md`
+   §3 refused the one-line tool strip because it DELETES these controls; the
+   operator's answer is that they were never the tool panel's to hold — they
+   are properties of what is about to be drawn, which is the same kind of
+   thing as the properties of what is already drawn.
+
+   ⇒ So they are drawn FIRST in the panel body, above every selection-scoped
+   section, for the reason the shipped module gives: these controls sat in the
+   top-right corner of the window, the panel changed and the corner did not.
+   Tinted so the eye can see it is a different subject from the selection
+   sections under it — the armed tool, not the picked object.
+   -------------------------------------------------------------------------- */
+.tsec{padding:7px 10px 9px;border-bottom:1px solid var(--line);background:var(--chrome)}
+.tsec .h{display:flex;align-items:center;gap:6px;font-family:var(--cond);font-size:12.5px;font-weight:600;margin-bottom:5px}
+.tsec .h .from{margin-left:auto;font-family:var(--sans);font-weight:400}
+.tsec .note{font-size:10.5px;color:var(--ink-quiet);line-height:1.35;margin-top:6px;white-space:normal}
+.tsec .pick{margin:0}
+.tsec .opt{padding:2px 0;line-height:1.3}
+.tsec .none{color:var(--ink-quiet);font-size:11.5px;line-height:1.35;white-space:normal}
+/* One picked point of a circular measurement — O107's removable row. */
+.prow{display:flex;align-items:center;gap:6px;padding:2px 0;font-family:var(--mono);font-size:11px}
+.prow .x{margin-left:auto;width:16px;height:16px;display:grid;place-items:center;border:1px solid var(--line-strong);border-radius:2px;color:var(--ink-quiet)}
+.prow .x:hover{border-color:var(--danger);color:var(--danger)}
 /* the Tool panel — the thing the one-line strip would have deleted */
 .tool{overflow:auto;flex:1;min-height:0;font-size:12px;padding:6px 10px 8px}
 .tool h4{font-family:var(--cond);font-size:12.5px;font-weight:600;margin:0 0 2px}
@@ -330,7 +482,12 @@ kbd{font-family:var(--mono);font-size:.9em;border:1px solid var(--line-strong);b
    and has NO counterpart in the product. It is styled to look unmistakably
    unlike the shell above it so that no screenshot can confuse the two.
    -------------------------------------------------------------------------- */
-.mockbar{display:flex;align-items:center;gap:6px;padding:0 8px;background:#1A1B1E;color:#C9CBD0;font-size:11px;border-top:2px solid #4C9AFF;overflow-x:auto}
+/* Wraps to a second line rather than scrolling sideways. A control bar with a
+   horizontal scrollbar hides its own right-hand end, and the right-hand end is
+   where the legend toggle lives — which is the one control that must always be
+   reachable, because it is how everything else on this page gets explained. */
+.mockbar{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;padding:4px 8px;background:#1A1B1E;color:#C9CBD0;font-size:11px;border-top:2px solid #4C9AFF}
+.mockbar .wrap{display:flex;align-items:center;gap:6px;flex:none}
 .mockbar .lbl{color:#7E838C;letter-spacing:.06em;text-transform:uppercase;font-size:9.5px;flex:none}
 .mockbar .seg{display:flex;border:1px solid #3A3E45;border-radius:3px;overflow:hidden;flex:none}
 .mockbar .seg button{padding:2px 8px;color:#C9CBD0;white-space:nowrap}
@@ -351,6 +508,10 @@ kbd{font-family:var(--mono);font-size:.9em;border:1px solid var(--line-strong);b
 .verdict .v{padding:2px 9px;border-radius:10px;font-size:10.5px;letter-spacing:.03em}
 .verdict .v b{font-size:12px}
 .verdict .v.shipped{background:#123A20;color:#7FD79A;border:1px solid #1E6236}
+/* RULED gets its own colour and not a shade of PROPOSED, because the whole
+   point of the fifth state is that a reader must not mistake it for either
+   neighbour at a glance. */
+.verdict .v.ruled{background:#2A1A3E;color:#C8A6FF;border:1px solid #5B3E96}
 .verdict .v.proposed{background:#0B2647;color:#7FB6FF;border:1px solid #1C4E8C}
 .verdict .v.rejected{background:#3A1414;color:#FF9C9C;border:1px solid #7A2626}
 .verdict .v.noted{background:#2A2214;color:#E0BE7C;border:1px solid #5C4A22}
@@ -358,17 +519,20 @@ kbd{font-family:var(--mono);font-size:.9em;border:1px solid var(--line-strong);b
 .verdict .rank b{color:#F0F1F3}
 .verdict .rank em{color:#C6CAD1;font-style:normal}
 .lgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(370px,1fr));gap:6px 14px;align-items:start}
-.li{display:grid;grid-template-columns:78px 1fr;gap:8px;padding:5px 0;border-top:1px solid #23262B;align-items:start}
+.li{display:grid;grid-template-columns:88px 1fr;gap:8px;padding:5px 0;border-top:1px solid #23262B;align-items:start}
 .li .chip{font-size:9px;letter-spacing:.07em;text-transform:uppercase;font-weight:700;text-align:center;padding:2px 0;border-radius:2px;margin-top:1px}
 .li .t{font-size:12px;color:#F0F1F3;font-weight:600;line-height:1.3}
 .li .w{font-size:11px;color:#9AA0A8;line-height:1.42;margin-top:2px}
 .li .w em{color:#C6CAD1;font-style:normal}
 .li .r{font-family:var(--mono);font-size:9.5px;color:#666C75}
 .li.shipped  .chip{background:#123A20;color:#7FD79A;border:1px solid #1E6236}
+.li.ruled    .chip{background:#2A1A3E;color:#C8A6FF;border:1px solid #5B3E96}
 .li.proposed .chip{background:#0B2647;color:#7FB6FF;border:1px solid #1C4E8C}
 .li.rejected .chip{background:#3A1414;color:#FF9C9C;border:1px solid #7A2626}
 .li.noted    .chip{background:#2A2214;color:#E0BE7C;border:1px solid #5C4A22}
-.li.proposed .t::after{content:" ";}
+/* A RULED line's reference row is the one place the BUILD's state is stated,
+   so it is not allowed to fade into the grey every other reference row uses. */
+.li.ruled .r{color:#9E8AC4}
 
 /* glyph sheet overlay */
 .sheetov{position:fixed;inset:0;background:var(--chrome);color:var(--ink);z-index:10;display:flex;flex-direction:column;font-variant-numeric:tabular-nums}
@@ -394,11 +558,12 @@ kbd{font-family:var(--mono);font-size:.9em;border:1px solid var(--line-strong);b
 {{SPRITE}}
 
 <div class="app" id="app" data-mode="edit" data-tab="view" data-board="quiet"
-     data-labels="on" data-left="rail" data-dock="320" data-rulers="on">
+     data-labels="on" data-left="rail" data-dock="360" data-rulers="on"
+     data-layout="a7" data-railroom="roomy">
 
   <div class="titlebar">
     <svg class="g" style="color:var(--accent)"><use href="#g-document"/></svg>
-    <div class="name"><b>a1-titleblock.pdf</b> — pdfcer — Edit</div>
+    <div class="name" id="wintitle"><b>a1-titleblock.pdf</b> — pdfcer — Edit</div>
     <div class="wc"><span>—</span><span>▢</span><span>✕</span></div>
   </div>
 
@@ -422,7 +587,7 @@ kbd{font-family:var(--mono);font-size:.9em;border:1px solid var(--line-strong);b
          is the one the eye will not expect. Its dashed outline says "not yet";
          the legend says which kind of not-yet. ⚠ The glyph carries no vendor
          mark — a window with a title bar, a sheet, and nothing else. -->
-    <button class="openin" title="Open in Acrobat — being built now, on another track"><svg class="g"><use href="#g-open-in-acrobat"/></svg><span>Open in Acrobat</span></button>
+    <button class="openin shipped" title="Open in Acrobat"><svg class="g"><use href="#g-open-in-acrobat"/></svg><span>Open in Acrobat</span></button>
   </div>
 
   <div class="ribbon" id="ribbon"></div>
@@ -472,15 +637,36 @@ const $ = (s, r=document) => r.querySelector(s);
 const g = (name, cls='') => `<svg class="g ${cls}" aria-hidden="true"><use href="#g-${name}"/></svg>`;
 const app = $('#app');
 
+/* ======================================================================
+   THE STATE. Every surface re-renders from this object and nothing else.
+
+   ★ `layout` is the comparison knob and the most important control on the
+   mock bar. `a7` is the arrangement O123 rules for; `today` is the one that
+   was on screen before it. The operator is reading this artifact to check a
+   decision he has already made, and being able to flip back to what he
+   decided AGAINST is what makes the difference visible at all.
+   ====================================================================== */
 const state = {
   mode:'edit', tab:'view', selection:true, facing:false,
-  leftPanel:'pages', left:'rail',        /* rail | tabs  (proposal 1 vs the cheap 80 %) */
-  dock:'320',                            /* 320 today | 360 proposed  (proposal 2)      */
-  rulers:true,                           /* shipped, ships OFF — see the legend         */
-  armed:false,                           /* arm a tool to see what the strip deletes    */
-  toolTab:false,                         /* Tool as a tab of the Objects stack          */
+  layout:'a7',                 /* a7 = O123's ruling | today = before it       */
+  leftPanel:'pages', left:'rail', /* rail | tabs — both legal under O123 part 5 */
+  dock:'360',                  /* 360 = O123 part 6 in Edit | 320 = before it   */
+  railRoom:'roomy',            /* roomy | tight | snug | cramped — the fold     */
+  tool:'select',               /* select | addtext | radius | cloud             */
+  mdSplit:0.46,                /* Objects' share of the master–detail column    */
+  rulers:true,                 /* shipped, ships OFF — see the legend           */
   labels:true, board:'quiet', legend:true, pageDisplay:'scroll', wheelFlip:false
 };
+
+/* Is a tool other than the resting one armed? Read in five places; a derived
+   predicate rather than a second stored flag, because two flags that mean the
+   same thing is how one of them goes stale. */
+const armed = () => state.tool !== 'select';
+/* The layout knob overrides two others rather than fighting them: the
+   arrangement before O123 had one dock width and no rail, so asking for
+   `today` at 360 pt with a rail would be picturing a build that never was. */
+const effDock = () => (state.layout==='today' || state.mode!=='edit') ? '320' : state.dock;
+const effLeft = () => (state.layout==='today') ? 'tabs' : state.left;
 
 /* ======================================================================
    THE RIBBON AS DATA. One command, one tab (shell rule P1).
@@ -601,13 +787,59 @@ const TABS = [
  ]},
 ];
 
+/* ======================================================================
+   THE ARMED TOOL — one table, read by the ribbon, the status strip, the rail
+   and Properties.
+
+   ★★★ `block` mirrors the SHIPPED pure function `properties::tool::block_for`,
+   which is deliberately a function and not a `match` inside a draw call: the
+   last time these controls moved, the three scale switches landed in a branch
+   `CanvasTool::Select` cannot reach, and *"every unit test in the chain
+   passed. Nothing tested that the control is on screen."*
+
+     scale   the three resize modifiers — Select's own options, and Select is
+             the RESTING state, which is why they are on screen most of the time
+     pen     face, size and colour for the NEXT run of new text. Add only, never
+             Edit: pdfcer cannot restyle a run it did not write, so offering
+             these on Edit would offer a change the commit silently discards
+     points  the circular measure's removable pick list (O107)
+     null    the tool has no settings — most of them do. R9: a heading with
+             nothing under it is worse than no heading
+
+   ⚠ Only Select's and Cloud's sentences below are quoted VERBATIM from
+   `text/tool.rs` (`pointer_edit`, `markup_instruction`). The other five are
+   indicative and the legend says so.
+   ====================================================================== */
+const TOOLS = {
+  select: {name:'Select', glyph:'pointer', block:'scale',
+    sentence:'Drag marquees objects on the page; click selects one. Hold Space to move the paper.'},
+  points: {name:'Points', glyph:'show-points', block:null,
+    sentence:'Click a node to pick it, then drag it.'},
+  text:   {name:'Text', glyph:'text-select', block:null,
+    sentence:'Drag selects text on the page; click puts the cursor in it. Hold Space to move the paper.'},
+  hand:   {name:'Hand', glyph:'hand', block:null,
+    sentence:'Drag to move the paper about.'},
+  addtext:{name:'Add text', glyph:'add-text', block:'pen',
+    sentence:'Click where the new text should start, then type it.'},
+  radius: {name:'Radius / diameter', glyph:'measure-radius', block:'points',
+    sentence:'Click three or more points around the arc.'},
+  cloud:  {name:'Cloud', glyph:'shape-cloud', block:null,
+    sentence:'Click each corner in turn, and double-click the last one.'},
+};
+/* ribbon glyph → the tool that command arms. */
+const ARMS = {'pointer':'select','show-points':'points','text-select':'text','hand':'hand',
+              'add-text':'addtext','measure-radius':'radius','shape-cloud':'cloud'};
+
 function itemHtml(it){
   const [label, glyph, o={}] = it;
   const big = o.big ? ' big' : '';
   let on = o.on ? 'true' : (o.toggle||o.radio ? 'false' : null);
   if (o.rulers) on = state.rulers ? 'true' : 'false';
-  if (o.radio==='tool' && glyph==='pointer') on = state.armed ? 'false' : 'true';
-  if (o.radio==='shape' && glyph==='shape-cloud' && state.armed) on = 'true';
+  /* ★ The four ribbon commands that ARM something. Whichever is armed is
+     pressed here, named on the status strip, and — the part O123 turns on —
+     brings its own controls into Properties. One table, read by all three,
+     because three copies of "which tool is up" is how two of them go stale. */
+  if (ARMS[glyph]) on = (state.tool===ARMS[glyph]) ? 'true' : 'false';
   if (o.radio==='pd'){
     const want = {'page-single':'single','page-continuous':'scroll','page-facing':'facing','page-facing-continuous':'facingscroll'}[glyph];
     on = state.pageDisplay===want ? 'true' : 'false';
@@ -643,25 +875,79 @@ function renderTabs(){
 }
 
 /* ======================================================================
-   LEFT SIDE — proposal 1, and the one-line alternative to it.
+   LEFT SIDE — O123 part 5, and the rail his last paragraph redefines.
 
-   `rail`  the proposal: a permanently visible vertical navigation surface,
-           one entry per panel, ALL FIVE simultaneously one click away. Its
-           width is a CONSTANT (52 px here, `exact_size` in the build), which
-           is what discharges the R128 fit-zoom gate by argument. The moment
-           anyone sizes it from its widest word the gate becomes real.
+   ★★★ WHAT THE RAIL IS FOR CHANGED. It was five panel tabs. He added:
+
+     "the navigate selectors and some other related selection controls
+      (lasso tool when we implement one, etc) and these will fold up into a
+      drop down arrow if space becomes scarce."
+
+   So it is now THREE groups on one strip — panel tabs, the navigate
+   selectors, the selection tools — and the interesting part is not the list,
+   it is what happens when they do not all fit.
+
+   ── THE FOLD LADDER, and why it is this order ───────────────────────────
+   `RIBBON_SCALING.md` already answers "what happens when the controls do not
+   fit" for the ribbon, in three rungs: re-wrap, then collapse, then scroll.
+   The rail reuses that reasoning rather than inventing a second answer, and
+   the rungs land as:
+
+     roomy    everything, with its word under it
+     tight    THE WORDS GO FIRST. Every control is still one click away — the
+              cheapest thing to give up is the label, not the control.
+     snug     the SELECTION group folds into the chevron. It is the specialist
+              gesture; nothing in it has a keyboard chord or a ribbon button
+              an operator reaches by habit.
+     cramped  the NAVIGATE group folds too — except the one that is ARMED,
+              which stays pinned. A rail that cannot say what you are holding
+              has stopped doing the one job the tool strip handed it.
+
+   ★★ THE PANEL TABS ARE THE FLOOR AND NEVER FOLD. "All five panels one click
+   away" is the rail's entire argument for existing; a rail that folds them is
+   strictly worse than the five-tab stack it replaced, and at that point the
+   honest move is to switch arrangements, not to keep shrinking.
+
+   ★ AND THE CHEVRON ITSELF NEVER FOLDS. Inkscape failure mode #8 — past about
+   six tabs the overflow button gets hidden — is this exact control eating
+   itself. Everything the rail dropped is behind it.
+
+   ── The two arrangements the knob switches between ──────────────────────
+   `rail`  a permanently visible vertical strip. Its width is a CONSTANT
+           (52 px here, `exact_size` in the build), which discharges the R128
+           fit-zoom gate by argument. Size it from its widest word and the
+           gate becomes real.
            ★ This is NOT S6. S6's rail is a collapsed-state SUBSTITUTE for a
-           hidden dock ("drawn instead of the tree, leaving tree state
-           untouched"). This one replaces the dock's arrangement while the
+           hidden dock. This one replaces the dock's arrangement while the
            dock is open. VS Code's activity bar, not its collapsed sidebar.
 
-   `tabs`  the cheap 80 %: merge the two left stacks into one five-tab stack,
-           one line at defaults.rs:412-421, legal today. At 280 pt it holds
-           three tabs and pushes two into an overflow chevron — which is the
-           thing a vertical rail does not have to do.
+   `tabs`  one five-tab stack, no rail. Also legal under part 5 — "Layers,
+           Signatures and Fonts join Pages and Bookmarks as tabs in ONE dock"
+           is satisfied either way. At 280 pt three tabs fit and two go behind
+           a chevron, which is the cost a vertical rail does not pay.
    ====================================================================== */
 const RAIL = [['pages','Pages','pages'],['bookmarks','Marks','bookmarks'],['layers','Layers','layers'],['signatures','Sigs','signatures'],['fonts','Fonts','fonts']];
 const PTITLE = {pages:'Pages', bookmarks:'Bookmarks', layers:'Layers', signatures:'Signatures', fonts:'Fonts'};
+
+/* The navigate selectors — the four modal tools, exactly as View ▸ Navigate
+   registers them. All four ship, all four have art of their own. */
+const RAIL_NAV = ['select','points','text','hand'].map(id=>[id, TOOLS[id].name, TOOLS[id].glyph, TOOLS[id].sentence]);
+/* The selection tools. ONE row, and the group is honest about being one row:
+   the lasso is the only member he named and it does not exist yet, so a
+   second entry would be a control invented to make a group look full.
+   ⚠ `shape-ink` is BORROWED art — the freehand pen's own picture. There is no
+   `lasso` asset in `icons/assets`, and drawing one here would put a picture in
+   the mock that the build has no way to render. Stated in the legend. */
+const RAIL_SEL = [
+  ['lasso','Lasso','shape-ink','Draw a loop around what you want picked. NOT BUILT — and this is the freehand pen’s art, borrowed.',true],
+];
+
+/* How many rows the rail can afford, per rung — the mock’s stand-in for a
+   short window. Width is deliberately NOT what shrinks; see the CSS header. */
+const RAIL_ROOM = {roomy:{words:true, sel:true, nav:'all'},
+                   tight:{words:false, sel:true, nav:'all'},
+                   snug: {words:false, sel:false, nav:'all'},
+                   cramped:{words:false, sel:false, nav:'armed'}};
 
 function panelBody(id){
   const cb = on => `<span class="cb ${on?'on':'off'}">${on?'✓':''}</span>`;
@@ -681,24 +967,91 @@ function panelBody(id){
         <div class="lrow">${g('info')}<span>Inter <i style="font-style:normal;color:var(--ink-quiet)">· not embedded, substituted</i></span></div></div>`;
   }
 }
+const PCOUNT = {pages:'1 page', fonts:'3', bookmarks:'', layers:'3', signatures:''};
+
 function renderLeft(){
   const tools = `<div class="tools"><button title="Float this panel">${g('floating-panels')}</button><button title="Close">${g('close')}</button></div>`;
-  const count = {pages:'1 page', fonts:'3', bookmarks:'', layers:'3', signatures:''}[state.leftPanel] || '';
-  if (state.left==='rail'){
-    $('#rail').innerHTML = RAIL.map(([id,lb,gl])=>
-      `<button role="tab" data-panel="${id}" aria-selected="${state.leftPanel===id}" title="${PTITLE[id]}">${g(gl)}<span>${lb}</span></button>`).join('')
-      + `<div class="spacer"></div><span class="tagp" title="Not built. Not S6 either — see the legend.">proposed</span><button title="Collapse the dock">${g('chevron-left')}<span>Hide</span></button>`;
+  const count = PCOUNT[state.leftPanel] || '';
+  const head = id => `<div class="ph">${PTITLE[id]} <span class="n">${PCOUNT[id]||''}</span>${tools}</div>`;
+
+  /* ---- the arrangement BEFORE O123 part 5: two docks, a FIXED divider ----
+     Pages and Bookmarks in one stack, Layers / Signatures / Fonts in a second
+     below it, split at a height nobody chose and nobody can move. Part 5 is
+     one sentence — "join … as tabs in ONE dock" — and this is what it is one
+     sentence about. Drawn so the difference is visible rather than described. */
+  if (state.layout==='today'){
+    $('#rail').innerHTML = '';
+    const topSel = ['pages','bookmarks'].includes(state.leftPanel) ? state.leftPanel : 'pages';
+    const botSel = ['layers','signatures','fonts'].includes(state.leftPanel) ? state.leftPanel : 'layers';
+    const bar = ids => `<div class="tabbar">${ids.map(id=>`<button data-panel="${id}" aria-selected="${state.leftPanel===id}">${g(RAIL.find(r=>r[0]===id)[2])}${PTITLE[id]}</button>`).join('')}</div>`;
     $('#leftpanel').innerHTML =
-      `<div class="ph">${PTITLE[state.leftPanel]} <span class="n">${count}</span>${tools}</div>` + panelBody(state.leftPanel);
+        `<div class="stack" style="flex:1">${bar(['pages','bookmarks'])}${head(topSel)}${panelBody(topSel)}</div>`
+      + `<div class="hardline" title="A fixed split. Not draggable — this is what part 5 replaces."></div>`
+      + `<div class="stack" style="flex:1">${bar(['layers','signatures','fonts'])}${head(botSel)}${panelBody(botSel)}</div>`;
+    return;
+  }
+
+  if (effLeft()==='rail'){
+    const room = RAIL_ROOM[state.railRoom];
+    const w = lb => room.words ? `<span>${lb}</span>` : '';
+    const cls = room.words ? '' : ' iconly';
+    const folded = [];   /* what went behind the chevron, in the order it went */
+
+    /* Group 1 — the panel tabs. The FLOOR. Never folded, at any rung. */
+    let html = RAIL.map(([id,lb,gl])=>
+      `<button role="tab" class="${cls.trim()}" data-panel="${id}" aria-selected="${state.leftPanel===id}" title="${PTITLE[id]}">${g(gl)}${w(lb)}</button>`).join('');
+
+    /* Group 2 — the navigate selectors. At `cramped` the group collapses to a
+       SINGLE pinned row showing whatever is armed — including a tool armed
+       from another ribbon tab, drawn with its own glyph. A rail that cannot
+       say what you are holding has given up the job the one-line tool strip
+       handed it, and that is the one thing this group must not stop doing. */
+    /* ⚠ Mode-gated, exactly as View ▸ Navigate already gates them. `Points`
+       edits the nodes of a path and Read cannot; drawing it there would be an
+       authoring control on a mode whose own dispatch refuses it, which is a
+       defect this project has already shipped once and fixed. */
+    const nav = RAIL_NAV.filter(r => r[0]!=='points' || state.mode==='edit');
+    html += `<div class="rule"></div>` + (room.words?`<div class="gl">navigate</div>`:'');
+    if (room.nav === 'all'){
+      html += nav.map(([id,lb,gl,tip])=>
+        `<button class="${cls.trim()}" data-arm="${id}" aria-pressed="${state.tool===id}" title="${lb} — ${tip}">${g(gl)}${w(lb)}</button>`).join('');
+    } else {
+      const t = TOOLS[state.tool];
+      html += `<button class="${cls.trim()}" data-arm="${state.tool}" aria-pressed="true" title="${t.name} — armed. The rest of this group is behind the chevron.">${g(t.glyph)}${w(t.name)}</button>`;
+      nav.filter(r=>r[0]!==state.tool).forEach(r=>folded.push(r[1]));
+    }
+
+    /* Group 3 — the selection tools. Folds BEFORE navigate. Not drawn in Read:
+       a lasso picks page CONTENT, which is the one thing Read does not do. */
+    if (room.sel && state.mode!=='read'){
+      html += `<div class="rule"></div>` + (room.words?`<div class="gl">select</div>`:'')
+        + RAIL_SEL.map(([id,lb,gl,tip,soon])=>
+          `<button class="${cls.trim()}${soon?' soon':''}" title="${lb} — ${tip}">${g(gl)}${w(lb)}</button>`).join('');
+    } else if (state.mode!=='read'){
+      RAIL_SEL.forEach(r=>folded.push(r[1]));
+    }
+
+    /* The chevron. Drawn only when it holds something; a chevron over an empty
+       overflow is the dead control R9 forbids. It never folds itself. */
+    const chev = folded.length
+      ? `<button class="chev" title="Folded away, in the order they went: ${folded.join(', ')}">${g('chevron-down')}<span>${folded.length}</span></button>` : '';
+
+    $('#rail').innerHTML = html + chev
+      + `<div class="spacer"></div>`
+      + `<span class="tagp" title="Ruled in O123 and not started. Not S6 either — see the legend.">ruled</span>`
+      + `<button class="${cls.trim()}" title="Collapse the dock">${g('chevron-left')}${w('Hide')}</button>`;
+
+    $('#leftpanel').innerHTML = head(state.leftPanel) + panelBody(state.leftPanel);
   } else {
-    /* three tabs fit at 280 pt; the other two go behind the overflow chevron */
+    /* ONE dock, five tabs — part 5 without the rail. Three fit at 280 pt and
+       the other two go behind the overflow chevron. */
     const shown = RAIL.slice(0,3), hidden = RAIL.slice(3);
     const sel = RAIL.find(r=>r[0]===state.leftPanel);
     const list = shown.some(r=>r[0]===state.leftPanel) ? shown : [sel, shown[0], shown[1]];
     $('#rail').innerHTML = '';
     $('#leftpanel').innerHTML =
       `<div class="tabbar">${list.map(([id,,gl])=>`<button data-panel="${id}" aria-selected="${state.leftPanel===id}">${g(gl)}${PTITLE[id]}</button>`).join('')}<button class="more" title="${hidden.map(h=>PTITLE[h[0]]).join(', ')}">⏷ 2 more</button></div>`
-      + `<div class="ph">${PTITLE[state.leftPanel]} <span class="n">${count}</span>${tools}</div>` + panelBody(state.leftPanel);
+      + head(state.leftPanel) + panelBody(state.leftPanel);
   }
 }
 
@@ -820,10 +1173,28 @@ const OBJECTS = [
   '→ page 1 · “SECTION A-A”', '→ page 1 · “SECTION A-A”'],
 ];
 
-/* The Tool panel — SHIPPED, and the thing the one-line strip would delete.
-   Blocks A (the pointer, unconditional and drawn FIRST because "the row an
-   operator's eye lands on must not move"), B (the tool list, hard cap 7 rows),
-   B′ (Select's own three scale switches), and C (the disclosure slot). */
+/* ======================================================================
+   THE TOOL PANEL — the surface O123 part 1 RETIRES. Drawn only on the
+   `before O123` setting of the layout knob, so the operator can see what he
+   ruled against beside what he ruled for.
+
+   Its four blocks: A (the pointer sentence, unconditional and drawn FIRST
+   because "the row an operator's eye lands on must not move"), B (the tool
+   list, hard-capped at seven rows), B′ (Select's own three scale switches),
+   and C (the disclosure slot).
+
+   ★ Where each block went is the whole of parts 1 and 2:
+       A  → the status strip's sentence
+       B  → GONE, and it is the one genuine subtraction. Every row was a
+            route to a ribbon command; "its buttons duplicate the ribbon and
+            go" is his instruction, by name. Worth recording that the list was
+            the answer to a real discoverability defect — "The feature works.
+            He could not find it." — and that what survives of that argument
+            is the strip, which is permanent, names what is armed at frame one,
+            and cannot be closed. The panel could say none of that.
+       B′ → Properties, `properties::tool::scale_switches`
+       C  → Properties, `properties::disclose`
+   ====================================================================== */
 const TOOLROWS = [
   ['pointer','Select','Pick a shape, then drag it. The tool everything comes back to.','View · V'],
   ['show-points','Points','Show every node on the picked path and drag them one at a time.','View · N'],
@@ -831,21 +1202,65 @@ const TOOLROWS = [
   ['hand','Hand','Push the sheet around without touching anything on it.','View · H'],
 ];
 
-function toolPanel(){
-  const cb = (on,label) => `<div class="opt"><span class="cb ${on?'on':''}">${on?'✓':''}</span><span>${label}</span></div>`;
-  if (state.armed){
-    return `<div class="tool">
-      <h4>Cloud</h4>
-      <div class="lead">Armed. Click each corner; double-click to finish.</div>
+const cb = (on,label) => `<div class="opt"><span class="cb ${on?'on':''}">${on?'✓':''}</span><span>${label}</span></div>`;
+
+/* ======================================================================
+   ★★★ THE ARMED TOOL'S CONTROLS — ONE function, drawn in TWO homes.
+
+   This is the load-bearing piece of the whole artifact. O123 part 1 removes
+   the Tool panel; `SHELL_LAYOUT_PROPOSAL.md` §3 refused that because it
+   DELETES these controls. Part 2 is the answer — they move to Properties.
+
+   Writing them once and rendering them in both places is not a code-saving.
+   It is the claim itself, made checkable: flip the layout knob and the same
+   three switches, the same pen, the same pick list appear in the other home.
+   If they were two copies, one of them could quietly become a shorter list
+   and the mock would be arguing for something it was not showing.
+
+   Every label below is the string the build already ships
+   (`text/tool.rs::scale_stroke_label`, `text_pen_*`, `measure_points_*`).
+   ====================================================================== */
+function toolBlockInner(){
+  const block = TOOLS[state.tool].block;
+  if (block === 'scale'){
+    return `<div class="h">When you resize something</div>
+      ${cb(true,'Scale line weight')}
+      ${cb(true,'Keep the inner margins the same size')}
+      ${cb(false,'Allow the artwork to distort (borders may come out uneven)')}
+      <div class="note">These apply to the next resize. Line weight stays put by default, because on a drawing it is a drafting standard rather than decoration — the same default Acrobat, Illustrator and Inkscape all ship.</div>`;
+  }
+  if (block === 'pen'){
+    return `<div class="h">New text</div>
       <div class="pick">
-        <label>Font</label><select><option>SpaceGrotesk-Bold</option></select>
+        <label>Font</label><select><option>SpaceGrotesk-Bold</option><option>JetBrainsMono-Regular</option></select>
         <label>Size</label><input value="8.00">
         <label>Colour</label><div class="swatch" style="background:#C8451E"></div>
       </div>
-      ${cb(true,'Scale line weight with the shape')}
-      ${cb(true,'Keep the insets')}
-      ${cb(false,'Allow distortion')}
-      <button class="putdown">${g('put-down')}put down <kbd>Esc</kbd></button>
+      <div class="note">These apply to the next text you add. They do not change text already on the page.</div>`;
+  }
+  if (block === 'points'){
+    /* O107: "clicking on a point or location listed should allow us to remove
+       it." The canvas markers say WHERE the points are; on a dense CAD sheet a
+       marker sitting on a junction is not distinguishable from the junction,
+       so this list is the only surface that answers "what is in this fit?" */
+    return `<div class="h">Points in this measurement</div>
+      ${[['1','418.20, 236.55'],['2','452.90, 208.14'],['3','487.60, 236.55']]
+        .map(([n,xy])=>`<div class="prow"><span style="color:var(--ink-quiet)">${n}</span><span>${xy}</span><button class="x" title="Remove this point">${g('close')}</button></div>`).join('')}
+      <div class="note">Three points fix the arc. Remove one and the fit waits for another.</div>`;
+  }
+  /* R9: no heading with nothing under it. Most tools have no settings, and
+     saying so plainly is better than an empty box that reads as a bug. */
+  return `<div class="h">${TOOLS[state.tool].name}</div>
+     <div class="none">This tool has no settings of its own. Most do not — the shape, the colour and the line width of what it draws are Markup&nbsp;▸&nbsp;Style on the ribbon.</div>`;
+}
+
+function toolPanel(){
+  if (armed()){
+    return `<div class="tool">
+      <h4>${TOOLS[state.tool].name}</h4>
+      <div class="lead">Armed. ${TOOLS[state.tool].sentence}</div>
+      <div class="tsec" style="border:0;padding:0;background:none">${toolBlockInner()}</div>
+      <button class="putdown">${g('put-down')}Put this tool down <kbd>Esc</kbd></button>
       <div class="disc"><span class="indic">indicative</span> A click was declined because the words under the pointer are drawn inside a form XObject that this document reuses on more than one page, and editing them here would silently change every other place the drawing appears, so the pen declines rather than doing that quietly.</div>
     </div>`;
   }
@@ -853,12 +1268,8 @@ function toolPanel(){
     <h4>Select</h4>
     <div class="lead">Pick a shape, then drag it. The tool everything comes back to.</div>
     ${TOOLROWS.map(([gl,name,sent,chord])=>`<div class="trow"><button class="tb" aria-pressed="${gl==='pointer'}" title="${name}">${g(gl)}</button><div><div class="s"><b>${name}</b> — ${sent}</div><div class="ch">${chord}</div></div></div>`).join('')}
-    <div class="cap"><span class="indic">indicative</span> Only Select's sentence is quoted verbatim; the shipped strings live in <code>text/tool.rs</code>. The list is hard-capped at seven rows.</div>
-    <div style="margin-top:8px"><h4>Select's own options</h4>
-      ${cb(true,'Scale line weight when resizing')}
-      ${cb(true,'Keep the insets')}
-      ${cb(false,'Allow distortion')}
-    </div>
+    <div class="cap"><span class="indic">indicative</span> Only Select's and Cloud's sentences are quoted verbatim; the shipped strings live in <code>text/tool.rs</code>. The list is hard-capped at seven rows. <b>This whole list is what O123 removes</b> — every row is a route to a ribbon command.</div>
+    <div class="tsec" style="border:0;padding:8px 0 0;background:none">${toolBlockInner()}</div>
     <div class="disc"><span class="indic">indicative</span> A click was declined because the words under the pointer are drawn inside a form XObject that this document reuses on more than one page, and editing them here would silently change every other place the drawing appears, so the pen declines rather than doing that quietly.</div>
   </div>`;
 }
@@ -867,14 +1278,26 @@ function renderDock(){
   const d = $('#dock');
   const hdrTools = (extra='') => `<div class="tools">${extra}<button title="Float this panel">${g('floating-panels')}</button><button title="Close">${g('close')}</button></div>`;
 
-  /* The salvage of proposal 3. An ADDITION: 28 pt of permanent chrome that
-     answers "what am I holding?" at frame one. It carries the identity and
-     the stage line ONLY — no `put down`, because put-down is live only in the
-     armed block and one beside Select would be a dead control (Select IS the
-     resting state). */
-  const banner = state.armed
-    ? `<div class="banner armed">${g('shape-cloud')}<b>Cloud</b><span class="st">armed · click each corner, double-click to finish</span><span class="tagp">proposed</span></div>`
-    : `<div class="banner">${g('pointer')}<b>Select</b><span class="st">click to pick · drag to marquee</span><span class="tagp">proposed</span></div>`;
+  /* ★★★ O123 PART 1 — THE ONE-LINE TOOL STATUS.
+     Name, one sentence, and *Put this tool down*. 26 pt of permanent chrome
+     the right dock reserves off the top before it resolves its columns; not a
+     stack, because `plan::MIN_STACK_HEIGHT` is 80 pt and the tab bar alone is
+     24 — a 26 pt stack is a tab bar with two points under it.
+
+     Three things it does that the panel could not: it cannot be closed, it
+     names what is armed at frame one with no clicks, and it draws its sentence
+     even when it cannot name the tool (O66 — a dialog-armed placement has no
+     ribbon command to name, and a missing name must suppress the NAME, never
+     the sentence).
+
+     ★ *Put this tool down* is ABSENT beside Select. Select is the resting
+     state; putting a tool down returns to it, so the button's press would
+     change nothing, and R9 forbids a dead control. */
+  const T = TOOLS[state.tool];
+  const hover = 'What you are holding. Its settings — font, size, colour, measuring options, resize switches — are in Properties.';
+  const banner = `<div class="banner${armed()?' armed':''}" title="${hover}">${g(T.glyph)}<b>${T.name}</b><span class="st">— ${T.sentence}</span>`
+    + (armed() ? `<button class="pd" title="Put this tool down (Esc)">${g('put-down')}Put this tool down</button>` : `<span class="grow"></span>`)
+    + `<span class="tagp" title="Ruled in O123; landed in the tree 2026-09-04.">ruled</span></div>`;
 
   if (state.mode==='read'){
     d.innerHTML = `<div class="ph">Fill form <span class="n">1 field</span>${hdrTools()}</div>
@@ -886,14 +1309,14 @@ function renderDock(){
   }
 
   if (state.mode==='review'){
-    d.innerHTML = banner + `<div class="ph">Comments <span class="n">13</span>${hdrTools(`<button title="Filter">${g('search')}</button>`)}</div><div class="rows">
+    d.innerHTML = (state.layout==='today'?'':banner) + `<div class="ph">Comments <span class="n">13</span>${hdrTools(`<button title="Filter">${g('search')}</button>`)}</div><div class="rows">
       ${[['FreeText · p. 1','documenttype','Construction drawing'],['FreeText · p. 1','kenmerk','OA-2026-001-A100'],['Square · p. 1','you · just now','Rectangle, 2.0 pt, no fill'],['FreeText · p. 1','projectnaam','Project name'],['Cloud · p. 1','reviewer','Check flange thickness against S355J2+N']]
         .map(([k,w,t])=>`<div class="comment"><div style="display:flex;gap:6px;align-items:center">${g(k.startsWith('Cloud')?'shape-cloud':k.startsWith('Square')?'shape-rect':'text-freetext')}<b>${k}</b></div><div class="who">by ${w}</div><div>${t}</div><div class="acts"><button>${g('edit')} Edit note</button><button>${g('zoom-selection')} Go to</button></div></div>`).join('')}
     </div>`;
     return;
   }
 
-  const proposed = state.dock==='360';
+  const proposed = effDock()==='360';
   /* Objects header. TODAY: two prose lines above the list — the disclosure
      rule is "every disclosure ABOVE the list, without exception". PROPOSED:
      the same two facts compressed into the header row, which keeps them above
@@ -903,8 +1326,16 @@ function renderDock(){
     : `<div class="ph">Objects${hdrTools(`<button title="Filter">${g('search')}</button>`)}</div>
        <div style="padding:5px 10px 6px;font-size:11.5px;color:var(--ink-quiet);line-height:1.35;border-bottom:1px solid var(--chrome)">Everything drawn on this page, front-most first — the object painted last is the first row.<br>28 object(s) on this page — 13 path(s), 15 text object(s).</div>`;
 
-  const rows = OBJECTS.map(([n,gl,ty,today,prop])=>
-    `<div class="row" aria-selected="${state.selection && n===26}">${g(gl)}<span class="id">#${n}</span><span class="t">${proposed?'':'#'+n+' '}${ty} <i>· ${proposed?prop:today}</i></span></div>`).join('');
+  /* ★★★ O123 PART 3 — the rows ELLIPSISE, and the full text is the `title`.
+     The tooltip is not decoration: it is the half of part 3 that makes the
+     ellipsis legal. `SALVAGE.md:44` forbids SILENT loss, not loss — an
+     ellipsis plus a hover is loss that announces itself and can be recovered
+     without resizing anything. Flip the layout knob to `before O123` and the
+     same rows go back to being cut mid-character with nowhere to read them. */
+  const rows = OBJECTS.map(([n,gl,ty,today,prop])=>{
+    const body = `${ty} · ${proposed?prop:today}`;
+    return `<div class="row" aria-selected="${state.selection && n===26}" title="#${n} ${body}">${g(gl)}<span class="id">#${n}</span><span class="t">${proposed?'':'#'+n+' '}${ty} <i>· ${proposed?prop:today}</i></span></div>`;
+  }).join('');
 
   /* The Properties stack's tab bar — six panels share it. At 320 pt three fit
      and three go behind `⏷ 3 more`; at 360 four fit. This is the same
@@ -914,31 +1345,81 @@ function renderDock(){
   const shownTabs = proposed ? ptabs.slice(0,4) : ptabs.slice(0,3);
   const moreTabs = 6 - shownTabs.length;
 
-  const toolStack = `<div class="stack" style="flex:1.3">
-      <div class="ph">Tool${hdrTools()}</div>${toolPanel()}</div>
-    <div class="split" title="Drag to resize"><i></i></div>`;
+  /* ★★★ O123 PART 2 — the armed tool's controls, FIRST in the Properties body.
+     Above every selection-scoped section, for the reason the shipped module
+     gives: these controls sat in the top-right corner of the window, the panel
+     changed and the corner did not. And deliberately NOT part of the panel's
+     `something_drew` predicate — an armed Select draws its three switches
+     almost always, and folding that into "a selection-scoped section has
+     spoken" would collapse the document section for ever (O75, backwards). */
+  const toolSection = `<div class="tsec">
+      ${toolBlockInner()}
+      <div class="note"><span class="indic">moved</span> These were the Tool panel's. They are properties of what is about to be drawn, which is the same kind of thing as the properties of what is already drawn — so this is the surface that owns them.</div>
+    </div>`;
 
-  d.innerHTML = banner
-    + (state.toolTab ? '' : toolStack)
-    + `<div class="stack" style="flex:1.35">
-         ${state.toolTab ? `<div class="tabbar"><button aria-selected="true">${g('edit-objects')}Objects</button><button>${g('pointer')}Tool</button></div>` : ''}
-         ${objHead}<div class="rows">${rows}</div>
-       </div>
+  /* ★ NOT drawn on the `before O123` setting, and this is a correctness point
+     rather than a tidiness one: before part 2 these controls were in the Tool
+     panel, and drawing them in BOTH places would picture a build in which they
+     existed twice — which is the arrangement nobody had and nobody proposed. */
+  const propsBody = `<div class="props">${state.layout==='today' ? '' : toolSection}${state.selection ? `
+      <div class="sec">${g('fit-page')} Position and size <span style="margin-left:auto;text-transform:none;letter-spacing:0">pt · from bottom-left</span></div>
+      <div class="kv"><div>Left</div><div><input value="1817.01"></div><div>Bottom</div><div><input value="28.35"></div><div>Width</div><div><input value="538.58"></div><div>Height</div><div><input value="311.81"></div><div>Rotation</div><div><input value="0.00"></div></div>
+      <div class="sec">Text</div>
+      <div class="kv"><div>Content</div><div class="tx">SIZE</div><div>Font</div><div class="tx">BAAAAA+JetBrainsMono-Regular <i style="font-style:normal;color:var(--ink-quiet)">· embedded subset</i></div><div>Size</div><div>5.50</div><div>Fill</div><div class="tx"><span class="sw" style="display:inline-block;vertical-align:-3px;background:#6B6D72"></span> #6B6D72</div></div>
+      <div class="sec">${g('layers')} Placement</div>
+      <div class="kv"><div>Page</div><div>1</div><div>Paint order</div><div>26 of 28</div><div>Clip</div><div class="tx">none</div></div>
+      <div style="padding:4px 10px 10px;color:var(--ink-quiet);font-size:11px;line-height:1.35">The subset tag <code>BAAAAA+</code> stays here even when the row above drops it: two subsets of one face carry different tags.</div>`
+      : `<div class="pb empty" style="padding:8px 10px">Nothing is selected. Pick a row above, or click an object on the sheet.</div>`}</div>`;
+
+  const propsStack = `<div class="stack" style="flex:${(1-state.mdSplit).toFixed(3)}">
+      <div class="tabbar">${shownTabs.map((t,i)=>`<button aria-selected="${i===0}">${t}</button>`).join('')}<button class="more" title="Dimension groups, Attachments">⏷ ${moreTabs} more</button></div>
+      <div class="ph">Properties <span class="n">${state.selection?'#26 · Text':'nothing picked'}</span>${hdrTools()}</div>
+      ${propsBody}
+    </div>`;
+
+  /* ---- the arrangement BEFORE O123: three stacks, and the Tool panel is one
+     of them. Note what it costs — the Tool panel takes a third of the column,
+     Properties gets what is left, and the object rows get the middle. */
+  if (state.layout==='today'){
+    d.innerHTML =
+      `<div class="stack" style="flex:1.3"><div class="ph">Tool${hdrTools()}</div>${toolPanel()}</div>
        <div class="split" title="Drag to resize"><i></i></div>
-       <div class="stack" style="flex:1.1">
-         <div class="tabbar">${shownTabs.map((t,i)=>`<button aria-selected="${i===0}">${t}</button>`).join('')}<button class="more">⏷ ${moreTabs} more</button></div>
-         <div class="ph">Properties <span class="n">${state.selection?'#26 · Text':'nothing picked'}</span>${hdrTools()}</div>
-         <div class="props">${state.selection ? `
-           <div class="sec">${g('fit-page')} Position and size <span style="margin-left:auto;text-transform:none;letter-spacing:0">pt · from bottom-left</span></div>
-           <div class="kv"><div>Left</div><div><input value="1817.01"></div><div>Bottom</div><div><input value="28.35"></div><div>Width</div><div><input value="538.58"></div><div>Height</div><div><input value="311.81"></div><div>Rotation</div><div><input value="0.00"></div></div>
-           <div class="sec">Text</div>
-           <div class="kv"><div>Content</div><div class="tx">SIZE</div><div>Font</div><div class="tx">BAAAAA+JetBrainsMono-Regular <i style="font-style:normal;color:var(--ink-quiet)">· embedded subset</i></div><div>Size</div><div>5.50</div><div>Fill</div><div class="tx"><span class="sw" style="display:inline-block;vertical-align:-3px;background:#6B6D72"></span> #6B6D72</div></div>
-           <div class="sec">${g('layers')} Placement</div>
-           <div class="kv"><div>Page</div><div>1</div><div>Paint order</div><div>26 of 28</div><div>Clip</div><div class="tx">none</div></div>
-           <div style="padding:4px 10px 10px;color:var(--ink-quiet);font-size:11px;line-height:1.35">The subset tag <code>BAAAAA+</code> stays here even when the row above drops it: two subsets of one face carry different tags.</div>`
-           : `<div class="pb empty">Pick a row above, or click an object on the sheet.</div>`}</div>
-       </div>`;
+       <div class="stack" style="flex:1.35">${objHead}<div class="rows">${rows}</div></div>
+       <div class="split" title="Drag to resize"><i></i></div>
+       ${propsStack}`;
+    return;
+  }
+
+  /* ★★★ O123 PARTS 3 and 4 — ONE master–detail column, in the Tool panel's
+     room. Objects above, Properties below, and a DRAGGABLE split between
+     them: `dock.right.0.split.row.0`, the dock's own stack splitter. Grab it
+     and the two panes trade height — which is the part a picture of a line
+     cannot say on its own, and why it is drawn with a grip and a resize
+     cursor rather than as a rule. */
+  d.innerHTML = banner
+    + `<div class="stack" style="flex:${state.mdSplit.toFixed(3)}">${objHead}<div class="rows">${rows}</div></div>`
+    + `<div class="split" id="mdsplit" title="Drag to move the split between Objects and Properties"><i></i></div>`
+    + propsStack;
 }
+
+/* ★ The split is dragged for real, not merely drawn draggable. A mock whose
+   splitter does not move is a mock that asserts "draggable" and demonstrates
+   "a line", and the operator is looking at this to check exactly that claim.
+   Bound once on the document, because the element is replaced on every
+   render and a listener attached to it would be lost with it. */
+let dragging = null;
+document.addEventListener('pointerdown', e=>{
+  const s = e.target.closest('#mdsplit'); if(!s) return;
+  dragging = s.closest('.dock').getBoundingClientRect();
+  s.classList.add('dragging'); s.setPointerCapture?.(e.pointerId); e.preventDefault();
+});
+document.addEventListener('pointermove', e=>{
+  if(!dragging) return;
+  const f = (e.clientY - dragging.top - 26) / (dragging.height - 26);
+  state.mdSplit = Math.min(0.86, Math.max(0.14, f));   /* both panes stay usable */
+  renderDock();
+});
+document.addEventListener('pointerup', ()=>{ dragging = null; renderDock(); });
 
 /* ======================================================================
    STATUS BAR. Note what is NOT here: no first-page and no last-page buttons.
@@ -956,7 +1437,7 @@ function renderStatus(){
     <span class="sep"></span>
     <span class="sb info">${state.selection&&state.mode!=='read' ? 'Selected: Text · 13.0 × 15.3 pt · 1 of 2 here' : 'A1 landscape · 841 × 594 mm · PDF 1.3'}</span>
     <span class="grow"></span>
-    <button class="sb" aria-pressed="${state.armed?'false':'true'}" title="Select tool (V)">${g('pointer')}<span>${state.armed?'Cloud':'Select'}</span></button>
+    <button class="sb" aria-pressed="${armed()?'false':'true'}" title="Select tool (V)">${g(TOOLS[state.tool].glyph)}<span>${TOOLS[state.tool].name}</span></button>
     <button class="sb" title="Find (Ctrl+F)">${g('search')}<span>Find</span></button>
     <span class="sep"></span>
     ${fit('Actual size',null,false)}${fit('Fit page','fit-page',true)}${fit('Fit width','fit-width',false)}${fit('Fit height','fit-height',false)}
@@ -976,37 +1457,84 @@ function renderStatus(){
    operator saw yesterday is worse than one that says where and why.
    ====================================================================== */
 const LEGEND = [
- ['proposed','1st — Right dock 320 → 360 pt, and object rows given columns',
-  'The review said our rows list far less than the mock\'s. Read against the source it is <em>backwards</em>: ours already compose paint style, colour hex, line width, node count, text preview, font name and size, image pixels — <em>and a trailing diagnostic note the mock has no equivalent for</em>. The screenshot impression was horizontal clipping at 320 pt. Flip the dock knob and watch the rows stop being cut mid-character.',
-  '§0.2, §2, §5 · ~1 day code, ~2 days harness re-baseline'],
+ /* ─────────────── O123 · the operator's ruling, seven parts ─────────────── */
+ ['ruled','★ The whole of this dock is <b>O123</b> — your decision, not a proposal',
+  'On 2026-09-04 you ruled on A7: <em>"I never understood why there is a tool dock when everything can be in object and properties."</em> Every line with a violet chip below is a part of that ruling. They are drawn here as <b>decided</b> — not as options to weigh, and not as things already finished. The mono line under each one says where the code actually stands. <b>Flip the layout knob at the far left of the black bar to see what each part replaced.</b>',
+  'OPERATOR_REQUESTS.md O123 · parts 1–6 landed 2026-09-04 · the rail not started'],
+
+ ['ruled','1 · The Tool panel is one line: name, sentence, <em>Put this tool down</em>',
+  'A 26 pt strip the right dock reserves off the top before it resolves its columns — chrome, not a stack, because the minimum stack is 80 pt and a tab bar alone is 24. It does three things the panel could not: it <em>cannot be closed</em>, it names what you are holding at frame one with no clicks, and it draws its sentence even when it cannot name the tool — a placement armed from inside a dialog has no ribbon command to name, and a missing name must suppress the name and never the sentence. ★ <em>Put this tool down</em> is absent beside Select, because Select <em>is</em> the resting state and that button\'s press would change nothing. The tool LIST is the one genuine subtraction, and it is the one you asked for by name: every row was a route to a ribbon command.',
+  'app/toolstatus.rs · egui_shell::dock::banner · landed 2026-09-04'],
+
+ ['ruled','2 · ★★★ Its live controls MOVED to Properties. Nothing was deleted.',
+  'This is the part that makes part 1 safe, and it is the reason your ruling beat the recommendation against it. <b>Arm a different tool on the black bar and watch the top of Properties change.</b> Select brings the three resize switches; Add text brings the pen — face, size, colour and its note; the radius measure brings the removable pick list you asked for in O107; Cloud brings <em>nothing</em>, and says so, because most tools have no settings and a heading with nothing under it is worse than no heading. They are drawn FIRST in the panel body for the reason the shipped module gives: these controls sat in the top-right corner of the window, the panel changed and the corner did not.',
+  'panels/properties/tool.rs · block_for is a pure function · landed 2026-09-04'],
+
+ ['ruled','3 · Objects over Properties, one master–detail panel, <em>draggable</em> split',
+  'Grab the dotted grip between the two panes and drag it — it moves, and it is drawn with a grip and a resize cursor rather than as a rule precisely so that it does not read as the fixed divider it is not. The rows now <b>ellipsise with the full text on hover</b> instead of being hard-clipped mid-character: a clip is silent, an ellipsis is a mark that says <em>there is more</em>. That reverses <code>REVIEW_TRIAGE.md</code> §4 on your instruction, and it still meets <code>SALVAGE.md</code>\'s actual requirement, which is no <em>silent</em> loss.',
+  'panels::elide_to_width · dock.right.0.split.row.0 · landed 2026-09-04'],
+
+ ['ruled','4 · And it sits in the room the Tool panel was taking',
+  'Not a new column — the same one. On the <em>before O123</em> setting the Tool panel takes the top third of the right dock and Objects and Properties divide what is left three ways; on <em>A7</em> there are two panes and a strip. ★ The Objects → Properties <em>linkage</em> was already real and has been since 2026-08-26: a row click raises a selection action and Properties reads the same canvas selection. What changed is room, not linkage.',
+  'app/modes/defaults.rs · landed 2026-09-04'],
+
+ ['ruled','5 · One left dock. Layers, Signatures and Fonts join Pages and Bookmarks',
+  'One stack of five tabs, not a second dock under a split nobody chose and nobody could move. Flip to <em>before O123</em> and the left side splits in two with a hard line across it — that line is what this part deletes. Overflow is the dock\'s existing affordance, the same three-rung ladder <code>RIBBON_SCALING.md</code> documents; with the rail there is no overflow at all, which is the rail\'s own argument.',
+  'app/modes/defaults.rs · landed 2026-09-04'],
+
+ ['ruled','6 · 360 pt in Edit, and the width is remembered per mode',
+  '<b>Switch the mode to Read and watch the dock narrow to 320.</b> Per-mode width needed no new mechanism — the side layout\'s width already lives on a dock layout saved as a per-mode named workspace on every layout change. The constant is only what a profile that has never been touched starts from. At 360 the object rows also earn an icon and an index column; at 320 they lose both.',
+  'EDIT_INSPECTOR_WIDTH beside INSPECTOR_WIDTH · landed 2026-09-04'],
+
+ ['ruled','7 · ★ The left rail is now panel tabs <em>plus</em> the navigate selectors and the selection tools',
+  'Your addition, and it changes what the rail is for: <em>"the navigate selectors and some other related selection controls (lasso tool when we implement one, etc) and these will fold up into a drop down arrow if space becomes scarce."</em> Three groups on one strip. <b>Turn the <em>rail room</em> knob down and watch what folds, and in what order.</b> The ladder is <code>RIBBON_SCALING.md</code>\'s own, one surface over: <b>Roomy</b> everything with words → <b>Tight</b> the words go first, every control still one click away → <b>Snug</b> the selection group folds into the chevron → <b>Cramped</b> the navigate group folds too, except the one that is <em>armed</em>, which stays pinned. ★★ <b>The five panel tabs never fold</b> — "all five panels one click away" is the rail\'s entire argument for existing, and a rail that folds them is strictly worse than the tab stack it replaced. ★ <b>And the chevron never folds itself</b>: that is Inkscape failure mode #8, the overflow button being the thing that gets hidden, and everything the rail dropped is behind it. The rail\'s WIDTH stays a constant at every rung, which is what discharges the R128 fit-zoom gate by argument.',
+  'OPERATOR_REQUESTS.md O123, last paragraph · NOT STARTED — the dock first, by that row\'s own sequencing note'],
+
+ ['ruled','· The rail\'s precondition is met, and it was not met a week ago',
+  '<code>SHELL_LAYOUT_PROPOSAL.md</code> §5 made one thing a condition of scheduling the rail: the dock\'s rect channel published <em>layout</em> rather than <em>visibility</em>, so no driven check could tell a working rail from the 2026-08-10 defect in which three panels shipped unreachable with every gate green — and that defect <em>was this feature</em>. The channel was converted on 2026-09-04. The condition is discharged.',
+  '§1.6, §5, §6 · precondition met 2026-09-04'],
+
+ ['noted','⚠ The lasso is drawn with <em>borrowed</em> art, and there is no other honest option',
+  'You named the lasso yourself and it does not exist — no command, no asset. The rail entry is drawn with <code>shape-ink</code>, the freehand pen\'s own picture, and outlined in the same dashed notice colour every other unbuilt control on this page wears. <em>Inventing a lasso drawing here would put a picture in the mock that the build has no way to render</em>, which is the exact failure this artifact exists to not repeat. When the tool is built it needs art of its own; until then the borrowing is stated rather than pretty.',
+  'no `lasso` key in icons/assets · borrowed shape-ink'],
+
+ ['noted','A command with no icon cannot live in an icon rail — and two of yours have none',
+  '<code>Select all</code> and <code>Actual size</code> both register with no icon, and both proposed glyphs were deliberately not adopted. That is fine on the ribbon, where a label carries the control. It is disqualifying for the rail, whose rows are a picture with an optional word under it — at the <em>Tight</em> rung and below there is no word left, and a row with neither is a blank. So neither is in the rail here. If you want <code>Select all</code> on the strip, that is a decision to draw it art, not a layout decision.',
+  'GLYPH_ADOPTION.md deferred list'],
+
+ ['noted','The rail\'s tool groups are mode-gated, the same way the ribbon\'s already are',
+  '<b>Switch the mode to Read and watch two rail entries go.</b> <code>Points</code> edits the nodes of a path and Read cannot; the lasso picks page content and Read does not do that either. Drawing them there would be authoring controls sitting on a mode whose own dispatch refuses them — which is not hypothetical, it shipped once and was fixed on 2026-09-04. A rail is a permanent surface, so a control that is wrong for the mode is wrong on screen the whole time rather than for one click.',
+  'the same gate View ▸ Navigate already applies to Points'],
+ ['noted','The strip\'s sentences: two are verbatim, five are indicative',
+  'Select\'s and Cloud\'s sentences are the shipped strings, character for character. The other five tools\' are written for this mock and marked here rather than in five tooltips nobody opens. The build\'s own rule is that where a mock disagrees with a sentence that has already been written and tested, <em>the sentence wins</em> — which is also why the strip joins name to sentence with an em dash rather than the middle dot an earlier draft of this mock used: a dot makes the name look like a third fragment instead of the subject of the line.',
+  'text/tool.rs · text/toolstatus.rs'],
+
+ /* ─────────────── everything else, unchanged in state ─────────────── */
+ ['ruled','· What the extra 40 pt actually buys the object rows',
+  'The review said our rows list far less than the mock\'s. Read against the source it is <em>backwards</em>: ours already compose paint style, colour hex, line width, node count, text preview, font name and size, image pixels — <em>and a trailing diagnostic note the mock has no equivalent for</em>. The impression came from horizontal clipping at 320 pt, not from missing content. At 360 each row also earns an icon column and an index column, and the text that is left still ellipsises rather than being cut.',
+  'part 6 · landed 2026-09-04 · the harness re-baseline was the larger half'],
  ['proposed','· Strip the AAAAAA+ subset tag in the row only',
   'Kept in Properties. Two subsets of one face carry different tags, so stripping it in both makes two rows read identically while they name different font objects.',
   '§2.4 hazard 2'],
  ['noted','360 pt fits most rows, not all — and that is not a failure',
-  'Our composed rows are longer than the mock\'s, on purpose: a fill colour, a stroke colour, a width, a node count and a diagnostic note is more than "Path · filled (even-odd) #FAEEDC" carries. The pane is a two-axis scroll area and the full row is on hover when it overflows. 360 pt stops the <em>common</em> row being cut mid-character; it does not promise every row fits, and a width that did would be a dock nobody wants.',
-  '§2.1'],
+  'Our composed rows are longer than the mock\'s, on purpose: a fill colour, a stroke colour, a width, a node count and a diagnostic note is more than "Path · filled (even-odd) #FAEEDC" carries. 360 pt stops the <em>common</em> row being cut; it does not promise every row fits, and a width that did would be a dock nobody wants. ★ Which is why part 3 pairs the width with the ellipsis and the hover: the horizontal scrollbar went away because there is no longer a part of a row past the pane to reach — the row shortens itself and hands you the rest on hover instead.',
+  '§2.1 · ScrollArea::both became vertical'],
  ['proposed','· Show the stroke colour beside the fill',
   'A path that both fills and strokes shows only the fill today — the summary collapses the engine\'s fill/stroke pair into one <code>Option&lt;Rgb&gt;</code>. The data is already in hand at the call site. The mock did not ask for this; it collapses them the same way we do.',
   '§0.2 ★★ · ~40 lines'],
  ['proposed','· Compress the Objects header into one line',
   'Ours draws two prose lines above the list. The mock folds both into the header — which keeps the disclosure <em>above</em> the list and is therefore compatible with the rule. An amendment, not a fix; the operator\'s call. Visible on the 360 setting.',
   '§2.2'],
- ['proposed','2nd — The left icon + word rail. And it is <em>not</em> S6.',
-  'The only arrangement in which all five left panels are simultaneously one click away: a 280 pt horizontal tab bar cannot hold five tabs, a 700 pt vertical rail holds five entries with room to spare. It ends the permanent half-height reservation for three panels that are empty on nearly every document. <em>S6\'s rail is a different feature</em> — a collapsed-state substitute drawn <em>instead of</em> a hidden tree. This one replaces the dock\'s arrangement while the dock is open.',
-  '§0.1, §1, §5 · ~1 week + re-baseline'],
- ['proposed','· The cheap 80 %: one stack, five tabs',
-  'One line at <code>defaults.rs:412-421</code>, legal today since the two-pane cap was retired. It buys the height back and pays with an overflow chevron. Switch the Left knob to see what that costs at 280 pt.',
-  '§1.2, §5'],
- ['proposed','· Conditions on scheduling the rail',
-  'Fix the dock\'s rect channel first — it publishes through the <em>unguarded</em> sink, so no check can tell a working rail from the 2026-08-10 defect, which was this feature. Convert every harness coordinate in one pass, not thirteen of fourteen. Keep the rail\'s width a constant and the R128 gate is discharged by argument; size it from its widest word and the gate becomes real.',
-  '§1.6, §6'],
- ['proposed','3rd — The tool identity line, as a dock <em>banner</em>',
-  'The salvage of the rejected strip: 28 pt of permanent chrome answering "what am I holding?" at frame one, drawn <em>over</em> the columns as dock chrome. It is an addition and takes nothing away. It carries no <code>put down</code> — put-down is live only in the armed block, and one beside Select would be a dead control because Select is the resting state.',
-  '§3.4 · ~120 lines'],
+ ['ruled','· And the rail is <em>not</em> S6 — a distinction worth keeping straight',
+  'It is the only arrangement in which all five left panels are simultaneously one click away: a 280 pt horizontal tab bar cannot hold five tabs, a tall vertical strip holds five entries with room to spare and now carries the selectors as well. <em>S6\'s rail is a different feature</em> — a collapsed-state substitute drawn <em>instead of</em> a hidden tree, leaving the tree\'s state untouched. This one replaces the dock\'s arrangement <em>while the dock is open</em>. VS Code\'s activity bar, not its collapsed sidebar.',
+  'part 7 · not started'],
+ ['ruled','· Part 5 is satisfied with or without the rail — flip the Left knob',
+  'One stack of five tabs is one line in the mode defaults and was legal the day the two-pane cap was retired. It buys the height back and pays with an overflow chevron at 280 pt. The rail buys the same height and pays nothing, which is why part 7 is worth its week — but part 5 does not wait on part 7, and in the build today it did not.',
+  'app/modes/defaults.rs · landed 2026-09-04'],
 
- ['proposed','<code>Open in Acrobat</code>, top right beside Read / Review / Edit — <em>being built now</em>',
-  'Where you asked for it. It is drawn <em>beside</em> the mode selector and not <em>inside</em> it: those three cells are a radio group and every one of them is a mode, so a fourth cell that opened another application would be a button pretending to be a state — and the one press in that control that does not toggle anything is the one your hand will not expect. This is the only line here that will be stale in a good way: another track is building the command as this mock is drawn, so the dashed outline should be solid by the time you next open it. ⚠ The picture is a window with a title bar and a sheet going into it — nothing of Adobe\'s mark is in it, and nothing ever will be.',
-  'src/acrobat/ · in flight today'],
+ ['shipped','<code>Open in Acrobat</code>, top right beside Read / Review / Edit — <em>and it is solid now</em>',
+  'Where you asked for it. It is drawn <em>beside</em> the mode selector and not <em>inside</em> it: those three cells are a radio group and every one of them is a mode, so a fourth cell that opened another application would be a button pretending to be a state — and the one press in that control that does not toggle anything is the one your hand will not expect. ★ This line said "being built now, the dash should be solid by the time you next open this" — <em>and it is</em>: <code>file.open_in_acrobat</code> registers as of 2026-09-04, so the dashed outline came off in the same pass that drew O123. A built control drawn as unbuilt is the same defect as the reverse, one direction over. ⚠ The picture is a window with a title bar and a sheet going into it — nothing of Adobe\'s mark is in it, and nothing ever will be.',
+  'catalog/file.rs:621 · the button is live'],
  ['proposed','<code>Copy as vector</code>, beside Cut / Copy / Paste on Edit',
   'Not built. Copy today puts a <em>picture</em> of the selection on the clipboard; this would put the geometry, so what you paste into the next drawing is still editable line-work rather than an image of it. It sits in Clipboard rather than in File ▸ Export because it is a clipboard verb — chord-reachable, and its result is pasted, not saved. It takes a column of its own rather than a fourth row in Cut / Copy / Paste: that triad is the one place in the ribbon you reach by position without reading, and inserting into it would cost you that.',
   'not scheduled · art drawn so the proposal has a face'],
@@ -1014,9 +1542,9 @@ const LEGEND = [
   'This is <b>O119</b> drawn: the engine can now put a password on a drawing and choose what it permits, and nothing in the GUI reaches any of it. Neither button exists — they are here so the question has a picture. <em>Why a new group, argued rather than assumed:</em> every other command on Edit is an undoable edit to what is on a page, and these two are not edits at all — each rewrites every byte of the file and hands you a different one, which is a <em>save</em>. Redaction, four groups away, removes marks from a page and can be undone until you apply it; putting them on one tab would tell you they are the same kind of act. And the position within File is your own framing of the question — "protect a drawing before you send it out" — so it sits immediately after the band that sends it out. ⚠ Three things you already said change the answer and would be on screen beside these: a permission setting is a <em>request</em> any program may ignore, protecting a signed drawing is refused outright, and changing permissions on a protected file needs the owner password.',
   'OPERATOR_REQUESTS.md O119 · a new surface: a password box, a permission list, and a full-rewrite save'],
 
- ['rejected','The one-line tool strip is not built',
-  'It cannot be a dock stack: <code>MIN_STACK_HEIGHT = 80</code> against 28 pt, and a tab bar alone is 24. It <em>deletes live controls</em> — the text pen\'s font, size and colour swatch, the measure options, the three scale switches. It <em>orphans the disclosure slot</em> into a row R128 forbids growing, and that slot exists precisely because a 47-word refusal sentence had nowhere else to fit. And it re-litigates a triage ruling the reviewer did not defeat. The Tool panel below the banner is what it would have replaced.',
-  '§3, §5 4th'],
+ ['noted','★ The written analysis recommended <em>against</em> part 1, and you overruled it. What it got right and what it got wrong.',
+  '<code>SHELL_LAYOUT_PROPOSAL.md</code> §3 ranked the one-line tool strip fourth of four and said do not build it. Its objection was that the strip <em>deletes live controls</em> — the pen\'s font, size and colour, the measure options, the three scale switches — and orphans a disclosure slot that exists because a 47-word refusal sentence had nowhere else to go. <b>That was right about the cost and wrong about the remedy.</b> It took the panel\'s contents as fixed and asked only whether a 26 pt row could hold them; your first sentence dissolves the question, because a font size is not the tool panel\'s to hold in the first place. The controls are in Properties and the refusal sentence is at the top of its body, wrapped, verbatim. ⇒ Recorded here rather than quietly deleted from that file: <em>an overruled recommendation is more useful to the next reader than a gap where it used to be.</em> It is not being re-argued.',
+  'SHELL_LAYOUT_PROPOSAL.md §3 · overruled by O123, and the record kept'],
  ['rejected','<code>Thin lines</code> removed from View ▸ Display',
   'Dead art for a command <em>deleted six weeks ago</em>: no such field on <code>RenderOptions</code>, no such command anywhere in the tree. It was carried into the proposal sheet marked "drawn for this mock", which is exactly how a deleted feature comes back — as a picture of itself in a document nobody re-checked against the code.',
   'GLYPH_ADOPTION.md'],
@@ -1055,8 +1583,8 @@ const LEGEND = [
  ['noted','The three glyphs in <em>neither</em> adoption list now have art — closed',
   '<code>properties</code>, <code>insert-pages</code> and <code>set-scale</code> were live icon <em>keys</em> wearing another role\'s picture, and were in neither list — 36 adopted + 26 deferred accounts for 62 of the 65 delivered. This mock is what found them, by drawing shipped art beside proposed art until the count did not add up. All three were drawn later the same day; the generator\'s alias table is now <em>empty</em>, and the two orphaned pictures were kept as variants so they stay under test rather than rotting unused.',
   'icons/catalog/mapping.rs · closed 2026-09-04'],
- ['noted','★ Five new pictures are in the build; four of the five buttons are not',
-  'Worth saying plainly, because it is the one way this mock could mislead you. A glyph shipping is <em>not</em> a command shipping. <code>export-image</code> is on a live button today. <code>open-in-acrobat</code>, <code>copy-as-vector</code>, <code>encrypt</code> and <code>permissions</code> are drawings with nothing behind them yet — every one of them is dashed here, and each has its own line above. The art was drawn first on purpose: the icon set is tested as a whole, so a picture that exists is a picture the suite checks for legibility and for not colliding with its neighbours, and one that waits in a folder is not. It also means the question can be asked with a picture instead of a paragraph.',
+ ['noted','★ Five new pictures are in the build; three of the five buttons are not',
+  'Worth saying plainly, because it is the one way this mock could mislead you. A glyph shipping is <em>not</em> a command shipping. <code>export-image</code> and <code>open-in-acrobat</code> are on live buttons today. <code>copy-as-vector</code>, <code>encrypt</code> and <code>permissions</code> are drawings with nothing behind them yet — every one of them is dashed here, and each has its own line above. The art was drawn first on purpose: the icon set is tested as a whole, so a picture that exists is a picture the suite checks for legibility and for not colliding with its neighbours, and one that waits in a folder is not. It also means the question can be asked with a picture instead of a paragraph.',
   'icons/catalog/mod.rs · Icon::EditObjects is the standing precedent'],
  ['noted','<code>save.svg</code> is now the odd member of its own family',
   'The three new Save commands were drawn as a family — one shared floppy body, one interior difference each. <code>save.svg</code> predates them and is a rounded square with a bar. The grammar is right and Save is the outlier. Deliberately not fixed: it is the operator\'s own art on the most-used control in the application.',
@@ -1069,21 +1597,28 @@ const LEGEND = [
   '§6'],
 ];
 
-const CHIP = {shipped:'shipped', proposed:'proposed', rejected:'rejected', noted:'noted'};
+const CHIP = {shipped:'shipped', ruled:'ruled · O123', proposed:'proposed', rejected:'rejected', noted:'noted'};
 function renderLegend(){
   const el = $('#legend');
   el.hidden = !state.legend;
   if (!state.legend) return;
   const n = s => LEGEND.filter(x=>x[0]===s).length;
-  el.innerHTML = `<h2>What changed in this mockup, and why <span style="font-weight:400;font-size:11px;color:#7E838C">— ${LEGEND.length} lines, scroll for all of them</span></h2>
+  el.innerHTML = `<h2>What this mockup draws, and what state each part is in <span style="font-weight:400;font-size:11px;color:#7E838C">— ${LEGEND.length} lines, scroll for all of them</span></h2>
     <div class="verdict">
+      <span class="v ruled"><b>${n('ruled')}</b> ruled · O123</span>
+      <span class="v shipped"><b>${n('shipped')}</b> shipped</span>
       <span class="v proposed"><b>${n('proposed')}</b> proposed</span>
       <span class="v rejected"><b>${n('rejected')}</b> rejected</span>
-      <span class="v shipped"><b>${n('shipped')}</b> shipped today</span>
       <span class="v noted"><b>${n('noted')}</b> noted</span>
-      <span class="rank">Ranked by value per risk-adjusted day: <b>1st</b> give the right dock its room (~1 day + ~2 days harness) · <b>2nd</b> the left rail (~1 week + re-baseline) · <b>3rd</b> rulers, <em>nothing to build</em> · <b>4th</b> the tool strip, <em>do not build it as proposed</em>.</span>
+      <span class="rank">This is <b>your ruling drawn</b>, not four options ranked. Parts <b>1–6</b> — the one-line tool status, its controls in Properties, master–detail in the Tool panel's room, one left dock, 360 pt in Edit — <b>landed in the tree on 2026-09-04</b>. Part <b>7</b>, the rail carrying the navigate selectors and the selection tools, is <b>not started</b>: the dock first, by O123's own sequencing note, because the two share the dock layout and one pass would mean two large changes in one file with no green state between them.</span>
     </div>
-    <div class="sub">A revision of the outside reviewer's <code>board-shell.html</code>, redrawn against the shipped source. Four states, and the difference between them is the whole point: <b style="color:#7FD79A">shipped</b> is in the build today and is <em>not</em> being proposed; <b style="color:#7FB6FF">proposed</b> is not built, and carries its rank and its cost; <b style="color:#FF9C9C">rejected</b> was analysed and refused, and carries the reason; <b style="color:#E0BE7C">noted</b> is neither, but the operator should see it. References are sections of <code>SHELL_LAYOUT_PROPOSAL.md</code> unless named otherwise; every claim there carries a <code>file:line</code>.</div>
+    <div class="sub">Redrawn against the shipped source after <code>OPERATOR_REQUESTS.md</code> <b>O123</b> settled the layout. <b>Five states, and telling them apart is the whole point:</b>
+      <b style="color:#C8A6FF">ruled</b> is the operator's own decision — not a proposal to weigh and <em>not automatically a build</em>, so every ruled line's mono reference row says where the code actually stands;
+      <b style="color:#7FD79A">shipped</b> is in the build and was never in question;
+      <b style="color:#7FB6FF">proposed</b> is nobody's decision yet, and carries its cost;
+      <b style="color:#FF9C9C">rejected</b> was analysed and refused, and carries the reason;
+      <b style="color:#E0BE7C">noted</b> is none of those, but you should see it.
+      ★ <em>A ruled item is deliberately not promoted to</em> shipped <em>and not demoted to</em> proposed: one would have this artifact claim work that is not finished, the other would re-open a question you have closed. References are sections of <code>SHELL_LAYOUT_PROPOSAL.md</code> unless named otherwise.</div>
     <div class="lgrid">${LEGEND.map(([s,t,w,r])=>
       `<div class="li ${s}"><div class="chip">${CHIP[s]}</div><div><div class="t">${t}</div><div class="w">${w}</div><div class="r">${r}</div></div></div>`).join('')}</div>`;
 }
@@ -1093,14 +1628,33 @@ function renderMockbar(){
   const seg = (label, key, opts) => `<span class="lbl">${label}</span><span class="seg">` +
     opts.map(([v,t,title])=>`<button data-set="${key}" data-val="${v}" aria-pressed="${String(state[key])===String(v)}" title="${title||''}">${t}</button>`).join('') + `</span>`;
   const tg = (id, label, on, title) => `<button class="tg" data-tg="${id}" aria-pressed="${on}" title="${title||''}">${label}</button>`;
+  /* The three knobs the `before O123` setting overrides are dimmed rather than
+     removed: a control that vanishes tells the operator it was never there. */
+  const dim = state.layout==='today'
+    ? 'class="wrap" style="opacity:.35" title="The arrangement before O123 had no rail and one dock width — this knob does nothing on that setting."'
+    : 'class="wrap"';
   $('#mockbar').innerHTML =
       `<span class="lbl" style="color:#4C9AFF;font-weight:700">mock controls</span>`
+    /* ★★ THE COMPARISON KNOB, first on the bar and first for a reason: this
+       artifact is being read to CHECK a decision, and a decision is only
+       visible against what it replaced. */
+    + seg('layout','layout',[
+        ['a7','A7 · as ruled','O123: one-line tool status, its controls in Properties, master–detail in the Tool panel\'s room, one left dock, 360 pt'],
+        ['today','before O123','What was on screen before: a Tool panel taking a third of the dock, three right stacks, two left docks with a fixed split, 320 pt, rows cut mid-character']])
     + seg('preset','board',[['quiet','Quiet'],['airy','Airy'],['dark','Dark']])
-    + seg('left','left',[['rail','Rail','The proposal: all five panels one click away'],['tabs','5 tabs','The cheap 80 %: one stack, one line, an overflow chevron']])
-    + seg('right dock','dock',[['320','320 · today','Rows are hard-clipped at this width'],['360','360 · proposed','Rows fit; icon and index columns']])
+    + `<span ${dim}>` + seg('left','left',[['rail','Rail','Panel tabs, the navigate selectors and the selection tools on one strip'],['tabs','5 tabs','Part 5 without the rail: one stack, five tabs, an overflow chevron at 280 pt']]) + `</span>`
+    + `<span ${dim}>` + seg('rail room','railRoom',[
+        ['roomy','Roomy','Everything, with its word under it'],
+        ['tight','Tight','The words go first — every control still one click away'],
+        ['snug','Snug','The selection group folds into the chevron'],
+        ['cramped','Cramped','The navigate group folds too, except the armed one. The panel tabs never fold.']]) + `</span>`
+    + `<span ${dim}>` + seg('dock','dock',[['320','320','What Edit had before O123 — and what Read and Review still get'],['360','360 · Edit','O123 part 6. Switch to Read to see the width remembered per mode.']]) + `</span>`
+    + seg('armed','tool',[
+        ['select','Select','The resting state. Brings the three resize switches.'],
+        ['addtext','Add text','Brings the pen — face, size, colour.'],
+        ['radius','Radius','Brings the removable pick list (O107).'],
+        ['cloud','Cloud','Brings nothing, and says so. Most tools have no settings.']])
     + tg('selection','Selected', state.selection)
-    + tg('armed','Armed tool', state.armed, 'Arm a tool to see the controls the one-line strip would delete')
-    + tg('toolTab','Tool as a tab', state.toolTab, 'The honest lever for the panel\'s third of the dock — one line at defaults.rs:427')
     + tg('rulers','Rulers', state.rulers, 'Shipped since long before this review — and shipping OFF by a recorded decision')
     + tg('labels','Button labels', state.labels)
     + `<span class="push"></span>`
@@ -1129,10 +1683,25 @@ function renderGlyphSheet(q=''){
 function renderAll(){
   app.dataset.mode = state.mode;
   app.dataset.board = state.board;
-  app.dataset.left = state.left;
-  app.dataset.dock = state.dock;
+  app.dataset.layout = state.layout;
+  app.dataset.railroom = state.railRoom;
+  app.dataset.left = effLeft();
+  /* ★ Part 6's "remembered per mode" made visible rather than described: the
+     360 pt default belongs to Edit, and Read and Review keep 320. The knob
+     only moves Edit's, which is exactly what a per-mode default means. */
+  app.dataset.dock = effDock();
   app.dataset.labels = state.labels ? 'on' : 'off';
   app.dataset.rulers = state.rulers ? 'on' : 'off';
+  /* ★ The mode selector and the window title are rendered FROM state, not
+     toggled by the click that changed it. They were toggled in place, which
+     worked for every click and was wrong for every URL fragment: `#read`
+     moved the layout and left `Edit` pressed in the segmented control and in
+     the title bar — a screenshot of a build that cannot exist. Anything a
+     fragment can set has to be drawn from state. */
+  const MODE = {read:'Read', review:'Review', edit:'Edit'};
+  document.querySelectorAll('.modes button').forEach(b=>
+    b.setAttribute('aria-pressed', String(b.dataset.mode===state.mode)));
+  $('#wintitle').innerHTML = `<b>a1-titleblock.pdf</b> — pdfcer — ${MODE[state.mode]}`;
   renderTabs(); renderLeft(); renderSheet(); renderDock(); renderStatus();
   renderMockbar(); renderLegend();
 }
@@ -1144,12 +1713,17 @@ document.addEventListener('click', e=>{
     if (k==='sheet'){ $('#sheetov').hidden=false; renderGlyphSheet($('#sheetq').value.trim().toLowerCase()); return; }
     state[k] = !state[k]; renderAll(); return;
   }
-  if (t.dataset.mode){ state.mode=t.dataset.mode; document.querySelectorAll('.modes button').forEach(b=>b.setAttribute('aria-pressed', b===t)); renderAll(); return; }
+  if (t.dataset.mode){ state.mode=t.dataset.mode; renderAll(); return; }
   if (t.dataset.tab){ state.tab=t.dataset.tab; renderTabs(); return; }
   if (t.dataset.panel){ state.leftPanel=t.dataset.panel; renderLeft(); return; }
+  /* A rail entry that arms a tool moves the same state the ribbon does — which
+     is the point of putting the selectors there, and is also why there is one
+     TOOLS table rather than a rail copy and a ribbon copy. */
+  if (t.dataset.arm){ state.tool=t.dataset.arm; renderAll(); return; }
   if (t.dataset.act==='rulers'){ state.rulers=!state.rulers; renderAll(); return; }
   if (t.classList.contains('rb') && t.dataset.glyph){
     const glyph=t.dataset.glyph;
+    if (ARMS[glyph] && !t.disabled){ state.tool = ARMS[glyph]; renderAll(); return; }
     if (glyph.startsWith('page-')){
       state.pageDisplay = {'page-single':'single','page-continuous':'scroll','page-facing':'facing','page-facing-continuous':'facingscroll'}[glyph];
       state.facing = state.pageDisplay.startsWith('facing'); renderAll(); return;
@@ -1173,8 +1747,12 @@ document.addEventListener('keydown', e=>{ if(e.key==='Escape' && !$('#sheetov').
 
 /* A URL fragment forces state, so a headless capture can reach every
    combination without editing a default and re-shooting:
-     …/pdfcer-shell.html#dark,dock360,tabs,armed,nolegend
-   Tokens: quiet|airy|dark · rail|tabs · dock320|dock360 · armed · tooltab ·
+     …/pdfcer-shell.html#dark,dock360,tabs,tool-addtext,nolegend
+   Tokens: quiet|airy|dark · rail|tabs · dock320|dock360 · a7|today ·
+           rail-roomy|rail-tight|rail-snug|rail-cramped ·
+           tool-select|tool-points|tool-text|tool-hand|tool-addtext|
+           tool-radius|tool-cloud (and `armed`, kept as an alias for
+           tool-cloud so older capture scripts still mean something) ·
            norulers · nosel · nolegend · read|review · sheet · tab-<id>
 
    ★ `tab-<id>` (tab-file, tab-edit, tab-pages, …) was added 2026-09-04, when
@@ -1189,8 +1767,11 @@ for (const tok of (location.hash||'').replace('#','').split(',').filter(Boolean)
   else if (['rail','tabs'].includes(tok)) state.left = tok;
   else if (tok==='dock320') state.dock='320';
   else if (tok==='dock360') state.dock='360';
-  else if (tok==='armed') state.armed = true;
-  else if (tok==='tooltab') state.toolTab = true;
+  else if (tok==='armed') state.tool = 'cloud';
+  else if (tok.startsWith('tool-')) state.tool = tok.slice(5);
+  else if (tok==='today') state.layout = 'today';
+  else if (tok==='a7') state.layout = 'a7';
+  else if (tok.startsWith('rail-')) state.railRoom = tok.slice(5);
   else if (tok==='norulers') state.rulers = false;
   else if (tok==='nosel') state.selection = false;
   else if (tok==='nolegend') state.legend = false;

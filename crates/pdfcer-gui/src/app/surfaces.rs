@@ -236,6 +236,178 @@ impl PdfcerApp {
     /// resolve draws its own explanation rather than an empty pane, because
     /// an empty pane is indistinguishable from a panel that had nothing to
     /// say.
+    /// **Draw every floating panel's window.**
+    ///
+    /// The second of the dock's two per-frame calls. It takes an
+    /// `&egui::Context` rather than a `&mut Ui` because it opens child
+    /// viewports, and a child viewport must be opened from the top of the
+    /// frame rather than from inside a half-composed side panel — see
+    /// `egui_shell::dock::floatwin`'s header, and `crate::dialogs::host`,
+    /// which is called from the same place for the same reason.
+    ///
+    /// # ★★★ The body closure is the SAME ONE `docks` uses
+    ///
+    /// Not a similar one — the same expression, resolving the same
+    /// `PanelId` through the same `Panel::from_command_id` and calling the
+    /// same `Panel::show`. That is the property `MODES_AND_PANELS.md`
+    /// identified as the thing that makes tear-out cheap here:
+    /// `show_viewport_immediate` takes `FnMut` with **no** `Send + Sync +
+    /// 'static` bound, so a torn-out panel keeps the docked signature and
+    /// there is no second rendering path to keep in step.
+    ///
+    /// A previous float-or-dock dual mode is on record as costing *"two
+    /// code paths for the same content, each duplicating open-state,
+    /// position/size and focus handling"*. This has one.
+    ///
+    /// # ★★ Every rect is tagged with its own viewport
+    ///
+    /// A child viewport's coordinates start at **its** origin, so an
+    /// untagged `ui-rect` from a float window reads to a harness as a
+    /// position in the application window — plausible numbers naming a
+    /// different place on the desktop, which
+    /// `D:/dev/rag/egui/a_child_viewports_ui_rects_are_relative_to_ITS_origin…`
+    /// records as a harness aiming hundreds of points away. The shell has
+    /// no diagnostic channel of its own, so the scope is entered here,
+    /// inside the body, from the very id the shell used — recovered
+    /// through `floatwin::viewport_id`, which is public for this.
+    pub(super) fn floating_panels(&mut self, ctx: &egui::Context, actions: &mut Vec<Action>) {
+        if self.dock.layout().floating.is_empty() {
+            return;
+        }
+        let conditions = self.conditions(ctx);
+        let Self {
+            status,
+            shell,
+            commands,
+            panel_registry,
+            dock,
+            panels,
+            ..
+        } = self;
+        let doc = match status {
+            Status::Open(doc) => Some(&**doc),
+            _ => None,
+        };
+        let host = shell
+            .as_ref()
+            .map(|s| crate::shell::menus::MenuHost::new(s, commands, &conditions));
+
+        let mut tokens: Vec<(
+            egui_shell::dock::PanelId,
+            egui_shell::commands::HandlerToken,
+        )> = Vec::new();
+        let mut header_tokens: Vec<(
+            egui_shell::dock::PanelId,
+            egui_shell::commands::HandlerToken,
+        )> = Vec::new();
+        // The header strip's menu is the dock tab's menu, with the two
+        // per-panel conditions set the other way round: everything drawn
+        // here is floating by construction, so Dock is offered and Float is
+        // not.
+        let mut header_menu = |tab: &mut egui_shell::dock::TabMenu<'_>| {
+            let panel = tab.panel().clone();
+            for h in host.iter() {
+                let conditions = h.with_conditions(&[
+                    (crate::shell::menus::PANEL_DOCKED, false),
+                    (crate::shell::menus::PANEL_FLOATING, true),
+                ]);
+                header_tokens.extend(
+                    h.attach_with(tab.response(), crate::shell::menus::DOCK_TAB, &conditions)
+                        .into_iter()
+                        .map(|t| (panel.clone(), t)),
+                );
+            }
+        };
+
+        let report = egui_shell::dock::Dock::new()
+            .with_registry(panel_registry)
+            .with_tab_menu(&mut header_menu)
+            .show_floating(ctx, dock, |panel_id, ui| {
+                let vp = egui_shell::dock::floatwin::viewport_id(panel_id);
+                let _regions = crate::diag::ViewportScope::enter(vp);
+                // ★★★ **THE WINDOW HAS TO SAY WHERE IT IS, and until 2026-09-04
+                // it did not.**
+                //
+                // `panels_float_close_and_dock` drove the real binary and
+                // reported *"3 of the four panel-window properties failed: no
+                // `viewport-inner`"* — while the three STATE transitions all
+                // fired correctly (`panel-float moved=true`, `panel-dock
+                // moved=true`, `panel-close closed=true`). The panel really was
+                // tearing out, docking back and closing; what no harness could
+                // see was whether a WINDOW ever appeared.
+                //
+                // ⇒ That is the exact hole `diag::viewport_inner`'s own doc
+                // comment describes for dialogs: *"the only way a check can
+                // assert that a dialog opened in its own window at all … a
+                // build that reverted to an in-viewport panel emits no
+                // `viewport-inner` line, and its absence is the failure."* A
+                // floated panel is the same act by the same mechanism, and it
+                // was publishing the same nothing.
+                //
+                // ★★ It is also the coordinate every `ui-rect` below is
+                // relative to. `ViewportScope` tags them with this viewport, but
+                // a tag is not an origin — without this line a check that
+                // resolves a region inside a floated panel aims at the
+                // APPLICATION window's origin, hundreds of points away, and
+                // clicks whatever happens to be there. `D:/dev/rag/egui/`
+                // records that failure twice; both cost days and both presented
+                // as *"the click lands somewhere else"*.
+                //
+                // ★ Read from `ViewportInfo`, on change only, exactly as
+                // `dialogs::host` does — one line, one mechanism, so a window
+                // and a dialog cannot come to report their geometry two
+                // different ways.
+                if let Some(inner) = ui.ctx().input(|i| i.viewport().inner_rect) {
+                    crate::diag::viewport_inner(vp, inner);
+                }
+                match crate::panels::Panel::from_command_id(panel_id.as_str()) {
+                    Some(panel) => {
+                        tokens.extend(
+                            panel
+                                .show(ui, doc, panels, host.as_ref(), actions)
+                                .into_iter()
+                                .map(|t| (panel_id.clone(), t)),
+                        );
+                    }
+                    None => {
+                        ui.label(crate::text::panels::panel_unknown());
+                    }
+                }
+            });
+
+        for (panel, token) in tokens.into_iter().chain(header_tokens) {
+            self.dock_menu_panel = Some(panel);
+            self.dispatch_token(ctx, token, actions);
+            self.dock_menu_panel = None;
+        }
+
+        // A close or a dock-back from a float window mutates the layout
+        // outside `Dock::show`'s intent queue, so the mode's workspace has
+        // to be told here — the same obligation `dispatch::panels` carries
+        // and for the same reason. Without it the operator docks a window,
+        // quits, and finds it floating again.
+        if report.layout_changed {
+            let layout = self.dock.layout().clone();
+            self.modes.record_layout(&layout, &mut self.layout);
+        }
+        crate::diag::trace_changed("float-windows", || {
+            format!(
+                // ui-text-exempt: diagnostic trace, never displayed.
+                "float-windows drawn={} real={} closed={:?} docked={:?}",
+                report.drawn.len(),
+                report.real_windows,
+                report
+                    .closed
+                    .as_ref()
+                    .map(egui_shell::dock::PanelId::as_str),
+                report
+                    .docked
+                    .as_ref()
+                    .map(egui_shell::dock::PanelId::as_str)
+            )
+        });
+    }
+
     pub(super) fn docks(&mut self, ui: &mut egui::Ui, actions: &mut Vec<Action>) {
         // Borrows split before the closure: the body needs `status` and
         // `panels` while `show` holds `dock` mutably, and the closure
@@ -323,17 +495,68 @@ impl PdfcerApp {
         // A second `Vec`, and it has to be: `tokens` is already captured
         // mutably by the body closure below, so the tab-menu handler cannot
         // also borrow it.
-        let mut tab_tokens = Vec::new();
+        // ★★ `(PanelId, HandlerToken)` PAIRS, not bare tokens, since
+        // 2026-09-04.
+        //
+        // Three of the four panel-layout verbs act on *the panel the
+        // operator right-clicked*, and a `HandlerToken` carries no operand.
+        // The handler below runs once per **drawn** tab per frame — for
+        // every tab, clicked or not — so recording `tab.panel()` into a
+        // field from inside it would leave that field naming whichever tab
+        // was drawn last. A token, by contrast, only ever comes back from
+        // the one tab whose menu row was actually chosen, so pairing it
+        // with that tab's panel at the moment it is produced is **exact**
+        // rather than nearly right. For a command that closes things, that
+        // is the difference that matters.
+        //
+        // `crate::app::dispatch::panels`' header carries the two designs
+        // rejected in favour of this one.
+        let mut tab_tokens: Vec<(
+            egui_shell::dock::PanelId,
+            egui_shell::commands::HandlerToken,
+        )> = Vec::new();
+        // The float census, read once before the closure so the closure
+        // borrows a plain value rather than the dock. Cheap: a `Vec` of the
+        // ids of the panels in windows, which is empty in the overwhelmingly
+        // common case.
+        let floating: Vec<egui_shell::dock::PanelId> = dock
+            .layout()
+            .floating
+            .iter()
+            .map(|f| f.panel.clone())
+            .collect();
         let mut tab_menu = |tab: &mut egui_shell::dock::TabMenu<'_>| {
             // The dock hands out the tab's `Response`; what a right-click on
             // it offers is the application's business, which is the whole
             // point of the seam. Supplying a handler also takes the dock's
             // built-in Close off that tab — deliberately, because two menus
             // on one `Response` are two writers of one popup id.
-            tab_tokens.extend(
-                host.iter()
-                    .flat_map(|h| h.attach(tab.response(), crate::shell::menus::DOCK_TAB)),
-            );
+            //
+            // ★★★ **The conditions are corrected PER TAB**, which is what
+            // makes R9 hold on this menu: `view.panel_float` is
+            // `shown_when("panel.docked")` and `view.panel_dock` is
+            // `shown_when("panel.floating")`, so exactly one of the two is
+            // drawn and the other renders NOTHING rather than a greyed row
+            // the operator cannot explain.
+            //
+            // `MenuHost::with_conditions` is the sanctioned route and its
+            // docs carry why this is not a second source of truth: it
+            // corrects two named conditions to values computed one line
+            // above, from the same `DockLayout` the frame's condition set
+            // reads. There is no second rule for what "floating" means.
+            let is_floating = floating.iter().any(|p| p == tab.panel());
+            let panel = tab.panel().clone();
+            for h in host.iter() {
+                let conditions = h.with_conditions(&[
+                    (crate::shell::menus::PANEL_DOCKED, !is_floating),
+                    (crate::shell::menus::PANEL_FLOATING, is_floating),
+                ]);
+                tab_tokens.extend(
+                    h.attach_with(tab.response(), crate::shell::menus::DOCK_TAB, &conditions)
+                        .into_iter()
+                        .map(|t| (panel.clone(), t)),
+                );
+            }
         };
         // ★★★ **The one-line tool status** — `OPERATOR_REQUESTS.md` O123.
         //
@@ -353,6 +576,23 @@ impl PdfcerApp {
         let mut tool_banner = |ui: &mut egui::Ui| {
             crate::app::toolstatus::banner(ui, doc, host.as_ref());
         };
+        // ★★★ **The left rail** — `OPERATOR_REQUESTS.md` O123 part 7 and O126.
+        //
+        // A third `Vec`, for `tab_tokens`' reason exactly: `tokens` is already
+        // captured mutably by the body closure, so this handler cannot also
+        // borrow it. Dispatched after `show` returns, in press order.
+        //
+        // ★ The rail's CONTENT is `shell.rail` — manifest data — so this line
+        // connects a region to a document and knows nothing about what is in
+        // it. `crate::app::rail` paints a row; `egui_shell::dock::rail` decides
+        // which rows exist at this height; neither of them is here.
+        let mut rail_tokens: Vec<egui_shell::commands::HandlerToken> = Vec::new();
+        let rail_data = shell.as_ref().and_then(|s| s.rail.clone());
+        let mut rail_strip = |ui: &mut egui::Ui| {
+            if let Some(rail) = &rail_data {
+                rail_tokens.extend(crate::app::rail::show(ui, rail, commands, &conditions));
+            }
+        };
         let report = egui_shell::dock::Dock::new()
             .with_registry(panel_registry)
             .with_tab_menu(&mut tab_menu)
@@ -361,6 +601,7 @@ impl PdfcerApp {
                 crate::app::toolstatus::BANNER_HEIGHT_PTS,
                 &mut tool_banner,
             )
+            .with_side_rail(egui_shell::dock::DockSide::Left, &mut rail_strip)
             .reporting_rects_to(&mut report_rect)
             .show(
                 ui,
@@ -391,8 +632,27 @@ impl PdfcerApp {
         // a request arriving while one is open leaves a half-typed ratio alone.
         let scale_request = self.panels.dimension_groups.take_scale_request();
 
-        for token in tokens.into_iter().chain(tab_tokens) {
+        for token in tokens {
             self.dispatch_token(ui.ctx(), token, actions);
+        }
+        // ★ The tab-menu tokens are dispatched SEPARATELY, and each one parks
+        // its panel on the line before the dispatch. Adjacent by
+        // construction: there is no statement between the write and the
+        // read, which is what makes the parked operand impossible to leave
+        // stale. `dispatch::panels` TAKES it rather than reading it, so it is
+        // `None` again before the next iteration.
+        // The rail's presses, dispatched like the ribbon's: they are ordinary
+        // commands and reach the ordinary dispatcher. No new `Action` variant
+        // exists for the rail and none is needed — every row on it is a
+        // command the ribbon or a menu already invokes, which is what
+        // `RIBBON_IA.md` P1a permits for a shortcut surface.
+        for token in rail_tokens {
+            self.dispatch_token(ui.ctx(), token, actions);
+        }
+        for (panel, token) in tab_tokens {
+            self.dock_menu_panel = Some(panel);
+            self.dispatch_token(ui.ctx(), token, actions);
+            self.dock_menu_panel = None;
         }
 
         if let Some(group) = scale_request {
@@ -755,5 +1015,164 @@ mod dock_rect_tests {
              those is a check that has silently stopped running{}",
             detail(&rows)
         );
+    }
+}
+
+/// ★★★ **The float windows are drawn, and forgetting to draw them is
+/// detectable.**
+///
+/// Floating is the one dock capability that needs **two** calls per frame:
+/// [`egui_shell::dock::Dock::show`] for the docked panels and
+/// [`egui_shell::dock::Dock::show_floating`] for the windows. The second
+/// cannot live inside the first — a child viewport must be opened from the
+/// top of the frame rather than from inside a half-composed side panel — so
+/// an application can forget it, and the symptom is a panel that is in the
+/// layout, reports as on screen, and is drawn nowhere.
+///
+/// **That is the exact class of defect this project shipped on 2026-08-10**:
+/// three panels laid out, publishing correct rectangles, unreachable, with
+/// every gate green. `crate::diag::ui_rect_visible` is the answer for a
+/// surface that has a rect; this is the answer for one whose window was
+/// never opened, and it is why
+/// [`egui_shell::dock::DockFrameReport::floats_undrawn`] exists at all.
+#[cfg(test)]
+mod float_window_tests {
+    use eframe::egui;
+    use egui_shell::dock::{Column, Dock, DockLayout, DockState, PanelId, SideLayout, Stack};
+
+    /// A layout with `layers` floated out of a two-tab left stack.
+    fn floated() -> DockState {
+        let mut layout = DockLayout::new(
+            SideLayout::new([Column::new([Stack::tabbed(vec![
+                "pages".to_string(),
+                "layers".to_string(),
+            ])])]),
+            SideLayout::none(),
+        );
+        assert!(
+            layout.float(&PanelId::new("layers")),
+            "the fixture must float"
+        );
+        DockState::new(layout)
+    }
+
+    fn input() -> egui::RawInput {
+        egui::RawInput {
+            screen_rect: Some(egui::Rect::from_min_size(
+                egui::Pos2::ZERO,
+                egui::vec2(1280.0, 800.0),
+            )),
+            ..Default::default()
+        }
+    }
+
+    /// ★★★ **An application that calls both halves reports nothing
+    /// undrawn.**
+    ///
+    /// Two frames, and the second is the assertion. `Dock::show` measures
+    /// `floats_undrawn` against the count `show_floating` recorded on the
+    /// PREVIOUS frame — because `show` runs first — so a genuine first frame
+    /// reports the float it is about to draw and the number settles on the
+    /// next one. A harness drives two frames anyway; the test says so
+    /// explicitly rather than leaving the one-frame lag to be discovered.
+    #[test]
+    fn drawing_both_halves_leaves_no_float_undrawn() {
+        let ctx = egui::Context::default();
+        let mut state = floated();
+        let mut drew: Vec<String> = Vec::new();
+        let mut last = 0usize;
+        for _ in 0..2 {
+            drew.clear();
+            let _ = ctx.run_ui(input(), |ui| {
+                let report = Dock::new().show(ui, &mut state, |_p, ui| {
+                    ui.label("docked");
+                });
+                last = report.floats_undrawn;
+                Dock::new().show_floating(ui.ctx(), &mut state, |panel, ui| {
+                    drew.push(panel.as_str().to_owned());
+                    ui.label("floated");
+                });
+            });
+        }
+        assert_eq!(
+            drew,
+            vec!["layers".to_string()],
+            "the floated panel's body must be called exactly once per frame"
+        );
+        assert_eq!(
+            last, 0,
+            "an application that draws its float windows must report nothing undrawn"
+        );
+    }
+
+    /// ★★★ **An application that forgets `show_floating` is caught.**
+    ///
+    /// The falsification, written as a test rather than performed by hand:
+    /// the same fixture, the same frames, and the second call simply not
+    /// made. If this ever reports zero, the guard has stopped guarding and
+    /// the next tear-out consumer ships three unreachable panels the way this
+    /// project already has once.
+    #[test]
+    fn forgetting_the_float_windows_is_reported_rather_than_silent() {
+        let ctx = egui::Context::default();
+        let mut state = floated();
+        let mut last = 0usize;
+        for _ in 0..2 {
+            let _ = ctx.run_ui(input(), |ui| {
+                let report = Dock::new().show(ui, &mut state, |_p, ui| {
+                    ui.label("docked");
+                });
+                last = report.floats_undrawn;
+                // …and `show_floating` is deliberately NOT called.
+            });
+        }
+        assert_eq!(
+            last, 1,
+            "a floating panel nothing drew must be reported, not silently missing"
+        );
+    }
+
+    /// ★★ **The docked half never draws a floating panel**, which is the
+    /// invariant that stops one panel being drawn twice from two `Ui`s with
+    /// the same widget ids.
+    #[test]
+    fn the_docked_half_does_not_draw_a_floating_panel() {
+        let ctx = egui::Context::default();
+        let mut state = floated();
+        let mut docked: Vec<String> = Vec::new();
+        let _ = ctx.run_ui(input(), |ui| {
+            Dock::new().show(ui, &mut state, |panel, ui| {
+                docked.push(panel.as_str().to_owned());
+                ui.label("docked");
+            });
+        });
+        assert_eq!(
+            docked,
+            vec!["pages".to_string()],
+            "only the panel still in a stack may be drawn by the docked half"
+        );
+    }
+
+    /// ★ **A layout with no floats does not pay for the second call.**
+    ///
+    /// The common case, and the one that must stay free: an application that
+    /// has never floated a panel calls `show_floating` on every frame
+    /// forever, and it must return immediately.
+    #[test]
+    fn a_layout_with_no_floats_draws_no_windows() {
+        let ctx = egui::Context::default();
+        let mut state = DockState::new(DockLayout::new(
+            SideLayout::new([Column::new([Stack::new("pages")])]),
+            SideLayout::none(),
+        ));
+        let mut drew = 0usize;
+        let _ = ctx.run_ui(input(), |ui| {
+            let report = Dock::new().show_floating(ui.ctx(), &mut state, |_p, _ui| {
+                drew += 1;
+            });
+            assert!(report.drawn.is_empty());
+            assert!(!report.layout_changed);
+        });
+        assert_eq!(drew, 0);
     }
 }

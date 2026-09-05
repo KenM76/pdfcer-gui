@@ -118,6 +118,29 @@ ocrs = ["pdfcer-core/ocrs"]
 # argument, and `dialogs::host` for what the ownership fixes.
 native-window = { path = "../native-window" }
 
+# native-clipboard = the eleven Win32 calls that place several formats on the
+# clipboard in a caller-chosen order, in one transaction. `crates/clipboard.rs`
+# decides WHICH formats and in WHAT order — the part that decides whether a
+# Word paste is editable — and that crate places bytes without knowing what a
+# PDF is.
+#
+# ★ A SECOND `native-*` crate rather than a module in `native-window`, for the
+# reason that crate's own header gives about itself: it is about *windows*, and
+# a clipboard concern in there makes the name a description of history rather
+# than of contents. Both exist for the identical structural reason — this
+# crate's `#![forbid(unsafe_code)]` is a claim worth keeping and `forbid`
+# cannot be relaxed from the inside.
+#
+# ★★ NO NEW LICENCE EXPOSURE AND NO NEW ROW IN `THIRD_PARTY_LICENSES.md`. It is
+# a first-party workspace member with an EMPTY `[dependencies]` block, so
+# `cargo-about` — which generates that file from the shipping graph — has
+# nothing to add. `clipboard-win` and `windows` were the obvious alternatives
+# and both are already linked into this binary (measured with
+# `cargo tree -p pdfcer-gui -i`, not read off a lockfile), so either would also
+# have been licence-neutral; the empty block makes the stronger claim that it
+# *cannot* change.
+native-clipboard = { path = "../native-clipboard" }
+
 # eframe = egui's application shell. Version, backend and feature set are
 # pinned once in this workspace's root `[workspace.dependencies]` to match
 # `D:\Dev\pdfcer` exactly (glow rather than wgpu — the wgpu 29 stack fails

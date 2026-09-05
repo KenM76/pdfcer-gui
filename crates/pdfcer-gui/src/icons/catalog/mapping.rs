@@ -131,6 +131,7 @@ impl Icon {
         // catalogue-wide tests still walk the art.
         Icon::Document,
         Icon::Convert,
+        Icon::SelectAll,
         // The 2026-09-04 batch — see `super`'s note on the enum.
         Icon::ApplyRedactions,
         Icon::Attachment,
@@ -177,6 +178,8 @@ impl Icon {
         Icon::ExportImage,
         Icon::OpenInAcrobat,
         Icon::Permissions,
+        Icon::Bold,
+        Icon::Italic,
     ];
 
     /// The asset's SVG source.
@@ -252,6 +255,9 @@ impl Icon {
             Icon::Properties => assets::PROPERTIES,
             Icon::Document => assets::DOCUMENT,
             Icon::Convert => assets::CONVERT,
+            Icon::SelectAll => assets::SELECT_ALL,
+            Icon::Bold => assets::BOLD,
+            Icon::Italic => assets::ITALIC,
             Icon::Markup => assets::MARKUP,
             Icon::Text => assets::TEXT,
             Icon::EditText => assets::EDIT,
@@ -412,6 +418,9 @@ impl Icon {
             Icon::Properties => "properties",
             Icon::Document => "document",
             Icon::Convert => "convert",
+            Icon::SelectAll => "select-all",
+            Icon::Bold => "bold",
+            Icon::Italic => "italic",
             Icon::Markup => "markup",
             Icon::Text => "text",
             Icon::EditText => "edit-text",

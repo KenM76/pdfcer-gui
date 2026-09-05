@@ -215,7 +215,90 @@ pub(crate) fn command_button(
             if !enabled {
                 ui.disable();
             }
-            let mut button = egui::Button::new(atoms).selected(selected);
+            // ★★★ **FRAMELESS AT REST** — 2026-09-04, and this one line is
+            // the operator's biggest single complaint about the band:
+            //
+            // > "Every ribbon item in the real build is drawn with a visible
+            // >  button FRAME. Every one — New, Open…, Recent, Close, Save,
+            // >  Save as…, all of them — sits in its own outlined box. The
+            // >  mockup draws them frameless."
+            //
+            // ## What the mockup actually specifies, which is NOT "no frame"
+            //
+            // ```css
+            // .rb                       { border: 1px solid transparent }
+            // .rb:hover                 { background: var(--chrome-3) }
+            // .rb[aria-pressed="true"]  { background: var(--plate);
+            //                             color: var(--accent);
+            //                             border-color: var(--plate) }
+            // ```
+            //
+            // The frame is **reserved and invisible**. That is a different
+            // thing from absent, and the difference is the one property that
+            // makes the whole change safe: the control occupies the same
+            // rectangle at rest as it does under the pointer, so acquiring a
+            // frame cannot move it, cannot reflow its row, and cannot make
+            // the band's planned width a lie.
+            //
+            // ## Why `frame_when_inactive(false)` and not `frame(false)`
+            //
+            // `Button::frame(false)` is the obvious spelling and it is the
+            // wrong one — it would remove the hover and pressed feedback
+            // along with the resting frame, which is precisely the failure
+            // this project would rather ship an ugly band than ship. From
+            // `egui-0.35.0/src/widgets/button.rs:363`:
+            //
+            // ```text
+            // layout = if has_frame_margin
+            //     && (state != WidgetState::Inactive || frame_when_inactive) {
+            //         layout.frame(frame)              // fill + stroke
+            //     } else {
+            //         layout.frame(Frame::new()
+            //             .inner_margin(frame.inner_margin))   // margin only
+            //     };
+            // ```
+            //
+            // Two facts fall out of those four lines and both are what is
+            // wanted:
+            //
+            //  1. Only the **Inactive** state loses its ink.
+            //     `WidgetState::Hovered` and `WidgetState::Active`
+            //     (`widget_style.rs:105-113`: pointer down, focused, or
+            //     clicked) still paint `frame` in full — fill *and* stroke. So
+            //     hover feedback and pressed feedback survive intact; what
+            //     goes away is the box around forty resting controls.
+            //  2. The **inner margin is identical in both branches**, so the
+            //     button measures the same in every state. This is why the
+            //     band's width planner needed no change: `sizing::width` was
+            //     always measuring `button_padding`, and `button_padding` is
+            //     what both branches keep.
+            //
+            // ## And `selected` is passed through as the exception
+            //
+            // `.frame_when_inactive(selected)`, not `(false)`. A *selected*
+            // control — an armed tool, the current page-display mode — is
+            // pressed-looking while nobody is touching it, i.e. it is in the
+            // Inactive state and must still draw its plate. This is exactly
+            // the composition `egui::Button::selectable` performs
+            // (`button.rs:78-83`), and the plate it draws is
+            // `visuals.selection.bg_fill` = `Palette::selected_plate` with
+            // `selection.stroke` = `Palette::accent` as ink — bit for bit the
+            // mockup's `background: var(--plate); color: var(--accent)`.
+            //
+            // ## What is deliberately NOT matched
+            //
+            // The mockup's hover paints a background and no border; egui's
+            // hovered state paints both. Zeroing `widgets.hovered.bg_stroke`
+            // to match would change that state's `inner_margin` — it is
+            // `button_padding + expansion − bg_stroke.width`
+            // (`widget_style.rs:163`) — so the button would grow by a point
+            // in each direction the moment the pointer touched it. A control
+            // that twitches under the cursor is a worse defect than a
+            // hairline the operator only ever sees on the one control they
+            // are already pointing at.
+            let mut button = egui::Button::new(atoms)
+                .selected(selected)
+                .frame_when_inactive(selected);
             if truncate {
                 button = button.truncate();
             }

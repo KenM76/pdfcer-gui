@@ -187,6 +187,16 @@ pub mod hit;
 /// What every key means inside a draft — the keystroke contract, split out
 /// under R2 on the day the selection landed.
 pub mod keys;
+/// ★★★ **The caret's arithmetic inside a draft that holds more than one line**
+/// — `OPERATOR_REQUESTS.md` **O127**, defect 2.
+///
+/// Enter inserting a line break is one keystroke; a caret that can reach the
+/// second line is four more. Its header carries the distinction that keeps it
+/// separate from [`blocks`]: a line here is one the **operator typed**, and a
+/// line there is one the **page draws** — different models, different costs
+/// (nothing, against 336 ms), and confusing them moves the caret to another
+/// part of the sheet mid-word.
+pub mod lines;
 /// What a draft looks like on the page - the in-place editor and its caret.
 /// Split out under R2 on 2026-08-20; its header carries the standing rule that
 /// the text and the caret are measured from ONE layout.

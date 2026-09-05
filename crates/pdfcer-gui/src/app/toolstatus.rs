@@ -122,28 +122,35 @@ pub fn banner(ui: &mut Ui, doc: Option<&OpenDoc>, host: Option<&MenuHost<'_>>) {
         None => line.clone(),
     };
 
-    ui.horizontal_centered(|ui| {
-        // ★★ `truncate`, never `wrap`. The strip's height is a constant the
-        // dock has already taken off the side; a second line would be drawn
-        // over the first stack's tab bar and clipped away, which reads as a
-        // rendering fault. The full text is on hover, which is the same
-        // elide-and-defer discipline [`crate::app::status::disclosure`] applies
-        // to the bar's single row and for the same reason.
-        let response = ui
-            .add(egui::Label::new(egui::RichText::new(&line).small()).truncate())
-            .on_hover_text(&hover)
-            .on_hover_text(ts::status_tooltip());
-        crate::diag::ui_rect_visible(REGION, response.rect, ui.clip_rect());
-
+    // ★★★ **The button is allocated BEFORE the sentence, and that order is the
+    // whole of the layout.**
+    //
+    // `Label::truncate` fills the width it is given, so a sentence laid out
+    // first takes the entire strip and the button is pushed off the end —
+    // present in the tree, rectangle and all, and unreachable. That is this
+    // project's recorded failure shape, and it would have arrived in the
+    // surface built to replace the panel it arrived in last time.
+    //
+    // A right-to-left outer layout places the button against the right edge and
+    // hands the remainder back; the inner left-to-right layout puts the
+    // sentence in that remainder, reading normally.
+    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
         if armed != CanvasTool::Select {
-            // Right-aligned, so the button does not move when the sentence
-            // changes length. A control that moves is a control you cannot aim
-            // at — the armed block's own layout rule, applied to a row instead
-            // of a column.
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                put_down(ui, &ctx);
-            });
+            put_down(ui, &ctx);
         }
+        ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
+            // ★★ `truncate`, never `wrap`. The strip's height is a constant the
+            // dock has already taken off the side; a second line would be drawn
+            // over the first stack's tab bar and clipped away, which reads as a
+            // rendering fault. The full text is on hover, which is the same
+            // elide-and-defer discipline [`crate::app::status::disclosure`]
+            // applies to the bar's single row and for the same reason.
+            let response = ui
+                .add(egui::Label::new(egui::RichText::new(&line).small()).truncate())
+                .on_hover_text(&hover)
+                .on_hover_text(ts::status_tooltip());
+            crate::diag::ui_rect_visible(REGION, response.rect, ui.clip_rect());
+        });
     });
 }
 

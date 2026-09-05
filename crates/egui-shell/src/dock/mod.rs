@@ -149,11 +149,24 @@
 /// The two controls that minimise a side and bring it back — split out under
 /// R2 on 2026-08-20. Its header carries the operator's ask and the argument for
 /// why a collapsed side must leave something on screen.
+/// **The one place the layout is mutable** — `Dock::show`'s third phase.
+/// Split out under R2; its header carries the property every arm depends
+/// on.
+mod apply;
 pub mod banner;
 mod collapse;
 pub mod ctx;
+/// **A panel torn out of the dock into a window of its own** — the value,
+/// the state machine, and the placement arithmetic. No `egui::Context`,
+/// no window: everything here is testable with nothing open.
+pub mod float;
+/// **The window a floated panel is drawn in.** [`Dock::show_floating`],
+/// the viewport, and the header strip that offers the way back.
+pub mod floatwin;
 pub mod model;
 pub mod plan;
+/// The permanent vertical strip down a side's outer edge — the left rail.
+pub mod rail;
 pub mod report;
 pub mod splitter;
 pub mod tab_menu;
@@ -190,14 +203,20 @@ mod testfont;
 
 use egui::{Align, Layout, Rect, UiBuilder, Vec2};
 
+use apply::apply;
+#[cfg(test)]
+use apply::equalize;
 use ctx::{Ctx, Intent};
 use splitter::Axis;
 
 pub use banner::BannerHandler;
+pub use float::{DockHome, FloatingPanel};
+pub use floatwin::FloatFrameReport;
 pub use model::{
     AnyPanel, Column, DockLayout, DockSide, PanelAddress, PanelCatalog, PanelId, PanelInfo,
     PanelRegistry, SideLayout, Stack,
 };
+pub use rail::{RailHandler, RailPlan, RailRow, Rung};
 pub use report::{RectReport, RectSink};
 pub use tab_menu::{TabMenu, TabMenuHandler};
 
@@ -231,6 +250,46 @@ pub struct DockFrameReport {
     pub activated: Option<PanelId>,
     /// The panel the operator closed this frame, if any.
     pub closed: Option<PanelId>,
+    /// The panel the operator floated this frame, if any.
+    pub floated: Option<PanelId>,
+    /// The panel the operator docked back this frame, if any.
+    pub docked: Option<PanelId>,
+    /// Every panel the layout says is floating — whether or not a window
+    /// was drawn for it.
+    ///
+    /// The *claim*. [`FloatFrameReport::drawn`] is the *fact*, and
+    /// [`Self::floats_undrawn`] is the difference.
+    pub floating: Vec<PanelId>,
+    /// ★★★ **How many floating panels nothing drew last frame.**
+    ///
+    /// Zero in a correct application. Non-zero means panels are in the
+    /// layout, are reported as on screen, and **are not on screen** —
+    /// because [`Dock::show_floating`] was never called.
+    ///
+    /// # Why this field exists at all
+    ///
+    /// Floating is the one capability in this dock that needs **two**
+    /// calls per frame instead of one: [`Dock::show`] for the docked
+    /// panels, and [`Dock::show_floating`] for the windows. The second is
+    /// separate because a child viewport must be opened from the
+    /// application's top-level frame rather than from inside a side
+    /// panel's layout closure.
+    ///
+    /// ⇒ That makes forgetting it a *silent* failure of exactly the class
+    /// this project has already shipped: three panels that were laid out,
+    /// published a rectangle, and could not be reached, with every gate
+    /// green. `crate::dock::report`'s header records the response —
+    /// *a rect proves layout, not visibility* — and this field is the same
+    /// response for a surface that has no rect at all because its window
+    /// was never opened.
+    ///
+    /// An application asserts this is zero in its own frame test. It is
+    /// measured against the **previous** frame's float report, because
+    /// `show` runs before `show_floating`; so a genuine first frame
+    /// reports the floats it is about to draw, and the value settles on
+    /// the next one. A test therefore drives two frames — which is what a
+    /// harness does anyway.
+    pub floats_undrawn: usize,
     /// Whether the layout changed this frame and is therefore worth
     /// saving.
     ///
@@ -250,6 +309,14 @@ pub struct DockFrameReport {
 pub struct DockState {
     layout: DockLayout,
     last_frame: DockFrameReport,
+    /// How many float windows [`Dock::show_floating`] drew last frame.
+    ///
+    /// The counter half of [`DockFrameReport::floats_undrawn`]. It lives
+    /// here rather than on the report because it has to survive from one
+    /// frame to the next, and the report is rebuilt every frame — which is
+    /// exactly the property that makes it the *claim* rather than the
+    /// *fact*.
+    floats_drawn: usize,
 }
 
 impl DockState {
@@ -270,6 +337,7 @@ impl DockState {
         Self {
             layout,
             last_frame: DockFrameReport::default(),
+            floats_drawn: 0,
         }
     }
 
@@ -338,6 +406,8 @@ pub struct Dock<'a> {
     /// asked for one. Built by [`Dock::with_side_banner`], which lives in
     /// [`banner`] beside the geometry it belongs to.
     banner: Option<(DockSide, f32, &'a mut BannerHandler<'a>)>,
+    /// The rail. Built by [`Dock::with_side_rail`]; see [`rail`].
+    rail: Option<(DockSide, &'a mut RailHandler<'a>)>,
 }
 
 impl<'a> Dock<'a> {
@@ -553,6 +623,21 @@ impl<'a> Dock<'a> {
 
         // Phase 3: apply. The one place the layout is mutable.
         report.layout_changed = apply(&mut state.layout, &ctx.intents, &mut report);
+        // ★★ The float census, taken from the layout AFTER the intents have
+        // been applied — so a panel floated on this very frame is already in
+        // the claim, and `show_floating` (which runs later in the same frame)
+        // draws it immediately rather than a frame behind. `floats_drawn`
+        // still describes the PREVIOUS frame at this point, which is what
+        // makes `floats_undrawn` non-zero for exactly one frame after a
+        // float and zero thereafter in a correct application. See the
+        // field's own docs.
+        report.floating = state
+            .layout
+            .floating
+            .iter()
+            .map(|f| f.panel.clone())
+            .collect();
+        report.floats_undrawn = report.floating.len().saturating_sub(state.floats_drawn);
         state.last_frame = report.clone();
         report
     }
@@ -610,6 +695,8 @@ impl<'a> Dock<'a> {
                 // stacks once rather than painting over them. See
                 // [`banner`]'s header for why it is chrome and not a stack.
                 let area = banner::draw(ui, ctx, side, area, self.banner.as_mut());
+                // Reserved off the OUTER edge, for the banner's reason.
+                let area = rail::draw(ui, ctx, side, area, self.rail.as_mut());
                 self.draw_side_contents(ui, ctx, layout, side, area, report, body);
                 // ★ The collapse chevron, drawn LAST and OVER the columns.
                 //
@@ -857,168 +944,6 @@ impl<'a> Dock<'a> {
         ctx.reporter.report(ui, body_rect, || report::body(&panel));
         report.panels_drawn.push(panel);
     }
-}
-
-/// Apply one frame's intents to the layout.
-///
-/// The **only** function in this module that takes `&mut DockLayout`.
-/// Returns whether anything changed, which the application uses to decide
-/// whether the layout is worth persisting.
-///
-/// Splitter drags are applied by resolving the *current* spans, moving
-/// one boundary with [`plan::drag_boundary`], and converting back — which
-/// is the one place [`plan::spans_to_shares`] may be called, and its
-/// documentation says why.
-fn apply(layout: &mut DockLayout, intents: &[Intent], report: &mut DockFrameReport) -> bool {
-    if intents.is_empty() {
-        return false;
-    }
-    let before = layout.clone();
-
-    for intent in intents {
-        match intent {
-            // ★★ Collapse a side, or bring it back. One toggle, two controls:
-            // the chevron on an open side and the rail on a shut one, neither
-            // of which can be pressed in the state the other lives in.
-            Intent::ToggleSide(side) => {
-                let s = match side {
-                    DockSide::Left => &mut layout.left,
-                    DockSide::Right => &mut layout.right,
-                };
-                s.visible = !s.visible;
-                // The arrangement is UNTOUCHED. Collapsing is a view state, not
-                // a structural edit — which is the whole difference between
-                // "collapse the dock" and "reset the dock", and the reason an
-                // operator can minimise a side and get their columns back
-                // exactly as they left them.
-                //
-                // No `changed` flag: this function compares the whole layout
-                // against a clone taken before the loop, so a mutation IS the
-                // signal. One place decides "did anything move", which is what
-                // stops a new intent forgetting to say so.
-            }
-            Intent::Activate(panel) => {
-                if layout.activate(panel) {
-                    report.activated = Some(panel.clone());
-                }
-            }
-            Intent::Close(panel) => {
-                if layout.close(panel) {
-                    report.closed = Some(panel.clone());
-                }
-            }
-            Intent::DragSide { side, delta } => {
-                let s = layout.side_mut(*side);
-                s.width_pts = (s.width_pts + delta).max(plan::MIN_SIDE_WIDTH);
-            }
-            Intent::DragColumns {
-                side,
-                boundary,
-                delta,
-            } => {
-                let s = layout.side_mut(*side);
-                let shares: Vec<f32> = s.columns.iter().map(|c| c.share).collect();
-                // Resolved against a nominal total rather than the real
-                // one. The real width is not available here — this runs
-                // after the frame — and it does not need to be: a drag
-                // of `delta` points is a fraction of the side's width,
-                // and the side's width is `width_pts`. Using it keeps the
-                // delta in the same units the operator moved the pointer
-                // in.
-                let total = s.width_pts.max(plan::MIN_SIDE_WIDTH);
-                let mut spans = plan::resolve_spans(
-                    &shares,
-                    total,
-                    plan::MIN_COLUMN_WIDTH,
-                    plan::SPLITTER_THICKNESS,
-                );
-                plan::drag_boundary(&mut spans, *boundary, *delta, plan::MIN_COLUMN_WIDTH);
-                for (c, share) in s.columns.iter_mut().zip(plan::spans_to_shares(&spans)) {
-                    c.share = share;
-                }
-            }
-            Intent::EqualizeColumns { side, boundary } => {
-                let s = layout.side_mut(*side);
-                equalize(
-                    &mut s
-                        .columns
-                        .iter_mut()
-                        .map(|c| &mut c.share)
-                        .collect::<Vec<_>>(),
-                    *boundary,
-                );
-            }
-            Intent::DragStacks {
-                side,
-                column,
-                boundary,
-                delta,
-            } => {
-                let s = layout.side_mut(*side);
-                let Some(col) = s.columns.get_mut(*column) else {
-                    continue;
-                };
-                let shares: Vec<f32> = col.stacks.iter().map(|s| s.share).collect();
-                // The column's height in points is not known here either.
-                // A nominal total works because `drag_boundary`'s delta
-                // and the minimums are both in points and the conversion
-                // back to shares is scale-free; the only visible effect
-                // of a nominal total is that a drag near the minimum
-                // resists slightly sooner or later than the pixel it was
-                // drawn at. A real height would have to be smuggled out
-                // of the draw phase, which is exactly the `&mut`-during-
-                // draw this design refuses.
-                let total = NOMINAL_COLUMN_HEIGHT;
-                let mut spans = plan::resolve_spans(
-                    &shares,
-                    total,
-                    plan::MIN_STACK_HEIGHT,
-                    plan::SPLITTER_THICKNESS,
-                );
-                plan::drag_boundary(&mut spans, *boundary, *delta, plan::MIN_STACK_HEIGHT);
-                for (st, share) in col.stacks.iter_mut().zip(plan::spans_to_shares(&spans)) {
-                    st.share = share;
-                }
-            }
-            Intent::EqualizeStacks {
-                side,
-                column,
-                boundary,
-            } => {
-                let s = layout.side_mut(*side);
-                let Some(col) = s.columns.get_mut(*column) else {
-                    continue;
-                };
-                equalize(
-                    &mut col
-                        .stacks
-                        .iter_mut()
-                        .map(|s| &mut s.share)
-                        .collect::<Vec<_>>(),
-                    *boundary,
-                );
-            }
-        }
-    }
-
-    layout.normalize();
-    *layout != before
-}
-
-/// The height a stack drag is resolved against when the real one is not
-/// available. See the call site.
-const NOMINAL_COLUMN_HEIGHT: f32 = 800.0;
-
-/// Give the two children either side of `boundary` equal share, leaving
-/// every other child alone — failure mode #7 applied to the double-click
-/// gesture as well as to the drag.
-fn equalize(shares: &mut [&mut f32], boundary: usize) {
-    if boundary + 1 >= shares.len() {
-        return;
-    }
-    let mean = (*shares[boundary] + *shares[boundary + 1]) / 2.0;
-    *shares[boundary] = mean;
-    *shares[boundary + 1] = mean;
 }
 
 #[cfg(test)]

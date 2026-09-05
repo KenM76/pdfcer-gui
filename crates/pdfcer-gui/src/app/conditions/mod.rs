@@ -101,6 +101,24 @@ impl PdfcerApp {
         if self.document_count() > 1 {
             set.set("docs.multiple");
         }
+        // ★★★ **At least one panel is in a window of its own**, which is the
+        // only thing `view.dock_all_panels` needs to know.
+        //
+        // Read from the dock's live layout rather than from a counter this
+        // type keeps, and that is the same rule
+        // `egui_shell::dock::DockFrameReport::panels_drawn`'s own docs argue
+        // for: *"an application deriving a toolbar toggle's selected state
+        // should read this rather than keeping a boolean of its own"*. A
+        // separate flag could disagree with the layout, and the operator would
+        // see a greyed recovery command with a floating window on screen —
+        // which is the one moment the command has to work.
+        //
+        // Set OUTSIDE the `Status::Open` arm: a floated panel does not stop
+        // floating because the document was closed, and the way to get it back
+        // must not depend on having a file open.
+        if !self.dock.layout().floating.is_empty() {
+            set.set("panels.floating");
+        }
         // ★★★ **An Acrobat exists on this machine** — `OPERATOR_REQUESTS.md`
         // O122, and the ONE thing that decides whether the control beside the
         // mode selector is drawn.

@@ -129,9 +129,16 @@ pub(super) fn tab() -> Tab {
                 "file",
                 ribbon::group_file_file(),
                 [
-                    command("file.new"),
+                    // ★ Large, 2026-09-04 — `mockups/pdfcer-shell.html`
+                    // draws `New` and `Open…` as the File group's two big
+                    // controls and wraps the rest into one column beside
+                    // them. They are already the leading run of this group,
+                    // so `sizing`'s hoist is a no-op and the rendered order
+                    // is the mockup's exactly: [New][Open…] then the column
+                    // [New from template…][Recent ⌄][Close].
+                    large("file.new"),
+                    large("file.open"),
                     command("file.new_from_template"),
-                    command("file.open"),
                     Item::custom(super::RECENT_FILES),
                     command("file.close"),
                 ],
@@ -169,7 +176,10 @@ pub(super) fn tab() -> Tab {
                 // things. A destructive-adjacent command at the bottom of a
                 // group is one an operator arrives at deliberately.
                 [
-                    command("file.save"),
+                    // ★ Large — the mockup's `Save` big, with the three
+                    // qualified saves in a column beside it. First in the
+                    // group already, so the hoist is a no-op.
+                    large("file.save"),
                     // ★ **Save as** between Save and Save a copy** — 2026-09-02,
                     // O95 — and the position is the group's own stated order of
                     // increasing consequence, not the end of the list.
@@ -248,6 +258,21 @@ pub(super) fn tab() -> Tab {
                     // trip and reads as one. §5.1's own Export table has the
                     // image row second for the same reason.
                     command("file.export_image"),
+                    // ★★★ Export text, 2026-09-04. Third, directly after the
+                    // two exports that write a derivative of the page's own
+                    // content and before the form-data pair, which is a round
+                    // trip and reads as one.
+                    //
+                    // ★ Its natural neighbours are the two copy-text verbs at
+                    // the end of this band, and it is deliberately NOT beside
+                    // them. Those two write to the **clipboard**; this writes a
+                    // file, which is what every control from `export_dxf` to
+                    // `import_form_data` does. Grouping by destination keeps the
+                    // band readable in one pass — four file verbs, then the two
+                    // clipboard ones — where grouping by subject would put a
+                    // file write between two clipboard writes and leave the band
+                    // with no order at all.
+                    command("file.export_text"),
                     command("file.export_form_data"),
                     // ★ Import directly after export, in that order, because
                     // the pair is a round trip and an operator meets the half
@@ -257,6 +282,44 @@ pub(super) fn tab() -> Tab {
                     command("file.copy_page_text"),
                     command("file.copy_document_text"),
                 ],
+            ),
+            // ---------------------------------------------------------------
+            // ★★★ SECURITY — `OPERATOR_REQUESTS.md` **O119**, approved and
+            // wired 2026-09-04: *"yes add encryption and permissions"*.
+            //
+            // # Placement: immediately after Export, and it is the mockup's
+            //
+            // `mockups/pdfcer-shell.html` draws it exactly here — between Export
+            // and Print — and the operator approved that mockup. Its own comment
+            // gives the reason, which is his framing of the question rather than
+            // a taxonomy: O119 asks *"do you want to protect a drawing before you
+            // send it out?"*, so the band sits immediately after the band that
+            // sends it out.
+            //
+            // Why a NEW GROUP on **File** rather than a row in Edit ▸ Protect,
+            // which is where a reader would first look: every other command on
+            // the Edit tab is an undoable edit to page CONTENT, and these two are
+            // neither. `EDITABLE_SURFACES.md` calls `set_encryption` *"a save
+            // transform, not an undoable edit"*. `crate::shell::commands::catalog::file`
+            // carries the full argument at the registrations.
+            //
+            // # Both LARGE, matching the mockup
+            //
+            // Two controls in a band of two, and both are consequential enough to
+            // be found rather than scanned for: one puts a password on the
+            // operator's drawing and the other decides what a recipient's reader
+            // is asked to allow. The mockup draws both `big`.
+            //
+            // ★ The group's caption is `crate::text::protect::group_file_security`
+            // rather than a `ribbon::` sibling, and the full path is written out
+            // so the seam is visible at the call site. Its own doc gives the
+            // reason: when a feature's copy is one subject and one module, the
+            // caption is part of that subject.
+            // ---------------------------------------------------------------
+            group(
+                "security",
+                crate::text::protect::group_file_security(),
+                [large("file.encrypt"), large("file.permissions")],
             ),
             // ---------------------------------------------------------------
             // Print. Imposition (n-up / booklet / poster) is **C**.
@@ -299,7 +362,9 @@ pub(super) fn tab() -> Tab {
                 "pdfcer",
                 ribbon::group_file_pdfcer(),
                 [
-                    command("file.settings"),
+                    // ★ Large — the mockup's `Settings…` big. First in the
+                    // group already.
+                    large("file.settings"),
                     command("file.shortcuts"),
                     command("file.about"),
                 ],

@@ -180,6 +180,22 @@ pub struct TabMenu<'a> {
     /// The tab button's response, with its accessible name already
     /// published. This is the thing the seam exists to hand out.
     response: &'a egui::Response,
+    /// Whether the handler asked the dock to float this panel out.
+    ///
+    /// A separate flag from [`Self::close_requested`] rather than an
+    /// enum, and the reason is the same one that made this a struct: a
+    /// capability added later must not change the shape of anything an
+    /// application already wrote. An enum would also make "asked for two
+    /// things" unrepresentable, which sounds like a virtue until you
+    /// notice that the dock is the right place to decide what happens
+    /// then — and it does, at the call site, in a documented order.
+    float_requested: bool,
+    /// Whether the handler asked the dock to put this panel back.
+    ///
+    /// Meaningful only on a floating panel's header strip, and harmless
+    /// on a tab: [`super::DockLayout::dock_back`] answers `false` for a
+    /// panel that is not floating and changes nothing.
+    dock_requested: bool,
     /// Whether the handler asked the dock to close this panel.
     ///
     /// A plain flag rather than a direct push into
@@ -199,6 +215,8 @@ impl<'a> TabMenu<'a> {
         Self {
             panel,
             response,
+            float_requested: false,
+            dock_requested: false,
             close_requested: false,
         }
     }
@@ -258,6 +276,50 @@ impl<'a> TabMenu<'a> {
     pub fn close_requested(&self) -> bool {
         self.close_requested
     }
+
+    /// **Ask the dock to tear this panel out into a window of its own.**
+    ///
+    /// The verb this module's own header names as the canonical example
+    /// of something *"the shell cannot know"* — and it still cannot: the
+    /// application owns the row, its label, its icon, its position in the
+    /// menu and its keyboard chord. What arrives here is the **act**, and
+    /// it goes through the dock's queue exactly as a close does, so it
+    /// appears in [`super::DockFrameReport::floated`], counts towards
+    /// [`super::DockFrameReport::layout_changed`], and is therefore
+    /// persisted by an application that saves on that flag.
+    ///
+    /// A no-op on a panel that is already floating or is not mounted —
+    /// see [`super::DockLayout::float`]. **Nothing happens during this
+    /// call**; the tab and its body are drawn for the rest of this frame.
+    pub fn request_float(&mut self) {
+        self.float_requested = true;
+    }
+
+    /// Whether [`Self::request_float`] has been called.
+    #[must_use]
+    pub fn float_requested(&self) -> bool {
+        self.float_requested
+    }
+
+    /// **Ask the dock to put this panel back where it came from.**
+    ///
+    /// The mirror of [`Self::request_float`], and the verb a floating
+    /// panel's header strip offers. A no-op on a panel that is not
+    /// floating.
+    ///
+    /// ★ It is offered on a **tab** as well as on a header strip, and
+    /// deliberately: one handler serves both surfaces, so an application
+    /// writes one menu and gets the right rows in both places by making
+    /// the rows conditional rather than by writing the menu twice.
+    pub fn request_dock(&mut self) {
+        self.dock_requested = true;
+    }
+
+    /// Whether [`Self::request_dock`] has been called.
+    #[must_use]
+    pub fn dock_requested(&self) -> bool {
+        self.dock_requested
+    }
 }
 
 impl std::fmt::Debug for TabMenu<'_> {
@@ -270,6 +332,8 @@ impl std::fmt::Debug for TabMenu<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("TabMenu")
             .field("panel", &self.panel.as_str())
+            .field("float_requested", &self.float_requested)
+            .field("dock_requested", &self.dock_requested)
             .field("close_requested", &self.close_requested)
             .field("response_id", &self.response.id)
             .finish()

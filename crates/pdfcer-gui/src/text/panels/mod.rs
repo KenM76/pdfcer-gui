@@ -104,6 +104,12 @@ pub mod dimension;
 /// somebody else's, which is exactly the case rule 4 requires a sentence for.
 pub mod face;
 /// The Fonts panel's inventory report.
+/// **The Layers panel's search field**, and the two lines that describe
+/// what it did to the list. Its own module because these four are the only
+/// strings here that describe a FILTER'S EFFECT on a list, and the wording
+/// rules for that job are written down with them.
+pub mod layersearch;
+
 pub mod fonts;
 /// The Comments panel — every annotation on the document, listed.
 pub mod formfield;
@@ -983,6 +989,49 @@ pub fn bookmark_row_heading_tooltip() -> &'static str {
 #[must_use]
 pub fn bookmark_row_unresolved_tooltip() -> &'static str {
     "This bookmark points somewhere pdfcer could not resolve — it may use a destination form pdfcer does not read yet, or name a page that is not in this document."
+}
+
+/// **What the panel says when the selected mark is on no layer.**
+///
+/// Shown for `panels::layers::highlight::Membership::None` and for nothing
+/// else — in particular **not** for `Unknown`, which is today's answer for
+/// every content object and which renders nothing at all (R9).
+///
+/// ## ★★★ Why this sentence exists, when silence would be simpler
+///
+/// It is the disambiguating half of a pair. A selected annotation either
+/// highlights a row or does not, and "does not" has two causes the operator
+/// cannot otherwise tell apart:
+///
+/// | cause | what they see without this line |
+/// |---|---|
+/// | the mark is genuinely on no layer | no highlight |
+/// | pdfcer could not work out which layer | no highlight |
+///
+/// The second is a real and current state — `pdfcer-core` discards the
+/// optional-content group identity while resolving it, so no content object
+/// can answer — and an operator who has just switched a layer off and is
+/// wondering why their note is still on the page needs to know which of the
+/// two they are in. This line is said only in the first case, so its
+/// *presence* is the answer and its absence is not a claim.
+///
+/// ## ★★ "Not on a layer", not "on no layer"
+///
+/// The operator's mental model is that things are *put on* layers. "Not on
+/// a layer" describes the mark; "on no layer" describes a set, and reads
+/// like the beginning of a fault report. The sentence is a statement about
+/// the document, as ordinary as a layer's name, so it is phrased as one.
+///
+/// ## ★ It says "selected", not "this object"
+///
+/// Because what carries an `/OC` today is an **annotation** — a stamp, a
+/// cloud, a note, a dimension — and "object" in this program means a
+/// content object, which is exactly the thing this cannot yet answer for.
+/// Naming the wrong noun would promise a capability the sentence is not
+/// evidence of.
+#[must_use]
+pub fn layer_selection_unlayered() -> &'static str {
+    "What you have selected is not on a layer."
 }
 
 #[cfg(test)]

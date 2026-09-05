@@ -403,13 +403,64 @@ pub fn quoted_text(text: &str, truncated: bool) -> String {
 /// scaled by a `Tm`/`cm`. It is written `10 pt` rather than `10.00 pt`
 /// because a type size is conventionally a whole number and the trailing
 /// zeros would read as a precision this value does not claim.
+/// ★★★ **THE SUBSET TAG IS STRIPPED HERE AND NOWHERE ELSE — 2026-09-04.**
+///
+/// A subsetted font's `/BaseFont` is `AAAAAA+JetBrainsMono-Regular`: six
+/// arbitrary uppercase letters, a `+`, then the name. §9.6.4 requires the tag
+/// to be unique per subset and says nothing about it meaning anything, and it
+/// does not — it is a uniqueness token, not a fact about the typeface.
+///
+/// # Why it goes, and why the driven harness is what decided it
+///
+/// `the_inspector_is_one_master_detail_column` drove the real binary against
+/// the operator's own A1 sheet and reported **8 of 9 object rows shortened at
+/// the default width**. O123 part 6 widened Edit's inspector to 360 pt
+/// precisely so the common row would fit, and it still did not — so either the
+/// width was wrong or the rows were too long. The width measured 354 pt of
+/// content (360 less the splitter), which is what it is supposed to be.
+///
+/// ⇒ The rows were too long, and **seven characters of every text row were a
+/// token with no meaning.** Removing it is the only shortening available that
+/// costs the operator nothing: every other clause — the paint style, the colour
+/// hex, the node count, the size — is a fact he might act on.
+///
+/// ★★ It was already the approved answer. `mockups/pdfcer-shell.html`'s legend
+/// carries it as its own line — *"Strip the AAAAAA+ subset tag in the row only.
+/// Kept in Properties"* — with the argument that two subsets of one face
+/// otherwise read identically in the list while naming different font objects.
+///
+/// ★ **In the ROW only.** Properties keeps the whole `/BaseFont`, because there
+/// the tag is the handle that tells two subsets apart, and that panel has the
+/// room to show it. A list optimises for scanning; a detail pane optimises for
+/// identity.
+///
+/// # What is NOT stripped, deliberately
+///
+/// A `+` that is not preceded by exactly six uppercase letters. `Arial+Bold`
+/// is a real face name in the wild and losing its first half would be a
+/// silent corruption of the one thing this label exists to say.
+#[must_use]
+fn without_subset_tag(name: &str) -> &str {
+    match name.split_once('+') {
+        Some((tag, rest))
+            if tag.len() == 6
+                && !rest.is_empty()
+                && tag.bytes().all(|b| b.is_ascii_uppercase()) =>
+        {
+            rest
+        }
+        _ => name,
+    }
+}
+
 #[must_use]
 pub fn font_label(font: &pdfcer_core::vector::TextFont) -> String {
-    let name = font
-        .base_font
-        .as_deref()
-        .filter(|n| !n.is_empty())
-        .unwrap_or(&font.resource);
+    let name = without_subset_tag(
+        font.base_font
+            .as_deref()
+            .filter(|n| !n.is_empty())
+            .unwrap_or(&font.resource),
+    );
     let size = font.size;
     if size.is_finite() && (size.fract().abs() < 1e-9) {
         format!("{name} {size:.0} pt")
@@ -804,6 +855,42 @@ mod tests {
 
     /// A font is named by its typeface when the file gives one, and by its
     /// resource name when that is all there is.
+    /// ★★★ A subset tag is six arbitrary letters and a plus, and it is stripped
+    /// from the ROW because it means nothing and costs seven characters on
+    /// every text row.
+    ///
+    /// The driven check `the_inspector_is_one_master_detail_column` reported 8
+    /// of 9 rows shortened at the intended width; this is the shortening that
+    /// costs the operator nothing.
+    #[test]
+    fn a_subset_tag_is_stripped_from_the_row() {
+        assert_eq!(
+            without_subset_tag("AAAAAA+JetBrainsMono-Regular"),
+            "JetBrainsMono-Regular"
+        );
+        assert_eq!(
+            without_subset_tag("BAAAAA+SpaceGrotesk-Bold"),
+            "SpaceGrotesk-Bold"
+        );
+    }
+
+    /// ★★ And a `+` that is not a subset tag is left alone — losing half of a
+    /// real face name would be a silent corruption of the one thing this label
+    /// exists to say.
+    #[test]
+    fn a_plus_that_is_not_a_subset_tag_survives() {
+        for name in [
+            "Arial+Bold",            // five letters, not six
+            "AAAAAAA+Thing",         // seven
+            "aaaaaa+Thing",          // lower case
+            "AAAA1A+Thing",          // not all letters
+            "AAAAAA+",               // nothing after the plus
+            "JetBrainsMono-Regular", // no plus at all
+        ] {
+            assert_eq!(without_subset_tag(name), name, "{name} must survive");
+        }
+    }
+
     #[test]
     fn a_font_falls_back_to_its_resource_name_and_formats_a_whole_size() {
         let named = TextFont {

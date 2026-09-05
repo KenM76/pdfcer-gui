@@ -1,6 +1,20 @@
-//! # `text::clipboard` — the four sentences the object clipboard can say
+//! # `text::clipboard` — what the clipboard verbs say on the status row
 //!
-//! Each is a **refusal on the status row**, and each exists because the
+//! ★ Two families live here as of 2026-09-04, and they are kept in one file
+//! because they are one operator-facing subject — *what happened to my copy* —
+//! and splitting them would invite two wordings of the same idea:
+//!
+//! 1. **The object clipboard's four refusals** ([`refusal`]), which are about
+//!    copying *within* pdfcer. These are the original contents of this file and
+//!    the paragraphs below are about them.
+//! 2. **The vector copy-out's disclosure and refusals**
+//!    ([`copied_as_vector`], [`copy_out_refusal`]), which are about copying
+//!    *out* of pdfcer — `OPERATOR_REQUESTS.md` O120. The copy-out is the one
+//!    clipboard verb that says something on **success** as well, because it
+//!    alone has two possible operands and the button cannot show which was
+//!    taken.
+//!
+//! Each refusal exists because the
 //! alternative is a keystroke that does nothing and says nothing. That is how
 //! the operator experienced the absence of cut, copy and paste in the first
 //! place — *"the standard copy/paste … aren't implemented"* — and a build that
@@ -23,6 +37,12 @@
 //! do*, not *that something went wrong*.
 
 use crate::canvas::clipboard::Refusal;
+// ★ Aliased. Two different refusals share the word in this crate — the object
+// clipboard's, imported above, and the vector copy-out's — and importing both
+// under one name would be a compile error while importing the second
+// unqualified would make `refusal` and `copy_out_refusal` look like two arms of
+// one function. The alias says which is which at every use site.
+use crate::clipboard::place::Refusal as CopyOut;
 
 /// The sentence for a refusal.
 #[must_use]
@@ -177,6 +197,105 @@ pub fn os_marker(count: usize) -> String {
         "1 object copied from pdfcer. Paste it back into pdfcer to place it.".to_owned()
     } else {
         format!("{count} objects copied from pdfcer. Paste them back into pdfcer to place them.")
+    }
+}
+
+/// **What a vector copy-out put on the clipboard**, said on the status row.
+///
+/// ★★★ It names the OPERAND, and that is the whole reason this is a sentence
+/// rather than a silence. `edit.copy_as_vector` copies the selection when there
+/// is one and the whole page when there is not, and those two outcomes look
+/// identical from the button — the operator finds out which they got when they
+/// paste, in another application, possibly minutes later. A copy that quietly
+/// took the sheet when three parts were selected is exactly the kind of thing
+/// `DEFECTS.md` D4a calls *a sentence describing a different world than the one
+/// on screen*, one step removed.
+///
+/// ★★ It does **not** list the clipboard format names. `image/svg+xml`,
+/// `CF_ENHMETAFILE`, `CF_DIBV5` are wire identifiers — they belong in the trace,
+/// where a developer looks, and `crate::clipboard::ClipFormat::name` is where
+/// they live. What an operator can act on is *how many ways the receiving
+/// program may read it*, and above all the promise that at least one of them is
+/// vector, which is what the count and the second clause carry between them.
+#[must_use]
+pub fn copied_as_vector(selection: bool, formats: usize) -> String {
+    let what = if selection {
+        "the selection"
+    } else {
+        "this page"
+    };
+    format!(
+        "Copied {what} to the clipboard in {formats} formats, vectors first. Paste into Word, \
+         PowerPoint or Inkscape and the line-work is still editable."
+    )
+}
+
+/// Why a vector copy-out did not happen.
+///
+/// ★★★ The [`CopyOut::WouldDegrade`] arm is the one this whole feature is built
+/// around, and it is the reason a refusal is better than a success here. Placing
+/// only the raster formats would produce a paste that **works**: Word accepts it,
+/// it looks right at 100%, and it is a flat picture that cannot be scaled,
+/// recoloured or taken apart. The operator would discover that days later and
+/// report it as *"pdfcer's copy doesn't paste as vectors"* — indistinguishable
+/// from the feature not existing, except that it cost them the time to find out.
+///
+/// ⇒ So the sentence says the vector form could not be made **and** that nothing
+/// was copied, in that order: the cause first, because the operator's next move
+/// (try a different page, or export to SVG and place the file) depends on it.
+///
+/// ★ Every arm ends by saying what is still on the clipboard. `native-clipboard`
+/// stages every handle before it opens the clipboard, so all of these except the
+/// partial-placement case leave the previous contents intact — which is a real
+/// reassurance and not a platitude, because the operator may have had something
+/// there that took work to produce.
+#[must_use]
+pub fn copy_out_refusal(reason: &CopyOut) -> String {
+    match reason {
+        CopyOut::NoPage => "There is no page to copy. Open a document first \u{2014} whatever was \
+             on the clipboard is still there."
+            .to_owned(),
+        // ★ The engine's own message is carried rather than paraphrased, for
+        // `text::export_image`'s reason: it names the numbers, and a shell
+        // rewording is a second account of a failure only the engine saw.
+        CopyOut::Render(why) => format!(
+            "This could not be recorded as vectors: {why}. Nothing was put on the clipboard."
+        ),
+        CopyOut::WouldDegrade => {
+            "The vector form could not be made, so nothing was copied. A picture-only copy \
+             would paste into Word as a flat image that cannot be scaled or recoloured, which \
+             is not what this command promises."
+                .to_owned()
+        }
+        CopyOut::Clipboard(err) => clipboard_refusal(err),
+    }
+}
+
+/// The sentence for the operating system's own refusal.
+///
+/// ★★ Split out so the four Win32 outcomes get four different next moves rather
+/// than one shrug. *Another program is holding it* is transient and the answer is
+/// to press the button again; a **partial** placement is the one case where the
+/// clipboard has genuinely changed, and the operator needs to know that what is
+/// there now is neither the old contents nor the whole copy.
+fn clipboard_refusal(err: &native_clipboard::PlaceError) -> String {
+    match err {
+        native_clipboard::PlaceError::Open => {
+            "Another program is holding the clipboard. Try the copy again in a moment \
+             \u{2014} nothing has changed on it yet."
+                .to_owned()
+        }
+        native_clipboard::PlaceError::Set(_) => {
+            "Windows refused part of the copy. The clipboard now holds only some of the \
+             formats, so paste the result before relying on it, or copy again."
+                .to_owned()
+        }
+        // Register, Stage, Nothing and Unsupported. None of them is expected on
+        // a Windows build with a page to copy, so the sentence says what it can
+        // honestly say — nothing was placed — rather than inventing a cause.
+        _ => "Windows would not take this copy, so nothing was placed. Whatever was on the \
+             clipboard is still there."
+            .to_owned(),
     }
 }
 

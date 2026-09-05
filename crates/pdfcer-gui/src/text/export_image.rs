@@ -25,7 +25,7 @@
 //! > where supported!)"*
 //!
 //! **The parenthesis is the instruction.** *Where supported* is an admission
-//! that one of the three formats cannot do it, and what it asks for is that
+//! that one of the four formats cannot do it, and what it asks for is that
 //! pdfcer say which — not that pdfcer quietly pick a background and hand back
 //! a file that looks right on screen and prints with a white box round the
 //! drawing.
@@ -71,7 +71,7 @@
 
 use pdfcer_render::display_list::ExportTally;
 
-use crate::app::actions::imageexport::{ImageFormat, Impossible};
+use crate::app::actions::imageexport::{EmfCounts, ImageFormat, Impossible};
 
 // ===========================================================================
 // THE WINDOW
@@ -107,6 +107,13 @@ pub const fn format_name(format: ImageFormat) -> &'static str {
         ImageFormat::Png => "PNG",
         ImageFormat::Jpeg => "JPEG",
         ImageFormat::Svg => "SVG",
+        // ★ The acronym AND what it stands for, unlike the other three, and
+        // that asymmetry is deliberate. PNG, JPEG and SVG are names an
+        // operator has met; "EMF" is one almost nobody has, and a radio
+        // reading only "EMF" is a radio nobody presses. The long form is what
+        // the Windows *Paste Special* list itself says, which is where this
+        // operator will have seen it if they have seen it anywhere.
+        ImageFormat::Emf => "EMF (Windows metafile)",
     }
 }
 
@@ -129,10 +136,20 @@ pub const fn format_hint(format: ImageFormat) -> &'static str {
              pick up smudges around the edges, and it cannot hold a clear \
              background at all."
         }
+        // ★★ Both vector hints name PROGRAMS rather than properties, because
+        // the choice between these two is not a choice about fidelity — it is
+        // a choice about which program is going to open the file, and an
+        // operator who has just been told "SVG keeps lines as lines" has no
+        // way to know that their copy of LibreOffice will refuse it.
         ImageFormat::Svg => {
             "Lines stay lines, so it can be scaled up without going blocky and \
              edited in Inkscape or Illustrator. Text arrives as outlines \
              rather than as words."
+        }
+        ImageFormat::Emf => {
+            "Also lines rather than pixels, for the programs that will not \
+             open an SVG — LibreOffice 24, Visio, CorelDRAW, and Word's Paste \
+             Special. Anything see-through in the page becomes a picture."
         }
     }
 }
@@ -219,6 +236,16 @@ pub const fn dpi_hint(format: ImageFormat) -> &'static str {
             "Lines and curves are exact at any value. This only governs the \
              parts that have to be embedded as a picture — shadings with no \
              gradient form, soft masks, and pictures the PDF already carried."
+        }
+        // ★ Worded separately from SVG rather than sharing its arm, because
+        // the list of things that "have to be embedded as a picture" is much
+        // longer here — every gradient and everything see-through, not just
+        // the awkward cases — so the same sentence would understate it by a
+        // long way on exactly the pages where the number matters.
+        ImageFormat::Emf => {
+            "Lines and curves are exact at any value. This governs everything \
+             that has to become a picture instead, which in a metafile is \
+             more: every gradient, and anything see-through."
         }
     }
 }
@@ -377,6 +404,32 @@ pub fn wrote_raster(path: &str, page_number: usize, width: u32, height: u32, dpi
 #[must_use]
 pub fn wrote_svg(path: &str, page_number: usize, ops: usize) -> String {
     format!("Page {page_number} written to {path} — {ops} drawing operations.")
+}
+
+/// An EMF export succeeded.
+///
+/// ★ Its own line rather than [`wrote_svg`]'s, and the difference is the
+/// second number. An SVG's `ops` count is the whole file; a metafile's is
+/// only the part that stayed geometry, and the balance became bitmaps. A
+/// receipt that reported `ops` alone would describe a file that is half
+/// pictures in exactly the same words as one that is all lines.
+///
+/// ⇒ So both are named, side by side, and the reader can see the ratio
+/// without doing arithmetic. `emf_fidelity` then says *what* the pictures
+/// were.
+#[must_use]
+pub fn wrote_emf(path: &str, page_number: usize, ops: usize, rasters: usize) -> String {
+    if rasters == 0 {
+        format!(
+            "Page {page_number} written to {path} — {ops} drawing operations, \
+             all of them real lines."
+        )
+    } else {
+        format!(
+            "Page {page_number} written to {path} — {ops} drawing operations, \
+             plus {rasters} part(s) that had to go in as pictures."
+        )
+    }
 }
 
 /// Several files were written; this replaces the per-file line.
@@ -575,6 +628,160 @@ pub const fn svg_text_is_outlines() -> &'static str {
      and no font travels with it."
 }
 
+/// ★★★ **What the metafile could not express exactly** — Rule 4's content for
+/// EMF, and it is a longer confession than the SVG's.
+///
+/// The engine's note names the obligation in one clause: *"`EmfOutcome`
+/// carries what became a bitmap (translucent solids, blend modes, gradients,
+/// images, groups) — **disclose those**"*. This is that.
+///
+/// # ★★ Why this is not `svg_fidelity` with a different noun
+///
+/// The two formats fail at different places, and folding them into one
+/// function would mean each page's disclosure was worded for the other one.
+///
+/// | | SVG | EMF |
+/// |---|---|---|
+/// | a translucent solid | `fill-opacity`, exact | **a bitmap** |
+/// | a gradient | `<linearGradient>`, exact | **a bitmap** |
+/// | an image the PDF carried | embedded, exact | a bitmap (same pixels, but counted) |
+/// | a blend mode | `mix-blend-mode`, Inkscape honours it | **dropped, and the element rasterised** |
+/// | a nonzero fill with several subpaths | `fill-rule`, exact | exact — but **LibreOffice 24.x ignores it** |
+///
+/// The right-hand column is why an operator would choose EMF and what it
+/// costs them, and none of it is visible in the file: a metafile that is half
+/// `EMR_ALPHABLEND` opens, plays, and looks correct at 100%.
+///
+/// # ★ The five reasons are given as a breakdown of one total, not five
+/// sentences
+///
+/// `rasters_embedded` is the engine's own sum and the number that matters —
+/// *how much of my drawing stopped being lines*. The five causes are the
+/// diagnosis, and a reader who does not need it should be able to stop after
+/// the first clause. Five separate sentences would bury the total in the
+/// middle of them.
+///
+/// # ★★★ The LibreOffice clause is unconditional on its counter and is NOT
+/// folded in with the rest
+///
+/// `nonzero_fills_multi_subpath` is the only entry here that is not a loss at
+/// all — the metafile records the fill rule correctly. It is a warning about
+/// **one named reader**, which is the very reader this format exists to
+/// serve, and the failure it predicts (a solid shape drawn with holes in it)
+/// is the kind an operator blames on pdfcer. So it gets its own sentence, it
+/// names the program and the version, and it says what will look wrong.
+#[must_use]
+pub fn emf_fidelity(counts: &EmfCounts) -> Vec<String> {
+    // Always, and first: the one nothing counts. `svg_fidelity`'s clause 3,
+    // and the same reasoning — a disclosure that listed only *counted* things
+    // would go silent on the largest surprise the format holds.
+    let mut out = vec![emf_text_is_outlines().to_owned()];
+
+    if counts.rasters_embedded > 0 {
+        out.push(format!(
+            "{} part(s) of the page could not be lines in a metafile and were \
+             put in as pictures at the resolution above — {} see-through, {} \
+             using a blend mode, {} gradients, {} pictures the PDF already \
+             had, and {} see-through groups. They will go blocky if the file \
+             is scaled up a long way.",
+            counts.rasters_embedded,
+            counts.ops_rasterised_for_alpha,
+            counts.blend_modes_dropped,
+            counts.gradients_rasterised,
+            counts.images_embedded,
+            counts.layers_rasterised,
+        ));
+        // Its own sentence because it names a program, and because it is the
+        // one caveat that does not apply to the format's own readers. The
+        // engine's note: *"Inkscape's EMF importer draws nothing for the alpha
+        // bitmaps"* — which is survivable on the clipboard, where Inkscape
+        // takes the SVG instead, and is not survivable for a `.emf` file.
+        out.push(
+            "Inkscape's metafile import draws none of those pictures. If \
+             Inkscape is where this is going, export SVG instead."
+                .to_owned(),
+        );
+    }
+    if counts.nonzero_fills_multi_subpath > 0 {
+        out.push(format!(
+            "{} filled shape(s) are made of several loops. LibreOffice 24 \
+             ignores which loops are holes and which are solid, so those \
+             shapes may open there with holes in them. LibreOffice 25.2 and \
+             Word do not have this problem.",
+            counts.nonzero_fills_multi_subpath
+        ));
+    }
+    if counts.dashed_strokes_pre_applied > 0 {
+        out.push(format!(
+            "{} dashed line(s) were written as the individual dashes. The \
+             picture is right; what is lost is the ability to change the dash \
+             pattern later.",
+            counts.dashed_strokes_pre_applied
+        ));
+    }
+    // The recording's own losses — everything that had already been
+    // approximated before the metafile writer saw the page. Worded as in
+    // `svg_fidelity`, because they are the same losses arriving by the same
+    // route and an operator who has read one should recognise the other.
+    if counts.tally.overprint_approximated > 0 {
+        out.push(format!(
+            "{} paint(s) set to overprint were drawn as ordinary paint. On a \
+             printing press those inks would mix; here the top one covers what \
+             is under it.",
+            counts.tally.overprint_approximated
+        ));
+    }
+    if counts.tally.nonseparable_approximated > 0 {
+        out.push(format!(
+            "{} paint(s) using a hue, saturation, colour or luminosity blend \
+             were drawn normally, so their colour where they overlap is an \
+             approximation.",
+            counts.tally.nonseparable_approximated
+        ));
+    }
+    if counts.tally.colorant_buffer_on_screen > 0 {
+        out.push(
+            "This page asks to be blended in printing inks and was blended in \
+             screen colours instead, so overlaps are close rather than exact."
+                .to_owned(),
+        );
+    }
+    if counts.tally.tiling_patterns > 0 {
+        out.push(format!(
+            "{} tiling pattern(s) could not be written as a repeating fill.",
+            counts.tally.tiling_patterns
+        ));
+    }
+
+    // See `svg_fidelity`'s clause 4: an exact page must SAY so, or a broken
+    // disclosure is indistinguishable from a clean one. `EmfCounts::is_exact`
+    // is asked rather than re-derived, and it deliberately means something
+    // stricter than `tally.is_exact()` — see its own doc.
+    if counts.is_exact() {
+        out.push(
+            "Everything else on this page went out as real lines — nothing had \
+             to become a picture."
+                .to_owned(),
+        );
+    }
+    out
+}
+
+/// The metafile's own always-true loss, [`svg_text_is_outlines`]'s twin.
+///
+/// ★ Worded separately rather than sharing the SVG's sentence, because the
+/// SVG's names the format — *"Text in an SVG"* — and a receipt that told an
+/// operator about their SVG after they exported an EMF is a receipt about
+/// somebody else's file. The consequences are identical and are listed in the
+/// same order, deliberately, so the two read as the same fact about two
+/// formats rather than as two different problems.
+#[must_use]
+pub const fn emf_text_is_outlines() -> &'static str {
+    "Text in a metafile is written as outlines, not as words. It will look \
+     right in any program, and it cannot be selected, searched or re-typed \
+     there, and no font travels with it."
+}
+
 /// The page could not be drawn at all.
 #[must_use]
 pub fn render_failed(page_number: usize, detail: &str) -> String {
@@ -742,5 +949,285 @@ mod tests {
             "the vector case must say raising it will not sharpen the lines: {vector}"
         );
         assert_eq!(dpi_hint(ImageFormat::Jpeg), raster);
+        // ★★ EMF gets its OWN vector sentence rather than sharing SVG's. The
+        // list of things that must become a picture is much longer in a
+        // metafile — every gradient, everything see-through — so SVG's wording
+        // would understate it on exactly the pages where the number matters.
+        let metafile = dpi_hint(ImageFormat::Emf);
+        assert_ne!(metafile, raster);
+        assert_ne!(
+            metafile, vector,
+            "sharing SVG's arm would tell an EMF operator that only the \
+             awkward cases are rasterised, which is false"
+        );
+        assert!(metafile.contains("exact at any value"), "{metafile}");
+    }
+
+    /// ★★★ **Every format has a name, a hint and a resolution hint, and no
+    /// two formats share a name.**
+    ///
+    /// The sweep that makes adding a fifth format safe. A `match` arm that
+    /// fell through to another format's wording would compile, would draw a
+    /// radio, and would describe somebody else's file — and nothing but this
+    /// test would notice.
+    #[test]
+    fn every_format_is_named_and_described_in_its_own_words() {
+        let mut names: Vec<&str> = Vec::new();
+        for format in ImageFormat::ALL {
+            let name = format_name(format);
+            assert!(!name.is_empty(), "{format:?} has no name");
+            assert!(
+                !format_hint(format).is_empty(),
+                "{format:?} has no hint under its radio"
+            );
+            assert!(
+                !dpi_hint(format).is_empty(),
+                "{format:?} has no resolution hint"
+            );
+            names.push(name);
+        }
+        let count = names.len();
+        names.sort_unstable();
+        names.dedup();
+        assert_eq!(
+            names.len(),
+            count,
+            "two formats share a display name; the radio group would show the \
+             same label twice"
+        );
+        assert_eq!(count, 4, "PNG, JPEG, SVG, EMF");
+    }
+
+    /// ★★ **The EMF radio spells out what the acronym means.**
+    ///
+    /// Unlike PNG, JPEG and SVG, "EMF" is a name almost no operator has met,
+    /// and a radio reading only "EMF" is a radio nobody presses. The long form
+    /// is the one the Windows *Paste Special* list itself uses.
+    #[test]
+    fn the_metafile_radio_does_not_read_as_a_bare_acronym() {
+        let name = format_name(ImageFormat::Emf);
+        assert!(name.contains("EMF"), "{name}");
+        assert!(
+            name.contains("metafile"),
+            "the acronym alone teaches nothing: {name}"
+        );
+        // The hint names the PROGRAMS, which is the actual question being
+        // answered by the choice between SVG and EMF.
+        let hint = format_hint(ImageFormat::Emf);
+        assert!(hint.contains("LibreOffice"), "{hint}");
+        assert!(hint.contains("Paste Special"), "{hint}");
+    }
+
+    /// ★★★ **An exact metafile reports nothing lost — and still says text
+    /// became outlines.**
+    ///
+    /// `svg_fidelity`'s clause 3, restated for EMF because the always-true
+    /// loss is the same and the sentence is not: the SVG's names the SVG, and
+    /// a receipt about somebody else's format is a receipt about somebody
+    /// else's file.
+    #[test]
+    fn an_exact_metafile_still_discloses_that_text_became_outlines() {
+        let counts = EmfCounts {
+            ops: 412,
+            ..EmfCounts::default()
+        };
+        assert!(counts.is_exact(), "the fixture must be the exact case");
+        let joined = emf_fidelity(&counts).join(" | ");
+        assert!(
+            joined.contains("Text in a metafile"),
+            "the always-true disclosure is missing, or is the SVG's: {joined}"
+        );
+        assert!(
+            joined.contains("nothing had to become a picture"),
+            "an exact metafile must SAY it was exact, or a broken disclosure \
+             looks the same as a clean one: {joined}"
+        );
+        assert!(
+            !joined.contains("Inkscape's metafile import"),
+            "nothing was rasterised, so the Inkscape caveat does not apply: \
+             {joined}"
+        );
+    }
+
+    /// ★★★ **Every one of the five reasons a part became a bitmap is named,
+    /// with its own number, in one sentence.**
+    ///
+    /// The engine's note is imperative about this: *"`EmfOutcome` carries what
+    /// became a bitmap (translucent solids, blend modes, gradients, images,
+    /// groups) — **disclose those**"*. A disclosure that gave only the total
+    /// would tell an operator that thirteen things went wrong and nothing
+    /// about which knob to turn.
+    #[test]
+    fn a_rasterised_metafile_names_all_five_reasons_with_their_counts() {
+        let counts = EmfCounts {
+            ops: 90,
+            rasters_embedded: 13,
+            ops_rasterised_for_alpha: 4,
+            blend_modes_dropped: 2,
+            gradients_rasterised: 3,
+            images_embedded: 1,
+            layers_rasterised: 3,
+            ..EmfCounts::default()
+        };
+        assert!(!counts.is_exact());
+        let joined = emf_fidelity(&counts).join(" | ");
+        assert!(joined.contains("13 part(s)"), "the total: {joined}");
+        assert!(joined.contains("4 see-through"), "{joined}");
+        assert!(joined.contains("2 using a blend mode"), "{joined}");
+        assert!(joined.contains("3 gradients"), "{joined}");
+        assert!(
+            joined.contains("1 pictures the PDF already had"),
+            "{joined}"
+        );
+        assert!(joined.contains("3 see-through groups"), "{joined}");
+        assert!(
+            joined.contains("Inkscape's metafile import draws none"),
+            "the engine's note: Inkscape's EMF importer draws nothing for the \
+             alpha bitmaps, and for a FILE there is no SVG to fall back on: \
+             {joined}"
+        );
+        assert!(
+            !joined.contains("nothing had to become a picture"),
+            "thirteen parts became pictures; it must not claim otherwise: \
+             {joined}"
+        );
+    }
+
+    /// ★★★ **A metafile whose RECORDING was exact but whose ALPHA was not is
+    /// reported as inexact.**
+    ///
+    /// The trap `EmfCounts::is_exact` exists for. `ExportTally` describes the
+    /// recording, which is shared with the SVG writer and knows nothing about
+    /// EMF's missing per-primitive alpha — so a page that recorded perfectly
+    /// and then had forty translucent rectangles turned into bitmaps has an
+    /// **exact tally** and an **inexact metafile**.
+    ///
+    /// ⇒ Asking the tally alone is how a disclosure comes to say *"nothing had
+    /// to be approximated"* over a file that is half pictures.
+    #[test]
+    fn an_exact_tally_does_not_make_a_rasterised_metafile_exact() {
+        let counts = EmfCounts {
+            rasters_embedded: 40,
+            ops_rasterised_for_alpha: 40,
+            ..EmfCounts::default()
+        };
+        assert!(
+            counts.tally.is_exact(),
+            "the fixture's point: the RECORDING was exact"
+        );
+        assert!(
+            !counts.is_exact(),
+            "forty parts became bitmaps; the metafile is not exact, whatever \
+             the recording's tally says"
+        );
+        let joined = emf_fidelity(&counts).join(" | ");
+        assert!(
+            !joined.contains("nothing had to become a picture"),
+            "this is the sentence that would have been the lie: {joined}"
+        );
+    }
+
+    /// ★★★ **The LibreOffice hole warning names the program AND the version,
+    /// and says what will look wrong.**
+    ///
+    /// `nonzero_fills_multi_subpath` is the only entry in the EMF disclosure
+    /// that is not a loss — the metafile records the fill rule correctly. It
+    /// is a warning about one named reader, and that reader is the entire
+    /// reason this format is offered. The failure it predicts (a solid shape
+    /// drawn with holes) is the kind an operator blames on pdfcer.
+    #[test]
+    fn the_libreoffice_hole_warning_names_the_program_and_the_versions() {
+        let counts = EmfCounts {
+            nonzero_fills_multi_subpath: 5,
+            ..EmfCounts::default()
+        };
+        assert!(!counts.is_exact());
+        let joined = emf_fidelity(&counts).join(" | ");
+        assert!(joined.contains("5 filled shape(s)"), "{joined}");
+        assert!(joined.contains("LibreOffice 24"), "{joined}");
+        assert!(
+            joined.contains("holes"),
+            "it must say what will LOOK wrong, not that a fill rule was \
+             ignored: {joined}"
+        );
+        assert!(
+            joined.contains("25.2") && joined.contains("Word"),
+            "it must say who does NOT have the problem, or an operator cannot \
+             act on it: {joined}"
+        );
+    }
+
+    /// ★★ **The recording's own losses are worded exactly as the SVG's are.**
+    ///
+    /// They are the same losses arriving by the same route — the shared export
+    /// recording — and an operator who has read one receipt should recognise
+    /// the other. Divergent wording for an identical fact reads as two
+    /// different problems.
+    #[test]
+    fn the_shared_recording_losses_read_the_same_in_both_formats() {
+        let mut tally = ExportTally::default();
+        tally.overprint_approximated = 2;
+        tally.nonseparable_approximated = 1;
+        tally.tiling_patterns = 3;
+
+        let svg = svg_fidelity(&tally, 0, 0).join(" | ");
+        let emf = emf_fidelity(&EmfCounts {
+            tally,
+            ..EmfCounts::default()
+        })
+        .join(" | ");
+
+        for shared in [
+            "2 paint(s) set to overprint were drawn as ordinary paint.",
+            "1 paint(s) using a hue, saturation, colour or luminosity blend",
+            "3 tiling pattern(s) could not be written as a repeating fill.",
+        ] {
+            assert!(svg.contains(shared), "missing from the SVG: {shared}");
+            assert!(emf.contains(shared), "missing from the EMF: {shared}");
+        }
+    }
+
+    /// ★★ **The EMF receipt gives the geometry AND the picture count.**
+    ///
+    /// An SVG's `ops` is the whole file; a metafile's is only the part that
+    /// stayed lines. A receipt reporting `ops` alone would describe a file
+    /// that is half `EMR_ALPHABLEND` in exactly the same words as one that is
+    /// all geometry.
+    #[test]
+    fn the_metafile_receipt_reports_what_stayed_lines_and_what_did_not() {
+        let mixed = wrote_emf("C:\\d\\a.emf", 3, 400, 12);
+        assert!(mixed.contains("400 drawing operations"), "{mixed}");
+        assert!(
+            mixed.contains("12 part(s) that had to go in as pictures"),
+            "{mixed}"
+        );
+
+        let clean = wrote_emf("C:\\d\\a.emf", 3, 400, 0);
+        assert!(
+            clean.contains("all of them real lines"),
+            "a metafile with nothing rasterised should say so rather than \
+             report a zero: {clean}"
+        );
+        assert!(!clean.contains("pictures"), "{clean}");
+    }
+
+    /// ★ **The two always-true outline sentences name their own formats.**
+    ///
+    /// They describe the same loss and must not be the same string: a receipt
+    /// that told an operator about "an SVG" after they exported a metafile is
+    /// a receipt about a file they do not have.
+    #[test]
+    fn each_vector_format_confesses_its_outlines_in_its_own_name() {
+        let svg = svg_text_is_outlines();
+        let emf = emf_text_is_outlines();
+        assert_ne!(svg, emf);
+        assert!(svg.contains("in an SVG"), "{svg}");
+        assert!(emf.contains("in a metafile"), "{emf}");
+        // The consequences are identical and are listed in the same order, so
+        // the two read as one fact about two formats.
+        for consequence in ["selected, searched", "no font travels with it"] {
+            assert!(svg.contains(consequence), "{svg}");
+            assert!(emf.contains(consequence), "{emf}");
+        }
     }
 }

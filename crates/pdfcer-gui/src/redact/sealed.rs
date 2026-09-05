@@ -3,9 +3,19 @@
 //! [`super`] §2.4. One property, asserted over **every `.rs` file in this
 //! crate**:
 //!
-//! > [`pdfcer_core::redact::apply_redactions`] is *called* in exactly one place
-//! > — [`super::prepare_redaction_apply`] — and that place always proves its
-//! > output before returning it.
+//! > The engine's removal is *called* from exactly one FILE — `redact/mod.rs` —
+//! > and exactly twice in it, and both callers prove their output before
+//! > returning it.
+//!
+//! ★★★ **CORRECTED 2026-09-04.** The property used to read *"called in exactly
+//! one place — [`super::prepare_redaction_apply`]"*, and it was true until the
+//! afternoon `Pass 250.1` gave the engine a second removal surface. There are
+//! now two: [`pdfcer_core::redact::apply_redactions`] (a free function, which
+//! produces bytes) and `EditSession::apply_redactions` (a method, which mutates
+//! a session). This shell calls each exactly once —
+//! [`super::prepare_redaction_apply`] and [`super::apply_into_session`] — and
+//! the check now pins the file **and the count**, because a file check alone
+//! would let an unproven third call be added inside the proving file.
 //!
 //! ## Why this exists at all, when the bytes are already private
 //!
@@ -316,6 +326,35 @@ mod tests {
             "exactly one file may call it: {:?}",
             swept.call_sites
         );
+
+        // ★★★ …and exactly TWICE inside that file, since 2026-09-04.
+        //
+        // Until that afternoon the number was one and the file check carried
+        // the whole guarantee. `Pass 250.1` gave the engine a second removal
+        // surface — `EditSession::apply_redactions`, a METHOD — and this shell
+        // calls both: the free function from `prepare_redaction_apply` (which
+        // produces bytes and proves them) and the method from
+        // `apply_into_session` (which mutates the open session and proves
+        // that). Both prove; neither may be joined by a third that does not.
+        //
+        // Pinned at an exact number rather than a ceiling, on this module's own
+        // fail-closed reasoning: a range would let a call be ADDED and a call be
+        // REMOVED in the same edit and report nothing, and "the proof pipeline
+        // no longer calls the engine" is the failure this file exists to catch.
+        // If a legitimate third route ever lands, this number changes in the
+        // same commit as the route, which is the point.
+        let (owner, calls) = &swept.call_sites[0];
+        assert_eq!(
+            *calls,
+            2,
+            "★ `{SUBJECT}` is called {calls} time(s) in {}, and exactly two are \
+             accounted for: the free function in `prepare_redaction_apply`, and \
+             the `EditSession` method in `apply_into_session`. Both prove their \
+             output. A third call is either an unproven route to the engine's \
+             removal — `SALVAGE.md`'s Pass 72.0 artefact — or a route that has \
+             been removed and this check has not been told.",
+            owner.display()
+        );
     }
 
     /// ★ **Nothing in `redact/` reaches for the incremental writer.**
@@ -330,6 +369,29 @@ mod tests {
     /// idiomatic here, well documented, and one autocompletion away from the
     /// one directory where it would leave the un-redacted content in a prior
     /// revision of a file the operator has been told is redacted.
+    ///
+    /// # ★★★ The exception, added 2026-09-04, and why it is two assertions
+    /// rather than a narrower one
+    ///
+    /// `redact/tests.rs` **does** call the forbidden verb, deliberately and
+    /// repeatedly, and it must. `Pass 250.1`'s whole answer to this shell's
+    /// §4.1 is that an incremental save of a *collapsed* session is safe — and
+    /// the only way to hold the engine to that is to perform exactly the save
+    /// the ban forbids and prove the removed text is not in the result. A ban
+    /// that also forbade the measurement would leave the guarantee resting on
+    /// the engine's doc comment.
+    ///
+    /// So the ban is scoped to the **production** files of the directory, and
+    /// the exception is pinned rather than merely allowed:
+    ///
+    /// 1. no production file under `redact/` calls it — unchanged, and it is
+    ///    the assertion that was always the point;
+    /// 2. **`tests.rs` calls it at least twice**, because if the measurement is
+    ///    ever deleted this test starts passing for the wrong reason and the
+    ///    only evidence for the deferred route's safety goes with it.
+    ///
+    /// Without (2) the narrowing would be a hole. With it, the file is either
+    /// proving the property or failing.
     #[test]
     fn the_apply_pipeline_never_reaches_for_the_incremental_writer() {
         let root = crate_src().join("redact");
@@ -340,15 +402,30 @@ mod tests {
             swept.files_read,
             root.display()
         );
+        // ui-text-exempt: a file name inside this crate, never displayed.
+        let suite: PathBuf = ["redact", "tests.rs"].iter().collect();
+        let (measurement, production): (Vec<_>, Vec<_>) = swept
+            .call_sites
+            .iter()
+            .partition(|(path, _)| path.ends_with(&suite));
         assert!(
-            swept.call_sites.is_empty(),
-            "★ `{FORBIDDEN_IN_REDACT}` is called inside `redact/`: {:?}\n\
+            production.is_empty(),
+            "★ `{FORBIDDEN_IN_REDACT}` is called inside `redact/`: {production:?}\n\
              \n\
              An incremental save appends a revision and leaves the ORIGINAL \
              bytes in the file. For a redaction that puts the removed content \
              one `startxref` hop away in a document pdfcer has told the operator \
-             is redacted. Apply is a full rewrite or it does not happen.",
-            swept.call_sites
+             is redacted. Apply is a full rewrite or it does not happen."
+        );
+        let measured: usize = measurement.iter().map(|(_, n)| *n).sum();
+        assert!(
+            measured >= 2,
+            "★★★ `redact/tests.rs` calls `{FORBIDDEN_IN_REDACT}` {measured} \
+             time(s), and the deferred route's entire safety argument is that \
+             an incremental save of a collapsed session is clean. That claim is \
+             the engine's; the measurement is ours, and it is gone. Restore \
+             `an_incremental_save_of_a_redacted_session_cannot_leak_the_removed_text` \
+             before shipping anything that depends on it."
         );
     }
 

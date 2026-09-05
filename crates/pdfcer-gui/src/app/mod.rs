@@ -148,6 +148,9 @@ pub mod prefs;
 /// unsaved document still unsaved. Its header carries why the cycle is derived
 /// from the document set each frame rather than remembered as a queue.
 pub mod quitting;
+/// The left rail — the permanent strip down the left dock's outer edge.
+/// `OPERATOR_REQUESTS.md` O123 part 7.
+pub mod rail;
 /// ★ The shell's OWN preferences — how pdfcer draws, as distinct from how it
 /// reads and writes PDFs.
 ///
@@ -344,6 +347,25 @@ pub struct PdfcerApp {
     /// Owned by the operator, not by the application — it is the thing
     /// layout persistence saves and a named workspace restores.
     pub dock: egui_shell::dock::DockState,
+
+    /// ★★★ **The panel a `dock.tab` menu row was chosen on**, parked for
+    /// exactly one dispatch.
+    ///
+    /// A command id is a verb with no noun, and three of the four panel
+    /// layout verbs (`view.panel_float`, `_dock`, `_close`) act on *the
+    /// panel the operator right-clicked*. This is the noun.
+    ///
+    /// It is written on the line before `dispatch_token` and **taken**, not
+    /// read, by the arm that uses it — see
+    /// [`crate::app::dispatch::panels`], whose header carries the two
+    /// alternatives that were rejected (thirty-six suffixed commands, or a
+    /// `HandlerToken` that carries data and thereby breaks saved key
+    /// bindings) and why the pairing is exact rather than nearly right.
+    ///
+    /// ★ `None` between dispatches, always. A parked operand that survived
+    /// its dispatch would be handed to whatever command ran next, which is
+    /// how a Close meant for one panel comes to act on another.
+    pub dock_menu_panel: Option<egui_shell::dock::PanelId>,
 
     /// Which mode is active, and each mode's remembered arrangement.
     ///
@@ -963,6 +985,8 @@ impl PdfcerApp {
             ribbon,
             panel_registry,
             dock,
+            // No panel is parked until a tab menu chooses one.
+            dock_menu_panel: None,
             modes,
             layout,
             recent,

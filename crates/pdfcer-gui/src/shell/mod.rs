@@ -84,6 +84,10 @@
 pub mod commands;
 pub mod manifest;
 pub mod menus;
+/// The optional capabilities every context menu is built with — an icon
+/// painter and a rect sink — kept apart from [`menus`] because both are
+/// properties of the build rather than of a frame. See its header.
+pub mod menus_wiring;
 pub mod ron;
 
 #[cfg(test)]
@@ -192,6 +196,12 @@ mod tests {
                 .iter()
                 .map(|(id, _, _)| (*id).to_owned()),
         );
+        // ★★ …and a command whose operand is THE SURFACE THE OPERATOR
+        // GESTURED AT, which no ribbon control can supply. See
+        // `manifest::TAB_SCOPED`, whose header holds the bar (the same one
+        // `CUSTOM_BACKED` sets), the discoverability answer, and the
+        // condition under which these entries come back out.
+        referenced.extend(manifest::TAB_SCOPED.iter().map(|(id, _)| (*id).to_owned()));
 
         let orphans: Vec<&str> = registry
             .ids()

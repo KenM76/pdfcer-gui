@@ -9,10 +9,11 @@
 //! second constructor in the path."*
 //!
 //! There is no engine struct to carry here, and that is a fact about the
-//! feature rather than a gap in the engine. The engine offers three unrelated
-//! writers — `export::encode_png`, `export::encode_jpeg`, `svg::export_svg_view`
-//! — each with its own options type and its own error type, and *"which of the
-//! three, over which pages, at what resolution, keeping transparency or not"*
+//! feature rather than a gap in the engine. The engine offers four unrelated
+//! writers — `export::encode_png`, `export::encode_jpeg`, `svg::export_svg_view`,
+//! `emf::export_emf_view` — each with its own options type and its own error
+//! type, and *"which of them, over which pages, at what resolution, keeping
+//! transparency or not"*
 //! is a question none of them asks. It is a **shell** question, invented by the
 //! window, and the shell owns the type that answers it.
 //!
@@ -25,7 +26,7 @@
 //! ## ★★★ [`Impossible`] is the point of the module
 //!
 //! The operator asked for *"full support (including transparency where
-//! supported!)"*. The parenthesis concedes that one of the three formats cannot
+//! supported!)"*. The parenthesis concedes that one of the four formats cannot
 //! do it and asks pdfcer to be the one that says so. The engine's note is
 //! imperative about the same thing:
 //!
@@ -63,7 +64,7 @@
 
 use std::path::{Path, PathBuf};
 
-/// Which of the three writers an export goes through.
+/// Which of the four writers an export goes through.
 ///
 /// Deliberately a shell enum rather than a string or an extension. The
 /// extension is *derived* from it ([`Self::extension`]) rather than being it —
@@ -78,6 +79,36 @@ pub enum ImageFormat {
     Jpeg,
     /// The renderer's own recording, replayed as vector geometry.
     Svg,
+    /// ★★ **The same recording, written as a Windows Enhanced Metafile**
+    /// ([MS-EMF]) — `pdfcer_render::emf::export_emf`.
+    ///
+    /// # Why a fourth format, when SVG already carries vectors
+    ///
+    /// Because one large family of programs on this desktop cannot read the
+    /// SVG. The engine's note, 2026-09-03, is specific about which and why:
+    /// **LibreOffice 24.x has no route to a foreign SVG clipboard entry
+    /// before 25.2**, so EMF is its *only* vector import on Windows. The same
+    /// is true of Office's *Paste Special ▸ Picture (Enhanced Metafile)*, of
+    /// Visio, CorelDRAW and most CAD importers, and of anything that predates
+    /// the SVG-on-the-clipboard convention entirely.
+    ///
+    /// ⇒ So this is not "SVG for Windows". It is the format that reaches a
+    /// second, disjoint set of programs, and an operator who has been handed
+    /// an SVG their copy of LibreOffice will not open has been handed
+    /// nothing.
+    ///
+    /// # ★ What it costs, which is why [`crate::text::export_image`] has a
+    /// whole disclosure for it
+    ///
+    /// EMF has **no per-primitive alpha**. Opaque geometry goes out as real
+    /// GDI path records and is exact; everything else — a translucent solid,
+    /// a blend mode, a gradient, an image the PDF already carried, a
+    /// transparency group — is replayed as an `EMR_ALPHABLEND` bitmap at the
+    /// chosen resolution. `EmfOutcome` counts each of those five separately,
+    /// and the receipt names them, because a metafile that is half geometry
+    /// and half pictures looks identical to one that is all geometry until
+    /// somebody scales it up.
+    Emf,
 }
 
 impl ImageFormat {
@@ -85,9 +116,15 @@ impl ImageFormat {
     ///
     /// PNG first because it is the answer that is right for a drawing and
     /// wrong for nothing; JPEG second because it is the one an operator will
-    /// look for by name; SVG last because it is the one whose consequences
+    /// look for by name; SVG third because it is the one whose consequences
     /// (text becomes outlines) need reading about first.
-    pub const ALL: [Self; 3] = [Self::Png, Self::Jpeg, Self::Svg];
+    ///
+    /// ★ **EMF last, and that is a statement rather than an afterthought.**
+    /// It is the specialist answer — the one to reach for when a named
+    /// program refused the SVG — and putting it above SVG would offer the
+    /// narrower format to an operator who has not yet discovered they need
+    /// it. Its hint says which programs, by name.
+    pub const ALL: [Self; 4] = [Self::Png, Self::Jpeg, Self::Svg, Self::Emf];
 
     /// The file extension, lower case, without a dot.
     #[must_use]
@@ -103,6 +140,9 @@ impl ImageFormat {
             // "JPEG", which is its name; this is only what the file is called.
             Self::Jpeg => "jpg",
             Self::Svg => "svg",
+            // ui-text-exempt: file extension. [MS-EMF] names no other one, and
+            // Windows associates `.emf` with the metafile picture handler.
+            Self::Emf => "emf",
         }
     }
 
@@ -112,10 +152,32 @@ impl ImageFormat {
     /// formats rather than about pdfcer. PNG has an alpha channel (ISO
     /// 15948 §6.1); SVG is a document with a background nobody has to paint;
     /// JPEG (ITU-T T.81) has neither and no version of it ever will.
+    ///
+    /// # ★★ EMF is `true`, and the reason is subtler than the other three
+    ///
+    /// A metafile is a **list of drawing commands**, not a surface, so there
+    /// is nothing to be transparent: where nothing was painted, nothing was
+    /// recorded, and whatever the metafile is played onto shows through. That
+    /// is what `EmfOptions::background: None` means — *do not record an
+    /// opening fill* — and it is the engine's own default.
+    ///
+    /// The engine's CLI states the same reading in the same words at the site
+    /// that uses it: *"`--transparent` is EMF's natural state (nothing is
+    /// drawn where nothing was painted) and `--background` an opaque first
+    /// fill."* Sourced there rather than inferred here, because "can this
+    /// format hold transparency" is a claim about somebody else's format and
+    /// getting it wrong in the optimistic direction ships a window that
+    /// promises a clear background and a file that has a white one.
+    ///
+    /// ⚠ What EMF cannot do is **per-primitive** alpha — a half-opaque
+    /// rectangle. That is a different property, it is not what this predicate
+    /// asks, and it is disclosed by name after the export
+    /// (`crate::text::export_image::emf_fidelity`) because every such
+    /// primitive silently became a bitmap.
     #[must_use]
     pub const fn can_be_transparent(self) -> bool {
         match self {
-            Self::Png | Self::Svg => true,
+            Self::Png | Self::Svg | Self::Emf => true,
             Self::Jpeg => false,
         }
     }
@@ -125,9 +187,21 @@ impl ImageFormat {
     /// Read by the window to decide whether to offer a JPEG quality control,
     /// and by the resolution hint, which means a different thing for a vector
     /// format and has to say so.
+    ///
+    /// ★ EMF joins SVG here on the property that is actually being asked
+    /// about: the resolution is a **recording scale** rather than a pixel
+    /// count, so the hint has to say the second thing, and there is no
+    /// quality control because nothing is being compressed.
+    ///
+    /// ⚠ It is deliberately **not** the predicate that chooses the writer.
+    /// `crate::app::actions::export::image` matches on the format itself, so
+    /// that adding a fifth format is a compile error there rather than a
+    /// silent routing into whichever branch this happens to select. Two
+    /// vector formats going through one `if` is exactly how the second one
+    /// gets written out as the first.
     #[must_use]
     pub const fn is_vector(self) -> bool {
-        matches!(self, Self::Svg)
+        matches!(self, Self::Svg | Self::Emf)
     }
 }
 
@@ -222,6 +296,118 @@ impl ImagePlan {
     #[must_use]
     pub fn is_multi_file(&self) -> bool {
         self.pages.len() > 1
+    }
+}
+
+/// ★★★ **What an EMF export had to give up, in a shape a test can build.**
+///
+/// # Why this exists at all, when `pdfcer_render::emf::EmfOutcome` already
+/// carries every one of these numbers
+///
+/// Because `EmfOutcome` **cannot be constructed from outside
+/// `pdfcer-render`.** It is `#[non_exhaustive]` and derives no `Default`, so
+/// a unit test in this crate has no way to make one — not even an empty one.
+///
+/// ⇒ That is not a complaint about the engine's API; `#[non_exhaustive]`
+/// without `Default` is the correct shape for a value only the engine should
+/// ever produce. But it means that if
+/// `crate::text::export_image::emf_fidelity` took an `&EmfOutcome`, **the
+/// mapping from counters to sentences would be untestable** — the one part of
+/// the whole EMF path that is pure, that has eleven branches, and that is
+/// therefore the part most worth testing.
+///
+/// The sibling `ExportTally` derives `Default`, which is exactly why
+/// `svg_fidelity` was able to take the engine's own type and be tested
+/// against it. The asymmetry in the engine's derives is the whole reason for
+/// the asymmetry here.
+///
+/// # ★★ The conversion is deliberately a dumb field copy
+///
+/// [`Self::from`] does nothing but move eleven numbers across. It has no
+/// branch, no arithmetic and no judgement, so the thing that could go wrong
+/// in it is a *transposition* — reading `blend_modes_dropped` into
+/// `gradients_rasterised` — and that is caught by reading eleven adjacent
+/// lines rather than by a test. Everything that requires judgement happens
+/// downstream of this struct, where a test can reach it.
+///
+/// ⚠ A future field on `EmfOutcome` will NOT appear here and will NOT be
+/// disclosed. That is the standing cost of the copy, it is the reason the
+/// conversion lists the engine's field names verbatim, and it is what
+/// `emf_fidelity`'s "everything else was geometry" line would then quietly
+/// over-claim. If the engine adds a counter, add it here in the same commit.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct EmfCounts {
+    /// Vector ops written as real GDI path records — the part that is exact.
+    pub ops: usize,
+    /// `EMR_ALPHABLEND` records written, of any origin. The **total** of the
+    /// five reasons below, as the engine counts it; not re-derived here,
+    /// because a sum computed on this side would drift the day the engine
+    /// gained a sixth reason and this struct did not.
+    pub rasters_embedded: usize,
+    /// Solid fills and strokes with a constant alpha below 1. EMF has no
+    /// per-primitive alpha, so each became a bitmap of itself.
+    pub ops_rasterised_for_alpha: usize,
+    /// Ops whose blend mode EMF cannot express, drawn `Normal` inside a
+    /// bitmap.
+    pub blend_modes_dropped: usize,
+    /// Gradients — native `<linearGradient>`/`<radialGradient>` in the SVG,
+    /// bitmaps here.
+    pub gradients_rasterised: usize,
+    /// The file's own images.
+    pub images_embedded: usize,
+    /// Transparency groups (opacity, soft mask, blend) rasterised whole.
+    pub layers_rasterised: usize,
+    /// Strokes whose dash pattern was pre-applied to the geometry.
+    pub dashed_strokes_pre_applied: usize,
+    /// ★ Nonzero-rule fills with more than one subpath. **LibreOffice 24.x
+    /// ignores the fill rule**, so these are the fills it may draw with holes
+    /// — and LibreOffice 24.x is the single reason this format is offered, so
+    /// this counter is the one most worth saying out loud.
+    pub nonzero_fills_multi_subpath: usize,
+    /// The export recording's own tally — what was rasterised or approximated
+    /// **before** the metafile writer saw it. Derives `Default`, so it needs
+    /// no shadow of its own.
+    pub tally: pdfcer_render::display_list::ExportTally,
+}
+
+impl From<&pdfcer_render::emf::EmfOutcome> for EmfCounts {
+    fn from(outcome: &pdfcer_render::emf::EmfOutcome) -> Self {
+        Self {
+            ops: outcome.ops,
+            rasters_embedded: outcome.rasters_embedded,
+            ops_rasterised_for_alpha: outcome.ops_rasterised_for_alpha,
+            blend_modes_dropped: outcome.blend_modes_dropped,
+            gradients_rasterised: outcome.gradients_rasterised,
+            images_embedded: outcome.images_embedded,
+            layers_rasterised: outcome.layers_rasterised,
+            dashed_strokes_pre_applied: outcome.dashed_strokes_pre_applied,
+            nonzero_fills_multi_subpath: outcome.nonzero_fills_multi_subpath,
+            tally: outcome.tally,
+        }
+    }
+}
+
+impl EmfCounts {
+    /// Whether the whole page went out as real geometry.
+    ///
+    /// ★ **Not** `tally.is_exact()` on its own. The tally describes the
+    /// *recording*, which is shared with the SVG writer and knows nothing
+    /// about EMF's missing alpha; a page that recorded perfectly and then had
+    /// forty translucent rectangles turned into bitmaps has an exact tally
+    /// and an inexact metafile. Asking the tally alone is how a disclosure
+    /// comes to say "nothing had to be approximated" over a file that is half
+    /// pictures.
+    ///
+    /// `dashed_strokes_pre_applied` counts here for the reason
+    /// `svg_fidelity` counts it: the picture is right and the *editability*
+    /// is gone, which is a loss an operator who opens the file to change a
+    /// dash pattern meets and nothing else would have told them about.
+    #[must_use]
+    pub fn is_exact(&self) -> bool {
+        self.rasters_embedded == 0
+            && self.dashed_strokes_pre_applied == 0
+            && self.nonzero_fills_multi_subpath == 0
+            && self.tally.is_exact()
     }
 }
 
@@ -334,7 +520,7 @@ pub fn resolve_pages(
 ///
 /// An operator who types `drawing.pdf` into a PNG export gets `drawing.png`.
 /// `export_form`'s opposite rule — the extension picks the format — is right
-/// there because three formats share one picker and the operator has no other
+/// there because four formats share one picker and the operator has no other
 /// way to choose. Here the format is already chosen, in a radio group, above
 /// the button they pressed; letting a stray extension override it would mean a
 /// window that shows one format and writes another.
@@ -453,18 +639,79 @@ mod tests {
                 );
             }
         }
-        assert!(!plan(ImageFormat::Jpeg, false).impossible().is_some());
+        assert!(plan(ImageFormat::Jpeg, false).impossible().is_none());
         assert!(plan(ImageFormat::Png, true).impossible().is_none());
         assert!(plan(ImageFormat::Svg, true).impossible().is_none());
+        assert!(plan(ImageFormat::Emf, true).impossible().is_none());
     }
 
     /// ★ JPEG is the only format that cannot hold transparency, and that is a
     /// fact about the formats rather than about pdfcer.
+    ///
+    /// ★★ EMF is asserted **transparent-capable** here, which is the claim
+    /// most likely to be "corrected" wrongly by a future reader who knows
+    /// that a metafile has no alpha channel. It has no *surface*: nothing is
+    /// recorded where nothing was painted, so what the metafile is played
+    /// onto shows through. `EmfOptions::background: None` — the engine's own
+    /// default — is that state, and the engine's CLI calls it *"EMF's natural
+    /// state"* at the site that sets it.
     #[test]
     fn jpeg_is_the_only_format_with_no_alpha() {
         assert!(ImageFormat::Png.can_be_transparent());
         assert!(ImageFormat::Svg.can_be_transparent());
+        assert!(ImageFormat::Emf.can_be_transparent());
         assert!(!ImageFormat::Jpeg.can_be_transparent());
+        // Said as a sweep too, so a fifth format cannot arrive without this
+        // test having an opinion about which side of the line it is on.
+        assert_eq!(
+            ImageFormat::ALL
+                .iter()
+                .filter(|f| !f.can_be_transparent())
+                .count(),
+            1,
+            "exactly one format has no way to store transparency; if a second \
+             arrives, `Impossible` needs a second variant and `refused` a \
+             second sentence"
+        );
+    }
+
+    /// ★★ **The two vector formats are both vector, and neither is routed by
+    /// that predicate.**
+    ///
+    /// `is_vector` decides what the *resolution hint* says and whether a JPEG
+    /// quality control is drawn. It deliberately does not choose the writer:
+    /// `app::actions::export::image` matches on the format, so a fifth format
+    /// is a compile error there rather than a silent write of an EMF through
+    /// the SVG encoder — which is precisely what an `if is_vector()` would
+    /// have done on the day EMF was added.
+    #[test]
+    fn both_vector_formats_report_as_vector_and_the_rasters_do_not() {
+        assert!(ImageFormat::Svg.is_vector());
+        assert!(ImageFormat::Emf.is_vector());
+        assert!(!ImageFormat::Png.is_vector());
+        assert!(!ImageFormat::Jpeg.is_vector());
+    }
+
+    /// ★ **Every format has its own extension**, which is what keeps a
+    /// four-way export from writing two of them to the same suggested name.
+    ///
+    /// A duplicate here would be invisible: the window would show four
+    /// radios, two of them would suggest the same file, and the second export
+    /// would silently overwrite the first behind the save dialog's generic
+    /// warning — the same defect shape `a_dotted_document_name_keeps_its_revision`
+    /// records, arriving by a different door.
+    #[test]
+    fn no_two_formats_share_an_extension() {
+        let mut seen: Vec<&str> = ImageFormat::ALL.iter().map(|f| f.extension()).collect();
+        seen.sort_unstable();
+        let count = seen.len();
+        seen.dedup();
+        assert_eq!(
+            seen.len(),
+            count,
+            "two formats share an extension: {seen:?}"
+        );
+        assert_eq!(ImageFormat::Emf.extension(), "emf");
     }
 
     /// **One page keeps the name the operator typed.**
@@ -512,6 +759,10 @@ mod tests {
         assert_eq!(
             output_path(chosen, ImageFormat::Svg, 0, false),
             PathBuf::from("C:/d/drawing.svg")
+        );
+        assert_eq!(
+            output_path(chosen, ImageFormat::Emf, 0, false),
+            PathBuf::from("C:/d/drawing.emf")
         );
     }
 

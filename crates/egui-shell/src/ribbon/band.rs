@@ -207,6 +207,7 @@ use crate::manifest::{Group, Item, ItemSize};
 use super::collapsed;
 use super::control::render_item_at;
 use super::ctx::Ctx;
+use super::measure::{SEPARATOR_LINE, separator_width};
 use super::overflow;
 use super::plan::{self, CUSTOM_ITEM_WIDTH, GroupRows};
 use super::report;
@@ -217,7 +218,14 @@ use super::sizing;
 /// Small on purpose: the caption must read as belonging to the row above
 /// it rather than as a line of its own. The salvage source used the same
 /// constant for the same reason.
-const CAPTION_GAP: f32 = 2.0;
+///
+/// ★ **2 → 3 on 2026-09-04**, from `mockups/pdfcer-shell.html`'s
+/// `.grp .cap { padding: 3px 0 5px }` — the first figure. One point, and it
+/// is here rather than left alone because the operator's instruction was
+/// *"exactly like that including sizing"* and because the caption's font
+/// went up two points in the same pass: a 9 pt caption 2 pt below its row
+/// and an 11 pt caption 2 pt below its row are not the same optical gap.
+const CAPTION_GAP: f32 = 3.0;
 
 /// Clear space between the band's captions and whatever the application puts
 /// underneath the ribbon.
@@ -251,7 +259,14 @@ const CAPTION_GAP: f32 = 2.0;
 /// see [`plan::GROUP_PADDING`]'s closing note. Adding either one would be
 /// visual churn beyond the defect, and churn is harder to review than the
 /// change it is mixed into.
-pub(super) const BAND_PADDING_BOTTOM: f32 = 4.0;
+///
+/// ★ **4 → 5 on 2026-09-04.** `mockups/ribbon.html` is superseded by
+/// `mockups/pdfcer-shell.html`, whose band puts the clearance on the CAPTION
+/// rather than on the band — `.grp .cap { padding: 3px 0 5px }`, the second
+/// figure — and asks for five points of it. The role is identical (the
+/// caption must not sit on the seam with whatever is under the ribbon) and
+/// so is the reasoning below; only the number moved.
+pub(super) const BAND_PADDING_BOTTOM: f32 = 5.0;
 
 /// The condition-name prefix that marks a command as currently *on*.
 ///
@@ -357,15 +372,30 @@ pub(crate) fn caption_text(group: &Group) -> &str {
 /// one-row group in the menu.
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub(crate) struct GroupBox {
+    /// Clear space **above** the first control row —
+    /// [`crate::theme::Metrics::ribbon_pad_top`], the mockup's
+    /// `.ribbon { padding: 6px … }`.
+    ///
+    /// Carried on the box rather than emitted by [`render_band`] before the
+    /// group loop because a `ui.horizontal` lays its children from one
+    /// cursor: an `add_space` there would push the groups *sideways*, not
+    /// down. Every group spends it identically, so the rows still start on
+    /// one line.
+    pub(crate) pad_top: f32,
     /// Height the control rows are padded out to, before the caption.
+    ///
+    /// Measured from **below** [`Self::pad_top`], so `pad_top + rows` is
+    /// where the caption's gap begins.
     pub(crate) rows: f32,
-    /// Height the whole group — rows, gap and caption — is padded out to.
+    /// Height the whole group — padding, rows, gap and caption — is padded
+    /// out to.
     pub(crate) total: f32,
 }
 
 impl GroupBox {
     /// Pad to nothing: the group is as tall as what it drew.
     pub(crate) const NATURAL: Self = Self {
+        pad_top: 0.0,
         rows: 0.0,
         total: 0.0,
     };
@@ -446,6 +476,26 @@ fn compressed_control_height(ui: &egui::Ui, ctx: &Ctx<'_>) -> f32 {
     rows_height(ui, ctx) / n - COMPRESSED_ROW_SPACING
 }
 
+/// The point size the band draws its **secondary** text at: group captions,
+/// and the label under a `Large` control.
+///
+/// One accessor rather than two reads of the metric, because the number is
+/// used in three places that must not drift — the caption's own
+/// `RichText::size`, [`band_height`]'s prediction of how tall that caption
+/// will be, and [`super::sizing`]'s Large label. A band whose height
+/// prediction and whose caption disagree is R128 by a fraction of a line,
+/// which is precisely the class of drift `group_body`'s closing
+/// `allocate_space` exists to absorb and would rather not have to.
+pub(crate) fn caption_font(ctx: &Ctx<'_>) -> egui::FontId {
+    egui::FontId::proportional(ctx.theme.metrics.ribbon_caption_pts)
+}
+
+/// How tall one line of [`caption_font`] is, in the fonts this context has.
+pub(crate) fn caption_height(ui: &egui::Ui, ctx: &Ctx<'_>) -> f32 {
+    let font = caption_font(ctx);
+    ui.ctx().fonts_mut(|fonts| fonts.row_height(&font))
+}
+
 /// Whether a group may be drawn re-wrapped at all, under this theme.
 ///
 /// See [`compressed_control_height`]. Separated so the plan and the renderer
@@ -454,18 +504,67 @@ fn rewrap_is_legible(ui: &egui::Ui, ctx: &Ctx<'_>) -> bool {
     compressed_control_height(ui, ctx) >= ctx.theme.metrics.icon_pts
 }
 
-fn rows_height(ui: &egui::Ui, ctx: &Ctx<'_>) -> f32 {
-    #[allow(clippy::cast_precision_loss)] // single digits
-    let n = plan::GROUP_ROWS.max(1) as f32;
-    (ctx.theme.metrics.control_height + ui.spacing().item_spacing.y) * n
+/// **The band's control-row area** — how far a group's cursor is padded out
+/// to before its caption is drawn, and therefore the one baseline every
+/// caption in the band shares.
+///
+/// ★★★ **This stopped being `GROUP_ROWS × (control_height + item_spacing)`
+/// on 2026-09-04**, and the change is the whole of the operator's fourth
+/// complaint — *"the mock's band is visibly taller with more generous rows
+/// and the group caption sitting lower"*.
+///
+/// The old expression means *"exactly as tall as two rows"*. It has one
+/// property that reads as a bug once it is named: a two-row group fills it
+/// edge to edge, so its caption is drawn immediately beneath the last
+/// control, while a one-row group's caption sits a whole row lower. The
+/// captions share a baseline — the invariant was never violated — but the
+/// band has no headroom anywhere, and the density that produces is exactly
+/// what the mock does not look like.
+///
+/// The mockup's band is a **budget**: `.grp .items { align-items:
+/// flex-start }` lays the rows into the top of a 68 px area and
+/// `.grp .cap { margin-top: auto }` hangs the caption off the bottom of it,
+/// whatever the rows did. So the area is now stated by the theme
+/// ([`crate::theme::Metrics::ribbon_rows`]) and the rows are laid into it.
+///
+/// # What did NOT change, and why that matters more than the number
+///
+/// The **collapse ladder**. `RIBBON_SCALING.md`'s three rungs are re-wrap →
+/// collapse → scroll, and rung one divides *this* area into
+/// [`plan::MAX_GROUP_ROWS`] rows instead of [`plan::GROUP_ROWS`]. Both row
+/// counts are untouched. What moved is the divisor's numerator, and it moved
+/// **upward**, so [`compressed_control_height`] goes from
+/// `56/3 − 2 = 16.67` pt against a 16 pt icon — a margin of two thirds of a
+/// point, which is the margin that decides whether the rung is available at
+/// all — to `68/3 − 2 = 20.67`. The rung that was one theme tweak away from
+/// switching itself off now clears by 4.67 pt. See
+/// [`rewrap_is_legible`] for the self-disabling behaviour this protects.
+fn rows_height(_ui: &egui::Ui, ctx: &Ctx<'_>) -> f32 {
+    ctx.theme.metrics.ribbon_rows
 }
 
 /// **The band's height, on every tab, whatever it contains.**
 ///
-/// Four terms, in the order they are drawn: the control rows, the gap, one
-/// line of caption, and [`BAND_PADDING_BOTTOM`]. Derived from the theme, the
-/// font and two constants, and from nothing the manifest can vary — see the
-/// module header on R128 for why that independence is the whole point.
+/// Five terms, in the order they are drawn:
+/// [`crate::theme::Metrics::ribbon_pad_top`], the control rows,
+/// [`CAPTION_GAP`], one line of [`caption_font`], and
+/// [`BAND_PADDING_BOTTOM`]. Derived from the theme, the font and two
+/// constants, and from nothing the manifest can vary — see the module header
+/// on R128 for why that independence is the whole point.
+///
+/// ★ **The top padding joined the sum on 2026-09-04** (`.ribbon
+/// { padding: 6px 8px 0 }`), and it joined *here* rather than as an
+/// `add_space` before the first group for exactly the reason
+/// [`BAND_PADDING_BOTTOM`] gives at length: space emitted only when there is
+/// a group to emit it before would be absent on a tab whose groups all went
+/// into the overflow menu, and a band six points shorter on one tab than on
+/// its neighbour moves the canvas on a tab click. [`group_body`] spends it,
+/// out of [`GroupBox::pad_top`], on every group and on none.
+///
+/// With the shipped `Quiet` theme the sum is
+/// `6 + 68 + 3 + 12.7 + 5 ≈ 94.7` pt, against the mockup's own
+/// `grid-template-rows` figure of 96 px for the ribbon row (which includes
+/// its 1 px bottom border). It was ≈ 74 pt before this pass.
 ///
 /// The bottom padding belongs **in this derivation** rather than in the group
 /// loop for the reason [`BAND_PADDING_BOTTOM`] gives at length: space emitted
@@ -476,9 +575,10 @@ fn rows_height(ui: &egui::Ui, ctx: &Ctx<'_>) -> f32 {
 /// `pub(crate)` so a test can state the claim in the same terms the
 /// renderer does rather than by re-deriving it.
 pub(crate) fn band_height(ui: &egui::Ui, ctx: &Ctx<'_>) -> f32 {
-    rows_height(ui, ctx)
+    ctx.theme.metrics.ribbon_pad_top
+        + rows_height(ui, ctx)
         + CAPTION_GAP
-        + ui.text_style_height(&TextStyle::Small)
+        + caption_height(ui, ctx)
         + BAND_PADDING_BOTTOM
 }
 
@@ -622,6 +722,7 @@ pub(crate) fn render_band(
         // header.
         let height = band_height(ui, ctx);
         let box_ = GroupBox {
+            pad_top: ctx.theme.metrics.ribbon_pad_top,
             rows: rows_height(ui, ctx),
             total: height,
         };
@@ -961,6 +1062,12 @@ fn group_body(
         // parameter somebody can forget to pass.
         let (large, items) = partition(ctx, group);
         let top = ui.cursor().top();
+        // ★ The band's top padding, spent here so it lands *above the rows*
+        // rather than beside the first group — see [`GroupBox::pad_top`].
+        // `top` is read before it, so the caption arithmetic at the bottom of
+        // this function measures from the band's own top edge and the padding
+        // is simply the first thing inside the budget.
+        ui.add_space(box_.pad_top);
         let mut widest = 0.0_f32;
         let content = ui
             .horizontal_top(|ui| {
@@ -1041,12 +1148,23 @@ fn group_body(
         // one-row group and a two-row group therefore caption on the
         // same baseline — `justify-content: space-between`, and the
         // reason the mockup's band reads as staged rather than ragged.
-        ui.add_space((box_.rows - (ui.cursor().top() - top)).max(0.0));
+        ui.add_space((box_.pad_top + box_.rows - (ui.cursor().top() - top)).max(0.0));
         ui.add_space(CAPTION_GAP);
 
+        // ★ `.size(…)` rather than `.small()`, since 2026-09-04. The mockup's
+        // `.grp .cap { font-size: 11px }` is two points above `egui`'s
+        // `TextStyle::Small` (9 pt), and a caption that small under an 11 pt
+        // band reads as a footnote rather than as the name of the block above
+        // it. `.weak()` is kept: `.cap { color: var(--ink-quiet) }` is
+        // `Palette::text_muted`, which is what `weak` resolves to — and it is
+        // NOT `.strong()`, so `check-strong-text` has nothing to say here.
         let caption = ui
             .allocate_ui_with_layout(vec2(widest, 0.0), Layout::top_down(Align::Center), |ui| {
-                ui.label(RichText::new(caption_text(group)).weak().small())
+                ui.label(
+                    RichText::new(caption_text(group))
+                        .weak()
+                        .size(ctx.theme.metrics.ribbon_caption_pts),
+                )
             })
             .inner;
 
@@ -1063,7 +1181,7 @@ fn group_body(
         // Zero-width, so it changes nothing horizontally.
         //
         // What this closes: `band_height` predicts the caption's height
-        // from `TextStyle::Small`'s row height, and the label allocates
+        // from [`caption_height`]'s row height, and the label allocates
         // whatever its galley measured. The two agree in every font this
         // crate has been run against, and if they ever stop agreeing the
         // band would be a fraction taller with groups in it than
@@ -1140,7 +1258,26 @@ fn measure_group_rows(
     if lead > 0.0 && !rest.is_empty() {
         lead += gutter;
     }
-    let caption = text_width(ui, caption_text(group), &TextStyle::Small);
+    // ★★ Measured in the font the caption is actually DRAWN in, since
+    // 2026-09-04. It read `&TextStyle::Small` until the mockup pass raised the
+    // caption to `Metrics::ribbon_caption_pts` (9 pt → 11), and a group
+    // measured against a 9 pt caption and drawn with an 11 pt one is a group
+    // whose caption is wider than the box the planner reserved for it — the
+    // caption is centred on the group's width, so the overflow is silent and
+    // symmetric, half a word past each edge and over the separator rule.
+    //
+    // This is the same "one decision written twice" trap `sizing`'s header
+    // warns about, arriving through a font rather than through arithmetic.
+    let caption = ui.ctx().fonts_mut(|fonts| {
+        fonts
+            .layout_no_wrap(
+                caption_text(group).to_owned(),
+                caption_font(ctx),
+                egui::Color32::PLACEHOLDER,
+            )
+            .size()
+            .x
+    });
     // ★ `lead + rows.width` is the whole of what the controls occupy: the
     // Large run, then the wrapped rows beside it. With no Large run this is
     // exactly what the planner computed before sizes existed, so every width
@@ -1241,100 +1378,6 @@ fn measure_item(ui: &egui::Ui, ctx: &Ctx<'_>, item: &Item) -> f32 {
             ),
         },
     }
-}
-
-/// The horizontal padding `egui` will add inside a button, both sides.
-///
-/// `pub(crate)` because the tab strip budgets buttons too — a tab, a QAT
-/// control and a band control are all `egui::Button`s and must be measured
-/// with the same constants, or one row's estimate disagrees with another's
-/// for no reason a reader could find.
-pub(crate) fn button_padding(ui: &egui::Ui) -> f32 {
-    ui.spacing().button_padding.x * 2.0
-}
-
-/// **★ The narrowest an `egui::Button` can be drawn — the floor
-/// `truncate()` cannot go below.**
-///
-/// # Why this number decides the whole tab-strip row
-///
-/// `Button::truncate()` shortens a label to the room available, which
-/// sounds like it can shrink to nothing and cannot. `egui` lays a
-/// truncated label out as *the ellipsis* plus the button's own padding,
-/// and stops there. Measured against the synthetic face of
-/// [`super::testfont`], asking a `"Save a copy…"` button to lay itself out
-/// in rooms from 0 to 80 pt:
-///
-/// ```text
-/// room     0     2     6    10    14    20    26    40    80
-/// width  19.7  19.7  19.7  19.7  19.7  19.7  19.7  34.7  74.7
-///        └──────────── the floor ────────────┘ └─ room − 5.3 ─┘
-/// ```
-///
-/// 19.6875 = 4 + 4 of `button_padding` plus 11.6875 of `…`. Below about
-/// 25 pt of room the button simply **overflows the space it was given**,
-/// silently, because `egui` does not clip children to a `Ui`'s `max_rect`.
-///
-/// The consequence is the one rule the tab-strip row is built on: a region
-/// gets either **at least this much width, or none at all**. Granting a
-/// sliver produces a control drawn outside its own rectangle, on top of
-/// its neighbour — which is exactly the class of defect
-/// [`super::strip`] exists to retire, arrived at by trying to be
-/// accommodating. See [`super::plan::plan_strip_row`], which takes this as
-/// its `button_floor`.
-///
-/// Measured from the live style rather than written down as a constant,
-/// because both terms are theme- and font-dependent: `button_padding` is
-/// the theme's, and the ellipsis's advance is the face's.
-pub(crate) fn min_button_width(ui: &egui::Ui) -> f32 {
-    button_padding(ui) + text_width(ui, "…", &TextStyle::Button)
-}
-
-/// The space a `ui.separator()` allocates for itself in a horizontal
-/// layout, excluding the layout gaps around it.
-///
-/// `egui::Separator`'s default `spacing` is 6 pt in the cross direction,
-/// with the 1 pt rule painted down the middle of it. It is not exposed as
-/// a constant, so it is named here rather than left as a bare literal at a
-/// call site.
-const SEPARATOR_LINE: f32 = 6.0;
-
-/// The full cost of putting a `ui.separator()` **between two things** in a
-/// horizontal layout: its own width plus the `item_spacing` `egui` puts on
-/// each side of it.
-///
-/// This is the band's inter-group figure — `[group][gap][rule][gap][group]`
-/// — and is what [`plan::plan_band`] is handed as `separator`. It is *not*
-/// the right number for a separator that is an item inside a group; see
-/// [`measure_item`].
-///
-/// `pub(crate)` because [`super::qat`] ends with the same `ui.separator()`
-/// and must charge itself the same figure for it.
-pub(crate) fn separator_width(ui: &egui::Ui) -> f32 {
-    SEPARATOR_LINE + ui.spacing().item_spacing.x * 2.0
-}
-
-/// Measure a string in the font `egui` will draw it in.
-///
-/// Uses [`egui::Color32::PLACEHOLDER`] so the galley this produces is the
-/// **same cache entry** the widget will later ask for with its real
-/// colour — `egui` memoizes layout jobs, and a placeholder-coloured
-/// galley is the form it stores. Measuring therefore costs a hash lookup
-/// rather than a second text layout.
-///
-/// `pub(crate)` for the reason [`button_padding`] gives: every row of the
-/// ribbon that plans its own width must measure text the same way.
-pub(crate) fn text_width(ui: &egui::Ui, text: &str, style: &TextStyle) -> f32 {
-    if text.is_empty() {
-        return 0.0;
-    }
-    let font_id = style.resolve(ui.style());
-    ui.ctx().fonts_mut(|fonts| {
-        fonts
-            .layout_no_wrap(text.to_owned(), font_id, egui::Color32::PLACEHOLDER)
-            .size()
-            .x
-    })
 }
 
 #[cfg(test)]

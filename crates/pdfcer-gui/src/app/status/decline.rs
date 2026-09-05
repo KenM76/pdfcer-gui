@@ -710,6 +710,30 @@ pub(crate) enum Declined {
     /// of it. A sentence in the past tense can go stale, and [`retire`] — the
     /// operator's next command — is what handles stale.
     EditRefused,
+    /// ★★★ **A reflow that did not happen, and which of its eight causes it
+    /// was** — `OPERATOR_REQUESTS.md` **O127**, defect 3.
+    ///
+    /// All eight were **already being reported** before O127, and none of them
+    /// reached the operator: four went through
+    /// `crate::app::actions::record_note`, which draws under `⚑ About your last
+    /// edit:` for a press where nothing happened, and four collapsed into
+    /// [`Self::EditRefused`]'s nine cause-free words. His verdict was *"I
+    /// haven't seen the reflow option actually work with anything when I press
+    /// it."* `decline/textedit.rs` carries the whole argument.
+    ///
+    /// ★ It carries the cause rather than being eight variants, on
+    /// [`Self::Rotate`]'s and [`Self::TextStyle`]'s precedent: the catalog owns
+    /// the wording and this enum owns only which sentence.
+    Reflow(crate::text::textedit::ReflowRefusal),
+    /// ★★★ **Enter was pressed in text that is already on the page, where a
+    /// line break cannot go** — `OPERATOR_REQUESTS.md` **O127**, defect 2.
+    ///
+    /// Enter means *a new line* in every draft this shell has; in an existing
+    /// show operator the FILE forbids one, so it declines by name instead. It
+    /// used to **commit**, silently — the operator asked *"can the enter key
+    /// create new lines?"* and was answered by an edit finishing under him.
+    /// See `decline/textedit.rs`.
+    EnterCannotSplit,
 }
 
 impl Declined {
@@ -894,6 +918,11 @@ impl Declined {
             // that produced them*, and this one was produced by an error value
             // this shell is not permitted to interpret.
             Self::EditRefused => true,
+            // ★ Both on the TENSE argument, not the stability one: several of
+            // these causes are live predicates the operator changes in a click,
+            // so `EditRefused`'s reasoning applies rather than its neighbours'.
+            // The sentence reports the press; `retire` owns stale.
+            Self::Reflow(_) | Self::EnterCannotSplit => true,
         }
     }
 
@@ -928,6 +957,16 @@ impl Declined {
             // `field_delete_declined_structural` above is: `text::status`'
             // `mod.rs` stands two dozen lines from R2's ceiling.
             Self::EditRefused => t::edit_declined_by_engine(),
+            // ★ Reaches across to `crate::text::textedit` on the same rule the
+            // arms below use: a string lives with the surface that owns its
+            // subject, and every one of these eight sentences is about the text
+            // caret and the paragraph under it. `ReflowRefusal::line` is the
+            // one mapping, so the shell-side causes and the engine-side ones
+            // cannot drift into two voices.
+            Self::Reflow(why) => why.line(),
+            // ★ Same catalog and same subject as the reflow family above: the
+            // text caret and what the page under it will accept.
+            Self::EnterCannotSplit => crate::text::textedit::enter_cannot_split_existing_text(),
             // ★ Reaches across to `crate::text::tool` rather than adding an
             // entry to `crate::text::status`, on the precedent the two field
             // -group sentences below already set: a string lives with the
@@ -1440,6 +1479,18 @@ mod floor;
 /// says `decline::before_the_verb()`. The split is about where the code lives; a
 /// call site should not have to learn that a submodule exists.
 pub(crate) use floor::before_the_verb;
+
+/// ★★★ **The two declines the text caret raises**, split out under R2 on
+/// 2026-09-04 when `OPERATOR_REQUESTS.md` O127 took this file past 1,500 lines
+/// for the second time. See `decline/textedit.rs`'s header for the seam and for
+/// the argument both of them share — that a sentence in the wrong slot is
+/// indistinguishable, from the operator's chair, from no sentence at all.
+mod textedit;
+/// Re-exported so the four call sites still say `decline::record_reflow(..)`
+/// and `decline::record_enter_cannot_split()`. `floor`'s rule: the split is
+/// about where the code lives, and a call site should not have to learn that a
+/// submodule exists.
+pub(crate) use textedit::{record_enter_cannot_split, record_reflow};
 
 /// See `decline/tests.rs`.
 #[cfg(test)]

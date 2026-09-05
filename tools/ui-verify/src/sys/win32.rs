@@ -1073,3 +1073,68 @@ pub fn clear_clipboard() -> bool {
     })
     .unwrap_or(false)
 }
+
+/// ★★★ **Every format on the clipboard, IN PLACEMENT ORDER, with its name.**
+///
+/// The oracle `checks::copy_as_vector` needs and the one
+/// [`clipboard_text`] cannot supply. `OPERATOR_REQUESTS.md` O120's whole design
+/// is an *order*: a pasting application "typically retrieves … the first format
+/// it recognizes", so what makes a Word paste an editable graphic rather than a
+/// flat picture is not *whether* the SVG is there — it is whether the SVG is
+/// there **first**. A check that asked "is `image/svg+xml` available?" would
+/// pass on a build that placed it last, which is the build that fails in Word.
+///
+/// `EnumClipboardFormats` answers exactly that question: it walks the formats
+/// *in the order they were placed*, which is also the priority order a reader
+/// sees. Anything Windows synthesised (it makes `CF_DIB` and `CF_BITMAP` out of
+/// a `CF_DIBV5`) comes after the ones that were really placed, so a caller can
+/// assert on a prefix and ignore the tail.
+///
+/// Each entry is `(id, name)`. The name comes from
+/// `GetClipboardFormatNameW` for a registered format and is empty for a
+/// predefined `CF_*` one — Windows has no name for those — so a caller matches
+/// predefined formats by id and registered ones by name, which is exactly how
+/// they are placed.
+///
+/// `None` means the clipboard could not be opened at all, which is a different
+/// fact from "the clipboard is empty" and must not be collapsed into it: the
+/// first is a flake, the second is a defect.
+#[must_use]
+pub fn clipboard_formats() -> Option<Vec<(u32, String)>> {
+    use windows_sys::Win32::System::DataExchange::{EnumClipboardFormats, GetClipboardFormatNameW};
+    with_clipboard(|| {
+        let mut out: Vec<(u32, String)> = Vec::new();
+        let mut id: u32 = 0;
+        loop {
+            // SAFETY: the clipboard is open and owned by this task, which is
+            // `EnumClipboardFormats`' only precondition. Passing 0 asks for the
+            // first format; passing the previous id asks for the next. A zero
+            // return ends the walk (and also signals an error, which for a
+            // read-only oracle is the same outcome: nothing more to report).
+            id = unsafe { EnumClipboardFormats(id) };
+            if id == 0 {
+                break;
+            }
+            let mut buffer = [0u16; 256];
+            // SAFETY: the buffer is a live array of exactly `len` `u16`s and
+            // the call writes at most that many. A zero return means the format
+            // has no name — every predefined `CF_*` is in that case — which is
+            // reported as an empty string rather than as a failure.
+            let written =
+                unsafe { GetClipboardFormatNameW(id, buffer.as_mut_ptr(), buffer.len() as i32) };
+            let name = if written > 0 {
+                String::from_utf16_lossy(&buffer[..written as usize])
+            } else {
+                String::new()
+            };
+            out.push((id, name));
+            // A clipboard with more entries than this is not one this
+            // application produced; the bound stops a driver bug from hanging
+            // the harness rather than failing it.
+            if out.len() > 64 {
+                break;
+            }
+        }
+        out
+    })
+}

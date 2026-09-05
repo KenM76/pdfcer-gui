@@ -121,7 +121,10 @@ pub(super) fn tab() -> Tab {
                 // View ▸ Render before it, because it is not empty: it has a
                 // live member. An empty captioned band is a caption offering
                 // nothing; a band of one is a band of one.
-                [command("tools.merge_files")],
+                // ★ Large, 2026-09-04 — the mockup's `Merge files…` big, and
+                // a one-item group, so this is the free case the `large`
+                // helper always allowed.
+                [large("tools.merge_files")],
             ),
             // ---------------------------------------------------------------
             // Fonts — configured once, rarely touched.
@@ -140,7 +143,10 @@ pub(super) fn tab() -> Tab {
                 "fonts",
                 ribbon::group_tools_fonts(),
                 [
-                    command("tools.font_folders"),
+                    // ★ Large — the mockup's `Font folders…` big, with the
+                    // two embed verbs in a column beside it. First in the
+                    // group already.
+                    large("tools.font_folders"),
                     command("tools.embed_fonts"),
                     command("tools.unembed_fonts"),
                 ],

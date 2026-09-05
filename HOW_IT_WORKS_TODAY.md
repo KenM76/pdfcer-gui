@@ -628,10 +628,30 @@ the panel — through five different canvas selections and two deselections.
 
 ## 5. Tools vs objects
 
-The Tool panel is the only panel whose subject is the operator rather than the
-document (`panels/mod.rs:271-287`). It was built to answer an earlier complaint
-— *"no side bar area showing what tool is active and its options"*
-(`panels/tool/mod.rs:9-21`). It answers that question and only that question.
+> ### ⚠ SUPERSEDED 2026-09-04 — `OPERATOR_REQUESTS.md` O123
+>
+> **There is no Tool panel.** `Panel::Tool` and `view.panel_tool` were
+> retired. What is on screen instead:
+>
+> * **A one-line strip the right dock reserves above its columns**
+>   (`crate::app::toolstatus`, `egui_shell::dock::banner`): the armed tool's
+>   name, one sentence, and *Put this tool down* — the last of those absent
+>   while `Select` is armed, because Select is the resting state.
+> * **Its live controls are in Properties**
+>   (`crate::panels::properties::tool`): the text pen's face, size and colour,
+>   the circular measure's pick list, the three resize switches.
+> * **Its disclosure block is in Properties**
+>   (`crate::panels::properties::disclose`), at the top of the body.
+>
+> The three-way dispatch split described below was already closed on
+> 2026-08-26 — a row click raises `Action::SelectObject` and Properties reads
+> the same canvas selection — and the paragraphs are left standing because the
+> *shape* of the gap they describe is still the thing to design against.
+
+The Tool panel was the only panel whose subject was the operator rather than the
+document. It was built to answer an earlier complaint — *"no side bar area
+showing what tool is active and its options"*. It answered that question and only
+that question.
 
 Object properties live in the **Properties** panel, and only for a path
 (geometry), an annotation, a form field, a ce dimension, or an Objects-panel
@@ -670,17 +690,23 @@ identical press is routed to the text sweep by
 
 Panel arrangements (`app/modes/defaults.rs:299-470`):
 
-- **Read** — left: Pages, Bookmarks; right: Forms. **No Tool panel, no Objects,
-  no Properties.**
-- **Review** — left: Pages, Bookmarks; right: [Tool] and [Comments, Properties,
-  Forms, Dimension groups]. **Properties is mounted but Objects is not**, so
-  `focus` can never be set, and the panel's empty state permanently instructs
-  the operator to click a row in a panel that mode does not have.
-- **Edit** — left: [Pages, Bookmarks] and [Layers, Signatures, Fonts]; right:
-  [Tool], [Objects], [Properties, Comments, Forms, Redact, Dimension groups].
-  **Properties is the first tab of a five-tab stack**; only the active tab of a
+- **Read** — left: Pages, Bookmarks; right: Forms. **No Objects, no
+  Properties.**
+- **Review** — left: Pages, Bookmarks; right: one stack — [Comments,
+  Properties, Forms, Dimension groups]. **Properties is mounted but Objects is
+  not.**
+- **Edit** — left: **ONE stack of five tabs** — Pages, Bookmarks, Layers,
+  Signatures, Fonts; right: **one column of two stacks** — [Objects] over
+  [Properties, Comments, Forms, Redact, Dimension groups, Attachments], with
+  the dock's own draggable splitter between them. Right-side default width
+  **360 pt**, against 320 in the two reading stances.
+  **Properties is the first tab of a six-tab stack**; only the active tab of a
   stack draws. If Forms or Comments was left active, selecting an object
   changes nothing visible in that slot at all.
+
+★ Both arrangements changed on 2026-09-04 — `OPERATOR_REQUESTS.md` O123. The
+Tool panel's stack is gone from both sides that had one, and its room went to
+the Objects/Properties pair.
 
 ---
 

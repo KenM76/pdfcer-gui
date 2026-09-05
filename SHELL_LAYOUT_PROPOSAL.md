@@ -711,6 +711,41 @@ the panel, so it answers what was computed, never what is on screen."*
 
 ## 3. Proposal 3 — the one-line tool strip
 
+> ### ★★★ OVERRULED AND BUILT, 2026-09-04 — read this before §3.4's verdict
+>
+> `OPERATOR_REQUESTS.md` **O123**. The operator read this section and reversed
+> it, and the reversal is right in a way this analysis could not see from
+> inside its own frame.
+>
+> §3.4 said *do not build the strip*, on three grounds. Two of them stand and
+> were answered rather than argued away; the third was a misreading of what the
+> proposal was for.
+>
+> | §3.4's ground | what happened |
+> |---|---|
+> | *"it deletes the armed options block"* | **It does not.** Every control moved to `panels::properties::tool` — the pen's face, size and colour swatch, the measure pick list, the three scale switches. His sentence is the whole argument: *"I never understood why there is a tool dock when everything can be in object and properties."* They were never the tool's; they are properties of what is about to be drawn. |
+> | *"it orphans Block C into a surface R128 forbids"* | **It does not go to a row.** The disclosure moved to `panels::properties::disclose` — a dock panel, whose width is the dock's, decided before the body draws. The status bar keeps its existing **elided** copy, unchanged. See that module's header for the check that the bar could not have been the home. |
+> | *"it reverses a recorded placement decision"* | **True, and it is his to reverse.** The tool LIST is gone. That list was the answer to a discoverability defect and its removal is a real subtraction; it is recorded in `app/toolstatus.rs`'s header, not glossed. |
+>
+> ⇒ **The analysis was right about the cost and wrong about the remedy**,
+> because it took the panel's contents as fixed and asked only whether a 28 pt
+> strip could hold them. The correct question was whether the panel should have
+> been holding them.
+>
+> ★ Two details from §3 survived intact and were built as written: the strip
+> **cannot be a dock stack** (§3.2's `MIN_STACK_HEIGHT` arithmetic), so it is a
+> shell-side side banner — `egui_shell::dock::banner`,
+> `Dock::with_side_banner`; and §3.3's catch that *"`put down` beside `Select`
+> would be inert"* is honoured — the button is absent in the resting state.
+>
+> ★★ §3.5's warning was also honoured: *"any check written against the existing
+> Tool panel must not be deleted along with it."*
+> `the_first_frame_names_the_tools` was **rewritten**, not removed, into
+> `the_first_frame_names_the_armed_tool`, and it gained the pixel assertion
+> §3.5 asked for — because a constant-height banner publishes a rectangle
+> whether or not it painted anything.
+
+
 ### 3.1 What we ship today
 
 **The Tool panel is not a stack of tool buttons.** `panels/tool/mod.rs` is
@@ -1013,7 +1048,14 @@ recorded reason for `false` is sound. **Recommend leaving it, and spending
 nothing.** ⚠ If the default is changed, price it as a suite-wide harness
 re-baseline, not as a boolean.
 
-### 4th — The tool strip. **Do not build it as proposed.**
+### 4th — The tool strip. ~~**Do not build it as proposed.**~~ **BUILT 2026-09-04**
+
+> ⚠ **This ranking was overruled by the operator on 2026-09-04** —
+> `OPERATOR_REQUESTS.md` O123. See the box at the head of §3 for what was
+> answered and what was conceded. The paragraphs below are left standing
+> because a recommendation that was overruled is more useful to the next reader
+> than a gap where it used to be.
+
 
 Stated plainly, because an optimistic assessment is worse than none:
 

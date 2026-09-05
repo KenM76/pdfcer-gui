@@ -273,7 +273,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         crate::geom::Pt::new(objects.max.x - EDGE_STRIP_PTS, objects.min.y),
         crate::geom::Pt::new(objects.max.x, objects.max.y),
     );
-    let uniformity = crate::pixels::region_not_uniform(&image, frame.logical_to_capture_pixels(strip));
+    let uniformity =
+        crate::pixels::region_not_uniform(&image, frame.logical_to_capture_pixels(strip));
     // ⚠ Polarity: uniform is the PASS here. See the module header.
     if !uniformity.is_uniform() {
         return Ok(Some(format!(
@@ -287,8 +288,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    report.note(
-        "★★ Objects over Properties, one column, draggable split, and every drawn row fits",
-    );
+    report
+        .note("★★ Objects over Properties, one column, draggable split, and every drawn row fits");
     Ok(None)
 }

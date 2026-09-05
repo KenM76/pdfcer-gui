@@ -80,7 +80,7 @@ use crate::canvas::fieldclip::PasteAs;
 pub fn handles(id: &str) -> bool {
     matches!(
         id,
-        "edit.cut" | "edit.copy" | "edit.paste" | "edit.paste_duplicate"
+        "edit.cut" | "edit.copy" | "edit.copy_as_vector" | "edit.paste" | "edit.paste_duplicate"
     )
 }
 
@@ -88,6 +88,10 @@ pub fn handles(id: &str) -> bool {
 pub fn dispatch(app: &mut PdfcerApp, ctx: &egui::Context, id: &str, actions: &mut Vec<Action>) {
     match id {
         "edit.copy" | "edit.cut" => copy_or_cut(app, ctx, id, actions),
+        // ★★ The copy-OUT takes no `ctx` and raises no `Action`, and both
+        // absences are the point: it neither reads the internal clipboard nor
+        // changes the document. It renders and it places. See `copy_as_vector`.
+        "edit.copy_as_vector" => copy_as_vector(app),
         "edit.paste" => paste(app, ctx, id, PasteAs::NewField, actions),
         "edit.paste_duplicate" => paste(app, ctx, id, PasteAs::Duplicate, actions),
         _ => {}
@@ -288,20 +292,102 @@ fn paste(
     }
 }
 
+/// ★★★ **`edit.copy_as_vector`** — put the page, or the selection on it, on the
+/// operating system's clipboard as **editable geometry**.
+///
+/// `OPERATOR_REQUESTS.md` **O120**, 2026-09-03: *"Also I'd like to be able to
+/// copy and paste anything to other software - like copy and paste vector
+/// graphics into word or inkscape for example if possible."*
+///
+/// # ★★ Why this is a fifth id and not a modifier on `edit.copy`
+///
+/// The same argument the two pastes make one screen up, and it holds harder
+/// here: **a command is the unit this shell can register, bind, place on a
+/// ribbon, put in a menu and withhold by mode.** A modifier read inside
+/// `copy_or_cut` would be reachable from the keyboard alone — nothing to draw
+/// in the Clipboard group, nothing to name in a tooltip, and nothing for an
+/// operator to discover. This is a *discoverability* feature as much as a
+/// capability one: the operator did not know pdfcer could do it, which is why
+/// he asked.
+///
+/// ⇒ And the two verbs genuinely differ in what they produce. `edit.copy` puts
+/// an internal clip plus a picture on the clipboard, for pasting back into
+/// pdfcer. This puts four public formats on it, for pasting into somebody
+/// else's program, and touches the internal clipboard not at all — so a copy-out
+/// does not destroy what the operator had copied for an in-pdfcer paste.
+///
+/// # ★★ It says something on SUCCESS, which no other clipboard verb here does
+///
+/// Because it alone has two possible operands and the button cannot show which
+/// was taken: the selection if there is one, the whole page otherwise. An
+/// operator who selected three parts and silently got the sheet finds out in
+/// Word, minutes later. `text::clipboard::copied_as_vector` carries the wording
+/// and the argument.
+///
+/// # No mode gate, deliberately
+///
+/// *Copying is not authoring* — the operator's own ruling, the same line that
+/// leaves `edit.copy` ungated above and put `file.copy_page_text` in Read. The
+/// Edit tab is not shown outside Edit mode, so the control is absent rather than
+/// refusing there; that is visibility doing the work, which is the rule
+/// `app::modes` states.
+fn copy_as_vector(app: &mut PdfcerApp) {
+    let Status::Open(doc) = &app.status else {
+        return;
+    };
+    let epoch = doc.edit_epoch;
+    match crate::clipboard::place::copy_out(doc) {
+        Ok(placed) => {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed. The FORMAT
+                // NAMES go here and not on the status row: they are wire
+                // identifiers a developer greps for, and an operator can act on
+                // none of them.
+                format!(
+                    "clipboard-copy-out selection={} formats={}",
+                    placed.selection,
+                    placed.formats.join(",")
+                )
+            });
+            crate::app::actions::record_note(
+                epoch,
+                crate::text::clipboard::copied_as_vector(placed.selection, placed.formats.len()),
+            );
+        }
+        Err(refusal) => {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed.
+                format!("clipboard-copy-out-refused reason={refusal:?}")
+            });
+            crate::app::actions::record_note(
+                epoch,
+                crate::text::clipboard::copy_out_refusal(&refusal),
+            );
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    /// The four ids, and nothing adjacent.
+    /// The five ids, and nothing adjacent.
     ///
     /// `edit.paste_in_place` is the trap this test exists for: it is a
     /// registered ABSENCE, and a prefix rule would claim it the day it became
     /// real, routing it here with no body and no failure.
+    ///
+    /// ★ Four until 2026-09-04, when `edit.copy_as_vector` joined. It is listed
+    /// here rather than trusted to the `edit.` prefix for the same reason the
+    /// absence is: `shell::commands::reach` proves every registered id is
+    /// routed by reading THIS function, so an id that only a prefix would have
+    /// claimed is an id nothing proves has a body.
     #[test]
-    fn handles_the_four_and_not_the_registered_absence() {
+    fn handles_the_five_and_not_the_registered_absence() {
         for id in [
             "edit.cut",
             "edit.copy",
+            "edit.copy_as_vector",
             "edit.paste",
             "edit.paste_duplicate",
         ] {

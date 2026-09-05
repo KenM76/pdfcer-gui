@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Generic slanted capital "I" letterform — two short serif bars and a leaning
+       stem, three line segments. No typeface is reproduced and nothing was traced:
+       the letter is drawn as GEOMETRY, the same construction info.svg uses for its
+       lower-case "i". A letter I is nobody's asset. No trademark risk.
+
+       ★★★ WHY THIS ASSET EXISTS. Identical to bold.svg's account and it is not
+       repeated here: `format.italic` was refused an icon on the ground that *"this
+       build has no such art"*, that is a statement about SUPPLY, and the
+       operator's standing ruling (2026-08-06, quoted in `Icon::Back`) is that a
+       missing glyph is authored. He asked for this pair by name on 2026-09-04. A
+       correction of a refusal, not a new capability.
+
+       ★★ THE SLANT IS THE WHOLE GLYPH, so it is exaggerated on purpose. A real
+       italic leans about 12°; this leans about 28° (14 units of lateral travel
+       over 26 of height). At 16 px a typographically honest slant is under two
+       pixels of shift and reads as a vertical stroke that failed to snap to the
+       grid — which is worse than no icon, because it looks like a rendering bug.
+
+       ★★ AND THE SERIFS ARE OFFSET, which is the cue that keeps it away from
+       text-select.svg — the bare I-beam text cursor, the nearest shape in the set.
+       That glyph is CENTRED and symmetric: 14-unit bars, a vertical stem, the
+       whole mark 14 units wide. This one is 26 units wide, its bars are 12 units
+       and they sit at opposite ends of the box — top bar right, bottom bar left —
+       so the silhouettes differ in composition and not only in the angle of one
+       line. The two never share a band (text-select is View ▸ Navigate, this is
+       Format ▸ Font), but they must survive an operator carrying the vocabulary
+       between tabs.
+
+       Distinct from bold.svg, its true neighbour, by weight (2.5 against 4) and by
+       being three open strokes against two closed bowls — see that asset for why
+       the pair is separated on two axes rather than one. Distinct from add-text.svg
+       by the same offset-serif composition plus the absence of its plus badge, and
+       from fonts.svg's capital A by the letter and by the baseline rule this
+       deliberately does not have: a rule under a letter means "a typeface", and
+       this control changes the SLANT of a run, not what face it is set in. -->
+  <path d="M25 11h12M11 37h12M31 11 17 37" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

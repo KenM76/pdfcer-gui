@@ -350,7 +350,6 @@ pub fn body(
     // same value as the row height is what keeps `show_rows`' virtual-scroll
     // arithmetic in step with what is actually painted.
     let row_height = ui.spacing().interact_size.y;
-    let viewport = ui.available_width();
 
     // ★★★ **`ScrollArea::vertical`, not `both`, since 2026-09-04** —
     // `OPERATOR_REQUESTS.md` O123.
@@ -369,6 +368,17 @@ pub fn body(
     egui::ScrollArea::vertical()
         .id_salt("objects-tree-rows")
         .show_rows(ui, row_height, total_rows, |ui, range| {
+            // ★★ The pane's width is taken from the **inner** `Ui`, not from
+            // the panel's, and the difference is the vertical scrollbar.
+            //
+            // `super::scroll_style` sets `bar_width` to 10 pt and turns the
+            // floating bar off, so a bar allocates real width — and the outer
+            // `available_width` does not know that yet. Eliding against the
+            // outer number would leave every row about one character too long,
+            // which is a row clipped by ten points with a trace line swearing
+            // it fits. That is the shape of defect this whole change is about,
+            // and it would have been introduced by the fix for it.
+            let viewport = ui.available_width();
             // Label every row in the visible range FIRST, and measure each
             // against its own indent — a point row indented twice has 28 pt
             // less text room than the object row above it, and shortening both
@@ -378,10 +388,7 @@ pub fn body(
                 .filter_map(|i| rows.get(i).copied())
                 .map(|row| {
                     let label = row_label(provider, row);
-                    // The text's own room: the pane, less the indentation and
-                    // the expander column this row will spend before its first
-                    // character.
-                    let room = viewport - row_indent(row) - EXPANDER_SPACE;
+                    let room = row_text_room(viewport, row);
                     let shortened =
                         elide_to_width(&label, room, |candidate| text_width(ui, candidate));
                     (row, label, shortened)
@@ -411,10 +418,31 @@ pub fn body(
             // this sixty times a second.
             crate::diag::trace_changed(ROWS_SLOT, || {
                 let elided = labelled.iter().filter(|(_, _, e)| e.is_some()).count();
+                let visible = labelled.len();
                 // ui-text-exempt: diagnostic trace, never displayed.
+                // ★★★ `overflow=` — the WORST row's overshoot, added 2026-09-04
+                // because `elided=` alone could not answer the question the
+                // driven check was really asking.
+                //
+                // That check asserted `elided == 0`, on the reasoning that
+                // O123 widened Edit's inspector to 360 pt *so the common row
+                // would fit*. It reported **8 of 9 shortened** on the
+                // operator's own A1 sheet — and a count cannot say whether
+                // that means the width regressed, the rows grew, or the rows
+                // are simply longer than any dock width a person would want.
+                //
+                // ⇒ The overshoot says which. A row that needs 380 pt in a
+                // 354 pt pane is a width problem; one that needs 900 is what
+                // ellipsis exists for, and no width fixes it.
+                let overflow = labelled
+                    .iter()
+                    .filter(|(_, _, e)| e.is_some())
+                    .map(|(_, full, _)| text_width(ui, full))
+                    .fold(0.0_f32, f32::max);
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
                 format!(
-                    "objects-rows visible={} elided={elided} pane={viewport:.1}",
-                    labelled.len()
+                    // ui-text-exempt: diagnostic trace, never displayed in the UI
+                    "objects-rows visible={visible} elided={elided} pane={viewport:.1} overflow={overflow:.1}"
                 )
             });
 
@@ -570,6 +598,29 @@ pub fn body(
         });
     }
     tokens
+}
+
+/// **How much width a row's TEXT actually has**, in points.
+///
+/// The pane, less the indentation this row will spend before its first
+/// character and less the expander column it holds whether or not it draws one.
+///
+/// # ★★ Why this is a function
+///
+/// Because it is the arithmetic the elision decision is made against, and a
+/// row-depth term that is silently dropped reintroduces clipping **for exactly
+/// the deepest rows** — the ones an operator had to work hardest to reach. That
+/// is not hypothetical: the same term was the subject of
+/// `indentation_counts_toward_the_row_width` under the previous mechanism, and a
+/// term that mattered under one mechanism matters under its replacement.
+///
+/// ⚠ It is not the whole call site, and the difference is worth stating: no
+/// unit test can see whether [`body`] still **calls** `elide_to_width` at all.
+/// Deleting that call leaves every test in this module green. That is the gap
+/// `the_inspector_is_one_master_detail_column` exists to close, and it is why
+/// it samples pixels rather than only reading a trace.
+fn row_text_room(viewport: f32, row: ObjectTreeRow) -> f32 {
+    viewport - row_indent(row) - EXPANDER_SPACE
 }
 
 /// The change-log slot [`body`]'s per-frame elision report is keyed on.
@@ -1023,6 +1074,45 @@ mod tests {
         // And the half that makes it not a loss: the hover carries the whole
         // thing, so the tail is one gesture away rather than gone.
         assert!(label.len() > kept.len());
+    }
+
+    /// ★★ **A deeper row gets LESS text room, and the difference is exactly the
+    /// indent.**
+    ///
+    /// The term this arithmetic is most likely to lose. Dropping `row_indent`
+    /// leaves every object row correct and clips every point row by 28 pt —
+    /// which reads as "the deep rows are broken" rather than as an arithmetic
+    /// slip, and is the reason the sum is a function.
+    #[test]
+    fn a_deeper_row_has_less_room_for_its_text() {
+        const PANE: f32 = 360.0;
+        let object = row_text_room(PANE, ObjectTreeRow::Object { index: 0 });
+        let part = row_text_room(PANE, ObjectTreeRow::Part { object: 0, part: 0 });
+        let point = row_text_room(
+            PANE,
+            ObjectTreeRow::Point {
+                object: 0,
+                part: 0,
+                node: 0,
+            },
+        );
+        assert!(
+            object > part,
+            "a part row must have less room than its object"
+        );
+        assert!(
+            part > point,
+            "a point row must have less room than its part"
+        );
+        assert!(
+            (object - part - t::OBJECT_TREE_INDENT).abs() < f32::EPSILON,
+            "the difference between depths must be exactly one indent"
+        );
+        // And the expander column is spent by every row, drawn or not (R83).
+        assert!(
+            (PANE - object - EXPANDER_SPACE).abs() < f32::EPSILON,
+            "an object row's room is the pane less the expander column"
+        );
     }
 
     /// …and the indent is part of that width.

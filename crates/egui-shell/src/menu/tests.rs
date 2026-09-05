@@ -499,6 +499,72 @@ fn the_icon_painter_is_asked_for_each_row_that_has_an_icon() {
     );
 }
 
+/// **★★★ A painted icon slot publishes its rectangle, and a blank one does
+/// not.**
+///
+/// The only signal a *driven* check has on this surface, and the reason it
+/// exists is in [`super::report`]'s header: a menu row is justified to the
+/// body width, so it measures the same whether its slot holds a glyph,
+/// holds a blank, or does not exist. The QAT's trick — an icon-only
+/// control is square and a text button is a word wide — has no menu
+/// equivalent, so without this name a harness cannot tell an application
+/// that wired an icon painter from one that did not. Which is exactly the
+/// state this project shipped in, undetectably, for the whole life of the
+/// menu engine.
+///
+/// The fixture is the mixed case on purpose: `edit.cut` has a key and the
+/// other three do not, so the menu reserves a column and three rows draw a
+/// blank into it. Publishing four names here would make the signal mean
+/// "a slot was reserved" — true of a blank — and it would be worthless.
+///
+/// The containment assertion is the second half: the published rectangle
+/// has to be *inside the row it belongs to*, or a check that clicked or
+/// sampled it would be aiming at somewhere else on the menu.
+#[test]
+fn only_a_painted_icon_slot_publishes_a_rectangle() {
+    let ctx = context();
+    let menus = menus();
+    let registry = registry();
+    let conditions = ConditionSet::new().with("selection.any");
+    let mut scene = Scene::new(&menus, &registry, &conditions);
+
+    let frame = open_menu(&ctx, &mut scene);
+    let icons: Vec<&str> = frame
+        .rects
+        .iter()
+        .filter(|(name, _)| name.starts_with("menu.icon."))
+        .map(|(name, _)| name.as_str())
+        .collect();
+    assert_eq!(
+        icons,
+        ["menu.icon.canvas.object.edit.cut"],
+        "exactly the rows whose glyph was painted publish a slot — Copy, Paste \
+         and Delete reserve a blank and must publish nothing, or the name means \
+         `a slot exists` and says nothing about whether anything draws"
+    );
+
+    let slot = frame
+        .rects
+        .iter()
+        .find(|(name, _)| name == "menu.icon.canvas.object.edit.cut")
+        .map(|(_, r)| *r)
+        .expect("just asserted present");
+    let row = frame
+        .rects
+        .iter()
+        .find(|(name, _)| name == "menu.item.canvas.object.edit.cut")
+        .map(|(_, r)| *r)
+        .expect("every row publishes a rectangle");
+    assert!(
+        row.contains_rect(slot.shrink(0.5)),
+        "the icon slot {slot:?} must lie inside its own row {row:?}"
+    );
+    assert!(
+        slot.width() > 0.0 && slot.height() > 0.0,
+        "a slot with no area is one nothing could have been drawn into: {slot:?}"
+    );
+}
+
 // =====================================================================
 // The seam
 // =====================================================================

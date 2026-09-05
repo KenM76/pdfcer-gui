@@ -53,11 +53,11 @@
 //! `redact-selection`, `apply-redactions`) and two discharge a refusal
 //! (`reflow`, `attachment`).
 //!
-//! ★ `edit.select_all`'s refusal is **untouched**, deliberately. It is refused
-//! on the ground that Select All has no conventional glyph in any comparable
-//! program and that a marquee would say "rubber band" — the gesture the
-//! command exists to replace — which is a reason no supply of art discharges.
-//! The batch drew nothing for it and this pass claims nothing about it.
+//! ★★ `edit.select_all`'s refusal was **discharged on 2026-09-04, and not by
+//! art arriving** — by the operator pointing out that it had never been his.
+//! It was a build session's argument that got quoted until it read as a
+//! ruling. See the registration itself for the account; the point that
+//! generalises is that **who wrote a refusal is part of the refusal**.
 //!
 //! ⇒ The two refusals are **discharged, not deleted**. Each paragraph below is
 //! rewritten in place to say what spent it and to keep the part that outlives
@@ -181,6 +181,49 @@ pub(super) fn band() -> Vec<Command> {
         // button's picture.
         command("edit.reflow_block", t::edit_reflow_block(), 406)
             .with_icon("reflow")
+            .enabled_when("doc.pages"),
+        // ═══════════════════════════════════════════════════════════════════
+        // ★★★ `edit.copy_as_vector` — the clipboard's copy-OUT, 2026-09-04.
+        //
+        // `OPERATOR_REQUESTS.md` **O120**, the operator, 2026-09-03: *"Also I'd
+        // like to be able to copy and paste anything to other software - like
+        // copy and paste vector graphics into word or inkscape for example if
+        // possible."*
+        //
+        // ★★ **Registered HERE and not beside its three siblings**, and the
+        // deviation is deliberate rather than an oversight worth quietly
+        // correcting later.
+        //
+        // `edit.cut`, `edit.copy`, `edit.paste` and `edit.paste_duplicate` are
+        // registered in `catalog::view`, which is the anomaly: this file's own
+        // header states that *"the split is per TAB"*, and `super::super`'s
+        // `every_handler_token_is_in_its_tabs_block` enforces the same taxonomy
+        // on the token — an `edit.*` id must take a token in `400..500`, which
+        // this one does. Following the four into `view.rs` would deepen a
+        // deviation from the rule the tests already encode; following the rule
+        // costs one cross-reference, which is this paragraph.
+        //
+        // ⇒ Nothing about the RIBBON changes either way: the placement is
+        // `shell::manifest::edit`'s Clipboard group, beside the other four,
+        // which is where the mockup draws it and where
+        // `every_command_id_names_its_owning_tab` requires an `edit.*` id to be.
+        //
+        // ★ **`doc.pages`, not a selection condition.** The command has two
+        // operands — the selection if there is one, the whole page otherwise —
+        // so there is no state in which an open document makes it meaningless.
+        // Gating on `selection.any` would grey it in exactly the case an
+        // operator most wants it: *"copy this whole sheet into my report"*.
+        //
+        // ★★ **No chord.** `Ctrl+Shift+C` was considered and not taken:
+        // `check-clipboard-chords.sh` records that `egui-winit` intercepts the
+        // three clipboard chords before they become key events, and a fourth
+        // clipboard verb reachable by a modifier on one of them is precisely
+        // the arrangement that file exists to warn about. It is a ribbon and
+        // menu-reachable command, like `file.export_image` beside it, and a
+        // binding can be added by the keymap editor by anyone who wants one.
+        // ═══════════════════════════════════════════════════════════════════
+        command("edit.copy_as_vector", t::edit_copy_as_vector(), 408)
+            .with_icon("copy-as-vector")
             .enabled_when("doc.pages"),
         // ★★★ `edit.objects` was HERE until 2026-08-31, and it is DELETED
         // rather than repointed. `OPERATOR_REQUESTS.md` row O69, the operator:
@@ -400,7 +443,34 @@ pub(super) fn band() -> Vec<Command> {
         // the sheet needs to FIND the command, and a keyboard shortcut nobody
         // can see is not findable. `Ctrl+A` is bound to it as well, because that
         // is the chord every program in the world uses.
-        command("edit.select_all", t::edit_select_all(), 402).enabled_when("doc.pages"),
+        // ★★★ **THE REFUSAL HERE WAS NOT THE OPERATOR'S, AND IT WAS BEGINNING
+        // TO BE REPORTED AS IF IT WERE — corrected 2026-09-04.**
+        //
+        // From 2026-09-01 this registration carried a written refusal: *"there
+        // is no conventional icon for Select All — Word, Acrobat and
+        // Illustrator all present it as words … a marquee glyph would say
+        // 'rubber band', which is the gesture this command exists to replace
+        // when the rubber band cannot reach."*
+        //
+        // It was a build session's argument. It was then quoted in the icon
+        // coverage count, in this file's header, in `GLYPH_ADOPTION.md`, and
+        // **twice in reports to the operator as a settled position** — at which
+        // point it had acquired an authority nobody granted it. He answered in
+        // four words: *"I didn't refuse that."*
+        //
+        // ⇒ The distinction is worth stating because it will recur: **a
+        // well-argued refusal written by whoever happened to be building that
+        // day is not an operator decision.** Quoting it does not promote it.
+        // The two are told apart by asking who said it, and the answer belongs
+        // in the sentence that records it.
+        //
+        // ★ The half of the argument that was right survives in the art rather
+        // than being discarded: a bare marquee really would read as a rubber
+        // band, so the marquee is not bare — it encloses the pointer. See
+        // `icons/assets/select-all.svg`, which carries the whole account.
+        command("edit.select_all", t::edit_select_all(), 402)
+            .with_icon("select-all")
+            .enabled_when("doc.pages"),
         command("edit.form_push_button", t::edit_form_push_button(), 438)
             .with_icon("push-button")
             .enabled_when("forms.push_button_runnable"),

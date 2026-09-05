@@ -189,13 +189,41 @@ pub const PLANNED: &[(&str, &str)] = &[
     // `pdfcer_render::svg` did not exist when it was written. **A capability
     // note is a measurement with a date on it**, and this one was read long
     // after it was taken.
-    (
-        "file.export_text",
-        "C — pdfcer-core extracts text already. Needs a save dialog and nothing else. Not to be \
-         confused with `file.copy_page_text` / `file.copy_document_text`, which sit in the same \
-         band and are shipped: those write the extracted text to the CLIPBOARD, this one writes \
-         it to a file the operator names.",
-    ),
+    // ★★★ **`file.export_text` BUILT 2026-09-04**, on the operator's ask:
+    // *"also the engine can export PDFs as text. we should have export/import
+    // for that."* Kept as a comment rather than silently deleted, on the
+    // precedent this list states above and its immediate neighbour follows:
+    // *"this used to be planned and is now built"* is the transition it exists
+    // to make legible. Its note read:
+    //
+    //   "C — pdfcer-core extracts text already. Needs a save dialog and nothing
+    //    else. Not to be confused with `file.copy_page_text` /
+    //    `file.copy_document_text`, which sit in the same band and are shipped:
+    //    those write the extracted text to the CLIPBOARD, this one writes it to
+    //    a file the operator names."
+    //
+    // ★ **Every clause of that was true and the last sentence is the reason it
+    // shipped as it did.** The register said the clipboard verbs and this one
+    // must not be confused, and the design that came out of taking that
+    // seriously is stronger than "do not confuse them": at its defaults this
+    // export writes **byte-for-byte the string `file.copy_document_text` puts
+    // on the clipboard**. They are now the same answer to the same question,
+    // reaching two destinations, which is a property no amount of careful
+    // labelling could have bought.
+    //
+    // ★★ **Where the note was wrong is "and nothing else."** A save dialog was
+    // not enough, and what it missed is the whole feature: **a scanned drawing
+    // extracts successfully and returns nothing**, so a save-dialog-only
+    // implementation would write a zero-byte `.txt` that is indistinguishable
+    // from a successful export of a blank page. `app::actions::export::text`
+    // refuses before the picker opens and names `Recognise text`. A capability
+    // note measures what the ENGINE lacks; it is silent on what the operator's
+    // documents will do to you, and that is where this one's cost was.
+    //
+    // ⇒ **The IMPORT half of the operator's sentence is NOT here and is not a
+    // planned entry either**, deliberately: this list is for surfaces this
+    // shell has not built, and an import is a verb the engine does not have.
+    // See `app::actions::exporttext`'s header and `ENGINE_BACKLOG.md`.
     (
         "file.imposition",
         "C — n-up, booklet and poster imposition exist in core and the CLI. Needs a \
@@ -738,3 +766,73 @@ pub const DIRECTED: &[(&str, &str)] = &[(
          without a mark. Modeless select-and-delete works today — it is what the removal of \
          the `Editing on` toggle relies on — so the command is real.",
 )];
+
+/// **The commands whose only surface is a per-panel menu**, with the reason
+/// a ribbon control could not be one.
+///
+/// # ★★★ Why this register exists, and what it must NOT become
+///
+/// Two tests state one rule from two sides:
+/// `shell::tests::no_registered_command_is_orphaned` and
+/// `shell::menus::tests::every_menu_command_is_also_reachable_from_the_ribbon`.
+/// The rule is right and it is worth restating in its own words:
+///
+/// > *A command reachable only by right-clicking one particular surface is
+/// > a command nobody can find: a context menu is discovered by an operator
+/// > who already suspects something is there, which is exactly the state a
+/// > command with no other home cannot put them in.*
+///
+/// ⇒ **The bar for an entry here is [`CUSTOM_BACKED`]'s bar, unchanged:
+/// the command needs an OPERAND a ribbon control cannot ask for.** Not
+/// *"a button would be redundant"*, not *"the menu is the natural place"* —
+/// the ribbon control must be impossible to make *correct*.
+///
+/// `CUSTOM_BACKED` answers that by drawing a non-button control on the
+/// ribbon that asks for the operand (a recent-files menu, a font-face
+/// chooser). This register answers it for the case where **even that is
+/// impossible**, because the operand is *the surface the operator
+/// gestured at*. There is no ribbon control that can ask "which of the
+/// twelve panels?" and get the answer "the one you just right-clicked",
+/// because at the moment a ribbon control is pressed the operator is not
+/// pointing at a panel.
+///
+/// # ★★ How discoverability is answered instead, since the rule's reason is
+/// discoverability and a register does not create any
+///
+/// The **capability** is on the ribbon even though the per-panel verbs are
+/// not. View ▸ Window carries `view.dock_all_panels` — *"Bring every
+/// floating panel back into the dock"* — and `view.reset_layout`. An
+/// operator reading that group learns that panels can float and that there
+/// is a way back, which is the fact worth discovering; where the verb that
+/// floats *this* panel lives is then the universal idiom, on the tab.
+///
+/// That is a weaker answer than a ribbon button and it is stated as such
+/// rather than dressed up. The day a panel tab grows a visible affordance
+/// — a close cross, a chevron — these entries come out, because then there
+/// is a control on the surface itself and the menu is a second route rather
+/// than the only one.
+///
+/// # What an entry buys and what it does not
+///
+/// It buys the two tests above. It does **not** buy the rename check:
+/// `every_command_every_menu_names_is_registered` still runs, so an entry
+/// naming a command that no longer exists, or a command here that is not
+/// in any menu, fails [`tests::every_tab_scoped_entry_is_real`] in both
+/// directions.
+pub const TAB_SCOPED: &[(&str, &str)] = &[
+    (
+        "view.panel_float",
+        // ui-text-exempt: a register reason for a reviewer and a test; never rendered.
+        "Its operand is THE PANEL THE OPERATOR RIGHT-CLICKED. A ribbon button has no such operand: at the moment it is pressed the pointer is on the ribbon, not on a panel, so the button would have to invent a subject (the active tab of which dock? the last one clicked?) and would then act on something other than what the operator was pointing at. The capability is discoverable from View ▸ Window's `view.dock_all_panels`, whose tooltip names floating panels.",
+    ),
+    (
+        "view.panel_dock",
+        // ui-text-exempt: a register reason for a reviewer and a test; never rendered.
+        "The mirror of `view.panel_float`, with the same operand and the same argument. It is additionally offered on the floating window's own header strip, which is a visible surface rather than a menu — so this one is nearer to having a control than its sibling, and it is listed here because the header strip is not a ribbon and the test asks about the ribbon.",
+    ),
+    (
+        "view.panel_close",
+        // ui-text-exempt: a register reason for a reviewer and a test; never rendered.
+        "Same operand, same argument. Deliberately NOT given a ribbon home by aliasing it onto the View ▸ Panels toggles: those toggle a NAMED panel and this closes the one under the pointer, and collapsing the two would make a toggle behave differently depending on where it was invoked from.",
+    ),
+];

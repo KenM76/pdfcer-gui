@@ -453,6 +453,15 @@ pub(super) fn tab() -> Tab {
                     command("view.close_other_documents"),
                     command("view.read_mode"),
                     command("view.fullscreen"),
+                    // ★★ **Dock all panels**, immediately before Reset
+                    // layout, and the order is the two-tier shape
+                    // `MODES_AND_PANELS.md` singles out: the cheap remedy
+                    // first, the destructive one after it. Docking every
+                    // float costs the operator nothing they arranged;
+                    // resetting costs them the arrangement. A menu whose
+                    // gentler remedy is *below* the harsher one trains people
+                    // to reach past it.
+                    command("view.dock_all_panels"),
                     command("view.reset_layout"),
                 ],
             ),

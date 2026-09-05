@@ -125,7 +125,15 @@ impl OpenDoc {
     }
 
     /// The override to hand a render, or `None` to obey the document.
-    pub(super) fn layer_visibility(&self) -> Option<LayerVisibility> {
+    ///
+    /// ★ `pub(crate)` since 2026-09-04, widened from `pub(super)` by one step
+    /// and for one caller: `crate::clipboard::place`, which produces the vector
+    /// copy-out and lives outside `app` because it is a *format* concern rather
+    /// than an application-state one. The widening is the smallest that works
+    /// and it does not weaken anything — this is a read-only accessor whose
+    /// whole job is to be handed to a render, and every render this shell
+    /// performs must pass it, or the copy shows a layer the operator hid.
+    pub(crate) fn layer_visibility(&self) -> Option<LayerVisibility> {
         self.layers
             .hidden
             .as_ref()

@@ -1714,3 +1714,246 @@ every word of why, because it read only the line it hoped for.
 Phase D now names all three lines the key can produce, and presses **until the
 trace shows the key was heard** (`driving::press_until_traced`) so that a key
 that never arrived is a SKIP rather than an accusation.
+
+---
+
+## D20 — Every real redaction was refused, because an embedded font's own `name` table counted as a leak — **FIXED 2026-09-04, NOT DRIVEN**
+
+**Severity:** critical · **Fix:** one classification · **Reported:** 2026-09-04,
+by the operator · **Files:** `crates/pdfcer-gui/src/redact/proof.rs`,
+`crates/pdfcer-gui/src/redact/mod.rs`, `crates/pdfcer-gui/src/dialogs/redact.rs`
+
+### What the operator said
+
+> *"I really hate how when I search for text to redact, or select a text object
+> on the screen to redact, pick the text to redact, then click apply redaction
+> it refuses to redact anything because it always finds text that wasn't
+> redacted, and it always finds all of the text is found that I selected. …
+> What is the purpose of a redaction tool that refuses every time to do any
+> work?"*
+
+Every clause of that was a measurement and every clause was correct.
+
+### The reproduction, on a fixture in this repository
+
+`fixtures/a1-titleblock.pdf`, marking the word `construction`:
+
+```text
+REFUSED: VerificationFailed { survivors: [" construction"] }
+```
+
+Nothing was written. The removal had **succeeded** — 13 characters deleted from
+1 content stream, 1 mark applied, 0 retained. What refused it was
+`redact::proof`'s own absence check, and what it found was object 9: a stream
+with `/Length1 19092` and no `/Type`, i.e. an **embedded TrueType font
+program**. JetBrains Mono's `name` table describes its own stylistic sets as
+*"Classic construction"* and *"Closed construction"*.
+
+A font's description of its own letterforms had vetoed the operator's
+redaction, and would have vetoed any redaction of any ordinary English word on
+any document with an embedded font — which is every document anybody opens.
+
+### The cause: an inverted classification, not a broken measurement
+
+`proof::prove` ran two halves over the finished bytes:
+
+| where the removed string still occurred | verdict |
+|---|---|
+| in **any decoded stream** | **REFUSE**, write nothing |
+| in the **raw bytes only** | disclose as a residual, acknowledgement-gated |
+
+The prose defending the first row said *"a decoded stream is content a renderer
+or a text extractor will read back"*. That is true of a content stream and
+false of most streams in a real file — font programs, image samples, ICC
+profiles, object-stream containers, attachments.
+
+★ **The two halves applied opposite rules to the same evidence.** The raw-byte
+half already knew that a byte run in a place nothing draws is a coincidence
+pdfcer cannot rule out — `MIN_VERIFIABLE_LEN` exists entirely because of it.
+The decoded half took the identical coincidence and, merely because it happened
+to sit inside a `/FlateDecode` stream rather than beside one, gave it the
+harshest verdict in the module instead of the mildest.
+
+### The fix
+
+Every stream is still decoded and still searched — narrowing the sweep would
+hide evidence. What changed is the **verdict** a blob can produce. `role_of`
+classifies each decoded stream, and only a **content-bearing** one can refuse:
+a page content stream, a form XObject (which is what an annotation appearance
+stream is), a tiling pattern, a Type 3 glyph procedure. Everything else is
+promoted into the disclosure list **with the site named**, so nothing that used
+to refuse now passes silently.
+
+The operator now gets what he asked for: the redaction is applied, the leftover
+is named in the same sentence, and the acknowledgement gate — not a refusal —
+stands between him and the write.
+
+### ★★ Why the test suite did not catch it, which is the transferable part
+
+Every unit test in `redact/` ran on `assemble`d fixtures: a handful of objects,
+uncompressed streams, `/Helvetica`, no embedded font. `tools/ui-verify`'s
+`checks::redaction` — the one check that drives the real binary — generates its
+own fixture and its header says what it is: *"Two pages, uncompressed"*, two
+ASCII strings, a Base-14 font.
+
+Those fixtures are right for what they assert (*"every byte in this file is one
+the suite put there"*) and they share one property that turned out to decide
+everything: **there is nothing in them for a coincidence to hide in.** So the
+feature had a unit suite and a driven check, and neither had ever seen a
+document a person would open.
+
+⇒ **The fixture that exercises the feature and the fixture that resembles the
+operator's work are not the same fixture, and a suite needs both.**
+`redact::tests::a_real_drawing_sheet_with_an_embedded_font_is_applied_rather_than_refused`
+is the second, and it runs the whole pipeline — mark, apply, write, re-extract
+— on `fixtures/a1-titleblock.pdf`, with `FOUNDATION` as a negative control so a
+build that blanked the page fails it.
+
+### The falsification
+
+Five plants, each restored:
+
+| plant | what it broke | which test went red |
+|---|---|---|
+| 1 | `/Length1` counts as drawn content again (the defect) | the font test, the site table, **and the real-sheet test**, the last with `VerificationFailed { survivors: [" construction"] }` |
+| 2 | opaque hits dropped on the floor (the *dangerous* fix — stop refusing, and stop telling) | the font test and the real-sheet test. ★ On the synthetic fixtures the residual merely degraded to `RawBytes`; **only the real-document test saw `[]`**, because a real font program is compressed and the plaintext is not in the raw bytes. The dangerous fix is invisible to a suite of uncompressed fixtures. |
+| 3 | `/Subtype /Form` classified opaque | `the_sweep_reaches_a_stream_that_is_not_page_content` |
+| 4 | the content-stream guard removed from the disclosure half | `a_survivor_in_drawn_content_is_not_also_listed_as_a_residual` |
+| 5 | the Type 3 `/CharProcs` walk removed | `a_tiling_pattern_and_a_type3_glyph_procedure_are_drawn_content` |
+
+### Not driven
+
+The GUI was **not launched and `ui-verify` was not run** — the operator was at
+his keyboard and a watchdog kills GUI processes on sight. `checks::redaction`
+gained a phase E2 that asserts the new destination control is drawn; that phase
+has never executed. Everything above was proven headlessly.
+
+---
+
+## D21 — Reflow answered every press, in the slot that reads as a footnote about an earlier edit — **FIXED 2026-09-04, NOT DRIVEN**
+
+`OPERATOR_REQUESTS.md` **O127**, defect 3. The operator:
+
+> *"I also haven't seen the reflow option actually work with anything when I
+> press it."*
+
+### The finding, and it is not the one anybody expected
+
+**`edit.reflow_block` was not silent. It answered him every single time.**
+
+All four of its shell-side refusals — no caret, caret on bare page, run not in a
+recognised block, session already edited — called
+`crate::app::actions::record_note`. That is the **disclosure** channel, which the
+status bar draws as:
+
+> `⚑ About your last edit: <sentence>`
+
+…truncated to 45 % of the remaining bar width (`NOTES_WIDTH_FRACTION`), with the
+full text on hover only. For a press where **nothing had happened**, in the past
+tense, labelled as a note about a *previous* edit.
+
+`app::status::decline`'s own header had already ruled on this exact swap, for two
+other sentences, in these words:
+
+> *"an operator who reads 'About your last edit' after a gesture that did nothing
+> has been told a small lie confidently."*
+
+⇒ ★★★ **A sentence in the wrong slot is indistinguishable, from the operator's
+chair, from no sentence at all.** That is the second time this project has proved
+it and it is the transferable part. The engine's own refusal was worse again: it
+collapsed into `Declined::EditRefused`'s nine cause-free words — *"That change
+was refused, and the document is unchanged"* — for four causes with four
+different remedies.
+
+### The fix
+
+`crate::text::textedit::ReflowRefusal`, eight variants with eight sentences, all
+routed through `decline::record_reflow` so they wear `⊗` and mean *nothing
+happened*. The engine's `ReflowApplyError` is mapped into the same enum through
+`Result::inspect_err` **inside** the funnel's closure — which works because
+`vector_edit` takes the decline floor *before* running it, and
+`BeforeTheVerb::refused` fills the slot only `if slot.is_none()`. Reflow is the
+first verb to use that mechanism for its own wording. The tooltip now leads with
+the two preconditions, before the press, per R9.
+
+### ⚠ The gate that was deliberately NOT removed, and why
+
+`app::actions::textstyle::reflow` refuses whenever `doc.edit_epoch != 0` — any
+edit at all, anywhere. That is far broader than the engine's own condition
+(`state.contains_key(&page.contents[0])`), and removing it was drafted and
+**rejected**:
+
+`EditSession::add_text` appends a **new** content stream and never touches
+`contents[0]`, so it does not trip the engine's guard. A reflow then plans from
+the base document and writes the result into `contents[0]` through
+`text_edit_command`, whose first-edit branch **empties every other `/Contents`
+entry** — the one holding the operator's added text. It returns `Ok`.
+
+⇒ Lifting the shell's forecast would trade a control that refuses too often for a
+control that silently deletes work. It is filed as
+`request_added_content_is_duplicated_by_the_next_content_edit.md` §6 and stays
+until the engine can be asked.
+
+### Not driven
+
+The GUI was **not launched and `ui-verify` was not run** — another session held
+the desktop. Proven headlessly: five new unit tests in `text::textedit`, each
+falsified.
+
+---
+
+## D22 — Enter answered "can this make a new line?" by finishing the edit — **FIXED 2026-09-04, NOT DRIVEN**
+
+`OPERATOR_REQUESTS.md` **O127**, defect 2:
+
+> *"also can the enter key create new lines when we are editing or creating
+> text?"*
+
+Enter inserted a line break in a **dragged box** and **committed** in the other
+two drafts. So the answer to his question, pressed with his fingers, was an edit
+finishing under him — which looks like success and answers a different question.
+
+### ★★ The half that was missing even where Enter worked
+
+A box draft could hold two lines and the caret could not reach the second one.
+`blocks::step` returns `false` for anything but `Anchor::Run`, and the arrow arm
+had **no fallback** — so Up and Down did **nothing at all** in a multi-line box,
+and Home and End jumped to the ends of the *whole draft* rather than of the line.
+Shipping the line break without those four would have been a multi-line editor
+you cannot move around in.
+
+### What it is now
+
+Enter means **one thing everywhere**: a new line. `Ctrl+Enter` commits every
+draft, so commit is never mouse-only. Escape still abandons and clicking away
+still commits, both unchanged. Where a line break cannot go — a caret in an
+existing show operator — Enter **declines in words** and leaves the draft alive,
+because that is the FILE's rule and not a shortcoming to hide: `edit_text`
+re-encodes into the run's own font, a line feed has no code in any standard
+encoding, and the engine refuses it by name.
+
+The decision is `canvas::textedit::keys::enter_means`, a pure function, so *"the
+whole interaction, not half of it"* is a claim four unit tests check rather than a
+sentence in a comment.
+
+### ★ Multi-line reaching the engine — read, not assumed
+
+| path | a `\n` |
+|---|---|
+| boxed `add_text` | a **hard paragraph break**, each paragraph wrapped independently. Intact. |
+| point `add_text` | a **named refusal** — no code in any standard encoding |
+| `edit_text` | a **named refusal**, same reason |
+
+So a clicked draft that gains a line break is promoted to a **boxed** request at
+the commit — `app::actions::addtext` — with the box taken from the page's own
+crop box: the click across to the right edge, and down to the bottom. Nothing is
+invented (`canvas::textedit::place`'s *"a click would have to invent a width"*
+still holds), and the promotion is disclosed under rule 4. A **one-line** click
+still takes the point path byte for byte.
+
+### Not driven
+
+`tools/ui-verify/src/checks/enter_newline.rs` was written and **not executed** —
+another session held the desktop. It is registered anyway, on the precedent
+`left_rail`, `properties_tool` and `protect` set: a check that is not in the list
+is a check nobody will ever run.

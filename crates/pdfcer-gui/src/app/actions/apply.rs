@@ -969,57 +969,29 @@ impl PdfcerApp {
                     })
                 });
             }
+            // ★★★ Moved to [`super::addtext`] on 2026-09-04 under **R2**, and
+            // the seam is [`super::funnel`]'s: this file ROUTES, and placing
+            // text now DECIDES — a clicked caret that holds a line break has no
+            // width, and something has to say where the second line ends. That
+            // module's header carries the whole argument, including why the
+            // width is read off the operator's own sheet rather than invented,
+            // and why a one-line click still takes the point path untouched.
             Action::CommitAddText {
                 page,
                 origin,
                 text,
                 pen,
                 wrap,
-            } => {
-                // ★★ The three fields the engine has carried since
-                // `AddTextRequest` shipped and this arm never set.
-                //
-                // Its comment used to read: *"a font, size and colour picker is
-                // a surface … picking a face here from nothing would be this arm
-                // computing rather than routing."* Both halves were right, and
-                // the conclusion expired the moment the surface existed: the
-                // pen is now `canvas::textedit::pen`, edited from the Tool
-                // panel, sampled at the commit, and carried here on the action.
-                // This arm still computes nothing — it routes three values it
-                // was handed.
-                let req = pdfcer_core::text_edit::AddTextRequest::new(page, origin, text)
-                    .with_font(pen.face)
-                    .with_size(pen.size())
-                    .with_color(pen.engine_colour());
-                // ★★★ …and the fourth, which is what makes text MULTI-LINE.
-                //
-                // `with_box` is `Pass 16.1`'s boxed variant: hard newlines split
-                // paragraphs, each paragraph is wrapped independently to the
-                // box's width, and the whole thing is top-anchored from the
-                // box's top edge (so `origin` is ignored, by the engine's own
-                // documentation — see the action's `wrap` field for why it is
-                // carried anyway).
-                //
-                // ★ Applied as a `map` over the option rather than as an `if`,
-                // so there is exactly one `req` and one call below it. Two
-                // branches each building a request would be two places for a
-                // font to be forgotten, which is what this arm's own comment is
-                // about one paragraph up.
-                // ★ `with_box` takes ORIGIN AND EXTENT, not two corners — a
-                // signature worth reading rather than assuming, because
-                // `(x, y, w, h)` and `(llx, lly, urx, ury)` are four `f64`s
-                // either way and transposing them compiles. The action carries
-                // corners because that is what a dragged rectangle is; the
-                // subtraction happens here, once, at the boundary.
-                let req = match wrap {
-                    Some((llx, lly, urx, ury)) => req.with_box(llx, lly, urx - llx, ury - lly),
-                    None => req,
-                };
-                let lines = text_lines(&req);
-                vector_edit(doc, "add-text", page, lines, |session| {
-                    session.add_text(&req).map(|report| report.disclosures)
-                });
-            }
+            } => super::addtext::commit(
+                doc,
+                super::addtext::Placed {
+                    page,
+                    origin,
+                    text,
+                    pen,
+                    wrap,
+                },
+            ),
             // ★ The three things a mode change does. See the variant's docs
             // for why each one is here and not somewhere more convenient.
             //
@@ -1113,7 +1085,14 @@ impl PdfcerApp {
             // reasoning would have been the split this project warns about.
             Action::MarkRedactionsBySearch { .. }
             | Action::MarkPageForRedaction { .. }
-            | Action::RemoveRedactionMark { .. } => {
+            | Action::RemoveRedactionMark { .. }
+            // ★★★ …and, since 2026-09-04, the one that REMOVES. It is routed
+            // here beside the three marking arms rather than into a module of
+            // its own because it is the other half of their subject — the
+            // module's header used to say "nothing in this file removes
+            // anything", and the correction is in that file rather than in a
+            // fourth location a reader would have to find.
+            | Action::ApplyRedactionsIntoDocument => {
                 super::redact::apply(doc, action);
             }
             // ★ Its own module, not a fourth arm in `redact`: it is the only
@@ -1153,6 +1132,13 @@ impl PdfcerApp {
             Action::Text(super::text::TextAction::Reflow { page, block }) => {
                 super::textstyle::reflow(doc, page, block);
             }
+            // ★ The one arm here that changes no document. It carries a
+            // sentence from a keystroke handler across the `crate::app`
+            // boundary to the bar — see the variant's own docs for why a
+            // keypress needs an `Action` to speak at all.
+            Action::Text(super::text::TextAction::EnterCannotSplit) => {
+                crate::app::status::decline::record_enter_cannot_split();
+            }
             Action::Write(write) => match write {
                 // (the enum is `super::write::WriteAction`)
                 super::write::WriteAction::Dxf { page, options } => {
@@ -1161,6 +1147,12 @@ impl PdfcerApp {
                 // O120. The refusal of an impossible combination, the picker
                 // and the whole disclosure live in `super::export::image`.
                 super::write::WriteAction::Image { plan } => super::export::image(doc, &plan),
+                // ★ The extraction, the scan refusal, the picker and the whole
+                // disclosure live in `super::export::text`. The refusal is the
+                // interesting half: a scanned page extracts successfully and
+                // returns nothing, and a zero-byte `.txt` on disk is
+                // indistinguishable from a successful export.
+                super::write::WriteAction::Text { plan } => super::export::text(doc, &plan),
                 super::write::WriteAction::FormData => super::export::form_data(doc),
                 super::write::WriteAction::Compacted { bytes, before } => {
                     crate::app::save::compacted(doc, &bytes, before);
@@ -1464,23 +1456,6 @@ impl PdfcerApp {
 /// only capability the error branch below actually uses — it puts the message on
 /// the trace and declines. Nothing here inspects a variant, so nothing here
 /// needed to know the type.
-/// How many lines an add-text request will author, for the trace's operand
-/// count.
-///
-/// ★ The count is what `vector_edit` reports as `n=`, and *"one"* was the honest
-/// answer while every add was one line. It stopped being honest when boxes
-/// arrived: a check reading `add-text … n=1` cannot tell a one-line run from a
-/// paragraph, and the number a wrong build gets wrong here is exactly *"did the
-/// newlines survive?"*
-///
-/// It counts **hard newlines**, not laid-out lines — the engine wraps to the
-/// box's width and this shell does not know the face's metrics, so a wrapped
-/// line count would be a guess. Hard newlines are a fact about what the operator
-/// typed, which is the thing worth reporting.
-fn text_lines(req: &pdfcer_core::text_edit::AddTextRequest) -> usize {
-    req.text.split('\n').count()
-}
-
 /// ★ The edit funnel moved to [`super::funnel`] on 2026-08-30 under R2, and is
 /// re-exported here so that every call site written as `apply::vector_edit`
 /// still resolves.

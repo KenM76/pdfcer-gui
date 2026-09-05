@@ -75,6 +75,29 @@ pub(crate) fn guard_claiming(id: &str) -> Option<&'static str> {
     if crate::canvas::textannot::TextAnnotKind::from_command(id).is_some() {
         return Some("from_command");
     }
+    // ★ The four panel-layout verbs. A free function rather than a method,
+    // for the reason its own docs give: this reader cannot see through a
+    // method call on `self`, so a guard written that way would make the arm
+    // invisible here and the four commands would read as unrouted.
+    if crate::app::dispatch::panels::claims(id) {
+        return Some("claims");
+    }
+    // ★ The two Security commands — O119 — claimed by exactly the shape above
+    // and for the same reason: `app::dispatch::protect` was split out under R2
+    // on 2026-09-04 (`dispatch.rs` was at 1,496 lines before the feature
+    // existed), and a guard written as a method on `self` would be invisible to
+    // this reader, so `file.encrypt` and `file.permissions` would read as
+    // unrouted controls that trace `command-unimplemented`.
+    //
+    // ★★ It needs no new entry in [`EVALUATED_GUARDS`], and that is worth
+    // stating rather than leaving to be noticed: the guard is also called
+    // `claims`, and that list is a set of FUNCTION NAMES read out of
+    // `dispatch.rs`'s syntax tree, not a set of call sites. Two guards sharing a
+    // name is fine here — what the list pins is that no guard the dispatcher
+    // evaluates is missing from the checker.
+    if crate::app::dispatch::protect::claims(id) {
+        return Some("claims");
+    }
     if super::super::page_display_for_command(id).is_some() {
         return Some("page_display_for_command");
     }
@@ -272,6 +295,8 @@ pub(crate) const EVALUATED_GUARDS: &[&str] = &[
     "form_for_command",
     // ui-text-exempt: Rust function names, compared against the parsed syntax tree.
     "from_command",
+    // ui-text-exempt: Rust function names, compared against the parsed syntax tree.
+    "claims",
     // ui-text-exempt: Rust function names, compared against the parsed syntax tree.
     "page_display_for_command",
     // ui-text-exempt: Rust function names, compared against the parsed syntax tree.

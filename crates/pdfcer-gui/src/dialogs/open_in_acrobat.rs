@@ -156,6 +156,11 @@ pub const REGION_SAVE_FIRST: &str = "open-in-acrobat.save_first"; // ui-text-exe
 pub const REGION_NO_FILE: &str = "open-in-acrobat.no_file"; // ui-text-exempt: trace region name, never displayed
 
 /// The region the Cancel button publishes.
+///
+/// ★ Published by the two shapes that HAVE a Cancel and by neither the third
+/// nor its dismiss button. The never-saved refusal offers no decision, so a
+/// check that found a cancel region there would be asserting a choice the
+/// operator was never given.
 pub const REGION_CANCEL: &str = "open-in-acrobat.cancel"; // ui-text-exempt: trace region name, never displayed
 
 /// What the operator chose.
@@ -312,10 +317,22 @@ impl OpenInAcrobatDialog {
         // point of this window having two buttons rather than three.
         ui.horizontal(|ui| match self.prompt {
             Prompt::NoFileOnDisk => {
+                // ★ ONE button, published under its own region and NOT also
+                // under `REGION_CANCEL`. This shape has no Cancel — there is
+                // nothing to cancel — and publishing the dismiss control under
+                // both names would let a driven check assert "the operator was
+                // offered a way out of a decision" on a window that offered no
+                // decision. The two states have almost the same screenshot,
+                // which is exactly when a region name has to be exact.
                 let button = ui.button(t::dismiss_button());
                 crate::diag::ui_rect_visible(REGION_NO_FILE, button.rect, ui.clip_rect());
-                crate::diag::ui_rect_visible(REGION_CANCEL, button.rect, ui.clip_rect());
                 if button.clicked() {
+                    // Recorded as a cancellation because that is what it is to
+                    // everything downstream: nothing was saved, nothing closed,
+                    // nothing launched. The trace line reads `acrobat-cancelled`
+                    // for a refusal the operator merely acknowledged, and the
+                    // `prompt=NoFileOnDisk` on the earlier `acrobat-asked` line
+                    // is what tells the two apart in a log.
                     self.cancelled = true;
                 }
             }

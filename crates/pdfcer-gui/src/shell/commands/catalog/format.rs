@@ -191,18 +191,87 @@ pub(super) fn band() -> Vec<Command> {
         // registry, and because the custom renderer draws the registered label
         // rather than a second copy of it. See `manifest::CUSTOM_BACKED`.
         //
-        // ★ **No icons on any of the five.** Word draws `B` and `I` as glyphs
-        // and this build has no such art; `icons/assets/PROVENANCE.md` declares
-        // that directory the operator's own work, which is what exempts it from
-        // `check-shipped-assets`, and a machine-drawn substitute would make that
-        // note false. Without an icon a `Small` item resolves to `Medium`
-        // (`egui_shell::ribbon::sizing::resolved`), so the labels are what
-        // render — "Bold" and "Italic", which are unambiguous where a
-        // home-made glyph would not be.
+        // ★★★ **The refusal that covered all five was CORRECTED on 2026-09-04,
+        // and "corrected" is the load-bearing word — it was not discharged.**
+        //
+        // What stood here from 2026-08-27 until then, verbatim:
+        //
+        // > **No icons on any of the five.** Word draws `B` and `I` as glyphs
+        // > and this build has no such art; `icons/assets/PROVENANCE.md`
+        // > declares that directory the operator's own work, which is what
+        // > exempts it from `check-shipped-assets`, and a machine-drawn
+        // > substitute would make that note false. Without an icon a `Small`
+        // > item resolves to `Medium` (`egui_shell::ribbon::sizing::resolved`),
+        // > so the labels are what render — "Bold" and "Italic", which are
+        // > unambiguous where a home-made glyph would not be.
+        //
+        // ⇒ **That paragraph was two arguments wearing one sentence**, and only
+        // one of them was ever the operator's. Splitting them is the whole
+        // content of this pass:
+        //
+        // * *"this build has no such art"* is a statement about **supply**, and
+        //   the operator has ruled on supply — repeatedly, and by name here. The
+        //   standing ruling of 2026-08-06 is carried in `Icon::Back`'s doc
+        //   comment: a missing glyph is **AUTHORED**, not worked around, because
+        //   working around it *"spends the operator's affordance to protect the
+        //   font stack; an icon costs one asset and keeps both."* On 2026-09-04
+        //   he quoted it back at this very pair: *"if bold and italics have no
+        //   art in the set, why weren't they made automatically as I have
+        //   instructed to be done for anything that a glyph is missing for on
+        //   multiple occasions?"* So the supply half is **corrected**, and the
+        //   two commands below name `bold` and `italic`.
+        // * *"a machine-drawn substitute would make PROVENANCE.md false"* was
+        //   never a claim about supply and it is **untouched**. It is answered
+        //   the way the 2026-09-04 icon batch answered it for eleven other
+        //   refusals: the asking happened, and the art is drawn in the §3 style
+        //   contract with its ruling embedded, exactly as
+        //   `icons/assets/PROVENANCE.md` requires of every future asset.
+        //
+        // ★★ This is **not a new capability**. `format.bold` and
+        // `format.italic` did on 2026-08-26 precisely what they do now; what
+        // changed is that a control which was bare because nobody had drawn its
+        // picture stopped being bare. Recording that distinction is the point of
+        // the pass — see the coverage counters in `super::super`, which move as a
+        // correction and say so.
+        //
+        // ★ The general lesson, and it is the second time in three days this
+        // project has paid for it (`edit.select_all` was the first): **a refusal
+        // whose reason is "no art exists" has an expiry date, and quoting it
+        // does not make it the operator's ruling.** A refusal that names a WRONG
+        // PICTURE — `view.zoom_actual`, argued against by name in the icon
+        // ui-spec §3.2 — has no expiry date at all. The two look identical in a
+        // coverage table and are opposites.
+        //
+        // ★★ **The other three still refuse, and for a reason that is NOT about
+        // supply**, which is why they are not corrected alongside their two
+        // neighbours. A face chooser, a size field and a colour swatch are drawn
+        // by an `Item::Custom` — an `egui::ComboBox`, an `egui::DragValue` and
+        // `Ui::color_edit_button_srgb` (see `app::fontband`) — and none of those
+        // widgets has an icon slot to draw into. The refusal is **structural**:
+        // there is nowhere to put a glyph, not nowhere to get one. Word agrees on
+        // the first two and its own font-name and size boxes carry no icon; the
+        // swatch's entire face IS the colour, and a glyph over it would cover the
+        // one thing the control exists to report.
         command("format.font", t::format_font(), 803).enabled_when("selection.text"),
         command("format.font_size", t::format_font_size(), 804).enabled_when("selection.text"),
-        command("format.bold", t::format_bold(), 805).enabled_when("selection.text"),
-        command("format.italic", t::format_italic(), 806).enabled_when("selection.text"),
+        // ★ `bold` — a capital B stroked at 4 rather than the set's 2.5, so the
+        // picture says HEAVIER, which is the thing the label cannot. The asset's
+        // own comment carries the weight argument and the two axes that keep it
+        // apart from its neighbour below. Closest neighbour in the whole set at
+        // 16 px: `page-single`, at 0.471 — against a floor of 0.15 and a set
+        // minimum of 0.211.
+        command("format.bold", t::format_bold(), 805)
+            .with_icon("bold")
+            .enabled_when("selection.text"),
+        // ★ `italic` — a slanted capital I with OFFSET serifs, which is the cue
+        // that keeps it clear of `text-select`'s bare centred I-beam (0.737 at
+        // 16 px; its closest neighbour anywhere is `measure-angle` at 0.719, and
+        // the pair `bold ~ italic` measures 0.820). The slant is exaggerated to
+        // about 28° on purpose — see the asset for why a typographically honest
+        // 12° reads as a rendering bug at 16 px.
+        command("format.italic", t::format_italic(), 806)
+            .with_icon("italic")
+            .enabled_when("selection.text"),
         command("format.font_colour", t::format_font_colour(), 807).enabled_when("selection.text"),
     ]
 }

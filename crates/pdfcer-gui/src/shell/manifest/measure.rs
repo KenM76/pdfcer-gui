@@ -63,7 +63,7 @@
 //! fix is to move one line out of PLANNED and into the Scale group — which
 //! is exactly what PLANNED exists to make findable.
 
-use super::{command, group};
+use super::{command, group, large};
 use crate::text::ribbon;
 use egui_shell::manifest::Tab;
 
@@ -109,8 +109,10 @@ pub(super) fn tab() -> Tab {
                 "scale",
                 ribbon::group_measure_scale(),
                 [
-                    command("measure.set_scale"),
-                    command("measure.manage_groups"),
+                    // ★ Both large, 2026-09-04 — the mockup's Scale group is
+                    // two big controls. Whole group promoted.
+                    large("measure.set_scale"),
+                    large("measure.manage_groups"),
                 ],
             ),
         ])

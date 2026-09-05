@@ -45,10 +45,10 @@
 //! |---|---|---|
 //! | [`model`] | [`Menu`], [`Menus`], [`MenuLookup`] | A menu is a [`crate::manifest::Group`] keyed by an application-supplied **context id**. Serializable, mergeable, customizable. |
 //! | [`shortcut`] | [`Shortcuts`] | The chord is **derived from the keymap**, never written down twice. When one command has several chords, the easiest one is taught. |
-//! | [`plan`] | resolution, punctuation, width — no `egui` | Unregistered is **absent**; disabled is **greyed**; nothing enabled means **the menu does not open**. |
+//! | [`plan`] | resolution, punctuation, width, the icon column — no `egui` | Unregistered is **absent**; disabled is **greyed**; nothing enabled means **the menu does not open**; the **column** belongs to the menu and the **glyph** to the command. |
 //! | [`render`] | [`ContextMenu`] and the entry points | The shell reports intent; the application dispatches. The decision not to open is taken **before** `egui` is asked for a popup. |
 //! | [`a11y`] | announced names | The chord travels *in the accessible name*, because `egui` 0.35 has no field that carries it anywhere else. |
-//! | [`report`] | published rectangles | A popup at the pointer cannot be found any other way. |
+//! | [`report`] | published rectangles | A popup at the pointer cannot be found any other way — and a painted icon slot publishes one too, because a justified row measures the same with a glyph in it or without. |
 //! | [`ctx`] | the per-menu render context | Icon and rect seams are the **ribbon's own types**; only the custom-row seam differs, and it differs because a menu has no tab and no group. |
 //!
 //! # What an application does

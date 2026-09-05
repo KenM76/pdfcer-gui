@@ -136,32 +136,26 @@ fn arm(app: &mut crate::app::PdfcerApp, ctx: &egui::Context, id: &str) {
 /// history and this one is about the caret, and they are deliberately not
 /// merged.
 fn reflow(ctx: &egui::Context, status: &Status, actions: &mut Vec<Action>) {
+    use crate::text::textedit::ReflowRefusal;
+
     let Status::Open(doc) = status else {
+        // ★★ Unreachable in practice — the control is `enabled_when("doc.pages")`
+        // — and still not a bare `return` as of O127. A dispatch arm that can
+        // leave without a word is the shape this whole function exists against,
+        // and *"there is no document"* is a cause like any other.
+        decline("no-document", ReflowRefusal::NeedsCaret);
         return;
     };
-    let epoch = doc.edit_epoch;
     let Some(draft) = crate::canvas::textedit::read(ctx) else {
-        decline(
-            "no-caret",
-            epoch,
-            crate::text::textedit::reflow_needs_caret(),
-        );
+        decline("no-caret", ReflowRefusal::NeedsCaret);
         return;
     };
     let crate::canvas::textedit::Anchor::Run { run, .. } = draft.anchor else {
-        decline(
-            "caret-not-on-a-run",
-            epoch,
-            crate::text::textedit::reflow_needs_existing_text(),
-        );
+        decline("caret-not-on-a-run", ReflowRefusal::NeedsExistingText);
         return;
     };
     let Some(block) = crate::canvas::textedit::reflow::block_of_run(doc, draft.page, run) else {
-        decline(
-            "run-not-in-a-block",
-            epoch,
-            crate::text::textedit::reflow_no_block(),
-        );
+        decline("run-not-in-a-block", ReflowRefusal::NoBlock);
         return;
     };
     crate::diag::trace(|| {
@@ -179,11 +173,32 @@ fn reflow(ctx: &egui::Context, status: &Status, actions: &mut Vec<Action>) {
 
 /// Say why, in the status line and in the trace, and change nothing.
 ///
-/// ★ One helper for all three, so a fourth refusal cannot be added that traces
-/// but does not tell the operator — the asymmetry that makes a feature look
-/// broken while the log says it declined politely.
-fn decline(reason: &str, epoch: u64, note: &str) {
-    crate::app::actions::record_note(epoch, note.to_owned());
+/// ★ One helper for all of them, so a further refusal cannot be added that
+/// traces but does not tell the operator — the asymmetry that makes a feature
+/// look broken while the log says it declined politely.
+///
+/// # ★★★ It writes to the DECLINE slot, and until O127 it wrote to the wrong one
+///
+/// This function used to call `crate::app::actions::record_note`, which the bar
+/// draws under **`⚑ About your last edit:`**. Every sentence it produced was
+/// correct, and every one of them arrived labelled as a footnote about an
+/// **earlier edit** — for a press that changed nothing. The operator's verdict
+/// was *"I haven't seen the reflow option actually work with anything when I
+/// press it."*
+///
+/// He was being answered. `app::status::decline`'s own header had already ruled
+/// on this exact swap for two other sentences: *"an operator who reads 'About
+/// your last edit' after a gesture that did nothing has been told a small lie
+/// confidently."* Nothing happened here either, so the slot that says so is
+/// `⊗`, and [`crate::app::status::decline::record_reflow`] is the door to it.
+///
+/// ⇒ The `epoch` parameter went with the swap. A disclosure is stamped with the
+/// edit it describes, so it can go stale and retire itself; a decline describes
+/// **no** edit and is retired by the operator's next command instead. Carrying
+/// an epoch here was the clearest possible sign the sentence was in the wrong
+/// place — it was being dated against an edit that had not happened.
+fn decline(reason: &str, why: crate::text::textedit::ReflowRefusal) {
+    crate::app::status::decline::record_reflow(why);
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         format!("reflow-declined reason={reason}")

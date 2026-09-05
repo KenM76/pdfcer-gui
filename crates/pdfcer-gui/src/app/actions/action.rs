@@ -1314,14 +1314,9 @@ pub enum Action {
     // every one of these goes through `vector_edit` exactly as a markup does
     // and `Ctrl+Z` takes it back.
     //
-    // The **irreversible** half is deliberately not here and must never be.
-    // Applying a redaction writes a new file and changes no document, so it
-    // contributes nothing to the undo log, has nothing to order against, and
-    // has no epoch to bump — `crate::dialogs`' header's test for what belongs
-    // in the funnel, and `crate::dialogs::redact` fails all three parts of it.
-    // An `Action::ApplyRedactions` would also mean the one operation in this
-    // program that cannot be undone travelling as plain data through a queue
-    // that a future replay, a macro or a test could re-run.
+    // ★★★ CORRECTED 2026-09-04: applying can now change the OPEN document
+    // (`Pass 250.1`), so `ApplyRedactionsIntoDocument` is below. The paragraph
+    // that argued it never could be is quoted and answered in `actions::redact`.
     // =======================================================================
     /// **Mark every occurrence of some text for redaction.**
     ///
@@ -1419,6 +1414,11 @@ pub enum Action {
         /// The `/Redact` annotation to delete.
         annot_id: pdfcer_core::object::ObjId,
     },
+    /// ★★★ **Apply every redaction mark INTO the open document, writing
+    /// nothing** — `OPERATOR_REQUESTS.md` O125, 2026-09-04. **The whole
+    /// argument — no fields, irreversible, undo cleared — is on the apply arm**
+    /// in `app::actions::redact`, on this file's own R2 rule.
+    ApplyRedactionsIntoDocument,
     /// **Select everything on the current page**, including anything that
     /// has been moved OFF it.
     ///

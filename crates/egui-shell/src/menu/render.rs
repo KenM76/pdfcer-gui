@@ -65,6 +65,30 @@
 //! `min_rect` (`egui-0.35.0/src/placer.rs`), so the justified rows pick the
 //! new width up in the same pass rather than a frame later.
 //!
+//! # ★ Decision 3: the icon column belongs to the menu, the glyph to the
+//! command
+//!
+//! Added 2026-09-04. A menu either has an icon column or it does not, and
+//! the answer is one property of the whole list rather than of each row:
+//! [`plan::reserves_icon_column`] is true iff *some* surviving command
+//! names an icon key. Every command row in a reserving menu then lays out
+//! a slot — [`plan::IconSlot::Glyph`] for the ones with a key,
+//! [`plan::IconSlot::Blank`] for the ones without — so the labels start at
+//! one x and the eye can scan them.
+//!
+//! **A blank slot paints nothing.** Not a placeholder box, not a dimmed
+//! outline, not a "?" — the painter is simply never called for that row.
+//! An indent is not a hole; it is the same left margin its neighbour has.
+//!
+//! This decision must be taken **before** the width is measured, because
+//! a `Blank` slot costs exactly what a `Glyph` slot costs and the widest
+//! row is what sets the body width. [`plan::RowWidths::icon`] spells out
+//! the failure the other ordering produces.
+//!
+//! Nothing changes for a menu whose commands have no icons at all — no
+//! slot, no indent, no extra width — which is what makes the rule safe to
+//! apply to every menu unconditionally.
+//!
 //! # What is *not* here
 //!
 //! **Submenus.** A nested menu is a second popup, a hover-intent timer and
@@ -81,7 +105,7 @@
 use egui::{Atoms, RichText, TextStyle, UiKind, Vec2, vec2};
 
 use crate::commands::{CommandRegistry, ConditionSet, HandlerToken};
-use crate::ribbon::band::{button_padding, text_width};
+use crate::ribbon::measure::{button_padding, text_width};
 use crate::ribbon::report::{RectSink, Reporter};
 use crate::ribbon::{IconPainter, IconRequest};
 use crate::theme::Theme;
@@ -280,10 +304,22 @@ impl<'a> ContextMenu<'a> {
             invoked: Vec::new(),
         };
 
+        // ★ Decision 3 (the icon column) is taken FIRST, because decision 2
+        // depends on it: whether a row lays out an icon slot changes how
+        // wide that row wants to be, and the widest row is what sets the
+        // body width. Measuring before knowing this would under-measure
+        // every icon-less row in a menu that has icons — see
+        // `plan::RowWidths::icon`.
+        //
+        // One decision for the whole menu, taken once, and handed to both
+        // the measurer and every row. `plan::reserves_icon_column` carries
+        // the argument for why it is per-menu rather than per-row.
+        let reserve_icons = plan::reserves_icon_column(slots);
+
         // Decision 2: measure, then set the width, then draw. Nothing
         // below may widen the body, because the two columns only line up
         // if every row was justified to the same number.
-        let width = measure(ui, &ctx, slots);
+        let width = measure(ui, &ctx, slots, reserve_icons);
         if width.truncating {
             crate::verify::event("menu-width-clamped")
                 .kv("context", context_id)
@@ -322,11 +358,14 @@ impl<'a> ContextMenu<'a> {
                 } => command_row(
                     ui,
                     &mut ctx,
-                    command,
-                    *enabled,
-                    *selected,
-                    *shortcut,
-                    width.truncating,
+                    &RowPlan {
+                        command,
+                        enabled: *enabled,
+                        selected: *selected,
+                        shortcut: *shortcut,
+                        truncating: width.truncating,
+                        icon: plan::icon_slot(reserve_icons, command.icon.is_some()),
+                    },
                 ),
                 Slot::Custom { kind, payload } => custom_row(ui, &mut ctx, kind, *payload),
             }
@@ -412,25 +451,54 @@ impl Menu {
 // Rows
 // ---------------------------------------------------------------------
 
-/// Draw one command row: optional icon, label, grow, right-aligned chord.
-fn command_row(
-    ui: &mut egui::Ui,
-    ctx: &mut Ctx<'_>,
-    command: &crate::commands::Command,
+/// Everything one command row needs to draw itself.
+///
+/// A struct rather than eight parameters, and not only for the lint: every
+/// field here is a *decision already taken* — by [`plan::resolve`], by
+/// [`measure`], by [`plan::icon_slot`] — and a positional argument list of
+/// six `bool`-ish values is the shape where two of them get swapped and
+/// the result still compiles.
+struct RowPlan<'a> {
+    /// The registration: label, tooltip, icon key, handler token.
+    command: &'a crate::commands::Command,
+    /// Whether the command's `Enable` predicate holds. `false` greys it.
     enabled: bool,
+    /// Whether the command is currently *on* (a checkable item).
     selected: bool,
-    shortcut: Option<&str>,
+    /// The chord to show, right-aligned, if the keymap binds one.
+    shortcut: Option<&'a str>,
+    /// Whether the body was clamped to [`plan::MAX_BODY_WIDTH`] and labels
+    /// must therefore truncate rather than overflow.
     truncating: bool,
-) {
-    let icon_slot = command
-        .icon
-        .as_ref()
-        .map(|key| (key.clone(), ctx.id("icon", &command.id)));
+    /// What this row does with its icon slot — **the same value
+    /// [`measure`] budgeted width for.** The two must agree; they are
+    /// derived from one function for that reason.
+    icon: plan::IconSlot,
+}
+
+/// Draw one command row: optional icon, label, grow, right-aligned chord.
+fn command_row(ui: &mut egui::Ui, ctx: &mut Ctx<'_>, row: &RowPlan<'_>) {
+    let RowPlan {
+        command,
+        enabled,
+        selected,
+        shortcut,
+        truncating,
+        icon,
+    } = *row;
+
+    // ★ The slot is laid out whenever the MENU reserves the column, even
+    // when this command has no key — that blank is what keeps the label
+    // column straight, and `plan::icon_slot` argues for it. The painter is
+    // only asked for a `Glyph`, so an icon-less row draws literally
+    // nothing in its slot: no placeholder, no outline, no dimmed
+    // stand-in. R9 in the small.
+    let slot_id = icon.is_reserved().then(|| ctx.id("icon", &command.id));
 
     let mut atoms = Atoms::default();
-    if let Some((_, slot_id)) = &icon_slot {
+    if let Some(slot_id) = slot_id {
         atoms.push_right(egui::Atom::custom(
-            *slot_id,
+            slot_id,
             Vec2::splat(ctx.theme.metrics.icon_pts),
         ));
     }
@@ -465,15 +533,27 @@ fn command_row(
         })
         .inner;
 
-    if let Some((key, slot_id)) = icon_slot
+    if icon.draws()
+        && let Some(key) = command.icon.as_deref()
+        && let Some(slot_id) = slot_id
         && let Some(rect) = laid_out.rect(slot_id)
         && let Some(painter) = ctx.icons.take()
     {
+        // ★ Published from INSIDE the painting branch, deliberately.
+        // Reporting it beside the row's own rect would make the name mean
+        // "a slot was reserved", which is true of a blank one too and
+        // therefore says nothing about whether this build draws glyphs at
+        // all. Here, the name's presence in a trace means a painter
+        // existed and was handed this rectangle — which is the only signal
+        // a driven check has on this surface. `menu::report`'s header
+        // carries the argument.
+        ctx.reporter
+            .report(rect, || report::icon(&ctx.context, &command.id));
         let visuals = ui.style().interact(&laid_out.response);
         painter(
             ui.painter(),
             &IconRequest {
-                key: &key,
+                key,
                 rect,
                 tint: visuals.fg_stroke.color,
                 enabled,
@@ -556,13 +636,18 @@ fn custom_row(ui: &mut egui::Ui, ctx: &mut Ctx<'_>, kind: &str, payload: Option<
 
 /// The width this body will be laid out at.
 ///
-/// Measured with [`crate::ribbon::band::text_width`] and
-/// [`crate::ribbon::band::button_padding`] — **the ribbon's own
+/// Measured with [`crate::ribbon::measure::text_width`] and
+/// [`crate::ribbon::measure::button_padding`] — **the ribbon's own
 /// functions**, not copies. A menu row and a band control are both
 /// `egui::Button`s, and two surfaces that measured the same text with
 /// different constants would disagree about how wide the same command is
 /// for no reason a reader could find.
-fn measure(ui: &egui::Ui, ctx: &Ctx<'_>, slots: &[Slot<'_>]) -> plan::BodyWidth {
+fn measure(
+    ui: &egui::Ui,
+    ctx: &Ctx<'_>,
+    slots: &[Slot<'_>],
+    reserve_icons: bool,
+) -> plan::BodyWidth {
     let atom_gap = ui.spacing().icon_spacing;
     let padding = button_padding(ui);
     let totals: Vec<f32> = slots
@@ -572,7 +657,12 @@ fn measure(ui: &egui::Ui, ctx: &Ctx<'_>, slots: &[Slot<'_>]) -> plan::BodyWidth 
                 command, shortcut, ..
             } => Some(
                 plan::RowWidths {
-                    icon: if command.icon.is_some() {
+                    // ★ `icon_slot`, not `command.icon.is_some()` — an
+                    // icon-less row in a menu that reserves the column
+                    // still spends the width, and measuring it as though
+                    // it did not is how the widest row comes to truncate
+                    // its own label.
+                    icon: if plan::icon_slot(reserve_icons, command.icon.is_some()).is_reserved() {
                         ctx.theme.metrics.icon_pts
                     } else {
                         0.0

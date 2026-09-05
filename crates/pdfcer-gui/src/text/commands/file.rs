@@ -41,6 +41,38 @@ pub const fn file_export_image() -> CommandText {
     )
 }
 
+/// ★★★ **Export text** — the operator's ask of 2026-09-04: *"also the engine
+/// can export PDFs as text. we should have export/import for that."*
+///
+/// # ★★ The tooltip's job is the difference from its two NEIGHBOURS
+///
+/// This control sits in a band that already contains `Copy page text` and
+/// `Copy document text`, and an operator scanning it is entitled to know why
+/// there are three ways to get words out of a drawing. The answer is one word —
+/// **a file** — so the tooltip leads with it.
+///
+/// # ★★★ And it names the one thing that makes the export empty
+///
+/// A scanned drawing has no text layer, so this export finds nothing on it. The
+/// receipt says so afterwards and names `Recognise text`, but a tooltip that
+/// warned nobody would let an operator press the control, wait for an
+/// extraction, and be told no. The sentence is short and it is the one an
+/// operator with a plotted sheet needs before pressing.
+///
+/// ⇒ **The tooltip deliberately says nothing about importing text**, because
+/// nothing imports text: `pdfcer-core` offers no route from a text file back
+/// into a PDF. See `crate::app::actions::exporttext`'s header. A tooltip that
+/// mentioned a round trip would be the promise R9 forbids.
+pub const fn file_export_text() -> CommandText {
+    CommandText::new(
+        "Export text…",
+        "Write the words on the page — or on every page — to a plain text file, \
+         encoded as UTF-8. Only the words travel: layout, fonts and position do \
+         not, so a table arrives as lines. A scanned page carries no words to \
+         export; use Recognise text on it first.",
+    )
+}
+
 /// **Save As** — `OPERATOR_REQUESTS.md` O95.
 ///
 /// ★★ The tooltip's job is the **difference from its neighbour**: the two labels

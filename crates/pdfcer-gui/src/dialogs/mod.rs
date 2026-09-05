@@ -95,6 +95,9 @@ pub mod export_dxf;
 /// ★★★ The Export-image window — a picture of the page in a format that can
 /// actually hold what is on it. `OPERATOR_REQUESTS.md` O120.
 pub mod export_image;
+/// ★★★ The Export-text window. Its header carries the half of the operator's
+/// ask that does not exist: **no route from a text file back into a PDF**.
+pub mod export_text;
 pub mod formfield;
 /// ★★ **A dialog is an OS window** — the operator's report of 2026-08-20, and
 /// `ui-conventions/dialogs.md` G1. One host, so the path of least resistance
@@ -122,6 +125,11 @@ pub mod open_in_acrobat;
 pub mod password;
 pub mod placing;
 pub mod print;
+/// **Encrypt… and Permissions…** — `OPERATOR_REQUESTS.md` O119. Its header
+/// carries the three disclosures O119 named and where each is drawn, why the
+/// form is two sections in a fixed order, and why the saving mechanism is
+/// [`redact`]'s part for part rather than a second answer to a settled question.
+pub mod protect;
 /// The Apply-redactions transaction — the report, the two acknowledgements, and
 /// the write. The **irreversible** half of the redaction feature; its
 /// reversible twin is `crate::panels::redact`. See its header for why the
@@ -297,10 +305,14 @@ pub struct DialogsState {
     /// The Set-scale dialog, when one is open.
     ///
     /// Document-scoped, and the first dialog here that **edits the document
-    /// through the action funnel**. Print writes to a spooler and OCR and
-    /// redaction produce new files; this one recalibrates a dimension group in
-    /// the open document, which is an undoable edit — see
+    /// through the action funnel**. Print writes to a spooler and OCR produces
+    /// a new file; this one recalibrates a dimension group in the open
+    /// document, which is an undoable edit — see
     /// `crate::app::actions::Action::SetGroupScale`.
+    ///
+    /// ★ *"and redaction produce new files"* stood here until 2026-09-04:
+    /// `dialogs::redact` now edits through the funnel too, on its default
+    /// destination of three.
     ///
     /// That is why [`Self::show`] takes an action queue at all: this module's
     /// header says a dialog that edits the document *"must use the funnel"*,
@@ -328,6 +340,14 @@ pub struct DialogsState {
     /// copy of something nobody is looking at, derived from a mark census that
     /// no longer exists to be checked against.
     redact: Option<redact::RedactDialog>,
+
+    /// The Encrypt / Permissions window, when one is open — O119.
+    ///
+    /// Document-scoped for [`Self::redact`]'s reason at its sharpest: it holds
+    /// the document's protection **as it stood when the window opened**, and
+    /// every control on it is seeded from that reading. ★ ONE field for the two
+    /// ribbon controls — see [`Self::open_protect`].
+    protect: Option<protect::ProtectDialog>,
 
     // --- application-scoped: survives an empty canvas ---------------------
     /// The About dialog, when one is open.
@@ -410,6 +430,12 @@ pub struct DialogsState {
     /// **Document-scoped**, for its neighbour's reason: every control in it is
     /// a statement about the open document's pages.
     export_image: Option<export_image::ExportImageDialog>,
+
+    /// The Export-text window, when one is open.
+    ///
+    /// **Document-scoped**, for its neighbour's reason: every control in it is
+    /// a statement about the open document's pages.
+    export_text: Option<export_text::ExportTextDialog>,
 
     /// The unsaved-edits confirmation, when one is open.
     ///
@@ -570,6 +596,22 @@ impl DialogsState {
             return;
         }
         self.redact = redact::open_for(status);
+    }
+
+    /// Open the Encrypt / Permissions window — `file.encrypt` and
+    /// `file.permissions`, which differ only in the [`crate::protect::Task`].
+    ///
+    /// Both guards [`Self::open_print`] documents are real, and the already-open
+    /// one is the strong one: rebuilding would silently discard four password
+    /// boxes and a permission list on a second press of a double-clicked button.
+    /// It also declines a press of the *other* control while the window is up,
+    /// which is right — switching the task under a half-filled form would change
+    /// which job is about to be done without changing what is in the boxes.
+    pub fn open_protect(&mut self, status: &Status, task: crate::protect::Task) {
+        if self.protect.is_some() {
+            return;
+        }
+        self.protect = protect::open_for(status, task);
     }
 
     /// Open the Render-diagnostics report for the document in `status`.
@@ -934,8 +976,13 @@ impl DialogsState {
         if self.diagnostics.as_mut().map(|d| d.show(ctx, doc)) == Some(false) {
             self.diagnostics = None;
         }
-        if self.redact.as_mut().map(|d| d.show(ctx, doc)) == Some(false) {
+        // ★ `actions` since 2026-09-04: the apply dialog's default destination
+        // now edits the OPEN document, so it pushes through the funnel — §5.
+        if self.redact.as_mut().map(|d| d.show(ctx, doc, actions)) == Some(false) {
             self.redact = None;
+        }
+        if self.protect.as_mut().map(|d| d.show(ctx, doc)) == Some(false) {
+            self.protect = None;
         }
         if self.insert_pages.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.insert_pages = None;
@@ -948,6 +995,9 @@ impl DialogsState {
         }
         if self.export_image.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.export_image = None;
+        }
+        if self.export_text.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
+            self.export_text = None;
         }
         if self.embed.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.embed = None;
@@ -1247,10 +1297,12 @@ impl DialogsState {
         self.ocr = None;
         self.diagnostics = None;
         self.redact = None;
+        self.protect = None;
         self.scale = None;
         self.insert_image = None;
         self.export_dxf = None;
         self.export_image = None;
+        self.export_text = None;
         self.embed = None;
         self.unembed = None;
         self.compact = None;
@@ -1328,6 +1380,15 @@ impl DialogsState {
             return;
         }
         self.export_dxf = export_dxf::open_for(status);
+    }
+
+    /// **The dispatch target for the `file.export_text` command**, with
+    /// [`Self::open_export_dxf`]'s two guards and for its reasons.
+    pub fn open_export_text(&mut self, status: &Status) {
+        if self.export_text.is_some() {
+            return;
+        }
+        self.export_text = export_text::open_for(status);
     }
 
     /// Open the Export-image window for the open document.

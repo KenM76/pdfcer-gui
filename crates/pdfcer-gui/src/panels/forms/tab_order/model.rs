@@ -1112,6 +1112,12 @@ mod tests {
                 // border and no unusual flags. `None` is the honest value for a
                 // synthetic widget — it means "this file says nothing", which is
                 // exactly true of one built in a test.
+                // ★ `background` arrived with the engine's field-shading Pass on
+                // 2026-09-04, alongside `border`. `None` is the honest value for a
+                // synthetic widget for the same reason the two below it are: it
+                // means "this file states no /MK /BG", which is exactly true of one
+                // built in a test.
+                background: None,
                 border: None,
                 visibility: None,
                 annot_flags: pdfcer_core::annot::AnnotFlags(0),

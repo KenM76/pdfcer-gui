@@ -82,6 +82,7 @@ mod ladder;
 mod markup;
 mod measure;
 mod pages;
+pub mod rail;
 mod tools;
 mod view;
 
@@ -270,6 +271,22 @@ pub fn built_in() -> Shell {
         // — and `Shell::validate`'s uniqueness rule walks tabs only, so nothing
         // would have complained.
         .with_trailing([Item::command("file.open_in_acrobat").shown_when(ACROBAT_AVAILABLE)])
+        // -------------------------------------------------------------------
+        // THE LEFT RAIL — `OPERATOR_REQUESTS.md` O123 part 7 and O126.
+        //
+        // The permanent vertical strip down the left dock's outer edge: the
+        // five panel tabs, the navigate selectors, the selection controls and
+        // rotate. `rail::groups` carries the list and the whole argument,
+        // including the two things that differ deliberately from the approved
+        // mockup (the lasso, and `edit.select_all`) and the ⚠ that putting
+        // rotate here lets Read dirty a document.
+        //
+        // ★★ Data on the manifest rather than a builder callback, for the
+        // reason `SHELL_FRAMEWORK.md` states in one line: *"a rail that only
+        // `pdfcer-gui` knows about breaks it quietly."* `Shell::validate` walks
+        // it, `merge` filters it, and an operator overlay can reorder it —
+        // exactly as for the QAT, the tabs, the trailing region and the keymap.
+        .with_rail(rail::groups())
         // -------------------------------------------------------------------
         // KEYMAP
         //
@@ -812,12 +829,35 @@ pub(super) fn icon_only(id: &str) -> Item {
 
 /// A command drawn **large** — icon above label, spanning the band's rows.
 ///
-/// ★★★ Used **only for a group whose single item it is**, and that restriction
-/// is deliberate rather than timid. `sizing`'s layout rule is that Large items
-/// **lead** their group, so marking one item of a multi-item group Large would
-/// hoist it to the front — which is a change to the **order** `RIBBON_IA.md`
-/// settled, and the ribbon IA is not this file's to amend. In a one-item group
-/// hoisting is a no-op, so the size is free.
+/// ★★★ **The restriction relaxed on 2026-09-04, and the rule that replaced it
+/// is narrower than "anywhere".**
+///
+/// It used to read *"used only for a group whose single item it is"*, on the
+/// grounds that `sizing`'s layout rule hoists Large items to the front of
+/// their group, so promoting one item of a multi-item group would silently
+/// re-order what `RIBBON_IA.md` settled — and the ribbon IA is not this
+/// file's to amend.
+///
+/// That reasoning is intact. What changed is that `mockups/pdfcer-shell.html`
+/// is now a specification of this band rather than a sketch of it, the
+/// operator having said *"I want everything to look exactly like that
+/// including sizing"*, and it draws a great many controls large. So the rule
+/// is now the **consequence** rather than the proxy for it:
+///
+/// > **A `large` may be added only where hoisting is a no-op** — i.e. the
+/// > promoted items are already the leading run of their group, or the whole
+/// > group is promoted together. Anywhere else, the promotion is an IA change
+/// > and belongs in `RIBBON_IA.md` first.
+///
+/// `manifest::tests::large_items_already_lead_their_group` asserts it, so the
+/// rule is checked rather than remembered. Two places where the mockup
+/// disagrees with the shipped manifest were therefore **left alone**, and are
+/// recorded here rather than silently skipped:
+///
+/// | mockup | shipped | why not promoted |
+/// |---|---|---|
+/// | Edit ▸ Content draws `Edit text` and `Add text` large, *after* a column of `Select all` / `Reflow paragraph` | all four Medium | promoting the two would hoist them **in front of** the column, which is the reordering this rule forbids. The mock authors its own column order; the band derives one. |
+/// | View ▸ Navigate and Pages ▸ Transform draw their tools large | [`icon_only`] | these are the `RIBBON_SCALING.md` §5.1 icon-only clusters, whose whole argument is that *position in a labelled group teaches the meaning*. Reversing that is a decision about the tool strip, not about a glyph size. |
 ///
 /// It is also where it reads best: a lone control in a captioned group looks
 /// stranded at Medium, and Word gives exactly this treatment to its own
@@ -843,7 +883,7 @@ pub(super) fn large(id: &str) -> Item {
 
 mod registers;
 
-pub use registers::{DIRECTED, PLANNED};
+pub use registers::{DIRECTED, PLANNED, TAB_SCOPED};
 
 #[cfg(test)]
 mod tests {
@@ -858,6 +898,91 @@ mod tests {
             .into_iter()
             .map(|(_, id)| id)
             .collect()
+    }
+
+    /// ★★★ **Every `Large` item already leads its group**, so promoting one
+    /// never reorders the band.
+    ///
+    /// This is the rule that replaced [`super::large`]'s old *"only for a
+    /// group whose single item it is"* restriction on 2026-09-04, when
+    /// `mockups/pdfcer-shell.html` became this band's specification and a
+    /// great many controls became Large.
+    ///
+    /// # Why the rule needs a test rather than a sentence
+    ///
+    /// `egui_shell::ribbon::sizing`'s layout rule is that **Large items lead
+    /// their group** — they are drawn first, in a horizontal run at the
+    /// group's left, and everything else wraps into the rows beside them. That
+    /// is not a preference; a Large control spans the rows and therefore
+    /// cannot live *inside* the row wrapping.
+    ///
+    /// The consequence is that writing `large("x")` in the middle of a group
+    /// **silently hoists `x` to the front of it**. Nothing fails, nothing
+    /// warns, and the only evidence is that the band's controls are in a
+    /// different order from the one `RIBBON_IA.md` argued for — an order the
+    /// operator reaches for by position, in groups like Cut / Copy / Paste,
+    /// where reordering is the whole cost.
+    ///
+    /// So: a `Large` item is legal exactly where hoisting is a no-op, i.e.
+    /// where the Large items are already a **prefix** of their group's item
+    /// list. Separators and custom items count as non-Large for this purpose,
+    /// which is the strict reading — a `Recent ⌄` gallery hoisted past is just
+    /// as reordered as a command.
+    ///
+    /// ★ Written as a scan for the first non-Large item followed by a Large
+    /// one, rather than as a whitelist of blessed groups. A whitelist is a
+    /// second copy of the manifest and goes stale; this cannot, because it is
+    /// derived from the manifest it checks.
+    #[test]
+    fn large_items_already_lead_their_group() {
+        for tab in built_in().tabs() {
+            for group in tab.groups() {
+                let mut seen_other = None::<usize>;
+                for (i, item) in group.items().iter().enumerate() {
+                    let is_large = matches!(item, Item::Command { size, .. } if *size == egui_shell::manifest::ItemSize::Large);
+                    match (is_large, seen_other) {
+                        (true, Some(at)) => panic!(
+                            "`{}` ▸ `{}` item {i} is Large but item {at} before it is not, so \
+                             `ribbon::sizing` will hoist it to the front of the group and the \
+                             band will draw this group in an order the manifest does not \
+                             state. Either promote the whole leading run, or leave this item \
+                             Medium and take the size question to RIBBON_IA.md",
+                            tab.id, group.id
+                        ),
+                        (false, None) => seen_other = Some(i),
+                        _ => {}
+                    }
+                }
+            }
+        }
+    }
+
+    /// ★★ **…and the manifest actually contains some Large items**, so the
+    /// scan above is not vacuous.
+    ///
+    /// A manifest with no Large item at all satisfies
+    /// [`large_items_already_lead_their_group`] perfectly, and would go on
+    /// satisfying it after somebody deleted every `large(…)` call in the tree.
+    /// The count is a floor rather than an exact number — the exact number is
+    /// a manifest decision that will move, and pinning it here would make an
+    /// IA change fail a test about hoisting.
+    #[test]
+    fn the_manifest_draws_large_controls_at_all() {
+        let large = built_in()
+            .tabs()
+            .iter()
+            .flat_map(|t| t.groups())
+            .flat_map(|g| g.items())
+            .filter(|i| {
+                matches!(i, Item::Command { size, .. } if *size == egui_shell::manifest::ItemSize::Large)
+            })
+            .count();
+        assert!(
+            large >= 10,
+            "the manifest emits {large} Large items. The mockup draws well over a \
+             dozen, and a band with none of them is the flat row of identical \
+             buttons the 2026-09-04 pass was asked to replace"
+        );
     }
 
     /// The shape of the ribbon, pinned.
@@ -910,8 +1035,14 @@ mod tests {
         assert_eq!(shell.contextual_tabs().len(), 1, "one contextual tab");
         assert_eq!(
             shell.all_tabs().flat_map(Tab::groups).count(),
-            34,
-            "thirty-four groups. ★ 33 → 34 on 2026-08-29: Pages ▸ Clipboard (O59 item 2). \
+            35,
+            "thirty-five groups. ★★ 34 → 35 on 2026-09-04: File ▸ Security (O119) — \
+             `Encrypt…` and `Permissions…`, in their own band immediately after Export. \
+             A new group rather than two rows under Document, and rather than a row on \
+             Edit ▸ Protect where a reader would first look: every other command on Edit \
+             is an undoable edit to page CONTENT, and these two rewrite every byte and \
+             enter nothing in the undo log. \
+             ★ 33 → 34 on 2026-08-29: Pages ▸ Clipboard (O59 item 2). \
              Its own band rather than three more entries under Organise, for the reason that \
              band's own note gives about Delete leading it — an operator comes to a band \
              because of what it is CALLED, and Cut/Copy/Paste under a caption reading \
@@ -1096,6 +1227,9 @@ mod tests {
                 "view.close_other_documents",
                 "view.read_mode",
                 "view.fullscreen",
+                // ★ Before Reset layout: the cheap remedy above the
+                // destructive one. See the manifest's own note at the item.
+                "view.dock_all_panels",
                 "view.reset_layout",
             ]
         );

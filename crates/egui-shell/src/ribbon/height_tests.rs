@@ -526,7 +526,7 @@ fn two_padded_groups() -> Shell {
 ///    [`super::plan::GROUP_PADDING`]. This is what fails if either
 ///    `add_space` is deleted.
 /// 2. **The gap between the two groups** — group edge to group edge — is
-///    `2 × GROUP_PADDING + `[`super::band::separator_width`]. That is the
+///    `2 × GROUP_PADDING + `[`super::measure::separator_width`]. That is the
 ///    number the mockup actually specifies: its `.group` padding is 13 px each
 ///    side and its divider is a zero-width `border-right`, giving 26 px, and
 ///    this build reaches the same 26 pt as 6 + 14 + 6 because its divider is a
@@ -636,7 +636,7 @@ fn a_group_is_inset_by_the_padding_the_plan_budgets_for_it() {
 /// The inter-group separator's cost, measured from a real `Ui` rather than
 /// re-derived from constants.
 ///
-/// [`super::band::separator_width`] takes a `&Ui` because it reads
+/// [`super::measure::separator_width`] takes a `&Ui` because it reads
 /// `item_spacing` from the live style, and a test that spelled the sum out
 /// again would pass while disagreeing with the renderer — which is the exact
 /// failure `super::plan`'s header warns about for the *group* width.
@@ -649,7 +649,7 @@ fn separator_width(ctx: &egui::Context) -> f32 {
         ..Default::default()
     };
     let mut seen = None;
-    let _ = ctx.run_ui(input, |ui| seen = Some(super::band::separator_width(ui)));
+    let _ = ctx.run_ui(input, |ui| seen = Some(super::measure::separator_width(ui)));
     seen.expect("the closure never ran, so no separator width was measured")
 }
 
@@ -747,5 +747,169 @@ fn the_band_leaves_clear_space_beneath_its_captions() {
         lowest.bottom(),
         ribbon.bottom(),
         super::band::BAND_PADDING_BOTTOM
+    );
+}
+
+// ===========================================================================
+// ★★★ THE MOCKUP'S VERTICAL RHYTHM — 2026-09-04
+//
+// Three tests added when `mockups/pdfcer-shell.html` was adopted as the
+// band's specification rather than as a sketch of it. The operator's words
+// were *"I want everything to look exactly like that including sizing"*, and
+// his fourth complaint was the one these are about: *"the mock's band is
+// visibly taller with more generous rows and the group caption sitting
+// lower."*
+//
+// ★ None of them asserts a total height against a literal, and that is
+// deliberate. A literal would pin the number and say nothing about where it
+// comes from, so the next font change would fail a test that reads as
+// arbitrary. Each of these pins a **relationship** the mockup states:
+// clearance above the rows, room for the rows themselves, and a caption
+// drawn at the size the height was predicted from.
+// ===========================================================================
+
+/// ★★★ **Every preset reserves enough row area for its own two rows.**
+///
+/// The one invariant that makes [`crate::theme::Metrics::ribbon_rows`] safe as
+/// a stated number rather than a derived one, and the reason the ribbon
+/// rhythm is a *metric* at all rather than a constant in `band`.
+///
+/// The band's row area is now a **budget** — the mockup's 68 px, into which
+/// [`super::plan::GROUP_ROWS`] rows are laid, with the caption hanging off the
+/// bottom of it (`.grp .cap { margin-top: auto }`). A budget smaller than what
+/// two rows cost does not fail loudly: the second row simply draws over the
+/// caption, in one preset, which is the class of defect
+/// `MODES_AND_PANELS.md` says has exactly one oracle and this project would
+/// rather not need it for.
+///
+/// `Airy` is the preset that makes this real, and it is why transcribing the
+/// mockup's `68` into all three would have been wrong: its `control_height` is
+/// 28 pt and its `gutter` 8, so two of its rows cost 72 — **more than the
+/// mockup's whole area.**
+///
+/// ★ Asserted over `Preset::ALL` rather than over the three by name, so a
+/// preset added later cannot ship unmeasured. That is the same discipline
+/// `Preset::ALL`'s own doc comment asks for.
+#[test]
+fn every_preset_reserves_room_for_its_own_rows() {
+    #[allow(clippy::cast_precision_loss)] // single digits
+    let rows = super::plan::GROUP_ROWS as f32;
+    for &preset in crate::theme::Preset::ALL {
+        let m = crate::theme::Theme::new(preset).metrics;
+        let needed = (m.control_height + m.gutter) * rows;
+        assert!(
+            m.ribbon_rows >= needed,
+            "preset {preset:?} budgets {} pt of band row area, but {} of its own rows \
+             cost {needed} pt ({} control + {} gutter, {rows} rows). The second row \
+             would be drawn over the group caption",
+            m.ribbon_rows,
+            super::plan::GROUP_ROWS,
+            m.control_height,
+            m.gutter
+        );
+    }
+}
+
+/// ★★ **…and the re-wrap rung survives the budget**, which is the half that
+/// could have been broken silently.
+///
+/// `RIBBON_SCALING.md`'s ladder is re-wrap → collapse → scroll, and rung one
+/// divides the *same* row area into [`super::plan::MAX_GROUP_ROWS`] instead of
+/// [`super::plan::GROUP_ROWS`]. It has a self-disabling guard —
+/// `band::rewrap_is_legible` — that turns the rung off rather than clipping
+/// icons when the arithmetic does not clear, and **a rung that has switched
+/// itself off looks exactly like a rung that was never needed.** So a change
+/// to the row area could disable the first rung of the ladder in one preset
+/// and no other test in this crate would say a word.
+///
+/// The margin is stated, not just the sign: with `Quiet` the compressed row is
+/// `68/3 − 2 = 20.67` pt against a 16 pt icon. Before the mockup pass it was
+/// `56/3 − 2 = 16.67` against the same 16 — a margin of two thirds of a point,
+/// i.e. the rung was one theme tweak from vanishing.
+#[test]
+fn every_preset_can_still_re_wrap_a_group() {
+    #[allow(clippy::cast_precision_loss)] // single digits
+    let n = super::plan::MAX_GROUP_ROWS as f32;
+    for &preset in crate::theme::Preset::ALL {
+        let m = crate::theme::Theme::new(preset).metrics;
+        // The same expression `band::compressed_control_height` evaluates,
+        // written out rather than called because that function needs a `Ui`
+        // and this claim is about the numbers alone.
+        let compressed = m.ribbon_rows / n - 2.0;
+        assert!(
+            compressed >= m.icon_pts,
+            "preset {preset:?} compresses a re-wrapped row to {compressed} pt, which \
+             cannot show its own {} pt icon — so `rewrap_is_legible` returns false, \
+             the collapse ladder loses its first rung in this preset, and every \
+             group jumps straight from natural to collapsed",
+            m.icon_pts
+        );
+    }
+}
+
+/// ★ **The band draws clear space above its first control** — the mockup's
+/// `.ribbon { padding: 6px 8px 0 }`, the first figure.
+///
+/// The exact mirror of [`the_band_leaves_clear_space_beneath_its_captions`],
+/// and it exists for the same reason: a padding that is *budgeted* and not
+/// *drawn* is invisible to every test that measures a total height, because
+/// the total is right and the ink is in the wrong place. That is the shipped
+/// defect `super::plan::GROUP_PADDING` produced horizontally, and this is the
+/// vertical version of the tripwire.
+///
+/// Measured from the **group's own published rectangle** rather than from the
+/// ribbon's, because the ribbon rect includes the tab strip above the band and
+/// would answer a different question. A group's rect starts at the band's top
+/// edge; its first control starts `ribbon_pad_top` below that, and nowhere
+/// else in `group_body` is any space emitted before the rows.
+#[test]
+fn the_band_draws_clear_space_above_its_first_control() {
+    let ctx = context();
+    let pad = crate::theme::Theme::of(&ctx).metrics.ribbon_pad_top;
+    // The vacuity guard, exactly as the bottom-clearance test carries one: a
+    // zero padding makes the assertion below `x >= -SLACK`, which every band
+    // in every state satisfies.
+    assert!(
+        pad > 0.0,
+        "this preset reserves no space above the band's first row, so the \
+         clearance assertion below holds for any band at all"
+    );
+
+    let frame = render_shell_with(
+        &ctx,
+        &two_padded_groups(),
+        &wide_registry(),
+        "padded",
+        &ConditionSet::new(),
+        1400.0,
+    );
+
+    let group = frame
+        .rect("ribbon.group.padded.shapes")
+        .expect("the Shapes group must be drawn in the band, or there is nothing to measure from");
+    let items = frame.all("ribbon.item.");
+    assert!(
+        !items.is_empty(),
+        "the band published no control rectangles, so the clearance below would be \
+         measured against nothing"
+    );
+    let highest = items
+        .iter()
+        .filter(|r| group.contains_rect(**r))
+        .fold(f32::INFINITY, |a, r| a.min(r.top()));
+    assert!(
+        highest.is_finite(),
+        "no control was published inside `ribbon.group.padded.shapes` — the group \
+         drew nothing, and a clearance over an empty group is not the claim"
+    );
+
+    let clearance = highest - group.top();
+    assert!(
+        clearance >= pad - SLACK,
+        "the Shapes group begins at y={} and its first control at y={highest} — \
+         {clearance} pt of clearance against the {pad} pt the theme reserves. Zero \
+         is the defect: the band's first row sits on the seam with the tab strip \
+         above it",
+        group.top()
     );
 }

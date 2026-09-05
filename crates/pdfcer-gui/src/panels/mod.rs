@@ -650,6 +650,22 @@ pub struct PanelsState {
     /// never meant for, and on this feature a search authors marks over whatever
     /// it hits.
     redact: redact::RedactUi,
+    /// **What the operator has typed into the Layers panel's search box.**
+    ///
+    /// Here rather than on the panel for [`Self::redact`]'s first reason: a
+    /// `TextEdit` needs a `&mut String` that survives the frame, and a panel
+    /// body is handed `&OpenDoc` — shared, deliberately, so that it cannot
+    /// mutate. It is the operator's own typing rather than a derived cache,
+    /// which is the line this module's header draws.
+    ///
+    /// ★ Reset with the document by [`Self::forget_document`], and here that
+    /// is a straightforward good rather than a safety property: a query left
+    /// over from a previous file would open the next one showing a filtered
+    /// layer list with no obvious cause. Unlike `redact`'s, this search
+    /// authors nothing — the worst it can do is hide rows — so the reset is
+    /// about not confusing the operator rather than about not marking the
+    /// wrong document.
+    layers_search: String,
     /// The Properties panel's half-typed document metadata.
     ///
     /// Here for [`Self::pages`]' reason and one of its own: a `TextEdit` needs
@@ -967,6 +983,15 @@ impl PanelsState {
     /// query while it draws the field and writes the mode while it reads the
     /// switch, and splitting that into accessors per field would cost it the
     /// ability to hold one borrow for the frame.
+    /// The Layers panel's search box, mutably.
+    ///
+    /// One accessor for one `String`, matching [`Self::redact_mut`]'s shape:
+    /// the panel needs the `&mut` to hand to a `TextEdit` and needs to read
+    /// the trimmed value back in the same frame.
+    pub fn layers_search_mut(&mut self) -> &mut String {
+        &mut self.layers_search
+    }
+
     pub fn redact_mut(&mut self) -> &mut redact::RedactUi {
         &mut self.redact
     }

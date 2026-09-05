@@ -65,7 +65,7 @@ one direction**, and it is worth being precise about which:
   written up: a verdict about a repository this project does not build has no
   falsifier here and rots silently regardless of diligence on either side.
 
-**Sixty-four of the ninety rows turned out to be reachable in this shell today.**
+**Sixty-five of the ninety rows turned out to be reachable in this shell today** (★ 64 on the day this was written; the encryption-authoring row moved out of `blocked` the same day, on the operator's O119 ruling).
 Some by weeks. The engine's evidence for a dozen of them is a single dated sweep
 — *"confirmed 2026-08-19"* — taken before the work landed, and an absence
 measured once is a claim with a date on it.
@@ -187,10 +187,10 @@ daily.
 
 | verdict | rows |
 |---|---|
-| `shipped` — the engine's `[ ]` is stale | **64** |
+| `shipped` — the engine's `[ ]` is stale | **65** |
 | `wanted` — a real gap | **18** |
 | `declined` — deliberately no surface | **5** |
-| `blocked` — waiting on something named | **3** |
+| `blocked` — waiting on something named | **2** |
 | `unknown` | **0** |
 | **total** | **90** |
 
@@ -258,17 +258,34 @@ written (2026-09-04)** — `dialogs::export_image`, `app::actions::imageexport` 
 Status line sets the bar and it is the engine's bar: *"they get ticked when the
 GUI half is driven, not when it compiles."*
 
+★★ **Updated later the same day, after O120's second pass.** Three of the four
+rows are now written and one is not, and the split is worth stating plainly
+because it is easy to read as "three quarters done":
+
+* **PNG / JPEG / SVG / EMF are written.** Four radios, one window, one writer.
+* **Copy-out is not written at all**, and that is a decision rather than a
+  remainder. Its row below carries the whole argument; the short form is that
+  the two dependencies it needs are in the lockfile and not in this crate's
+  manifest, that the metafile placement needs `unsafe` in a crate that
+  `forbid`s it, and that a copy-out missing its two vector entries makes Word's
+  paste a flat picture — which an operator cannot tell from a broken feature.
+
+⇒ **None of the four moves to `shipped`.** The three written ones are still
+undriven — the Export-image window has not been opened in a running binary —
+and the fourth does not exist. `D:\Dev\pdfcer\docs\FEATURES.md` is read-only
+from here and no box in it is ticked by this pass.
+
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 | Export page(s) to PNG or JPEG, with real transparency (PNG … | **O120, and it is the reason this file exists.** He asked the **engine** for PNG/JPEG/SVG export on 2026-09-03; the engine shipped it that day and sent a note; this shell built none of it and had no row. `export::encode_png(&pixmap, Some(dpi))` with `PageBackdrop::Transparent` is the whole call. ★ The `pHYs` DPI is not a detail: without it Word places a 300 dpi page four times too large, which is the difference between *supporting export* and *the thing you paste being the right size*. A transparent JPEG must be **refused by name**, never silently flattened. |
 | Export page(s) to SVG 1.1 (vector), from the renderer's … | **O120.** `svg::export_svg_view(...)` → `SvgExport { svg, outcome }`, from the renderer's own display-list recording, so it carries images, clips, transparency and blend modes rather than the editing model. Axial and focal-radial shadings go out as native gradients; what cannot be expressed exactly comes back in `ExportTally` and goes **off-canvas**, after the export, per rule 4. |
-| Export page(s) to EMF (Windows Enhanced Metafile) — a hand-rolled … | **O120, and it is the format Word and LibreOffice actually paste.** `emf::export_emf(...)`; solid opaque geometry goes out as real GDI path records and everything else is replayed as `EMR_ALPHABLEND`, counted. LibreOffice 24.x reads the EMF because it cannot read a foreign SVG clipboard entry before 25.2. |
-| Copy page content to the OS clipboard as editable vector (Word/PowerPoint/Excel/Inkscape/LibreOffice) … | **O120's second half, and the one he asked for in his own words**: *"copy and paste vector graphics into word or inkscape"*. The format order is measured, not chosen — SVG, then EMF, then PNG, then `CF_DIBV5`, all in one transaction; place only the raster formats and Word degrades it to a plain picture. ⇒ `arboard` cannot register custom formats, so this needs `clipboard-win` directly, as the CLI does. |
+| Export page(s) to EMF (Windows Enhanced Metafile) — a hand-rolled … | **WRITTEN 2026-09-04, and it stays `wanted` for the same reason the three above it do.** `emf::export_emf_view(...)` is called by `app::actions::export::emf_bytes`; `ImageFormat::Emf` is the fourth radio in the Export-image window, with `EmfOptions::background: None` for the transparent case (*"EMF's natural state"*, per the engine's own CLI). The disclosure names all five reasons a part became a bitmap — see-through solids, blend modes, gradients, images, transparency groups — plus the LibreOffice 24 nonzero-fill warning, because that reader is the entire reason the format is offered. ⚠ `EmfOutcome` is `#[non_exhaustive]` **with no `Default`**, so no test outside `pdfcer-render` can build one; the shell copies it into its own `EmfCounts` purely so the counters-to-sentences mapping is testable. If the engine adds a counter, that copy must gain the field in the same commit or the disclosure silently omits it. ★ Still `wanted`: the window has not been driven in a running binary. |
+| Copy page content to the OS clipboard as editable vector (Word/PowerPoint/Excel/Inkscape/LibreOffice) … | **⚠ NOT BUILT, AND DELIBERATELY SO — this is the one row where a partial build is worse than none.** The format order is measured, not chosen — SVG, then EMF, then PNG, then `CF_DIBV5`, all in one transaction; place only the raster formats and Word degrades the paste to a flat picture that looks correct and cannot be scaled or ungrouped. **Two things block it, neither fixable from inside `crates/pdfcer-gui/src/`:** (1) `clipboard-win` 5.4.1 and `windows` 0.62.2 are already **linked into this binary** — measured with `cargo tree -p pdfcer-gui -i`, not read off a lockfile line: `clipboard-win` under `arboard` ‹ `egui-winit` ‹ `eframe`, and `windows` by two routes, under `accesskit_windows` ‹ `eframe` and under `pdfcer-print`, which is a direct dependency. Neither is a **direct** dependency of `pdfcer-gui` — adding them is a manifest edit; `arboard`, which this crate can already reach, has no registered-format API and so cannot place entries 1 or 3. (2) `CF_ENHMETAFILE` is a GDI handle, so it needs `SetEnhMetaFileBits` + `SetClipboardData` — `unsafe`, which `#![forbid(unsafe_code)]` in `lib.rs` and `main.rs` will not host and which `forbid` will not let a module relax. ⇒ The project has answered this exact question once already: `crates/native-window` is a whole crate for four `user32` calls, and the placement half belongs in a `crates/native-clipboard` on that precedent — a new manifest plus a `members` entry. **What IS built and proved:** `crate::clipboard` carries the ordered `ORDER`, `svg_payload` (Chromium's UTF-8-plus-one-NUL, what Office was validated against), `dib_v5` (premultiplied top-down BGRA, `BI_BITFIELDS`, sRGB) and `CopyPayload::degrades_word_to_a_picture`, all under test, so the next pass adds four Win32 calls rather than re-deriving a measurement. **No test touches the real clipboard**, on purpose — it is global state on the operator's machine and a test that placed bytes would destroy whatever he had copied. |
 
 
 ---
 
-## `blocked` — 3 of 90
+## `blocked` — 2 of 90
 
 Wanted, and waiting on something named. Every row here says **what** it is waiting on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat, and this project has found seven stale blockers already.
 
@@ -284,12 +301,14 @@ Wanted, and waiting on something named. Every row here says **what** it is waiti
 |---|---|
 | Author a named destination and point an outline item at it — `add_named_destination` … | The engine's row states the block and it is this project's own argument coming back: *"Shipped and deliberately NOT wired in `pdfcer-gui` — that shell has drag-to-reorder pages, and a destination resolved-and-baked at author time would look identical to a correct one until the next reorder moved the page it points at. Held until there is a surface where the destination-kind choice means something (the `insert_pages` bookmark-carry work)."* **Blocked on that surface**, not on the verb; `add_named_destination` is called nowhere here and should stay that way until then. |
 
-### Export
-
-| Row (`FEATURES.md`, blocked) | Why |
-|---|---|
-| Encrypt a document (AES-256, `/R` 6 only), set … | **Blocked on the operator's own ruling, filed as O119 and awaiting an answer.** The authoring half arrived on 2026-09-04 with no note, and the only thing that made a noise was `check-verb-coverage.sh` — the fourth time. It is a new **surface**, not a new button: a password box, a permissions list, and a save that rewrites the whole file. ★ Three facts change the answer and are already written for the screen: a permission setting is a request rather than a lock, protecting a signed drawing is refused, and changing permissions on a protected file needs the owner password. |
-
+★ **The Export row that used to sit here — *"Encrypt a document (AES-256, `/R` 6
+only), set …"* — moved to `shipped` on 2026-09-04**, when the operator answered
+the ruling it was blocked on with *"yes add encryption and permissions"*. It is
+the first row in this file to move OUT of `blocked`, and the movement is what
+the section's own opening sentence asks for: a blocked row names what it waits
+on, so when the named thing arrives the row goes somewhere. Its reasoning is not
+deleted — it is carried into the `shipped` entry, which is this file's standing
+rule.
 
 ---
 
@@ -327,9 +346,9 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — 64 of 90
+## `shipped` — 65 of 90
 
-**The engine's row is stale: an operator can reach this today.** Sixty-four of ninety, which is the single largest finding of this triage. Each row names the surface or the call site, and where this project's own record dates the work, the date. These rows are kept, never deleted — `EDITABLE_SURFACES.md`'s own rule, and the argument is the valuable part.
+**The engine's row is stale: an operator can reach this today.** Sixty-five of ninety (★ 64 → 65 on 2026-09-04, when the encryption-authoring row moved out of `blocked` on the operator's O119 ruling), which is the single largest finding of this triage. Each row names the surface or the call site, and where this project's own record dates the work, the date. These rows are kept, never deleted — `EDITABLE_SURFACES.md`'s own rule, and the argument is the valuable part.
 
 ### Document & pages
 
@@ -343,11 +362,55 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
 | Text on a rotated baseline — a CAD title block's `Tm = [0 1 -1 0 e f]` … | **Consumed — `canvas::textsel` reads `line.direction`.** This is the field the engine's row says *"`pdfcer-gui` filed the request and has not yet consumed"*; it is read in the line model and in the selection geometry, which is what makes a swept selection follow a CAD title block's rotated baseline instead of boxing it page-axis. The row is stale. |
-| Choose what pdfcer does when bold or italic needs … | **Reachable — Settings, honoured at `app::actions::textstyle`**, which reads `doc.settings.style_policy` and passes it into `FormatOptions`. The engine's row explains its `[ ]` as *"the three-option control shipped in `crates/pdfce-gui`'s settings window … `D:\dev\pdfcer-gui` has not been notified"* — it was notified, and the settings-completeness test would have failed the build if the key had no control. Stale. |
+| Choose what pdfcer does when bold or italic needs … | **Reachable — Settings, honoured at `app::actions::textstyle`**, which reads `doc.settings.style_policy` and passes it into `FormatOptions`. The engine's row explains its `[ ]` as *"the three-option control shipped in `crates/pdfce-gui`'s settings window … `D:\dev\pdfcer-gui` has not been notified"* — it was notified, and the settings-completeness test would have failed the build if the key had no control. Stale. <!-- old-name-exempt: quoting the engine's own row, which names the deleted `crates/pdfce-gui` by its real historical path --> |
 | Copy-on-write a shared form XObject onto one page … | **Reachable — `app::actions::xobject` calls `unshare_form`**, offered as *"Give this page its own copy"* with seven worded refusals (`EDITABLE_SURFACES.md`, the twelve-gap table). It is the option the engine's decision `112` names for an edit that would otherwise change every invocation. |
 | Reflow within a block, including justified alignment. Not reachable … | **Reachable — Edit ▸ Reflow paragraph, and a right-click inside the text you are editing, 2026-08-28**, on the operator's own ask. `app::actions::textstyle` calls `reflow_block`. The engine quotes this project's *"three gates … Untouched"* line, which was true when written and stopped being true the day the command shipped; the save-and-reopen gate survives as a **worded refusal with a remedy**, which is a shipped behaviour rather than an absence. |
 | Add new page text — point insert and wrapped multi-line … | **Reachable — Edit ▸ Add text**, click to place one line or **drag a rectangle** for a wrapped multi-line box (2026-08-21), committed with `Ctrl+Enter`; `app::actions::apply` calls `add_text`. The engine's *"no font, size or colour surface yet"* predates the Format work: new text is authored with a font, a size and a colour. Stale. |
 | OCR as an edit to the open document, not a separate file — `EditSession::add_ocr_layer` … | **Reachable — `app::actions::apply` calls `add_ocr_layer`**, so recognition is an undoable edit to the open document. The engine's *"`gui` still routes through the free-function one-shot (`<stem>-recognised.pdf`, never in place)"* describes the route as it was; both routes exist now and the in-place one goes through the funnel. |
+
+#### ★★★ Text export to a FILE — 2026-09-04, and it is a row this gate structurally cannot see
+
+**Not a table row above, and the tally is deliberately unchanged**, because
+this is not one of the ninety. `FEATURES.md`'s *"Extract and copy text — search
+index, `ToUnicode`, reading order, page/document clipboard copy"* is
+`[x] core / [x] gui`, so `check-engine-backlog.sh` never collects it, so nothing
+in this file was ever going to mention it. Recorded here anyway, because the
+**shape** is worth more than the row:
+
+> A capability whose `gui` column is already `[x]` can still be **half
+> reachable**, and no gate in this project can tell.
+
+That row's `gui` tick was earned by `file.copy_page_text` and
+`file.copy_document_text` — the **clipboard** half, shipped 2026-08-14 and wired
+2026-08-20. The engine's own words in the row are *"page/document clipboard
+copy"*, and they are accurate. What did not exist until 2026-09-04 was writing
+that text to a **file**, which is the half an operator asks for when they want
+to search a drawing set, diff two revisions, or paste a specification's words
+into a specification.
+
+* **The surface**: `file.export_text`, File ▸ Export, beside Export DXF /
+  Export image / Export form data. Page scope through
+  `imageexport::resolve_pages` → `dialogs::print::tabs::parse_page_range`;
+  U+000C or a visible page marker; UTF-8, optional BOM, optional CRLF.
+  `app::actions::export::text` + `app::actions::exporttext`.
+* **The invariant**: at its defaults it writes byte-for-byte the string
+  `file.copy_document_text` already puts on the clipboard. One answer to *"what
+  is the text of this document"*, not two.
+* **The refusal**: a document with no readable text refuses **before the save
+  picker**, and names `File ▸ Recognise text`. A scanned drawing extracts
+  successfully and returns nothing, and a zero-byte `.txt` looks exactly like a
+  successful export.
+
+★★ **The IMPORT half the operator asked for in the same sentence does not exist
+in the engine at all**, and that is a genuine gap with nowhere else to live:
+there is no document builder, no page-level text replace, and `add_ocr_layer`
+takes positioned words rather than a file. `add_text` is the nearest verb and
+stops at pagination — its overflow is *emitted, never clipped* (R76), so a
+two-page text file would produce one page with the second page painted off the
+sheet. Filed as
+`open/request_there_is_no_route_from_a_text_file_back_into_a_pdf.md`; the
+durable record is `app::actions::exporttext`'s module header. **No control was
+drawn for it.**
 
 ### Vector objects (Inkscape-style editing)
 
@@ -403,7 +466,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
 | Rasterize an arbitrary page region, so magnification is bounded by viewport … | **Reachable — `render::worker` calls `render_page_region` for the canvas**, and `render::offpage` calls it for content outside the crop box. The engine's *"no GUI code path calls it at all"* is the single most consequential stale claim in this file: region rendering is what holds the cost of a zoom flat instead of quadratic, and it is what this shell's canvas is built on. |
-| `/Separation`/`/DeviceN`/`Lab`/`CalGray`/`CalRGB` colour spaces on image … | **Reachable — it is what the canvas draws.** The shell rasterises through `render_page_with_view` / `render_page_region`, so an `/Indexed` duotone or a `/Separation` image XObject paints correctly on screen with no code of ours involved. The engine's *"GUI surface deliberately paused by the operator"* is a note about a **control** surface and about a project (`crates/pdfce-gui`) that has since been deleted. |
+| `/Separation`/`/DeviceN`/`Lab`/`CalGray`/`CalRGB` colour spaces on image … | **Reachable — it is what the canvas draws.** The shell rasterises through `render_page_with_view` / `render_page_region`, so an `/Indexed` duotone or a `/Separation` image XObject paints correctly on screen with no code of ours involved. The engine's *"GUI surface deliberately paused by the operator"* is a note about a **control** surface and about a project (`crates/pdfce-gui`) that has since been deleted. <!-- old-name-exempt: quoting the engine's own row, which names the deleted `crates/pdfce-gui` by its real historical path --> |
 | Paint shading via the `sh` operator — axial and radial (types … | **Reachable — it is what the canvas draws.** Axial and radial `sh` shadings paint on screen through the same renderer the CLI uses. Same stale *"paused by the operator"* note as the row above. |
 | Paint shading patterns (`PatternType 2`, named via `scn`) … | **Reachable — it is what the canvas draws.** A `PatternType 2` shading pattern selected by `scn` paints on screen, anchored to the pattern's own base CTM. Same stale note. |
 | Paint mesh shadings — types 4 (free-form Gouraud … | **Reachable twice over — the canvas paints mesh shadings, and `mesh_patch_padding` has a control** in Settings ▸ Colour (`dialogs::settings::colour`). The engine's row names that setting as its own permanent-ambiguity switch and marks `gui` `[ ]`; the switch is drawn. |
@@ -442,6 +505,13 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
+| Encrypt a document (AES-256, `/R` 6 only), set … | **Reachable — File ▸ Security ▸ `Encrypt…` and `Permissions…`, wired 2026-09-04 (`OPERATOR_REQUESTS.md` O119).** `crate::protect` is the model, `crate::dialogs::protect` is the window, and all three verbs are called from one place — `protect::prepare`: `set_encryption` on the open session (it takes `&self`, so unsaved edits ride along), `set_permissions` and `remove_encryption` on a **throwaway** session re-opened from the file with the owner password. ★★★ The throwaway is not caution: both mutating verbs call `clear_encryption()` on the base, which would disarm `save_incremental`'s `EncryptedSaveUnsupported` guard and let the operator's next ordinary `Ctrl+S` append plaintext objects to a file of AES ciphertext, silently. It is also the authentication — `NotOwner { opened_as }` comes back from the load rather than from a second code path. ★ O119's three disclosures are all on screen and none waits for a press: `PERMISSIONS_DISCLOSURE` verbatim above the tick-boxes, the signed refusal **instead of** the form (with the count and the mechanism), and the owner-password note above the field it is about. The save is `dialogs::redact`'s mechanism part for part — new file by default, a suggestion that is never the source, replace behind one extra acknowledgement and no picker, atomic temp-then-rename. ⚠ **This row was moved from `blocked` on the ruling, not on a driven run**: the headless suite is green (`protect::tests`, `dialogs::protect::tests`) and the `ui-verify` checks are written and **were not run** — another agent held the desktop. It is `shipped` because the command is registered, on the ribbon and dispatched; the engine's *"ticked when the GUI half is driven"* bar has not been met and saying so here is cheaper than being asked. |
 | Move, resize and rotate a content-stream object (path, text … | **Reachable — move, resize and rotate ANY object, 2026-08-20**, closing a request the operator made three times; `app::actions::vector` calls `transform_objects`, which wraps each object's operator run in `q <cm> … Q` and so is kind-agnostic by mechanism rather than by match arm. Driven by `resize_scales_a_shape` and `geometry_fields_resize_a_shape`. |
 | Reach inside a form XObject for hit-testing — click and marquee … | **Reachable — clicking an object inside a form XObject selects THAT object, 2026-08-27**, and it closed the operator's largest single report: *"when I click on one of the objects all I get is the page selected"*. `hit_test_point_deep` is the pick and the marquee has the same reach, so the two gestures that both mean *select this* cannot disagree. |
+| Import an installed Acrobat/Reader trust store … | **`wanted`, and it is the missing half of a feature we already ship.** `pdfcer-core::trust_store` direct-parses the user's own `addressbook.acrodata` with pdfcer's own COS + X.509 code — no Acrobat automation, no network, opt-in and read-only — and was proven against **this operator's real 1,780-anchor store** (211 AATL / 1,576 EUTL / 2 ADBE). ★★★ Why it matters more than its row suggests: `signature::verify_all` returns three facts that never collapse into one bool, and the third — `trust` — currently has **only** `NotChecked`, because there is no store to check against. This is the store. Without it the Signatures panel can say a signature's bytes are intact and cannot say whose it is; with it, it can. ★ It also pairs with O122: Acrobat Pro is installed on his machine, so the store exists and is his own. **Arrived 2026-09-04 and caught by this gate on its first real day** — no note, no announcement, exactly the silence the gate was written for. |
+| Tell which layer (optional-content group) a selected page object is on … | **`wanted`, and it is OUR OWN REQUEST COMING BACK ANSWERED — within hours.** Filed 2026-09-04 as `request_which_layer_is_this_object_on.md` when the layers-panel work found the relation unreachable: `vector::decompose` counted `/OC` sections and discarded the id, and the renderer resolved it and pushed a `bool`. The engine's `Pass 250.0` puts `oc: Option<ObjId>` on `PathObject` / `TextObject` / `ImageObject`, read via `VectorObject::oc()` / `FormLeaf::oc()`. ★ The GUI half already exists in the shape that was buildable — `Annotation::oc` is exposed, so selecting an ANNOTATION already highlights its layer, with a three-valued `Membership` so `Unknown` can never render as "on no layer". This row is the other half: page objects. **The refusal to fake it is what made this arrive** — a 40-line shell-side re-parse would have shipped a second, weaker `/OC` implementation and nobody would ever have asked. |
+| Apply a redaction as a SAVE-COMMITTED edit, not an immediate file write … | **WIRED 2026-09-04 (evening) — `EditSession::apply_redactions`, `Pass 250.1`, `225db51`.** It is the default destination in the apply dialog: the removal lands in the open document, nothing is written, and Save / Save As decide where it goes. ★★★ **The property this row demanded was checked before wiring, and the engine does NOT enforce it the way the request asked — it removes the hazard instead, and that was verified rather than believed.** There is no refusal on `to_incremental_bytes`; the verb *collapses* the session onto the redacted bytes as a brand-new base with an empty dirty set, so an incremental save appends to already-clean bytes. Measured against `pdfcer-core` `8b24a0a`: straight after the apply the incremental output carries **no `/Prev` at all**, and after a further ordinary edit it carries one whose prior revision is the redacted base — the removed text is absent from the whole file in both states, on a synthetic fixture and on `fixtures/a1-titleblock.pdf`. The tests are `redact::tests::an_incremental_save_of_a_redacted_session_cannot_leak_the_removed_text` and `…both_save_modes…`, and both were falsified. ★ **What the engine's answer costs, disclosed rather than absorbed:** the verb FINALIZES — the whole undo log is cleared, not only the redaction — so the dialog states the step count above the confirm control, and `app::save::has_unsaved_edits` gained a third term because a collapsed session answers `is_modified() == false` and would otherwise have been closed without a prompt. |
+| Undo-preserving DEFERRED redaction — a redaction STAGED at Save that leaves the live session and its FULL undo/redo history untouched … | **`wanted`, and it is the variant our own request asked for in the first place — shipped `41095eb`, `Pass 250.2`, engine v0.38.0, and it is NOT in this shell's locked revision (`8b24a0a`, v0.37.0).** ★★★ It is the only route that would remove the one cost the operator is currently paying: `Pass 250.1`'s collapse variant, wired here on 2026-09-04, **clears the whole undo log** at the moment a redaction is applied into the document. His ruling was *"finalizing the document and can't be undone is ok for now"* — note *for now* — and the shell discloses the step count above the confirm control because of it. `apply_redactions_deferred` stages the removal and leaves base, overlay and the entire undo/redo stack intact. ★★ **And it is the shape that carries our request's §4.1 guard, which the collapse variant made unnecessary rather than implemented**: while staged, BOTH ordinary save modes are refused BY NAME (`WriteError::RedactionPending`), and the removal happens only through `save_applying_redaction(&self, ..)`, which takes `&self` so undo survives the save. **What wiring it would take**, and it is more than a swap: (1) bump the engine lock past `41095eb`; (2) `app::save`'s three verbs must route through `save_applying_redaction` when `has_pending_redaction()`, because otherwise every one of them starts failing by name after an apply; (3) `crate::redact::prove_saved_bytes` moves onto that path and stays the shell's independent proof; (4) the dialog's undo disclosure (`text::redact::undo_will_be_cleared`) and the third term added to `app::save::has_unsaved_edits` both become wrong and must be revisited — a staged redaction is dirty in a different way; (5) `redact::sealed`'s pinned call count changes. ⚠ **Do not wire it as a second destination beside the finalizing one.** Two apply routes with different undo semantics on one dialog is a choice the operator would have to understand to make safely, on the one operation that cannot be undone. If this lands it REPLACES `Pass 250.1`'s route here. |
+| Evaluate a signature's trust against those anchors … | **`wanted`, and it is the third arrival in one day from a request we filed.** With the trust store importable, `verify_all`'s `trust` field can finally hold something other than `NotChecked` — the Signatures panel goes from *"these bytes are intact"* to *"and this is who signed them"*. ⚠ **This is the one place in the product where a wrong answer is worse than no answer**: a UI that says "trusted" on a chain it did not really validate is the failure mode the engine's own three-facts-that-never-collapse design exists to prevent. Wire it only with the same discipline — integrity, coverage and trust reported separately, never folded into one badge, and `NotChecked` still rendered as itself rather than as a soft "no". |
+| Persistently use an Acrobat trust store as pdfcer's own … | **`wanted`, and it is the opt-in half of the row above.** Importing a store is one act; *keeping* it as the anchor set across sessions is another, and it is a preference with a privacy shape — it reads a file belonging to another vendor's product. Belongs in Settings beside the other opt-ins, off by default, with the store's path and its **mtime** disclosed, because an anchor set that silently went stale is worse than one that was never imported. |
 

@@ -406,3 +406,62 @@ Print, Insert, Comments, Diagnostics, Insert image. `sizing`'s layout rule is
 that Large items *lead* their group, so marking one item of a multi-item group
 Large would reorder it, and the order is `RIBBON_IA.md`'s to decide, not this
 change's. In a one-item group, leading is a no-op.
+
+---
+
+## 10. The mockup pass — 2026-09-04, and what it did to the ladder
+
+`mockups/pdfcer-shell.html` became this band's **specification** rather than a
+sketch of it on 2026-09-04, the operator having said *"I want everything to
+look exactly like that including sizing."* Four things changed in the band's
+appearance; only one of them touches this document's subject, and it is worth
+being explicit that the ladder came out of it **stronger**, not merely intact.
+
+### What changed
+
+| | before | after | mockup |
+|---|---|---|---|
+| resting item frame | a visible box around every control | **none** — painted on hover, focus, press and selection only | `.rb { border: 1px solid transparent }` |
+| band row area | `GROUP_ROWS × (control_height + gutter)` = 56 pt | `Metrics::ribbon_rows` = **68 pt** | `3 × 22 + 2 × 1` |
+| band height | ≈ 74 pt | ≈ **95 pt** | 96 px (`grid-template-rows`) |
+| a `Large` control | spans the whole row area, 16 pt glyph, one-line label | **56 pt**, 24 pt glyph, label wraps at 76 pt | `.rb.big` |
+| group caption | `TextStyle::Small`, 9 pt | **11 pt** | `.grp .cap { font-size: 11px }` |
+
+### ★★★ Why the row area is the paragraph that matters here
+
+Rung one of the ladder — **re-wrap** — divides the band's row area into
+`MAX_GROUP_ROWS` rows instead of `GROUP_ROWS`, and it has a self-disabling
+guard: when the resulting row is shorter than an icon, `rewrap_is_legible`
+returns false, `Candidate::gains_from` sees no gain, and the rung is skipped.
+The feature turns itself off rather than clipping.
+
+**That guard means a change to the row area could have silently removed the
+first rung of the ladder, in one preset, with every test green** — because a
+rung that has switched itself off looks exactly like a rung that was never
+needed.
+
+It did not, and the numbers are the point:
+
+| | row area | compressed row | icon | margin |
+|---|---|---|---|---|
+| before | 56 | `56/3 − 2` = **16.67** | 16 | **0.67 pt** |
+| after | 68 | `68/3 − 2` = **20.67** | 16 | **4.67 pt** |
+
+The rung was two thirds of a point from vanishing and is now clear by nearly
+five. `egui-shell`'s `every_preset_can_still_re_wrap_a_group` asserts it for
+**every** preset rather than for the shipped one, which is the assertion that
+did not exist before this pass and is the reason the guard can no longer fail
+quietly.
+
+`GROUP_ROWS` and `MAX_GROUP_ROWS` are **unchanged at 2 and 3**. §7's refusal
+of a third *default* body row stands, and stands for its original reason.
+
+### ★ What was deliberately not taken from the mockup
+
+The mockup authors its group columns by hand and several of them are three or
+four rows deep. This band *derives* its columns from `wrap_group`, at
+`GROUP_ROWS` normally. Adopting the mockup's authored depth would mean
+`GROUP_ROWS = 3`, hence `MAX_GROUP_ROWS = 4`, hence a compressed row of
+`68/4 − 2 = 15` pt against a 16 pt icon — which is the table above, in
+reverse, and would disable rung one outright in the default preset. The
+mockup's *rhythm* is adopted; its row **count** is not.

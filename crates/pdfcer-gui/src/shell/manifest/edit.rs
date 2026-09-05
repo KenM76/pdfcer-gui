@@ -145,7 +145,11 @@ pub(super) fn tab() -> Tab {
             group(
                 "insert",
                 ribbon::group_edit_insert(),
-                [large("edit.insert_image"), command("edit.attachments")],
+                // ★ BOTH large, 2026-09-04 — the mockup draws `Image…` and
+                // `Attachments` as the Insert group's two big controls. The
+                // whole group is promoted, so nothing is hoisted past
+                // anything.
+                [large("edit.insert_image"), large("edit.attachments")],
             ),
             // ★★ **Clipboard is BACK, 2026-08-19** — and the note below, which
             // explains why it was deleted, is kept because its reasoning was
@@ -185,6 +189,32 @@ pub(super) fn tab() -> Tab {
                     // tooltip and in the Edit menu; `RIBBON_SCALING.md`'s rule is
                     // that a group's members share a presentation.
                     icon_only("edit.paste_duplicate"),
+                    // ★★★ **Five now — `edit.copy_as_vector`, 2026-09-04**, and
+                    // it is the one member of this group that copies OUT of
+                    // pdfcer rather than within it (`OPERATOR_REQUESTS.md`
+                    // O120).
+                    //
+                    // ★★ **Clipboard, not File ▸ Export**, and the mockup's own
+                    // caption note is the argument: *"it is a clipboard verb —
+                    // chord-reachable, and its result is pasted, not saved."*
+                    // Export writes a file the operator then has to find and
+                    // place; this puts the same geometry one `Ctrl+V` away.
+                    // Putting it beside Copy is also what makes the difference
+                    // legible — it reads as a variant of Copy, which is exactly
+                    // what it is.
+                    //
+                    // ★ **`icon_only`, and the approved mockup draws it
+                    // labelled.** The deviation is this group's own rule, stated
+                    // one comment up when `edit.paste_duplicate` joined: *"a
+                    // single labelled member in a row of three icons reads as a
+                    // mistake … `RIBBON_SCALING.md`'s rule is that a group's
+                    // members share a presentation."* The mockup's Clipboard cap
+                    // draws three members and this one; the shipped group has
+                    // four already, all icon-only, so adopting the label here
+                    // would make this the only labelled control in a band of
+                    // five. The label is in the tooltip and in the Edit menu,
+                    // which is where `edit.paste_duplicate` puts its own.
+                    icon_only("edit.copy_as_vector"),
                 ],
             ),
             // ---------------------------------------------------------------
@@ -289,7 +319,10 @@ pub(super) fn tab() -> Tab {
                 "protect",
                 ribbon::group_edit_protect(),
                 [
-                    command("edit.redact"),
+                    // ★ Large — the mockup's `Redact` big, with the two
+                    // qualified redaction verbs in a column beside it. First
+                    // in the group already.
+                    large("edit.redact"),
                     // ★ Between mark-by-search and Apply, which is the order an
                     // operator works in: find what you can find, mark what you
                     // cannot, then apply once. Putting it after Apply would put

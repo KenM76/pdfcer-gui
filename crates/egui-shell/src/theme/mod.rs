@@ -301,6 +301,116 @@ pub struct Metrics {
     pub corner_radius: u8,
     /// Icon size in points, for whatever draws the application's icons.
     pub icon_pts: f32,
+
+    // -----------------------------------------------------------------
+    // ★★★ THE RIBBON BAND'S OWN RHYTHM — `mockups/pdfcer-shell.html`
+    //
+    // Five numbers that exist because the band is the one surface in this
+    // application whose vertical proportions were **specified as a
+    // picture** rather than derived from `control_height`. The operator's
+    // instruction on 2026-09-04 was *"I want everything to look exactly
+    // like that including sizing"*, and the mockup's stylesheet is the
+    // readable form of "that":
+    //
+    // ```css
+    // .app  { grid-template-rows: 30px 34px 96px 26px … }   /* the band */
+    // .ribbon        { padding: 6px 8px 0 }
+    // .grp .cap      { font-size: 11px; padding: 3px 0 5px; line-height: 1.1 }
+    // .grp .col      { gap: 1px }
+    // .rb            { height: 22px }
+    // .rb.big        { height: 56px; gap: 4px; padding: 5px 8px 2px;
+    //                  min-width: 52px }
+    // .rb.big .lb    { font-size: 11px; max-width: 76px }
+    // svg.g          { width: 16px }      /* an ordinary control's icon */
+    // svg.g.big      { width: 24px }      /* a Large control's icon     */
+    // ```
+    //
+    // ★ Why they live HERE rather than as constants in `ribbon::band`.
+    //
+    // Because they are theme-dependent and the two other presets prove
+    // it. `Airy` exists to be *roomier* — its `control_height` is 28 pt
+    // against `Quiet`'s 24 — and a band whose row area were a bare `68.0`
+    // would be **shorter than two of its own rows** under that preset
+    // (2 × (28 + 8) = 72), so the second row would draw over the caption.
+    // A number that has to move when the preset moves is a metric, not a
+    // constant, and `every_preset_reserves_room_for_its_own_rows` is the
+    // assertion that keeps the relationship true rather than merely
+    // true-today.
+    //
+    // ★★ What is deliberately NOT here: a hover colour. The mockup's
+    // `--chrome-3` is commented `/* hover, derived */` in its own palette
+    // block — the mock author's arithmetic, not a role this theme
+    // publishes. `write_style` already lifts hover toward `surface` with a
+    // stated reason ("hover and active lift toward the accent … so the one
+    // accent is what the eye tracks"), and inventing a `hover_fill` role
+    // to match a derived swatch would be re-deciding a settled question
+    // for a picture's sake.
+    /// **The band's control-row area**, in points: the height a group's
+    /// rows are padded out to before its caption is drawn.
+    ///
+    /// The mockup's tallest authored column is three `.rb` rows with 1 px
+    /// between them — `3 × 22 + 2 × 1 = 68` — and every group's caption
+    /// hangs off the bottom of that area (`\.cap { margin-top: auto }`),
+    /// which is what makes the captions in a band share one baseline
+    /// whether the group above used one row or three.
+    ///
+    /// ★ It is **not** `GROUP_ROWS × (control_height + gutter)`, which is
+    /// what it used to be and is why the shipped band read as cramped
+    /// against the mock: that expression is "exactly as tall as two rows",
+    /// so a two-row group filled it edge to edge and the caption sat
+    /// immediately under the last control. The mockup's area is a
+    /// *budget* the rows are laid into, and the slack under a short group
+    /// is the thing the operator described as "the group caption sitting
+    /// lower".
+    ///
+    /// # Invariant
+    ///
+    /// `ribbon_rows ≥ GROUP_ROWS × (control_height + gutter)`. A preset
+    /// that violates it draws its second row over its own caption. Asserted
+    /// per preset by `crate::ribbon::height_tests`.
+    pub ribbon_rows: f32,
+    /// **Clear space above the band's first control row** —
+    /// `.ribbon { padding: 6px … }`.
+    ///
+    /// Folded into [`crate::ribbon`]'s band height rather than emitted as a
+    /// stray `add_space`, for the reason R128 gives about every other term
+    /// in that sum: a padding that is only drawn when there is something to
+    /// pad would be absent on a tab whose groups all went to the overflow
+    /// menu, and the canvas underneath would move by six points on a tab
+    /// click.
+    pub ribbon_pad_top: f32,
+    /// **The band's secondary text size**, in points: group captions, and
+    /// the label under a `Large` control.
+    ///
+    /// One metric for both because the mockup gives them one number
+    /// (`.cap` and `.rb.big .lb` are both `font-size: 11px`) for one
+    /// reason — they are the two pieces of text on the band that are
+    /// *subordinate* to a control's own label, and they must not compete
+    /// with it. Splitting them into two metrics would invite them to
+    /// drift apart, which is a distinction no reader of the band could
+    /// name.
+    ///
+    /// ★ This is a **raise**, not a reduction. The captions were drawn
+    /// with `RichText::small()`, i.e. `egui`'s `TextStyle::Small`, which
+    /// is 9 pt — the mockup asks for 11.
+    pub ribbon_caption_pts: f32,
+    /// **The icon size on a `Large` control** — `svg.g.big { width: 24px }`.
+    ///
+    /// Half again the ordinary [`Self::icon_pts`], and that ratio is the
+    /// entire visual argument for a Large control: it is not a taller
+    /// button with the same picture in it, it is a **bigger picture**. A
+    /// Large control drawn with a 16 pt glyph reads as an ordinary control
+    /// with an unusual amount of air around it, which is exactly how the
+    /// shipped band looked beside the mock.
+    pub ribbon_icon_large_pts: f32,
+    /// **The height of a `Large` control** — `.rb.big { height: 56px }`.
+    ///
+    /// Deliberately **less than** [`Self::ribbon_rows`]: in the mockup a
+    /// Large control is 56 px inside a 68 px row area, top-aligned
+    /// (`.grp .items { align-items: flex-start }`). It spans *most* of the
+    /// band rather than all of it, which is what stops a group made only
+    /// of Large controls from reading as a solid block.
+    pub ribbon_large_pts: f32,
 }
 
 /// A complete look: a palette and its metrics.
@@ -443,6 +553,16 @@ impl Theme {
                 panel_padding: 6.0,
                 corner_radius: 3,
                 icon_pts: 16.0,
+                // The mockup's own numbers, unscaled — `Quiet` is the preset
+                // the mock was drawn against, so these are transcriptions
+                // rather than derivations. 68 = 3 × 22 + 2 × 1, and it clears
+                // this preset's two natural rows (2 × (24 + 4) = 56) by 12 pt,
+                // which is the slack the caption hangs below.
+                ribbon_rows: 68.0,
+                ribbon_pad_top: 6.0,
+                ribbon_caption_pts: 11.0,
+                ribbon_icon_large_pts: 24.0,
+                ribbon_large_pts: 56.0,
             },
         }
     }
@@ -479,6 +599,29 @@ impl Theme {
                 panel_padding: 12.0,
                 corner_radius: 6,
                 icon_pts: 17.0,
+                // ★★★ NOT the mockup's literals, and this preset is the proof
+                // that the ribbon rhythm had to be a metric.
+                //
+                // `Airy` exists to be roomier: `control_height` 28 against
+                // Quiet's 24, `gutter` 8 against 4. Two of its natural rows
+                // cost `2 × (28 + 8) = 72` pt — **more than the mockup's 68**
+                // — so transcribing 68 here would lay the second row of every
+                // wrapped group over its own caption. 84 = 3 × 26 + 2 × 3,
+                // the same three-rows-and-two-gaps shape at this preset's
+                // scale, and it clears 72 by the same proportion Quiet's 68
+                // clears 56.
+                //
+                // The rest scale with it: the caption keeps the mock's
+                // one-point-below-`Body` relationship, the Large icon keeps
+                // the 1.5× ratio to `icon_pts` (17 × 1.5 = 25.5 → 26, kept
+                // even so the glyph raster lands on a whole point), and the
+                // Large control keeps its "most of the row area, not all of
+                // it" proportion — 64/84 against Quiet's 56/68.
+                ribbon_rows: 84.0,
+                ribbon_pad_top: 8.0,
+                ribbon_caption_pts: 12.0,
+                ribbon_icon_large_pts: 26.0,
+                ribbon_large_pts: 64.0,
             },
         }
     }

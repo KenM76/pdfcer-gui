@@ -44,3 +44,35 @@ path was wrong".
 
 Generalised: whenever a test asserts *"X is rejected"*, ask what else would also
 be rejected, and add the case that must be **accepted**.
+
+## ★★★ A FALSIFICATION THAT READS REDNESS FROM THE EXIT CODE CAN BE SATISFIED BY SOMEONE ELSE'S COMPILE ERROR — 2026-09-04
+
+With several tracks writing one tree, `cargo test` exits non-zero for reasons
+that have nothing to do with your plant. A harness that plants a defect, runs
+the suite, and concludes *"exit code 1, therefore my test caught it"* is
+measuring the tree's health, not its own assertion.
+
+It happened, and it cost two false confirmations before being noticed:
+
+> Two plants first reported RED on exit code alone; the raw output showed the
+> non-zero exit was a **concurrent track's compile error**, with no test having
+> run at all.
+
+⇒ **The verdict must be the test's own line**, not the process's status:
+
+```bash
+cargo test -p pdfcer-gui --lib the_test_name 2>&1 | grep -q "test result: FAILED"
+```
+
+★★ And the payoff is the reason to bother: re-run properly, **both plants came
+back GREEN** — the two tests were genuinely weak and neither would have caught
+its defect. One read a heading and body joined, so the heading could stop
+carrying the fact; the other could have split on "exactly four spaces" and
+passed everything. Both fixed. **The exit-code shortcut had been hiding two
+real holes behind two false confirmations.**
+
+★ Same family as the existing entries here: assert the *mechanism*, never a
+proxy for it. And it composes with the plant-landed check —
+[[feedback_a_backlog_row_is_a_record_not_evidence]] — so a falsification now
+needs three things, all of them: **the plant matched, the test's own line said
+FAILED, and the file was restored.**

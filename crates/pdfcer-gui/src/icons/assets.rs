@@ -1163,3 +1163,28 @@ pub(super) const OPEN_IN_ACROBAT: &str = include_str!("assets/open-in-acrobat.sv
 /// What the document permits — the engine's `set_permissions`, the other half
 /// of `OPERATOR_REQUESTS.md` O119.
 pub(super) const PERMISSIONS: &str = include_str!("assets/permissions.svg");
+
+/// `select-all.svg` — the art for [`super::Icon::SelectAll`].
+///
+/// ★ Added 2026-09-04 to correct a record, not to fill a gap. Its absence had
+/// been argued as a refusal by a build session and then quoted until it read as
+/// the operator's own ruling; it was not, and he said so. The asset's own
+/// comment carries the whole account, including which half of the old argument
+/// is drawn into the glyph rather than discarded.
+pub(super) const SELECT_ALL: &str = include_str!("assets/select-all.svg");
+
+/// `bold.svg` — the art for [`super::Icon::Bold`].
+///
+/// ★ Added 2026-09-04 to correct a refusal, not to fill a gap. `format.bold`
+/// was registered with no icon because *"this build has no such art"* — a
+/// statement about supply, and the operator's standing ruling is that a missing
+/// glyph is **authored**. The asset's own comment carries the account, and the
+/// reason its stroke is 4 rather than the set's 2.5.
+pub(super) const BOLD: &str = include_str!("assets/bold.svg");
+
+/// `italic.svg` — the art for [`super::Icon::Italic`].
+///
+/// ★ Added 2026-09-04 alongside [`BOLD`], on the same correction and for the
+/// same reason. See the asset for why the slant is exaggerated and why the
+/// serifs are offset rather than centred.
+pub(super) const ITALIC: &str = include_str!("assets/italic.svg");

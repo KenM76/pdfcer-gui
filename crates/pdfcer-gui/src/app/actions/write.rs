@@ -107,6 +107,40 @@ pub enum WriteAction {
         /// Everything the writer needs, frozen when Export was pressed.
         plan: super::imageexport::ImagePlan,
     },
+    /// ★★★ **Write the words on one or more pages out as a plain text file.**
+    ///
+    /// Raised by `crate::dialogs::export_text` and by nothing else. The
+    /// operator, 2026-09-04: *"also the engine can export PDFs as text. we
+    /// should have export/import for that."*
+    ///
+    /// # Why it carries a plan, like [`Self::Image`] and unlike [`Self::FormData`]
+    ///
+    /// A window collected four decisions before the press — which pages, what
+    /// goes between them, how lines end, and whether the file opens with a
+    /// byte-order mark — and none of the four is recoverable from a save
+    /// picker. `FormData` needs no plan precisely because its one decision (the
+    /// format) *is* recoverable from the picker, as the extension typed.
+    ///
+    /// # ★ The pages are RESOLVED, not a scope and a string
+    ///
+    /// [`Self::Image`]'s reason verbatim: the window has already parsed the
+    /// typed range — it needs the answer to decide whether Export is pressable
+    /// — so re-parsing in the apply phase would be a second reading of the same
+    /// box against a document that may have changed pages in between.
+    ///
+    /// # ★★ The plan is the SHELL's type, and there is no engine equivalent
+    ///
+    /// [`Self::Dxf`] carries `DxfOptions` because that is literally the value
+    /// the writer takes. There is no writer here at all: the engine offers
+    /// `text_extract::extract_pages_view` and `ExtractedText::plain_text()`,
+    /// and *"how do several pages become one file"* is a question neither of
+    /// them asks. See `super::exporttext` for the whole argument, and for the
+    /// recorded finding that the **import** half of the operator's sentence has
+    /// no engine route at all.
+    Text {
+        /// Everything the write needs, frozen when Export was pressed.
+        plan: super::exporttext::TextExportPlan,
+    },
     /// **Write the form's values out as FDF, XFDF or CSV.**
     ///
     /// # ★ It carries nothing, and that is the difference from [`Self::Dxf`]

@@ -54,4 +54,35 @@ pub enum TextAction {
         /// Which paragraph on it.
         block: usize,
     },
+    /// ★★★ **Enter was pressed where a line break cannot go** —
+    /// `OPERATOR_REQUESTS.md` **O127**, defect 2.
+    ///
+    /// Raised by `canvas::textedit::keys` when the caret is in an existing show
+    /// operator, and by nothing else. It changes **no document**: it exists
+    /// solely to carry a sentence from a keystroke handler to the status bar.
+    ///
+    /// # ★★ Why a keystroke needs an `Action` to say something
+    ///
+    /// Because of a module boundary that is worth keeping. `app::status::decline`
+    /// is `pub(super)` inside `crate::app`, with its own note saying why:
+    ///
+    /// > *"a decline is written by the one dispatcher and read by the one
+    /// > bar."*
+    ///
+    /// `canvas::textedit::keys` is neither, and widening that visibility so a
+    /// keystroke could reach the store directly would trade a real invariant
+    /// for two saved lines. An `Action` is the channel this shell already has
+    /// for *"something in the canvas happened and `crate::app` must react"* —
+    /// the same one every commit, every markup and every move travels on.
+    ///
+    /// ★ It carries no fields, and that is the honest shape: there is exactly
+    /// one thing to say, the sentence is in the catalog, and an anchor or a run
+    /// index here would be data nobody reads.
+    ///
+    /// ★★ Nested under [`TextAction`] rather than added to
+    /// `super::action::Action`, per **R2**: that file is at its 1,500-line
+    /// ceiling and its own header names this as the remedy — *"nest a domain
+    /// enum"*. The subject fits: this variant's subject is the page's own text
+    /// and the caret in it, which is what this enum is for.
+    EnterCannotSplit,
 }

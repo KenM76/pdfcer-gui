@@ -430,7 +430,8 @@ pub struct PanelAddress {
     pub tab: usize,
 }
 
-/// The whole dock arrangement: both sides.
+/// The whole dock arrangement: both sides, plus anything torn out of
+/// them into a window of its own.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct DockLayout {
@@ -438,6 +439,30 @@ pub struct DockLayout {
     pub left: SideLayout,
     /// The trailing-edge dock.
     pub right: SideLayout,
+    /// ★★★ **The panels that are not in either dock, because the operator
+    /// floated them.**
+    ///
+    /// A floated panel is **removed from its side** and listed here. It is
+    /// deliberately not a third `SideLayout` and not a flag on a `Stack`:
+    /// a floating window has no column, no share and no neighbour to
+    /// splitter against, so every field of the docked model would be a
+    /// field that meant nothing. What it *does* have — a desktop position,
+    /// a size, and the place it came from — is exactly
+    /// [`super::float::FloatingPanel`], and nothing else.
+    ///
+    /// ★★ **The invariant that makes the two representations safe to hold
+    /// at once: a panel is in exactly one of them.** A panel both mounted
+    /// on a side and listed here would be drawn twice in one frame, in two
+    /// windows, from two `Ui`s that each believe they own it — and
+    /// `egui` would give the two the same widget ids. [`Self::normalize`]
+    /// repairs it by dropping the *float*, and
+    /// [`Self::panels`] counts both lists so that `contains`, `mount` and
+    /// `unregistered_panels` cannot be fooled by a panel that is floating.
+    ///
+    /// ★ `#[serde(default)]` on the struct is what makes this field
+    /// backward-compatible with every `layout.ron` written before it
+    /// existed: an old file simply has no floats, which is the truth.
+    pub floating: Vec<super::float::FloatingPanel>,
 }
 
 impl DockLayout {
@@ -453,13 +478,18 @@ impl DockLayout {
         Self {
             left: SideLayout::none(),
             right: SideLayout::none(),
+            floating: Vec::new(),
         }
     }
 
     /// An arrangement with the given sides.
     #[must_use]
     pub fn new(left: SideLayout, right: SideLayout) -> Self {
-        Self { left, right }
+        Self {
+            left,
+            right,
+            floating: Vec::new(),
+        }
     }
 
     /// One side, by name.
@@ -479,14 +509,47 @@ impl DockLayout {
         }
     }
 
-    /// Every panel mounted anywhere, in layout order.
+    /// Every panel this layout holds — **docked or floating** — in layout
+    /// order, floats last.
+    ///
+    /// ★★ The floats are included, and that is the whole reason this is
+    /// worth a doc comment. Three consumers depend on it and all three
+    /// would be wrong without it:
+    ///
+    /// * [`Self::contains`], and through it [`Self::mount`] — so choosing
+    ///   a floating panel from a View ▸ Panels menu cannot mount a second
+    ///   copy of it into the dock while the first is still in a window.
+    /// * [`Self::unregistered_panels`] — so a float naming a panel this
+    ///   build cannot draw is reported, rather than being a window that
+    ///   opens with nothing in it.
+    /// * A caller asking *"what does this layout hold"* before saving a
+    ///   workspace's `known_panels`.
+    ///
+    /// [`Self::docked_panels`] is the narrower question, for the callers
+    /// that genuinely mean *in a stack*.
     pub fn panels(&self) -> impl Iterator<Item = &PanelId> {
+        self.docked_panels()
+            .chain(self.floating.iter().map(|f| &f.panel))
+    }
+
+    /// Every panel **mounted in a stack**, in layout order — floats
+    /// excluded.
+    ///
+    /// The question the drawing code asks, because a float is drawn by
+    /// [`super::floatwin`] and not by any side, column or stack.
+    pub fn docked_panels(&self) -> impl Iterator<Item = &PanelId> {
         DockSide::ALL
             .into_iter()
             .flat_map(|s| self.side(s).panels())
     }
 
-    /// Whether `panel` is mounted anywhere in this layout.
+    /// Whether `panel` is mounted in a stack. See [`Self::docked_panels`].
+    #[must_use]
+    pub fn contains_docked(&self, panel: &PanelId) -> bool {
+        self.docked_panels().any(|p| p == panel)
+    }
+
+    /// Whether `panel` is anywhere in this layout — docked or floating.
     #[must_use]
     pub fn contains(&self, panel: &PanelId) -> bool {
         self.panels().any(|p| p == panel)
@@ -531,10 +594,22 @@ impl DockLayout {
             .is_some_and(|a| self.side(a.side).columns[a.column].stacks[a.stack].active == a.tab)
     }
 
-    /// Whether `panel` is the active tab of its stack **and** its side is
-    /// visible — i.e. whether it is genuinely on screen.
+    /// Whether `panel` is genuinely on screen: floating, or the active
+    /// tab of its stack on a visible side.
+    ///
+    /// ★★ **The floating arm is first and it is unconditional.** A float
+    /// has no side, so nothing about either dock can hide it — collapsing
+    /// the side it came from does not, and neither does another panel
+    /// being the front tab of the stack it used to be in. An
+    /// implementation that consulted [`super::float::DockHome::side`]
+    /// here would answer "not on screen" about a window the operator is
+    /// looking at, and every toolbar toggle reading this would go dark
+    /// while its panel stayed open.
     #[must_use]
     pub fn is_on_screen(&self, panel: &PanelId) -> bool {
+        if self.is_floating(panel) {
+            return true;
+        }
         self.find(panel).is_some_and(|a| self.side(a.side).visible) && self.is_active(panel)
     }
 
@@ -551,6 +626,18 @@ impl DockLayout {
     /// meaning "select its tab inside a dock you cannot see" is a command
     /// that from the operator's side did nothing at all.
     pub fn activate(&mut self, panel: &PanelId) -> bool {
+        // ★★ A floating panel is already the only thing in its window, so
+        // there is no tab to select and no side to reveal — but the answer
+        // is `true`, not `false`. `false` means *"not mounted, fall back
+        // to mounting it"*, and falling back here would put a second copy
+        // of a panel into the dock while its window was still open. What
+        // "activate a float" additionally *should* do — raise the window
+        // in front of whatever is covering it — is a viewport command, not
+        // a layout edit, so it belongs to `super::floatwin`, which reads
+        // `DockFrameReport::activated` to find out.
+        if self.is_floating(panel) {
+            return true;
+        }
         let Some(a) = self.find(panel) else {
             return false;
         };
@@ -567,6 +654,23 @@ impl DockLayout {
     /// a run of closes moving leftwards along the bar instead of
     /// marching through the tabs the operator has not touched.
     pub fn close(&mut self, panel: &PanelId) -> bool {
+        // ★★★ **Closing a FLOATING panel is a close, not a dock-and-close.**
+        //
+        // The operator pressed a close control on a window; the panel goes
+        // away and its float entry goes with it. A leaked entry would be
+        // drawn as a window every frame for a panel that every "is it
+        // open" query answers `false` about — so nothing would ever offer
+        // to close it again.
+        //
+        // Why this is not "dock it back, then close it" — which would let
+        // a later reopen find the old home — is argued at length in
+        // [`super::float`]'s state-machine table: a close that silently
+        // rearranges the dock behind the window it just shut is a side
+        // effect nothing announced.
+        if let Some(i) = self.floating.iter().position(|f| &f.panel == panel) {
+            self.floating.remove(i);
+            return true;
+        }
         let Some(a) = self.find(panel) else {
             return false;
         };
@@ -661,6 +765,12 @@ impl DockLayout {
             }
             s.columns.retain(|c| !c.stacks.is_empty());
         }
+        // ★ AFTER the sides, and the order is load-bearing: the duplicate
+        // rule below drops a float whose panel is also docked, and "also
+        // docked" has to be asked of the tree *after* the tree has had its
+        // own duplicates removed. Asking first would let a panel mounted
+        // twice keep a float that the surviving mount then collides with.
+        super::float::normalize_floats(self);
     }
 
     /// Whether this layout satisfies every invariant [`Self::normalize`]

@@ -482,3 +482,173 @@ fn a_hidden_custom_item_is_never_offered_to_the_renderer_and_gives_its_width_bac
         wide.width()
     );
 }
+
+// ===========================================================================
+// ★★★ THE MOCKUP'S `Large` CONTROL — 2026-09-04
+//
+// `mockups/pdfcer-shell.html` specifies a Large control as
+//
+//     .rb.big     { height: 56px; gap: 4px; padding: 5px 8px 2px;
+//                   min-width: 52px }
+//     .rb.big .lb { font-size: 11px; max-width: 76px; white-space: normal }
+//     svg.g.big   { width: 24px; height: 24px }
+//
+// and the operator's second complaint was about exactly this control: *"the
+// mock's `New` is a large item — glyph above, label beneath, centred in its
+// own column. The real one is a small row."* Half of that is a manifest
+// change (which items are Large) and half is this file's subject: what a
+// Large control looks like once it is one.
+//
+// Three properties are pinned, and each is a thing the shipped control got
+// wrong rather than a restatement of the CSS:
+//
+//   · the label WRAPS, so a long-labelled Large control is a button and not
+//     a letterbox;
+//   · a short-labelled one does not collapse below the mockup's floor;
+//   · a Large control is SHORTER than the row area it sits in, which is what
+//     stops a group of them reading as one solid block.
+// ===========================================================================
+
+/// A registry whose one command has a label far wider than
+/// `sizing::LARGE_LABEL_WRAP`, and one whose label is far narrower.
+///
+/// Both fully equipped (icon + tooltip) for [`registry`]'s stated reason, so
+/// nothing here is measuring a size that silently fell back.
+fn wrapping_registry() -> CommandRegistry {
+    let mut r = CommandRegistry::new();
+    r.register_all([
+        Command::new(
+            "a.long",
+            "Save a compacted copy of this document",
+            HandlerToken::new(1),
+        )
+        .with_icon("k1")
+        .with_tooltip("The long one"),
+        Command::new("a.short", "New", HandlerToken::new(2))
+            .with_icon("k2")
+            .with_tooltip("The short one"),
+    ])
+    .expect("distinct ids");
+    r
+}
+
+/// Render `items` against [`wrapping_registry`] and report the rects.
+///
+/// Goes through the same `render_with_icons` the rest of this file uses, so a
+/// change to the harness cannot make these three tests measure something the
+/// others do not.
+fn render_wrapping(items: impl IntoIterator<Item = Item>) -> Vec<(String, Rect)> {
+    render_with_icons(items, &wrapping_registry(), &ConditionSet::new())
+}
+
+/// ★★★ **A Large control wraps its label instead of running on.**
+///
+/// The defect this pins is not subtle once it is drawn: `Save a compacted
+/// copy of this document` laid out on one line is a control roughly 200 pt
+/// wide and 56 pt tall — a letterbox with a small picture floating in the
+/// middle of it, which is not what a Large control looks like in Word, in
+/// Acrobat, or in the mockup. It also pushes every group to its right off the
+/// band, so the first visible symptom is *"why is Print in the overflow
+/// menu"*.
+///
+/// ★ The vacuity guard is the second assertion and it is doing real work.
+/// Without it the test passes trivially against any implementation whose
+/// labels happen to be short — including one that never wraps — because the
+/// bound would never be approached. So the unwrapped width is measured too,
+/// and the fixture is required to be a case that actually needs wrapping.
+#[test]
+fn a_large_control_wraps_a_long_label_instead_of_running_on() {
+    let drawn = render_wrapping([Item::command("a.long").sized(ItemSize::Large)]);
+    let large = item_rect(&drawn, "a.long").expect("the large control drew");
+
+    // What the same label would measure with no wrap, through the same font.
+    let ctx = context();
+    let mut unwrapped = 0.0_f32;
+    let _ = ctx.run_ui(egui::RawInput::default(), |ui| {
+        unwrapped = super::measure::text_width(
+            ui,
+            "Save a compacted copy of this document",
+            &egui::TextStyle::Button,
+        );
+    });
+    assert!(
+        unwrapped > super::sizing::LARGE_LABEL_WRAP,
+        "the fixture label measures {unwrapped} pt unwrapped, which already fits \
+         inside the {} pt wrap width — so the assertion below would hold against an \
+         implementation that never wraps anything, and this test would be measuring \
+         nothing",
+        super::sizing::LARGE_LABEL_WRAP
+    );
+
+    let ceiling = super::sizing::LARGE_LABEL_WRAP + super::sizing::LARGE_SIDE_PADDING * 2.0;
+    assert!(
+        large.width() <= ceiling + super::width_tests::SLACK,
+        "a Large control with a long label drew {} pt wide, against a ceiling of \
+         {ceiling} pt ({} of wrapped label plus {} of padding each side). The label \
+         ran on instead of wrapping, and the control is a letterbox",
+        large.width(),
+        super::sizing::LARGE_LABEL_WRAP,
+        super::sizing::LARGE_SIDE_PADDING
+    );
+}
+
+/// ★ **…and a short-labelled one does not collapse below the floor.**
+///
+/// `.rb.big { min-width: 52px }`. Without it a run of Large controls is a
+/// ragged fence — `New` measures `max(24 pt glyph, 21 pt label) + 16 = 40`,
+/// `Open…` measures rather more — and a row of buttons of visibly unequal
+/// width is the thing a ribbon is not.
+///
+/// The pair with the test above is the point: one asserts a ceiling, the
+/// other a floor, and an implementation that satisfied only one of them would
+/// be broken in a way the other could not see.
+#[test]
+fn a_large_control_never_narrows_below_the_mockups_floor() {
+    let drawn = render_wrapping([Item::command("a.short").sized(ItemSize::Large)]);
+    let large = item_rect(&drawn, "a.short").expect("the large control drew");
+    assert!(
+        large.width() >= super::sizing::LARGE_MIN_WIDTH - super::width_tests::SLACK,
+        "a Large control with a short label drew {} pt wide, under the {} pt floor \
+         the mockup pins. A band of Large controls whose widths track their labels \
+         reads as a ragged fence",
+        large.width(),
+        super::sizing::LARGE_MIN_WIDTH
+    );
+}
+
+/// ★★ **A Large control is SHORTER than the band's row area, not equal to it.**
+///
+/// The mockup draws `.rb.big` at 56 px inside a 68 px row area, top-aligned
+/// by `.grp .items { align-items: flex-start }`. Until 2026-09-04 a Large
+/// control simply *was* the row area, and the difference is visible the
+/// moment a group holds nothing else: Pages ▸ Clipboard is three Large
+/// controls, and three full-height plates side by side read as one block of
+/// chrome rather than as three buttons.
+///
+/// ★ Asserted as a **relationship between the two metrics and the drawn
+/// rect**, not against 56. A literal would pass under `Quiet` and say nothing
+/// about `Airy`, whose own pair is 64 in 84.
+#[test]
+fn a_large_control_is_shorter_than_the_row_area_it_sits_in() {
+    let ctx = context();
+    let m = crate::theme::Theme::of(&ctx).metrics;
+    assert!(
+        m.ribbon_large_pts < m.ribbon_rows,
+        "this preset's Large control ({} pt) is not shorter than its row area ({} \
+         pt), so the assertion below is vacuous",
+        m.ribbon_large_pts,
+        m.ribbon_rows
+    );
+
+    let drawn = render_wrapping([Item::command("a.short").sized(ItemSize::Large)]);
+    let large = item_rect(&drawn, "a.short").expect("the large control drew");
+    assert!(
+        (large.height() - m.ribbon_large_pts).abs() <= super::width_tests::SLACK,
+        "a Large control drew {} pt tall against the {} pt the theme states. If it \
+         drew {} pt it is still spanning the whole row area, which is the shape the \
+         mockup replaced",
+        large.height(),
+        m.ribbon_large_pts,
+        m.ribbon_rows
+    );
+}

@@ -22,6 +22,39 @@
 //! | `menu.body.<context>` | the whole menu body |
 //! | `menu.item.<context>.<command id>` | one command row |
 //! | `menu.custom.<context>.<kind>` | one application-drawn row |
+//! | `menu.icon.<context>.<command id>` | the icon slot of a row **whose glyph was actually painted** |
+//!
+//! ## ★★★ Why the icon slot is published, and what its ABSENCE means
+//!
+//! Added 2026-09-04 with the menu icon column, and it is the one name here
+//! whose *absence* is the assertion.
+//!
+//! A row's own rectangle proves the row was drawn. It proves nothing about
+//! the glyph, because a row is justified to the body width and measures
+//! the same whether its icon slot holds a picture, holds a blank, or does
+//! not exist. So the QAT's trick — assert the SHAPE of the control, since
+//! an icon-only button is square and a text button is a word wide — has no
+//! menu equivalent, and a harness looking only at
+//! `menu.item.<context>.<id>` cannot tell an application that wired an
+//! icon painter from one that did not. That was exactly the state this
+//! build was in until 2026-09-04, undetectably, for the whole life of the
+//! menu engine.
+//!
+//! This name closes that. It is published **only from the branch that
+//! calls the application's painter** — not when the slot is blank, not
+//! when there is no slot, and not when no painter was supplied. So:
+//!
+//! * present ⇒ the row reserved a slot, a painter existed, and it was
+//!   handed this rectangle to draw the command's key into;
+//! * absent ⇒ one of those three did not happen, which is precisely the
+//!   defect class a driven check exists to catch.
+//!
+//! It is deliberately **not** proof that pixels changed. Whether a key
+//! resolves to art is the icon set's own business and is asserted offline
+//! by the application's icon tests; the missing fact was never *"does a
+//! glyph render"* but *"did anything ask for one"* — the same distinction
+//! `tools/ui-verify`'s `qat_controls_are_icon_only` header draws, reached
+//! independently on the other surface.
 //!
 //! ## ★ Why the body is `menu.body.<context>` and not `menu.<context>`
 //!
@@ -76,6 +109,17 @@ pub fn custom(context_id: &str, kind: &str) -> String {
     format!("{PREFIX}.custom.{context_id}.{kind}")
 }
 
+/// The name under which one row's **painted icon slot** is published.
+///
+/// Published only when the application's icon painter was actually called
+/// for that row. See this module's header: the absence of this name is the
+/// assertion, and it is the only signal a driven check has that a menu
+/// surface draws glyphs at all.
+#[must_use]
+pub fn icon(context_id: &str, command_id: &str) -> String {
+    format!("{PREFIX}.icon.{context_id}.{command_id}")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -99,6 +143,10 @@ mod tests {
             custom("pages.thumbnail", "page_scale"),
             "menu.custom.pages.thumbnail.page_scale"
         );
+        assert_eq!(
+            icon("dock.tab", "view.panel_float"),
+            "menu.icon.dock.tab.view.panel_float"
+        );
     }
 
     /// **★ The body namespace and the row namespace cannot collide.**
@@ -119,12 +167,21 @@ mod tests {
         // And the mirror image.
         assert!(!item("x", "y").starts_with("menu.body."));
         assert!(!custom("x", "y").starts_with("menu.item."));
+        // The icon slot shares a row's command id, so its namespace is the
+        // one most likely to be confused with the row's. It must not be.
+        assert!(!icon("x", "y").starts_with("menu.item."));
+        assert!(!item("x", "y").starts_with("menu.icon."));
     }
 
     /// Every name is filterable by [`PREFIX`].
     #[test]
     fn every_name_carries_the_menu_prefix() {
-        for name in [body("c"), item("c", "x.y"), custom("c", "k")] {
+        for name in [
+            body("c"),
+            item("c", "x.y"),
+            custom("c", "k"),
+            icon("c", "x.y"),
+        ] {
             assert!(
                 name.starts_with(PREFIX),
                 "`{name}` is not filterable as a menu report"

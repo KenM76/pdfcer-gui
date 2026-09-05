@@ -105,6 +105,13 @@ use super::PdfcerApp;
 pub(crate) mod batch;
 pub(crate) mod fonts;
 mod forms;
+/// **The four verbs whose subject is a PANEL** — float it, dock it back,
+/// close it, and bring every floating one home. Its header carries the
+/// operand problem (a command id is a verb with no noun) and the
+/// park-and-drain shape that answers it.
+pub(crate) mod panels;
+/// The two Security commands — O119, split under **R2**; see its header.
+pub(crate) mod protect;
 pub(crate) mod routes;
 pub(crate) mod settings;
 /// **The three commands whose subject is a text caret** — the two that arm it
@@ -728,6 +735,8 @@ impl PdfcerApp {
             // capability: an export reads the document and writes elsewhere, so
             // there is no mode in which it should be refused. Read mode
             // exporting a drawing is exactly what a reading stance is for.
+            // Encrypt… / Permissions… — O119; `dispatch::protect` argues both.
+            id if protect::claims(id) => self.dispatch_protect(id),
             "file.export_dxf" => self.dialogs.open_export_dxf(&self.status),
             // ★★★ **Export image — `OPERATOR_REQUESTS.md` O120, wired
             // 2026-09-04.** The operator asked the ENGINE side for it on
@@ -743,6 +752,20 @@ impl PdfcerApp {
             // there is no mode in which it should be refused. Read mode
             // exporting a drawing is what a reading stance is FOR.
             "file.export_image" => self.dialogs.open_export_image(&self.status),
+            // ★★★ **Export text — wired 2026-09-04**, on the operator's ask:
+            // *"also the engine can export PDFs as text. we should have
+            // export/import for that."* A dialog rather than a bare picker,
+            // unlike `file.export_form_data` below, because four decisions have
+            // to be made before the bytes exist and none is recoverable from a
+            // save picker.
+            //
+            // ★★ **There is no `file.import_text` beside it**, and that is a
+            // recorded finding rather than an omission — see
+            // `crate::app::actions::exporttext`'s header for the three things
+            // "import text" could mean and why the engine offers none of them.
+            // R9: an absence is honest; a control that declines when pressed is
+            // a promise the program cannot keep.
+            "file.export_text" => self.dialogs.open_export_text(&self.status),
             // ★★★ **`file.export_form_data` — registered, drawn on File ▸
             // Export, and inert for the whole life of the project.**
             //
@@ -1343,6 +1366,22 @@ impl PdfcerApp {
             // control is gated on `doc.open` and a chord bound to the same id is
             // not.
             "tools.render_diagnostics" => self.dialogs.open_diagnostics(&self.status),
+            // ★★ **The four panel-layout verbs**, 2026-09-04.
+            //
+            // A guard arm rather than four literals, and it sits ABOVE
+            // `view.reset_layout` for no ordering reason at all — the two sets
+            // are disjoint by construction, since `dispatch_panel_layout`
+            // matches four exact ids and returns `false` for everything else.
+            // It is here because it is the same subject.
+            //
+            // ★ It must stay BELOW the `Panel::from_command_id` guard above,
+            // and that one IS an ordering constraint: that guard matches any
+            // id a panel claims, and these four are not panel ids — but a
+            // future panel command id beginning `view.panel_` would be, and
+            // the toggle is the more surprising thing to lose.
+            id if panels::claims(id) => {
+                self.dispatch_panel_layout(id);
+            }
             "view.reset_layout" => {
                 let scope = egui_shell::layout::ResetScope::All;
                 let changed = self.modes.reset(

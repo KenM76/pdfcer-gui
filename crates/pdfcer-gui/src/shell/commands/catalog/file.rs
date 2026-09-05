@@ -423,6 +423,42 @@ pub(super) fn band() -> Vec<Command> {
         command("file.export_image", t::file_export_image(), 124)
             .with_icon("export-image")
             .enabled_when("doc.pages"),
+        // ★★★ **Export text — wired 2026-09-04**, on the operator's ask:
+        // *"also the engine can export PDFs as text. we should have
+        // export/import for that."*
+        //
+        // Registered between the image export and the form-data pair, and drawn
+        // in the same band, because it is the same act the three of them share:
+        // *content of this document, written out to somewhere that is not this
+        // document.* CAD geometry, a picture, the filled values — and now the
+        // words.
+        //
+        // ★★ **It wears `export`, the shared tray, and that is the CORRECT side
+        // of the line `file.export_image` had to cross.**
+        //
+        // That registration's own note draws the line and it is worth applying
+        // rather than restating: the shared glyph is honest where the FORMAT
+        // has no picture, and dishonest where it does. A DXF is a coordinate
+        // list, a form-data file is a set of name/value pairs, and **a text
+        // file is a run of characters** — none of the three has a picture, so
+        // none of the three can be drawn, so the tray is telling the truth
+        // about all three. `export-image` needed its own art because a raster
+        // image *does* have a picture and this icon set already draws it, so a
+        // generic tray there asked the operator to unlearn `image.svg`.
+        //
+        // ★ The near miss is `copy-page-text` / `copy-document-text`, two
+        // registrations below: sheets with text RULES on them. Those are the
+        // right art for *the words of this page, to the clipboard*, and sharing
+        // one with this command would put three controls in one band reading as
+        // two — and would lose the only cue separating a clipboard copy from a
+        // file write, which is the whole difference between them.
+        //
+        // ★ `doc.pages` rather than `doc.open`, matching every export in this
+        // band and for the copy verbs' version of the reason: text is drawn on
+        // pages, and a legal `/Count 0` document has none to export from.
+        command("file.export_text", t::file_export_text(), 125)
+            .with_icon("export")
+            .enabled_when("doc.pages"),
         command("file.export_form_data", t::file_export_form_data(), 121)
             .with_icon("export")
             .enabled_when("doc.open"),
@@ -539,6 +575,73 @@ pub(super) fn band() -> Vec<Command> {
         // Declining the wrong glyph was right; it was never a reason to have
         // none. `print` is the printer art the ui-spec §8.12 reserved, and it
         // collides with nothing.
+        // ===================================================================
+        // SECURITY — `OPERATOR_REQUESTS.md` O119, approved and wired
+        // 2026-09-04: *"yes add encryption and permissions"*.
+        // ===================================================================
+        //
+        // # Why a new group on **File** rather than a row in Edit ▸ Protect
+        //
+        // The mockup drew it there and the operator approved that mockup, and
+        // the reason it drew it there survives restating: **every other command
+        // on the Edit tab is an undoable edit to page content, and these two are
+        // neither.** `EDITABLE_SURFACES.md` calls `set_encryption` *"a save
+        // transform, not an undoable edit"* — pressing either rewrites every
+        // byte and produces a different file, with nothing entered in the undo
+        // log. Redaction, four groups away on Edit, removes marks from a page
+        // and is undoable right up until it is applied. Putting the two on one
+        // tab would say they are the same kind of verb.
+        //
+        // The position **within** File is the operator's own framing of the
+        // question: O119 asks *"do you want to protect a drawing before you send
+        // it out?"*, so the band sits immediately after the band that sends it
+        // out. `crate::shell::manifest::file` places it there.
+        //
+        // # ★★★ Why both are gated on `doc.open` and NOT on "is it signed"
+        //
+        // Because whether **this** document is signed is not known when the
+        // registry is built, and a predicate that had to answer it would be a
+        // per-frame signature census on every ribbon draw. So the controls stay
+        // present and the WINDOW refuses — it opens, names the count, explains
+        // that encrypting rewrites every byte the signature covers, and offers
+        // no form at all.
+        //
+        // That is R9 satisfied rather than dodged. The rule is *"the control is
+        // absent or explained, never a button that fails on press"*, and this
+        // is the explained branch: pressing it produces a sentence about the
+        // operator's document, not a failure. The tooltips name the refusal too,
+        // so an operator who only ever hovers still meets it.
+        //
+        // ★ `doc.open` rather than `doc.pages`: protection is a property of the
+        // FILE, not of its pages. A legal `/Count 0` document can perfectly well
+        // carry a password, and refusing to let one be set would be this shell
+        // inventing a restriction the standard does not have.
+        //
+        // # Tokens 126 and 127
+        //
+        // New ids get new numbers in the `file.` block. ★ These were 125 and
+        // 126 for about an hour, and 125 collided: a CONCURRENT track wired
+        // `file.export_text` and took 125 in the same working tree. The
+        // collision was caught by `every_handler_token_is_unique`, which is
+        // precisely why that test exists and why this file's own header records
+        // that a per-tab split was once refused on the grounds that a collision
+        // between two blocks would be "invisible" — it is not, and this is the
+        // day that got demonstrated rather than argued.
+        //
+        // ⇒ Moved to 126/127 rather than asking the other track to move, on the
+        // rule that the later arrival yields. A token is what a trace prints;
+        // reusing a retired one would make an old trace read as whatever
+        // inherited its number, so 125 stays with `file.export_text`.
+        command("file.encrypt", crate::text::protect::file_encrypt(), 126)
+            .with_icon("encrypt")
+            .enabled_when("doc.open"),
+        command(
+            "file.permissions",
+            crate::text::protect::file_permissions(),
+            127,
+        )
+        .with_icon("permissions")
+        .enabled_when("doc.open"),
         command("file.print", t::file_print(), 130)
             .with_icon("print")
             .enabled_when("doc.open"),
@@ -587,17 +690,28 @@ pub(super) fn band() -> Vec<Command> {
         // block, and `PdfcerApp::conditions`, which sets the name from the one
         // resolved viewer.
         //
-        // ## No icon, and it is a refusal rather than an omission
+        // ## ★★★ The icon refusal was ARGUED and then DISCHARGED, within hours
         //
+        // This registration was written with no icon, and the argument was the
+        // one `file.save_as`, `edit.select_all` and `edit.attachments` all
+        // reached: every reuse available would MISLEAD — `export` says "out of
+        // this document into a file", which this does not do, and `open` says
+        // "bring a file in here", which is its opposite — and drawing a new
+        // glyph is not a build session's to do, because
         // `icons/assets/PROVENANCE.md` declares that directory the operator's
-        // own art, so the alternative to a glyph is not "draw one" but "ask him
-        // for one" — the judgement `file.save_as`, `edit.select_all` and
-        // `edit.attachments` all reached. And every reuse available would
-        // mislead: `export` says "out of this document into a file", which is
-        // not what this does, and `open` says "bring a file in here", which is
-        // its opposite. The label is a proper noun the operator reads faster
-        // than any picture — which is the one case where words beat a glyph
-        // outright.
+        // own art.
+        //
+        // ★ The second clause is what got spent, and it got spent the same
+        // afternoon: `open-in-acrobat.svg` was drawn on the icon track for
+        // this command, before this command existed to name it. So the glyph
+        // is purpose-drawn rather than borrowed, `PROVENANCE.md` is untouched,
+        // and the refusal is DISCHARGED rather than reversed — the same word
+        // `file.ocr`'s was, and for the same reason: the argument was never
+        // wrong, its supply premise simply stopped holding.
+        //
+        // ⚠ The asset's own note carries the constraint that made it drawable
+        // at all: the LABEL names a vendor, and the art carries nothing of
+        // that vendor's mark.
         //
         // ## `doc.open`, not `doc.pages`
         //
@@ -611,6 +725,7 @@ pub(super) fn band() -> Vec<Command> {
             crate::text::acrobat::file_open_in_acrobat(),
             161,
         )
+        .with_icon("open-in-acrobat")
         .enabled_when("doc.open"),
         command("file.settings", t::file_settings(), 150).with_icon("settings"),
         command("file.shortcuts", t::file_shortcuts(), 151).with_icon("keyboard"),

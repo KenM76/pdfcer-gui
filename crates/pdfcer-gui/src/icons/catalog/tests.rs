@@ -57,9 +57,16 @@ fn all_is_exhaustive_and_free_of_duplicates() {
     // the set will ever be. THIS assertion is the only figure left, and it
     // is in a test, where drift fails the build instead of misinforming a
     // reader. Prefer that shape for any future count.
+    // ★ 137 → 139 later on 2026-09-04: `bold` and `italic`. Not new capability
+    // and not a gap being filled — a **correction**. `format.bold` and
+    // `format.italic` had been registered bare since 2026-08-27 on the ground
+    // that *"Word draws `B` and `I` as glyphs; this build has no such art"*,
+    // which is a statement about SUPPLY, and the operator's standing ruling
+    // (2026-08-06, quoted in `Icon::Back`) is that a missing glyph is AUTHORED.
+    // He asked for this pair by name. The two assets carry the account.
     assert_eq!(
         Icon::ALL.len(),
-        136,
+        139,
         "the catalogue changed size: add the new variant to Icon::ALL and update this count"
     );
 }

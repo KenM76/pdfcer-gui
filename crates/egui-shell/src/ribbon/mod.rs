@@ -105,6 +105,10 @@ pub(crate) mod control;
 pub mod ctx;
 pub mod frame_report;
 pub mod mode_selector;
+// The four width primitives every ribbon row plans with -- button padding,
+// the truncation floor, a separator's cost and text measurement. Split from
+// `band` under R2 on 2026-09-04; see that module's header for the seam.
+pub(crate) mod measure;
 pub(crate) mod overflow;
 pub mod plan;
 pub mod qat;

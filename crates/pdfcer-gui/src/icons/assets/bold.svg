@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Generic capital "B" letterform — a stem and two bowls, constructed from one
+       line and two semicircular arcs. No typeface is reproduced and nothing was
+       traced: the letter is drawn as GEOMETRY, which is the same construction
+       info.svg already uses for its lower-case "i" and the same rule §2 states —
+       metaphor-level resemblance is intended, asset-level copying is forbidden. A
+       letter B is nobody's asset. No trademark risk.
+
+       ★★★ WHY THIS ASSET EXISTS. `format.bold` was registered on 2026-08-27 with
+       no icon, and the refusal beside it read: *"Word draws `B` and `I` as glyphs;
+       this build has no such art, and `icons/assets/PROVENANCE.md` declares that
+       directory the operator's own work — which a machine-drawn substitute would
+       make false."*
+
+       The second half of that sentence is a real constraint and it is unchanged.
+       The FIRST half is a statement about SUPPLY, and the operator's standing
+       ruling of 2026-08-06 — carried in `Icon::Back`'s doc comment — is that a
+       missing glyph is AUTHORED, not worked around: rewording a control to dodge
+       a character the font stack cannot draw *"spends the operator's affordance to
+       protect the font stack; an icon costs one asset and keeps both."* He said so
+       again on 2026-09-04, of this very pair: *"if bold and italics have no art in
+       the set, why weren't they made automatically as I have instructed to be done
+       for anything that a glyph is missing for on multiple occasions?"*
+
+       ⇒ This is a CORRECTION of a refusal, not a new capability. Nothing about
+       what `format.bold` does changed; what changed is that "there is no art"
+       stopped being an argument for leaving a control bare.
+
+       ★★ THE WEIGHT IS THE POINT, and it is why `stroke-width` is 4 rather than
+       the set's 2.5. A Bold button whose glyph is merely the letter B is a button
+       that says "B"; the label already says Bold, so the picture has to add the
+       thing a word cannot — that it is HEAVIER than what sits beside it. The set
+       already carries exactly this vocabulary: `IconWeight::Bold` (see
+       `icons/mod.rs`, "Weight") is *"the same art with the stroke width
+       multiplied"*, the non-colour cue for a selected toggle. This asset spends it
+       statically, against italic.svg's ordinary 2.5, so the pair reads the way it
+       reads in every word processor since the 1980s: a fat B and a thin slanted I.
+       Deviating from 2.5 with a stated reason is in-contract — `info.svg` (3.5 for
+       its tittle) and `shape-highlight.svg` (1 for its hatch) are the precedents.
+
+       ★ Drawn for 16 px first. The bowls are FULL semicircles of radius 7 on a
+       28-unit stem, so each counter is ~10 units clear of the stroke — about 3 px
+       of hole at the size this ships at. A narrower, more elegant B closes both
+       counters into mud at 16 px, which is the one real hazard with a stroked
+       letterform and the reason this one is squat.
+
+       Distinct from italic.svg, its only true neighbour (they sit side by side in
+       Format ▸ Font), on TWO axes at once and deliberately not one: weight, and
+       the closed bowls against three open strokes. Distinct from fonts.svg's
+       capital A by the letter and by the missing baseline rule — that glyph's rule
+       is what turns "a letter" into "a typeface", and this one must not claim to
+       be about the document's fonts. Distinct from text-freetext.svg and every
+       other framed glyph by having no frame at all. -->
+  <path d="M15 38V10h11a7 7 0 0 1 0 14H15" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M15 24h13a7 7 0 0 1 0 14H15" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

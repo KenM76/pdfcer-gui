@@ -231,6 +231,179 @@ pub const fn reflow_no_block() -> &'static str {
      there is nothing to re-wrap."
 }
 
+/// ★★★ **Every way a reflow can decline, as ONE type** — `OPERATOR_REQUESTS.md`
+/// **O127**, defect 3.
+///
+/// # Why this enum exists, when five `&'static str` functions already did
+///
+/// Because the five functions were being written to **the wrong slot**, and
+/// nothing in the type system could say so. `app::dispatch::text` and
+/// `app::actions::textstyle` both called `crate::app::actions::record_note`,
+/// which the status bar renders under **`⚑ About your last edit:`** — and
+/// `app::status::decline`'s own header forbids exactly that for a decline:
+///
+/// > *"an operator who reads 'About your last edit' after a gesture that did
+/// > nothing has been told a small lie confidently."*
+///
+/// The operator's report is the plain consequence. He pressed Reflow, the shell
+/// declined every time, wrote a correct sentence into a slot that reads as a
+/// footnote about something *earlier*, truncated it to 45 % of the bar, and he
+/// reported *"I haven't seen the reflow option actually work with anything when
+/// I press it."* **It was answering him. In the wrong voice, in the wrong
+/// place, in the wrong tense.**
+///
+/// ⇒ Routing every cause through one enum makes the channel a property of the
+/// type: `Declined::Reflow` can only be shown by `decline::show`, which wears
+/// `⊗` and means *nothing happened*. A sixth cause added tomorrow cannot pick
+/// the wrong slot, because there is no longer a slot to pick.
+///
+/// # ★★ The two halves, and why both are here
+///
+/// | | decided by | variants |
+/// |---|---|---|
+/// | **before** the engine is called | the shell, from the caret | [`Self::NeedsCaret`], [`Self::NeedsExistingText`], [`Self::NoBlock`], [`Self::PageAlreadyEdited`] |
+/// | **by** the engine | `pdfcer-core` | [`Self::PageSetChanged`], [`Self::Encrypted`], [`Self::CannotTrace`], [`Self::Other`] |
+///
+/// The engine half used to reach the operator as
+/// `crate::text::status::edit_declined_by_engine` — nine words, no cause, no
+/// remedy — because `funnel::vector_edit`'s error arm traces the detail and
+/// shows the generic line. These four are what that generic line was standing
+/// in for, and each names a different thing to do next.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ReflowRefusal {
+    /// No caret at all: the operator pressed Reflow with nothing composing.
+    NeedsCaret,
+    /// The caret is on bare page (`Anchor::Origin` or `Anchor::Box`), so it is
+    /// placing NEW text and there is no paragraph on the page yet.
+    NeedsExistingText,
+    /// The caret is in a run the block recogniser does not group into a
+    /// paragraph — a title-block cell, a dimension label, an isolated note.
+    NoBlock,
+    /// This session has already changed the document.
+    ///
+    /// ★★★ **This gate is load-bearing and it is NOT merely conservative.**
+    /// See [`reflow_after_edit`]'s own note: `EditSession::reflow_block` plans
+    /// from the **base** document and then writes the result into the page's
+    /// first content object, *emptying every other one*. Text added this
+    /// session lives in one of those other content objects, so a reflow that
+    /// ran would **silently delete it**. The engine's own guard does not cover
+    /// that case — it only refuses when the *first* content object was
+    /// rewritten — so this forecast is the only thing standing between the
+    /// operator and losing work he can see on the page.
+    PageAlreadyEdited,
+    /// The engine's page-set guard: a page was added, removed or reordered, and
+    /// reflow's planner is indexed against the base document's pages.
+    PageSetChanged,
+    /// The document is encrypted, which reflow refuses outright.
+    Encrypted,
+    /// The engine could not trace the paragraph's lines back to the operators
+    /// that drew them (`ReflowApplyError::NoProvenance`, or an extraction that
+    /// failed), so it will not re-wrap what it cannot address.
+    CannotTrace,
+    /// Anything else the engine returned. Named rather than merged into
+    /// [`Self::CannotTrace`], because *"pdfcer could not"* and *"pdfcer would
+    /// not"* are different admissions and only one of them has a remedy.
+    Other,
+}
+
+impl ReflowRefusal {
+    /// The sentence for this cause.
+    ///
+    /// One function over the enum rather than one per variant, for
+    /// [`refusal`]'s reason: a variant added without a sentence is a compile
+    /// error rather than a control that declines silently.
+    ///
+    /// ★ The first four forward to the free functions that already existed and
+    /// are already tested, so no sentence is written twice. What changed for
+    /// them is the **channel**, not the words.
+    #[must_use]
+    pub const fn line(self) -> &'static str {
+        match self {
+            Self::NeedsCaret => reflow_needs_caret(),
+            Self::NeedsExistingText => reflow_needs_existing_text(),
+            Self::NoBlock => reflow_no_block(),
+            Self::PageAlreadyEdited => reflow_after_edit(),
+            // ★ Deliberately the same remedy as `PageAlreadyEdited` and
+            // deliberately not the same sentence: the operator did something
+            // different to get here, and a sentence that named the wrong cause
+            // would send them looking for an edit they did not make.
+            Self::PageSetChanged => {
+                "Reflowing a paragraph needs the pages as they were when you opened the file, and \
+                 pages have been added, removed or reordered since. Save this file and open it \
+                 again, then reflow."
+            }
+            Self::Encrypted => {
+                "This document is encrypted, so pdfcer cannot re-write its text. Remove the \
+                 protection first, using Protect > Remove security."
+            }
+            Self::CannotTrace => {
+                "pdfcer cannot tell which parts of the page drew these lines, so it will not \
+                 re-wrap them — re-wrapping text it cannot address would move the wrong words."
+            }
+            Self::Other => {
+                "pdfcer could not re-wrap this paragraph, and your document has not been changed."
+            }
+        }
+    }
+}
+
+/// ★★★ **Why Enter did not make a new line in text that is already on the
+/// page** — `OPERATOR_REQUESTS.md` **O127**, defect 2.
+///
+/// The operator: *"can the enter key create new lines when we are editing or
+/// creating text?"*
+///
+/// **Creating: yes, everywhere, as of this change.** A dragged box and a
+/// clicked point both take a line break on Enter and commit on Ctrl+Enter.
+///
+/// **Editing text already on the page: no, and it is the FILE that says so.**
+/// `EditSession::edit_text` replaces the string inside one show operator, and a
+/// show operator cannot contain a line break — `\n` has no code in any of the
+/// standard encodings, so the engine refuses it by name (`Refusal`,
+/// `TargetAbsent`, character `'\n'`) rather than dropping it. A PDF has no
+/// paragraph: each visible line is its own operator at its own absolute
+/// position, so splitting a line in two is not an edit, it is authoring a
+/// second line somewhere.
+///
+/// ★★ So this is a **decline with a route**, not an apology. It says what
+/// cannot happen, why, and the two things that can: finish the edit, or place
+/// new text in a box that wraps. Silence here — which is what the shell did
+/// before, by quietly committing instead — is the founding defect class of this
+/// project: the key was pressed, something else happened, and nothing said so.
+#[must_use]
+pub const fn enter_cannot_split_existing_text() -> &'static str {
+    "Text already on the page is drawn one line at a time, so a line cannot be split in two \
+     here. Press Ctrl+Enter to finish this edit, or use Add text and drag a box for text that \
+     wraps."
+}
+
+/// The disclosure owed when a **clicked** text draft turns out to be
+/// multi-line.
+///
+/// # ★★★ Rule 4: an inference the operator cannot see owes an off-canvas report
+///
+/// A click has no extent, so a point text has no width to wrap against — which
+/// is why dragging a box was the multi-line gesture in the first place. Once
+/// Enter inserts a line break at a clicked caret, the commit needs a box
+/// anyway, and this shell derives one: from the click across to the right edge
+/// of the sheet, and down to the bottom.
+///
+/// That width is **not invented** — it is the page's own crop box, which is a
+/// fact about the operator's document rather than a number this shell chose —
+/// but it is still an inference, and the operator cannot see a rectangle that
+/// is not drawn. What they *can* see is the consequence: a line long enough
+/// will wrap at the sheet edge rather than running off it.
+///
+/// ★ It is shown once, at the commit, and not while typing: the draft is still
+/// a draft until then, and a sentence about how something will be placed is
+/// noise until it has been placed.
+#[must_use]
+pub const fn point_text_became_a_block() -> &'static str {
+    "Your text has more than one line, so it was placed as a block: it starts where you clicked \
+     and wraps at the right-hand edge of the sheet. Drag a box with Add text to choose your own \
+     width."
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -309,6 +482,101 @@ mod tests {
         assert!(centre.contains("centred"));
         assert_ne!(rotated, right);
         assert_ne!(right, centre);
+    }
+
+    /// ★★★ **Every reflow cause has its own sentence, and no two are the
+    /// same.**
+    ///
+    /// The property the enum exists for. Before O127 the four shell-side causes
+    /// went to one channel and the four engine-side ones collapsed into nine
+    /// generic words — so the operator could press Reflow for four genuinely
+    /// different reasons and be told the same nothing. A duplicate here would
+    /// be that failure re-arriving with a type in front of it.
+    #[test]
+    fn every_reflow_cause_says_something_of_its_own() {
+        let all = [
+            ReflowRefusal::NeedsCaret,
+            ReflowRefusal::NeedsExistingText,
+            ReflowRefusal::NoBlock,
+            ReflowRefusal::PageAlreadyEdited,
+            ReflowRefusal::PageSetChanged,
+            ReflowRefusal::Encrypted,
+            ReflowRefusal::CannotTrace,
+            ReflowRefusal::Other,
+        ];
+        for why in all {
+            let s = why.line();
+            assert!(s.len() > 40, "{why:?} needs a real sentence, got {s:?}");
+            assert!(s.ends_with('.'), "{why:?} is prose: {s:?}");
+        }
+        for (i, a) in all.iter().enumerate() {
+            for b in all.iter().skip(i + 1) {
+                assert_ne!(
+                    a.line(),
+                    b.line(),
+                    "{a:?} and {b:?} say the same thing, so one of the two causes is \
+                     unreportable and the operator cannot tell which happened"
+                );
+            }
+        }
+    }
+
+    /// ★★ **The two "save and reopen" causes both carry the remedy**, and it is
+    /// the whole of what the operator has to do.
+    ///
+    /// A refusal naming a cause with no route is half a sentence — the rule
+    /// `text::embed`'s blocker rows already follow — and *"save this file and
+    /// open it again"* is not guessable from *"cannot reflow"*.
+    #[test]
+    fn the_two_stale_plan_causes_name_the_remedy() {
+        for why in [
+            ReflowRefusal::PageAlreadyEdited,
+            ReflowRefusal::PageSetChanged,
+        ] {
+            let s = why.line();
+            assert!(
+                s.contains("open it again"),
+                "{why:?} must say what to do, not only what went wrong: {s:?}"
+            );
+        }
+    }
+
+    /// ★★★ **Enter's refusal names the remedy, and names BOTH halves of it.**
+    ///
+    /// The sentence has to carry the keyboard route as well as the gesture
+    /// route, because O127's brief is explicit that commit must not be reachable
+    /// only by mouse: an operator told *"use Add text"* and nothing else has
+    /// been given a way to place text and no way to finish the edit they are
+    /// already in.
+    #[test]
+    fn the_enter_refusal_offers_a_keyboard_route_and_a_gesture_route() {
+        let s = enter_cannot_split_existing_text();
+        assert!(
+            s.contains("Ctrl+Enter"),
+            "commit must be reachable from the keyboard, and the sentence is where the \
+             operator learns the chord: {s:?}"
+        );
+        assert!(
+            s.contains("drag a box"),
+            "and the way to get a line break at all is a box, which is the FILE's rule \
+             rather than a preference: {s:?}"
+        );
+    }
+
+    /// ★★ **The point-text disclosure says where the width came from.**
+    ///
+    /// Rule 4's obligation, and the reason the sentence is longer than *"placed
+    /// as a block"*: the operator can see two lines of text and cannot see the
+    /// rectangle they were laid into, so the one fact they need is what decides
+    /// where a long line will break.
+    #[test]
+    fn the_point_text_disclosure_names_the_edge_it_wraps_at() {
+        let s = point_text_became_a_block();
+        assert!(s.contains("edge of the sheet"), "{s:?}");
+        assert!(
+            s.contains("Drag a box"),
+            "and it offers the gesture that puts the width back in the operator's hands: {s:?}"
+        );
     }
 
     /// **The disclosure warns about the cost it exists to disclose.** Without

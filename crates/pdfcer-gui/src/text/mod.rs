@@ -158,6 +158,15 @@ pub mod export_form;
 /// instruction rather than an aside: one of the three formats cannot do it, and
 /// what is being asked for is that pdfcer be the thing that says which.
 pub mod export_image;
+/// ★★★ Every word the Export-text window shows, and every sentence a text
+/// export owes afterwards.
+///
+/// Its header carries the sentence the whole feature is arranged around — **a
+/// scanned drawing has no text layer, so exporting it writes an empty file, and
+/// an empty file looks exactly like a successful export** — and the reason the
+/// losses are said twice, in the window and in the receipt, in two different
+/// registers.
+pub mod export_text;
 /// ★ The FORM-FIELD clipboard's sentences — five refusals and the paste's
 /// off-canvas loss note. Separate from [`clipboard`] because the loss note is
 /// not a refusal: the paste worked, and the sentence exists because part of the
@@ -245,6 +254,14 @@ pub mod pick;
 pub mod placing;
 /// Every word the print dialog shows. Consumed by `crate::dialogs::print`.
 pub mod print;
+/// Every word the two Security controls that **write** protection into a file
+/// say — O119. The WRITE side; [`security`] is the READ side, and the two are
+/// separate modules because they make opposite kinds of claim. Nothing is
+/// duplicated across the seam: this module calls `security`'s wording verbatim
+/// wherever one fact serves both.
+pub mod protect;
+/// The left rail's own words — O123 part 7.
+pub mod rail;
 /// ★★★ The sentence a document that reaches outside itself earns — a submit
 /// button, a launch action, a script that runs on open. Its header carries the
 /// two opposite ways to word it wrongly.

@@ -249,7 +249,21 @@ mod tests {
     fn the_ron_file_reads_as_a_ribbon() {
         let text = built_in_ron();
         for needle in [
-            "Command(id: \"file.open\")",
+            // ★ Was `Command(id: "file.open")` until 2026-09-04. `file.open`
+            // is now a **Large** item — the mockup draws it as one of the File
+            // group's two big controls — so it serializes with its size and no
+            // longer matches a needle that was really asserting *"a
+            // default-sized command elides its size"*.
+            //
+            // Both halves of that property are now asserted, which is stronger
+            // than what was here before: `file.new_from_template` is the plain
+            // form (size omitted because `Medium` is the default) and
+            // `file.new` is the qualified one. A serializer that started
+            // emitting `size: Medium` everywhere, or that stopped emitting
+            // `size:` at all, fails on one needle or the other rather than
+            // slipping past a single example.
+            "Command(id: \"file.new_from_template\")",
+            "Command(id: \"file.new\", size: Large)",
             "caption: \"Page display\"",
             "id: \"review\"",
             "\"Ctrl+1\": \"mode.read\"",

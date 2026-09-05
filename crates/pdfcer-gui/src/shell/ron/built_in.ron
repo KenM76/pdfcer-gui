@@ -44,9 +44,9 @@
                     id: "file",
                     caption: "File",
                     items: [
-                        Command(id: "file.new"),
+                        Command(id: "file.new", size: Large),
+                        Command(id: "file.open", size: Large),
                         Command(id: "file.new_from_template"),
-                        Command(id: "file.open"),
                         Custom(kind: "recent_files"),
                         Command(id: "file.close"),
                     ],
@@ -63,7 +63,7 @@
                     id: "save",
                     caption: "Save",
                     items: [
-                        Command(id: "file.save"),
+                        Command(id: "file.save", size: Large),
                         Command(id: "file.save_as"),
                         Command(id: "file.save_copy"),
                         Command(id: "file.save_compacted"),
@@ -75,12 +75,21 @@
                     items: [
                         Command(id: "file.export_dxf"),
                         Command(id: "file.export_image"),
+                        Command(id: "file.export_text"),
                         Command(id: "file.export_form_data"),
                         Command(id: "file.import_form_data"),
                         Command(id: "file.copy_page_text"),
                         Command(id: "file.copy_document_text"),
                     ],
                     collapse: 3,
+                ),
+                (
+                    id: "security",
+                    caption: "Security",
+                    items: [
+                        Command(id: "file.encrypt", size: Large),
+                        Command(id: "file.permissions", size: Large),
+                    ],
                 ),
                 (
                     id: "print",
@@ -102,7 +111,7 @@
                     id: "pdfcer",
                     caption: "pdfcer",
                     items: [
-                        Command(id: "file.settings"),
+                        Command(id: "file.settings", size: Large),
                         Command(id: "file.shortcuts"),
                         Command(id: "file.about"),
                     ],
@@ -192,6 +201,7 @@
                         Command(id: "view.close_other_documents"),
                         Command(id: "view.read_mode"),
                         Command(id: "view.fullscreen"),
+                        Command(id: "view.dock_all_panels"),
                         Command(id: "view.reset_layout"),
                     ],
                     collapse: 1,
@@ -215,9 +225,9 @@
                     id: "page-clipboard",
                     caption: "Clipboard",
                     items: [
-                        Command(id: "pages.cut"),
-                        Command(id: "pages.copy"),
-                        Command(id: "pages.paste"),
+                        Command(id: "pages.cut", size: Large),
+                        Command(id: "pages.copy", size: Large),
+                        Command(id: "pages.paste", size: Large),
                     ],
                 ),
                 (
@@ -262,7 +272,7 @@
                     caption: "Insert",
                     items: [
                         Command(id: "edit.insert_image", size: Large),
-                        Command(id: "edit.attachments"),
+                        Command(id: "edit.attachments", size: Large),
                     ],
                     collapse: 4,
                 ),
@@ -274,6 +284,7 @@
                         Command(id: "edit.copy", size: Small),
                         Command(id: "edit.paste", size: Small),
                         Command(id: "edit.paste_duplicate", size: Small),
+                        Command(id: "edit.copy_as_vector", size: Small),
                     ],
                     collapse: 3,
                 ),
@@ -295,7 +306,7 @@
                     id: "protect",
                     caption: "Protect",
                     items: [
-                        Command(id: "edit.redact"),
+                        Command(id: "edit.redact", size: Large),
                         Command(id: "edit.redact_selection"),
                         Command(id: "edit.redact_apply"),
                     ],
@@ -337,9 +348,9 @@
                     id: "notes",
                     caption: "Notes",
                     items: [
-                        Command(id: "markup.text_box"),
-                        Command(id: "markup.sticky_note"),
-                        Command(id: "markup.stamp"),
+                        Command(id: "markup.text_box", size: Large),
+                        Command(id: "markup.sticky_note", size: Large),
+                        Command(id: "markup.stamp", size: Large),
                     ],
                     collapse: 2,
                 ),
@@ -382,8 +393,8 @@
                     id: "scale",
                     caption: "Scale",
                     items: [
-                        Command(id: "measure.set_scale"),
-                        Command(id: "measure.manage_groups"),
+                        Command(id: "measure.set_scale", size: Large),
+                        Command(id: "measure.manage_groups", size: Large),
                     ],
                     collapse: 1,
                 ),
@@ -398,7 +409,7 @@
                     id: "batch",
                     caption: "Batch",
                     items: [
-                        Command(id: "tools.merge_files"),
+                        Command(id: "tools.merge_files", size: Large),
                     ],
                     collapse: 3,
                 ),
@@ -406,7 +417,7 @@
                     id: "fonts",
                     caption: "Fonts",
                     items: [
-                        Command(id: "tools.font_folders"),
+                        Command(id: "tools.font_folders", size: Large),
                         Command(id: "tools.embed_fonts"),
                         Command(id: "tools.unembed_fonts"),
                     ],
@@ -463,6 +474,46 @@
     ],
     trailing: [
         Command(id: "file.open_in_acrobat", visible_when: "acrobat.available"),
+    ],
+    rail: [
+        (
+            id: "tabs",
+            items: [
+                Command(id: "view.panel_pages"),
+                Command(id: "view.panel_bookmarks"),
+                Command(id: "view.panel_layers"),
+                Command(id: "view.panel_signatures"),
+                Command(id: "file.fonts"),
+            ],
+        ),
+        (
+            id: "navigate",
+            caption: "Navigate",
+            fold: pin_armed,
+            items: [
+                Command(id: "view.tool_select"),
+                Command(id: "view.tool_node", visible_when: "mode.edit_content"),
+                Command(id: "view.tool_text"),
+                Command(id: "view.tool_hand"),
+            ],
+        ),
+        (
+            id: "select",
+            caption: "Select",
+            fold: whole,
+            items: [
+                Command(id: "edit.select_all"),
+            ],
+        ),
+        (
+            id: "rotate",
+            caption: "Rotate",
+            fold: whole,
+            items: [
+                Command(id: "pages.rotate_left"),
+                Command(id: "pages.rotate_right"),
+            ],
+        ),
     ],
     keymap: {
         "A": "view.tool_node",
@@ -544,6 +595,10 @@
         (
             context: "dock.tab",
             items: [
+                Command(id: "view.panel_float", visible_when: "panel.docked"),
+                Command(id: "view.panel_dock", visible_when: "panel.floating"),
+                Command(id: "view.panel_close"),
+                Separator,
                 Command(id: "view.reset_layout"),
             ],
         ),

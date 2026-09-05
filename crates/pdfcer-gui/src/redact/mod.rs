@@ -29,6 +29,37 @@
 //!
 //! # 1. The three properties carried across from the source
 //!
+//! ## ★★★ 1.0 CORRECTED 2026-09-04 (evening) — there are now TWO apply routes,
+//! and the second one lands in the open document
+//!
+//! Everything from §1.1 down was written on the morning of 2026-09-04, when
+//! [`pdfcer_core::redact::apply_redactions`] took a `&Document` and returned
+//! `Vec<u8>` and there was no way back into an `EditSession`. That is no longer
+//! the shape of the world. The engine shipped
+//! [`pdfcer_core::edit::EditSession::apply_redactions`] the same afternoon
+//! (`Pass 250.1`, `225db51`, `pdfcer-core` v0.35.0), in answer to this shell's
+//! own request, and this module now has two entry points rather than one:
+//!
+//! | route | what it produces | what it touches | who calls it |
+//! |---|---|---|---|
+//! | [`prepare_redaction_apply`] | the finished redacted **bytes**, in memory, proven | nothing | the dialog on open — the MEASUREMENT — and the two write-now destinations |
+//! | [`apply_into_session`] | a mutation of the **session**, proven | the open document | the deferred destination, through `crate::app::actions::redact` |
+//!
+//! Both are kept, and the reason is not symmetry. The measurement has to exist
+//! *before* the confirmation on either path (§2 of [`crate::dialogs::redact`]),
+//! and the deferred route is irreversible at the moment it runs — it clears the
+//! undo log — so the operator must be reading a real report, of a removal that
+//! really ran, before he chooses. The cost is that the removal runs twice on
+//! the deferred path: once to measure, once to land. That is a second full
+//! rewrite of the document on a deliberate click, and it is bought for the one
+//! property that could not be had any other way — that the numbers on screen at
+//! the moment of consent are measurements rather than predictions.
+//!
+//! ★★ **The `to_incremental_bytes` question, which is the whole of §4.1 of our
+//! request, is answered by CONSTRUCTION rather than by a refusal, and it was
+//! verified rather than believed** — see [`apply_into_session`], which carries
+//! the measurement and the test that would catch a regression.
+//!
 //! ## 1.1 Apply is a FULL REWRITE, or it does not happen
 //!
 //! The engine's `ARCHITECTURE.md` §5 corollary and standing rule R35: an
@@ -150,8 +181,18 @@
 //! ## 2.4 The call-site monopoly is asserted from the syntax tree
 //!
 //! `redact::sealed` parses **every `.rs` file in this crate** with `syn` and asserts
-//! that `apply_redactions` is *called* in exactly one place — the function
-//! below. A second call site anywhere is a test failure naming the file.
+//! that `apply_redactions` is *called* in exactly one FILE — this one. A call
+//! from anywhere else is a test failure naming the file.
+//!
+//! ★ 2026-09-04: it is *one file*, not *one call*, and since this afternoon
+//! that distinction is load-bearing rather than pedantic. There are now two
+//! calls in this file — the free function in [`prepare_redaction_apply`] and
+//! the `EditSession` method in [`apply_into_session`] — and `sealed` pins the
+//! number at exactly two so a third cannot arrive quietly. The reader counts
+//! method calls as well as free calls, which it did before either existed,
+//! *"because a future engine that moved it onto a type would otherwise slip the
+//! monopoly silently"*. That future engine arrived; the check was already
+//! pointed at it.
 //!
 //! It reads the abstract syntax tree rather than the text, for
 //! `crate::shell::commands::reach`'s reasons applied to a different question: a
@@ -182,35 +223,61 @@
 //!
 //! It does not decide **where** the file goes. [`PreparedRedaction::write_to`]
 //! takes a path; asking the operator for one is [`crate::dialogs::redact`]'s
-//! job, and that surface asks every time. See §4.
+//! job. See §4.
 //!
-//! It does not mutate the open document. Applying produces a **new file**; the
-//! session keeps its marks, its undo log and its epoch. That is not a
-//! limitation — it is the property that makes an irreversible operation safe to
-//! offer, and [`crate::text::redact`] says so on screen in as many words.
+//! ★★★ **CORRECTED 2026-09-04 (evening).** This paragraph used to read:
+//!
+//! > *"It does not mutate the open document. Applying produces a **new file**;
+//! > the session keeps its marks, its undo log and its epoch. That is not a
+//! > limitation — it is the property that makes an irreversible operation safe
+//! > to offer."*
+//!
+//! It was a description of an engine surface, dressed as a principle. The
+//! engine surface changed the same afternoon and the principle did not survive
+//! it: [`apply_into_session`] mutates the open document, on purpose, because
+//! the operator asked for exactly that and because deferring the write destroys
+//! nothing — **the original is on disk, untouched, until he chooses to
+//! overwrite it.** What was actually load-bearing in the old sentence is kept
+//! and is now §4.
 //!
 //! ---
 //!
-//! # 4. ★ Save-as, never save-over — and why that is the sharpest rule here
+//! # 4. ★★★ CORRECTED 2026-09-04 — the rule is *warn at the overwrite*, not
+//! *never overwrite*
 //!
-//! `HANDOFF.md` §3 item 5 records the operator's standing rule — *"Read may
-//! produce a new document; it may not modify this one"* — with the enforcement
-//! at the **save** rather than at the operation, and names redact-apply
-//! explicitly as one of the capabilities it settles in advance.
+//! This section used to be headed *"Save-as, never save-over — and why that is
+//! the sharpest rule here"*, and it argued from `HANDOFF.md` §3 item 5 (*"Read
+//! may produce a new document; it may not modify this one"*) and from
+//! [`crate::app::save`] §3.4 that the source file must never be overwritten by
+//! a redaction.
 //!
-//! [`crate::app::save`] §3.4 draws the matching line for this shell: a save is a
-//! **copy**, and the original is never overwritten. For a redaction that stops
-//! being a convention and becomes the whole safety argument, because the source
-//! file is *the only remaining copy of the content being removed*. Overwriting
-//! it would be the most damaging single act this shell could perform, on the one
-//! operation least able to survive a mistake.
+//! The operator overruled it on 2026-09-04, and the argument that replaced it is
+//! `OPERATOR_REQUESTS.md` O125's:
 //!
-//! So: the destination is always asked for, and the suggested name is never the
-//! file that was opened ([`crate::text::redact::suggested_suffix`], asserted by
-//! [`crate::dialogs::redact`]'s own test in the shape
-//! `crate::app::save::suggested_path` and `crate::dialogs::ocr::suggested_path`
-//! both established). Nothing in this module can produce a path at all, which is
-//! the structural half of the same rule.
+//! > *"if the engine can't hold it we need to leave it up to the user to decide
+//! > to overwrite the original or save to a new file… If someone is saving
+//! > their changes while redacting they aren't going to keep having to save a
+//! > new file every time."*
+//!
+//! The premise of the old rule is still true — the source file **is** the only
+//! remaining copy of the content being removed — and the conclusion still does
+//! not follow from it. Forcing a copy does not protect him from the decision;
+//! it makes him perform it in two steps and leaves a stray file behind. What
+//! survives, and survives as a *mechanism* rather than as a prohibition:
+//!
+//! 1. **Nothing in this module can produce a path.** [`PreparedRedaction::write_to`]
+//!    takes one; it never invents one. That is unchanged and is the structural
+//!    half of the rule.
+//! 2. **The suggested name is never the file that was opened**
+//!    ([`crate::text::redact::suggested_suffix`], asserted by
+//!    [`crate::dialogs::redact`]'s own test, in the shape
+//!    `crate::app::save::suggested_path` and `crate::dialogs::ocr::suggested_path`
+//!    both established).
+//! 3. **The write is atomic** — temp file, then rename — precisely because the
+//!    destination may now be the source. See [`PreparedRedaction::write_to`].
+//! 4. **The overwrite is warned about at the moment it is chosen**, in words,
+//!    at a control the operator had to select. A warning, not a refusal: that
+//!    distinction is the whole of O125.
 
 pub mod proof;
 
@@ -233,7 +300,7 @@ use pdfcer_core::object::ObjId;
 use pdfcer_core::redact::{self, RedactError, RedactionReport};
 use pdfcer_core::writer::SaveOptions;
 
-pub use proof::AbsenceVerification;
+pub use proof::{AbsenceVerification, Residual, ResidualSite};
 
 /// Why a redaction apply did not happen. Every variant is a refusal **before
 /// any byte reached the filesystem**.
@@ -465,24 +532,45 @@ impl PreparedRedaction {
     /// the document each time an operator opened the dialog with a residual
     /// pending.
     ///
-    /// # Why the write is not atomic, where the salvage source's was
+    /// # ★★★ Why the write IS atomic, as of 2026-09-04
     ///
-    /// The old shell routed this through a `write_atomic` helper it shared with
-    /// its ordinary save. This shell has no such helper — both of its existing
-    /// writers (`crate::app::save::write_copy` and `crate::dialogs::ocr`) call
-    /// `std::fs::write` — and inventing one here for this path alone would make
-    /// the most security-critical write in the program the only one with a
-    /// different mechanism, which is how a subsequent "consistency" edit
-    /// removes it.
+    /// It was not, and the argument for that is kept below because it was
+    /// sound **for the destination this method used to have** and stopped being
+    /// sound the moment that changed.
     ///
-    /// It is also, specifically here, not a safety property. A truncated write
-    /// can only *lose* trailing bytes of an already-redacted buffer: it cannot
-    /// introduce un-redacted content, and a truncated PDF does not open, so the
-    /// failure is loud rather than quiet. The hazard atomicity defends against
-    /// — a plausible, working, wrong file — is not reachable from this
-    /// direction. (An atomic writer shared by all three call sites would still
-    /// be an improvement, and is recorded in this work's report as such rather
-    /// than smuggled in here.)
+    /// What it used to say: this shell had no `write_atomic` helper, both of
+    /// its writers called `std::fs::write`, and inventing one here alone would
+    /// make the most security-critical write in the program the only one with a
+    /// different mechanism — *"which is how a subsequent 'consistency' edit
+    /// removes it."* And, specifically, atomicity was not a safety property
+    /// here: a truncated write could only *lose* trailing bytes of an
+    /// already-redacted buffer, never introduce un-redacted content, and a
+    /// truncated PDF does not open, so the failure was loud.
+    ///
+    /// ★ **Every clause of that depended on `target` never being the source
+    /// file.** A torn write to `sheet-redacted.pdf` costs a file that did not
+    /// exist five seconds ago. A torn write to `sheet.pdf` — which
+    /// [`crate::dialogs::redact`] can now be asked for, on the operator's
+    /// instruction of 2026-09-04 — destroys the **only remaining copy of the
+    /// content being removed**, and leaves neither the original nor the
+    /// redacted document. That is the one loss in this feature that cannot be
+    /// undone by doing the work again.
+    ///
+    /// So: write to `<target>.pdfcer-tmp`, then `std::fs::rename` over the
+    /// target. Same shape, same extension and same failure handling as
+    /// [`crate::app::save::save_in_place`], deliberately — the "one mechanism"
+    /// objection is answered by *matching the shell's in-place writer* rather
+    /// than by staying unsafe, and rename-over-target is a single directory
+    /// operation on every filesystem pdfcer runs on.
+    ///
+    /// It is applied to **both** destinations rather than only the dangerous
+    /// one. A branch would mean the safe path and the dangerous path used
+    /// different writers, which is the arrangement in which somebody later
+    /// "simplifies" the wrong one.
+    ///
+    /// ★ The temporary file is removed if the rename fails, so a refusal leaves
+    /// no half-written PDF beside the operator's document — and it carries the
+    /// redacted bytes, which is one more reason not to leave it lying about.
     ///
     /// # Errors
     ///
@@ -494,17 +582,30 @@ impl PreparedRedaction {
         target: &Path,
         acknowledgement: ResidualAcknowledgement,
     ) -> Result<usize, WriteRefusal> {
-        let residuals = self.verification.raw_byte_residuals.len();
+        let residuals = self.verification.residuals.len();
         if residuals > 0 && acknowledgement == ResidualAcknowledgement::Withheld {
             return Err(WriteRefusal::ResidualsNotAcknowledged { residuals });
         }
         // ★ §2.2 — the proof between the buffer and the syscall.
         if let Some(survivors) =
-            proof::survivors_in_decoded_streams(&self.bytes, &self.report.redacted_text)
+            proof::survivors_in_content_streams(&self.bytes, &self.report.redacted_text)
         {
             return Err(WriteRefusal::VerificationFailed { survivors });
         }
-        std::fs::write(target, &self.bytes).map_err(WriteRefusal::FileSystem)?;
+        // ★ Temp-then-rename. See the "Why the write IS atomic" section: the
+        // destination may now be the source document, and a torn write there
+        // would destroy the last copy of the content being removed.
+        let temporary = target.with_extension("pdfcer-tmp");
+        std::fs::write(&temporary, &self.bytes).map_err(WriteRefusal::FileSystem)?;
+        if let Err(err) = std::fs::rename(&temporary, target) {
+            // The temporary holds a redacted document. Leaving it beside the
+            // operator's file after a failure would be a stray artefact of the
+            // most sensitive kind, so it goes even though the removal itself
+            // may also fail — there is nothing further to try and nothing to
+            // report about it that the rename's error does not already say.
+            let _ = std::fs::remove_file(&temporary);
+            return Err(WriteRefusal::FileSystem(err));
+        }
         crate::diag::trace(|| {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed.
@@ -615,460 +716,285 @@ pub fn prepare_redaction_apply(
     })
 }
 
-#[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
-mod tests {
-    use super::*;
-    use pdfcer_core::annot_author::{Quad, RedactSpec};
-    use pdfcer_core::page_tree::{self, Rect};
-    use pdfcer_core::text_extract::{self, ExtractOptions};
-    use pdfcer_core::vartext::Quadding;
+// ===========================================================================
+// ★★★ THE DEFERRED APPLY — 2026-09-04, `Pass 250.1`
+// ===========================================================================
 
-    /// The secret this suite proves the absence of.
+/// What [`apply_into_session`] did, once it had done it.
+///
+/// Distinct from [`PreparedRedaction`] and deliberately **not** a variant of
+/// it: that type's whole shape is *"finished bytes nobody has written yet"*,
+/// and there are no bytes here. The removal is in the session; the file system
+/// has not been touched and will not be until the operator saves.
+#[derive(Debug)]
+pub struct AppliedRedaction {
+    /// The engine's report — what was removed, per carrier, plus its own
+    /// disclosed residuals. The same value [`PreparedRedaction::report`] holds,
+    /// from the same engine call on the same marks.
+    pub report: RedactionReport,
+    /// This module's independent absence proof, run over the session's own
+    /// serialisation **after** the collapse.
+    pub verification: AbsenceVerification,
+    /// ★★★ **How many undo steps the apply destroyed.**
     ///
-    /// Deliberately long and distinctive: a short token could be absent by
-    /// luck, and a proof that can pass by luck proves nothing.
-    const SECRET: &str = "CONFIDENTIALWITNESSNAME";
-
-    /// A one-page document whose content stream shows `SECRET` followed by a
-    /// word that must SURVIVE.
+    /// Read from `EditSession::undo_depth()` immediately before the call, and
+    /// it is the number the operator has to be told — *before* he commits, by
+    /// [`crate::text::redact::undo_will_be_cleared`], and again after, in the
+    /// edit disclosure. The engine's verb *finalizes*: it collapses the session
+    /// onto a clean redacted base with an empty edit and undo stack, so every
+    /// step in the log — including the ones that have nothing to do with the
+    /// redaction — is gone.
     ///
-    /// The survivor is what stops the test from passing on a build that simply
-    /// erased the page.
-    fn secret_pdf() -> Vec<u8> {
-        let content = format!("BT /F1 12 Tf 20 100 Td ({SECRET}) Tj ( KEEPTHIS) Tj ET");
-        let stream = format!(
-            "<< /Length {} >>\nstream\n{content}\nendstream",
-            content.len()
-        );
-        assemble(&[
-            "<< /Type /Catalog /Pages 2 0 R >>",
-            "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 400 200] \
-             /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>",
-            &stream,
-            "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
-        ])
-    }
-
-    /// Assemble a classic single-revision PDF from object bodies `1..=n` with a
-    /// correct xref table. Object 1 must be the catalog.
-    ///
-    /// The same fixture shape `pdfcer-core`'s own redaction tests use —
-    /// synthetic, so that every byte in the file is one this suite put there.
-    /// `pub(super)` so [`super::proof`]'s tests share it rather than growing a
-    /// second, subtly different assembler.
-    pub(super) fn assemble(bodies: &[&str]) -> Vec<u8> {
-        let mut buf = b"%PDF-1.7\n%\xE2\xE3\xCF\xD3\n".to_vec();
-        let mut offsets = Vec::new();
-        for (i, body) in bodies.iter().enumerate() {
-            offsets.push(buf.len());
-            buf.extend_from_slice(format!("{} 0 obj\n{body}\nendobj\n", i + 1).as_bytes());
-        }
-        let xref_at = buf.len();
-        let n = bodies.len() + 1;
-        buf.extend_from_slice(format!("xref\n0 {n}\n0000000000 65535 f \n").as_bytes());
-        for off in &offsets {
-            buf.extend_from_slice(format!("{off:010} 00000 n \n").as_bytes());
-        }
-        buf.extend_from_slice(
-            format!("trailer\n<< /Size {n} /Root 1 0 R >>\nstartxref\n{xref_at}\n%%EOF\n")
-                .as_bytes(),
-        );
-        buf
-    }
-
-    /// A session with ONE unsaved `/Redact` mark over the secret — the exact
-    /// state an operator is in when they press Apply without having saved.
-    fn session_with_unsaved_mark() -> EditSession {
-        let doc = Document::from_bytes(secret_pdf()).unwrap();
-        let mut session = EditSession::new(doc);
-        let created = session
-            .mark_redactions_by_search(SECRET, false)
-            .expect("the fixture's text is extractable");
-        assert!(!created.is_empty(), "the search must find the secret");
-        session
-    }
-
-    /// A scratch path under the OS temporary directory, unique to this test.
-    ///
-    /// `std::env::temp_dir` rather than a path in the repository, exactly as
-    /// `crate::app::save`'s tests do it: a test that writes beside the fixtures
-    /// leaves a file somebody eventually commits.
-    fn scratch(name: &str) -> std::path::PathBuf {
-        let dir = std::env::temp_dir().join("pdfcer-gui-redact-tests");
-        std::fs::create_dir_all(&dir).expect("the temporary directory must be creatable");
-        dir.join(name)
-    }
-
-    // -- THE SECURITY ASSERTION ---------------------------------------------
-
-    /// ★★ **The headline gate for the apply path.**
-    ///
-    /// After apply-and-save through [`prepare_redaction_apply`], the redacted
-    /// text must not be recoverable from the saved bytes by any means pdfcer
-    /// itself offers. Three independent measures, because a single one could be
-    /// satisfied by a build that merely hid the text:
-    ///
-    /// 1. **`extract-text`** — the very tool `pdfcer extract-text` and this
-    ///    shell's Copy-text both use — finds nothing;
-    /// 2. **every decoded stream** (content streams, XObjects, object-stream
-    ///    containers, metadata) contains no occurrence;
-    /// 3. **the raw file bytes** contain no occurrence.
-    ///
-    /// And the negative control: `KEEPTHIS`, which was never marked, is still
-    /// extractable. Without it, a build that emitted an empty page would pass
-    /// all three assertions above while destroying the document.
-    ///
-    /// This is deliberately an assertion of ABSENCE, not of appearance. A
-    /// raster test could only show that the region is painted black, which is
-    /// precisely the false-redaction failure ISO 32000-1 §12.5.6.23 forbids
-    /// ("clipping or image masks shall not be used to hide that data") — a black
-    /// box over live text is what this feature exists to never ship.
-    #[test]
-    fn applied_redaction_leaves_no_recoverable_trace_in_the_saved_bytes() {
-        let session = session_with_unsaved_mark();
-        let prepared = prepare_redaction_apply(&session).expect("the apply must succeed");
-
-        // The bytes are private, so the assertion goes through the one door
-        // that exists — which is itself the property this module is about.
-        let target = scratch("headline.pdf");
-        let _ = std::fs::remove_file(&target);
-        let written = prepared
-            .write_to(&target, ResidualAcknowledgement::Withheld)
-            .expect("a clean redaction needs no acknowledgement");
-        assert_eq!(written, prepared.byte_len());
-        let bytes = std::fs::read(&target).expect("the redacted file must exist");
-
-        // (3) raw bytes.
-        assert!(
-            !proof::contains(&bytes, SECRET.as_bytes()),
-            "the redacted text survived in the raw saved bytes"
-        );
-
-        let back = Document::from_bytes(bytes.clone()).expect("the redacted output must re-parse");
-
-        // (2) every decoded stream in the file — asked through the proof's own
-        // sweep, which is the wide one.
-        assert_eq!(
-            proof::survivors_in_decoded_streams(&bytes, &[SECRET.to_owned()]),
-            None,
-            "the redacted text survived in a decoded stream of the saved file"
-        );
-
-        // (1) pdfcer's own text extraction — the tool an operator would actually
-        // reach for to get the text back out.
-        let extracted =
-            text_extract::extract_document(&back, &ExtractOptions::default()).expect("extract");
-        let all_text: String = extracted
-            .pages
-            .iter()
-            .flat_map(|p| p.runs.iter())
-            .map(|r| r.text.clone())
-            .collect();
-        assert!(
-            !all_text.contains(SECRET),
-            "the redacted text was recoverable via extract-text: {all_text:?}"
-        );
-
-        // The negative control — proof the test can fail.
-        assert!(
-            all_text.contains("KEEPTHIS"),
-            "un-redacted text must survive; the page was not supposed to be emptied"
-        );
-
-        // And the mark itself is gone (§12.5.6.23 outcome 3).
-        assert_eq!(
-            redact::count_redaction_marks(&back),
-            0,
-            "the /Redact mark must be removed by apply"
-        );
-        let _ = std::fs::remove_file(&target);
-    }
-
-    /// The absence proof must REPORT that it ran, or the wording contract has
-    /// nothing to read and the summary would have to fall back to the weaker
-    /// word.
-    #[test]
-    fn the_absence_proof_reports_a_clean_verification() {
-        let session = session_with_unsaved_mark();
-        let prepared = prepare_redaction_apply(&session).unwrap();
-        assert!(
-            prepared.verification.strings_checked > 0,
-            "the proof must have had something to check"
-        );
-        assert!(
-            prepared.verification.is_clean(),
-            "no residual expected on this fixture: {:?}",
-            prepared.verification.raw_byte_residuals
-        );
-    }
-
-    /// ★ **A mark that exists ONLY in the session overlay must still be
-    /// applied.**
-    ///
-    /// The un-saved-mark trap §1.2 names: passing `session.document()` to
-    /// `apply_redactions` would apply nothing and report success. The assertion
-    /// that makes it bite is `marks_applied` — a build with that bug produces
-    /// `NothingToApply` or a zero count, never a removal.
-    #[test]
-    fn a_mark_that_was_never_saved_is_still_applied() {
-        let session = session_with_unsaved_mark();
-        // The base revision genuinely has no mark — that is the trap.
-        assert_eq!(redact::count_redaction_marks(session.document()), 0);
-        assert!(redact::count_redaction_marks(&session.graph()) > 0);
-
-        let prepared = prepare_redaction_apply(&session).unwrap();
-        assert!(
-            prepared.report.marks_applied >= 1,
-            "an unsaved mark must be applied, not silently skipped"
-        );
-        assert!(prepared.report.glyphs_removed >= SECRET.len() as u64);
-    }
-
-    /// ★ **The output is a SINGLE revision.**
-    ///
-    /// A `/Prev` in the trailer would mean a prior revision is reachable in the
-    /// saved file, which for a redaction is the un-redacted content one hop
-    /// away — R35's whole point, and the reason §1.1 forbids the incremental
-    /// writer this shell otherwise uses for every save.
-    #[test]
-    fn the_output_is_one_revision_with_no_prior_revision_to_walk_back_to() {
-        let session = session_with_unsaved_mark();
-        let prepared = prepare_redaction_apply(&session).unwrap();
-        let target = scratch("one-revision.pdf");
-        let _ = std::fs::remove_file(&target);
-        prepared
-            .write_to(&target, ResidualAcknowledgement::Withheld)
-            .unwrap();
-        let back = Document::from_bytes(std::fs::read(&target).unwrap()).unwrap();
-        assert!(
-            back.trailer().get(b"Prev").is_none(),
-            "a redaction apply must leave no /Prev — a prior revision holds the un-redacted bytes"
-        );
-        let _ = std::fs::remove_file(&target);
-    }
-
-    /// A document with no marks is refused by name rather than producing an
-    /// empty "successful" apply, so the caller can never present a report that
-    /// describes nothing as if it were a removal.
-    #[test]
-    fn an_unmarked_document_is_refused_by_name() {
-        let doc = Document::from_bytes(secret_pdf()).unwrap();
-        let session = EditSession::new(doc);
-        assert_eq!(
-            prepare_redaction_apply(&session).unwrap_err(),
-            RedactApplyRefusal::NothingToApply
-        );
-    }
-
-    /// ★★★ **A region over a raster image now DESTROYS the samples**, and this
-    /// test is the record of the day that changed.
-    ///
-    /// It read `a_region_over_an_image_refuses_the_whole_apply` until
-    /// 2026-09-03 and asserted that the engine declined the entire document —
-    /// which was true, was the operator's headline complaint
-    /// (`OPERATOR_REQUESTS.md` O103, *"every time I've tried the redact feature
-    /// it tells me it can't"*), and stopped being true with `pdfcer-core`
-    /// v0.26.0 the same day.
-    ///
-    /// ★★ **A test asserting an external limitation goes red when the
-    /// limitation lifts, and that red is a REPORT rather than a regression.**
-    /// It is also the only member of that family that behaves well: the prose
-    /// version of the same claim — in `text::redact`, in a UI string — went on
-    /// compiling and passing, and had to be corrected because the engine's reply
-    /// told us to. ⇒ Where a stale external claim can be spelled as an
-    /// assertion, spell it as one.
-    ///
-    /// What it asserts now is the pair the operator cares about: the apply
-    /// SUCCEEDS, and the report says the image was dealt with rather than
-    /// quietly stepped over.
-    #[test]
-    fn a_region_over_an_image_destroys_the_samples_and_says_so() {
-        let content = "q 200 0 0 100 20 20 cm /Im0 Do Q";
-        let stream = format!(
-            "<< /Length {} >>\nstream\n{content}\nendstream",
-            content.len()
-        );
-        let image = "<< /Type /XObject /Subtype /Image /Width 1 /Height 1 /ColorSpace \
-                     /DeviceGray /BitsPerComponent 8 /Length 1 >>\nstream\n\x00\nendstream";
-        let bytes = assemble(&[
-            "<< /Type /Catalog /Pages 2 0 R >>",
-            "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 400 200] \
-             /Resources << /XObject << /Im0 5 0 R >> >> /Contents 4 0 R >>",
-            &stream,
-            image,
-        ]);
-        let doc = Document::from_bytes(bytes).unwrap();
-        let mut session = EditSession::new(doc);
-        session
-            .add_redaction(
-                0,
-                &RedactSpec {
-                    quads: vec![Quad::from_rect(Rect::from_corners(30.0, 30.0, 150.0, 90.0))],
-                    fill: None,
-                    overlay_text: None,
-                    quadding: Quadding::Left,
-                },
-            )
-            .unwrap();
-
-        let prepared = prepare_redaction_apply(&session)
-            .expect("a region over an image is applied, not refused, since pdfcer-core v0.26.0");
-        let report = &prepared.report;
-        assert!(
-            report.images_cleared > 0 || report.images_removed > 0,
-            "the region covers the only image on the page, so the report must say what happened to it — cleared or removed. Got cleared={} removed={} retained={}",
-            report.images_cleared,
-            report.images_removed,
-            report.marks_retained
-        );
-        // ★ And the mark was APPLIED rather than retained. A retained mark is
-        // the honest half-measure for an image the engine cannot decode; this
-        // one is a 1x1 DeviceGray it certainly can, so a retention here would
-        // mean the destroy path was not reached at all and the assertion above
-        // was satisfied by something else.
-        assert_eq!(
-            report.marks_retained, 0,
-            "a decodable image must not leave the mark unapplied"
-        );
-    }
-
-    /// The census the review panel lists from and the census the status bar
-    /// counts from must be the same walk.
-    ///
-    /// Asserted here because the shell reads both and a disagreement between
-    /// them is unresolvable from the operator's side.
-    #[test]
-    fn the_mark_list_and_the_mark_count_agree() {
-        let session = session_with_unsaved_mark();
-        let graph = session.graph();
-        assert_eq!(
-            redact::redaction_marks(&graph).len(),
-            redact::count_redaction_marks(&graph)
-        );
-        let pages = page_tree::pages_in(&graph).unwrap();
-        for mark in redact::redaction_marks(&graph) {
-            assert!(
-                mark.page_index < pages.len(),
-                "a listed mark must name a real page"
-            );
-        }
-    }
-
-    // -- THE WRITE GATE -----------------------------------------------------
-
-    /// ★★ **A disclosed residual cannot be written past without an
-    /// acknowledgement, and the refusal leaves no file behind.**
-    ///
-    /// §2.3, asserted rather than described. The dialog greys its confirm
-    /// control until the box is ticked, and **a greyed control is a drawing
-    /// decision, not a mechanism** — this is the mechanism. The failure it
-    /// catches is the one that matters most: a partially-redacted file handed
-    /// over as a complete one.
-    ///
-    /// The fixture builds the residual by hand rather than hunting for a
-    /// document that happens to produce one, because the point under test is
-    /// the *gate*, not the classification (which [`proof`]'s own tests cover).
-    #[test]
-    fn an_unacknowledged_residual_refuses_the_write() {
-        let session = session_with_unsaved_mark();
-        let mut prepared = prepare_redaction_apply(&session).unwrap();
-        assert!(
-            prepared.verification.is_clean(),
-            "the fixture must start clean, or the assertion below proves nothing"
-        );
-        prepared
-            .verification
-            .raw_byte_residuals
-            .push("MARGARETHALE".to_owned());
-
-        let target = scratch("unacknowledged.pdf");
-        let _ = std::fs::remove_file(&target);
-        let refusal = prepared
-            .write_to(&target, ResidualAcknowledgement::Withheld)
-            .expect_err("a withheld acknowledgement must refuse");
-        assert!(
-            matches!(
-                refusal,
-                WriteRefusal::ResidualsNotAcknowledged { residuals: 1 }
-            ),
-            "{refusal}"
-        );
-        assert!(
-            !target.exists(),
-            "a refused write must leave nothing behind at the path it was aimed at"
-        );
-
-        // …and the same value writes once the operator has acknowledged.
-        prepared
-            .write_to(&target, ResidualAcknowledgement::Given)
-            .expect("an acknowledged residual may proceed");
-        assert!(target.is_file());
-        let _ = std::fs::remove_file(&target);
-    }
-
-    /// A clean report needs no acknowledgement, in either position.
-    ///
-    /// The other direction of the gate, and the one that would make the feature
-    /// unusable if it were wrong: a redaction with nothing to disclose must not
-    /// demand a tick nobody can give.
-    #[test]
-    fn a_clean_report_writes_with_the_acknowledgement_withheld() {
-        let session = session_with_unsaved_mark();
-        let prepared = prepare_redaction_apply(&session).unwrap();
-        for ack in [
-            ResidualAcknowledgement::Withheld,
-            ResidualAcknowledgement::Given,
-        ] {
-            let target = scratch("clean.pdf");
-            let _ = std::fs::remove_file(&target);
-            prepared
-                .write_to(&target, ack)
-                .expect("a clean redaction writes under either acknowledgement");
-            assert!(target.is_file());
-            let _ = std::fs::remove_file(&target);
-        }
-    }
-
-    /// A write that cannot happen is reported rather than swallowed.
-    ///
-    /// `crate::app::save`'s equivalent test, for the writer that matters more:
-    /// a redaction the operator believes landed, at a path that does not exist,
-    /// is a file they will look for and not find at the moment they need it.
-    #[test]
-    fn a_write_that_cannot_happen_is_a_named_refusal() {
-        let session = session_with_unsaved_mark();
-        let prepared = prepare_redaction_apply(&session).unwrap();
-        let target = scratch("no-such-folder").join("nested").join("out.pdf");
-        let refusal = prepared
-            .write_to(&target, ResidualAcknowledgement::Withheld)
-            .expect_err("a missing folder cannot be written to");
-        assert!(matches!(refusal, WriteRefusal::FileSystem(_)), "{refusal}");
-        assert!(!target.exists());
-    }
-
-    /// ★ **`{:?}` on a prepared redaction does not print the document.**
-    ///
-    /// §2.1's hand-written [`std::fmt::Debug`], pinned. The failure it prevents
-    /// is silent and total: a `#[derive(Debug)]` restored during a routine
-    /// tidy-up would put a whole redacted PDF into any trace, panic or test
-    /// failure that formatted this value — a log file nobody thinks of as
-    /// containing document content.
-    #[test]
-    fn the_debug_impl_reports_a_length_rather_than_the_bytes() {
-        let session = session_with_unsaved_mark();
-        let prepared = prepare_redaction_apply(&session).unwrap();
-        let rendered = format!("{prepared:?}");
-        assert!(
-            !rendered.contains("KEEPTHIS"),
-            "the Debug impl emitted document content: {rendered}"
-        );
-        assert!(
-            rendered.contains(&prepared.byte_len().to_string()),
-            "…and it must still report the length, which is what a diagnostic \
-             actually wants from that field: {rendered}"
-        );
-    }
+    /// A count rather than a `bool` because *"this will discard 14 undo
+    /// steps"* and *"this will discard 1 undo step"* are different decisions,
+    /// and *"0"* is a real and common state that is not worth a sentence.
+    pub undo_steps_cleared: usize,
 }
+
+/// **Apply every `/Redact` mark INTO the open session, and prove the result.**
+///
+/// The half of `OPERATOR_REQUESTS.md` O125 that could not be built this
+/// morning:
+///
+/// > *"why does it have to save to a new file right away? Why can't it just
+/// > wait on saving until I choose to save over the existing file or save as a
+/// > new file?"*
+///
+/// **Nothing is written.** The redaction becomes part of the document the
+/// operator is looking at, and `file.save`, `file.save_as` and
+/// `file.save_copy` decide where it lands and when, exactly as they do for
+/// every other edit.
+///
+/// # ★★★ 1. The property that had to be re-established: an incremental save
+/// cannot leak
+///
+/// Our engine request's §4.1 asked for this to be enforced by a **refusal** —
+/// a redacted session that declines `to_incremental_bytes` by name, ideally
+/// through `Pass 73.0`'s `requires_full` layer. **The engine did not ship
+/// that, and said so, and it is right.** Its reasoning, from
+/// `EditSession::apply_redactions`' own doc comment:
+///
+/// > *"The request asked that a redacted session refuse incremental save,
+/// > because a redaction left in a dirty set over the original base would leak
+/// > via `/Prev`. This implementation removes that hazard at the root instead:
+/// > after the collapse there IS no un-redacted base — the new base is a
+/// > single-revision full rewrite with the content already gone — so an
+/// > incremental save appends to clean bytes and cannot leak."*
+///
+/// That is a stronger guarantee than the refusal we asked for, and it is also
+/// an unfalsifiable-sounding claim, so it was **measured rather than believed**.
+/// Read against `pdfcer-core` at `8b24a0a` (v0.37.0) on 2026-09-04, the verb:
+///
+/// 1. serialises the session — base plus every pending edit, marks included —
+///    with `to_full_bytes`;
+/// 2. re-parses it, runs the free-function removal, and re-parses *that*;
+/// 3. `*self = EditSession::new(redacted_base)` — so the un-redacted document
+///    is dropped, not superseded — preserving only `quad_point_order`, and
+///    sets its `redacted` flag;
+/// 4. touches `self` only after every fallible step has succeeded, so a failed
+///    apply leaves the session exactly as it was.
+///
+/// The measurements that back each claim, and the tests that would catch a
+/// regression in any of them, are in this module's test suite:
+///
+/// | claim | test |
+/// |---|---|
+/// | an incremental save of a redacted session contains none of the removed text | `an_incremental_save_of_a_redacted_session_cannot_leak_the_removed_text` |
+/// | …and still cannot after further ordinary edits appended a real revision | same test, second half — the output has a `/Prev`, and the revision it points at is the **redacted** base |
+/// | the two save modes agree | `both_save_modes_of_a_redacted_session_are_clean` |
+/// | it holds on a real document, not only a synthetic one | `a_real_drawing_survives_the_deferred_route` (`fixtures/a1-titleblock.pdf`) |
+///
+/// ⇒ **The shell therefore does NOT gate saving on `has_applied_redaction()`,**
+/// on the engine's explicit instruction, because doing so would refuse a
+/// legitimate incremental save of a document that is already clean. What the
+/// shell does instead is prove the saved bytes — see [`prove_saved_bytes`],
+/// which `crate::app::save` runs on the way to the file system. A guarantee by
+/// construction plus a check at the boundary is the same posture §2.2 takes
+/// about [`PreparedRedaction::write_to`], and for the same reason: the promise
+/// must not depend on how the value was constructed.
+///
+/// # ★★ 2. It is irreversible the moment it runs, and the surface must say so
+/// FIRST
+///
+/// The engine's verb **finalizes**. The operator can keep editing afterwards
+/// but cannot undo past the redaction, and the undo steps he had *before* it go
+/// too. [`AppliedRedaction::undo_steps_cleared`] carries the number and
+/// [`crate::text::redact::undo_will_be_cleared`] is the sentence
+/// [`crate::dialogs::redact`] draws **above the confirm control**, not after
+/// it. Our own request §4.3 asked for exactly this and the operator's ruling
+/// was *"finalizing the document and can't be undone is ok for now"* — it is
+/// acceptable *because it is disclosed*, and the disclosure is the half we owe.
+///
+/// # 3. The proof still runs, and it runs on the session's own bytes
+///
+/// §1.3's rule is not relaxed for the deferred route. After the collapse the
+/// session is serialised once more with `to_full_bytes` and [`proof::prove`] is
+/// run over it. A decoded-stream survivor is a
+/// [`RedactApplyRefusal::VerificationFailed`] — with the honest caveat, stated
+/// here rather than hidden, that **the session has already been mutated by
+/// then**: unlike [`prepare_redaction_apply`], this route cannot refuse before
+/// the fact, because the engine's verb is the fact. What the caller must do
+/// with that refusal is refuse to *save*, which is what [`prove_saved_bytes`]
+/// enforces at the only place it can still be enforced.
+///
+/// It is not reachable in practice from [`crate::dialogs::redact`], which runs
+/// [`prepare_redaction_apply`] on the identical marks seconds earlier and
+/// refuses there. It is answered anyway, because "unreachable through the one
+/// surface that exists today" is a claim about a caller.
+///
+/// # Errors
+///
+/// [`RedactApplyRefusal`]. Every variant except `VerificationFailed` means the
+/// session was **not touched** — that is the engine's own guarantee, not this
+/// function's inference. `VerificationFailed` means it was, and that no file
+/// derived from it may be written.
+pub fn apply_into_session(
+    session: &mut EditSession,
+) -> Result<AppliedRedaction, RedactApplyRefusal> {
+    // Same census, same graph, same reason as `prepare_redaction_apply`: the
+    // marks that matter are the ones the operator just made, and the base
+    // revision by construction does not have them.
+    if redact::count_redaction_marks(&session.graph()) == 0 {
+        return Err(RedactApplyRefusal::NothingToApply);
+    }
+    // ★ Taken BEFORE the call, because the call is what destroys it. Reading it
+    // afterwards would report 0 every time and the disclosure would say
+    // "nothing was lost" on exactly the runs where something was.
+    let undo_steps_cleared = session.undo_depth();
+
+    // ★★★ The engine's session-level verb — the second and last call to
+    // `apply_redactions` in this crate. See §2.4: `sealed` pins the count at
+    // two, in this file, and counts this method call as readily as the free
+    // one.
+    let report = session.apply_redactions().map_err(|err| match err {
+        // Same mapping as the byte route, so one refusal taxonomy serves both
+        // and `crate::text::redact::refusal_message` needs no second table.
+        RedactError::Write(inner) => RedactApplyRefusal::FullRewriteUnavailable {
+            reason: inner.to_string(),
+        },
+        RedactError::NothingToApply => RedactApplyRefusal::NothingToApply,
+        other => RedactApplyRefusal::CoreRefused {
+            reason: other.to_string(),
+        },
+    })?;
+
+    // §3 — prove what is now in the session, on the session's own
+    // serialisation. `to_full_bytes` and never `to_incremental_bytes`: the
+    // latter is banned inside this directory by `sealed`, and the ban stands
+    // even though the engine has made it safe here, because what makes it safe
+    // is a property of the engine that this directory must not start assuming.
+    let (settled, _) = session
+        .to_full_bytes(&SaveOptions::identity())
+        .map_err(|err| RedactApplyRefusal::FullRewriteUnavailable {
+            reason: err.to_string(),
+        })?;
+    let proven = proof::prove(&settled, &report.redacted_text);
+    if let Some(survivors) = proven.survivors {
+        return Err(RedactApplyRefusal::VerificationFailed { survivors });
+    }
+
+    crate::diag::trace(|| {
+        format!(
+            // ui-text-exempt: diagnostic trace, never displayed.
+            //
+            // `undo_cleared=` is on the line because it is the one consequence
+            // of this route that has no equivalent on the write-now route, and
+            // a build that had silently stopped disclosing it would produce an
+            // otherwise identical line.
+            "redact-into-session marks={} pages={} glyphs={} streams={} checked={} \
+             residuals={} verified={} undo_cleared={}",
+            report.marks_applied,
+            report.pages_redacted,
+            report.glyphs_removed,
+            report.content_streams_rewritten,
+            proven.verification.strings_checked,
+            proven.verification.residuals.len(),
+            proven.verification.is_clean(),
+            undo_steps_cleared,
+        )
+    });
+
+    Ok(AppliedRedaction {
+        report,
+        verification: proven.verification,
+        undo_steps_cleared,
+    })
+}
+
+/// **How many items a report and a proof disclose as NOT removed.**
+///
+/// The count behind `crate::dialogs::redact::residual_lines`, lifted out of it
+/// on 2026-09-04 because the deferred route needs the same number and has no
+/// dialog to ask. One derivation, in the domain module, so a residual can never
+/// be counted one way in the sentence the operator acknowledges and another way
+/// in the sentence he is shown afterwards.
+///
+/// Five sources, and the list is the same one that module documents at length:
+/// carriers the engine disclosed rather than scrubbed, retained marks, vector
+/// geometry it could not cut, clips whose outline had to be kept, and the
+/// proof's own raw-byte residuals.
+///
+/// ★ **Promotion is deliberately NOT counted here**, and that is the one place
+/// the two lists differ. Objects promoted out of an object stream are a
+/// leftover of *this shell's* materialisation step
+/// ([`prepare_redaction_apply`]'s full rewrite #1) and are reported by it; the
+/// deferred route has no such step of its own — the engine materialises
+/// internally — so there is no promotion list to report and inventing a zero
+/// would be a claim rather than a measurement.
+/// `crate::dialogs::redact`'s own test pins the two together so the difference
+/// stays exactly one item and cannot drift.
+#[must_use]
+pub fn residual_count(report: &RedactionReport, verification: &AbsenceVerification) -> usize {
+    use pdfcer_core::redact::CarrierAction;
+    report
+        .carriers
+        .iter()
+        .filter(|c| c.action == CarrierAction::DisclosedNotScrubbed)
+        .count()
+        + usize::from(report.marks_retained > 0)
+        + usize::from(report.vector_paths_intersecting > 0)
+        + usize::from(report.vector_clips_kept > 0)
+        + verification.residuals.len()
+}
+
+/// **The absence proof, run over bytes that are one syscall from a file.**
+///
+/// §2.2's argument, moved to the one place the deferred route can still make
+/// it. On the write-now route the proof sits inside
+/// [`PreparedRedaction::write_to`], between the buffer and the syscall. The
+/// deferred route has no such buffer — the bytes are built by
+/// `crate::app::save` at save time, minutes later, possibly after further
+/// edits, possibly by a different save verb — so the check has to be made
+/// available *to* that module rather than owned by this one.
+///
+/// `claims` is [`pdfcer_core::redact::RedactionReport::redacted_text`], carried
+/// on the document since the apply. An empty slice is the overwhelmingly common
+/// case (no redaction has been applied to this document) and returns `Ok`
+/// without decoding anything, so an ordinary save pays nothing.
+///
+/// # ★ Why the DECODED-stream sweep and not a raw byte scan
+///
+/// Both were considered and the split is [`proof`]'s standing one. A raw byte
+/// run that survives outside every decoded stream is a *disclosure*, not a
+/// leak — it is routinely a font `name` table, which is the exact false refusal
+/// that made this feature useless on `fixtures/a1-titleblock.pdf` until it was
+/// fixed this morning. Refusing a save on one would re-create that defect at a
+/// worse moment: after the operator has redacted, with his only route to a file
+/// blocked. A survivor in a **decoded** stream is content a reader will render
+/// or extract, and there is no reading of that under which the file is safe to
+/// hand over.
+///
+/// # Errors
+///
+/// The strings that survived. A caller that gets one must not write the file.
+pub fn prove_saved_bytes(bytes: &[u8], claims: &[String]) -> Result<(), Vec<String>> {
+    if claims.is_empty() {
+        return Ok(());
+    }
+    proof::survivors_in_content_streams(bytes, claims).map_or(Ok(()), Err)
+}
+
+/// The security assertions for this pipeline, in their own file since
+/// 2026-09-04 — see [`tests`]'s header for the seam.
+#[cfg(test)]
+mod tests;

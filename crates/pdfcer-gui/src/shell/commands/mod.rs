@@ -104,6 +104,7 @@
 //! |---|---|---|
 //! | *(none)* | always | commands with no precondition: Open, Settings, the batch tools, the window and render settings |
 //! | `docs.multiple` | **more than one document is open** | Next / Previous document |
+//! | `panels.floating` | **some panel is in a window of its own** | Dock all panels |
 //! | `doc.open` | a document is open | document-level commands — close, save a copy, properties, print |
 //! | `doc.pages` | …and it has at least one page | everything that acts on a page |
 //! | `undo.available` / `redo.available` | the corresponding stack is non-empty | Undo, Redo |
@@ -330,7 +331,48 @@ mod tests {
         // recorded the same way every increment is — with the operator's
         // reason, in the same commit as the list — because a count that only
         // ever goes up is a count nobody has had to think about.
-        assert_eq!(registry().len(), 130);
+        // ★★★ 130 → 134 on 2026-09-04: the four panel-layout verbs —
+        // `view.panel_float`, `view.panel_dock`, `view.panel_close` and
+        // `view.dock_all_panels`. Panels now tear out into real OS windows
+        // (`egui_shell::dock::float` / `::floatwin`), and R8 is why these are
+        // commands rather than three buttons the dock draws for itself:
+        // registering one is the only way this shell may learn a capability
+        // exists, and it is what puts them in the keymap, in the menu
+        // document, and under the operator's own customization.
+        //
+        // ★ Three of the four are `manifest::TAB_SCOPED` — their operand is
+        // the panel the operator right-clicked, which no ribbon control can
+        // supply. The fourth has no operand at all and is on the ribbon in
+        // View ▸ Window, which is where the capability is discovered.
+        // ★★★ 134 → 136 on 2026-09-04: `file.encrypt` and `file.permissions` —
+        // `OPERATOR_REQUESTS.md` O119, approved as *"yes add encryption and
+        // permissions"*. Two commands and one window; the pair sits in a new
+        // File ▸ Security band immediately after Export, which is where the
+        // approved mockup draws it and where the operator's own framing of the
+        // question puts it — *protect a drawing before you send it out.*
+        //
+        // ★ …and 136 → 137 the same afternoon: `file.export_text`, from a
+        // CONCURRENT track in the same working tree. Recorded as its own
+        // movement rather than folded into the line above, because this
+        // counter's whole value is that each step names who moved it — and a
+        // reader who finds one increment covering two features has no way to
+        // learn that two sessions were writing at once, which is the fact that
+        // explains the token collision recorded in `catalog::file`.
+        //
+        // ★★★ …and 137 → 138 on 2026-09-04: `edit.copy_as_vector`
+        // (`OPERATOR_REQUESTS.md` **O120**) — *"copy and paste vector graphics
+        // into word or inkscape"*. The clipboard's copy-OUT, and the first
+        // command in this registry whose whole point is what happens in
+        // SOMEBODY ELSE'S program: it places four public formats — SVG, EMF,
+        // PNG, DIB — in a measured order, in one transaction, so a paste into
+        // Word arrives as editable geometry rather than as a picture of it.
+        //
+        // ★ A registered COMMAND rather than a modifier on `edit.copy`, for
+        // `edit.paste_duplicate`'s reason two dozen lines up and one more
+        // besides: the operator did not know pdfcer could do this, which is why
+        // he asked, so a keyboard-only route would have answered the request
+        // with something he still could not find.
+        assert_eq!(registry().len(), 138);
     }
 
     /// ★ **The icon-coverage split adds up to the registry.**
@@ -461,7 +503,100 @@ mod tests {
         // ★ 120 → 119 on 2026-09-04: `view.panel_tool` is retired (O123) and it
         // named `pointer`. The glyph itself is untouched — `view.tool_select`
         // still wears it — so this is a command leaving, not art leaving.
-        assert_eq!(named, 119, "commands naming an icon");
+        // ★ 119 → 120 on 2026-09-04: `file.open_in_acrobat` (O122) NAMES a
+        // glyph. It was registered a few hours earlier with the refusal argued
+        // at its registration — see the `refused` note below — and
+        // `open-in-acrobat.svg` then landed on the icon track, drawn for this
+        // command before this command existed to name it. Purpose-drawn art,
+        // so `icons/assets/PROVENANCE.md` is untouched.
+        // ★ 120 → 121 on 2026-09-04: `edit.select_all` names a glyph. Not a
+        // new capability and not new art arriving on its own — a **correction**.
+        // Its refusal was written by a build session, quoted four times, and
+        // reported to the operator as settled until he said *"I didn't refuse
+        // that."* The registration carries the account.
+        // ★ 121 → 124 on 2026-09-04: `view.panel_float`, `view.panel_dock`
+        // and `view.dock_all_panels` name `floating-panels`, which was in the
+        // set before anything used it — drawn for a capability that had been
+        // specified and not built. `view.panel_close` refuses one and is
+        // counted below with the other refusals.
+        //
+        // ★★★ **CORRECTED IN PLACE 2026-09-04.** This entry read: *"there is
+        // no close art in this set, and the row is a labelled menu item where
+        // a glyph would add nothing a word does not."* Both halves are false,
+        // and they were false when written:
+        //
+        //   · **There is close art.** `close.svg` / `crate::icons::Icon::Close`
+        //     has been in the set since it landed and is worn by `file.close`.
+        //     A supply claim is the one kind of claim in this file that anyone
+        //     can check in ten seconds, which is exactly why an unchecked one
+        //     is so expensive: it reads as settled and it is quotable.
+        //   · **The row is not a place a glyph could not go.** That half rested
+        //     on this build's context menus wiring no icon painter, which was
+        //     true until `shell::menus_wiring::attach` wired one on 2026-09-04
+        //     — after which 25 menu rows began drawing glyphs their commands
+        //     had named all along. A missing wire is not a design decision, and
+        //     stating it in the grammar of one is how a refusal outlives its
+        //     reason.
+        //
+        // The sentence that replaces it: **`view.panel_close` should draw
+        // `close`, and does not yet only because its registration lives in a
+        // file another track owns this session.** The full ruling, and the
+        // argument for why sharing the X with `file.close` is the relationship
+        // rather than a collision, is at the refusal count below.
+        // ★★★ 124 → 126 on 2026-09-04: `format.bold` and `format.italic`. **A
+        // CORRECTION of a refusal, not a new capability** — the same shape as
+        // `edit.select_all` five entries up, and the second time in three days.
+        //
+        // Both commands did on 2026-08-26 exactly what they do now. What changed
+        // is that the reason they were bare — *"Word draws `B` and `I` as
+        // glyphs; this build has no such art"*, in the `refused` note below —
+        // was a statement about **supply**, and the operator has a standing
+        // ruling on supply that predates it by three weeks. From 2026-08-06,
+        // carried in `icons::Icon::Back`'s doc comment: a missing glyph is
+        // **AUTHORED**, not worked around, because working around it *"spends
+        // the operator's affordance to protect the font stack; an icon costs one
+        // asset and keeps both."* On 2026-09-04 he applied it to this pair
+        // himself: *"if bold and italics have no art in the set, why weren't
+        // they made automatically as I have instructed to be done for anything
+        // that a glyph is missing for on multiple occasions?"*
+        //
+        // ★★ **Why the distinction between a correction and a discharge is the
+        // whole point of this entry.** A DISCHARGE (the twelve of 2026-09-04,
+        // below) is a refusal that was right when written and stopped applying
+        // because the world changed — art arrived. A CORRECTION is a refusal
+        // that was never entitled to be made: it contradicted a ruling that was
+        // already on the books, and it survived because it was quoted rather
+        // than checked. Netting the two into one counter movement would lose
+        // exactly the fact that matters, which is that nothing about the ribbon
+        // needed to change for this to have been wrong all along.
+        //
+        // ⇒ The rule this leaves behind, for the next reader deciding whether a
+        // bare control may stay bare: **"no art exists" is not a reason, it is a
+        // work item.** A refusal survives only if it names a WRONG PICTURE
+        // (`view.zoom_actual`, argued against by name in the icon ui-spec §3.2),
+        // a MISSING SLOT (a custom widget, the mode selector's text segments, a
+        // menu row in a build whose menus wire no icon painter), or a CLAIM the
+        // command cannot support (`Icon::Signatures`' seal, `Icon::Fonts`'
+        // pencil). The three surviving Format ▸ Font refusals are the second
+        // kind and are argued at their registration.
+        // ★ 126 → 128 on 2026-09-04: `file.encrypt` and `file.permissions`
+        // (O119). Both name a glyph and neither needed one drawn — `encrypt`
+        // and `permissions` were adopted in the 2026-09-03 batch and have been
+        // in `icons/assets/` waiting for the commands that would use them, which
+        // is the adoption rule working exactly as `GLYPH_ADOPTION.md` states it.
+        //
+        // ★ 128 → 129 the same afternoon: `file.export_text`, from a concurrent
+        // track. Named separately for the reason the registry counter above
+        // gives.
+        //
+        // ★ 129 → 130 the same afternoon: `edit.copy_as_vector` (O120). Another
+        // adoption already on disk — `copy-as-vector` was drawn in the
+        // 2026-09-04 batch for a control the ribbon did not yet reach, and
+        // `icons/catalog/mapping`'s note calling it *"art before button"* is one
+        // name shorter as of this commit. Art waiting for a command is the
+        // adoption rule working; a command waiting for art is the refusal this
+        // counter's other half exists to make somebody argue for.
+        assert_eq!(named, 130, "commands naming an icon");
         // ★ 12 → 17 on 2026-08-27: the Format ▸ Font group's five commands
         // all refuse a glyph, and they refuse it for one reason argued once at
         // their registration. Word draws `B` and `I` as glyphs; this build has
@@ -471,6 +606,14 @@ mod tests {
         // false. Without an icon a `Small` item resolves to `Medium`, so the
         // labels render, and "Bold" is less ambiguous than a home-made glyph
         // would have been.
+        //   ⇒ ★★★ **Two of those five were CORRECTED on 2026-09-04** — see the
+        //   17 → 15 entry at the end of this block, and the `named` note above
+        //   for why "corrected" and "discharged" are different words. The
+        //   paragraph is kept unedited because it is the exhibit: it welds a
+        //   supply claim (*"this build has no such art"*) to a provenance
+        //   constraint (*"a machine-drawn substitute would make that note
+        //   false"*) in one sentence, and being unable to tell the two apart is
+        //   how a work item spent six weeks looking like a decision.
         // ★ 17 → 18 on 2026-08-28: `file.save_compacted` refuses a glyph, and
         // it refuses one for a reason worth stating rather than inheriting.
         // Its two neighbours in the Save group carry icons, and a third disc
@@ -532,20 +675,152 @@ mod tests {
         //     2026-09-03 sheet did offer a `select-all` marquee. It was
         //     deliberately not adopted, for this paragraph's reason.
         //
-        // The five Format ▸ Font refusals also stand: the sheet offered no
-        // `B`/`I` art and the argument was never only about supply.
-        // ★ 10 → 11 on 2026-09-04: `file.open_in_acrobat` refuses a glyph, and
-        // it reaches the judgement its predecessors did by a route worth
-        // stating. Two reuses were available and both would MISLEAD in the
-        // exact way this list exists to prevent: `export` says "out of this
-        // document, into a file", and this produces no file; `open` says
-        // "bring a file in here", which is its opposite. Drawing a new one is
-        // not a build session's to do — `icons/assets/PROVENANCE.md` makes that
-        // directory the operator's own art. And the label is a PROPER NOUN,
-        // which is the one case where a word beats a picture outright: nobody
-        // has to learn what "Acrobat" means.
+        // ★★★ **And that last sentence was wrong, within hours, in the one way
+        // this file keeps proving is possible.** It read:
+        //
+        // > The five Format ▸ Font refusals also stand: the sheet offered no
+        // > `B`/`I` art and the argument was never only about supply.
+        //
+        // The argument was *partly* about supply — *"this build has no such
+        // art"* is the first clause of it — and a refusal that is partly a
+        // supply statement is partly expired. Two of the five (`format.bold`,
+        // `format.italic`) were corrected the same day; the art was drawn
+        // rather than sourced from a sheet, which is what the operator's
+        // standing ruling asks for and what "the sheet offered no `B`/`I` art"
+        // was quietly treating as the end of the matter.
+        //
+        // The other **three stand and are not expiring**: `format.font`,
+        // `format.font_size` and `format.font_colour` are drawn by an
+        // `Item::Custom` — a combo box, a drag field and a colour swatch — and
+        // none of those widgets has an icon slot. That is a MISSING SLOT, not a
+        // missing picture, and no amount of drawing touches it.
+        // ★ 11 → 10 on 2026-09-04, within hours of 10 → 11. The intervening
+        // entry was `file.open_in_acrobat`, registered with no glyph and with
+        // the refusal argued at its registration — two reuses were available
+        // and both would have MISLED: `export` says "out of this document,
+        // into a file", which this does not do, and `open` says "bring a file
+        // in here", which is its opposite.
+        //
+        // It was discharged the same afternoon by a purpose-drawn
+        // `open-in-acrobat.svg` that had landed on the icon track for this
+        // command before this command existed to name it. Recorded as two
+        // movements rather than netted silently to zero, because the argument
+        // is the record: a refusal that names a MISSING SUPPLY rather than a
+        // wrong picture is a refusal with an expiry date, and both of this
+        // file's discharges have now proved it.
         assert_eq!(
-            refused, 11,
+            // ★ 10 → 9, 2026-09-04 — `edit.select_all`, and the reason is a
+            // correction rather than a discharge. See the `named` note above.
+            //
+            // ★ 9 → 10 the same day — `view.panel_close`. It refuses a glyph
+            // because it is only ever drawn as a MENU ROW, and a menu row is
+            // a line of words: the icon column exists on the ribbon, not in a
+            // context menu. Its two siblings name `floating-panels` because
+            // they are the same act in two directions and the picture
+            // distinguishes them from the text rows around them; a close has
+            // nothing to be distinguished from.
+            //   ⇒ ★★ **The verdict stands and two of its sentences do not**,
+            //   corrected 2026-09-04 by the refusal audit. This entry also
+            //   said *"there is no close art in this set"*. There is:
+            //   `close.svg`, `icons::Icon::Close`, worn by `file.close` since
+            //   the set landed. A false supply claim inside a valid structural
+            //   refusal is the worst version of the pattern this file keeps
+            //   finding, because the paragraph reads as settled and half of it
+            //   is checkable and wrong.
+            //   The structural half was then checked and is TRUE, more
+            //   completely than it claimed: `shell::menus::MenuHost::attach_with`
+            //   builds its `ContextMenu` with `reporting_rects_to` and **no
+            //   `with_icon_painter`**, so every context-menu row in this build
+            //   draws a label and nothing else. So the sibling sentence is
+            //   wrong too — `view.panel_float` and `view.panel_dock` name
+            //   `floating-panels`, but nothing paints it on this surface;
+            //   their keys are correct data waiting for a surface that reads
+            //   them, not a picture the operator sees today.
+            //
+            //   ⇒ ★★★ **And the structural half expired the same day, 2026-09-04,
+            //   by being acted on rather than re-argued.** Every sentence above
+            //   is kept, because the shape of the mistake is the record; this
+            //   is what is now true instead.
+            //
+            //   `ContextMenu::with_icon_painter` had existed since the menu
+            //   engine landed. Nothing called it. `shell::menus_wiring::attach`
+            //   now does — one builder call, `crate::icons::paint_ribbon_icon`,
+            //   the ribbon's own painter — and **25 menu rows across all nine
+            //   context menus began drawing glyphs they were already carrying**,
+            //   with no per-row work, because their commands had named a key all
+            //   along. `shell::menus_wiring::tests` holds the count.
+            //
+            //   So *"the icon column exists on the ribbon, not in a context
+            //   menu"* was never a fact about menus. It was a fact about one
+            //   line nobody had written, stated in the grammar of a design
+            //   decision — which is the exact failure this ledger keeps
+            //   catching, arriving this time in the STRUCTURAL half rather than
+            //   the supply half. The operator's test (2026-08-06, quoted in
+            //   `crate::icons::Icon::Back`) discriminates them: *"there is no
+            //   icon SLOT on this surface"* is a valid refusal only if adding
+            //   one would be **wrong**, not merely if it would be **work**.
+            //   Here it was one line of work.
+            //
+            //   ⇒ **The verdict on the merits, now that the slot exists:
+            //   `view.panel_close` SHOULD draw `close`.** Not because the
+            //   column wants filling — a column that is half empty is better
+            //   than a column of pictures that mean nothing — but because the
+            //   picture is right and is already in the set:
+            //
+            //     · `close.svg` / `crate::icons::Icon::Close` is an X, which is
+            //       what "close the thing this row is about" looks like in
+            //       every application anyone has used. It says nothing this
+            //       command does not do, which is the whole wrong-picture test.
+            //     · Sharing it with `file.close` is not a collision, it is the
+            //       relationship: **one verb, two operands** — the same
+            //       relationship `view.panel_float` and `view.panel_dock`
+            //       already have with the one `floating-panels` glyph they
+            //       share, which this file accepted at their registration.
+            //     · The inconsistency is otherwise visible in two menus at
+            //       once. `document.tab` draws `file.close` **with** the X;
+            //       `dock.tab` would draw `view.panel_close` bare, one row
+            //       below a Float that has a glyph. The same word, twice, one
+            //       of them pictured.
+            //
+            //   ⇒ ★ The one-line change (`.with_icon("close")` at this
+            //   command's registration in `catalog::view`) is NOT made here.
+            //   `shell/commands/catalog/` belongs to a concurrent track this
+            //   session and a two-agent edit of one registration list is how a
+            //   command gets registered twice. The decision is recorded, the
+            //   count below stays at 8 until it is applied, and the day it is,
+            //   this becomes 8 → 7 and the third discharge in this ledger.
+            //
+            // ★★★ 10 → 8 on 2026-09-04 — `format.bold` and `format.italic`,
+            // **corrected, not discharged**. The `named` note above carries the
+            // account and the rule it leaves behind; the two assets carry the
+            // art's own reasoning, which is where `icons/assets/PROVENANCE.md`
+            // says a per-glyph ruling belongs.
+            //
+            // ★★ The other eight were AUDITED at the same time, against the
+            // operator's ruling rather than against each other, and every one
+            // survives on a reason that is not about supply:
+            //
+            //   · `format.font`, `format.font_size`, `format.font_colour` —
+            //     MISSING SLOT. Drawn by an `Item::Custom`; a combo box, a drag
+            //     field and a colour swatch have nowhere to put a glyph, and the
+            //     swatch's whole face is the value it reports.
+            //   · `mode.read`, `mode.review`, `mode.edit` — MISSING SLOT.
+            //     `egui_shell::ribbon::mode_selector` draws text segments and
+            //     contains no icon path at all; a key here would name art
+            //     nothing draws.
+            //   · `view.zoom_actual` — WRONG PICTURE, argued against BY NAME in
+            //     the icon ui-spec §3.2 and marked `{noicon:1}` in the approved
+            //     mockup. No supply of art touches that.
+            //   · `view.panel_close` — **NO LONGER REFUSED ON THE MERITS**, and
+            //     the only entry in this list whose reason has expired rather
+            //     than survived. It was recorded as MISSING SLOT because this
+            //     build's context menus wired no icon painter; they wire one as
+            //     of 2026-09-04, the slot exists, and the ruling immediately
+            //     above is that `close` is the right picture for it. It is
+            //     still counted below only because the registration lives in a
+            //     file another track owns this session.
+            refused,
+            8,
             "commands with no icon, each argued at its registration"
         );
         // Each refusal is argued at its own registration and listed in the
@@ -622,6 +897,18 @@ mod tests {
             // header says why: the one state that needs it most is a failed
             // open with other documents behind it.
             "docs.multiple",
+            // ★★ **At least one panel is in a window of its own**, published
+            // by `app::conditions` from the dock's live layout since
+            // 2026-09-04. `view.dock_all_panels` is the only command that
+            // waits on it, and it is the RECOVERY command for a float window
+            // the operator cannot reach — so this is greying in R9's strict
+            // sense: temporarily unavailable, because there is nothing to
+            // dock this second, and the tooltip says what it would do.
+            //
+            // ★ Deliberately NOT `!panels.floating` on anything. Nothing is
+            // hidden by a panel being floated; a float is a place a panel is,
+            // not a state the application is in.
+            "panels.floating",
             "doc.open",
             "doc.pages",
             "undo.available",
@@ -796,6 +1083,17 @@ mod tests {
             "tools.font_folders",
             "tools.merge_files",
             "view.fullscreen",
+            // ★★ The three panel-layout verbs need no document, and that is
+            // deliberate rather than an omission. A panel arrangement is
+            // CHROME: it belongs to the operator, it is persisted beside the
+            // settings rather than in the file, and it survives closing every
+            // document. An operator who floated the Layers panel and then
+            // closed their last document must still be able to dock it back —
+            // gating these on `doc.open` would leave a window on screen with
+            // no command able to act on it.
+            "view.panel_close",
+            "view.panel_dock",
+            "view.panel_float",
             "view.read_mode",
             "view.reset_layout",
         ]
@@ -870,6 +1168,100 @@ mod tests {
                 command.id
             );
         }
+    }
+
+    /// ★★★ **Every icon key a command names is a key the icon set has.**
+    ///
+    /// The missing half of [`Self::the_icon_coverage_split_adds_up_to_the_registry`],
+    /// added 2026-09-04 during the mockup-parity pass, and the two are
+    /// deliberately adjacent because they are one question asked at two
+    /// depths:
+    ///
+    /// | test | question |
+    /// |---|---|
+    /// | the split | *does this command name a glyph at all?* |
+    /// | this one | *and does that name resolve to a picture?* |
+    ///
+    /// # What a wrong key actually does, which is why this is not cosmetic
+    ///
+    /// It does **not** crash and it does **not** draw nothing.
+    /// `icons::paint_ribbon_icon` falls through to `paint_missing_mark`, which
+    /// draws a rounded square with a diagonal slash — a deliberate, visible
+    /// mark, argued at length in `icons::paint`'s header as *not* a
+    /// placeholder: it says "there is no glyph for this", which is a true
+    /// statement about the build rather than an invitation to believe a
+    /// control is coming.
+    ///
+    /// That is the right behaviour at run time and it is exactly why a test
+    /// is needed. The failure is **legible on screen and silent everywhere
+    /// else**: a typo in a `with_icon("…")` string compiles, registers,
+    /// renders, passes the coverage split (the key is `Some`), passes the
+    /// kebab-case check (the typo is kebab), and ships as a slashed box in
+    /// the middle of the File tab. The only oracle was a screenshot, and
+    /// `MODES_AND_PANELS.md` is clear that a defect an oracle found deserves
+    /// a test that would have found it too.
+    ///
+    /// ★ Asserted over the **whole registry** rather than over the ribbon
+    /// manifest, and that is the wider claim on purpose: a command's icon is
+    /// drawn wherever the command is drawn — the band, the quick-access
+    /// toolbar, the overflow menu, a context menu, the collapsed-group popup,
+    /// the shortcuts dialog. Scoping this to the ribbon would bless a broken
+    /// key on any of the other five surfaces.
+    #[test]
+    fn every_icon_key_a_command_names_resolves_to_real_art() {
+        let reg = registry();
+        let mut broken: Vec<(&str, &str)> = Vec::new();
+        let mut checked = 0_usize;
+        for command in reg.iter() {
+            let Some(key) = command.icon.as_deref() else {
+                continue;
+            };
+            checked += 1;
+            if crate::icons::Icon::from_key(key).is_none() {
+                broken.push((command.id.as_str(), key));
+            }
+        }
+        // The vacuity guard, and it is not decoration: `iter()` returning an
+        // empty registry, or `icon` becoming `None` everywhere, would make the
+        // loop above pass by never running. The floor is deliberately loose —
+        // the exact count is pinned by the coverage split next door, and a
+        // second copy of it here would be a second number to drift.
+        assert!(
+            checked > 100,
+            "only {checked} commands named an icon, so this test barely ran. The \
+             coverage split next door pins the real number; this is the guard that \
+             says the loop had something to look at"
+        );
+        assert!(
+            broken.is_empty(),
+            "these commands name an icon key the set does not have, so each one draws \
+             a slashed box where the operator expects a picture: {broken:?}"
+        );
+    }
+
+    /// ★★ **…and the check above can fail**, which is the half a green test
+    /// cannot demonstrate about itself.
+    ///
+    /// `PROJECT_PLAN.md` §4.1 records a gate that printed "clean" while
+    /// checking a handful of files, and the standing lesson from it is that
+    /// *finding nothing looks exactly like finding no violations*. So the
+    /// predicate the test above is built on — `Icon::from_key` returning
+    /// `None` for a name that is not in the set — is asserted directly,
+    /// against a key shaped exactly like the typo this is guarding against:
+    /// plausible, kebab-case, and absent.
+    #[test]
+    fn a_plausible_but_absent_icon_key_does_not_resolve() {
+        assert!(
+            crate::icons::Icon::from_key("new-documnet").is_none(),
+            "`Icon::from_key` resolved a misspelling of a real key, so \
+             `every_icon_key_a_command_names_resolves_to_real_art` would pass over \
+             exactly the defect it exists to catch"
+        );
+        assert!(
+            crate::icons::Icon::from_key("new-document").is_some(),
+            "…and the correctly-spelled key must resolve, or the assertion above is \
+             satisfied by an `Icon::from_key` that resolves nothing at all"
+        );
     }
 
     /// Icon keys are lower-case kebab, matching the salvaged icon set's

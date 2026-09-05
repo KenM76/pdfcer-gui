@@ -233,6 +233,32 @@ Mark what should go — by drawing boxes, or by searching for a word and marking
 every match — and then apply. Applying is the point at which content is
 actually removed, and **it cannot be undone**.
 
+### Where the redacted document goes — three choices, and the first is the default
+
+The Apply window asks before it does anything, and shows you exactly what will
+be removed and anything it could not remove.
+
+| choice | what happens |
+|---|---|
+| **This document** *(default)* | the content leaves the document you are looking at and **nothing is written**. Save or Save As decides where it goes, exactly like every other edit. |
+| **A new file** | you are asked for a name, and it is never the name of the file you opened. The document you have open is untouched. |
+| **Replace `<your file>`** | the file on disk is overwritten with the redacted version. One extra tick box, naming the file, before the button will work. |
+
+**Replacing is the only one that cannot be recovered from.** The file you
+replace is the last copy of the content you are removing, so once it is gone it
+is gone. You are warned at the moment you choose it — warned, not stopped;
+it is your file.
+
+### ★★ Applying into the document clears your undo history
+
+If you take the default, the redaction goes into the open document — and the
+**whole undo history goes with it**, not just the redaction. You can carry on
+editing afterwards; you cannot step back past that point. The window tells you
+how many steps you are about to lose, before you press the button.
+
+Nothing is on disk until you save. If you apply and then hand over the original
+file without saving, you have handed over the unredacted document.
+
 ### ★★ The warning to read
 
 If the document contains text that cannot be searched (see above), then

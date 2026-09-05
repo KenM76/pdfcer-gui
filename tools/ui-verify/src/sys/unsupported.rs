@@ -154,3 +154,14 @@ pub fn clipboard_text() -> Option<String> {
 pub fn clear_clipboard() -> bool {
     false
 }
+
+/// Always `None` — there is no clipboard here, so there are no formats on it.
+///
+/// `None` rather than `Some(vec![])` for [`clipboard_text`]'s reason one step
+/// on: an empty list is a real and *different* answer, and a caller that read
+/// one here would report "the application placed nothing" about a platform that
+/// has no clipboard to place onto.
+#[must_use]
+pub fn clipboard_formats() -> Option<Vec<(u32, String)>> {
+    None
+}

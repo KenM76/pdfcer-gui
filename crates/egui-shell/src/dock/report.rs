@@ -280,6 +280,23 @@ pub fn rail(side: DockSide) -> String {
     format!("{PREFIX}.{}.rail", side.key())
 }
 
+/// ★ The **tool rail** — the permanent vertical strip down a side's outer
+/// edge, carrying the panel tabs and the tool groups. `OPERATOR_REQUESTS.md`
+/// O123 part 7.
+///
+/// Deliberately **not** [`rail`], which names a different surface: the sliver
+/// a *collapsed* side leaves behind as the way back. Two surfaces sharing one
+/// trace name is how a driven check reads the wrong one — recorded in
+/// `D:/dev/rag/egui/two_trace_lines_sharing_an_event_name_make_a_check_read_the_wrong_one.md`.
+///
+/// Published only on a side that actually reserved one, so its **absence** is
+/// the evidence that no rail was drawn — [`banner`]'s asymmetry, for
+/// [`banner`]'s reason.
+#[must_use]
+pub fn tool_rail(side: DockSide) -> String {
+    format!("{PREFIX}.{}.toolrail", side.key())
+}
+
 /// The splitter between a side and the central area.
 #[must_use]
 pub fn side_splitter(side: DockSide) -> String {

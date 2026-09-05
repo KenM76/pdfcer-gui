@@ -47,7 +47,7 @@ use egui::{Align, Layout, Rect, UiBuilder, vec2};
 use crate::commands::{Command, CommandRegistry, ConditionSet, HandlerToken};
 use crate::manifest::{Item, Keymap};
 use crate::menu::{ContextMenu, Menus, Shortcuts};
-use crate::ribbon::band::{button_padding, text_width};
+use crate::ribbon::measure::{button_padding, text_width};
 use crate::theme::Theme;
 
 use super::plan;
@@ -145,11 +145,22 @@ fn draw(
         let theme = Theme::of(ui.ctx());
         let atom_gap = ui.spacing().icon_spacing;
         let padding = button_padding(ui);
+        // ★ The icon column is decided ONCE for the menu, exactly as the
+        // renderer decides it (`plan::reserves_icon_column`) — so a row
+        // with no key in a menu that has one is measured *with* its blank
+        // slot. Mirroring the old per-command rule here would make this
+        // harness agree with a renderer that no longer exists, which is
+        // the worst kind of green.
+        let reserved = rows.iter().any(|(_, _, icon)| *icon);
         let totals: Vec<f32> = rows
             .iter()
             .map(|(id, label, icon)| {
                 plan::RowWidths {
-                    icon: if *icon { theme.metrics.icon_pts } else { 0.0 },
+                    icon: if plan::icon_slot(reserved, *icon).is_reserved() {
+                        theme.metrics.icon_pts
+                    } else {
+                        0.0
+                    },
                     label: text_width(ui, label, &egui::TextStyle::Button),
                     shortcut: shortcuts
                         .get(id)
@@ -376,6 +387,92 @@ fn an_icon_slot_is_reserved_rather_than_overlaid() {
         bare.planned.points,
         iconed.planned.points
     );
+}
+
+/// **★★★ A menu with one icon costs the same as a menu with all icons,
+/// and a menu with none costs nothing.**
+///
+/// The rendered proof of the icon-column rule, against real font metrics.
+/// Three menus, identical labels and chords, differing only in which rows
+/// name a glyph:
+///
+/// | Menu | Every row's slot | Expected body |
+/// |---|---|---|
+/// | all four have icons | `Glyph` | the reference |
+/// | one has an icon | `Glyph`, then three `Blank` | **the same** |
+/// | none has an icon | `Absent` | strictly narrower |
+///
+/// The first two being **equal** is the whole rule: a blank slot costs
+/// what a glyph costs, so the label column starts at one x whatever the
+/// mix. If the renderer had kept the per-command rule the middle menu
+/// would come out narrower than the first and its labels would zig-zag —
+/// and no width assertion that looked at one menu at a time would notice.
+///
+/// The third being narrower is the other half, and it is what keeps the
+/// rule cheap: a menu whose commands have no icons is laid out exactly as
+/// it was before the column existed.
+#[test]
+fn one_icon_costs_a_menu_the_same_column_as_four() {
+    let ctx = context();
+    // ★ The LONGEST label belongs to a row with NO icon, and that is the
+    // whole design of this fixture. The body width is set by the widest
+    // row, so if the widest row were the one carrying the glyph the
+    // equality below would hold under the wrong rule too — a per-command
+    // renderer would give that row its slot either way and the menu would
+    // measure the same. Putting the long label on a bare row makes the
+    // blank slot the thing being measured.
+    let labels = [
+        "Cut",
+        "Copy",
+        "Paste a very much longer command label indeed",
+        "Delete",
+    ];
+    let ids = ["a.1", "a.2", "a.3", "a.4"];
+    let build = |icons: [bool; 4]| -> Vec<(&'static str, &'static str, bool)> {
+        (0..4).map(|i| (ids[i], labels[i], icons[i])).collect()
+    };
+    let chords = [("Ctrl+X", "a.1"), ("Del", "a.4")];
+
+    let all = draw(&ctx, &build([true; 4]), &chords, 600.0);
+    let one = draw(&ctx, &build([true, false, false, false]), &chords, 600.0);
+    let none = draw(&ctx, &build([false; 4]), &chords, 600.0);
+
+    assert!(
+        (all.body.width() - one.body.width()).abs() < 0.5,
+        "a menu where one row has a glyph reserves the same column as one where \
+         every row does — all {} vs one {}",
+        all.body.width(),
+        one.body.width()
+    );
+    assert!(
+        none.body.width() < one.body.width() - 1.0,
+        "a menu with no icons must not pay for a column it has no use for: \
+         none {} vs one {}",
+        none.body.width(),
+        one.body.width()
+    );
+
+    // ★ And the column costs no HEIGHT. The slot is `icon_pts` square and
+    // the row is `control_height` tall, so a menu that gained a column
+    // must not have grown taller — a taller menu is how "we added an icon
+    // column" turns into "the menus all got bigger", which nobody asks for
+    // and everybody notices.
+    let row_height = |d: &Drawn| d.rows.first().expect("a row").1.height();
+    assert!(
+        (row_height(&one) - row_height(&none)).abs() < 0.5,
+        "gaining an icon column changed the row height: {} with a column, {} without",
+        row_height(&one),
+        row_height(&none)
+    );
+    for (id, rect) in &one.rows {
+        assert!(
+            (rect.height() - row_height(&one)).abs() < 0.5,
+            "`{id}` is {} tall against the first row's {}: a menu whose rows are \
+             different heights reads as a rendering fault",
+            rect.height(),
+            row_height(&one)
+        );
+    }
 }
 
 /// Rows stack downwards in document order and do not overlap.

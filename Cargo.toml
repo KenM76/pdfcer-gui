@@ -18,6 +18,22 @@
 resolver = "2"
 members = [
     "crates/egui-shell",
+    # native-clipboard — the ordered, all-or-nothing clipboard transaction.
+    #
+    # A SECOND `native-*` member rather than a module inside `native-window`,
+    # and the split is by SUBJECT rather than by convenience: that crate is
+    # about *windows*, its own docs say so ("There is no trait, no abstraction
+    # … when the toolkit grows an owner option, this module is DELETED"), and
+    # its `clipboard` module already opens by admitting it is "the first thing
+    # in this crate that is not about a *window*". One more clipboard concern
+    # in there would make the name a lie rather than a description.
+    #
+    # Both are here for the same structural reason and neither adds a
+    # dependency: `pdfcer-gui` carries `#![forbid(unsafe_code)]`, `forbid`
+    # cannot be relaxed from the inside, and Win32 clipboard placement is
+    # `unsafe`. See `crates/native-clipboard/Cargo.toml` for the full argument
+    # and for what must never go into it.
+    "crates/native-clipboard",
     "crates/native-window",
     "crates/pdfcer-gui",
     "tools/ui-verify",

@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Select all — a dashed marquee enclosing the pointer, i.e. "the selection
+       reaches everything on the page". Two shapes, primitives only; no
+       trademark risk.
+
+       ★★★ THE RECORD THIS ASSET CORRECTS. From 2026-09-01 until 2026-09-04
+       `edit.select_all` was registered with no icon, and the refusal beside it
+       read: *"there is no conventional icon for Select All — Word, Acrobat and
+       Illustrator all present it as words, in a menu or a list, because what it
+       selects is the thing a picture cannot show. A marquee glyph would say
+       'rubber band', which is the gesture this command exists to replace when
+       the rubber band cannot reach."*
+
+       That refusal was written by a BUILD SESSION. It was then quoted often
+       enough — in a coverage count, in a module header, in an adoption ledger,
+       and twice in reports to the operator — that it began to read as HIS
+       ruling. It was not. He said so on 2026-09-04, in four words:
+       *"I didn't refuse that."*
+
+       ⇒ The argument itself was not silly, and the part of it that survives is
+       drawn INTO this glyph rather than deleted: a bare marquee really would
+       say "rubber band". So the marquee is not bare — it encloses the POINTER,
+       which is what makes it a statement about the selection rather than about
+       the gesture. A rubber band is something you drag; this is something that
+       is already around everything.
+
+       Distinct from shape-rect.svg by the dash: that is a solid rectangle you
+       draw, this is a marquee that is not content and never will be. Distinct
+       from pointer.svg by the enclosure — the arrow alone is the tool, the
+       arrow inside a marquee is the tool's reach. Distinct from redact-selection
+       .svg, which is also dashed, by what is inside it: a solid bar that
+       obliterates, against an arrow that picks. -->
+  <path d="M19 17v16l4.5-4 3 6.5 3.5-1.5-3-6.5H33z" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M8 8h32v32H8z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" stroke-dasharray="5 4"/>
+</svg>

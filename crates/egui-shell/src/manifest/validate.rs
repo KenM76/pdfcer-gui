@@ -62,6 +62,16 @@ pub enum Site {
     /// the manifest — and the two regions are three fields apart in a file
     /// that is mostly tabs.
     Trailing,
+    /// A group in the left rail.
+    ///
+    /// Carries the group id rather than only saying "the rail", for
+    /// [`Self::Group`]'s reason: the rail is three or four groups deep and a
+    /// message that named only the region would send the reader to a strip
+    /// rather than to a line.
+    Rail {
+        /// The rail group's id.
+        group: String,
+    },
     /// A key binding.
     Keymap {
         /// The chord, e.g. `"Ctrl+E"`.
@@ -81,6 +91,7 @@ impl std::fmt::Display for Site {
             Site::Group { tab, group } => write!(f, "tab `{tab}` group `{group}`"),
             Site::Qat => f.write_str("the quick-access toolbar"),
             Site::Trailing => f.write_str("the trailing controls"),
+            Site::Rail { group } => write!(f, "rail group `{group}`"),
             Site::Keymap { chord } => write!(f, "key binding `{chord}`"),
             Site::Mode { mode } => write!(f, "mode `{mode}`"),
         }
@@ -414,6 +425,26 @@ impl Shell {
             for item in trailing.items() {
                 if let Item::Command { id, .. } = item {
                     out.push((Site::Trailing, id.clone()));
+                }
+            }
+        }
+        // ★ The rail is walked for the trailing region's reason, verbatim: a
+        // typo in it is a start-up failure rather than a control that quietly
+        // is not there. It matters more here than anywhere else on the
+        // document, because the rail is PERMANENT chrome — a mis-typed id in a
+        // ribbon group costs one absent button on one tab, and a mis-typed id
+        // here costs a hole in a strip that is on screen for the whole session.
+        if let Some(rail) = &self.rail {
+            for group in rail.groups() {
+                for item in &group.items {
+                    if let Item::Command { id, .. } = item {
+                        out.push((
+                            Site::Rail {
+                                group: group.id.clone(),
+                            },
+                            id.clone(),
+                        ));
+                    }
                 }
             }
         }

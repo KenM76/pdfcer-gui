@@ -109,9 +109,13 @@ pub(super) fn tab() -> Tab {
                 "page-clipboard",
                 ribbon::group_pages_clipboard(),
                 [
-                    command("pages.cut"),
-                    command("pages.copy"),
-                    command("pages.paste"),
+                    // ★ All three large, 2026-09-04 — the mockup's page
+                    // Clipboard group is three big controls and nothing else.
+                    // Whole group promoted, so the Cut / Copy / Paste triad
+                    // an operator reaches for by position keeps its order.
+                    large("pages.cut"),
+                    large("pages.copy"),
+                    large("pages.paste"),
                 ],
             ),
             group(

@@ -43,9 +43,18 @@
 //!
 //! The old shell's permanence statement already deviated from its own ui-spec,
 //! because apply there wrote a **new file** and left the open document alone.
-//! That is still true here and is now enforced structurally as well as worded
-//! (`crate::redact` §4), so the sentence is carried across essentially
-//! unchanged. What is new is that this shell's *ordinary* save is incremental
+//! That was true here too until 2026-09-04, when the operator asked for the
+//! choice every other edit in this shell gives him — *"why can't it just wait on
+//! saving until I choose to save over the existing file or save as a new
+//! file?"* — so the permanence statement now has **three** forms, one per
+//! destination: [`permanence_statement`]`(false)` for a new file,
+//! [`permanence_statement`]`(true)` for replacing the open file, and
+//! [`permanence_statement_deferred`] for the destination that lands in the open
+//! document and writes nothing, which is the default and the one he actually
+//! asked for. The clause that does **not** change between the three is the full
+//! rewrite and the impossibility of getting the content back; what changes is
+//! what happens to the file he opened. What is new is that this shell's *ordinary*
+//! save is incremental
 //! and promises so on `file.save_copy`'s tooltip — which makes
 //! [`single_revision_note`] carry more weight here than it did there: it is the
 //! one place an operator is told that this write does **not** behave like the
@@ -84,7 +93,13 @@ pub fn panel_title() -> &'static str {
 /// failure. Carried verbatim from the old shell's `redact_panel_intro`.
 #[must_use]
 pub fn panel_intro() -> &'static str {
-    "Mark content, then apply to permanently remove it. Marking is reversible and changes nothing in the file; applying writes a new file with the marked content gone, and cannot be undone."
+    // ★ 2026-09-04: *"writes a file"* rather than *"writes a NEW file"*. The
+    // apply dialog now offers to replace the open document as well, so the old
+    // wording promised a property the operator can switch off two clicks later
+    // — and this sentence is read before that dialog is ever opened, which
+    // makes it the worse place to be specific about the destination. The
+    // permanence, which does not vary, stays exactly as emphatic as it was.
+    "Mark content, then apply to permanently remove it. Marking is reversible and changes nothing in the file; applying writes a file with the marked content gone, and cannot be undone."
 }
 
 /// The heading over the marking controls.
@@ -309,9 +324,11 @@ pub fn report_heading() -> &'static str {
 ///
 /// It says what this operation does *in this shell*, which is not what a
 /// generic redaction warning would say. Apply does not mutate the open
-/// document: it writes a new file and leaves the session exactly as it is,
-/// marks and all (`crate::redact` §3). A sentence about "you cannot undo this
-/// once you save" would describe a save that never happens.
+/// document: it writes a **file**, and leaves the session exactly as it is,
+/// marks and all (`crate::redact` §3) — whichever destination was chosen, and
+/// including the destination that overwrites the file the session was loaded
+/// from. A sentence about "you cannot undo this once you save" would describe a
+/// save that never happens.
 ///
 /// The clause about the open document is not reassurance filler. It is the
 /// answer to the question an operator asks immediately afterwards — *"so what
@@ -320,8 +337,23 @@ pub fn report_heading() -> &'static str {
 /// worse error, and believing nothing happened at all is the one that makes
 /// people press the button twice.
 #[must_use]
-pub fn permanence_statement() -> &'static str {
-    "Applying writes a NEW file with the marked content permanently removed. It is a full rewrite, not an edit: nothing in that file can bring the removed content back — not Undo, not a previous revision, not any recovery tool. The document you have open is left exactly as it is now, marks and all."
+/// ★★ 2026-09-04: it takes the destination, because two of its three claims
+/// stopped being unconditionally true when the operator was given the choice of
+/// replacing the open file. *"Writes a NEW file"* and *"the document you have
+/// open is left exactly as it is now"* are both false on a replace, and this
+/// sentence is drawn in the warning role at the top of the report — the one
+/// sentence a reader who takes in nothing else takes in. A false claim there is
+/// worse than no claim anywhere.
+///
+/// The middle clause — the full rewrite, and that nothing brings the content
+/// back — is true either way and is worded identically in both, deliberately:
+/// it is the part the operator must not have to read twice to compare.
+pub fn permanence_statement(replacing_the_open_file: bool) -> &'static str {
+    if replacing_the_open_file {
+        "Applying REPLACES the file you have open with a copy that has the marked content permanently removed. It is a full rewrite, not an edit: nothing in that file can bring the removed content back — not Undo, not a previous revision, not any recovery tool. The file you are replacing is the last copy of that content, so it will not exist anywhere afterwards."
+    } else {
+        "Applying writes a NEW file with the marked content permanently removed. It is a full rewrite, not an edit: nothing in that file can bring the removed content back — not Undo, not a previous revision, not any recovery tool. The document you have open is left exactly as it is now, marks and all."
+    }
 }
 
 /// The heading for the affirmative half of the report.
@@ -398,7 +430,13 @@ pub fn containers_decomposed(containers: u64, promoted: u64) -> String {
 /// tells them this write is different.
 #[must_use]
 pub fn single_revision_note() -> &'static str {
-    "The new file will be a single revision. Any earlier revision of this document — which would still hold the un-redacted content — is not carried into it."
+    // ★ 2026-09-04: *"the file that is written"* rather than *"the new file"*,
+    // because it may not be a new one — the operator can now choose to replace
+    // the document he opened, and on that path this sentence carries MORE
+    // weight rather than less: replacing a file that had five earlier revisions
+    // with a single-revision rewrite is precisely the property that makes the
+    // replacement safe, and is the opposite of what `file.save` does.
+    "The file that is written will be a single revision. Any earlier revision of this document — which would still hold the un-redacted content — is not carried into it."
 }
 
 /// ★★ **The verification line — the ONLY place in this catalog permitted to
@@ -494,17 +532,54 @@ pub fn residual_carrier_line(carrier: &str) -> String {
     )
 }
 
-/// ★ **One residual line for a removed string that still occurs in the raw
-/// output bytes while occurring in no decoded stream.**
+/// ★ **One residual line for a removed string that still occurs somewhere in
+/// the saved file while occurring in nothing the document draws.**
 ///
 /// Worded so it claims exactly what pdfcer knows and nothing more: the byte run
-/// is there; whether it is a real leftover copy or an unrelated coincidence is
-/// not something pdfcer can decide. See `crate::redact::proof`'s table for why
-/// this is disclosed rather than refused.
+/// is there, in *this* kind of place; whether it is a real leftover copy or an
+/// unrelated coincidence is not something pdfcer can decide. See
+/// `crate::redact::proof`'s table for why this is disclosed rather than refused.
+///
+/// # ★★★ Why the SITE is named, added 2026-09-04
+///
+/// This sentence used to end at *"somewhere in the saved file"*, and the
+/// operator's report of that day is what a warning of that shape produces:
+///
+/// > *"it always finds text that wasn't redacted, and it always … counts
+/// > everything I selected as unredactable."*
+///
+/// He was right on the facts and the sentence gave him nothing to do about
+/// them. The commonest cause by far — an embedded font program whose `name`
+/// table happens to spell an ordinary English word — is one an operator can
+/// dismiss in a second **if they are told that is where it is**, and cannot
+/// evaluate at all if they are not. A warning nobody can act on is a warning
+/// everybody learns to click past, which then costs the real one its force.
+///
+/// ★ It still refuses to judge. It says where the bytes are, in the operator's
+/// vocabulary, and then repeats that pdfcer cannot tell a coincidence from a
+/// carrier. Naming the place is more information, not a verdict — the catalog's
+/// rule 1 is *"never say removed without qualification when anything was left"*,
+/// and nothing here says removed.
 #[must_use]
-pub fn raw_residual_line(text: &str) -> String {
+pub fn raw_residual_line(text: &str, site: crate::redact::ResidualSite) -> String {
+    use crate::redact::ResidualSite as S;
+    let place = match site {
+        S::FontProgram => {
+            "inside an embedded font program — the part of a font file that holds its own name, its copyright and the English descriptions of its lettering features"
+        }
+        S::ImageSamples => "inside the pixel data of an image",
+        S::ObjectContainer => {
+            "inside a compressed object container, which keeps its own copy of objects that were moved out of it"
+        }
+        S::Attachment => {
+            "inside a file attached to this document — an attachment is a separate document and redaction does not reach into it"
+        }
+        S::Metadata => "inside a metadata stream",
+        S::OtherStream => "inside a stream this build does not recognise",
+        S::RawBytes => "in the file's raw bytes, outside every stream pdfcer could decode",
+    };
     format!(
-        "⚠  The removed text “{text}” no longer appears in any page content, but that same byte sequence still occurs somewhere in the saved file. It may be an unrelated coincidence, or a copy in a carrier pdfcer does not recognise — pdfcer cannot tell which, so it is reported rather than claimed removed."
+        "⚠  The removed text “{text}” no longer appears in anything this document draws, but that same byte sequence still occurs {place}. It may be an unrelated coincidence, or a copy in a carrier pdfcer does not recognise — pdfcer cannot tell which, so it is reported rather than claimed removed."
     )
 }
 
@@ -709,6 +784,23 @@ pub fn confirm_checkbox() -> &'static str {
     "I understand this permanently removes the underlying content, not just the visible marks."
 }
 
+// ---------------------------------------------------------------------------
+// The destination — where the redacted document goes
+//
+// A module of its own since 2026-09-04 (rule R2: this file reached 1536 lines).
+// `pub use` rather than a `destination::` path at every call site, so the split
+// is invisible to consumers and the catalog keeps one flat namespace — see that
+// module's header for the seam it was cut along.
+// ---------------------------------------------------------------------------
+mod destination;
+pub use destination::{
+    applied_into_document, confirm_button_into_document, confirm_button_replace,
+    destination_heading, destination_new_file, destination_new_file_tooltip,
+    destination_open_document, destination_open_document_tooltip, destination_replace,
+    destination_replace_tooltip, overwrite_acknowledgement_checkbox, permanence_statement_deferred,
+    undo_will_be_cleared,
+};
+
 /// ★ **The confirm control. The label IS the consequence** — never "OK", never
 /// "Yes", never "Apply" alone.
 #[must_use]
@@ -737,15 +829,62 @@ pub fn confirm_button() -> &'static str {
 /// anyway rather than left to a `_` arm, because a sentence that cannot be
 /// reached is better than a panic and better than a wrong one, and because the
 /// day the gate grows a third term this arm is where the omission shows.
+///
+/// # ★★★ 2026-09-04 — the day came, and the arm did its job
+///
+/// The gate grew a third term: [`overwrite_acknowledgement_checkbox`], asked
+/// for only when the operator has chosen to replace the open file. The comment
+/// above predicted where the omission would show and it showed there — the
+/// `(true, true)` arm stopped being unreachable and started meaning *"both the
+/// boxes I know about are ticked"*, which on a replace would have greyed the
+/// button and said **"Ready."**
+///
+/// So the parameters are now three, and all three are stated as
+/// **outstanding** rather than as *acknowledged*. That is not tidying. A box
+/// that is not being asked for is neither ticked nor untickable, and reading
+/// `residuals_acknowledged == false` as *"go and tick it"* when no such box is
+/// on screen is exactly the vague refusal this function exists to prevent. The
+/// caller — which is the only surface that knows which boxes it drew — answers
+/// the question *"is this one still owed?"*, and the answer for a box that was
+/// never drawn is *no*.
+///
+/// # The order the boxes are named in
+///
+/// Top to bottom as they are drawn, because the operator is being sent to look
+/// at one: the overwrite acknowledgement sits directly under the destination
+/// choice, the residual acknowledgement under that, and the permanence
+/// acknowledgement immediately above the button.
 #[must_use]
-pub fn confirm_disabled(acknowledged: bool, residuals_acknowledged: bool) -> &'static str {
-    match (acknowledged, residuals_acknowledged) {
-        (false, false) => "Tick both boxes above to confirm you have read what will be removed.",
-        (false, true) => "Tick the box above to confirm you have read what will be removed.",
-        (true, false) => {
-            "Tick the second box above to confirm you have read what pdfcer could not prove it removed."
+pub fn confirm_disabled(
+    permanence_outstanding: bool,
+    residuals_outstanding: bool,
+    overwrite_outstanding: bool,
+) -> &'static str {
+    match (
+        permanence_outstanding,
+        residuals_outstanding,
+        overwrite_outstanding,
+    ) {
+        (false, false, false) => "Ready.",
+        (true, false, false) => "Tick the box above to confirm you have read what will be removed.",
+        (false, true, false) => {
+            "Tick the box above to confirm you have read what pdfcer could not prove it removed."
         }
-        (true, true) => "Ready.",
+        (false, false, true) => {
+            "Tick the box above to confirm you understand the file you have open will be replaced."
+        }
+        (true, true, false) => {
+            "Tick both boxes above to confirm you have read what will be removed."
+        }
+        (true, false, true) => {
+            "Tick both boxes above — one confirms what will be removed, the other that the file you have open will be replaced."
+        }
+        (false, true, true) => {
+            "Tick both boxes above — one confirms what pdfcer could not prove it removed, the other that the file you have open will be replaced."
+        }
+        (true, true, true) => {
+            "Tick all three boxes above: what will be removed, what pdfcer could not prove it removed, and that the file you have open will be replaced."
+        }
     }
 }
 
@@ -799,10 +938,33 @@ pub fn suggested_suffix() -> &'static str {
 /// ran again between the buffer and the write. The last clause corrects the
 /// learned Undo expectation rather than leaving it to be assumed (rule 3).
 #[must_use]
-pub fn applied_clean(file_name: &str, regions: u64, pages: usize) -> String {
-    format!(
-        "Redacted and saved to {file_name} — {regions} region(s) across {pages} page(s) removed, and verified absent from the saved file. That file cannot be un-redacted; the document you still have open is unchanged."
-    )
+/// ★★ 2026-09-04: `replaced` is what the last clause turns on. *"The document
+/// you still have open is unchanged"* is a reassurance when a copy was written
+/// and a **falsehood** when the open file was the one replaced — and on that
+/// path the operator is owed the opposite fact, which is stranger than it
+/// sounds and which nothing else on screen would tell them: the window in front
+/// of them still shows the marks and the content, because the session was not
+/// touched, while the file those bytes came from no longer contains either.
+///
+/// ★★★ **CORRECTED the same evening.** The replace form used to explain that
+/// staleness with *"because pdfcer cannot apply a redaction into an open
+/// document"*. That was true when it was written and stopped being true a few
+/// hours later, when `Pass 250.1` shipped `EditSession::apply_redactions` and
+/// [`destination_open_document`] became the default. The window is still stale
+/// on the two write-now destinations — that has not changed — but the reason is
+/// now a **choice the operator made**, not a limit of the program, and a
+/// sentence that blames the program for a chosen behaviour teaches him the
+/// wrong thing about a control he is holding.
+pub fn applied_clean(file_name: &str, regions: u64, pages: usize, replaced: bool) -> String {
+    if replaced {
+        format!(
+            "Redacted — {file_name} has been replaced, {regions} region(s) across {pages} page(s) removed, and verified absent from it. That file cannot be un-redacted. ⚠  The window you are looking at still shows the marks and the content underneath them, because this destination writes a file and leaves the document you have open exactly as it was — close it and open {file_name} again to see what is now in the file."
+        )
+    } else {
+        format!(
+            "Redacted and saved to {file_name} — {regions} region(s) across {pages} page(s) removed, and verified absent from the saved file. That file cannot be un-redacted; the document you still have open is unchanged."
+        )
+    }
 }
 
 /// The line shown once a redaction that had acknowledged residuals is on disk.
@@ -812,10 +974,21 @@ pub fn applied_clean(file_name: &str, regions: u64, pages: usize) -> String {
 /// it is still owed a standing record of what remains. This is rule 1 —
 /// **the residual is named in the same sentence as the success.**
 #[must_use]
-pub fn applied_with_residuals(file_name: &str, regions: u64, residuals: usize) -> String {
-    format!(
-        "⚠  Redacted and saved to {file_name} — {regions} region(s) removed, but {residuals} item(s) could NOT be removed and are still in that file. Do not treat it as fully redacted; see the report you acknowledged for what and why."
-    )
+pub fn applied_with_residuals(
+    file_name: &str,
+    regions: u64,
+    residuals: usize,
+    replaced: bool,
+) -> String {
+    if replaced {
+        format!(
+            "⚠  Redacted — {file_name} has been replaced and {regions} region(s) removed, but {residuals} item(s) could NOT be removed and are still in it. Do not treat it as fully redacted; see the report you acknowledged for what and why. The window you are looking at still shows the marks — close it and open {file_name} again to see what is now in the file."
+        )
+    } else {
+        format!(
+            "⚠  Redacted and saved to {file_name} — {regions} region(s) removed, but {residuals} item(s) could NOT be removed and are still in that file. Do not treat it as fully redacted; see the report you acknowledged for what and why."
+        )
+    }
 }
 
 /// The sentence for a refusal that happened before anything was written.
@@ -1077,185 +1250,7 @@ pub fn marked_selection(objects: usize) -> String {
     }
 }
 
+/// The three wording rules, enforced — in their own file since 2026-09-04.
+/// See [`tests`]'s header for the seam.
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    /// ★★ **No marking string ever claims content was removed.**
-    ///
-    /// Rule 1 of the module header, asserted rather than trusted. The failure
-    /// this catches is a copy pass tightening *"marked for redaction"* into
-    /// *"redacted"* — which reads better, is shorter, and is the exact
-    /// misunderstanding that ships marked documents.
-    #[test]
-    fn nothing_on_the_marking_surface_claims_a_removal() {
-        let marking: Vec<String> = vec![
-            panel_intro().to_owned(),
-            mark_heading().to_owned(),
-            mark_whole_page().to_owned(),
-            mark_whole_page_tooltip().to_owned(),
-            search_button_tooltip(true).to_owned(),
-            search_hint(false).to_owned(),
-            search_hint(true).to_owned(),
-            marks_count(3),
-            mark_remove_tooltip().to_owned(),
-        ];
-        for line in &marking {
-            let lower = line.to_lowercase();
-            for claim in ["has been removed", "was removed", "is redacted", "now gone"] {
-                assert!(
-                    !lower.contains(claim),
-                    "`{line}` claims {claim:?} on the MARKING surface, where nothing \
-                     has been removed. Marking is reversible; applying is not, and \
-                     an operator who believes otherwise ships the marked file"
-                );
-            }
-        }
-    }
-
-    /// ★★ **"Verified" appears in exactly one place.**
-    ///
-    /// Rule 2, and it is a test rather than a doc comment because the word is
-    /// the single most valuable one on this surface: it is the difference
-    /// between a report and a claim, and it costs nothing to sprinkle it
-    /// somewhere it is not earned.
-    #[test]
-    fn only_the_verification_line_and_the_clean_outcome_say_verified() {
-        let everything: Vec<(&str, String)> = vec![
-            ("panel_intro", panel_intro().to_owned()),
-            ("permanence_statement", permanence_statement().to_owned()),
-            ("removal_summary", removal_summary(2, 1, 30, 1)),
-            ("single_revision_note", single_revision_note().to_owned()),
-            ("residual_heading", residual_heading().to_owned()),
-            ("raw_residual_line", raw_residual_line("x")),
-            ("scope_reminder", scope_reminder().to_owned()),
-            ("confirm_checkbox", confirm_checkbox().to_owned()),
-            ("confirm_button", confirm_button().to_owned()),
-            ("marks_count", marks_count(2)),
-            (
-                "applied_with_residuals",
-                applied_with_residuals("a.pdf", 2, 1),
-            ),
-        ];
-        for (name, line) in &everything {
-            assert!(
-                !line.to_lowercase().contains("verif"),
-                "`{name}` uses the word \"verified\", which only a clean \
-                 AbsenceVerification earns: {line}"
-            );
-        }
-        assert!(verified_line(3).to_lowercase().contains("verified"));
-        assert!(
-            applied_clean("a.pdf", 2, 1)
-                .to_lowercase()
-                .contains("verified")
-        );
-    }
-
-    /// ★ **No post-apply sentence offers Undo.**
-    ///
-    /// Rule 3. Every other edit in this shell teaches the operator that undo is
-    /// available until they save; this is the one moment that expectation is
-    /// wrong, so the copy has to correct it rather than merely omit it.
-    ///
-    /// The marking strings are excluded from the sweep on purpose — they say
-    /// "Undo" and **should**, because taking a mark off genuinely is undoable
-    /// and telling the operator so is what makes marking feel reversible.
-    #[test]
-    fn no_post_apply_sentence_mentions_undo_as_a_way_back() {
-        for line in [
-            permanence_statement().to_owned(),
-            applied_clean("a.pdf", 1, 1),
-            applied_with_residuals("a.pdf", 1, 1),
-            confirm_checkbox().to_owned(),
-        ] {
-            let lower = line.to_lowercase();
-            assert!(
-                !lower.contains("undo")
-                    || lower.contains("not undo")
-                    || lower.contains("not be undone"),
-                "a post-apply sentence offers Undo, which is the one place in \
-                 pdfcer that learned expectation is wrong: {line}"
-            );
-        }
-    }
-
-    /// ★ **A residual outcome and a clean one do not share a sentence.**
-    ///
-    /// Rule 1 mechanically: the residual form must name the leftover count in
-    /// the same sentence as the success, and must not be reachable by softening
-    /// the clean form.
-    #[test]
-    fn the_two_outcomes_read_differently_and_the_residual_one_names_its_count() {
-        let clean = applied_clean("survey.pdf", 4, 2);
-        let residual = applied_with_residuals("survey.pdf", 4, 2);
-        assert_ne!(clean, residual);
-        assert!(
-            residual.contains("NOT be removed") && residual.contains('2'),
-            "the residual outcome must name what is left, in the same sentence \
-             as the success: {residual}"
-        );
-        assert!(
-            !clean.contains("could NOT"),
-            "the clean outcome must not carry the residual wording: {clean}"
-        );
-    }
-
-    /// The suggested name can never be the file that was opened.
-    ///
-    /// The suffix is the mechanism; `crate::dialogs::redact` asserts the
-    /// resulting path. This asserts the half that lives in the catalog, in the
-    /// shape `crate::text::ocr`'s equivalent test established.
-    #[test]
-    fn the_suggested_name_differs_from_the_original() {
-        assert!(suggested_suffix().starts_with('-'));
-        assert!(confirm_button().contains("as…"), "it must read as a prompt");
-        assert!(
-            !confirm_button().to_lowercase().contains("ok"),
-            "the label IS the consequence"
-        );
-    }
-
-    /// Every refusal says something different, and each names its own cause.
-    #[test]
-    fn each_named_refusal_says_something_different() {
-        use crate::redact::RedactApplyRefusal as R;
-        let all = [
-            R::NothingToApply,
-            R::FullRewriteUnavailable {
-                reason: "hybrid".to_owned(),
-            },
-            R::MaterialisedDocumentUnreadable {
-                reason: "bad xref".to_owned(),
-            },
-            R::CoreRefused {
-                reason: "page 2 is an image".to_owned(),
-            },
-            R::VerificationFailed {
-                survivors: vec!["x".to_owned()],
-            },
-        ];
-        let mut seen: Vec<String> = Vec::new();
-        for refusal in &all {
-            let s = refusal_message(refusal);
-            assert!(!s.is_empty());
-            assert!(
-                !seen.contains(&s),
-                "{refusal:?} repeats a sentence another refusal already uses"
-            );
-            seen.push(s);
-        }
-        assert!(
-            refusal_message(&all[3]).contains("page 2 is an image"),
-            "the engine's own diagnosis is the actionable half and must survive"
-        );
-    }
-
-    /// The census reads as an answer at zero and as a warning above it.
-    #[test]
-    fn the_census_changes_shape_rather_than_only_its_number() {
-        assert!(marks_count(0).contains("No redaction marks"));
-        assert!(!marks_count(0).contains('0'));
-        assert!(marks_count(3).contains("STILL IN THIS FILE"));
-    }
-}
+mod tests;

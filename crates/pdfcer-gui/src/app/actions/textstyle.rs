@@ -145,6 +145,7 @@ use pdfcer_core::text_edit::{
 use crate::app::state::OpenDoc;
 use crate::app::status::decline;
 use crate::text::status as t;
+use crate::text::textedit::ReflowRefusal;
 
 /// One property of a text run, and the value the operator chose for it.
 ///
@@ -633,6 +634,53 @@ fn refusal_of(error: &FormatError) -> t::TextStyleRefusal {
     }
 }
 
+/// **Which sentence the engine's reflow refusal earns.**
+///
+/// # ★★★ The same shape as [`text_style_refusal`] above, and for the same rule
+///
+/// The engine's error is a *diagnosis*; the operator needs a *next step*, and
+/// the two are not the same list. `ReflowApplyError` has ten variants and this
+/// maps them onto the four things an operator can do about them — save and
+/// reopen, remove the protection, accept that this text cannot be addressed, or
+/// stop. Wording each engine variant separately would put ten operator-facing
+/// decisions in an error type that was written for a library.
+///
+/// # ★★ `Unsupported` is the one judgement call, and here is the reasoning
+///
+/// The engine raises it with three different sentences inside a `String`, and
+/// this deliberately does **not** match on that string — a sentence is not an
+/// API, and a shell that branched on somebody else's prose would break on a
+/// typo fix. Of the three:
+///
+/// | the engine's case | reachable here? |
+/// |---|---|
+/// | *"the page's content was already edited this session"* | **no** — [`reflow`]'s own forecast declines first, with [`ReflowRefusal::PageAlreadyEdited`] |
+/// | *"the page set was changed this session"* | **yes**, and it is the one this arm is for |
+/// | *"the page has no `/Contents` to reflow"* | **no** — the operand is a caret in existing text, and a page with no content has no text to put a caret in |
+///
+/// ⇒ So `PageSetChanged` is the honest mapping rather than a guess, and the two
+/// unreachable cases would still land on *"save this file and open it again"*,
+/// which is the right advice for both of them anyway.
+///
+/// ★ `#[non_exhaustive]` on the engine's enum makes the wildcard mandatory
+/// rather than lazy. It answers [`ReflowRefusal::Other`] — *"pdfcer could not,
+/// and your document has not been changed"* — which is true of every variant
+/// this shell has not met, and says the one thing that matters most after a
+/// refusal: nothing was written.
+fn reflow_refusal(error: &pdfcer_core::text_edit::ReflowApplyError) -> ReflowRefusal {
+    use pdfcer_core::text_edit::ReflowApplyError as E;
+    match error {
+        E::Encrypted => ReflowRefusal::Encrypted,
+        E::Unsupported(_) => ReflowRefusal::PageSetChanged,
+        // ★ Three engine variants, one operator fact: pdfcer could not follow
+        // the paragraph's lines back to the operators that drew them. Splitting
+        // them would offer the operator a distinction between "no provenance"
+        // and "extraction failed" that they cannot act on differently.
+        E::NoProvenance | E::Extract(_) | E::Content(_) => ReflowRefusal::CannotTrace,
+        _ => ReflowRefusal::Other,
+    }
+}
+
 #[cfg(test)]
 mod tests;
 
@@ -665,9 +713,37 @@ pub(super) fn reflow(doc: &mut OpenDoc, page: usize, block: usize) {
     // ⇒ The engine's own refusal remains the backstop and is traced by the
     // funnel. This is the wording, not the gate.
     if doc.edit_epoch != 0 {
-        super::record_note(
-            doc.edit_epoch,
-            crate::text::textedit::reflow_after_edit().to_owned(),
+        // ★★★ THE SLOT CHANGED ON 2026-09-04 (O127) AND THE GATE DID NOT, and
+        // the second half of that sentence is the surprising one — so it is
+        // written down rather than left as an absence.
+        //
+        // This forecast reads as over-broad, and by the ENGINE's own gate it
+        // is: `reflow_block` refuses only when *this page's first content
+        // object* has been rewritten this session, while `edit_epoch != 0` is
+        // true after any edit to anything. The obvious remedy — delete the
+        // forecast, let the engine decide, word its refusal — was drafted and
+        // **rejected**, because the engine's gate does not cover the case the
+        // operator was actually in.
+        //
+        // `EditSession::add_text` appends a NEW content stream to the page's
+        // `/Contents` and never touches the first one, so it does not trip the
+        // engine's guard. `reflow_block` then plans from the BASE document,
+        // writes the result into the first content object, and — through
+        // `text_edit_command`'s first-edit branch — **empties every other
+        // `/Contents` entry**. The added text is in one of those entries.
+        //
+        // ⇒ A reflow permitted after an add-text would silently delete text the
+        // operator can see on the page. This forecast is the only thing
+        // preventing that, it is filed as an engine request beside O127's
+        // duplication defect, and it stays until the engine can be asked.
+        //
+        // What DID change is the channel. It used to call `super::record_note`,
+        // which draws under `⚑ About your last edit:` — a slot that says an
+        // edit happened, for a press where none did. See
+        // `app::dispatch::text::decline`, whose four siblings moved for the
+        // same reason on the same day.
+        crate::app::status::decline::record_reflow(
+            crate::text::textedit::ReflowRefusal::PageAlreadyEdited,
         );
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
@@ -700,31 +776,53 @@ pub(super) fn reflow(doc: &mut OpenDoc, page: usize, block: usize) {
         None => request,
     };
     super::apply::vector_edit(doc, "reflow-block", page, 1, |session| {
-        session.reflow_block(page, block, &request).map(|report| {
-            crate::diag::trace(|| {
-                // ui-text-exempt: diagnostic trace, never displayed
-                format!(
-                    // `-applied`, per the convention `forms::import_data`
-                    // records: the funnel writes its own bare-named line for
-                    // the same edit and `.last()` would read that one.
-                    "reflow-block-applied page={page} block={block} lines={}->{} \
+        session
+            .reflow_block(page, block, &request)
+            // ★★★ **The engine's own refusal, worded** — O127, defect 3.
+            //
+            // `funnel::vector_edit`'s error arm traces `detail={error}` and
+            // shows `Declined::EditRefused`: *"That change was refused, and the
+            // document is unchanged."* Nine words, no cause, no remedy — and
+            // reflow has four engine-side causes with four different next
+            // steps. An operator told only that something was refused has been
+            // given the fact he already had.
+            //
+            // ★★ `inspect_err` rather than a `match` around the funnel, and the
+            // ordering is what makes it work: `vector_edit` takes the decline
+            // floor *before* running this closure, so the slot is empty when
+            // this line writes to it — and `BeforeTheVerb::refused` only fills
+            // the slot `if slot.is_none()`, so this specific sentence survives
+            // and the generic one stands aside. That mechanism is `floor`'s
+            // documented purpose (*"unless the verb already said something
+            // better"*); this is the first verb to use it.
+            .inspect_err(|error| {
+                crate::app::status::decline::record_reflow(reflow_refusal(error));
+            })
+            .map(|report| {
+                crate::diag::trace(|| {
+                    // ui-text-exempt: diagnostic trace, never displayed
+                    format!(
+                        // `-applied`, per the convention `forms::import_data`
+                        // records: the funnel writes its own bare-named line for
+                        // the same edit and `.last()` would read that one.
+                        "reflow-block-applied page={page} block={block} lines={}->{} \
                          justified={} height_delta={:.2}",
-                    report.lines_before,
-                    report.lines_after,
-                    report.justified_lines,
-                    report.height_delta
-                )
-            });
-            let mut notes = report.disclosures;
-            // ★★ The line count, added because the engine's own list does
-            // not always carry one and it is the fact the operator can
-            // check by looking. A reflow that changed nothing is a correct
-            // outcome — the paragraph already fitted — and reads as a
-            // failure without a sentence.
-            if report.lines_before == report.lines_after && notes.is_empty() {
-                notes.push(crate::text::textedit::reflow_unchanged().to_owned());
-            }
-            notes
-        })
+                        report.lines_before,
+                        report.lines_after,
+                        report.justified_lines,
+                        report.height_delta
+                    )
+                });
+                let mut notes = report.disclosures;
+                // ★★ The line count, added because the engine's own list does
+                // not always carry one and it is the fact the operator can
+                // check by looking. A reflow that changed nothing is a correct
+                // outcome — the paragraph already fitted — and reads as a
+                // failure without a sentence.
+                if report.lines_before == report.lines_after && notes.is_empty() {
+                    notes.push(crate::text::textedit::reflow_unchanged().to_owned());
+                }
+                notes
+            })
     });
 }

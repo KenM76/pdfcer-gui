@@ -351,10 +351,14 @@ fn draw_tab(
     // so a menu-driven close and the built-in one are the same event
     // downstream, and `DockFrameReport::closed` is true for both.
     let mut close_requested = false;
+    let mut float_requested = false;
+    let mut dock_requested = false;
     if let Some(handler) = ctx.tab_menu.as_deref_mut() {
         let mut tab = TabMenu::new(panel, &response);
         handler(&mut tab);
         close_requested = tab.close_requested();
+        float_requested = tab.float_requested();
+        dock_requested = tab.dock_requested();
     } else {
         response.context_menu(|ui| {
             if ui.button("Close").clicked() {
@@ -363,8 +367,27 @@ fn draw_tab(
             }
         });
     }
+    // ★★ The ORDER these are tested in is the answer to "what if a handler
+    // asked for two of them in one frame", and it is documented rather than
+    // left to whichever `if` happened to be written first.
+    //
+    // **Close outranks everything**, because it is the most emphatic thing
+    // an operator can ask of a surface and the only one that is not
+    // reversible by another click. Float outranks dock, because a tab is a
+    // docked panel: `dock_back` on it is a no-op anyway, and honouring the
+    // no-op over the real verb would make the pair silently order-dependent.
+    //
+    // ★ A tab is only ever one of the two states, so a correctly-written
+    // handler cannot reach this. It is decided here so that an
+    // *incorrectly*-written one has a defined outcome rather than one that
+    // depends on the phase of the layout — the same posture
+    // `DockLayout::mount` takes towards an out-of-range address.
     if close_requested {
         ctx.intents.push(Intent::Close(panel.clone()));
+    } else if float_requested {
+        ctx.intents.push(Intent::Float(panel.clone()));
+    } else if dock_requested {
+        ctx.intents.push(Intent::Dock(panel.clone()));
     }
 
     ctx.reporter

@@ -125,6 +125,7 @@ use crate::manifest::{Shell, Tab};
 
 use super::band;
 use super::ctx::Ctx;
+use super::measure;
 use super::mode_selector;
 use super::plan::{self, StripPlan};
 use super::qat;
@@ -204,7 +205,7 @@ pub(crate) fn render(
     // -----------------------------------------------------------------
     // MEASURE. Every claimant states its natural width before any of them
     // is drawn. All three use the same galley cache and the same padding
-    // constants — see `band::text_width` on why that matters.
+    // constants — see `measure::text_width` on why that matters.
     // -----------------------------------------------------------------
     let qat_wanted = qat::measure(ui, ctx, shell.qat.as_ref());
     let qat_floor = qat::min_width(ui, ctx, shell.qat.as_ref());
@@ -212,15 +213,15 @@ pub(crate) fn render(
     let trailing_wanted = trailing::measure(ui, ctx, shell.trailing.as_ref());
     let trailing_floor = trailing::min_width(ui, ctx, shell.trailing.as_ref());
     let tab_widths: Vec<f32> = visible.iter().map(|t| tabs::measure_tab(ui, t)).collect();
-    let affordance_wanted = plan::overflow_width(visible.len(), band::button_padding(ui), |s| {
-        band::text_width(ui, s, &egui::TextStyle::Button)
+    let affordance_wanted = plan::overflow_width(visible.len(), measure::button_padding(ui), |s| {
+        measure::text_width(ui, s, &egui::TextStyle::Button)
     });
 
     // ★ The measured floor everything on this row turns on: below it,
     // `Button::truncate()` stops shrinking and the control is drawn
     // outside whatever rectangle it was given. See
-    // `band::min_button_width`.
-    let button_floor = band::min_button_width(ui);
+    // `measure::min_button_width`.
+    let button_floor = measure::min_button_width(ui);
 
     // -----------------------------------------------------------------
     // PLAN. Steps 1 and 2: the row's three regions, outermost first.

@@ -169,9 +169,12 @@ pub(super) fn tab() -> Tab {
                 "notes",
                 ribbon::group_markup_notes(),
                 [
-                    command("markup.text_box"),
-                    command("markup.sticky_note"),
-                    command("markup.stamp"),
+                    // ★ All three large, 2026-09-04 — the mockup's Notes
+                    // group is three big controls and nothing else, so the
+                    // whole group is promoted and no order changes.
+                    large("markup.text_box"),
+                    large("markup.sticky_note"),
+                    large("markup.stamp"),
                 ],
             ),
             // ---------------------------------------------------------------

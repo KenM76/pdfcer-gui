@@ -80,6 +80,502 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
+## O128 — ◑ **HALF SHIPPED 2026-09-04, AND THE OTHER HALF DOES NOT EXIST** — export and import as text
+
+**Ken, 2026-09-04, verbatim:**
+
+> *"also the engine can export PDFs as text. we should have export/import for
+> that."*
+
+**Status: export SHIPPED, import BLOCKED on the engine. NOT VERIFIED by driving
+— the check is written and was not run.**
+
+### The export half — shipped
+
+**File ▸ Export ▸ Export text…**, beside Export DXF, Export image and Export
+form data. `crates/pdfcer-gui/src/dialogs/export_text.rs`,
+`app::actions::export::text`, `app::actions::exporttext`,
+`crate::text::export_text`.
+
+* **Which pages** — every page (the default), this page only, or a typed range.
+  The range box is the print dialog's own parser, so `5,1-2` and `1-4` mean here
+  what they mean on Print.
+* **What it writes** — at its defaults, byte-for-byte the string
+  `Copy document text` already puts on your clipboard. One answer to *"what is
+  the text of this document"*, reaching two destinations. Optional extras, all
+  off by default and all named in the receipt: a visible `----- Page N -----`
+  line instead of the invisible page break, Windows line endings, a UTF-8
+  byte-order mark.
+* **UTF-8**, said out loud in the window, because a drawing carries `Ø`, `°`
+  and `±` and anything that guesses a code page mangles all three.
+* **What it cannot carry**, said in the window *before* you press: a table
+  becomes a run of lines, side-by-side columns can interleave, and where the
+  lines and spaces fall is pdfcer's reading rather than the document's.
+* **★ A scanned drawing refuses instead of writing an empty file**, before the
+  save dialog opens, and names `Recognise text` on the File tab. An empty
+  `.txt` on disk is indistinguishable from a successful export of a blank page,
+  and a plotted sheet is the commonest thing this will be pointed at.
+* **Afterwards, off-canvas**: which pages came out empty (by number), pages that
+  could not be read at all, fonts that publish no way to turn their glyphs back
+  into characters, and how many characters fell through as `U+FFFD`.
+
+### The import half — the engine has no route, and this is filed
+
+**`pdfcer-core` cannot turn a text file back into PDF page content**, in any of
+the three senses *"import text"* could mean: there is no document builder, no
+page-level text replace, and `add_ocr_layer` takes positioned words from the
+recogniser rather than a file. The nearest verb, `add_text`, places one run on
+**one** page and *emits* overflow past the sheet rather than paginating — so a
+two-page text file would produce one page with the second page painted off the
+edge, invisible and present. That is a data-loss trap wearing the shape of a
+feature, so it was not built.
+
+**Nothing was drawn for it.** No greyed control, no control that declines when
+pressed, no tooltip implying a round trip.
+
+Filed at
+`D:\Dev\FeatureRequests\pdfce_FeatureRequests\open\request_there_is_no_route_from_a_text_file_back_into_a_pdf.md`,
+asking for either a paginating text placer or a page-level text replace. The
+durable record of the finding is `app::actions::exporttext`'s module header.
+
+### Verification
+
+**NOT VERIFIED**, in those words. `tools/ui-verify/src/checks/export_text.rs`
+(`export_text_writes_the_documents_words`) is written and registered and **was
+not run** — another session owned the desktop, and two harnesses driving one
+focus produce a verdict that is noise. What is proven: 20 unit tests over the
+range, the filename derivation, the page joining, the encoding and every
+disclosure sentence, each one falsified by a planted mutation.
+
+## O127 — ◑ **PARTLY DONE 2026-09-04** — added text duplicates on move, Enter cannot make a new line, and Reflow does nothing
+
+**Ken, 2026-09-04, verbatim, from a real editing session:**
+
+> *"there's a bug I've come across where if you add text once it works, but if
+> you add text a second or third time it will make duplicates of you try to move
+> the instances after and make a duplicate for every new text box that you added
+> regardless of which one you move, with the exception that if you make a text
+> box, switch tools and make another one, then the first one doesn't start
+> making duplicates. also can the enter key create new lines when we are editing
+> or creating text? I also haven't seen the reflow option actually work with
+> anything when I press it."*
+
+### ★★★ The exception he noticed IS the diagnosis, and it is worth more than the report
+
+*"if you make a text box, switch tools and make another one, then the first one
+doesn't start making duplicates."*
+
+Switching tools **clears** something that placing a box **accumulates**. The
+shape that produces exactly this behaviour — including *"a duplicate for every
+new text box that you added"* — is a **pending-placement list appended to on
+each placement and never emptied on commit**, so a later edit re-applies every
+entry still in it and the duplicate count equals the number of boxes added since
+the last clear. Arming a different tool resets the list, which is precisely the
+exception.
+
+⚠ **Do not fix it by clearing on move.** That hides the accumulation and leaves
+the same growing list for the next code path that reads it.
+
+★★ **And it is the signature of a path tested with ONE placement.** A defect
+that survives the first use and appears on the second is what a fixture with a
+single object cannot see — the same shape as the redaction verifier that was
+only ever run on synthetic pages with no embedded font.
+
+### Enter should make a new line
+
+It almost certainly commits today. The whole interaction has to move, not half:
+Enter inserts a break, **something else commits** (`Ctrl+Enter` is the
+convention wherever Enter is a newline, and commit must not be mouse-only), and
+multi-line has consequences — box height, caret movement across lines, and
+whether the engine accepts a multi-line string at all on both the annotation and
+the content-stream paths. If one path takes a single line only, that is disclosed
+rather than silently joined.
+
+### Reflow does nothing
+
+`edit.reflow_block` is registered and carries an icon. The chain from command to
+engine stops somewhere. ★ If it turns out to need an operand he is not giving
+it, **that is not an answer on its own** — a control that requires something says
+so before it is pressed (R9) or after (a worded decline, O116's precedent).
+Silence is this project's founding defect class.
+
+### ★★★ VERDICT 2026-09-04 — all three located, two fixed here, one filed
+
+| # | cause | where | status |
+|---|---|---|---|
+| 1 | duplicates on move | **`pdfcer-core`**, `edit.rs` `text_edit_command`'s `if first_edit {` gate | **filed** — reproduced by a test here; the fix is not ours to make |
+| 2 | Enter cannot make a new line | this shell, `canvas::textedit::keys` | **fixed** |
+| 3 | Reflow does nothing | this shell — it was answering, in the wrong slot | **fixed**, with one gate deliberately kept |
+
+#### 1 — the accumulating list is `/Contents`, and it is in the engine
+
+`add_text` appends a **new content stream object** to the page's `/Contents` and
+never touches `contents[0]`. Every content surgery — `transform_objects` (which
+is the verb a text drag reaches; `move_objects` is path-only), `edit_text`,
+`format_text`, `delete_object`, `reflow_block` — reads the **whole `/Contents`
+list concatenated**, splices, and writes the entire result back into
+`contents[0]`. It therefore *must* empty `contents[1..]`, and it does — but only
+`if first_edit`, i.e. only the first time that session rewrites `contents[0]`.
+
+Text added **after** that first rewrite is folded in **and left in place**, so it
+renders twice, and gains another copy on every subsequent edit.
+
+★★★ **The exception was the diagnosis, exactly as predicted — but what drains
+the list is not a tool change.** *"If you make a text box, switch tools and make
+another one, then the first one doesn't start making duplicates."* Switching
+tools is how he reaches Select to drag the first box, and **that drag is the
+`first_edit == true` sweep**. It folds the first box into `contents[0]`
+permanently, so the first box is the only one that can never duplicate.
+
+Reproduced by `crates/pdfcer-gui/tests/added_text_duplicates_on_a_later_edit.rs`
+— three tests, written to pass on the broken engine and go **red** on the fixed
+one, in `engine_overlay_skew.rs`'s shape. Filed as
+`request_added_content_is_duplicated_by_the_next_content_edit.md`.
+
+★★ **Never tested end to end, and this is the more useful half.** No file in
+`pdfcer-core/tests` mentions both `add_text` and a move verb. Every existing test
+**places once, or edits once** — which is exactly what cannot see a defect that
+survives the first placement and appears on the second.
+
+⚠ **A second, worse defect found while diagnosing it:** `reflow_block` guards
+only on `contents[0]`, which `add_text` does not touch — so a reflow after an
+add **silently deletes the added text**. Filed in the same request. See 3.
+
+#### 2 — Enter now means one thing everywhere
+
+| draft | Enter | Ctrl+Enter | Escape | click away |
+|---|---|---|---|---|
+| dragged **box** | a line break | commit | abandon | commit |
+| clicked **point** | a line break *(new)* | commit | abandon | commit |
+| existing **run** | a worded decline *(was: a silent commit)* | commit | abandon | commit |
+
+`Ctrl+Enter` commits **every** draft, so commit is never mouse-only.
+
+★★ **Multi-line reaches the engine intact on the authoring paths, and cannot on
+the editing path** — read, not assumed:
+
+* boxed `add_text`: `
+` is a **hard paragraph break**, wrapped independently per
+  paragraph. Intact.
+* point `add_text`: `
+` is a **named refusal** — it has no code in any standard
+  encoding. So a clicked draft that gains a line break is promoted to a boxed
+  request at the commit, with the box read off the **page's own crop box** (click
+  → right edge, click → bottom edge). Nothing is invented, and it is disclosed.
+* `edit_text`: a `
+` is refused by name. A show operator **is** one line. Hence
+  the decline, which names both routes out.
+
+Caret movement across lines came with it — Up, Down, Home and End previously did
+nothing or jumped to the ends of the whole draft
+(`canvas::textedit::lines`).
+
+#### 3 — Reflow was answering him, in the slot that reads as a footnote
+
+All four shell-side refusals called `record_note`, which the bar draws under
+**`⚑ About your last edit:`** — truncated to 45 % of the bar — for a press
+where **nothing had happened**. `app::status::decline`'s own header had already
+ruled on that exact swap: *"an operator who reads 'About your last edit' after a
+gesture that did nothing has been told a small lie confidently."*
+
+They now wear `⊗`, through `ReflowRefusal`, and the engine's own refusal is
+mapped to a sentence instead of collapsing into *"that change was refused."* The
+tooltip now leads with the two preconditions before the press (R9).
+
+⚠ **The `edit_epoch != 0` gate is KEPT**, and that is the one thing here a
+reader will want to argue with. It looks over-broad next to the engine's own
+condition, and it is — but the engine's condition does not cover `add_text`, and
+a reflow permitted after one **silently deletes the added text** (see 1). Lifting
+it needs the engine change that is now filed. Until then reflow still refuses
+after any edit, and now says so where he will see it.
+
+---
+
+---
+
+## O126 — ◑ **OPEN 2026-09-04** — float / close / dock on every panel, search on Layers, selection highlights its layer, and the export list is short
+
+**Ken, 2026-09-04, verbatim, after approving the A7 mockup:**
+
+> *"I checked the mockup and it is perfect. And you understand that there are
+> options to float, close, and dock those panels, and that there is a search to
+> implement on the layers and selecting an object highlights that layer? No
+> shortcuts or lazy half-implementation. Be sure to implement everything to the
+> fullest of what would be expected by a user. I think we might also have a few
+> more export options available that what is shown."*
+
+### ★★★ "No shortcuts or lazy half-implementation" is the brief, not a preamble
+
+It restates a standing rule of this project — he expects what *surrounds* a
+request too, and enumerating deferrals just moves the work onto him. Each of
+these three is to be built whole, including the parts he did not have to say:
+
+1. **Float / close / dock, per panel.** A floated panel is a real movable,
+   resizable window that remembers position and size **per mode**. Docking it
+   back puts it where it came from, and that survives a restart. Closing the
+   last panel in a stack leaves no dead column. A closed panel is reopenable
+   from View ▸ Panels. ⚠ **Reset layout must recover from all of it**,
+   including a floated panel stranded off-screen by an unplugged monitor.
+2. **Search on Layers.** Narrows as you type, clearing restores, and an empty
+   result owes a sentence — R9 forbids a placeholder but not an explanation.
+   Follows whatever list filtering `panels/forms` and `panels/objects` already
+   do rather than inventing a second.
+3. **Selecting an object highlights its layer** — row emphasised, scrolled into
+   view. ★★ **This is an engine question before it is a UI one**: an object's
+   optional-content membership comes from `/OC` marked content, and if
+   `pdfcer-core` does not expose the object→layer relation it must be requested,
+   not invented. Highlighting the wrong layer is worse than highlighting none.
+
+### ◐ **Item 3 is PART-BLOCKED, 2026-09-04** — the engine cannot answer for a content object
+
+**The relation is not reachable, and it was requested rather than invented.**
+Filed as
+`D:\Dev\FeatureRequests\pdfce_FeatureRequests\open
+equest_which_layer_is_this_object_on.md`,
+which this row names per rule 4 of this file's contract.
+
+What the engine has and has not:
+
+| selection | the relation | why |
+|---|---|---|
+| an **annotation** — a stamp, a note, a cloud, a dimension | **reachable** | `pdfcer_core::annot::Annotation::oc: Option<ObjId>` carries the §8.11.3.3 reference |
+| a **content object** — a path, a text run, an image | **not reachable** | `vector::decompose`'s walk *counts* `/OC` sections and has no `EMC` arm; `pdfcer-render`'s interpreter resolves the group's `ObjId` correctly and then pushes a `bool`, discarding the identity on the next line |
+
+⇒ **Shipped: the half that is true.** Selecting an annotation emphasises its
+layer row and scrolls it into view. Selecting a content object renders
+**nothing** — not a highlight, not a "layer unknown" line, not a greyed row —
+because R9 says an unavailable capability renders nothing, and because the
+alternative is a silence that reads as *"this object is on no layer"*, which
+would be the wrong answer rather than a missing one. The panel's own type is
+three-valued so those two can never be confused:
+`crates/pdfcer-gui/src/panels/layers/highlight.rs`.
+
+★★ **The shell-side workaround was available and was refused.** Re-tokenizing
+the page and keeping our own `/OC` stack is about forty lines of public API. It
+would be a second implementation of `/OC` resolution beside the engine's — the
+"two surfaces drift" failure `pdfcer-core`'s `layers.rs` decision 1 exists to
+prevent — it cannot see OCMD `/VE` policy, and it re-parses a stream the engine
+has already parsed. The request document carries the argument in full.
+
+★ **The reverse — clicking a layer indicating its objects — is not built**, and
+not because it was skipped: it needs an inverse index (`objects_on_layer`) that
+is trivially derivable from the membership above and does not exist without it.
+Named in the request as a second, lower-priority ask.
+
+### ★★ Addendum, same conversation — select-all's glyph, and rotate in the rail
+
+> *"add a select-all glyph. I didn't refuse that."*
+
+**He is right and the record was wrong.** `edit.select_all` carried a written
+refusal from 2026-09-01 — *"no conventional icon … a marquee glyph would say
+'rubber band'"* — authored by a build session, then quoted in the icon coverage
+count, this file, `GLYPH_ADOPTION.md` and **twice in reports to him as a settled
+position**. Quoting had promoted it. ★★★ **A well-argued refusal written by
+whoever happened to be building that day is not an operator decision**, and the
+two are told apart by asking who said it. Shipped 2026-09-04; the surviving half
+of the argument is drawn into the art — the marquee encloses the pointer, so it
+reads as reach rather than as a rubber band.
+
+> *"also add rotate pages to that area, and those should be available in every
+> mode including read."*
+
+Rotate left / rotate right join the rail's control groups.
+
+⚠ **One consequence he should know rather than discover.** `pages.rotate_*`
+writes `/Rotate` — it is a **document edit**, not a view transform. Today both
+are `enabled_when("doc.pages")` with no mode gate, so the commands already work
+in every mode; what is missing is only their placement. But putting them in
+Read means **Read mode can now dirty a document**, which contradicts the
+standing "Read authors nothing" invariant.
+
+⇒ Built as he asked, because he asked. Named here because the alternative — a
+view-only rotation in Read and a real one elsewhere — would be two behaviours
+wearing one button, which is worse than either. If he wants view-only rotation
+instead, it is a different control and should say so.
+
+### ★ The export list: he is right, and the missing one is EMF
+
+Checked against `pdfcer-render`'s own symbols rather than against the note:
+`encode_png`, `encode_jpeg`, `export_svg` / `export_svg_view`, **`export_emf` /
+`export_emf_view`**. The dialog that shipped today offers PNG, JPEG and SVG.
+
+**EMF is the gap, and it is not a nicety** — it is what LibreOffice 24.x reads
+from the clipboard (it cannot read a foreign SVG clipboard entry before 25.2),
+and it is a real vector file Word imports. It comes with `EmfOutcome`, which
+reports what had to become a bitmap.
+
+⇒ EMF as a file format in the export dialog, and EMF as the second clipboard
+entry in the copy-out pass — the engine's measured order is
+`image/svg+xml` → `CF_ENHMETAFILE` → `PNG` → `CF_DIBV5`, one transaction.
+
+⚠ **Do not test EMF with `System.Drawing.Imaging.Metafile`** — GDI+ mis-plays
+`EMR_ALPHABLEND`. Real GDI (`PlayEnhMetaFile`) is what Office uses and plays it
+correctly; the engine's core-api §7.10 has the numbers.
+
+---
+
+## O125 — ✅ **FIXED 2026-09-04** — redaction refuses to do anything, and it should not have to save a new file every time
+
+**Ken, 2026-09-04, verbatim:**
+
+> *"I really hate how when I search for text to redact, or select a text object
+> on the screen to redact, pick the text to redact, then click apply redaction it
+> refuses to redact anything because it always finds text that wasn't redacted,
+> and it always finds all of the text is found that I selected. I really really
+> would like if it still redacted the things it could redact, warn that there
+> were things it couldn't redact (because every time I have tried the tool there
+> always is and it always counts everything I selected as unredactable) but still
+> make the changes it could. What is the purpose of a redaction tool that refuses
+> every time to do any work? Also why does it have to save to a new file right
+> away? Why can't it just wait on saving until I choose to save over the existing
+> file or save as a new file?"*
+
+And, ruling on the fallback:
+
+> *"if the engine can't hold it we need to leave it up to the user to decide to
+> overwrite the original or save to a new file, and just add another option to
+> save a copy before overwriting the orginal. If someone is saving their changes
+> while redacting they aren't going to keep having to save a new file every
+> time."*
+
+### ★★★ Part 1 is a bug, not a policy, and "always" is the tell
+
+*"It always counts everything I selected as unredactable"* is a **measurement**,
+not an opinion. A tool reporting 100 % residuals on every attempt is almost
+certainly measuring the wrong surface.
+
+**Leading hypothesis:** `text::redact::raw_residual_line` fires when a removed
+string *"no longer appears in any page content, but that same byte sequence
+still occurs somewhere in the saved file."* ⇒ **If the redacted copy is written
+as an incremental update, the previous revision is retained in the file by
+construction**, so a raw-byte scan finds every removed string, every time, for
+everything. That reproduces his report exactly — the "always" and the "all of
+it" both.
+
+★★ **And the code already contradicts its own documentation.** That same
+function's doc comment says a raw-byte match *"is reported rather than claimed
+removed"* — disclose, never refuse. Something downstream refuses anyway. The
+behaviour he is asking for is the behaviour that was designed.
+
+⇒ **Redact what it can, disclose what it could not, make the change.** Never
+refuse the whole operation because part of it was un-scrubbable. Rule 4 in its
+purest form: *render normally; report separately; both.* The disclosure stays
+strong — he is not asking to be told less, he is asking not to be blocked.
+
+### Part 2 — the forced save-as, and why his objection defeats its argument
+
+`dialogs/redact.rs`'s `commit` asks for a path every time and never suggests the
+open file, on a recorded argument: *"on this operation that is the difference
+between a copy and the destruction of the only remaining source of the content
+being removed."*
+
+**The original is on disk, untouched, until he chooses to overwrite it.**
+Deferring the write destroys nothing; the *overwrite* is the irreversible act,
+and it is his to make — with Save or Save As, like every other edit.
+
+### ★★ His ruling on the fallback, which is now the spec if the engine cannot hold it
+
+If `EditSession` cannot carry applied redactions — if `apply_redactions`
+produces finished bytes rather than a session mutation — then **do not force a
+new file anyway.** Three choices at save time, his words:
+
+1. **Overwrite the original.**
+2. **Save to a new file.**
+3. **Save a copy first, then overwrite the original** — a new option, and the
+   one that makes the other two safe to offer.
+
+> *"If someone is saving their changes while redacting they aren't going to keep
+> having to save a new file every time."*
+
+★ Option 3 is worth more than this feature. It is the general answer to *"this
+save is irreversible"* and belongs wherever that is true, not only here. Build it
+so redaction is its first caller rather than its owner.
+
+★★ Whatever the route, **warn once at the moment the original is overwritten** —
+a redacted file replacing its source cannot be undone. A warning, not a refusal;
+the distinction is the whole of this row.
+
+### Also to find out
+
+Whether this path was ever tested end to end. A tool that refuses on every real
+document suggests its tests only ever ran on a fixture with no residuals.
+
+**Answered: no, not in any way that could have caught this.** Every fixture the
+redaction suite used was synthetic, uncompressed and drawn in a Base-14 font —
+a document with nothing for a coincidence to hide in, which is precisely why a
+byte-run inside an embedded font program had never appeared. Both halves of the
+suite now run against `fixtures/a1-titleblock.pdf`, a real CAD title block with
+compressed content streams and a subsetted embedded font, and that is the
+fixture whose `name` table describes its ligatures as *"Classic construction"*
+— the string that made the tool refuse to redact the word *construction*.
+
+---
+
+## ★★★ How it was answered, 2026-09-04 (evening) — and the engine moved the same afternoon
+
+**Part 1 was fixed in the morning**, and the diagnosis in the row above was
+right about the shape and wrong about the suspect: the shell's own absence proof
+was counting a byte-run inside an **embedded font program** as a leak, so a
+document whose font advertises a *"Classic construction"* ligature could not
+have the word *construction* removed from it. Fixed in
+`crates/pdfcer-gui/src/redact/proof.rs`; the engine had removed the text
+correctly every time.
+
+**Part 2 was answered by the engine, in full, within hours of being asked.**
+The request `request_apply_redactions_into_the_session.md` went out at midday
+saying the deferral could not be built —
+`redact::apply_redactions` took a `&Document` and returned `Vec<u8>`, and
+`EditSession` had no way to take the result back. `Pass 250.1` (`225db51`)
+shipped `EditSession::apply_redactions` the same afternoon. So the fallback
+ruling in this row is **not** what was built: the deferral itself was.
+
+### What he gets
+
+**Three destinations, and the default is the one he asked for.**
+
+| destination | what it does |
+|---|---|
+| **This document** — *the default* | the marked content leaves the document he is looking at, **nothing is written**, and Save / Save As decide where it lands, like every other edit |
+| **A new file** | unchanged from this morning: the picker, with a name that is never the source |
+| **Replace `<name>.pdf`** | unchanged: no picker, a checkbox naming the file, an atomic temp-then-rename write |
+
+★★ **The warning at the overwrite stayed**, exactly as this row demanded — a
+warning, not a refusal.
+
+### ★★★ The property this row's fallback did not have to worry about, and the
+deferral did
+
+A redaction that can be saved **incrementally** is theatre: an incremental save
+keeps the previous revision inside the file, so the removed bytes are still
+one `startxref` hop away. The request asked the engine to make that impossible
+by refusing the save.
+
+**The engine declined to refuse, and removed the hazard instead.** Its verb
+*collapses* the session — it serialises the document, runs the removal, and
+adopts the redacted bytes as a **brand-new base** with an empty edit stack — so
+there is no un-redacted revision left for any save mode to preserve. That is a
+stronger guarantee than the refusal, and it was **measured rather than
+believed**: straight after an apply the incremental save carries no `/Prev` at
+all, and after a further ordinary edit it carries one whose prior revision is
+the redacted base. The removed text is absent from the whole file in both
+states, on a synthetic fixture and on the real drawing.
+
+### ★★ What it costs him, and he is told before he presses the button
+
+**Applying into the document clears the undo history** — the whole log, not
+just the redaction. That is the engine's finalizing design and his own ruling
+(*"finalizing the document and can't be undone is ok for now"*), and the price
+of accepting it was that he must be told **before** he commits, not after. The
+dialog names the number of steps, in the warning colour, between the
+destination choice and the confirm control.
+
+⚠ **And a defect that would have made the whole feature a silent loss.** A
+collapsed session reports `is_modified() == false` — correctly, since the
+redacted bytes *are* its base — and the shell's one unsaved-edits predicate
+read that as **clean**. Apply a redaction, close the document, and it would
+have gone with no tab marker, no question and no file. The predicate now has a
+third term.
+
 ## O124 — ✅ **FIXED 2026-09-04** — the canvas fades content at the edges of the view; it should render true
 
 > *"the canvas does a fading around the edges on stuff shown at the edges of the
@@ -165,7 +661,12 @@ in the GUI — you were at the keyboard.
 
 ---
 
-## O123 — ◑ **OPEN 2026-09-04** — A7: one dock, master–detail, a one-line tool status, and selection controls in the left rail
+## O123 — ◐ **PARTLY DONE 2026-09-04** — A7: one dock, master–detail, a one-line tool status, and selection controls in the left rail
+
+> **Parts 1–6 shipped 2026-09-04. The left rail — his last paragraph — is NOT
+> started, by the sequencing note at the foot of this row.** What landed is
+> recorded at the end of the row, after his words and the reasoning, so that a
+> reader meets the request before the answer.
 
 **Ken, 2026-09-04, verbatim:**
 
@@ -242,6 +743,135 @@ defect where three panels shipped unreachable with every gate green. That landed
 The right dock (parts 1–6) first; the rail second. They share the dock layout
 and building them in one pass would mean two large changes in one file with no
 green state between them.
+
+---
+
+### ✅ What shipped, 2026-09-04 — parts 1–6
+
+**1 · The Tool panel is gone, and its status is one line of permanent chrome.**
+`crate::app::toolstatus` draws *name — sentence — [Put this tool down]* into a
+strip the **right dock reserves above its columns**. New shell seam:
+`egui_shell::dock::banner`, `Dock::with_side_banner(side, height, handler)`,
+region `dock.<side>.banner`. It is chrome rather than a stack because
+`plan::MIN_STACK_HEIGHT` is 80 pt and `TAB_BAR_HEIGHT` alone is 24 — a 26 pt
+stack is a tab bar with two points under it. R7-clean: the shell knows a
+rectangle, a height and a closure.
+
+★ Two things the strip does that the panel could not: it **cannot be closed**,
+and it is drawn for `CanvasTool::Place` — the dialog-armed placement that has no
+ribbon command to name (O66) — because a missing NAME suppresses the name and
+never the sentence.
+
+★ *Put this tool down* is **absent** when `Select` is armed. Select is the
+resting state, so the button would change nothing, and R9 forbids a dead
+control — which is an error `mockups/pdfcer-shell.html` contains and this build
+does not copy.
+
+**2 · Every live control moved to Properties. None was deleted.**
+`crate::panels::properties::tool`, drawn **first** in the panel body:
+
+| control | from | to |
+|---|---|---|
+| text pen font picker | `panels::tool::armed::options` | `properties::tool::text_pen` |
+| text pen size | same | same |
+| text pen colour swatch | same | same |
+| the pen's disclosure note | same | same |
+| circular measure pick list, one removable row per point (O107) | `panels::tool::armed::measure_points` | `properties::tool::measure_points` |
+| *Scale line weight* (O51) | `panels::tool::armed::scale_switches` | `properties::tool::scale_switches` |
+| *Keep the inner margins* | same | same |
+| *Allow the artwork to distort* | same | same |
+| the switches' note | same | same |
+| the disclosure block (Block C) | `panels::tool::disclosures` | `properties::disclose` |
+| every stage's **second** sentence | the armed block's second label | the strip's **hover** |
+
+★★ The tool→controls mapping is a **shipped pure function**,
+`properties::tool::block_for`, rather than a `match` inside a draw call — because
+the last time these switches moved they landed in a branch `Select` cannot reach
+and *"every unit test in the chain passed. Nothing tested that the control is on
+screen."*
+
+⚠ **The one genuine subtraction is the tool LIST**, which is what he asked for
+(*"its buttons duplicate the ribbon and go"*). It was the answer to a
+discoverability defect; that is recorded in `app/toolstatus.rs`'s header rather
+than argued away.
+
+**3 · The rows ellipsise, and this reverses `REVIEW_TRIAGE.md` §4 on his
+instruction.** `panels::elide_to_width` shortens each row against **its own**
+room (the pane less that row's indent and expander), ends it in one ellipsis, and
+the full text is on hover — including on the point rows and the capped-rows
+notice, which never carried one. `ScrollArea::both` becomes `vertical`: the
+horizontal axis existed to reach the part of a row past the pane, and there is no
+such part now. `SALVAGE.md:44`'s actual requirement — *no **silent** loss* — is
+still met.
+
+**3/4 · Objects over Properties, in the Tool panel's room.** Edit's right side is
+one column of two stacks: `[Objects]` then `[Properties, Comments, Fill form,
+Redact, Dimension groups, Attachments]`. The split is the dock's own draggable
+stack splitter (`dock.right.0.split.row.0`). ★ Per `SHELL_LAYOUT_PROPOSAL.md`
+§2.1 the linkage was already real since 2026-08-26 — a row click raises
+`Action::SelectObject` and Properties reads the same canvas selection. **What
+changed is room, not linkage.**
+
+**5 · One left dock.** Edit's left side is ONE stack of five tabs: Pages,
+Bookmarks, Layers, Signatures, Fonts. Overflow is the dock's existing affordance,
+the same three-rung ladder `RIBBON_SCALING.md` documents.
+
+**6 · 360 pt in Edit, 320 elsewhere.** `EDIT_INSPECTOR_WIDTH` beside
+`INSPECTOR_WIDTH` in `app/modes/defaults.rs`. *Remembered per mode* needed no
+new mechanism: `SideLayout.width_pts` lives on a `DockLayout` that
+`Modes::record_layout` saves as a **per-mode named workspace** on every
+`layout_changed`. The constant is only what an unremembered profile starts from.
+
+### ★★★ Where the 47-word refusal sentence went, and why that is permitted
+
+To **Properties**, at the top of the body, verbatim and wrapped.
+
+The status bar was checked rather than assumed, because it is the tempting
+answer. `app::status::disclosure::edit_disclosure` **already reads the same
+`last_edit_disclosure` slot** — so the bar is not being asked for permission to
+mention it, it mentions it today. What the bar may not do is make it *readable*:
+`disclosure_line`'s four R128 rules include `truncate()` rather than wrapping
+(*"wrapping is how a one-row bar becomes a two-row bar, which is the feedback
+loop with extra steps"*) and a bounded sub-region. Forty-seven words under those
+rules is a hover, not a disclosure. **So the decline slot is not the home, and it
+keeps its elided line unchanged.**
+
+Properties is permitted for the identical property the Tool panel relied on — **a
+dock panel's width is the dock's, decided before the body draws**, so wrapped
+text drives nothing — and for a precedent inside the same module:
+`annotdelete::section` already sends *"a permanently-refused capability's
+explanation to the surface that describes what is selected"*.
+
+It moved from **last** in the Tool panel to **first** in Properties, on
+`REVIEW_TRIAGE.md`'s rule: *"a caveat below a list arrives after the operator has
+already drawn a conclusion."*
+
+### What was removed from the registry
+
+`view.panel_tool` and `Panel::Tool`. Command count 131 → **130**, the first
+decrement that counter has taken; icon-naming count 120 → 119. Fifteen strings
+went with the tool list (`tools_heading`, `tools_hint`, `row_home`, the nine
+`row_*`, `pointer_heading`, `armed_heading`, `no_document`); every other string
+in `text::tool` was re-homed rather than deleted.
+
+### Checks
+
+Written, and **NOT RUN** — the operator was at his keyboard and a driven run
+flashes windows at him:
+
+- `the_first_frame_names_the_armed_tool` (rewritten from
+  `the_first_frame_names_the_tools`) — the dock's `dock.right.banner` **and** the
+  application's `toolstatus` region, plus a pixel: a constant-height banner
+  publishes a rectangle whether or not it painted anything.
+- `the_inspector_is_one_master_detail_column` (new) — both bodies on screen, the
+  detail under the master in the same column, a splitter between them, zero
+  elided rows on `a1-titleblock.pdf`, and the pane's right edge sampled as clean.
+- `the_armed_tools_settings_are_in_properties` (new) — three launches, one per
+  moved block.
+- Re-pointed: `scale_switch`, `measure_circular_points`, `double_click_text`.
+
+---
+
 
 ---
 
@@ -471,12 +1101,127 @@ directly, as the CLI does.
 
 ### Status
 
-◑ **The FILE-EXPORT half shipped 2026-09-04. Copy-out and EMF did not, and
-that is a scope line rather than a forgetting.**
+◑ **File export shipped 2026-09-04 in two passes — PNG / JPEG / SVG in the
+first, EMF in the second. Copy-out shipped in a THIRD pass the same day, page
+and selection both.** What keeps this row at ◑ rather than ✔ is item 3 below
+and nothing else: **none of the three passes has been opened in a running
+binary.**
+
+★ The paragraph that follows was the second pass's status line and is kept
+rather than overwritten, because the stop it describes was correct and the
+reason it gives is the whole design: *"COPY-OUT DID NOT SHIP AND WAS NOT
+ATTEMPTED, and that is a stop with a reason rather than a remainder."* A reader
+who finds only the finished feature learns nothing about why it was refused as
+half.
+
+**EMF landed the same afternoon** as a fourth radio in the same window, through
+`emf::export_emf_view`, with `EmfOptions::background: None` for the transparent
+case — the engine's own CLI calls that *"EMF's natural state (nothing is drawn
+where nothing was painted)"*, which is the source for this window offering
+transparency on a format with no alpha channel. Its disclosure names all five
+reasons a part of the page became a bitmap (see-through solids, blend modes,
+gradients, images, transparency groups) as a breakdown of one total, plus the
+warning that LibreOffice 24 ignores the nonzero fill rule and may draw
+multi-loop shapes with holes — that reader being the entire reason the format
+is offered at all.
+
+★ **A finding worth keeping from building it:** `pdfcer_render::emf::EmfOutcome`
+is `#[non_exhaustive]` **and derives no `Default`**, so nothing outside
+`pdfcer-render` can construct one — not even an empty one. Its sibling
+`ExportTally` does derive `Default`, which is why `svg_fidelity` could be
+tested against the engine's own type and `emf_fidelity` cannot. The shell
+copies the eleven counters into its own `EmfCounts` for exactly that reason,
+and the standing cost is that **a counter the engine adds will not be disclosed
+until that copy gains the field.**
+
+### ★★★ COPY-OUT SHIPPED 2026-09-04, in a third pass — `Copy as vector`
+
+**Edit ▸ Clipboard ▸ `Copy as vector`** (`edit.copy_as_vector`, token 408),
+beside Cut / Copy / Paste, with the `copy-as-vector` glyph that had been drawn
+for it and had no button. It copies the **selection** if there is one and the
+**whole current page** if there is not, and places four formats in the measured
+order — `image/svg+xml`, `CF_ENHMETAFILE`, `PNG`, `CF_DIBV5` — in one
+transaction.
+
+**The two blocks below were both crossed, in the way this row already said they
+should be.** `crates/native-clipboard` exists, on `crates/native-window`'s
+precedent: no dependencies at all, hand-written `extern` declarations, one
+`SAFETY` comment per call, and RAII types rather than careful sequencing — a
+`Staged` handle that frees itself unless the clipboard took it, and an
+`OpenGuard` that closes the clipboard on the success, error **and panic** paths.
+So neither `clipboard-win` nor `windows` was adopted after all, and
+`THIRD_PARTY_LICENSES.md` did not change by a single row: a first-party
+workspace member with an empty `[dependencies]` block adds nothing to the
+shipping graph.
+
+★★ **One deliberate departure from the CLI's worked example**, and it is the
+thing that makes *"the whole transaction lands or nothing is placed"* true
+rather than aspirational. The CLI creates the metafile handle **inside** the
+clipboard-open guard. `native-clipboard` creates **every** handle — registers
+every name, allocates every block, and hands the EMF bytes to
+`SetEnhMetaFileBits` — *before* the clipboard is opened. So a malformed
+metafile, an allocation failure or an unregisterable name is a refusal that
+leaves the operator's clipboard exactly as it was, instead of a failure
+half-way through replacing it. It also discharges a check
+`app::actions::export` had written down as owed: *"the clipboard path is the one
+that owes this check, because there `SetEnhMetaFileBits` is handed a raw buffer
+and a bad one is a GDI failure rather than a refusal."* It is now a refusal,
+using the operating system's own validator, before anything is destroyed.
+
+★ **`degrades_word_to_a_picture` is asked before a single byte is framed**, and
+a payload it answers `true` to is refused with a sentence rather than placed.
+The half-built copy-out this row spent four paragraphs arguing against is not
+merely unbuilt — it is *unreachable*.
+
+⚠ **Still owed: the driven check.** See item 3 below. Nothing in this pass was
+opened in a running binary either; the desktop was owned by a concurrent track
+and `ui-verify` was deliberately not run.
+
+### ⚠ Why copy-out shipped as nothing in the SECOND pass — kept, because both
+blocks were real and both were crossed the way this said they should be
+
+Two blocks, neither of them fixable inside `crates/pdfcer-gui/src/`:
+
+1. **Two dependencies this crate does not declare.** `clipboard-win` 5.4.1 and
+   `windows` 0.62.2 are both already **linked into `pdfcer-gui.exe`** — measured
+   with `cargo tree -p pdfcer-gui -i`, not inferred from a lockfile line:
+   `clipboard-win` arrives under `arboard` ‹ `egui-winit` ‹ `eframe`, and
+   `windows` by two routes at once, under `accesskit_windows` ‹ `eframe` and
+   under `pdfcer-print`, which this crate depends on directly. So naming them
+   adopts crates the binary already carries rather than adding anything. But naming them is a `Cargo.toml` edit. And `arboard`, which this
+   crate *can* already reach, is not a substitute: it has no registered-format
+   API, so it cannot place `"image/svg+xml"` or `"PNG"`, which are the two
+   entries that make a Word paste an editable graphic and an Inkscape paste
+   vector.
+2. **`unsafe`, in a crate that forbids it.** `CF_ENHMETAFILE` is a GDI handle
+   rather than an `HGLOBAL`, so the metafile goes on through
+   `SetEnhMetaFileBits` + `SetClipboardData` directly, with a real ownership
+   contract between them. `lib.rs` and `main.rs` both open
+   `#![forbid(unsafe_code)]`, and `forbid` cannot be relaxed from the inside —
+   which is the point of choosing it over `deny`. ★ **This project has answered
+   this exact question once already:** `crates/native-window` is an entire
+   crate for four `user32` calls, and its manifest says why in one sentence.
+   The placement half belongs in a `crates/native-clipboard` on that precedent.
+
+⇒ And the reason it is *nothing* rather than the raster half: **placing only
+PNG and `CF_DIBV5` makes Word's paste a flat picture** that looks correct at
+100%, cannot be scaled or ungrouped, and is indistinguishable to the operator
+from a feature that does not work. A half-built copy-out costs him the time to
+discover it is not what he asked for.
+
+**What was built, so the next pass is a wiring job:** `crate::clipboard`
+carries the measured `ORDER`, `svg_payload` (Chromium's exact UTF-8-plus-one-NUL
+shape, which is what Office was validated against), `dib_v5` (premultiplied
+top-down BGRA, `BI_BITFIELDS`, sRGB) and `CopyPayload::degrades_word_to_a_picture`
+— all pure, all under test. ★★ **No test touches the real clipboard and none
+ever should:** it is global state on this machine, and a test that placed bytes
+would silently destroy whatever the operator had copied, from a `cargo test` run
+he never connected to his clipboard. Every assertion is on the bytes that would
+have been placed.
 
 **What is on the ribbon now:** File ▸ Export ▸ **Export image…**
 (`file.export_image`, token 124) → `crate::dialogs::export_image`. Format
-(PNG / JPEG / SVG), pages (this one / all / a typed range), resolution with the
+(PNG / JPEG / SVG / EMF), pages (this one / all / a typed range), resolution with the
 pixel count and the `MAX_PIXMAP_EDGE` ceiling shown live, transparency, and JPEG
 quality. The refusal is worded and doubled: the checkbox goes dead beside a
 sentence naming JPEG, and `ImagePlan::impossible` refuses the same combination
@@ -484,24 +1229,45 @@ again at the writer so the property survives a build with a different window.
 The disclosure is off-canvas, after the export, and always states that SVG text
 became outlines — the one loss nothing counts.
 
-**What is NOT built, and is the second pass:**
+**What the third pass built, against that list:**
 
-1. **Clipboard copy-out.** The whole of the operator's second sentence —
-   *"copy and paste anything to other software"*. It needs `clipboard-win`
-   directly (`arboard` cannot register a custom format) and the placement order
-   the engine MEASURED against a real Word paste: `image/svg+xml` +
-   trailing NUL, then `CF_ENHMETAFILE`, then `PNG`, then `CF_DIBV5`, all in one
-   transaction. `crates/pdfcer-cli/src/clipboard.rs` is the worked example.
-   ★ Placing only the raster formats degrades Word's paste to a plain
-   picture, so a half-built version of this is worse than none.
-2. **EMF, as a file and as a clipboard entry.** `emf::export_emf` exists and
-   `EmfOutcome` carries its own disclosure (what became a bitmap). It is what
-   LibreOffice 24.x reads, since that version cannot read a foreign SVG
-   clipboard entry.
+1. ✔ **Clipboard placement.** `crates/native-clipboard` — eleven Win32 symbols
+   across `user32`, `kernel32` and `gdi32`, and it does not name a PDF concept
+   anywhere, which is what would let `egui-shell` take it unchanged.
+   `crate::clipboard::place` is the shell half: it produces the payload, asks
+   the degradation predicate, and maps `ClipFormat` → `Slot` in one function.
+2. ✔ **A selection, as opposed to a page** — and it **fell out cleanly**, which
+   is why it was taken rather than deferred again. Both ends already existed:
+   `EditSession::copy_objects` → `ObjectClip::to_pdf` gives a standalone
+   one-page PDF whose `/MediaBox` is the *selection's* bounds (so what lands in
+   Word is the line-work at its own size, not floating in a page-sized empty
+   rectangle), and `svg::export_svg` / `emf::export_emf` take a plain
+   `&Document` — the `_view` forms are the session variants and a freshly parsed
+   clip has no session. Four lines of plumbing between two things already there.
+   ⚠ It is **page content only**: an annotation-only selection names no content
+   objects, so such a copy takes the whole page rather than refusing, which is
+   the honest answer because a markup's vector form is on the page.
+   ★ The file-export window still does not offer a selection, and that is
+   unchanged and deliberate: *"export this selection to a file"* has a question
+   inside it that a clipboard copy does not — what are the file's bounds? — and
+   the clipboard answers it by construction.
 3. **The driven check.** ⚠ The window has never been opened in a running
-   binary. R1's bar is *an operator can reach it in a real build*, and by that
-   bar this is not finished — stated here rather than implied by a green
-   test count.
+   binary — not for the first three formats and not for EMF. R1's bar is *an
+   operator can reach it in a real build*, and by that bar this is not
+   finished. Stated here rather than implied by a green test count, and stated
+   again because neither the second nor the **third** pass cleared it: the
+   desktop was owned by a concurrent track on both days and `ui-verify` was
+   deliberately not run. The driven check for the copy-out is written and
+   unrun — `Copy as vector` on a page, then a paste into a real Word document
+   through combridge, asserting an inline shape with `svgBlip` in the OOXML,
+   which is exactly the measurement the engine made when it fixed the order.
+
+⚠ **Do NOT check the EMF output with `System.Drawing.Imaging.Metafile`.** GDI+'s
+player mis-plays `EMR_ALPHABLEND`, which is the record that every rasterised
+part of the page becomes — so a GDI+ inspection of a *correct* metafile reports
+a wrong picture, and the obvious next move is to "fix" a writer that was
+right. Real GDI (`PlayEnhMetaFile`) plays it correctly and is what Office and
+Win32 actually use; the engine's core-api §7.10 has the numbers.
 
 `D:\Dev\pdfcer\docs\FEATURES.md`'s `gui` boxes are **not** ticked, and cannot
 be from this side: that tree is read-only until fold-in. The engine's note asks
@@ -509,7 +1275,7 @@ for the tick; it is owed and it is not ours to make.
 
 ---
 
-## O119 — ❓ **A QUESTION FOR YOU, 2026-09-04** — the engine can now put a password on a document and set what it allows. Do you want a way to do it?
+## O119 — ✅ **BUILT 2026-09-04** — the engine can now put a password on a document and set what it allows. You said yes.
 
 **Not something you asked for — something that arrived, and needs your ruling
 before anyone builds it.**
@@ -547,12 +1313,92 @@ rather than that nobody noticed.
    password**, not the one that merely opens it. We can tell you that before you
    press anything — the GUI already knows which password opened the file.
 
-### Status
+### Your answer, and what was built on it
 
-⏸ **Awaiting your ruling on scope. Nothing built, nothing half-built.** The
-capability is recorded in `EDITABLE_SURFACES.md` (§"The two the GATE found,
-2026-09-04") so it cannot go quiet again — which is how it was caught: a gate
-that fails the build when the engine grows something nothing here mentions.
+**"yes add encryption and permissions."** Built the same day.
+
+**Where it is: File ▸ Security, immediately after Export** — exactly where
+`mockups/pdfcer-shell.html` drew it and you approved it. Two large controls,
+`Encrypt…` and `Permissions…`, wearing the two glyphs that had been sitting in
+the icon set waiting for the commands that would use them.
+
+**What `Encrypt…` does, all three of them.** Put a password on a document that
+has none; change the passwords one already has, keeping exactly what it allowed
+before; or take the protection off entirely. One control rather than three,
+because they are one subject and three buttons are three chances to press the
+wrong one — the tooltip names all three so nobody has to guess that *Encrypt*
+also un-encrypts.
+
+**Two password boxes, not one, and the window says why.** The **user** password
+opens the document. The **owner** password changes these settings later. They are
+different things and they are not collapsed: leaving the user box blank makes a
+document that opens with no prompt and still states what it allows, which is a
+genuinely useful thing to want and a baffling one to arrive at by accident. The
+window refuses to let the two be the same, because the owner password ignores
+every permission — so if it also opened the document, the whole list below would
+be decoration.
+
+**What `Permissions…` offers is what `pdfcer-core` actually models, read out of
+its source rather than assumed: eight bits.** Print, Print at full quality,
+Change the contents, Copy text and graphics, Annotate and fill forms, Fill
+existing form fields, Extract for accessibility, Insert/rotate/delete pages.
+
+★★★ **Seven of the eight are tick-boxes and one is not**, and finding that out
+was the useful part of the day. `pdfcer-core` sets the accessibility bit on
+**every file it writes**, whatever the caller asks for — a compatibility rule for
+older readers. A tick-box you could clear would therefore come back ticked in
+the file. So that row is a sentence instead of a control, saying so. It was
+found by a test that failed, not by reading the docs.
+
+### The three things you already knew, on screen
+
+All three, none behind a hover, none waiting for a press:
+
+1. **A permission is a request, not a lock** — the engine's own sentence,
+   verbatim, in red, **above** the tick-boxes. Not re-worded: the CLI prints the
+   same one, and two surfaces wording one limitation differently is worse than
+   either wording.
+2. **A signed document is refused** — and the window draws **no form at all**.
+   It opens, says how many signatures the document carries, explains that
+   protecting it rewrites every byte the signature covers so the signature would
+   no longer match, and tells you the real remedy: protect first, sign second.
+   No greyed boxes, no button that fails when pressed.
+3. **Re-permissioning needs the owner password** — written above the box it is
+   about, before you type anything. It also says you have to type it again even
+   if you used it to open the document, because pdfcer does not keep passwords
+   after using them, and a field you believe you already filled in reads as the
+   program having lost track.
+
+### Saving — the same answer you gave for the redaction
+
+Protecting rewrites every byte, so it raises the question you settled hours
+earlier on `Apply redactions`: *"why does it have to save to a new file right
+away?"* **The mechanism here is that one's, part for part**, deliberately, rather
+than a second answer to a question you have already answered: a new file by
+default with a suggested name that is never the file you have open; replacing
+the original offered and gated behind one extra tick-box that names the file and
+takes no picker; and the write itself atomic — temp file, then rename — so a
+failure half-way cannot leave you with neither document.
+
+The half of your request the engine still cannot do is the same half as there:
+**defer the write to a later Save.** All three encryption verbs hand back bytes;
+none of them can put the result into the document you have open. So after a
+replace the window you are looking at is deliberately out of date, and it says
+so by name, telling you which file to re-open.
+
+### ⚠ What is NOT finished
+
+**The window has never been opened in a running binary.** The headless suite is
+green — the model and the dialog have 22 tests between them — and the
+`ui-verify` check that drives the real thing is **written and was not run**: the
+desktop was owned by a concurrent track that day. R1's bar is *an operator can
+reach it in a real build*, and by that bar this is not signed off. Stated here
+rather than implied by a green test count.
+
+`D:\Dev\pdfcer\docs\FEATURES.md`'s `gui` box for the encryption-authoring row
+is **not** ticked and cannot be from this side: that tree is read-only until
+fold-in. `ENGINE_BACKLOG.md` moves the row from `blocked` to `shipped` with the
+surface named and the same caveat attached.
 
 ★ Worth saying because it is the fourth time: this landed with no note and no
 announcement, and the only thing that made a noise was that gate. The engine's
@@ -5709,10 +6555,63 @@ a selection too small for its grips draw them outside the box, as other editors
 do — accepting that a dense drawing at fit zoom will show grips overlapping
 neighbouring objects?
 
+### ★★★ It IS driven now — 2026-09-04, on his own banana sheet
+
+He asked for the sweep that found it:
+
+> *"you should also try zooming in on the atoms of the banana pdf file and see
+> what happens when you try to draw a box around a molecule and move it, or
+> select the ion and move it, or edit the nodes at that scale. you should check
+> all the mouse actions and capabilities out at each scale where our scaling
+> algorithm changes."*
+
+`ui-verify --check mouse_work_survives_every_render_tier` drives
+`banana.pdf`, steers a closed loop onto the pair of cells at PDF (540, 560) —
+**0.85 pt across, drawn life size** — and at every rung selects them, presses
+the exact centre of the published `canvas.selection-outline`, and drags 40 pt.
+Measured, with the grip box the application itself published:
+
+| zoom | grip box, on screen | what a drag from its centre did |
+|---|---|---|
+| 107 % | **6.0 × 6.0 pt** | `resize-declined reason=Degenerate` — nothing |
+| 2,139 % | **6.0 × 6.0 pt** | `resize-declined reason=Degenerate` — nothing |
+| 15,808 % | 13.4 × 12.5 pt | **moved**, and landed within 0.1 pt of the drop |
+| 2,346,176 % | 16,699 × 16,815 pt | **moved**, and landed within 0.1 pt of the drop |
+
+⇒ **The boundary is 12 pt of grip box**, exactly as the arithmetic says: each
+corner grip takes `GRIP_SIZE_PX / 2 + GRIP_GRAB_SLACK_PX` = 6 pt of the box, so
+four corners meet in the middle of anything smaller. And
+`overlay::MIN_OUTLINE_EXTENT_PX` floors the box at **6 pt** — so the objects
+with the least body to spare are floored to a size at which they have **none**,
+and the floor exists to make them *visible*. The two constants were each right
+alone and are wrong together.
+
+★★ Above 12 pt the body is a **hole, not a region**: at 13.4 × 12.5 pt the four
+corners leave a gap of 1.4 × 0.5 pt in the middle. The harness hits it because
+it computes the box's exact centre from the application's own published rect. A
+hand does not. So "it works above 12 pt" is true of the mechanism and not of the
+operator until the box is past about 20 pt on both axes.
+
+★ **The coordinate conversion is exonerated.** The sweep's pointer probe moved
+the pointer 100 pt at every rung and compared the canvas point the application
+reported against `100 / zoom`: **linear at 107 %, 2,139 %, 15,808 %, 174,259 %
+and 2,346,176 %**, and at the top rung a drag that found the body landed within
+a tenth of a point of where it was dropped. `viewer::screen_to_page`'s
+`(pos.x − image_rect.min.x) / zoom` — all `f32`, over a page rect whose origin
+reaches −12,668,752 at the deepest rung — was the suspect and it holds.
+
+★ **Falsified.** With `handles::grip_at` temporarily answering `Grip::Move` for
+a press inside a box too small to hold its grips, the same rung reports
+`drag: MOVED … landed (40.0, 40.0) pt` and the failure disappears. The plant was
+removed; it is **not** shipped, because which of the two answers to take is the
+question below and it is his.
+
 **Status:** ⬜ **OPEN — half shipped, half is a question.** The shipped half is
-in `canvas::handles::MIN_BODY_STRIP_PX` with its measurement. Not driven: found
-by `widget_move`, whose own press had to be moved to a quarter of the box width
-to get past the grips at all — which is itself the report.
+in `canvas::handles::MIN_BODY_STRIP_PX` with its measurement. **Driven since
+2026-09-04** by `mouse_work_survives_every_render_tier`, which fails on today's
+build with the table above; it was first found by `widget_move`, whose own press
+had to be moved to a quarter of the box width to get past the grips at all —
+which is itself the report.
 
 ---
 

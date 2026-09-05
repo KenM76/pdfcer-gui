@@ -1964,6 +1964,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "native-clipboard"
+version = "0.1.0"
+
+[[package]]
 name = "native-window"
 version = "0.1.0"
 
@@ -2402,8 +2406,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-core"
-version = "0.31.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#04f7ec0a0d65bfcb483a6d172c49297056b6bffa"
+version = "0.37.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#8b24a0a1261da82739bdaa19ac635954013bd548"
 dependencies = [
  "aes",
  "brotli",
@@ -2431,6 +2435,7 @@ dependencies = [
  "egui-shell",
  "embed-resource",
  "flate2",
+ "native-clipboard",
  "native-window",
  "pdfcer-core",
  "pdfcer-print",
@@ -2442,8 +2447,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-print"
-version = "0.31.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#04f7ec0a0d65bfcb483a6d172c49297056b6bffa"
+version = "0.37.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#8b24a0a1261da82739bdaa19ac635954013bd548"
 dependencies = [
  "thiserror 2.0.20",
  "windows",
@@ -2451,8 +2456,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-render"
-version = "0.31.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#04f7ec0a0d65bfcb483a6d172c49297056b6bffa"
+version = "0.37.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#8b24a0a1261da82739bdaa19ac635954013bd548"
 dependencies = [
  "iccce-cmm",
  "iccce-color",

@@ -1,4 +1,5 @@
-//! # `app::actions::redact` — the three arms that mark content for removal
+//! # `app::actions::redact` — the three arms that MARK content for removal,
+//! and the one that removes it
 //!
 //! Split out of [`super::apply`] on 2026-08-18 under rule R2, and the seam is a
 //! real one rather than a line count.
@@ -10,20 +11,50 @@
 //! undo. Moving the arms and leaving the reasoning behind would have been
 //! exactly the split this project's own R2 note warns against.
 //!
-//! ## ★ What is NOT here, and that is the point
+//! ## ★★★ CORRECTED 2026-09-04 (evening) — the removal IS here now, and the
+//! old section said it never could be
 //!
-//! **Nothing in this file removes anything.** Marking is the reversible half of
-//! redaction; the irreversible half is `crate::dialogs::redact`, which reaches
-//! no arm in this funnel at all — it changes no document through the queue, so
-//! it has nothing to order against and no epoch to bump. Routing the one
-//! operation that cannot be undone through a queue that replays would be the
-//! defect, not the tidiness.
+//! What stood here, verbatim, until this afternoon:
+//!
+//! > *"## ★ What is NOT here, and that is the point. **Nothing in this file
+//! > removes anything.** Marking is the reversible half of redaction; the
+//! > irreversible half is `crate::dialogs::redact`, which reaches no arm in
+//! > this funnel at all — it changes no document through the queue, so it has
+//! > nothing to order against and no epoch to bump. Routing the one operation
+//! > that cannot be undone through a queue that replays would be the defect,
+//! > not the tidiness."*
+//!
+//! The middle clause was a **fact about the engine**, not a principle, and it
+//! expired the same day: `EditSession::apply_redactions` (`Pass 250.1`) applies
+//! a redaction into the open session, so the operation now *does* change a
+//! document through the queue and *does* have an epoch to bump. It is
+//! [`Action::ApplyRedactionsIntoDocument`], the fourth arm below, and it goes
+//! through the identical `vector_edit` funnel as the three marking arms.
+//!
+//! ★ The last sentence — *"routing the one operation that cannot be undone
+//! through a queue that replays would be the defect"* — deserves an answer
+//! rather than a deletion, because it names a real hazard. **This queue does
+//! not replay.** `crate::app::actions` drains it once per frame in order and
+//! discards it; the thing that replays is the engine's *undo log*, and the
+//! apply is not in it — the engine clears the log rather than recording a
+//! command, which is precisely why it cannot be replayed backwards into an
+//! un-redaction. The hazard the sentence feared is structurally absent, and the
+//! epoch bump, the texture invalidation and the page resync that the funnel
+//! performs are all things this verb genuinely needs.
+//!
+//! ## What is still NOT here
+//!
+//! **The write.** This arm puts the removal in the session and stops. Where the
+//! bytes go, and when, is `file.save` / `file.save_as` / `file.save_copy`'s
+//! decision, exactly as it is for every other edit — which is what the operator
+//! asked for in `OPERATOR_REQUESTS.md` O125. The two *write-now* destinations
+//! still live in `crate::dialogs::redact` and still reach no arm in this file.
 
 use super::Action;
 use super::apply::vector_edit;
 use crate::app::state::OpenDoc;
 
-/// Apply one of the three marking actions.
+/// Apply one of the three marking actions, or the apply-into-document one.
 ///
 /// Takes the whole `Action` rather than destructured fields, so the match here
 /// is the same shape as the one it was lifted out of and a reader comparing
@@ -31,9 +62,9 @@ use crate::app::state::OpenDoc;
 ///
 /// # Panics
 ///
-/// Never. The `_` arm is unreachable — `super::apply` routes only the three
+/// Never. The `_` arm is unreachable — `super::apply` routes only the four
 /// redaction variants here — and it is spelled rather than `unreachable!()`
-/// because a future fourth variant sent here by mistake should do nothing
+/// because a future fifth variant sent here by mistake should do nothing
 /// visible rather than end the process an operator is mid-edit in.
 pub fn apply(doc: &mut OpenDoc, action: Action) {
     match action {
@@ -47,11 +78,13 @@ pub fn apply(doc: &mut OpenDoc, action: Action) {
         // page has to re-raster because a `/Redact` mark draws a red
         // outline the operator needs to see.
         //
-        // ★ **Nothing here removes anything.** The irreversible half is
-        // `crate::dialogs::redact`, which reaches no arm in this file at
-        // all: it changes no document, so it has nothing to order against
-        // and no epoch to bump, and routing it through here would put the
-        // one operation that cannot be undone into a queue that replays.
+        // ★ **Nothing in THESE THREE removes anything** — corrected
+        // 2026-09-04, when the fourth arm arrived. This comment used to say
+        // "nothing here removes anything" of the whole file and to argue
+        // that the irreversible half could never reach this funnel. See the
+        // module header for why that expired the day
+        // `EditSession::apply_redactions` shipped. Marking is still the
+        // reversible half and these three are still all of it.
         //
         // `.map(|_| Vec::new())` on the first two adapts the engine's
         // `Vec<ObjId>`/`ObjId` to the disclosure list `vector_edit` traces,
@@ -208,6 +241,83 @@ pub fn apply(doc: &mut OpenDoc, action: Action) {
             vector_edit(doc, "redact-unmark", page, 1, |session| {
                 session.delete_redaction_mark(annot_id).map(|()| Vec::new())
             });
+        }
+        // ===============================================================
+        // ★★★ THE ONE THAT REMOVES — `OPERATOR_REQUESTS.md` O125,
+        // 2026-09-04.
+        //
+        // Raised by `crate::dialogs::redact` on its default destination,
+        // after the operator has read a measured report, ticked the
+        // permanence box and been told how many undo steps this discards.
+        // Nothing is written: the redaction lands in the session and Save
+        // decides where it goes, which is the whole of what he asked for.
+        //
+        // ★★ `vector_edit`, NOT `vector_edit_on_page`. A redaction is a
+        // whole-document change by construction — the engine collapses the
+        // session onto a completely new base, every page of it — so the
+        // page-scoped funnel would be a claim this verb cannot make. The
+        // `page` argument below is the trace's, as it is everywhere.
+        // ===============================================================
+        Action::ApplyRedactionsIntoDocument => {
+            let page = doc.view.page_index;
+            // Set inside the closure and read after it, the same shape the
+            // search arm uses for its unreadable-font count and for the same
+            // reason: the closure holds the only `&mut EditSession`, and
+            // `doc` is borrowed for the whole of the call.
+            //
+            // ★★★ `absence_claims` is the load-bearing one. It is
+            // `RedactionReport::redacted_text` — the exact strings the engine
+            // says it removed — and it is what `crate::app::save` greps the
+            // saved bytes for on every subsequent save of this document. Our
+            // engine request promised to keep that proof and to move it to
+            // save time; this is where the promise is kept, and dropping this
+            // assignment would silently retire the shell's only independent
+            // check that a redacted document reaches disk redacted.
+            let mut absence_claims: Vec<String> = Vec::new();
+            let mut disclosed: Option<String> = None;
+            vector_edit(doc, "redact-apply-into-document", page, 1, |session| {
+                // ★ `{:?}` rather than a `Display` impl on the refusal, and
+                // deliberately so. `vector_edit` needs `E: Display` to put the
+                // cause on the trace, and `RedactApplyRefusal` has no `Display`
+                // ON PURPOSE — `check-ui-strings.sh`'s exclusion 3 permits a
+                // diagnostic `Display`, but this type is rendered to the
+                // operator by `crate::text::redact::refusal_message` and giving
+                // it a second, uncatalogued rendering is how the two drift.
+                // Debug is unambiguously diagnostic and cannot be mistaken for
+                // copy. The operator-facing half of a refusal here is the
+                // funnel's own worded decline; the dialog has already refused
+                // by name for every cause reachable in practice.
+                crate::redact::apply_into_session(session)
+                    .map_err(|refusal| format!("{refusal:?}"))
+                    .map(|applied| {
+                        absence_claims = applied.report.redacted_text.clone();
+                        // The residual list the DIALOG showed is built from more
+                        // sources than the report alone (retained marks, uncut
+                        // vector geometry, kept clips, raw-byte residuals). The
+                        // sentence here counts the same way, so the number the
+                        // operator acknowledged and the number he is told about
+                        // afterwards cannot disagree.
+                        let residuals =
+                            crate::redact::residual_count(&applied.report, &applied.verification);
+                        let line = crate::text::redact::applied_into_document(
+                            applied.report.marks_applied,
+                            applied.report.pages_redacted,
+                            residuals,
+                            applied.undo_steps_cleared,
+                        );
+                        disclosed = Some(line.clone());
+                        vec![line]
+                    })
+            });
+            // ★ Recorded only on success. `disclosed` is `None` on every
+            // refusal path, and an empty claim list means `crate::app::save`
+            // proves nothing — which is correct, because on a refusal the
+            // session was never redacted and there is nothing to prove about
+            // it. Assigning unconditionally would have armed the save-time
+            // proof with the strings from a removal that did not happen.
+            if disclosed.is_some() {
+                doc.redaction_absence_claims = absence_claims;
+            }
         }
         _ => {}
     }

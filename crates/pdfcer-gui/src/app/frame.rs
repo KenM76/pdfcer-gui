@@ -605,11 +605,45 @@ impl eframe::App for PdfcerApp {
         // no operator has, which is the failure this whole channel exists to
         // avoid.
         if let Some(id) = scripted_invoke() {
+            // ★★★ **An OPERAND, for the commands that need one** — added
+            // 2026-09-04 with the panel-layout verbs.
+            //
+            // `view.panel_float`, `_dock` and `_close` act on *the panel the
+            // operator right-clicked*, which arrives through
+            // `PdfcerApp::dock_menu_panel` — see `dispatch::panels`' header.
+            // A harness has no pointer and no menu, so without this the three
+            // commands were **unreachable headlessly**: the seam would fire
+            // them, they would find no parked panel, and they would correctly
+            // do nothing — which is symptom-identical to the feature being
+            // broken.
+            //
+            // ★★ `D:/dev/rag/egui/a_harness_seam_that_fires_one_command_cannot_reach_anything_behind_a_mode.md`
+            // is the same finding one turn earlier: that one added the comma
+            // list because a capability could take two commands to reach; this
+            // adds the operand because a capability can take a command **and a
+            // noun**. Both are the same rule — a seam that can express less
+            // than the interface can leaves part of the interface unverifiable
+            // — and the answer is to widen the seam rather than to write a
+            // check that asserts something easier.
+            //
+            // Spelled `view.panel_float@view.panel_layers`: the id, an `@`,
+            // and the PanelId. `@` because it appears in no command id and no
+            // panel id, so the split cannot be ambiguous.
+            let (id, operand) = match id.split_once('@') {
+                Some((id, panel)) => (id.to_owned(), Some(panel.to_owned())),
+                None => (id, None),
+            };
+            self.dock_menu_panel = operand.as_deref().map(egui_shell::dock::PanelId::new);
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed.
-                format!("diag-invoke id={id}")
+                format!("diag-invoke id={id} operand={operand:?}")
             });
             self.dispatch_command(&ctx, &id, &mut actions);
+            // Drained whether or not the command read it, so a seam-supplied
+            // operand cannot survive into the next frame's dispatch — the same
+            // one-call window `dispatch::panels::take_menu_panel` enforces for
+            // the menu path.
+            self.dock_menu_panel = None;
         }
 
         // Step 1b — the ribbon, above the canvas.
@@ -909,6 +943,31 @@ impl eframe::App for PdfcerApp {
             keymap,
             &self.commands,
         );
+
+        // ★★★ **Step 4a — the FLOATING PANELS' own windows.**
+        //
+        // The dock's second per-frame call, and it is here rather than
+        // inside `Self::docks` for the reason `egui_shell::dock::floatwin`'s
+        // header states: opening a child viewport runs a complete nested
+        // pass for another window, and doing that from inside a
+        // half-composed side panel would make the rest of this frame's
+        // layout depend on what a different window did. The dialogs are
+        // hosted from this same point, for this same reason.
+        //
+        // ★★ After the dialogs, deliberately. A modal dialog takes the
+        // frame; a panel window is a peer surface the operator can work in
+        // while a dialog is up. Drawing the panels first would put them
+        // above a modal in the composition order for no benefit and one
+        // real cost — a dialog raised *from* a panel window would be behind
+        // the window that raised it.
+        //
+        // ⚠ **Forgetting this call is a silent failure.** Every floating
+        // panel would stay in the layout, report as on screen, and be
+        // drawn nowhere — the exact class of defect this project shipped on
+        // 2026-08-10 with three unreachable panels and every gate green.
+        // `DockFrameReport::floats_undrawn` is the number that catches it,
+        // and `crate::app::surfaces`' own test asserts it is zero.
+        self.floating_panels(&ctx, &mut actions);
 
         // ★★ The unsaved-edits answer, drained IMMEDIATELY after the dialogs
         // draw and before anything else in this frame reads the document.
