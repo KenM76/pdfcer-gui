@@ -8,9 +8,43 @@ extracted for use by other projects.
 Started 2026-08-12 as a design workspace. It became the code on
 2026-08-13.
 
-## Capabilities worth naming
+## What it does today
 
-### Deep zoom — to a trillion percent, with the detail actually there
+Measured 2026-09-05 against `pdfcer-core` **v0.38.0** (`b01964f`), at commit
+`a926423`: **3,390 tests passing**, **29 of 29 CI gates**, **175 driven checks**
+in `tools/ui-verify`, **138 registered commands** across seven ribbon tabs plus
+a contextual Format tab, **12 dockable panels**, three modes.
+
+**Read** — open, navigate, zoom, search, thumbnails, bookmarks, layers,
+attachments, page display modes, rulers, grid and guides. Encrypted documents
+open with a password. **Comments are readable here** — click a sticky note on
+the page and it opens with its author, its date and its words.
+
+**Review** — sticky notes, text boxes, shapes, arrows, clouds, freehand,
+highlight/underline/strike, stamps. A comment list that filters by author, by
+type and by whether the comment actually carries words, sorts, and jumps to the
+comment on the page. Copy and paste any annotation, with its appearance intact.
+
+**Measure** — ce dimensions on a scaled drawing, with the scale read from the
+document where the document states one.
+
+**Edit** — text editing and reflow, vector node editing, object selection with
+properties, colour on text and on paths (including a real indeterminate state
+when a selection disagrees, and a refusal by name over a spot ink), form field
+authoring and filling, page insert/extract/rotate/delete, redaction, digital
+signature reading with trust evaluation, passwords and permissions.
+
+**Out** — print with a live preview that can pop into its own window; export to
+PDF, DXF, PNG, JPEG, SVG, EMF, plain text and form data; copy page content to
+the clipboard as editable vector for Word, Inkscape and LibreOffice.
+
+★ `FEATURES.md` is the authoritative list, and it distinguishes three states
+rather than two: ✅ shipped **and driven in a running window**, ⬜ built and
+**undriven**, and absent. That distinction is the project's founding rule (R1)
+made visible — this shell has shipped features that every unit test passed and
+that did not work.
+
+## Deep zoom — to a trillion percent, with the detail actually there
 
 The viewer magnifies to **1,000,000,000,000 %**. Reaching the number is the
 easy half; three things make it usable rather than a setting nobody can
@@ -60,17 +94,17 @@ bash tools/gates/run-all.sh
 cargo run --release -q -p ui-verify -- --exe target/release/pdfcer-gui.exe --pdf D:/Dev/temp/pdfcer/SW41177.pdf --doc-point 0,300,500
 ```
 
-Stages **S0–S5** are complete, along with **Phase 3** (viewer conventions,
-Find, thumbnails, rulers/grid/guides) and **Phase 4** (page display
-modes). The application opens documents, navigates, selects, edits,
-measures nothing yet, prints, fills forms and finds text. `FEATURES.md`
-is the authoritative list, and a row there is ticked **only when an
-operator can reach it in a real build**.
+⚠ **This paragraph used to say "measures nothing yet" and "Phase 5 — text
+editing … has not been started."** Both were true when written and were still
+on the front page weeks after they stopped being true, which is the exact
+failure this project keeps finding in its own prose. The capability list above
+is dated and was measured, not remembered. **`FEATURES.md` is authoritative;
+this page is a summary with a shelf life.**
 
-Next is **Phase 5 — text editing**, which is the defect that began the
-project. It has not been started.
-
-`PROJECT_PLAN.md` §4 has the eight-stage plan.
+Stages **S0–S5** are complete, along with Phase 3 (viewer conventions, Find,
+thumbnails, rulers/grid/guides), Phase 4 (page display modes) and Phase 5 (text
+editing — the defect that began the project). `PROJECT_PLAN.md` §4 has the
+eight-stage plan; `GUI_ROADMAP.md` has the phases.
 
 ## Builds
 
