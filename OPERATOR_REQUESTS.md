@@ -224,6 +224,37 @@ in its first section.
 
 ## O134 — ◑ **GUARDED 2026-09-05, AWAITING THE ENGINE FIX AND YOUR VERDICT** — deleting pages gave you a file with blank pages at the end
 
+> ### ★★★ ENGINE FIXED IT — `Pass 251.1`, commit `e4cefcd`, 2026-09-05
+>
+> **Not yet in our lock**, and deliberately so: a driven sweep owns the pointer
+> and bumping the engine would swap the binary under a run in progress. It goes
+> in with `RESUME.md`'s queued bump.
+>
+> **The cause, in their words, and it is exactly the shape the three-level
+> fixture was built to expose:** `delete_pages_with`'s splice loop rewrites a
+> node's `/Count` only when its **own** `/Kids` changed —
+> `if kept.len() == kids.len() { continue; }`. On a nested tree the ancestors
+> above the immediate parent keep all their kids (their child node survives,
+> just lighter), so every one of them was skipped. The `leaves_under` /
+> `lost_under` tallies **were already computed for them**; they simply were not
+> consumed.
+>
+> ⇒ `page-copy --cut` is fixed by the same change, *"exactly as your
+> byte-identical-output measurement implied."*
+>
+> ★★ **What happens to our guard when the bump lands:** it should stop firing,
+> and it was built to notice — its own test distinguishes *engine fixed* from
+> *guard unwired* by re-reading the written file. **The guard stays**, because
+> it is a proof at the boundary rather than a workaround for one defect, and the
+> same class can return through any writer. What must change is the sentence: it
+> currently says *"this is a fault in pdfcer"*, which becomes false for a file
+> pdfcer wrote with the fixed engine.
+>
+> ★ Also scoped by the engine off the back of today: **`Pass 254.0` — the
+> line-weights-off display mode (O137), marked "Next up, operator-requested"**,
+> and `Pass 255.0` — markup-shape vertex read/edit, backlogged.
+
+
 **Your words, 2026-09-05:**
 
 > *"I tested deleting pages from a pdf. when I open the document in Acrobat
@@ -13442,3 +13473,57 @@ day it can work.
 **not** being asked for. Named in the request only so that if `RenderOptions` is
 being opened anyway, the second dead control is visible on the same trip.
 
+
+---
+
+## O138 — ✅ **THE BAND WAS DRIVEN, AND THE THREE-ROW CHANGE HAD REACHED NOTHING ON SCREEN**
+
+**Not a new request — the measured close of the ribbon half of his
+2026-09-05 report,** *"it looks like the edits to the ribbon got halfway
+done"*, and of the sixteen item-level differences `RIBBON_IA.md` recorded
+that morning. Full ledger: `RIBBON_IA.md`, the two 2026-09-05 (LATEST)
+amendments.
+
+### What driving found that reading could not
+
+The release binary, launched off screen at 1400 × 900 with
+`PDFCER_DIAG_VIEWPORT` and read back through its own `ribbon.item.*` trace:
+**six groups on the File tab, every one of them one row, two collapsed into
+captioned buttons, and 126 pt of band unspent.** The row budget had gone from
+two rows to three the day before; nothing consumed it, because
+`plan::wrap_group` only wraps a group past 440 pt on one row and **no group
+is that wide.** The amendment that raised the row count argued its table from
+the mock's rectangles and this shell's unit tests, and said in its own closing
+block that the product's rectangles had never been captured.
+
+After: **eight groups on the band, `file.ocr` no longer behind a collapse,
+File 393 → 279 pt, Save 435 → 241 pt, rows at 41.0 / 63.7 / 86.3** — the
+mockup's `3 × 22 + 2 × 1 = 68`. One argument at one call site
+(`band::measure_group_rows`); `wrap_group` still returns the narrowest packing,
+so nothing is forced and O97's `prefer_rows: 2` still wins where it is set.
+
+### The sixteen item divergences: nine were real
+
+`tools/compare-mockup-ribbon.py` compared **icon key strings**, and the
+product's key is a role (`open`) where the mock's is an asset basename
+(`folder`) — six of the eight pairs it called *"different pictures"* draw the
+same one. It now resolves both sides to the asset, and parses the two item
+kinds it could not see (`Custom`, `Separator`). 16 → 9, and it exits **0**,
+falsified against all four sources it reads.
+
+Two moved the product — `file.document_properties` takes the `document` glyph
+it had been sharing with `file.properties`, and Recent draws its glyph instead
+of a bare word. Seven moved the mock, each with its reason on the row.
+
+⚠ **Three of the mock's View ▸ Panels controls were NOT adopted**: Properties,
+Comments and Fonts each already live on another tab, so drawing them there
+violates P1 — and an invalid manifest is not a local failure, because
+`Capabilities::for_mode` answers `FULL` when the shell is absent.
+
+### ⬜ What is still open
+
+**The mockup lays a group out in COLUMNS and the product lays it out in ROWS.**
+Same footprint, different cell for each control. The column split is not in
+`built_in.ron` at all, so matching it means the manifest carrying columns — a
+schema change — and the mock is not self-consistent about it either. Named on
+`RIBBON_IA.md`'s geometry amendment as the largest open ribbon question.
