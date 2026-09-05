@@ -1,0 +1,26 @@
+ui-verify — profile `pdfcer-gui` (the application this project is building (crates/pdfcer-gui))
+  NOTE: this harness drives the REAL cursor and keyboard. It raises the target window, moves the pointer, and types into it. The pointer is put back where it was when the run ends. Pass --no-input to disable (checks that need input then report SKIPPED, never PASS).
+
+[FAIL] a_refused_typo_fix_says_why_it_was_refused
+       detects: text the document arrived with is committed for edit, the engine refuses it, and the operator is told nothing — while text pdfcer itself added edits fine, so from his chair the program silently ignores corrections to exactly the words he wants to correct
+       · fixture C:/Users/Ken/AppData/Local/Temp/claude/D--Dev-pdfcer-gui/b87679c0-5e3b-4a4a-b478-a76640dddb66/scratchpad/apt.pdf — page 1 is 612 x 791.9999937 pt; aiming at (200.0, 537.0) on page 2 (1-based)
+       · launched target/release/pdfcer-gui.exe as pid 34600 with PDFCER_DIAG_INVOKE=view.reset_layout,mode.edit,edit.text
+       · ★ the dock layout was reset, and the application said so: `pdfcer-diag layout-reset scope=all changed=false`
+       · ★ rolled the wheel 3 step(s) to bring page 2 onto the canvas
+       · ★ the click placed a caret: `pdfcer-diag text-edit-caret kind=Edit page=1 run=12 len=36`
+       · ★★ the engine refused the commit: `pdfcer-diag edit-text-refused page=1 n=1 detail=text to edit ("Final quality walkthrough with clien") was not found in an editable run on the page`
+       → THE REFUSAL NAMES NO CATEGORY. No `edit-text-classified … kind=…
+         said=…` line, so the shell did not classify the engine's answer and cannot
+         have worded it. `pdfcer_core::text_edit::RefusalKind` is the coarse, stable,
+         exhaustively-matchable discriminant the engine shipped at `b1033ab` in
+         answer to this project's own request; a build that does not read it is back
+         to one un-categorised sentence for every refusal there is. The refusal was:
+         `pdfcer-diag edit-text-refused page=1 n=1 detail=text to edit ("Final
+         quality walkthrough with clien") was not found in an editable run on the
+         page`. Trace: target/ui-verify\typo-refusal.trace.txt.
+       artifact: target/ui-verify\typo-refusal.trace.txt
+
+------------------------------------------------------------------------
+  0 passed, 1 failed, 0 skipped
+
+RESULT: FAIL — a check drove the application and the assertion did not hold.

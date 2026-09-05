@@ -1,0 +1,20 @@
+ui-verify — profile `pdfcer-gui` (the application this project is building (crates/pdfcer-gui))
+  NOTE: this harness drives the REAL cursor and keyboard. It raises the target window, moves the pointer, and types into it. The pointer is put back where it was when the run ends. Pass --no-input to disable (checks that need input then report SKIPPED, never PASS).
+
+[PASS] text_edit_on_a_real_drawing
+       detects: Edit text arms on a real CAD sheet and a click on text the engine reports as present resolves no run — or it declines and the operator is never told why, which is indistinguishable from a feature that does nothing and is the operator's own report
+       · fixture D:/Dev/pdfTests/SW41177/SW41177.pdf — page 1 is 1584 x 1224 pt, aiming at (1201.0, 1185.0) on page 1
+       · launched target/release/pdfcer-gui.exe as pid 44396
+       · Edit ▸ Edit text armed the caret on the real drawing
+       · ★ the click on real drawing text placed a caret: `pdfcer-diag text-edit-caret kind=Edit page=0 run=152 len=6`
+       · ★★ the line is drawn as several separate pieces — the shape that refused every click until 2026-08-19 — and the caret landed anyway
+       · ★★ the edit reached the engine on the operator's own drawing
+       · ★ the edit named its buffer: `pdfcer-diag edit-text-target page=0 run=152 form=none invocations=0 pages=0 followers=0 disposition=Pin`
+       · ★★ the edit stayed inside its own line: 0 following operator(s) repositioned, against 1,676 on the same drawing before the engine's `Pass 121.1`
+       · the edited stream is painted in 0 place(s) in the document — if that is more than one, the operator changed every one of them, and the engine's SHARED CONTENT disclosure is on the status row saying so
+       artifact: target/ui-verify\text_edit_real.trace.txt
+
+------------------------------------------------------------------------
+  1 passed, 0 failed, 0 skipped
+
+RESULT: PASS — every check drove the application and every assertion held.

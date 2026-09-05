@@ -812,6 +812,16 @@ pub mod text_tool;
 /// which nothing had ever sampled under a theme. Its header carries why the
 /// page is the one invariant a dark theme in this product must hold.
 pub mod theme_page;
+/// ★★★ **A refusal an operator can read** — `OPERATOR_REQUESTS.md` O140, driven
+/// on the file he reported it on.
+///
+/// The only check in the suite that takes its **negative control through the
+/// same instrument in the same process**: it commits an edit the engine refuses
+/// and asserts the `⊗` slot drew, then commits one that succeeds and asserts it
+/// did **not**. Its header carries why a one-sided reading of that region is not
+/// a verdict, and why the tempting `Identity-H` forecast is falsified by
+/// `pdfcer-core`'s own fixture.
+pub mod typo_refusal;
 /// ★ `edit.undo` and `edit.redo` — the pair that was registered, drawn on the
 /// quick-access toolbar in **every** mode and bound to three chords with **no
 /// dispatch arm**, so an operator could author dimensions, seven markup kinds,

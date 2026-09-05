@@ -1,0 +1,21 @@
+ui-verify — profile `pdfcer-gui` (the application this project is building (crates/pdfcer-gui))
+  NOTE: this harness drives the REAL cursor and keyboard. It raises the target window, moves the pointer, and types into it. The pointer is put back where it was when the run ends. Pass --no-input to disable (checks that need input then report SKIPPED, never PASS).
+
+[PASS] text_edit_pins_an_aligned_tail
+       detects: Text editing does not reach the page at all, or it reaches it and drags the text the operator did not touch with it — DEFECTS.md D4b's right-aligned and rotated cases, which the old shell got wrong because its only call site passed EditOptions::default() and never asked the page anything
+       · fixture D:\Dev\pdfcer-gui\tools\ui-verify\../../fixtures/tail-alignment.pdf — 1017 bytes, page 1 is 612 x 792 pt
+       · launched on D:\Dev\pdfcer-gui\tools\ui-verify\../../fixtures/tail-alignment.pdf as pid 39016
+       · the ribbon control armed the caret tool
+       · the click placed a caret: `pdfcer-diag text-edit-caret kind=Edit page=0 run=0 len=10`
+       · the commit planned: `pdfcer-diag text-edit-plan page=0 run=0 disposition=Pin reason=Flush(Right) pinned=true`
+       · the copy is 1643 bytes, of which 626 were appended
+       · ★ the untouched line's operator `412.64 668.00 Tm` is in the appended revision verbatim
+       · launched on target/ui-verify\text-edit-round-trip.pdf as pid 43956
+       · a second process (pid 43956) opened the copy and drew it
+       artifact: target/ui-verify\text_edit.trace.txt
+       artifact: target/ui-verify\text_edit.reopen.trace.txt
+
+------------------------------------------------------------------------
+  1 passed, 0 failed, 0 skipped
+
+RESULT: PASS — every check drove the application and every assertion held.

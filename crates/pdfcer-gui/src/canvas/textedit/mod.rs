@@ -708,6 +708,32 @@ pub struct Plan {
     pub options: EditOptions,
     /// Why that disposition, for the trace and the disclosure.
     pub reason: Reason,
+    /// ★★★ **Whether the run being edited is ONE show operator** —
+    /// `OPERATOR_REQUESTS.md` **O140**, and the only field here that exists to
+    /// explain a *failure* rather than to shape a request.
+    ///
+    /// [`pin::spans_one_operator`]'s answer, already computed a few lines below
+    /// to decide whether the `find` may be dropped, and until O140 it was traced
+    /// and then thrown away. It is carried out because the apply arm cannot
+    /// otherwise tell two identical engine refusals apart:
+    ///
+    /// | run | what `EditError::NoMatch` means |
+    /// |---|---|
+    /// | one operator | the page moved under the caret — *"pdfcer could not find the text this edit named"* |
+    /// | several | **the reconstructed `find` could never have matched**, because no single operator holds it |
+    ///
+    /// The engine answers `RefusalKind::NotFound` for both, correctly and
+    /// necessarily: from its side the request named text that is not in any one
+    /// editable run, and it has no way to know the shell rebuilt that string
+    /// from a run it had segmented itself. **This shell does know**, and this
+    /// field is the whole of that knowledge.
+    ///
+    /// ★ `true` when there is no pin at all, which is the honest default: with
+    /// no provenance the shell has measured nothing, and claiming a split it
+    /// did not observe would put a confident wrong sentence in front of the
+    /// operator — the one outcome `crate::text::textedit::EditRefusal`'s header
+    /// argues is worse than the silence it replaces.
+    pub one_operator: bool,
 }
 
 /// **Plan a commit against the page as it is now.**
@@ -754,6 +780,13 @@ pub fn plan(doc: &OpenDoc, page: usize, run: usize, original: &str, replacement:
     // something it never saw. The single-run case is also the overwhelmingly
     // commoner one in ordinary prose documents.
     let mut shares_the_line = false;
+    // ★★★ **Defaults to `true`, and the default is a claim about knowledge
+    // rather than about the run** — see [`Plan::one_operator`]. If the
+    // extraction fails, or the run carries no provenance, this shell has
+    // measured nothing; answering `false` there would let the apply arm tell
+    // the operator his line is written one letter at a time on the strength of
+    // an extraction that never ran.
+    let mut one_operator = true;
 
     // ★★ **This extraction is its own, and it is NOT `doc.page_text()`.**
     //
@@ -866,7 +899,7 @@ pub fn plan(doc: &OpenDoc, page: usize, run: usize, original: &str, replacement:
                 // defect. `find_len` carries the number that made the string
                 // unmatchable, because a reader seeing 30 characters for a
                 // six-character cell has the whole story in one line.
-                let one_operator = pin::spans_one_operator(&model, run);
+                one_operator = pin::spans_one_operator(&model, run);
                 crate::diag::trace(|| {
                     // ui-text-exempt: diagnostic trace, never displayed.
                     format!(
@@ -902,6 +935,7 @@ pub fn plan(doc: &OpenDoc, page: usize, run: usize, original: &str, replacement:
         request,
         options: disposition::options(reason),
         reason,
+        one_operator,
     }
 }
 

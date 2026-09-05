@@ -1,0 +1,22 @@
+ui-verify — profile `pdfcer-gui` (the application this project is building (crates/pdfcer-gui))
+  NOTE: this harness drives the REAL cursor and keyboard. It raises the target window, moves the pointer, and types into it. The pointer is put back where it was when the run ends. Pass --no-input to disable (checks that need input then report SKIPPED, never PASS).
+
+[SKIP] text_edit_on_a_real_drawing
+       detects: Edit text arms on a real CAD sheet and a click on text the engine reports as present resolves no run — or it declines and the operator is never told why, which is indistinguishable from a feature that does nothing and is the operator's own report
+       · fixture C:/Users/Ken/AppData/Local/Temp/claude/D--Dev-pdfcer-gui/b87679c0-5e3b-4a4a-b478-a76640dddb66/scratchpad/apt.pdf — page 1 is 612 x 791.9999937 pt, aiming at (200.0, 537.0) on page 2
+       · launched target/release/pdfcer-gui.exe as pid 50428
+       · Edit ▸ Edit text armed the caret on the real drawing
+       → the canvas is showing page 1, and this check's point is on page 2.
+         Converting a document point against another page's rect would put it
+         somewhere plausible and wrong.
+       artifact: target/ui-verify\text_edit_real.trace.txt
+
+------------------------------------------------------------------------
+  0 passed, 0 failed, 1 skipped
+
+RESULT: NOTHING VERIFIED — no check reached a verdict.
+
+  This is NOT a pass. Every check above was unable to begin, and the
+  reasons are printed with each one. A suite that cannot run has told
+  you nothing about the application, and 'told you nothing' rendered
+  as green is the exact failure this harness exists to remove.

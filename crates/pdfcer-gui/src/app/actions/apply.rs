@@ -902,9 +902,38 @@ impl PdfcerApp {
                 // whole argument, including the nested-form case where the
                 // remedy would succeed and change nothing.
                 let page_forms = crate::canvas::textedit::report::PageLevelForms::of(doc);
+                // ★★★ **The one fact that turns the engine's answer into a
+                // sentence he can act on** — `OPERATOR_REQUESTS.md` O140. Copied
+                // out of the plan before the closure takes `plan` by reference,
+                // because the classification below runs inside it.
+                let one_operator = plan.one_operator;
                 vector_edit(doc, "edit-text", page, 1, |session| {
                     session
                         .edit_text(&plan.request, &plan.options)
+                        // ★★★ **O140 — the refusal is CLASSIFIED, and the arm
+                        // routes rather than deciding.**
+                        //
+                        // `app::status::decline::textedit` owns *"what does the
+                        // text caret decline, and who says so"*; this is its
+                        // third decline, and its header carries the whole
+                        // argument — the engine's coarse `RefusalKind`, the one
+                        // fact the engine cannot see (whether the pinned run is
+                        // a single show operator), and why the tidier-looking
+                        // home in `canvas::textedit::report` was rejected.
+                        //
+                        // ★ Inside the closure, through `inspect_err`, on
+                        // `textstyle::reflow`'s precedent: the funnel takes its
+                        // decline floor *before* running this and fills the slot
+                        // only `if slot.is_none()`, so the classified sentence
+                        // survives and the generic one stands aside.
+                        .inspect_err(|error| {
+                            crate::app::status::decline::record_edit_text_refusal(
+                                page,
+                                run,
+                                one_operator,
+                                error,
+                            );
+                        })
                         .map(|report| {
                             // ★ The shared-content fan-out, on the trace.
                             // `canvas::textedit::trace_target` owns the whole

@@ -80,6 +80,115 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
+## O140 — ◑ **FIXED 2026-09-05, AWAITING YOUR VERDICT** — you tried to fix a typo, the program ignored you, and it now tells you why in your own words
+
+> *"on page 2 there is a spelling mistake — clien instead of client. if I try to
+> edit the edit is not accepted. **the lines I added below `price)` are
+> editable, but everything else that existed when I got the pdf is not.**"*
+>
+> — 2026-09-05, on `C:\Users\Ken\OneDrive\pdfTests\apartment work.pdf`
+
+**Your second sentence was a better diagnosis than anything the program gave
+you, and it was very nearly the right one.** What changed today is that the
+program now says the rest of it, out loud, at the moment you meet it.
+
+### What you get now, in the status bar's `⊗` slot, the instant you press Ctrl+Enter
+
+> *"pdfcer cannot change these words. The program that made this file wrote the
+> line one letter at a time, and pdfcer rewrites a whole piece of text at once —
+> so there is no piece here that holds the word you are correcting. Text you
+> added with pdfcer is written a line at a time, which is why those lines do
+> edit. Your document is unchanged; this limit is on the list to fix."*
+
+### ★★★ And the reason is not the one anybody guessed, including me
+
+The morning's diagnosis — filed at the engine as a feature request — was that
+your document's fonts are `Identity-H` and cannot be written into. **That is
+wrong, and it is retracted.** On your own page 2, with the engine's own command
+line:
+
+```
+pdfcer edit-text --page 2 --find "n" --replace "t"
+  → base_font=AAAAAA+Arimo-Bold … OK
+```
+
+`AAAAAA+Arimo-Bold` is one of the three faces the request called blocked, and it
+edited and read back. So did the engine's own test fixture, which carries the
+identical verdict.
+
+**The real cause is in how your document was written.** Its page 2 content is:
+
+```
+(one letter) Tj   (move) Td   (one letter) Tj   (move) Td   …
+```
+
+— **one show operator per letter**. pdfcer replaces text inside *one* of those
+pieces, and `clien` is five letters spread across five of them, so there is no
+piece to replace. The lines you added yourself are written a whole line at a
+time, which is exactly why they edit. Your two sentences were describing that
+difference; we attributed it to the fonts because the fonts also differ, and the
+font is the thing that has a column in a report.
+
+### ⚠ Is there anything you can do today? No, and I checked rather than assuming
+
+- **Retyping it is not available.** There is no verb here that deletes a line of
+  text — the engine's `delete_text_run` removes **one show operator**, which on
+  this file is one letter — and text placed with Add text is written in
+  Helvetica, so retyping the line would change its typeface and you would have
+  to place it by eye.
+- **Editing one letter is not reachable from a caret.** It works at the command
+  line (`--find "n"`), because there the whole page is searched; from a click
+  there is no way to say *which* `n`.
+
+Both are filed. The second is the small one and is the route to your fix.
+
+### What is at the engine, and what I got wrong
+
+`correction_identity_h_is_NOT_the_cause_the_producer_writes_one_glyph_per_show_operator.md`
+retracts the morning's diagnosis, shows the falsification three ways, and asks
+for the thing that would actually fix this: an edit that can name **which**
+show operator a caret is sitting in. The `/ToUnicode` work the first request
+asked for is left standing to be judged on its own merits and would not have
+fixed your typo.
+
+### The evidence
+
+`tools/ui-verify`'s **`a_refused_typo_fix_says_why_it_was_refused`**, driven on
+your own file at your own typo, **PASS**. It clicks the word, seeds the `t`,
+commits, and asserts the `⊗` slot draws afterwards — and then, in the same
+process, commits an edit that **succeeds** and asserts the slot stays silent,
+because a check that only ever watches something appear cannot tell a working
+program from one that shows that sentence always.
+
+Falsified three ways, each planted, each re-driven, each restored:
+
+| planted defect | the check said |
+|---|---|
+| the classification removed (yesterday's build) | `THE REFUSAL NAMES NO CATEGORY` |
+| the engine's category forwarded instead of resolved | `THE CATEGORY AND THE MEASUREMENT DISAGREE` |
+| the `⊗` slot published on every frame | `THE DECLINE SLOT DREW AFTER AN EDIT THAT SUCCEEDED, so the positive half of this check is NOT a verdict` |
+
+### Two things I chose, and why
+
+**The caret still appears on text that cannot be edited.** The tidier-looking
+answer is not to offer a cursor you are going to refuse — but the same cursor is
+how Reflow and the font and colour controls find their text, and those work on
+this document. Taking it away would remove three working features to save one
+wasted keystroke. What changed is that the refusal now has words instead of
+being a shrug.
+
+**The sentence is in the status bar and nothing is marked on the page.** Rule 4:
+nothing gets tinted, outlined or badged on the drawing itself.
+
+### ⚠ One honest limitation
+
+The status bar truncates. You will see the first clause — *"pdfcer cannot change
+these words."* — and the rest is on hover. That is the slot's existing behaviour
+and not something this change introduced; the sentence is written front-loaded
+so the truncated form still says the thing that matters.
+
+---
+
 ## O136 — ◑ **BUILT 2026-09-05, AWAITING YOUR VERDICT** — the document's own properties have their own tab now, and the Properties tab is only ever about what you picked
 
 **Your words, 2026-09-05:**

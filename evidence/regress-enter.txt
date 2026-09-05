@@ -1,0 +1,15 @@
+ui-verify — profile `pdfcer-gui` (the application this project is building (crates/pdfcer-gui))
+  NOTE: this harness drives the REAL cursor and keyboard. It raises the target window, moves the pointer, and types into it. The pointer is put back where it was when the run ends. Pass --no-input to disable (checks that need input then report SKIPPED, never PASS).
+
+[PASS] enter_makes_a_second_line_and_control_enter_commits
+       detects: Enter committed a clicked text draft instead of breaking the line, so new page text could only ever be one line and the operator's question was answered by an edit finishing under him
+       · launched target/release/pdfcer-gui.exe on fixtures/a1-titleblock.pdf as pid 39244 with PDFCER_DIAG_INVOKE=mode.edit,edit.add_text and PDFCER_DIAG_TYPE=FIRST
+       · ★ a draft is open: `pdfcer-diag text-edit-caret kind=Add page=0 origin=1097.3,900.4 len=0`
+       · ★★ Enter arrived and broke the line: `pdfcer-diag text-edit-enter means=NewLine`
+       · ★★★ two hard lines reached the engine: `pdfcer-diag add-text page=0 n=2 epoch=1 disclosures=new run uses a bundled Standard-14 face 'Helvetica' by name+code — no glyph embedding (R79 / ISO 32000-1 §9.6.2.2); provenance is disclosed, not the document's own | boxed add: wrapped to 1 line(s) at 1286.6pt box width, left alignment, top-anchored from the box top at 14.40pt leading (derived default 1.2 x size) — DERIVED layout (greedy first-fit, ISO 32000-1 §9.4.4 advances via the shipped 15.x breaker; §14.8 S1-S9), a reviewable add | Your text has more than one line, so it was placed as a block: it starts where you clicked and wraps at the right-hand edge of the sheet. Drag a box with Add text to choose your own width.`
+       artifact: target/ui-verify\enter-newline.trace.txt
+
+------------------------------------------------------------------------
+  1 passed, 0 failed, 0 skipped
+
+RESULT: PASS — every check drove the application and every assertion held.

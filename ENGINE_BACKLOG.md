@@ -253,6 +253,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
+| Read and edit a markup shape's vertices — `Annotation::vertices` … | **wanted — the capability landed 2026-09-05 and this shell has no anchors and no drag.** `Pass 255.0` (`35ca5be`) put `/Vertices`, `/L` and `/InkList` into the read model and shipped `reshape_annotation` / `move_annotation_vertex` / `insert_annotation_vertex` / `remove_annotation_vertex`, with Polygon and PolyLine taking all three (floors of 3 and 2, a remove below the floor refused by name), Line moving either endpoint, and Ink/Square/Circle/text markup refused by name with a reason a shell can show. ★ **This row was written by the O128 track because `check-engine-backlog` went red on it mid-session**, not by anyone who has scoped the work: the Pass shipped a few hours after that track's brief was cut, and the gate caught it within the minute, which is the case it exists for. What it would take, from the shape of the two verb families already wired: node anchors and a drag on a selected markup, mirroring `canvas::dimdrag`'s Ctrl-drag / Ctrl+Shift-drag for ce dimensions (row above, closed the same day) — and the engine's own advice there applies unchanged, *ask the preview verb every frame rather than catching the error*, so a gesture never promises a shape the release would refuse. |
 
 ### Redaction & security
 

@@ -1,0 +1,218 @@
+
+pdfcer-gui gates — 2026-09-05 16:59:31 — /d/Dev/pdfcer-gui
+
+------------------------------------------------------------------------
+>> check-ui-strings --self-test
+------------------------------------------------------------------------
+ui-strings self-test:
+  [ok]   clean fixture passes (2 files scanned)
+  [ok]   dirty fixture fails as designed:
+         /d/Dev/pdfcer-gui/tools/gates/fixtures/ui-strings/dirty/src/app/state.rs:20:    "Delete selected object"
+  [ok]   the planted violation is at src/app/state.rs, which a flat
+         `src/*.rs` glob cannot reach — so assertion B proves recursion,
+         which is the bug this port exists to fix.
+  self-test: PASS
+
+------------------------------------------------------------------------
+>> check-theme-colors --self-test
+------------------------------------------------------------------------
+theme-colors self-test: the gate catches its own planted violation.
+
+------------------------------------------------------------------------
+>> check-strong-text --self-test
+------------------------------------------------------------------------
+check-strong-text --self-test: OK
+
+------------------------------------------------------------------------
+>> check-shipped-assets --self-test
+------------------------------------------------------------------------
+shipped-assets self-test: the gate catches all five planted violations (including one cited only inside an HTML comment), exempts own work, and passes a documented directory.
+
+------------------------------------------------------------------------
+>> check-string-gaps --self-test
+------------------------------------------------------------------------
+check-string-gaps self-test: PASS
+
+------------------------------------------------------------------------
+>> check-ui-strings
+------------------------------------------------------------------------
+ui-strings: clean — 468 .rs file(s) scanned recursively under crates/pdfcer-gui/src,
+            no operator-visible literals outside the catalog
+            catalog (excluded, relative to crates/pdfcer-gui/src): text.rs text/* ui_text.rs ui_text/*
+
+------------------------------------------------------------------------
+>> check-theme-colors
+------------------------------------------------------------------------
+theme-colors: clean — every colour is a named role in crates/egui-shell/src/theme
+
+------------------------------------------------------------------------
+>> check-strong-text
+------------------------------------------------------------------------
+>> check-strong-text
+   no bare .strong() found
+
+------------------------------------------------------------------------
+>> check-plate-colour --self-test
+------------------------------------------------------------------------
+plate-colour --self-test: PASS — catches the unpaired plate, passes all four correct shapes.
+
+------------------------------------------------------------------------
+>> check-plate-colour
+------------------------------------------------------------------------
+check-plate-colour: scanning for on_accent drawn without its plate…
+check-plate-colour: clean — every on_accent states its plate.
+
+------------------------------------------------------------------------
+>> check-selection-channel --self-test
+------------------------------------------------------------------------
+selection-channel --self-test: PASS — catches both readings, passes all four correct shapes.
+
+------------------------------------------------------------------------
+>> check-selection-channel
+------------------------------------------------------------------------
+check-selection-channel: scanning for canvas code reading egui's widget channel…
+check-selection-channel: clean — the widget channel is read only where it is defined.
+
+------------------------------------------------------------------------
+>> check-file-size
+------------------------------------------------------------------------
+file-size: clean — 843 .rs file(s) scanned, none over 1500 lines
+           largest:
+                1500  crates/pdfcer-gui/src/app/lifecycle.rs
+                1500  crates/pdfcer-gui/src/app/actions/action.rs
+                1499  crates/pdfcer-gui/src/app/dispatch.rs
+
+------------------------------------------------------------------------
+>> check-shell-purity
+------------------------------------------------------------------------
+shell-purity: clean — crates/egui-shell/Cargo.toml declares no pdfcer-* dependency,
+              and 72 .rs file(s) under crates/egui-shell name no domain crate
+
+------------------------------------------------------------------------
+>> check-shipped-assets
+------------------------------------------------------------------------
+shipped-assets: clean — 5 asset directory(ies) (2 of them in the engine tree), 159 redistributed file(s), all with recorded licensing;
+                THIRD_PARTY_LICENSES.md is in the package payload and matches about.hbs.
+
+------------------------------------------------------------------------
+>> check-string-gaps
+------------------------------------------------------------------------
+check-string-gaps: scanning crates/ and tools/ for baked-in gaps…
+check-string-gaps: PASS — no baked-in gaps.
+
+------------------------------------------------------------------------
+>> check-stale-blockers
+------------------------------------------------------------------------
+check-stale-blockers: OK — no row declares a blocker that has been closed.
+
+------------------------------------------------------------------------
+>> check-typing-guard
+------------------------------------------------------------------------
+check-typing-guard: one predicate for "is the operator typing?"…
+check-typing-guard: PASS — the predicate exists once.
+
+------------------------------------------------------------------------
+>> check-conventions
+------------------------------------------------------------------------
+check-conventions: every interactive surface answers its gesture class…
+  15 surface(s) registered.
+check-conventions: PASS — every registered surface has answered.
+
+------------------------------------------------------------------------
+>> check-clipboard-chords
+------------------------------------------------------------------------
+check-clipboard-chords: PASS — the three chords are read as events.
+
+------------------------------------------------------------------------
+>> check-suite-name-absent
+------------------------------------------------------------------------
+suite-name-absent: clean -- nothing in the work tree, staged or not, names it or mentions it
+
+------------------------------------------------------------------------
+>> check-trace-names
+------------------------------------------------------------------------
+check-trace-names: PASS - 73 funnel labels, no collisions.
+
+------------------------------------------------------------------------
+>> check-verb-coverage
+------------------------------------------------------------------------
+197 EditSession verbs (lock b1033ab), 188 named somewhere in the shell, 9 named nowhere.
+PASS: all 9 uncalled verb(s) are named in EDITABLE_SURFACES.md.
+
+------------------------------------------------------------------------
+>> check-old-name-absent
+------------------------------------------------------------------------
+old-name-absent: clean - nothing names the old project except the
+                 106 documented reference(s): the salvaged GUI's path, the
+                 shared request-channel folder, Cargo.lock, and lines that carry
+                 an old-name-exempt: reason.
+
+------------------------------------------------------------------------
+>> check-engine-backlog --self-test
+------------------------------------------------------------------------
+engine-backlog --self-test: PASS — catches an unaccounted row and a reworded
+  one (naming the likely rewrite), measures all 4 targets including the
+  escaped-pipe row, and reports none of the four correct shapes.
+
+------------------------------------------------------------------------
+>> check-engine-backlog
+------------------------------------------------------------------------
+measured 25 row(s) reading [x] core / [ ] gui in D:/Dev/pdfcer/docs/FEATURES.md
+         against 99 entr(ies) in ENGINE_BACKLOG.md
+note: 74 register entr(ies) match no current row — either a row whose
+      `gui` box got ticked (keep it, the argument is the valuable part) or
+      one whose opening words were reworded.
+
+PASS: every `[x] core / [ ] gui` row is accounted for in ENGINE_BACKLOG.md.
+
+------------------------------------------------------------------------
+>> check-third-party-licences
+------------------------------------------------------------------------
+PASS: THIRD_PARTY_LICENSES.md is what the generator produces from the current lock.
+
+------------------------------------------------------------------------
+>> cargo fmt
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+>> cargo clippy
+------------------------------------------------------------------------
+   Compiling pdfcer-gui v0.1.0 (D:\Dev\pdfcer-gui\crates\pdfcer-gui)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 12.85s
+
+------------------------------------------------------------------------
+SUMMARY
+------------------------------------------------------------------------
+  PASS     check-ui-strings --self-test
+  PASS     check-theme-colors --self-test
+  PASS     check-strong-text --self-test
+  PASS     check-shipped-assets --self-test
+  PASS     check-string-gaps --self-test
+  PASS     check-ui-strings
+  PASS     check-theme-colors
+  PASS     check-strong-text
+  PASS     check-plate-colour --self-test
+  PASS     check-plate-colour
+  PASS     check-selection-channel --self-test
+  PASS     check-selection-channel
+  PASS     check-file-size
+  PASS     check-shell-purity
+  PASS     check-shipped-assets
+  PASS     check-string-gaps
+  PASS     check-stale-blockers
+  PASS     check-typing-guard
+  PASS     check-conventions
+  PASS     check-clipboard-chords
+  PASS     check-suite-name-absent
+  PASS     check-trace-names
+  PASS     check-verb-coverage
+  PASS     check-old-name-absent
+  PASS     check-engine-backlog --self-test
+  PASS     check-engine-backlog
+  PASS     check-third-party-licences
+  PASS     cargo fmt
+  PASS     cargo clippy
+
+  29 passed, 0 failed, 0 skipped
+
+RESULT: PASS — every gate ran and every gate is clean.

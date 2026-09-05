@@ -405,9 +405,430 @@ pub const fn point_text_became_a_block() -> &'static str {
      width."
 }
 
+// ===========================================================================
+// ★★★ Why an edit the operator committed did not happen — O140
+// ===========================================================================
+
+/// ★★★ **Why a committed text edit was refused** — `OPERATOR_REQUESTS.md`
+/// **O140**, and the sentence that replaces `edit_declined_by_engine`'s nine
+/// cause-free words for this one verb.
+///
+/// The operator, 2026-09-05, on his own quote:
+///
+/// > *"on page 2 there is a spelling mistake — clien instead of client. if I
+/// > try to edit the edit is not accepted. **the lines I added below `price)`
+/// > are editable, but everything else that existed when I got the pdf is
+/// > not.**"*
+///
+/// He met a caret that took his keystrokes, a Ctrl+Enter that did nothing, and
+/// a status line reading *"That change was refused, and the document is
+/// unchanged."* — which is true, and tells him nothing he could act on. His own
+/// second sentence is a better diagnosis than anything the program gave him.
+///
+/// # ★★★ Where the categories come from, and why not from here
+///
+/// `crate::text::status::edit_declined_by_engine`'s documentation says, in as
+/// many words, that it *"is written to be **deleted**… The day `EditError`
+/// gains a `kind()`, this becomes four sentences that name the four buckets."*
+///
+/// **That day arrived and nothing here had noticed.** `pdfcer-core` shipped
+/// `text_edit::RefusalKind` — four variants, deliberately **not**
+/// `#[non_exhaustive]` so a front end may match it exhaustively and have the
+/// compiler prove the sentences are complete — at revision `b1033ab`, in direct
+/// answer to this project's 2026-09-04 request. It sat unconsumed because both
+/// gates that watch the engine are keyed on `EditSession`'s **verbs**: a new
+/// *type* is invisible to `check-verb-coverage.sh` and to
+/// `check-engine-backlog.sh` alike.
+///
+/// ⇒ Four of the five variants below are `RefusalKind`'s, one-for-one. Nothing
+/// here re-derives the engine's reasoning, matches on its error variants or
+/// greps its `Display` prose — the three things that entry forbids. The mapping
+/// lives beside the errors, in their crate, and moves with them.
+///
+/// # ★★★ The fifth variant, and why the shell is entitled to it
+///
+/// [`Self::SplitAcrossPieces`] is **not** a `RefusalKind`. It is a fact this
+/// shell measured before it asked, and it is the one his document actually
+/// hits.
+///
+/// `canvas::textedit::plan` calls `pin::spans_one_operator` and traces the
+/// answer as `edit-text-pin … one_operator=…`. On his file that is **false**:
+/// the producer emitted **one show operator per glyph** — the page-2 content
+/// stream is a run of `(\x00\x17) Tj  16.07 0 Td  (\x00\x11) Tj  8.03 0 Td …`,
+/// one two-byte code and its own `Td` per letter — so no single operator holds
+/// more than one character. The shell therefore sends the reconstructed `find`
+/// rather than the whole-operator form (see `plan`'s own note: the
+/// whole-operator form on a split run would replace one fragment's text with
+/// the whole replacement and leave the others painting their old glyphs —
+/// *visible corruption reported as success*), and a 36-character `find` cannot
+/// match inside a one-character operator. The engine answers
+/// `EditError::NoMatch`, whose `RefusalKind` is `RefusalKind::NotFound`.
+///
+/// ★★ **`NotFound` is the honest engine answer and the wrong operator
+/// sentence.** *"pdfcer couldn't find what the edit named"* is
+/// indistinguishable from *"your search string is wrong"* — and he did not type
+/// a search string; he clicked a word he can see. The shell knows the piece of
+/// information that turns that answer into a true one, and no other layer does:
+/// **it placed the caret on that run itself, from its own extraction, and it
+/// knows the run is split.** So the join is made here, at the only place both
+/// facts exist.
+///
+/// # ★★★ What this variant is NOT, and the forecast that was falsified
+///
+/// The feature request filed against the engine on the same day names the cause
+/// as `Identity-H` — *"the document's original faces are `Type0/CIDFontType2`
+/// `Identity-H`, `verdict=blocked-identity`… the only character information is
+/// a one-way `/ToUnicode`"* — and asks for that map to be inverted.
+///
+/// **Measured, and it is not the cause.** `Pass 29.0` made composite runs
+/// editable whenever their `/ToUnicode` inverts, and on his own file, with the
+/// engine's own CLI:
+///
+/// ```text
+/// pdfcer edit-text --page 2 --find "n" --replace "t"
+///   → base_font=AAAAAA+Arimo-Bold  …  OK
+/// ```
+///
+/// — an `Identity-H`, `blocked-identity`, embedded `CIDFontType2` face, edited
+/// end to end, read back out of the saved file. A **one-character** find
+/// matches inside a one-character operator; a five-character one cannot. The
+/// font was never the obstacle.
+///
+/// ⇒ **So this shell must not forecast on the font.** A guard reading
+/// *"`Identity-H` ⇒ refuse"* would withhold the caret on text pdfcer can edit,
+/// on every document a modern producer makes, silently — which is
+/// `Refusal::InsideForm`'s episode repeated with a different predicate. The
+/// falsifying fixture is `pdfcer-core`'s own
+/// `fixtures/synthetic/text/composite-editable.pdf`: identical `list-fonts`
+/// verdict to every face in his document, and
+/// `an_invertible_composite_run_is_editable_end_to_end` asserts it edits.
+///
+/// # ★★ Why the caret is still OFFERED, against R9's first reading
+///
+/// R9 says a control that fails on press is worse than one that is not there,
+/// and the obvious application is *"do not put a caret on a split run"*. It is
+/// the wrong application here, for a reason that is a property of the caret
+/// rather than of this refusal: **the caret anchors more than the replace.**
+/// `edit.reflow_block` resolves its operand from `Anchor::Run`, and
+/// `format_text` restyles through the same pin without ever needing a `find` —
+/// both work on a split run. Withdrawing the anchor because one of the three
+/// verbs it feeds is certain to refuse would take reflow and restyling away
+/// from every run in this document to save one wasted keystroke in it.
+///
+/// ⇒ The caret stays; the **silence** goes. That is the whole of O140.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum EditRefusal {
+    /// ★★★ **The line was written one piece at a time and the change spans
+    /// more than one piece** — the operator's own document, and the case
+    /// `RefusalKind` cannot name because it is not the engine's to see.
+    ///
+    /// Raised only when the engine answered `RefusalKind::NotFound` *and*
+    /// `pin::spans_one_operator` had already said `false`. Both halves are
+    /// required: a split run whose refusal is a font refusal gets the font
+    /// sentence, because that is what actually stopped it.
+    SplitAcrossPieces,
+    /// `RefusalKind::UnsupportedFont` — the code↔glyph relation is
+    /// unrecoverable, or a substitute could not cover the text.
+    UnsupportedFont,
+    /// `RefusalKind::StructureFrozen` — encryption, an enforced certification
+    /// signature, or a suppressed object set.
+    DocumentProtected,
+    /// `RefusalKind::NotFound` on a run the shell had measured as a **single**
+    /// operator, so the split explanation is unavailable and the honest reading
+    /// is that the page moved under the caret.
+    TextMovedAway,
+    /// `RefusalKind::Other` — an invalid parameter, an unbuilt combination, a
+    /// parse or save failure. The engine's own words are on the trace.
+    Unstated,
+}
+
+impl EditRefusal {
+    /// **Classify one refused text edit**, from the engine's coarse kind and
+    /// the one thing the shell knows that the engine cannot.
+    ///
+    /// # ★★★ The order of the arms is the design
+    ///
+    /// The engine's category wins wherever it has one, and the shell's fact is
+    /// consulted **only** inside `NotFound` — the single bucket where the
+    /// engine's answer is true and unusable at the same time.
+    ///
+    /// That ordering is what keeps this from being a second taxonomy. A split
+    /// run whose edit was stopped by a font gets
+    /// [`Self::UnsupportedFont`], not [`Self::SplitAcrossPieces`], because the
+    /// font is what actually stopped it and the split is merely also true. The
+    /// failure mode of the opposite ordering is precisely the one
+    /// `RefusalKind`'s own header warns about: *telling the operator the wrong
+    /// reason, which is strictly worse than the silence it replaced.*
+    ///
+    /// # ★★ `one_operator` is a measurement, and `true` is its "not measured"
+    ///
+    /// See [`crate::canvas::textedit::Plan::one_operator`]. It is `true` when
+    /// the plan could not read provenance at all, so an unmeasured run falls to
+    /// [`Self::TextMovedAway`] — a sentence that is honest about a page that
+    /// moved and never claims a structure this shell did not observe.
+    #[must_use]
+    pub const fn of(kind: pdfcer_core::text_edit::RefusalKind, one_operator: bool) -> Self {
+        use pdfcer_core::text_edit::RefusalKind as K;
+        match kind {
+            K::UnsupportedFont => Self::UnsupportedFont,
+            K::StructureFrozen => Self::DocumentProtected,
+            K::NotFound if !one_operator => Self::SplitAcrossPieces,
+            K::NotFound => Self::TextMovedAway,
+            K::Other => Self::Unstated,
+        }
+    }
+
+    /// The sentence for this cause.
+    ///
+    /// One function over the enum rather than one per variant, for
+    /// [`refusal`]'s and [`ReflowRefusal::line`]'s reason: a variant added
+    /// without a sentence is a compile error rather than a commit that refuses
+    /// silently.
+    ///
+    /// # ★★ Every sentence is FRONT-LOADED, and that is a layout fact
+    ///
+    /// `app::status::disclosure::disclosure_line` draws the decline with
+    /// `.truncate()` and hangs the whole text on hover. So the first clause is
+    /// what most operators read, and it must carry the claim that matters:
+    /// **pdfcer cannot**, not *you did something wrong*. The cause, the
+    /// contrast and the remedy follow it in that order.
+    ///
+    /// # ★ Two of them name his contrast explicitly
+    ///
+    /// He noticed it before the program told him: *"the lines I added below
+    /// `price)` are editable, but everything else that existed when I got the
+    /// pdf is not."* A sentence that explains the refusal and ignores the
+    /// contrast reads as evasive, because he has already worked out that the
+    /// two cases differ and is waiting to hear why.
+    #[must_use]
+    pub const fn line(self) -> &'static str {
+        match self {
+            // ★★★ The remedy clause is the one this project checked before
+            // writing. `pdfcer-core` can edit a piece: `--find "n" --replace
+            // "t"` succeeded on this very run. What it cannot do is address ONE
+            // piece from a caret — the shell has no gesture that names a single
+            // glyph operator, and `EditRequest` carries one pin per request. So
+            // there is no sequence of clicks that gets him his `t` today, and
+            // the sentence says exactly that rather than inventing one.
+            //
+            // ⚠ It deliberately does NOT say "delete it and retype it". That
+            // was checked too: `add_text` writes the engine's bundled
+            // Helvetica, so retyping a line of AbrilFatface or Arimo replaces
+            // his typography with a substitute at a position he would have to
+            // find by eye — and there is no verb here that deletes a text run
+            // in the first place. Offering it would be a workaround that does
+            // not exist.
+            Self::SplitAcrossPieces => {
+                "pdfcer cannot change these words. The program that made this file wrote the line \
+                 one letter at a time, and pdfcer rewrites a whole piece of text at once — so \
+                 there is no piece here that holds the word you are correcting. Text you added \
+                 with pdfcer is written a line at a time, which is why those lines do edit. Your \
+                 document is unchanged; this limit is on the list to fix."
+            }
+            Self::UnsupportedFont => {
+                "pdfcer cannot write new letters into this text. Its font records what each shape \
+                 looks like but not which letter it is, so pdfcer cannot spell a letter that is \
+                 not already there. Text you added with pdfcer uses a font it can spell in, which \
+                 is why those lines do edit. Your document is unchanged."
+            }
+            Self::DocumentProtected => {
+                "This document's protection does not allow its text to be changed, so pdfcer left \
+                 it alone. If you have the password, remove the protection first with Protect > \
+                 Remove security, then edit."
+            }
+            Self::TextMovedAway => {
+                "pdfcer could not find the text this edit named — the page has moved on since the \
+                 cursor was placed there. Click in the words again and make the change a second \
+                 time. Your document is unchanged."
+            }
+            // ★ The one variant with no cause to name, and it is deliberately
+            // the SAME sentence the whole verb used to show. Where the engine
+            // says only "other", inventing a cause here would be the "second
+            // copy of their taxonomy that drifts and then tells the operator
+            // the WRONG reason" that `RefusalKind` exists to prevent.
+            Self::Unstated => crate::text::status::edit_declined_by_engine(),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// **Every variant**, so a sixth added without a sentence, without an
+    /// obstacle in its first clause, or promising a remedy this build does not
+    /// have, goes red rather than shipping.
+    ///
+    /// ★ A hand-written list inside a completeness sweep is a shape this
+    /// project has been bitten by three times, and it is tolerable here for one
+    /// reason: `EditRefusal::line`'s `match` is exhaustive, so a new variant is
+    /// a **compile error** in the catalog before it can be a gap in this list.
+    /// The list is a convenience over a closed set, not the closure itself.
+    const EVERY: [EditRefusal; 5] = [
+        EditRefusal::SplitAcrossPieces,
+        EditRefusal::UnsupportedFont,
+        EditRefusal::DocumentProtected,
+        EditRefusal::TextMovedAway,
+        EditRefusal::Unstated,
+    ];
+
+    /// **No sentence opens with the operator.** His report is *"the edit is not
+    /// accepted"*, and a sentence beginning with what he did reads as a
+    /// correction of him rather than an admission by the program.
+    ///
+    /// ★ Checked on the first clause because that is the part the status bar
+    /// actually shows — `disclosure_line` truncates and hangs the rest on
+    /// hover.
+    #[test]
+    fn no_edit_refusal_opens_by_naming_what_the_operator_did() {
+        for why in EVERY {
+            let first = why.line().split('.').next().unwrap_or_default().to_owned();
+            assert!(
+                !first.starts_with("You ") && !first.starts_with("Your "),
+                "a decline that opens with the operator reads as a correction of them: {first:?}"
+            );
+        }
+    }
+
+    /// ★★★ **Every sentence this shell WORDED names the obstacle in its first
+    /// clause** — and the exception proves the rule rather than weakening it.
+    ///
+    /// The first version of this test asserted it over all five variants and
+    /// went red on [`EditRefusal::Unstated`], whose line is
+    /// *"That change was refused, and the document is unchanged."* — the
+    /// pre-O140 sentence, deliberately reused byte for byte.
+    ///
+    /// ⇒ **The test was asserting more than the design promises.** `Unstated`
+    /// is the arm where the engine says only *other*, and its whole point is
+    /// that this shell has nothing to add; naming an obstacle there would be
+    /// the invented cause `RefusalKind` exists to prevent. So the obligation
+    /// belongs to the four categorised sentences, and is stated over exactly
+    /// those — with the fifth pinned separately, by
+    /// [`Self::the_uncategorised_case_keeps_the_sentence_it_always_had`], to
+    /// the string it is supposed to be.
+    ///
+    /// [`Self::the_uncategorised_case_keeps_the_sentence_it_always_had`]: the_uncategorised_case_keeps_the_sentence_it_always_had
+    #[test]
+    fn every_categorised_refusal_names_the_obstacle_in_its_first_clause() {
+        for why in [
+            EditRefusal::SplitAcrossPieces,
+            EditRefusal::UnsupportedFont,
+            EditRefusal::DocumentProtected,
+            EditRefusal::TextMovedAway,
+        ] {
+            let first = why.line().split('.').next().unwrap_or_default().to_owned();
+            assert!(
+                first.contains("pdfcer") || first.contains("document's protection"),
+                "the visible clause must name the program or the document as the obstacle: \
+                 {first:?}"
+            );
+        }
+    }
+
+    /// ★★★ **Every mapping from the engine's four buckets, exhaustively.**
+    ///
+    /// The compiler already proves `EditRefusal::of` handles every
+    /// `RefusalKind` — that is what `RefusalKind` not being `#[non_exhaustive]`
+    /// buys, and it is why the engine committed to it. What the compiler cannot
+    /// prove is that the **`NotFound` split is wired the right way round**, and
+    /// getting it backwards is the failure mode that matters most here: the
+    /// operator would be told his page had moved when his line is written one
+    /// letter at a time, or the reverse.
+    #[test]
+    fn the_engines_four_buckets_map_to_five_sentences_and_notfound_is_the_one_that_splits() {
+        use pdfcer_core::text_edit::RefusalKind as K;
+        // The three that ignore the shell's measurement, asserted both ways so
+        // a stray `one_operator` condition added to any of them goes red.
+        for one in [true, false] {
+            assert_eq!(
+                EditRefusal::of(K::UnsupportedFont, one),
+                EditRefusal::UnsupportedFont
+            );
+            assert_eq!(
+                EditRefusal::of(K::StructureFrozen, one),
+                EditRefusal::DocumentProtected
+            );
+            assert_eq!(EditRefusal::of(K::Other, one), EditRefusal::Unstated);
+        }
+        // ★ And the one that does not. `one_operator == false` means the run is
+        // written in several pieces, which is the operator's own document.
+        assert_eq!(
+            EditRefusal::of(K::NotFound, false),
+            EditRefusal::SplitAcrossPieces,
+            "a split run's NotFound is the split, not a page that moved"
+        );
+        assert_eq!(
+            EditRefusal::of(K::NotFound, true),
+            EditRefusal::TextMovedAway,
+            "a single-operator run's NotFound has no split to blame, and claiming one \
+             would be a structure this shell did not observe"
+        );
+    }
+
+    /// ★★★ **The two font-shaped refusals answer his contrast.**
+    ///
+    /// *"the lines I added below `price)` are editable, but everything else
+    /// that existed when I got the pdf is not."* He had the diagnosis before
+    /// the program did. A sentence that explains the refusal and says nothing
+    /// about why his own lines behave differently leaves the one question he
+    /// actually asked unanswered.
+    #[test]
+    fn the_two_content_refusals_explain_why_his_own_added_lines_edit() {
+        for why in [EditRefusal::SplitAcrossPieces, EditRefusal::UnsupportedFont] {
+            let s = why.line();
+            assert!(
+                s.contains("added with pdfcer"),
+                "his contrast is unaddressed: {s:?}"
+            );
+            assert!(s.contains("do edit"), "and it must say which way: {s:?}");
+        }
+    }
+
+    /// **No sentence promises a workaround.**
+    ///
+    /// ⚠ Verified before it was written, not assumed: there is no verb in this
+    /// shell that deletes a text run, and `add_text` writes the engine's
+    /// bundled Helvetica — so *"delete it and retype it"* would cost the
+    /// operator his typography and his position, and is not offered. A remedy
+    /// named in a decline is a promise, and a promise that does not resolve is
+    /// worse than the silence it replaced.
+    #[test]
+    fn no_edit_refusal_offers_a_remedy_this_build_does_not_have() {
+        for why in EVERY {
+            let s = why.line().to_ascii_lowercase();
+            assert!(
+                !s.contains("retype") && !s.contains("delete it"),
+                "neither deletion nor retyping is available, so neither may be suggested: {s:?}"
+            );
+        }
+    }
+
+    /// ★★ **The split-run sentence says the document is intact and does not
+    /// pretend there is something to do.**
+    ///
+    /// The failure this ends is not *"I was not told why"* — it is *"I do not
+    /// know whether it took"*. `edit_declined_by_engine`'s own documentation
+    /// carries the argument; this variant inherits the obligation.
+    #[test]
+    fn the_split_run_sentence_says_the_document_is_unchanged() {
+        let s = EditRefusal::SplitAcrossPieces.line();
+        assert!(s.contains("unchanged"), "{s:?}");
+        assert!(
+            s.contains("one letter at a time"),
+            "the cause has to be in his terms, not in show operators: {s:?}"
+        );
+    }
+
+    /// **`Unstated` is the old sentence, unchanged.** Where the engine says
+    /// only *other*, this shell has nothing to add — and adding something would
+    /// be the invented cause `RefusalKind` exists to prevent.
+    #[test]
+    fn the_uncategorised_case_keeps_the_sentence_it_always_had() {
+        assert_eq!(
+            EditRefusal::Unstated.line(),
+            crate::text::status::edit_declined_by_engine()
+        );
+    }
 
     /// ★ **Every refusal has a sentence, and none of them is empty.**
     ///

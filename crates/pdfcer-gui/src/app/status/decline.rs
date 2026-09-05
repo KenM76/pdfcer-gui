@@ -814,6 +814,56 @@ pub(crate) enum Declined {
     /// operator who reads it, moves the selector and presses again retires it
     /// with that press, through [`retire`], which is the honest lifetime.
     ClipboardMode(crate::text::clipboard::ModeRefusal),
+    /// ★★★ **A text edit the engine refused, and WHICH KIND of refusal it was**
+    /// — `OPERATOR_REQUESTS.md` **O140**, 2026-09-05.
+    ///
+    /// The operator: *"on page 2 there is a spelling mistake — clien instead of
+    /// client. if I try to edit the edit is not accepted."*
+    ///
+    /// # What this replaces, and it is not a silence
+    ///
+    /// [`Self::EditRefused`] was already reaching him — O116 shipped it on
+    /// 2026-09-04 and a driven run on his own file confirms the `⊗` slot draws
+    /// one frame after the refusal. What he read was *"That change was refused,
+    /// and the document is unchanged."* True, complete about the document, and
+    /// **silent about the one thing he wanted**: why, and whether he can do
+    /// anything.
+    ///
+    /// ⇒ So this is not the founding defect class a second time. It is the
+    /// *next* rung of it: a sentence that says nothing actionable is not the
+    /// same as no sentence, and it is not good enough either.
+    ///
+    /// # ★★★ It exists because [`Self::EditRefused`]'s stated blocker LIFTED
+    ///
+    /// That variant's documentation is explicit — *"It carries NO payload,
+    /// unlike every other refusal variant here… adding one would be the exact
+    /// mistake those three narrowly avoid at scale — a second copy of
+    /// `pdfcer-core`'s whole taxonomy… ⇒ A payload arrives the day `EditError`
+    /// exposes a coarse `kind()`. Until then the honest arity is zero."*
+    ///
+    /// **`pdfcer-core` shipped `text_edit::RefusalKind` at `b1033ab`**, in
+    /// answer to this project's own request, deliberately not
+    /// `#[non_exhaustive]` so a front end may match it exhaustively. The
+    /// condition that variant named is met, so this one exists — and it carries
+    /// a payload for [`Self::Reflow`]'s and [`Self::Rotate`]'s reason: the
+    /// catalog owns the wording and this enum owns only which sentence.
+    ///
+    /// ★ [`Self::EditRefused`] is **not** deleted, and that is deliberate
+    /// rather than an oversight. It is the funnel's floor for **every other
+    /// verb** — ~78 call sites — and only `edit_text` has been given a
+    /// classifier. Deleting it would silence the other seventy-seven.
+    ///
+    /// # Retirement: the `retire`-only class, on the TENSE argument
+    ///
+    /// [`Self::still_true`] answers `true`, and the argument is
+    /// [`Self::EditRefused`]'s exactly: this is a **report of a past moment** —
+    /// *that commit was refused, and the document is unchanged* — true when it
+    /// was written whatever the next frame does. It cannot claim stability (an
+    /// operator may unlock a protected document, and `DocumentProtected` names
+    /// that as the remedy), and it cannot be re-asked through a live predicate,
+    /// because the fact recorded is *what the engine answered about a request
+    /// that no longer exists*. The operator's next command retires it.
+    EditText(crate::text::textedit::EditRefusal),
 }
 
 impl Declined {
@@ -1009,6 +1059,12 @@ impl Declined {
             // asks the operator to change. A live predicate would retire the
             // explanation at the instant they acted on it.
             Self::ClipboardMode(_) => true,
+            // ★★ On the TENSE argument, and inheriting `EditRefused`'s section
+            // wholesale — this variant is that one with a cause attached, so
+            // the retirement reasoning is unchanged by the payload. It reports
+            // what the engine answered about a request that no longer exists;
+            // there is no predicate to re-ask, and `retire` owns stale.
+            Self::EditText(_) => true,
         }
     }
 
@@ -1093,6 +1149,13 @@ impl Declined {
             // other three clipboard refusals already live, so a fourth wording
             // of "that did not happen" cannot grow up beside them.
             Self::ClipboardMode(why) => why.line(),
+            // ★★ Same catalog as `Reflow` and `EnterCannotSplit` above, and the
+            // same rule: this enum owns which sentence, `crate::text::textedit`
+            // owns the words. `EditRefusal::Unstated` forwards to
+            // `t::edit_declined_by_engine` — the line `Self::EditRefused` shows
+            // — so the un-categorised case is the *same string*, in one place,
+            // and cannot drift into two voices for one condition.
+            Self::EditText(why) => why.line(),
             // ★ Reaches across to `crate::text::measure` on the same rule: a
             // string lives with the surface that owns its subject, and this
             // one's subject is what a ce dimension measures — where the
@@ -1287,7 +1350,7 @@ mod textedit;
 /// and `decline::record_enter_cannot_split()`. `floor`'s rule: the split is
 /// about where the code lives, and a call site should not have to learn that a
 /// submodule exists.
-pub(crate) use textedit::{record_enter_cannot_split, record_reflow};
+pub(crate) use textedit::{record_edit_text_refusal, record_enter_cannot_split, record_reflow};
 
 /// ★★★ **Every writer of the decline slot**, split out under R2 on 2026-09-05
 /// when this file reached 1,497 lines against the ceiling for the third time —

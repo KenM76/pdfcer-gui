@@ -555,6 +555,16 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // check that exists and is not registered is a check nobody will ever
         // run. Whoever runs the suite next is the first thing that executes it.
         Box::new(enter_newline::EnterMakesASecondLineAndControlEnterCommits),
+        // ★★★ O140, and it sits here rather than beside `text_edit_real`
+        // deliberately: it is the same family and the OPPOSITE question. That
+        // check asks whether the shell can place a caret and reach the engine
+        // on a real drawing; this one starts from a commit the engine is
+        // certain to refuse and asks only what the operator is told about it.
+        // Running it after `enter_newline` puts the two keystroke-level text
+        // checks together and both after the reflow, which is the order a
+        // reader debugging "text editing does not work" wants: can it commit,
+        // can it break a line, can it explain itself.
+        Box::new(typo_refusal::ARefusedTypoFixSaysWhyItWasRefused),
         // ★ Directly after `redaction`, and before the two selection checks,
         // because it is the second most expensive check in the suite — it
         // launches the binary twice, for the same reason `save_copy` does — and
