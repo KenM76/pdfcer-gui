@@ -120,6 +120,17 @@ use crate::report::CheckReport;
 
 /// The mode O123 rearranged.
 const MODE: &str = "edit";
+
+/// The command that puts the dock back to this build's default arrangement.
+///
+/// Fired before anything is measured — see the block in `run` for why. Named as
+/// a constant rather than inlined so the assertion that the reset landed and the
+/// invocation that performs it cannot drift apart.
+const RESET: &str = "view.reset_layout";
+
+/// The environment variable that rings a command chain through the real
+/// dispatcher at launch - no pointer, no keystroke.
+const INVOKE_ENV: &str = "PDFCER_DIAG_INVOKE";
 /// The fixture, pinned. See the module header.
 const FIXTURE: &str = "fixtures/a1-titleblock.pdf";
 /// The master's body compartment, as the dock reports it.
@@ -227,6 +238,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
+    spec.env.push((INVOKE_ENV.to_owned(), RESET.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
 
@@ -236,6 +248,52 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     session.settle(40);
 
     let driver = Driver::new(session.window());
+
+    // ★★★ **RESET THE LAYOUT FIRST, AND ASSERT THE RESET LANDED — 2026-09-05.**
+    //
+    // The application persists its dock arrangement to `userdata/layout.ron`,
+    // and `Session::launch` does not clear it. So without this the check
+    // inherits **whatever width a previous run left behind**, and the trace says
+    // so plainly: `mode-changed … remembered=true` — a restored workspace, which
+    // never reads `EDIT_INSPECTOR_WIDTH` at all.
+    //
+    // ⇒ This check's own header already spotted the symptom and corrected its
+    // *failure message* to warn about `remembered=true`. It did not make the
+    // check **hermetic**, so the warning was advice to a human reading a report
+    // rather than a property of the run. A measurement of an inherited width is
+    // a measurement of an earlier session's furniture.
+    //
+    // ★★ It is the same defect that made `panels_float_close_and_dock` fail for
+    // days — four sections relaunching the binary, each inheriting what the last
+    // one saved, and the headline number (`docked=0`) *honest* the whole time.
+    // That check's fix is the precedent this follows: reset in the shared path,
+    // and **assert the reset landed**, because a reset that silently did nothing
+    // is indistinguishable from a clean start and turns every number below into
+    // a claim about the wrong document.
+    // Assert the reset LANDED before anything downstream is believed —
+    // `panel_float::reset_landed`'s precedent, and its exact reason: a section
+    // that skipped this and went on to report a width would be reporting the
+    // application wrong for the check's own reason.
+    {
+        let pre = session.trace()?;
+        let landed = pre
+            .events("layout-reset")
+            .last()
+            .map(|l| l.raw.clone())
+            .filter(|raw| raw.contains("changed="));
+        if landed.is_none() {
+            return Ok(Some(format!(
+                "\u{2605}\u{2605}\u{2605} THE LAYOUT RESET DID NOT LAND. `{RESET}` was fired at launch and \
+                 no `layout-reset ... changed=` line came back, so every width below \
+                 would be whatever a previous run left in `userdata/layout.ron` rather \
+                 than this build's default. A check measuring an inherited arrangement \
+                 is measuring an earlier session's furniture - reported as a FAILURE, \
+                 not a note, because a silent inheritance is indistinguishable from a \
+                 clean start."
+            )));
+        }
+    }
+
     click_mode_segment(&session, &driver, ui_rect, MODE)?;
     session.settle(30);
 
