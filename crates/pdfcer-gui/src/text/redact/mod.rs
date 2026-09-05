@@ -938,9 +938,24 @@ pub fn cancel_button() -> &'static str {
 /// destructive-but-reversible actions everywhere else, so the ABSENCE of a
 /// chord on the one irreversible action is a deliberate asymmetry worth
 /// stating.
+///
+/// ★★★ **CORRECTED 2026-09-05, and the defect was that this string does not
+/// branch while the sentence two hundred lines above it does.**
+/// [`permanence_statement`] takes the destination and says two different
+/// things; this note is drawn unconditionally in the same window's footer
+/// (`crate::dialogs::redact`), so on the **default** destination — which
+/// since `Pass 250.2` stages the removal into the next save, keeps the undo
+/// log and offers a Cancel — the footer was contradicting the body of the
+/// dialog it sits in.
+///
+/// The fix is to make the sentence true on **every** destination rather than
+/// to branch it, because the reason for the missing chord does not vary: what
+/// this button starts always ends in a write that no Undo reaches. Branching
+/// would have produced a second pair of strings to keep in step, which is the
+/// condition that produced this defect.
 #[must_use]
 pub fn no_shortcut_note() -> &'static str {
-    "There is deliberately no keyboard shortcut for this button. It is the one action in pdfcer that cannot be undone, so it takes a deliberate click."
+    "There is deliberately no keyboard shortcut for this button. It is the one action in pdfcer that ends in a change nothing can undo, so it takes a deliberate click."
 }
 
 /// The title on the system file-save dialog.

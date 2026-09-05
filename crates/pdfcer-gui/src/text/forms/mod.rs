@@ -309,9 +309,20 @@ pub fn form_field_certification_disabled_tooltip() -> &'static str {
 ///
 /// Listed rather than hidden (R83): an operator scrolling past a signature
 /// field should see that pdfcer knows it is there.
+///
+/// ★★ **CORRECTED 2026-09-05, and it is a worked example of why a conjoined
+/// refusal is dangerous.** It read *"pdfcer does not create or verify
+/// signatures yet."* Half of that stayed true — pdfcer still cannot **sign**
+/// — and half became false the day `signature::verify_all_with_trust` was
+/// wired (`crate::panels::signatures`, engine v0.38.0 at `b01964f`). Because
+/// the two claims shared one sentence, the true half kept the false half
+/// looking true, and this row went on denying a capability the Signatures
+/// panel demonstrates two clicks away. The clauses are separated now, and
+/// only the one that is still true is a refusal.
 #[must_use]
 pub fn form_field_signature_note() -> &'static str {
-    "Signature field — pdfcer does not create or verify signatures yet."
+    "Signature field — pdfcer cannot sign a document. The Signatures panel reports on the \
+     signatures a document already carries."
 }
 
 /// Note on a pushbutton row.

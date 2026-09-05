@@ -76,11 +76,24 @@
 //!    a real temptation — it is the most useful thing an operator could be
 //!    told — and it is unsourced, which under the claim-bearing-copy rule
 //!    settles it.
-//! 2. **That a signature is valid, or verified, or checked.** The engine's
-//!    first line is *"This module verifies nothing."* It computes no digest,
-//!    parses no PKCS#7 blob and validates no certificate chain. [`verifies_nothing`]
-//!    is the footnote that says so on the one surface where an operator might
-//!    otherwise read pdfcer's silence as a pass.
+//! 2. **That a signature is valid, or verified, or checked.** ★★★ **The
+//!    REASON changed on 2026-09-05 and the RULE did not, which is the only
+//!    reason this entry is still here.** It used to rest on the engine's own
+//!    opening line, *"This module verifies nothing"* — and that stopped being
+//!    true at `pdfcer-core` v0.38.0 (`b01964f`), where
+//!    `signature::verify_all_with_trust` does compute the digest and does walk
+//!    the chain. What survives is a **scope** rule rather than a capability
+//!    one: the checking is reported by [`crate::panels::signatures`], as three
+//!    separate labelled facts, and **nothing in this file may borrow that
+//!    verdict**, because every string here is drawn by a save dialog that has
+//!    looked at byte ranges and nothing else. [`verifies_nothing`] is the
+//!    footnote that says so, and since 2026-09-05 it also names the surface
+//!    that has the other answer instead of implying there is none.
+//!
+//!    ⇒ ★★ *This is the seventh recurrence of the project's most expensive
+//!    pattern.* The prohibition was right; its stated justification was a
+//!    dated citation of another crate, and it expired silently. A rule that
+//!    outlives its reason keeps passing its own tests.
 //! 3. **"Author signature", or any resolution of it.** Table 234's seed value
 //!    `MDP /P 0` defines *"an author signature"* to mean an ordinary approval
 //!    signature, while §12.8.2.2.1 uses *"the author of a document"* to mean
@@ -319,10 +332,29 @@ pub const fn cancel_button() -> &'static str {
 /// what somebody needs *after* they have noticed the window is making a claim
 /// and wondered how it knows, and putting it above would stand a sentence
 /// between the question and the answer.
+/// ★★★ **CORRECTED 2026-09-05, and the correction is the whole point of the
+/// doc comment above it.**
+///
+/// The sentence used to read *"pdfcer does not check any signature's
+/// certificate or its cryptography."* That was a claim about the **build**,
+/// and it became false the day `signature::verify_all_with_trust` was wired
+/// (`crate::trust::examine`, consumed by `crate::panels::signatures`, which
+/// draws integrity, coverage and trust as three separate labelled lines).
+/// Engine `pdfcer-core` v0.38.0 at `b01964f`; measured against that lock, not
+/// recalled.
+///
+/// What is still true is the narrower thing this window needed all along:
+/// **this window** has not checked anything — it is arithmetic over byte
+/// ranges — and the Signatures panel is where the checking is reported. So
+/// the sentence is now scoped to its own surface and points at the one that
+/// carries the other answer, which is what it should have said when it was
+/// written. ⇒ *A sentence about what the program cannot do is a dated
+/// citation; where it can name the surface it is true of, it should.*
 #[must_use]
 pub const fn verifies_nothing() -> &'static str {
-    "pdfcer does not check any signature's certificate or its cryptography. It reports what a \
-     save does to the bytes a signature covers, and nothing more."
+    "This window does not look at any signature's certificate or its cryptography. It reports \
+     what a save does to the bytes a signature covers, and nothing more. The Signatures panel \
+     is where pdfcer reports what it can establish about a signature itself."
 }
 
 /// The status-bar note after a save whose signatures kept their byte range.
@@ -403,7 +435,8 @@ pub fn invalidated_note(count: usize) -> String {
     };
     format!(
         "{subject}, and the save you just made changes it after signing. pdfcer reports that as \
-         invalidating {object}; it has not checked any signature's cryptography."
+         invalidating {object}; that is a reading of where the bytes moved, not of the \
+         cryptography. The Signatures panel reports the rest."
     )
 }
 

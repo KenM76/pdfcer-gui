@@ -156,6 +156,29 @@ impl NoteDraft {
 pub struct CommentsUi {
     /// The note being typed. See [`NoteDraft`].
     pub draft: NoteDraft,
+    /// ★★★ **How many WRITING controls the panel drew on its last frame** —
+    /// Delete buttons plus note editors — so a headless test can assert that a
+    /// reading stance offers none.
+    ///
+    /// # Why an instrument and not an assertion on a pure function
+    ///
+    /// On 2026-09-05 the Delete control and the note editor were both drawn,
+    /// live and effective, in **Read** — the mode whose whole stated posture is
+    /// *the document is not yours to alter*. Forty-six tests over this panel
+    /// passed, the twenty-nine gates were green and the ribbon comparison
+    /// exited 0. It was found by launching the release binary off screen and
+    /// reading its trace.
+    ///
+    /// The lesson this project already had, applied one rung up: **a unit test
+    /// that calls the verb cannot see the chain in front of it.** A test of a
+    /// `should_offer_delete(caps)` predicate would have passed on the build
+    /// that never asked it. So the observable is the *drawn* count, taken from
+    /// the same pass that draws, and the test drives the real `body`.
+    ///
+    /// Reset at the top of every frame, so a stale count can never be read as a
+    /// fresh one — the failure mode `NoteDraft`'s epoch stamp exists to prevent,
+    /// in its cheapest form.
+    pub writing_controls_drawn: u32,
     /// ★ **What the reviewer has narrowed the list to**, and how it is
     /// ordered. Added 2026-09-05; see [`super::filter`].
     ///

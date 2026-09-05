@@ -535,11 +535,25 @@ pub const fn view_panel_layers() -> CommandText {
 }
 
 /// `view.panel_signatures`
+///
+/// ★★★ **CORRECTED 2026-09-05.** The second sentence read *"pdfcer does not
+/// check whether they are valid."* It became false when
+/// `signature::verify_all_with_trust` was wired (`crate::trust::examine`,
+/// engine `pdfcer-core` v0.38.0 at `b01964f`), and it was **missed by the
+/// sweep that corrected the panel's own explainer** — `crate::text::panels`
+/// deleted the near-identical sentence the same day and left this one
+/// standing, because the feature work opened that file and never opened this
+/// one. The tooltip is the surface read *before* the panel opens, so it was
+/// the worse of the two to leave wrong.
+///
+/// The replacement states the three facts the panel actually draws rather
+/// than a verdict, because the panel never folds them into one.
 #[must_use]
 pub const fn view_panel_signatures() -> CommandText {
     CommandText::new(
         "Signatures",
-        "Show what each digital signature covers. pdfcer does not check whether they are valid.",
+        "Show each digital signature: what it covers, whether the bytes it covers were \
+         altered, and whether the signer is one you have chosen to trust.",
     )
 }
 

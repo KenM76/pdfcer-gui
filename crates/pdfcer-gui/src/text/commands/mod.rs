@@ -33,10 +33,24 @@
 //! pdfcer's tooltips are unusually long and unusually specific, and that is
 //! a deliberate quality of the product rather than an accident of who
 //! wrote them. They say what a command *changes* ("This changes the
-//! document, not just the view"), what it *cannot* do ("pdfcer does not
-//! check whether they are valid"), and what is *irreversible* ("Marking is
-//! reversible; applying is not"). Where the salvage source's wording said
-//! something worth keeping, it is kept close to verbatim.
+//! document, not just the view"), what it *cannot* do, and what is
+//! *irreversible*. Where the salvage source's wording said something worth
+//! keeping, it is kept close to verbatim.
+//!
+//! ★★★ **The two examples this paragraph used to quote were both FALSE by
+//! 2026-09-05, and they were quoted here as models of good voice.** They were
+//! *"pdfcer does not check whether they are valid"* (untrue once
+//! `signature::verify_all_with_trust` was wired) and *"Marking is reversible;
+//! applying is not"* (untrue on the default destination once `Pass 250.2`
+//! made applying stage the next save). Both have been corrected in place —
+//! see [`edit_redact`] and [`crate::text::commands::view::view_panel_signatures`].
+//!
+//! ⇒ **The lesson is about the QUOTING, not the sentences.** A header that
+//! holds up a live string as an exemplar makes a second copy of that string's
+//! claim, in a file nobody edits when the claim expires. Name the *shape* of
+//! the good sentence, not its text. The examples that survive above are the
+//! ones that describe a permanent property of a tooltip rather than a
+//! measurement of the build.
 //!
 //! Two things are trimmed:
 //!
@@ -838,21 +852,47 @@ pub const fn edit_find() -> CommandText {
 }
 
 /// `edit.redact`
+///
+/// ★★★ **CORRECTED 2026-09-05.** The closing clause read *"Marking is
+/// reversible; applying is not."* That was true of every route this shell had
+/// until `Pass 250.2` (engine `pdfcer-core` v0.38.0 at `b01964f`), which made
+/// the **default** destination arm the next save instead of rewriting at the
+/// click: the undo log survives, the page does not change, and a Cancel
+/// disarms it. `crate::text::redact::panel_intro` was rewritten for that the
+/// same day; these two tooltips were not, because the work opened the panel's
+/// catalog and not this one.
+///
+/// What is unchanged, and stays exactly as emphatic, is that **once a file
+/// with the marks applied has been written, nothing brings the content
+/// back.** What moved is *when*, never *whether* — which is the same
+/// distinction `panel_intro`'s own note draws, and it is deliberately worded
+/// to match so an operator comparing the two is not comparing two accounts.
 #[must_use]
 pub const fn edit_redact() -> CommandText {
     CommandText::new(
         "Redact",
         "Mark what is to be permanently removed — a whole page, every occurrence of some text, \
-         or everything matching a pattern. Marking is reversible; applying is not.",
+         or everything matching a pattern. Marking is reversible, and so is applying until the \
+         file is written; once it is written, that cannot be undone.",
     )
 }
 
 /// `edit.redact_apply`
+///
+/// ★★★ **CORRECTED 2026-09-05** — see [`edit_redact`] above for the whole
+/// account. The sentence read *"This cannot be undone."* On the default
+/// destination the click now stages the removal into the next save
+/// (`crate::redact::stage_into_session`), which is undoable and cancellable;
+/// the irreversible moment is the write, and both ordinary save routes refuse
+/// by name while a redaction is armed rather than writing a half-redacted
+/// file.
 #[must_use]
 pub const fn edit_redact_apply() -> CommandText {
     CommandText::new(
         "Apply redactions",
-        "Permanently remove everything the redaction marks cover. This cannot be undone.",
+        "Permanently remove everything the redaction marks cover. By default this happens when \
+         you next save, and can be cancelled until then; once the file is written it cannot be \
+         undone.",
     )
 }
 

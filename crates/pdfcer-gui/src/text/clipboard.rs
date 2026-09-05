@@ -264,7 +264,12 @@ fn cannot_carry(subtypes: &[String]) -> String {
 /// * **`thin`** — annotations that *will* paste, and will paste **without their
 ///   author, date, note text and opacity**. This is the one nobody would ever
 ///   report: the mark is on the page, it looks right, and what is missing lives
-///   in a pop-up this shell does not draw. It is `pdfcer-core`'s limit, not
+///   in the pop-up. ★★ **Corrected 2026-09-05: it used to read *"a pop-up this
+///   shell does not draw"*, and that stopped being true the day
+///   `crate::canvas::notepopup` shipped** — which makes the loss *more*
+///   reportable, not less, because the operator can now open the pop-up and
+///   find it empty. The sentence is kept for the same reason it was written;
+///   only its false half is gone. It is `pdfcer-core`'s limit, not
 ///   this shell's — `paste_clip_annotations` plants a modelled markup with
 ///   `add_markup` rather than `add_markup_with` — and the sentence says so
 ///   plainly, because an operator who believes it is their mistake will retry.

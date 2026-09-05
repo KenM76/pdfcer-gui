@@ -18,6 +18,16 @@
 //! place and something softer in another has to work out which program is
 //! lying.
 //!
+//! ★★★ **Amended 2026-09-05: only the FIRST of those two is still the engine's
+//! wording.** [`signature_not_verified`] described a limitation that ended when
+//! `pdfcer-core` v0.38.0 (`b01964f`) shipped `verify_all_with_trust`, so it has
+//! been rewritten here rather than left standing — see its own doc comment. The
+//! "do not re-word it" rule protected a sentence that had **expired**, which is
+//! the failure mode a shared-wording rule is most exposed to: it makes the
+//! sentence harder to change at exactly the moment it needs changing. The rule
+//! stands for [`permissions_are_advisory`], which describes a property of the
+//! PDF standard and cannot expire.
+//!
 //! The engine also corrected our draft of the second, and the correction is
 //! instructive: our version said pdfcer *"cannot tell you the document is
 //! unaltered"*, and the engine asked for wording that **will not have to be
@@ -322,12 +332,31 @@ pub const fn not_signed() -> &'static str {
 /// answer. So: *"does not yet check"*, and the clause that will change is
 /// separated from the clause about trust, which will not.
 ///
-/// When `signature::verify` lands, the first two clauses change and the trust
-/// clause stays. The engine will send the replacement wording with the verb.
-/// **Do not guess at it.**
+/// ★★★ **THAT DAY CAME — 2026-09-05 — and this sentence was false for it.**
+/// The paragraph above said *"when `signature::verify` lands, the first two
+/// clauses change"*. It landed: `pdfcer-core` v0.38.0 (`b01964f`) carries
+/// `signature::verify_all_with_trust`, `crate::trust::examine` calls it, and
+/// `crate::panels::signatures` draws integrity, coverage and trust as three
+/// separate labelled lines. The clause *"It does not yet check the signature
+/// itself"* was untrue from that moment.
+///
+/// ⚠ **And nothing went red, because this function has ZERO call sites.** The
+/// panel was built against [`crate::text::trust`] and [`crate::text::panels`]
+/// instead, which orphaned this whole signature group — `signatures_heading`,
+/// `not_signed`, `signature_count` and `coverage_line` are likewise
+/// unreferenced. A dead string cannot mislead an operator, but it can and did
+/// mislead a reader auditing what this build claims, which is what
+/// `FEATURES.md` is re-measured against.
+///
+/// The wording below is **not guessed**: it is scoped down to the two facts
+/// this catalog's own surviving callers deal in, and everything about
+/// verdicts is deferred to [`crate::text::trust`], which is the catalog the
+/// engine's reply was actually spent on. ⇒ *An absence claim is a claim about
+/// every route; when the absence ends, grep for the sentence, not just for
+/// the caller.*
 #[must_use]
 pub const fn signature_not_verified() -> &'static str {
-    "pdfcer can see that this document is signed and can tell you whether anything was appended after the signature. It does not yet check the signature itself — so it cannot tell you the signed bytes are unaltered, and it cannot tell you who signed it or whether to trust them."
+    "pdfcer can see that this document is signed and can tell you whether anything was appended after the signature. What each signature covers, whether its bytes were altered, and whether its signer is one you trust are reported together in the Signatures panel."
 }
 
 /// How many signatures, and how many of those cover the whole file.
@@ -369,7 +398,21 @@ pub const fn coverage_line(covers: bool) -> &'static str {
 /// feature is half-built and stop looking — which is the discoverability defect
 /// that produced the Tool panel, arriving from the opposite direction. So the
 /// tab states the boundary once, in one sentence, as a fact about this build.
+///
+/// ★★★ **CORRECTED 2026-09-05 — two of its three clauses were false, and it
+/// too has ZERO call sites.** *"Encryption first, signing later"* was the
+/// right prediction and it came true on 2026-09-04: `file.encrypt` and
+/// `file.permissions` are registered, dispatched through
+/// `crate::app::dispatch::protect`, drawn on **File ▸ Security**, and
+/// `crate::protect` calls `set_encryption`, `set_permissions` and
+/// `remove_encryption`. So pdfcer can add a password, remove one, and change
+/// these permissions. Only *sign a document* is still true.
+///
+/// The tab this was written for was superseded by that window and by
+/// [`crate::text::protect`], which is where the live wording lives — so this
+/// sentence sat false and unreferenced for a day. It is scoped to the one
+/// clause that survives, and it now names where the rest went.
 #[must_use]
 pub const fn cannot_author() -> &'static str {
-    "pdfcer can read a document's protection and cannot change it: it cannot add or remove a password, change these permissions, or sign a document. Those are being built in the engine — encryption first, signing later."
+    "pdfcer can add or remove a password and change these permissions — File > Security. It cannot sign a document; that is still being built in the engine."
 }
