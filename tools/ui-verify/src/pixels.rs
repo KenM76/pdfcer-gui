@@ -328,6 +328,121 @@ pub fn region_not_uniform(img: &Image, region: PixRect) -> UniformityReport {
     }
 }
 
+/// **How much INK a strip carries, as distinct from how varied it is.**
+///
+/// # Why this exists beside [`region_not_uniform`]
+///
+/// `region_not_uniform` answers *"is this region all one colour?"* with
+/// `distinct <= 1 || dominant_share > 0.999`. On a 2,112-pixel strip that
+/// permits **two** stray pixels — and a panel edge always carries more than
+/// two, because a one-pixel border column and the antialiased tips of a few
+/// glyphs are furniture, not overflow.
+///
+/// Measured on `master-detail.png`, 2026-09-05, over the last 8 pt of the
+/// Objects pane:
+///
+/// ```text
+/// (232,232,234) x 2098   the panel's own plate
+/// (196,198,202) x    8   the pane's right border column
+/// four dark values x 1   isolated antialiased pixels
+/// ```
+///
+/// `dominant_share` = 0.9934, below the 0.999 floor, so the strip read as
+/// *"ink is running into the pane's right edge"* — about fourteen pixels, six
+/// of which were single. **The statistic was maximally sensitive to the one
+/// thing always present (antialiasing) and said nothing about the thing it
+/// wanted (a run of glyph ink).**
+///
+/// ⇒ ★★★ **This is a better instrument, not a wider tolerance**, and the
+/// distinction is the project's standing rule: when a measurement runs out,
+/// read something else — never move the threshold until the failure stops.
+/// Text that has genuinely overflowed is **dark** and **contiguous**: a clipped
+/// word puts dozens of near-black pixels into several adjacent rows. Isolated
+/// pixels and a border column are neither.
+///
+/// # What it measures
+///
+/// A pixel is *ink* when its luminance is at least `INK_CONTRAST` below the
+/// strip's own dominant colour — so the plate is the reference and no constant
+/// has to know what colour the theme is. The verdict is the **longest vertical
+/// run** of ink in any single column: one isolated pixel is 1, an antialiased
+/// glyph tip is 1 or 2, and a clipped capital is the height of the type.
+#[must_use]
+pub fn ink_run_into(img: &Image, region: PixRect) -> InkReport {
+    /// How far below the plate a pixel must be to count as ink. Measured: the
+    /// darkest antialiased stray in the observed strip was 103 against a plate
+    /// of 232 — a distance of 129 — so a threshold based on stray VALUES would
+    /// not separate them. The run length does the separating; this only
+    /// excludes the border column (232 against 197 = 35).
+    const INK_CONTRAST: i32 = 60;
+
+    let (buckets, sampled) = bucketize(img, region);
+    // The plate is the strip's own dominant bucket, averaged back to a colour,
+    // so no constant here has to know what the theme is painting.
+    let plate_luma = buckets
+        .iter()
+        .max_by_key(|(_, b)| b.count)
+        .map_or(255 * 3, |(_, b)| {
+            let n = b.count.max(1);
+            i32::try_from((b.r + b.g + b.b) / n).unwrap_or(255 * 3)
+        });
+
+    let mut longest = 0usize;
+    let mut ink = 0usize;
+    for x in region.x..region.x + region.w {
+        let mut run = 0usize;
+        for y in region.y..region.y + region.h {
+            let Some(px) = img.pixel(x, y) else { continue };
+            let luma = i32::from(px.r) + i32::from(px.g) + i32::from(px.b);
+            if plate_luma - luma >= INK_CONTRAST * 3 {
+                ink += 1;
+                run += 1;
+                longest = longest.max(run);
+            } else {
+                run = 0;
+            }
+        }
+    }
+    InkReport {
+        longest_run: longest,
+        ink,
+        sampled,
+    }
+}
+
+/// What [`ink_run_into`] found.
+#[derive(Debug, Clone, Copy)]
+pub struct InkReport {
+    /// The longest vertical run of ink pixels in any one column.
+    pub longest_run: usize,
+    /// Every ink pixel in the strip, run or not.
+    pub ink: usize,
+    /// How many pixels were looked at.
+    pub sampled: usize,
+}
+
+impl InkReport {
+    /// **Whether this is text and not furniture.**
+    ///
+    /// Three pixels, because two adjacent antialiased pixels are reachable on a
+    /// steep glyph edge and three are not — while the shortest thing an
+    /// operator would call clipped text is a lower-case x-height, which at this
+    /// project's smallest shipped size is seven.
+    #[must_use]
+    pub const fn is_text(&self) -> bool {
+        self.longest_run >= 3
+    }
+
+    /// A one-line summary for a report.
+    #[must_use]
+    pub fn summary(&self) -> String {
+        format!(
+            "longest vertical ink run {} px, {} ink px of {} sampled",
+            self.longest_run, self.ink, self.sampled
+        )
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

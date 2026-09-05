@@ -475,17 +475,35 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         crate::geom::Pt::new(objects.max.x - EDGE_STRIP_PTS, objects.min.y),
         crate::geom::Pt::new(objects.max.x, objects.max.y),
     );
-    let uniformity =
-        crate::pixels::region_not_uniform(&image, frame.logical_to_capture_pixels(strip));
-    // ⚠ Polarity: uniform is the PASS here. See the module header.
-    if !uniformity.is_uniform() {
+    // ★★★ **`ink_run_into`, not `region_not_uniform` — changed 2026-09-05, the
+    // first time this assertion was ever REACHED.**
+    //
+    // Earlier assertions in this check failed for their own reasons and
+    // execution never got here. Making the check hermetic let it through, and
+    // it failed at once — on a strip that is 2,098 pixels of the panel's own
+    // plate, 8 of the pane's border column, and **six single antialiased
+    // pixels**. `region_not_uniform` passes only on
+    // `dominant_share > 0.999`, i.e. **two** stray pixels in 2,112: a floor no
+    // panel edge with type near it can ever meet.
+    //
+    // ⇒ The statistic was maximally sensitive to the one thing always present
+    // (antialiasing) and said nothing about the thing it wanted (a run of glyph
+    // ink). **A better instrument, not a wider tolerance** — this project's
+    // standing rule is that when a measurement runs out you read something
+    // else, never move the threshold until the failure stops.
+    //
+    // Overflowing text is **dark and contiguous**: a clipped word puts dozens
+    // of near-black pixels into adjacent rows. Furniture and antialiasing are
+    // one or two. So the verdict is the longest vertical ink run in any column.
+    let ink = crate::pixels::ink_run_into(&image, frame.logical_to_capture_pixels(strip));
+    if ink.is_text() {
         return Ok(Some(format!(
             "★★★ INK IS RUNNING INTO THE OBJECT PANE'S RIGHT EDGE ({}). The application \
              reported zero shortened rows and the last {EDGE_STRIP_PTS} pt of the pane are not \
              the panel's ground, so something is being drawn past where the elision arithmetic \
              thinks the text ends. That is the case the trace channel alone cannot see, and it \
              is why this assertion exists. The capture is at {}.",
-            uniformity.summary(),
+            ink.summary(),
             path.display()
         )));
     }
