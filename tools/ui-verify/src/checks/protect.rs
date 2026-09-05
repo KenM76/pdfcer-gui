@@ -555,13 +555,36 @@ fn shell_rect_count(session: &Session, ui_rect: &str, name: &str) -> Result<usiz
 /// missing fixture is a fact about the checkout. The error names the path so
 /// the next reader fixes the right thing.
 fn repo_fixture(ctx: &CheckContext, name: &str) -> Result<PathBuf> {
-    let root = ctx.source_root.clone().ok_or_else(|| {
-        Error::new(
-            "no source root, so this check cannot find the repository's fixtures. Pass \
-             --source-root.",
-        )
-    })?;
-    let path = root.join("fixtures").join(name);
+    // *** From this crate's own manifest directory, NOT from `ctx.source_root`
+    // *** -- corrected 2026-09-05, the first time this check was ever run.
+    //
+    // `--source-root` defaults to `crates`, because its job is the STALENESS
+    // comparison: which tree's mtimes decide whether the binary is older than
+    // its sources. It is not a repository root and never was. So
+    // `root.join("fixtures")` resolved to `crates/fixtures/...`, which does not
+    // exist, and this check reported:
+    //
+    // ```text
+    // [SKIP] -> the fixture crates\fixtures\<name>.pdf is missing
+    // ```
+    //
+    // => It would have SKIPPED FOR EVER WHILE LOOKING HEALTHY, which is the
+    // precise failure this check's own header warns about for a fixture that
+    // cannot exercise the feature. This is the same trap one level out: not a
+    // fixture too weak to fail, but a fixture never found at all -- and a suite
+    // reporting SKIP is reporting *nothing*, which is why this harness exits 3
+    // rather than 0 on an incomplete run.
+    //
+    // `CARGO_MANIFEST_DIR` is `tools/ui-verify`, so two parents up is the
+    // workspace root. Resolved at COMPILE TIME, so it cannot be got wrong by an
+    // invocation -- the property `--source-root` lacked. This is the pattern
+    // `checks::comment_popup` already used, and that check ran green.
+    let _ = ctx;
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("..")
+        .join("..")
+        .join("fixtures")
+        .join(name);
     if !path.is_file() {
         return Err(Error::new(format!(
             "the fixture {} is missing. This check needs both `four-pages.pdf` (unprotected, \
