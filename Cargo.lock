@@ -2609,7 +2609,7 @@ dependencies = [
 [[package]]
 name = "pdfcer-core"
 version = "0.43.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#95a936e1a29860234425c8f6948344ae5f05cb4b"
+source = "git+file:///D:/Dev/pdfcer?branch=main#05696b5fd956949ddcb1842ca5e339915c3f0775"
 dependencies = [
  "aes",
  "brotli",
@@ -2660,7 +2660,7 @@ dependencies = [
 [[package]]
 name = "pdfcer-print"
 version = "0.43.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#95a936e1a29860234425c8f6948344ae5f05cb4b"
+source = "git+file:///D:/Dev/pdfcer?branch=main#05696b5fd956949ddcb1842ca5e339915c3f0775"
 dependencies = [
  "thiserror 2.0.20",
  "windows",
@@ -2669,7 +2669,7 @@ dependencies = [
 [[package]]
 name = "pdfcer-render"
 version = "0.43.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#95a936e1a29860234425c8f6948344ae5f05cb4b"
+source = "git+file:///D:/Dev/pdfcer?branch=main#05696b5fd956949ddcb1842ca5e339915c3f0775"
 dependencies = [
  "iccce-cmm",
  "iccce-color",
