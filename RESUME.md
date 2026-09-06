@@ -6,8 +6,21 @@
 > `Sign…`**, driven end to end, with the verdict taken by **a different
 > subsystem in a different process**.
 >
-> **State: engine v0.41.0 at `f9bc7c8`, unchanged** — `cargo update` was
-> forbidden this session and was not run. **MEASURE, do not quote**, as always.
+> **State: engine v0.42.0 at `d6b998f`** — read from `Cargo.lock`.
+> ⚠ This line said *"v0.41.0, unchanged — `cargo update` was forbidden this
+> session"*, which was true of the track that wrote it and false of the tree:
+> a parallel track bumped the pin an hour earlier. **A state line written by
+> one of several concurrent tracks describes that track, not the repository.**
+> **MEASURE, do not quote**, as always.
+>
+> ⭐ **`HANDOFF_20260906.md`** is the record of this session — 84 commits, four
+> releases, eight methodological findings. Read it after this block if you are
+> starting cold.
+>
+> **Released 2026-09-06 08:31** from `f974ed9`: `OneDrive\pdfcer-gui1` is the
+> new build, **`pdfcer-gui2` (05:44) is the fallback**. GitHub
+> `v0.5.0-dev.20260906.3`. Tests **3,666**; gates **31 of 31** — the gate count
+> rose from 30 on 2026-09-06 and several documents still say 29 or 30.
 >
 > ---
 >
@@ -107,14 +120,18 @@
 > to save up for. ⚠ **One driven run at a time** — the harness moves the real
 > cursor; check `tasklist | grep -icE "^(pdfcer-gui|ui-verify)\.exe"` first.
 >
-> **State: engine v0.41.0 at `f9bc7c8`** — read from `Cargo.lock`, which is the
+> **State: engine v0.42.0 at `d6b998f`** — read from `Cargo.lock`, which is the
 > only thing here worth trusting without re-running it. **Every count below and
 > throughout this file is stale by construction: MEASURE, do not quote.** The
 > commands are further down.
 >
-> **Released 2026-09-06 05:37** from shell `874a670`: `OneDrive\pdfcer-gui2` is
-> the new build, **`pdfcer-gui1` (02:01) is the fallback**. GitHub
-> `v0.5.0-dev.20260906.2`. Three releases in twelve hours and **the slots
+> ⭐ **`HANDOFF_20260906.md` is the record of the 2026-09-05/06 session** — 84
+> commits, four releases, and the eight methodological findings that came out
+> of it. Read it after this block if you are starting cold.
+>
+> **Released 2026-09-06 08:31** from shell `f974ed9`: `OneDrive\pdfcer-gui1` is
+> the new build, **`pdfcer-gui2` (05:44) is the fallback**. GitHub
+> `v0.5.0-dev.20260906.3`. Four releases in fourteen hours and **the slots
 > alternated every time**, which is the whole point of them: whatever he is
 > running, the previous build is still on disk beside it.
 >
