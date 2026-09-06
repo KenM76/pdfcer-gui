@@ -596,11 +596,25 @@ pub(super) fn set_note(doc: &mut OpenDoc, id: ObjId, text: &str, author: Option<
                     change.replaced.is_some()
                 )
             });
-            change
-                .replaced
-                .as_deref()
-                .and_then(crate::text::markup::note_replaced)
+            // ★★★ The text box's disclosure goes FIRST, and the order is the
+            // decision. `record_notes` documents the first sentence as the one
+            // an operator reads if they read only one — and between "here are
+            // the words you replaced" and "the page did not change", only the
+            // second is something they cannot find out any other way.
+            //
+            // Gated on the ENGINE's own `/Subtype`, not on anything this shell
+            // inferred about the selection. The reasoning, the measurement and
+            // the choice to disclose rather than refuse are all at
+            // `crate::text::textannot`'s edit-time banner.
+            crate::text::textannot::note_edit_disclosure(&change.subtype)
+                .map(str::to_owned)
                 .into_iter()
+                .chain(
+                    change
+                        .replaced
+                        .as_deref()
+                        .and_then(crate::text::markup::note_replaced),
+                )
                 .collect()
         })
     });
@@ -639,11 +653,19 @@ pub(super) fn clear_note(doc: &mut OpenDoc, id: ObjId) {
                     change.replaced_author.is_some()
                 )
             });
-            change
-                .replaced
-                .as_deref()
-                .and_then(crate::text::markup::note_removed)
+            // First, for the same reason as `set_note` — and the surprise is
+            // worse here. Removing the comment takes away the only copy the
+            // operator can edit and leaves the copy they cannot, still on the
+            // page, saying what it always said.
+            crate::text::textannot::note_clear_disclosure(&change.subtype)
+                .map(str::to_owned)
                 .into_iter()
+                .chain(
+                    change
+                        .replaced
+                        .as_deref()
+                        .and_then(crate::text::markup::note_removed),
+                )
                 .collect()
         })
     });
@@ -861,6 +883,13 @@ pub(super) fn apply_action(
         // `move_annotation` finds the annotation by id, and the disclosure it
         // owes is about a pop-up rather than a sheet.
         A::Move { id, dx, dy } => move_annot(doc, id, dx, dy),
+        // ★ The one arm here whose body is in another family's module, and it is
+        // deliberate: `app::actions::reorder` owns the `/Annots` permutation and
+        // has since the tab-order panel needed it. A second implementation
+        // beside `reorder_annotations` — same engine verb, same three
+        // disclosures, different words — is precisely the drift that module's
+        // own header is now about.
+        A::Arrange { page, id, to } => crate::app::actions::reorder::arrange(doc, page, id, to),
         A::Resize {
             id,
             anchor,

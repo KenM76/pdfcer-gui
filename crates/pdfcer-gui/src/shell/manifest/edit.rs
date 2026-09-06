@@ -215,6 +215,43 @@ pub(super) fn tab() -> Tab {
                     // five. The label is in the tooltip and in the Edit menu,
                     // which is where `edit.paste_duplicate` puts its own.
                     icon_only("edit.copy_as_vector"),
+                    // ★★★ **Six now — `edit.duplicate`, 2026-09-06** (Ctrl+D),
+                    // and it is the one member of this group that never touches
+                    // the clipboard at all.
+                    //
+                    // ★★ **That is exactly why it is in the Clipboard group.**
+                    // The band is the operator's *"make another one of this"*
+                    // cluster, and until today the only way to make another
+                    // comment was Copy-then-Paste — which is to say, the
+                    // capability was in this group already, spread across two
+                    // of its buttons and costing whatever was on the clipboard.
+                    // Putting the direct verb anywhere else would separate it
+                    // from the two controls it replaces.
+                    //
+                    // ★ **Placed LAST rather than beside `edit.copy`**, whose
+                    // glyph it reuses. `edit.paste` and `edit.paste_duplicate`
+                    // are adjacent and share `paste`, which is the precedent
+                    // that makes a shared glyph admissible here at all; not
+                    // repeating the adjacency keeps the band readable. The
+                    // registration in `shell::commands::catalog::edit` carries
+                    // the whole argument for the reuse.
+                    //
+                    // ★★ `icon_only`, like its five neighbours —
+                    // `RIBBON_SCALING.md`'s rule that a group's members share a
+                    // presentation, and the same rule `edit.copy_as_vector`
+                    // deviated from the mockup to honour one comment up.
+                    //
+                    // ⚠ **The approved mockup's home for this verb is the
+                    // CANVAS CONTEXT MENU**, not the ribbon —
+                    // `mockups/app.html:198` draws *"Duplicate  Ctrl+D"* in the
+                    // object menu. That placement is not made here because
+                    // `canvas::menus` and `shell::menus` belonged to a
+                    // concurrent track on the day this landed, and a context
+                    // menu edited from two sessions is a merge nobody can
+                    // review. The ribbon entry is a placement, not a
+                    // substitute: **the context-menu row is still owed**, and
+                    // this note is where whoever adds it should start.
+                    icon_only("edit.duplicate"),
                 ],
             ),
             // ---------------------------------------------------------------

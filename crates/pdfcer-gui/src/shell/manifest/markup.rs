@@ -187,6 +187,83 @@ pub(super) fn tab() -> Tab {
                 [Item::custom(super::COLOUR_SWATCH)],
             ),
             // ---------------------------------------------------------------
+            // ★★★ **Arrange** — which mark is drawn on top, 2026-09-06.
+            //
+            // ## An amendment to `RIBBON_IA.md` §5.5, to be reflected back
+            //
+            // §5.5 names five groups — Shapes, Text markup, Notes, Style,
+            // Comments — and this is a **sixth**. `RIBBON_IA.md` is a settled
+            // spec and the standing rule is to propose rather than improvise;
+            // the operator's directive of 2026-09-06 suspends that for this work
+            // by name (*"never ask — placement, wording and scope are yours"*),
+            // so the group is placed and the reasoning is recorded HERE for the
+            // doc edit to be made from. **Do not read the absence of a §5.5 row
+            // as this group being unplanned.**
+            //
+            // ## Why a group of its own rather than four rows in Style
+            //
+            // Because Style and Arrange answer opposite questions about tense.
+            // This module's header states §5.5's own rule: *"the Style group sets
+            // the style of the NEXT markup. Not of the selected one."* Style is a
+            // pen. These four act on a mark that is **already placed**, are drawn
+            // only when one is selected, and reach a different engine verb
+            // (`reorder_annotations`, which permutes the page's `/Annots`, not
+            // `set_markup_style`). Folding them into Style would put a live
+            // control and a greyed one under one caption whose word describes
+            // neither.
+            //
+            // ## Why HERE — after Style, before Comments
+            //
+            // The tab reads left to right as a sequence of tenses, and this is
+            // the seam between the two halves:
+            //
+            //   Shapes · Text markup · Notes   what I am about to add
+            //   Style                          how the next one will look
+            //   ARRANGE                        what I have already added
+            //   Comments                       what everyone has added
+            //
+            // Placing it before Style would split the three authoring groups from
+            // the pen that governs them; placing it after Comments would put a
+            // selection-scoped group after a document-scoped panel toggle, which
+            // is the widening the order otherwise never reverses.
+            //
+            // ## Why the four are labelled and not icon-only
+            //
+            // `catalog::arrange`'s header carries the icon refusal in full — there
+            // is no front/back glyph in the set and the two near-misses mean
+            // *move this up the page list*. Given no glyphs, `icon_only` would
+            // fall back to labels anyway (`sizing::resolved`), so asking for it
+            // would be a request the shell silently declines: a line of code that
+            // states an intention the build does not honour. `command` says what
+            // actually happens.
+            //
+            // ## Two rows, not four
+            //
+            // `group_two_rows` — O97's shape (*"our display buttons should be on
+            // two rows to save space"*). Four labelled controls in one row is the
+            // widest group on the tab by some margin; asking for two lets the
+            // packer find a narrower shape.
+            //
+            // ★ A **hint**, not a layout: `plan::rows_for` reads it as *"skip the
+            // fits-already short-circuit and search"*, then returns the narrowest
+            // packing within the band's row ceiling — so this asks for a block
+            // and does not dictate one. The packing is greedy in item order, so
+            // the ordering below is what decides which controls share a row: the
+            // two that move a mark **forward** come first and the two that move
+            // it **back** follow, which is the reading that survives whichever
+            // shape the packer picks.
+            // ---------------------------------------------------------------
+            super::group_two_rows(
+                "arrange",
+                crate::text::arrange::group_arrange(),
+                [
+                    command("markup.bring_to_front"),
+                    command("markup.bring_forward"),
+                    command("markup.send_backward"),
+                    command("markup.send_to_back"),
+                ],
+            ),
+            // ---------------------------------------------------------------
             // Comments.
             //
             // `RIBBON_IA.md` §5.2 also lists a `Comments` entry under

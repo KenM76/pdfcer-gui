@@ -6,6 +6,7 @@
 - [Scope a request to the whole expected behaviour](feedback_scope_a_request_to_the_whole_expected_behaviour.md) — Ken expects what surrounds a request too; enumerating deferrals just moves the work onto him.
 - [The engine session runs in parallel](project_the_engine_session_runs_in_parallel_and_answers_within_the_hour.md) — it answers requests within minutes and dirties the read-only tree; that is not a violation.
 - [Always publish the latest build to OneDrive](feedback_always_publish_the_latest_build_to_onedrive.md) — **finishing work is itself the trigger**; do not weigh the cost, he has. Alternates the slots itself, so the previous survives.
+- [Publish the portable zip to GitHub every release](feedback_publish_the_portable_zip_to_github_every_release.md) — GitHub AND OneDrive, both, every time; and package from a CLEAN tree, the last zip says `dirty`.
 - [Refresh FEATURES.md before every release](feedback_refresh_features_md_before_every_release.md) — re-measure against the build, then package; he reads it to know what he has.
 - [Never defer on an external blocker](feedback_never_defer_on_an_external_blocker.md) — decompose the operation into verbs that exist; three "blockers" were never real.
 - [Use the conventional interaction, never invent one](feedback_use_the_conventional_interaction_never_invent_one.md) — the convergence of the product class IS the spec; an invented model is a defect even when it works.

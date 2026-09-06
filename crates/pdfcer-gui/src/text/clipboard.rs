@@ -521,6 +521,25 @@ pub enum ModeRefusal {
     /// `edit.cut` over a **form field**, in a mode that does not change page
     /// content.
     CutField,
+    /// `edit.duplicate` over a **comment or markup**, in a mode that authors
+    /// none. 2026-09-06.
+    ///
+    /// # ★★ Why this is a seventh variant and not [`Self::PasteMarkup`] reused
+    ///
+    /// Because that sentence says *"Switch to Review to **paste** this"*, and
+    /// nothing was pasted. The operator pressed `Ctrl+D` over a comment they
+    /// can see, with a clipboard that may hold something else entirely — a
+    /// sentence about pasting sends them to inspect a clipboard that has
+    /// nothing to do with what they just did, which is the *"describing a
+    /// different world than the one on screen"* shape `DEFECTS.md` D4a names.
+    ///
+    /// ★ The remedy is identical to [`Self::PasteMarkup`]'s and the sentence
+    /// still has to be its own, which is this enum's founding argument turned
+    /// round: the variants are distinguished by **what the operator did**, not
+    /// by which mode fixes it. Two acts that share a remedy still owe two
+    /// sentences, because the first half of each sentence is what tells the
+    /// operator pdfcer understood the gesture.
+    DuplicateMarkup,
 }
 
 impl ModeRefusal {
@@ -557,6 +576,14 @@ impl ModeRefusal {
             }
             Self::CutField => {
                 "That is a form field, which is part of the document rather than a comment on it, and this mode does not change what is on the page. Nothing has been removed — switch to Edit to cut it."
+            }
+            // ★ *"Nothing has been added"*, on the three cut sentences' own
+            // rule inverted. A duplicate that is refused after the operator has
+            // watched a selected comment sit there is a case where they may
+            // reasonably wonder whether a second one landed off-screen, and
+            // rule 4 puts the disclosure where the doubt is.
+            Self::DuplicateMarkup => {
+                "This mode does not add comments or markup to a document. Nothing has been added — switch to Review to duplicate this, or to Edit."
             }
         }
     }
@@ -682,6 +709,11 @@ mod tests {
             (ModeRefusal::CutContent, edit),
             (ModeRefusal::CutMarkup, review),
             (ModeRefusal::CutField, edit),
+            // ★ Added 2026-09-06 with the variant. A refusal added to the
+            // enum and not to this list is a sentence nothing checks, which
+            // is the gap `measure_two_line` left in `text::commands::tests`
+            // for a day and which is recorded there in the same words.
+            (ModeRefusal::DuplicateMarkup, review),
         ] {
             let line = why.line();
             assert!(
@@ -691,16 +723,21 @@ mod tests {
         }
     }
 
-    /// ★★ **Every one of the six is a distinct sentence**, and the three cut
-    /// sentences say the document is unchanged.
+    /// ★★ **Every one of the seven is a distinct sentence**, and the four that
+    /// follow a gesture over a visible operand say the document is unchanged.
     ///
-    /// Six variants exist only because the remedy differs by operand; two
-    /// wearing the same words would be five variants pretending to be six. And
-    /// a refused CUT is the one case in this family where an operator might
-    /// reasonably fear something was removed, so rule 4 puts the disclosure
-    /// where the doubt is.
+    /// Seven variants exist only because the remedy or the ACT differs; two
+    /// wearing the same words would be six variants pretending to be seven. And
+    /// a refused cut — or, since 2026-09-06, a refused duplicate — is the case
+    /// in this family where an operator might reasonably fear the document
+    /// moved under them, so rule 4 puts the disclosure where the doubt is.
+    ///
+    /// ★ `DuplicateMarkup` says *"Nothing has been added"* rather than
+    /// *"removed"*, which is why it is asserted separately below rather than
+    /// folded into the cut loop: the doubt it answers is the opposite one — a
+    /// second comment landed somewhere I cannot see.
     #[test]
-    fn the_six_mode_refusals_are_six_sentences_and_the_cuts_reassure() {
+    fn the_seven_mode_refusals_are_seven_sentences_and_the_gestures_reassure() {
         let all = [
             ModeRefusal::PasteContent,
             ModeRefusal::PasteMarkup,
@@ -708,6 +745,7 @@ mod tests {
             ModeRefusal::CutContent,
             ModeRefusal::CutMarkup,
             ModeRefusal::CutField,
+            ModeRefusal::DuplicateMarkup,
         ];
         let mut lines: Vec<&str> = all.iter().map(|w| w.line()).collect();
         lines.sort_unstable();
@@ -726,5 +764,13 @@ mod tests {
                 why.line()
             );
         }
+
+        assert!(
+            ModeRefusal::DuplicateMarkup
+                .line()
+                .contains("Nothing has been added"),
+            "a refused duplicate must say no second copy landed: {}",
+            ModeRefusal::DuplicateMarkup.line()
+        );
     }
 }

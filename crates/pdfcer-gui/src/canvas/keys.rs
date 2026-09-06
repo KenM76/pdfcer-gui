@@ -459,6 +459,33 @@ pub(super) struct Keys<'a> {
     /// every rung of the ladder — they never reach the assert, because they
     /// never supply a selection at a deeper rung without a provider.
     pub model_attempted: bool,
+    /// ★★★ **The page on screen**, for the arrow-key nudge and for nothing else.
+    ///
+    /// # Why a `&Page` does not break this struct's "no `&OpenDoc`" rule
+    ///
+    /// [`Self::targets`]' doc states the rule and the reason: this function is
+    /// pure over what it is handed, which is what lets its unit tests drive the
+    /// whole ladder **without opening a file**. A `&Page` is a page
+    /// dictionary — the same thing [`crate::canvas::annotdrag::drag`] takes as
+    /// a parameter, and for the identical stated reason: *"it is what lets every
+    /// rule in this module be tested without a window or a file."* It is not
+    /// the application state, and the tests below pass `None`.
+    ///
+    /// # ★★ Why it is needed at all, when a nudge is a fixed step
+    ///
+    /// Because *up* is a screen fact and `dy` is a page fact, and the two are
+    /// related by the page's own device transform — the Y flip **and**
+    /// `/Rotate`. [`crate::canvas::moving::page_delta`] is the one function in
+    /// `canvas/` that crosses between them, it takes a `&Page`, and routing
+    /// through it is what stops this feature writing a second derivation of the
+    /// page transform. A nudge that hard-coded `dy = +1` would be right on an
+    /// unrotated page and would move a mark sideways on a landscape drawing
+    /// exported with `/Rotate 90` — silently, and correctly-looking in every
+    /// test that asserted the sign.
+    ///
+    /// `None` for a frame with no page on screen, in which case the nudge
+    /// declines with a sentence rather than fabricating a delta.
+    pub page: Option<&'a pdfcer_core::page_tree::Page>,
 }
 
 pub(super) fn canvas_keys(
@@ -478,6 +505,7 @@ pub(super) fn canvas_keys(
         targets,
         edit_epoch,
         model_attempted,
+        page,
     } = keys;
     // ★ Claimant 0, and it is read BEFORE the D1 guard rather than after it.
     //
@@ -533,6 +561,35 @@ pub(super) fn canvas_keys(
         crate::canvas::measure::cycle_snap(ctx);
         return;
     }
+
+    // ★★★ **The arrow keys nudge the selected markup** — the gesture every
+    // drawing program has and this one did not.
+    //
+    // It is read here rather than in `app::keyboard` for the reason Delete and
+    // Escape are: a nudge acts on the **canvas selection**, and the keymap's
+    // dispatcher reaches commands rather than selections. It is read here rather
+    // than in `canvas::interact` because this is the function that already
+    // asked `text_edit_focused` — an arrow key is the key most easily stolen
+    // from somebody who is typing, and asking that question twice in one frame
+    // is how the two spellings of it come to disagree (`DEFECTS.md` D1).
+    //
+    // ★ It does NOT return early, and the omission is deliberate: a frame
+    // carrying an arrow carries neither Escape nor Delete, so there is nothing
+    // below to protect from it, and a `return` here would be a claim about key
+    // exclusivity that this function would then rely on without checking.
+    //
+    // Everything about the step, the modifiers it refuses, the Y sign and the
+    // four refusals is `canvas::moving::nudge`. This line is routing.
+    crate::canvas::moving::nudge::keys(
+        ctx,
+        &crate::canvas::moving::nudge::Frame {
+            page,
+            caps,
+            edit_epoch,
+        },
+        selection,
+        actions,
+    );
 
     // ★ Escape retires the most transient thing first, and exactly one thing.
     //

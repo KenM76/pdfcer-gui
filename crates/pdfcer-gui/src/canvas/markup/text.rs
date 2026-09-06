@@ -349,22 +349,41 @@ impl TextMarkKind {
         }
     }
 
-    /// ★ **All three take the INK, and none of them takes the highlighter.**
+    /// ★★★ **EACH OF THE FOUR TAKES ITS OWN PEN**, and until 2026-09-06 three
+    /// of them shared one.
     ///
-    /// [`super::pen::Pen`] holds two colours because a stroke and a wash are
-    /// different instruments — `pen.rs`' own words, *"an operator who sets the
-    /// pen to green does not thereby want a green highlight, any more than
-    /// picking a green biro changes the marker in their other hand."* This
-    /// function is where that split is applied to the text kinds, and the answer
-    /// is not a judgement call: **Underline, StrikeOut and Squiggly are lines**,
-    /// so they are the biro. `Highlight` is the wash, and it is not in this enum
-    /// at all — it is a *band* gesture handled by [`super::band`], which reaches
-    /// the highlighter through [`super::pen::Pen::colour_for`].
+    /// ### What this said before, and why it was right at the time
     ///
-    /// So the two modules partition [`super::pen::Pen`] exactly, with no kind
-    /// reaching both colours and no kind reaching neither, and
-    /// `pen::tests::every_geometric_kind_takes_the_ink_and_only_highlight_does_not`
-    /// pins the half it can see.
+    /// > **All three take the INK, and none of them takes the highlighter.**
+    /// > … the answer is not a judgement call: **Underline, StrikeOut and
+    /// > Squiggly are lines**, so they are the biro. `Highlight` is the wash …
+    /// > So the two modules partition [`super::pen::Pen`] exactly, with no kind
+    /// > reaching both colours and no kind reaching neither.
+    ///
+    /// That reasoning is sound and it is the reason there were exactly two pens:
+    /// given two instruments, a line belongs to the biro. It answers *"which of
+    /// these two?"* correctly. The operator's ask of 2026-09-06 changed the
+    /// question to *"which colour does Adobe use?"*, and Adobe's answer is not a
+    /// choice between two:
+    ///
+    /// | kind | Acrobat key | measured |
+    /// |---|---|---|
+    /// | Highlight | `cHighlight` | `#FF6200`, an **orange** |
+    /// | Underline | `cUnderline` | `#1373E8`, a **blue** |
+    /// | StrikeOut | `cStrikeOut` | `#F86464`, a light red |
+    /// | Squiggly | `cSquiggly` | `#DB3425`, the shape red |
+    ///
+    /// ⇒ Four kinds, four keys, three distinct colours. A partition into "biro"
+    /// and "marker" cannot express that, so the pen grew a slot per key and this
+    /// function became a routing table rather than a two-arm decision. See
+    /// [`super::palette`] for where those four readings come from and
+    /// [`super::pen::PenSlot`] for the slots.
+    ///
+    /// ★ The old sentence's *"no kind reaching both colours and no kind reaching
+    /// neither"* survives, strengthened: it is now
+    /// `pen::tests::every_kind_takes_the_slot_it_is_documented_to_take` on one
+    /// side and [`tests::each_text_kind_takes_its_own_pen`] on this one, and both
+    /// sweep their enum's full list rather than a hand-written subset.
     ///
     /// # ★ Why this used to be a hard-coded triple, and why that stopped being
     /// right
@@ -396,30 +415,41 @@ impl TextMarkKind {
     /// test asserting the two paths agree, which is now
     /// `tests::the_ink_reaches_every_text_kind`.
     ///
-    /// # Why the default is unchanged, and why that is not a coincidence
+    /// # ★★ The one argument from the old version that is NOT superseded
     ///
-    /// [`super::pen::Pen::default`]'s ink is `(0.85, 0.16, 0.16)` — the same
-    /// triple this function returned. So a build whose operator has never
-    /// touched the swatch authors byte-identical annotations before and after
-    /// this change, and the original argument for red still stands and still
-    /// belongs somewhere: these three are lines, a line must be seen against the
-    /// text it marks, a yellow underline under black glyphs on white paper is
-    /// very nearly invisible, and red is what every other reader draws them in.
-    /// That argument is now `pen.rs`' to make, because it is now `pen.rs`' value
-    /// — which is the right home for it, since it is one default rather than
-    /// two that must be kept equal.
+    /// *"A line must be seen against the text it marks; a yellow underline under
+    /// black glyphs on white paper is very nearly invisible."* Still true, and it
+    /// is now a **check on the measurement rather than a reason for a value**:
+    /// Acrobat's underline blue and strikeout red both pass it comfortably, which
+    /// is one more piece of evidence that the registry readings are a designed
+    /// set rather than an accident of this machine's history.
+    ///
+    /// # Why an operator's Highlight still comes out of one swatch
+    ///
+    /// Unchanged, and it is the reason [`Self::Highlight`] and
+    /// [`super::MarkupKind::Highlight`] both route to
+    /// [`super::pen::PenSlot::Highlighter`]: a highlight is a wash whichever
+    /// gesture drew it, so a text-following one and an area one must come out of
+    /// the same swatch. The alternative is one feature that changes colour
+    /// depending on how it was reached.
     #[must_use]
     fn rgb(self, pen: super::pen::Pen) -> (f64, f64, f64) {
+        pen.colour_of(self.slot())
+    }
+
+    /// **Which pen draws this kind** — see [`Self::rgb`] for the table.
+    ///
+    /// Split out from `rgb` so a test can assert the *routing* without asserting
+    /// a colour. The two are different claims: which slot a kind takes is a fact
+    /// about this module and must not change; what colour that slot holds is the
+    /// operator's and may.
+    #[must_use]
+    const fn slot(self) -> super::pen::PenSlot {
         match self {
-            // ★★ The HIGHLIGHTER, not the ink, and it is the one arm that
-            // differs. `pen.rs`: *"an operator who sets the pen to green does
-            // not thereby want a green highlight, any more than picking a green
-            // biro changes the marker in their other hand."* A highlight is a
-            // wash whichever gesture drew it, so a text-following one and an
-            // area one must come out of the same swatch — the alternative is
-            // one feature that changes colour depending on how it was reached.
-            Self::Highlight => pen.highlighter,
-            Self::Underline | Self::StrikeOut | Self::Squiggly => pen.ink,
+            Self::Highlight => super::pen::PenSlot::Highlighter,
+            Self::Underline => super::pen::PenSlot::Underline,
+            Self::StrikeOut => super::pen::PenSlot::StrikeOut,
+            Self::Squiggly => super::pen::PenSlot::Squiggly,
         }
     }
 }
@@ -770,8 +800,8 @@ mod tests {
         assert_eq!(authored, quads, "the boxes must arrive as they left");
     }
 
-    /// ★★ **The operator's ink reaches every text kind** — the test that would
-    /// have caught the defect this function was changed to fix.
+    /// ★★ **The operator's pen reaches every text kind** — the test that would
+    /// have caught the defect [`TextMarkKind::rgb`] was changed to fix.
     ///
     /// # What was here before, and why it passed through the whole bug
     ///
@@ -783,30 +813,29 @@ mod tests {
     /// its subject can only fail if someone edits one copy, which is the one
     /// thing nobody did.
     ///
-    /// So the assertion is now a **relation, not a magnitude**: whatever colour
-    /// the pen holds, that is the colour the spec authors. It is driven with a
-    /// pen deliberately unlike the default in all three channels, so a build
-    /// that went back to a hard-coded red fails on the first kind — and it would
-    /// have failed at `4035b64`, which is the point of writing it this way.
+    /// So the assertion is a **relation, not a magnitude**: whatever colour the
+    /// kind's own slot holds, that is the colour the spec authors. Driven with a
+    /// pen whose eight slots are eight distinguishable values, so a kind that
+    /// took a neighbour's pen names itself — the stronger form of the 2026-08-17
+    /// version, which planted one ink and could not have caught a kind taking
+    /// the wrong *line* colour because there was only one.
     ///
-    /// # Why it also checks the DEFAULT, in the same test
+    /// # ★ What it no longer asserts, and why the deletion is deliberate
     ///
-    /// Because the relation alone would be satisfied by a build that had
-    /// silently changed what an untouched shell authors. Every annotation this
-    /// project has ever written is `(0.85, 0.16, 0.16)`, and a change that
-    /// quietly moved the default would alter the appearance of new marks in
-    /// files sitting beside old ones. The second half pins that the *migration*
-    /// was colour-preserving; the first half pins that the control now works.
-    /// Neither implies the other.
+    /// The old second half read *"the default is colour-preserving: an operator
+    /// who never touches the swatch gets exactly what every earlier build
+    /// authored"*, pinning `(0.85, 0.16, 0.16)`. **That is now false on
+    /// purpose** — the operator asked for Adobe's defaults and got them, so a
+    /// text mark authored today is a different colour from one authored on
+    /// 2026-09-05. `Pen::default`'s own doc comment carries the argument for
+    /// departing from the "omits nothing" rule, and
+    /// `pen::tests::every_slot_ships_at_the_acrobat_value_it_was_measured_from`
+    /// is what pins the new values against the registry keys they came from.
+    /// Asserting them a second time here would be the two-copies-of-one-constant
+    /// mistake this test's own history is about.
     #[test]
-    fn the_ink_reaches_every_text_kind() {
-        // A pen unlike the default in all three channels, so no component can
-        // agree by coincidence. Not the highlighter's yellow either — that is
-        // the subject of the sibling assertion below.
-        let chosen = crate::canvas::markup::pen::Pen {
-            ink: (0.10, 0.35, 0.90),
-            ..Default::default()
-        };
+    fn the_operators_pen_reaches_every_text_kind() {
+        let chosen = planted_pen();
         for &kind in TextMarkKind::ALL {
             let MarkupSpec::TextMarkup { color, .. } = spec(kind, vec![quad(700.0)], chosen) else {
                 panic!("{kind:?} must author a /QuadPoints text markup");
@@ -814,67 +843,132 @@ mod tests {
             let Color::Rgb(r, g, b) = color else {
                 panic!("{kind:?} authored a non-RGB colour");
             };
+            let expected = chosen.colour_of(kind.slot());
             assert!(
-                (r - chosen.ink.0).abs() < 1e-9
-                    && (g - chosen.ink.1).abs() < 1e-9
-                    && (b - chosen.ink.2).abs() < 1e-9,
-                "{kind:?} ignored the operator's ink and authored ({r}, {g}, {b}) — the Markup ▸ \
-                 Style swatch moves shapes and not text marks again"
-            );
-
-            // The default is colour-preserving: an operator who never touches
-            // the swatch gets exactly what every earlier build authored.
-            let MarkupSpec::TextMarkup { color, .. } = spec(
-                kind,
-                vec![quad(700.0)],
-                crate::canvas::markup::pen::Pen::default(),
-            ) else {
-                panic!("{kind:?} must author a /QuadPoints text markup");
-            };
-            let Color::Rgb(r, g, b) = color else {
-                panic!("{kind:?} authored a non-RGB colour");
-            };
-            assert!(
-                (r - 0.85).abs() < 1e-9 && (g - 0.16).abs() < 1e-9 && (b - 0.16).abs() < 1e-9,
-                "{kind:?} changed what an untouched shell authors: ({r}, {g}, {b})"
+                (r - expected.0).abs() < 1e-9
+                    && (g - expected.1).abs() < 1e-9
+                    && (b - expected.2).abs() < 1e-9,
+                "{kind:?} ignored its own pen and authored ({r}, {g}, {b}) instead of \
+                 {expected:?} — the Markup ▸ Style swatch moves shapes and not text marks again"
             );
         }
     }
 
-    /// ★ **No text kind may reach the highlighter**, whatever the pen holds.
+    /// ★★★ **Each text kind takes its OWN pen, and no two share one.**
     ///
-    /// [`TextMarkKind::rgb`]'s partition, asserted from this side: these three
-    /// are lines and take the ink; Highlight is a wash, takes the highlighter,
-    /// and is not in this enum. The failure it catches is a plausible one — a
-    /// future hand "simplifying" `rgb` to `pen.colour_for(kind.into())` would
-    /// route all three to whichever colour that mapping picked, and with the
-    /// default pen that is **yellow**: a yellow underline under black glyphs on
-    /// white paper marks nothing an operator can see, which is the one failure a
-    /// mark whose entire job is to be noticed cannot afford.
+    /// # What this replaces, and why the replacement is stricter
     ///
-    /// Driven with a highlighter that is *not* the default yellow, so the
-    /// assertion catches the wiring rather than the hue.
+    /// It was `no_text_kind_takes_the_highlighter`, which asserted the
+    /// two-instrument partition: *these three are lines and take the ink;
+    /// Highlight is a wash and takes the highlighter.* True while there were two
+    /// pens, and it would now pass on a build that had collapsed Underline,
+    /// StrikeOut and Squiggly back into one slot — which is precisely the
+    /// regression the operator's ask forbids, since Acrobat gives each of them
+    /// its own key and two of them different colours.
+    ///
+    /// So the claim is now about **separation**: four kinds, four slots, no two
+    /// equal. It still catches everything the old one did — a future hand
+    /// "simplifying" `rgb` to one shared colour fails on the first pair — and it
+    /// catches the new failure as well.
+    ///
+    /// ★ It asserts on the **slot**, not on the colour. Two slots may legitimately
+    /// hold the same colour (Squiggly and Shape ship at the same Acrobat red, and
+    /// an operator may set any two the same), and a test that demanded distinct
+    /// *colours* would forbid a state the operator is entitled to choose.
+    ///
+    /// # ★★★ THE SEPARATION CLAIM ALONE WAS NOT ENOUGH, and running the
+    /// # falsification is how that was found
+    ///
+    /// This test shipped its first draft asserting only *"no two of the four
+    /// share a slot"*, with a doc comment claiming it was falsified by pointing
+    /// `Squiggly` at `PenSlot::Shape`. **That falsification was run and the test
+    /// stayed green** — because `Shape` is a fourth distinct slot, so all four
+    /// were still different and the separation claim was still true. The mark
+    /// would have come out of the shape pen, moving whenever the operator
+    /// recoloured a rectangle, and this test would have said nothing.
+    ///
+    /// ⇒ A test is only worth what its falsification proves, and a falsification
+    /// **claimed in a comment** proves nothing at all. The identity assertion
+    /// below is what the first draft was missing: each kind takes the slot named
+    /// after it, not merely a slot of its own.
+    ///
+    /// Falsified twice, both actually run: pointing `Squiggly` at
+    /// `PenSlot::Shape` (fired — and did **not** fire before the identity row
+    /// existed), and pointing it at `PenSlot::StrikeOut` (fired). Both land on
+    /// the identity row, because it is checked first and is the stricter of the
+    /// two; the separation row is kept anyway, since identity alone would pass a
+    /// build where two kinds were each renamed to the other's slot. Restored
+    /// after each.
     #[test]
-    fn no_text_kind_takes_the_highlighter() {
-        let chosen = crate::canvas::markup::pen::Pen {
-            ink: (0.10, 0.35, 0.90),
-            highlighter: (0.95, 0.90, 0.05),
-            ..Default::default()
-        };
-        for &kind in TextMarkKind::ALL {
-            let MarkupSpec::TextMarkup { color, .. } = spec(kind, vec![quad(700.0)], chosen) else {
-                panic!("{kind:?} must author a /QuadPoints text markup");
-            };
-            let Color::Rgb(r, g, b) = color else {
-                panic!("{kind:?} authored a non-RGB colour");
-            };
-            assert!(
-                (r - chosen.highlighter.0).abs() > 1e-9
-                    || (g - chosen.highlighter.1).abs() > 1e-9
-                    || (b - chosen.highlighter.2).abs() > 1e-9,
-                "{kind:?} took the highlighter — a wash colour on a line"
+    fn each_text_kind_takes_its_own_pen() {
+        use crate::canvas::markup::pen::PenSlot;
+        // Every variant, including Highlight — which is deliberately NOT in
+        // `TextMarkKind::ALL` (it is reached by a band gesture) and is exactly
+        // the one a careless edit would route somewhere else.
+        let every = [
+            (TextMarkKind::Highlight, PenSlot::Highlighter),
+            (TextMarkKind::Underline, PenSlot::Underline),
+            (TextMarkKind::StrikeOut, PenSlot::StrikeOut),
+            (TextMarkKind::Squiggly, PenSlot::Squiggly),
+        ];
+        // ★ IDENTITY: each kind takes the slot named after it. This is the row
+        // the separation check below cannot make — a kind routed to a slot that
+        // belongs to a different FAMILY (the shape pen, the note) is still
+        // "distinct from the other three".
+        for (kind, slot) in every {
+            assert_eq!(
+                kind.slot(),
+                slot,
+                "{kind:?} is authored from the {:?} pen — Acrobat keeps a \
+                 `c{kind:?}` key of its own, and a text mark that moves when the \
+                 operator recolours a rectangle is a mark drawn by the wrong tool",
+                kind.slot()
             );
         }
+        // ★ SEPARATION: and no two of them share one.
+        for i in 0..every.len() {
+            for j in (i + 1)..every.len() {
+                assert_ne!(
+                    every[i].0.slot(),
+                    every[j].0.slot(),
+                    "{:?} and {:?} share a pen slot — Acrobat gives each its own \
+                     key, and collapsing two is how a per-kind palette becomes a \
+                     single pen again",
+                    every[i].0,
+                    every[j].0
+                );
+            }
+        }
+        // …and Highlight is the wash, whichever gesture reached it. A
+        // text-following highlight and an area highlight must come out of one
+        // swatch or the feature changes colour depending on how it was drawn.
+        assert_eq!(
+            TextMarkKind::Highlight.slot(),
+            crate::canvas::markup::pen::PenSlot::Highlighter
+        );
+        assert_eq!(
+            crate::canvas::markup::pen::PenSlot::of(crate::canvas::markup::MarkupKind::Highlight),
+            crate::canvas::markup::pen::PenSlot::Highlighter
+        );
+    }
+
+    /// A pen whose eight slots hold eight distinguishable values.
+    ///
+    /// Built from each slot's index rather than written out, so a ninth slot
+    /// gets a ninth distinct value with no edit here — the same construction
+    /// `pen::tests::planted` uses, and for the same reason.
+    fn planted_pen() -> crate::canvas::markup::pen::Pen {
+        use crate::canvas::markup::pen::{Pen, PenSlot};
+        let mut pen = Pen::default();
+        for (i, slot) in PenSlot::ALL.iter().enumerate() {
+            #[allow(clippy::cast_possible_truncation)]
+            let step = (i as u8) * 16 + 8;
+            // NOT A THEME COLOUR: eight distinguishable test values, so an
+            // assertion says which slot was taken rather than which default
+            // happened to match.
+            pen.set_colour(*slot, egui::Color32::from_rgb(step, step, step));
+        }
+        pen
     }
 
     // -----------------------------------------------------------------

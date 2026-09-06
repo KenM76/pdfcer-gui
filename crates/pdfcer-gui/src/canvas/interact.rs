@@ -1145,6 +1145,11 @@ pub(super) fn interact(
             // Passing `targets.is_some()` here would collapse the two causes
             // back together and disarm the tripwire.
             model_attempted: needs_targets,
+            // ★ The page dictionary, for the arrow-key nudge's one crossing
+            // into PDF space. A `&Page`, not the document — the same parameter
+            // `annotdrag::drag` takes and for its stated reason. See
+            // `keys::Keys::page`.
+            page: doc.pages.get(page_index),
         },
         &mut selection,
         &mut text_selection,

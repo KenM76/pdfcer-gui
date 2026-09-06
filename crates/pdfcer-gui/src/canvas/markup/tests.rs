@@ -477,16 +477,45 @@ fn the_preview_colour_is_the_committed_colour() {
             "{kind:?}"
         );
     }
-    // …and only the highlighter is yellow. A yellow line on white paper
-    // under black glyphs marks nothing visible, which is the one failure a
-    // comment cannot afford — the same assertion `text::TextMarkKind` makes.
+    // ★★ …and only Highlight takes the highlighter, and every shipped colour
+    // is dark enough to be seen on white paper.
+    //
+    // This pair replaces a single test that read *"only the highlighter is
+    // yellow"*, implemented as `r > 0.5 && g > 0.5 && b < 0.5`. That was a
+    // correct check of a true fact — the highlighter WAS `#FFFF00` — and it
+    // became a **wrong** check on 2026-09-06, when the highlighter became
+    // Acrobat's measured `#FF6200`. An orange is not yellow by that predicate,
+    // so the test would have failed while nothing was broken.
+    //
+    // ⇒ The lesson is that it asserted the wrong thing all along. "Is it
+    // yellow" was a proxy for two separate claims, and neither of them is about
+    // yellow:
+    //
+    //   1. WHICH SLOT — only Highlight draws with the highlighter. That is a
+    //      routing fact and it must never change.
+    //   2. WHETHER IT CAN BE SEEN — a wash colour on a line marks nothing on
+    //      white paper under black glyphs, which is the one failure a comment
+    //      cannot afford.
+    //
+    // Both are now asserted directly, so a future default that is neither
+    // yellow nor visible still fails.
     for &kind in MarkupKind::ALL {
-        let (r, g, b) = pen::Pen::default().colour_for(kind);
-        let yellow = r > 0.5 && g > 0.5 && b < 0.5;
         assert_eq!(
-            yellow,
+            pen::PenSlot::of(kind) == pen::PenSlot::Highlighter,
             kind == MarkupKind::Highlight,
-            "{kind:?} draws in ({r}, {g}, {b})"
+            "{kind:?} took the wrong pen slot"
+        );
+        let (r, g, b) = pen::Pen::default().colour_for(kind);
+        // Rec. 709 relative luminance, which is the standard measure of how
+        // light a colour reads. Pure yellow is 0.93 and vanishes on white;
+        // Acrobat's orange highlighter is 0.49 and does not. The threshold is
+        // set between them, so the shipped set passes and the specific failure
+        // the old predicate was groping at still fails.
+        let luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        assert!(
+            luminance < 0.75,
+            "{kind:?} ships at ({r}, {g}, {b}) — luminance {luminance:.2}, too \
+             light to be seen against white paper"
         );
     }
 }

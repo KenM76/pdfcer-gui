@@ -15,7 +15,7 @@
 //! decision in a pure function ([`offers_anything`]) makes it assertable
 //! directly, exhaustively, and without simulating a right-click.
 //!
-//! # The three rules this module holds
+//! # The four rules this module holds
 //!
 //! ## 1. ★ A command that does not exist is *absent*, not greyed
 //!
@@ -51,7 +51,40 @@
 //! is one would silently delete a control the application asked for. The
 //! application decides; the shell does not guess.)
 //!
-//! ## 3. Separators are punctuation, and punctuation collapses
+//! ## 3. ★★★ `visible_when` HIDES a row, and until 2026-09-06 it did nothing
+//!
+//! [`crate::manifest::Item`] is the shared vocabulary of ribbon groups and
+//! menus, and its `visible_when` field is documented as *"the item is drawn
+//! **only** while the condition holds"* — R9's disappearing half, as against
+//! [`crate::commands::Enable`]'s greying half.
+//!
+//! **[`resolve`] ignored it.** Only [`crate::ribbon::sizing::visible`] and
+//! [`crate::ribbon::tabs`] ever read `visible_condition()`, so a menu row
+//! carrying `visible_when` was resolved exactly as though it carried nothing:
+//! present, and greyed or not according to the command's own predicate.
+//!
+//! ⇒ The consuming application had been writing that field on menu items for
+//! over a week, with prose at each site describing the behaviour above as
+//! though it happened — a Delete withheld on a certified document, a *Float*
+//! row that never appears on an already-floating panel. Every one of those was
+//! **greyed instead of gone**, which is the R9 inversion the field exists to
+//! prevent, and no test could see it because every test asked the model
+//! (`command_ids()`) rather than the resolution.
+//!
+//! It is the shape this project keeps finding: **a field that is read on one
+//! surface and silently ignored on another, with the documentation written
+//! against the surface that reads it.** The fix is three lines; the reason it
+//! is worth this much prose is that the same `Item` type serves both surfaces,
+//! so *"the ribbon honours it"* reads, at a call site, exactly like *"it is
+//! honoured"*.
+//!
+//! The predicate is the ribbon's own — [`crate::ribbon::sizing::visible`],
+//! called rather than restated, so a menu and a band can never disagree about
+//! what `visible_when` means. Rule 4 below then does the rest: a row removed
+//! here can leave a separator with nothing above it, and that is exactly the
+//! stale-document shape [`collapse`] already handles.
+//!
+//! ## 4. Separators are punctuation, and punctuation collapses
 //!
 //! A separator's meaning is entirely relational — it says *"the things
 //! above and the things below are different kinds"*. Once rule 1 has
@@ -150,6 +183,14 @@ pub fn resolve<'a>(
 ) -> Vec<Slot<'a>> {
     let mut slots = Vec::with_capacity(items.len());
     for item in items {
+        // Rule 3. **Before** the registry lookup, deliberately: an item the
+        // conditions hide is not a row at all, so an unregistered id behind a
+        // false `visible_when` should not also emit a `menu-skipped-unknown-command`
+        // disclosure. Hidden is hidden; the skip channel is for a command the
+        // document asked for and this build does not have.
+        if !crate::ribbon::sizing::visible(item, conditions) {
+            continue;
+        }
         match item {
             Item::Separator => slots.push(Slot::Separator),
             Item::Custom { kind, payload, .. } => slots.push(Slot::Custom {
@@ -521,6 +562,99 @@ mod tests {
             .into_iter()
             .collect(),
         ))
+    }
+
+    /// **★★★ `visible_when` takes the row AWAY, and `Enable` only greys it.**
+    ///
+    /// Rule 3, and it is asserted here because it was **not implemented** until
+    /// 2026-09-06 while three consuming menus already carried the field with
+    /// prose describing this behaviour as though it happened. Every one of those
+    /// rows was greyed instead of gone — R9 inverted, silently, because the same
+    /// `Item` type is honoured on the ribbon and was ignored here.
+    ///
+    /// Three rows, one condition set, three outcomes, so the two mechanisms
+    /// cannot be confused:
+    ///
+    /// * a hidden row leaves **no slot at all** — not a disabled one;
+    /// * an unhidden but disabled row leaves a slot with `enabled: false`;
+    /// * a row with no condition is unaffected.
+    ///
+    /// ★ Falsified by deleting the `visible` check in [`resolve`]: the first
+    /// assertion fails with three slots instead of two, which is exactly the
+    /// state that shipped.
+    #[test]
+    fn a_hidden_item_leaves_no_row_while_a_disabled_one_leaves_a_greyed_one() {
+        let items = [
+            // Hidden: its condition is not in the set.
+            Item::command("edit.copy").shown_when("selection.delete_permitted"),
+            // Visible (no condition) and disabled (`selection.any` is unset).
+            Item::command("edit.cut"),
+            // Visible and enabled.
+            Item::command("view.single"),
+        ];
+        let registry = registry();
+        let shortcuts = shortcuts();
+        let slots = resolve(
+            &items,
+            &registry,
+            &ConditionSet::new(),
+            &shortcuts,
+            "canvas.markup",
+        );
+
+        assert_eq!(
+            slots.len(),
+            2,
+            "a `visible_when` that does not hold must remove the row, not grey it: \
+             greying says `not right now`, and this field is how a menu says `never here`"
+        );
+        assert!(matches!(
+            &slots[0],
+            Slot::Command { command, enabled, .. } if command.id == "edit.cut" && !enabled
+        ));
+        assert!(matches!(
+            &slots[1],
+            Slot::Command { command, enabled, .. } if command.id == "view.single" && *enabled
+        ));
+
+        // …and the same document with the condition SET draws all three.
+        let showing = ConditionSet::new().with("selection.delete_permitted");
+        let slots = resolve(&items, &registry, &showing, &shortcuts, "canvas.markup");
+        assert_eq!(slots.len(), 3);
+        assert!(matches!(
+            &slots[0],
+            Slot::Command { command, .. } if command.id == "edit.copy"
+        ));
+    }
+
+    /// **A hidden row takes its separator with it**, through rule 4.
+    ///
+    /// The interaction the two rules have to get right together: hiding the only
+    /// item in a group leaves a rule with nothing above it, which is the stale
+    /// document shape [`collapse`] already handles — asserted rather than
+    /// assumed, because rule 3 is new and this is the way it can go wrong
+    /// visibly.
+    ///
+    /// ★ Falsified by running `resolve` without `collapse`: the leading
+    /// separator survives and the menu opens with a horizontal line at the top.
+    #[test]
+    fn hiding_a_group_collapses_the_rule_that_introduced_it() {
+        let items = [
+            Item::command("edit.copy").shown_when("never.set"),
+            Item::Separator,
+            Item::command("view.single"),
+        ];
+        let registry = registry();
+        let shortcuts = shortcuts();
+        let slots = resolve(
+            &items,
+            &registry,
+            &ConditionSet::new(),
+            &shortcuts,
+            "canvas.markup",
+        );
+        assert_eq!(slots.len(), 1, "a leading rule must not survive the hiding");
+        assert!(!slots[0].is_separator());
     }
 
     /// **★ An unregistered command is absent; a disabled one is present

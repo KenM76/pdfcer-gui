@@ -198,6 +198,40 @@ pub const fn edit_paste_duplicate() -> CommandText {
     )
 }
 
+/// `edit.duplicate` — a second copy of the selected comment, **without using
+/// the clipboard**.
+///
+/// ★★★ The tooltip's first clause is *"without using the clipboard"*, and that
+/// is the whole reason the command exists rather than a nicety of phrasing.
+/// `Ctrl+C` then `Ctrl+V` already produces a second comment; what it also does
+/// is throw away whatever the operator was carrying — a part number, a
+/// title-block string, a cell from a spreadsheet — and they find that out the
+/// next time they press `Ctrl+V` somewhere else. An operator placing a row of
+/// identical revision marks pays that price once per mark.
+///
+/// ⇒ So the disclosure and the selling point are the same clause. Leading with
+/// the mechanism (*"copies the selected annotation and plants a second one"*)
+/// would describe what they can already see happening and omit the only thing
+/// they cannot.
+///
+/// ★★ It names the OFFSET, because a duplicate that landed exactly on its
+/// original would look like a command that did nothing — the invisible-paste
+/// problem `canvas::clipboard`'s header names — and because the offset is what
+/// makes pressing it repeatedly walk a row, which is the gesture it is for.
+///
+/// ★ *"Comment"*, not *"annotation"*: `crate::text`'s standing rule that a
+/// label is the operator's vocabulary, and the same word the Comments panel and
+/// the whole of `crate::text::markup` use.
+#[must_use]
+pub const fn edit_duplicate() -> CommandText {
+    CommandText::new(
+        "Duplicate",
+        "Put a second copy of the selected comment on the page, slightly offset so you \
+         can see it \u{2014} WITHOUT using the clipboard, so whatever you had copied is \
+         still there. Press it again for another.",
+    )
+}
+
 /// `edit.copy_as_vector` — the clipboard's copy-OUT.
 ///
 /// **Ken, 2026-09-03** (`OPERATOR_REQUESTS.md` **O120**): *"Also I'd like to be

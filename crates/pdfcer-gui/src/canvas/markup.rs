@@ -259,6 +259,15 @@ pub mod ink;
 /// `canvas::interact` under R2; its header carries the fallback ordering.
 pub mod route;
 
+/// ★★★ **Acrobat's own markup colours, measured** — the ten values Adobe
+/// authors comments in, and the grid the Style swatch offers them from.
+///
+/// The data half of the operator's ask of 2026-09-06: *"make sure you've used
+/// the same default colours and style look for these things as Adobe."* Every
+/// number in it was read out of Acrobat DC's own tool-defaults registry rather
+/// than chosen here; the module header carries the reading and the evidence.
+pub mod palette;
+
 /// ★ The colour and width the next markup is authored with — the **Style**
 /// group `RIBBON_IA.md` §5.5 specifies and this shell shipped without.
 ///

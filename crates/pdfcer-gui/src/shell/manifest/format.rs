@@ -35,50 +35,81 @@
 //! alignment — is therefore **N**, and under P3 absent. Twenty-four
 //! entries in [`super::PLANNED`] come from this one section.
 //!
-//! # ★ MEASURED 2026-08-17: they are not *unbuilt*, they are *unbuildable*
+//! # ★★★ MEASURED 2026-08-17, FALSIFIED 2026-08-18, AND STILL WRITTEN HERE ON
+//! 2026-09-06
 //!
-//! This header used to say the property editors were not built yet, which
-//! reads as a scheduling fact. It is not one. The tab was taken up as work
-//! and stopped against **two independent blockers**, neither of which is in
-//! this file:
+//! What follows is the header this file carried for nineteen days, kept
+//! verbatim because **the shape of the mistake is the record**. It named two
+//! blockers, both of which were true when they were measured, both of which
+//! were gone the **next day**, and neither of which anything checked:
 //!
-//! **1. `EditSession` has no verb that modifies an annotation.** Grepping
-//! every public `pub fn` for annotation work returns `add_markup`,
-//! `add_text_annotation`, `delete_annotation`, `delete_redaction_mark` and
-//! two deletion predicates. **Add and delete, nothing between them.** So a
-//! markup's colour, width, fill, opacity, arrowheads and note text cannot be
-//! changed after it is placed — which is §5.8's entire markup row.
+//! > **1. `EditSession` has no verb that modifies an annotation.** Grepping
+//! > every public `pub fn` for annotation work returns `add_markup`,
+//! > `add_text_annotation`, `delete_annotation`, `delete_redaction_mark` and
+//! > two deletion predicates. **Add and delete, nothing between them.** So a
+//! > markup's colour, width, fill, opacity, arrowheads and note text cannot be
+//! > changed after it is placed — which is §5.8's entire markup row.
+//! >
+//! > **2. The canvas selection cannot address an annotation.**
+//! > `canvas::selection::identity::Selection` is `page + object + subpath +
+//! > node` — four integers naming a **paint-order index into page content**.
+//! > … a markup or a dimension is not selectable at all, so even a perfect
+//! > `set_markup_style` would have nothing to name.
 //!
-//! Delete-and-re-add is not a workaround for this and is deliberately not
-//! built. Re-adding loses the annotation's object identity, and with it its
-//! `/NM`, its place in the page's `/Annots` order (so its z-order), and any
-//! reply thread hung off it as an `/IRT` target. A "change the colour" button
-//! that silently detaches a reviewer's replies is worse than no button.
+//! **`EditSession::set_markup_style` shipped on 2026-08-18**, and
+//! `canvas::selection::annot::AnnotTarget` — an `ObjId`, a page, an
+//! `AnnotKind` and the `/F` lock bit — landed the same day.
+//! `panels::properties::markup` has been calling the verb through
+//! `Action::SetMarkupStyle` since 2026-08-19. Every sentence above was false
+//! from the moment the panel it argues for existed, and this file went on
+//! stating both as present-tense facts about the engine until the operator
+//! asked for *"full editing working for the Markup tools"* and somebody read
+//! the header.
 //!
-//! The **one** exception is the ce dimension row: `set_group_style`,
-//! `set_dimension_style`, `set_group_scale` and `set_group_standard` all
-//! exist. Dimensions have a style model and nothing else does.
+//! ⇒ **A blocker is a measurement with a date, not a property of the world.**
+//! `tools/gates/check-stale-blockers.sh` exists for exactly this class and did
+//! not catch it, because the claim was prose in a module header rather than a
+//! row in a register — which is the general lesson: *a reason that outlives
+//! what made it true costs the next reader the whole feature.* The register
+//! entries were caught (`manifest::PLANNED` names each absent command and is
+//! asserted in both directions); the paragraph was not.
 //!
-//! **2. The canvas selection cannot address an annotation.**
-//! `canvas::selection::identity::Selection` is `page + object + subpath +
-//! node` — four integers naming a **paint-order index into page content**.
-//! That shape is what makes a selection immune to zoom and is not lightly
-//! changed; it also means a markup or a dimension is not selectable at all,
-//! so even a perfect `set_markup_style` would have nothing to name.
+//! ★ Two clauses of the old header **stand**, and they are kept as live text
+//! rather than quotation because they still decide things:
 //!
-//! The second is ours and the first is filed as
-//! `request_no_verb_modifies_an_existing_annotation.md`. Until both land, the
-//! honest content of this tab is exactly what is below — and the argument for
-//! shipping it with one command rather than deferring the tab is unchanged and
-//! is now *stronger*, because the appear-on-selection behaviour is the only
-//! part of §5.8 that can be exercised at all.
+//! - **Delete-and-re-add is not a workaround and is deliberately not built.**
+//!   Re-adding loses the annotation's object identity, and with it its `/NM`,
+//!   its place in the page's `/Annots` order (so its z-order), and any reply
+//!   thread hung off it as an `/IRT` target. A "change the colour" button that
+//!   silently detaches a reviewer's replies is worse than no button. This is
+//!   also what `set_markup_style` is *for*: `MarkupStyleChange::annot_id` is
+//!   documented as unchanged, and that is the whole point of the verb.
+//! - **A ce dimension is a different verb.** `set_dimension_style`,
+//!   `set_group_style`, `set_group_scale` and `set_group_standard` are its,
+//!   and handing one to `set_markup_style` regenerates it as a bare line with
+//!   its label and witness lines gone — which the engine refuses by name.
+//!   `AnnotKind` carries the distinction **in the type**, so the Markup
+//!   group's guard is a `match` the compiler checks rather than a comparison of
+//!   `/Subtype` strings. Rule 15.
 //!
-//! What is left is the row that appears in *every* selection type's list
-//! in §5.8's table, and that works today: **Delete**. An unarmed canvas
-//! already does modeless select-and-delete — that is what the removal of
-//! the `Editing on` master toggle relies on — so a Delete command on a
-//! surface that only appears when something is selected is real, not a
-//! stub.
+//! # What the tab carries now
+//!
+//! Three groups: **Font** (2026-08-27), **Markup** (2026-09-06) and
+//! **Selection**. §5.8's build order — *"panel first, tab second … the tab's
+//! contents are a subset of it"* — was followed for both of the first two, and
+//! it is why each was one pass rather than two: the property editors were
+//! written once, in `panels::properties`, and the band reads the same actions.
+//!
+//! What is left of §5.8's table in [`super::PLANNED`] is now the rows with no
+//! verb behind them — a markup's line style (`MarkupStyle` carries no dash
+//! pattern), a note's text (`MarkupNote`, a different struct), the dimension
+//! property editors, and the vector-object rows.
+//!
+//! **Delete** is the row that appears in *every* selection type's list in
+//! §5.8's table. An unarmed canvas already does modeless select-and-delete —
+//! that is what the removal of the `Editing on` master toggle relies on — so a
+//! Delete command on a surface that only appears when something is selected is
+//! real, not a stub.
 //!
 //! Shipping the tab with one command rather than deferring the tab
 //! entirely is a deliberate choice and worth defending, because it looks
@@ -173,6 +204,59 @@ pub(super) const VISIBLE_WHEN: &str = "selection.formattable"; // ui-text-exempt
 /// shape P3 forbids.
 const FONT_VISIBLE_WHEN: &str = "mode.edit_content"; // ui-text-exempt: a condition name, never displayed
 
+/// The condition under which the **Markup** group is drawn at all: a markup
+/// annotation is selected, and this mode may author markup.
+///
+/// # ★★★ Why it is ONE fused fact and not two conditions
+///
+/// The Font group above takes two — `mode.edit_content` for visibility and
+/// `selection.text` for enablement — and the reason is O37: an operator meets
+/// the Font controls **greyed**, because reaching the operand means pressing
+/// `T` first and nothing on screen says so, and a greyed control they can hover
+/// is the one surface that can tell them. The greying is the feature.
+///
+/// Nothing here is like that. The operand is *the mark you clicked*, and the
+/// gesture that produces it is clicking the mark — which the operator has
+/// already done, or the tab would not be on screen. So a greyed Markup group
+/// would explain nothing an operator did not already know, and R9 is explicit
+/// about what that leaves: *an unavailable capability renders nothing; greying
+/// is reserved for temporarily unavailable and is always explained on hover.*
+/// **Absent**, in both of the two states that make it unavailable:
+///
+/// | state | why absent rather than greyed |
+/// |---|---|
+/// | the selection is not a markup — a page object, a form field, a swept text range, or a **ce dimension** | these controls have no operand of the right *kind*, and `set_dimension_style` is the ce dimension's verb (Rule 15) |
+/// | the mode cannot author markup — Read | not a mislaid ability; Read does not have it, and the mode selector is the disclosure |
+///
+/// ★ Fusing them is what `selection.formattable` and
+/// `selection.delete_permitted` already do, and for the stated reason:
+/// `egui_shell::commands::Enable`'s grammar is one condition name with an
+/// optional leading `!` — *"a grammar in a string is a parser and a parser is a
+/// thing that has its own bugs"* — so an `A && B` predicate is published as a
+/// **named fact** rather than assembled here. The name says which fact.
+///
+/// # ★★ What is deliberately NOT folded in: the lock
+///
+/// §12.5.3 Table 165 bit 8 says a locked annotation's properties *"shall not be
+/// changed by the user interface"*, and the engine refuses `set_markup_style`
+/// for one by name. That is a property of **this annotation** rather than of
+/// this build or this mode — click a different mark and the controls work —
+/// which is exactly the case R9 reserves greying for, and exactly the case
+/// where making the controls vanish would read as pdfcer being unable to
+/// restyle anything at all.
+///
+/// So the lock greys, with a sentence, and [`crate::app::markupband`] does that
+/// itself: a custom item gets no greying from the shell, and the sentence has
+/// to be the locked one rather than the command's tooltip. The Properties
+/// panel's *This mark* section takes the same position with the same string
+/// (`text::panels::properties::markup_locked`), which is what keeps the two
+/// surfaces from refusing for different reasons.
+///
+/// ★ Note it is **not** spelled `selection.markup`. That name would claim only
+/// half of what is published and would read, at the two call sites, as though
+/// Read could restyle a mark.
+const MARKUP_VISIBLE_WHEN: &str = "selection.markup_restylable"; // ui-text-exempt: a condition name, never displayed
+
 /// The Format tab.
 pub(super) fn tab() -> Tab {
     Tab::new("format", ribbon::tab_format())
@@ -241,6 +325,67 @@ pub(super) fn tab() -> Tab {
                     command("format.bold").shown_when(FONT_VISIBLE_WHEN),
                     command("format.italic").shown_when(FONT_VISIBLE_WHEN),
                     Item::custom(super::FONT_COLOUR).shown_when(FONT_VISIBLE_WHEN),
+                ],
+            ),
+            // ---------------------------------------------------------------
+            // Markup — §5.8's "Markup annotation" row, built 2026-09-06 on the
+            // operator's *"getting full editing working for the Markup tools."*
+            //
+            // ★★★ SECOND, between Font and Selection, and the position is
+            // decided by the same rule that put Font first. §5.8's tables read
+            // *change how this looks · describe it · destroy it*, left to
+            // right, in increasing commitment. Font and Markup are both the
+            // first of those — one for a swept text range, one for a placed
+            // mark — and Selection is the second and third. Putting Markup
+            // after Selection would put a Delete between two bands of
+            // appearance controls.
+            //
+            // ★ Font and Markup are never drawn together. Their conditions are
+            // disjoint by construction: `mode.edit_content` needs Edit and a
+            // swept text range, `selection.markup_restylable` needs an
+            // annotation selected — and `SelectionState` cannot hold an
+            // annotation and a content selection at once, while a text sweep is
+            // a third space again. So the order between them is a decision
+            // about the *file*, not about what an operator sees; it is recorded
+            // anyway, because the next group added here will not be disjoint
+            // from both.
+            //
+            // # ★★ Five items, one condition, and no separator
+            //
+            // Every item carries `MARKUP_VISIBLE_WHEN`, so the group is drawn
+            // whole or not at all and `egui-shell`'s
+            // `a_group_with_nothing_left_is_not_drawn` removes the caption with
+            // it. There is no separator, unlike the Font group: that one splits
+            // *which typeface* from *how it is set*, which is a real seam an
+            // operator reads. These five are five properties of one mark with
+            // no such seam — and the two that would have been candidates for a
+            // divider (the pair of colours) are already adjacent and already
+            // read as a pair from their labels.
+            //
+            // # ★ The arrowhead chooser has NO extra condition, and that is the
+            // application's decision rather than the manifest's
+            //
+            // `/LE` is meaningful for `/Line` alone. That could have been a
+            // second published condition, and it is not: the item is drawn for
+            // every markup and `app::markupband` **draws nothing** for a
+            // subtype with no ends, which costs no space (the shell reserves
+            // the budgeted width only when the application supplies no renderer
+            // at all — see `egui_shell::ribbon::control`). It is the same shape
+            // `panels::properties::markup::width_row` already uses for a
+            // highlight, which has no border to widen: a control that decides
+            // its own absence from the value it reads, in the one place that
+            // has read it. A condition would put the same question in two
+            // places and let them disagree.
+            // ---------------------------------------------------------------
+            group(
+                "markup",
+                ribbon::group_format_markup(),
+                [
+                    Item::custom(super::MARKUP_STROKE).shown_when(MARKUP_VISIBLE_WHEN),
+                    Item::custom(super::MARKUP_FILL).shown_when(MARKUP_VISIBLE_WHEN),
+                    Item::custom(super::MARKUP_WIDTH).shown_when(MARKUP_VISIBLE_WHEN),
+                    Item::custom(super::MARKUP_OPACITY).shown_when(MARKUP_VISIBLE_WHEN),
+                    Item::custom(super::MARKUP_ENDINGS).shown_when(MARKUP_VISIBLE_WHEN),
                 ],
             ),
             group(
@@ -414,5 +559,61 @@ mod tests {
                  `shown_when(FONT_VISIBLE_WHEN)`."
             );
         }
+    }
+
+    /// ★★★ **Every CUSTOM item on this tab is withheld too, and neither test
+    /// above can see one.**
+    ///
+    /// `items()` filters `Item::Command`, because that is the only variant
+    /// carrying an id — which means the two tests above walked past the three
+    /// Font controls from the day they landed and would have walked past the
+    /// five Markup controls the same way. All eight **write to the document**:
+    /// a face chooser rewrites a content stream, a colour swatch regenerates an
+    /// annotation's appearance. They are the exact population A18 was about.
+    ///
+    /// ⇒ The gap is the shape this file's own `WRITERS` note warns of — *"a
+    /// hand-written list inside a completeness test is exactly the shape this
+    /// project has already been bitten by"* — arriving through a **variant**
+    /// rather than through a missing row. So this asserts over custom items,
+    /// where the check is stronger than the command one and needs no list:
+    /// there is nothing on this tab that a custom item may legitimately do
+    /// without authoring, so *every* one of them must carry a mode-bearing
+    /// condition. A custom item with no `shown_when` at all fails.
+    ///
+    /// ★ Two conditions are accepted rather than one, and they are not
+    /// interchangeable: `mode.edit_content` gates the Font group (page content)
+    /// and `selection.markup_restylable` gates the Markup group (an
+    /// annotation), and `Capabilities` keeps `edit_content` and `author_markup`
+    /// as separate questions precisely so a reviewer may recolour a cloud in a
+    /// drawing they may not otherwise touch. A test that demanded one string
+    /// would have taken the working verb away from the mode that owns it.
+    #[test]
+    fn every_custom_control_on_this_tab_is_withheld_from_a_mode_that_cannot_author() {
+        let mut seen = 0_usize;
+        for item in tab().groups().iter().flat_map(|g| g.items().iter()) {
+            let Item::Custom {
+                kind, visible_when, ..
+            } = item
+            else {
+                continue;
+            };
+            seen += 1;
+            assert!(
+                matches!(
+                    visible_when.as_deref(),
+                    Some(FONT_VISIBLE_WHEN | MARKUP_VISIBLE_WHEN)
+                ),
+                "the `{kind}` control edits the document and is shown in every mode. R9: an \
+                 unavailable capability renders NOTHING. Gate it on `mode.edit_content` if it \
+                 changes page content, or on `selection.markup_restylable` if it restyles a \
+                 mark."
+            );
+        }
+        assert_eq!(
+            seen, 8,
+            "three Font controls and five Markup controls. A count, because the loop above \
+             passes trivially over an empty tab — which is what a renamed variant or a group \
+             lost to an editing accident would leave it"
+        );
     }
 }

@@ -273,5 +273,80 @@ pub(super) fn band() -> Vec<Command> {
             .with_icon("italic")
             .enabled_when("selection.text"),
         command("format.font_colour", t::format_font_colour(), 807).enabled_when("selection.text"),
+        // -------------------------------------------------------------------
+        // The Markup group — `RIBBON_IA.md` §5.8's "Markup annotation" row,
+        // registered 2026-09-06 on the operator's *"getting full editing
+        // working for the Markup tools."*
+        //
+        // ★★★ **The five reasons this row was `PLANNED` were all one claim, and
+        // it had been false for eighteen days.** `manifest::format`'s header
+        // said `EditSession` had no verb that modified an annotation and that
+        // the canvas selection could not address one.
+        // `EditSession::set_markup_style` shipped 2026-08-18;
+        // `canvas::selection::annot::AnnotTarget` landed the same day; and
+        // `panels::properties::markup` has raised `Action::SetMarkupStyle`
+        // since 2026-08-19. The header is corrected there, at length, because
+        // the mistake is worth more than the correction: **a blocker is a
+        // measurement with a date**, and this one outlived what made it true by
+        // the whole of the feature's cost.
+        //
+        // ★★ **All five are `enabled_when(MARKUP_RESTYLABLE)`, which is the
+        // SAME condition the manifest gives them as `shown_when`** — deliberate,
+        // and this file's header already argues that the duplication is not
+        // redundant: the tab and its contents are evaluated independently, and
+        // a Format tab that appeared holding five greyed controls would be the
+        // placeholder P3 forbids, arriving through a mismatch rather than a
+        // decision. Here it is stronger than that. The condition IS the
+        // question "is there an operand of the right kind, in a mode that may
+        // change it?", so a state where the item is drawn and the command is
+        // greyed cannot exist by construction — which is exactly what should be
+        // true of a group whose absence is the whole R9 story.
+        //
+        // ⇒ The one greyed state these controls do have is a **locked**
+        // annotation (§12.5.3 Table 165 bit 8), and it is deliberately NOT in
+        // this predicate. `enabled_when` greys with the command's own tooltip,
+        // and the honest sentence for a locked mark is
+        // `text::panels::properties::markup_locked` — the same string the
+        // Properties panel shows, so the two surfaces cannot refuse for
+        // different reasons. `app::markupband` draws that greying itself, which
+        // it has to anyway: the shell evaluates no predicate, draws no greying
+        // and shows no tooltip for an `Item::Custom`.
+        //
+        // ★ **No icons on any of the five, and the refusal is STRUCTURAL rather
+        // than about supply** — which is the distinction this project has now
+        // paid for twice (`edit.select_all`, then `format.bold`/`format.italic`
+        // on 2026-09-04). A refusal reading "no art exists" has an expiry date
+        // and the operator's standing ruling is that the art gets **drawn**.
+        // This is the other kind: two colour swatches, two drag fields and a
+        // combo box are drawn by `Ui::color_edit_button_srgb`,
+        // `egui::DragValue` and `egui::ComboBox`, and **none of those widgets
+        // has an icon slot**. There is nowhere to put a glyph, not nowhere to
+        // get one, and no amount of drawing touches it. The three Font controls
+        // beside them refuse on the identical ground.
+        //
+        // ★ And a swatch's entire face IS the colour it reports; a glyph over
+        // it would cover the one thing the control exists to say.
+        command("format.colour", t::format_colour(), 809).enabled_when(MARKUP_RESTYLABLE),
+        command("format.fill", t::format_fill(), 810).enabled_when(MARKUP_RESTYLABLE),
+        command("format.line_width", t::format_line_width(), 811).enabled_when(MARKUP_RESTYLABLE),
+        command("format.opacity", t::format_opacity(), 812).enabled_when(MARKUP_RESTYLABLE),
+        command("format.arrowheads", t::format_arrowheads(), 813).enabled_when(MARKUP_RESTYLABLE),
     ]
 }
+
+/// **A markup annotation is selected, and this mode may author markup.**
+///
+/// Spelled once here because five registrations read it, and spelled as a
+/// constant rather than as five literals for [`crate::shell::commands::FILE_RECENT`]'s
+/// reason: a typo in one of five copies produces a permanently greyed control
+/// and no error at all, because an unset condition and a false condition are
+/// the same value.
+///
+/// ★ It is **not** shared with `manifest::format`'s `MARKUP_VISIBLE_WHEN`,
+/// which holds the same string. That is the same deliberate de-aliasing
+/// `manifest::SELECTION_ANY` records the cost of: while `SELECTION_ANY` read
+/// `= format::VISIBLE_WHEN`, editing the Format tab's condition would have
+/// silently retargeted the canvas context menu's Delete. Two readers, two
+/// spellings, and the manifest side carries the full account of what the
+/// condition means.
+const MARKUP_RESTYLABLE: &str = "selection.markup_restylable"; // ui-text-exempt: a condition name, never displayed

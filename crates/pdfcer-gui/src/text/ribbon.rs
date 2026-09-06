@@ -1,10 +1,11 @@
 //! # text::ribbon — the ribbon's *structural* strings
 //!
 //! Tab labels, the one-line question each tab exists to answer, group
-//! captions, and the three mode labels. Everything a person reads on the
+//! captions, the three mode labels, and the words inside the band's own
+//! non-button controls. Everything a person reads on the
 //! ribbon that is **not** a command; command labels and tooltips live in
 //! [`crate::text::commands`], which is a much longer file for a reason
-//! that is worth stating: there are eight tabs and thirty-three groups, and
+//! that is worth stating: there are eight tabs and thirty-seven groups, and
 //! there are a hundred and twenty commands. Splitting the catalog along that seam
 //! keeps both halves navigable and both files inside the project's
 //! 1,500-line ceiling.
@@ -538,6 +539,127 @@ pub fn group_format_font() -> &'static str {
 #[must_use]
 pub fn group_format_selection() -> &'static str {
     "Selection"
+}
+
+/// Format ▸ Markup — the controls that restyle a mark already on the page.
+///
+/// `RIBBON_IA.md` §5.8's *Markup annotation* row: *Colour · Fill · Line width ·
+/// Line style · Opacity · Arrowheads · Note text · Delete*. Five of those eight
+/// are built ([`crate::app::markupband`]); Line style and Note text stay in
+/// `manifest::PLANNED`, and Delete is the [`group_format_selection`] band's,
+/// which is where §5.8 puts it for **every** selection type.
+///
+/// # ★★ "Markup", not "Mark", "Annotation", "Shape" or "Style"
+///
+/// - **"Annotation"** is the PDF word. `crate::text::paint`'s rule for this
+///   catalog — *"'Fill' and 'Line', not 'fill' and 'stroke'; stroke is the PDF
+///   word"* — refuses it for the same reason, and the Markup **tab** already
+///   made this exact choice: `RIBBON_IA.md` renamed §5.5's tab from *Review* to
+///   *Markup* because *"`Markup` is also the word this project's audience
+///   uses."*
+/// - **"Shape"** is narrower than the group. A highlight and a sticky note are
+///   markup and are not shapes, and the colour and opacity controls act on
+///   both.
+/// - **"Style"** is what the Markup tab's own pen band is called, and it edits
+///   the pen the **next** gesture will use. Two groups called Style, one
+///   changing what you are about to draw and one changing what you already
+///   drew, is a distinction an operator would have to learn from the
+///   consequences.
+///
+/// ⇒ It matches the tab the marks were placed from, which is the association
+/// worth having: the band that made this mark is called Markup, and so is the
+/// band that changes it.
+#[must_use]
+pub fn group_format_markup() -> &'static str {
+    "Markup"
+}
+
+// ---------------------------------------------------------------------------
+// FORMAT ▸ MARKUP — the words inside the band's own controls
+//
+// ★★★ **Only the strings with no Properties-panel twin live here.** The
+// panel's *This mark* section (`panels::properties::markup`) already names the
+// width suffix, the opacity suffix, the Clear button and the locked sentence,
+// and `app::markupband` reads all four from `crate::text::panels::properties`
+// exactly as `app::fontband` reads its own from there.
+//
+// That is deliberate and it is the same argument `fontband` makes: the two
+// surfaces restyle one annotation through one verb, so a word that differed
+// between them would be two names for one property — and the ribbon's copy is
+// the one an operator meets first, so it is the copy that would teach them the
+// wrong name. What is below is what the panel has no equivalent of, because the
+// panel does not offer a fill or an arrowhead at all.
+// ---------------------------------------------------------------------------
+
+/// The fill swatch's *no fill* state — `MarkupStyle::interior` set to
+/// `StyleEdit::Clear`.
+///
+/// # ★★★ Why this is a named state and not an absent control
+///
+/// `canvas::markup::spec` authors every shape with `interior: None`, and its
+/// reason is quoted in `panels::properties::markup`'s header: *"a filled
+/// comment shape hides the drawing it is a comment about, which on a CAD sheet
+/// is the whole content under it."* Acrobat's default is the same. So **no
+/// fill is where every mark starts**, and a fill control that could only ever
+/// set one would be a one-way door: try a fill on a drawing, decide against it,
+/// and there is no way back to the mark you had.
+///
+/// ★ *"No fill"*, not [`crate::text::panels::properties::markup_clear`]'s
+/// *"Clear"*, although both raise `StyleEdit::Clear`. "Clear" is honest about
+/// the **act** — it removes the key, and what applies afterwards is the
+/// standard's default rather than anything pdfcer remembers — and that is the
+/// right word beside a colour the operator set. Beside a fill it is the wrong
+/// word twice over: *clear* also means *transparent*, which is what the result
+/// looks like, and the state has a name every drawing program already uses.
+/// It is what Word, Illustrator and Acrobat all call it.
+#[must_use]
+pub fn markup_no_fill() -> &'static str {
+    "No fill"
+}
+
+/// The four positions the arrowhead chooser offers, in the order it draws them.
+///
+/// # ★★★ Positions, not pairs
+///
+/// `/LE` is two independent endings (§12.5.6.7, Table 176) over three shapes
+/// each — nine combinations, which is not a list anybody reads on a ribbon
+/// band. [`crate::app::markupband`] offers the four *positions* an operator
+/// means and **preserves the shape** the mark already carries, so a closed
+/// arrowhead stays closed and an open one stays open. These are the names of
+/// those four positions.
+///
+/// ★ The order is *fewest endings first*, which is also increasing commitment
+/// and is the same reading order §5.8's menu rule gives a group. It puts the
+/// state pdfcer authors — a head at the end only, `(None, OpenArrow)` in
+/// `canvas::markup` — third rather than first, and that is correct: the list is
+/// ordered by what it does, not by what is common, because an operator scanning
+/// four entries for "both" should find it at the end every time.
+///
+/// ★★ *"Start"* and *"end"*, not *"first point"* and *"last point"* and not
+/// *"tail"* and *"head"*. The first pair is the file's vocabulary (`/L` is
+/// `[x1 y1 x2 y2]`), the second is a draughtsman's, and the operator's is the
+/// direction they dragged: an arrow points where the drag finished.
+#[must_use]
+pub fn markup_endings_none() -> &'static str {
+    "No arrowheads"
+}
+
+/// See [`markup_endings_none`].
+#[must_use]
+pub fn markup_endings_start() -> &'static str {
+    "At the start"
+}
+
+/// See [`markup_endings_none`].
+#[must_use]
+pub fn markup_endings_end() -> &'static str {
+    "At the end"
+}
+
+/// See [`markup_endings_none`].
+#[must_use]
+pub fn markup_endings_both() -> &'static str {
+    "At both ends"
 }
 
 // ---------------------------------------------------------------------------

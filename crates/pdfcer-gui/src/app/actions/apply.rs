@@ -764,7 +764,10 @@ impl PdfcerApp {
                     stamp,
                 },
                 &text,
-                self.pen.ink,
+                // ★ This kind's own pen, not the shape pen — read
+                // `self.pen.ink` until 2026-09-06, which made a sticky note
+                // shape-red where Acrobat's is violet. `PenSlot::of_text_annot`.
+                self.pen.text_annot_colour(kind),
                 self.pen.opacity_option(),
             ),
             // ★ One text markup, through the SAME funnel and the same engine

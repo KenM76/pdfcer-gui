@@ -103,6 +103,20 @@ mod fontband;
 /// of font embedding the engine says is the shell's. See its header for why
 /// pdfcer never goes looking on its own.
 pub mod fonts;
+/// The five Format ▸ Markup controls the ribbon cannot draw itself — two colour
+/// swatches, a width field, an opacity field and an arrowhead chooser, which
+/// restyle a mark that is already on the page. [`fontband`]'s twin, with the
+/// same four obligations and the same park-and-report contract; see its header
+/// for what differs, and for why R9 makes this group **absent** where the Font
+/// group greys.
+///
+/// ★ `pub`, unlike [`fontband`] beside it, and for one mechanical reason:
+/// [`PdfcerApp::markup_change`] parks a `markupband::MarkupEdit` on a public
+/// struct, and a public field of a type nothing outside the module can name is
+/// a private interface the compiler refuses under `-D warnings`. `fontband`
+/// needs no such thing because its operand type lives in `app::actions`, which
+/// is already public.
+pub mod markupband;
 
 /// ★ The per-frame update — `eframe`'s entry point, and the one order the
 /// frame's eleven steps may happen in.
@@ -528,6 +542,51 @@ pub struct PdfcerApp {
     /// pair, and the arm `take`s it, so it is `None` again before the frame
     /// ends.
     pub font_change: Option<crate::app::actions::textstyle::StyleChange>,
+
+    /// **The Format ▸ Markup control the operator just used, and the mark it is
+    /// about**, parked for the length of one frame.
+    ///
+    /// [`Self::font_change`]'s twin in every respect but one, and that one is
+    /// the reason it carries a second value. See that field's note for the
+    /// whole argument — a `HandlerToken` has no room for an operand, the
+    /// control reports and the command acts, and a `Vec` here would be a
+    /// container whose second element is unreachable because the pointer is in
+    /// exactly one control per frame.
+    ///
+    /// # ★★★ Why the TARGET is parked here and the Font group's page and runs
+    /// are not
+    ///
+    /// `font_change`'s own note is explicit that the page and the runs are
+    /// deliberately re-read in the dispatch arm, so that all five Font commands
+    /// derive one operand one way and a chord gets the same answer as a click.
+    /// That argument holds there because the operand — *which runs does a
+    /// restyle act on* — is a **rule** with a stated definition
+    /// (`selection.runs(edit_epoch)`), and a rule stated twice is a rule that
+    /// diverges.
+    ///
+    /// Here the operand is not a rule. It is *the annotation the swatch was
+    /// showing the colour of*, and the control has already read it out of the
+    /// session to draw itself. Re-deriving it in the dispatch arm would open a
+    /// gap this surface cannot afford: `app::markupband` reads
+    /// `doc.selection.annot()` while drawing, the dispatcher would read it
+    /// again after the frame's input has been applied, and a click that landed
+    /// on the canvas in the same frame — deselecting, or selecting a different
+    /// mark — would send the operator's colour to a mark they were no longer
+    /// looking at. `MarkupStyleChange` is not undoable in halves; a restyle
+    /// applied to the wrong annotation is a wrong document.
+    ///
+    /// ⇒ The dispatch arm re-derives nothing and **verifies** instead: it takes
+    /// this pair and checks the parked target is still what the selection
+    /// names, declining to the trace if it is not. One operand, read once, at
+    /// the moment the operator chose it.
+    ///
+    /// ★ Not a half-finished intent living across frames: `Self::ribbon_band`
+    /// sets it and dispatches in the same statement pair, and the arm `take`s
+    /// it, so it is `None` again before the frame ends.
+    pub markup_change: Option<(
+        crate::canvas::selection::annot::AnnotTarget,
+        crate::app::markupband::MarkupEdit,
+    )>,
 
     /// The panels' own working state: the page decomposition and the font
     /// inventory, both of which are caches with no equivalent in
@@ -1044,6 +1103,7 @@ impl PdfcerApp {
             tab_menu_target: None,
             recent_choice: None,
             font_change: None,
+            markup_change: None,
             panels: crate::panels::PanelsState::default(),
             find: crate::find::FindState::default(),
             dialogs: crate::dialogs::DialogsState::default(),

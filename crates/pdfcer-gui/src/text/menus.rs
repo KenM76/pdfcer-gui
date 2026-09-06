@@ -81,6 +81,28 @@
 //! command already says. If a command's label reads wrongly in a menu, the
 //! fix is the command's label — the ribbon has the same problem and has not
 //! noticed.
+//!
+//! ## ★★★ The case that tested the boundary hardest, and still did not break it
+//!
+//! `canvas.markup` (2026-09-06) carries two rows whose labels are **deictic** —
+//! *"Add a point here"*, *"Remove this point"* — and whose operand is *the
+//! corner the operator was pointing at when they opened the menu*. Nothing else
+//! in the catalog is written that way, and it looks at first like exactly the
+//! copy a menu owns rather than a command: the words only make sense inside a
+//! popup, at a pointer.
+//!
+//! **They still belong to the command**, and the reason is the one this whole
+//! module is built on. The row's tooltip has to explain the greying — *"Greyed
+//! once the shape is down to its last corners: a closed shape keeps three and
+//! an open one keeps two"* — which is P3's *"always explained on hover"*, and a
+//! greyed row's tooltip is looked up in the registry like every other. Writing
+//! the label here and the tooltip there would split one sentence across two
+//! catalogs.
+//!
+//! ⇒ So the rule survives its hardest case, and it survives it by being about
+//! **where the words are looked up**, not about how general they read.
+//! `crate::text::commands::annotate` carries both, with the argument for the
+//! deixis at the registration.
 
 #[cfg(test)]
 mod tests {

@@ -82,11 +82,20 @@
 //! that menu empty, and the right-click would then correctly do nothing
 //! rather than opening a box with a rule in it.
 //!
-//! # The four menus, and why each holds what it holds
+//! # The menus, and why each holds what it holds
+//!
+//! ⚠ This heading read *"The four menus"* until 2026-09-06 and the table under
+//! it listed four while [`built_in`] returned eight. That is this project's
+//! recurring shape — **a prose count beside the thing it counts, decaying while
+//! a test pins the truth one screen down** — and it is why the heading no
+//! longer carries a number at all. [`CONTEXTS`] is the count, and
+//! `tests::the_catalog_defines_exactly_the_documented_contexts` is what makes
+//! it true.
 //!
 //! | Context id | Right-click site | Items | The reasoning |
 //! |---|---|---|---|
 //! | [`CANVAS_OBJECT`] | a selected object on the page | `view.zoom_selection`, `format.properties`, `format.select_form`, `format.unshare_form`, `format.delete` | ★ The Items column was **wrong** until 2026-08-28 — it had never been updated for `format.select_form`, added the previous day, which is this project's recurring shape of a prose claim beside the thing it describes decaying while a test pins the truth one screen down. The two form commands arrived with the form-XObject work: `format.select_form` because a click now reaches *inside* a form and the container has to be reachable on purpose, and `format.unshare_form` because O53 forbids a command existing only on the ribbon — and because the operator who needs it is mid-gesture, about to type into a title block, and the pointer is where they are looking. Zoom to selection is here because **SolidWorks and Acrobat both reach it by right-click** and only Inkscape binds a key for it — operator instruction of 2026-08-14 to match those three; see the registration site for why no chord was invented. Then §5.8 lists Delete in **every** selection type's row. It is the one command in that section that exists (see `manifest::DIRECTED`), and it is wired: `PdfcerApp::dispatch_token` reads `SelectionState::deletable_objects_on`, the same rule the Delete key reads. **`format.properties` joined them on 2026-08-18**, with the ce-dimension properties section: a selected ce dimension's group, measurement, style overrides and radius/diameter switch are otherwise reachable only by noticing that a contextual tab appeared or by opening a dock panel by name, and the operator's report was *"I click and can't figure out how to enable some of the basic stuff."* It sits above Delete because the destructive row is last in every menu here. |
+//! | [`CANVAS_MARKUP`] | a selected markup shape on the page | `format.properties`, `markup.add_node`, `markup.remove_node`, `edit.cut`, `edit.copy`, `edit.paste`, `format.delete` | ★★★ **The sixth canvas context, 2026-09-06, and the reason it is not [`CANVAS_OBJECT`] is that four of that menu's five rows are meaningless on an annotation.** `format.select_form` and `format.unshare_form` are about page content inside a form XObject; a markup annotation is not page content and is never inside one, so both would resolve, draw and do nothing — the *live and silently inert* class this project's `DEFECTS.md` is made of. What replaces them is the pair the operator asked for by name: *"I also can't edit or delete nodes of a markup shape once it is drawn."* See the block comment at the registration for the order, and [`crate::canvas::annotnodes::menu`] for why one of them can be greyed and the other absent on the very same shape. |
 //! | [`CANVAS_EMPTY`] | blank page, or the paper beside the drawing | `view.zoom_fit_page`, `view.zoom_fit_width`, `view.zoom_fit_height`, `view.zoom_actual` | The four **named** zoom levels, all of which have a live dispatch arm today. A right-click on paper is about the *view*, because there is no object to be about. |
 //! | [`DOCK_TAB`] | a panel tab in the dock | `view.reset_layout` | The only registered command that acts on the dock. The **command** is wired (`PdfcerApp::dispatch_command` calls `Modes::reset` with `ResetScope::All`); the **menu** still cannot be attached — see the warning below. |
 //! | [`OBJECTS_ROW`] | a row in the Objects panel | `file.properties` | The Properties panel is *where an object row is described*; right-clicking a row focuses it and this is the command that puts the description on screen — which it now does: `PdfcerApp::show_panel` activates the panel, mounting it first if the operator's arrangement no longer holds it. |
@@ -210,6 +219,69 @@ pub const CANVAS_TEXT: &str = "canvas.text";
 /// drag and Delete.
 pub const CANVAS_FIELD: &str = "canvas.field";
 
+/// ★★★ Right-click on the page **over a selected markup shape**.
+///
+/// The sixth canvas menu, added 2026-09-06. Keyed on the **annotation
+/// selection** — `SelectionState::annot` with
+/// [`AnnotKind::Markup`](crate::canvas::selection::AnnotKind::Markup) — which is
+/// neither a content selection nor a caret nor a field, so none of the other
+/// five ever resolved for one.
+///
+/// # ★★ Why not just widen [`CANVAS_OBJECT`]
+///
+/// Because four of that menu's five rows are about **page content**, and an
+/// annotation is not page content:
+///
+/// | that menu's row | on a markup shape |
+/// |---|---|
+/// | `format.select_form` | meaningless — an annotation is never inside a form XObject |
+/// | `format.unshare_form` | meaningless, same reason |
+/// | `view.zoom_selection` | works, and is kept |
+/// | `format.properties` | works, and is the route to the Properties panel's markup section |
+/// | `format.delete` | works, and stays last |
+///
+/// Two rows that resolve, draw and do nothing is the *live and silently inert*
+/// class `DEFECTS.md` is made of, and R9's answer to *"this cannot apply"* is
+/// nothing rather than greying — the shape will not become page content while
+/// the operator looks at it.
+///
+/// ⇒ So a context of its own, carrying what a placed markup can actually
+/// answer for: what it is, its two node verbs, the clipboard, and Delete.
+pub const CANVAS_MARKUP: &str = "canvas.markup";
+
+/// **The right-click landed on a segment of a shape that can take a new
+/// point** — the `visible_when` of `markup.add_node`.
+///
+/// Set per right-click by [`crate::canvas::menus`], never by
+/// `PdfcerApp::conditions`, for [`PANEL_DOCKED`]'s reason one step further
+/// along: it is a fact about *one click on one edge*, and the frame's condition
+/// set describes the frame. [`crate::canvas::annotnodes::menu::rows`] is what
+/// answers it, and it answers it by **asking the engine**, so this name means
+/// *the engine did not refuse this on grounds of the shape's kind*.
+pub const NODE_INSERT_OFFERED: &str = "markup.node_insert_offered";
+
+/// **…and inserting there would actually be allowed** — the `enabled_when` of
+/// `markup.add_node`, carried on the command rather than on the item because
+/// `Item` has no enablement field and enablement is the registry's.
+///
+/// The gap between this and [`NODE_INSERT_OFFERED`] is the greyed row: drawn,
+/// unpressable, explaining itself on hover. R9.
+pub const NODE_INSERTABLE: &str = "markup.node_insertable";
+
+/// **The right-click landed on an existing point** — the `visible_when` of
+/// `markup.remove_node`. [`NODE_INSERT_OFFERED`]'s twin; see it for why these
+/// live here and not in `PdfcerApp::conditions`.
+pub const NODE_REMOVE_OFFERED: &str = "markup.node_remove_offered";
+
+/// **…and removing it would not breach the shape's vertex floor** — the
+/// `enabled_when` of `markup.remove_node`.
+///
+/// ★ This is the one condition in the pair that is genuinely *temporary*: a
+/// closed shape keeps three points and an open one keeps two, and drawing
+/// another corner makes the row live again. That is precisely why the row is
+/// greyed rather than hidden, and why the command's tooltip states the floor.
+pub const NODE_REMOVABLE: &str = "markup.node_removable";
+
 /// Right-click on a panel tab in the dock.
 ///
 /// Defined but not attachable from this crate — see the module header.
@@ -263,6 +335,7 @@ pub const CONTEXTS: &[&str] = &[
     CANVAS_EMPTY,
     CANVAS_TEXT,
     CANVAS_FIELD,
+    CANVAS_MARKUP,
     DOCK_TAB,
     DOCUMENT_TAB,
     OBJECTS_ROW,
@@ -527,6 +600,122 @@ pub fn built_in() -> Menus {
         // meaning: *deleting what is selected would not be refused*.
         .with(Menu::new(CANVAS_FIELD).with_items([
             Item::command("format.properties"),
+            Item::command("format.delete").shown_when(super::manifest::DELETE_PERMITTED),
+        ]))
+        // -------------------------------------------------------------------
+        // canvas.markup — a placed markup shape's menu.
+        //
+        // ★★★ **The sixth canvas context, 2026-09-06.** The operator's report of
+        // 2026-09-05 is the whole commission:
+        //
+        //   "I also can't edit or delete nodes of a markup shape once it is
+        //    drawn."
+        //
+        // Half of that was answered the same day: `canvas::annotnodes` moves,
+        // inserts and removes vertices through `Pass 255.0`'s verbs. But insert
+        // and remove needed the Points tool armed **plus** `Ctrl` or
+        // `Ctrl+Shift`, and nothing on screen said so — a capability only
+        // somebody who was told about it can use, which is the same shape as
+        // O71's chord-only Copy Image one menu above. The note filed with that
+        // work named the fix and named this file as the reason it was not built:
+        //
+        //   "The natural way to add or remove a corner is a right-click on the
+        //    shape — 'add a point here', 'remove this point' — which is how the
+        //    engine itself describes these two operations. The chords above are
+        //    a stopgap."
+        //
+        // ## Why not `canvas.object` with two rows added
+        //
+        // Because that menu is FIVE rows and only three of them mean anything
+        // on an annotation. `format.select_form` and `format.unshare_form` are
+        // about page content painted from inside a form XObject; a markup
+        // annotation is never inside one, so both would draw, resolve and do
+        // nothing. R9's answer to a permanently inapplicable control is nothing
+        // rather than greying, and `canvas.read-object`'s own note two menus
+        // above settled the precedent: when a majority of a menu's rows do not
+        // apply to a subject, the subject gets a context, not a filter.
+        //
+        // `view.zoom_selection` is absent for a sharper reason than taste: it is
+        // gated on `selection.bounds`, which `app::conditions` publishes from
+        // `canvas::zoom::can_zoom_to_selection` → `SelectionState::outline_union`
+        // → the **content** outline map. An annotation selection carries its
+        // outline on `AnnotSelection` and puts nothing in that map, so the row
+        // would be greyed on every markup shape there has ever been. A
+        // permanently greyed row is a promise the build cannot keep; when
+        // zoom-to-selection learns to frame an annotation it belongs here, first.
+        //
+        // ## ★★ The order, and the two rules it obeys
+        //
+        // 1. **Describe, then act, then destroy** — the same progression
+        //    `canvas.object` uses and for the same reason.
+        // 2. **The destructive row is last in every menu in this file.**
+        //
+        // So: what is it (`format.properties`) · the two node verbs, which are
+        // why this menu exists · the clipboard · Delete.
+        //
+        // Separators between the three groups because they are three KINDS of
+        // verb, which is what a rule is punctuation for. The menu engine
+        // collapses a leading, trailing or doubled rule (`plan::collapse`), so
+        // on a shape with no node rows — an `/Ink` stroke, a `/Square` — the two
+        // rules around them become one and the menu reads as though the group
+        // was never written.
+        //
+        // ## ★★★ The two node rows: `shown_when` AND greying, on one row
+        //
+        // This is the only pair in the file that uses both halves of R9 at once,
+        // and it has to, because the same command is permanently inapplicable on
+        // one shape and temporarily unavailable on another:
+        //
+        // | shape, and where the pointer is | Remove this point |
+        // |---|---|
+        // | a `/Square`, anywhere | **absent** — it will never have points |
+        // | a five-corner polygon, on a corner | live |
+        // | a **three**-corner polygon, on a corner | **greyed**, tooltip names the floor |
+        // | a five-corner polygon, in its middle | absent — no point was pointed at |
+        //
+        // Neither answer is hard-coded here or in the canvas. Both come from
+        // `EditSession::reshape_annotation_preview`, asked with the exact
+        // `VertexEdit` the row would commit, and the **error variant** is what
+        // separates the greyed case (`ReshapeWouldBreachVertexFloor` — draw
+        // another corner and it comes back) from the absent one. See
+        // `crate::canvas::annotnodes::menu`, which is where that is decided and
+        // where the two `visible_when` conditions below are set per click.
+        //
+        // ## The clipboard rows
+        //
+        // Three, and they are the three that exist. `canvas::annotclip` shipped
+        // the lossless annotation route on 2026-09-05, and `edit.cut`,
+        // `edit.copy` and `edit.paste` are all registered, all wired through
+        // `dispatch::clipboard`, and all reach an annotation operand.
+        //
+        // ★ `edit.paste_duplicate` is deliberately absent even though it is
+        // registered: over a markup clipboard `dispatch::clipboard` falls it
+        // through to plain paste, so the row would be a second Paste under a
+        // different name. Its subject is a form field, and `canvas.field` is
+        // where it would belong the day that menu grows a clipboard group.
+        //
+        // ★★ `edit.cut` carries no `shown_when` here, unlike `format.delete`
+        // below it, and the asymmetry is the registry's rather than this file's:
+        // cut is gated by `selection.cut_permitted`, an `Enable::Custom` on the
+        // command that clears for the things the clipboard cannot carry, so it
+        // GREYS where it would refuse. Delete's refusal is a property of the
+        // FILE — a certified or encrypted drawing — which is not temporary, so
+        // that one disappears. Two refusals, two mechanisms, one reason each.
+        .with(Menu::new(CANVAS_MARKUP).with_items([
+            Item::command("format.properties"),
+            Item::Separator,
+            Item::command("markup.add_node").shown_when(NODE_INSERT_OFFERED),
+            Item::command("markup.remove_node").shown_when(NODE_REMOVE_OFFERED),
+            Item::Separator,
+            Item::command("edit.cut"),
+            Item::command("edit.copy"),
+            Item::command("edit.paste"),
+            Item::Separator,
+            // ★★★ The same condition and the same constant `canvas.object`'s
+            // and `canvas.field`'s Deletes carry. `app::conditions` publishes it
+            // from a ladder whose annotation rung is guarded by `author_markup`,
+            // which is what keeps this row alive in Review — deleting a comment
+            // is exactly what Review is for.
             Item::command("format.delete").shown_when(super::manifest::DELETE_PERMITTED),
         ]))
         // -------------------------------------------------------------------
@@ -953,516 +1142,4 @@ impl std::fmt::Debug for MenuHost<'_> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::shell::{commands, manifest};
-    use egui_shell::manifest::Item;
-    use std::collections::BTreeSet;
-
-    /// The shipped shell and a fully populated registry, built the way the
-    /// application builds them.
-    fn shell_and_registry() -> (Shell, CommandRegistry) {
-        let mut registry = CommandRegistry::new();
-        commands::register(&mut registry);
-        (manifest::built_in(), registry)
-    }
-
-    /// Conditions for a document that is open, has pages, and has something
-    /// selected — the state in which every menu here is at its liveliest.
-    fn everything_open() -> ConditionSet {
-        ConditionSet::new()
-            .with("doc.open")
-            .with("doc.pages")
-            .with(manifest::SELECTION_ANY)
-            // ★★ 2026-08-28. Without it `canvas.object` stopped opening, and
-            // the failure was correct: `format.delete` and `format.properties`
-            // moved to the wider `selection.actionable` when a form field
-            // became something they can act on, and this fixture's name
-            // promises *"everything open"* while naming conditions one at a
-            // time.
-            //
-            // ⇒ A hand-listed "liveliest state" fixture goes stale the moment a
-            // command's predicate changes, and it fails on the menu that lost
-            // its last enabled item rather than on the condition that moved —
-            // which is a true failure pointing at the wrong file. Adding the
-            // name here is the whole repair; the alternative, deriving the set
-            // from the registry, would make the test assert that the registry
-            // agrees with itself.
-            .with(manifest::SELECTION_ACTIONABLE)
-    }
-
-    /// **★ Every command every menu names is registered.**
-    ///
-    /// The check nothing else performs. `Shell::validate_against` walks
-    /// `command_references()`, which covers tab groups, the QAT and the
-    /// keymap and deliberately **not** the menus — so a menu naming a
-    /// command this build does not have passes the manifest's own
-    /// validation, renders as one row fewer, and discloses the omission on
-    /// a channel nobody reads during development.
-    ///
-    /// `Menus::validate_against` is the engine's own opt-in answer and it
-    /// checks both this and the structural rules (no empty context id, no
-    /// duplicate context, no command listed twice within one menu), so it
-    /// is asked rather than reimplemented. Its error names the menu **and**
-    /// the id, which is what makes a failure point at a line rather than at
-    /// a file.
-    #[test]
-    fn every_command_every_menu_names_is_registered() {
-        let (shell, registry) = shell_and_registry();
-        let menus = shell
-            .menus
-            .as_ref()
-            .expect("the built-in shell must carry its menus");
-        menus.validate_against(&registry).expect(
-            "every command a context menu names must be registered — an unregistered id \
-             is silently dropped at render time, so nothing else would report this",
-        );
-    }
-
-    /// …and the manifest really carries them, rather than the menus existing
-    /// only as a function nothing calls.
-    ///
-    /// The failure this catches is a one-line omission with no symptom: drop
-    /// the `menus` assignment from `manifest::built_in` and every test in
-    /// this file that builds `built_in()` directly still passes, while every
-    /// right-click in the running application does nothing.
-    #[test]
-    fn the_shipped_shell_carries_the_menu_document() {
-        let shell = manifest::built_in();
-        let menus = shell
-            .menus
-            .as_ref()
-            .expect("`manifest::built_in` must set the `menus` field");
-        assert_eq!(
-            menus.len(),
-            built_in().len(),
-            "the shell carries a different menu document from the one this module defines"
-        );
-        for context in CONTEXTS {
-            assert!(
-                menus.get(context).is_some(),
-                "the shipped shell has no menu for `{context}`"
-            );
-        }
-    }
-
-    /// **The catalog and the constant list are the same set.**
-    ///
-    /// [`CONTEXTS`] is hand-written and every sweep below is only as
-    /// complete as it is, which is the classic way a test suite quietly
-    /// stops covering something. Checked in both directions.
-    #[test]
-    fn the_catalog_defines_exactly_the_documented_contexts() {
-        let menus = built_in();
-        let declared: BTreeSet<&str> = CONTEXTS.iter().copied().collect();
-        assert_eq!(
-            declared.len(),
-            CONTEXTS.len(),
-            "CONTEXTS lists a context id twice"
-        );
-        let defined: BTreeSet<&str> = menus.iter().map(|m| m.context.as_str()).collect();
-        assert_eq!(
-            defined, declared,
-            "the menu document and CONTEXTS disagree; every sweep in this file is scoped \
-             by CONTEXTS, so the extra or missing entry is untested"
-        );
-    }
-
-    /// The document is structurally valid on its own.
-    ///
-    /// Distinct from the registry check and not implied by it: the built-in
-    /// layer is what every customization layer patches and what a reset
-    /// restores, so it has to stand up without an application present —
-    /// non-empty context ids, no duplicates, no command listed twice in one
-    /// menu.
-    #[test]
-    fn the_built_in_menu_document_is_valid() {
-        built_in()
-            .validate()
-            .expect("the built-in menu layer must satisfy every structural rule");
-    }
-
-    /// **★ No menu names a command that does not exist — stated as the
-    /// no-placeholders rule, by name.**
-    ///
-    /// `every_command_every_menu_names_is_registered` proves the positive.
-    /// This proves the *specific* negative `RIBBON_IA.md` §6 asks for and
-    /// P3 forbids: §6 wants Cut/Copy/Paste on the selection menu, this build
-    /// has no object clipboard, and the honest answer is **absence**.
-    ///
-    /// Asserted against `PLANNED` rather than against a hand-written list of
-    /// four ids, so a clipboard command that lands — and is therefore
-    /// removed from `PLANNED` — stops being forbidden here automatically
-    /// instead of failing a test that had gone stale.
-    #[test]
-    fn no_menu_offers_a_command_this_build_does_not_have() {
-        let planned: BTreeSet<&str> = manifest::PLANNED.iter().map(|(id, _)| *id).collect();
-        for menu in built_in().iter() {
-            for id in menu.command_ids() {
-                assert!(
-                    !planned.contains(id),
-                    "menu `{}` offers `{id}`, which `manifest::PLANNED` records as absent \
-                     from this build. P3: an unavailable capability renders NOTHING — not \
-                     a greyed row, which is a promise the build cannot keep.",
-                    menu.context
-                );
-            }
-        }
-        // ★★★ **A HAND-WRITTEN LIST OF FOUR IDS STOOD HERE UNTIL 2026-09-01,
-        // AND THIS TEST'S OWN DOC COMMENT SAID IT DID NOT.**
-        //
-        // The paragraph above reads *"asserted against `PLANNED` rather than
-        // against a hand-written list of four ids, so a clipboard command that
-        // lands … stops being forbidden here automatically instead of failing
-        // a test that had gone stale."* The sweep above does exactly that. And
-        // underneath it sat the list anyway, forbidding `edit.cut`,
-        // `edit.copy`, `edit.paste` and `edit.paste_in_place` by name.
-        //
-        // The object clipboard landed on 2026-08-20. `edit.copy` has a
-        // registration, a dispatch arm, a driven check and — as of
-        // `OPERATOR_REQUESTS.md` O71 — a right-click row on the reader's
-        // picture menu, which is what made this fail. **The test was not
-        // protecting an invariant; it was pinning a fact that had stopped
-        // being true, in a file whose prose already said it should not.**
-        //
-        // ⇒ Deleted rather than updated, because updating it would restore the
-        // exact mechanism the doc comment argues against. `PLANNED` is the one
-        // list, and a command that lands leaves it.
-    }
-
-    /// **★ Every menu opens when the application is at its liveliest.**
-    ///
-    /// The other half of the empty-menu rule, and the half that would
-    /// otherwise be satisfied by defining no menus at all. A menu that never
-    /// opens is indistinguishable from a right-click that is not wired, and
-    /// the operator draws the same conclusion from both.
-    ///
-    /// `dock.tab` is included: it is not *attached* (see the module header),
-    /// but the day the `egui-shell` seam lands it must have something to
-    /// offer, and this is what says so.
-    #[test]
-    fn every_menu_offers_something_when_a_document_is_open_and_selected() {
-        let (shell, registry) = shell_and_registry();
-        let conditions = everything_open();
-        let host = MenuHost::new(&shell, &registry, &conditions);
-        for context in CONTEXTS {
-            assert!(
-                host.would_open(context),
-                "`{context}` offers nothing even with a document open, pages present and \
-                 something selected — so right-clicking that surface does nothing, ever"
-            );
-        }
-    }
-
-    /// ★★★ **The field menu opens on a field selection ALONE.**
-    ///
-    /// The state the operator is actually in when they right-click a text box:
-    /// `doc.selected_field` is set and `SelectionState` is **empty**, because a
-    /// `/Widget` is deliberately not an annotation selection. Every other canvas
-    /// menu resolves nothing there.
-    ///
-    /// ⇒ This is the assertion that would have caught the bug this feature
-    /// shipped with for ten minutes: `format.delete` and `format.properties`
-    /// were gated on `selection.any`, which is **false** in exactly this state,
-    /// so both items resolved disabled, `offers_anything` was false, and the
-    /// menu never opened. A right-click on a form field would have done nothing
-    /// at all — `DEFECTS.md` D1's shape, arrived at through a new door.
-    ///
-    /// ★ `everything_open()` is deliberately not used: it sets both conditions
-    /// and would pass on a build where the two are confused. The whole point is
-    /// that only the wider one holds here.
-    #[test]
-    fn the_field_menu_opens_with_a_field_selected_and_nothing_else() {
-        let (shell, registry) = shell_and_registry();
-        let field_only = ConditionSet::new()
-            .with("doc.open")
-            .with("doc.pages")
-            .with(manifest::SELECTION_ACTIONABLE);
-        let host = MenuHost::new(&shell, &registry, &field_only);
-        assert!(
-            host.would_open(CANVAS_FIELD),
-            "a selected form field offers no menu, so right-clicking one does nothing"
-        );
-        // ★★ And the object menu opens here TOO, which is correct and is worth
-        // asserting rather than leaving as a surprise: both its items can act
-        // on a field, so the menus differ by their CONTEXT ID rather than by
-        // what is enabled. `canvas::menus::attach` picks Field first when a
-        // field is in play, which is where the distinction is made.
-        assert!(host.would_open(CANVAS_OBJECT));
-    }
-
-    /// **★ …and an empty menu never opens.**
-    ///
-    /// The engine's rule 2, asserted through the seam this application
-    /// actually uses rather than against the engine's own unit tests.
-    /// Three shapes, and all three are reachable:
-    ///
-    /// 1. **a context with no menu at all** — a right-click site whose id is
-    ///    misspelled, or one wired ahead of its menu;
-    /// 2. **a menu whose every command is disabled** — `canvas.object` with
-    ///    nothing selected, which is what a right-click on paper would find
-    ///    if the canvas picked the wrong context id;
-    /// 3. **a menu whose every command is unregistered** — the shape a
-    ///    build with a capability compiled out produces.
-    ///
-    /// Shape 2 is the one that matters most in daily use, and it is the one
-    /// a naive wiring gets wrong: `format.delete` is registered, so a
-    /// `context_menu` closure written by hand would happily draw it greyed
-    /// and cost a click to dismiss.
-    #[test]
-    fn a_menu_with_nothing_to_offer_does_not_open() {
-        let (shell, registry) = shell_and_registry();
-
-        // 1. No such context.
-        let live = everything_open();
-        let host = MenuHost::new(&shell, &registry, &live);
-        assert!(
-            !host.would_open("canvas.nothing-here"),
-            "an unknown context must resolve to no menu, not to an empty one"
-        );
-
-        // 2. Every command disabled — nothing is selected, so `format.delete`
-        //    is greyed and it is the menu's only item.
-        let nothing_selected = ConditionSet::new().with("doc.open").with("doc.pages");
-        let host = MenuHost::new(&shell, &registry, &nothing_selected);
-        assert!(
-            !host.would_open(CANVAS_OBJECT),
-            "a menu of nothing but greyed rows is strictly worse than no menu: it costs a \
-             click to dismiss and teaches the operator that right-clicking here is useless"
-        );
-        assert!(
-            host.would_open(CANVAS_EMPTY),
-            "…while the view menu is still live, which is what makes the canvas's choice \
-             of context id the thing that matters"
-        );
-
-        // 3. Every command unregistered — the compiled-out build.
-        let empty_registry = CommandRegistry::new();
-        let host = MenuHost::new(&shell, &empty_registry, &live);
-        for context in CONTEXTS {
-            assert!(
-                !host.would_open(context),
-                "`{context}` opened against a registry holding no commands at all"
-            );
-        }
-    }
-
-    /// **★ A corrected condition changes the answer.**
-    ///
-    /// [`MenuHost::with_condition`] exists for one frame-ordering hazard,
-    /// and this is that hazard reduced to two assertions: with the stale
-    /// snapshot the selection menu does not open, and with the correction
-    /// the canvas just computed it does.
-    ///
-    /// Without this the first right-click on an object silently does
-    /// nothing — the menu is decided before `egui` is asked for a popup, so
-    /// there is no later frame on which it can recover.
-    #[test]
-    fn correcting_the_selection_condition_is_what_opens_the_object_menu() {
-        let (shell, registry) = shell_and_registry();
-        // The snapshot the frame was composed with: nothing was selected
-        // when the ribbon was drawn.
-        let stale = ConditionSet::new().with("doc.open").with("doc.pages");
-        let host = MenuHost::new(&shell, &registry, &stale);
-        assert!(!host.would_open(CANVAS_OBJECT));
-
-        // The canvas has since selected the object under the pointer.
-        //
-        // ★ BOTH conditions, because `attach` corrects both — see
-        // `MenuHost::with_conditions`. Correcting only `selection.any` here
-        // would have this test passing on a build where `attach` forgot the
-        // second, which is the exact hazard the test exists for one level up.
-        let corrected = host.with_conditions(&[
-            (manifest::SELECTION_ANY, true),
-            (manifest::SELECTION_ACTIONABLE, true),
-        ]);
-        assert!(
-            host.would_open_with(CANVAS_OBJECT, &corrected),
-            "the right-click selected an object and the menu still refused to open"
-        );
-
-        // …and the correction goes both ways, so a menu cannot be opened by
-        // a condition the caller has just found to be false.
-        //
-        // ★★ BOTH have to be cleared, and the reason is worth a sentence
-        // because the first version of this line cleared only `selection.any`
-        // and the assertion failed. `canvas.object`'s two items now take
-        // `selection.actionable`, so clearing the narrower condition alone
-        // leaves them enabled and the menu opens — correctly.
-        //
-        // ⇒ A "goes both ways" assertion has to clear **every** condition the
-        // forward direction set, or it is asserting about a state the forward
-        // direction never produces.
-        let cleared = MenuHost::new(&shell, &registry, &corrected).with_conditions(&[
-            (manifest::SELECTION_ANY, false),
-            (manifest::SELECTION_ACTIONABLE, false),
-        ]);
-        assert!(!host.would_open_with(CANVAS_OBJECT, &cleared));
-    }
-
-    /// A command may appear in several menus, and on a tab as well.
-    ///
-    /// `RIBBON_IA.md` §5.8: the context menu *"carries the same commands
-    /// again … that is not duplication in the P1 sense — context menus are
-    /// not tabs"*. Every id in this document is also on a ribbon tab, which
-    /// is the point and not an oversight; if a future edit extends the
-    /// one-command-one-tab rule over menus, this is the test that says no.
-    #[test]
-    fn every_menu_command_is_also_reachable_from_the_ribbon() {
-        let shell = manifest::built_in();
-        let on_a_surface: BTreeSet<String> = shell
-            .command_references()
-            .into_iter()
-            .map(|(_, id)| id)
-            .collect();
-        // The exemption register, and the assertion below consults it rather
-        // than being weakened. See `manifest::TAB_SCOPED`.
-        let tab_scoped: BTreeSet<&str> = manifest::TAB_SCOPED.iter().map(|(id, _)| *id).collect();
-        for menu in built_in().iter() {
-            for id in menu.command_ids() {
-                if tab_scoped.contains(id) {
-                    continue;
-                }
-                assert!(
-                    on_a_surface.contains(id),
-                    "menu `{}` is the ONLY route to `{id}`. A context menu is a third \
-                     surface carrying commands that already have a home, not a home of \
-                     its own — a command reachable by right-click alone is undiscoverable.",
-                    menu.context
-                );
-            }
-        }
-    }
-
-    /// Menus survive a round trip through RON, which is what makes them
-    /// customizable.
-    ///
-    /// The whole value proposition of the shell-as-data design is that an
-    /// operator can edit this; `crate::shell::ron` asserts the same thing
-    /// for the manifest as a whole. Asserted here as well, on the menu
-    /// document alone, because a failure in the shared file says only that
-    /// *something* stopped round-tripping.
-    #[test]
-    fn the_menu_document_round_trips_through_ron() {
-        let original = built_in();
-        let text = original.to_ron_pretty().expect("serializes");
-        assert_eq!(
-            Menus::from_ron(&text).expect("the pretty form parses"),
-            original
-        );
-        // And the shapes an operator would search for are legible in it.
-        //
-        // ★ The command spelling is checked on the COMPACT form. RON's pretty
-        // printer breaks a struct variant across three lines, and `Item::Command`
-        // became one when `ItemSize` landed — so a `contains` for the one-line
-        // spelling fails on a pretty document that is perfectly correct. The
-        // context id is still checked on the pretty form, because that is the
-        // string an operator scrolling the file actually looks for.
-        assert!(text.contains(CANVAS_OBJECT), "{text}");
-        let compact = original.to_ron().expect("serializes");
-        // ★★ The spelling checked here carries the CONDITION, and it had to
-        // change on 2026-08-29: **both** `format.delete` items now do.
-        //
-        // `canvas.object`'s gained `selection.delete_permitted` with the
-        // annotation half of R83; `canvas.field`'s gained the same name with
-        // the form half, which is what this assertion's previous bare spelling
-        // was silently attesting was still missing. A `contains` for
-        // `Command(id:"format.delete")` matched only because no gate was
-        // written on that menu at all.
-        //
-        // ⇒ Asserting the gated spelling rather than deleting the assertion:
-        // the point of the check is that an operator scrolling the compact
-        // document can find the command, and the visible-condition is the half
-        // that decides whether the row is drawn — which is exactly what such an
-        // operator is looking for it to say.
-        assert!(
-            compact.contains(
-                "Command(id:\"format.delete\",visible_when:\"selection.delete_permitted\")"
-            ),
-            "{compact}"
-        );
-        assert!(
-            !compact.contains("Command(id:\"format.delete\")"),
-            "an UNGATED `format.delete` is back on some menu. Both of them are \
-             gated on `selection.delete_permitted`, because a Delete drawn where \
-             the engine refuses it is silently inert — and on `canvas.field` that \
-             press also cleared the selection, blanking the Properties panel \
-             sentence that explained the refusal: {compact}"
-        );
-    }
-
-    /// Each menu holds the items this module's header claims it holds.
-    ///
-    /// A change-detector, and deliberately one: the table in the header is
-    /// the specification, and a menu that quietly gains an item has a
-    /// specification that quietly became wrong. The failure message names
-    /// the menu, so the fix is one line in one of the two places.
-    #[test]
-    fn each_menu_holds_exactly_the_documented_items() {
-        let menus = built_in();
-        for (context, expected) in [
-            (
-                CANVAS_OBJECT,
-                &[
-                    "view.zoom_selection",
-                    "format.properties",
-                    "format.select_form",
-                    "format.unshare_form",
-                    "format.delete",
-                ][..],
-            ),
-            (
-                CANVAS_EMPTY,
-                &[
-                    "view.zoom_fit_page",
-                    "view.zoom_fit_width",
-                    "view.zoom_fit_height",
-                    "view.zoom_actual",
-                ][..],
-            ),
-            (
-                DOCK_TAB,
-                &[
-                    "view.panel_float",
-                    "view.panel_dock",
-                    "view.panel_close",
-                    "view.reset_layout",
-                ][..],
-            ),
-            (OBJECTS_ROW, &["file.properties"][..]),
-        ] {
-            let menu = menus.get(context).expect("defined");
-            let ids: Vec<&str> = menu.command_ids().collect();
-            assert_eq!(
-                ids, expected,
-                "menu `{context}` no longer matches the table in this module's header"
-            );
-            // ★★ **No CUSTOM item**, which is what the sweeps above would
-            // miss. Narrowed from "no non-command item" on 2026-09-04, when
-            // `dock.tab` grew a separator.
-            //
-            // The invariant's own stated reason is the test: the sweeps walk
-            // `command_ids()`, so an item carrying a command id they cannot
-            // see is a hole in them. `Item::Separator` carries no id, refers
-            // to no capability and cannot be a route to anything — there is
-            // nothing for a sweep to miss — whereas `Item::Custom` carries a
-            // *kind* the application draws, which can be a control that
-            // invokes something, and `manifest::COLOUR_SWATCH`'s own note
-            // records a custom kind that no renderer ever matched going
-            // unreported for a whole release.
-            //
-            // ⇒ So the assertion names the thing it was protecting against
-            // rather than everything that is not a command. Widening it back
-            // would forbid a separator in every menu in the program to guard
-            // against a case a separator cannot produce.
-            assert!(
-                !menu
-                    .items()
-                    .iter()
-                    .any(|i| matches!(i, Item::Custom { .. })),
-                "menu `{context}` holds a non-command item; the sweeps in this file walk \
-                 `command_ids()` and would not see it"
-            );
-        }
-    }
-}
+mod tests;

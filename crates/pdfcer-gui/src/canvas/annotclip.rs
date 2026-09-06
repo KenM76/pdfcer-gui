@@ -18,6 +18,23 @@
 //! not?"* finds the whole answer here, in one file, rather than interleaved
 //! with the paste offset and the OS-clipboard marker.
 //!
+//! ## ★★ 2026-09-06 — [`duplicate`] lives here, and the reason is the finding
+//! below
+//!
+//! `edit.duplicate` (`Ctrl+D`) puts a second copy of the selected comment on
+//! the page **without touching the clipboard**, which is the whole point of it:
+//! `Ctrl+C`/`Ctrl+V` already produced a second comment and destroyed whatever
+//! the operator was carrying, once per mark on a row of revision marks.
+//!
+//! It is in *this* module rather than beside the dispatcher because a duplicate
+//! faces the identical carrier question a copy does, and the obvious
+//! implementation — straight onto `paste_objects` with a translate matrix —
+//! gets it wrong in the same invisible way: it would hand back an **anonymous,
+//! undated, opaque** copy of a signed revision cloud, which looks correct on
+//! the page. So it runs the same `copy_selection`, asks the same [`Plan::of`],
+//! and takes the same fork [`Plan::spec_is_more_faithful`] draws. **No subtype
+//! list, in either verb.**
+//!
 //! ---
 //!
 //! ## ★★★ THE FINDING THIS MODULE EXISTS TO RECORD
@@ -122,6 +139,7 @@ use pdfcer_core::object::ObjId;
 use pdfcer_core::vector::{ClipAnnotation, ObjectClip};
 
 use super::clipboard::Refusal;
+use crate::app::actions::Action;
 use crate::app::state::OpenDoc;
 
 /// **One selected annotation, resolved into the address space
@@ -583,6 +601,206 @@ pub fn translated(spec: MarkupSpec, dx: f64, dy: f64) -> MarkupSpec {
     }
 }
 
+// ===========================================================================
+// ★★★ DUPLICATE — `edit.duplicate`, Ctrl+D, 2026-09-06
+// ===========================================================================
+
+/// **Place a second copy of the selected annotation on the same page**, offset
+/// so it is visible, as one undoable command — **without touching the
+/// clipboard**.
+///
+/// # ★★★ Why this is a verb and not "copy then paste"
+///
+/// Because the two are different acts and the difference is the clipboard.
+///
+/// Before this existed, the only route to a second revision cloud was `Ctrl+C`
+/// then `Ctrl+V` — which works, and **destroys whatever the operator had
+/// copied**. An operator laying out a row of identical revision marks is very
+/// often carrying something else on the clipboard (a title-block string, a part
+/// number, a cell from a spreadsheet), and every duplicate cost them that. Every
+/// application in this class separates the two for exactly that reason, and
+/// Acrobat has had `Ctrl+D` on a comment for as long as it has had comments.
+///
+/// `mockups/app.html`'s approved canvas context menu already draws
+/// *"Duplicate — Ctrl+D"*; this is the verb behind that line.
+///
+/// # ★★ Why it is NOT an extension of `edit.paste_duplicate`, which was checked
+/// first
+///
+/// `app::dispatch::clipboard`'s header names `edit.paste_duplicate` as *"the
+/// second sense of a form-field paste"* — `Ctrl+V` plants a copied field as a
+/// **new** field, `Ctrl+Shift+V` plants it as **another widget of the same
+/// field**. Its own header records what it does over a markup: *"falls through
+/// to the ordinary paste … a markup has no second sense to duplicate into"*.
+///
+/// So it does already route by selection kind, and the route it takes for a
+/// markup is *the plain paste*. Making it duplicate the **selection** instead
+/// would be a paste verb that acts when the clipboard is empty and ignores the
+/// clipboard when it is not — two unrelated behaviours behind one id, reachable
+/// by a chord named for the one it would stop doing. This is a sibling command
+/// instead, which is what a shell that registers, binds, places and mode-gates
+/// per id can express and a modifier read inside a handler cannot (R8).
+///
+/// # ★★★ The route is decided by the ENGINE, exactly as the copy's is
+///
+/// This runs the same `copy_selection` the copy runs and asks [`Plan::of`]
+/// which carrier each annotation landed on, then takes the same fork
+/// [`Plan::spec_is_more_faithful`] draws. It does **not** re-implement the
+/// classification, and it does not hard-code a subtype list.
+///
+/// ⇒ That is the whole reason this function lives in this module rather than
+/// beside the dispatcher. The module header's finding — *"the engine's
+/// 'lossless' annotation clipboard is lossy for exactly the annotations this
+/// shell could already copy"* — applies to a duplicate identically. A duplicate
+/// written the obvious way, straight onto `paste_objects`, would have produced
+/// an **anonymous, undated, opaque** copy of a signed revision cloud, silently,
+/// and it would have looked right on the page.
+///
+/// # ★ The clip is assembled and, on the spec route, thrown away
+///
+/// `copy_selection` takes `&self` and commits nothing, so the cost is one walk
+/// and one allocation. Paying it in order to ask the engine a question and then
+/// discarding the answer is deliberate: the alternative is this shell deciding
+/// which carrier an annotation *would* land on, which is the hard-coded subtype
+/// list the module header spends a section refusing.
+///
+/// # The offset
+///
+/// [`crate::canvas::clipboard::PASTE_OFFSET_PT`] down and to the right — the
+/// **same** constant and the same signs a same-page paste uses, because a
+/// duplicate is a same-page paste in everything but where the payload came
+/// from. ★ Down the page is **negative** in PDF user space; getting it
+/// backwards produces a copy that goes up-and-right, which looks deliberate
+/// and is the kind of thing nobody reports as a defect.
+///
+/// ★★ There is deliberately **no cursor rule** here, where a paste has one
+/// (`OPERATOR_REQUESTS.md` O73). A paste is invoked with the pointer over the
+/// place the operator wants the thing; a duplicate is invoked from a chord, a
+/// menu row or a ribbon button while they are looking at the original, and
+/// dropping the copy under a pointer that is resting on a ribbon icon would
+/// put it wherever the mouse happened to be. The offset is the whole rule, and
+/// it is what makes `Ctrl+D Ctrl+D Ctrl+D` walk a diagonal row of marks —
+/// which is the gesture the feature exists for.
+///
+/// # ★ One undo entry
+///
+/// Whichever route it takes, exactly one action is raised, and each of the two
+/// goes through `app::actions::apply::vector_edit` as a single `EditSession`
+/// command. `Ctrl+Z` after a duplicate takes back the duplicate.
+///
+/// # Errors
+///
+/// * [`Refusal::NothingSelected`] — no annotation is selected. Page content is
+///   *also* nothing to this verb today: the selection model makes the two
+///   mutually exclusive, and a content duplicate is a different feature with a
+///   different name for what "the same place" means.
+/// * [`Refusal::Unreadable`] — the selection names an annotation that is no
+///   longer on its page, or whose dictionary will not read. Reachable after an
+///   undo.
+/// * [`Refusal::EngineRefused`] — `copy_selection` would not assemble a clip.
+/// * [`Refusal::CannotCarry`] — `/Widget`, `/Popup` or `/Redact`, refused by
+///   the engine **by name** and by this verb for the same three reasons the
+///   copy refuses them. A redaction in particular: duplicating one arms a
+///   second destructive operation nobody reviewed.
+pub fn duplicate(doc: &OpenDoc, actions: &mut Vec<Action>) -> Result<(), Refusal> {
+    let annots = selected(doc)?;
+    let Some(target) = annots.first() else {
+        return Err(Refusal::NothingSelected);
+    };
+    let page = target.page;
+    // ★ No content indices. A duplicate's subject is the selected annotation,
+    // and `SelectionState` cannot hold both — passing `object_indices_on(page)`
+    // here would be asking a question whose answer is always the empty list,
+    // and would read as though a mixed duplicate were supported.
+    let clip = doc
+        .session
+        .copy_selection(page, &[], &[target.index])
+        .map_err(|_| Refusal::EngineRefused)?;
+    let plan = Plan::of(&clip);
+
+    if plan.nothing_to_carry(0) {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed.
+            format!(
+                "annot-duplicate-refused reason=cannot-carry what={:?}",
+                plan.refused
+            )
+        });
+        return Err(Refusal::CannotCarry(plan.refused));
+    }
+
+    let (dx, dy) = (
+        crate::canvas::clipboard::PASTE_OFFSET_PT,
+        -crate::canvas::clipboard::PASTE_OFFSET_PT,
+    );
+
+    if plan.spec_is_more_faithful(0) {
+        // ★★★ THE ENGINE MODELLED IT, SO THE SPEC ROUTE IS THE FAITHFUL ONE —
+        // the copy's own branch, reached by the same predicate. Taking the clip
+        // here would compile, would pass a "the duplicate happened" test, and
+        // would hand the operator an anonymous, undated, opaque copy of a
+        // signed comment.
+        use pdfcer_core::annot_author::spec_from_dict;
+        use pdfcer_core::object::Object;
+
+        let graph = doc.session.graph();
+        let Some(Object::Dict(dict)) = doc.session.value(target.id) else {
+            return Err(Refusal::Unreadable);
+        };
+        let spec = spec_from_dict(&graph, dict).map_err(|_| Refusal::Unreadable)?;
+        // The four keys a `MarkupSpec` cannot express — `/CA`, `/Contents`,
+        // `/T`, `/M` — read from the annotation being duplicated. Without this
+        // a duplicated comment loses its author, its date, its words and its
+        // opacity while looking identical on the page.
+        let options = Box::new(carried_options(doc, page, target.id));
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed.
+            //
+            // ★ `carrier=spec` is the word that makes the fork observable, for
+            // `canvas::clipboard::copy_as_spec`'s stated reason: a build that
+            // took the model carrier and lost the author traces identically
+            // otherwise, and the difference is invisible on the page.
+            format!(
+                "annot-duplicate id={} page={page} carrier=spec dx={dx:.1} dy={dy:.1}",
+                target.id.num
+            )
+        });
+        actions.push(Action::PasteMarkup {
+            page,
+            options,
+            // Translated HERE, where the offset is decided, on the funnel's own
+            // rule: an action carries a complete statement of what the operator
+            // asked for, and geometry computed in the apply arm cannot be
+            // tested without a document.
+            spec: Box::new(translated(spec, dx, dy)),
+            dx,
+            dy,
+        });
+        return Ok(());
+    }
+
+    // ★ The whole-carrier route: a raw dictionary with its baked `/AP`, or a ce
+    // dimension with its group. `paste_objects` takes a page-space MATRIX
+    // rather than a displacement, which is why the offset cannot simply be
+    // shared with the branch above even though the rule that decides it is.
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        format!(
+            "annot-duplicate id={} page={page} carrier=clip whole={} thin={} dx={dx:.1} dy={dy:.1}",
+            target.id.num, plan.whole, plan.thin
+        )
+    });
+    actions.push(
+        crate::app::actions::VectorAction::PasteObjects {
+            page,
+            clip: clip.to_bytes(),
+            at: pdfcer_core::vector::Matrix::translate(dx, dy),
+        }
+        .into(),
+    );
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -915,5 +1133,146 @@ mod tests {
              copy whichever annotation now sits at that position, which is a wrong copy that \
              looks exactly like a right one."
         );
+    }
+
+    // =======================================================================
+    // `duplicate` — `edit.duplicate`, Ctrl+D
+    // =======================================================================
+
+    /// ★★★ **A modelled markup duplicates through the SPEC route, carrying the
+    /// four keys a `MarkupSpec` cannot express.**
+    ///
+    /// The `/Square` at index 0 is the kind `spec_from_dict` reads, so
+    /// [`Plan::spec_is_more_faithful`] is true and this is the branch every
+    /// revision cloud, arrow and callout this operator draws will take.
+    ///
+    /// ★★ The assertion that matters is **`options`**, not that an action was
+    /// raised. A duplicate written the obvious way — straight onto
+    /// `paste_objects` — raises an action too, pastes a shape that looks
+    /// identical on the page, and hands back an **anonymous, undated, opaque**
+    /// copy of a signed comment. That is the module header's central finding,
+    /// and this is where it is held for the duplicate route.
+    ///
+    /// **Falsified** by replacing `carried_options(..)` in [`duplicate`] with
+    /// `MarkupOptions::default()`: the opacity and note assertions went red,
+    /// the "an action was raised" assertion stayed green. Restored.
+    #[test]
+    fn duplicating_a_modelled_markup_carries_its_note_and_its_opacity() {
+        let doc = with_annot_selected(0);
+        let mut actions = Vec::new();
+        duplicate(&doc, &mut actions).expect("a /Square duplicates");
+        let [action] = actions.as_slice() else {
+            panic!("★ exactly one action, so one Ctrl+Z takes the duplicate back: {actions:?}");
+        };
+        let Action::PasteMarkup { page, dx, dy, .. } = action else {
+            panic!("★ a modelled markup must take the SPEC route, not the clip: {action:?}");
+        };
+        assert_eq!(*page, 0);
+        assert!(
+            (*dx - crate::canvas::clipboard::PASTE_OFFSET_PT).abs() < 1e-9,
+            "the duplicate offsets right by the same constant a same-page paste uses"
+        );
+        assert!(
+            *dy < 0.0,
+            "★ down the page is NEGATIVE in PDF user space; a positive dy sends the copy \
+             up-and-right, which looks deliberate and is the kind of thing nobody reports"
+        );
+
+        // The four keys, read off the action rather than off the document, so
+        // this fails if the options were built from a default rather than from
+        // the annotation.
+        let Action::PasteMarkup { options, .. } = action else {
+            unreachable!("matched one line up")
+        };
+        assert!(
+            options.opacity.is_some() || options.note.is_some(),
+            "★ a duplicate must carry /CA, /Contents, /T and /M — the four a MarkupSpec cannot \
+             express. Without them a duplicated revision cloud is anonymous, undated and \
+             opaque, and looks identical on the page: {options:?}"
+        );
+    }
+
+    /// ★★ **An annotation the engine carries WHOLE duplicates through the clip
+    /// route**, with its baked appearance.
+    ///
+    /// The `/Text` sticky note at index 1 is not modelled by `spec_from_dict`,
+    /// so taking the spec route for it would lose the artwork entirely. The
+    /// fork is read off the engine's own answer rather than from a subtype
+    /// list — see the module header — and this asserts that the *duplicate*
+    /// honours the same fork the copy does.
+    ///
+    /// **Falsified** by making [`duplicate`] always take the spec branch: this
+    /// went red (`PasteMarkup` where `PasteObjects` was required) and the test
+    /// above stayed green, which is the pair that proves the fork is real.
+    #[test]
+    fn duplicating_an_unmodelled_annotation_takes_the_whole_carrier() {
+        let doc = with_annot_selected(1);
+        let mut actions = Vec::new();
+        duplicate(&doc, &mut actions).expect("a sticky note duplicates");
+        let [action] = actions.as_slice() else {
+            panic!("★ exactly one action: {actions:?}");
+        };
+        assert!(
+            matches!(
+                action,
+                Action::Vector(crate::app::actions::VectorAction::PasteObjects { .. })
+            ),
+            "★ an annotation the engine carries whole must travel as a CLIP — the spec route \
+             would drop its baked /AP and render a sticky note as nothing at all: {action:?}"
+        );
+    }
+
+    /// Nothing selected refuses by name and raises nothing.
+    ///
+    /// ★ The `actions` emptiness is half the assertion. A verb that refuses and
+    /// still pushes is worse than one that does neither, because the refusal
+    /// sentence then contradicts the undo entry beside it.
+    #[test]
+    fn duplicating_nothing_refuses_and_raises_nothing() {
+        let doc = crate::app::state::open_local_fixture(FIXTURE);
+        let mut actions = Vec::new();
+        assert_eq!(duplicate(&doc, &mut actions), Err(Refusal::NothingSelected));
+        assert!(actions.is_empty(), "a refusal raises nothing: {actions:?}");
+    }
+
+    /// ★ **A selection that has outlived its annotation refuses**, through the
+    /// same [`selected`] guard the copy uses, rather than duplicating whichever
+    /// annotation now sits at that `/Annots` position.
+    #[test]
+    fn duplicating_a_stale_selection_refuses() {
+        use crate::canvas::selection::annot::{AnnotKind, AnnotSelection, AnnotTarget};
+
+        let mut doc = crate::app::state::open_local_fixture(FIXTURE);
+        doc.selection.select_annot(AnnotSelection {
+            target: AnnotTarget {
+                page: 0,
+                id: pdfcer_core::object::ObjId::new(999, 0),
+                kind: AnnotKind::Markup,
+                subtype: "Square".to_owned(),
+                locked: false,
+            },
+            outline: egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(10.0, 10.0)),
+        });
+        let mut actions = Vec::new();
+        assert_eq!(duplicate(&doc, &mut actions), Err(Refusal::Unreadable));
+        assert!(actions.is_empty());
+    }
+
+    /// ★★★ **The duplicate does not touch the clipboard**, which is the whole
+    /// reason the command exists.
+    ///
+    /// Asserted **structurally** rather than by reading `egui` memory: this
+    /// function takes no `&egui::Context`, so it *cannot* read or write the
+    /// clipboard — `canvas::clipboard::store` and `read` both require one. A
+    /// test that opened a context and compared before/after would pass equally
+    /// well against a signature that could reach it, and would stop being
+    /// evidence the day somebody threaded a context through "for the trace".
+    ///
+    /// ⇒ So what is pinned here is the signature. If this stops compiling
+    /// because `duplicate` grew a `ctx` parameter, that is the review this note
+    /// is asking for, not a test to update.
+    #[test]
+    fn the_duplicate_cannot_reach_the_clipboard() {
+        let _: fn(&crate::app::state::OpenDoc, &mut Vec<Action>) -> Result<(), Refusal> = duplicate;
     }
 }

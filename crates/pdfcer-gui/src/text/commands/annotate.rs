@@ -174,6 +174,63 @@ pub const fn markup_finish() -> CommandText {
 }
 
 // ---------------------------------------------------------------------------
+// THE TWO NODE COMMANDS — the right-click route to a drawn shape's corners.
+//
+// ★★★ Their words are the ENGINE'S words, and that is deliberate rather than
+// lazy. `pdfcer-core`'s note on the vertex verbs describes them as *"add a
+// point here"* and *"remove this point"*, and the shell's own filed note asked
+// for exactly those two phrases on the right-click menu. Using them unchanged
+// means the operator, the shell and the engine's own documentation all call one
+// operation one thing.
+//
+// ★★ **"Point", not "vertex" and not "node".** `/Vertices` is the PDF key,
+// `node` is what this crate's modules are named after, and *point* is the word
+// on the tool that arms them — `view.tool_node` is labelled **Points**. The same
+// split as Rectangle/`/Square` and Freehand/`/Ink`, resolved the same way: the
+// operator's vocabulary wins on a label, the specification's wins in the code.
+//
+// ★ Both labels are DEICTIC — "here", "this" — where every other label in this
+// file names a thing in the abstract. That is correct for these two and only
+// these two: they are the only commands in the catalog whose operand is *the
+// place the operator was pointing at when they opened the menu*, and a label
+// that said "Add a point" would be describing a different, general command that
+// this build does not have. `manifest::TAB_SCOPED` carries the same fact from
+// the other side — it is why neither has a ribbon home.
+// ---------------------------------------------------------------------------
+
+/// `markup.add_node`
+///
+/// ★ The tooltip names the three shapes it works on rather than the one it
+/// does not, because a `/Line`'s row is **absent** and not greyed — nobody
+/// reads a tooltip for a row they cannot see. What it does have to explain is
+/// where the new corner lands, since the answer is *on the outline*, not under
+/// the pointer: the click is allowed to be several points off the line.
+#[must_use]
+pub const fn markup_add_node() -> CommandText {
+    CommandText::new(
+        "Add a point here",
+        "Split the edge you right-clicked and put a new corner on it, at the place you \
+         pointed. Works on a polyline, a polygon and a revision cloud.",
+    )
+}
+
+/// `markup.remove_node`
+///
+/// ★★ The tooltip carries **the floor**, and it is the reason this command is
+/// greyed rather than absent when the shape is down to its last corners. R9
+/// asks that a greyed control always explain itself on hover, and the
+/// explanation has to say what would make it live again — *draw another
+/// corner* — or greying is just a locked door.
+#[must_use]
+pub const fn markup_remove_node() -> CommandText {
+    CommandText::new(
+        "Remove this point",
+        "Take away the corner you right-clicked. Greyed once the shape is down to its last \
+         corners: a closed shape keeps three and an open one keeps two.",
+    )
+}
+
+// ---------------------------------------------------------------------------
 // The three kinds that mark a SELECTION rather than a drag.
 //
 // Their tooltips are written the other way round from the four above, and

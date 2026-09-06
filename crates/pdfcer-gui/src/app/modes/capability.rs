@@ -266,12 +266,31 @@ impl Default for Capabilities {
 /// hands a mode a verb nothing stops.
 /// [`tests::every_dispatcher_gated_command_is_one_the_clipboard_dispatcher_owns`]
 /// binds the two ends mechanically rather than by this paragraph.
-const GATED_BY_THEIR_DISPATCHER: [&str; 4] = [
+const GATED_BY_THEIR_DISPATCHER: [&str; 5] = [
     // ui-text-exempt: registered command ids, never displayed.
     "edit.copy",
     "edit.cut",
     "edit.paste",
     "edit.paste_duplicate",
+    // ★★★ **`edit.duplicate`, 2026-09-06** — Ctrl+D, and it joins the class on
+    // its first day rather than after a driven sweep found it silent, which is
+    // the whole value of the class having a name.
+    //
+    // It is registered on the **Edit** tab, beside the four above and for the
+    // same reason: the Clipboard group is where an operator looks for *"make
+    // another one of this"*. **Review is not shown that tab** — and Review is
+    // the mode whose entire purpose is marking up somebody else's drawing,
+    // i.e. the mode in which an operator is most likely to be laying out a row
+    // of identical revision marks. Without this line `Ctrl+D` would trace
+    // `chord-not-offered id=edit.duplicate mode=review` and do nothing, which
+    // is character for character the defect the 2026-09-05 sweep found for
+    // `edit.paste`.
+    //
+    // ⚠ Membership is a promise, not a decoration: `app::dispatch::clipboard`'s
+    // `duplicate` arm gates on `capabilities().author_markup` and words the
+    // refusal through `ModeRefusal::DuplicateMarkup`, so Read is still stopped
+    // — with a sentence rather than with silence.
+    "edit.duplicate",
 ];
 
 /// **Whether the active mode offers `command_id` at all.**
@@ -968,6 +987,31 @@ mod tests {
                 // the distinction this list is for.
                 "edit.select_all",
                 "edit.text",
+                // ★★★ **The four Markup ▸ Arrange chords**, joined 2026-09-06 —
+                // `Ctrl+[`, `Ctrl+]` and their Shift forms.
+                //
+                // Refused in Read for the same structural reason as the page
+                // verbs below rather than for a reason of their own: Read's tab
+                // list is File and View, so the Markup tab is not there, and
+                // `offers_command` answers `false` for every id on a tab the
+                // mode does not show. **Nothing was added to the gate.**
+                //
+                // ★★ And it is the right answer on the merits, which is worth
+                // checking rather than inheriting: changing which mark is drawn
+                // on top **is an edit to the document** — it permutes the page's
+                // `/Annots` and enters the undo log — and Read is the mode that
+                // does not edit. It is not the copying-is-not-authoring case
+                // three notes up, where the refusal was wrong because the act
+                // changed nothing.
+                //
+                // In **Review** all four reach the dispatcher, which is where
+                // they belong: Review is the markup stance, it has the Markup
+                // tab, and `author_markup` is the capability
+                // `dispatch::arrange` asks.
+                "markup.bring_forward",
+                "markup.bring_to_front",
+                "markup.send_backward",
+                "markup.send_to_back",
                 // Structural page verbs. Read shows no Pages tab, which is
                 // `MODES_AND_PANELS.md`'s own decision, not this gate's.
                 "pages.move_down",

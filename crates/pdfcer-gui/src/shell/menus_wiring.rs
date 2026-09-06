@@ -282,14 +282,23 @@ mod tests {
         // moved from the blank column to the glyph column. `absent` stays 0
         // and that is the load-bearing third number — it says no menu in this
         // build is drawn without an icon column at all.
+        //
+        // ★★ 26 / 1 → 33 / 1 on 2026-09-06: `canvas.markup`, the sixth canvas
+        // menu, and **all seven of its rows land in the glyph column**. That is
+        // not luck — it is the reuse convention working. `format.properties`,
+        // `edit.cut`, `edit.copy`, `edit.paste` and `format.delete` were already
+        // drawn elsewhere and bring their glyphs with them, and the two new node
+        // commands share `show-points` rather than asking for art. So a whole
+        // menu arrived with a complete icon column and `icons/assets/` was not
+        // touched, which is the outcome this column's rules were written for.
         assert_eq!(
             (glyph, blank, absent),
-            (26, 1, 0),
+            (33, 1, 0),
             "menu rows by icon slot state; per-menu breakdown:\n{report}"
         );
         assert_eq!(
-            reserving_menus, 9,
-            "menus that reserve an icon column, of 9:\n{report}"
+            reserving_menus, 10,
+            "menus that reserve an icon column, of 10:\n{report}"
         );
     }
 

@@ -1,7 +1,7 @@
 //! # shell::manifest — pdfcer's ribbon, as an `egui_shell::Shell` value
 //!
 //! [`built_in`] returns the complete pdfcer shell: eight tabs (seven
-//! ordinary plus the contextual Format tab), thirty-three groups, three
+//! ordinary plus the contextual Format tab), thirty-seven groups, three
 //! modes, the quick-access toolbar and the keymap. It is the **built-in
 //! layer** of `SHELL_FRAMEWORK.md` §4's three-layer merge:
 //!
@@ -329,6 +329,19 @@ pub fn built_in() -> Shell {
         //                        canvas. Which one applies depends on where
         //                        focus is, and a global binding cannot
         //                        express that. It stays canvas-scoped.
+        //   The four ARROWS  They nudge the selected markup a point at a
+        //                        time (`canvas::moving::nudge`), and their
+        //                        operand is the CANVAS SELECTION — which is
+        //                        not a command's operand and cannot be one.
+        //                        Canvas-scoped for Delete's reason exactly:
+        //                        which surface an arrow belongs to depends on
+        //                        where focus is, and a global binding cannot
+        //                        express that. `Alt+Up` / `Alt+Down` below ARE
+        //                        bound here and do not collide — the nudge
+        //                        refuses every modifier shape but bare and
+        //                        Ctrl, reading them itself rather than through
+        //                        `consume_key`, whose matching ignores extra
+        //                        Alt. See that module's `step_for`.
         //   PageUp / PageDown / Home / End / Ctrl+Plus / Ctrl+Minus
         //                        Viewer navigation, handled in the app's
         //                        own keyboard layer against the view state.
@@ -447,6 +460,25 @@ pub fn built_in() -> Shell {
         // resolve. The convention it follows is the one Word, Excel and every
         // browser use for "paste, but differently": the same key with Shift.
         .with_binding("Ctrl+Shift+V", "edit.paste_duplicate")
+        // ★★★ **Ctrl+D — `edit.duplicate`, 2026-09-06.** A second copy of the
+        // selected comment, offset, without touching the clipboard.
+        //
+        // ★★ **The chord was FREE and was measured to be free**, not assumed:
+        // no `D` appears in this keymap in any form, `app::keyboard::OWNED`
+        // does not claim it, `canvas::keys` reads only Escape, Delete,
+        // Backspace and Tab, and no `egui::Key::D` exists anywhere in the tree.
+        // `check-clipboard-chords.sh` is inert here — it forbids asking about
+        // `C`, `X` and `V` as KEYS, because `egui-winit` turns those three into
+        // `Event::Copy`/`Cut`/`Paste` before a key event exists, and `D` has no
+        // such interception.
+        //
+        // ★★ It is also the chord the APPROVED MOCKUP already reserves:
+        // `mockups/app.html:198` draws *"Duplicate  Ctrl+D"* in the canvas
+        // object menu. So this binding is not a new claim on the keyboard, it
+        // is a claim being honoured — and it is the chord Acrobat, Illustrator
+        // and Inkscape have all put Duplicate on, which is what makes it the
+        // one an operator presses without looking.
+        .with_binding("Ctrl+D", "edit.duplicate")
         .with_binding("V", "view.tool_select")
         .with_binding("A", "view.tool_node")
         .with_binding("T", "view.tool_text")
@@ -488,6 +520,37 @@ pub fn built_in() -> Shell {
         .with_binding("]", "pages.rotate_right")
         .with_binding("Alt+Up", "pages.move_up")
         .with_binding("Alt+Down", "pages.move_down")
+        // ★★★ **The four Arrange chords**, 2026-09-06 — the bracket keys with a
+        // modifier, which is the same four chords Illustrator, InDesign,
+        // Photoshop, Acrobat's comment menu and Bluebeam all ship. There was
+        // nothing to decide beyond whether they were free, and they are.
+        //
+        // ★★ **Measured, not assumed**, and the measurement is what makes them
+        // safe to take next to the two lines above:
+        //
+        // * bare `[` and `]` are `pages.rotate_left` / `pages.rotate_right` —
+        //   `parse_chord` builds an exact `(Modifiers, Key)` and
+        //   `app::keyboard::commands` matches modifiers exactly, so a
+        //   `Ctrl+[` cannot fall through to the bare binding;
+        // * `app::keyboard::OWNED` — the chords the viewer binds outright —
+        //   holds no bracket in any spelling, and `no_chord_has_two_owners`
+        //   checks that against this map in every spelling it knows;
+        // * `canvas::keys` claims Escape, Delete/Backspace, Tab and the four
+        //   arrows, none of which is a bracket;
+        // * `check-clipboard-chords.sh` is about `C`, `X` and `V` as KEYS and
+        //   is untouched by any of these.
+        //
+        // ★ The pairing is the mnemonic and is worth stating: `]` is forward,
+        // `[` is back, and **Shift makes it all the way** — one step without,
+        // the whole stack with. That is the opposite sense to the arrow nudge's
+        // Ctrl (which makes the step *smaller*), and the two do not collide
+        // because they are different keys; what they share is that neither
+        // gives Shift a meaning on the canvas, where it already means *constrain
+        // to one axis*.
+        .with_binding("Ctrl+Shift+]", "markup.bring_to_front")
+        .with_binding("Ctrl+]", "markup.bring_forward")
+        .with_binding("Ctrl+[", "markup.send_backward")
+        .with_binding("Ctrl+Shift+[", "markup.send_to_back")
         // New. `RIBBON_IA.md` §3 records Ctrl+H and F11 as the only way to
         // reach read mode and full screen in the shipped build — they have
         // no ribbon control at all — but no such string appears anywhere in
@@ -684,6 +747,38 @@ pub const RECENT_FILES: &str = "recent_files"; // ui-text-exempt: a custom-item 
 /// that does not exist.
 pub const COLOUR_SWATCH: &str = "colour_swatch"; // ui-text-exempt: a custom-item kind, never displayed
 
+/// **The `Item::Custom` kinds of the Format ▸ Markup controls** — the five
+/// that restyle a mark already on the page.
+///
+/// `RIBBON_IA.md` §5.8's *Markup annotation* row, drawn by
+/// [`crate::app::markupband`]. Each clears [`CUSTOM_BACKED`]'s bar in the same
+/// shape the Font group's three do: the command needs an **operand a button
+/// cannot ask for** — two colours that must also *show* the current one, a
+/// number the operator drags, a percentage, and a four-way choice.
+///
+/// ★★ They are **registered commands**, unlike [`COLOUR_SWATCH`] one screen up,
+/// and the difference is the same one that separates the Font group from the
+/// pen: `COLOUR_SWATCH` edits `PdfcerApp::pen` — application state, no
+/// document, no undo entry — while these five raise an
+/// `Action::SetMarkupStyle` that rewrites an annotation's appearance stream and
+/// lands in the engine's command log. R8: a capability that edits the document
+/// is a registered command, because registering one is the only way this shell
+/// may learn a capability exists, and because a build compiled without it must
+/// lose the control rather than draw a dead one.
+///
+/// ⚠ Do not confuse `MARKUP_STROKE` with `COLOUR_SWATCH`. One restyles the mark
+/// you have selected; the other chooses the colour of the mark you are about to
+/// draw. They sit on different tabs and mean opposite things about *when*.
+pub const MARKUP_STROKE: &str = "markup_stroke"; // ui-text-exempt: a custom-item kind, never displayed
+/// See [`MARKUP_STROKE`].
+pub const MARKUP_FILL: &str = "markup_fill"; // ui-text-exempt: a custom-item kind, never displayed
+/// See [`MARKUP_STROKE`].
+pub const MARKUP_WIDTH: &str = "markup_width"; // ui-text-exempt: a custom-item kind, never displayed
+/// See [`MARKUP_STROKE`].
+pub const MARKUP_OPACITY: &str = "markup_opacity"; // ui-text-exempt: a custom-item kind, never displayed
+/// See [`MARKUP_STROKE`].
+pub const MARKUP_ENDINGS: &str = "markup_endings"; // ui-text-exempt: a custom-item kind, never displayed
+
 // ===========================================================================
 // CUSTOM_BACKED
 // ===========================================================================
@@ -774,12 +869,65 @@ pub const CUSTOM_BACKED: &[(&str, &str, &str)] = &[
          run painted in CMYK or a spot colour the swatch is replaced by a sentence, which is a \
          second thing a button has no way to express.",
     ),
+    // -----------------------------------------------------------------------
+    // The Format ▸ Markup group, 2026-09-06 — `RIBBON_IA.md` §5.8's *Markup
+    // annotation* row, and the operator's ask of the same day: *"getting full
+    // editing working for the Markup tools."*
+    //
+    // ★★★ The two blockers `manifest::format`'s header recorded against this
+    // row are BOTH stale, and the header said so for eighteen days after they
+    // were gone: `EditSession::set_markup_style` shipped 2026-08-18, and the
+    // canvas selection has addressed an annotation since the same day
+    // (`canvas::selection::annot::AnnotTarget`). What remained was work.
+    //
+    // ★ Every entry clears the bar for one reason in a different shape — the
+    // command needs an OPERAND a button cannot ask for — and the alternative
+    // for each is absurd in exactly `file.recent`'s way: a button per colour, a
+    // button per point width, a button per percentage.
+    // -----------------------------------------------------------------------
+    (
+        "format.colour",
+        MARKUP_STROKE,
+        "The line-colour swatch in Format ▸ Markup. A colour is a three-dimensional choice and \
+         the control must also SHOW the mark's current one, neither of which a button does — and \
+         a mark drawn in CMYK or a spot colour gets the default swatch rather than a converted \
+         near-match, which is a second thing a button has no way to express.",
+    ),
+    (
+        "format.fill",
+        MARKUP_FILL,
+        "The fill swatch in Format ▸ Markup. A colour is a three-dimensional choice, and this \
+         one has a fourth state a button cannot carry: NO FILL, which is where every mark pdfcer \
+         authors starts and the state an operator must be able to get back to. It is drawn only \
+         for the subtypes that have an interior.",
+    ),
+    (
+        "format.line_width",
+        MARKUP_WIDTH,
+        "The line-width field in Format ▸ Markup. A width in points is a number the operator \
+         drags or types, and a button is a control with one value. It commits on release rather \
+         than on change, because each commit regenerates the appearance and is one undo entry.",
+    ),
+    (
+        "format.opacity",
+        MARKUP_OPACITY,
+        "The opacity field in Format ▸ Markup. A percentage is a number the operator drags, and \
+         a button is a control with one value. Same release-not-change commit rule as the width \
+         field beside it, and for the same reason.",
+    ),
+    (
+        "format.arrowheads",
+        MARKUP_ENDINGS,
+        "The arrowhead chooser in Format ▸ Markup. WHICH ends carry a head is a four-way choice \
+         and the control must also show the current answer, neither of which a button does. It \
+         is drawn for `/Line` alone, because nothing else has ends to put one on.",
+    ),
 ];
 
 /// A captioned band of items.
 ///
 /// A two-line convenience over `Group::new(..).with_items(..)`, because
-/// this manifest writes thirty-three of them and the builder chain is the
+/// this manifest writes thirty-seven of them and the builder chain is the
 /// noisiest thing on the page when every group is one expression.
 fn group(id: &str, caption: &str, items: impl IntoIterator<Item = Item>) -> Group {
     Group::new(id, caption).with_items(items)
@@ -1035,8 +1183,29 @@ mod tests {
         assert_eq!(shell.contextual_tabs().len(), 1, "one contextual tab");
         assert_eq!(
             shell.all_tabs().flat_map(Tab::groups).count(),
-            35,
-            "thirty-five groups. ★★ 34 → 35 on 2026-09-04: File ▸ Security (O119) — \
+            37,
+            "thirty-seven groups. ★★★ 36 → 37 on 2026-09-06: Markup ▸ Arrange — Bring to \
+             front, Bring forward, Send backward, Send to back, the other half of the same \
+             operator ask. A SIXTH group on a tab `RIBBON_IA.md` §5.5 documents as five, \
+             placed under his standing directive of 2026-09-06 (*\"never ask — placement, \
+             wording and scope are yours\"*) with the reasoning recorded at the group in \
+             `manifest::markup` for the doc edit to be made from. It is not folded into \
+             Style because Style sets the style of the NEXT mark — §5.5's own words — and \
+             these four act on one already placed; it sits after Style and before Comments \
+             because the tab reads left to right as a sequence of tenses and that is the \
+             seam. \
+             ★★★ 35 → 36 on 2026-09-06: Format ▸ Markup — the five controls \
+             that restyle a mark already on the page, and the answer to the operator's \
+             *\"getting full editing working for the Markup tools.\"* A group of its own rather \
+             than five more items under Selection, because Selection's three commands act on \
+             ANY selection — describe it, re-aim it, destroy it — and these five exist only \
+             while the selection is a markup annotation. A band whose items disappear as a \
+             body is a band. \
+             ⚠ The five prose sites this test's own note enumerates all read `thirty-three` \
+             when this ran: they had drifted through 34 and 35 without moving. All five were \
+             re-measured against `built_in()` and rewritten with this line, which is the \
+             procedure the note prescribes and the fourth time it has been needed. \
+             ★★ 34 → 35 on 2026-09-04: File ▸ Security (O119) — \
              `Encrypt…` and `Permissions…`, in their own band immediately after Export. \
              A new group rather than two rows under Document, and rather than a row on \
              Edit ▸ Protect where a reader would first look: every other command on Edit \
@@ -1051,14 +1220,25 @@ mod tests {
         assert_eq!(shell.modes().len(), 3, "three modes");
         assert_eq!(
             shell.keymap.as_ref().expect("a keymap").len(),
-            35,
-            "thirty-five key bindings — Ctrl+A joined on 2026-09-01 for `edit.select_all`; \
+            40,
+            "forty key bindings. ★★★ 36 → 40 on 2026-09-06: the four Markup ▸ Arrange \
+             chords, `Ctrl+[`/`Ctrl+]` and their Shift forms — the four Illustrator, \
+             InDesign, Photoshop, Acrobat and Bluebeam all ship, taken after measuring \
+             that no bracket appears in `app::keyboard::OWNED`, in `canvas::keys` or in \
+             this map under a modifier. Bare `[` and `]` are the two page rotations two \
+             lines above and cannot be reached by these: `parse_chord` builds an exact \
+             `(Modifiers, Key)` pair. \
+             Ctrl+A joined on 2026-09-01 for `edit.select_all`; \
              the four pointer tools took V, A, T and H on 
              2026-08-19, and the document tabs took Ctrl+Tab, Ctrl+Shift+Tab and 
              Ctrl+W the same day. Both are the layout every program in this class uses. 
              ★ 33 → 34 on 2026-08-29: Ctrl+Shift+V for `edit.paste_duplicate`, the 
              operator's own choice, following the Word/Excel/browser convention that 
-             'paste, but differently' is the same key with Shift"
+             'paste, but differently' is the same key with Shift. \
+             ★ 35 → 36 on 2026-09-06: Ctrl+D for `edit.duplicate` — measured \
+             free: no D anywhere in this keymap, none in `app::keyboard::OWNED`, \
+             none in `canvas::keys`, and already reserved for this verb by the \
+             approved mockup's canvas object menu"
         );
     }
 

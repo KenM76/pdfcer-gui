@@ -98,6 +98,35 @@ pub(crate) fn guard_claiming(id: &str) -> Option<&'static str> {
     if crate::app::dispatch::security::claims(id) {
         return Some("claims");
     }
+    // ★ The three markup-POINT commands, claimed by the same shape as the two
+    // above and for the same reason: `app::dispatch::markupnodes` was split out
+    // under R2 on 2026-09-06 (`dispatch.rs` stood at exactly 1,500 lines before
+    // the two node verbs existed), and a guard written as a method on `self`
+    // would be invisible to this reader, so `markup.finish` — which used to be
+    // a literal arm and is now behind a module — plus `markup.add_node` and
+    // `markup.remove_node` would all read as unrouted controls that trace
+    // `command-unimplemented`.
+    //
+    // ★★ It needs no new entry in [`EVALUATED_GUARDS`], for the reason spelled
+    // out at `security::claims` above: that list is a set of FUNCTION NAMES read
+    // out of `dispatch.rs`'s syntax tree, and `claims` is already in it. The
+    // guard was named `claims` rather than `handles` deliberately, so that this
+    // module joined the checker with one `if` and no register edit at all.
+    if crate::app::dispatch::markupnodes::claims(id) {
+        return Some("claims");
+    }
+    // ★ The four Arrange commands — Bring to front and its three siblings — in
+    // `app::dispatch::arrange` since 2026-09-06. Everything the entry above says
+    // applies unchanged, including why it needs no `EVALUATED_GUARDS` edit: the
+    // guard is named `claims`, which that list already holds.
+    //
+    // ★★ Written in the SAME edit as the module, per this file's own header. The
+    // four commands would otherwise all have reported unreachable in one run —
+    // the loud-and-total failure that makes a hand-kept list survivable here, and
+    // the sixth time it would have been paid for a split.
+    if crate::app::dispatch::arrange::claims(id) {
+        return Some("claims");
+    }
     if super::super::page_display_for_command(id).is_some() {
         return Some("page_display_for_command");
     }

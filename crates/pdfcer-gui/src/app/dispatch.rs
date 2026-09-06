@@ -102,9 +102,20 @@ use super::PdfcerApp;
 /// the seam is a subject rather than a size.
 /// ★ The Tools ▸ Batch band — `OPERATOR_REQUESTS.md` O68. Its own module under
 /// R2, on the same argument as the six splits above it.
+/// **The four commands whose subject is a mark's DEPTH** — Bring to front and
+/// its three siblings, 2026-09-06. Its own module for [`markupnodes`]' reason
+/// twice over: they share one preamble and one refusal, and this file had 23
+/// lines of R2's ceiling left when they were wired.
+pub(crate) mod arrange;
 pub(crate) mod batch;
 pub(crate) mod fonts;
 mod forms;
+/// **The three commands whose subject is a POINT on a markup shape** — end the
+/// run of points you are clicking out, add one to a drawn edge, take one away.
+/// `markup.finish` moved there from this file on 2026-09-06, when the two node
+/// verbs needed an arm and this file stood at exactly 1,500 lines; see its
+/// header for why the operand — *which* corner — is the seam.
+pub(crate) mod markupnodes;
 /// **The four verbs whose subject is a PANEL** — float it, dock it back,
 /// close it, and bring every floating one home. Its header carries the
 /// operand problem (a command id is a verb with no noun) and the
@@ -928,54 +939,35 @@ impl PdfcerApp {
                     Err(reason) => crate::canvas::markup::text::decline(kind, reason),
                 }
             }
-            // ★ **Finish** — the ribbon half of the vertex tools' ending, and the
-            // one `markup.*` command that is neither a tool nor a mark.
+            // ★★★ **The three commands about a markup shape's POINTS**, in
+            // `dispatch::markupnodes` since 2026-09-06 — `markup.finish`, which
+            // used to be an arm right here, plus the two node verbs the
+            // right-click menu carries.
             //
-            // It is `measure.finish`'s twin, deliberately down to the shape of
-            // this arm, because it answers the identical problem: PolyLine and
-            // Polygon are runs of clicks with no natural end, exactly as the
-            // radius/diameter pick set has none, and the operator settled that
-            // on 2026-08-14 with **two endings through one commit path**. A
-            // double-click on the canvas is the other half and is the one most
-            // operators will use; this is the discoverable one, and the one that
-            // works when the last vertex sits somewhere awkward to double-click.
+            // The route is one line; what is in that file is the *reasoning* —
+            // in particular why the two node commands need no armed tool where
+            // the equivalent chord does, and why nothing in this shell decides
+            // whether a reshape is allowed.
             //
-            // It must sit ahead of the `markup_for_command` arm below rather
-            // than inside it, for the reason `measure.finish` states in its own
-            // words: that mapping takes ids to *kinds*, this id names no kind,
-            // and if it ever did, pressing Finish would toggle the tool off
-            // (`arm_markup`'s same-kind-retires rule) instead of committing.
+            // ★★ It must stay AHEAD of the `markup_for_command` arm below, and
+            // being a module rather than three sibling arms is what makes that
+            // structural: `markup_for_command` maps ids to *kinds*, none of
+            // these three names a kind, and if `markup.finish` ever did,
+            // pressing Finish would toggle the tool off (`arm_markup`'s
+            // same-kind-retires rule) instead of committing. The two sets are
+            // asserted disjoint in `shell::commands::mapping`; the order is the
+            // cheaper of the two guarantees and costs nothing to state.
+            id if markupnodes::claims(id) => markupnodes::dispatch(self, ctx, id, actions),
+            // ★★★ **The four commands whose subject is a mark's DEPTH** — the
+            // ribbon's Arrange group. `/Annots` order is paint order, the engine
+            // has permuted it since 2026-09-02, and until today the only surface
+            // that could ask was the form-field tab-order panel.
             //
-            // The arm routes and does not compute. Everything about what a
-            // finish *is* — whether the run is long enough for its kind, which
-            // page it belongs to, emptying it afterwards — lives in
-            // `canvas::markup::vertex::finish`, which is the same commit path
-            // the canvas's double-click reaches. One commit path, two entrances;
-            // a second derivation here is exactly how the two endings would come
-            // to author different annotations.
-            //
-            // Both refusals are traced separately, because "the mode says no"
-            // and "there was nothing to finish" are different facts with
-            // different answers, and a reader of a trace from a machine they
-            // cannot see should not have to guess which nothing happened.
-            "markup.finish" => {
-                if !self.capabilities().author_markup {
-                    crate::diag::trace(|| {
-                        // ui-text-exempt: diagnostic trace, never displayed.
-                        format!("command-declined id={id} reason=mode-cannot-author-markup")
-                    });
-                } else if !crate::canvas::markup::vertex::finish(ctx, actions, self.pen) {
-                    crate::diag::trace(|| {
-                        // ui-text-exempt: diagnostic trace, never displayed.
-                        //
-                        // Reachable only by a chord or a customized manifest:
-                        // the ribbon control is greyed unless there is a run
-                        // long enough for its kind, by the same predicate
-                        // `finish` itself asks.
-                        format!("command-declined id={id} reason=no-vertex-run-to-finish")
-                    });
-                }
-            }
+            // No `ctx`: nothing here is about a gesture in flight. It reads the
+            // selection and raises one action, and the permutation itself is
+            // built at apply time — see the module's own header for why a list
+            // computed at the press would be a stale one.
+            id if arrange::claims(id) => arrange::dispatch(self, id, actions),
             // ★ The three text-bearing kinds, ABOVE the geometric markup arm.
             //
             // Ordering is a statement rather than a tie-break — the two

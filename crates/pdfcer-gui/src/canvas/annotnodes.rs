@@ -905,5 +905,10 @@ pub fn explain_unreshapable(
     true
 }
 
+/// ★★★ **The right-click route to these same three verbs.** See its header for
+/// why a menu row needs no armed tool where the chord does, and for where the
+/// *which node did they mean* operand is parked for the life of the popup.
+pub mod menu;
+
 #[cfg(test)]
 mod tests;

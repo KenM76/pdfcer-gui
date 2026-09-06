@@ -16,7 +16,7 @@
 //!
 //! | Submodule | Holds |
 //! |---|---|
-//! | [`manifest`] | [`manifest::built_in`] — the whole ribbon as an `egui_shell::Shell` value: eight tabs, thirty-three groups, three modes, the QAT and the keymap. Plus [`manifest::PLANNED`], the commands deliberately **absent**. |
+//! | [`manifest`] | [`manifest::built_in`] — the whole ribbon as an `egui_shell::Shell` value: eight tabs, thirty-seven groups, three modes, the QAT and the keymap. Plus [`manifest::PLANNED`], the commands deliberately **absent**. |
 //! | [`commands`] | [`commands::register`] — every command the manifest names, with its label, tooltip, icon key, enable predicate and opaque handler token. |
 //! | [`menus`] | [`menus::built_in`] — the four context menus, carried on the same `Shell`, plus [`menus::MenuHost`], the one seam a right-click site uses. |
 //! | [`ron`] | The same manifest as a `.ron` file, with a test that the two agree. |

@@ -617,23 +617,39 @@ pub const PLANNED: &[(&str, &str)] = &[
     // "build order: panel first, tab second. The panel is the harder half
     // and the tab's contents are a subset of it, so building the tab first
     // would mean writing the property editors twice."
+    // ★★★ `format.colour`, `format.fill`, `format.line_width`,
+    // `format.opacity` and `format.arrowheads` were HERE, each with the note
+    // "N — markup property; panel first." **All five shipped on 2026-09-06** as
+    // the Format ▸ Markup group, drawn by `crate::app::markupband`, on the
+    // operator's ask: *"getting full editing working for the Markup tools."*
+    //
+    // The build order they cite was followed exactly and is the reason the
+    // group could be written in one pass: `panels::properties::markup` landed
+    // first (2026-08-19), the band's controls are a **subset** of it, and the
+    // property editors were written once — which is §5.8's whole argument for
+    // ordering it that way.
+    //
+    // ★ `format.line_style` and `format.note_text` STAY, and the distinction is
+    // the one this register is for. Those two are not deferred by build order;
+    // `MarkupStyle` carries no dash pattern at all, so `format.line_style` has
+    // no verb to reach, and a note's `/Contents` is `MarkupNote`'s — a different
+    // struct, a different verb, and a control the ribbon is the wrong surface
+    // for because it is prose.
+    //
+    // ★★ The removal is not optional bookkeeping.
+    // `planned_commands_are_genuinely_absent` asserts in BOTH directions —
+    // nothing listed here may be referenced by the manifest, and nothing listed
+    // here may be registered — so leaving these five rows in fails the suite
+    // rather than becoming a stale comment. That is the property the register
+    // was built for, and this is the second time it has been exercised by a
+    // deletion (the first was `format.font` and `format.font_size` on
+    // 2026-08-27).
     (
-        "format.colour",
+        "format.line_style",
         // ui-text-exempt: developer note about an ABSENT command; never rendered.
-        "N — markup property editors are built panel-first; see format.rs.",
-    ),
-    // ui-text-exempt: developer note about an ABSENT command; never rendered.
-    ("format.fill", "N — markup property; panel first."),
-    // ui-text-exempt: developer note about an ABSENT command; never rendered.
-    ("format.line_width", "N — markup property; panel first."),
-    // ui-text-exempt: developer note about an ABSENT command; never rendered.
-    ("format.line_style", "N — markup property; panel first."),
-    // ui-text-exempt: developer note about an ABSENT command; never rendered.
-    ("format.opacity", "N — markup property; panel first."),
-    (
-        "format.arrowheads",
-        // ui-text-exempt: developer note about an ABSENT command; never rendered.
-        "N — markup property, arrow and line only; panel first.",
+        "N — markup property; no verb: `MarkupStyle` has no dash pattern, so there is nothing \
+         for a control to reach. Not deferred by build order like the five that shipped beside \
+         it on 2026-09-06 — this one is an engine gap.",
     ),
     (
         "format.note_text",
@@ -854,5 +870,18 @@ pub const TAB_SCOPED: &[(&str, &str)] = &[
         "view.panel_close",
         // ui-text-exempt: a register reason for a reviewer and a test; never rendered.
         "Same operand, same argument. Deliberately NOT given a ribbon home by aliasing it onto the View ▸ Panels toggles: those toggle a NAMED panel and this closes the one under the pointer, and collapsing the two would make a toggle behave differently depending on where it was invoked from.",
+    ),
+    // ★★★ The two markup-node verbs, 2026-09-06 — the first entries here whose
+    // surface is a CANVAS menu rather than a panel tab, and they meet the bar
+    // for the same reason the three above do.
+    (
+        "markup.add_node",
+        // ui-text-exempt: a register reason for a reviewer and a test; never rendered.
+        "Its operand is A POINT ON ONE EDGE OF ONE SHAPE — which edge, and where along it. A ribbon button has no such operand: at the moment it is pressed the pointer is on the ribbon, so it would have to invent one (the first edge? the longest? the last one clicked?) and would then split an edge the operator was not pointing at. The capability is discoverable from the tool row's `view.tool_node`, labelled Points, which draws an anchor on every corner of the selected shape and so teaches that a drawn shape HAS corners you can aim at.",
+    ),
+    (
+        "markup.remove_node",
+        // ui-text-exempt: a register reason for a reviewer and a test; never rendered.
+        "The mirror of `markup.add_node`, with the same operand and the same argument — this corner, the one under the pointer. It is additionally the more dangerous of the two to give a ribbon home: a button that removed some invented default corner would silently reshape a drawing on a press the operator read as harmless.",
     ),
 ];

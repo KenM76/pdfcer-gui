@@ -655,6 +655,69 @@ mod tests {
         }
     }
 
+    /// ★★★ **The note editor's painted-words warning fires on exactly one of
+    /// the subtypes this panel lets an operator edit — and it is asked in the
+    /// SAME vocabulary the panel stores.**
+    ///
+    /// The wiring guard for `panels::comments::note_editor`, and it is about a
+    /// coupling rather than about prose. [`CommentRow::subtype`] is filled from
+    /// `pdfcer-core`'s own `Annotation::subtype_label` (`annot.rs:640`) — the
+    /// raw `/Subtype` name — and `crate::text::textannot::paints_its_note` is a
+    /// **string match on that same vocabulary**. Nothing but this test holds
+    /// the two together: a well-meant change that title-cased the panel's
+    /// subtype for display, or that swapped it for an enum, would leave the
+    /// warning silently never firing, and the symptom is a *missing* sentence,
+    /// which no screenshot shows and no other test asks about.
+    ///
+    /// Reusing the row above's list is the point — it is this panel's own
+    /// enumeration of what displays its `/Contents`, i.e. exactly the rows that
+    /// get an editor — so the two cannot be brought into disagreement by adding
+    /// a subtype to one list and not the other.
+    ///
+    /// The both-directions shape is deliberate. The costly failure is the
+    /// **false positive**: a sticky note that started warning that the page did
+    /// not change would be describing a page that never showed those words, and
+    /// an operator who learns to dismiss this sentence loses the one case where
+    /// it is true.
+    #[test]
+    fn only_the_text_box_row_warns_that_the_page_will_not_change() {
+        use crate::text::textannot::note_edit_hint;
+
+        assert!(
+            note_edit_hint("FreeText").is_some(),
+            "a /FreeText paints its /Contents (annot_author.rs:3131), so editing a \
+             text box's note leaves the page stale and the editor must say so"
+        );
+        for s in [
+            "Text",
+            "Square",
+            "Circle",
+            "Line",
+            "Polygon",
+            "PolyLine",
+            "Ink",
+            "Highlight",
+            "Underline",
+            "StrikeOut",
+            "Squiggly",
+            "Stamp",
+            "Caret",
+            "FileAttachment",
+            "(no Subtype)",
+        ] {
+            assert!(
+                !contents_is_description(s),
+                "the list this test shares with its neighbour drifted: {s}"
+            );
+            assert!(
+                note_edit_hint(s).is_none(),
+                "/{s} does not paint its /Contents, so a note edit on one is \
+                 complete -- warning about it teaches the operator to ignore \
+                 the warning that matters"
+            );
+        }
+    }
+
     /// **An absent `/Contents` is [`Note::Absent`], and that drives the
     /// document-wide disclosure.**
     ///

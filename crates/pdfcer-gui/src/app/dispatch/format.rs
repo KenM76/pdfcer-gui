@@ -80,6 +80,16 @@ pub(crate) fn handles(id: &str) -> bool {
             | "format.font_colour"
             | "format.bold"
             | "format.italic"
+            // The Markup group, 2026-09-06. All five are drawn by an
+            // `Item::Custom` — `app::markupband` REPORTS (it parks a
+            // `(target, edit)` pair and returns a token) and this file ACTS, so
+            // every one of them arrives here and none has a second
+            // implementation inside the renderer.
+            | "format.colour"
+            | "format.fill"
+            | "format.line_width"
+            | "format.opacity"
+            | "format.arrowheads"
     )
 }
 
@@ -549,6 +559,101 @@ pub(crate) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>)
                 page: selection.page,
                 runs,
                 change,
+            });
+        }
+        // ★★★ The Markup group. Five ids, ONE operand shape, and the operand
+        // arrives WITH the token rather than being re-derived here.
+        //
+        // # Why this is the opposite of the Font arm above, deliberately
+        //
+        // The Font arm re-reads `doc.text_selection` for all five of its ids,
+        // and its own note says why: *"which runs does a restyle act on?"* is a
+        // **rule**, and a rule stated in the renderer as well as here is a rule
+        // that diverges — with the renderer's copy being the one a chord never
+        // reaches.
+        //
+        // This operand is not a rule. It is *the annotation the swatch was
+        // showing the colour of*, which `app::markupband` had already read out
+        // of the session in order to draw itself. Re-deriving it here would
+        // open a window this surface cannot afford: the control reads
+        // `doc.selection.annot()` while drawing, the dispatcher would read it
+        // again after the frame's input has been applied, and a canvas click in
+        // the same frame — deselecting, or selecting a different mark — would
+        // send the operator's colour to a mark they were no longer looking at.
+        // A restyle applied to the wrong annotation is a wrong document, and
+        // `MarkupStyleChange` is not undoable in halves.
+        //
+        // ⇒ So the arm **verifies** rather than re-derives, which is the honest
+        // middle: the parked target must still be what the selection names.
+        //
+        // ★ `None` raises nothing and is not a defect: it is what a chord bound
+        // to one of the five ids produces, because a chord cannot park an
+        // operand. Silence is the honest answer — there is no value to apply
+        // and nothing was refused.
+        "format.colour" | "format.fill" | "format.line_width" | "format.opacity"
+        | "format.arrowheads" => {
+            // Taken before the document is borrowed: `take` needs `&mut app`
+            // and the check below needs `&app.status`.
+            let Some((target, edit)) = app.markup_change.take() else {
+                return;
+            };
+            // ★★ `author_markup`, NOT `edit_content` — one predicate per
+            // capability, the rule `canvas::keys` states beside its own pair
+            // and the Delete arm above repeats. **Review must keep this**:
+            // restyling a mark is exactly what Review is for, and a guard
+            // reaching for `edit_content` would take the working verb away from
+            // the mode that owns it.
+            //
+            // ★ Re-asked here although `enabled_when` and `shown_when` both
+            // carry it, for this file's standing reason: greying is a hint and
+            // enforces nothing — a chord consults no condition at all.
+            if !app.capabilities().author_markup {
+                crate::diag::trace(|| {
+                    // ui-text-exempt: diagnostic trace, never displayed in the UI
+                    "format-markup-style-declined reason=mode-cannot-author-markup".to_owned()
+                });
+                return;
+            }
+            let Status::Open(doc) = &app.status else {
+                return;
+            };
+            // ★★★ The parked target must still be the selection, and the
+            // §12.5.3 lock must still be clear.
+            //
+            // Both are re-asked rather than trusted, and neither is reachable
+            // by clicking: the control was drawn from this very selection one
+            // frame ago. What IS reachable is a chord, and a frame in which the
+            // canvas moved the selection between the ribbon's draw and this
+            // dispatch. The engine refuses a locked annotation by name, so
+            // without this the refusal would arrive in
+            // `actions::apply`'s `Err` arm and say nothing to the operator —
+            // which is the silent-decline class this project was founded on.
+            //
+            // ★ It declines to the TRACE rather than to the status bar for
+            // `format.delete`'s reason two hundred lines up: the sentence for a
+            // locked mark is already on screen, in the Properties panel and on
+            // the greyed control's own hover
+            // (`text::panels::properties::markup_locked`), so inventing a
+            // second wording here would be two statements of one refusal.
+            let addressed = doc
+                .selection
+                .annot()
+                .is_some_and(|a| a.target == target && !a.target.locked);
+            if !addressed {
+                crate::diag::trace(|| {
+                    // ui-text-exempt: diagnostic trace, never displayed in the UI
+                    format!(
+                        "format-markup-style-declined id={id} reason=selection-moved-or-locked \
+                         page={} annot={:?}",
+                        target.page, target.id
+                    )
+                });
+                return;
+            }
+            actions.push(crate::app::actions::Action::SetMarkupStyle {
+                page: target.page,
+                id: target.id,
+                style: edit.into_style(),
             });
         }
         // ui-text-exempt: a panic message, read from a stack trace by whoever

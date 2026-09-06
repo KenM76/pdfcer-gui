@@ -65,6 +65,48 @@ pub enum AnnotAction {
         /// upward in PDF user space (§8.3.2.3).
         dy: f64,
     },
+    /// ★★★ **Change where a markup annotation sits in its page's paint
+    /// order** — Bring to front, Bring forward, Send backward, Send to back.
+    ///
+    /// Raised by `crate::app::dispatch::markup` from the ribbon's Arrange group
+    /// and from nothing else.
+    ///
+    /// # ★★ It carries an INTENT, not an order — and that is the whole design
+    ///
+    /// `EditSession::reorder_annotations` takes the page's whole `/Annots`
+    /// permutation, and the obvious shape for this variant is therefore
+    /// `order: Vec<ObjId>`, computed by the dispatcher which has the document in
+    /// front of it. **It would be wrong**, for the reason this action bus exists:
+    /// an action is raised on one frame and drained on another, behind every
+    /// action queued ahead of it. A permutation computed at the press describes
+    /// the array as it was *before* whatever ran in between, and the engine
+    /// refuses a stale one by name (`AnnotsNotAPermutation`) rather than applying
+    /// it approximately.
+    ///
+    /// ⇒ So the array is read at apply time, in
+    /// [`crate::app::actions::reorder::arrange`]. This is the same rule
+    /// [`Self::Move`] follows by carrying a **delta** rather than a rectangle,
+    /// and its reason restated: a value resolved at the press is a value that may
+    /// have moved under you.
+    ///
+    /// # ★ It takes a page, unlike its neighbours, and the header's rule holds
+    ///
+    /// This module's header says *"none of them takes a page index"*, because
+    /// every annotation verb finds its operand by stable object id. That is still
+    /// true of the operand — the mark is named by [`Self::Arrange::id`] — and the
+    /// page here is not an address for it. It is `reorder_annotations`' **own**
+    /// operand: the array being permuted belongs to a page, and the engine takes
+    /// `page_index` because that is what it is reordering. Exactly like
+    /// [`Self::Delete`]'s page, the asymmetry is documented rather than smoothed
+    /// away.
+    Arrange {
+        /// The page whose `/Annots` is permuted.
+        page: usize,
+        /// The mark to move within it, by stable object id.
+        id: pdfcer_core::object::ObjId,
+        /// Which end, or which single step.
+        to: crate::app::actions::reorder::ArrangeTo,
+    },
     /// ★★★ **Scale a markup annotation about an anchor**, as one undoable
     /// command. `OPERATOR_REQUESTS.md` **O51**.
     ///

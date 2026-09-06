@@ -302,6 +302,61 @@ pub fn spec(
         // R9 is satisfied meanwhile: no chooser is drawn, no greyed control,
         // no placeholder. The note gets `/Note`, which is what every sticky
         // this program has ever authored carries.
+        //
+        // ---------------------------------------------------------------
+        // ★★ **RE-MEASURED 2026-09-06: route 1's blocker is GONE, and route
+        // 3 is no longer the recommendation.**
+        //
+        // The paragraph above is kept verbatim rather than rewritten, because
+        // what changed is a *measurement* and the correction is the useful
+        // part. `wc -l app/actions/action.rs` is **1,479** — twenty-one lines
+        // of R2 headroom, where the note above recorded exactly 1,500. A
+        // concurrent track split that file after this was written.
+        //
+        // ⇒ Route 1 now costs a field and its doc comment, and it is the
+        // RIGHT route, not merely the newly-affordable one. The reason is the
+        // one the stamp already proves: **`StampName` travels this exact path
+        // today.** `dialogs/textannot.rs:77` holds the gallery's choice,
+        // `:262` puts it on `Action::CommitTextAnnot`, `action.rs:1367`
+        // carries it, `app/actions/textannot.rs:63` lands it on `Placement`,
+        // and `:148` hands it to this function as the `stamp` argument. An
+        // icon is the same shape of operand as a stamp name and belongs in
+        // the same carrier — route 3 would put two answers to *"what did the
+        // operator pick?"* in two different places, one on the pen and one on
+        // the action.
+        //
+        // # The whole remaining change, so it is one sitting for whoever owns
+        // # these files
+        //
+        // 1. `canvas/textannot.rs` (here): `STICKY_ICONS` + `DEFAULT_STICKY_ICON`
+        //    beside `STAMPS`/`DEFAULT_STAMP`, and an `icon: StickyIcon`
+        //    parameter on `spec` replacing `StickyIcon::default()` below;
+        // 2. `text/textannot.rs`: `sticky_icon_label`, beside `stamp_label`;
+        // 3. `app/actions/action.rs`: one field on `CommitTextAnnot`;
+        // 4. `app/actions/textannot.rs`: one field on `Placement`, threaded
+        //    at `apply.rs:751`;
+        // 5. `dialogs/textannot.rs`: the radio group at `:399-405` again, over
+        //    `STICKY_ICONS`, gated on `Sticky` as the stamp's is on `Stamp`.
+        //
+        // **Not done here, and the reason is ownership rather than
+        // difficulty.** This was measured by the 2026-09-06 note-editing track,
+        // which owns items 1 and 2 and neither of items 3 and 5;
+        // `dialogs/textannot.rs` was outside its grant entirely, and the tree
+        // was red from six concurrent tracks at the time. Landing a
+        // five-file signature change across three other tracks' files while
+        // the build is broken is how a reconciliation becomes expensive.
+        //
+        // ★ R9 still holds and that has not changed: nothing is drawn. The
+        // seven icons are `pdfcer_core::annot_author::StickyIcon`'s, which is
+        // §12.5.6.4 Table 172's complete set and exactly the seven Acrobat's
+        // note tool offers — so the gallery needs no list of ours, the way
+        // `STAMPS` needed one.
+        //
+        // The **editing** half of this — changing a placed note's icon or
+        // colour — is the engine's and is filed:
+        // `request_a_sticky_notes_icon_and_colour_cannot_be_changed.md`,
+        // re-measured against v0.42.0 on 2026-09-06 and **still unanswered**
+        // (no `/C` read in `annot.rs`, no icon read, no set verb).
         TextAnnotKind::Sticky => TextAnnotSpec::Sticky {
             rect,
             icon: StickyIcon::default(),

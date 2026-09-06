@@ -87,3 +87,4 @@ crates/pdfcer-gui/src/dialogs/insert_image.rs        dialogs
 crates/pdfcer-gui/src/dialogs/scale.rs               dialogs
 crates/pdfcer-gui/src/dialogs/export_image.rs        dialogs
 crates/pdfcer-gui/src/dialogs/open_in_acrobat.rs   dialogs
+crates/pdfcer-gui/src/canvas/moving/nudge.rs         drag-moves

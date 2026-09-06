@@ -1093,6 +1093,22 @@ fn decline(selection: &SelectionState, reason: Refusal, actions: &mut Vec<Action
     });
 }
 
+/// ★★★ **The keyboard's way of asking for the same move** — the arrow keys.
+///
+/// A sibling module rather than a section of this one, and the seam is the same
+/// one this file was split along: *what a gesture is* and *what a move is* are
+/// different subjects. Everything in this file is about a **drag** — a phase, a
+/// ghost, a grab point, a release — and none of it applies to a keystroke, which
+/// has no interval at all. What the two share is [`page_delta`], and that is
+/// exactly what the child imports.
+///
+/// It is under `moving` rather than under `keys` because the shared thing is the
+/// **coordinate crossing**, not the key: a nudge written in the key handler
+/// would have had to re-derive the Y flip and the page rotation, which is the
+/// silent failure `viewer`'s header warns about. See that module's own header
+/// for the whole argument, the step it takes and whose convention it is.
+pub(crate) mod nudge;
+
 // The move gesture's assertions. Split out under R2 on 2026-08-27; see its
 // header for why the tests were the seam and the code was not.
 #[cfg(test)]

@@ -986,7 +986,7 @@ Contents vary by selection type:
 
 | Selection | Groups |
 |---|---|
-| Markup | Colour · Fill · Line width · Line style · Opacity · Arrowheads · Note text · Delete |
+| Markup | **Colour · Fill · Line width · Opacity · Arrowheads** · ~~Line style · Note text~~ · Delete — ★ **BUILT 2026-09-06, see the amendment below** |
 | ce dimension | Group · Scale · Precision · Units · Standard · Witness lines · Delete |
 | Image | Size · Position · Crop · Opacity · Replace · Delete |
 | Vector object | Stroke · Fill · Winding rule · Node tools · Delete |
@@ -1077,6 +1077,84 @@ nothing on screen told an operator to press `T`.
 `selection.formattable` — the union of an object selection and a live text
 selection. The tab now has two kinds of subject and neither operand is its
 question.
+
+### ★★★ Amendment, 2026-09-06 — the Markup group, and a stale blocker that cost eighteen days
+
+**Operator instruction:** *"getting full editing working for the Markup
+tools."*
+
+The **Markup** row shipped as one captioned band called **Markup**, placed
+**second on the tab**, between Font and Selection. Five of the row's eight
+entries are built: Colour, Fill, Line width, Opacity and Arrowheads, drawn by
+`app::markupband` as five `Item::Custom` controls backing five registered
+commands (`format.colour`, `format.fill`, `format.line_width`,
+`format.opacity`, `format.arrowheads`). The sixth, Delete, is the Selection
+group's, exactly as it is for every other row of the table. §5.5's closing
+sentence — *"Both must exist; today only the first does, which is why a placed
+markup feels final"* — is answered: the Style group still sets the defaults for
+the **next** mark, and this band changes the one you have **selected**.
+
+**★★★ The blocker this row carried was measured on 2026-08-17 and was false on
+2026-08-18.** `shell::manifest::format`'s header said in the present tense that
+`EditSession` had no verb that modified an annotation and that the canvas
+selection could not address one. `EditSession::set_markup_style` shipped the
+next day; `canvas::selection::annot::AnnotTarget` landed the same day; and
+`panels::properties::markup` has been calling the verb since 2026-08-19. The
+paragraph stating both as facts survived all of it, and the row stayed in
+`manifest::PLANNED` for eighteen days after the thing that blocked it was gone.
+**A blocker is a measurement with a date, not a property of the world** — the
+register entries were caught by `planned_commands_are_genuinely_absent`, which
+asserts in both directions, and the prose in the module header was checked by
+nothing. The header now carries the old text as a quotation, because the shape
+of the mistake is worth more than the correction.
+
+**Line style was dropped, and it is not a scheduling deferral.** `MarkupStyle`
+carries no dash pattern at all, so there is no verb for a control to reach. It
+stays in `manifest::PLANNED` with that reason written in, replacing the "panel
+first" note that read as a scheduling fact and was not one.
+
+**Note text was dropped**, for a different reason and it is worth keeping the
+two apart: `/Contents` is `MarkupNote`'s, a different struct behind a different
+verb, and a note is **prose** — a ribbon band is the wrong surface for a
+paragraph. It belongs in the Properties panel, which is where §5.8's own
+division of labour puts everything that is not reached for mid-gesture.
+
+**Two controls exceed the panel, and the build order permits it.** The panel's
+*This mark* section offers colour, width and opacity; this band adds **Fill**
+and **Arrowheads**. That looks like the superset the Font group's amendment
+refused, and it is not the same case: the build order exists so the property
+editors are not written twice, and these two are written **once**, here. The
+panel deliberately declines Fill (`canvas::markup::spec` authors `interior:
+None` so a comment does not hide the drawing under it) and declines Arrowheads
+(they mean something for `/Line` alone). Both are offered here as *restyling an
+existing mark* rather than as a change to what pdfcer authors, and neither
+changes the pen.
+
+**The arrowhead chooser offers four POSITIONS, not nine pairs.** `/LE` is two
+independent endings over three shapes each. The control asks *which ends* and
+**preserves the shape the mark already carries**, so a closed arrowhead stays
+closed. A chooser that normalised every arrow to `/OpenArrow` would silently
+rewrite a producer's `/ClosedArrow`, invisibly here and visibly elsewhere.
+
+**One condition carries it**, and the split from the Font group's two is R9
+rather than convenience. `selection.markup_restylable` is each item's
+`visible_when` **and** each command's `enabled_when`: a markup annotation is
+selected and the mode may author markup. The Font group greys on
+`selection.text` because a greyed control there is the only surface that can say
+*press T first* (O37); a greyed Markup control could only say *select a mark*,
+which the operator has already done or the contextual tab would not be drawn.
+R9 then requires **absence**, in Read and with any other kind of selection.
+
+**Greying is left for the lock alone.** §12.5.3 Table 165 bit 8 is a fact about
+one annotation rather than about the build or the mode — click a different mark
+and the controls work — so a locked mark greys with the Properties panel's own
+sentence rather than making the band vanish.
+
+**Rule 15 is enforced in the type.** A ce dimension is `set_dimension_style`'s,
+and its `/Subtype` is `/Line`, identical to an arrow's — so the guard is a
+`match` on `AnnotKind` the compiler checks, in the condition and again where the
+operand is built. A string comparison would restyle the operator's dimensions
+into bare lines and look correct doing it.
 
 A third surface, the **context menu**, carries the same commands again
 for the user who right-clicks. That is not duplication in the P1 sense —

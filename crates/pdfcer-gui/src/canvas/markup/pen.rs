@@ -46,25 +46,198 @@
 //! roof and in their own file, which is `SHELL_FRAMEWORK.md`'s subject rather
 //! than this one's.
 //!
-//! ## ★ Two pens, not one, and it is not a per-kind palette
+//! ## ★★★ EIGHT PENS, NOT TWO — and the argument that said otherwise is kept
+//! ## here, superseded rather than deleted
 //!
-//! [`Pen::ink`] is the comment-linework colour; [`Pen::highlighter`] is the
-//! highlight band's. They are separate because they answer different
-//! questions — *what colour is my pen?* and *what colour is my highlighter?* —
-//! and an operator who sets the pen to green does not thereby want a green
-//! highlight, any more than picking a green biro changes the marker in their
-//! other hand.
+//! ### What this section used to say, verbatim
 //!
-//! What this is **not** is a colour per markup kind. `MarkupKind::rgb`'s own
-//! note argued that down when three kinds were added: they are comment
-//! linework, they have to be seen against a drawing that is already black on
-//! white, and *"a per-kind palette would be a style decision made in code where
-//! the Style group is the surface that owns it."* One pen for every geometric
-//! kind is the same answer, now made choosable.
+//! > **Two pens, not one, and it is not a per-kind palette.** … What this is
+//! > **not** is a colour per markup kind. `MarkupKind::rgb`'s own note argued
+//! > that down when three kinds were added: they are comment linework, they have
+//! > to be seen against a drawing that is already black on white, and *"a
+//! > per-kind palette would be a style decision made in code where the Style
+//! > group is the surface that owns it."* One pen for every geometric kind is
+//! > the same answer, now made choosable.
+//!
+//! ### Why that was a good argument
+//!
+//! It is worth saying plainly, because the correction is only useful if the
+//! thing being corrected was reasonable. The argument had two halves and both
+//! were sound at the time:
+//!
+//! 1. **A colour chosen in code is a style decision made in the wrong place.**
+//!    True, and still true. A shell that hard-codes a green underline because
+//!    somebody liked green has put a preference in a source file where no
+//!    operator can reach it.
+//! 2. **Comment linework has one job — to be seen over black-on-white CAD.**
+//!    Also true. Nothing about a per-kind palette makes an underline more
+//!    legible over a drawing than the pen colour would.
+//!
+//! ### ★★ Why it is superseded anyway
+//!
+//! Because it answered the wrong question. It asked *"can this shell justify
+//! inventing eight colours?"* — and the answer to that is still no. The
+//! operator's ask of 2026-09-06 asks something else:
+//!
+//! > *"Also make sure you've used the same default colours and style look for
+//! > these things as Adobe."*
+//!
+//! ⇒ The values are no longer this shell's to choose. [`super::palette`] reads
+//! them out of **Acrobat's own tool-defaults store**, and Acrobat does not use
+//! one colour for everything: its highlighter is orange, its underline is blue,
+//! its strikeout is a light red that is not the shape red, and its sticky note
+//! is violet. A single pen cannot express that table, so the table is the shape
+//! the pen has to have. The style decision is not being made in code — it is
+//! being **transcribed from the program the operator compares against**, which
+//! is this project's standing tie-breaker for anything of this kind.
+//!
+//! ★ Half of the old argument survives intact and is worth keeping: the values
+//! must still be the operator's to override, and every slot below is. What
+//! changed is only where the *shipped* value comes from.
+//!
+//! ### The slots, and why they are named rather than an array
+//!
+//! [`PenSlot`] has one variant per **key Acrobat keeps a separate default
+//! under** — not per [`MarkupKind`] variant, and the difference matters in both
+//! directions:
+//!
+//! * The seven geometric kinds share `cSquare`/`cCircle`/`cLine`/… , all holding
+//!   the identical red, so they share [`Pen::ink`]. Giving each its own field
+//!   would be seven copies of one number and seven places for it to drift.
+//! * Squiggly and Stamp hold that same red **under their own registry keys**, so
+//!   they get their own slots even though the shipped values agree today. An
+//!   operator who recolours the shape pen has not thereby asked for a recoloured
+//!   squiggly — Acrobat's do not move together, and collapsing two slots that
+//!   happen to agree is how a per-kind palette quietly becomes a single pen
+//!   again.
+//!
+//! [`Pen::colour_for`] is the total function from a kind to its slot's colour;
+//! [`Pen::colour_of`] and [`Pen::set_colour`] are the slot-addressed pair the
+//! swatch uses. Both matches are exhaustive, so a ninth slot fails to compile
+//! rather than silently landing on the shape pen.
 
 use egui::Color32;
 
 use super::MarkupKind;
+use super::palette;
+
+/// **Which pen** — one variant per default Acrobat keeps a separate key for.
+///
+/// # ★ Why this exists rather than the swatch naming a field
+///
+/// Because there are now eight colours and one control. A swatch that wrote to
+/// `pen.underline` by naming the field would need a second swatch for every
+/// slot, and the slot a control edits is a *runtime* choice — which is the
+/// definition of a value rather than a field name. [`Pen::colour_of`] and
+/// [`Pen::set_colour`] take one of these and are total over it, so the control
+/// is written once and a ninth slot is a compile error rather than a silent
+/// fallback to the shape pen.
+///
+/// # The mapping to Acrobat's store
+///
+/// | slot | Acrobat key | shipped colour |
+/// |---|---|---|
+/// | [`Self::Shape`] | `cSquare`, `cCircle`, `cLine`, `cLine:LineArrow`, `cPolyLine`, `cPolygon`, `cPolygon:PolygonCloud`, `cInk` | [`palette::MARKUP_RED`] |
+/// | [`Self::Highlighter`] | `cHighlight`, `cInk:InkHighlight` | [`palette::HIGHLIGHTER_ORANGE`] |
+/// | [`Self::Underline`] | `cUnderline` | [`palette::UNDERLINE_BLUE`] |
+/// | [`Self::StrikeOut`] | `cStrikeOut` | [`palette::STRIKEOUT_PINK`] |
+/// | [`Self::Squiggly`] | `cSquiggly` | [`palette::MARKUP_RED`] |
+/// | [`Self::Note`] | `cText` | [`palette::NOTE_PURPLE`] |
+/// | [`Self::TextBox`] | `cFreeText` | [`palette::MARKUP_RED`] |
+/// | [`Self::Stamp`] | `cStamp` | [`palette::MARKUP_RED`] |
+///
+/// See [`super::palette`]'s header for where those readings come from and for
+/// the evidence that they are Adobe's factory values rather than this machine's
+/// history.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PenSlot {
+    /// Every kind drawn as **linework by a pointer gesture**: rectangle,
+    /// ellipse, arrow, polyline, polygon, revision cloud, freehand.
+    ///
+    /// One slot for seven kinds because Acrobat holds one value across their
+    /// seven keys. Called `Shape` rather than `Ink` because [`Pen::ink`] is the
+    /// field and `MarkupKind::Ink` is the *freehand* kind — three meanings of
+    /// one word, and the enum is where they are told apart.
+    Shape,
+    /// The highlight band, whether drawn as an area or over found text.
+    Highlighter,
+    /// `/Underline`.
+    Underline,
+    /// `/StrikeOut`.
+    StrikeOut,
+    /// `/Squiggly`.
+    ///
+    /// Ships at the same red as [`Self::Shape`] and is a separate slot anyway —
+    /// see the module header on why two slots that agree today are not one slot.
+    Squiggly,
+    /// `/Text` — the sticky note.
+    Note,
+    /// `/FreeText` — the text box.
+    ///
+    /// ★ Acrobat splits this in two and this shell cannot. `cFreeText` holds a
+    /// *border* colour (`#F86464`) and a *text* colour (`#DB3425`), and
+    /// `canvas::textannot` authors one `ink` used for both. This slot ships at
+    /// Acrobat's **text** colour, because the words are what the operator reads
+    /// and a frame is a frame. The divergence is real and is written down here
+    /// rather than smoothed over: a pdfcer text box has an Acrobat-red frame
+    /// where Acrobat's would be pink.
+    TextBox,
+    /// `/Stamp` — a framed label.
+    Stamp,
+}
+
+impl PenSlot {
+    /// Every slot, in the order the module header's table lists them.
+    ///
+    /// Exists for the reason `MarkupKind::ALL` does: it is what lets a test
+    /// sweep every slot rather than a hand-written subset, so a ninth slot is
+    /// covered without anybody remembering to add it.
+    pub const ALL: &'static [PenSlot] = &[
+        PenSlot::Shape,
+        PenSlot::Highlighter,
+        PenSlot::Underline,
+        PenSlot::StrikeOut,
+        PenSlot::Squiggly,
+        PenSlot::Note,
+        PenSlot::TextBox,
+        PenSlot::Stamp,
+    ];
+
+    /// **Which pen draws this kind.**
+    ///
+    /// The successor to the two-arm `match` [`Pen::colour_for`] used to be, and
+    /// the one place the geometric family's shared slot is asserted. Exhaustive
+    /// over [`MarkupKind`], so a ninth kind fails to compile here rather than
+    /// arriving in whatever colour the catch-all happened to name.
+    #[must_use]
+    pub const fn of(kind: MarkupKind) -> Self {
+        match kind {
+            MarkupKind::Highlight => Self::Highlighter,
+            MarkupKind::Rectangle
+            | MarkupKind::Ellipse
+            | MarkupKind::Arrow
+            | MarkupKind::PolyLine
+            | MarkupKind::Polygon
+            | MarkupKind::Cloud
+            | MarkupKind::Ink => Self::Shape,
+        }
+    }
+
+    /// **Which pen writes this text annotation.**
+    ///
+    /// The sticky/text-box/stamp counterpart of [`Self::of`]. Its one caller is
+    /// `app::actions::apply`'s `CommitTextAnnot` arm, which until 2026-09-06
+    /// passed `pen.ink` for all three — so a sticky note came out shape-red
+    /// where Acrobat's is violet.
+    #[must_use]
+    pub const fn of_text_annot(kind: crate::canvas::textannot::TextAnnotKind) -> Self {
+        match kind {
+            crate::canvas::textannot::TextAnnotKind::TextBox => Self::TextBox,
+            crate::canvas::textannot::TextAnnotKind::Sticky => Self::Note,
+            crate::canvas::textannot::TextAnnotKind::Stamp => Self::Stamp,
+        }
+    }
+}
 
 /// The colour and width the next markup gesture will be authored with.
 ///
@@ -84,6 +257,19 @@ pub struct Pen {
     pub ink: (f64, f64, f64),
     /// The highlight band's colour, same units and the same warning.
     pub highlighter: (f64, f64, f64),
+    /// `/Underline`'s colour — [`PenSlot::Underline`]. Same units, same warning.
+    pub underline: (f64, f64, f64),
+    /// `/StrikeOut`'s colour — [`PenSlot::StrikeOut`].
+    pub strike_out: (f64, f64, f64),
+    /// `/Squiggly`'s colour — [`PenSlot::Squiggly`].
+    pub squiggly: (f64, f64, f64),
+    /// The sticky note's colour — [`PenSlot::Note`].
+    pub note: (f64, f64, f64),
+    /// The text box's border **and** painted text — [`PenSlot::TextBox`]. See
+    /// that variant on why one value serves two of Acrobat's.
+    pub text_box: (f64, f64, f64),
+    /// The stamp's colour — [`PenSlot::Stamp`].
+    pub stamp: (f64, f64, f64),
     /// Border and stroke width, in PDF points.
     ///
     /// Clamped to [`MIN_WIDTH_PTS`]`..=`[`MAX_WIDTH_PTS`] by the control that
@@ -154,29 +340,102 @@ pub const MIN_OPACITY: f64 = 0.1;
 pub const MAX_WIDTH_PTS: f64 = 12.0;
 
 impl Default for Pen {
-    /// The shipped pen: red linework at 2 pt, yellow highlighter.
+    /// ★★★ **The shipped pen: Acrobat's own eight defaults, at 2 pt, opaque.**
     ///
-    /// Every value here is the one the hard-coded constants held before this
-    /// module existed, so a build that never touches the Style group authors
-    /// byte-identical annotations to the one before it. That is the standing
-    /// rule for a capability becoming choosable: *a build which omits nothing
-    /// must behave as it did before the choice existed.*
+    /// # Every colour here is measured, and none of it is chosen
     ///
-    /// **Red** because that is what every PDF reader draws a comment shape in
-    /// by default, and *"make it work the way other programs do"* is the
-    /// operator's stated tie-breaker. **Yellow** for the highlighter for the
-    /// same reason.
+    /// [`super::palette`]'s header carries the reading — Acrobat DC's
+    /// `HKCU\…\Annots\cAnnots\<subtype>\cstrokeColor`, on 2026-09-06 — the
+    /// registry key each value came from, and the evidence that those are
+    /// Adobe's factory values rather than this machine's history. Nothing below
+    /// is a colour this shell picked, which is the entire difference between
+    /// this version and the one before it.
     ///
-    /// **2 pt** because it is the width a comment shape reads at on a dense CAD
-    /// export without dominating it — a hairline vanishes among the drawing's
-    /// own 0.25 pt linework, which is the specific failure a markup on an
-    /// engineering drawing has to avoid.
+    /// # ★★★ THIS DELIBERATELY BREAKS THE STANDING "OMITS NOTHING" RULE, and
+    /// # the rule is not being ignored — it is being answered
+    ///
+    /// [`Self::opacity`]'s doc comment states the rule this project applies when
+    /// a capability becomes choosable:
+    ///
+    /// > **a build which omits nothing must behave as it did before the choice
+    /// > existed**, byte for byte.
+    ///
+    /// That rule is about a *capability arriving*: an operator who never touches
+    /// a new control must not discover that the new control changed their output
+    /// anyway. It is a rule against **silent** change, and it is a good one.
+    ///
+    /// ⇒ It does not bind here, and the reason is that this change is not
+    /// silent — **it is the thing the operator asked for by name**:
+    ///
+    /// > *"Also make sure you've used the same default colours and style look
+    /// > for these things as Adobe."*
+    ///
+    /// A markup authored by this build is therefore a different colour from one
+    /// authored by the build before it. That is a deliberate, requested,
+    /// operator-visible change, and pretending otherwise by keeping the old
+    /// values *"for compatibility"* would be answering a request with a refusal
+    /// dressed as a principle. Saying so here, rather than quietly departing
+    /// from a rule written four lines above, is the whole reason this paragraph
+    /// exists.
+    ///
+    /// ⚠ The concrete consequence, so nobody has to discover it: a drawing
+    /// marked up before 2026-09-06 and marked up again after it will carry two
+    /// slightly different reds and — much more visibly — an orange highlight
+    /// beside a yellow one. Both are in [`super::palette::ACROBAT`], one click
+    /// apart, which is why the grid keeps [`super::palette::CLASSIC_YELLOW`].
+    ///
+    /// # ★★ 2 pt is KEPT, and Adobe's number is not being ignored — there
+    /// # isn't one
+    ///
+    /// The brief for this change said to weigh Acrobat's default line width
+    /// against this shell's 2 pt and decide, recording both sides. The weighing
+    /// found only one side, and the finding is the decision:
+    ///
+    /// **There is no measurable Acrobat width to match.** `cAnnots` holds a
+    /// colour key, a fill key, a text key, an opacity key and an icon name for
+    /// every subtype, and **no width, thickness or border key at all** — the
+    /// whole `…\Adobe Acrobat\DC` tree was searched for `width`, `thick` and
+    /// `border` and the only hits were print-N-up and multimedia settings. So an
+    /// "Acrobat default of 1 pt" could only have come from memory or from a
+    /// web page, and this project's **claim-bearing copy** rule is explicit that
+    /// a plausible number from a marketplace convention is not a source. A line
+    /// width is written into `/BS /W` and reaches the operator's file; it is a
+    /// claim.
+    ///
+    /// The two sides, since both were asked for:
+    ///
+    /// | for adopting Adobe's | for keeping 2 pt |
+    /// |---|---|
+    /// | the operator asked for parity with Adobe, and asked for it about style | **the number is not sourced** — the ask was for Adobe's value, not for a guess at it |
+    /// | a thinner default is easier to thicken than a thick one is to find | the operator's own drawings are dense CAD exports whose linework is 0.25 pt, and *"a hairline vanishes among the drawing's own linework"* is his use case, argued here since the constant existed |
+    /// | | 2 pt is what every markup this shell has authored is drawn at, so an old and a new comment on one sheet match |
+    ///
+    /// ⇒ **2 pt wins**, on the first row of the right-hand column alone. If a
+    /// measurement of Acrobat's width later turns up — its Properties dialog
+    /// shows a `Thickness` field, so the number exists somewhere this search did
+    /// not reach — this decision should be revisited **with that measurement**,
+    /// not with a recollection of it.
     fn default() -> Self {
         Self {
-            // DOCUMENT COLOUR: the default markup pen, written into `/C`.
-            ink: (0.85, 0.16, 0.16),
-            // DOCUMENT COLOUR: highlighter yellow, likewise `/C` in the file.
-            highlighter: (1.0, 1.0, 0.0),
+            // DOCUMENT COLOUR: Acrobat's shape-tool red, written into `/C`.
+            ink: palette::components(palette::MARKUP_RED),
+            // DOCUMENT COLOUR: Acrobat's highlighter — ORANGE, measured, see
+            // `palette`'s header for why that is not the mistake it looks like.
+            highlighter: palette::components(palette::HIGHLIGHTER_ORANGE),
+            // DOCUMENT COLOUR: Acrobat's `cUnderline`.
+            underline: palette::components(palette::UNDERLINE_BLUE),
+            // DOCUMENT COLOUR: Acrobat's `cStrikeOut`.
+            strike_out: palette::components(palette::STRIKEOUT_PINK),
+            // DOCUMENT COLOUR: Acrobat's `cSquiggly` — the same red as the shape
+            // pen, under its own key, so it is its own slot.
+            squiggly: palette::components(palette::MARKUP_RED),
+            // DOCUMENT COLOUR: Acrobat's `cText` — the sticky note's violet.
+            note: palette::components(palette::NOTE_PURPLE),
+            // DOCUMENT COLOUR: Acrobat's `cFreeText` TEXT colour. See
+            // `PenSlot::TextBox` on why the text colour and not the border's.
+            text_box: palette::components(palette::MARKUP_RED),
+            // DOCUMENT COLOUR: Acrobat's `cStamp`.
+            stamp: palette::components(palette::MARKUP_RED),
             width_pts: 2.0,
             // Fully opaque, which writes no `/CA` at all — see the field's own
             // doc comment. This is what every markup this shell authored before
@@ -238,6 +497,31 @@ impl Pen {
     /// kept beside the value it derives from cannot be forgotten when that
     /// value changes — which is precisely what happened when it lived
     /// elsewhere as a `const`.
+    ///
+    /// # ★★★ THE RULE WAS RE-READ ON 2026-09-06 AND STILL HOLDS, because the
+    /// # width did NOT go per-kind
+    ///
+    /// The per-kind change of 2026-09-06 made the **colour** per-slot and left
+    /// [`Self::width_pts`] a single value. That was checked against this rule
+    /// before it was decided, not after, because this exact rule was written
+    /// down once and broken **the same day** by the session that read it, and
+    /// the file records that. It is not being broken a third time.
+    ///
+    /// Two things follow, and both are load-bearing:
+    ///
+    /// 1. **Today**, `self.width_pts` is the only width, so this signature is
+    ///    correct and needs no kind. A `Pen` is one thickness and eight colours.
+    /// 2. **The day a width goes per-slot**, this function must gain the slot
+    ///    and every caller must pass it. `ink::simplify` is the only consumer
+    ///    and it already knows the kind it is simplifying, so the change is
+    ///    mechanical — but it is *not optional*: an ink stroke simplified at the
+    ///    shape pen's tolerance while drawn at a per-slot width would move the
+    ///    centreline outside the stroke on exactly the thin-pen row of the table
+    ///    above, silently, on the dense drawings this shell is for.
+    ///
+    /// [`tests::the_tolerance_follows_the_width`] is what enforces this rather
+    /// than the prose — it varies the width and asserts the tolerance moves,
+    /// which is the only form of the rule a future edit cannot read past.
     #[must_use]
     pub fn simplify_tolerance_pts(self) -> f32 {
         (self.width_pts as f32) / 4.0
@@ -245,16 +529,81 @@ impl Pen {
 
     /// The colour this kind is authored in.
     ///
-    /// The one place the two-pens rule is applied. `MarkupKind::rgb`'s
-    /// hard-coded `match` moved here whole: every geometric kind takes
-    /// [`Self::ink`] and Highlight takes [`Self::highlighter`], which is the
-    /// same split the constant version made and is now the operator's to set.
+    /// Two total functions composed: [`PenSlot::of`] says which pen draws the
+    /// kind, [`Self::colour_of`] says what colour that pen is. Neither has a
+    /// catch-all arm, so a ninth [`MarkupKind`] or a ninth [`PenSlot`] is a
+    /// compile error rather than a silent landing on the shape pen — which is
+    /// what the old two-arm `match` with its `_ => self.ink` did, and was right
+    /// to do while there were exactly two pens.
     #[must_use]
     pub fn colour_for(self, kind: MarkupKind) -> (f64, f64, f64) {
-        match kind {
-            MarkupKind::Highlight => self.highlighter,
-            _ => self.ink,
+        self.colour_of(PenSlot::of(kind))
+    }
+
+    /// **The colour in one slot**, as PDF `/DeviceRGB` components.
+    ///
+    /// Exhaustive over [`PenSlot`], deliberately and without a `_` arm: this is
+    /// the function a new slot must be taught about, and a catch-all here would
+    /// let a new slot compile while authoring the shape pen's red — a defect
+    /// with no symptom except a colour nobody chose.
+    #[must_use]
+    pub fn colour_of(self, slot: PenSlot) -> (f64, f64, f64) {
+        match slot {
+            PenSlot::Shape => self.ink,
+            PenSlot::Highlighter => self.highlighter,
+            PenSlot::Underline => self.underline,
+            PenSlot::StrikeOut => self.strike_out,
+            PenSlot::Squiggly => self.squiggly,
+            PenSlot::Note => self.note,
+            PenSlot::TextBox => self.text_box,
+            PenSlot::Stamp => self.stamp,
         }
+    }
+
+    /// **Set one slot's colour** from a screen colour, discarding alpha.
+    ///
+    /// The write half of [`Self::colour_of`] and the one place the operator's
+    /// override lands. *"Once they set a colour for a kind, it sticks for that
+    /// kind"* is this function plus the fact that [`Pen`] lives on the
+    /// application rather than on the document — see the module header's own
+    /// section on why a pencil does not change colour when you turn the page.
+    ///
+    /// Alpha is dropped; see [`Self::set_ink`] for the argument, which is about
+    /// `/C` having three components and no fourth.
+    pub fn set_colour(&mut self, slot: PenSlot, colour: Color32) {
+        let rgb = rgb_of(colour);
+        match slot {
+            PenSlot::Shape => self.ink = rgb,
+            PenSlot::Highlighter => self.highlighter = rgb,
+            PenSlot::Underline => self.underline = rgb,
+            PenSlot::StrikeOut => self.strike_out = rgb,
+            PenSlot::Squiggly => self.squiggly = rgb,
+            PenSlot::Note => self.note = rgb,
+            PenSlot::TextBox => self.text_box = rgb,
+            PenSlot::Stamp => self.stamp = rgb,
+        }
+    }
+
+    /// One slot's colour as a screen colour, for the swatch that shows it.
+    #[must_use]
+    pub fn color32_of(self, slot: PenSlot) -> Color32 {
+        color32_of(self.colour_of(slot))
+    }
+
+    /// **The colour a sticky note, text box or stamp is authored in.**
+    ///
+    /// ★ Its one caller is `app::actions::apply`'s `CommitTextAnnot` arm, and
+    /// the line it replaced read `self.pen.ink` — one colour for all three,
+    /// which made a pdfcer sticky note shape-red where Acrobat's is violet.
+    /// Routing through [`PenSlot::of_text_annot`] rather than exposing the three
+    /// fields keeps the mapping total and keeps it here, beside the table it is
+    /// derived from.
+    #[must_use]
+    pub fn text_annot_colour(
+        self,
+        kind: crate::canvas::textannot::TextAnnotKind,
+    ) -> (f64, f64, f64) {
+        self.colour_of(PenSlot::of_text_annot(kind))
     }
 
     /// Set the ink colour from a screen colour, discarding alpha.
@@ -267,14 +616,22 @@ impl Pen {
     /// transparency carried by `/CA` instead). Feeding the picker's alpha into
     /// `/C` would be a value with nowhere to go.
     ///
-    /// Opacity is therefore a **separate control**, and it is not built yet:
-    /// `/CA` support was filed against `pdfcer-core` and is accepted-and-
-    /// scheduled rather than shipped. Until it lands, offering an alpha slider
-    /// here would be an affordance for something that cannot happen — the
-    /// no-placeholders rule — so the picker is asked for an opaque colour and
-    /// the operator is never shown a channel pdfcer would silently ignore.
+    /// Opacity is therefore a **separate control**, and it is one that **now
+    /// exists** — [`Self::opacity`], drawn beside the swatches in
+    /// [`super::swatch::show`] since 2026-08-28. This paragraph used to end
+    /// *"it is not built yet: `/CA` support was filed against `pdfcer-core` and
+    /// is accepted-and-scheduled rather than shipped"*, which was true when
+    /// written and stopped being true when `Pass 81.1` landed
+    /// `MarkupOptions::opacity`. Corrected rather than deleted, because a stale
+    /// blocker is this project's most-repeated defect and the shape of it is the
+    /// useful part.
+    ///
+    /// ⇒ The alpha channel is *still* not offered **on the colour picker**, and
+    /// that is unchanged and correct: `/C` has three components, and a picker
+    /// alpha would be a fourth with nowhere to go. Transparency is `/CA` and it
+    /// has its own control.
     pub fn set_ink(&mut self, colour: Color32) {
-        self.ink = rgb_of(colour);
+        self.set_colour(PenSlot::Shape, colour);
     }
 
     /// **The `/CA` value to author with, or `None` for "write no key".**
@@ -291,19 +648,19 @@ impl Pen {
 
     /// Set the highlighter colour from a screen colour. As [`Self::set_ink`].
     pub fn set_highlighter(&mut self, colour: Color32) {
-        self.highlighter = rgb_of(colour);
+        self.set_colour(PenSlot::Highlighter, colour);
     }
 
     /// The ink colour as a screen colour, for the swatch that sets it.
     #[must_use]
     pub fn ink_color32(self) -> Color32 {
-        color32_of(self.ink)
+        self.color32_of(PenSlot::Shape)
     }
 
     /// The highlighter colour as a screen colour.
     #[must_use]
     pub fn highlighter_color32(self) -> Color32 {
-        color32_of(self.highlighter)
+        self.color32_of(PenSlot::Highlighter)
     }
 }
 
@@ -348,49 +705,232 @@ fn color32_of((r, g, b): (f64, f64, f64)) -> Color32 {
 mod tests {
     use super::*;
 
-    /// ★ The shipped pen authors exactly what the constants did.
+    /// ★★★ **The shipped pen is Acrobat's, slot for slot.**
     ///
-    /// The "a build that omits nothing behaves as it did before" rule, pinned.
-    /// These three values were `MarkupKind::rgb`'s two arms and
-    /// `PEN_WIDTH_PTS`; a drift here means every markup this shell has ever
-    /// authored is a different colour from the ones it authors now, with
-    /// nothing to say so.
+    /// The successor to `the_default_pen_is_the_constants_it_replaced`, which
+    /// pinned `(0.85, 0.16, 0.16)` and `(1.0, 1.0, 0.0)` — this shell's own
+    /// invented red and yellow — under the *"a build that omits nothing behaves
+    /// as it did before"* rule. That test was **deleted deliberately**, not
+    /// renamed: it asserted the exact values the operator asked to have
+    /// replaced, so leaving it would have made the requested change fail the
+    /// suite. `Pen::default`'s own doc comment carries the argument for why the
+    /// rule does not bind here.
+    ///
+    /// What replaces it is stronger, because it is checkable against something
+    /// outside this file: every slot must equal the [`super::palette`] constant
+    /// whose doc comment names the Acrobat registry key it was read from. A
+    /// hand-typed drift in either place fails here.
+    ///
+    /// Falsified by changing `ink` to `palette::NOTE_PURPLE`: the assertion
+    /// fired naming `Shape`. Restored.
     #[test]
-    fn the_default_pen_is_the_constants_it_replaced() {
+    fn every_slot_ships_at_the_acrobat_value_it_was_measured_from() {
         let pen = Pen::default();
-        assert_eq!(pen.ink, (0.85, 0.16, 0.16));
-        assert_eq!(pen.highlighter, (1.0, 1.0, 0.0));
+        let expected = [
+            (PenSlot::Shape, palette::MARKUP_RED),
+            (PenSlot::Highlighter, palette::HIGHLIGHTER_ORANGE),
+            (PenSlot::Underline, palette::UNDERLINE_BLUE),
+            (PenSlot::StrikeOut, palette::STRIKEOUT_PINK),
+            (PenSlot::Squiggly, palette::MARKUP_RED),
+            (PenSlot::Note, palette::NOTE_PURPLE),
+            (PenSlot::TextBox, palette::MARKUP_RED),
+            (PenSlot::Stamp, palette::MARKUP_RED),
+        ];
+        assert_eq!(
+            expected.len(),
+            PenSlot::ALL.len(),
+            "a slot was added and this table was not told about it"
+        );
+        for (slot, bytes) in expected {
+            assert_eq!(
+                pen.colour_of(slot),
+                palette::components(bytes),
+                "{slot:?} does not ship at the Acrobat value it is documented as"
+            );
+        }
         assert!((pen.width_pts - 2.0).abs() < f64::EPSILON);
     }
 
-    /// Every geometric kind takes the ink; only Highlight takes the highlighter.
+    /// ★★ **The highlighter is ORANGE, and that is not a typo.**
     ///
-    /// The two-pens rule, over the whole `MarkupKind::ALL` list rather than
-    /// over a hand-written subset — so a kind added later is covered without
-    /// anybody remembering to add it here, and lands on the ink by default,
-    /// which is the answer `MarkupKind::rgb`'s own note argued for.
+    /// Stated as its own test because it is the single value most likely to be
+    /// "corrected" back to yellow by somebody who knows that PDF highlighters
+    /// are yellow. They are not, in the program the operator compares against:
+    /// `cHighlight\cstrokeColor` reads `1.0, 0.384308, 0.0`.
+    ///
+    /// The assertion is written as *"not the yellow it used to be"* rather than
+    /// only as *"is the orange"*, so the failure message says what happened.
     #[test]
-    fn only_the_highlight_kind_uses_the_highlighter() {
-        let pen = Pen {
-            // DOCUMENT COLOUR: two arbitrary distinguishable values, so the
-            // assertion below says which pen was taken rather than which
-            // default happened to match.
-            ink: (0.1, 0.2, 0.3),
-            highlighter: (0.4, 0.5, 0.6),
-            ..Pen::default()
-        };
+    fn the_highlighter_is_acrobats_orange_and_not_the_old_yellow() {
+        let pen = Pen::default();
+        assert_eq!(pen.highlighter, palette::components([255, 98, 0]));
+        assert_ne!(
+            pen.highlighter,
+            (1.0, 1.0, 0.0),
+            "the highlighter has been put back to this shell's old invented \
+             yellow — Acrobat's is #FF6200, measured from cHighlight, and the \
+             operator asked for Adobe's value. Yellow is still one click away \
+             in the palette as `CLASSIC_YELLOW`."
+        );
+    }
+
+    /// ★ **Every markup kind reaches a slot, and the geometric family shares
+    /// one.**
+    ///
+    /// The successor to `only_the_highlight_kind_uses_the_highlighter`, over
+    /// the whole `MarkupKind::ALL` list rather than a hand-written subset — so a
+    /// ninth kind is covered without anybody remembering to add it here.
+    ///
+    /// What it asserts is now the *routing*, not the colour: eight
+    /// distinguishable values are planted, one per slot, so a kind that took the
+    /// wrong pen names itself. Planting real colours would let a wrong answer
+    /// pass whenever two slots happened to ship the same red — which three of
+    /// them do.
+    #[test]
+    fn every_kind_takes_the_slot_it_is_documented_to_take() {
+        let pen = planted();
         for kind in MarkupKind::ALL {
+            let slot = PenSlot::of(*kind);
             let expected = if matches!(kind, MarkupKind::Highlight) {
-                (0.4, 0.5, 0.6)
+                PenSlot::Highlighter
             } else {
-                (0.1, 0.2, 0.3)
+                PenSlot::Shape
             };
+            assert_eq!(slot, expected, "{kind:?} took the wrong pen");
             assert_eq!(
                 pen.colour_for(*kind),
-                expected,
-                "{kind:?} took the wrong pen"
+                pen.colour_of(slot),
+                "{kind:?}'s colour did not come from its own slot"
             );
         }
+    }
+
+    /// ★★★ **Every slot is separately settable, and setting one moves nothing
+    /// else.**
+    ///
+    /// This is the *"once they set a colour for a kind, it sticks for that
+    /// kind"* half of the operator's ask, and it is the property a collapsed
+    /// slot would silently lose: if `Squiggly` were folded into `Shape` because
+    /// they ship the same red, recolouring the shape pen would recolour every
+    /// squiggly on every future page and nothing would say so.
+    ///
+    /// Falsified by making `set_colour`'s `Squiggly` arm write `self.ink`: the
+    /// assertion fired on the `Shape` slot while setting `Squiggly`. Restored.
+    #[test]
+    fn setting_one_slot_leaves_the_other_seven_alone() {
+        for target in PenSlot::ALL {
+            let mut pen = planted();
+            let before = pen_slots(&pen);
+            // NOT A THEME COLOUR: an arbitrary value distinct from every
+            // planted one, so "did this slot move" is unambiguous.
+            pen.set_colour(*target, Color32::from_rgb(1, 2, 3));
+            assert_eq!(
+                pen.colour_of(*target),
+                (1.0 / 255.0, 2.0 / 255.0, 3.0 / 255.0),
+                "{target:?} did not take the colour it was given"
+            );
+            for (i, other) in PenSlot::ALL.iter().enumerate() {
+                if other == target {
+                    continue;
+                }
+                assert_eq!(
+                    pen.colour_of(*other),
+                    before[i],
+                    "setting {target:?} also moved {other:?}"
+                );
+            }
+        }
+    }
+
+    /// The three text-annotation kinds land on three different slots.
+    ///
+    /// The mapping `app::actions::apply` depends on. Before 2026-09-06 all
+    /// three took `pen.ink`, so a sticky note came out shape-red where
+    /// Acrobat's `cText` is violet — this is the assertion that would have
+    /// caught that, stated as *"three kinds, three slots"* rather than as three
+    /// hard-coded colours, because the colours may legitimately be edited and
+    /// the separation may not.
+    #[test]
+    fn the_three_text_annotation_kinds_do_not_share_a_pen() {
+        use crate::canvas::textannot::TextAnnotKind;
+        let slots: Vec<PenSlot> = TextAnnotKind::ALL
+            .iter()
+            .map(|k| PenSlot::of_text_annot(*k))
+            .collect();
+        for i in 0..slots.len() {
+            for j in (i + 1)..slots.len() {
+                assert_ne!(
+                    slots[i],
+                    slots[j],
+                    "{:?} and {:?} share a pen slot",
+                    TextAnnotKind::ALL[i],
+                    TextAnnotKind::ALL[j]
+                );
+            }
+        }
+        // …and the sticky note is on the note slot specifically, which is the
+        // one whose Acrobat value differs from the shape pen's.
+        assert_eq!(PenSlot::of_text_annot(TextAnnotKind::Sticky), PenSlot::Note);
+        assert_eq!(
+            Pen::default().text_annot_colour(TextAnnotKind::Sticky),
+            palette::components(palette::NOTE_PURPLE)
+        );
+    }
+
+    /// ★★★ **THE TOLERANCE FOLLOWS THE WIDTH.**
+    ///
+    /// The rule [`Pen::simplify_tolerance_pts`] carries at length: ε must be a
+    /// quarter of the stroke width, because that is half of the half-width and
+    /// therefore the bound that keeps a simplified centreline strictly inside
+    /// the stroke the operator drew.
+    ///
+    /// It is asserted by **varying the width**, which is the only form of the
+    /// rule a stale constant cannot pass: `ink::SIMPLIFY_TOLERANCE_PTS` was
+    /// `PEN_WIDTH_PTS / 4.0` frozen at 2 pt, and it satisfied every test that
+    /// used the default pen while being wrong by 4× at the thin end.
+    ///
+    /// ⚠ **If a width ever goes per-slot, this test must gain the slot too.**
+    /// See the function's own note; the rule has been broken once already by a
+    /// session that had just read it.
+    #[test]
+    fn the_tolerance_follows_the_width() {
+        for width in [MIN_WIDTH_PTS, 0.5, 2.0, 7.5, MAX_WIDTH_PTS] {
+            let pen = Pen {
+                width_pts: width,
+                ..Pen::default()
+            };
+            let expected = (width as f32) / 4.0;
+            assert!(
+                (pen.simplify_tolerance_pts() - expected).abs() < 1e-6,
+                "at {width} pt the tolerance is {} and must be {expected} — a \
+                 quarter of the width, so the simplified centreline stays \
+                 inside the stroke",
+                pen.simplify_tolerance_pts()
+            );
+        }
+    }
+
+    /// A pen with eight distinguishable colours, one per slot.
+    ///
+    /// Named rather than spelled out at three call sites, and built from the
+    /// slot's own *index* so it cannot fall out of step with [`PenSlot::ALL`]:
+    /// a ninth slot gets a ninth distinct value with no edit here.
+    fn planted() -> Pen {
+        let mut pen = Pen::default();
+        for (i, slot) in PenSlot::ALL.iter().enumerate() {
+            #[allow(clippy::cast_possible_truncation)]
+            let step = (i as u8) * 16 + 8;
+            // NOT A THEME COLOUR: eight distinguishable test values, so an
+            // assertion says which slot was taken rather than which default
+            // happened to match.
+            pen.set_colour(*slot, Color32::from_rgb(step, step, step));
+        }
+        pen
+    }
+
+    /// Every slot's colour, in [`PenSlot::ALL`] order.
+    fn pen_slots(pen: &Pen) -> Vec<(f64, f64, f64)> {
+        PenSlot::ALL.iter().map(|s| pen.colour_of(*s)).collect()
     }
 
     /// ★ A colour survives the round trip through the picker unchanged.

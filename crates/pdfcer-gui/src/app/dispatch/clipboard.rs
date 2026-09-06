@@ -1,8 +1,17 @@
-//! # `app::dispatch::clipboard` — cut, copy and the two pastes
+//! # `app::dispatch::clipboard` — cut, copy, the two pastes, and duplicate
 //!
 //! Four ids — `edit.cut`, `edit.copy`, `edit.paste`, `edit.paste_duplicate` —
 //! over **three kinds of operand**, and the whole subject of this module is the
 //! fork that decides which of them a keystroke is about.
+//!
+//! ★ Six now. `edit.copy_as_vector` joined on 2026-09-04 (the copy-OUT) and
+//! `edit.duplicate` on 2026-09-06 (`Ctrl+D`) — and the second of those is the
+//! one that stretches the module's name, because **it never touches the
+//! clipboard at all**. It is here because *"make another one of this"* is what
+//! an operator was doing with Copy-then-Paste before it existed, and because
+//! what it needs is this file's fork: which operand does the gesture mean?
+//! Its own function carries the argument for why it is a separate id from
+//! `edit.paste_duplicate`, which the name invites a reader to assume it is not.
 //!
 //! ## Why this is a module and not four match arms
 //!
@@ -115,7 +124,18 @@ use crate::canvas::fieldclip::PasteAs;
 pub fn handles(id: &str) -> bool {
     matches!(
         id,
-        "edit.cut" | "edit.copy" | "edit.copy_as_vector" | "edit.paste" | "edit.paste_duplicate"
+        "edit.cut"
+            | "edit.copy"
+            | "edit.copy_as_vector"
+            | "edit.paste"
+            | "edit.paste_duplicate"
+            // ★★ `edit.duplicate`, 2026-09-06 — and it is the one id here that
+            // never touches the clipboard. It is routed to this module anyway
+            // because *"make another one of this"* is what the operator was
+            // doing with Copy-then-Paste before it existed, and because the
+            // three-rung fork at the head of this file is the machinery it
+            // needs: which operand does the gesture mean?
+            | "edit.duplicate"
     )
 }
 
@@ -129,7 +149,85 @@ pub fn dispatch(app: &mut PdfcerApp, ctx: &egui::Context, id: &str, actions: &mu
         "edit.copy_as_vector" => copy_as_vector(app),
         "edit.paste" => paste(app, ctx, id, PasteAs::NewField, actions),
         "edit.paste_duplicate" => paste(app, ctx, id, PasteAs::Duplicate, actions),
+        // ★ Takes no `ctx`, like the copy-OUT and for the mirror reason: it
+        // neither reads nor writes the clipboard, so there is nothing in
+        // `egui`'s memory for it to consult. Its whole operand is the
+        // selection.
+        "edit.duplicate" => duplicate(app, id, actions),
         _ => {}
+    }
+}
+
+/// ★★★ **`edit.duplicate`** — a second copy of the selected comment, offset,
+/// **without using the clipboard**. `Ctrl+D`.
+///
+/// # Why it is here and not an extension of `edit.paste_duplicate`
+///
+/// That question was asked first, because the two names are one word apart.
+/// `edit.paste_duplicate` **does** already route by selection kind — this
+/// module's header says what it does over a markup: *"falls through to the
+/// ordinary paste … a markup has no second sense to duplicate into"*. Its
+/// second sense is a **form field's**: `Ctrl+V` plants a copied field as a new
+/// field, `Ctrl+Shift+V` plants it as another widget of the same one.
+///
+/// ⇒ Teaching it to duplicate the **selection** over a markup would give one id
+/// two unrelated behaviours — a paste verb that acts when the clipboard is
+/// empty and ignores the clipboard when it is not — behind a chord named for
+/// the behaviour it would stop having. The same argument this module's header
+/// makes for the two pastes being two commands, applied once more.
+///
+/// # ★★ What it does NOT do, and it is the feature
+///
+/// It does not put anything on the clipboard and does not read what is there.
+/// An operator laying out a row of revision marks keeps whatever they were
+/// carrying — a part number, a title-block string — which `Ctrl+C`/`Ctrl+V`
+/// destroyed once per mark. `crate::text::commands::edit_duplicate`'s tooltip
+/// leads with that clause for the same reason.
+///
+/// # ★★ The mode gate is `author_markup`, and the sentence is its own
+///
+/// A duplicate authors an annotation, so Review — the mode whose whole purpose
+/// is marking up somebody else's drawing — must be able to do it, and Read must
+/// not. That is the same gate `paste` applies to a markup clip.
+///
+/// The **sentence** is not the same: `ModeRefusal::PasteMarkup` says *"switch
+/// to Review to paste this"*, and nothing was pasted. A seventh variant —
+/// `DuplicateMarkup` — carries the wording, and its doc comment argues why a
+/// shared remedy still owes its own sentence.
+///
+/// ★★★ It records through `decline::record_mode_refusal`, which draws in the
+/// `⊗` slot meaning *this did not happen* — never through
+/// `actions::record_note`, which draws under `⚑ About your last edit:` and
+/// would report a press where nothing happened as an edit. Fourth application
+/// of the split this module's header states.
+///
+/// # ★ The operand refusals go through `record_note`, unchanged
+///
+/// Nothing selected, an annotation the engine will not carry, a selection that
+/// has outlived its annotation — those are
+/// [`crate::canvas::clipboard::Refusal`]s about the *operand* rather than the
+/// stance, and they take the same route the other clipboard verbs' operand
+/// refusals take, worded by the same `text::clipboard::refusal`. That routing
+/// is named as unfinished rather than principled in this module's header, and
+/// this arm inherits the note rather than inventing a second answer.
+fn duplicate(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>) {
+    let caps = app.capabilities();
+    let Status::Open(doc) = &app.status else {
+        return;
+    };
+    let epoch = doc.edit_epoch;
+    if !caps.author_markup {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed.
+            format!("command-declined id={id} reason=mode-cannot-author-markup")
+        });
+        crate::app::status::decline::record_mode_refusal(
+            crate::text::clipboard::ModeRefusal::DuplicateMarkup,
+        );
+        return;
+    }
+    if let Err(refusal) = crate::canvas::annotclip::duplicate(doc, actions) {
+        crate::app::actions::record_note(epoch, crate::text::clipboard::refusal(refusal));
     }
 }
 
@@ -512,14 +610,20 @@ mod tests {
     /// absence is: `shell::commands::reach` proves every registered id is
     /// routed by reading THIS function, so an id that only a prefix would have
     /// claimed is an id nothing proves has a body.
+    ///
+    /// ★ Six since 2026-09-06, when `edit.duplicate` joined — the one member
+    /// that never touches the clipboard, listed here for the same reason as the
+    /// rest: `shell::commands::reach` proves every registered id is routed by
+    /// reading THIS function.
     #[test]
-    fn handles_the_five_and_not_the_registered_absence() {
+    fn handles_the_six_and_not_the_registered_absence() {
         for id in [
             "edit.cut",
             "edit.copy",
             "edit.copy_as_vector",
             "edit.paste",
             "edit.paste_duplicate",
+            "edit.duplicate",
         ] {
             assert!(handles(id), "{id} must route here");
         }

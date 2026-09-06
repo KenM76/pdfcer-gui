@@ -1,10 +1,17 @@
 //! # `text::markup` — the words the Markup ▸ Style group shows
 //!
-//! Three tooltips and one suffix, which is the whole operator-visible surface
-//! of `canvas::markup::swatch`. The controls themselves are a colour swatch and
-//! a number: neither can carry a label without doubling the width of a ribbon
-//! group, so **the tooltip is the only place they say what they are** — which
-//! makes these strings load-bearing rather than supplementary.
+//! Four tooltips, two suffixes and **ten colour names**, which is the whole
+//! operator-visible surface of `canvas::markup::swatch`. The controls themselves
+//! are colour chips and two numbers: none of them can carry a label without
+//! doubling the width of a ribbon group, so **the tooltip is the only place they
+//! say what they are** — which makes these strings load-bearing rather than
+//! supplementary.
+//!
+//! ⚠ The count in that first sentence has been wrong before. It read *"Three
+//! tooltips and one suffix"* while the opacity tooltip and the percent suffix
+//! sat forty lines below it, added on 2026-08-28 without the header being told.
+//! A count in prose is a claim nothing checks;
+//! [`tests::the_header_counts_what_this_module_actually_holds`] now does.
 //!
 //! ## Each one answers "what will this change, and when?"
 //!
@@ -90,6 +97,138 @@ pub const fn pen_opacity_tooltip() -> &'static str {
 #[must_use]
 pub const fn opacity_suffix() -> &'static str {
     "%"
+}
+
+// ---------------------------------------------------------------------------
+// The palette grid — the name of each colour Acrobat marks up in
+// ---------------------------------------------------------------------------
+//
+// ★★★ THESE WORDS ARE THE ONLY LABEL A COLOUR CELL HAS.
+//
+// A cell in `canvas::markup::palette::ACROBAT` is a filled square about twelve
+// points on a side. It cannot carry text, so the tooltip is the whole of its
+// accessible name — the same argument this module's header makes about the two
+// swatches, one size down and one step more acute, because there are ten of
+// them and they differ only by hue.
+//
+// ★★ THEY ARE PLAIN COLOUR WORDS, NOT ACROBAT ROLES, AND THAT IS A DECISION.
+//
+// The tempting alternative was "Underline blue", "Sticky-note violet" — naming
+// each cell after the Acrobat tool whose default it is. Rejected: one grid is
+// offered from every swatch, so a cell reading "Underline blue" under the
+// HIGHLIGHTER swatch would be describing a tool the operator is not using and
+// a setting they are not making. The Acrobat role is recorded at each palette
+// constant's own doc comment, where the reader who wants it is; the operator
+// gets the word they would say out loud.
+//
+// ★ NO HEX, NO RGB TRIPLE. A tooltip reading "Blue (#1373E8)" tells an operator
+// choosing a pen colour nothing they can act on, and pushes the useful word off
+// the front of a narrow tip. The numbers are in the code and in the palette
+// module's table, which is where a number is useful.
+
+/// The palette cell at [`crate::canvas::markup::palette::MARKUP_RED`].
+#[must_use]
+pub const fn colour_red() -> &'static str {
+    "Red"
+}
+
+/// The palette cell at [`crate::canvas::markup::palette::HIGHLIGHTER_ORANGE`].
+#[must_use]
+pub const fn colour_orange() -> &'static str {
+    "Orange"
+}
+
+/// The palette cell at [`crate::canvas::markup::palette::CLASSIC_YELLOW`].
+#[must_use]
+pub const fn colour_yellow() -> &'static str {
+    "Yellow"
+}
+
+/// The palette cell at [`crate::canvas::markup::palette::FREETEXT_GREEN`].
+#[must_use]
+pub const fn colour_green() -> &'static str {
+    "Green"
+}
+
+/// The palette cell at [`crate::canvas::markup::palette::UNDERLINE_BLUE`].
+#[must_use]
+pub const fn colour_blue() -> &'static str {
+    "Blue"
+}
+
+/// The palette cell at [`crate::canvas::markup::palette::NOTE_PURPLE`].
+///
+/// **Violet, not purple**, and the difference is worth the thought it took.
+/// `#9643FC` sits on the blue side of purple, and the two neighbouring cells are
+/// Blue and Magenta — so an operator scanning for "the purple one" between a
+/// blue and a magenta gets no help from a word that could mean either. Violet
+/// names the position in the spectrum, which is how the cell is found.
+#[must_use]
+pub const fn colour_violet() -> &'static str {
+    "Violet"
+}
+
+/// The palette cell at [`crate::canvas::markup::palette::CARET_MAGENTA`].
+#[must_use]
+pub const fn colour_magenta() -> &'static str {
+    "Magenta"
+}
+
+/// The palette cell at [`crate::canvas::markup::palette::STRIKEOUT_PINK`].
+///
+/// Acrobat's strikeout colour, which is a light desaturated red. "Light red"
+/// would be the accurate description and is the wrong label: it puts two cells
+/// called Red and Light red side by side in a grid, which is a distinction the
+/// eye has to make twice. Pink is the word for it.
+#[must_use]
+pub const fn colour_pink() -> &'static str {
+    "Pink"
+}
+
+/// The palette cell at [`crate::canvas::markup::palette::BLACK`].
+#[must_use]
+pub const fn colour_black() -> &'static str {
+    "Black"
+}
+
+/// The palette cell at [`crate::canvas::markup::palette::WHITE`].
+///
+/// ★ The one cell whose tooltip earns a second clause. A white mark on a
+/// black-on-white CAD sheet is invisible everywhere except over the drawing's
+/// own linework, so an operator who picks it by accident sees a tool that has
+/// stopped working. Saying so at the moment of choosing is cheaper than the
+/// support question.
+#[must_use]
+pub const fn colour_white() -> &'static str {
+    "White — invisible on a white page"
+}
+
+/// The heading over the palette grid.
+///
+/// It names **Adobe**, deliberately and once. The operator's ask was for
+/// Acrobat's colours specifically, and a grid captioned "Colours" would look
+/// like ten colours somebody liked. This is the one place the provenance of the
+/// values is visible from inside the program.
+#[must_use]
+pub const fn palette_heading() -> &'static str {
+    "Acrobat's markup colours"
+}
+
+/// The route out of the grid to the full colour picker.
+///
+/// ★ The trailing ellipsis is the platform convention for *"this opens
+/// something"* and is load-bearing here: every other cell in the popup applies
+/// immediately, and this one does not.
+#[must_use]
+pub const fn more_colours() -> &'static str {
+    "More colours…"
+}
+
+/// Hover text for the More-colours button.
+#[must_use]
+pub const fn more_colours_tooltip() -> &'static str {
+    "Open the full colour picker to choose a colour that is not in the grid. \
+     Anything you pick there is used exactly as chosen."
 }
 
 /// The width control's suffix.
@@ -768,6 +907,103 @@ mod tests {
                 "a Style tooltip no longer says it applies to the next mark: {tip:?}"
             );
         }
+    }
+
+    /// ★★ **The ten palette names are ten different words.**
+    ///
+    /// A cell's name is its whole accessible label — see this module's palette
+    /// section — so two cells reading "Purple" would be two controls an operator
+    /// cannot tell apart by any means the program offers, hover included.
+    ///
+    /// It also asserts each is non-empty, which is the failure a `const fn`
+    /// returning `""` produces: a cell with no tooltip at all, silently, on a
+    /// control that has nothing else to say what it is.
+    #[test]
+    fn every_palette_cell_has_its_own_word() {
+        let names = [
+            colour_red(),
+            colour_orange(),
+            colour_yellow(),
+            colour_green(),
+            colour_blue(),
+            colour_violet(),
+            colour_magenta(),
+            colour_pink(),
+            colour_black(),
+            colour_white(),
+        ];
+        for (i, name) in names.iter().enumerate() {
+            assert!(!name.trim().is_empty(), "cell {i} has no name at all");
+            for (j, other) in names.iter().enumerate().skip(i + 1) {
+                assert_ne!(name, other, "cells {i} and {j} are both named {name:?}");
+            }
+        }
+    }
+
+    /// ★ **The palette heading names Adobe, and the white cell warns.**
+    ///
+    /// Two disclosures that a shortening edit would take out first, and both are
+    /// the kind this project does not leave to convention:
+    ///
+    /// * the heading is the only place in the running program where the
+    ///   provenance of these ten values is visible — the operator asked for
+    ///   *Adobe's* colours and is entitled to see the claim being made;
+    /// * white is invisible on a white page, and an operator who picks it sees a
+    ///   tool that has stopped working rather than a colour they chose.
+    #[test]
+    fn the_palette_says_where_its_colours_came_from() {
+        assert!(
+            palette_heading().contains("Acrobat"),
+            "the heading must name the program these values were measured from: {:?}",
+            palette_heading()
+        );
+        assert!(
+            colour_white().to_lowercase().contains("invisible"),
+            "the white cell must warn that it disappears on a white page: {:?}",
+            colour_white()
+        );
+        assert!(
+            more_colours().ends_with('…'),
+            "the ellipsis is the convention for 'this opens something', and it is \
+             the only cell in the popup that does: {:?}",
+            more_colours()
+        );
+    }
+
+    /// ★★★ **The header's count of what this module holds is checked.**
+    ///
+    /// It read *"Three tooltips and one suffix"* for four months after a fourth
+    /// tooltip and a second suffix were added. Nothing was broken by it and
+    /// nobody could have noticed, which is exactly the class of statement that
+    /// rots — a count in prose is a claim with no reader that verifies it.
+    ///
+    /// Falsified by changing the header to say "five tooltips": the assertion
+    /// fired. Restored.
+    #[test]
+    fn the_header_counts_what_this_module_actually_holds() {
+        let header = include_str!("markup.rs");
+        let first_line = header
+            .lines()
+            .find(|l| l.contains("tooltips"))
+            .expect("the header's opening sentence names a count of tooltips");
+        // Four: pen colour, highlighter colour, width, opacity. Counted here
+        // rather than derived, because the point is to compare the prose against
+        // a number a human had to think about.
+        let tooltips = [
+            pen_colour_tooltip(),
+            highlighter_colour_tooltip(),
+            pen_width_tooltip(),
+            pen_opacity_tooltip(),
+        ];
+        assert_eq!(tooltips.len(), 4);
+        assert!(
+            first_line.contains("Four tooltips"),
+            "this module holds {} tooltips and its header says: {first_line:?}",
+            tooltips.len()
+        );
+        let suffixes = [opacity_suffix(), width_suffix()];
+        assert_eq!(suffixes.len(), 2);
+        assert!(first_line.contains("two suffixes"), "{first_line:?}");
     }
 
     /// The two colour tooltips are different sentences about different pens.

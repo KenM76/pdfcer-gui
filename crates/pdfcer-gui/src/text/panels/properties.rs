@@ -498,6 +498,135 @@ pub const fn markup_locked() -> &'static str {
      still delete it."
 }
 
+/// ★★★ **What is possible on a mark this shell cannot restyle** — the sentence
+/// that replaced three live controls that could not commit.
+///
+/// The defect, the reachability test that fixes it, and why R9 wants a sentence
+/// here rather than an empty space, are all in
+/// `crate::panels::properties::markup`'s header. This doc records the part that
+/// belongs to the **words**: that each of the four claims was checked against
+/// the engine on 2026-09-06 before it was written, because a limitation
+/// sentence has an hours-long shelf life on this project and a false one is
+/// worse than none.
+///
+/// - **move** — `EditSession::move_annotation` refuses a ce dimension and a
+///   form widget by name, then works from `/Rect` and whatever geometry keys
+///   are present. A `/Text`, `/FreeText` or `/Stamp` has a `/Rect`.
+/// - **resize** — `EditSession::resize_annotation` refuses the same two, and
+///   otherwise **carries** a foreign appearance rather than rebuilding it; a
+///   uniform scale is exact. (A *non-uniform* scale of a foreign appearance is
+///   refused unless distortion is allowed. That refusal arrives from the engine
+///   with its own message and is not this sentence's subject.)
+/// - **delete** — [`markup_locked`] already promises it, and
+///   `crate::panels::properties::annotdelete` speaks for an annotation of any
+///   kind: the verb is document-wide rather than per-subtype.
+/// - **the note** — `EditSession::set_markup_note` refuses a ce dimension and a
+///   widget, and nothing else. `/Contents` on a sticky note is the whole point
+///   of a sticky note.
+#[must_use]
+pub const fn markup_not_restylable() -> &'static str {
+    "pdfcer does not redraw this kind of mark, so its colour, line width and opacity cannot be \
+     changed here. You can still move it, resize it, delete it, and edit the note it carries."
+}
+
+/// The fill control's label — `/IC`, the interior colour.
+///
+/// *"Fill"* rather than *"Interior"*: `/IC` is the format's word and every
+/// drawing application an operator has used calls it fill. The standing rule in
+/// `text::commands` is that a label is the operator's vocabulary and an id is
+/// the format's.
+#[must_use]
+pub const fn markup_fill_label() -> &'static str {
+    "Fill"
+}
+
+/// What sits beside the fill swatch when the mark has no `/IC` at all.
+///
+/// ★ It exists because a swatch cannot show *absence*. With no `/IC` the swatch
+/// falls back to black, and a black square beside the word "Fill" says "this
+/// shape is filled black" — which is the opposite of the truth. Acrobat draws a
+/// red diagonal through its no-colour swatch for exactly this reason; this
+/// shell says the word instead, which survives a theme change and a screen
+/// reader where a drawn diagonal does not.
+#[must_use]
+pub const fn markup_fill_none() -> &'static str {
+    "None"
+}
+
+/// The label over the chooser for the ending drawn at a line's **start** —
+/// `/LE`'s first element (§12.5.6.7, Table 176).
+#[must_use]
+pub const fn markup_line_start_label() -> &'static str {
+    "Line start"
+}
+
+/// The label over the chooser for the ending drawn at a line's **end** —
+/// `/LE`'s second element.
+#[must_use]
+pub const fn markup_line_end_label() -> &'static str {
+    "Line end"
+}
+
+/// One line-ending style, in the operator's words.
+///
+/// ★ Table 176 names ten endings and pdfcer authors three of them —
+/// `annot_author::LineEnding` has exactly `None`, `OpenArrow` and `ClosedArrow`,
+/// and its own doc comment calls the rest "a documented not-yet-authored
+/// remainder". The chooser offers what the engine can draw, because a
+/// fourth entry that produced a `/Butt` the appearance did not show would be
+/// the inert control this project forbids, one level down.
+///
+/// The words are the operator's rather than the file's: *"Open arrow"*, not
+/// `/OpenArrow`.
+#[must_use]
+pub const fn markup_line_ending_name(
+    ending: pdfcer_core::annot_author::LineEnding,
+) -> &'static str {
+    use pdfcer_core::annot_author::LineEnding as L;
+    // Exhaustive on purpose, with no wildcard: `LineEnding` is NOT
+    // `#[non_exhaustive]`, so an ending the engine learns to draw breaks this
+    // match at compile time rather than silently reaching a fallback word. That
+    // is the whole reason the list is not written out in the panel module.
+    match ending {
+        L::None => "No end",
+        L::OpenArrow => "Open arrow",
+        L::ClosedArrow => "Closed arrow",
+    }
+}
+
+/// The disclosure under the two line-ending choosers.
+///
+/// ★ It is owed because the readback is **lossy in one direction and silent
+/// about it**: `annot_author::read_line_endings` degrades any Table 176 ending
+/// pdfcer does not author down to `None`, so a `/Line` a foreign producer gave
+/// a `/Butt` or a `/Diamond` end reads here as *No end* — and the mark on the
+/// page plainly has one. Without this sentence the operator's conclusion is
+/// that the chooser is broken.
+#[must_use]
+pub const fn markup_line_ending_note() -> &'static str {
+    "pdfcer draws three of the standard's line ends. A mark that carries any other one shows as \
+     No end here, and redrawing it does not put that end back."
+}
+
+/// ★★★ The narrowing the colour swatches perform, said where the operator can
+/// see it — **before** the click rather than after.
+///
+/// §12.5.2 lets `/C` and `/IC` be a 0-, 1-, 3- or **4**-component array, and the
+/// four-component case is CMYK, which is not rare on a CAD sheet where the
+/// producer is plotter-bound. The swatches convert one for display and a change
+/// made through them writes RGB in its place, which is a real narrowing of the
+/// colour space and is disclosed rather than performed quietly — the engine's
+/// own posture on every conversion it makes.
+///
+/// The full argument, including the refuse-to-show behaviour this replaced and
+/// why that was worse than an approximation, is on
+/// `crate::panels::properties::markup`'s `swatch_of`.
+#[must_use]
+pub const fn markup_colour_narrowed() -> &'static str {
+    "This mark's colour is recorded in CMYK and the swatches above are an approximation of it. \
+     Picking a new colour here records an RGB one in its place."
+}
+
 /// ★★ What regenerating an appearance LOST, in the operator's terms.
 ///
 /// `set_markup_style` redraws a mark from the geometry pdfcer models, so

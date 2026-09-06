@@ -266,6 +266,10 @@ pub(super) fn all() -> Vec<Command> {
     out.extend(pages::band());
     out.extend(edit::band());
     out.extend(markup::band());
+    // ★ The Markup tab's second band. A group rather than a tab — the ids stay
+    // `markup.*`; see that file's header for why the file is named for the group
+    // and the ids for the tab.
+    out.extend(arrange::band());
     out.extend(measure::band());
     out.extend(tools::band());
     out.extend(format::band());
@@ -273,6 +277,8 @@ pub(super) fn all() -> Vec<Command> {
     out
 }
 
+/// the Markup tab's Arrange group — which mark is drawn on top
+mod arrange;
 /// the Edit tab — changing content that is already there
 mod edit;
 /// the File tab — opening, saving, exporting, printing, and pdfcer itself

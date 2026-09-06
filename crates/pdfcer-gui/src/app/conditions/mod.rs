@@ -524,6 +524,84 @@ impl PdfcerApp {
             if !doc.selection.is_empty() || set.is_set("selection.text") {
                 set.set("selection.formattable");
             }
+            // ★★★ **A markup annotation is selected, and this mode may author
+            // markup** — the Format ▸ Markup group's whole existence condition,
+            // published from 2026-09-06 for `app::markupband`'s five controls.
+            //
+            // # Why ONE condition carries two facts
+            //
+            // `egui_shell::commands::Enable`'s grammar is one condition name
+            // with an optional leading `!` — *"a grammar in a string is a
+            // parser and a parser is a thing that has its own bugs"* — so an
+            // `A && B` predicate is published as a **named fact** rather than
+            // assembled in a manifest. `selection.formattable` above is the
+            // same shape for the same reason.
+            //
+            // It is the right shape here anyway, and the argument is R9's. The
+            // Font group takes two conditions because its two failure states
+            // want two ANSWERS: absent in a mode that cannot edit content,
+            // greyed with an explanation when nothing is swept — and the
+            // greying is the feature, because reaching the operand means
+            // pressing `T` and nothing else on screen says so (O37). Nothing
+            // here is like that. The operand is *the mark you clicked*, so a
+            // greyed Markup group could only say *select a mark*, which the
+            // operator has already done or the contextual tab would not be
+            // drawn. R9 then requires absence in both states, and one name is
+            // what absence in both states is called.
+            //
+            // # ★★ `AnnotKind::Markup`, matched — Rule 15, and it is a
+            // DIFFERENT VERB, not a stricter filter
+            //
+            // A **ce dimension** is also an annotation and is also selectable,
+            // and `panels::properties::dimension` owns it through
+            // `set_dimension_style`. Handing one to `set_markup_style`
+            // regenerates it as a bare line with its label and witness lines
+            // gone — the engine refuses it by name, and this condition is what
+            // stops the controls ever being drawn for one. The test is a
+            // `match` on `AnnotKind` that the compiler checks rather than a
+            // comparison of `/Subtype` strings, because a ce dimension's
+            // `/Subtype` is `/Line` exactly like an arrow's: a string test
+            // would restyle the operator's dimensions into bare lines and
+            // would look correct while doing it.
+            //
+            // # ★ `author_markup`, NOT `edit_content`
+            //
+            // One predicate per capability — the rule `canvas::keys` states
+            // beside its own pair, and `dispatch::format`'s Delete arm repeats.
+            // **Review must keep this**: restyling a mark is exactly what
+            // Review is for, and a guard reaching for `edit_content` would take
+            // the working verb away from the mode that owns it. Read has
+            // neither capability and gets no group.
+            //
+            // # ★★ The LOCK is deliberately not folded in
+            //
+            // §12.5.3 Table 165 bit 8 is a fact about one annotation, not about
+            // the build or the mode — click a different mark and the controls
+            // work — which is exactly the case R9 reserves greying for. Folding
+            // it in here would make the group flicker out of the ribbon on
+            // every click that landed on a locked mark, and would leave nothing
+            // on screen to say why. `app::markupband` greys instead, with
+            // `text::panels::properties::markup_locked`: the same sentence the
+            // Properties panel shows, so the two surfaces cannot refuse for
+            // different reasons.
+            //
+            // # ★ Why it asks the ribbon for the mode rather than `self.modes`
+            //
+            // Because [`Self::capabilities`] does, and its own note says why:
+            // the ribbon is where the operator's click lands and `self.modes`
+            // catches up later in the same frame. A second derivation would put
+            // this group one frame behind the mode selector on exactly the
+            // frame a stray click is most likely.
+            if self.capabilities().author_markup
+                && doc.selection.annot().is_some_and(|annot| {
+                    matches!(
+                        annot.target.kind,
+                        crate::canvas::selection::annot::AnnotKind::Markup
+                    )
+                })
+            {
+                set.set("selection.markup_restylable");
+            }
             // ★ `selection.bounds` is NOT `selection.any`, and the gap
             // between them is a real state rather than a defensive check.
             //

@@ -24,14 +24,22 @@
 //! visible from a unit test, because a unit test constructs the state directly
 //! rather than letting a click produce it.
 //!
-//! ## The four menus, in the order they are asked
+//! ## The menus, in the order they are asked
 //!
 //! | # | condition | menu | why it outranks the next |
 //! |---|---|---|---|
 //! | 1 | a caret is in existing page text | `canvas.text` | the operator is *in* the words; a text run is not a hit-testable object, so deciding by hit test first would give them the view menu |
 //! | 2 | a form field is under the pointer or selected | `canvas.field` | a widget sits on top of whatever page content is beneath it |
-//! | 3 | an object is under the pointer | `canvas.object` | there is a thing to act *on* |
-//! | 4 | otherwise | `canvas.empty` | no thing, so the menu is about the *view* |
+//! | 3 | a **markup shape is selected**, and the pointer is on it or on paper | `canvas.markup` | an annotation is not in the content model, so no hit test below could ever find it — and its two node verbs exist on no other surface |
+//! | 4 | this mode reads rather than edits, over an object | `canvas.read-object` | O71: every row of the object menu edits |
+//! | 5 | an object is under the pointer | `canvas.object` | there is a thing to act *on* |
+//! | 6 | otherwise | `canvas.empty` | no thing, so the menu is about the *view* |
+//!
+//! ⚠ Rows 3 and 4 were missing from this table while both were live — the
+//! heading said *"The four menus"* and the file resolved five. Recorded rather
+//! than silently corrected: it is the third copy of one count in this
+//! subsystem, and the answer adopted with the sixth menu is that the count
+//! lives in `canvas::menus::CanvasMenu`'s variant list and nowhere else.
 //!
 //! ★ 1 and 2 are mutually exclusive by construction — `canvas::forms` owns
 //! `/Widget` presses and only Edit mode offers field selection, while a caret
@@ -175,14 +183,29 @@ pub fn attach(click: Click<'_>) -> Vec<HandlerToken> {
     // editing menu without anybody editing this line, and one that does not
     // gets the reader's.
     let reading = !click.caps.edit_content;
-    menus::attach(
-        click.response,
-        click.selection,
-        click.page_index,
+    menus::attach(menus::Attach {
+        response: click.response,
+        selection: click.selection,
+        page: click.page_index,
         object,
-        field_menu,
+        field_selected: field_menu,
         field_delete_permitted,
         reading,
-        click.host,
-    )
+        // ★★ **`author_markup`, and it is deliberately not `!reading`.**
+        //
+        // Review has `edit_content == false` and `author_markup == true` — it
+        // edits no page content and authors every comment there is. Gating the
+        // markup menu on the reader flag above would take the shape's own menu
+        // away in the one mode whose entire subject is shapes, and would hand
+        // that operator `canvas.read-object`'s *Copy image* instead.
+        //
+        // ⇒ One capability per question. The two flags exist separately on
+        // `Capabilities` for exactly this, and `app::conditions`' delete ladder
+        // already reads them apart the same way.
+        author_markup: click.caps.author_markup,
+        doc: click.doc,
+        map: click.map,
+        screen_pos: click.screen_pos,
+        host: click.host,
+    })
 }

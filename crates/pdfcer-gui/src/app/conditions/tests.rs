@@ -868,3 +868,137 @@ fn a_certified_document_withholds_delete_for_a_selected_form_field() {
          build hides Delete on every signed document"
     );
 }
+
+/// ★★★ **The Format ▸ Markup group is published for a markup annotation, in a
+/// mode that may author markup, and for nothing else** — the condition that
+/// makes the group appear at all.
+///
+/// # The defect this exists for, and it is the one nothing else could catch
+///
+/// `selection.markup_restylable` is spelled in **four** places: here in
+/// `app::conditions` (which sets it), `manifest::format::MARKUP_VISIBLE_WHEN`
+/// (which draws the five items on it), `catalog::format::MARKUP_RESTYLABLE`
+/// (which enables the five commands on it) and the `KNOWN` list in
+/// `shell::commands::tests` (which vouches that somebody publishes it).
+///
+/// Three of the four agreeing is not enough, and the failure is silent in the
+/// worst direction: `KNOWN` is a hand-written list, so a typo *in the publisher*
+/// leaves the other three consistent, the condition permanently unset, and the
+/// **group permanently absent**. Nothing would be greyed, nothing would trace,
+/// and R9 makes absence the correct rendering of an unavailable capability — so
+/// the bug would look exactly like the design. `every_armable_tool_kind_reports_a_pressed_state`
+/// exists in this file because Phase 7 shipped a measure tool with four passing
+/// unit tests and no `conditions` call site; this is the same join, asserted
+/// before it can be missed.
+///
+/// ⇒ It reads the condition through the **registered commands' own predicates**
+/// rather than by name, exactly as `the_history_conditions_follow_the_session`
+/// does, so a rename on either side fails here rather than silently withholding
+/// a control forever.
+///
+/// # ★ Rule 15 — a ce dimension must not light it
+///
+/// A ce dimension is also an annotation and is also selectable, and its verb is
+/// `set_dimension_style`. Handing one to `set_markup_style` regenerates it as a
+/// bare line with its label and witness lines gone. The `AnnotKind::CeDimension`
+/// case below is that rule asserted, and it matters because a ce dimension's
+/// `/Subtype` **is** `/Line` — identical to an arrow's — so a build that filtered
+/// on the string would pass every test that only ever selected a square.
+#[test]
+fn the_markup_style_group_follows_the_kind_of_annotation_and_the_mode() {
+    use crate::app::tests::opened;
+    use crate::canvas::selection::annot::{AnnotKind, AnnotSelection, AnnotTarget};
+    use pdfcer_core::object::ObjId;
+
+    const IDS: &[&str] = &[
+        "format.colour",
+        "format.fill",
+        "format.line_width",
+        "format.opacity",
+        "format.arrowheads",
+    ];
+
+    let ctx = egui::Context::default();
+    let mut reg = egui_shell::CommandRegistry::new();
+    crate::shell::commands::register(&mut reg);
+    let live = |app: &PdfcerApp| {
+        let set = app.conditions(&ctx);
+        IDS.iter()
+            .all(|id| reg.get(id).expect("registered").is_enabled(&set))
+    };
+
+    let mut app = opened();
+    app.ribbon.set_mode("review");
+    assert!(
+        !live(&app),
+        "nothing is selected, so there is no operand and the group must be absent"
+    );
+
+    // A placed mark, addressed the way the canvas addresses one. Planted
+    // rather than clicked, because `canvas::clicking` needs a window; the hit
+    // test itself is asserted in `canvas::clicking` and against the real binary
+    // by `ui-verify`.
+    let plant = |app: &mut PdfcerApp, kind: AnnotKind, locked: bool| {
+        let Status::Open(doc) = &mut app.status else {
+            panic!("`opened` opens a document") // ui-text-exempt: test panic, never displayed
+        };
+        doc.selection.select_annot(AnnotSelection {
+            target: AnnotTarget {
+                page: 0,
+                id: ObjId::new(9_001, 0),
+                kind,
+                // ★ The SAME `/Subtype` for both kinds, deliberately. A ce
+                // dimension is a `/Line` carrying `/IT /LineDimension`, so a
+                // guard written as a string comparison would pass this test
+                // for the wrong reason. Only the `AnnotKind` differs.
+                subtype: "Line".to_owned(), // ui-text-exempt: a PDF /Subtype name, never displayed
+                locked,
+            },
+            outline: egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(10.0, 10.0)),
+        });
+    };
+
+    plant(&mut app, AnnotKind::Markup, false);
+    assert!(
+        live(&app),
+        "★ Review AUTHORS MARKUP, and restyling a mark is exactly what Review is for. A guard \
+         reaching for `edit_content` here would take the working verb away from the mode that \
+         owns it — the defect `delete_is_not_offered_in_a_mode_that_cannot_perform_it` records \
+         from the other direction"
+    );
+
+    app.ribbon.set_mode("edit");
+    assert!(live(&app), "Edit authors markup too");
+
+    app.ribbon.set_mode("read");
+    assert!(
+        !live(&app),
+        "★ Read authors nothing. R9: the capability is absent rather than temporarily \
+         unavailable, so the group renders NOTHING — and the mode selector is the disclosure"
+    );
+
+    // Rule 15: the ce dimension, with the identical `/Subtype`.
+    app.ribbon.set_mode("review");
+    plant(&mut app, AnnotKind::CeDimension, false);
+    assert!(
+        !live(&app),
+        "a ce dimension is `set_dimension_style`'s, and `set_markup_style` regenerates one as a \
+         bare line with its label and witness lines gone. Its `/Subtype` is `/Line`, exactly \
+         like an arrow's, so only a `match` on `AnnotKind` tells them apart"
+    );
+
+    // ★★ The LOCK is deliberately NOT in this condition. §12.5.3 Table 165 bit
+    // 8 is a fact about one annotation rather than about the build or the
+    // mode, which is R9's textbook greying case — so the group stays DRAWN and
+    // `app::markupband` greys it with `markup_locked`'s sentence. Folding the
+    // lock in here would make the band flicker out of the ribbon on every
+    // click that landed on a locked mark, with nothing left on screen to say
+    // why.
+    plant(&mut app, AnnotKind::Markup, true);
+    assert!(
+        live(&app),
+        "a locked mark GREYS with a reason and must not make the group vanish — see \
+         `manifest::format::MARKUP_VISIBLE_WHEN`, and `app::markupband`, which draws the \
+         greying because the shell draws none for an `Item::Custom`"
+    );
+}

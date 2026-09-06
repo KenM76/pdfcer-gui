@@ -61,6 +61,18 @@
 //!   below were amended at salvage for exactly this reason, and each says so
 //!   in its own doc comment rather than being quietly reworded.
 
+/// ★★ **The annotation half of the Properties panel's geometry section** —
+/// added 2026-09-06 when X/Y/W/H became typeable over a selected markup.
+///
+/// A module of its own rather than four more functions in [`properties`], and
+/// its header argues the seam: the heading, the units note, the four labels and
+/// the Apply button are **shared with the page-content half and stay in
+/// `properties`**, because the units note states the coordinate convention and
+/// a second copy of a convention is how one panel ends up measuring Y from the
+/// top in one half and from the bottom in the other. What is in the new module
+/// is only what the annotation subject adds — the file's own refusal — plus the
+/// argument for why the *other* refusal it could reach gets no string at all.
+pub mod annotgeometry;
 /// ★ The Attachments panel — the whole files a document carries inside itself
 /// (§7.11.4.1), and the four verbs opposite them.
 ///

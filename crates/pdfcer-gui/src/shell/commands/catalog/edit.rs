@@ -225,6 +225,61 @@ pub(super) fn band() -> Vec<Command> {
         command("edit.copy_as_vector", t::edit_copy_as_vector(), 408)
             .with_icon("copy-as-vector")
             .enabled_when("doc.pages"),
+        // ═══════════════════════════════════════════════════════════════════
+        // ★★★ `edit.duplicate` — Ctrl+D over a selected comment, 2026-09-06.
+        //
+        // **What it closes.** A markup could be duplicated only by `Ctrl+C`
+        // then `Ctrl+V`, which works and **destroys whatever was on the
+        // clipboard**. An operator placing a row of identical revision marks
+        // pays that once per mark. Acrobat has had `Ctrl+D` on a comment for as
+        // long as it has had comments, and `mockups/app.html:198` — the
+        // approved canvas context menu — already draws *"Duplicate  Ctrl+D"*.
+        //
+        // ★★ **A sibling command rather than an extension of
+        // `edit.paste_duplicate`, and that was checked before it was decided.**
+        // That command already routes by selection kind: over a form field it
+        // pastes as another widget of the same field, and over a markup it
+        // *falls through to the ordinary paste* — `app::dispatch::clipboard`'s
+        // header says so in as many words, because a markup has no second sense
+        // to paste into. Making it duplicate the SELECTION instead would be a
+        // paste verb that acts when the clipboard is empty and ignores the
+        // clipboard when it is not: two unrelated behaviours behind one id,
+        // reachable by a chord named for the one it would stop doing.
+        //
+        // ★★ **`selection.any`, not `doc.pages`.** Every other member of this
+        // group has an operand rule that always resolves — a paste has the
+        // clipboard, a copy-out falls back to the whole page — so all of them
+        // are live on any open document. This one has nothing to act on with
+        // nothing selected, and R83 says an affordance that cannot be honoured
+        // is not offered. The chord is still pushed through blind and declined
+        // in words by the dispatcher; the *button* greys.
+        //
+        // ★★★ **It reuses the `copy` glyph**, under the header's shared-key
+        // convention and with the same argument `edit.paste_duplicate` makes
+        // for reusing `paste` two registrations above:
+        //
+        // * The mark is two overlapping sheets, and what that mark MEANS is
+        //   *"there are now two of these"* — which is what a duplicate is, more
+        //   exactly than it is what a copy is. Illustrator, Figma and Inkscape
+        //   all draw Duplicate with overlapping shapes for that reason.
+        // * A second, subtly different two-sheets glyph would be a distinction
+        //   the operator has to learn in order to gain nothing, and would put
+        //   this build one step nearer the icon set nobody can tell apart.
+        // * `icons/assets/PROVENANCE.md` is untouched, because nothing was
+        //   drawn. That directory is declared the operator's own work, and a
+        //   machine-drawn substitute would make the declaration false — which
+        //   is why "draw a duplicate glyph" was not the answer.
+        //
+        // ★ It is placed **last** in the ribbon's Clipboard group rather than
+        // beside `edit.copy`, so the two controls that share a glyph are not
+        // adjacent. `edit.paste` and `edit.paste_duplicate` are adjacent and do
+        // share one, which is the precedent that makes the reuse admissible at
+        // all; not repeating the adjacency is the cheap half of not making the
+        // band harder to read.
+        // ═══════════════════════════════════════════════════════════════════
+        command("edit.duplicate", t::edit_duplicate(), 409)
+            .with_icon("copy")
+            .enabled_when("selection.any"),
         // ★★★ `edit.objects` was HERE until 2026-08-31, and it is DELETED
         // rather than repointed. `OPERATOR_REQUESTS.md` row O69, the operator:
         // *"We shouldn't even need an Edit Objects button."*

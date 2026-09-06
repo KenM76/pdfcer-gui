@@ -1204,6 +1204,26 @@ fn editor(
         return;
     }
 
+    // ★★★ **The text box's warning goes ABOVE the keyboard hint, and it is the
+    // only line in this editor that is not `.weak()`.**
+    //
+    // Both are deliberate. It is the one thing here an operator cannot find out
+    // by trying — Enter-versus-Save is discovered in a second by pressing
+    // Enter, while "the words on the page will not change" is discovered only
+    // by saving, looking at the page, and not believing your eyes. Drawing it
+    // in the same grey as the key hints would file it with the trivia.
+    //
+    // Placed BEFORE the write on purpose. The status line says the same thing
+    // afterwards (`app::actions::annots::set_note`), but only this one can
+    // still change what the operator does. The measurement and the decision to
+    // disclose rather than refuse are at `crate::text::textannot`.
+    //
+    // R8b: off-canvas, in the editor. Nothing is drawn onto the page, and the
+    // box renders exactly as it will save.
+    if let Some(warning) = crate::text::textannot::note_edit_hint(&comment.subtype) {
+        ui.label(egui::RichText::new(warning).small());
+    }
+
     ui.label(
         egui::RichText::new(t::comment_row_note_hint())
             .small()

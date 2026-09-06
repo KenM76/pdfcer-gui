@@ -131,6 +131,20 @@ impl PdfcerApp {
         };
         let font_draft = self.panels.text_style_mut();
         let font_change = &mut self.font_change;
+        // ★ The Format ▸ Markup group's five controls, borrowed as a sixth
+        // disjoint field for the same borrow-checker reason the four above are
+        // named separately: `&self.commands` is held by the ribbon for the
+        // whole render, so a `&mut self` inside the closure would not compile.
+        //
+        // ★★ It carries its OWN operand — the `AnnotTarget` the control read
+        // while drawing — where `font_change` carries only the style and lets
+        // the dispatch arm re-derive the runs. `PdfcerApp::markup_change`'s doc
+        // holds the argument: the Font group's operand is a *rule* and a rule
+        // stated twice diverges, while this one is *the mark the swatch was
+        // showing the colour of*, and re-reading it after the frame's input has
+        // been applied would send a colour to whatever the operator selected
+        // next.
+        let markup_change = &mut self.markup_change;
         let registry = &self.commands;
         let mut custom = |ui: &mut egui::Ui, item: &egui_shell::ribbon::CustomItem<'_>| {
             // ★ The Markup ▸ Style controls. They return `None` — no handler
@@ -164,6 +178,31 @@ impl PdfcerApp {
                 doc,
                 font_draft,
                 font_change,
+            ) {
+                return Some(token);
+            }
+            // ★★ The Markup group's two swatches, two fields and arrowhead
+            // chooser. Same contract as the Font group's three and for the same
+            // reason — these rewrite an annotation's appearance stream and land
+            // in the engine's command log, so R8 makes each a registered
+            // command and the token routes the press through
+            // `dispatch_command`, the choke point a chord and a context-menu
+            // row also reach.
+            //
+            // ★ Called for every kind and answering `None` for the ones that
+            // are not its, exactly as `fontband` above does. The two renderers
+            // are asked in sequence rather than matched in one place because
+            // each owns its own kind → command id mapping and each asserts that
+            // mapping against `manifest::CUSTOM_BACKED` in its own tests; a
+            // dispatch table here would be a third statement of the pairing and
+            // the one no test reads.
+            if let Some(token) = crate::app::markupband::draw(
+                ui,
+                item.kind,
+                registry,
+                &conditions,
+                doc,
+                markup_change,
             ) {
                 return Some(token);
             }

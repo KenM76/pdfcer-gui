@@ -34,6 +34,18 @@
 //! behaviour and the reason the value is not simply `false` for tidiness. See
 //! `canvas::modelneed` for the four incidents and `keys::Keys::model_attempted`
 //! for the table.
+//!
+//! ## ★ …and every case passes `page: None`, which is the honest value
+//!
+//! [`keys::Keys::page`] exists for the arrow-key nudge and for nothing else, and
+//! no assertion in this file presses an arrow — these are the Escape and Delete
+//! ladders, and neither key crosses into PDF space. `None` is therefore what a
+//! frame with no page on screen genuinely hands over, not a stub, and every
+//! ladder below behaves identically with a page present.
+//!
+//! The nudge's own enumeration lives in
+//! [`crate::canvas::moving::nudge`]'s tests, beside the module that decides it —
+//! this file's seam, applied once more.
 
 // ★★ The INNER attribute, not just the `mod tests;` declaration in the parent.
 // `check-ui-strings.sh`'s exclusion 2b recognises a whole test file **from the
@@ -113,6 +125,7 @@ fn keys_for(input: RawInput, selection: &mut SelectionState) -> Vec<Action> {
                 targets: None,
                 edit_epoch: 0,
                 model_attempted: true,
+                page: None,
                 escape_consumed: false,
             },
             selection,
@@ -121,6 +134,86 @@ fn keys_for(input: RawInput, selection: &mut SelectionState) -> Vec<Action> {
         );
     });
     actions
+}
+
+/// ★★★ **AN ARROW KEY REACHES THE NUDGE THROUGH THIS FUNCTION.**
+///
+/// The nudge's own rules are enumerated in
+/// [`crate::canvas::moving::nudge`]'s tests, which call that module directly.
+/// This asserts the one thing those cannot: that the wiring exists — that a
+/// press of Up on a canvas with a markup selected comes out of `canvas_keys`
+/// as an `AnnotAction::Move`.
+///
+/// ★★ It is a separate test on purpose, and the reason is this project's most
+/// expensive recurring defect: **a working verb reachable by nothing.** It has
+/// shipped four times (`Resize`, `Handle`, `DimensionVertex`, the Delete key),
+/// every time with the module's own tests green, because a module tested in
+/// isolation cannot tell whether anybody calls it. Deleting the
+/// `moving::nudge::keys` call above leaves fifteen nudge tests passing and this
+/// one red.
+///
+/// ★ It also pins the two things this function contributes and the nudge module
+/// does not: that the Tab branch above does not swallow the frame, and that the
+/// `page` field really reaches the coordinate crossing — a nudge wired with
+/// `page: None` would decline, so the positive `dy` here is proof the page
+/// arrived.
+#[test]
+fn an_arrow_key_reaches_the_nudge_through_canvas_keys() {
+    use crate::app::actions::annot::AnnotAction;
+    use crate::canvas::selection::{AnnotKind, AnnotSelection, AnnotTarget};
+
+    let page = pdfcer_core::page_tree::Page {
+        id: pdfcer_core::object::ObjId::new(1, 0),
+        resources: pdfcer_core::object::Dict::new(),
+        media_box: pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, 612.0, 792.0),
+        crop_box: pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, 612.0, 792.0),
+        rotate: 0,
+        contents: Vec::new(),
+        contents_unresolved: 0,
+        contents_flattened: 0,
+    };
+    let mut selection = SelectionState::default();
+    selection.select_annot(AnnotSelection {
+        target: AnnotTarget {
+            page: 0,
+            id: pdfcer_core::object::ObjId::new(7, 0),
+            kind: AnnotKind::Markup,
+            // ui-text-exempt: a PDF /Subtype name in a test fixture.
+            subtype: "Square".to_owned(),
+            locked: false,
+        },
+        outline: egui::Rect::from_min_size(egui::pos2(10.0, 20.0), egui::vec2(40.0, 30.0)),
+    });
+
+    let ctx = Context::default();
+    let mut actions = Vec::new();
+    let mut text_selection = None;
+    let _ = ctx.run_ui(key(Key::ArrowUp), |ui| {
+        canvas_keys(
+            Keys {
+                ctx: ui.ctx(),
+                page_index: 0,
+                caps: Capabilities::FULL,
+                selected_field: None,
+                annot_delete_refused: false,
+                field_delete_refused: false,
+                targets: None,
+                edit_epoch: 0,
+                model_attempted: true,
+                page: Some(&page),
+                escape_consumed: false,
+            },
+            &mut selection,
+            &mut text_selection,
+            &mut actions,
+        );
+    });
+
+    let [Action::Annot(AnnotAction::Move { dx, dy, .. })] = actions.as_slice() else {
+        panic!("an arrow key must reach the nudge through this function: {actions:?}");
+    };
+    assert!(dx.abs() < 1e-6, "one axis only: dx={dx}");
+    assert!(*dy > 0.0, "Up is a positive dy in PDF user space: dy={dy}");
 }
 
 /// ★★★ **Delete removes a selected FORM FIELD, and it outranks the other
@@ -166,6 +259,7 @@ fn delete_removes_a_selected_form_field_and_nothing_else() {
                 targets: None,
                 edit_epoch: 0,
                 model_attempted: true,
+                page: None,
                 escape_consumed: false,
             },
             &mut selection,
@@ -241,6 +335,7 @@ fn delete_does_not_act_on_a_form_field_whose_deletion_would_be_refused() {
                 targets: None,
                 edit_epoch: 0,
                 model_attempted: true,
+                page: None,
                 escape_consumed: false,
             },
             &mut selection,
@@ -303,6 +398,7 @@ fn delete_acts_on_a_form_field_when_the_gate_is_open() {
                 targets: None,
                 edit_epoch: 0,
                 model_attempted: true,
+                page: None,
                 escape_consumed: false,
             },
             &mut selection,
@@ -420,6 +516,7 @@ fn an_escape_spent_on_a_drag_leaves_the_rung_alone() {
                 targets: None,
                 edit_epoch: 0,
                 model_attempted: true,
+                page: None,
                 escape_consumed: true,
             },
             &mut selection,
@@ -460,6 +557,7 @@ fn escape_retires_an_armed_region_zoom_before_it_touches_the_ladder() {
                 targets: None,
                 edit_epoch: 0,
                 model_attempted: true,
+                page: None,
                 escape_consumed: false,
             },
             &mut selection,
@@ -503,6 +601,7 @@ fn escape_reaches_the_ladder_again_once_nothing_is_armed() {
                 targets: None,
                 edit_epoch: 0,
                 model_attempted: true,
+                page: None,
                 escape_consumed: false,
             },
             &mut selection,
@@ -541,6 +640,7 @@ fn an_escape_spent_on_a_drag_leaves_the_armed_zoom_alone() {
                 targets: None,
                 edit_epoch: 0,
                 model_attempted: true,
+                page: None,
                 escape_consumed: true,
             },
             &mut selection,
@@ -612,6 +712,7 @@ fn a_focused_text_field_keeps_delete_for_itself() {
                 targets: None,
                 edit_epoch: 0,
                 model_attempted: true,
+                page: None,
                 escape_consumed: false,
             },
             &mut selection,
@@ -662,6 +763,7 @@ fn escape_retires_the_markup_tool_before_the_region_zoom() {
                 targets: None,
                 edit_epoch: 0,
                 model_attempted: true,
+                page: None,
                 escape_consumed: false,
             },
             &mut selection,
@@ -719,6 +821,7 @@ fn an_escape_spent_on_a_markup_drag_leaves_the_tool_armed() {
                 targets: None,
                 edit_epoch: 0,
                 model_attempted: true,
+                page: None,
                 escape_consumed: true,
             },
             &mut selection,
@@ -760,6 +863,7 @@ fn escape_still_reaches_the_zoom_and_the_ladder_with_no_markup_armed() {
                     targets: None,
                     edit_epoch: 0,
                     model_attempted: true,
+                    page: None,
                     escape_consumed: false,
                 },
                 &mut selection,
@@ -813,6 +917,7 @@ fn escape_abandons_a_guide_drag_before_it_touches_the_region_zoom() {
                 targets: None,
                 edit_epoch: 0,
                 model_attempted: true,
+                page: None,
                 escape_consumed: false,
             },
             &mut selection,
@@ -881,6 +986,7 @@ fn escape_abandons_a_circle_fit_before_it_puts_the_measure_tool_down() {
                 targets: None,
                 edit_epoch: 0,
                 model_attempted: true,
+                page: None,
                 escape_consumed: false,
             },
             &mut selection,
@@ -913,6 +1019,7 @@ fn escape_abandons_a_circle_fit_before_it_puts_the_measure_tool_down() {
                 targets: None,
                 edit_epoch: 0,
                 model_attempted: true,
+                page: None,
                 escape_consumed: false,
             },
             &mut selection,
@@ -988,6 +1095,7 @@ fn escape_abandons_a_vertex_run_before_it_puts_the_markup_tool_down() {
                 targets: None,
                 edit_epoch: 0,
                 model_attempted: true,
+                page: None,
                 escape_consumed: false,
             },
             &mut selection,
@@ -1020,6 +1128,7 @@ fn escape_abandons_a_vertex_run_before_it_puts_the_markup_tool_down() {
                 targets: None,
                 edit_epoch: 0,
                 model_attempted: true,
+                page: None,
                 escape_consumed: false,
             },
             &mut selection,
@@ -1072,6 +1181,7 @@ fn a_second_escape_retires_the_zoom_the_guide_drag_protected() {
                     targets: None,
                     edit_epoch: 0,
                     model_attempted: true,
+                    page: None,
                     escape_consumed: false,
                 },
                 &mut selection,
@@ -1150,6 +1260,7 @@ fn delete_does_not_act_on_an_annotation_whose_deletion_would_be_refused() {
                 targets: None,
                 edit_epoch: 0,
                 model_attempted: true,
+                page: None,
                 escape_consumed: false,
             },
             &mut selection,
@@ -1248,6 +1359,7 @@ fn a_delete_declined_for_want_of_asking_is_not_allowed_to_be_quiet() {
                 // The whole point of the case: the frame did not ask.
                 model_attempted: false,
                 escape_consumed: false,
+                page: None,
             },
             &mut selection,
             &mut text_selection,

@@ -201,6 +201,83 @@ pub(super) fn band() -> Vec<Command> {
         command("markup.finish", t::markup_finish(), 506)
             .with_icon("finish-shape")
             .enabled_when("markup.finishable"),
+        // ===================================================================
+        // ★★★ THE TWO NODE COMMANDS — the right-click route to a drawn
+        // shape's corners, 2026-09-06.
+        // ===================================================================
+        //
+        // The operator, 2026-09-05: *"I also can't edit or delete nodes of a
+        // markup shape once it is drawn."* `canvas::annotnodes` answered the
+        // moving half that day and half-answered the other two — insert and
+        // remove worked, and they needed the Points tool armed **plus** `Ctrl`
+        // or `Ctrl+Shift`, with nothing on screen saying so. These two are the
+        // route somebody can find.
+        //
+        // ## ★★★ Why neither has a ribbon home, and why that is legitimate
+        //
+        // Both are in `shell::manifest::TAB_SCOPED`, whose bar is stated in its
+        // own header and is not *"a button would be redundant"*:
+        //
+        // > the command needs an OPERAND a ribbon control cannot ask for.
+        //
+        // These do. *Add a point here* means **this edge, at this place on it**;
+        // *Remove this point* means **this corner**. At the moment a ribbon
+        // button is pressed the pointer is on the ribbon, so the button would
+        // have to invent a subject — the first vertex? the nearest to the last
+        // click? — and would then act on something other than what the operator
+        // was pointing at. That is the identical argument `view.panel_float`
+        // makes about the panel under the pointer, one surface along.
+        //
+        // ★★ And the discoverability the rule exists to protect is answered the
+        // way that register asks it to be: **the capability is on the ribbon
+        // even though the verb is not.** `view.tool_node` — labelled *Points* —
+        // sits in the tool row and puts square anchors on every corner of the
+        // selected shape. An operator who arms it learns that a drawn shape HAS
+        // corners and that they are things you can aim at; where the verb that
+        // adds one lives is then the universal idiom, at the pointer.
+        //
+        // ## ★★ One glyph for the pair
+        //
+        // `show-points` on both, which is this module's stated family
+        // convention: a family shares a glyph when its members are told apart by
+        // their labels. Two verbs on one subject, and the subject is what the
+        // icon is of — the same call `edit.paste` and `edit.paste_duplicate`
+        // make. It is deliberately not `finish-shape`'s run-with-a-tick or
+        // `cursor-node`: this is about the POINTS, and `show-points` is the one
+        // glyph in the catalog that puts square node boxes on a run to say
+        // *these points are aimable*, which is exactly what the menu row is
+        // about to let the operator do to one.
+        //
+        // ## ★★★ The enable predicates, and where their answers come from
+        //
+        // Both are set **per right-click**, by `crate::canvas::menus` through
+        // `MenuHost::with_conditions`, never by `PdfcerApp::conditions()` — see
+        // `shell::menus::NODE_INSERTABLE`. A frame-top condition set describes
+        // the frame; these describe one click on one edge, and there is no
+        // ribbon control whose greying they could get wrong because there is no
+        // ribbon control.
+        //
+        // The answer itself is the ENGINE's: `reshape_annotation_preview`, asked
+        // with the exact `VertexEdit` the row would commit, per frame the popup
+        // is open. `enabled_when` is therefore *"the engine would allow it"*,
+        // and the `visible_when` on the menu item is *"the engine did not refuse
+        // on grounds of the shape's kind"*. The gap between them is the greyed
+        // row, which is R9's *temporarily unavailable, always explained on
+        // hover* — and `markup_remove_node`'s tooltip is what does the
+        // explaining, because it states the floor and therefore what would make
+        // the row live again.
+        //
+        // ⇒ A shell-side subtype list would have been the obvious alternative
+        // and is exactly what `canvas::annotnodes`' header refuses: *"every
+        // question about whether an edit is allowed goes to the engine"*, so
+        // that the day `/Line` learns to take a third point, this file needs no
+        // edit at all.
+        command("markup.add_node", t::markup_add_node(), 530)
+            .with_icon("show-points")
+            .enabled_when("markup.node_insertable"),
+        command("markup.remove_node", t::markup_remove_node(), 531)
+            .with_icon("show-points")
+            .enabled_when("markup.node_removable"),
         command("markup.highlight", t::markup_highlight(), 510)
             .with_icon("shape-highlight")
             .enabled_when("doc.pages"),

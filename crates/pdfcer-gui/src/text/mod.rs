@@ -87,6 +87,13 @@ pub mod acrobat;
 /// that works in Read mode. Its header carries the two capabilities that are
 /// deliberately WORDLESS here, under R9, because the engine cannot reach them.
 pub mod annotpopup;
+/// ★★★ **Moving a mark that is already on the page** — the four refusals an
+/// arrow-key nudge can owe and the five disclosures a *Bring to front* can.
+/// Consumed by `crate::canvas::moving::nudge` and
+/// `crate::app::actions::reorder`. One catalog for two gestures because they
+/// refuse for the same three reasons in the same words; its header argues why
+/// the lock sentence is deliberately NOT the Properties panel's.
+pub mod arrange;
 /// The attachment clipboard's words, including the one question a paste must
 /// ask before the press: the engine REPLACES a same-named attachment.
 pub mod attachclip;

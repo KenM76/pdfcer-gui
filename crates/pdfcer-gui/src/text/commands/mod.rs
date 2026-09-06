@@ -1036,11 +1036,38 @@ pub const fn edit_redo() -> CommandText {
 pub mod annotate;
 
 pub use annotate::{
-    markup_arrow, markup_cloud, markup_comments, markup_ellipse, markup_finish, markup_highlight,
-    markup_ink, markup_polygon, markup_polyline, markup_rectangle, markup_squiggly, markup_stamp,
-    markup_sticky_note, markup_strikeout, markup_text_box, markup_underline, measure_finish,
-    measure_length, measure_linear, measure_manage_groups, measure_perimeter,
-    measure_radius_diameter, measure_set_scale, measure_two_line,
+    markup_add_node, markup_arrow, markup_cloud, markup_comments, markup_ellipse, markup_finish,
+    markup_highlight, markup_ink, markup_polygon, markup_polyline, markup_rectangle,
+    markup_remove_node, markup_squiggly, markup_stamp, markup_sticky_note, markup_strikeout,
+    markup_text_box, markup_underline, measure_finish, measure_length, measure_linear,
+    measure_manage_groups, measure_perimeter, measure_radius_diameter, measure_set_scale,
+    measure_two_line,
+};
+
+/// ★ The five Format ▸ Markup controls, split out on 2026-09-06 under **R2**:
+/// this file stood at 1,438 of its 1,500 lines and five entries written to this
+/// project's register do not fit in 62. The seam is [`annotate`]'s, one step
+/// along the same line — that module holds the strings of the commands that
+/// **place** a mark, and this one the strings of the commands that **restyle
+/// one already placed**. Re-exported by name, not by glob, so a function added
+/// over there still has to be named here to reach the crate.
+pub mod markupstyle;
+
+pub use markupstyle::{
+    format_arrowheads, format_colour, format_fill, format_line_width, format_opacity,
+};
+
+/// ★ The four Markup ▸ Arrange controls, split out on 2026-09-06 under **R2**
+/// for [`markupstyle`]'s reason and along the same seam one step further:
+/// [`annotate`] holds the strings of the commands that **place** a mark,
+/// `markupstyle` those that **restyle** one already placed, and this one those
+/// that **re-depth** one already placed. Its header carries why all four labels
+/// are borrowed verbatim from five reference applications and why not one of
+/// them may say *z-order*.
+pub mod arrange;
+
+pub use arrange::{
+    markup_bring_forward, markup_bring_to_front, markup_send_backward, markup_send_to_back,
 };
 
 // ===========================================================================

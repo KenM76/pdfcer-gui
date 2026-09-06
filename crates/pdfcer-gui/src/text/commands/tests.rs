@@ -129,6 +129,13 @@ fn all() -> Vec<CommandText> {
         tools_unembed_fonts(),
         tools_render_diagnostics(),
         format_delete(),
+        // The Markup ▸ Arrange group, 2026-09-06. In tab order, like the rest of
+        // this list — they sit between Style and Comments on the Markup tab, and
+        // the list is in tab order for the same reason the catalog is.
+        markup_bring_to_front(),
+        markup_bring_forward(),
+        markup_send_backward(),
+        markup_send_to_back(),
         mode_read(),
         mode_review(),
         mode_edit(),
