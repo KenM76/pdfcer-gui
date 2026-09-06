@@ -222,7 +222,7 @@ fn provenance() {
 /// |---|---|---|
 /// | `PDFCER_RELEASE_VERSION` | the bare version off the nearest tag, `v` stripped — `0.5.0` | **empty** |
 /// | `PDFCER_RELEASE_DISTANCE` | commits between that tag and `HEAD`, decimal — `0` on the tag itself | **empty** |
-/// | `PDFCER_RELEASE_MODIFIED` | `1` when the working tree had uncommitted changes, else empty | empty |
+/// | `PDFCER_RELEASE_MODIFIED` | `1` when the working tree had uncommitted changes, else `0` — never empty, see the note at the emitter | `0` |
 ///
 /// # ★★★ Why the git TAG, and not `CARGO_PKG_VERSION`
 ///
@@ -327,9 +327,29 @@ fn release(modified: bool) {
 
     println!("cargo:rustc-env=PDFCER_RELEASE_VERSION={version}");
     println!("cargo:rustc-env=PDFCER_RELEASE_DISTANCE={distance}");
+    // ★★★ **`"0"`, not `""` — changed 2026-09-05, in the middle of cutting a
+    // release.**
+    //
+    // This emitted an EMPTY string for the clean case, and the consumer in
+    // `dialogs::about` compares it with `== "1"`. `env!` expands at compile
+    // time to a literal, so on a clean tree clippy saw `"" == "1"` and fired
+    // `comparison_to_empty` — **and `cargo clippy` is one of this project's
+    // thirty gates.**
+    //
+    // ⇒ So the gate's verdict depended on **whether the working tree happened
+    // to be dirty when `build.rs` last ran.** It passed all day on a tree with
+    // uncommitted work in it, and went red the moment the tree was clean, which
+    // is precisely when a release is cut. A gate whose result is a function of
+    // git state rather than of source is not measuring the source.
+    //
+    // ★ The repair is at the emitter rather than at the comparison, for this
+    // project's standing reason: making the consumer dodge the lint would have
+    // left the field's vocabulary — *"empty means false"* — intact, and the
+    // next reader would meet the same trap. A flag with two named values has no
+    // empty case to compare against.
     println!(
         "cargo:rustc-env=PDFCER_RELEASE_MODIFIED={}",
-        if modified { "1" } else { "" }
+        if modified { "1" } else { "0" }
     );
 
     // ★ Said out loud, once, and only when it is true. A build with no
