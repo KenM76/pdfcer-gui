@@ -1960,7 +1960,7 @@ is a check nobody will ever run.
 
 ---
 
-## D23 — A link jumps to the page it names and is then dragged back, because the fit that follows it re-places the view — **DIAGNOSED 2026-09-06, NOT FIXED**
+## D23 — A link arrives at the right place and the zoom that framed it lands a frame later, about the anchor it has already left — **DIAGNOSED TO THE FRAME 2026-09-06, NOT FIXED**
 
 **A clickable table of contents is a page of dead text.** Click a link, the view
 goes to the right place for a moment, and comes back.
@@ -1994,7 +1994,60 @@ scroll rather than a failed first one.
 well-written and would have sent a reader to `DestinationReader` — three layers
 above where the evidence points. Read the trace, not the verdict.
 
-### The suspect
+### ★★★ CORRECTION, same evening — the destination ARRIVES, and both earlier suspects are refuted
+
+The section below blamed the `Fit(Width)` between the page jump and the
+destination scroll. **That is wrong**, and the line that disproves it was in the
+trace the whole time:
+
+```text
+destination-arrive page=3 framed=true pending=Point { page: 3, left: None, top: Some(540.0) }
+```
+
+`canvas::destination::arrive` compares the parked destination's page against the
+view's and **drops** a mismatch. It matched. The fit did not prevent the
+arrival, the page turn worked, and the region was framed. So the check's
+*"defaulted to index 0"* and this entry's *"the fit re-places the view"* are
+**two wrong causes for one symptom**, arrived at from the endpoint in both
+cases.
+
+⇒ **Twice now the articulate explanation was reasoning backwards from where the
+view ended up.** The evidence that settles it is not at the end of the trace; it
+is the pair of frames in the middle.
+
+### What actually happens, frame by frame
+
+| frame | trace | reading |
+|---|---|---|
+| N | `destination-arrive page=3 framed=true` | the destination is resolved and framed |
+| N | `canvas-zoom to=rect requested=3.1200 applied=3.1200 clamped=false` | `zoom_to_rect` decides 3.12× and **raises** `ZoomTo` |
+| N | `canvas … zoom=0.7647 page=3 … off=[484.0 2436.8]` | the canvas still draws at the OLD zoom, correctly on **page 3** |
+| N+1 | `canvas … zoom=3.1200 page=0 … off=[476.0 1316.6]` | the zoom lands — and the view is now on **page 0** |
+
+`zoom_to_rect` scrolls **this** frame and raises a zoom that is applied on the
+**next** one. When it lands it magnifies about the viewport anchor as it is
+then, which is no longer the anchor the framing was computed against, and 3.12×
+of error puts the destination four pages away.
+
+★★ **The `/XYZ` arm three branches above describes this exact failure, in
+advance, and is talking about source order rather than frame order:**
+
+> *"`zoom` first, because the scroll is expressed in the zoom that will be in
+> force when it lands. Reversing them scrolls to a point and then magnifies
+> about a different anchor, which puts the destination off screen by however
+> much the zoom changed."*
+
+Every word applies. The ordering it prescribes is honoured in the source — and
+defeated by a one-frame lag between deciding a zoom and applying it. ⇒ **An
+ordering argument written about statements is not a claim about frames**, and an
+action queue turns the second into the first only when everything in it lands
+together.
+
+⚠ `arrive` discards `zoom_to_rect`'s return value (`let _ = …`), so whatever it
+reports about the framing it achieved is thrown away at the one call site that
+could act on it. Worth reading before changing anything.
+
+### The earlier suspect, kept because it was reasonable and is refuted above
 
 `app::actions::destination::actions_for` pushes, in order:
 
