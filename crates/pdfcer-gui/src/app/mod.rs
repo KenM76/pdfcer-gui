@@ -978,6 +978,47 @@ impl PdfcerApp {
             dock,
         } = startup;
 
+        // ★★★ THE RIBBON TAKES THE RESTORED MODE, and until 2026-09-06 it did
+        // not — so *"open in the mode you were last in"* had been dead since
+        // the day it shipped.
+        //
+        // `RibbonState` was set to the manifest's **first** mode a few dozen
+        // lines above, because an unset mode makes the shell show every tab.
+        // `Startup` then restored the operator's remembered mode into `Modes`,
+        // the dock and the layout — but **not** into the ribbon, because the
+        // ribbon had already been built. `Self::docks` reconciles the two once
+        // per frame by comparing `ribbon.mode()` against `modes.active()`, and
+        // the ribbon is the side it treats as authoritative. So the restored
+        // mode survived exactly one frame and was then overwritten by Read.
+        //
+        // ★★ The trace said it was working, which is why nobody caught it.
+        // `Modes::assemble` emits `mode-restore stored=Some("review")
+        // using=Some("review")` — a true statement about what `assemble`
+        // adopted — and one frame later `mode-changed from=Some("review")
+        // to=read` undid it, forty lines further down a 230-line trace. ⇒ **A
+        // start-up trace records what a stage decided, not what the frame
+        // settled on**, and the two are different claims whenever a later
+        // stage can overrule an earlier one. Measured by launching the release
+        // binary off screen against a `layout.ron` holding `mode: Some(
+        // "review")`, twice, once on a profile written fresh for the purpose.
+        //
+        // ★ Why this is the operator's defect and not a tidy-up. `modes/mod.rs`
+        // `assemble` carries the whole argument for remembering the mode, from
+        // his own report of 2026-08-26 — *"I can't figure out how to click on
+        // objects to edit them"* — and ends: *"Someone who spent an afternoon
+        // in Edit came back the next morning to a program that had silently
+        // forgotten."* That is precisely what has been happening. It bites
+        // markup hardest, because markup is authored in **Review** and the
+        // program reopened in Read every time.
+        //
+        // The `or_else` keeps the original behaviour for the three declines
+        // `assemble` documents — no stored id, an id the manifest no longer
+        // declares, no modes at all — where `active()` is `None` and the first
+        // mode is still the right answer.
+        if let Some(mode) = opening_ribbon_mode(modes.active(), ribbon.mode()) {
+            ribbon.set_mode(mode);
+        }
+
         // ★ The recent list is loaded for real, EXCEPT under `cfg(test)`.
         //
         // `RecentFiles::default()` points nowhere and can write nothing, which
@@ -1196,3 +1237,103 @@ pub fn configure_context(ctx: &egui::Context) {
 /// the same commit and for the same reason.
 #[cfg(test)]
 pub(crate) mod tests;
+
+/// **Which mode the ribbon opens in** — the restored one if there is one, and
+/// otherwise whatever it was already set to.
+///
+/// # Why this is a function and not two lines inside `PdfcerApp::new`
+///
+/// Because it was two lines inside `PdfcerApp::new` and one of them was
+/// missing for ten days, and the shape of that absence is worth a name.
+///
+/// `new` builds the `RibbonState` **before** it calls [`modes::start`], and
+/// seeds it with `modes().first()` — Read — because an unset mode makes the
+/// shell show every tab regardless of the selector. `start` then restores the
+/// operator's remembered mode into [`modes::Modes`], the dock and the layout.
+/// The ribbon, already built, kept Read. `PdfcerApp::docks` reconciles the two
+/// once a frame by comparing `ribbon.mode()` against `modes.active()` and
+/// treats the **ribbon** as authoritative — so the restored mode lived exactly
+/// one frame and was then thrown away.
+///
+/// The effect on the operator is the one `modes::assemble`'s header was
+/// written to prevent, quoting his own report of 2026-08-26:
+///
+/// > Someone who spent an afternoon in Edit came back the next morning to a
+/// > program that had silently forgotten.
+///
+/// It bites markup hardest: markup is authored in **Review**, and the program
+/// reopened in Read every single time.
+///
+/// # ★★★ The start-up trace said it was working
+///
+/// `modes::assemble` emits `mode-restore stored=Some("review")
+/// using=Some("review")` — true of what *that stage* adopted — and forty lines
+/// further down the same trace carries `mode-changed from=Some("review")
+/// to=read`. ⇒ **A stage's trace records what the stage decided, not what the
+/// frame settled on.** The two are different claims wherever a later stage may
+/// overrule an earlier one, and a harness grepping only the first would report
+/// a working feature.
+///
+/// It was found, and the fix proven, by launching the **release binary** off
+/// screen against a `layout.ron` holding `mode: Some("review")` and reading
+/// which ribbon tabs published a rect:
+///
+/// | | tabs that drew |
+/// |---|---|
+/// | before | `file`, `view` |
+/// | after | `file`, `view`, `pages`, `markup`, `measure` |
+///
+/// # ★★ What the test below can prove, and what only the launch can
+///
+/// This function's test drives the **decision** and is falsifiable: hand it a
+/// restored `"review"` beside a current `"read"` and it must answer `"review"`,
+/// which the ten-day-old code — passing `first` unconditionally — could not.
+///
+/// It cannot prove that `PdfcerApp::new` still *calls* it. An earlier attempt
+/// asserted `app.ribbon.mode() == app.modes.active()` after `PdfcerApp::new()`
+/// and **stayed green with the fix deleted**, because `new` reads the real
+/// layout file and on a machine with no stored mode both sides are Read for a
+/// trivial reason. A check that cannot fail is not evidence, so that test was
+/// removed rather than left to imply coverage it did not have. The wiring's
+/// oracle is the off-screen launch above.
+fn opening_ribbon_mode(restored: Option<&str>, current: Option<&str>) -> Option<String> {
+    restored.or(current).map(str::to_owned)
+}
+
+#[cfg(test)]
+mod opening_mode_tests {
+    use super::opening_ribbon_mode;
+
+    /// The restored mode wins over whatever the ribbon was seeded with.
+    ///
+    /// Falsified by replacing the body with `current.or(restored)`, which is
+    /// the ten-day-old behaviour: this goes red and the two below stay green,
+    /// which is why all three exist rather than only this one.
+    #[test]
+    fn a_restored_mode_beats_the_seeded_first_mode() {
+        assert_eq!(
+            opening_ribbon_mode(Some("review"), Some("read")).as_deref(),
+            Some("review"),
+        );
+    }
+
+    /// With nothing restored, the seed stands — the three declines
+    /// `modes::assemble` documents (no stored id, an id the manifest no longer
+    /// declares, no modes at all) all arrive here as `None` and must not clear
+    /// a mode the ribbon already holds. Clearing it would make the shell show
+    /// every tab in every mode, which is the state the seed exists to prevent.
+    #[test]
+    fn nothing_restored_keeps_the_seed() {
+        assert_eq!(
+            opening_ribbon_mode(None, Some("read")).as_deref(),
+            Some("read"),
+        );
+    }
+
+    /// Neither side has an answer — a manifest that failed to validate, so
+    /// there are no modes to be in. `None`, not a fabricated id.
+    #[test]
+    fn no_modes_at_all_stays_unset() {
+        assert_eq!(opening_ribbon_mode(None, None), None);
+    }
+}
