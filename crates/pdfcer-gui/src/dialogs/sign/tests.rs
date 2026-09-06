@@ -29,6 +29,8 @@ fn filling() -> SignDialog {
             certification_permission: None,
             pages: 3,
             on_disk: true,
+            empty_fields: Vec::new(),
+            certified: false,
         },
         phase: Phase::Filling,
         certificate: None,
@@ -37,8 +39,11 @@ fn filling() -> SignDialog {
         identity_error: None,
         reason: String::new(),
         location: String::new(),
-        visible: false,
+        place: Place::Nothing,
         page: 0,
+        field: 0,
+        certify: false,
+        mdp: MdpPermission::FormFillAndSign,
         signing_time: Some("D:20260906120000Z".to_owned()),
         destination: Destination::NewFile,
         overwrite_acknowledged: false,
@@ -328,6 +333,51 @@ fn nothing_on_this_surface_claims_a_signature_is_trusted() {
     ];
     copy.push(t::identity_integrity(Some("SHA-256")));
     copy.push(t::identity_integrity(None));
+    // `Pass 10.13` - signing into a box the sender placed.
+    copy.push(t::placement_existing(1));
+    copy.push(t::placement_existing(3));
+    copy.push(t::placement_field_note().to_owned());
+    copy.push(t::field_row("SignHere", Some(0)));
+    copy.push(t::field_row("SignHere", None));
+    copy.push(t::field_invisible().to_owned());
+    copy.push(t::field_locks("All"));
+    copy.push(t::field_locks("Include"));
+    copy.push(t::field_constrained().to_owned());
+    copy.push(t::field_unusable(crate::sign::FieldBar::HasKids));
+    copy.push(t::no_existing_fields().to_owned());
+    copy.push(t::author_imposed("the field requires Reasons"));
+    copy.push(t::field_refused("that box is already signed."));
+    copy.push(t::appearance_overflow("3 lines do not fit."));
+
+    // ★★★ `Pass 10.12`'s certification copy is on this list TOO, and the
+    // word it is allowed is the point.
+    //
+    // `FORBIDDEN` holds "certified" - a claim that somebody has vouched for a
+    // signature, which this surface must never make. It does NOT hold
+    // "certifying", and these strings use that word deliberately: a certifying
+    // signature is `/DocMDP`, an act the operator is about to perform, and
+    // naming the act is not claiming a verdict about it. Including them here
+    // rather than exempting them is what keeps that distinction under test -
+    // the day somebody writes "your document is now certified" on this window,
+    // this assertion goes red.
+    copy.push(t::kind_heading().to_owned());
+    copy.push(t::kind_approval().to_owned());
+    copy.push(t::kind_certify().to_owned());
+    copy.push(t::kind_certify_note().to_owned());
+    copy.push(t::mdp_heading().to_owned());
+    for level in [
+        MdpPermission::NoChanges,
+        MdpPermission::FormFillAndSign,
+        MdpPermission::FormFillSignAnnotate,
+    ] {
+        copy.push(t::mdp_level(level).to_owned());
+    }
+    copy.push(t::certify_unavailable(
+        crate::sign::CertifyBar::AlreadyCertified,
+    ));
+    copy.push(t::certify_unavailable(crate::sign::CertifyBar::NotFirst {
+        existing: 2,
+    }));
 
     // ★ "checked" is NOT on this list, deliberately: `identity_integrity` says
     // the container's own checksum was checked, which is a true statement about
@@ -351,4 +401,175 @@ fn nothing_on_this_surface_claims_a_signature_is_trusted() {
             );
         }
     }
+}
+
+// ---------------------------------------------------------------------------
+// The copy the 2026-09-06 engine bump falsified
+// ---------------------------------------------------------------------------
+
+/// ★★★ **The box is no longer described as empty, and this assertion is the
+/// successor to a paragraph that could not go red.**
+///
+/// Until `Cargo.lock` moved to `d6b998f` (v0.42.0),
+/// [`crate::text::sign::placement_note`] told the operator *"The box is an
+/// empty frame: pdfcer does not yet draw your name or the date inside it."*
+/// Engine `Pass 10.14` composes the signer's CN, the date and the reason and
+/// location into it — so the sentence became false the moment the pin moved.
+///
+/// ⚠ **And it became false in the direction nothing reports.** An operator told
+/// the box would be empty, who then finds his name in it, has been
+/// under-promised; he files nothing, no screen looks wrong, and no test was
+/// asserting the claim. What caught it was a doc comment carrying its own
+/// expiry date and the engine commit that would void it.
+///
+/// ⇒ **Where a claim about the engine CAN be an assertion, make it one.** This
+/// is that assertion. It names both old wordings so a future "simplification"
+/// cannot reinstate one out of git history, and it requires the two facts the
+/// box now actually carries.
+#[test]
+fn the_box_is_described_as_carrying_the_name_and_the_date() {
+    let note = crate::text::sign::placement_note().to_lowercase();
+    for stale in ["empty frame", "does not yet draw"] {
+        assert!(
+            !note.contains(stale),
+            "`placement_note` still carries the pre-v0.42.0 wording {stale:?}: {note}"
+        );
+    }
+    assert!(
+        note.contains("name"),
+        "the box carries the signer's name: {note}"
+    );
+    assert!(note.contains("date"), "the box carries the date: {note}");
+    // The recommendation survived the correction and is a different argument
+    // now; see the string's own doc comment.
+    assert!(
+        note.contains("drawing nothing"),
+        "invisible is still the recommended choice: {note}"
+    );
+}
+
+/// ★★★ **AN AUTHOR-IMPOSED REFUSAL SAYS WHOSE RULE IT IS, AND PDFCER IS NOT THE
+/// SUBJECT OF THE FIRST SENTENCE.**
+///
+/// The single most important property of any string added on 2026-09-06.
+/// `Pass 10.13` enforces a signature field's `/SV` dictionary in full and is
+/// deliberately stricter than Acrobat, so the operator **will** meet refusals
+/// here on documents another reader signs. The general wording,
+/// [`crate::text::sign::engine_refused`] — *"pdfcer did not sign the document:
+/// …"* — would tell him, in plain English, that pdfcer is broken; he would be
+/// right to conclude it from the sentence and wrong about the program, and a
+/// working feature would be reported as a defect.
+///
+/// So: the document's preparer is named, and named FIRST; the strictness is
+/// admitted as a choice rather than hidden; and a remedy is offered that does
+/// not require pdfcer to change.
+#[test]
+fn an_author_imposed_refusal_names_the_author_and_not_pdfcer() {
+    let sentence = crate::text::sign::author_imposed("the field requires SubFilter one of: X, Y");
+    let lower = sentence.to_lowercase();
+    let prepared = lower
+        .find("prepared this document")
+        .expect("the sentence names whoever prepared the document");
+    let pdfcer = lower.find("pdfcer").expect("pdfcer is mentioned");
+    assert!(
+        prepared < pdfcer,
+        "the document's author must be named BEFORE pdfcer is: {sentence}"
+    );
+    assert!(
+        lower.contains("not a limit in pdfcer"),
+        "the sentence must deny that this is a pdfcer limitation: {sentence}"
+    );
+    assert!(
+        lower.contains("stricter"),
+        "the deliberate strictness is stated rather than hidden: {sentence}"
+    );
+    assert!(
+        lower.contains("the field requires subfilter one of: x, y"),
+        "the engine's own message, with the satisfying values, is quoted verbatim: {sentence}"
+    );
+}
+
+/// **What the report says was written names the box that was reused.**
+///
+/// The rule-4 disclosure has to distinguish the two outcomes an operator cannot
+/// tell apart from the file: signed IN the sender's box, or signed beside it.
+/// And `SignReport::notes` — the seed-value constraints the author RECOMMENDED
+/// and this signature does not meet — must reach the screen, because they are
+/// the ones that did **not** refuse and would otherwise be silent.
+#[test]
+fn the_written_summary_carries_the_reuse_the_lock_and_the_notes() {
+    let written = crate::text::sign::written_details(
+        "SignHere",
+        "CN=Ken",
+        "0A1B",
+        true,
+        Some("Include: Name"),
+        Some("form fill-in and signing"),
+        &["seed value: a timestamp was recommended".to_owned()],
+    );
+    assert!(written.contains("already on the document"), "{written}");
+    assert!(written.contains("SignHere"), "{written}");
+    assert!(written.contains("Include: Name"), "{written}");
+    assert!(written.contains("form fill-in and signing"), "{written}");
+    assert!(written.contains("a timestamp was recommended"), "{written}");
+
+    // The created-field case says none of it, rather than saying "no lock" and
+    // "no notes" — an absence is not a disclosure.
+    let plain =
+        crate::text::sign::written_details("Signature1", "CN=Ken", "0A1B", false, None, None, &[]);
+    assert!(plain.contains("Signature field Signature1"), "{plain}");
+    assert!(!plain.contains("already on the document"), "{plain}");
+    assert!(!plain.contains("lock"), "{plain}");
+}
+
+/// **The three placement arms map to three different requests.**
+///
+/// ★ The one that matters: choosing the sender's box must NOT produce a
+/// rectangle. `SignRequest::visible` beside a resolving `field_name` is
+/// `RectRefusedForExistingField`, so a build that carried both would refuse the
+/// ordinary case the feature exists for.
+#[test]
+fn choosing_the_senders_box_produces_no_rectangle() {
+    let mut dialog = filling();
+    dialog.standing.empty_fields = vec![crate::sign::SigField {
+        name: "SignHere".to_owned(),
+        page: Some(1),
+        invisible: false,
+        locks: None,
+        constrained: false,
+        unusable: None,
+    }];
+    assert_eq!(dialog.placement(), crate::sign::Placement::Invisible);
+
+    dialog.place = Place::Box;
+    dialog.page = 2;
+    assert_eq!(
+        dialog.placement(),
+        crate::sign::Placement::Visible { page: 2 }
+    );
+
+    dialog.place = Place::Existing;
+    assert_eq!(
+        dialog.placement(),
+        crate::sign::Placement::ExistingField {
+            name: "SignHere".to_owned()
+        },
+        "the field is named and no page or rectangle travels with it"
+    );
+}
+
+/// ★★ **An index that outran its list falls back to drawing NOTHING.**
+///
+/// Unreachable from the window — `Place::Existing` is only offered when a
+/// selectable field exists — so this pins the *direction* of a guess rather
+/// than a live path. When a surface has to guess on a branch it believes
+/// impossible, it should guess toward writing LESS into the operator's file: a
+/// fallback of `Visible` would stamp a box carrying his name on a page he never
+/// asked to have marked.
+#[test]
+fn a_field_index_with_no_field_draws_nothing() {
+    let mut dialog = filling();
+    dialog.place = Place::Existing;
+    dialog.field = 7;
+    assert_eq!(dialog.placement(), crate::sign::Placement::Invisible);
 }

@@ -412,9 +412,26 @@ mod tests {
         // signing exists — and this expression is a test asserting that the
         // mechanism did what it says. A test that could not mention the feature
         // could not check that turning it off removes exactly one command.
+        // ★★★ 143 → 144 on 2026-09-06: `pages.resize`, and it closes the
+        // largest gap `EDITABLE_SURFACES.md` had listed with no sentence
+        // anywhere against it.
+        //
+        // `EditSession::set_media_boxes` shipped on **2026-08-18** — written
+        // for the drawing-set case, one undo entry however many sheets — and
+        // was called by nothing for nineteen days, because no command reached
+        // it. Worse: a complete size chooser was already built and unreachable,
+        // in `dialogs::new_document`, which offers `PaperSize::ALL`, both
+        // orientations and a custom size and opens **only while creating a
+        // file**. An operator with a drawing open could not resize its sheets
+        // at all.
+        //
+        // ⇒ The counter moves by one and the capability moves from *"present
+        // in the engine, written down in three files, reachable from
+        // nowhere"* to reachable. That transition is the one this whole
+        // register exists to make legible.
         assert_eq!(
             registry().len(),
-            142 + usize::from(cfg!(feature = "signing"))
+            143 + usize::from(cfg!(feature = "signing"))
         );
     }
 
@@ -703,12 +720,32 @@ mod tests {
         // and sharing would have put one picture on a control that reads and
         // one that writes. See `catalog::file`'s registration.
         //
+        // ★★ 136 → 137 on 2026-09-06: `pages.resize` names `page-single`,
+        // which is a SHARED key rather than new art — the second entry in this
+        // ledger to share, and the first to do so under duress rather than on
+        // the merits.
+        //
+        // The merits are real: `view.page_single` is on a different tab, one
+        // tab's band shows at a time, so the two are never drawn together, and
+        // a single sheet is a fair picture of "what size is this sheet". What
+        // makes it duress is that the operator's standing ruling of 2026-08-06
+        // is that **a missing glyph is drawn, not worked around**, and there is
+        // no glyph in the set that says *sheet size*. It was not drawn because
+        // `icons::catalog::mod` sits at **1,498 of R2's 1,500 lines**: minting
+        // an `Icon` variant there is a file split, not an icon, and a file
+        // split of the icon catalogue is not this track's to make while another
+        // track is live.
+        //
+        // ⇒ Recorded as a **deferred** decision rather than a settled one.
+        // What distinguishes the two controls today is the label, which is why
+        // `pages.resize` carries one and its two rotate neighbours do not.
+        //
         // Build-dependent for `registry().len()`'s reason above: with the
         // capability compiled out the command is not registered, so it names
         // no icon and this count is one lower.
         assert_eq!(
             named,
-            135 + usize::from(cfg!(feature = "signing")),
+            136 + usize::from(cfg!(feature = "signing")),
             "commands naming an icon"
         );
         // ★ 12 → 17 on 2026-08-27: the Format ▸ Font group's five commands

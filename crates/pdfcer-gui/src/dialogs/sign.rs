@@ -107,6 +107,8 @@ use egui_shell::theme::Theme;
 use crate::app::actions::Action;
 use crate::app::state::OpenDoc;
 use crate::secret::Secret;
+use pdfcer_core::sign::apply::MdpPermission;
+
 use crate::sign::{Authored, Identity, IdentityFailure, Placement, Refusal, Standing};
 use crate::text::protect as tp;
 use crate::text::sign as t;
@@ -120,17 +122,17 @@ use crate::text::sign as t;
 // ---------------------------------------------------------------------------
 
 /// The whole window.
-const REGION_DIALOG: &str = "sign-dialog"; // ui-text-exempt: trace region name, never displayed
+pub(super) const REGION_DIALOG: &str = "sign-dialog"; // ui-text-exempt: trace region name, never displayed
 
 /// A refusal, declared **only while it is on screen** — so its presence in a
 /// trace is evidence about the operator's document rather than about the build.
-const REGION_REFUSAL: &str = "sign-refusal"; // ui-text-exempt: trace region name, never displayed
+pub(super) const REGION_REFUSAL: &str = "sign-refusal"; // ui-text-exempt: trace region name, never displayed
 
 /// The identity read-back, declared only once a certificate has been opened.
-const REGION_IDENTITY: &str = "sign-identity"; // ui-text-exempt: trace region name, never displayed
+pub(super) const REGION_IDENTITY: &str = "sign-identity"; // ui-text-exempt: trace region name, never displayed
 
 /// The control that opens the file picker for a certificate.
-const REGION_CHOOSE_CERTIFICATE: &str = "sign-choose-certificate"; // ui-text-exempt: trace region name, never displayed
+pub(super) const REGION_CHOOSE_CERTIFICATE: &str = "sign-choose-certificate"; // ui-text-exempt: trace region name, never displayed
 
 /// The passphrase field.
 ///
@@ -138,13 +140,76 @@ const REGION_CHOOSE_CERTIFICATE: &str = "sign-choose-certificate"; // ui-text-ex
 /// region name is a position, and `crate::diag::ui_rect` publishes a rect and a
 /// name and never a value. A driven check needs somewhere to click before it
 /// types, and this is it.
-const REGION_PASSPHRASE: &str = "sign-passphrase"; // ui-text-exempt: trace region name, never displayed
+pub(super) const REGION_PASSPHRASE: &str = "sign-passphrase"; // ui-text-exempt: trace region name, never displayed
 
 /// The control that opens the chosen certificate.
-const REGION_OPEN_CERTIFICATE: &str = "sign-open-certificate"; // ui-text-exempt: trace region name, never displayed
+pub(super) const REGION_OPEN_CERTIFICATE: &str = "sign-open-certificate"; // ui-text-exempt: trace region name, never displayed
 
 /// The control that commits, declared only while it is live.
-const REGION_CONFIRM: &str = "sign-confirm"; // ui-text-exempt: trace region name, never displayed
+pub(super) const REGION_CONFIRM: &str = "sign-confirm"; // ui-text-exempt: trace region name, never displayed
+
+/// The radio that chooses *sign into a box already on the document*
+/// (`Pass 10.13`), declared **only while the document has one to offer** — so
+/// its presence in a trace is evidence about the operator's document.
+pub(super) const REGION_EXISTING: &str = "sign-existing-field"; // ui-text-exempt: trace region name, never displayed
+
+/// **The scrolling body's own viewport**, declared every frame it is drawn.
+///
+/// ★★★ NOT [`REGION_DIALOG`], and the difference cost a driven run. The window
+/// region is `ui.max_rect()` for the whole host and includes the separator and
+/// the button row **below** the scroll area. A control scrolled to just above
+/// that footer is inside the window rectangle and **clipped out of the scroll
+/// area**, so egui reports its position and refuses the click — which reads to
+/// a harness as *"the control is there and pressing it does nothing"*.
+///
+/// ⇒ A check that wants to press something in this form must compare against
+/// THIS rectangle. It is `ui.clip_rect()` taken inside the scroll closure,
+/// which is the viewport egui itself interacts within.
+pub(super) const REGION_BODY: &str = "sign-body"; // ui-text-exempt: trace region name, never displayed
+
+/// The radio that chooses *draw a signature box on the page*.
+///
+/// ★ Declared unconditionally, unlike its two neighbours: it is always an
+/// option, so its presence carries no evidence and its only job is to give a
+/// driven check somewhere to press. [`REGION_EXISTING`] and
+/// [`REGION_BOX_WHERE`] are the ones whose presence is a measurement.
+pub(super) const REGION_PLACE_BOX: &str = "sign-place-box"; // ui-text-exempt: trace region name, never displayed
+
+/// The line stating where a box this shell places will go, declared **only
+/// while that is the choice**.
+///
+/// ★★★ Its whole job is to make *retirement* measurable on a ONE-PAGE document.
+/// [`REGION_PAGE`] is the obvious probe and it is not drawn on a single-page
+/// document at all — a chooser with one possible value is a label pretending to
+/// be a choice — so a check aimed at it could not tell *"the page control
+/// retired because a pre-placed box was chosen"* from *"there was never a page
+/// control"*. This region is declared for `Place::Box` and for nothing else, on
+/// a document of any length, so its presence and its absence are both evidence.
+pub(super) const REGION_BOX_WHERE: &str = "sign-box-where"; // ui-text-exempt: trace region name, never displayed
+
+/// The page chooser, declared only while a box is being placed by the operator.
+///
+/// ★★★ Named so that its **absence** is measurable. `--visible`/`--page` are
+/// refused by the engine alongside a field name, so this control retires when a
+/// pre-placed box is chosen; a driven check can only prove *"retired"* rather
+/// than *"greyed"* if the region has a name to be missing under.
+pub(super) const REGION_PAGE: &str = "sign-page"; // ui-text-exempt: trace region name, never displayed
+
+/// The radio that makes this a **certifying** signature (`Pass 10.12`),
+/// declared only while the document permits one.
+pub(super) const REGION_CERTIFY: &str = "sign-certify"; // ui-text-exempt: trace region name, never displayed
+
+/// One row in the list of pre-placed signature fields, by index.
+///
+/// ★ A function rather than a constant because there is one per field and a
+/// check has to aim at a particular one. The index is the position in
+/// [`crate::sign::Standing::empty_fields`], which is the order the engine's own
+/// form projection returns — stable for a given document, which is all a check
+/// needs.
+pub(super) fn field_region(index: usize) -> String {
+    // ui-text-exempt: trace region name, never displayed.
+    format!("sign-field-{index}")
+}
 
 /// The control that opens what was just written.
 const REGION_OPEN_SIGNED: &str = "sign-open-signed"; // ui-text-exempt: trace region name, never displayed
@@ -161,7 +226,7 @@ const FOOTER_RESERVE: f32 = 96.0;
 const BODY_FLOOR: f32 = 160.0;
 
 /// The width of the single-line fields.
-const FIELD_WIDTH: f32 = 320.0;
+pub(super) const FIELD_WIDTH: f32 = 320.0;
 
 // ---------------------------------------------------------------------------
 // State
@@ -203,13 +268,31 @@ enum Phase {
     Failed(String),
 }
 
+/// **The placement radio group's value.**
+///
+/// A three-way choice on screen, matching [`Placement`]'s three arms — but a
+/// `Copy` enum of its own rather than `Placement` itself, because
+/// `egui::Ui::radio_value` compares and assigns its value and `Placement`'s
+/// third arm owns a `String`. The two are converted once, at
+/// [`SignDialog::commit`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) enum Place {
+    /// Nothing is drawn on any page. The default — [`Placement`]'s header
+    /// argues why.
+    Nothing,
+    /// A box this shell places, at [`crate::sign::default_rect`].
+    Box,
+    /// A box the document's author already placed. `Pass 10.13`.
+    Existing,
+}
+
 /// **Where the signed document goes.**
 ///
 /// [`crate::dialogs::protect::Destination`]'s twin; §6 of [`crate::sign`]'s
 /// header is the argument, including why replacing is more defensible here
 /// than for a redaction and still not the default.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Destination {
+pub(super) enum Destination {
     /// A new file, chosen in the save picker. The default.
     NewFile,
     /// The document that is open, replaced in place.
@@ -242,15 +325,36 @@ pub struct SignDialog {
     reason: String,
     /// `/Location`, as typed.
     location: String,
-    /// Whether a box is drawn on a page, and which page.
+    /// Where the signature goes: nothing drawn, a box this shell places, or a
+    /// box somebody else already placed.
     ///
-    /// ★ The page is kept beside the choice rather than inside
-    /// [`Placement::Visible`] so that switching to *draw nothing* and back does
-    /// not lose the page the operator picked. A radio group that forgets its
-    /// neighbour's value is one people learn not to touch.
-    visible: bool,
-    /// The 0-based page a visible signature goes on.
+    /// ★ The page and the chosen field are kept **beside** this rather than
+    /// inside it, so that switching to *draw nothing* and back does not lose
+    /// either. A radio group that forgets its neighbour's value is one people
+    /// learn not to touch.
+    place: Place,
+    /// The 0-based page a box this shell places goes on.
     page: usize,
+    /// Which pre-placed field is chosen — an index into
+    /// [`crate::sign::Standing::empty_fields`].
+    ///
+    /// ★★ An index HERE and a name in the request, and the asymmetry is
+    /// deliberate. A radio group binds to a value it can compare, and an index
+    /// is that; but an index that reached the engine would silently name the
+    /// wrong field if the list it indexes had changed, whereas a name that no
+    /// longer exists is refused by the engine, by name. The conversion happens
+    /// once, at [`SignDialog::commit`].
+    field: usize,
+    /// Whether this is a **certifying** (author) signature — `Pass 10.12`.
+    certify: bool,
+    /// The `/DocMDP` level a certification would carry.
+    ///
+    /// ★ Table 254's own default, `P = 2`, which the engine's bare `--certify`
+    /// also takes and *prints that it defaulted*. Form fill-in and further
+    /// signatures are what a drawing sent out for approval needs to allow; `P =
+    /// 1` would break the next person's signature, which is rarely what an
+    /// author signing first actually wants.
+    mdp: MdpPermission,
     /// `/M`, captured when the window opened and shown on screen.
     ///
     /// ★★★ Captured **once**, not read per frame, and that is what makes
@@ -306,8 +410,10 @@ impl std::fmt::Debug for SignDialog {
             .field("certificate_chosen", &self.certificate.is_some())
             .field("passphrase_supplied", &!self.passphrase.is_empty())
             .field("identity_open", &self.identity.is_some())
-            .field("visible", &self.visible)
+            .field("place", &self.place)
             .field("page", &self.page)
+            .field("field", &self.field)
+            .field("certify", &self.certify)
             .field("destination", &self.destination)
             .field("overwrite_acknowledged", &self.overwrite_acknowledged)
             .finish_non_exhaustive()
@@ -321,7 +427,7 @@ impl SignDialog {
     /// be wrong later: the identity does not exist yet and the bytes are not
     /// produced until the press.
     fn open(doc: &OpenDoc) -> Self {
-        let standing = Standing::read(&doc.session, &doc.path, doc.pages.len());
+        let standing = Standing::read(&doc.session, &doc.path, &doc.pages);
         let signing_time = crate::app::clock::pdf_date_utc();
         // ★ The clock failure is a REFUSAL, not a warning. PAdES requires `/M`
         // and the engine will not invent one, so a machine whose clock is
@@ -339,9 +445,21 @@ impl SignDialog {
             // opened onto a form" from "it opened onto a refusal" and, when it
             // is a refusal, which one — without which a check asserting a
             // refusal cannot tell the right refusal from any refusal.
+            //
+            // ★★ `empty_fields=` and `signable_fields=` are two numbers rather
+            // than one, and the difference is the whole of `Pass 10.13`'s
+            // list-with-a-reason rule: a field that is present and cannot be
+            // signed into is listed WITH its reason rather than filtered out,
+            // so a check must be able to tell *"the document has no box"* from
+            // *"the document has a box this build will not offer"*. One number
+            // makes those indistinguishable.
+            //
+            // ⚠ No field NAMES here. They are text out of the operator's own
+            // document and this trace is kept as evidence.
             format!(
                 "sign-opened refusal={} encrypted={} redaction_pending={} recovered={} \
-                 certification={} prior={} pages={} on_disk={}",
+                 certification={} prior={} pages={} on_disk={} empty_fields={} \
+                 signable_fields={} may_certify={}",
                 refusal_token(standing.refusal()),
                 u8::from(standing.encrypted),
                 u8::from(standing.redaction_pending),
@@ -352,6 +470,13 @@ impl SignDialog {
                 standing.prior_signatures,
                 standing.pages,
                 u8::from(standing.on_disk),
+                standing.empty_fields.len(),
+                standing
+                    .empty_fields
+                    .iter()
+                    .filter(|f| f.selectable())
+                    .count(),
+                u8::from(standing.may_certify().is_ok()),
             )
         });
         Self {
@@ -364,8 +489,18 @@ impl SignDialog {
             identity_error: None,
             reason: String::new(),
             location: String::new(),
-            visible: false,
+            // ★★★ The DEFAULT is *nothing drawn*, even on a document that
+            // carries a pre-placed box — deliberately, and it is the one place
+            // this design could reasonably have gone the other way. Pre-selecting
+            // the sender's box would be helpful and would also mean the first
+            // press of *Sign* writes into a field the operator never chose,
+            // possibly triggering a `/Lock` that freezes fields he still has to
+            // fill. Every arm of this group is one click; consent is not.
+            place: Place::Nothing,
             page: 0,
+            field: 0,
+            certify: false,
+            mdp: MdpPermission::FormFillAndSign,
             signing_time,
             destination: Destination::NewFile,
             overwrite_acknowledged: false,
@@ -468,6 +603,38 @@ impl SignDialog {
             return false;
         }
         !(self.destination == Destination::ReplaceOriginal && !self.overwrite_acknowledged)
+    }
+
+    /// **Turn the radio group's value into the request's placement.**
+    ///
+    /// Pure, so every arm is asserted headlessly — including the one that
+    /// matters most: *Existing* falling back to [`Placement::Invisible`] when
+    /// there is no field at that index.
+    ///
+    /// ★★★ The fallback is `Invisible`, never `Visible`, and the choice is a
+    /// safety one rather than an arbitrary default. `Invisible` writes
+    /// `/Rect [0 0 0 0]` and draws nothing; `Visible` would stamp a box with the
+    /// operator's name on a page he did not ask to have marked. When a surface
+    /// has to guess on an unreachable branch, it should guess toward *writes
+    /// less into the operator's file*.
+    ///
+    /// ⚠ Unreachable from the window — `Place::Existing` is only offered when
+    /// there is a selectable field and the index comes from the list that was
+    /// drawn — so this is the standing preference against panicking on a branch
+    /// a guard has already excluded, not a live path.
+    fn placement(&self) -> Placement {
+        match self.place {
+            Place::Nothing => Placement::Invisible,
+            Place::Box => Placement::Visible { page: self.page },
+            Place::Existing => {
+                self.standing
+                    .empty_fields
+                    .get(self.field)
+                    .map_or(Placement::Invisible, |f| Placement::ExistingField {
+                        name: f.name.clone(),
+                    })
+            }
+        }
     }
 
     /// Whether replacing the open document is an option at all.
@@ -624,12 +791,16 @@ impl SignDialog {
             authored: Authored {
                 reason: self.reason.clone(),
                 location: self.location.clone(),
-                placement: if self.visible {
-                    Placement::Visible { page: self.page }
-                } else {
-                    Placement::Invisible
-                },
+                placement: self.placement(),
                 signing_time,
+                // ★ `certify` is `None` unless the operator both chose it AND
+                // the document permits it. The second half is asked again here
+                // rather than trusted from the draw: the flag survives a
+                // document that changed under the window, and sending a
+                // certification the engine will refuse would replace a sentence
+                // the operator read when the window opened with one he meets
+                // after the picker.
+                certify: (self.certify && self.standing.may_certify().is_ok()).then_some(self.mdp),
             },
             target,
             replace: self.destination == Destination::ReplaceOriginal,
@@ -700,6 +871,8 @@ impl SignDialog {
                     .auto_shrink([false, true])
                     .max_height((ui.available_height() - FOOTER_RESERVE).max(BODY_FLOOR))
                     .show(ui, |ui| {
+                        // ★ The viewport, not the content — see `REGION_BODY`.
+                        crate::diag::ui_rect(REGION_BODY, ui.clip_rect());
                         ui.label(t::intro());
                         if self.standing.prior_signatures > 0 {
                             ui.add_space(6.0);
@@ -727,6 +900,16 @@ impl SignDialog {
                             ui.add_space(10.0);
                             ui.separator();
                             ui.add_space(6.0);
+                            // ★ BEFORE placement, deliberately. *What kind of
+                            // signature this is* is the bigger of the two
+                            // decisions — a certification states what anybody
+                            // may change afterwards — and *where the box goes*
+                            // is a decision about a picture. The order on a form
+                            // is a claim about which question matters.
+                            self.kind_section(ui, &theme);
+                            ui.add_space(10.0);
+                            ui.separator();
+                            ui.add_space(6.0);
                             self.placement_section(ui, &theme);
                             ui.add_space(10.0);
                             ui.separator();
@@ -749,226 +932,6 @@ impl SignDialog {
         });
     }
 
-    /// **The certificate: choose it, unlock it, and read back what it says.**
-    fn certificate_section(&mut self, ui: &mut egui::Ui, theme: &Theme) {
-        ui.label(t::certificate_heading());
-        ui.add_space(6.0);
-        ui.horizontal(|ui| {
-            let choose = ui.button(t::choose_certificate());
-            crate::diag::ui_rect(REGION_CHOOSE_CERTIFICATE, choose.rect);
-            if choose.clicked() {
-                self.pick_requested = true;
-            }
-            ui.label(
-                self.certificate
-                    .as_deref()
-                    .map_or_else(|| t::certificate_none_chosen().to_owned(), file_name_of),
-            );
-        });
-        ui.add_space(6.0);
-        ui.label(t::passphrase_label());
-        let field = ui.add(
-            egui::TextEdit::singleline(&mut self.passphrase)
-                .password(true)
-                .desired_width(FIELD_WIDTH),
-        );
-        crate::diag::ui_rect(REGION_PASSPHRASE, field.rect);
-        ui.add_space(2.0);
-        // ★★★ The promise about behaviour, where the secret is typed rather
-        // than in a footnote. `crate::text::sign::passphrase_note` names the
-        // two mechanisms that make it true.
-        ui.label(
-            egui::RichText::new(t::passphrase_note())
-                .color(theme.palette.text_muted)
-                .small(),
-        );
-        ui.add_space(6.0);
-        // Enabled only once there is a file to open — a button that reports
-        // "choose a certificate first" is a button that knew.
-        let open = ui.add_enabled(
-            self.certificate.is_some(),
-            egui::Button::new(t::open_certificate()),
-        );
-        crate::diag::ui_rect(REGION_OPEN_CERTIFICATE, open.rect);
-        if open.clicked() {
-            self.open_certificate_requested = true;
-        }
-
-        if let Some(error) = &self.identity_error {
-            ui.add_space(6.0);
-            ui.label(egui::RichText::new(error.clone()).color(theme.palette.danger));
-        }
-
-        let Some(identity) = &self.identity else {
-            return;
-        };
-        let report = identity.report();
-        ui.add_space(10.0);
-        let heading = ui.label(t::identity_heading());
-        crate::diag::ui_rect(REGION_IDENTITY, heading.rect);
-        ui.add_space(4.0);
-        ui.label(t::identity_subject(&report.subject));
-        if let Some(friendly) = &report.friendly_name {
-            ui.label(t::identity_friendly_name(friendly));
-        }
-        ui.label(t::identity_key(&report.key, report.chain_length));
-        // ★★ Both directions, always. A line that appears only when something
-        // is wrong is a line nobody learns to look for — and the wrong
-        // direction here (a container with no MAC) is the one fact on this
-        // window an operator could act on and would not otherwise be told.
-        let integrity = t::identity_integrity(report.mac.as_deref());
-        if report.mac.is_some() {
-            ui.label(integrity);
-        } else {
-            ui.label(egui::RichText::new(integrity).color(theme.palette.danger));
-        }
-        if report.unrelated_certificates > 0 {
-            ui.label(
-                egui::RichText::new(t::identity_unrelated(report.unrelated_certificates))
-                    .color(theme.palette.text_muted),
-            );
-        }
-    }
-
-    /// **What the signature will say** — `/Reason`, `/Location`, and the time.
-    fn details_section(&mut self, ui: &mut egui::Ui, theme: &Theme) {
-        ui.label(t::details_heading());
-        ui.add_space(6.0);
-        ui.label(t::reason_label());
-        ui.add(
-            egui::TextEdit::singleline(&mut self.reason)
-                .hint_text(t::reason_hint())
-                .desired_width(FIELD_WIDTH),
-        );
-        ui.add_space(4.0);
-        ui.label(t::location_label());
-        ui.add(
-            egui::TextEdit::singleline(&mut self.location)
-                .hint_text(t::location_hint())
-                .desired_width(FIELD_WIDTH),
-        );
-        ui.add_space(6.0);
-        ui.label(
-            egui::RichText::new(t::authored_note())
-                .color(theme.palette.text_muted)
-                .small(),
-        );
-        ui.add_space(4.0);
-        // The absence explained on screen — see `crate::text::sign`'s header.
-        ui.label(
-            egui::RichText::new(t::name_comes_from_the_certificate())
-                .color(theme.palette.text_muted)
-                .small(),
-        );
-        ui.add_space(6.0);
-        if let Some(stamp) = &self.signing_time {
-            ui.label(t::signing_time(stamp));
-        }
-    }
-
-    /// **On the page** — invisible by default, with the box's contents stated
-    /// before it is chosen.
-    fn placement_section(&mut self, ui: &mut egui::Ui, theme: &Theme) {
-        ui.label(t::placement_heading());
-        ui.add_space(6.0);
-        ui.radio_value(&mut self.visible, false, t::placement_invisible());
-        ui.radio_value(&mut self.visible, true, t::placement_visible());
-        ui.add_space(4.0);
-        // ★★★ R8b Rule 4, and it is drawn whichever option is selected: the
-        // operator must know what the box contains BEFORE choosing it, not
-        // after. A note that appeared only once *visible* was picked would
-        // arrive one press too late.
-        ui.label(
-            egui::RichText::new(t::placement_note()).color(if self.visible {
-                theme.palette.danger
-            } else {
-                theme.palette.text_muted
-            }),
-        );
-        if self.visible {
-            ui.add_space(4.0);
-            ui.label(egui::RichText::new(t::placement_where()).color(theme.palette.text_muted));
-            ui.add_space(4.0);
-            // ★ A one-page document gets no chooser — a control with one
-            // possible value is a label pretending to be a choice, which is
-            // `crate::dialogs::protect`'s own rule about its job radio group.
-            if self.standing.pages > 1 {
-                ui.horizontal(|ui| {
-                    ui.label(t::page_label());
-                    // 1-based on screen, 0-based in the request. The engine
-                    // takes an index; an operator counts pages.
-                    let mut shown = self.page + 1;
-                    ui.add(egui::DragValue::new(&mut shown).range(1..=self.standing.pages));
-                    self.page = shown.saturating_sub(1);
-                });
-            }
-        }
-    }
-
-    /// **Where the signed document goes.** Drawn only when there is an
-    /// original to replace.
-    fn destination_section(&mut self, ui: &mut egui::Ui) {
-        if !self.can_replace_original() {
-            return;
-        }
-        let name = file_name_of(&self.source);
-        ui.label(tp::destination_heading());
-        ui.add_space(2.0);
-        let mut choice = self.destination;
-        ui.radio_value(
-            &mut choice,
-            Destination::NewFile,
-            tp::destination_new_file(),
-        )
-        .on_hover_text(tp::destination_new_file_tooltip());
-        ui.radio_value(
-            &mut choice,
-            Destination::ReplaceOriginal,
-            tp::destination_replace(&name),
-        )
-        .on_hover_text(tp::destination_replace_tooltip());
-        self.choose_destination(choice);
-        ui.add_space(6.0);
-        // Asked for only while it applies, for the reason above.
-        if self.destination == Destination::ReplaceOriginal {
-            ui.checkbox(
-                &mut self.overwrite_acknowledged,
-                tp::overwrite_acknowledgement_checkbox(&name),
-            );
-        }
-    }
-
-    /// The confirm control, and the sentence that explains it when it is
-    /// greyed.
-    fn confirm_row(&mut self, ui: &mut egui::Ui) {
-        // ★ The label IS the consequence, and the consequence depends on the
-        // destination: an ellipsis promises the picker, and naming the file
-        // promises there will be no further question before it is replaced.
-        // Promising one with a punctuation mark and not asking it would be a
-        // lie the operator acts on.
-        let label = match self.destination {
-            Destination::NewFile => t::confirm_button().to_owned(),
-            Destination::ReplaceOriginal => t::confirm_button_replace(&file_name_of(&self.source)),
-        };
-        let ready = self.ready_to_confirm();
-        let confirm = ui.add_enabled(ready, egui::Button::new(label));
-        // Declared only while it is live, so its absence from a trace is
-        // evidence the gates are closed rather than evidence a click missed.
-        if ready {
-            crate::diag::ui_rect(REGION_CONFIRM, confirm.rect);
-        }
-        let clicked = confirm.clicked();
-        // ★★ The `if !ready` shape and the borrow order are copied from
-        // `dialogs::redact`: `on_disabled_hover_text` CONSUMES the response, so
-        // `.rect` and `.clicked()` are read first.
-        if !ready {
-            confirm.on_disabled_hover_text(self.disabled_reason());
-        }
-        if clicked {
-            self.confirm_requested = true;
-        }
-    }
-
     /// **Why the confirm control is greyed**, in the order the conditions are
     /// met.
     ///
@@ -976,6 +939,12 @@ impl SignDialog {
     /// **always explained on hover**. `OPERATOR_REQUESTS.md` O77's sweep found
     /// seven greyed controls with no explanation; this is the shape that
     /// discharges it.
+    ///
+    /// ★ It stays HERE rather than moving to [`sections`] with the row that
+    /// draws it, because it is a statement about the window's gate — the same
+    /// gate [`Self::ready_to_confirm`] enforces two functions above — and the
+    /// two must be read together or they drift into disagreeing about which
+    /// condition is being explained.
     fn disabled_reason(&self) -> &'static str {
         if self.identity.is_none() {
             t::confirm_disabled_no_certificate()
@@ -1004,7 +973,7 @@ const fn refusal_token(refusal: Option<Refusal>) -> &'static str {
 }
 
 /// A path's file name, for a sentence that names a file.
-fn file_name_of(path: &Path) -> String {
+pub(super) fn file_name_of(path: &Path) -> String {
     path.file_name().map_or_else(
         || path.display().to_string(),
         |n| n.to_string_lossy().into_owned(),
@@ -1022,6 +991,8 @@ pub(super) fn open_for(status: &crate::app::state::Status) -> Option<SignDialog>
     };
     Some(SignDialog::open(doc))
 }
+
+mod sections;
 
 #[cfg(test)]
 mod tests;

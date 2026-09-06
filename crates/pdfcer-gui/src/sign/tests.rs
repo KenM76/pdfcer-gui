@@ -42,7 +42,157 @@ fn clean() -> Standing {
         certification_permission: None,
         pages: 3,
         on_disk: true,
+        empty_fields: Vec::new(),
+        certified: false,
     }
+}
+
+/// A `Standing` carrying one plain, signable, pre-placed signature field.
+///
+/// ★ Built field by field rather than read off a document, for [`clean`]'s
+/// reason: the tests below are about what this shell DOES with a field, and the
+/// reading of one out of an `/AcroForm` is exercised by the driven check on the
+/// engine's own `sig-field-empty.pdf`.
+fn with_field(field: SigField) -> Standing {
+    Standing {
+        empty_fields: vec![field],
+        ..clean()
+    }
+}
+
+/// The plain case: a merged, unlocked, unconstrained, visible box on page 1.
+fn plain_field() -> SigField {
+    SigField {
+        name: "SignHere".to_owned(),
+        page: Some(0),
+        invisible: false,
+        locks: None,
+        constrained: false,
+        unusable: None,
+    }
+}
+
+// ---------------------------------------------------------------------------
+// `Pass 10.13` — signing into a box somebody else placed
+// ---------------------------------------------------------------------------
+
+/// ★★★ **A pre-placed field reaches the request as a NAME and no rectangle.**
+///
+/// The whole of `Pass 10.13`'s contract from this side, and the one property a
+/// build could get wrong in a way nothing else would notice: sending `visible`
+/// beside a `field_name` that resolves is
+/// `SignApplyError::RectRefusedForExistingField`, so the operator would meet a
+/// refusal on the ordinary case the feature exists for.
+///
+/// ⚠ Asserted through `Placement` rather than through `prepare`, which needs a
+/// real `EditSession` and a private key. What this pins is that the three arms
+/// are exclusive **by construction** — the enum cannot carry both — which is
+/// the mechanism, and the mapping in `prepare` is one `match` in view of it.
+#[test]
+fn a_pre_placed_field_is_named_and_carries_no_rectangle() {
+    let placement = Placement::ExistingField {
+        name: "SignHere".to_owned(),
+    };
+    // The type system is the assertion: there is no rectangle to set.
+    assert!(matches!(placement, Placement::ExistingField { ref name } if name == "SignHere"));
+    assert_ne!(placement, Placement::Invisible);
+    assert_ne!(placement, Placement::Visible { page: 0 });
+}
+
+/// **A field whose widgets are under `/Kids` is listed and not selectable.**
+///
+/// Listed WITH its reason rather than filtered out, which is the rule this
+/// shell applies to every unreachable option on this window: an operator hunting
+/// for the box the sender told him about must find it and be told why it is not
+/// offered. An absent row is indistinguishable from a document that never had
+/// one.
+#[test]
+fn a_kids_field_is_listed_and_refused_by_name() {
+    let field = SigField {
+        unusable: Some(FieldBar::HasKids),
+        ..plain_field()
+    };
+    assert!(!field.selectable());
+    let standing = with_field(field);
+    assert_eq!(standing.empty_fields.len(), 1, "listed, not filtered out");
+    assert_eq!(
+        standing
+            .empty_fields
+            .iter()
+            .filter(|f| f.selectable())
+            .count(),
+        0
+    );
+}
+
+/// **A lock and a seed-value dictionary are carried, not swallowed.**
+///
+/// ★★★ Both are disclosed BEFORE the press — the lock because signing freezes
+/// fields the author nominated, the constraints because a refusal is possible
+/// and it will be the author's rule rather than pdfcer's. A build that read the
+/// field and dropped these two would produce an identical list, an identical
+/// signature, and an operator who learned about the freeze from the summary
+/// afterwards.
+#[test]
+fn a_lock_and_a_seed_value_survive_the_reading() {
+    let field = SigField {
+        locks: Some("Include".to_owned()),
+        constrained: true,
+        ..plain_field()
+    };
+    assert!(field.selectable(), "a lock does not make a field unusable");
+    assert_eq!(field.locks.as_deref(), Some("Include"));
+    assert!(field.constrained);
+}
+
+// ---------------------------------------------------------------------------
+// `Pass 10.12` — certifying
+// ---------------------------------------------------------------------------
+
+/// **A clean document may be certified.**
+///
+/// The negative control for the two below: without it, a build whose
+/// `may_certify` returned `Err` unconditionally would pass both refusal tests
+/// and never offer a certification.
+#[test]
+fn a_clean_document_may_be_certified() {
+    assert_eq!(clean().may_certify(), Ok(()));
+}
+
+/// **A document that already carries a signature cannot be certified.**
+///
+/// §12.8.2.2.1: the certifier is the author, *"the person applying the first
+/// signature"* — a later certification could not govern the changes made before
+/// it. Refused HERE, when the window opens, rather than by the engine after the
+/// form is filled in and a save path chosen.
+#[test]
+fn a_signed_document_cannot_be_certified() {
+    let standing = Standing {
+        prior_signatures: 2,
+        ..clean()
+    };
+    assert_eq!(
+        standing.may_certify(),
+        Err(CertifyBar::NotFirst { existing: 2 })
+    );
+}
+
+/// ★★ **An already-certified document is refused for THAT reason, and the
+/// order matters.**
+///
+/// A document that is both certified and signed satisfies both guards. The
+/// engine checks `AlreadyCertified` first, so this shell does too — two surfaces
+/// disagreeing about which of two true things to say is how an operator learns
+/// to distrust both.
+#[test]
+fn an_already_certified_document_names_the_certification_not_the_count() {
+    let standing = Standing {
+        certified: true,
+        certification_permission: Some(2),
+        prior_signatures: 1,
+        ..clean()
+    };
+    assert_eq!(standing.may_certify(), Err(CertifyBar::AlreadyCertified));
 }
 
 /// **A document with nothing wrong with it is offered a form.**

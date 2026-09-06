@@ -143,7 +143,28 @@ pub(super) fn tab() -> Tab {
             // *only* rotate was what made the absence of every other page
             // operation loudest.
             //
-            // Crop and Resize are **N**.
+            // ★★★ Crop is still **N**. **Resize is not** — 2026-09-06.
+            //
+            // `pages.resize` is the third control in this band and the first
+            // that changes a page's *paper* rather than its orientation, which
+            // is why it sits here and not in Organise: Organise is about the
+            // set of sheets, Transform is about a sheet.
+            //
+            // ★ Labelled (`command`) where its two neighbours are `icon_only`,
+            // and that asymmetry is deliberate rather than an oversight. Rotate
+            // left and rotate right are a *pair* an operator finds by shape and
+            // position, and a glyph is enough for them. This one opens a window
+            // that will crop his drawing if he is not careful, and there is no
+            // icon in the catalogue that says "sheet size" — so it says it in
+            // words. `large` is not available here anyway:
+            // `large_items_already_lead_their_group` forbids promoting an item
+            // that does not lead its group, and this one is third.
+            //
+            // It reuses the `page-single` glyph, shared with
+            // `view.page_single` under the catalogue's shared-key convention —
+            // the two are never drawn together, because one tab's band shows at
+            // a time. A key of its own was not available: `icons::catalog` is
+            // at 1,498 of R2's 1,500 lines.
             // ---------------------------------------------------------------
             group(
                 "transform",
@@ -151,6 +172,7 @@ pub(super) fn tab() -> Tab {
                 [
                     icon_only("pages.rotate_left"),
                     icon_only("pages.rotate_right"),
+                    command("pages.resize"),
                 ],
             ),
         ])

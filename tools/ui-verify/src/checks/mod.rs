@@ -375,6 +375,7 @@ pub mod page_clipboard;
 /// program has never seen.
 pub mod page_display_pref;
 pub mod page_ops;
+pub mod page_size;
 /// ★★★ **A save that would produce blank pages in Acrobat is refused** —
 /// the operator's report of 2026-09-05. `pdfcer-core`'s `delete_pages` leaves
 /// every ancestor's `/Count` above the immediate parent stale, so pdfcer's own

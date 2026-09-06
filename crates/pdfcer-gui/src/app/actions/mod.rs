@@ -167,6 +167,17 @@ pub use chrome::ViewChrome;
 /// one's is *a page index is a position, not an identity*. See its header for
 /// the table of what each kind of page edit invalidates.
 pub mod pages;
+/// ★★★ **Changing the paper an open drawing sits on** — `set_media_boxes`, and
+/// the pre-commit survey that tells the operator whether he is about to crop
+/// his drawing or leave it alone.
+///
+/// A sibling of [`pages`] rather than part of it, and the seam is a real one:
+/// that file's subject is the resync a **structural** edit owes, and a media
+/// box change adds, removes and renumbers nothing — every row of its table is
+/// "unchanged" for this verb. Its header carries the measured answer to the
+/// question every other page-size control in the world gets wrong: the paper
+/// changes and the drawing does not move.
+pub mod pagesize;
 
 pub use disclosure::{EditDisclosure, last_edit_disclosure};
 // ★ Crate-visible rather than `pub`, and re-exported here rather than reached

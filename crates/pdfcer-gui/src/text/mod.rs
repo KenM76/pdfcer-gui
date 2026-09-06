@@ -235,6 +235,14 @@ pub mod merge;
 /// `crate::dialogs::new_document`.
 pub mod new_document;
 pub mod ocr;
+/// ★★★ The words for **changing the paper an open drawing sits on** — the
+/// sheet-size window and the disclosures its commit raises. Consumed by
+/// `crate::dialogs::page_size` and `crate::app::actions::pagesize`. Its header
+/// carries the one sentence the whole module exists for: a `/MediaBox` change
+/// changes the **paper**, and does not move or scale anything drawn on the
+/// page — which is the opposite of what every other "page size" control an
+/// operator has ever used does.
+pub mod page_size;
 /// ★ The PAGE clipboard's four sentences — three of which are facts the
 /// operator cannot see. Its header carries why a page paste is rule 4's
 /// sharpest case.

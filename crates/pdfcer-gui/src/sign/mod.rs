@@ -52,7 +52,7 @@
 //! # 2. The engine's verbs, verified against the source at the pinned revision
 //!
 //! `D:\Dev\pdfcer\crates\pdfcer-core\src\`, at the revision `Cargo.lock` pins
-//! (`pdfcer-core 0.41.0`, `f9bc7c8`). Checked at that commit rather than at
+//! (`pdfcer-core 0.42.0`, `d6b998f`). Checked at that commit rather than at
 //! `main`, on [`crate::protect`]'s standing rule: what compiles here is the
 //! pin, and a sentence about the engine has a shelf life measured in hours.
 //!
@@ -61,7 +61,113 @@
 //! Pkcs12Signer::report()                            -> &Pkcs12Report
 //! EditSession::sign(&dyn Signer, &SignRequest, &SaveOptions)
 //!                                                   -> Result<(Vec<u8>, SignReport), SignApplyError>
+//! forms::parse_acroform(&SessionGraph)              -> Option<AcroForm>
 //! ```
+//!
+//! ---
+//!
+//! # 2b. ★★★ WHAT THE PIN MOVE OF 2026-09-06 CHANGED, AND THE COPY IT MADE FALSE
+//!
+//! The lock went `f9bc7c8` (v0.41.0) → `d6b998f` (v0.42.0), thirteen commits,
+//! carrying three signing Passes. **Nothing failed to compile** — every one of
+//! them is additive on a `#[non_exhaustive]` struct — which is precisely why
+//! the interesting half is the prose:
+//!
+//! | Pass | what arrived | what it falsified here |
+//! |---|---|---|
+//! | `10.12` (`02bb1ba`) | `SignRequest::certify` — a **certifying** (`/DocMDP`) signature | nothing; the capability was simply absent |
+//! | `10.13` (`ab40127`) | `SignRequest::field_name` resolving an EXISTING empty `/FT /Sig` field — signing **into** a box somebody else placed | nothing; absent |
+//! | `10.14` (`187fa09`) | a **composed** visible appearance: signer CN, date, reason, location, Helvetica, shrink-to-fit | ★★★ [`crate::text::sign::placement_note`], which told the operator in as many words that *"the box is an empty frame"* |
+//!
+//! ★★ That third row is the one worth carrying, because the falsehood was
+//! **under-promising** and therefore unreportable: an operator told the box
+//! would be empty, who then finds his own name in it, has been pleasantly
+//! surprised and will never file a defect. Nothing on the screen, in a test, or
+//! in a gate could have gone red. What caught it was that the string's own doc
+//! comment carried the date, the engine commit and the instruction *"when the
+//! pin moves past `f9bc7c8`, re-read this string first"* — a dated citation
+//! that names its own expiry.
+//!
+//! ⇒ **A claim about the engine is a citation, and a citation gets a date and a
+//! successor.** The corrected string carries the same apparatus.
+//!
+//! ---
+//!
+//! # 2c. ★★★ SIGNING INTO A BOX THE SENDER PLACED — the half that matters
+//!
+//! What shipped on 2026-09-06 signs by **creating** a signature field. That is
+//! the wrong half for this operator's ordinary day: a drawing goes out for
+//! approval, the sender places a *"sign here"* box on the title block, and it
+//! comes back needing a signature **in that box**. `Pass 10.13` is the other
+//! half, and it changes three things here.
+//!
+//! **1. The field is chosen, not created.** [`Standing::empty_fields`] lists
+//! every `/FT /Sig` field in the document that has no `/V` — read once, when the
+//! window opens, out of `forms::parse_acroform`. [`Placement::ExistingField`]
+//! names one.
+//!
+//! **2. ★★★ Placement becomes a THREE-way choice, and the combination the
+//! engine refuses is made unrepresentable.** `SignRequest::visible` beside a
+//! `field_name` that resolves to an existing field is
+//! `SignApplyError::RectRefusedForExistingField` — *"the existing field already
+//! has a rectangle; --visible/--page do not apply."* This shell could have sent
+//! both and shown the refusal. It does not: [`Placement`] is one enum with three
+//! arms, so *"draw the box here"* and *"use the sender's box"* cannot both be
+//! true, and the window **retires** the page chooser rather than greying it —
+//! R9's *absent* branch, with [`crate::text::sign::placement_field_note`]
+//! saying why it went.
+//!
+//! **3. ★★★ TWO ENFORCEMENT FAMILIES ARRIVE WITH IT, AND BOTH ARE THE AUTHOR'S
+//! RULES RATHER THAN PDFCER'S.** This is the design decision the wording has to
+//! carry, and getting it wrong makes a working feature read as a defect.
+//!
+//! * **`/Lock` (Table 233)** on the chosen field is *honoured*, as a
+//!   `/FieldMDP` signature reference (§12.8.2.4) whose Action and Fields are
+//!   copied from the lock. So signing that box can legitimately **freeze other
+//!   fields the author nominated** — a real consequence for a form the operator
+//!   may still have to fill in. [`SigField::locks`] carries it, and the window
+//!   says so **beside the field, before the press**, not in the summary
+//!   afterwards.
+//! * **`/SV` (Table 234)** is enforced **in full**: a required constraint the
+//!   request does not meet is refused by name with the satisfying values
+//!   (`SeedValueViolated`); a recommended one unmet is disclosed on
+//!   `SignReport::notes`; and anything pdfcer does not evaluate — `/Cert`, a
+//!   required timestamp, a legal attestation, revocation info, an unknown key —
+//!   is **refused rather than skipped** (`SeedValueUnevaluable`).
+//!
+//! ★★★ **The engine is therefore deliberately stricter than Acrobat, and the
+//! operator will meet refusals on documents Acrobat would sign.** A sentence
+//! that reads *"pdfcer could not sign this"* would be true and would be taken as
+//! a defect in pdfcer. [`crate::text::sign::author_imposed`] is the one wording
+//! for all of them and it says whose rule it is: **the person who prepared the
+//! document wrote the condition**, pdfcer will not sign around it, and the
+//! remedy is another box or a word with the sender. The strictness is stated as
+//! a choice, because an operator comparing two programs deserves to know which
+//! one is doing something unusual and why.
+//!
+//! ---
+//!
+//! # 2d. Certifying — an option in this window, not a second command
+//!
+//! `Pass 10.12`'s `SignRequest::certify` writes the `/DocMDP` transform and the
+//! catalog `/Perms`, which is *"the author's signature"*: it says what may be
+//! changed afterwards without invalidating it (Table 254 — `P` 1, 2 or 3).
+//!
+//! ★ It is a **radio pair inside the Sign window**, not `file.certify` on the
+//! ribbon, and that is a design decision rather than an economy. The two acts
+//! share every field on this form — the same identity, the same reason, the same
+//! placement, the same destination, the same private key handled the same way —
+//! and differ in one value. A second command would put all of that in a second
+//! file, which is where a disclosure goes missing; and it would ask the operator
+//! to know the word *certify* before he could find out what it means. Here the
+//! choice is beside its explanation.
+//!
+//! ⚠ Both of the engine's certification refusals are **states of the document**,
+//! not of the request: a certification must be the document's FIRST signature
+//! (`CertificationNotFirst`) and there is at most one per document
+//! (`AlreadyCertified`). Both are knowable when the window opens, so
+//! [`Standing::may_certify`] answers them there and the option is **absent with
+//! a sentence** rather than offered and then refused.
 //!
 //! ## ★★ What the engine does that this module must NOT duplicate
 //!
@@ -213,7 +319,7 @@ use std::path::{Path, PathBuf};
 
 use pdfcer_core::edit::EditSession;
 use pdfcer_core::page_tree::{Page, Rect};
-use pdfcer_core::sign::apply::{SignApplyError, SignReport, SignRequest};
+use pdfcer_core::sign::apply::{MdpPermission, SignApplyError, SignReport, SignRequest};
 use pdfcer_core::sign::pkcs12::{Pkcs12Error, Pkcs12Report, Pkcs12Signer};
 use pdfcer_core::writer::SaveOptions;
 
@@ -262,6 +368,184 @@ pub struct Standing {
     /// `crate::app::save::has_a_file` asks it: a second source of truth drifts,
     /// and the failure when it does is writing over the wrong file.
     pub on_disk: bool,
+    /// **The empty signature fields somebody already placed in this document.**
+    ///
+    /// `Pass 10.13`'s whole subject: the *"sign here"* boxes a sender puts on a
+    /// drawing before mailing it out. Read once, when the window opens, for
+    /// [`Self`]'s stated reason — a list re-read per frame could change under
+    /// the choice seeded from it.
+    ///
+    /// ★ Empty in the ordinary case, and that is the point of listing rather
+    /// than assuming: most documents carry none, and offering *"sign into an
+    /// existing box"* on one of them would be an option whose only outcome is a
+    /// question.
+    pub empty_fields: Vec<SigField>,
+    /// Whether the document already carries a `/DocMDP` certification.
+    ///
+    /// Distinct from [`Self::certification_permission`] only in what an absent
+    /// `/P` means: the census reports `Some(2)` for a certification with no
+    /// `/P` because Table 254's default is permissive, so the permission is
+    /// never `None` on a certified document — but reading *"is it certified?"*
+    /// off a permission is the kind of derivation that survives one refactor.
+    pub certified: bool,
+}
+
+/// **One pre-placed, empty signature field — a box the document's author put
+/// there for somebody to sign in.**
+///
+/// `Pass 10.13`. Everything on this type is read out of the document and
+/// nothing is inferred; see [`read_empty_signature_fields`] for where each
+/// value comes from and for the two keys the engine models and
+/// `pdfcer_core::forms::Field` does not.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SigField {
+    /// The fully qualified field name (`/T`, dotted through its ancestors).
+    /// This is what `SignRequest::field_name` takes.
+    pub name: String,
+    /// The 0-based page the widget sits on, when it could be resolved.
+    ///
+    /// `None` rather than a guess. `/P` is optional on a widget (§12.5.2), and
+    /// a field whose widget is in no page's `/Annots` either has no page or has
+    /// one this shell could not find; saying *"page 1"* in either case would be
+    /// a sentence about the document that the document does not support.
+    pub page: Option<usize>,
+    /// Whether the field's own rectangle has no area — the author's own choice
+    /// of an **invisible** signature (§12.7.4.5), honoured rather than
+    /// corrected.
+    pub invisible: bool,
+    /// **The field carries a `/Lock` (Table 233): signing it FREEZES fields the
+    /// author nominated.**
+    ///
+    /// The engine honours it as a `/FieldMDP` signature reference (§12.8.2.4),
+    /// copying Action and Fields from the lock. `Some` carries the lock's own
+    /// `/Action` name — `All`, `Include`, `Exclude` — so the sentence beside the
+    /// field can say *which* freeze it is.
+    ///
+    /// ★★★ Disclosed **before** the press, not in the summary afterwards. The
+    /// engine reports it on `SignReport::field_lock` and this shell shows that
+    /// too, but a consequence an operator learns about after the file is written
+    /// is a consequence he did not consent to.
+    pub locks: Option<String>,
+    /// Whether the field carries an `/SV` seed-value dictionary (Table 234) —
+    /// conditions the author attached to signing it.
+    ///
+    /// A boolean rather than the parsed constraints, deliberately. `/SV` is
+    /// seven `/Ff` bits over five entry families and the engine evaluates all of
+    /// them; re-deriving that here would be a **second** answer to a question
+    /// with one answer, and the two would disagree the first time either
+    /// changed. What this shell owes the operator before the press is *"the
+    /// sender attached conditions to this box"*; what the conditions ARE is the
+    /// engine's sentence, arriving by name if one is unmet.
+    pub constrained: bool,
+    /// Why this field cannot be signed into, when it cannot.
+    ///
+    /// `None` means it can. Listed **with the reason** rather than filtered out,
+    /// on this project's standing rule: an operator looking for the box the
+    /// sender told him about needs to find it and be told why it is not
+    /// offered — an absent row is indistinguishable from a document that never
+    /// had one.
+    pub unusable: Option<FieldBar>,
+}
+
+/// Why a pre-placed signature field cannot be signed into.
+///
+/// A closed set with one sentence each in [`crate::text::sign`], each mirroring
+/// a `SignApplyError` the engine would raise if it were chosen anyway.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FieldBar {
+    /// The field's widgets are under `/Kids` rather than merged into the field
+    /// dictionary. `SignApplyError::FieldHasKids` — the first cut signs into a
+    /// merged field-widget only.
+    HasKids,
+}
+
+impl SigField {
+    /// Whether this field may be chosen.
+    #[must_use]
+    pub const fn selectable(&self) -> bool {
+        self.unusable.is_none()
+    }
+}
+
+/// **Read every empty `/FT /Sig` field out of the open document.**
+///
+/// `Pass 10.13`'s input. Signed fields are excluded — the engine refuses to
+/// re-sign one (`SignApplyError::FieldAlreadySigned`) and offering it would be
+/// an option whose only outcome is a refusal — and so is anything that is not a
+/// signature field, which is a different refusal
+/// (`SignApplyError::FieldNotSignature`) and equally not worth offering.
+///
+/// # ★★ Two of the five values are read from the raw dictionary, and that is
+/// not a shortcut
+///
+/// `pdfcer_core::forms::Field` models `/FT`, `/T`, `/V`, `/Kids` and the
+/// widgets' rectangles, and it models **neither `/Lock` nor `/SV`** — the engine
+/// reads both directly off the field dictionary inside its own signing path
+/// (`EditSession::reusable_sig_field`), where they are consumed rather than
+/// projected. So there is no projection to read them from, and this function
+/// asks the object graph the same question the engine asks.
+///
+/// ★ It asks only whether they are **present**, never what they say. Parsing
+/// `/SV`'s seven `/Ff` bits here would be a second implementation of a rule the
+/// engine enforces in full — see [`SigField::constrained`].
+///
+/// `pages` is the flattened page vector, passed rather than re-walked, so a
+/// widget's `/P` can be turned into the page number an operator counts.
+#[must_use]
+pub fn read_empty_signature_fields(session: &EditSession, pages: &[Page]) -> Vec<SigField> {
+    use pdfcer_core::forms::{FieldType, FieldValue};
+    use pdfcer_core::graph::ObjectGraph;
+    use pdfcer_core::object::Object;
+
+    let graph = session.graph();
+    let Some(form) = pdfcer_core::forms::parse_acroform(&graph) else {
+        return Vec::new();
+    };
+    form.fields
+        .iter()
+        .filter(|f| f.field_type == Some(FieldType::Signature))
+        // `/V` present is a SIGNED field. `FieldValue::Signature` is the
+        // projection's word for "a signature dictionary is this field's value";
+        // anything else on a `/Sig` field is `Absent`.
+        .filter(|f| f.value == FieldValue::Absent)
+        .map(|f| {
+            let dict = graph.resolved(f.id).as_dict();
+            let locks = dict
+                .and_then(|d| d.get(b"Lock"))
+                .map(|o| graph.resolve(o))
+                .and_then(Object::as_dict)
+                .map(|lock| {
+                    lock.get(b"Action")
+                        .map(|o| graph.resolve(o))
+                        .and_then(Object::as_name)
+                        .map_or_else(
+                            // ui-text-exempt: a PDF name from the operator's
+                            // own file, echoed for the disclosure — not copy.
+                            || String::from("All"),
+                            |n| String::from_utf8_lossy(n.as_bytes()).into_owned(),
+                        )
+                });
+            let constrained = dict.is_some_and(|d| d.contains_key(b"SV"));
+            // ★ `merged` is the projection's own answer to the same question
+            // `/Kids` asks, and it is the one the engine's refusal keys on.
+            let unusable = (!f.merged).then_some(FieldBar::HasKids);
+            let widget = f.widgets.first();
+            let invisible = widget.and_then(|w| w.rect).is_none_or(|r| {
+                (r.urx - r.llx).abs() < f64::EPSILON || (r.ury - r.lly).abs() < f64::EPSILON
+            });
+            let page = widget
+                .and_then(|w| w.page)
+                .and_then(|id| pages.iter().position(|p| p.id == id));
+            SigField {
+                name: f.fully_qualified_name.clone(),
+                page,
+                invisible,
+                locks,
+                constrained,
+                unusable,
+            }
+        })
+        .collect()
 }
 
 impl Standing {
@@ -271,8 +555,14 @@ impl Standing {
     /// *"the flattened page vector, resolved once at open"* and re-walking the
     /// tree here would be a second answer to a question the document already
     /// has one answer to.
+    ///
+    /// ⚠ `pages` changed shape on 2026-09-06 from a count to the vector:
+    /// [`read_empty_signature_fields`] needs the page **identities** to turn a
+    /// widget's `/P` into the number an operator counts, and re-walking the tree
+    /// here would be a second answer to a question the document has one answer
+    /// to. The count is taken from it.
     #[must_use]
-    pub fn read(session: &EditSession, path: &Path, pages: usize) -> Self {
+    pub fn read(session: &EditSession, path: &Path, pages: &[Page]) -> Self {
         let base = session.document();
         let census = session.signature_census();
         Self {
@@ -281,9 +571,35 @@ impl Standing {
             recovered: base.loaded_via_recovery(),
             prior_signatures: census.signatures,
             certification_permission: census.certification_permission,
-            pages,
+            pages: pages.len(),
             on_disk: path.is_file(),
+            empty_fields: read_empty_signature_fields(session, pages),
+            certified: census.certifications > 0,
         }
+    }
+
+    /// **Whether a CERTIFYING signature may be offered at all, and if not, why.**
+    ///
+    /// Pure, so both arms are asserted headlessly. §2d: both of the engine's
+    /// certification refusals are states of the **document**, knowable when the
+    /// window opens, so the option is absent with a sentence rather than offered
+    /// and then refused.
+    ///
+    /// ★ The order is the engine's own guard order — `AlreadyCertified` is
+    /// checked before `CertificationNotFirst` — so a document that is both
+    /// gets the same sentence here that it would get from the engine. Two
+    /// surfaces disagreeing about which of two true things to say is how an
+    /// operator learns to distrust both.
+    pub const fn may_certify(&self) -> Result<(), CertifyBar> {
+        if self.certified {
+            return Err(CertifyBar::AlreadyCertified);
+        }
+        if self.prior_signatures > 0 {
+            return Err(CertifyBar::NotFirst {
+                existing: self.prior_signatures,
+            });
+        }
+        Ok(())
     }
 
     /// **Whether this surface may offer anything at all, and if not, why.**
@@ -344,6 +660,27 @@ pub enum Refusal {
     RecoveredBase,
     /// The document has never been written to disk. See §4.
     NotOnDisk,
+}
+
+/// **Why this document cannot be CERTIFIED**, though it can still be signed.
+///
+/// Distinct from [`Refusal`] and it must stay distinct: every [`Refusal`]
+/// closes the window, and each of these closes exactly one option on a window
+/// that still works. Flattening them would turn *"you cannot be the author of
+/// this document, but you can approve it"* into *"this document cannot be
+/// signed"*, which is false and is the more expensive direction to be wrong in.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CertifyBar {
+    /// `SignApplyError::AlreadyCertified` — §12.8.2.2.1 permits one `/DocMDP`
+    /// per document.
+    AlreadyCertified,
+    /// `SignApplyError::CertificationNotFirst` — the certifier is the author,
+    /// *"the person applying the first signature"*, and a later certification
+    /// could not govern the changes made before it.
+    NotFirst {
+        /// How many signatures are already there.
+        existing: usize,
+    },
 }
 
 // ---------------------------------------------------------------------------
@@ -455,18 +792,40 @@ pub enum IdentityFailure {
 ///
 /// `SignRequest::visible`'s own documentation says invisible *"is the default
 /// for batch/CLI signing"*, which is an argument about batches. The argument
-/// here is about what would be drawn: the engine states that a visible
-/// signature's appearance is, in this first cut, *"a thin frame only — no
-/// text"*.
+/// here is about what would be drawn on a CAD sheet the operator is about to
+/// send out: **a box is applied content**, it renders exactly as the saved file
+/// renders, and there is nothing provisional about it. So the default draws
+/// nothing, the box is offered, and the copy on the control says what will be
+/// inside it before it is chosen.
 ///
-/// A thin empty rectangle stamped on one of this operator's CAD sheets is
-/// **indistinguishable from a defect**. He would read it as a stray annotation,
-/// and it would be applied content — R8b Rule 4: a signature renders exactly as
-/// saved content will, and there is nothing provisional about it. So the
-/// default draws nothing, the visible option is offered, and the copy on the
-/// control says in plain words what the frame will and will not contain. An
-/// operator who wants the box gets the box and is not surprised by it.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// ★★ **What is inside it changed under this shell on 2026-09-06.** At the old
+/// pin the appearance was *"a thin frame only — no text"*, and this type's
+/// documentation and [`crate::text::sign::placement_note`] both said so. Engine
+/// `Pass 10.14` (`187fa09`, in the pin since `d6b998f`) **composes** the signer
+/// CN, the date, and the reason and location when given, in Helvetica, shrunk to
+/// fit, and refuses a rectangle too small for them by name
+/// (`SignApplyError::AppearanceOverflow`) before anything is staged. See §2b.
+///
+/// ⇒ The default is still invisible, and the argument for that survives the
+/// correction intact but is now a **different** argument: not *"the box would be
+/// empty and read as a defect"* but *"a signature the reader shows in its own
+/// panel does not need a stamp on the drawing, and a stamp is content the
+/// operator did not draw."* An operator who wants the box now gets a box with
+/// his name in it.
+///
+/// ★★★ **The third arm is not a placement at all, and that is the point.**
+/// [`Self::ExistingField`] names a box **somebody else already placed**; its own
+/// `/Rect` and page decide where the appearance goes, and the engine refuses a
+/// `visible` rectangle beside it by name. Modelling all three as one enum makes
+/// the refused combination unrepresentable rather than reachable-and-explained.
+///
+/// ⚠ **Not `Copy`**, because [`Self::ExistingField`] owns the field's name. The
+/// name is carried rather than an index into [`Standing::empty_fields`] for the
+/// reason every stale-index bug has: the vector is read once when the window
+/// opens and the request is built later, and an index that survives into a list
+/// that changed points at the wrong field silently, while a name that no longer
+/// exists is refused by the engine, by name.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Placement {
     /// `/Rect [0 0 0 0]` on the first page; nothing drawn. The default.
     Invisible,
@@ -474,6 +833,17 @@ pub enum Placement {
     Visible {
         /// 0-based page index.
         page: usize,
+    },
+    /// **Sign INTO a pre-placed empty signature field.** `Pass 10.13`.
+    ///
+    /// The field's own `/Rect` and page place the appearance; nothing is
+    /// appended to `/Annots` or `/Fields` and the author's dictionary is
+    /// otherwise untouched. A field whose rectangle is zero-area is the
+    /// author's own choice of an invisible signature and is honoured as one.
+    ExistingField {
+        /// The field's fully qualified name (`/T`, dotted through its
+        /// ancestors). Passed to `SignRequest::field_name`.
+        name: String,
     },
 }
 
@@ -550,6 +920,18 @@ pub struct Authored {
     /// the operator was told — the engine reads no clock and says a GUI should
     /// pass *"the time it showed the operator."*
     pub signing_time: String,
+    /// **Make this a certifying (author) signature, at this `/DocMDP` level.**
+    ///
+    /// `Pass 10.12`; `None` is an ordinary approval signature and is the
+    /// default. §2d argues why it lives in this window rather than on a command
+    /// of its own, and [`Standing::may_certify`] why it is sometimes absent.
+    ///
+    /// ★ The engine's own type, `MdpPermission`, rather than a local mirror.
+    /// The three levels ARE Table 254's three values, their meanings are the
+    /// standard's, and `MdpPermission::meaning` already renders each in plain
+    /// words — a parallel enum here would be a second spelling of a fixed list
+    /// whose only possible divergence is a bug.
+    pub certify: Option<MdpPermission>,
 }
 
 /// Why a signing did not produce bytes.
@@ -620,13 +1002,27 @@ impl Prepared {
             // ⚠ `subject` and `serial` are NOT here. They are on screen, in the
             // report the operator reads, which is where a disclosure about
             // whose key was used belongs. A trace file is kept and shared.
+            //
+            // ★★ `field_reused=` is here as well as on `sign-prepared`, and the
+            // duplication is deliberate: this is the line that says a FILE
+            // exists, and *"the signature went into the box the sender placed"*
+            // is a claim about that file. A check reading only the written line
+            // would otherwise have to correlate two events to learn the one
+            // thing the feature is about.
             format!(
-                "sign-written path={:?} bytes={} field={} prior={} self_verified={}",
+                "sign-written path={:?} bytes={} field={} prior={} self_verified={} \
+                 field_reused={} certified={}",
                 target,
                 self.bytes.len(),
                 self.report.field_name,
                 self.report.prior_signatures,
                 u8::from(self.report.self_verified),
+                u8::from(self.report.field_reused),
+                self.report.certification.map_or_else(
+                    // ui-text-exempt: trace token, never displayed.
+                    || "none".to_owned(),
+                    |p| p.p().to_string()
+                ),
             )
         });
         Ok(self.bytes.len())
@@ -711,9 +1107,24 @@ pub fn prepare(
     // The engine: "`None` omits the key and a verifier falls back to the
     // certificate subject (Table 252 says it should anyway)." A free-text name
     // beside a certificate is a second, unverifiable claim about who signed.
-    request.visible = match authored.placement {
+    // ★★★ `Pass 10.12`. Written before the placement, so the request is
+    // assembled in the order the engine guards it: certification is refused
+    // before any field is resolved.
+    request.certify = authored.certify;
+    request.visible = match &authored.placement {
         Placement::Invisible => None,
+        // ★★★ `Pass 10.13`: the field's OWN `/Rect` and page place the
+        // appearance, so `visible` stays `None`. Setting both is
+        // `SignApplyError::RectRefusedForExistingField` — which cannot be
+        // reached from here, because `Placement`'s three arms are exclusive.
+        // That is the enum earning its shape: the refusal is unrepresentable
+        // rather than reachable-and-handled.
+        Placement::ExistingField { name } => {
+            request.field_name = Some(name.clone());
+            None
+        }
         Placement::Visible { page } => {
+            let page = *page;
             // ★ The CROP box, not the media box, and the difference is what
             // the operator sees. Content is clipped to `/CropBox` at display
             // time (Table 30), so a box placed against a larger `/MediaBox` on
@@ -735,10 +1146,27 @@ pub fn prepare(
 
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
+        // ★ `into_field=` is a BIT, not the field's name. A field name is text
+        // out of the operator's own document — a title block's wording, a
+        // customer's name — and this line goes into a file the harness keeps as
+        // evidence. `sign-prepared` below carries what the engine wrote, which
+        // is the answer a diagnosis needs; what this line owes is *which shape
+        // of request was built*.
+        //
+        // ⚠ `certify=` is the `/P` NUMBER or `none`, never `{:?}` of
+        // `MdpPermission`: a check parses this line, and a Debug rendering is a
+        // spelling nobody chose.
         format!(
-            "sign-requested visible={} page={} reason={} location={} time_len={}",
+            "sign-requested visible={} page={} into_field={} certify={} reason={} location={} \
+             time_len={}",
             u8::from(request.visible.is_some()),
             request.visible.map_or(usize::MAX, |(p, _)| p),
+            u8::from(request.field_name.is_some()),
+            request.certify.map_or_else(
+                // ui-text-exempt: trace token, never displayed.
+                || "none".to_owned(),
+                |p| p.p().to_string()
+            ),
             u8::from(request.reason.is_some()),
             u8::from(request.location.is_some()),
             authored.signing_time.len(),
@@ -751,9 +1179,19 @@ pub fn prepare(
 
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
+        // ★★ `field_reused=`, `locked=`, `notes=` and `certified=` are what
+        // `Pass 10.12`–`10.14` added, and each is the ONE fact a check needs to
+        // tell "the signature went into the sender's box" from "a new box was
+        // created beside it" — two outcomes whose byte counts and field names
+        // can be identical.
+        //
+        // ⚠ `locked=` is a BIT and `notes=` a COUNT. Both of their contents are
+        // field names and sentences out of the operator's document; the engine's
+        // own wording of them is on screen, where he can act on it.
         format!(
             "sign-prepared bytes={} field={} algorithm={:?} certificates={} cms={} reserved={} \
-             prior={} level={} self_verified={}",
+             prior={} level={} self_verified={} field_reused={} locked={} notes={} \
+             appearance_lines={} certified={}",
             bytes.len(),
             report.field_name,
             report.algorithm,
@@ -763,6 +1201,15 @@ pub fn prepare(
             report.prior_signatures,
             report.pades_level,
             u8::from(report.self_verified),
+            u8::from(report.field_reused),
+            u8::from(report.field_lock.is_some()),
+            report.notes.len(),
+            report.appearance_lines.len(),
+            report.certification.map_or_else(
+                // ui-text-exempt: trace token, never displayed.
+                || "none".to_owned(),
+                |p| p.p().to_string()
+            ),
         )
     });
     Ok(Prepared { bytes, report })

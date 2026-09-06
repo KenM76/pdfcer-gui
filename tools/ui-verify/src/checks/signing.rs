@@ -29,7 +29,7 @@
 //! wrote no signature at all would produce **no row at all**, which this check
 //! also fails on.
 //!
-//! # The four phases, and what each is for
+//! # The eight phases, and what each is for
 //!
 //! | phase | document | what it proves |
 //! |---|---|---|
@@ -37,6 +37,48 @@
 //! | **B** | `encrypted-aes-128.pdf` | the **encrypted** refusal, stated instead of a form |
 //! | **C** | `four-pages.pdf` with a redaction armed | the **pending-redaction** refusal, stated instead of a form |
 //! | **D** | phase A's output, fresh process | ★★★ THE VERDICT — the signature is in the file |
+//! | **E** | `sig-field-empty.pdf` | `Pass 10.13` — a box the SENDER placed is listed, chosen, and the placement controls RETIRE |
+//! | **F** | phase E's output, fresh process | ★★★ THE SECOND VERDICT — the signature went INTO that box |
+//! | **G** | `four-pages.pdf`, certifying | `Pass 10.12` — the operator can sign as the document's AUTHOR |
+//! | **H** | phase G's output, fresh process | ★★★ THE THIRD VERDICT — the `/DocMDP` is in the file |
+//!
+//! # ★★★ PHASE H'S ORACLE IS THE DOCUMENT CENSUS, WHICH IS NOT THE SIGNING CODE
+//!
+//! There is no signature-panel row that reports a certification, so phase F's
+//! trick — read the name back through the verification side — has no equivalent
+//! here. What does exist is `EditSession::signature_census`, which parses
+//! `/Reference … /TransformMethod /DocMDP` and the catalog's `/Perms` out of the
+//! bytes on disk. It shipped months before the signing verb, for a different
+//! purpose (deciding whether a save would break somebody else's signature), and
+//! this shell reads it **when the Sign window opens**.
+//!
+//! ⇒ So phase H launches a fresh process on the certified file and presses
+//! `Sign…` again. `sign-opened certification=2` is the census finding a
+//! `/DocMDP` transform where the document had none — asked of a subsystem that
+//! knows nothing about how the file was produced.
+//!
+//! # ★★★ WHY PHASE F IS A SEPARATE VERDICT AND NOT A REPEAT OF PHASE D
+//!
+//! Phase D asks *"is there a signature in the file?"* Phase F asks a question
+//! phase D cannot distinguish: **which box did it go into?**
+//!
+//! Signing into a pre-placed field and signing beside one produce outcomes that
+//! are identical in every respect this check could otherwise measure — a file
+//! exists, the bytes grew, `self_verified=1`, the Signatures panel shows one
+//! row, `integrity=verified`. A build that quietly ignored `field_name` and
+//! created its own field would pass every assertion in phase D.
+//!
+//! ⇒ The discriminator is **the field's name**. A signature written into the
+//! author's box carries the author's own `/T` — `SignHere` on this fixture — and
+//! one written into a field pdfcer invented carries `Signature1`, Acrobat's
+//! convention. That name is read back **in a fresh process, by the verification
+//! side**, from `signature-row field=…`, so it is not the signing code's account
+//! of its own behaviour.
+//!
+//! ★★ And the same phase measures the thing that has no in-process oracle at
+//! all: `sign-written field_reused=1`. That line is written by the same beliefs
+//! as the signing, so it is reported as a **note**, never as the verdict — the
+//! verdict is the name, read by somebody else.
 //!
 //! ★★ **Phase A is not a formality and it is not there for coverage.** A probe
 //! whose baseline has no dynamic range cannot produce a verdict: without a
@@ -74,18 +116,12 @@
 //! outlives the session. So phase A clicks into the field and types it, the way
 //! an operator does — which is also the only way to prove the field works.
 
-use std::path::{Path, PathBuf};
-
-use super::driving::{
-    self, INVOKE_EVENT, ITEM_PREFIX, SHELL_DIAG_ENV, TAB_EVENT, declared, declared_names,
-    declared_or_in_overflow, list, shell_trace,
-};
+use super::driving::{self, declared_names, list};
 use super::{Check, CheckContext};
 use crate::error::{Error, Result};
 use crate::input::Driver;
-use crate::launch::{LaunchSpec, Session};
+use crate::launch::Session;
 use crate::report::CheckReport;
-use crate::trace::Trace;
 
 /// The mode phases A, B and D drive from.
 ///
@@ -112,6 +148,9 @@ const SIGN: &str = "file.sign";
 
 /// The whole window.
 const REGION_DIALOG: &str = "sign-dialog";
+/// The scrolling body's own viewport - what a control must be inside before it
+/// can be clicked. See [`click_scrolled`].
+const REGION_BODY: &str = "sign-body";
 /// A refusal, declared only while one is on screen.
 const REGION_REFUSAL: &str = "sign-refusal";
 /// The file-picker button.
@@ -126,6 +165,22 @@ const REGION_IDENTITY: &str = "sign-identity";
 const REGION_CONFIRM: &str = "sign-confirm";
 /// The control that opens what was just written.
 const REGION_OPEN_SIGNED: &str = "sign-open-signed";
+/// The radio that chooses *sign into a box already on the document*, declared
+/// only while the document has one to offer.
+const REGION_EXISTING: &str = "sign-existing-field";
+/// The first pre-placed field's row.
+const REGION_FIELD_0: &str = "sign-field-0";
+/// The radio that chooses *draw a signature box on the page*.
+const REGION_PLACE_BOX: &str = "sign-place-box";
+/// The radio that makes this a certifying signature, declared only while the
+/// document permits one.
+const REGION_CERTIFY: &str = "sign-certify";
+/// The page chooser, drawn only for a box this shell places on a document of
+/// more than one page.
+const REGION_PAGE: &str = "sign-page";
+/// The line saying where a box THIS SHELL places will go — declared for
+/// `Place::Box` and nothing else. Phase E's retirement probe; see that phase.
+const REGION_BOX_WHERE: &str = "sign-box-where";
 
 // --- trace events ----------------------------------------------------------
 
@@ -186,6 +241,34 @@ const REGION_REDACT_CONFIRM: &str = "redact-apply-confirm";
 /// the measurement, and one fewer way for the check to fail about itself.
 const ENCRYPTED: &str = "encryption/enc-emptyuser.pdf";
 
+// --- phases E and F's document ---------------------------------------------
+
+/// ★★★ **A page carrying a PRE-PLACED, EMPTY signature field** — the *"sign
+/// here"* box a form author puts on a drawing before mailing it out.
+///
+/// `/FT /Sig /T (SignHere) /Rect [72 600 300 660] /P <page>`, a merged widget,
+/// **no `/V`**, no `/Lock`, no `/SV` — and a text field `Name` beside it, so a
+/// build that offered every field rather than only the signature fields would
+/// be caught by the count rather than by inspection.
+///
+/// Read from the engine's own corpus (`tools/gen-sig-field-fixtures.py`, which
+/// is committed there and is deterministic — no clock, no randomness) for
+/// [`CERT`]'s reason, applied to a document instead of a key: it is the corpus
+/// the engine's own `Pass 10.13` tests run against, so the shape this check
+/// drives and the shape the engine was built for cannot drift apart. **Nothing
+/// is written anywhere near it.**
+const FIELD_DOC: &str = "signing/sig-field-empty.pdf";
+
+/// ★★ The field's name, and it is **the oracle of phase F.**
+///
+/// The one fact that distinguishes *"pdfcer signed the box the sender placed"*
+/// from *"pdfcer made a new box beside it"*. Both produce a signed file, both
+/// self-verify, both trace a plausible `sign-written`; the second names its
+/// field `Signature1`, Acrobat's convention for a field pdfcer invented. Read
+/// back in a **fresh process** by the Signatures panel, so the claim is not
+/// checked by the code that made it.
+const FIELD_NAME: &str = "SignHere";
+
 /// See the module documentation.
 pub struct ADocumentCanBeSignedAndTheSignatureIsInTheFile;
 
@@ -216,257 +299,12 @@ impl Check for ADocumentCanBeSignedAndTheSignatureIsInTheFile {
 // Driving
 // ---------------------------------------------------------------------------
 
-/// Launch one process, optionally with the certificate and save-path seams set.
-fn launch(
-    ctx: &CheckContext,
-    report: &mut CheckReport,
-    pdf: &Path,
-    trace_name: &str,
-    env: &[(&str, PathBuf)],
-) -> Result<Session> {
-    let mut spec = LaunchSpec::new(
-        ctx.resolve_exe().ok_or_else(|| {
-            Error::new(format!(
-                "no binary to drive. Pass --exe, or build the profile's default at {}.",
-                ctx.profile.default_exe
-            ))
-        })?,
-        ctx.out(trace_name),
-    );
-    spec.pdf = Some(pdf.to_path_buf());
-    spec.env.push((
-        ctx.profile.diag_env.0.to_owned(),
-        ctx.profile.diag_env.1.to_owned(),
-    ));
-    spec.env
-        .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
-    for (key, value) in env {
-        spec.env
-            .push(((*key).to_owned(), value.display().to_string()));
-    }
-    spec.allow_stale = ctx.allow_stale;
-    spec.source_root = ctx.source_root.clone();
+mod reaching;
 
-    let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
-    report.note(format!(
-        "launched {} on {} as pid {}",
-        spec.exe.display(),
-        pdf.display(),
-        session.pid()
-    ));
-    report.artifact(session.trace_path().to_path_buf());
-    session.settle(40);
-
-    if !session.trace()?.started(ctx.profile.vocab.start_event) {
-        return Err(Error::new(format!(
-            "the trace has no `{}` line, so the diagnostic switch {}={} did not reach the process \
-             and this check has no oracle. Captured stderr is at {}.",
-            ctx.profile.vocab.start_event,
-            ctx.profile.diag_env.0,
-            ctx.profile.diag_env.1,
-            session.trace_path().display()
-        )));
-    }
-    Ok(session)
-}
-
-/// Click a ribbon tab and confirm the shell reported it.
-fn click_tab(
-    session: &Session,
-    driver: &Driver,
-    ui_rect: &str,
-    (region, id): (&str, &str),
-) -> Result<()> {
-    let trace = session.trace()?;
-    let rect = declared(&trace, ui_rect, region).ok_or_else(|| {
-        Error::new(format!(
-            "the application declared no `{region}` region. Tabs declared: {}.",
-            list(&declared_names(&trace, ui_rect, "ribbon.tab."))
-        ))
-    })?;
-    let before = shell_trace(session)?
-        .events(TAB_EVENT)
-        .filter(|l| l.get("tab") == Some(id))
-        .count();
-    driver.click_at(session.frame()?.declared_center(rect))?;
-    session.settle(14);
-    if shell_trace(session)?
-        .events(TAB_EVENT)
-        .filter(|l| l.get("tab") == Some(id))
-        .count()
-        <= before
-    {
-        return Err(Error::new(format!(
-            "the click on `{region}` produced no new `{TAB_EVENT} tab={id}` line."
-        )));
-    }
-    Ok(())
-}
-
-/// **Click a ribbon tab without requiring that it CHANGED.**
-///
-/// [`click_tab`] asserts a new `ribbon-tab-activated` line, which is the right
-/// test when a check is switching away from a tab it knows is active. It is the
-/// wrong test for *"make sure this tab is on top"*: a tab that is already active
-/// emits nothing when clicked, and the strict form then reports a perfectly good
-/// click as a failure.
-///
-/// ★ A missing tab is still an error. This tolerates *no change*, never *no tab*.
-fn click_tab_tolerant(
-    session: &Session,
-    driver: &Driver,
-    ui_rect: &str,
-    region: &str,
-) -> Result<()> {
-    let trace = session.trace()?;
-    let rect = declared(&trace, ui_rect, region).ok_or_else(|| {
-        Error::new(format!(
-            "the application declared no `{region}` region. Tabs declared: {}.",
-            list(&declared_names(&trace, ui_rect, "ribbon.tab."))
-        ))
-    })?;
-    driver.click_at(session.frame()?.declared_center(rect))?;
-    session.settle(14);
-    Ok(())
-}
-
-/// **Find a ribbon control and press it**, through the overflow if it is there.
-///
-/// ★★★ Through [`declared_or_in_overflow`] rather than a bare rect lookup, and
-/// for `checks::protect`'s reason word for word: at the harness's window width
-/// the File band runs out of room, and `file.sign` is the **third** control in a
-/// Security group that was already the last group added to a full band. A plain
-/// `declared` would report *"the application declared no
-/// `ribbon.item.file.sign` region"* — which would be true, and would be
-/// reported as a missing feature when what is missing is a scroll.
-fn press(session: &Session, driver: &Driver, ui_rect: &str, id: &str) -> Result<()> {
-    let name = format!("{ITEM_PREFIX}{id}");
-    let found = declared_or_in_overflow(session, driver, ui_rect, &name)?;
-    let items = list(&declared_names(&session.trace()?, ui_rect, ITEM_PREFIX));
-    let rect = found.ok_or_else(|| {
-        Error::new(format!(
-            "`{id}` is on no band, in no collapsed group's popup and behind no overflow button — \
-             so an operator cannot reach it. ⚠ If this build was compiled WITHOUT the `signing` \
-             feature that is the correct behaviour and this check should not have been run \
-             against it. Ribbon items declared: {items}."
-        ))
-    })?;
-    let before = invokes(session, id)?;
-    driver.click_at(session.frame()?.declared_center(rect))?;
-    session.settle(24);
-    if invokes(session, id)? <= before {
-        return Err(Error::new(format!(
-            "the click on `{id}` produced no new `{INVOKE_EVENT} id={id}` line, so the control was \
-             found and did not fire. Every assertion below would then be measuring a window that \
-             never opened."
-        )));
-    }
-    Ok(())
-}
-
-/// How many times the shell has reported `id` invoked.
-fn invokes(session: &Session, id: &str) -> Result<usize> {
-    Ok(shell_trace(session)?
-        .events(INVOKE_EVENT)
-        .filter(|l| l.get("id") == Some(id))
-        .count())
-}
-
-/// Whether the application declared `name` at a usable rectangle.
-///
-/// ★ A degenerate rect counts as **absent**, not present. A region declared at
-/// zero area is not something an operator can see.
-fn drawn(trace: &Trace, ui_rect: &str, name: &str) -> bool {
-    declared(trace, ui_rect, name).is_some_and(|r| r.is_substantial())
-}
-
-/// Click a region's centre, refusing when it was never drawn.
-///
-/// ★★★ Through [`driving::frame_of`] rather than `session.frame()`, and the
-/// first driven run of this check is why. **A dialog is an OS window**
-/// (`ui-conventions/dialogs.md` G1), so every region inside the Sign window is
-/// declared in a CHILD viewport with its own origin; `session.frame()` is the
-/// application window's, and clicking `declared_center` against it aims the
-/// real pointer hundreds of points away — at whatever happens to be there.
-///
-/// The symptom was silence: the trace showed `certificate-picked chosen=1` and
-/// then nothing at all, because the press on *Open certificate* landed outside
-/// the button. ⇒ **Ask what the check AIMED AT**, which is the same finding
-/// this project has recorded about the rotation buttons and about
-/// `panning_past_the_overscan`, arriving a third way.
-///
-/// ★ `frame_of` is safe on a main-window region too — an untagged one answers
-/// with `session.frame()`, unchanged — so there is no reason for a call site to
-/// use the other form.
-fn click(session: &Session, driver: &Driver, ui_rect: &str, name: &str) -> Result<()> {
-    let trace = session.trace()?;
-    let rect = declared(&trace, ui_rect, name).ok_or_else(|| {
-        Error::new(format!(
-            "no `{name}` region to click. Regions declared under `sign-`: {}.",
-            list(&declared_names(&trace, ui_rect, "sign-"))
-        ))
-    })?;
-    let frame = driving::frame_of(session, &trace, ui_rect, name)?;
-    driver.click_at(frame.declared_center(rect))?;
-    session.settle(18);
-    Ok(())
-}
-
-/// The last `sign-opened` line's `refusal=` token.
-///
-/// ★ A token the application spells as a `const fn`, never a `{:?}` of a domain
-/// type — `dialogs::sign::refusal_token` says why at its definition, and the
-/// reason is that Debug-formatting a value a check parses produced two false
-/// failure reports on 2026-09-05.
-fn last_refusal(session: &Session) -> Result<Option<String>> {
-    Ok(session
-        .trace()?
-        .events(OPENED_EVENT)
-        .last()
-        .and_then(|l| l.get("refusal").map(str::to_owned)))
-}
-
-/// Resolve a fixture from this repository.
-fn repo_fixture(name: &str) -> Result<PathBuf> {
-    // Resolved from this crate's manifest directory at COMPILE time, not from
-    // `--source-root`, for the reason `checks::protect::repo_fixture` records:
-    // `--source-root` is the staleness comparison's root and defaults to
-    // `crates`, so joining `fixtures` onto it produced a path that does not
-    // exist and a check that SKIPPED for ever while looking healthy.
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("..")
-        .join("..")
-        .join("fixtures")
-        .join(name);
-    if !path.is_file() {
-        return Err(Error::new(format!(
-            "the fixture {} is missing.",
-            path.display()
-        )));
-    }
-    Ok(path)
-}
-
-/// Resolve something from the engine repository's synthetic corpus.
-///
-/// ★ The path is derived, not configured. `D:\Dev\pdfcer` is READ-ONLY to this
-/// project and its corpus is the only place these shapes exist, so the check
-/// reads from it and writes nowhere near it — `checks::adopt_widget`'s
-/// precedent, unchanged.
-///
-/// A missing corpus is a hard error naming the path, not a SKIP: a SKIP reads
-/// as *"this build does not have the feature"*, and this is a fact about the
-/// checkout rather than about the program.
-fn engine_fixture(rel: &str, what: &str) -> Result<PathBuf> {
-    let path = Path::new("D:/Dev/pdfcer/fixtures/synthetic").join(rel);
-    if !path.is_file() {
-        return Err(Error::new(format!(
-            "{what} is missing at {}. It lives in `pdfcer-core`'s own synthetic corpus, which this check READS — see this module's header for why nothing like it is committed into this repository.",
-            path.display()
-        )));
-    }
-    Ok(path)
-}
+use reaching::{
+    click, click_scrolled, click_tab, drawn, engine_fixture, field_name_of, last_refusal, launch,
+    press, raise_signatures, repo_fixture,
+};
 
 #[allow(clippy::too_many_lines)]
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
@@ -812,36 +650,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         // ★ The panel must be brought to the FRONT before it is read: a docked
         // pane that is not in front publishes nothing, which is
         // indistinguishable from a panel with nothing to say. That was called a
-        // defect once and was not one.
-        // ★★★ THE FALLBACK IS NOT OPTIONAL, and the first full re-run of this
-        // check is why. `raise_dock_tab` succeeded on the earlier run purely
-        // because a PREVIOUS launch had left the Signatures panel selected and
-        // the shell had saved that layout — so the verdict was resting on
-        // inherited state, which is a trap this project has already recorded
-        // once ("one relaunched the binary and inherited the dock layout its
-        // own previous launch had saved"). On a machine whose saved layout has
-        // that panel behind another tab, phase D would have had no oracle and
-        // would have SKIPPED — reporting nothing, in green.
-        //
-        // ⇒ Raise it; if it is not mounted, mount it from the ribbon and raise
-        // it again. Three attempts at one fact, because the fact is the whole
-        // verdict of this check.
-        if !super::reaching::raise_dock_tab(&session, &driver, ui_rect, "view.panel_signatures")? {
-            // ★★ TOLERANT, unlike `click_tab`: the View tab may already be the
-            // active one, in which case a correct click emits **no new**
-            // `ribbon-tab-activated` line and the strict form reports a click
-            // that landed as one that did not. Ask what the check SAMPLED.
-            click_tab_tolerant(&session, &driver, ui_rect, "ribbon.tab.view")?;
-            press(&session, &driver, ui_rect, "view.panel_signatures")?;
-            session.settle(24);
-            let _ = super::reaching::raise_dock_tab(
-                &session,
-                &driver,
-                ui_rect,
-                "view.panel_signatures",
-            )?;
-        }
-        session.settle(30);
+        // defect once and was not one. `raise_signatures` carries the rest of
+        // the reasoning, including why the fallback is not optional.
+        raise_signatures(&session, &driver, ui_rect)?;
 
         let trace = session.trace()?;
         let rows: Vec<_> = trace.events(ROW_EVENT).collect();
@@ -861,13 +672,17 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                 .and_then(|l| l.get("integrity"))
                 .unwrap_or_default()
                 .to_owned();
-            let field = rows
-                .last()
-                .and_then(|l| l.get("field"))
-                .unwrap_or_default()
-                .to_owned();
+            // Through `field_name_of` for the reason that function records:
+            // the panel Debug-formats an `Option<String>`, so the raw value
+            // reads `Some("Signature1")` and this note had been printing the
+            // wrapper and the quotes as though they were the name.
+            let field = field_name_of(rows.last().and_then(|l| l.get("field")).unwrap_or_default());
+            // ⚠ "row(s)" is FRAMES, not signatures: the panel publishes one
+            // line per signature per frame it draws. Said in the note rather
+            // than corrected here, because phase D's verdict does not rest on
+            // the count; phase F's does, and it counts distinct names instead.
             report.note(format!(
-                "★ phase D: {} row(s); last {ROW_EVENT} field={field} integrity={integrity}",
+                "★ phase D: {} row line(s) (one per signature per frame); last {ROW_EVENT} field={field} integrity={integrity}",
                 rows.len()
             ));
             if integrity != "verified" {
@@ -883,9 +698,445 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         }
     }
 
+    // =======================================================================
+    // PHASE E — ★★★ `Pass 10.13`: THE BOX THE SENDER PLACED.
+    // =======================================================================
+    let field_doc = engine_fixture(
+        FIELD_DOC,
+        "the document phase E needs (a pre-placed, EMPTY /FT /Sig field). Regenerate the engine's corpus with `python tools/gen-sig-field-fixtures.py` in D:\\Dev\\pdfcer",
+    )?;
+    let field_out = ctx.out("signed-into-field-by-ui-verify.pdf");
+    let _ = std::fs::remove_file(&field_out);
+    {
+        let session = launch(
+            ctx,
+            report,
+            &field_doc,
+            "sign-into-field.trace.txt",
+            &[
+                ("PDFCER_DIAG_CERTIFICATE_PATH", certificate.clone()),
+                ("PDFCER_DIAG_SAVE_PATH", field_out.clone()),
+            ],
+        )?;
+        let driver = Driver::new(session.window());
+        driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
+        session.settle(16);
+        click_tab(&session, &driver, ui_rect, FILE_TAB)?;
+        press(&session, &driver, ui_rect, SIGN)?;
+
+        let trace = session.trace()?;
+        if !drawn(&trace, ui_rect, REGION_DIALOG) {
+            return Err(Error::new(format!(
+                "PHASE E: `{SIGN}` fired on {} and declared no `{REGION_DIALOG}` region.",
+                field_doc.display()
+            )));
+        }
+        // ★★ The COUNT, before anything is clicked. Two numbers rather than
+        // one: `empty_fields` is what the document holds and `signable_fields`
+        // is what this build will offer, and a build that listed the text field
+        // `Name` beside the signature field would read 2 here.
+        match session.trace()?.events(OPENED_EVENT).last() {
+            Some(line) => {
+                let held = line.get("empty_fields").unwrap_or_default().to_owned();
+                let usable = line.get("signable_fields").unwrap_or_default().to_owned();
+                report.note(format!(
+                    "phase E: {OPENED_EVENT} empty_fields={held} signable_fields={usable}"
+                ));
+                if held != "1" || usable != "1" {
+                    findings.push(format!(
+                        "PHASE E: the window read `empty_fields={held} signable_fields={usable}` \
+                         on a document carrying exactly ONE empty signature field (and one text \
+                         field beside it, which must not be counted). `0` means the pre-placed \
+                         box the whole feature exists for was never found; anything above 1 means \
+                         fields that are not signature fields — or fields that are already \
+                         signed — are being offered as places to put a signature."
+                    ));
+                }
+            }
+            None => findings.push(format!(
+                "PHASE E: no `{OPENED_EVENT}` line at all after `{SIGN}` fired."
+            )),
+        }
+
+        // --- open the identity, so the rest of the form exists --------------
+        click(&session, &driver, ui_rect, REGION_CHOOSE)?;
+        click(&session, &driver, ui_rect, REGION_PASSPHRASE)?;
+        driver.type_ascii(PASSPHRASE)?;
+        session.settle(10);
+        click(&session, &driver, ui_rect, REGION_OPEN_CERT)?;
+        session.settle(16);
+
+        if !drawn(&session.trace()?, ui_rect, REGION_EXISTING) {
+            findings.push(format!(
+                "PHASE E: no `{REGION_EXISTING}` region on a document that HAS an empty signature \
+                 field. The operator is offered no way to sign in the box the sender placed, \
+                 which is the ordinary case for a drawing sent out for approval. Regions declared \
+                 under `sign-`: {}.",
+                list(&declared_names(&session.trace()?, ui_rect, "sign-"))
+            ));
+        }
+
+        // ★★★ THE DYNAMIC RANGE FOR THE RETIREMENT ASSERTION, taken FIRST.
+        // `--visible`/`--page` are refused by the engine alongside a field
+        // name, so those controls must retire when a box is picked — and
+        // "retired" is only a claim if this build draws them at all. So: select
+        // *draw a box*, measure `sign-box-where`; then select the field and
+        // measure it again. Without the first measurement, a build that never
+        // drew the control would pass the second one perfectly.
+        click_scrolled(&session, &driver, ui_rect, REGION_PLACE_BOX, report)?;
+        let with_box = drawn(&session.trace()?, ui_rect, REGION_BOX_WHERE);
+        if !with_box {
+            findings.push(format!(
+                "PHASE E: `{REGION_BOX_WHERE}` was not declared with *draw a box on the page* \
+                 selected, so this build never draws the control whose retirement the next \
+                 assertion is about. Everything below would pass vacuously."
+            ));
+        }
+
+        // --- choose the sender's box ---------------------------------------
+        click_scrolled(&session, &driver, ui_rect, REGION_EXISTING, report)?;
+        session.settle(14);
+        let trace = session.trace()?;
+        if !drawn(&trace, ui_rect, REGION_FIELD_0) {
+            findings.push(format!(
+                "PHASE E: `{REGION_EXISTING}` was chosen and no `{REGION_FIELD_0}` row appeared, \
+                 so the document's own signature box is not listed and cannot be picked. Regions \
+                 declared under `sign-`: {}.",
+                list(&declared_names(&trace, ui_rect, "sign-"))
+            ));
+        }
+        click_scrolled(&session, &driver, ui_rect, REGION_FIELD_0, report)?;
+        session.settle(14);
+
+        // ★★★ THE RETIREMENT. Paired with the measurement above: together they
+        // say the choice CONTROLS the control, where either alone says only
+        // that it was drawn or was not.
+        let trace = session.trace()?;
+        if with_box && drawn(&trace, ui_rect, REGION_BOX_WHERE) {
+            findings.push(format!(
+                "PHASE E: `{REGION_BOX_WHERE}` is STILL declared with the sender's box chosen. \
+                 The page and position controls have not retired, so the window is offering the \
+                 operator a placement the engine refuses by name alongside a field name \
+                 (`RectRefusedForExistingField`) — a control whose only possible outcome is a \
+                 refusal."
+            ));
+        }
+        if drawn(&trace, ui_rect, REGION_PAGE) {
+            findings.push(format!(
+                "PHASE E: `{REGION_PAGE}` is declared with the sender's box chosen. The field's \
+                 own /Rect and page place the signature; a page chooser beside it is a control \
+                 that cannot do anything."
+            ));
+        }
+
+        // --- sign ------------------------------------------------------------
+        if !drawn(&trace, ui_rect, REGION_CONFIRM) {
+            return Err(Error::new(format!(
+                "PHASE E: `{REGION_CONFIRM}` is not declared with an identity open and a box \
+                 chosen, so nothing can be signed and phase F has no file to read."
+            )));
+        }
+        click(&session, &driver, ui_rect, REGION_CONFIRM)?;
+        session.settle(60);
+        match session.trace()?.events(WRITTEN_EVENT).last() {
+            Some(line) => {
+                let reused = line.get("field_reused").unwrap_or_default().to_owned();
+                let field = line.get("field").unwrap_or_default().to_owned();
+                report.note(format!(
+                    "phase E: {WRITTEN_EVENT} field={field} field_reused={reused}"
+                ));
+                // ⚠ A NOTE that is also asserted, and the asymmetry is
+                // deliberate: this line is written by the same beliefs as the
+                // signing, so on its own it proves nothing — the verdict is
+                // phase F. It is still checked, because a `0` here beside a
+                // correct name in phase F would mean the two disagree, which is
+                // worth knowing.
+                if reused != "1" {
+                    findings.push(format!(
+                        "PHASE E: `{WRITTEN_EVENT} field_reused={reused}` after choosing the \
+                         document's own signature box. The engine reports it created a field \
+                         rather than signing into the one that was there."
+                    ));
+                }
+            }
+            None => findings.push(format!(
+                "PHASE E: no `{WRITTEN_EVENT}` line after pressing the confirm control."
+            )),
+        }
+    }
+
+    if !field_out.is_file() {
+        findings.push(format!(
+            "PHASE E: {} does not exist, so the second verdict cannot be taken.",
+            field_out.display()
+        ));
+        return Ok(Some(findings.join("\n\n")));
+    }
+    report.artifact(field_out.clone());
+
+    // =======================================================================
+    // PHASE F — ★★★ THE SECOND VERDICT. A fresh process, reading the NAME.
+    // =======================================================================
+    {
+        let session = launch(ctx, report, &field_out, "sign-field-verify.trace.txt", &[])?;
+        let driver = Driver::new(session.window());
+        driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
+        session.settle(16);
+        raise_signatures(&session, &driver, ui_rect)?;
+
+        let trace = session.trace()?;
+        let rows: Vec<_> = trace.events(ROW_EVENT).collect();
+        if rows.is_empty() {
+            findings.push(format!(
+                "★★★ PHASE F — THE SECOND VERDICT: a fresh process opened {} and the Signatures \
+                 panel reported NO `{ROW_EVENT}` line. The file was written and carries no \
+                 signature `pdfcer_core::signature` can find.",
+                field_out.display()
+            ));
+        } else {
+            let last = rows.last();
+            let integrity = last
+                .and_then(|l| l.get("integrity"))
+                .unwrap_or_default()
+                .to_owned();
+            // ⚠ Through `field_name_of`, because the panel Debug-formats an
+            // `Option<String>` and the raw value is `Some("SignHere")`. See
+            // that function.
+            let field = field_name_of(last.and_then(|l| l.get("field")).unwrap_or_default());
+            // ⚠ "row line(s)", not signatures — see phase D's note and the
+            // distinct-name count below.
+            report.note(format!(
+                "★ phase F: {} row line(s); last {ROW_EVENT} field={field:?} integrity={integrity}",
+                rows.len()
+            ));
+            if integrity != "verified" {
+                findings.push(format!(
+                    "★★★ PHASE F — THE SECOND VERDICT: the signature in {} reads \
+                     `integrity={integrity}` in a fresh process.",
+                    field_out.display()
+                ));
+            }
+            // ★★★ THE DISCRIMINATOR.
+            if field != FIELD_NAME {
+                findings.push(format!(
+                    "★★★ PHASE F — THE SECOND VERDICT: a fresh process read the signature back \
+                     under the field name {field:?}, and the box the document's author placed is \
+                     called {FIELD_NAME:?}. The signature did not go into the sender's box — it \
+                     went into a field pdfcer created beside it, which is precisely the outcome \
+                     `Pass 10.13` exists to replace. ⚠ A name of \"Signature1\" is pdfcer's own \
+                     convention for a field it invented, so that value means `field_name` reached \
+                     the engine as `None` or was ignored."
+                ));
+            }
+            // ★★★ DISTINCT NAMES, NOT ROWS — and the first run of this phase is
+            // why. `signature-row` is published by the Signatures panel **when
+            // it draws**, which is once per frame per signature, so phase D's
+            // own note has been reading "37 row(s)" for one signature since the
+            // day it was written. Counting lines counts FRAMES.
+            //
+            // ⇒ Ask what the check SAMPLED. This project has recorded the same
+            // finding about `ui-rect` standing in for "the application drew a
+            // frame"; it is the identical mistake with the identical shape, and
+            // an assertion of `rows.len() == 1` here would have failed on a
+            // perfectly correct build.
+            let names: std::collections::BTreeSet<String> = rows
+                .iter()
+                .filter_map(|l| l.get("field"))
+                .map(field_name_of)
+                .collect();
+            if names.len() != 1 {
+                findings.push(format!(
+                    "PHASE F: the signed document carries {} distinct signature field(s) — {}. \
+                     Signing into a pre-placed field must append nothing to /Annots or /Fields, \
+                     so anything but the author's own single box means a second field was created \
+                     as well as theirs being filled.",
+                    names.len(),
+                    list(&names.iter().cloned().collect::<Vec<_>>())
+                ));
+            }
+        }
+    }
+
+    // =======================================================================
+    // PHASE G — ★★★ `Pass 10.12`: CERTIFYING, as the document's author.
+    // =======================================================================
+    let certified_out = ctx.out("certified-by-ui-verify.pdf");
+    let _ = std::fs::remove_file(&certified_out);
+    {
+        let session = launch(
+            ctx,
+            report,
+            &plain,
+            "sign-certify.trace.txt",
+            &[
+                ("PDFCER_DIAG_CERTIFICATE_PATH", certificate.clone()),
+                ("PDFCER_DIAG_SAVE_PATH", certified_out.clone()),
+            ],
+        )?;
+        let driver = Driver::new(session.window());
+        driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
+        session.settle(16);
+        click_tab(&session, &driver, ui_rect, FILE_TAB)?;
+        press(&session, &driver, ui_rect, SIGN)?;
+
+        // ★ THE DYNAMIC RANGE for phase H's absence assertion, taken on a
+        // document that has never been signed. Without it, phase H's
+        // `may_certify=0` would pass identically on a build that never offers
+        // the option at all.
+        match last_may_certify(&session)? {
+            Some(token) if token == "1" => {
+                report.note("phase G: sign-opened may_certify=1 on an unsigned document");
+            }
+            other => findings.push(format!(
+                "PHASE G: `{OPENED_EVENT} may_certify=` was {other:?} on a clean, unsigned \
+                 document. Certifying is refused before it is offered, so phase H would measure \
+                 an option this build never draws."
+            )),
+        }
+
+        click(&session, &driver, ui_rect, REGION_CHOOSE)?;
+        click(&session, &driver, ui_rect, REGION_PASSPHRASE)?;
+        driver.type_ascii(PASSPHRASE)?;
+        session.settle(10);
+        click(&session, &driver, ui_rect, REGION_OPEN_CERT)?;
+        session.settle(16);
+
+        if !drawn(&session.trace()?, ui_rect, REGION_CERTIFY) {
+            findings.push(format!(
+                "PHASE G: no `{REGION_CERTIFY}` region on a clean document. An operator cannot \
+                 sign as the document's author, which is the whole of `Pass 10.12`. Regions \
+                 declared under `sign-`: {}.",
+                list(&declared_names(&session.trace()?, ui_rect, "sign-"))
+            ));
+        }
+        click_scrolled(&session, &driver, ui_rect, REGION_CERTIFY, report)?;
+        // ★ Plain `click`, NOT `click_scrolled` — and the first run of this
+        // phase is why. The confirm control lives in the window's FOOTER,
+        // below the scroll area, so it is never inside `sign-body` and
+        // `click_scrolled` waited eight notches for a containment that
+        // cannot happen. ⇒ The two helpers are not interchangeable: one is
+        // for the form, the other for the furniture around it.
+        click(&session, &driver, ui_rect, REGION_CONFIRM)?;
+        session.settle(60);
+        match session.trace()?.events(WRITTEN_EVENT).last() {
+            Some(line) => {
+                let certified = line.get("certified").unwrap_or_default().to_owned();
+                report.note(format!("phase G: {WRITTEN_EVENT} certified={certified}"));
+                // A NOTE that is also asserted; the verdict is phase H. `2` is
+                // Table 254's own default and this window's, so anything else
+                // means the level travelled wrong rather than not at all.
+                if certified != "2" {
+                    findings.push(format!(
+                        "PHASE G: `{WRITTEN_EVENT} certified={certified}` after choosing to sign \
+                         as the document's author. `none` means the choice never reached the \
+                         request; any other number means a /DocMDP level the operator did not \
+                         pick, which decides what anybody may do to his document afterwards."
+                    ));
+                }
+            }
+            None => findings.push(format!(
+                "PHASE G: no `{WRITTEN_EVENT}` line after pressing the confirm control."
+            )),
+        }
+    }
+
+    if !certified_out.is_file() {
+        findings.push(format!(
+            "PHASE G: {} does not exist, so the third verdict cannot be taken.",
+            certified_out.display()
+        ));
+        return Ok(Some(findings.join("\n\n")));
+    }
+    report.artifact(certified_out.clone());
+
+    // =======================================================================
+    // PHASE H — ★★★ THE THIRD VERDICT. A fresh process, reading /Perms.
+    // =======================================================================
+    //
+    // ★★★ THE ORACLE IS THE DOCUMENT CENSUS, WHICH IS NOT THE SIGNING CODE.
+    //
+    // `EditSession::signature_census` parses `/Reference … /TransformMethod
+    // /DocMDP` and the catalog's `/Perms` out of the bytes on disk. It shipped
+    // months before the signing verb, for a different purpose — deciding
+    // whether a SAVE would break somebody else's signature — and this shell
+    // reads it when the Sign window opens, which is how a second launch on the
+    // written file can report what the first one wrote **without asking the
+    // code that wrote it**.
+    //
+    // ⇒ So the verdict is two numbers from `sign-opened`: `certification=2`,
+    // which is the census finding a /DocMDP transform where there was none, and
+    // `may_certify=0`, which is this shell refusing a SECOND certification —
+    // §12.8.2.2.1's "a document can contain only one". A build that wrote the
+    // `certify` flag into a trace and no /DocMDP into the file produces
+    // `certification=none` here.
+    {
+        let session = launch(
+            ctx,
+            report,
+            &certified_out,
+            "sign-certify-verify.trace.txt",
+            &[],
+        )?;
+        let driver = Driver::new(session.window());
+        driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
+        session.settle(16);
+        click_tab(&session, &driver, ui_rect, FILE_TAB)?;
+        press(&session, &driver, ui_rect, SIGN)?;
+        session.settle(20);
+
+        match session.trace()?.events(OPENED_EVENT).last() {
+            Some(line) => {
+                let certification = line.get("certification").unwrap_or_default().to_owned();
+                let may = line.get("may_certify").unwrap_or_default().to_owned();
+                report.note(format!(
+                    "★ phase H: {OPENED_EVENT} certification={certification} may_certify={may}"
+                ));
+                if certification != "2" {
+                    findings.push(format!(
+                        "★★★ PHASE H — THE THIRD VERDICT: a fresh process read \
+                         `certification={certification}` out of {}. The document census — a \
+                         different subsystem, parsing /Reference and the catalog /Perms from the \
+                         bytes on disk — finds no /DocMDP transform at permission 2. The \
+                         certification was reported and not written.",
+                        certified_out.display()
+                    ));
+                }
+                // ⚠ **WEAKER THAN IT LOOKS, and the falsification run proved
+                // it.** With the certification planted out, this assertion still
+                // held — because the written file carries a SIGNATURE either
+                // way, so `CertifyBar::NotFirst` closes the option even when no
+                // /DocMDP was written. It cannot distinguish "already certified"
+                // from "already signed", and it is kept as a guard against the
+                // option being offered on a document that would refuse it, NOT
+                // as evidence that certifying worked. **The verdict is
+                // `certification=2` above**, which the plant did move.
+                if may != "0" {
+                    findings.push(format!(
+                        "PHASE H: `may_certify={may}` on a document that is already certified. \
+                         §12.8.2.2.1 permits ONE certification per document, so this build would \
+                         offer the operator a second one and let the engine refuse it after he had \
+                         filled in the form and chosen a destination."
+                    ));
+                }
+            }
+            None => findings.push(format!(
+                "PHASE H: no `{OPENED_EVENT}` line after `{SIGN}` on the certified document."
+            )),
+        }
+    }
+
     if findings.is_empty() {
         Ok(None)
     } else {
         Ok(Some(findings.join("\n\n")))
     }
+}
+
+/// The last `sign-opened` line's `may_certify=` bit.
+fn last_may_certify(session: &Session) -> Result<Option<String>> {
+    Ok(session
+        .trace()?
+        .events(OPENED_EVENT)
+        .last()
+        .and_then(|l| l.get("may_certify").map(str::to_owned)))
 }

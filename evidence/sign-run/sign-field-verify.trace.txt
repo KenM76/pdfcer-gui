@@ -1,0 +1,501 @@
+pdfcer-diag start argv1=Some("evidence/sign-run\\signed-into-field-by-ui-verify.pdf")
+pdfcer-diag shell commands=144 planned=69 directed=1
+pdfcer-diag layout-load path="D:\\Dev\\pdfcer-gui\\target\\release\\userdata\\layout.ron" kind=Portable workspaces=3 skipped=0 noteworthy=false
+pdfcer-diag mode-restore stored=Some("read") using=Some("read")
+pdfcer-diag mode-changed from=None to=read remembered=true panels=6
+pdfcer-diag recent-load path=Some("D:\\Dev\\pdfcer-gui\\target\\release\\userdata\\recent.txt") n=10
+pdfcer-diag paste-chords order=PdfcerOrder new=Ctrl+V duplicate=Ctrl+Shift+V
+pdfcer-diag pick-filter-load path="D:\\Dev\\pdfcer-gui\\target\\release\\userdata\\select-filter.txt" unreadable=entity not found default=1
+pdfcer-diag window-handle present=true
+pdfcer-diag ui-scale-initial to=1.00
+pdfcer-diag opening-view fit=Page zoom=1.000 rulers=false grid=false guides=false
+pdfcer-diag reach-out network=0 launch=0 open_script=false truncated=false scanned=0
+pdfcer-diag recent-save path="D:\\Dev\\pdfcer-gui\\target\\release\\userdata\\recent.txt" n=10 saves=1
+pdfcer-diag page-display mode=continuous source=mode-default ribbon-mode=read
+pdfcer-diag open ok pages=1 path="evidence/sign-run\\signed-into-field-by-ui-verify.pdf"
+pdfcer-diag root-focus focused=Some(false)
+pdfcer-diag window-title "signed-into-field-by-ui-verify.pdf — pdfcer — 2026-09-06 11:08 UTC"
+pdfcer-diag ui-rect name=ribbon.qat.file.open rect=[[8.0 5.0] - [32.0 23.0]]
+pdfcer-diag ui-rect name=ribbon.qat.file.save rect=[[40.0 5.0] - [64.0 23.0]]
+pdfcer-diag ui-rect name=ribbon.qat.edit.undo rect=[[72.0 5.0] - [96.0 23.0]]
+pdfcer-diag ui-rect name=ribbon.qat.edit.redo rect=[[104.0 5.0] - [128.0 23.0]]
+pdfcer-diag ui-rect name=ribbon.tab.file rect=[[150.0 4.5] - [180.3 23.5]]
+pdfcer-diag ui-rect name=ribbon.tab.view rect=[[188.3 5.0] - [224.7 23.0]]
+pdfcer-diag ui-rect name=ribbon.modes rect=[[880.9 2.0] - [1060.0 26.0]]
+pdfcer-diag ui-rect name=ribbon.mode.read rect=[[880.9 2.0] - [940.6 26.0]]
+pdfcer-diag ui-rect name=ribbon.mode.review rect=[[940.6 2.0] - [1000.3 26.0]]
+pdfcer-diag ui-rect name=ribbon.mode.edit rect=[[1000.3 2.0] - [1060.0 26.0]]
+pdfcer-diag ui-rect name=ribbon.trailing.file.open_in_acrobat rect=[[1060.0 5.0] - [1084.0 23.0]]
+pdfcer-diag ui-rect name=ribbon.autohide.trigger rect=[[8.0 2.0] - [1092.0 33.0]]
+pdfcer-diag ui-rect name=ribbon.item.file.new rect=[[14.0 39.0] - [66.0 95.0]]
+pdfcer-diag ui-rect name=ribbon.item.file.open rect=[[70.0 39.0] - [124.2 95.0]]
+pdfcer-diag ui-rect name=ribbon.item.file.new_from_template rect=[[128.2 39.0] - [283.0 61.0]]
+pdfcer-diag ui-rect name=ribbon.item.file.close rect=[[128.2 85.0] - [187.7 107.0]]
+pdfcer-diag ui-rect name=ribbon.group.file.file.caption rect=[[140.0 110.0] - [157.0 123.0]]
+pdfcer-diag ui-rect name=ribbon.group.file.file rect=[[8.0 33.0] - [289.0 127.7]]
+pdfcer-diag ui-rect name=ribbon.group.file.recognise.collapsed rect=[[311.0 33.0] - [390.3 127.7]]
+pdfcer-diag ui-rect name=ribbon.item.file.save rect=[[418.3 39.0] - [470.3 95.0]]
+pdfcer-diag ui-rect name=ribbon.item.file.save_as rect=[[474.3 39.0] - [557.1 61.0]]
+pdfcer-diag ui-rect name=ribbon.item.file.save_copy rect=[[474.3 62.0] - [581.7 84.0]]
+pdfcer-diag ui-rect name=ribbon.item.file.save_compacted rect=[[474.3 85.0] - [649.3 107.0]]
+pdfcer-diag ui-rect name=ribbon.group.file.save.caption rect=[[522.8 110.0] - [544.8 123.0]]
+pdfcer-diag ui-rect name=ribbon.group.file.save rect=[[412.3 33.0] - [655.3 127.7]]
+pdfcer-diag ui-rect name=ribbon.group.file.export.collapsed rect=[[677.3 33.0] - [736.2 127.7]]
+pdfcer-diag ui-rect name=ribbon.item.file.encrypt rect=[[764.2 39.0] - [828.9 95.0]]
+pdfcer-diag ui-rect name=ribbon.item.file.permissions rect=[[832.9 39.0] - [917.8 95.0]]
+pdfcer-diag ui-rect name=ribbon.item.file.sign rect=[[921.8 39.0] - [973.8 95.0]]
+pdfcer-diag ui-rect name=ribbon.group.file.security.caption rect=[[849.3 110.0] - [888.6 123.0]]
+pdfcer-diag ui-rect name=ribbon.group.file.security rect=[[758.2 33.0] - [979.8 127.7]]
+pdfcer-diag ui-rect name=ribbon.overflow rect=[[1068.0 33.0] - [1092.0 57.0]]
+pdfcer-diag ui-rect name=doc-tabs rect=[[8.0 131.7] - [1092.0 153.7]]
+pdfcer-diag ui-rect name=doc-tab.0 rect=[[8.0 131.7] - [168.0 153.7]]
+pdfcer-diag doc-tabs open=1 active=0 drawn=1 hidden=0
+pdfcer-diag status-shed groups=none
+pdfcer-diag ui-rect name=status-page-box rect=[[998.0 770.5] - [1042.0 789.5]]
+pdfcer-diag ui-rect name=status-group:page rect=[[970.3 768.0] - [1092.0 792.0]]
+pdfcer-diag ui-rect name=status-group:zoom rect=[[800.8 768.0] - [948.3 792.0]]
+pdfcer-diag ui-rect name=status-group:fit rect=[[508.7 768.0] - [778.8 792.0]]
+pdfcer-diag ui-rect name=status-group:find rect=[[453.9 768.0] - [486.7 792.0]]
+pdfcer-diag ui-rect name=status-group:filter rect=[[388.6 771.0] - [431.9 789.0]]
+pdfcer-diag ui-rect name=status-bar rect=[[8.0 768.0] - [1092.0 792.0]]
+pdfcer-diag status page=0 pages=1 zoom=100 fit=Page wheel=scroll
+pdfcer-diag ui-rect name=dock.left rect=[[0.0 155.7] - [280.0 766.0]]
+pdfcer-diag ui-rect name=dock.left.railtrigger rect=[[0.0 155.7] - [52.0 766.0]]
+pdfcer-diag ui-rect name=dock.left.toolrail rect=[[0.0 155.7] - [52.0 766.0]]
+pdfcer-diag rail-plan rung=Roomy rows=18 folded=0 wants=492 budget=610
+pdfcer-diag ui-rect name=rail.tabs.view.panel_pages rect=[[3.0 156.0] - [49.0 190.0]]
+pdfcer-diag ui-rect name=rail.tabs.view.panel_bookmarks rect=[[3.0 191.0] - [49.0 225.0]]
+pdfcer-diag ui-rect name=rail.tabs.view.panel_layers rect=[[3.0 226.0] - [49.0 260.0]]
+pdfcer-diag ui-rect name=rail.tabs.view.panel_signatures rect=[[3.0 261.0] - [49.0 295.0]]
+pdfcer-diag ui-rect name=rail.tabs.markup.comments rect=[[3.0 296.0] - [49.0 330.0]]
+pdfcer-diag ui-rect name=rail.tabs.file.fonts rect=[[3.0 331.0] - [49.0 365.0]]
+pdfcer-diag ui-rect name=rail.navigate.view.tool_select rect=[[3.0 390.0] - [49.0 424.0]]
+pdfcer-diag ui-rect name=rail.navigate.view.tool_text rect=[[3.0 425.0] - [49.0 459.0]]
+pdfcer-diag ui-rect name=rail.navigate.view.tool_hand rect=[[3.0 460.0] - [49.0 494.0]]
+pdfcer-diag ui-rect name=rail.select.edit.select_all rect=[[3.0 519.0] - [49.0 553.0]]
+pdfcer-diag ui-rect name=rail.rotate.pages.rotate_left rect=[[3.0 578.0] - [49.0 612.0]]
+pdfcer-diag ui-rect name=rail.rotate.pages.rotate_right rect=[[3.0 613.0] - [49.0 647.0]]
+pdfcer-diag ui-rect name=dock.left.split.side rect=[[274.0 155.7] - [280.0 766.0]]
+pdfcer-diag ui-rect name=dock.left.0 rect=[[52.0 155.7] - [274.0 766.0]]
+pdfcer-diag ui-rect name=dock.left.0.0 rect=[[52.0 155.7] - [274.0 766.0]]
+pdfcer-diag ui-rect name=panel:signatures rect=[[52.0 155.7] - [274.0 766.0]]
+pdfcer-diag trust-report path="evidence/sign-run\\signed-into-field-by-ui-verify.pdf" len=26702 signatures=1 anchors=off
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag ui-rect name=dock.body.view.panel_signatures rect=[[52.0 155.7] - [274.0 766.0]]
+pdfcer-diag ui-rect name=dock.left.collapse rect=[[258.0 155.7] - [274.0 177.7]]
+pdfcer-diag ui-rect name=dock.right rect=[[780.0 155.7] - [1100.0 766.0]]
+pdfcer-diag ui-rect name=dock.right.banner rect=[[780.0 155.7] - [1100.0 181.7]]
+pdfcer-diag ui-rect name=toolstatus rect=[[780.0 163.7] - [1098.0 173.7]]
+pdfcer-diag ui-rect name=dock.right.split.side rect=[[780.0 181.7] - [786.0 766.0]]
+pdfcer-diag ui-rect name=dock.right.0 rect=[[786.0 181.7] - [1100.0 766.0]]
+pdfcer-diag ui-rect name=dock.right.0.0 rect=[[786.0 181.7] - [1100.0 766.0]]
+pdfcer-diag ui-rect name=dock.right.0.0.tabbar rect=[[786.0 181.7] - [1100.0 205.7]]
+pdfcer-diag ui-rect name=dock.tab.markup.comments rect=[[786.0 181.7] - [863.0 205.7]]
+pdfcer-diag ui-rect name=dock.tab.view.panel_forms rect=[[865.0 181.7] - [927.0 205.7]]
+pdfcer-diag ui-rect name=dock.tab.file.document_properties rect=[[929.0 181.7] - [1067.2 205.7]]
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag ui-rect name=dock.body.markup.comments rect=[[786.0 205.7] - [1100.0 766.0]]
+pdfcer-diag ui-rect name=dock.right.collapse rect=[[1084.0 181.7] - [1100.0 203.7]]
+pdfcer-diag dock panels=2 overflowed=0 changed=false
+pdfcer-diag ui-rect name=central-panel rect=[[288.0 163.7] - [772.0 758.0]]
+pdfcer-diag canvas-unavailable reason=nothing-visible
+pdfcer-diag page-objects-built page=0 objects=2 leaves=0 ms=0
+pdfcer-diag objects n=2 page=0 paths=1 text=1 images=0 forms=0 leaves=0 depth_overflow=0 cycles=0
+pdfcer-diag render-spawn gen=1 page=0 scale=0.730232
+pdfcer-diag raster-blend-space cmyk_buffer=false refused=0 wrong_space=0 scale=0.730
+pdfcer-diag render-inline gen=1 ms=2 async=0
+pdfcer-diag backdrop-kept page=0 px=447x579
+pdfcer-diag root-focus focused=Some(true)
+pdfcer-diag ui-rect name=ribbon.qat.file.open rect=[[8.0 2.0] - [30.0 26.0]]
+pdfcer-diag ui-rect name=ribbon.qat.file.save rect=[[34.0 2.0] - [56.0 26.0]]
+pdfcer-diag ui-rect name=ribbon.qat.edit.undo rect=[[60.0 2.0] - [82.0 26.0]]
+pdfcer-diag ui-rect name=ribbon.qat.edit.redo rect=[[86.0 2.0] - [108.0 26.0]]
+pdfcer-diag ui-rect name=ribbon.tab.file rect=[[130.0 2.0] - [158.3 26.0]]
+pdfcer-diag ui-rect name=ribbon.tab.view rect=[[162.3 2.0] - [196.7 26.0]]
+pdfcer-diag ui-rect name=ribbon.modes rect=[[884.9 2.0] - [1064.0 26.0]]
+pdfcer-diag ui-rect name=ribbon.mode.read rect=[[884.9 2.0] - [944.6 26.0]]
+pdfcer-diag ui-rect name=ribbon.mode.review rect=[[944.6 2.0] - [1004.3 26.0]]
+pdfcer-diag ui-rect name=ribbon.mode.edit rect=[[1004.3 2.0] - [1064.0 26.0]]
+pdfcer-diag ui-rect name=ribbon.trailing.file.open_in_acrobat rect=[[1064.0 2.0] - [1086.0 26.0]]
+pdfcer-diag ui-rect name=ribbon.autohide.trigger rect=[[8.0 2.0] - [1092.0 35.0]]
+pdfcer-diag ui-rect name=ribbon.item.file.new rect=[[14.0 41.0] - [66.0 97.0]]
+pdfcer-diag ui-rect name=ribbon.item.file.open rect=[[70.0 41.0] - [124.2 97.0]]
+pdfcer-diag ui-rect name=ribbon.item.file.new_from_template rect=[[128.2 41.0] - [281.0 62.7]]
+pdfcer-diag ui-rect name=ribbon.item.file.close rect=[[128.2 86.7] - [185.7 108.3]]
+pdfcer-diag ui-rect name=ribbon.group.file.file.caption rect=[[139.0 112.0] - [156.0 125.0]]
+pdfcer-diag ui-rect name=ribbon.group.file.file rect=[[8.0 35.0] - [287.0 129.7]]
+pdfcer-diag ui-rect name=ribbon.group.file.recognise.collapsed rect=[[301.0 35.0] - [380.3 129.7]]
+pdfcer-diag ui-rect name=ribbon.item.file.save rect=[[400.3 41.0] - [452.3 97.0]]
+pdfcer-diag ui-rect name=ribbon.item.file.save_as rect=[[456.3 41.0] - [537.1 62.7]]
+pdfcer-diag ui-rect name=ribbon.item.file.save_copy rect=[[456.3 63.7] - [561.7 85.3]]
+pdfcer-diag ui-rect name=ribbon.item.file.save_compacted rect=[[456.3 86.3] - [629.3 108.0]]
+pdfcer-diag ui-rect name=ribbon.group.file.save.caption rect=[[503.8 112.0] - [525.8 125.0]]
+pdfcer-diag ui-rect name=ribbon.group.file.save rect=[[394.3 35.0] - [635.3 129.7]]
+pdfcer-diag ui-rect name=ribbon.group.file.export.collapsed rect=[[649.3 35.0] - [708.2 129.7]]
+pdfcer-diag ui-rect name=ribbon.item.file.encrypt rect=[[728.2 41.0] - [792.9 97.0]]
+pdfcer-diag ui-rect name=ribbon.item.file.permissions rect=[[796.9 41.0] - [881.8 97.0]]
+pdfcer-diag ui-rect name=ribbon.item.file.sign rect=[[885.8 41.0] - [937.8 97.0]]
+pdfcer-diag ui-rect name=ribbon.group.file.security.caption rect=[[813.3 112.0] - [852.6 125.0]]
+pdfcer-diag ui-rect name=ribbon.group.file.security rect=[[722.2 35.0] - [943.8 129.7]]
+pdfcer-diag ui-rect name=ribbon.item.file.print rect=[[963.8 41.0] - [1015.8 97.0]]
+pdfcer-diag ui-rect name=ribbon.group.file.print.caption rect=[[978.1 112.0] - [1001.4 125.0]]
+pdfcer-diag ui-rect name=ribbon.group.file.print rect=[[957.8 35.0] - [1021.8 129.7]]
+pdfcer-diag ui-rect name=ribbon.overflow rect=[[1068.0 35.0] - [1092.0 59.0]]
+pdfcer-diag ui-rect name=doc-tabs rect=[[8.0 133.7] - [1092.0 157.7]]
+pdfcer-diag ui-rect name=doc-tab.0 rect=[[8.0 133.7] - [168.0 155.7]]
+pdfcer-diag ui-rect name=status-group:notes rect=[[8.0 768.0] - [106.4 792.0]]
+pdfcer-diag ui-rect name=status-page-box rect=[[1006.0 770.5] - [1050.0 789.5]]
+pdfcer-diag ui-rect name=status-group:page rect=[[982.3 768.0] - [1092.0 792.0]]
+pdfcer-diag ui-rect name=status-group:zoom rect=[[828.8 768.0] - [968.3 792.0]]
+pdfcer-diag ui-rect name=status-group:fit rect=[[560.7 768.0] - [814.8 792.0]]
+pdfcer-diag ui-rect name=status-group:find rect=[[515.9 768.0] - [546.7 792.0]]
+pdfcer-diag ui-rect name=status-group:filter rect=[[458.6 768.0] - [501.9 792.0]]
+pdfcer-diag status page=0 pages=1 zoom=73.02320098876953 fit=Page wheel=scroll
+pdfcer-diag ui-rect name=dock.left rect=[[0.0 157.7] - [280.0 766.0]]
+pdfcer-diag ui-rect name=dock.left.railtrigger rect=[[0.0 157.7] - [52.0 766.0]]
+pdfcer-diag ui-rect name=dock.left.toolrail rect=[[0.0 157.7] - [52.0 766.0]]
+pdfcer-diag rail-plan rung=Roomy rows=18 folded=0 wants=492 budget=608
+pdfcer-diag ui-rect name=rail.tabs.view.panel_pages rect=[[3.0 158.0] - [49.0 192.0]]
+pdfcer-diag ui-rect name=rail.tabs.view.panel_bookmarks rect=[[3.0 193.0] - [49.0 227.0]]
+pdfcer-diag ui-rect name=rail.tabs.view.panel_layers rect=[[3.0 228.0] - [49.0 262.0]]
+pdfcer-diag ui-rect name=rail.tabs.view.panel_signatures rect=[[3.0 263.0] - [49.0 297.0]]
+pdfcer-diag ui-rect name=rail.tabs.markup.comments rect=[[3.0 298.0] - [49.0 332.0]]
+pdfcer-diag ui-rect name=rail.tabs.file.fonts rect=[[3.0 333.0] - [49.0 367.0]]
+pdfcer-diag ui-rect name=rail.navigate.view.tool_select rect=[[3.0 392.0] - [49.0 426.0]]
+pdfcer-diag ui-rect name=rail.navigate.view.tool_text rect=[[3.0 427.0] - [49.0 461.0]]
+pdfcer-diag ui-rect name=rail.navigate.view.tool_hand rect=[[3.0 462.0] - [49.0 496.0]]
+pdfcer-diag ui-rect name=rail.select.edit.select_all rect=[[3.0 521.0] - [49.0 555.0]]
+pdfcer-diag ui-rect name=rail.rotate.pages.rotate_left rect=[[3.0 580.0] - [49.0 614.0]]
+pdfcer-diag ui-rect name=rail.rotate.pages.rotate_right rect=[[3.0 615.0] - [49.0 649.0]]
+pdfcer-diag ui-rect name=dock.left.split.side rect=[[274.0 157.7] - [280.0 766.0]]
+pdfcer-diag ui-rect name=dock.left.0 rect=[[52.0 157.7] - [274.0 766.0]]
+pdfcer-diag ui-rect name=dock.left.0.0 rect=[[52.0 157.7] - [274.0 766.0]]
+pdfcer-diag ui-rect name=panel:signatures rect=[[52.0 157.7] - [274.0 766.0]]
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag ui-rect name=dock.body.view.panel_signatures rect=[[52.0 157.7] - [274.0 766.0]]
+pdfcer-diag ui-rect name=dock.left.collapse rect=[[258.0 157.7] - [274.0 179.7]]
+pdfcer-diag ui-rect name=dock.right rect=[[780.0 157.7] - [1100.0 766.0]]
+pdfcer-diag ui-rect name=dock.right.banner rect=[[780.0 157.7] - [1100.0 183.7]]
+pdfcer-diag ui-rect name=toolstatus rect=[[780.0 165.7] - [1098.0 175.7]]
+pdfcer-diag ui-rect name=dock.right.split.side rect=[[780.0 183.7] - [786.0 766.0]]
+pdfcer-diag ui-rect name=dock.right.0 rect=[[786.0 183.7] - [1100.0 766.0]]
+pdfcer-diag ui-rect name=dock.right.0.0 rect=[[786.0 183.7] - [1100.0 766.0]]
+pdfcer-diag ui-rect name=dock.right.0.0.tabbar rect=[[786.0 183.7] - [1100.0 207.7]]
+pdfcer-diag ui-rect name=dock.tab.markup.comments rect=[[786.0 183.7] - [863.0 207.7]]
+pdfcer-diag ui-rect name=dock.tab.view.panel_forms rect=[[865.0 183.7] - [927.0 207.7]]
+pdfcer-diag ui-rect name=dock.tab.file.document_properties rect=[[929.0 183.7] - [1067.2 207.7]]
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag ui-rect name=dock.body.markup.comments rect=[[786.0 207.7] - [1100.0 766.0]]
+pdfcer-diag ui-rect name=dock.right.collapse rect=[[1084.0 183.7] - [1100.0 205.7]]
+pdfcer-diag ui-rect name=central-panel rect=[[288.0 165.7] - [772.0 758.0]]
+pdfcer-diag status page=0 pages=1 zoom=72.77067565917969 fit=Page wheel=scroll
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-coverage covered=1.000 sharp=1.000 textured=1 backdrop=1 zoom=0.728
+pdfcer-diag form-boxes n=0 pages=0 undrawn=1 unreachable=0
+pdfcer-diag form-target page=0 field=SignHere widget=0 rect=(72.0,132.0)+(228.0,60.0)
+pdfcer-diag form-target page=0 field=Name widget=0 rect=(72.0,272.0)+(228.0,20.0)
+pdfcer-diag canvas rect=[[307.3 173.3] - [752.7 749.7]] zoom=0.7277 page=0 pages=1 off=[484.0 592.3] sel=0 display=continuous visible=1 drawn=1
+pdfcer-diag canvas-pos at=-19.322,-7.688 tier=scroll paint=307.322,173.344 region=none want=none ext=612.000,792.000
+pdfcer-diag ui-rect name=page rect=[[307.3 173.3] - [752.7 749.7]]
+pdfcer-diag ui-rect name=canvas-viewport rect=[[288.0 165.7] - [772.0 758.0]]
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-19.322,-7.688 tier=scroll paint=307.322,173.344 region=none want=none ext=612.000,792.000
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-19.322,-7.688 tier=scroll paint=307.322,173.344 region=none want=none ext=612.000,792.000
+pdfcer-diag canvas-pointer screen=(111.0,255.0) page=(-269.78,112.21) pdf=(-269.78,679.79) zoom=0.7277
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-19.322,-7.688 tier=scroll paint=307.322,173.344 region=none want=none ext=612.000,792.000
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-19.322,-7.688 tier=scroll paint=307.322,173.344 region=none want=none ext=612.000,792.000
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-19.322,-7.688 tier=scroll paint=307.322,173.344 region=none want=none ext=612.000,792.000
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-19.322,-7.688 tier=scroll paint=307.322,173.344 region=none want=none ext=612.000,792.000
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-19.322,-7.688 tier=scroll paint=307.322,173.344 region=none want=none ext=612.000,792.000
+pdfcer-diag render-spawn gen=2 page=0 scale=0.72770673
+pdfcer-diag raster-blend-space cmyk_buffer=false refused=0 wrong_space=0 scale=0.728
+pdfcer-diag render-inline gen=2 ms=2 async=0
+pdfcer-diag backdrop-kept page=0 px=446x577
+pdfcer-diag frame n=10
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-19.322,-7.688 tier=scroll paint=307.322,173.344 region=none want=none ext=612.000,792.000
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-19.322,-7.688 tier=scroll paint=307.322,173.344 region=none want=none ext=612.000,792.000
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-19.322,-7.688 tier=scroll paint=307.322,173.344 region=none want=none ext=612.000,792.000
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-19.322,-7.688 tier=scroll paint=307.322,173.344 region=none want=none ext=612.000,792.000
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag layout-save path="D:\\Dev\\pdfcer-gui\\target\\release\\userdata\\layout.ron" workspaces=3 n=1
+pdfcer-diag canvas-pos at=-19.322,-7.688 tier=scroll paint=307.322,173.344 region=none want=none ext=612.000,792.000
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-19.322,-7.688 tier=scroll paint=307.322,173.344 region=none want=none ext=612.000,792.000
+pdfcer-diag canvas-pointer screen=(915.0,14.0) page=(835.06,-218.97) pdf=(835.06,1010.97) zoom=0.7277
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-19.322,-7.688 tier=scroll paint=307.322,173.344 region=none want=none ext=612.000,792.000
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-19.322,-7.688 tier=scroll paint=307.322,173.344 region=none want=none ext=612.000,792.000
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-19.322,-7.688 tier=scroll paint=307.322,173.344 region=none want=none ext=612.000,792.000
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-19.322,-7.688 tier=scroll paint=307.322,173.344 region=none want=none ext=612.000,792.000
+pdfcer-diag frame n=20
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-19.322,-7.688 tier=scroll paint=307.322,173.344 region=none want=none ext=612.000,792.000
+egui-shell-diag ribbon-mode-selected mode=read
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-19.322,-7.688 tier=scroll paint=307.322,173.344 region=none want=none ext=612.000,792.000
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-19.322,-7.688 tier=scroll paint=307.322,173.344 region=none want=none ext=612.000,792.000
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-19.322,-7.688 tier=scroll paint=307.322,173.344 region=none want=none ext=612.000,792.000
+pdfcer-diag ui-rect name=ribbon.tab.view rect=[[162.3 2.0] - [198.7 26.0]]
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-19.322,-7.688 tier=scroll paint=307.322,173.344 region=none want=none ext=612.000,792.000
+pdfcer-diag canvas-pointer screen=(180.0,14.0) page=(-174.96,-218.97) pdf=(-174.96,1010.97) zoom=0.7277
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-19.322,-7.688 tier=scroll paint=307.322,173.344 region=none want=none ext=612.000,792.000
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-19.322,-7.688 tier=scroll paint=307.322,173.344 region=none want=none ext=612.000,792.000
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-19.322,-7.688 tier=scroll paint=307.322,173.344 region=none want=none ext=612.000,792.000
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-19.322,-7.688 tier=scroll paint=307.322,173.344 region=none want=none ext=612.000,792.000
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-19.322,-7.688 tier=scroll paint=307.322,173.344 region=none want=none ext=612.000,792.000
+pdfcer-diag frame n=30
+egui-shell-diag ribbon-tab-activated tab=view
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-19.322,-7.688 tier=scroll paint=307.322,173.344 region=none want=none ext=612.000,792.000
+pdfcer-diag ui-rect name=ribbon.tab.file rect=[[130.0 2.0] - [156.3 26.0]]
+pdfcer-diag ui-rect name=ribbon.tab.view rect=[[160.3 2.0] - [196.7 26.0]]
+pdfcer-diag ui-rect name=ribbon.item.view.page_single rect=[[14.0 41.0] - [36.0 62.7]]
+pdfcer-diag ui-rect name=ribbon.item.view.page_continuous rect=[[40.0 41.0] - [64.0 63.0]]
+pdfcer-diag ui-rect name=ribbon.item.view.page_facing rect=[[14.0 64.0] - [36.0 85.7]]
+pdfcer-diag ui-rect name=ribbon.item.view.page_facing_continuous rect=[[40.0 64.0] - [62.0 85.7]]
+pdfcer-diag ui-rect name=ribbon.group.view.page_display.caption rect=[[21.9 112.0] - [56.1 138.0]]
+pdfcer-diag ui-rect name=ribbon.group.view.page_display rect=[[8.0 35.0] - [70.0 138.0]]
+pdfcer-diag ui-rect name=ribbon.item.view.tool_select rect=[[90.0 41.0] - [112.0 62.7]]
+pdfcer-diag ui-rect name=ribbon.item.view.tool_text rect=[[90.0 63.7] - [112.0 85.3]]
+pdfcer-diag ui-rect name=ribbon.item.view.tool_hand rect=[[90.0 86.3] - [112.0 108.0]]
+pdfcer-diag ui-rect name=ribbon.group.view.navigate.caption rect=[[90.0 112.0] - [112.0 138.0]]
+pdfcer-diag ui-rect name=ribbon.group.view.navigate rect=[[84.0 35.0] - [118.0 138.0]]
+pdfcer-diag ui-rect name=ribbon.item.view.zoom_actual rect=[[138.0 41.0] - [205.2 62.7]]
+pdfcer-diag ui-rect name=ribbon.item.view.zoom_fit_page rect=[[209.2 41.0] - [281.8 62.7]]
+pdfcer-diag ui-rect name=ribbon.item.view.zoom_fit_width rect=[[285.8 41.0] - [362.8 62.7]]
+pdfcer-diag ui-rect name=ribbon.item.view.zoom_fit_height rect=[[138.0 63.7] - [219.3 85.3]]
+pdfcer-diag ui-rect name=ribbon.item.view.zoom_selection rect=[[223.3 63.7] - [353.5 85.3]]
+pdfcer-diag ui-rect name=ribbon.item.view.zoom_region rect=[[138.0 86.3] - [253.5 108.0]]
+pdfcer-diag ui-rect name=ribbon.group.view.zoom.caption rect=[[236.7 112.0] - [264.2 125.0]]
+pdfcer-diag ui-rect name=ribbon.group.view.zoom rect=[[132.0 35.0] - [368.8 129.7]]
+pdfcer-diag ui-rect name=ribbon.item.view.show_annotations rect=[[388.8 41.0] - [410.8 62.7]]
+pdfcer-diag ui-rect name=ribbon.item.view.show_points rect=[[414.8 41.0] - [436.8 62.7]]
+pdfcer-diag ui-rect name=ribbon.item.view.rulers rect=[[388.8 63.7] - [410.8 85.3]]
+pdfcer-diag ui-rect name=ribbon.item.view.grid rect=[[414.8 63.7] - [436.8 85.3]]
+pdfcer-diag ui-rect name=ribbon.item.view.guides rect=[[388.8 86.3] - [410.8 108.0]]
+pdfcer-diag ui-rect name=ribbon.item.view.line_weights rect=[[414.8 86.3] - [438.8 108.3]]
+pdfcer-diag ui-rect name=ribbon.group.view.display.caption rect=[[396.7 112.0] - [430.9 125.0]]
+pdfcer-diag ui-rect name=ribbon.group.view.display rect=[[382.8 35.0] - [444.8 129.7]]
+pdfcer-diag ui-rect name=ribbon.item.view.panel_pages rect=[[464.8 41.0] - [525.2 62.7]]
+pdfcer-diag ui-rect name=ribbon.item.view.panel_bookmarks rect=[[529.2 41.0] - [619.6 62.7]]
+pdfcer-diag ui-rect name=ribbon.item.view.panel_layers rect=[[464.8 63.7] - [527.7 85.3]]
+pdfcer-diag ui-rect name=ribbon.item.view.panel_objects rect=[[531.7 63.7] - [602.1 85.3]]
+pdfcer-diag ui-rect name=ribbon.item.view.panel_signatures rect=[[464.8 86.3] - [552.1 108.0]]
+pdfcer-diag ui-rect name=ribbon.item.view.panel_forms rect=[[556.1 86.3] - [630.0 108.0]]
+pdfcer-diag ui-rect name=ribbon.group.view.panels.caption rect=[[531.6 112.0] - [563.3 125.0]]
+pdfcer-diag ui-rect name=ribbon.group.view.panels rect=[[458.8 35.0] - [636.0 129.7]]
+pdfcer-diag ui-rect name=ribbon.item.view.previous_document rect=[[656.0 41.0] - [793.8 62.7]]
+pdfcer-diag ui-rect name=ribbon.item.view.next_document rect=[[797.8 41.0] - [913.9 62.7]]
+pdfcer-diag ui-rect name=ribbon.item.view.close_other_documents rect=[[917.9 41.0] - [1015.9 62.7]]
+pdfcer-diag ui-rect name=ribbon.item.view.read_mode rect=[[656.0 63.7] - [747.8 85.3]]
+pdfcer-diag ui-rect name=ribbon.item.view.fullscreen rect=[[751.8 63.7] - [839.5 85.3]]
+pdfcer-diag ui-rect name=ribbon.item.view.dock_all_panels rect=[[843.5 63.7] - [955.3 85.3]]
+pdfcer-diag ui-rect name=ribbon.item.view.ribbon_auto_hide rect=[[656.0 86.3] - [780.2 108.0]]
+pdfcer-diag ui-rect name=ribbon.item.view.rail_auto_hide rect=[[784.2 86.3] - [919.8 108.0]]
+pdfcer-diag ui-rect name=ribbon.item.view.reset_layout rect=[[923.8 86.3] - [1021.7 108.0]]
+pdfcer-diag ui-rect name=ribbon.group.view.window.caption rect=[[819.1 112.0] - [858.7 125.0]]
+pdfcer-diag ui-rect name=ribbon.group.view.window rect=[[650.0 35.0] - [1027.7 129.7]]
+pdfcer-diag ui-rect name=doc-tabs rect=[[8.0 142.0] - [1092.0 166.0]]
+pdfcer-diag ui-rect name=doc-tab.0 rect=[[8.0 142.0] - [168.0 164.0]]
+pdfcer-diag ui-rect name=dock.left rect=[[0.0 166.0] - [280.0 766.0]]
+pdfcer-diag ui-rect name=dock.left.railtrigger rect=[[0.0 166.0] - [52.0 766.0]]
+pdfcer-diag ui-rect name=dock.left.toolrail rect=[[0.0 166.0] - [52.0 766.0]]
+pdfcer-diag rail-plan rung=Roomy rows=18 folded=0 wants=492 budget=600
+pdfcer-diag ui-rect name=rail.tabs.view.panel_pages rect=[[3.0 166.0] - [49.0 200.0]]
+pdfcer-diag ui-rect name=rail.tabs.view.panel_bookmarks rect=[[3.0 201.0] - [49.0 235.0]]
+pdfcer-diag ui-rect name=rail.tabs.view.panel_layers rect=[[3.0 236.0] - [49.0 270.0]]
+pdfcer-diag ui-rect name=rail.tabs.view.panel_signatures rect=[[3.0 271.0] - [49.0 305.0]]
+pdfcer-diag ui-rect name=rail.tabs.markup.comments rect=[[3.0 306.0] - [49.0 340.0]]
+pdfcer-diag ui-rect name=rail.tabs.file.fonts rect=[[3.0 341.0] - [49.0 375.0]]
+pdfcer-diag ui-rect name=rail.navigate.view.tool_select rect=[[3.0 400.0] - [49.0 434.0]]
+pdfcer-diag ui-rect name=rail.navigate.view.tool_text rect=[[3.0 435.0] - [49.0 469.0]]
+pdfcer-diag ui-rect name=rail.navigate.view.tool_hand rect=[[3.0 470.0] - [49.0 504.0]]
+pdfcer-diag ui-rect name=rail.select.edit.select_all rect=[[3.0 529.0] - [49.0 563.0]]
+pdfcer-diag ui-rect name=rail.rotate.pages.rotate_left rect=[[3.0 588.0] - [49.0 622.0]]
+pdfcer-diag ui-rect name=rail.rotate.pages.rotate_right rect=[[3.0 623.0] - [49.0 657.0]]
+pdfcer-diag ui-rect name=dock.left.split.side rect=[[274.0 166.0] - [280.0 766.0]]
+pdfcer-diag ui-rect name=dock.left.0 rect=[[52.0 166.0] - [274.0 766.0]]
+pdfcer-diag ui-rect name=dock.left.0.0 rect=[[52.0 166.0] - [274.0 766.0]]
+pdfcer-diag ui-rect name=panel:signatures rect=[[52.0 166.0] - [274.0 766.0]]
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag ui-rect name=dock.body.view.panel_signatures rect=[[52.0 166.0] - [274.0 766.0]]
+pdfcer-diag ui-rect name=dock.left.collapse rect=[[258.0 166.0] - [274.0 188.0]]
+pdfcer-diag ui-rect name=dock.right rect=[[780.0 166.0] - [1100.0 766.0]]
+pdfcer-diag ui-rect name=dock.right.banner rect=[[780.0 166.0] - [1100.0 192.0]]
+pdfcer-diag ui-rect name=toolstatus rect=[[780.0 174.0] - [1098.0 184.0]]
+pdfcer-diag ui-rect name=dock.right.split.side rect=[[780.0 192.0] - [786.0 766.0]]
+pdfcer-diag ui-rect name=dock.right.0 rect=[[786.0 192.0] - [1100.0 766.0]]
+pdfcer-diag ui-rect name=dock.right.0.0 rect=[[786.0 192.0] - [1100.0 766.0]]
+pdfcer-diag ui-rect name=dock.right.0.0.tabbar rect=[[786.0 192.0] - [1100.0 216.0]]
+pdfcer-diag ui-rect name=dock.tab.markup.comments rect=[[786.0 192.0] - [863.0 216.0]]
+pdfcer-diag ui-rect name=dock.tab.view.panel_forms rect=[[865.0 192.0] - [927.0 216.0]]
+pdfcer-diag ui-rect name=dock.tab.file.document_properties rect=[[929.0 192.0] - [1067.2 216.0]]
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag ui-rect name=dock.body.markup.comments rect=[[786.0 216.0] - [1100.0 766.0]]
+pdfcer-diag ui-rect name=dock.right.collapse rect=[[1084.0 192.0] - [1100.0 214.0]]
+pdfcer-diag ui-rect name=central-panel rect=[[288.0 174.0] - [772.0 758.0]]
+pdfcer-diag canvas-coverage covered=1.000 sharp=1.000 textured=1 backdrop=1 zoom=0.717
+pdfcer-diag canvas rect=[[310.5 181.0] - [749.5 749.0]] zoom=0.7172 page=0 pages=1 off=[484.0 584.6] sel=0 display=continuous visible=1 drawn=1
+pdfcer-diag canvas-pos at=-22.545,-7.000 tier=scroll paint=310.545,181.000 region=none want=none ext=612.000,792.000
+pdfcer-diag ui-rect name=page rect=[[310.5 181.0] - [749.5 749.0]]
+pdfcer-diag ui-rect name=canvas-viewport rect=[[288.0 174.0] - [772.0 758.0]]
+pdfcer-diag canvas-pointer screen=(180.0,14.0) page=(-182.03,-232.86) pdf=(-182.03,1024.86) zoom=0.7172
+pdfcer-diag ui-rect-gone name=ribbon.group.file.export.collapsed
+pdfcer-diag ui-rect-gone name=ribbon.group.file.file
+pdfcer-diag ui-rect-gone name=ribbon.group.file.file.caption
+pdfcer-diag ui-rect-gone name=ribbon.group.file.print
+pdfcer-diag ui-rect-gone name=ribbon.group.file.print.caption
+pdfcer-diag ui-rect-gone name=ribbon.group.file.recognise.collapsed
+pdfcer-diag ui-rect-gone name=ribbon.group.file.save
+pdfcer-diag ui-rect-gone name=ribbon.group.file.save.caption
+pdfcer-diag ui-rect-gone name=ribbon.group.file.security
+pdfcer-diag ui-rect-gone name=ribbon.group.file.security.caption
+pdfcer-diag ui-rect-gone name=ribbon.item.file.close
+pdfcer-diag ui-rect-gone name=ribbon.item.file.encrypt
+pdfcer-diag ui-rect-gone name=ribbon.item.file.new
+pdfcer-diag ui-rect-gone name=ribbon.item.file.new_from_template
+pdfcer-diag ui-rect-gone name=ribbon.item.file.open
+pdfcer-diag ui-rect-gone name=ribbon.item.file.permissions
+pdfcer-diag ui-rect-gone name=ribbon.item.file.print
+pdfcer-diag ui-rect-gone name=ribbon.item.file.save
+pdfcer-diag ui-rect-gone name=ribbon.item.file.save_as
+pdfcer-diag ui-rect-gone name=ribbon.item.file.save_compacted
+pdfcer-diag ui-rect-gone name=ribbon.item.file.save_copy
+pdfcer-diag ui-rect-gone name=ribbon.item.file.sign
+pdfcer-diag ui-rect-gone name=ribbon.overflow
+pdfcer-diag status page=0 pages=1 zoom=71.71717071533203 fit=Page wheel=scroll
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-22.545,-7.000 tier=scroll paint=310.545,181.000 region=none want=none ext=612.000,792.000
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-22.545,-7.000 tier=scroll paint=310.545,181.000 region=none want=none ext=612.000,792.000
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-22.545,-7.000 tier=scroll paint=310.545,181.000 region=none want=none ext=612.000,792.000
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-22.545,-7.000 tier=scroll paint=310.545,181.000 region=none want=none ext=612.000,792.000
+pdfcer-diag render-spawn gen=3 page=0 scale=0.7171717
+pdfcer-diag raster-blend-space cmyk_buffer=false refused=0 wrong_space=0 scale=0.717
+pdfcer-diag render-inline gen=3 ms=2 async=0
+pdfcer-diag backdrop-kept page=0 px=439x568
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-22.545,-7.000 tier=scroll paint=310.545,181.000 region=none want=none ext=612.000,792.000
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-22.545,-7.000 tier=scroll paint=310.545,181.000 region=none want=none ext=612.000,792.000
+pdfcer-diag ui-rect name=ribbon.item.view.panel_signatures rect=[[464.8 86.3] - [554.1 108.3]]
+pdfcer-diag ui-rect name=ribbon.item.view.panel_forms rect=[[558.1 86.5] - [632.0 108.2]]
+pdfcer-diag ui-rect name=ribbon.group.view.panels.caption rect=[[532.6 112.0] - [564.3 125.0]]
+pdfcer-diag ui-rect name=ribbon.group.view.panels rect=[[458.8 35.0] - [638.0 129.7]]
+pdfcer-diag ui-rect name=ribbon.item.view.previous_document rect=[[658.0 41.0] - [795.8 62.7]]
+pdfcer-diag ui-rect name=ribbon.item.view.next_document rect=[[799.8 41.0] - [915.9 62.7]]
+pdfcer-diag ui-rect name=ribbon.item.view.close_other_documents rect=[[919.9 41.0] - [1017.9 62.7]]
+pdfcer-diag ui-rect name=ribbon.item.view.read_mode rect=[[658.0 63.7] - [749.8 85.3]]
+pdfcer-diag ui-rect name=ribbon.item.view.fullscreen rect=[[753.8 63.7] - [841.5 85.3]]
+pdfcer-diag ui-rect name=ribbon.item.view.dock_all_panels rect=[[845.5 63.7] - [957.3 85.3]]
+pdfcer-diag ui-rect name=ribbon.item.view.ribbon_auto_hide rect=[[658.0 86.3] - [782.2 108.0]]
+pdfcer-diag ui-rect name=ribbon.item.view.rail_auto_hide rect=[[786.2 86.3] - [921.8 108.0]]
+pdfcer-diag ui-rect name=ribbon.item.view.reset_layout rect=[[925.8 86.3] - [1023.7 108.0]]
+pdfcer-diag ui-rect name=ribbon.group.view.window.caption rect=[[821.1 112.0] - [860.7 125.0]]
+pdfcer-diag ui-rect name=ribbon.group.view.window rect=[[652.0 35.0] - [1029.7 129.7]]
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-22.545,-7.000 tier=scroll paint=310.545,181.000 region=none want=none ext=612.000,792.000
+pdfcer-diag canvas-pointer screen=(508.0,97.0) page=(275.32,-117.13) pdf=(275.32,909.13) zoom=0.7172
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-22.545,-7.000 tier=scroll paint=310.545,181.000 region=none want=none ext=612.000,792.000
+pdfcer-diag frame n=40
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-22.545,-7.000 tier=scroll paint=310.545,181.000 region=none want=none ext=612.000,792.000
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-22.545,-7.000 tier=scroll paint=310.545,181.000 region=none want=none ext=612.000,792.000
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-22.545,-7.000 tier=scroll paint=310.545,181.000 region=none want=none ext=612.000,792.000
+pdfcer-diag signature-row field=Some("SignHere") covered=2124 tail=0 pairs=2 well_formed=true integrity=verified trust=not-checked
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-22.545,-7.000 tier=scroll paint=310.545,181.000 region=none want=none ext=612.000,792.000
+egui-shell-diag ribbon-command-invoked id=view.panel_signatures handler=243
+pdfcer-diag panel-closed id=view.panel_signatures closed=true
+pdfcer-diag bookmarks-panel page=1 items=0
+pdfcer-diag ui-rect name=dock.body.view.panel_bookmarks rect=[[52.0 166.0] - [274.0 766.0]]
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-22.545,-7.000 tier=scroll paint=310.545,181.000 region=none want=none ext=612.000,792.000
+pdfcer-diag ui-rect-gone name=dock.body.view.panel_signatures
+pdfcer-diag ui-rect-gone name=panel:signatures
+pdfcer-diag bookmarks-panel page=1 items=0
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-22.545,-7.000 tier=scroll paint=310.545,181.000 region=none want=none ext=612.000,792.000
+pdfcer-diag bookmarks-panel page=1 items=0
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-22.545,-7.000 tier=scroll paint=310.545,181.000 region=none want=none ext=612.000,792.000
+pdfcer-diag bookmarks-panel page=1 items=0
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-22.545,-7.000 tier=scroll paint=310.545,181.000 region=none want=none ext=612.000,792.000
+pdfcer-diag bookmarks-panel page=1 items=0
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-22.545,-7.000 tier=scroll paint=310.545,181.000 region=none want=none ext=612.000,792.000
+pdfcer-diag bookmarks-panel page=1 items=0
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-22.545,-7.000 tier=scroll paint=310.545,181.000 region=none want=none ext=612.000,792.000
+pdfcer-diag frame n=50
+pdfcer-diag bookmarks-panel page=1 items=0
+pdfcer-diag comments-panel pages=1 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=2 excluded_popups=0 excluded_trapnet=0 excluded_total=2 filtered=0 shown=0
+pdfcer-diag layout-save path="D:\\Dev\\pdfcer-gui\\target\\release\\userdata\\layout.ron" workspaces=3 n=2
+pdfcer-diag canvas-pos at=-22.545,-7.000 tier=scroll paint=310.545,181.000 region=none want=none ext=612.000,792.000

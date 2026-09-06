@@ -694,6 +694,30 @@ pub const fn pages_rotate_right() -> CommandText {
     )
 }
 
+/// `pages.resize`
+///
+/// ★★★ **The tooltip says what the command does NOT do**, and that is the
+/// whole reason it is worded this way. Every other "page size" control an
+/// operator has met — Word, LibreOffice, a print dialog's Fit-to-page —
+/// reflows or scales, and this one changes the paper and leaves the drawing
+/// exactly where it is. A tooltip reading *"change the page size"* would be
+/// true, useless, and would confirm the wrong belief.
+///
+/// The window itself says it again, at greater length, with the overhang
+/// measured — see `crate::text::page_size`. Saying it twice is deliberate: the
+/// tooltip is what an operator reads *before deciding whether to open the
+/// window at all*.
+#[must_use]
+pub const fn pages_resize() -> CommandText {
+    CommandText::new(
+        "Sheet size…",
+        "Put the selected pages on a different size of paper. This changes the paper only — \
+         nothing on the page moves and nothing is scaled to fit, so a smaller sheet crops the \
+         drawing rather than shrinking it. The window shows what would fall off before you \
+         commit.",
+    )
+}
+
 // ===========================================================================
 // EDIT TAB
 // ===========================================================================

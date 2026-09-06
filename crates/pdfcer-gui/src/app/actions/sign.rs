@@ -97,6 +97,8 @@
 //! digital ID. What is traced is what a diagnosis needs — that a signing was
 //! asked for, which step it reached, and what the engine said.
 
+use pdfcer_core::sign::apply::MdpPermission;
+
 use crate::app::PdfcerApp;
 use crate::app::actions::Action;
 use crate::app::state::Status;
@@ -221,23 +223,7 @@ fn run(
         Err(PrepareFailure::Refused(refusal)) => {
             return Outcome::Failed(t::refusal_line(refusal));
         }
-        Err(PrepareFailure::Engine(error)) => {
-            // ★ The reservation gets its own sentence, and it is the one engine
-            // refusal whose own advice this shell cannot follow: its message
-            // ends "sign again with a larger reserve" and there is no control
-            // here that sets one. See `crate::sign::prepare`'s note.
-            let detail = error.to_string();
-            return Outcome::Failed(
-                if matches!(
-                    error,
-                    pdfcer_core::sign::apply::SignApplyError::ReservationTooSmall { .. }
-                ) {
-                    t::reservation_too_small(&detail)
-                } else {
-                    t::engine_refused(&detail)
-                },
-            );
-        }
+        Err(PrepareFailure::Engine(error)) => return Outcome::Failed(worded(&error)),
     };
 
     // --- 4. write, and say exactly what was written -----------------------
@@ -246,6 +232,10 @@ fn run(
         &report.field_name,
         &report.signer_subject,
         &report.signer_serial_hex,
+        report.field_reused,
+        report.field_lock.as_deref(),
+        report.certification.map(MdpPermission::meaning),
+        &report.notes,
     );
     match prepared.write_to(target) {
         Ok(_) => Outcome::Written {
@@ -254,5 +244,164 @@ fn run(
             details,
         },
         Err(failure) => Outcome::Failed(t::write_failed(&failure.to_string())),
+    }
+}
+
+/// **Which operator-facing sentence an engine refusal gets.**
+///
+/// Pure, so every arm is asserted headlessly rather than by driving a window —
+/// which matters more here than usual, because two of these arms are only
+/// reachable on documents this repository does not commit.
+///
+/// # ★★★ 5. THE ONE DECISION IN THIS FUNCTION: WHOSE RULE REFUSED
+///
+/// `SignApplyError` has a distinct, already-written sentence per variant, and
+/// [`crate::text::sign::engine_refused`] frames them all as *"pdfcer did not
+/// sign the document: …"*. That framing is right for most of them and **wrong
+/// for the seed-value pair**, and the wrongness is expensive rather than
+/// cosmetic.
+///
+/// `Pass 10.13` enforces a signature field's `/SV` dictionary (Table 234) **in
+/// full** and is deliberately **stricter than Acrobat**: a required constraint
+/// unmet is refused by name, and a constraint pdfcer cannot evaluate is refused
+/// **rather than skipped**. So an operator will meet refusals here on documents
+/// Acrobat signs — and *"pdfcer did not sign the document"* beside one of those
+/// tells him, in plain English, that pdfcer is broken. He would be right to
+/// conclude that from the sentence and wrong about the program, and a working
+/// feature would be reported as a defect.
+///
+/// ⇒ [`crate::text::sign::author_imposed`] puts **the person who prepared the
+/// document** in the subject position, quotes the engine's message verbatim
+/// (because it names the constraint AND the satisfying values, which are the
+/// actionable half), states the strictness as a deliberate choice, and gives two
+/// remedies that do not require pdfcer to change.
+///
+/// ★ Three more variants get their own wording for smaller reasons, each noted
+/// at its arm. Everything else keeps the general form: the engine's sentence is
+/// already an operator-facing one and re-wording it here would be a second
+/// spelling of a fact with one author.
+fn worded(error: &pdfcer_core::sign::apply::SignApplyError) -> String {
+    use pdfcer_core::sign::apply::SignApplyError as E;
+    let detail = error.to_string();
+    match error {
+        // ★★★ The author's rule, not pdfcer's. See above.
+        E::SeedValueViolated { .. } | E::SeedValueUnevaluable { .. } => t::author_imposed(&detail),
+        // ★★ The chosen box turned out not to be usable. Reachable despite the
+        // window filtering its list, because the list is read once when the
+        // window opens and the document can change under it — and the remedy
+        // ("choose another box, or place your own") is a thing the operator can
+        // do on the form he is still looking at, which the engine's own message
+        // has no way to know.
+        //
+        // ⚠ `RectRefusedForExistingField` is here for completeness and is
+        // UNREACHABLE from this shell: `crate::sign::Placement`'s three arms are
+        // exclusive, so a rectangle and a field name cannot both be sent. It is
+        // matched rather than left to the catch-all so that the day somebody
+        // splits that enum, the arm is already correct.
+        E::FieldNotSignature { .. }
+        | E::FieldAlreadySigned { .. }
+        | E::FieldHasKids { .. }
+        | E::FieldNameTaken { .. }
+        | E::RectRefusedForExistingField { .. } => t::field_refused(&detail),
+        // ★ New in `Pass 10.14`: the composed appearance does not fit. The
+        // engine's advice is "enlarge --visible", and there is no such control
+        // here — the box's size is fixed by `crate::sign::default_rect` — so the
+        // remedy offered is the one that exists.
+        E::AppearanceOverflow { .. } => t::appearance_overflow(&detail),
+        // ★ The one refusal whose own advice this shell cannot follow: it ends
+        // "sign again with a larger reserve" and there is no control that sets
+        // one. `crate::sign::prepare`'s note argues why asking would be handing
+        // the operator arithmetic.
+        E::ReservationTooSmall { .. } => t::reservation_too_small(&detail),
+        _ => t::engine_refused(&detail),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::worded;
+    use pdfcer_core::sign::apply::SignApplyError as E;
+
+    /// ★★★ **A seed-value refusal is worded as the AUTHOR'S rule, and every
+    /// other refusal is not.**
+    ///
+    /// The whole of §5, asserted rather than argued. `Pass 10.13` enforces
+    /// `/SV` in full and is deliberately stricter than Acrobat, so the operator
+    /// will meet these on documents another reader signs — and the general
+    /// wording, *"pdfcer did not sign the document: …"*, would tell him in
+    /// plain English that pdfcer is broken.
+    ///
+    /// ⚠ The negative half matters as much: a refusal that is genuinely
+    /// pdfcer's (the fixed reservation) must NOT be dressed up as somebody
+    /// else's rule. Blaming the document's author for a pdfcer limit is the
+    /// same defect pointed the other way.
+    #[test]
+    fn only_a_seed_value_refusal_blames_the_documents_author() {
+        let authors_rule = [
+            E::SeedValueViolated {
+                name: "SignHere".to_owned(),
+                constraint: "Reasons one of: Approved".to_owned(),
+            },
+            E::SeedValueUnevaluable {
+                name: "SignHere".to_owned(),
+                what: "/Cert".to_owned(),
+            },
+        ];
+        for error in authors_rule {
+            let sentence = worded(&error);
+            assert!(
+                sentence.contains("prepared this document"),
+                "a seed-value refusal must name the document's author: {sentence}"
+            );
+            assert!(sentence.contains("not a limit in pdfcer"), "{sentence}");
+        }
+
+        // pdfcer's own limits keep pdfcer as the subject.
+        let ours = worded(&E::ReservationTooSmall {
+            needed: 20_000,
+            reserved: 12_288,
+        });
+        assert!(!ours.contains("prepared this document"), "{ours}");
+        assert!(ours.contains("pdfcer reserves a fixed amount"), "{ours}");
+    }
+
+    /// **A field that cannot be used sends the operator back to the form.**
+    ///
+    /// Reachable even though the window filters its list, because the list is
+    /// read once when the window opens and the document can change under it.
+    /// The engine's message says what is wrong; this adds the remedy that
+    /// exists on the screen the operator is still looking at.
+    #[test]
+    fn an_unusable_field_offers_the_other_two_routes() {
+        let sentence = worded(&E::FieldAlreadySigned {
+            name: "SignHere".to_owned(),
+        });
+        assert!(sentence.contains("Choose another box"), "{sentence}");
+        assert!(sentence.contains("place your own"), "{sentence}");
+    }
+
+    /// **The appearance-overflow refusal does not repeat advice this shell
+    /// cannot take.**
+    ///
+    /// `Pass 10.14`'s message ends *"enlarge --visible, or drop
+    /// --reason/--location"*, and there is no control here that enlarges the
+    /// box — `crate::sign::default_rect` fixes it. So the engine's sentence is
+    /// shown and the remedy offered is one the operator can actually perform.
+    #[test]
+    fn the_overflow_refusal_offers_a_remedy_this_window_has() {
+        let sentence = worded(&E::AppearanceOverflow {
+            lines: 4,
+            width: 180.0,
+            height: 60.0,
+            min_size: 4.0,
+        });
+        assert!(
+            sentence.contains("Shorten or clear the reason"),
+            "{sentence}"
+        );
+        assert!(
+            sentence.contains("do not draw anything on the page"),
+            "the alternative that always works is named: {sentence}"
+        );
     }
 }

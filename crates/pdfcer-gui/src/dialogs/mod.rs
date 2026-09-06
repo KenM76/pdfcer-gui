@@ -129,6 +129,13 @@ pub mod open;
 /// Its header carries why there is no third *"open without saving"* button,
 /// which is the one place it deliberately departs from [`unsaved`]'s shape.
 pub mod open_in_acrobat;
+/// ★★★ **Changing the paper an open drawing sits on** — `pages.resize`. Its
+/// header carries the design decision the window is built around: a
+/// `/MediaBox` change crops, it does not shrink, so the window's real product
+/// is a *measurement* of how far the drawing would run past the paper being
+/// chosen — computed before the operator commits, from a facility the engine
+/// itself names as a residual it does not have.
+pub mod page_size;
 
 pub mod password;
 pub mod placing;
@@ -334,6 +341,20 @@ pub struct DialogsState {
     /// header says a dialog that edits the document *"must use the funnel"*,
     /// and this is the first one that does.
     scale: Option<scale::ScaleDialog>,
+    /// ★★★ The sheet-size window, when one is open.
+    ///
+    /// **Document-scoped**, and pointedly not application-scoped like its
+    /// sibling [`new_document`]: that window exists to produce a document and
+    /// would be harmful to close, this one is *about* a document's sheets and
+    /// has nothing true to say without them. It holds a snapshot of what those
+    /// sheets are and what is drawn on them, so it must not outlive them.
+    ///
+    /// ⚠ **`page_size` and `scale` are different subjects and the names are
+    /// close enough to be worth separating here.** `scale` recalibrates a ce
+    /// dimension group — what a measurement *means*. This one changes the
+    /// paper. Neither moves the drawing, and only one of them changes a
+    /// printed number.
+    page_size: Option<page_size::PageSizeDialog>,
     /// The open text-annotation dialog, if a text box, sticky or stamp has
     /// just been placed.
     text_annot: Option<textannot::TextAnnotDialog>,
@@ -752,6 +773,16 @@ impl DialogsState {
         if self.scale.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.scale = None;
         }
+        // ★ Beside `scale`, below the no-document guard, and taking no `doc` —
+        // for `scale`'s own reason. Everything this window says about the
+        // document was read when it opened (`PageSizeDialog::open`), so its
+        // controls need nothing from the open document per frame. What it DOES
+        // need from the document is the guard above: a snapshot of sheets that
+        // are no longer open would draw a measurement of a document nobody can
+        // see.
+        if self.page_size.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
+            self.page_size = None;
+        }
         if self.form_field.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.form_field = None;
         }
@@ -1034,6 +1065,11 @@ impl DialogsState {
         self.redact = None;
         self.protect = None;
         self.scale = None;
+        // ★ On this list because it holds a SNAPSHOT — the picked sheets' sizes
+        // and the drawing's extent, read when it opened. A window that survived
+        // its document would keep describing sheets nobody has open, and every
+        // number in it would still look authoritative.
+        self.page_size = None;
         self.insert_image = None;
         self.export_dxf = None;
         self.export_image = None;

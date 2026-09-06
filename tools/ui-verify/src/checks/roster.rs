@@ -126,6 +126,11 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // `enabled_when` because an operator with nothing open is the one it
         // exists for.
         Box::new(new_document_size::NewDocumentSizesThePage),
+        // ★ Immediately after its sibling, and the pairing is the point: that
+        // one asserts a NEW document gets the size asked for, this one asserts an
+        // OPEN one can be changed. The chooser they drive is the same widget, and
+        // it was reachable only from the first of the two until 2026-09-06.
+        Box::new(page_size::ResizingASheetChangesThePaperInTheSavedFile),
         // Clicks and captures, so it takes the desktop — but only with the
         // mouse, and only for a few seconds. Placed after the three ribbon
         // chrome checks because it depends on the same rects they read and a

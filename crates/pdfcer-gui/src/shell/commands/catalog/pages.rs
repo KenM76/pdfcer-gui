@@ -129,6 +129,28 @@ pub(super) fn band() -> Vec<Command> {
         command("pages.rotate_right", t::pages_rotate_right(), 321)
             .with_icon("rotate-cw")
             .enabled_when("doc.pages"),
+        // ★★★ **Sheet size** — 2026-09-06, the third Transform command and the
+        // one that closes `EDITABLE_SURFACES.md`'s `set_media_boxes` row.
+        //
+        // ★ `doc.pages` and no new condition, on this band's own rule stated at
+        // the top of the file: with nothing picked it acts on the current
+        // sheet, which is a defined answer and not a disabled state. Adding an
+        // "are any picked" condition would also mean adding a string to
+        // `shell::commands`' closed condition vocabulary, and a command gated
+        // on a condition nothing produces is permanently and silently greyed.
+        //
+        // ★★ The icon is `page-single`, **shared** with `view.page_single`
+        // under the header's shared-key convention. Two reasons, and only the
+        // second is a preference: the two are never drawn together, because
+        // View is a different tab and one tab's band shows at a time; and there
+        // is no glyph in the catalogue that means "sheet size", while
+        // `icons::catalog::mod` sits at 1,498 of R2's 1,500 lines, so minting
+        // one is a file split rather than an icon. What distinguishes the two
+        // controls is the label, which is why this one carries a label and its
+        // two rotate neighbours do not.
+        command("pages.resize", t::pages_resize(), 325)
+            .with_icon("page-single")
+            .enabled_when("doc.pages"),
         // ★★ The PAGE clipboard — O59 item 2. Three commands rather than a
         // chord: `app::dispatch::pageclip`'s header carries why, and the short
         // form is that the `pages.*` operand rule always resolves, so a chord

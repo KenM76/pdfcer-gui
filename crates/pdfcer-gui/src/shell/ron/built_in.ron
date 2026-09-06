@@ -256,6 +256,7 @@
                     items: [
                         Command(id: "pages.rotate_left", size: Small),
                         Command(id: "pages.rotate_right", size: Small),
+                        Command(id: "pages.resize"),
                     ],
                     collapse: 1,
                 ),

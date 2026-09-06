@@ -179,9 +179,29 @@ pub fn body(
                 trust_line(ui, verdict, report.as_ref().and_then(|r| r.as_ref().ok()));
 
                 crate::diag::trace(|| {
+                    // ★★★ **`field_token`, not `{:?}` — corrected 2026-09-06.**
+                    //
+                    // This line read `field={:?}` over an `Option<String>`, so it
+                    // emitted `field=Some("SignHere")` — quotes, brackets and all
+                    // — into a `key=value` trace that checks parse by splitting on
+                    // whitespace and `=`. The signing check's own verdict rests on
+                    // this field.
+                    //
+                    // ⇒ The project's standing rule, met for the third time this
+                    // week: **never Debug-format a value a machine reads.** It has
+                    // already produced two false failure reports, one of which
+                    // announced that a surface did not name a character while
+                    // quoting the surface naming it. A `{:?}` also makes the
+                    // trace's vocabulary a consequence of a Rust derive, so it
+                    // changes silently when the type does.
+                    //
+                    // ★ Fixed at the emitter rather than in the reader, and the
+                    // absent case gets the same `none` spelling every other token
+                    // helper here uses — so a check comparing two surfaces is
+                    // comparing one language.
                     format!(
-                        "signature-row field={:?} covered={} tail={} pairs={} well_formed={} integrity={} trust={}",
-                        c.field_name,
+                        "signature-row field={} covered={} tail={} pairs={} well_formed={} integrity={} trust={}",
+                        field_token(c.field_name.as_deref()),
                         c.covered,
                         c.uncovered_tail,
                         c.pair_count,
@@ -344,6 +364,21 @@ fn labelled(ui: &mut egui::Ui, label: &str, said: &str) {
         ui.label(egui::RichText::new(label).small().weak());
         ui.label(said);
     });
+}
+
+/// The signature field's name as one trace token, or `none`.
+///
+/// ★★ Exists because the call site used to write `field={:?}` over an
+/// `Option<String>`, emitting `field=Some("SignHere")` into a `key=value`
+/// trace that readers split on whitespace. **Never Debug-format a value a
+/// machine reads** — the third instance in this project in one week, and the
+/// only one that had not yet cost a false failure report.
+///
+/// ★ `none` rather than an empty string, matching every other token helper
+/// here: an empty value after `=` is indistinguishable from a truncated line,
+/// and a check cannot tell the two apart.
+fn field_token(name: Option<&str>) -> &str {
+    name.unwrap_or("none")
 }
 
 /// The integrity verdict as one trace token.

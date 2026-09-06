@@ -211,6 +211,42 @@ pub enum PageAction {
         /// A relative turn in degrees, a multiple of 90.
         delta: i32,
     },
+    /// ★★★ **Put the operand pages on a different size of paper**, as one
+    /// undoable command however many sheets it touched.
+    ///
+    /// Raised by `crate::dialogs::page_size` and by nothing else — the
+    /// window is the only place the two questions this verb needs answering
+    /// (*which sheet, and do you understand it will crop*) can both be put.
+    ///
+    /// # It changes no page's identity, and it does not move the drawing
+    ///
+    /// A `/MediaBox` change rewrites one page-dictionary entry. Nothing is
+    /// added, removed or renumbered, so both selections survive it untouched
+    /// and the resync is about **pictures** — every cached raster of a
+    /// resized sheet is now the wrong shape — exactly as it is for
+    /// [`Self::RotatePages`].
+    ///
+    /// ⚠ And nothing drawn on the page moves either. That is the whole
+    /// subject of [`crate::app::actions::pagesize`], which carries the
+    /// measurement: an A1 drawing put on A4 paper is **cropped, not shrunk**.
+    ///
+    /// # Why a rectangle rather than a width and a height
+    ///
+    /// [`crate::app::actions::Action::NewSized`] carries a *size* because a
+    /// new page's lower-left corner is the origin by construction. An
+    /// existing page's is not — §7.7.3.3 does not require one, and imposition
+    /// output and cropped scans carry offset boxes — so the corner is a real
+    /// choice, it is made once in
+    /// [`crate::app::actions::pagesize::SheetSurvey::target_rect`] against the
+    /// sheets actually picked, and it travels with the request rather than
+    /// being re-derived from a survey that may no longer exist.
+    SetPageSize {
+        /// 0-based page indices, ascending and unique.
+        pages: Vec<usize>,
+        /// The `/MediaBox` to write on every one of them, §7.9.5-normalized
+        /// by the engine before anything is touched.
+        rect: pdfcer_core::page_tree::Rect,
+    },
     /// **Remove the operand pages from the document**, as one undoable
     /// command.
     ///
@@ -1029,6 +1065,34 @@ pub(super) fn apply(
                 super::apply::vector_edit(doc, "rotate-pages", first, pages.len(), |session| {
                     rotate(session, &pages, delta)
                 });
+            }
+        }
+        // ★★★ **The paper changes and the drawing does not.** The body, the
+        // measurement behind that sentence and the rule-4 disclosures are all
+        // in `super::pagesize`; this arm only routes, exactly as the rotate arm
+        // above it does.
+        //
+        // ★ The funnel label is `page-size-changed`, and the suffix is not
+        // decoration: `vector_edit` publishes `<label> page= n= epoch=
+        // disclosures=`, `ui-verify` matches a trace line on its FIRST token,
+        // and `super::pagesize` publishes `page-size-sheet` and
+        // `page-size-applied` of its own. Three distinct first tokens, which is
+        // what `tools/gates/check-trace-names.py` exists to keep true — the
+        // convention was broken three times in three days before it existed.
+        //
+        // Guarded on a non-empty operand list for the rotate arm's reason: the
+        // engine would accept an empty selection and record nothing, producing
+        // a control the operator pressed that changed nothing and said nothing.
+        PageAction::SetPageSize { pages, rect } => {
+            if !pages.is_empty() {
+                let first = pages.first().copied().unwrap_or(0);
+                super::apply::vector_edit(
+                    doc,
+                    "page-size-changed",
+                    first,
+                    pages.len(),
+                    |session| super::pagesize::set(session, &pages, rect),
+                );
             }
         }
         // ★ **The destructive one**, and the one that renumbers.

@@ -336,11 +336,31 @@ pub const PLANNED: &[(&str, &str)] = &[
         // ui-text-exempt: developer note about an ABSENT command; never rendered.
         "N — needs an interactive crop-box gesture and a /CropBox writer.",
     ),
-    (
-        "pages.resize",
-        // ui-text-exempt: developer note about an ABSENT command; never rendered.
-        "N — rescale or re-media-box a set of pages.",
-    ),
+    // ★★★ `pages.resize` was here until 2026-09-06, reading
+    // *"N — rescale or re-media-box a set of pages."* It is registered and
+    // drawn now, in Pages ▸ Transform, so the row is removed rather than left
+    // with a stale reason — `planned_commands_are_genuinely_absent` asserts in
+    // both directions and fails on an entry that has shipped.
+    //
+    // ★★ Recorded as a comment rather than silently deleted, on the
+    // `file.recent` / `file.about` precedent above: *"this used to be planned
+    // and is now built"* is the one transition this list exists to make
+    // legible. And this row's own wording is worth keeping, because it was
+    // **wrong in a way that mattered** — it named two capabilities, *"rescale
+    // OR re-media-box"*, as if they were one command with two spellings. They
+    // are not. Re-media-boxing changes the paper and leaves the drawing
+    // exactly where it is; rescaling would move every mark on the page, and
+    // would have to rescale every ce dimension group's calibration with them
+    // or start printing wrong measurements. What shipped is the second half of
+    // that phrase. `crate::app::actions::pagesize`'s header carries the
+    // measurement and the argument for not building the first half quietly
+    // alongside it.
+    //
+    // ★ `pages.crop` above stays **N** and is a genuinely different command:
+    // `/CropBox` is the visible region *within* the paper, it needs an
+    // interactive gesture, and `set_media_boxes` does not write it. The
+    // sheet-size window discloses a crop box the new paper no longer contains
+    // and deliberately does not repair one.
     (
         "pages.watermark",
         "N — the whole Pages ▸ Stamp group is unbuilt, so the GROUP is absent too rather \

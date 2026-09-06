@@ -51,6 +51,7 @@ pub(crate) fn handles(id: &str) -> bool {
             | "pages.extract"
             | "pages.move_up"
             | "pages.move_down"
+            | "pages.resize"
     )
 }
 
@@ -59,8 +60,45 @@ pub(crate) fn handles(id: &str) -> bool {
 /// `id` is guaranteed to be one [`handles`] claims — the caller's arm is
 /// guarded on it — so the fall-through below is unreachable and says so rather
 /// than guessing.
-pub(super) fn dispatch(app: &PdfcerApp, id: &str, actions: &mut Vec<Action>) {
+/// ★ **`&mut` since `pages.resize` landed**, and the widening is deliberate
+/// rather than incidental. Every other arm here builds an `Action` and pushes
+/// it; that one opens a window, which lives on `PdfcerApp::dialogs`. The
+/// alternative was to put the arm in [`super`] beside `pages.merge_into` and
+/// `pages.insert_from_file`, which are in that file for exactly this reason —
+/// and [`super`] is at **1,500 of its 1,500 lines**, so there is no room to.
+/// Widening the receiver costs the call site nothing (it is already inside a
+/// `&mut self` method and reborrows) and keeps every Pages arm in the file
+/// named after the Pages tab.
+pub(super) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>) {
     match id {
+        // ★★★ **Change the paper the picked sheets sit on.**
+        //
+        // The only arm here that opens a window rather than pushing an
+        // `Action`, and it has to: the operator is being asked TWO questions,
+        // and the second one is not a choice — it is whether he has understood
+        // that a smaller sheet CROPS his drawing rather than shrinking it. See
+        // `crate::dialogs::page_size`, whose header carries the measurement.
+        //
+        // ★ The operand list is resolved by the same `page_operands` every
+        // other arm calls, and it is resolved BEFORE `app.dialogs` is borrowed
+        // mutably — `page_operands` takes `&self` and returns an owned `Vec`,
+        // so that borrow is over by the time the window is built. `status` and
+        // `dialogs` are then two disjoint fields, which is the one shape the
+        // borrow checker allows here and the reason this is written as field
+        // access rather than as a method on `PdfcerApp`.
+        "pages.resize" => {
+            let Some(pages) = app.page_operands() else {
+                return;
+            };
+            let Status::Open(doc) = &app.status else {
+                // Unreachable: `page_operands` already returned `None` for a
+                // closed document and traced why. Spelled out rather than
+                // `unreachable!()`, because a panic-free binary must not depend
+                // on another function's early return staying where it is.
+                return;
+            };
+            app.dialogs.open_page_size(doc, &pages);
+        }
         // ===============================================================
         // ★★ THE PAGE VERBS — six commands, one operand rule, five arms
         //

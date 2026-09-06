@@ -1,0 +1,800 @@
+pdfcer-diag start argv1=Some("evidence/sign-falsify\\sign-redaction-source.pdf")
+pdfcer-diag shell commands=144 planned=69 directed=1
+pdfcer-diag layout-load path="D:\\Dev\\pdfcer-gui\\target\\release\\userdata\\layout.ron" kind=Portable workspaces=3 skipped=0 noteworthy=false
+pdfcer-diag mode-restore stored=Some("read") using=Some("read")
+pdfcer-diag mode-changed from=None to=read remembered=true panels=6
+pdfcer-diag recent-load path=Some("D:\\Dev\\pdfcer-gui\\target\\release\\userdata\\recent.txt") n=10
+pdfcer-diag paste-chords order=PdfcerOrder new=Ctrl+V duplicate=Ctrl+Shift+V
+pdfcer-diag pick-filter-load path="D:\\Dev\\pdfcer-gui\\target\\release\\userdata\\select-filter.txt" unreadable=entity not found default=1
+pdfcer-diag window-handle present=true
+pdfcer-diag ui-scale-initial to=1.00
+pdfcer-diag opening-view fit=Page zoom=1.000 rulers=false grid=false guides=false
+pdfcer-diag reach-out network=0 launch=0 open_script=false truncated=false scanned=0
+pdfcer-diag recent-save path="D:\\Dev\\pdfcer-gui\\target\\release\\userdata\\recent.txt" n=10 saves=1
+pdfcer-diag page-display mode=continuous source=mode-default ribbon-mode=read
+pdfcer-diag open ok pages=2 path="evidence/sign-falsify\\sign-redaction-source.pdf"
+pdfcer-diag root-focus focused=Some(false)
+pdfcer-diag window-title "sign-redaction-source.pdf — pdfcer — 2026-09-06 10:39 UTC"
+pdfcer-diag ui-rect name=ribbon.qat.file.open rect=[[8.0 5.0] - [32.0 23.0]]
+pdfcer-diag ui-rect name=ribbon.qat.file.save rect=[[40.0 5.0] - [64.0 23.0]]
+pdfcer-diag ui-rect name=ribbon.qat.edit.undo rect=[[72.0 5.0] - [96.0 23.0]]
+pdfcer-diag ui-rect name=ribbon.qat.edit.redo rect=[[104.0 5.0] - [128.0 23.0]]
+pdfcer-diag ui-rect name=ribbon.tab.file rect=[[150.0 4.5] - [180.3 23.5]]
+pdfcer-diag ui-rect name=ribbon.tab.view rect=[[188.3 5.0] - [224.7 23.0]]
+pdfcer-diag ui-rect name=ribbon.modes rect=[[880.9 2.0] - [1060.0 26.0]]
+pdfcer-diag ui-rect name=ribbon.mode.read rect=[[880.9 2.0] - [940.6 26.0]]
+pdfcer-diag ui-rect name=ribbon.mode.review rect=[[940.6 2.0] - [1000.3 26.0]]
+pdfcer-diag ui-rect name=ribbon.mode.edit rect=[[1000.3 2.0] - [1060.0 26.0]]
+pdfcer-diag ui-rect name=ribbon.trailing.file.open_in_acrobat rect=[[1060.0 5.0] - [1084.0 23.0]]
+pdfcer-diag ui-rect name=ribbon.autohide.trigger rect=[[8.0 2.0] - [1092.0 33.0]]
+pdfcer-diag ui-rect name=ribbon.item.file.new rect=[[14.0 39.0] - [66.0 95.0]]
+pdfcer-diag ui-rect name=ribbon.item.file.open rect=[[70.0 39.0] - [124.2 95.0]]
+pdfcer-diag ui-rect name=ribbon.item.file.new_from_template rect=[[128.2 39.0] - [283.0 61.0]]
+pdfcer-diag ui-rect name=ribbon.item.file.close rect=[[128.2 85.0] - [187.7 107.0]]
+pdfcer-diag ui-rect name=ribbon.group.file.file.caption rect=[[140.0 110.0] - [157.0 123.0]]
+pdfcer-diag ui-rect name=ribbon.group.file.file rect=[[8.0 33.0] - [289.0 127.7]]
+pdfcer-diag ui-rect name=ribbon.group.file.recognise.collapsed rect=[[311.0 33.0] - [390.3 127.7]]
+pdfcer-diag ui-rect name=ribbon.item.file.save rect=[[418.3 39.0] - [470.3 95.0]]
+pdfcer-diag ui-rect name=ribbon.item.file.save_as rect=[[474.3 39.0] - [557.1 61.0]]
+pdfcer-diag ui-rect name=ribbon.item.file.save_copy rect=[[474.3 62.0] - [581.7 84.0]]
+pdfcer-diag ui-rect name=ribbon.item.file.save_compacted rect=[[474.3 85.0] - [649.3 107.0]]
+pdfcer-diag ui-rect name=ribbon.group.file.save.caption rect=[[522.8 110.0] - [544.8 123.0]]
+pdfcer-diag ui-rect name=ribbon.group.file.save rect=[[412.3 33.0] - [655.3 127.7]]
+pdfcer-diag ui-rect name=ribbon.group.file.export.collapsed rect=[[677.3 33.0] - [736.2 127.7]]
+pdfcer-diag ui-rect name=ribbon.item.file.encrypt rect=[[764.2 39.0] - [828.9 95.0]]
+pdfcer-diag ui-rect name=ribbon.item.file.permissions rect=[[832.9 39.0] - [917.8 95.0]]
+pdfcer-diag ui-rect name=ribbon.item.file.sign rect=[[921.8 39.0] - [973.8 95.0]]
+pdfcer-diag ui-rect name=ribbon.group.file.security.caption rect=[[849.3 110.0] - [888.6 123.0]]
+pdfcer-diag ui-rect name=ribbon.group.file.security rect=[[758.2 33.0] - [979.8 127.7]]
+pdfcer-diag ui-rect name=ribbon.overflow rect=[[1068.0 33.0] - [1092.0 57.0]]
+pdfcer-diag ui-rect name=doc-tabs rect=[[8.0 131.7] - [1092.0 153.7]]
+pdfcer-diag ui-rect name=doc-tab.0 rect=[[8.0 131.7] - [168.0 153.7]]
+pdfcer-diag doc-tabs open=1 active=0 drawn=1 hidden=0
+pdfcer-diag status-shed groups=none
+pdfcer-diag ui-rect name=status-page-box rect=[[998.0 770.5] - [1042.0 789.5]]
+pdfcer-diag ui-rect name=status-group:page rect=[[970.3 768.0] - [1092.0 792.0]]
+pdfcer-diag ui-rect name=status-group:zoom rect=[[800.8 768.0] - [948.3 792.0]]
+pdfcer-diag ui-rect name=status-group:fit rect=[[508.7 768.0] - [778.8 792.0]]
+pdfcer-diag ui-rect name=status-group:find rect=[[453.9 768.0] - [486.7 792.0]]
+pdfcer-diag ui-rect name=status-group:filter rect=[[388.6 771.0] - [431.9 789.0]]
+pdfcer-diag ui-rect name=status-bar rect=[[8.0 768.0] - [1092.0 792.0]]
+pdfcer-diag status page=0 pages=2 zoom=100 fit=Page wheel=scroll
+pdfcer-diag ui-rect name=dock.left rect=[[0.0 155.7] - [280.0 766.0]]
+pdfcer-diag ui-rect name=dock.left.railtrigger rect=[[0.0 155.7] - [52.0 766.0]]
+pdfcer-diag ui-rect name=dock.left.toolrail rect=[[0.0 155.7] - [52.0 766.0]]
+pdfcer-diag rail-plan rung=Roomy rows=18 folded=0 wants=492 budget=610
+pdfcer-diag ui-rect name=rail.tabs.view.panel_pages rect=[[3.0 156.0] - [49.0 190.0]]
+pdfcer-diag ui-rect name=rail.tabs.view.panel_bookmarks rect=[[3.0 191.0] - [49.0 225.0]]
+pdfcer-diag ui-rect name=rail.tabs.view.panel_layers rect=[[3.0 226.0] - [49.0 260.0]]
+pdfcer-diag ui-rect name=rail.tabs.view.panel_signatures rect=[[3.0 261.0] - [49.0 295.0]]
+pdfcer-diag ui-rect name=rail.tabs.markup.comments rect=[[3.0 296.0] - [49.0 330.0]]
+pdfcer-diag ui-rect name=rail.tabs.file.fonts rect=[[3.0 331.0] - [49.0 365.0]]
+pdfcer-diag ui-rect name=rail.navigate.view.tool_select rect=[[3.0 390.0] - [49.0 424.0]]
+pdfcer-diag ui-rect name=rail.navigate.view.tool_text rect=[[3.0 425.0] - [49.0 459.0]]
+pdfcer-diag ui-rect name=rail.navigate.view.tool_hand rect=[[3.0 460.0] - [49.0 494.0]]
+pdfcer-diag ui-rect name=rail.select.edit.select_all rect=[[3.0 519.0] - [49.0 553.0]]
+pdfcer-diag ui-rect name=rail.rotate.pages.rotate_left rect=[[3.0 578.0] - [49.0 612.0]]
+pdfcer-diag ui-rect name=rail.rotate.pages.rotate_right rect=[[3.0 613.0] - [49.0 647.0]]
+pdfcer-diag ui-rect name=dock.left.split.side rect=[[274.0 155.7] - [280.0 766.0]]
+pdfcer-diag ui-rect name=dock.left.0 rect=[[52.0 155.7] - [274.0 766.0]]
+pdfcer-diag ui-rect name=dock.left.0.0 rect=[[52.0 155.7] - [274.0 766.0]]
+pdfcer-diag ui-rect name=panel:signatures rect=[[52.0 155.7] - [274.0 766.0]]
+pdfcer-diag ui-rect name=dock.body.view.panel_signatures rect=[[52.0 155.7] - [274.0 766.0]]
+pdfcer-diag ui-rect name=dock.left.collapse rect=[[258.0 155.7] - [274.0 177.7]]
+pdfcer-diag ui-rect name=dock.right rect=[[780.0 155.7] - [1100.0 766.0]]
+pdfcer-diag ui-rect name=dock.right.banner rect=[[780.0 155.7] - [1100.0 181.7]]
+pdfcer-diag ui-rect name=toolstatus rect=[[780.0 163.7] - [1098.0 173.7]]
+pdfcer-diag ui-rect name=dock.right.split.side rect=[[780.0 181.7] - [786.0 766.0]]
+pdfcer-diag ui-rect name=dock.right.0 rect=[[786.0 181.7] - [1100.0 766.0]]
+pdfcer-diag ui-rect name=dock.right.0.0 rect=[[786.0 181.7] - [1100.0 766.0]]
+pdfcer-diag ui-rect name=dock.right.0.0.tabbar rect=[[786.0 181.7] - [1100.0 205.7]]
+pdfcer-diag ui-rect name=dock.tab.markup.comments rect=[[786.0 181.7] - [863.0 205.7]]
+pdfcer-diag ui-rect name=dock.tab.view.panel_forms rect=[[865.0 181.7] - [927.0 205.7]]
+pdfcer-diag ui-rect name=dock.tab.file.document_properties rect=[[929.0 181.7] - [1067.2 205.7]]
+pdfcer-diag comments-panel pages=2 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=0 excluded_popups=0 excluded_trapnet=0 excluded_total=0 filtered=0 shown=0
+pdfcer-diag ui-rect name=dock.body.markup.comments rect=[[786.0 205.7] - [1100.0 766.0]]
+pdfcer-diag ui-rect name=dock.right.collapse rect=[[1084.0 181.7] - [1100.0 203.7]]
+pdfcer-diag dock panels=2 overflowed=0 changed=false
+pdfcer-diag ui-rect name=central-panel rect=[[288.0 163.7] - [772.0 758.0]]
+pdfcer-diag canvas-unavailable reason=nothing-visible
+pdfcer-diag page-objects-built page=0 objects=1 leaves=0 ms=0
+pdfcer-diag objects n=1 page=0 paths=0 text=1 images=0 forms=0 leaves=0 depth_overflow=0 cycles=0
+pdfcer-diag render-spawn gen=1 page=0 scale=1.17
+pdfcer-diag raster-blend-space cmyk_buffer=false refused=0 wrong_space=0 scale=1.170
+pdfcer-diag render-inline gen=1 ms=1 async=0
+pdfcer-diag backdrop-kept page=0 px=468x234
+pdfcer-diag root-focus focused=Some(true)
+pdfcer-diag ui-rect name=ribbon.qat.file.open rect=[[8.0 2.0] - [30.0 26.0]]
+pdfcer-diag ui-rect name=ribbon.qat.file.save rect=[[34.0 2.0] - [56.0 26.0]]
+pdfcer-diag ui-rect name=ribbon.qat.edit.undo rect=[[60.0 2.0] - [82.0 26.0]]
+pdfcer-diag ui-rect name=ribbon.qat.edit.redo rect=[[86.0 2.0] - [108.0 26.0]]
+pdfcer-diag ui-rect name=ribbon.tab.file rect=[[130.0 2.0] - [158.3 26.0]]
+pdfcer-diag ui-rect name=ribbon.tab.view rect=[[162.3 2.0] - [196.7 26.0]]
+pdfcer-diag ui-rect name=ribbon.modes rect=[[884.9 2.0] - [1064.0 26.0]]
+pdfcer-diag ui-rect name=ribbon.mode.read rect=[[884.9 2.0] - [944.6 26.0]]
+pdfcer-diag ui-rect name=ribbon.mode.review rect=[[944.6 2.0] - [1004.3 26.0]]
+pdfcer-diag ui-rect name=ribbon.mode.edit rect=[[1004.3 2.0] - [1064.0 26.0]]
+pdfcer-diag ui-rect name=ribbon.trailing.file.open_in_acrobat rect=[[1064.0 2.0] - [1086.0 26.0]]
+pdfcer-diag ui-rect name=ribbon.autohide.trigger rect=[[8.0 2.0] - [1092.0 35.0]]
+pdfcer-diag ui-rect name=ribbon.item.file.new rect=[[14.0 41.0] - [66.0 97.0]]
+pdfcer-diag ui-rect name=ribbon.item.file.open rect=[[70.0 41.0] - [124.2 97.0]]
+pdfcer-diag ui-rect name=ribbon.item.file.new_from_template rect=[[128.2 41.0] - [281.0 62.7]]
+pdfcer-diag ui-rect name=ribbon.item.file.close rect=[[128.2 86.7] - [185.7 108.3]]
+pdfcer-diag ui-rect name=ribbon.group.file.file.caption rect=[[139.0 112.0] - [156.0 125.0]]
+pdfcer-diag ui-rect name=ribbon.group.file.file rect=[[8.0 35.0] - [287.0 129.7]]
+pdfcer-diag ui-rect name=ribbon.group.file.recognise.collapsed rect=[[301.0 35.0] - [380.3 129.7]]
+pdfcer-diag ui-rect name=ribbon.item.file.save rect=[[400.3 41.0] - [452.3 97.0]]
+pdfcer-diag ui-rect name=ribbon.item.file.save_as rect=[[456.3 41.0] - [537.1 62.7]]
+pdfcer-diag ui-rect name=ribbon.item.file.save_copy rect=[[456.3 63.7] - [561.7 85.3]]
+pdfcer-diag ui-rect name=ribbon.item.file.save_compacted rect=[[456.3 86.3] - [629.3 108.0]]
+pdfcer-diag ui-rect name=ribbon.group.file.save.caption rect=[[503.8 112.0] - [525.8 125.0]]
+pdfcer-diag ui-rect name=ribbon.group.file.save rect=[[394.3 35.0] - [635.3 129.7]]
+pdfcer-diag ui-rect name=ribbon.group.file.export.collapsed rect=[[649.3 35.0] - [708.2 129.7]]
+pdfcer-diag ui-rect name=ribbon.item.file.encrypt rect=[[728.2 41.0] - [792.9 97.0]]
+pdfcer-diag ui-rect name=ribbon.item.file.permissions rect=[[796.9 41.0] - [881.8 97.0]]
+pdfcer-diag ui-rect name=ribbon.item.file.sign rect=[[885.8 41.0] - [937.8 97.0]]
+pdfcer-diag ui-rect name=ribbon.group.file.security.caption rect=[[813.3 112.0] - [852.6 125.0]]
+pdfcer-diag ui-rect name=ribbon.group.file.security rect=[[722.2 35.0] - [943.8 129.7]]
+pdfcer-diag ui-rect name=ribbon.item.file.print rect=[[963.8 41.0] - [1015.8 97.0]]
+pdfcer-diag ui-rect name=ribbon.group.file.print.caption rect=[[978.1 112.0] - [1001.4 125.0]]
+pdfcer-diag ui-rect name=ribbon.group.file.print rect=[[957.8 35.0] - [1021.8 129.7]]
+pdfcer-diag ui-rect name=ribbon.overflow rect=[[1068.0 35.0] - [1092.0 59.0]]
+pdfcer-diag ui-rect name=doc-tabs rect=[[8.0 133.7] - [1092.0 157.7]]
+pdfcer-diag ui-rect name=doc-tab.0 rect=[[8.0 133.7] - [168.0 155.7]]
+pdfcer-diag ui-rect name=status-group:notes rect=[[8.0 768.0] - [106.4 792.0]]
+pdfcer-diag ui-rect name=status-page-box rect=[[1006.0 770.5] - [1050.0 789.5]]
+pdfcer-diag ui-rect name=status-group:page rect=[[982.3 768.0] - [1092.0 792.0]]
+pdfcer-diag ui-rect name=status-group:zoom rect=[[828.8 768.0] - [968.3 792.0]]
+pdfcer-diag ui-rect name=status-group:fit rect=[[560.7 768.0] - [814.8 792.0]]
+pdfcer-diag ui-rect name=status-group:find rect=[[515.9 768.0] - [546.7 792.0]]
+pdfcer-diag ui-rect name=status-group:filter rect=[[458.6 768.0] - [501.9 792.0]]
+pdfcer-diag status page=0 pages=2 zoom=116.99999237060547 fit=Page wheel=scroll
+pdfcer-diag ui-rect name=dock.left rect=[[0.0 157.7] - [280.0 766.0]]
+pdfcer-diag ui-rect name=dock.left.railtrigger rect=[[0.0 157.7] - [52.0 766.0]]
+pdfcer-diag ui-rect name=dock.left.toolrail rect=[[0.0 157.7] - [52.0 766.0]]
+pdfcer-diag rail-plan rung=Roomy rows=18 folded=0 wants=492 budget=608
+pdfcer-diag ui-rect name=rail.tabs.view.panel_pages rect=[[3.0 158.0] - [49.0 192.0]]
+pdfcer-diag ui-rect name=rail.tabs.view.panel_bookmarks rect=[[3.0 193.0] - [49.0 227.0]]
+pdfcer-diag ui-rect name=rail.tabs.view.panel_layers rect=[[3.0 228.0] - [49.0 262.0]]
+pdfcer-diag ui-rect name=rail.tabs.view.panel_signatures rect=[[3.0 263.0] - [49.0 297.0]]
+pdfcer-diag ui-rect name=rail.tabs.markup.comments rect=[[3.0 298.0] - [49.0 332.0]]
+pdfcer-diag ui-rect name=rail.tabs.file.fonts rect=[[3.0 333.0] - [49.0 367.0]]
+pdfcer-diag ui-rect name=rail.navigate.view.tool_select rect=[[3.0 392.0] - [49.0 426.0]]
+pdfcer-diag ui-rect name=rail.navigate.view.tool_text rect=[[3.0 427.0] - [49.0 461.0]]
+pdfcer-diag ui-rect name=rail.navigate.view.tool_hand rect=[[3.0 462.0] - [49.0 496.0]]
+pdfcer-diag ui-rect name=rail.select.edit.select_all rect=[[3.0 521.0] - [49.0 555.0]]
+pdfcer-diag ui-rect name=rail.rotate.pages.rotate_left rect=[[3.0 580.0] - [49.0 614.0]]
+pdfcer-diag ui-rect name=rail.rotate.pages.rotate_right rect=[[3.0 615.0] - [49.0 649.0]]
+pdfcer-diag ui-rect name=dock.left.split.side rect=[[274.0 157.7] - [280.0 766.0]]
+pdfcer-diag ui-rect name=dock.left.0 rect=[[52.0 157.7] - [274.0 766.0]]
+pdfcer-diag ui-rect name=dock.left.0.0 rect=[[52.0 157.7] - [274.0 766.0]]
+pdfcer-diag ui-rect name=panel:signatures rect=[[52.0 157.7] - [274.0 766.0]]
+pdfcer-diag ui-rect name=dock.body.view.panel_signatures rect=[[52.0 157.7] - [274.0 766.0]]
+pdfcer-diag ui-rect name=dock.left.collapse rect=[[258.0 157.7] - [274.0 179.7]]
+pdfcer-diag ui-rect name=dock.right rect=[[780.0 157.7] - [1100.0 766.0]]
+pdfcer-diag ui-rect name=dock.right.banner rect=[[780.0 157.7] - [1100.0 183.7]]
+pdfcer-diag ui-rect name=toolstatus rect=[[780.0 165.7] - [1098.0 175.7]]
+pdfcer-diag ui-rect name=dock.right.split.side rect=[[780.0 183.7] - [786.0 766.0]]
+pdfcer-diag ui-rect name=dock.right.0 rect=[[786.0 183.7] - [1100.0 766.0]]
+pdfcer-diag ui-rect name=dock.right.0.0 rect=[[786.0 183.7] - [1100.0 766.0]]
+pdfcer-diag ui-rect name=dock.right.0.0.tabbar rect=[[786.0 183.7] - [1100.0 207.7]]
+pdfcer-diag ui-rect name=dock.tab.markup.comments rect=[[786.0 183.7] - [863.0 207.7]]
+pdfcer-diag ui-rect name=dock.tab.view.panel_forms rect=[[865.0 183.7] - [927.0 207.7]]
+pdfcer-diag ui-rect name=dock.tab.file.document_properties rect=[[929.0 183.7] - [1067.2 207.7]]
+pdfcer-diag comments-panel pages=2 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=0 excluded_popups=0 excluded_trapnet=0 excluded_total=0 filtered=0 shown=0
+pdfcer-diag ui-rect name=dock.body.markup.comments rect=[[786.0 207.7] - [1100.0 766.0]]
+pdfcer-diag ui-rect name=dock.right.collapse rect=[[1084.0 183.7] - [1100.0 205.7]]
+pdfcer-diag ui-rect name=central-panel rect=[[288.0 165.7] - [772.0 758.0]]
+pdfcer-diag comments-panel pages=2 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=0 excluded_popups=0 excluded_trapnet=0 excluded_total=0 filtered=0 shown=0
+pdfcer-diag canvas-coverage covered=1.000 sharp=1.000 textured=1 backdrop=1 zoom=1.170
+pdfcer-diag form-boxes n=0 pages=0 undrawn=0 unreachable=0
+pdfcer-diag canvas rect=[[296.0 344.5] - [764.0 578.5]] zoom=1.1700 page=0 pages=2 off=[484.0 468.3] sel=0 display=continuous visible=2 drawn=1
+pdfcer-diag canvas-pos at=-8.000,-178.839 tier=scroll paint=296.000,344.496 region=none want=none ext=400.000,200.000
+pdfcer-diag ui-rect name=page rect=[[296.0 344.5] - [764.0 578.5]]
+pdfcer-diag ui-rect name=canvas-viewport rect=[[288.0 165.7] - [772.0 758.0]]
+pdfcer-diag strip-raster-requested page=1 visible=2
+pdfcer-diag render-spawn gen=2 page=1 scale=1.17
+pdfcer-diag render-inline gen=2 ms=1 async=0
+pdfcer-diag comments-panel pages=2 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=0 excluded_popups=0 excluded_trapnet=0 excluded_total=0 filtered=0 shown=0
+pdfcer-diag canvas rect=[[296.0 344.5] - [764.0 578.5]] zoom=1.1700 page=0 pages=2 off=[484.0 468.3] sel=0 display=continuous visible=2 drawn=2
+pdfcer-diag canvas-pos at=-8.000,-178.839 tier=scroll paint=296.000,344.496 region=none want=none ext=400.000,200.000
+pdfcer-diag comments-panel pages=2 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=0 excluded_popups=0 excluded_trapnet=0 excluded_total=0 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-8.000,-178.839 tier=scroll paint=296.000,344.496 region=none want=none ext=400.000,200.000
+pdfcer-diag comments-panel pages=2 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=0 excluded_popups=0 excluded_trapnet=0 excluded_total=0 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-8.000,-178.839 tier=scroll paint=296.000,344.496 region=none want=none ext=400.000,200.000
+pdfcer-diag comments-panel pages=2 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=0 excluded_popups=0 excluded_trapnet=0 excluded_total=0 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-8.000,-178.839 tier=scroll paint=296.000,344.496 region=none want=none ext=400.000,200.000
+pdfcer-diag comments-panel pages=2 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=0 excluded_popups=0 excluded_trapnet=0 excluded_total=0 filtered=0 shown=0
+pdfcer-diag layout-save path="D:\\Dev\\pdfcer-gui\\target\\release\\userdata\\layout.ron" workspaces=3 n=1
+pdfcer-diag canvas-pos at=-8.000,-178.839 tier=scroll paint=296.000,344.496 region=none want=none ext=400.000,200.000
+pdfcer-diag comments-panel pages=2 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=0 excluded_popups=0 excluded_trapnet=0 excluded_total=0 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-8.000,-178.839 tier=scroll paint=296.000,344.496 region=none want=none ext=400.000,200.000
+pdfcer-diag canvas-pointer screen=(1034.0,14.0) page=(630.77,-282.47) pdf=(630.77,482.47) zoom=1.1700
+pdfcer-diag comments-panel pages=2 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=0 excluded_popups=0 excluded_trapnet=0 excluded_total=0 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-8.000,-178.839 tier=scroll paint=296.000,344.496 region=none want=none ext=400.000,200.000
+pdfcer-diag frame n=10
+pdfcer-diag comments-panel pages=2 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=0 excluded_popups=0 excluded_trapnet=0 excluded_total=0 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-8.000,-178.839 tier=scroll paint=296.000,344.496 region=none want=none ext=400.000,200.000
+pdfcer-diag comments-panel pages=2 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=0 excluded_popups=0 excluded_trapnet=0 excluded_total=0 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-8.000,-178.839 tier=scroll paint=296.000,344.496 region=none want=none ext=400.000,200.000
+pdfcer-diag comments-panel pages=2 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=0 excluded_popups=0 excluded_trapnet=0 excluded_total=0 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-8.000,-178.839 tier=scroll paint=296.000,344.496 region=none want=none ext=400.000,200.000
+pdfcer-diag comments-panel pages=2 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=0 excluded_popups=0 excluded_trapnet=0 excluded_total=0 filtered=0 shown=0
+pdfcer-diag canvas-pos at=-8.000,-178.839 tier=scroll paint=296.000,344.496 region=none want=none ext=400.000,200.000
+egui-shell-diag ribbon-mode-selected mode=edit
+pdfcer-diag rail-plan rung=Roomy rows=20 folded=0 wants=560 budget=608
+pdfcer-diag ui-rect name=rail.navigate.view.tool_node rect=[[3.0 427.0] - [49.0 461.0]]
+pdfcer-diag ui-rect name=rail.navigate.view.tool_text rect=[[3.0 462.0] - [49.0 496.0]]
+pdfcer-diag ui-rect name=rail.navigate.view.tool_hand rect=[[3.0 497.0] - [49.0 531.0]]
+pdfcer-diag ui-rect name=rail.navigate.view.smart_select rect=[[3.0 532.0] - [49.0 566.0]]
+pdfcer-diag ui-rect name=rail.select.edit.select_all rect=[[3.0 591.0] - [49.0 625.0]]
+pdfcer-diag ui-rect name=rail.rotate.pages.rotate_left rect=[[3.0 650.0] - [49.0 684.0]]
+pdfcer-diag ui-rect name=rail.rotate.pages.rotate_right rect=[[3.0 685.0] - [49.0 719.0]]
+pdfcer-diag comments-panel pages=2 listed=0 with_note=0 descriptions=0 authors=0 ce_dimensions=0 suppressed=0 unresolved=0 replies=0 group_members=0 selected=0 excluded_widgets=0 excluded_popups=0 excluded_trapnet=0 excluded_total=0 filtered=0 shown=0
+pdfcer-diag mode-changed from=Some("read") to=edit remembered=true panels=13
+pdfcer-diag canvas-pos at=-8.000,-178.839 tier=scroll paint=296.000,344.496 region=none want=none ext=400.000,200.000
+pdfcer-diag ui-rect name=ribbon.tab.pages rect=[[200.7 2.0] - [241.0 26.0]]
+pdfcer-diag ui-rect name=ribbon.tab.edit rect=[[245.0 2.0] - [273.8 26.0]]
+pdfcer-diag ui-rect name=ribbon.tab.markup rect=[[277.8 2.0] - [327.9 26.0]]
+pdfcer-diag ui-rect name=ribbon.tab.measure rect=[[331.9 2.0] - [387.9 26.0]]
+pdfcer-diag ui-rect name=ribbon.tab.tools rect=[[391.9 2.0] - [428.4 26.0]]
+pdfcer-diag ui-rect name=panel-pages-tile.0 rect=[[52.0 215.0] - [274.0 326.0]]
+pdfcer-diag ui-rect name=panel-pages-current-tile rect=[[52.0 215.0] - [274.0 326.0]]
+pdfcer-diag ui-rect name=panel-pages-tile.1 rect=[[52.0 346.0] - [274.0 457.0]]
+pdfcer-diag ui-rect name=panel-pages rect=[[52.0 157.7] - [274.0 472.7]]
+pdfcer-diag ui-rect name=panel-pages-grid rect=[[52.0 214.7] - [274.0 766.0]]
+pdfcer-diag pages-thumbnail page=1 ms=0 state=Ready cached=1
+pdfcer-diag pages-panel pages=2 current=1 selected=0 visible=2 drawn=1 previews=1
+pdfcer-diag ui-rect name=dock.body.view.panel_pages rect=[[52.0 157.7] - [274.0 766.0]]
+pdfcer-diag ui-rect name=dock.right rect=[[740.0 157.7] - [1100.0 766.0]]
+pdfcer-diag ui-rect name=dock.right.banner rect=[[740.0 157.7] - [1100.0 183.7]]
+pdfcer-diag ui-rect name=toolstatus rect=[[740.0 165.7] - [1098.0 175.7]]
+pdfcer-diag ui-rect name=dock.right.split.side rect=[[740.0 183.7] - [746.0 766.0]]
+pdfcer-diag ui-rect name=dock.right.0 rect=[[746.0 183.7] - [1100.0 766.0]]
+pdfcer-diag ui-rect name=dock.right.0.0 rect=[[746.0 183.7] - [1100.0 471.8]]
+pdfcer-diag ui-rect name=dock.right.0.0.tabbar rect=[[746.0 183.7] - [1100.0 207.7]]
+pdfcer-diag ui-rect name=dock.tab.view.panel_objects rect=[[746.0 183.7] - [804.4 207.7]]
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag objects-rows visible=1 elided=0 pane=354.0 overflow=0.0
+pdfcer-diag ui-rect name=dock.body.view.panel_objects rect=[[746.0 207.7] - [1100.0 471.8]]
+pdfcer-diag ui-rect name=dock.right.0.split.row.0 rect=[[746.0 471.8] - [1100.0 477.8]]
+pdfcer-diag ui-rect name=dock.right.0.1 rect=[[746.0 477.8] - [1100.0 766.0]]
+pdfcer-diag ui-rect name=dock.right.0.1.tabbar rect=[[746.0 477.8] - [1100.0 501.8]]
+pdfcer-diag ui-rect name=dock.tab.file.properties rect=[[746.0 477.8] - [820.5 501.8]]
+pdfcer-diag ui-rect name=dock.tab.markup.comments rect=[[822.5 477.8] - [899.5 501.8]]
+pdfcer-diag ui-rect name=dock.tab.view.panel_forms rect=[[901.5 477.8] - [963.5 501.8]]
+pdfcer-diag ui-rect name=dock.tab.edit.redact rect=[[965.5 477.8] - [1019.9 501.8]]
+pdfcer-diag ui-rect name=dock.right.0.1.overflow rect=[[1030.3 477.8] - [1100.0 501.8]]
+pdfcer-diag ui-rect name=properties.tool.scale_switches rect=[[746.0 502.0] - [905.3 517.0]]
+pdfcer-diag ui-rect name=properties.tool.scale.stroke rect=[[746.0 521.0] - [860.8 545.0]]
+pdfcer-diag ui-rect name=properties.tool.scale.insets rect=[[746.0 549.0] - [978.5 573.0]]
+pdfcer-diag ui-rect name=properties.tool.scale.distort rect=[[746.0 577.0] - [1064.0 607.0]]
+pdfcer-diag ui-rect name=properties.tool rect=[[746.0 502.0] - [1097.1 641.0]]
+pdfcer-diag ui-rect name=dock.body.file.properties rect=[[746.0 501.8] - [1100.0 766.0]]
+pdfcer-diag dock panels=3 overflowed=3 changed=false
+pdfcer-diag ui-rect name=central-panel rect=[[288.0 165.7] - [732.0 758.0]]
+pdfcer-diag canvas-coverage covered=1.000 sharp=1.000 textured=1 backdrop=1 zoom=1.070
+pdfcer-diag canvas rect=[[296.0 354.1] - [724.0 568.1]] zoom=1.0700 page=0 pages=2 off=[444.0 479.5] sel=0 display=continuous visible=2 drawn=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag ui-rect name=page rect=[[296.0 354.1] - [724.0 568.1]]
+pdfcer-diag ui-rect name=canvas-viewport rect=[[288.0 165.7] - [732.0 758.0]]
+pdfcer-diag canvas-pointer screen=(1034.0,14.0) page=(689.72,-317.85) pdf=(689.72,517.85) zoom=1.0700
+pdfcer-diag ui-rect-gone name=dock.body.markup.comments
+pdfcer-diag ui-rect-gone name=dock.body.view.panel_signatures
+pdfcer-diag ui-rect-gone name=dock.tab.file.document_properties
+pdfcer-diag ui-rect-gone name=panel:signatures
+pdfcer-diag status page=0 pages=2 zoom=107.00000762939453 fit=Page wheel=scroll
+pdfcer-diag pages-thumbnail page=2 ms=0 state=Ready cached=2
+pdfcer-diag pages-panel pages=2 current=1 selected=0 visible=2 drawn=2 previews=1
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag frame n=20
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag render-spawn gen=3 page=0 scale=1.07
+pdfcer-diag raster-blend-space cmyk_buffer=false refused=0 wrong_space=0 scale=1.070
+pdfcer-diag render-inline gen=3 ms=1 async=0
+pdfcer-diag backdrop-kept page=0 px=429x215
+pdfcer-diag strip-raster-requested page=1 visible=2
+pdfcer-diag render-spawn gen=4 page=1 scale=1.07
+pdfcer-diag render-inline gen=4 ms=0 async=0
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas rect=[[296.0 354.1] - [724.0 568.1]] zoom=1.0700 page=0 pages=2 off=[444.0 479.5] sel=0 display=continuous visible=2 drawn=2
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag layout-save path="D:\\Dev\\pdfcer-gui\\target\\release\\userdata\\layout.ron" workspaces=3 n=2
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag ui-rect name=ribbon.tab.edit rect=[[245.0 2.0] - [275.8 26.0]]
+pdfcer-diag ui-rect name=ribbon.tab.markup rect=[[279.8 2.0] - [329.9 26.0]]
+pdfcer-diag ui-rect name=ribbon.tab.measure rect=[[333.9 2.0] - [389.9 26.0]]
+pdfcer-diag ui-rect name=ribbon.tab.tools rect=[[393.9 2.0] - [430.4 26.0]]
+pdfcer-diag pages-thumbnail-deferred busy=1 settling=0
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag canvas-pointer screen=(259.0,14.0) page=(-34.58,-317.85) pdf=(-34.58,517.85) zoom=1.0700
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag frame n=30
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+egui-shell-diag ribbon-tab-activated tab=edit
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag ui-rect name=ribbon.tab.file rect=[[130.0 2.0] - [156.3 26.0]]
+pdfcer-diag ui-rect name=ribbon.tab.view rect=[[160.3 2.0] - [194.7 26.0]]
+pdfcer-diag ui-rect name=ribbon.tab.pages rect=[[198.7 2.0] - [239.0 26.0]]
+pdfcer-diag ui-rect name=ribbon.tab.edit rect=[[243.0 2.0] - [273.8 26.0]]
+pdfcer-diag ui-rect name=ribbon.tab.markup rect=[[277.8 2.0] - [327.9 26.0]]
+pdfcer-diag ui-rect name=ribbon.tab.measure rect=[[331.9 2.0] - [387.9 26.0]]
+pdfcer-diag ui-rect name=ribbon.tab.tools rect=[[391.9 2.0] - [428.4 26.0]]
+pdfcer-diag ui-rect name=ribbon.item.edit.select_all rect=[[14.0 41.0] - [91.5 62.7]]
+pdfcer-diag ui-rect name=ribbon.item.edit.text rect=[[14.0 63.7] - [89.4 85.3]]
+pdfcer-diag ui-rect name=ribbon.item.edit.add_text rect=[[93.4 63.7] - [169.6 85.3]]
+pdfcer-diag ui-rect name=ribbon.item.edit.reflow_block rect=[[14.0 86.3] - [143.5 108.0]]
+pdfcer-diag ui-rect name=ribbon.group.edit.content.caption rect=[[71.7 112.0] - [111.9 125.0]]
+pdfcer-diag ui-rect name=ribbon.group.edit.content rect=[[8.0 35.0] - [175.6 129.7]]
+pdfcer-diag ui-rect name=ribbon.item.edit.insert_image rect=[[195.6 41.0] - [252.7 97.0]]
+pdfcer-diag ui-rect name=ribbon.item.edit.attachments rect=[[256.7 41.0] - [335.9 97.0]]
+pdfcer-diag ui-rect name=ribbon.group.edit.insert.caption rect=[[252.1 112.0] - [279.3 125.0]]
+pdfcer-diag ui-rect name=ribbon.group.edit.insert rect=[[189.6 35.0] - [341.9 129.7]]
+pdfcer-diag ui-rect name=ribbon.item.edit.cut rect=[[361.9 41.0] - [383.9 62.7]]
+pdfcer-diag ui-rect name=ribbon.item.edit.copy rect=[[387.9 41.0] - [409.9 62.7]]
+pdfcer-diag ui-rect name=ribbon.item.edit.paste rect=[[361.9 63.7] - [383.9 85.3]]
+pdfcer-diag ui-rect name=ribbon.item.edit.paste_duplicate rect=[[387.9 63.7] - [409.9 85.3]]
+pdfcer-diag ui-rect name=ribbon.item.edit.copy_as_vector rect=[[361.9 86.3] - [383.9 108.0]]
+pdfcer-diag ui-rect name=ribbon.group.edit.clipboard.caption rect=[[362.2 112.0] - [409.6 125.0]]
+pdfcer-diag ui-rect name=ribbon.group.edit.clipboard rect=[[355.9 35.0] - [415.9 129.7]]
+pdfcer-diag ui-rect name=ribbon.item.edit.form_text_field rect=[[435.9 41.0] - [516.0 62.7]]
+pdfcer-diag ui-rect name=ribbon.item.edit.form_check_box rect=[[520.0 41.0] - [605.4 62.7]]
+pdfcer-diag ui-rect name=ribbon.item.edit.form_radio_button rect=[[435.9 63.7] - [537.7 85.3]]
+pdfcer-diag ui-rect name=ribbon.item.edit.form_choice rect=[[541.7 63.7] - [633.1 85.3]]
+pdfcer-diag ui-rect name=ribbon.item.edit.form_push_button rect=[[435.9 86.3] - [502.5 108.0]]
+pdfcer-diag ui-rect name=ribbon.item.edit.form_manage_fields rect=[[506.5 86.3] - [613.5 108.0]]
+pdfcer-diag ui-rect name=ribbon.item.edit.form_flatten rect=[[617.5 86.3] - [684.8 108.0]]
+pdfcer-diag ui-rect name=ribbon.group.edit.forms.caption rect=[[545.5 112.0] - [575.2 125.0]]
+pdfcer-diag ui-rect name=ribbon.group.edit.forms rect=[[429.9 35.0] - [690.8 129.7]]
+pdfcer-diag ui-rect name=ribbon.item.edit.redact rect=[[710.8 41.0] - [762.8 97.0]]
+pdfcer-diag ui-rect name=ribbon.item.edit.redact_selection rect=[[766.8 41.0] - [888.2 62.7]]
+pdfcer-diag ui-rect name=ribbon.item.edit.redact_apply rect=[[766.8 63.7] - [889.5 85.3]]
+pdfcer-diag ui-rect name=ribbon.group.edit.protect.caption rect=[[782.0 112.0] - [818.2 125.0]]
+pdfcer-diag ui-rect name=ribbon.group.edit.protect rect=[[704.8 35.0] - [895.5 129.7]]
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag ui-rect-gone name=ribbon.group.file.export.collapsed
+pdfcer-diag ui-rect-gone name=ribbon.group.file.file
+pdfcer-diag ui-rect-gone name=ribbon.group.file.file.caption
+pdfcer-diag ui-rect-gone name=ribbon.group.file.print
+pdfcer-diag ui-rect-gone name=ribbon.group.file.print.caption
+pdfcer-diag ui-rect-gone name=ribbon.group.file.recognise.collapsed
+pdfcer-diag ui-rect-gone name=ribbon.group.file.save
+pdfcer-diag ui-rect-gone name=ribbon.group.file.save.caption
+pdfcer-diag ui-rect-gone name=ribbon.group.file.security
+pdfcer-diag ui-rect-gone name=ribbon.group.file.security.caption
+pdfcer-diag ui-rect-gone name=ribbon.item.file.close
+pdfcer-diag ui-rect-gone name=ribbon.item.file.encrypt
+pdfcer-diag ui-rect-gone name=ribbon.item.file.new
+pdfcer-diag ui-rect-gone name=ribbon.item.file.new_from_template
+pdfcer-diag ui-rect-gone name=ribbon.item.file.open
+pdfcer-diag ui-rect-gone name=ribbon.item.file.permissions
+pdfcer-diag ui-rect-gone name=ribbon.item.file.print
+pdfcer-diag ui-rect-gone name=ribbon.item.file.save
+pdfcer-diag ui-rect-gone name=ribbon.item.file.save_as
+pdfcer-diag ui-rect-gone name=ribbon.item.file.save_compacted
+pdfcer-diag ui-rect-gone name=ribbon.item.file.save_copy
+pdfcer-diag ui-rect-gone name=ribbon.item.file.sign
+pdfcer-diag ui-rect-gone name=ribbon.overflow
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag canvas-pointer screen=(737.0,69.0) page=(412.15,-266.44) pdf=(412.15,466.44) zoom=1.0700
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag frame n=40
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+egui-shell-diag ribbon-command-invoked id=edit.redact handler=440
+pdfcer-diag panel-shown id=edit.redact mounted=already
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag ui-rect name=redact-panel rect=[[746.0 501.8] - [1100.0 766.0]]
+pdfcer-diag ui-rect name=redact-whole-page rect=[[746.0 702.8] - [853.3 726.8]]
+pdfcer-diag ui-rect name=redact-query rect=[[778.4 767.3] - [1058.4 786.3]]
+pdfcer-diag ui-rect name=redact-search rect=[[746.0 792.8] - [822.3 816.8]]
+pdfcer-diag redact-panel marks=0 pages=0 epoch=0
+pdfcer-diag ui-rect name=dock.body.edit.redact rect=[[746.0 501.8] - [1100.0 766.0]]
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag ui-rect-gone name=dock.body.file.properties
+pdfcer-diag ui-rect-gone name=properties.tool
+pdfcer-diag ui-rect-gone name=properties.tool.scale.distort
+pdfcer-diag ui-rect-gone name=properties.tool.scale.insets
+pdfcer-diag ui-rect-gone name=properties.tool.scale.stroke
+pdfcer-diag ui-rect-gone name=properties.tool.scale_switches
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag canvas-pointer screen=(800.0,715.0) page=(471.03,337.29) pdf=(471.03,-137.29) zoom=1.0700
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag frame n=50
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag redact-mark-page page=0 n=1 epoch=1 disclosures=none
+pdfcer-diag page-objects-built page=0 objects=1 leaves=0 ms=0
+pdfcer-diag objects n=1 page=0 paths=0 text=1 images=0 forms=0 leaves=0 depth_overflow=0 cycles=0
+pdfcer-diag render-spawn gen=5 page=0 scale=1.07
+pdfcer-diag render-inline gen=5 ms=1 async=0
+pdfcer-diag backdrop-kept page=0 px=429x215
+pdfcer-diag strip-raster-requested page=1 visible=2
+pdfcer-diag render-spawn gen=6 page=1 scale=1.07
+pdfcer-diag render-inline gen=6 ms=0 async=0
+pdfcer-diag pages-thumbnail-deferred busy=0 settling=1
+pdfcer-diag pages-panel pages=2 current=1 selected=0 visible=2 drawn=0 previews=1
+pdfcer-diag page-objects-built page=0 objects=1 leaves=0 ms=0
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag ui-rect name=redact-apply rect=[[746.0 627.8] - [918.0 651.8]]
+pdfcer-diag redact-panel marks=1 pages=1 epoch=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag pages-thumbnail page=1 ms=0 state=Ready cached=1
+pdfcer-diag pages-panel pages=2 current=1 selected=0 visible=2 drawn=1 previews=1
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag pages-thumbnail page=2 ms=0 state=Ready cached=2
+pdfcer-diag pages-panel pages=2 current=1 selected=0 visible=2 drawn=2 previews=1
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag ui-rect name=ribbon.item.edit.redact_apply rect=[[766.8 63.7] - [891.5 85.7]]
+pdfcer-diag ui-rect name=ribbon.group.edit.protect.caption rect=[[783.0 112.0] - [819.2 125.0]]
+pdfcer-diag ui-rect name=ribbon.group.edit.protect rect=[[704.8 35.0] - [897.5 129.7]]
+pdfcer-diag pages-thumbnail-deferred busy=1 settling=0
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag canvas-pointer screen=(828.0,75.0) page=(497.20,-260.84) pdf=(497.20,460.84) zoom=1.0700
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag frame n=60
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+egui-shell-diag ribbon-command-invoked id=edit.redact_apply handler=441
+pdfcer-diag redact-prepared marks=1 pages=1 glyphs=24 streams=1 checked=1 short=0 residuals=0 verified=true bytes=917
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag viewport-inner id="06D1" rect=[[836.0 119.0] - [1596.0 679.0]]
+pdfcer-diag dialog-owned title="Apply redactions — permanent removal" owned=true
+pdfcer-diag TMPASK title="Apply redactions — permanent removal" now=64 opened_at=64
+pdfcer-diag dialog-focus title="Apply redactions — permanent removal" focused=Some(true)
+pdfcer-diag ui-rect name=redact-apply-dialog rect=[[12.0 12.0] - [748.0 548.0]] viewport="06D1"
+pdfcer-diag ui-rect name=redact-apply-destination-into-document rect=[[12.0 355.0] - [344.7 379.0]] viewport="06D1"
+pdfcer-diag ui-rect name=redact-apply-destination-new-file rect=[[12.0 383.0] - [229.2 407.0]] viewport="06D1"
+pdfcer-diag ui-rect name=redact-apply-destination-replace rect=[[12.0 411.0] - [394.7 435.0]] viewport="06D1"
+pdfcer-diag ui-rect name=redact-apply-staging-note rect=[[12.0 461.0] - [741.0 506.0]] viewport="06D1"
+pdfcer-diag ui-rect name=redact-apply-ack rect=[[12.0 516.0] - [544.6 540.0]] viewport="06D1"
+pdfcer-diag dialog-fit title="Apply redactions — permanent removal" from=760x560 to=760x656
+pdfcer-diag root-focus focused=Some(false)
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag viewport-inner id="06D1" rect=[[836.0 119.0] - [1596.0 775.0]]
+pdfcer-diag TMPASK title="Apply redactions — permanent removal" now=65 opened_at=64
+pdfcer-diag ui-rect name=redact-apply-dialog rect=[[12.0 12.0] - [748.0 644.0]] viewport="06D1"
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag TMPASK title="Apply redactions — permanent removal" now=66 opened_at=64
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag TMPASK title="Apply redactions — permanent removal" now=67 opened_at=64
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag TMPASK title="Apply redactions — permanent removal" now=68 opened_at=64
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag TMPASK title="Apply redactions — permanent removal" now=69 opened_at=64
+pdfcer-diag frame n=70
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag TMPASK title="Apply redactions — permanent removal" now=70 opened_at=64
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag TMPASK title="Apply redactions — permanent removal" now=71 opened_at=64
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag ui-rect name=ribbon.item.edit.redact_apply rect=[[766.8 63.7] - [889.5 85.3]]
+pdfcer-diag ui-rect name=ribbon.group.edit.protect.caption rect=[[782.0 112.0] - [818.2 125.0]]
+pdfcer-diag ui-rect name=ribbon.group.edit.protect rect=[[704.8 35.0] - [895.5 129.7]]
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag frame n=80
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag ui-rect name=redact-apply-confirm rect=[[12.0 552.0] - [278.1 576.0]] viewport="06D1"
+pdfcer-diag frame n=90
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag redact-apply-deferred marks=1
+pdfcer-diag redact-staged marks=1 pages=1 glyphs=24 streams=1 undo_kept=1
+pdfcer-diag redact-stage page=0 n=1 epoch=2 disclosures=Set up — 1 marked region(s) across 1 page(s) will be removed when you save. Nothing has been removed yet and the page has not changed: use Save to write the redacted document over the file you opened, or Save As for a new one.
+pdfcer-diag page-objects-built page=0 objects=1 leaves=0 ms=0
+pdfcer-diag objects n=1 page=0 paths=0 text=1 images=0 forms=0 leaves=0 depth_overflow=0 cycles=0
+pdfcer-diag render-spawn gen=7 page=0 scale=1.07
+pdfcer-diag render-inline gen=7 ms=1 async=0
+pdfcer-diag backdrop-kept page=0 px=429x215
+pdfcer-diag strip-raster-requested page=1 visible=2
+pdfcer-diag render-spawn gen=8 page=1 scale=1.07
+pdfcer-diag render-inline gen=8 ms=0 async=0
+pdfcer-diag ui-rect name=status-group:edit-disclosure rect=[[110.4 768.0] - [549.4 792.0]]
+pdfcer-diag status-shed groups=status-group:fit@view.zoom_fit_page
+pdfcer-diag ui-rect name=status-group:find rect=[[784.0 768.0] - [814.8 792.0]]
+pdfcer-diag ui-rect name=status-group:filter rect=[[726.7 768.0] - [770.0 792.0]]
+pdfcer-diag pages-thumbnail-deferred busy=0 settling=1
+pdfcer-diag pages-panel pages=2 current=1 selected=0 visible=2 drawn=0 previews=1
+pdfcer-diag page-objects-built page=0 objects=1 leaves=0 ms=0
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag redact-panel marks=1 pages=1 epoch=2
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag ui-rect-gone name=redact-apply-ack
+pdfcer-diag ui-rect-gone name=redact-apply-confirm
+pdfcer-diag ui-rect-gone name=redact-apply-destination-into-document
+pdfcer-diag ui-rect-gone name=redact-apply-destination-new-file
+pdfcer-diag ui-rect-gone name=redact-apply-destination-replace
+pdfcer-diag ui-rect-gone name=redact-apply-dialog
+pdfcer-diag ui-rect-gone name=redact-apply-staging-note
+pdfcer-diag ui-rect-gone name=status-group:fit
+pdfcer-diag ui-rect-gone name=viewport-inner:"06D1"
+pdfcer-diag root-focus focused=Some(true)
+pdfcer-diag pages-thumbnail-deferred busy=1 settling=1
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag frame n=100
+pdfcer-diag pages-thumbnail-deferred busy=0 settling=1
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag pages-thumbnail-deferred busy=1 settling=1
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag canvas-pointer screen=(193.0,612.0) page=(-96.26,241.03) pdf=(-96.26,-41.03) zoom=1.0700
+pdfcer-diag pages-thumbnail-deferred busy=0 settling=1
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag pages-thumbnail page=1 ms=0 state=Ready cached=1
+pdfcer-diag pages-panel pages=2 current=1 selected=0 visible=2 drawn=1 previews=1
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag pages-thumbnail page=2 ms=0 state=Ready cached=2
+pdfcer-diag pages-panel pages=2 current=1 selected=0 visible=2 drawn=2 previews=1
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag ui-rect name=ribbon.tab.file rect=[[130.0 2.0] - [158.3 26.0]]
+pdfcer-diag ui-rect name=ribbon.tab.view rect=[[162.3 2.0] - [196.7 26.0]]
+pdfcer-diag ui-rect name=ribbon.tab.pages rect=[[200.7 2.0] - [241.0 26.0]]
+pdfcer-diag ui-rect name=ribbon.tab.edit rect=[[245.0 2.0] - [275.8 26.0]]
+pdfcer-diag ui-rect name=ribbon.tab.markup rect=[[279.8 2.0] - [329.9 26.0]]
+pdfcer-diag ui-rect name=ribbon.tab.measure rect=[[333.9 2.0] - [389.9 26.0]]
+pdfcer-diag ui-rect name=ribbon.tab.tools rect=[[393.9 2.0] - [430.4 26.0]]
+pdfcer-diag pages-thumbnail-deferred busy=1 settling=0
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag canvas-pointer screen=(143.0,14.0) page=(-142.99,-317.85) pdf=(-142.99,517.85) zoom=1.0700
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag frame n=110
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+egui-shell-diag ribbon-tab-activated tab=file
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag ui-rect name=ribbon.tab.edit rect=[[245.0 2.0] - [273.8 26.0]]
+pdfcer-diag ui-rect name=ribbon.tab.markup rect=[[277.8 2.0] - [327.9 26.0]]
+pdfcer-diag ui-rect name=ribbon.tab.measure rect=[[331.9 2.0] - [387.9 26.0]]
+pdfcer-diag ui-rect name=ribbon.tab.tools rect=[[391.9 2.0] - [428.4 26.0]]
+pdfcer-diag ui-rect name=ribbon.item.file.new rect=[[14.0 41.0] - [66.0 97.0]]
+pdfcer-diag ui-rect name=ribbon.item.file.open rect=[[70.0 41.0] - [124.2 97.0]]
+pdfcer-diag ui-rect name=ribbon.item.file.new_from_template rect=[[128.2 41.0] - [281.0 62.7]]
+pdfcer-diag ui-rect name=ribbon.item.file.close rect=[[128.2 86.7] - [185.7 108.3]]
+pdfcer-diag ui-rect name=ribbon.group.file.file.caption rect=[[139.0 112.0] - [156.0 125.0]]
+pdfcer-diag ui-rect name=ribbon.group.file.file rect=[[8.0 35.0] - [287.0 129.7]]
+pdfcer-diag ui-rect name=ribbon.group.file.recognise.collapsed rect=[[301.0 35.0] - [380.3 129.7]]
+pdfcer-diag ui-rect name=ribbon.item.file.save rect=[[400.3 41.0] - [452.3 97.0]]
+pdfcer-diag ui-rect name=ribbon.item.file.save_as rect=[[456.3 41.0] - [537.1 62.7]]
+pdfcer-diag ui-rect name=ribbon.item.file.save_copy rect=[[456.3 63.7] - [561.7 85.3]]
+pdfcer-diag ui-rect name=ribbon.item.file.save_compacted rect=[[456.3 86.3] - [629.3 108.0]]
+pdfcer-diag ui-rect name=ribbon.group.file.save.caption rect=[[503.8 112.0] - [525.8 125.0]]
+pdfcer-diag ui-rect name=ribbon.group.file.save rect=[[394.3 35.0] - [635.3 129.7]]
+pdfcer-diag ui-rect name=ribbon.group.file.export.collapsed rect=[[649.3 35.0] - [708.2 129.7]]
+pdfcer-diag ui-rect name=ribbon.item.file.encrypt rect=[[728.2 41.0] - [792.9 97.0]]
+pdfcer-diag ui-rect name=ribbon.item.file.permissions rect=[[796.9 41.0] - [881.8 97.0]]
+pdfcer-diag ui-rect name=ribbon.item.file.sign rect=[[885.8 41.0] - [937.8 97.0]]
+pdfcer-diag ui-rect name=ribbon.group.file.security.caption rect=[[813.3 112.0] - [852.6 125.0]]
+pdfcer-diag ui-rect name=ribbon.group.file.security rect=[[722.2 35.0] - [943.8 129.7]]
+pdfcer-diag ui-rect name=ribbon.item.file.print rect=[[963.8 41.0] - [1015.8 97.0]]
+pdfcer-diag ui-rect name=ribbon.group.file.print.caption rect=[[978.1 112.0] - [1001.4 125.0]]
+pdfcer-diag ui-rect name=ribbon.group.file.print rect=[[957.8 35.0] - [1021.8 129.7]]
+pdfcer-diag ui-rect name=ribbon.overflow rect=[[1068.0 35.0] - [1092.0 59.0]]
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag ui-rect-gone name=ribbon.group.edit.clipboard
+pdfcer-diag ui-rect-gone name=ribbon.group.edit.clipboard.caption
+pdfcer-diag ui-rect-gone name=ribbon.group.edit.content
+pdfcer-diag ui-rect-gone name=ribbon.group.edit.content.caption
+pdfcer-diag ui-rect-gone name=ribbon.group.edit.forms
+pdfcer-diag ui-rect-gone name=ribbon.group.edit.forms.caption
+pdfcer-diag ui-rect-gone name=ribbon.group.edit.insert
+pdfcer-diag ui-rect-gone name=ribbon.group.edit.insert.caption
+pdfcer-diag ui-rect-gone name=ribbon.group.edit.protect
+pdfcer-diag ui-rect-gone name=ribbon.group.edit.protect.caption
+pdfcer-diag ui-rect-gone name=ribbon.item.edit.add_text
+pdfcer-diag ui-rect-gone name=ribbon.item.edit.attachments
+pdfcer-diag ui-rect-gone name=ribbon.item.edit.copy
+pdfcer-diag ui-rect-gone name=ribbon.item.edit.copy_as_vector
+pdfcer-diag ui-rect-gone name=ribbon.item.edit.cut
+pdfcer-diag ui-rect-gone name=ribbon.item.edit.form_check_box
+pdfcer-diag ui-rect-gone name=ribbon.item.edit.form_choice
+pdfcer-diag ui-rect-gone name=ribbon.item.edit.form_flatten
+pdfcer-diag ui-rect-gone name=ribbon.item.edit.form_manage_fields
+pdfcer-diag ui-rect-gone name=ribbon.item.edit.form_push_button
+pdfcer-diag ui-rect-gone name=ribbon.item.edit.form_radio_button
+pdfcer-diag ui-rect-gone name=ribbon.item.edit.form_text_field
+pdfcer-diag ui-rect-gone name=ribbon.item.edit.insert_image
+pdfcer-diag ui-rect-gone name=ribbon.item.edit.paste
+pdfcer-diag ui-rect-gone name=ribbon.item.edit.paste_duplicate
+pdfcer-diag ui-rect-gone name=ribbon.item.edit.redact
+pdfcer-diag ui-rect-gone name=ribbon.item.edit.redact_apply
+pdfcer-diag ui-rect-gone name=ribbon.item.edit.redact_selection
+pdfcer-diag ui-rect-gone name=ribbon.item.edit.reflow_block
+pdfcer-diag ui-rect-gone name=ribbon.item.edit.select_all
+pdfcer-diag ui-rect-gone name=ribbon.item.edit.text
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag canvas-pointer screen=(912.0,69.0) page=(575.70,-266.44) pdf=(575.70,466.44) zoom=1.0700
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag frame n=120
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+egui-shell-diag ribbon-command-invoked id=file.sign handler=128
+pdfcer-diag sign-opened refusal=redaction-pending encrypted=0 redaction_pending=1 recovered=0 certification=none prior=0 pages=2 on_disk=1 empty_fields=0 signable_fields=0 may_certify=1
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag viewport-inner id="40F4" rect=[[836.0 119.0] - [1556.0 779.0]]
+pdfcer-diag dialog-owned title="Sign document" owned=true
+pdfcer-diag TMPASK title="Sign document" now=123 opened_at=123
+pdfcer-diag dialog-focus title="Sign document" focused=Some(true)
+pdfcer-diag ui-rect name=sign-dialog rect=[[12.0 12.0] - [708.0 648.0]] viewport="40F4"
+pdfcer-diag ui-rect name=sign-refusal rect=[[12.0 37.0] - [667.0 67.0]] viewport="40F4"
+pdfcer-diag root-focus focused=Some(false)
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag TMPASK title="Sign document" now=124 opened_at=123
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag TMPASK title="Sign document" now=125 opened_at=123
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag TMPASK title="Sign document" now=126 opened_at=123
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag TMPASK title="Sign document" now=127 opened_at=123
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag TMPASK title="Sign document" now=128 opened_at=123
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag TMPASK title="Sign document" now=129 opened_at=123
+pdfcer-diag frame n=130
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag TMPASK title="Sign document" now=130 opened_at=123
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000
+pdfcer-diag objects-panel page=0 objects=1 rows=1
+pdfcer-diag canvas-pos at=-8.000,-188.439 tier=scroll paint=296.000,354.096 region=none want=none ext=400.000,200.000

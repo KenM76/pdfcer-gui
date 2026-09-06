@@ -56,8 +56,8 @@
 
 use super::{
     DialogsState, about, compact, diagnostics, embed, export_dxf, export_image, export_text,
-    formfield, insert_image, insert_pages, new_document, ocr, print, protect, redact, scale,
-    shortcuts, textannot, unembed,
+    formfield, insert_image, insert_pages, new_document, ocr, page_size, print, protect, redact,
+    scale, shortcuts, textannot, unembed,
 };
 use crate::app::state::Status;
 
@@ -397,6 +397,32 @@ impl DialogsState {
             return;
         }
         self.new_document = Some(new_document::NewDocumentDialog::open());
+    }
+
+    /// **Open the sheet-size window** over `pages`, the operand sheets.
+    ///
+    /// The dispatch target for `pages.resize`.
+    ///
+    /// # ★ Why the operands are passed in rather than resolved here
+    ///
+    /// `crate::panels::pages::ops::operands` — picked sheets, else the current
+    /// one — is stated in exactly one place, and `crate::app::dispatch::pages`
+    /// is the caller that states it, for every `pages.*` command. A second
+    /// resolution here would be a second place for a rule about *which sheets
+    /// an operation is aimed at* to drift, and the direction it drifts in is a
+    /// window that measures one set of sheets and changes another.
+    ///
+    /// # ★★ It can DECLINE, and declining is not the same as doing nothing
+    ///
+    /// `PageSizeDialog::open` returns `None` when the survey found no sheets.
+    /// The idempotence guard above it is the ordinary one — one window at a
+    /// time, so a second press does not replace a survey the operator is
+    /// reading with an identical one.
+    pub fn open_page_size(&mut self, doc: &crate::app::state::OpenDoc, pages: &[usize]) {
+        if self.page_size.is_some() {
+            return;
+        }
+        self.page_size = page_size::PageSizeDialog::open(doc, pages);
     }
 
     /// Open the Export-DXF window for the page on screen.
