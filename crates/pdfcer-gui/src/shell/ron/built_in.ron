@@ -89,6 +89,11 @@
                     items: [
                         Command(id: "file.encrypt", size: Large),
                         Command(id: "file.permissions", size: Large),
+                        Command(
+                            id: "file.sign",
+                            size: Large,
+                            capability: "signing",
+                        ),
                     ],
                 ),
                 (

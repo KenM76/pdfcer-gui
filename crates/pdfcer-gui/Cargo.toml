@@ -58,8 +58,71 @@ path = "src/main.rs"
 # here: Cargo unifies features across the whole graph, so every
 # intermediate crate must (a) take `pdfcer-core` with
 # `default-features = false` and (b) re-export each capability it forwards.
-default = ["jpx", "ocrs"]
+default = ["jpx", "ocrs", "signing"]
 jpx = ["pdfcer-core/jpx", "pdfcer-render/jpx"]
+
+# ---------------------------------------------------------------------------
+# `signing` — the PRIVATE-KEY side, and only the private-key side.
+#
+# ★★★ THIS FLAG'S ABSENCE WAS THE JPX INCIDENT REPEATING, WORD FOR WORD.
+#
+# `pdfcer-core` shipped `pdfcer_core::sign` — 101 public items across
+# `Pass 10.7`/`10.8`/`10.9`, PKCS#12 identity loading, CAdES `SignedData`
+# (PAdES B-B) and `EditSession::sign` — on 2026-09-05, in answer to *this
+# shell's own* request of 2026-09-03 (*"a document cannot be signed"*). Its
+# module header names us. And because this manifest took `pdfcer-core` with
+# `default-features = false` and forwarded only `jpx` and `ocrs`, the
+# engine's default-on `signing` feature was stripped: the entire subsystem
+# was **not in the binary**, nothing failed to compile, and no test went red.
+# That is verbatim the failure the comment forty lines above this one
+# records about JPEG 2000 — *"forgetting to forward does not fail to
+# compile"* — and it happened again, to a capability the operator had asked
+# for by name, three days after the warning was written down.
+#
+# ⇒ The warning above did not protect the code path written after it. What
+# protects this one is `tools/gates/check-forwarded-features.sh`: it reads
+# the engine's own `default = [...]` list out of `D:\Dev\pdfcer`'s manifest
+# and fails the build when a name in it is not forwarded from here or
+# named in that gate's own DELIBERATELY-NOT-FORWARDED list with a reason.
+#
+# WHAT IS AND IS NOT GATED, from `pdfcer-core`'s manifest verbatim:
+#
+#   NOT gated  VERIFICATION — `signature`, `signature_verify`, `cms`, the
+#              trust-path arithmetic. It handles no secret and is in every
+#              build. So the Signatures panel, the trust store setting and
+#              every verdict this shell already prints are UNAFFECTED by
+#              this flag. That asymmetry is why the feature-off build is a
+#              coherent product rather than a broken one: it still reads
+#              and checks other people's signatures, it just cannot author
+#              one of its own.
+#   Gated      `sign::pkcs12` (the `.pfx` reader), the `Signer` key
+#              operations, and — since the whole `sign` module is behind
+#              `#[cfg(feature = "signing")]` in the engine's `lib.rs` —
+#              `EditSession::sign` itself. There is no half-present verb.
+#
+# WHY IT IS IN `default`: rule 1 of the engine's strippable-capability
+# convention — a build that omits nothing behaves as it did before the
+# feature existed. Off is a legitimate lite build, and is also the build
+# that keeps `rsa`'s open RUSTSEC-2023-0071 out of the tree entirely (the
+# advisory names a PKCS#1 v1.5 *decryption* de-padding oracle, which signing
+# never executes).
+#
+# ★★ WHAT THE OFF BUILD MUST LOOK LIKE HERE, and it is R8, not taste. The
+# gated-out path in this shell refuses by ABSENCE: `commands::sign` is
+# registered only under `#[cfg(feature = "signing")]`, and the manifest item
+# naming it is dropped by the ordinary `CapabilityAbsent` mechanism that
+# already drops every other unregistered command. There is no
+# `#[cfg(feature = ...)]` anywhere in the ribbon, in a panel or in the
+# manifest — a capability's presence is expressed by registering its
+# command and by nothing else (`SHELL_FRAMEWORK.md` §5b). That is the whole
+# reason this is a feature rather than a runtime bool: get it right and the
+# eventual exe→DLL move needs no GUI work at all.
+#
+# `pdfcer-render` is deliberately NOT listed — it declares no `signing`
+# feature, and naming a feature a crate does not declare is a hard Cargo
+# error rather than a silent no-op, which is the safe direction of this
+# mistake.
+signing = ["pdfcer-core/signing"]
 
 # ---------------------------------------------------------------------------
 # `ocrs` — the OCR RECOGNISER, and only the recogniser.

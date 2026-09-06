@@ -121,7 +121,7 @@ pub mod appearance;
 
 use pdfcer_core::object::ObjId;
 
-use crate::app::actions::Action;
+use crate::app::actions::{Action, RedactAction};
 use crate::app::state::OpenDoc;
 use crate::panels::PanelsState;
 use crate::text::redact as t;
@@ -289,10 +289,10 @@ fn marking_controls(
         .on_disabled_hover_text(t::mark_whole_page_disabled());
     crate::diag::ui_rect(REGION_WHOLE_PAGE, whole.rect);
     if whole.clicked() {
-        actions.push(Action::MarkPageForRedaction {
+        actions.push(Action::Redact(RedactAction::WholePage {
             page: doc.view.page_index,
             appearance: chosen.clone(),
-        });
+        }));
     }
 
     ui.add_space(6.0);
@@ -340,11 +340,11 @@ fn marking_controls(
             .on_disabled_hover_text(t::search_button_tooltip(!query.is_empty()));
         crate::diag::ui_rect(REGION_SEARCH, search.rect);
         if search.clicked() {
-            actions.push(Action::MarkRedactionsBySearch {
+            actions.push(Action::Redact(RedactAction::BySearch {
                 query,
                 pattern,
                 appearance: chosen,
-            });
+            }));
         }
     });
 
@@ -456,9 +456,9 @@ fn mark_rows(
                 .on_hover_text(t::mark_remove_tooltip())
                 .clicked()
             {
-                actions.push(Action::RemoveRedactionMark {
+                actions.push(Action::Redact(RedactAction::RemoveMark {
                     annot_id: mark.annot_id,
-                });
+                }));
             }
         });
     }

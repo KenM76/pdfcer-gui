@@ -658,6 +658,50 @@ pub(super) fn band() -> Vec<Command> {
         )
         .with_icon("permissions")
         .enabled_when("doc.open"),
+        // ★★★ SIGNING — `file.sign`, token **128**, and the `#[cfg]` here is
+        // THE ONLY EXPRESSION OF THE CAPABILITY ANYWHERE IN THE GUI.
+        //
+        // `SHELL_FRAMEWORK.md` §5b's one rule: *a capability's presence is
+        // expressed by registering its command, and by nothing else. No other
+        // code in the GUI may test for a capability.* So there is no `#[cfg]`
+        // in the ribbon manifest, none in a panel, and none in the dispatcher's
+        // decision about what to draw. The built-in manifest names `file.sign`
+        // unconditionally and marks it `capability: "signing"`; a build without
+        // the feature registers nothing here, the merge drops that one item
+        // with `SkipReason::CapabilityAbsent`, and the Security band renders
+        // with two controls instead of three.
+        //
+        // ⇒ That is what makes the eventual exe→DLL move a swap rather than a
+        // rewrite: the registry does not care whether a command was registered
+        // by a statically linked module or by one loaded at start-up, but only
+        // if it is the ONLY thing that knows.
+        //
+        // # Token 128, and why it is not a reused number
+        //
+        // 126 and 127 are `file.encrypt` and `file.permissions`; 128 was free.
+        // A token is what a trace prints, so a retired one is never recycled —
+        // `file.export_text`'s note above records the day that rule was
+        // demonstrated rather than argued.
+        //
+        // # `doc.open`, and deliberately NOT "and the document is signable"
+        //
+        // The same ruling `file.encrypt` and `file.permissions` carry, and it is
+        // R9 rather than laziness: whether THIS document is encrypted, or is
+        // carrying a redaction the operator armed ten minutes ago, is not known
+        // when the registry is built. So the control stays present and the
+        // WINDOW refuses, by name, with the remedy — which is R9's *explained*
+        // branch, and is why the tooltip names both refusals before the press.
+        //
+        // # …and not gated by mode either
+        //
+        // Read mode reaches it, on `file.export_dxf`'s argument: signing a
+        // drawing before sending it out changes nothing on any page, so it is
+        // not authoring. An operator reading a document in Read mode is exactly
+        // the operator about to email it to somebody.
+        #[cfg(feature = "signing")]
+        command("file.sign", crate::text::sign::file_sign(), 128)
+            .with_icon("sign")
+            .enabled_when("doc.open"),
         command("file.print", t::file_print(), 130)
             .with_icon("print")
             .enabled_when("doc.open"),

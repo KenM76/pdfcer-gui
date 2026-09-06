@@ -394,6 +394,25 @@ pub(super) struct Arms {
     /// `command-unimplemented` is traced, so a `match` without one is not the
     /// `match` this module thinks it is reading.
     pub(super) catch_all: bool,
+    /// ★★★ The ids named by an arm carrying `#[cfg(feature = "…")]` — a
+    /// **conditional** arm, `SHELL_FRAMEWORK.md` §5b's dispatch-side twin of
+    /// the manifest's `capability:` field.
+    ///
+    /// These ids are also in [`Self::literals`], so the *"is every registered
+    /// command routed?"* direction sees them and is satisfied in the build
+    /// where the command exists. They are listed separately so the **mirror**
+    /// direction — *"does any arm name a command that is not registered?"* —
+    /// can exempt them, because in a build with the capability compiled out
+    /// that is precisely the intended state: the arm is in the source, the
+    /// command is not in the registry, and no token can reach it on purpose.
+    ///
+    /// ⚠ The two directions must NOT be handled by one rule. Skipping a
+    /// conditional arm entirely would report `file.sign` as *"registered and
+    /// unrouted"* in the build where it IS registered — i.e. would call a
+    /// working, dispatched, driven control an unwired one. That is what
+    /// happened on the first attempt, and it is the reason this is a second
+    /// set rather than a `continue`.
+    pub(super) conditional: BTreeSet<String>,
 }
 
 /// Read the routing table out of `src`.
@@ -423,6 +442,32 @@ pub(super) fn read_arms(src: &str, consts: &BTreeMap<String, String>) -> Result<
 
     let mut arms = Arms::default();
     for (n, arm) in matched.arms.iter().enumerate() {
+        // ★★★ A CONDITIONAL ARM IS SKIPPED, and this is `SHELL_FRAMEWORK.md`
+        // §5b arriving in the one instrument that reads the dispatcher as text.
+        //
+        // An arm carrying `#[cfg(feature = "…")]` names a command that is
+        // registered in some builds and not in others. This reader parses
+        // source, so it sees the arm whichever build it is compiled into — and
+        // in the build where the feature is off it would report
+        // *"1 dispatch arm names a command that is not registered"* about an
+        // arm that is correct, present on purpose, and unreachable exactly as
+        // intended.
+        //
+        // ⚠ The alternative the failure message itself suggests — put it in
+        // `UNREACHED_ARMS` with a reason — is **wrong here**, and the
+        // difference matters: that list is for an arm waiting for a command
+        // that does not exist yet, i.e. a promise. This arm is not waiting for
+        // anything; in a default build it is live, dispatched and driven. A
+        // permanent entry on the unreached list would make a working control
+        // look like an outstanding work item forever.
+        //
+        // ★ It is skipped rather than recorded as a third category because
+        // this reader's whole output is *"which ids can a token reach"*, and
+        // the honest answer for a conditional arm is *"it depends on the
+        // build"* — which the registry already answers, in the build that is
+        // running, at `shell::tests::the_signing_command_is_registered_exactly
+        // _when_the_feature_is_on`.
+        let conditional = arm.attrs.iter().any(|a| a.path().is_ident("cfg"));
         // A guard arm is classified by what it CALLS, never by what it
         // matches: its pattern is the binding `id`, which names no command.
         if let Some((_, guard)) = &arm.guard {
@@ -436,7 +481,20 @@ pub(super) fn read_arms(src: &str, consts: &BTreeMap<String, String>) -> Result<
             arms.guards.insert(name);
             continue;
         }
+        let before: BTreeSet<String> = if conditional {
+            arms.literals.clone()
+        } else {
+            BTreeSet::new()
+        };
         collect_pattern(&arm.pat, consts, n, &mut arms)?;
+        if conditional {
+            // Whatever this arm added, recorded a second time as conditional.
+            // Read as a difference rather than by re-walking the pattern,
+            // because `collect_pattern` recurses through `Pat::Or` and a second
+            // walk would be a second implementation of the same classification.
+            let added: Vec<String> = arms.literals.difference(&before).cloned().collect();
+            arms.conditional.extend(added);
+        }
     }
     Ok(arms)
 }
@@ -791,6 +849,31 @@ mod tests {
     /// Guard arms are deliberately not checked here. They claim ids by
     /// computing over an enum, and [`super::mapping`]'s own tests already
     /// assert in both directions that every kind has a registered command.
+    ///
+    /// ★★★ **CONDITIONAL arms are exempt, and `UNREACHED_ARMS` is the wrong
+    /// place for them** — added 2026-09-06 with `file.sign`.
+    ///
+    /// An arm carrying `#[cfg(feature = "…")]` names a command that is
+    /// registered in some builds and not in others, and this reader parses
+    /// SOURCE, so it sees the arm in both. In a `--no-default-features` build
+    /// it would report *"an arm no token can ever reach"* about an arm that is
+    /// correct, present on purpose, and live in the default build.
+    ///
+    /// ⚠ The remedy this test's own failure message suggests — put it on
+    /// `UNREACHED_ARMS` with a reason — is wrong here, and the difference is
+    /// worth stating because the message will suggest it again. That list is
+    /// for an arm **waiting for a command that does not exist yet**: a promise,
+    /// which becomes false the day the command arrives, and which
+    /// `every_allow_list_entry_still_earns_its_place` deletes when it does.
+    /// A conditional arm is not waiting for anything. Listing it would make a
+    /// working control look like an outstanding work item **for ever**, and the
+    /// allow-list test would then fail in the default build because the arm is
+    /// both listed and routed.
+    ///
+    /// ★ The exemption is narrow in the right way: it does not weaken the
+    /// mirror direction. `every_registered_command_is_routed_or_argued` still
+    /// sees a conditional arm in [`Arms::literals`], so a build that registers
+    /// `file.sign` and forgets its arm still fails.
     #[test]
     fn no_literal_arm_names_an_unregistered_command() {
         let reg = registry();
@@ -799,7 +882,11 @@ mod tests {
         let dead: Vec<&String> = arms
             .literals
             .iter()
-            .filter(|id| reg.get(id).is_none() && !tolerated.contains(id.as_str()))
+            .filter(|id| {
+                reg.get(id).is_none()
+                    && !tolerated.contains(id.as_str())
+                    && !arms.conditional.contains(*id)
+            })
             .collect();
         assert!(
             dead.is_empty(),

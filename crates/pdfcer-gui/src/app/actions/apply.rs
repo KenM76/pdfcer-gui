@@ -43,6 +43,7 @@
 //! type to follow its writer would have been the tidier-looking edit and the
 //! one that widened a private thing's visibility for no gain.
 
+use super::RedactAction;
 use pdfcer_core::vector::MarqueeMode;
 
 use super::forms::FieldAction;
@@ -227,6 +228,17 @@ impl PdfcerApp {
             // reach `edit.find` from any state and "the chord did nothing" and
             // "the chord did nothing because no document is open" need
             // different responses from whoever is reading the trace.
+            // ★★★ Signing, matched here for `Action::Find`'s BORROW reason
+            // rather than for the guard's: it needs the open document and
+            // `self.dialogs` at once, and the guard below takes
+            // `&mut self.status` for the rest of the function. Its own module
+            // carries the four steps, why it does not go through
+            // `vector_edit`, and why the private key is not in this enum.
+            #[cfg(feature = "signing")]
+            Action::SignDocument { .. } => {
+                super::sign::apply(self, &action);
+                return;
+            }
             Action::Find(request) => {
                 match &mut self.status {
                     Status::Open(doc) => crate::find::apply(&mut self.find, doc, request),
@@ -322,6 +334,15 @@ impl PdfcerApp {
             | Action::Find(_) => {
                 // ui-text-exempt: a panic message, read from a stack trace by
                 // whoever moved one of these six arms. Never rendered.
+                unreachable!("handled before the document guard")
+            }
+            // ★ Listed separately rather than folded into the run above, only
+            // because it carries a `#[cfg]` and an attribute cannot be applied
+            // to one alternative of an or-pattern.
+            #[cfg(feature = "signing")]
+            Action::SignDocument { .. } => {
+                // ui-text-exempt: a panic message, read from a stack trace by
+                // whoever moved the signing arm. Never rendered.
                 unreachable!("handled before the document guard")
             }
             // ★★ A row click in the Objects panel, arriving as an action for
@@ -1078,9 +1099,10 @@ impl PdfcerApp {
             // in this file uses, and their comments carry the argument for the
             // one operation pdfcer cannot undo. Moving the arms without their
             // reasoning would have been the split this project warns about.
-            Action::MarkRedactionsBySearch { .. }
-            | Action::MarkPageForRedaction { .. }
-            | Action::RemoveRedactionMark { .. }
+            Action::Redact(
+                redaction @ (RedactAction::BySearch { .. }
+                | RedactAction::WholePage { .. }
+                | RedactAction::RemoveMark { .. }
             // ★★★ …and, since 2026-09-04, the one that ARMS a removal (and,
             // since 2026-09-05, disarms it). It is routed here beside the three
             // marking arms rather than into a module of its own because it is
@@ -1088,12 +1110,13 @@ impl PdfcerApp {
             // "nothing in this file removes anything", and the correction is in
             // that file rather than in a fourth location a reader would have to
             // find.
-            | Action::PendingRedaction(_) => {
-                super::redact::apply(doc, action);
+                | RedactAction::Pending(_)),
+            ) => {
+                super::redact::apply(doc, redaction);
             }
             // ★ Its own module, not a fourth arm in `redact`: it is the only
             // marking route whose geometry comes from the CANVAS.
-            Action::MarkSelectionForRedaction { appearance } => {
+            Action::Redact(RedactAction::Selection { appearance }) => {
                 super::redactsel::mark_selection(doc, &appearance);
             }
             // ★ Every page verb, routed. The bodies have lived in

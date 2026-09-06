@@ -110,9 +110,9 @@ mod forms;
 /// operand problem (a command id is a verb with no noun) and the
 /// park-and-drain shape that answers it.
 pub(crate) mod panels;
-/// The two Security commands — O119, split under **R2**; see its header.
-pub(crate) mod protect;
 pub(crate) mod routes;
+/// The File > Security band's commands — O119 plus signing; see its header.
+pub(crate) mod security;
 pub(crate) mod settings;
 /// **The three commands whose subject is a text caret** — the two that arm it
 /// and the reflow that acts on the paragraph it is in. The arming pair moved
@@ -547,15 +547,16 @@ impl PdfcerApp {
             // quads. The appearance comes from the panel's own default, the
             // same one the search and whole-page routes use, so three routes
             // cannot produce three differently-coloured marks.
+            // ★ The panel's OWN chosen appearance, not a fresh default. Three
+            // marking routes, one look: an operator who set the fill to grey in
+            // the panel and then marked a selection from the ribbon must not get
+            // a black one. `state.redact_mut()` is where that choice lives and
+            // where the other two read it.
             "edit.redact_selection" => {
-                actions.push(crate::app::actions::Action::MarkSelectionForRedaction {
-                    // ★ The panel's OWN chosen appearance, not a fresh default. Three
-                    // marking routes, one look: an operator who set the fill to
-                    // grey in the panel and then marked a selection from the
-                    // ribbon must not get a black one. `state.redact_mut()` is
-                    // where that choice lives and where the other two read it.
-                    appearance: self.panels.redact_mut().appearance.to_core(),
-                });
+                let appearance = self.panels.redact_mut().appearance.to_core();
+                actions.push(crate::app::actions::Action::Redact(
+                    crate::app::actions::RedactAction::Selection { appearance },
+                ));
             }
             "edit.redact_apply" => self.dialogs.open_redact(&self.status),
             // ★ Recent. The operand comes from the `recent_files` custom item
@@ -735,8 +736,8 @@ impl PdfcerApp {
             // capability: an export reads the document and writes elsewhere, so
             // there is no mode in which it should be refused. Read mode
             // exporting a drawing is exactly what a reading stance is for.
-            // Encrypt… / Permissions… — O119; `dispatch::protect` argues both.
-            id if protect::claims(id) => self.dispatch_protect(id),
+            // File > Security: Encrypt…, Permissions…, Sign…. See that module.
+            id if security::claims(id) => self.dispatch_security(id),
             "file.export_dxf" => self.dialogs.open_export_dxf(&self.status),
             // ★★★ **Export image — `OPERATOR_REQUESTS.md` O120, wired
             // 2026-09-04.** The operator asked the ENGINE side for it on

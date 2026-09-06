@@ -1,6 +1,104 @@
 # RESUME — read this, then say "continue"
 
 
+> ★★★ **LAST SESSION: 2026-09-06. HE CAN SIGN A DOCUMENT.** His report of
+> 2026-09-03 — *"a document cannot be signed"* — is closed: **File > Security >
+> `Sign…`**, driven end to end, with the verdict taken by **a different
+> subsystem in a different process**.
+>
+> **State: engine v0.41.0 at `f9bc7c8`, unchanged** — `cargo update` was
+> forbidden this session and was not run. **MEASURE, do not quote**, as always.
+>
+> ---
+>
+> ★★★ **THE FINDING OF THE DAY: THE CAPABILITY WAS NOT IN THE BINARY, AND THE
+> WARNING ABOUT THAT WAS FORTY LINES ABOVE THE LINE THAT REPEATED IT.**
+>
+> `pdfcer-core` shipped `pdfcer_core::sign` on 2026-09-05 — 101 public items,
+> written in answer to *this shell's own* request, its module header naming us.
+> `crates/pdfcer-gui/Cargo.toml` took the crate with `default-features = false`
+> and forwarded `jpx` and `ocrs`. The `signing` feature is default-on. **It was
+> stripped.** Nothing failed to compile. No test went red. And
+> `check-verb-coverage` scored `EditSession::sign` *consumed* for two days on
+> the bare word `sign` in a doc table about the arithmetic sign of `/Count`.
+>
+> ★★ That is the JPX incident **verbatim**, and the comment recording the JPX
+> incident is in the same `[features]` block, three days old: *"forgetting to
+> forward does not fail to compile."*
+>
+> ⇒ **A warning does not protect a code path written after it** — fourth
+> recorded instance. `tools/gates/check-forwarded-features.sh` now reads the
+> ENGINE's own `default = [...]` and fails when a name in it is neither
+> forwarded here nor refused in writing. **Falsified both ways.** Gate count is
+> **31**.
+>
+> ★★★ **AND THE START-UP MERGE WAS NOT BEING CALLED.** `SHELL_FRAMEWORK.md`
+> §5b's `capability:` field and `SkipReason::CapabilityAbsent` did not exist —
+> §5b called them *"the gap that must be closed"*. Closing them found a second
+> thing: `PdfcerApp::new`'s own comment claimed the merge ran, and the manifest
+> went straight to the **strict** `validate_against`. In a lite build
+> `file.sign` would have failed validation, `shell` would have been `None`, and
+> `Capabilities::for_mode` returns **FULL** with no shell — **a lite build would
+> have lost its ribbon and granted every authoring capability to every mode,
+> including Read.** Now merged, skips traced, and held by
+> `the_built_in_manifest_survives_a_build_without_an_optional_capability`.
+>
+> ★★★ **R8 PROVED FROM THE RUNNING PROGRAM**, two off-screen launches:
+> the default build publishes `ribbon.item.file.sign` and skips nothing; the
+> `--no-default-features` build publishes no such region and emits one line —
+> *"`file.sign` … is provided by the `signing` capability, which this build does
+> not include"*. **Gone, not greyed.** No `#[cfg]` in the ribbon, the manifest
+> or any panel.
+>
+> ★★★ **THE VERDICT IS TAKEN IN ANOTHER PROCESS, AND THE FALSIFICATION IS THE
+> WHOLE PROOF.** `a_document_can_be_signed_and_the_signature_is_in_the_file`
+> signs, then opens the written file in a **fresh binary** and reads the
+> Signatures panel (`Pass 10.5`'s verification side): `signature-row
+> field="Signature1" integrity=verified`. Planted one flipped byte: phase A's
+> trace stayed **character for character identical** — `sign-written
+> field=Signature1 bytes=103508 self_verified=1` — and phase D read
+> `digest-mismatch`. ⇒ The *"traces perfectly and does nothing"* class, caught
+> only because the oracle is not the code under test.
+>
+> ⚠ **THE ENGINE HAS ALREADY MOVED PAST WHAT THIS BUILD PINS.** `Pass 10.14`
+> (`187fa09`, **unreleased**, outside our pin — measured with
+> `git merge-base --is-ancestor`, not read off a changelog) composes a REAL
+> visible appearance: signer CN, date, reason, location, Helvetica, shrink-to-fit.
+> `text::sign::placement_note` says the box is an empty frame, which is **true of
+> what compiles here and false of engine `main`**. Filed in `ENGINE_BACKLOG.md`
+> under *Signing hardening*; **re-read that string the moment the pin moves.**
+> `check-engine-backlog` surfaced 10.14 on the day it shipped, which is the
+> mechanism working.
+>
+> ★★ **Two harness findings.** (1) **A dialog is an OS window, so
+> `session.frame()` is the WRONG frame** — the first driven run aimed every
+> in-dialog click hundreds of points away and the symptom was *silence*. Use
+> `driving::frame_of`, which is safe on main-window regions too. (2)
+> **`Session::launch` latches the PASSWORD DIALOG as the target window** when a
+> fixture needs a password at start-up; every click after it closes fails with
+> *"GetClientRect failed"*. Not fixed; worked around with an empty-user-password
+> fixture and written down at the constant.
+>
+> ⚠ **R2 fired three times.** Redaction's five `Action` variants became
+> `RedactAction` (19 call sites) — the written plan nominated **markup**, and
+> the reason for departing is recorded at the new enum: markup is 370 lines
+> across 48 call sites in two modules, redaction 114 across 19 in the module
+> that already held every body. **Markup remains the next candidate.**
+> `manifest/mod.rs` → `+ item.rs`; `dispatch::protect` → `dispatch::security`
+> (three commands, and signing is not protection). ⚠ `app/lifecycle.rs`,
+> `app/dispatch.rs` and `egui-shell/src/manifest/merge.rs` are all at exactly
+> **1500 — zero headroom**.
+>
+> ★ `text::security::cannot_author` was corrected for the **third** time and has
+> had **zero call sites** throughout. A string nothing draws cannot be caught by
+> looking at the screen, cannot be caught by a driven check, and is corrected
+> only when somebody greps past it.
+>
+> ⬜ **Still the engine's:** certifying (`/DocMDP`) signatures, signing into a
+> pre-placed field, and a reserve an operator can widen.
+
+
+
 > ★★★ **LAST SESSION: 2026-09-05. THE OPERATOR IS AWAY AND THE MACHINE IS
 > YOURS UNTIL 2026-09-08** — his words: *"I'm not at the keyboard unless I tell
 > you I am there… the PC is free for you to use until Tuesday."*

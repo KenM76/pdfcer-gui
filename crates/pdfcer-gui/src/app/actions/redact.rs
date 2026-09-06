@@ -37,7 +37,7 @@
 //! still not a principle, which is the whole lesson of having written it as
 //! one. It is a dated property of an engine this project does not build.
 //!
-//! ⇒ The arm below is [`Action::PendingRedaction`], and it goes through the
+//! ⇒ The arm below is [`RedactAction::Pending`], and it goes through the
 //! identical `vector_edit` funnel as the three marking arms, for a reason that
 //! is worth stating because the funnel does more than this verb needs: the
 //! engine's staging and cancelling verbs both take `&mut EditSession`, and
@@ -77,7 +77,165 @@
 //! them through the removal. The two *write-now* destinations still live in
 //! `crate::dialogs::redact` and still reach no arm in this file.
 
-use super::Action;
+// ===========================================================================
+// THE ACTION FAMILY
+// ===========================================================================
+
+/// ★★★ **Everything whose subject is a redaction**, as one family.
+///
+/// Moved out of [`super::Action`] under **R2** on 2026-09-06, when document
+/// signing needed a variant that file could not afford — it was at exactly
+/// 1,500 of 1,500 lines, which is a state its own header had predicted and
+/// named the remedy for: *"the next family of variants to grow is the one that
+/// will have to become a sub-enum beside `PageAction` and `DimensionAction`."*
+///
+/// ## Why redaction, when the written plan nominated markup
+///
+/// `super`'s declaration of `action` carries a 2026-08-20 measurement naming
+/// **markup** as the candidate, *"written down here so the next person does not
+/// have to re-measure it under deadline."* It was not taken, and departing from
+/// a plan that was written down deserves its reason in the same place:
+///
+/// | family | lines in `action.rs` | call sites | destination module |
+/// |---|---|---|---|
+/// | markup | ~370 | **48** | `canvas::markup` + `actions::annots` — two |
+/// | redaction | 114 | **19** | `actions::redact` — this one, already holding every body |
+///
+/// The deciding term is the third column, and it is
+/// [`super::pages::PageAction`]'s own third argument verbatim: *"the
+/// destination already existed. This module has held the five verbs' bodies
+/// since page operations shipped, and `apply` already routed every one of them
+/// here. The enum was the only half still living elsewhere."* That is exactly
+/// true of this file and is not true of markup, whose bodies are split across
+/// two modules.
+///
+/// ⇒ **Markup remains the next candidate and its measurement stands.** This is
+/// a cheaper move taken first, not a revision of that judgement.
+///
+/// ## ★★★ The property that puts all five in an `Action` at all: they are
+/// REVERSIBLE
+///
+/// Marking authors a `/Redact` annotation and removes nothing — the engine
+/// records each as an undoable command, so every one goes through `vector_edit`
+/// exactly as a markup does and `Ctrl+Z` takes it back. [`Self::Pending`] arms
+/// the removal at the next save (`Pass 250.2`) and can be called off.
+///
+/// **The verb that actually destroys content is not in this family and is not
+/// an `Action`.** Routing the one operation that cannot be undone through a
+/// queue that replays would be the defect, not the tidiness.
+///
+/// ## ★★ The names lost their `Redaction` stutter, and nothing else changed
+///
+/// `MarkRedactionsBySearch` became `RedactAction::BySearch`, and its four
+/// siblings likewise: the family name is now carried by the enum, so repeating
+/// it in every variant would spell it twice at every call site. The **fields
+/// are untouched**, deliberately — a rename and a change of shape in one commit
+/// is a diff nobody can review, and the fields are what the engine sees.
+#[derive(Debug, Clone, PartialEq)]
+pub enum RedactAction {
+    /// **Mark every occurrence of some text for redaction.**
+    ///
+    /// Raised by [`crate::panels::redact`]'s Find & mark control. Applied
+    /// through `vector_edit`, so it is one undoable command however many marks
+    /// it creates — which is the right granularity: the operator asked one
+    /// question, and taking back "mark every occurrence of this name" one
+    /// annotation at a time would be unusable.
+    ///
+    /// # ★ The query is carried, not a hit list
+    ///
+    /// The panel could resolve the matches itself and push the quads, the way
+    /// [`super::super::actions::Action::CommitTextMarkup`] carries the selection's boxes. It must not,
+    /// for a reason specific to this verb: `pdfcer-core`'s own
+    /// `mark_redactions_by_search_with` documents the trap — a front end whose
+    /// search and whose marking disagree about *which hits exist* produces
+    /// "three highlights and eleven redaction marks", and *"on the one
+    /// operation whose whole purpose is removing content irreversibly, 'the
+    /// mark set is a superset of the highlight set' is not a cosmetic
+    /// difference."* Handing the engine the query lets the engine answer both
+    /// halves with one scan.
+    BySearch {
+        /// The text, already trimmed by the panel.
+        query: String,
+        /// Whether to read the query as a pattern (`#` any digit, `?` any
+        /// character) rather than as literal text.
+        ///
+        /// A `bool` here rather than an enum, unlike
+        /// `crate::redact::ResidualAcknowledgement` — because this one is
+        /// *named at its field* and reads as a sentence at the one call site
+        /// that builds it, while that one is a positional argument at a call
+        /// site where a transposition would write a file.
+        pattern: bool,
+        /// How the marks this creates will look once applied.
+        ///
+        /// ★ Carried on the action, not read at apply time, and it is the same
+        /// rule the pen follows for markup: the operator's choice is the one
+        /// they had **when they pressed the control**. Reading it in the
+        /// dispatcher would let a frame in which they also changed the fill
+        /// swatch author marks they did not choose — and on this verb the
+        /// difference is not cosmetic, because the appearance is baked into
+        /// each `/Redact` annotation at creation and there is no verb that
+        /// modifies one afterwards.
+        appearance: pdfcer_core::annot_author::RedactAppearance,
+    },
+    /// **Mark the whole of one page for redaction.**
+    ///
+    /// Raised by [`crate::panels::redact`]'s Mark whole page control. The page
+    /// is carried rather than read from `doc.view` at apply time, on
+    /// [`super::super::actions::Action::CommitTextMarkup`]'s rule: the operator marked the sheet they
+    /// were looking at, and an action applied after a frame in which they also
+    /// paged away must mark the sheet they meant.
+    ///
+    /// The rectangle is not carried, because it is not the operator's choice —
+    /// it is the page's crop box, and `crate::panels::redact::whole_page_spec`
+    /// is the one place that decision is made and tested.
+    WholePage {
+        /// The 0-based page to cover.
+        page: usize,
+        /// How the mark will look once applied. See
+        /// [`Self::BySearch`]'s field of the same name.
+        appearance: pdfcer_core::annot_author::RedactAppearance,
+    },
+    /// ★★★ **Mark what is SELECTED on the page for redaction** — the third
+    /// marking route, and the first that does not go through text.
+    ///
+    /// **Ken, 2026-08-30:** *"am I able to select objects on the canvas and
+    /// redact them that way yet? … it just told me it couldn't."* It could not:
+    /// [`Self::BySearch`] reaches text pdfcer can read as text and
+    /// [`Self::WholePage`] reaches everything, and on a CAD drawing
+    /// most of what wants redacting is in between.
+    ///
+    /// `super::redactsel`'s header carries the argument in full, including why
+    /// neither a page nor a rectangle is carried here.
+    Selection {
+        /// How the mark will look once applied. See
+        /// [`Self::BySearch`]'s field of the same name.
+        appearance: pdfcer_core::annot_author::RedactAppearance,
+    },
+    /// **Take one redaction mark off.**
+    ///
+    /// Raised by a row's Remove control. The engine's
+    /// `EditSession::delete_redaction_mark` rather than its general annotation
+    /// delete, deliberately and on core's own instruction: the two record
+    /// different `CommandKind`s so that an undo tooltip can say *"remove a
+    /// redaction mark"* rather than *"delete annotation"*, and — as that
+    /// method's docs put it — *"I decided not to redact that"* is a different
+    /// claim from *"delete annotation"*.
+    ///
+    /// The **annotation id**, not a row index: a list position is a position in
+    /// a census rebuilt every frame, and by the time the apply phase runs the
+    /// same index may name a different mark. `crate::app` §10's rule —
+    /// *selection is an identity, not a position* — applied to a list.
+    RemoveMark {
+        /// The `/Redact` annotation to delete.
+        annot_id: pdfcer_core::object::ObjId,
+    },
+    /// ★★★ **Arm the removal of every redaction mark at the next save, or
+    /// disarm it** — O125, corrected 2026-09-05 for `Pass 250.2`. **The whole
+    /// argument — undo-preserving, why Cancel had to exist — is on the apply
+    /// arm** in `app::actions::redact`, on this file's own R2 rule.
+    Pending(crate::redact::Staging),
+}
+
 use super::apply::vector_edit;
 use crate::app::state::OpenDoc;
 use crate::redact::Staging;
@@ -94,7 +252,7 @@ use crate::redact::Staging;
 /// redaction variants here — and it is spelled rather than `unreachable!()`
 /// because a future fifth variant sent here by mistake should do nothing
 /// visible rather than end the process an operator is mid-edit in.
-pub fn apply(doc: &mut OpenDoc, action: Action) {
+pub fn apply(doc: &mut OpenDoc, action: RedactAction) {
     match action {
         // ===============================================================
         // ★ THE REDACTION MARKING VERBS
@@ -121,7 +279,7 @@ pub fn apply(doc: &mut OpenDoc, action: Action) {
         // changed form and rule 4 owes the operator nothing. It is the same
         // adaptation `CommitMarkup` makes one screen up.
         // ===============================================================
-        Action::MarkRedactionsBySearch {
+        RedactAction::BySearch {
             query,
             pattern,
             appearance,
@@ -229,7 +387,7 @@ pub fn apply(doc: &mut OpenDoc, action: Action) {
                 });
             }
         }
-        Action::MarkPageForRedaction { page, appearance } => {
+        RedactAction::WholePage { page, appearance } => {
             // Resolved here rather than carried on the action because the
             // rectangle is the page's, not the operator's — see the
             // variant's docs. A page index past the end is unreachable from
@@ -264,7 +422,7 @@ pub fn apply(doc: &mut OpenDoc, action: Action) {
                 });
             }
         }
-        Action::RemoveRedactionMark { annot_id } => {
+        RedactAction::RemoveMark { annot_id } => {
             let page = doc.view.page_index;
             vector_edit(doc, "redact-unmark", page, 1, |session| {
                 session.delete_redaction_mark(annot_id).map(|()| Vec::new())
@@ -286,7 +444,7 @@ pub fn apply(doc: &mut OpenDoc, action: Action) {
         // be a claim this verb cannot make. The `page` argument below is the
         // trace's, as it is everywhere.
         // ===============================================================
-        Action::PendingRedaction(Staging::Stage) => {
+        RedactAction::Pending(Staging::Stage) => {
             let page = doc.view.page_index;
             // Set inside the closure and read after it, the same shape the
             // search arm uses for its unreadable-font count and for the same
@@ -369,7 +527,7 @@ pub fn apply(doc: &mut OpenDoc, action: Action) {
         // re-raster it costs draws an identical picture, because nothing
         // about the page ever changed.
         // ===============================================================
-        Action::PendingRedaction(Staging::Cancel) => {
+        RedactAction::Pending(Staging::Cancel) => {
             let page = doc.view.page_index;
             let marks = crate::panels::redact::mark_ids(&doc.session).len();
             vector_edit(doc, "redact-stage-cancel", page, 1, |session| {

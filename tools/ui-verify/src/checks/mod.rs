@@ -473,6 +473,11 @@ pub mod protect;
 pub mod qat_icons;
 pub mod read_mode;
 pub mod redact_image_warning;
+/// ★★★ **A document is signed, and the signature is read back out of the FILE**
+/// — the driven half of `crate::sign`, and the check whose verdict is taken in
+/// a **different process by a different subsystem** because a trace line saying
+/// `sign` was called is not evidence a document was signed.
+pub mod signing;
 pub mod tab_order_drag;
 pub mod title_build_stamp;
 

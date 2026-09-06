@@ -560,6 +560,15 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // ⚠ O119 — registered without having been run: an unregistered check
         // is one nobody will ever run.
         Box::new(protect::ProtectShowsTheDocumentAndRefusesASignedOne),
+        // ★★★ Signing — the operator's report of 2026-09-03, wired 2026-09-06.
+        // Beside `protect` and `redaction` because the three share a subject
+        // (what pdfcer writes into a file that is about the file rather than
+        // about a page) and because this check reads the other two's fixtures.
+        //
+        // ⚠ It is the longest check in the suite — four processes, roughly
+        // twenty clicks — and it is that long because its verdict cannot be
+        // taken in the process that produced it. See its header.
+        Box::new(signing::ADocumentCanBeSignedAndTheSignatureIsInTheFile),
         Box::new(redaction::RedactionRemovesAndProvesIt),
         // ★ Beside the text-editing checks and owning its own fixture, like
         // `text_edit` and `redaction` above: its verdict is a LINE COUNT that

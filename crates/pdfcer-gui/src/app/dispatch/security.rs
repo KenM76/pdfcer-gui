@@ -1,5 +1,20 @@
-//! `app::dispatch::protect` — the two Security commands, and the one line of
-//! `dispatch.rs` they cost
+//! `app::dispatch::security` — the File > Security band's commands, and the one
+//! line of `dispatch.rs` they cost
+//!
+//! ## ★★ Renamed from `dispatch::protect` on 2026-09-06, when `file.sign`
+//! joined the band
+//!
+//! The old name described two of the three: encrypting and re-permissioning are
+//! *protection*, and signing is not — a signature protects nothing, it asserts
+//! authorship. Keeping the name would have made it a description of the
+//! module's history rather than of its contents, which is the thing this
+//! project's own `native-clipboard` manifest argues against by name.
+//!
+//! What all three ARE is the **File > Security band**: each writes something
+//! into the file that is about the file rather than about any page, none is an
+//! undoable content edit, and each produces a new document rather than changing
+//! the one on screen. That is the subject, and the module is now named after
+//! it.
 //!
 //! `OPERATOR_REQUESTS.md` **O119**, approved and wired 2026-09-04: *"yes add
 //! encryption and permissions"*. `file.encrypt` and `file.permissions`, which
@@ -36,7 +51,7 @@
 //! One guard arm and a two-line comment:
 //!
 //! ```ignore
-//! id if protect::claims(id) => self.dispatch_protect(id),
+//! id if security::claims(id) => self.dispatch_security(id),
 //! ```
 //!
 //! …which is [`super::panels`]' arrangement precisely, including the pairing of
@@ -70,14 +85,20 @@ use crate::protect::Task;
 
 /// Whether `id` is one of the Security commands this module dispatches.
 ///
-/// ★ Paired with [`PdfcerApp::dispatch_protect`] over the same list, and the
+/// ★ Paired with [`PdfcerApp::dispatch_security`] over the same list, and the
 /// two are pinned together by a test — [`super::panels::claims`]' arrangement
 /// and its reason: a guard and a dispatcher that disagree turn a registered
 /// command into one that traces `command-unimplemented`, which looks from the
 /// outside exactly like a command nobody wired.
 #[must_use]
 pub(crate) fn claims(id: &str) -> bool {
-    matches!(id, "file.encrypt" | "file.permissions")
+    // ★ `file.sign` is behind the `signing` feature, so a build without it
+    // registers no such command and this arm can never be reached — but the
+    // predicate names it unconditionally, deliberately. `SHELL_FRAMEWORK.md`
+    // §5b's rule binds the RIBBON and the registry; a `#[cfg]` here would put
+    // a second place that knows about a capability into the dispatcher, and
+    // the string costs nothing because nothing can raise it.
+    matches!(id, "file.encrypt" | "file.permissions" | "file.sign")
 }
 
 impl PdfcerApp {
@@ -93,7 +114,17 @@ impl PdfcerApp {
     /// The already-open guard lives in
     /// [`crate::dialogs::DialogsState::open_protect`] rather than here, so a
     /// chord and a ribbon click are gated by one expression.
-    pub(in crate::app) fn dispatch_protect(&mut self, id: &str) {
+    pub(in crate::app) fn dispatch_security(&mut self, id: &str) {
+        // ★★★ Signing is its own window, not a third `Task`. The two encryption
+        // commands share a window because they differ in exactly one value; a
+        // signature shares nothing with them — no password fields, no
+        // permission list, a private key it must hold and drop, and a different
+        // set of engine refusals. One window per subject.
+        #[cfg(feature = "signing")]
+        if id == "file.sign" {
+            self.dialogs.open_sign(&self.status);
+            return;
+        }
         let task = match id {
             "file.permissions" => Task::Permissions,
             // ★ `file.encrypt` and — by construction — nothing else, because
@@ -131,15 +162,20 @@ mod tests {
         // registration path rather than of a list.
         let mut reg = egui_shell::commands::CommandRegistry::new();
         crate::shell::commands::register(&mut reg);
-        let registered: Vec<String> = ["file.encrypt", "file.permissions"]
+        let registered: Vec<String> = ["file.encrypt", "file.permissions", "file.sign"]
             .into_iter()
             .filter(|id| reg.get(id).is_some())
             .map(str::to_owned)
             .collect();
+        // ★ Build-dependent: `file.sign` is registered only with the `signing`
+        // feature, which is `SHELL_FRAMEWORK.md` §5b's whole mechanism. Written
+        // as arithmetic over `cfg!` rather than as a number, because both
+        // answers are correct and one literal would fail one of the two
+        // supported builds.
         assert_eq!(
             registered.len(),
-            2,
-            "both Security commands are registered: {registered:?}"
+            2 + usize::from(cfg!(feature = "signing")),
+            "every registered Security command: {registered:?}"
         );
         for id in &registered {
             assert!(
@@ -164,7 +200,7 @@ mod tests {
         assert_eq!(task_of("file.permissions"), Task::Permissions);
     }
 
-    /// The mapping [`PdfcerApp::dispatch_protect`] applies, without an app.
+    /// The mapping [`PdfcerApp::dispatch_security`] applies, without an app.
     ///
     /// ★ A second spelling of three lines, and it is the honest cost of
     /// asserting a decision that is otherwise only reachable through a

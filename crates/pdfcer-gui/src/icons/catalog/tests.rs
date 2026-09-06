@@ -69,9 +69,24 @@ fn all_is_exhaustive_and_free_of_duplicates() {
     // engine shipped the field it had been missing (`Pass 254.0`), and the
     // glyph was AUTHORED for it. The same correction shape as `bold`/`italic`
     // the day before: the absence was about supply, and supply is ours.
+    // ★ 140 → 141 on 2026-09-06: `sign`. The signing capability arrived and
+    // the glyph was AUTHORED for it, on the same 2026-08-06 ruling — a missing
+    // glyph is drawn, not worked around. `sign.svg` carries the constraint that
+    // decided every line of it: NOT a seal, badge, shield or checkmark, because
+    // every one of those reads as VALIDATED and this control makes a signature
+    // rather than judging one.
+    //
+    // ★★ It does NOT count as a build-dependent number even though the COMMAND
+    // that names it is behind a Cargo feature. `Icon::ALL` is the art in this
+    // binary, and art is not gated: the asset is a `include_str!` constant with
+    // no dependency on `pdfcer-core`, so a `--no-default-features` build ships
+    // the same 141 glyphs and simply has no button that names one of them. That
+    // is deliberate — gating the art would put a `#[cfg]` in `icons`, which is
+    // a second place that knows about a capability and is exactly what
+    // `SHELL_FRAMEWORK.md` §5b forbids.
     assert_eq!(
         Icon::ALL.len(),
-        140,
+        141,
         "the catalogue changed size: add the new variant to Icon::ALL and update this count"
     );
 }

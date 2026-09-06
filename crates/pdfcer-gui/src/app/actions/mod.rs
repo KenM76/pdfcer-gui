@@ -189,6 +189,12 @@ pub mod redactimg;
 /// first that does not go through text. Its header carries why the search box
 /// could not reach a vector title block, a stamp or a logo.
 mod redactsel;
+/// The one arm that signs a document — `Action::SignDocument`'s body, split
+/// out under R2 on the seam `saving`, `redact` and `destination` already
+/// occupy. `#[cfg]` for `crate::sign`'s reason: without the capability there is
+/// no verb for it to call.
+#[cfg(feature = "signing")]
+pub mod sign;
 
 // ---------------------------------------------------------------------------
 // The edit disclosure — what [`vector_edit`] carries out to `app::status`
@@ -276,6 +282,12 @@ pub mod write;
 pub mod xobject;
 
 pub use action::Action;
+// ★ The redaction family's sub-enum, re-exported beside `Action` exactly as
+// `VectorAction` is, so a call site writes `actions::RedactAction` rather than
+// reaching through the module that happens to hold the bodies. It moved out of
+// `Action` on 2026-09-06 under R2 — see its own header for why it went before
+// markup, which the written plan had nominated.
+pub use redact::RedactAction;
 pub use vector::VectorAction;
 
 // ---------------------------------------------------------------------------

@@ -257,6 +257,23 @@ run "check-trace-names" python "$HERE/check-trace-names.py"
 # It found five more the moment it worked -- three attachment-clipboard verbs
 # and two cut verbs -- none of which had a sentence anywhere.
 run "check-verb-coverage" bash "$HERE/check-verb-coverage.sh"
+# ★★★ `check-forwarded-features`, added 2026-09-06 — and it is `check-verb-
+# coverage`'s twin one layer down.
+#
+# That one asks *"is there an engine VERB nothing here calls?"*. This one asks
+# the question underneath it: *"is there an engine CAPABILITY that is not even
+# COMPILED IN?"* — because a verb inside a stripped Cargo feature does not
+# exist to be called, and `verb-coverage.py` cannot tell that from a verb this
+# shell has simply not reached yet.
+#
+# It was written the day the whole digital-signing subsystem was found missing
+# from the binary: `pdfcer-core`'s `signing` is default-on, this manifest takes
+# the crate with `default-features = false`, and forwarding `jpx` and `ocrs`
+# and not `signing` removed 101 public items with nothing failing anywhere.
+# The identical omission had removed JPEG 2000 three weeks earlier, and the
+# COMMENT warning about that incident was forty lines above the block that
+# repeated it. ⇒ A warning does not protect a code path written after it.
+run "check-forwarded-features" bash "$HERE/check-forwarded-features.sh"
 
 # `check-old-name-absent` is what the 2026-09-03 rename left behind, and it
 # exists because a rename is exactly the operation whose completeness cannot be

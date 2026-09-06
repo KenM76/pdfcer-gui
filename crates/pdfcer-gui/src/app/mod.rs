@@ -771,7 +771,50 @@ impl PdfcerApp {
         let mut commands = egui_shell::commands::CommandRegistry::new();
         crate::shell::commands::register(&mut commands);
 
+        // ★★★ THE MERGE RUNS BEFORE THE VALIDATION, AND UNTIL 2026-09-06 IT
+        // DID NOT RUN AT ALL — which would have cost the whole ribbon on the
+        // first build compiled without an optional capability.
+        //
+        // The comment on this constructor already said the merge resolves
+        // every item against the registry and that *"resolution is what makes
+        // a capability that is not compiled in disappear from the ribbon
+        // rather than render as a dead control (R8, SHELL_FRAMEWORK.md §5b)"*.
+        // It was describing a call that was not here: the built-in manifest
+        // went straight to `validate_against`, which is **strict by design**
+        // and rejects any reference to an unregistered command.
+        //
+        // ⇒ In a `--no-default-features` build, `file.sign` would have failed
+        // validation, `shell` would have been `None`, and — because
+        // `Capabilities::for_mode` returns FULL when the shell is absent —
+        // **every authoring capability would have been granted to every mode**,
+        // including Read. That is the exact failure a previous session hit from
+        // the other direction, turning eight mode-gating tests red at once. A
+        // lite build would have lost its ribbon and gained every permission.
+        //
+        // ★★ This is the fourth recorded instance of the same shape: a rule
+        // written in a comment beside the code it governs is not a mechanism.
+        // What makes it one now is `crate::shell::tests::the_built_in_manifest
+        // _survives_a_build_without_an_optional_capability`, which merges
+        // against a registry with the conditional commands withheld and
+        // asserts the shell still validates.
         let built_in = crate::shell::manifest::built_in();
+        let merged = egui_shell::manifest::merge(
+            egui_shell::manifest::MergeInput::built_in(&built_in),
+            &commands,
+        );
+        // Disclosed, never silent — `manifest::merge`'s own rule, and the
+        // reason it returns the report by value: *"a silently dropped ribbon
+        // item is the operator seeing a button missing and concluding the
+        // application removed it."* In a default build this loop runs zero
+        // times, so the line's presence in a trace is itself the signal that
+        // the binary was built smaller.
+        for skip in merged.report.skips() {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed.
+                format!("shell-item-skipped {skip}")
+            });
+        }
+        let built_in = merged.shell;
         let shell = match built_in.validate_against(&commands) {
             Ok(()) => Some(built_in),
             Err(error) => {

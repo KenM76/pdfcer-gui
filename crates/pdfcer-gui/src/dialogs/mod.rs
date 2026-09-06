@@ -144,6 +144,14 @@ pub mod protect;
 /// removal runs on open, why confirmation is three gates rather than one click,
 /// and why the destination is asked for every time.
 pub mod redact;
+/// The window that puts the operator's own digital signature on a document.
+///
+/// `#[cfg]` for `crate::sign`'s reason, and it is the module boundary rather
+/// than the ribbon: `SHELL_FRAMEWORK.md` §5b's rule is satisfied by
+/// `file.sign` simply not being registered, which drops the ribbon item
+/// through the ordinary merge with a `CapabilityAbsent` skip reason.
+#[cfg(feature = "signing")]
+pub mod sign;
 /// ★★ The question Save has never asked about a **signed** document — the
 /// warning that stands between a structural edit and a revision written over a
 /// legal artifact.
@@ -356,6 +364,11 @@ pub struct DialogsState {
     /// every control on it is seeded from that reading. ★ ONE field for the two
     /// ribbon controls — see [`Self::open_protect`].
     protect: Option<protect::ProtectDialog>,
+    /// The Sign window — `file.sign`. Holds the loaded signing identity for as
+    /// long as it is open, which is why the private key never enters the action
+    /// queue; see [`sign`]'s §3.
+    #[cfg(feature = "signing")]
+    sign: Option<sign::SignDialog>,
 
     // --- application-scoped: survives an empty canvas ---------------------
     /// The About dialog, when one is open.
@@ -690,6 +703,12 @@ impl DialogsState {
         if self.protect.as_mut().map(|d| d.show(ctx, doc)) == Some(false) {
             self.protect = None;
         }
+        // ★ `actions` because signing needs `&mut EditSession` and a dialog
+        // body is handed `&OpenDoc` — `crate::dialogs::sign`'s §2.
+        #[cfg(feature = "signing")]
+        if self.sign.as_mut().map(|d| d.show(ctx, doc, actions)) == Some(false) {
+            self.sign = None;
+        }
         if self.insert_pages.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.insert_pages = None;
         }
@@ -999,6 +1018,16 @@ impl DialogsState {
     /// Application-scoped dialogs are deliberately absent — see
     /// [`Self::show`].
     fn close_document_scoped(&mut self) {
+        // ★★★ The Sign window is document-scoped, and closing it also DROPS
+        // THE LOADED PRIVATE KEY, which is the strongest reason it belongs on
+        // this list rather than merely a consistent one. `crate::sign::Identity`
+        // holds the key material for as long as the window is open; a window
+        // that survived its document would hold somebody's key for the rest of
+        // the session with nothing on screen to say so.
+        #[cfg(feature = "signing")]
+        {
+            self.sign = None;
+        }
         self.print = None;
         self.ocr = None;
         self.diagnostics = None;

@@ -158,6 +158,41 @@ impl DialogsState {
         self.protect = protect::open_for(status, task);
     }
 
+    /// **Open the Sign window** — `file.sign`.
+    ///
+    /// ★★★ The already-open guard is the strongest one on this file, and it is
+    /// not about losing typed text. The window holds a **loaded private key**
+    /// once the operator has opened their certificate; rebuilding it on a
+    /// second press would discard that and make them type the passphrase again
+    /// — and, worse, an operator who pressed twice would be looking at a form
+    /// with an empty passphrase box and no identity, which reads exactly like
+    /// the certificate having been rejected.
+    ///
+    /// The no-document guard lives in [`super::sign::open_for`], which returns
+    /// `None` rather than building a window over nothing.
+    #[cfg(feature = "signing")]
+    pub fn open_sign(&mut self, status: &Status) {
+        if self.sign.is_some() {
+            return;
+        }
+        self.sign = super::sign::open_for(status);
+    }
+
+    /// **Hand the signing outcome to the window that asked for it.**
+    ///
+    /// Called by [`crate::app::actions::sign::apply`]. Silently ignored when
+    /// the window has been closed in the meantime, which is a real sequence: a
+    /// signature can take a second on a large document, and an operator who
+    /// closed the window is not waiting for an answer. The file was still
+    /// written and `sign-written` is still on the trace, so nothing is lost —
+    /// only the sentence about it.
+    #[cfg(feature = "signing")]
+    pub fn sign_outcome(&mut self, outcome: crate::sign::Outcome) {
+        if let Some(dialog) = self.sign.as_mut() {
+            dialog.outcome(outcome);
+        }
+    }
+
     /// Open the Render-diagnostics report for the document in `status`.
     ///
     /// **The dispatch target for the `tools.render_diagnostics` command**, and

@@ -316,10 +316,58 @@ pub(super) fn tab() -> Tab {
             // reason: when a feature's copy is one subject and one module, the
             // caption is part of that subject.
             // ---------------------------------------------------------------
+            // ★★★ **`file.sign` joined this band on 2026-09-06**, and it is
+            // the ribbon's first CONDITIONAL item — `SHELL_FRAMEWORK.md` §5b's
+            // `capability:` field, whose mechanism landed with it.
+            //
+            // # Why here, beside Encrypt… and Permissions…
+            //
+            // Because O119's own framing of the Security band is the operator's
+            // question *"do you want to protect a drawing before you send it
+            // out?"*, and signing is the third answer to it. It is also the
+            // band's own subject stated exactly: all three write something into
+            // the file that is about the file rather than about any page, none
+            // of them is an undoable content edit, and all three produce a new
+            // document rather than changing the one on screen.
+            //
+            // ★★ **NOT beside the Signatures PANEL, which is the other
+            // candidate and is wrong twice over.** `view.panel_signatures` is
+            // on View ▸ Panels, and `RIBBON_IA.md` P1 — enforced by
+            // `Shell::validate` — allows a command on at most one tab; a second
+            // entry there would be a validation failure, and an invalid
+            // manifest makes `Capabilities::for_mode` return FULL, silently
+            // granting every authoring capability to every mode. A previous
+            // session turned eight mode-gating tests red exactly that way. The
+            // panel is where a signature is READ; this is where one is MADE,
+            // and the two are one tab apart on purpose.
+            //
+            // # ★★★ `capability: "signing"` — the whole of R8, in one field
+            //
+            // The item is here **unconditionally**: there is no `#[cfg]` in
+            // this file, and there must never be one. The string tells the
+            // merge that an unregistered `file.sign` is a build compiled
+            // without the capability rather than a typo, so it is dropped with
+            // `SkipReason::CapabilityAbsent` instead of failing validation and
+            // costing the whole ribbon. Its two neighbours carry no such field
+            // and are mandatory; an unregistered `file.encrypt` still fails
+            // loudly, which is the distinction the field exists to keep.
+            //
+            // # Large, and third
+            //
+            // Large because the band's other two are, and `manifest::large`'s
+            // rule is that a promotion is only safe where hoisting is a no-op —
+            // here the whole group is promoted together, so it is. Third
+            // because the band reads in order of how far the operator is from
+            // sending the file: put a password on it, decide what it allows,
+            // sign it.
             group(
                 "security",
                 crate::text::protect::group_file_security(),
-                [large("file.encrypt"), large("file.permissions")],
+                [
+                    large("file.encrypt"),
+                    large("file.permissions"),
+                    large("file.sign").provided_by("signing"),
+                ],
             ),
             // ---------------------------------------------------------------
             // Print. Imposition (n-up / booklet / poster) is **C**.

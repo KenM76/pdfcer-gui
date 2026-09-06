@@ -1,5 +1,117 @@
 # CONTINUE - handoff
 
+## 2026-09-06 — the operator can sign a document, and it took a MANIFEST edit before it took a UI one
+
+### The one-line version
+
+File > Security > **Sign…**. Choose a `.pfx`/`.p12`, type its passphrase, press
+*Open certificate*, fill in Reason and Location if you want them, choose where
+the signed file goes, press *Sign and save…*. It is driven, and the driven
+check reads the signature back **in a fresh process** rather than believing the
+trace that produced it.
+
+### ★★★ The finding to carry: THE CAPABILITY WAS NOT IN THE BINARY, AND THE WARNING ABOUT THAT WAS FORTY LINES ABOVE THE LINE THAT REPEATED IT
+
+`pdfcer-core` shipped `pdfcer_core::sign` on 2026-09-05 — 101 public items,
+PKCS#12 import, CAdES `SignedData`, `EditSession::sign` — in answer to *this
+shell's own* request of 2026-09-03, *"a document cannot be signed."* Its module
+header names us.
+
+`crates/pdfcer-gui/Cargo.toml` took `pdfcer-core` with
+`default-features = false` and forwarded `jpx` and `ocrs`. The engine's
+`signing` feature is default-on. **It was stripped.** Nothing failed to
+compile, no test went red, and no instrument noticed for two days —
+`check-verb-coverage` scored `EditSession::sign` as *consumed* on the bare word
+`sign` in a doc table about the arithmetic sign of `/Count`.
+
+★★ That is the JPX incident, verbatim, and **the comment recording the JPX
+incident is in the same `[features]` block**: *"forgetting to forward does not
+fail to compile."* Three days old. Forty lines above.
+
+⇒ **A warning does not protect a code path written after it.** This is the
+fourth recorded instance of that shape in this project (the rotation-button
+gate, `facewall`'s own instruction, the redaction module header, this). The
+remedy is always the same and it is never a better paragraph:
+`tools/gates/check-forwarded-features.sh` reads the ENGINE's own
+`default = [...]` and fails when a name in it is neither forwarded here nor
+refused in writing. Falsified both ways — the real omission, and a feature
+declared but left out of this crate's `default`.
+
+### ★★★ …and the START-UP MERGE WAS NOT BEING CALLED, which would have cost the whole ribbon
+
+`SHELL_FRAMEWORK.md` §5b's `capability:` field and `SkipReason::CapabilityAbsent`
+did not exist; §5b called them *"the gap that must be closed"*. Closing them
+turned up a second thing: `PdfcerApp::new`'s own comment said *"the merge
+resolves every item against the registry — that resolution is what makes a
+capability that is not compiled in disappear from the ribbon"*, and **the
+manifest went straight to `validate_against`**, which is strict and rejects any
+reference to an unregistered command.
+
+⇒ In a `--no-default-features` build, `file.sign` would have failed validation,
+`shell` would have been `None`, and — because `Capabilities::for_mode` returns
+**FULL** when the shell is absent — **every authoring capability would have
+been granted to every mode, including Read.** A lite build would have lost its
+ribbon and gained every permission. The merge is now called, its skips are
+traced, and `the_built_in_manifest_survives_a_build_without_an_optional_capability`
+is the mechanism rather than the comment.
+
+### Proof, from the running program, that R8 works
+
+Two off-screen launches, same fixture, one binary each:
+
+```text
+default build                    ribbon.item.file.sign published, 0 skips
+--no-default-features            no such region; 1 skip line:
+  shell-item-skipped the built-in manifest: `file.sign` in tab `file` group
+  `security` is provided by the `signing` capability, which this build does
+  not include, so that one item was left out
+```
+
+The control is **gone**, not greyed. No `#[cfg]` in the ribbon, in the
+manifest, or in any panel.
+
+### ★★★ The verdict is taken in another PROCESS, and the falsification is the proof
+
+`a_document_can_be_signed_and_the_signature_is_in_the_file` has four phases:
+a document that signs (the negative control and the dynamic range), the
+encrypted refusal, the pending-redaction refusal, and then **a fresh binary
+opened on the file that was written**, reading the Signatures panel —
+`Pass 10.5`'s verification side, a different subsystem: `signature-row
+field="Signature1" integrity=verified`.
+
+Falsified by flipping **one byte** of the output before the write. Phase A's
+trace was **character for character identical** — `sign-written field=Signature1
+bytes=103508 self_verified=1` — and phase D read `digest-mismatch`. ⇒ That is
+the *"traces perfectly and does nothing"* class this project has shipped
+before, and the only reason it was caught is that the oracle is not the code
+under test.
+
+### Two harness findings worth keeping
+
+* **A dialog is an OS window, so `session.frame()` is the WRONG frame.** The
+  first driven run aimed every in-dialog click hundreds of points away and the
+  symptom was **silence** — `certificate-picked chosen=1` and then nothing.
+  `driving::frame_of` is safe on a main-window region too, so there is no
+  reason for a call site to use the other form.
+* **`Session::launch` latches the PASSWORD DIALOG as the target window.**
+  `find_window_for_pid` takes the first window over the minimum size; with a
+  modal up at start-up that is the dialog, and every click after it closes
+  fails with *"GetClientRect failed"*. Phase B uses an encrypted fixture with
+  an **empty user password** instead. Not fixed; written down at the constant.
+
+### Housekeeping
+
+Redaction's five `Action` variants became `RedactAction` under R2 (19 call
+sites) — the written plan nominated **markup**, and the reason for departing
+from it is recorded at the new enum: markup is 370 lines across 48 call sites
+in two modules, redaction is 114 across 19 in the module that already holds
+every body. Markup remains the next candidate. `dispatch::protect` is now
+`dispatch::security`, because it dispatches three commands and signing is not
+protection. `text::security::cannot_author` was corrected for the **third**
+time and has had zero call sites throughout — a string nothing draws cannot be
+caught by looking at the screen.
+
+
 ## 2026-09-04 — nine parallel tracks, the glyph batch, and a request that had gone missing for a day
 
 ### The shape of the day, because it was unusual

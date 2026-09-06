@@ -191,6 +191,19 @@ pub const DIAG_ACROBAT_PATH: &str = "PDFCER_DIAG_ACROBAT_PATH"; // ui-text-exemp
 /// it proved would be false.
 pub const DIAG_TRUST_STORE_PATH: &str = "PDFCER_DIAG_TRUST_STORE_PATH"; // ui-text-exempt: an environment variable name, never displayed
 
+/// The harness seam for [`pick_certificate`] — the `.pfx`/`.p12` a driven
+/// check signs with.
+///
+/// ⚠ **A PATH, and never a passphrase.** There is deliberately no
+/// `PDFCER_DIAG_CERTIFICATE_PASSPHRASE` beside it: `tools/ui-verify` captures
+/// the child's environment into the same evidence directory it captures the
+/// trace into, and `crate::sign`'s §5 forbids a private key's passphrase
+/// reaching any file that outlives the session. A driven check types the
+/// passphrase into the field like an operator does, which is also the only way
+/// to prove the field works.
+#[cfg(feature = "signing")]
+pub const DIAG_CERTIFICATE_PATH: &str = "PDFCER_DIAG_CERTIFICATE_PATH"; // ui-text-exempt: an environment variable name, never displayed
+
 /// The environment variable that answers the **save** dialog instead of
 /// opening it.
 ///
@@ -668,6 +681,66 @@ pub fn pick_trust_store() -> Picked {
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         format!("trust-store-picked source=native answer={answer:?}")
+    });
+    answer
+}
+
+/// **The certificate file to sign with** — a PKCS#12 `.pfx` or `.p12`.
+///
+/// [`pick_trust_store`]'s shape, and its filter argument applies here twice
+/// over: `.pfx` and `.p12` are the two names one format goes by (Windows
+/// exports the first, OpenSSL the second), and neither is required —
+/// `Pkcs12Signer::from_der` reads DER and never looks at the name. So the
+/// specific filter is offered first, because a picker showing every file in a
+/// directory is one the operator has to fight, and *all files* is offered
+/// second, because a certificate somebody was handed as `identity.bin` is a
+/// perfectly readable one and a filter that could not be widened would be this
+/// shell overruling the operator about their own machine.
+///
+/// ⚠ **Nothing here remembers where the operator keeps their digital ID.**
+/// `set_directory` is not called, no preference is written, and the path is not
+/// traced. A picker that reopened in the right folder would be a convenience
+/// paid for with a durable pointer at somebody's private key, written by a file
+/// nobody thinks of as sensitive.
+///
+/// ★ `#[cfg]` for `crate::sign`'s reason: without the capability there is no
+/// window that could open this picker and no verb that could use its answer,
+/// and the copy it names (`crate::text::sign`) is compiled out with it. The
+/// module boundary is where a capability is present or absent;
+/// `SHELL_FRAMEWORK.md` §5b's rule governs the ribbon, and is satisfied by
+/// `file.sign` simply not being registered.
+#[cfg(feature = "signing")]
+#[must_use]
+pub fn pick_certificate() -> Picked {
+    if let Some(answer) = from_env(std::env::var_os(DIAG_CERTIFICATE_PATH)) {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed.
+            //
+            // ★ `answer` is NOT interpolated, unlike every sibling in this
+            // file, and the asymmetry is deliberate: this path names the file
+            // holding the operator's private key, and a trace is kept as
+            // evidence. Whether a path was supplied is the whole diagnostic
+            // question; which path it was is not ours to publish.
+            format!(
+                "certificate-picked source=env chosen={}",
+                u8::from(matches!(answer, Picked::Path(_)))
+            )
+        });
+        return answer;
+    }
+    let answer = rfd::FileDialog::new()
+        .set_title(crate::text::sign::certificate_picker_title())
+        .add_filter(crate::text::sign::certificate_filter(), &["pfx", "p12"])
+        .add_filter(crate::text::files::filter_all(), &["*"])
+        .pick_file()
+        .map_or(Picked::Cancelled, Picked::Path);
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed. See above for why
+        // the path itself is absent.
+        format!(
+            "certificate-picked source=native chosen={}",
+            u8::from(matches!(answer, Picked::Path(_)))
+        )
     });
     answer
 }

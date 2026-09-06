@@ -170,8 +170,8 @@
 //!
 //! | press | what it changes | route |
 //! |---|---|---|
-//! | confirm on [`Destination::OpenDocument`] | the session's pending-redaction flag | `Action::PendingRedaction(Staging::Stage)` → `crate::app::actions::redact` → `vector_edit` |
-//! | *call the removal off*, in [`Phase::Staged`] | the same flag, back off | `Action::PendingRedaction(Staging::Cancel)` → the same arm |
+//! | confirm on [`Destination::OpenDocument`] | the session's pending-redaction flag | `RedactAction::Pending(Staging::Stage)` → `crate::app::actions::redact` → `vector_edit` |
+//! | *call the removal off*, in [`Phase::Staged`] | the same flag, back off | `RedactAction::Pending(Staging::Cancel)` → the same arm |
 //! | confirm on [`Destination::NewFile`] | a file | [`crate::redact::PreparedRedaction::write_to`], here |
 //! | confirm on [`Destination::ReplaceOriginal`] | the source file | the same, atomically |
 //!
@@ -692,8 +692,8 @@ impl RedactDialog {
         if !std::mem::take(&mut self.cancel_requested) {
             return;
         }
-        actions.push(crate::app::actions::Action::PendingRedaction(
-            crate::redact::Staging::Cancel,
+        actions.push(crate::app::actions::Action::Redact(
+            crate::app::actions::RedactAction::Pending(crate::redact::Staging::Cancel),
         ));
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
@@ -1211,8 +1211,8 @@ impl RedactDialog {
         // after this frame, so a sentence written here would be a prediction
         // — and on the one path where the action failed, a false one.
         if !self.destination.writes_now() {
-            actions.push(crate::app::actions::Action::PendingRedaction(
-                crate::redact::Staging::Stage,
+            actions.push(crate::app::actions::Action::Redact(
+                crate::app::actions::RedactAction::Pending(crate::redact::Staging::Stage),
             ));
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed.

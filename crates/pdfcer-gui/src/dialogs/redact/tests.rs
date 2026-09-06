@@ -518,8 +518,8 @@ fn a_staged_document_offers_the_control_that_calls_the_removal_off() {
     assert!(
         matches!(
             actions.as_slice(),
-            [crate::app::actions::Action::PendingRedaction(
-                crate::redact::Staging::Cancel
+            [crate::app::actions::Action::Redact(
+                crate::app::actions::RedactAction::Pending(crate::redact::Staging::Cancel)
             )]
         ),
         "exactly the cancel, and nothing else: {actions:?}"
@@ -565,7 +565,9 @@ fn confirming_the_default_destination_pushes_an_action_and_writes_no_file() {
     assert!(
         matches!(
             actions[0],
-            crate::app::actions::Action::PendingRedaction(crate::redact::Staging::Stage)
+            crate::app::actions::Action::Redact(crate::app::actions::RedactAction::Pending(
+                crate::redact::Staging::Stage
+            ))
         ),
         "the deferred route must raise the STAGE half of the pending-redaction \
          verb — a build that raised the cancel half here would close the dialog \

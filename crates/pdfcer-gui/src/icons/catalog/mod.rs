@@ -149,6 +149,15 @@ pub enum Icon {
     /// line says so; the glyph must not contradict it before the panel is
     /// open. An icon is a claim too.
     Signatures,
+    /// **File ▸ Security ▸ Sign…** — authoring a digital signature.
+    ///
+    /// A page with a cursive stroke on a signing rule. It inherits
+    /// [`Icon::Signatures`]' constraint word for word — **not** a seal, badge,
+    /// shield or checkmark — and the reason is stronger here: this control is
+    /// the one that *makes* a signature, so a glyph promising a verdict would
+    /// promise it about a signature that does not exist yet. The page
+    /// silhouette is [`Icon::Encrypt`]'s. Full argument in `sign.svg`.
+    Sign,
     /// Fonts panel toggle — the document's font inventory.
     ///
     /// A capital A on a baseline rule. The letterform reads as "type"; the

@@ -342,7 +342,15 @@ fn digest(bytes: &[u8]) -> (usize, u64) {
 /// false pass. Phase H's survivor assertion is what would catch that if a
 /// future writer compressed the *output*; keeping the input uncompressed is
 /// what stops it arising in the first place.
-fn fixture_bytes() -> Vec<u8> {
+///
+/// ★ `pub(super)` since 2026-09-06, so `checks::signing` can arm a redaction on
+/// the same document rather than authoring a second one. That check needs a
+/// document whose whole-page redaction actually **verifies** — `four-pages.pdf`
+/// refuses with `VerificationFailed { survivors: ["SCALE", "REVISION"] }`, so a
+/// check that used it would sit in front of a refusal dialog with no
+/// destination to choose. Two fixtures for one property is two chances for one
+/// of them to stop having it.
+pub(super) fn fixture_bytes() -> Vec<u8> {
     let page_content = |text: &str| format!("BT /F1 18 Tf 40 120 Td ({text}) Tj ET");
     let stream = |text: &str| {
         let c = page_content(text);

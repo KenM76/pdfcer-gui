@@ -746,6 +746,17 @@ pub(super) const SIDEBAR: &str = include_str!("assets/sidebar.svg");
 /// Authored for pdfcer in the header §3 style contract — header §5 addition #4, and emphatically not a seal, badge, shield or checkmark.
 pub(super) const SIGNATURES: &str = include_str!("assets/signatures.svg");
 
+/// `sign.svg` — the art for [`super::Icon::Sign`].
+///
+/// ★ The SIGNING control's glyph, and deliberately a different asset from
+/// [`SIGNATURES`] even though the two subjects are one word apart. That one
+/// is a **panel toggle** — it opens a report about signatures that already
+/// exist — and this one **authors** a new one. Sharing a key would make
+/// `tools/compare-mockup-ribbon.py`'s item comparison unable to tell the
+/// File ▸ Security band from the View ▸ Panels row, and would put the same
+/// picture on a control that reads and one that writes.
+pub(super) const SIGN: &str = include_str!("assets/sign.svg");
+
 /// `stamp.svg` — the art for [`super::Icon::Stamp`].
 ///
 /// Authored for pdfcer in the header §3 style contract.

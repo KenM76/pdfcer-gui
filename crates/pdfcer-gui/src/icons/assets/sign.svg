@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Sign this document (the engine's `EditSession::sign`, Pass 10.9) — a
+       folded-corner page with a HANDWRITTEN STROKE resting on a signature
+       RULE across its lower half.
+
+       ★★★ THE CONSTRAINT THAT DECIDED EVERY LINE, and it is the one
+       `signatures.svg` and `encrypt.svg` both bind onto this file in as many
+       words: NOT A SEAL, NOT A BADGE, NOT A SHIELD, NOT A CHECKMARK, AND NOT
+       A PADLOCK. Every one of those shapes reads as VALIDATED or as SECURED,
+       and this control does neither — it AUTHORS a signature. Whether that
+       signature is trusted is a separate question, answered by a different
+       surface (the Signatures panel), which reports three facts and never
+       merges them into a tick. A glyph that promised the verdict here would
+       be the panel's whole design undone by a picture.
+
+       ⇒ So the interior mark is a person's HAND, which is what a signature
+       actually is: a mark somebody made. It claims authorship and nothing
+       about validity.
+
+       # The family, and the one cue that separates the three
+
+       `encrypt.svg` argued the page silhouette as the word that says *THIS
+       DOCUMENT is the subject*, against `lock.svg`'s bare padlock which is a
+       row marker. The same page is used here for the same reason, and the
+       three File ▸ Security controls now read as one family with one
+       difference each — which is what makes them legible side by side at
+       16 px, where three variations on a keyhole would not be:
+
+       * `encrypt.svg`   — page + a closed BLOCK with an arc (a padlock).
+       * `permissions.svg` — page + TICKED ROWS (what the document allows).
+       * `sign.svg`      — page + a CURSIVE STROKE on a RULE (who signed it).
+
+       Block, ticks, script. Three silhouettes, no shared interior.
+
+       # Why a rule under the stroke, and not a stroke alone
+
+       At 16 px a bare cursive squiggle inside a page is indistinguishable
+       from `text.svg`'s ruled lines gone wrong — it reads as a rendering
+       fault. The horizontal rule is what names the shape: a line you put your
+       name on is a convention every operator already knows, and it is the
+       only piece of this glyph that does not have to be resolved to be
+       understood. The script rides ABOVE it and breaks it in two places, so
+       the two marks cannot merge into one thick smear when the renderer
+       rounds them onto the same device row.
+
+       # Outline, never filled
+
+       `redact.svg` is this set's one filled glyph and the fill is semantic:
+       that tool obliterates. Signing removes nothing and covers nothing —
+       the document is intact and has gained an appendix — so nothing here is
+       filled, on `encrypt.svg`'s identical argument.
+
+       ★ Drawn for pdfcer under the operator's standing ruling of 2026-08-06
+       that a missing glyph is CREATED as part of the work rather than the
+       feature reworded around it. No ScripTree ancestor; see PROVENANCE.md.
+       Primitives only, no trademark risk, uniform 2.5 stroke like every
+       other file in this directory. -->
+  <path d="M8 4h20l8 8v32H8z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M28 4v8h8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M14 38h6m4 0h10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M14 32c3-8 5-8 6-2s3 6 5 0 4-4 5 2" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

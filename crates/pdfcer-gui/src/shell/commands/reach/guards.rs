@@ -83,7 +83,7 @@ pub(crate) fn guard_claiming(id: &str) -> Option<&'static str> {
         return Some("claims");
     }
     // ★ The two Security commands — O119 — claimed by exactly the shape above
-    // and for the same reason: `app::dispatch::protect` was split out under R2
+    // and for the same reason: `app::dispatch::security` was split out under R2
     // on 2026-09-04 (`dispatch.rs` was at 1,496 lines before the feature
     // existed), and a guard written as a method on `self` would be invisible to
     // this reader, so `file.encrypt` and `file.permissions` would read as
@@ -95,7 +95,7 @@ pub(crate) fn guard_claiming(id: &str) -> Option<&'static str> {
     // `dispatch.rs`'s syntax tree, not a set of call sites. Two guards sharing a
     // name is fine here — what the list pins is that no guard the dispatcher
     // evaluates is missing from the checker.
-    if crate::app::dispatch::protect::claims(id) {
+    if crate::app::dispatch::security::claims(id) {
         return Some("claims");
     }
     if super::super::page_display_for_command(id).is_some() {

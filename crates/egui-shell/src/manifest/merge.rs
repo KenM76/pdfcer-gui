@@ -96,6 +96,22 @@
 //! validation failure in the application's own test suite — not be
 //! quietly repaired at start-up, which would hide the bug on every machine
 //! that runs it.
+//!
+//! ## ★★ The one exception, added 2026-09-06 — and it is an exception to
+//! *what is filtered*, not to the rule above
+//!
+//! [`prune_absent_capabilities`] drops built-in items that name a
+//! **capability** ([`super::Item::Command::capability`]) whose command is not
+//! registered. `SHELL_FRAMEWORK.md` §5b calls this the *second, legitimate*
+//! case: the built-in manifest names `file.sign`, the build was compiled
+//! without signing, and that is not a bug — it is the configuration the
+//! operator asked for on 2026-08-13, *"if not needed by someone they could
+//! just remove them and they would not show up as options in the GUI."*
+//!
+//! The paragraph above still holds for every **mandatory** item. A built-in
+//! item with no `capability` and no registered command is untouched here and
+//! still reaches [`Shell::validate_against`] to fail loudly, which is why the
+//! two kinds of absence are two [`SkipReason`] variants rather than one.
 
 use super::validate::Site;
 use super::{CommandCatalog, Group, Item, Keymap, Mode, Qat, Shell, Tab, Trailing};
@@ -128,6 +144,30 @@ pub enum SkipReason {
     /// The item referenced a command that is not registered.
     UnknownCommand {
         /// The id that did not resolve.
+        command: String,
+    },
+    /// **The item was conditional on a capability this build does not have.**
+    ///
+    /// ★★★ A DIFFERENT REASON FROM [`Self::UnknownCommand`], AND THE
+    /// DIFFERENCE IS THE WHOLE POINT — `SHELL_FRAMEWORK.md` §5b:
+    ///
+    /// > `CapabilityAbsent` is a *different* reason from `UnknownCommand`
+    /// > precisely so the two never get confused in a log: one says "this
+    /// > build does not include that", the other says "someone made a
+    /// > mistake".
+    ///
+    /// Raised when an [`Item::Command`] carrying a
+    /// [`capability`](super::Item::Command::capability) names a command the
+    /// registry does not hold — a build compiled without an optional
+    /// capability, behaving exactly as the operator's 2026-08-13 directive
+    /// asks. It is the one reason also raised against the **built-in** layer;
+    /// [`prune_absent_capabilities`] carries why that is not a weakening of the
+    /// rule beside it.
+    CapabilityAbsent {
+        /// The capability the item named. Carried so the report can say what
+        /// is missing; the shell never matches it against anything.
+        capability: String,
+        /// The command that is not registered.
         command: String,
     },
     /// A mode named a tab that does not exist after merging.
@@ -171,6 +211,15 @@ impl std::fmt::Display for Skip {
                 f,
                 "{}: `{command}` in {} is not a registered command, so that one item \
                  was skipped",
+                self.layer, self.site
+            ),
+            SkipReason::CapabilityAbsent {
+                capability,
+                command,
+            } => write!(
+                f,
+                "{}: `{command}` in {} is provided by the `{capability}` capability, which this \
+                 build does not include, so that one item was left out",
                 self.layer, self.site
             ),
             SkipReason::UnknownTab { tab } => write!(
@@ -318,9 +367,96 @@ pub fn merge(input: MergeInput<'_>, catalog: &dyn CommandCatalog) -> Merged {
         );
     }
 
+    // ★ BEFORE `prune_mode_tabs`, and the order is load-bearing. Dropping a
+    // capability's items can empty a group and empty a tab; a mode still
+    // naming that tab must then lose the reference, and only the pass below
+    // does that. Running them the other way round leaves a mode pointing at a
+    // tab that has nothing in it.
+    prune_absent_capabilities(&mut shell, catalog, &mut report);
     prune_mode_tabs(&mut shell, &mode_source, &mut report);
 
     Merged { shell, report }
+}
+
+/// **Drop the conditional items whose capability this build does not have.**
+///
+/// `SHELL_FRAMEWORK.md` §5b's *"gap that must be closed"*, closed 2026-09-06
+/// by the work that wired document signing — a capability the operator asked
+/// for, which `pdfcer-core` gates behind a Cargo feature, and which therefore
+/// had to be able to be **absent** without a single `#[cfg]` in a ribbon.
+///
+/// # ★★★ Why this runs over the whole merged shell, built-in layer included
+///
+/// It is the one deliberate exception to this module's standing rule that the
+/// built-in layer is not filtered. That rule's reason is sound and unchanged:
+/// an unknown command compiled into the binary is a programming error, and
+/// quietly repairing it at start-up hides the bug on every machine that runs
+/// it. But §5b names a **second, legitimate** case — the built-in manifest
+/// names `file.sign`, signing is compiled out, and that is not a bug, it is
+/// the intended configuration. Under the old rule that was either a validation
+/// failure that blocks start-up or a live command with no handler.
+///
+/// The fix is not to weaken the strict rule but to make the two cases
+/// distinguishable, which is exactly what
+/// [`Item::Command::capability`](super::Item::Command::capability) does. A
+/// mandatory item is still untouched here and still reaches
+/// [`super::Shell::validate_against`] to fail loudly.
+///
+/// # What it reports, and why every skip says `BuiltIn`
+///
+/// Anything this pass finds came from the built-in layer **by construction**:
+/// an overlay's items were already filtered by [`filter_group_items`] and
+/// [`filter_items`] as that layer was applied, and those use the same
+/// [`absence_reason`], so a conditional overlay item naming an absent command
+/// was dropped then — with its own layer on the skip. What survives to here is
+/// what `built_in` supplied.
+///
+/// # Empty groups and empty tabs are left where they are
+///
+/// §5b's *"a group left with no items does not render"* is a **rendering**
+/// rule, already honoured by the renderer. Deleting the group here would also
+/// destroy the operator's saved customization of it, which would come back
+/// blank the day they installed a build that has the capability again. An empty
+/// group is invisible; a deleted one is forgotten.
+fn prune_absent_capabilities(
+    shell: &mut Shell,
+    catalog: &dyn CommandCatalog,
+    report: &mut MergeReport,
+) {
+    // ★★★ CONDITIONAL ITEMS ONLY. `filter_group_items` is deliberately NOT
+    // reused here even though it is one line shorter, because it would also
+    // drop a MANDATORY item whose command is missing — silently repairing, in
+    // the built-in layer, exactly the programming error this module's header
+    // says must reach `validate_against` and fail loudly. The two filters
+    // share `absence_reason`; only this one narrows what it acts on.
+    let mut retain_conditional = |items: &mut Vec<Item>, site: &Site| {
+        items.retain(|item| match absence_reason(item, catalog) {
+            Some(reason @ SkipReason::CapabilityAbsent { .. }) => {
+                report.push(Layer::BuiltIn, site.clone(), reason);
+                false
+            }
+            _ => true,
+        });
+    };
+
+    for tabs in [shell.tabs.as_mut(), shell.contextual_tabs.as_mut()] {
+        for tab in tabs.into_iter().flatten() {
+            let tab_id = tab.id.clone();
+            for group in tab.groups.iter_mut().flatten() {
+                let site = Site::Group {
+                    tab: tab_id.clone(),
+                    group: group.id.clone(),
+                };
+                if let Some(items) = group.items.as_mut() {
+                    retain_conditional(items, &site);
+                }
+            }
+        }
+    }
+
+    if let Some(trailing) = shell.trailing.as_mut() {
+        retain_conditional(&mut trailing.0, &Site::Trailing);
+    }
 }
 
 /// Apply one overlay onto the accumulating shell.
@@ -402,21 +538,52 @@ fn filter_items(
 ) -> Trailing {
     items
         .iter()
-        .filter(|item| match item {
-            Item::Command { id, .. } if !catalog.contains(id) => {
-                report.push(
-                    layer,
-                    site.clone(),
-                    SkipReason::UnknownCommand {
-                        command: id.clone(),
-                    },
-                );
+        .filter(|item| match absence_reason(item, catalog) {
+            Some(reason) => {
+                report.push(layer, site.clone(), reason);
                 false
             }
-            Item::Command { .. } | Item::Separator | Item::Custom { .. } => true,
+            None => true,
         })
         .cloned()
         .collect()
+}
+
+/// **Why this item cannot be carried across, if it cannot.**
+///
+/// The one place the two absence reasons are told apart, so they cannot drift:
+/// every filter in this module routes through it, and adding a third caller
+/// means adding a call rather than re-deriving the distinction.
+///
+/// `None` for anything that stays — a separator, a custom item, and a command
+/// the registry holds.
+///
+/// | the item | the command | reason |
+/// |---|---|---|
+/// | mandatory (no `capability`) | registered | `None` — it stays |
+/// | mandatory | **not** registered | [`SkipReason::UnknownCommand`] — someone made a mistake |
+/// | conditional (`capability: Some`) | registered | `None` — it stays; the build has the capability |
+/// | conditional | **not** registered | [`SkipReason::CapabilityAbsent`] — this build is smaller, on purpose |
+///
+/// ★ Note the third row: a conditional item whose command **is** registered is
+/// indistinguishable at render time from a mandatory one, and must be. The
+/// field says how to read the item's absence, never how to draw its presence.
+fn absence_reason(item: &Item, catalog: &dyn CommandCatalog) -> Option<SkipReason> {
+    let Item::Command { id, capability, .. } = item else {
+        return None;
+    };
+    if catalog.contains(id) {
+        return None;
+    }
+    Some(match capability {
+        Some(capability) => SkipReason::CapabilityAbsent {
+            capability: capability.clone(),
+            command: id.clone(),
+        },
+        None => SkipReason::UnknownCommand {
+            command: id.clone(),
+        },
+    })
 }
 
 /// Merge a tab list: mentioned ids first in overlay order, then the rest.
@@ -543,18 +710,12 @@ fn filter_group_items(
         tab: tab_id.to_owned(),
         group: group.id.clone(),
     };
-    items.retain(|item| match item {
-        Item::Command { id, .. } if !catalog.contains(id) => {
-            report.push(
-                layer,
-                site.clone(),
-                SkipReason::UnknownCommand {
-                    command: id.clone(),
-                },
-            );
+    items.retain(|item| match absence_reason(item, catalog) {
+        Some(reason) => {
+            report.push(layer, site.clone(), reason);
             false
         }
-        Item::Command { .. } | Item::Separator | Item::Custom { .. } => true,
+        None => true,
     });
 }
 
@@ -1173,5 +1334,167 @@ mod tests {
         let merged = merge(MergeInput::built_in(&base), &AnyCommand);
         assert_eq!(merged.shell, base);
         assert!(merged.report.is_empty());
+    }
+
+    // ------------------------------------------------------------------
+    // SHELL_FRAMEWORK.md §5b — a capability that is not in this build
+    // ------------------------------------------------------------------
+    //
+    // ★★★ These four tests are the whole of the §5b contract, and they are
+    // written against the MERGE rather than against a ribbon on purpose:
+    // the rule they defend is *a capability's presence is expressed by
+    // registering its command, and by nothing else*, and a test that drew a
+    // band would be a test of the renderer's obedience rather than of the
+    // mechanism. If the renderer is the only thing that knows, the exe→DLL
+    // move is a rewrite.
+
+    /// **A conditional item whose command is absent is dropped — from the
+    /// BUILT-IN layer, which nothing else in this module filters.**
+    ///
+    /// The case §5b was written for and left open: the manifest compiled
+    /// into the binary names a command the build did not register, because
+    /// the build was compiled without that capability. Before this, that was
+    /// either a hard validation failure at start-up or a live control with
+    /// no handler.
+    #[test]
+    fn a_built_in_item_provided_by_an_absent_capability_is_dropped_by_name() {
+        let built_in = Shell::new().with_tab(Tab::new("file", "File").with_groups([
+            Group::new("security", "Security").with_items([
+                Item::command("file.open"),
+                Item::command("file.sign").provided_by("signing"),
+            ]),
+        ]));
+
+        let merged = merge(MergeInput::built_in(&built_in), &CATALOG);
+
+        let items: Vec<&str> = merged
+            .shell
+            .tabs()
+            .iter()
+            .flat_map(Tab::groups)
+            .flat_map(Group::items)
+            .filter_map(Item::command_id)
+            .collect();
+        assert_eq!(
+            items,
+            ["file.open"],
+            "the conditional item is gone and its neighbour is untouched"
+        );
+
+        let skips = merged.report.skips();
+        assert_eq!(skips.len(), 1, "exactly one skip: {skips:?}");
+        assert_eq!(
+            skips[0].reason,
+            SkipReason::CapabilityAbsent {
+                capability: "signing".to_owned(),
+                command: "file.sign".to_owned(),
+            },
+            "and it names the capability, not merely the command"
+        );
+        assert_eq!(skips[0].layer, Layer::BuiltIn);
+    }
+
+    /// **A MANDATORY built-in item is still not filtered.**
+    ///
+    /// ★★★ The other half, and the one a careless implementation loses. The
+    /// pass that drops conditional items runs over the same lists, and reusing
+    /// the ordinary item filter there would have silently repaired a
+    /// programming error in the built-in manifest — the exact behaviour this
+    /// module's header says must never happen, because it hides the bug on
+    /// every machine that runs it.
+    ///
+    /// So the item survives the merge, and `validate_against` is left to fail
+    /// on it, which is asserted here rather than assumed.
+    #[test]
+    fn a_mandatory_built_in_item_is_still_left_for_validation_to_reject() {
+        let built_in = Shell::new().with_tab(Tab::new("file", "File").with_groups([
+            Group::new("security", "Security").with_items([
+                // No `provided_by` — this one is a typo, not a lite build.
+                Item::command("file.sgin"),
+            ]),
+        ]));
+
+        let merged = merge(MergeInput::built_in(&built_in), &CATALOG);
+
+        assert!(
+            merged.report.skips().is_empty(),
+            "the merge repairs nothing: {:?}",
+            merged.report.skips()
+        );
+        assert!(
+            merged.shell.validate_against(&CATALOG).is_err(),
+            "and validation is what says so, loudly"
+        );
+    }
+
+    /// **A conditional item whose command IS registered renders like any
+    /// other.**
+    ///
+    /// The negative control, and it is not a formality: an implementation
+    /// that dropped every conditional item — or drew one differently — would
+    /// pass the first test above and ship a build in which the capability is
+    /// compiled in and invisible. The field says how to read an item's
+    /// *absence*; it must say nothing about its presence.
+    #[test]
+    fn a_conditional_item_whose_capability_is_present_is_kept_untouched() {
+        let built_in = Shell::new().with_tab(
+            Tab::new("tools", "Tools").with_groups([Group::new("batch", "Batch")
+                .with_items([Item::command("tools.batch").provided_by("batch-engine")])]),
+        );
+
+        let merged = merge(MergeInput::built_in(&built_in), &CATALOG);
+
+        assert!(merged.report.skips().is_empty());
+        let kept: Vec<&Item> = merged
+            .shell
+            .tabs()
+            .iter()
+            .flat_map(Tab::groups)
+            .flat_map(Group::items)
+            .collect();
+        assert_eq!(kept.len(), 1);
+        assert_eq!(kept[0].command_id(), Some("tools.batch"));
+        assert_eq!(kept[0].capability(), Some("batch-engine"));
+    }
+
+    /// **An OPERATOR's conditional item is dropped at the operator's layer,
+    /// with the same reason.**
+    ///
+    /// The two paths are different code — an overlay is filtered as it is
+    /// applied, the built-in layer in a final pass — and they share
+    /// [`absence_reason`] so they cannot disagree about which of the two
+    /// reasons applies. This is what pins that sharing: an operator who put
+    /// `file.sign` on their own QAT-adjacent group in a build without signing
+    /// must be told *"this build does not include that"*, not *"you made a
+    /// mistake"*, because they did not.
+    #[test]
+    fn an_operator_item_provided_by_an_absent_capability_reports_the_capability() {
+        let built_in = Shell::new().with_tab(Tab::new("file", "File").with_groups([
+            Group::new("security", "Security").with_items([Item::command("file.open")]),
+        ]));
+        let operator = Shell::new().with_tab(
+            Tab::new("file", "File").with_groups([Group::patch("security")
+                .with_items([Item::command("file.sign").provided_by("signing")])]),
+        );
+
+        let merged = merge(
+            MergeInput::built_in(&built_in).with_operator(&operator),
+            &CATALOG,
+        );
+
+        let skips = merged.report.skips();
+        assert_eq!(skips.len(), 1, "{skips:?}");
+        assert_eq!(
+            skips[0].reason,
+            SkipReason::CapabilityAbsent {
+                capability: "signing".to_owned(),
+                command: "file.sign".to_owned(),
+            }
+        );
+        assert_eq!(
+            skips[0].layer,
+            Layer::Operator,
+            "at THEIR layer, so the disclosure names the file they edited"
+        );
     }
 }

@@ -148,6 +148,23 @@ pub mod secret;
 // as rendering code. See SHELL_FRAMEWORK.md; this module is the sole
 // consumer of `text::{ribbon, commands}`.
 pub mod shell;
+/// ★★★ **Putting the operator's own digital signature on a document** — the
+/// answer to this shell's request of 2026-09-03, *"a document cannot be
+/// signed"*, which `pdfcer-core` answered with `pdfcer_core::sign` and which
+/// this build then failed to compile in for three days because the manifest
+/// stripped the engine's default-on `signing` feature.
+///
+/// ★★★ **THE ONE `#[cfg]` IN THIS FILE, AND IT IS WHERE R8 SAYS IT BELONGS.**
+/// `SHELL_FRAMEWORK.md` §5b's rule is that *a capability's presence is
+/// expressed by registering its command, and by nothing else* — no `#[cfg]` in
+/// the ribbon, no panel asking whether signing exists. A module declaration is
+/// not the ribbon: it is the boundary the capability is compiled in or out at,
+/// and the engine draws the same one (`pdfcer_core::sign` does not exist
+/// without the feature, so nothing here could reference it if it wanted to).
+/// The ribbon item naming `file.sign` is unconditional and is dropped by the
+/// ordinary merge, with a `CapabilityAbsent` skip reason.
+#[cfg(feature = "signing")]
+pub mod sign;
 pub mod text;
 /// ★★★ Where signature trust ANCHORS come from, and the three facts they let
 /// this shell state.

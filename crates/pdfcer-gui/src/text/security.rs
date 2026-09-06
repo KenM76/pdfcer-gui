@@ -403,7 +403,7 @@ pub const fn coverage_line(covers: bool) -> &'static str {
 /// too has ZERO call sites.** *"Encryption first, signing later"* was the
 /// right prediction and it came true on 2026-09-04: `file.encrypt` and
 /// `file.permissions` are registered, dispatched through
-/// `crate::app::dispatch::protect`, drawn on **File ▸ Security**, and
+/// `crate::app::dispatch::security`, drawn on **File ▸ Security**, and
 /// `crate::protect` calls `set_encryption`, `set_permissions` and
 /// `remove_encryption`. So pdfcer can add a password, remove one, and change
 /// these permissions. Only *sign a document* is still true.
@@ -412,7 +412,30 @@ pub const fn coverage_line(covers: bool) -> &'static str {
 /// [`crate::text::protect`], which is where the live wording lives — so this
 /// sentence sat false and unreferenced for a day. It is scoped to the one
 /// clause that survives, and it now names where the rest went.
+///
+/// ★★★ **CORRECTED AGAIN 2026-09-06, and the last surviving clause is gone
+/// too.** It read *"It cannot sign a document; that is still being built in the
+/// engine."* Both halves were false by then: `pdfcer_core::sign` shipped on
+/// 2026-09-05 — 101 public items, written in answer to this shell's own
+/// request — and `file.sign` is now registered, dispatched and drawn on the
+/// same File > Security band as its two neighbours.
+///
+/// ⇒ **This is the THIRD correction to one sentence, and it has had ZERO call
+/// sites throughout.** That is the finding worth keeping: a string nothing
+/// draws cannot be caught by looking at the screen, cannot be caught by a
+/// driven check, and is corrected only when somebody happens to grep past it.
+/// It has now been wrong about encryption, wrong about permissions, and wrong
+/// about signing, in that order, each time by outliving a capability's arrival.
+///
+/// ⚠ The function is kept rather than deleted for the reason its own header
+/// gives — the tab it belongs to states a boundary, and a boundary that is
+/// merely absent reads as a half-built feature — but what it now states is the
+/// **shape** of the boundary rather than a list of missing verbs, because a
+/// list of missing verbs is a dated citation and this one has now expired three
+/// times. `crate::panels::signatures` is named because that is the honest limit:
+/// pdfcer authors a signature and reports what it can check about one, and
+/// whether a recipient trusts it is not pdfcer's to say.
 #[must_use]
 pub const fn cannot_author() -> &'static str {
-    "pdfcer can add or remove a password and change these permissions — File > Security. It cannot sign a document; that is still being built in the engine."
+    "pdfcer can add or remove a password, change these permissions, and sign a document — File > Security. Whether anyone else trusts a signature is a separate question, and the Signatures panel is where pdfcer reports what it could and could not check."
 }

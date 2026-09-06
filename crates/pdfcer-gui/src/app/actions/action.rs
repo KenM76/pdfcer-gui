@@ -123,6 +123,67 @@ pub enum Action {
         password: crate::secret::Secret,
     },
 
+    /// ★★★ **Sign the open document with the operator's own certificate, and
+    /// write the signed bytes where they chose.**
+    ///
+    /// Raised by [`crate::dialogs::sign`]; handled in
+    /// [`crate::app::actions::sign`].
+    ///
+    /// # Why an action rather than the dialog doing it
+    ///
+    /// `EditSession::sign` needs `&mut EditSession`, and a dialog body is
+    /// handed `&OpenDoc`. That is not an inconvenience to route around — it is
+    /// the rule that stops a window mutating a document while the frame that
+    /// drew it is still reading one, and `Arc::get_mut` fails outright while
+    /// the render worker holds its clone. Every other `&mut` verb in this shell
+    /// reaches the session the same way.
+    ///
+    /// # ★★★ Why the PATH and the passphrase travel, and not the loaded key
+    ///
+    /// This enum derives `Debug`, `Clone` and `PartialEq`, and every one of
+    /// those is wrong for a private key: `Debug` puts it in a trace file
+    /// `tools/ui-verify` keeps as evidence, `Clone` makes copies nobody counts,
+    /// and `PartialEq` is a **non-constant-time comparison over secret bytes**.
+    /// So the dialog keeps the loaded `crate::sign::Identity` and this variant
+    /// carries what the handler needs to load it again.
+    ///
+    /// ⇒ The `.pfx` is therefore read and parsed **twice** — once so the
+    /// operator can see whose certificate it is, once to sign. That is the
+    /// right trade, and the second read is not redundant: it is the read that
+    /// signs, so a file that changed between them is caught rather than assumed
+    /// away.
+    ///
+    /// ★★ **The passphrase travels in a [`crate::secret::Secret`]**, exactly as
+    /// [`Self::OpenWithPassword`]'s password does and for the reason that
+    /// variant records. The stakes are higher here — this one opens a private
+    /// key rather than a document — and `crate::sign`'s §5 adds a rule stricter
+    /// than the one `crate::protect` works to: **no trace line carries even its
+    /// length.**
+    ///
+    /// ★ `#[cfg]`, and it is the module boundary rather than the ribbon:
+    /// `crate::sign::Authored` does not exist in a build without the
+    /// capability, because `pdfcer_core::sign` does not. `SHELL_FRAMEWORK.md`
+    /// §5b's rule governs the RIBBON — no `#[cfg]` there, no panel asking
+    /// whether signing exists — and is satisfied by the command simply not
+    /// being registered.
+    #[cfg(feature = "signing")]
+    SignDocument {
+        /// The `.pfx`/`.p12` to sign with.
+        certificate: std::path::PathBuf,
+        /// What the operator typed. Never formatted, never traced, never
+        /// persisted.
+        passphrase: crate::secret::Secret,
+        /// `/Reason`, `/Location`, the placement and the signing time — all of
+        /// them the operator's own words or choices.
+        authored: crate::sign::Authored,
+        /// Where the signed document goes.
+        target: std::path::PathBuf,
+        /// Whether `target` is the document the operator has open. Carried
+        /// rather than re-derived by comparing paths, so the sentence the
+        /// dialog prints describes what was asked for.
+        replace: bool,
+    },
+
     /// ★★★ **Put a completed recognition into the open document, as one
     /// undoable edit.**
     ///
@@ -1305,120 +1366,38 @@ pub enum Action {
         /// state for the dialog to be in.
         stamp: pdfcer_core::annot_author::StampName,
     },
-    // =======================================================================
-    // ★ THE REDACTION MARKING VERBS
-    //
-    // Three variants, all **reversible**, and that is the property that puts
-    // them in this enum at all. Marking authors a `/Redact` annotation and
-    // removes nothing; the engine records each one as an undoable command, so
-    // every one of these goes through `vector_edit` exactly as a markup does
-    // and `Ctrl+Z` takes it back.
-    //
-    // ★★★ CORRECTED 2026-09-05: applying now ARMS the open document's next
-    // save (`Pass 250.2`), so `PendingRedaction` is below — and it, too, is
-    // reversible, which is why it is in this enum. See `actions::redact`.
-    // =======================================================================
-    /// **Mark every occurrence of some text for redaction.**
+    /// ★★★ **Everything whose subject is a REDACTION** — mark by search, mark
+    /// a whole page, mark what is selected, take one mark off, and arm or
+    /// disarm the removal that happens at the next save.
     ///
-    /// Raised by [`crate::panels::redact`]'s Find & mark control. Applied
-    /// through `vector_edit`, so it is one undoable command however many marks
-    /// it creates — which is the right granularity: the operator asked one
-    /// question, and taking back "mark every occurrence of this name" one
-    /// annotation at a time would be unusable.
+    /// Moved into [`super::redact::RedactAction`] under **R2** on 2026-09-06,
+    /// when document signing needed a variant this file could not afford. This
+    /// file's own header named the rule in advance — *"the next family of
+    /// variants to **grow** is the one that will have to become a sub-enum
+    /// beside `PageAction` and `DimensionAction`"* — and `super`'s declaration
+    /// of that module nominated **markup** as the candidate on a 2026-08-20
+    /// measurement. Redaction was taken instead, and the reason is worth
+    /// recording rather than quietly departing from a written plan: markup is
+    /// 370 lines across **48 call sites**, redaction is 114 lines across
+    /// **19**, and the module that would receive it — `super::redact` — already
+    /// holds every one of the bodies, which is precisely
+    /// [`super::pages::PageAction`]'s third argument (*"the destination already
+    /// existed"*). Markup remains the next candidate and its measurement
+    /// stands.
     ///
-    /// # ★ The query is carried, not a hit list
+    /// Its header carries the two things a reader must not have to rediscover:
     ///
-    /// The panel could resolve the matches itself and push the quads, the way
-    /// [`Self::CommitTextMarkup`] carries the selection's boxes. It must not,
-    /// for a reason specific to this verb: `pdfcer-core`'s own
-    /// `mark_redactions_by_search_with` documents the trap — a front end whose
-    /// search and whose marking disagree about *which hits exist* produces
-    /// "three highlights and eleven redaction marks", and *"on the one
-    /// operation whose whole purpose is removing content irreversibly, 'the
-    /// mark set is a superset of the highlight set' is not a cosmetic
-    /// difference."* Handing the engine the query lets the engine answer both
-    /// halves with one scan.
-    MarkRedactionsBySearch {
-        /// The text, already trimmed by the panel.
-        query: String,
-        /// Whether to read the query as a pattern (`#` any digit, `?` any
-        /// character) rather than as literal text.
-        ///
-        /// A `bool` here rather than an enum, unlike
-        /// `crate::redact::ResidualAcknowledgement` — because this one is
-        /// *named at its field* and reads as a sentence at the one call site
-        /// that builds it, while that one is a positional argument at a call
-        /// site where a transposition would write a file.
-        pattern: bool,
-        /// How the marks this creates will look once applied.
-        ///
-        /// ★ Carried on the action, not read at apply time, and it is the same
-        /// rule the pen follows for markup: the operator's choice is the one
-        /// they had **when they pressed the control**. Reading it in the
-        /// dispatcher would let a frame in which they also changed the fill
-        /// swatch author marks they did not choose — and on this verb the
-        /// difference is not cosmetic, because the appearance is baked into
-        /// each `/Redact` annotation at creation and there is no verb that
-        /// modifies one afterwards.
-        appearance: pdfcer_core::annot_author::RedactAppearance,
-    },
-    /// **Mark the whole of one page for redaction.**
-    ///
-    /// Raised by [`crate::panels::redact`]'s Mark whole page control. The page
-    /// is carried rather than read from `doc.view` at apply time, on
-    /// [`Self::CommitTextMarkup`]'s rule: the operator marked the sheet they
-    /// were looking at, and an action applied after a frame in which they also
-    /// paged away must mark the sheet they meant.
-    ///
-    /// The rectangle is not carried, because it is not the operator's choice —
-    /// it is the page's crop box, and `crate::panels::redact::whole_page_spec`
-    /// is the one place that decision is made and tested.
-    MarkPageForRedaction {
-        /// The 0-based page to cover.
-        page: usize,
-        /// How the mark will look once applied. See
-        /// [`Self::MarkRedactionsBySearch`]'s field of the same name.
-        appearance: pdfcer_core::annot_author::RedactAppearance,
-    },
-    /// ★★★ **Mark what is SELECTED on the page for redaction** — the third
-    /// marking route, and the first that does not go through text.
-    ///
-    /// **Ken, 2026-08-30:** *"am I able to select objects on the canvas and
-    /// redact them that way yet? … it just told me it couldn't."* It could not:
-    /// [`Self::MarkRedactionsBySearch`] reaches text pdfcer can read as text and
-    /// [`Self::MarkPageForRedaction`] reaches everything, and on a CAD drawing
-    /// most of what wants redacting is in between.
-    ///
-    /// `super::redactsel`'s header carries the argument in full, including why
-    /// neither a page nor a rectangle is carried here.
-    MarkSelectionForRedaction {
-        /// How the mark will look once applied. See
-        /// [`Self::MarkRedactionsBySearch`]'s field of the same name.
-        appearance: pdfcer_core::annot_author::RedactAppearance,
-    },
-    /// **Take one redaction mark off.**
-    ///
-    /// Raised by a row's Remove control. The engine's
-    /// `EditSession::delete_redaction_mark` rather than its general annotation
-    /// delete, deliberately and on core's own instruction: the two record
-    /// different `CommandKind`s so that an undo tooltip can say *"remove a
-    /// redaction mark"* rather than *"delete annotation"*, and — as that
-    /// method's docs put it — *"I decided not to redact that"* is a different
-    /// claim from *"delete annotation"*.
-    ///
-    /// The **annotation id**, not a row index: a list position is a position in
-    /// a census rebuilt every frame, and by the time the apply phase runs the
-    /// same index may name a different mark. `crate::app` §10's rule —
-    /// *selection is an identity, not a position* — applied to a list.
-    RemoveRedactionMark {
-        /// The `/Redact` annotation to delete.
-        annot_id: pdfcer_core::object::ObjId,
-    },
-    /// ★★★ **Arm the removal of every redaction mark at the next save, or
-    /// disarm it** — O125, corrected 2026-09-05 for `Pass 250.2`. **The whole
-    /// argument — undo-preserving, why Cancel had to exist — is on the apply
-    /// arm** in `app::actions::redact`, on this file's own R2 rule.
-    PendingRedaction(crate::redact::Staging),
+    /// * **Every variant here is REVERSIBLE**, which is what puts them in this
+    ///   enum at all. Marking authors a `/Redact` annotation and removes
+    ///   nothing; arming a removal (`Pass 250.2`) stages it for the next save
+    ///   and can be called off. The verb that actually destroys content is not
+    ///   in this family and is not an `Action`.
+    /// * **The search verb carries the QUERY, never a hit list**, because a
+    ///   front end whose search and whose marking disagree about which hits
+    ///   exist produces *"three highlights and eleven redaction marks"* — and
+    ///   on the one operation whose purpose is removing content irreversibly,
+    ///   that is not a cosmetic difference.
+    Redact(super::redact::RedactAction),
     /// **Select everything on the current page**, including anything that
     /// has been moved OFF it.
     ///

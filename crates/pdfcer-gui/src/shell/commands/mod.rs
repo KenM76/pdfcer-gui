@@ -397,7 +397,25 @@ mod tests {
         // capability exists and R8 says registering the command is how the GUI
         // learns it. A **new token (235)**, not the retired 213 — see the
         // registration for why a retired token is never handed back.
-        assert_eq!(registry().len(), 142);
+        // ★★★ 142 → 143 on 2026-09-06: `file.sign`, and it is **the first
+        // entry in this counter that depends on how the binary was built.**
+        //
+        // `SHELL_FRAMEWORK.md` §5b's whole mechanism is that a capability which
+        // is not compiled in registers no command, so a `--no-default-features`
+        // build has 142 and a default build has 143. The literal is therefore
+        // written as arithmetic over `cfg!` rather than as a number, because
+        // both answers are correct and a single number would make one of the
+        // two supported builds fail its own suite.
+        //
+        // ⚠ `cfg!` in a TEST is not the thing §5b forbids. Its rule binds the
+        // running program — no `#[cfg]` in the ribbon, no panel asking whether
+        // signing exists — and this expression is a test asserting that the
+        // mechanism did what it says. A test that could not mention the feature
+        // could not check that turning it off removes exactly one command.
+        assert_eq!(
+            registry().len(),
+            142 + usize::from(cfg!(feature = "signing"))
+        );
     }
 
     /// ★ **The icon-coverage split adds up to the registry.**
@@ -679,7 +697,20 @@ mod tests {
         // directory that deliberately breaks the uniform 2.5 stroke, because
         // the varying weight is the subject. `line-weights.svg` carries the
         // ruling and the 16 px measurement behind every number in it.
-        assert_eq!(named, 135, "commands naming an icon");
+        // ★ 135 → 136 on 2026-09-06: `file.sign` names `sign`, which is NEW
+        // art rather than a shared key — `signatures` belongs to the panel
+        // TOGGLE, which reads a report about signatures that already exist,
+        // and sharing would have put one picture on a control that reads and
+        // one that writes. See `catalog::file`'s registration.
+        //
+        // Build-dependent for `registry().len()`'s reason above: with the
+        // capability compiled out the command is not registered, so it names
+        // no icon and this count is one lower.
+        assert_eq!(
+            named,
+            135 + usize::from(cfg!(feature = "signing")),
+            "commands naming an icon"
+        );
         // ★ 12 → 17 on 2026-08-27: the Format ▸ Font group's five commands
         // all refuse a glyph, and they refuse it for one reason argued once at
         // their registration. Word draws `B` and `I` as glyphs; this build has

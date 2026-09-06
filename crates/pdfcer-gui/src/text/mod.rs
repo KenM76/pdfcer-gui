@@ -357,6 +357,17 @@ pub mod unembed;
 pub mod security;
 pub mod shortcuts;
 
+/// Every operator-facing string on the control that SIGNS a document — the
+/// write side of a subject whose read side is `text::security` (what a document
+/// says about its protection) and `text::trust` (what pdfcer could and could
+/// not check about a signature that already exists).
+///
+/// `#[cfg]` for `crate::sign`'s reason: with the capability compiled out there
+/// is no window for these strings to appear in, and a catalogue of copy for a
+/// surface that does not exist is exactly the dead weight `check-string-gaps`
+/// is there to notice.
+#[cfg(feature = "signing")]
+pub mod sign;
 /// **What this shell says about a digital signature before and after it
 /// writes.** The claim-bearing area of the catalog: every sentence is a
 /// translation of a distinction `pdfcer-core`'s `signature` module draws, and

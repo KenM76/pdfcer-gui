@@ -427,7 +427,7 @@ pub struct OpenDoc {
     /// that has no removal armed.
     ///
     /// Added 2026-09-04 with the collapsing apply; **re-based 2026-09-05** onto
-    /// `Action::PendingRedaction(Staging::Stage)` when `pdfcer-core`
+    /// `RedactAction::Pending(Staging::Stage)` when `pdfcer-core`
     /// `Pass 250.2` replaced that route with an undo-preserving one. The old
     /// sentence said *applied INTO this document*, which is no longer what
     /// happens: nothing is removed until the save.

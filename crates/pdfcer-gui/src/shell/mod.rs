@@ -125,6 +125,146 @@ mod tests {
             .expect("the built-in manifest must satisfy every structural rule");
     }
 
+    /// ★★★ **THE BUILT-IN MANIFEST SURVIVES A BUILD WITH A CAPABILITY
+    /// COMPILED OUT — and this is R8's whole point, asserted rather than
+    /// hoped for.**
+    ///
+    /// `SHELL_FRAMEWORK.md` §5b, the operator's directive of 2026-08-13:
+    /// *"Everything should be capable of being modular… if not needed by
+    /// someone they could just remove them and they would not show up as
+    /// options in the GUI."*
+    ///
+    /// # What this simulates, and why simulating it is the right test
+    ///
+    /// It builds the real registry, then **withholds** every command that the
+    /// manifest marks conditional — which is exactly the state a
+    /// `--no-default-features` build is in — and asserts three things:
+    ///
+    /// 1. The merge drops those items, and drops **only** those items.
+    /// 2. Each drop reports [`SkipReason::CapabilityAbsent`], naming the
+    ///    capability. Not `UnknownCommand`: one says *"this build does not
+    ///    include that"* and the other says *"someone made a mistake"*, and a
+    ///    log that confuses them turns modularity and a typo into one event.
+    /// 3. **The merged shell still validates.** This is the assertion that
+    ///    matters most and the one whose absence would have been catastrophic:
+    ///    `validate_against` is strict, an unregistered command fails it, a
+    ///    failed validation leaves `PdfcerApp::shell` as `None`, and
+    ///    `Capabilities::for_mode` returns **FULL** when the shell is absent.
+    ///    So without the merge, a lite build would have lost its whole ribbon
+    ///    **and granted every authoring capability to every mode, including
+    ///    Read.** A previous session turned eight mode-gating tests red from
+    ///    the other direction; this is the same trap facing the other way.
+    ///
+    /// ⚠ A cross-compilation would be a better test and is not available from
+    /// inside one: `cfg!` describes the build that is running. What this does
+    /// instead is exercise **the mechanism** — the merge, the skip reason and
+    /// the validation — against a registry in the state the other build
+    /// produces, which is the part that could be wrong. The other half (that
+    /// the command really is absent when the feature is off) is a one-line
+    /// `cfg!` assertion below and is checked for real by building with
+    /// `--no-default-features --features jpx,ocrs`.
+    #[test]
+    fn the_built_in_manifest_survives_a_build_without_an_optional_capability() {
+        use egui_shell::manifest::{CommandCatalog, MergeInput, SkipReason, merge};
+
+        let built_in = manifest::built_in();
+        // Every id the manifest marks conditional, whatever it is today. Read
+        // out of the manifest rather than hard-coded, so a second conditional
+        // command added tomorrow is covered by this test without editing it —
+        // and so the test cannot pass because somebody deleted the field.
+        let conditional: Vec<(String, String)> = built_in
+            .tabs()
+            .iter()
+            .flat_map(egui_shell::manifest::Tab::groups)
+            .flat_map(egui_shell::manifest::Group::items)
+            .filter_map(|item| Some((item.command_id()?.to_owned(), item.capability()?.to_owned())))
+            .collect();
+        assert!(
+            !conditional.is_empty(),
+            "the manifest must mark at least one item conditional, or this test asserts nothing — `file.sign` is the first and `capability:` is the field"
+        );
+
+        /// The real registry with a named set of commands withheld.
+        struct Without {
+            real: CommandRegistry,
+            withheld: Vec<String>,
+        }
+        impl CommandCatalog for Without {
+            fn contains(&self, id: &str) -> bool {
+                !self.withheld.iter().any(|w| w == id) && self.real.get(id).is_some()
+            }
+        }
+
+        let mut real = CommandRegistry::new();
+        commands::register(&mut real);
+        let catalog = Without {
+            real,
+            withheld: conditional.iter().map(|(id, _)| id.clone()).collect(),
+        };
+
+        let merged = merge(MergeInput::built_in(&built_in), &catalog);
+
+        // 1 + 2: exactly those items, each with the right reason.
+        assert_eq!(
+            merged.report.skips().len(),
+            conditional.len(),
+            "one skip per conditional command and nothing else: {:?}",
+            merged.report.skips()
+        );
+        for (id, capability) in &conditional {
+            assert!(
+                merged.report.skips().iter().any(|s| s.reason
+                    == SkipReason::CapabilityAbsent {
+                        capability: capability.clone(),
+                        command: id.clone(),
+                    }),
+                "`{id}` must be dropped as CapabilityAbsent(`{capability}`), not as a mistake: {:?}",
+                merged.report.skips()
+            );
+        }
+
+        // …and the item really is gone from the ribbon, which is the operator-
+        // visible half of the same fact.
+        let still_there: Vec<String> = merged
+            .shell
+            .tabs()
+            .iter()
+            .flat_map(egui_shell::manifest::Tab::groups)
+            .flat_map(egui_shell::manifest::Group::items)
+            .filter_map(|i| i.command_id())
+            .filter(|id| conditional.iter().any(|(c, _)| c == id))
+            .map(str::to_owned)
+            .collect();
+        assert!(
+            still_there.is_empty(),
+            "a conditional command whose build does not have it must not render: {still_there:?}"
+        );
+
+        // 3: THE assertion. The shell must still be valid, or the application
+        // falls back to no shell at all and every mode becomes FULL.
+        merged
+            .shell
+            .validate_against(&catalog)
+            .expect("a build without an optional capability must still have a ribbon");
+    }
+
+    /// **…and with the feature ON, the command really is registered.**
+    ///
+    /// The negative control for the test above, and it is not a formality: that
+    /// one withholds the command itself, so it would pass identically against a
+    /// build in which `file.sign` was never registered at all. This is what
+    /// makes the pair say *"the feature controls it"* rather than *"it is
+    /// absent"*.
+    #[test]
+    fn the_signing_command_is_registered_exactly_when_the_feature_is_on() {
+        let (_, registry) = shell_and_registry();
+        assert_eq!(
+            registry.get("file.sign").is_some(),
+            cfg!(feature = "signing"),
+            "`file.sign` is registered if and only if the `signing` feature is compiled in — that is the ONLY way this GUI expresses the capability"
+        );
+    }
+
     /// **★ Every command the manifest names is registered.**
     ///
     /// Walks every reference site — tab groups, the quick-access toolbar
@@ -132,10 +272,36 @@ mod tests {
     /// does not exist is a chord that does nothing, and it is the
     /// reference easiest to leave behind when a command is renamed,
     /// because unlike a button it is invisible until pressed.
+    ///
+    /// ★★★ **It validates the MERGED shell, not the raw manifest** — corrected
+    /// 2026-09-06, when `file.sign` became the first conditional item.
+    ///
+    /// `validate_against` is strict by design and rejects any reference to an
+    /// unregistered command. That is right for a mandatory item and wrong for a
+    /// conditional one, whose absence in a build without its capability is the
+    /// intended configuration rather than a bug. The merge is what tells the
+    /// two apart, and `PdfcerApp::new` runs it before validating for exactly
+    /// this reason.
+    ///
+    /// ⚠ So this test asserts something slightly stronger than it used to: not
+    /// only that everything resolves, but that **the only things the merge had
+    /// to drop were capability-absent items.** An `UnknownCommand` skip fails
+    /// here rather than being swallowed by the merge's fail-soft posture —
+    /// which is the hole a naive "merge then validate" would have opened.
     #[test]
     fn every_command_the_manifest_names_is_registered() {
+        use egui_shell::manifest::{MergeInput, SkipReason, merge};
+
         let (shell, registry) = shell_and_registry();
-        shell
+        let merged = merge(MergeInput::built_in(&shell), &registry);
+        for skip in merged.report.skips() {
+            assert!(
+                matches!(skip.reason, SkipReason::CapabilityAbsent { .. }),
+                "the merge may only drop items this BUILD does not have; anything else is a stale reference: {skip}"
+            );
+        }
+        merged
+            .shell
             .validate_against(&registry)
             .expect("every referenced command id must be registered");
     }

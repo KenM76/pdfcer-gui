@@ -73,6 +73,28 @@ impl Secret {
         self.0.as_bytes()
     }
 
+    /// **The value, as a string slice.**
+    ///
+    /// ★ A second accessor rather than a caller writing
+    /// `std::str::from_utf8(secret.expose())`, and the difference is not
+    /// ergonomic: that expression cannot fail here (the buffer is a `String`)
+    /// and a caller who wrote it would have to decide what to do with an
+    /// `Err` that cannot occur — which is how an `unwrap` gets written on the
+    /// one path in the program that must not panic while holding a secret.
+    ///
+    /// Added 2026-09-06 for `crate::sign`: `Pkcs12Signer::from_der` takes the
+    /// passphrase as `&str`, because RFC 7292's key derivation is defined over
+    /// a BMPString and the engine does that conversion itself.
+    ///
+    /// ⚠ Exposing is exactly as dangerous as [`Self::expose`] and the same rule
+    /// applies: the result must not be formatted, stored, or handed to anything
+    /// that will outlive the call. This type's guarantee is that the *value*
+    /// cannot be printed; it cannot follow a `&str` a caller took out of it.
+    #[must_use]
+    pub fn expose_str(&self) -> &str {
+        &self.0
+    }
+
     /// Whether anything was typed.
     ///
     /// ★ An **empty** password is not the same as no password at all, and the
