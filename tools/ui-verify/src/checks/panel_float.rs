@@ -191,6 +191,37 @@ const PANEL: &str = "view.panel_layers";
 /// `moved=false` / `docked=0` family.
 const RESET: &str = "view.reset_layout";
 
+/// **The mode this check must be in before it resets anything**, and the
+/// reason it is now stated instead of inherited.
+///
+/// # ★★★ This check was passing because a DIFFERENT check leaked its mode
+///
+/// `view.panel_layers` is not in every mode's default dock. Read mounts five
+/// panels, Review seven, Edit thirteen — measured off `mode-changed … panels=`
+/// — and the Layers panel is an Edit-mode surface. So a float of it can only
+/// succeed in a mode whose default dock carries it.
+///
+/// This check never said which mode it wanted. It ran green for months anyway,
+/// because `tools/ui-verify` launched every check from **one portable profile
+/// beside the exe**, an earlier check in the sweep clicked the Edit segment,
+/// and the mode was still on disk when this one launched. The application
+/// discarded the stored mode on every launch until 2026-09-06, so nothing
+/// noticed; the moment that was fixed, the leak became load-bearing, and the
+/// moment the harness gained per-check isolation the leak stopped and this
+/// check failed.
+///
+/// ⇒ **A check that does not state its preconditions is not passing — it is
+/// agreeing with whatever ran before it.** The isolation fix did not break
+/// this check; it revealed that the check had never been testing what it
+/// claimed on its own. That is the price of isolation and it is worth paying
+/// once per check that had been coasting.
+///
+/// ⚠ It is `mode.edit` rather than a click on the mode segment because
+/// `PDFCER_DIAG_INVOKE` is this check's whole input channel — the harness has
+/// no pointer here, which is the same reason the float command carries an
+/// operand at all.
+const MODE: &str = "mode.edit";
+
 /// See the module documentation.
 pub struct PanelsFloatCloseAndDock;
 
@@ -243,8 +274,12 @@ fn run_once(ctx: &CheckContext, tag: &str, invoke: &str) -> Result<crate::trace:
     ));
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
+    // ★ MODE first, then the reset, then the work. One command per frame, and
+    // the order is the precondition chain: the reset must be asked of the mode
+    // this check needs, or it resets a dock that was never going to mount the
+    // panel. See [`MODE`] for why this is stated rather than inherited.
     spec.env
-        .push(((*INVOKE_ENV).to_owned(), format!("{RESET},{invoke}")));
+        .push(((*INVOKE_ENV).to_owned(), format!("{MODE},{RESET},{invoke}")));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
@@ -256,7 +291,12 @@ fn run_once(ctx: &CheckContext, tag: &str, invoke: &str) -> Result<crate::trace:
     // ★ One frame more than before, because the reset now takes the first
     // frame — `PDFCER_DIAG_INVOKE` fires exactly one command per frame, and
     // the ordering is what makes the reset a precondition rather than a race.
-    session.settle(70);
+    //
+    // ★★ And one more again since 2026-09-06, because [`MODE`] now takes a
+    // frame ahead of the reset. A settle tuned to the old chain would report
+    // "no window" for a float that was one frame from having one, which is the
+    // failure `dialog_windows` records against its own 40.
+    session.settle(80);
     session.trace()
 }
 
