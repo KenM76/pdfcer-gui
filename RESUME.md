@@ -9,10 +9,37 @@
 > to save up for. ⚠ **One driven run at a time** — the harness moves the real
 > cursor; check `tasklist | grep -icE "^(pdfcer-gui|ui-verify)\.exe"` first.
 >
-> **State: engine v0.40.0 at `03f6004`** — read from `Cargo.lock`, which is the
+> **State: engine v0.40.0 at `56dde4d`** — read from `Cargo.lock`, which is the
 > only thing here worth trusting without re-running it. **Every count below and
 > throughout this file is stale by construction: MEASURE, do not quote.** The
 > commands are further down.
+>
+> **Released 2026-09-05 23:26** from shell `b012b57`: `OneDrive\pdfcer-gui2` is
+> the new build, **`pdfcer-gui1` (03:32) is the fallback**. GitHub
+> `v0.5.0-dev.20260905.2`.
+>
+> ---
+>
+> ⬜ **DO THIS FIRST: the engine is at v0.41.0 and it BREAKS OUR BUILD.**
+> Deliberately not pulled while cutting the release. One mechanical call site:
+> `pdfcer_core::text_edit::invocation_set` went from `(document, page, object)`
+> to **`(view: &DocumentView, object)`** — `app/actions/xobject.rs:368`.
+>
+> ⚠ **Fixing the call site is the easy half.** v0.41.0 also carries `Pass 257.0`
+> — *session verbs plan against the session graph, not `self.base`* — which is
+> the engine's answer to the measurement this project filed about O141, and it
+> changes **seven planner call sites**. It should make the in-session font swap
+> work end to end. **Re-drive `a_refused_character_offers_a_face_that_can_type_it`
+> after the bump**: it currently PASSES by asserting the refusal *and* the
+> honest "save and reopen" sentence, so a build where the swap succeeds will
+> turn it red for the right reason, and the check needs rewriting rather than
+> the fix reverting.
+>
+> ★ Why it was skipped: `tools/package-portable.py` runs `cargo update` before
+> it builds, so packaging on an untested engine is the documented way this
+> project has already shipped a regression once. The pin was moved deliberately
+> **before** testing, and rolled back when v0.41.0 failed to compile — which is
+> the rule working.
 >
 > ---
 >
