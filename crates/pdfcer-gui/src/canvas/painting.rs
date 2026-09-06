@@ -115,6 +115,20 @@ pub(super) struct Frame<'a> {
     /// defined in the page. Projecting happens once, at the painter, through
     /// the same two-hop bridge `canvas::measure` uses.
     pub dimension_preview: Option<&'a [(pdfcer_core::vector::Point, pdfcer_core::vector::Point)]>,
+    /// ★★★ **A markup shape being reshaped, as the page-space segments it
+    /// would be drawn as on release** — `Pass 255.0`.
+    ///
+    /// Page space for [`Self::dimension_preview`]'s reason, and its own field
+    /// for `canvas::previews::Previews::markup_nodes`': the two describe two
+    /// subjects reaching two engine verb families (R8b rule 15), and one slice
+    /// whose meaning depends on the live selection is a value this painter
+    /// would have to interrogate.
+    ///
+    /// ★ Derived from the SAME point list the release commits —
+    /// `annotnodes::preview_of` over the edited nodes — and drawn only when the
+    /// engine's own preflight has said the release would be accepted. So the
+    /// operator is never shown a shape that will not happen.
+    pub markup_node_preview: Option<&'a [(pdfcer_core::vector::Point, pdfcer_core::vector::Point)]>,
     /// What a perimeter corner being dragged is snapping to, if anything.
     ///
     /// ★ `ui-conventions/drag-moves.md` D6: *"a snap is an inference. It is
@@ -400,10 +414,42 @@ pub(super) fn draw(
     // Note this is NOT content marking. Rule 4 forbids styling applied content
     // as provisional; a selection handle is the cursor, and it is drawn for the
     // selected object only, and it disappears the moment the selection does.
-    for (index, centre) in crate::canvas::dimdrag::vertices(doc, selection)
+    //
+    // ★★★ …AND A MARKUP SHAPE'S NODES, on the same loop — `Pass 255.0`, and the
+    // operator's *"I also can't edit or delete nodes of a markup shape once it
+    // is drawn."*
+    //
+    // One loop over two sources rather than two loops, because they are the
+    // same affordance to a hand: a small square you grab. What differs is the
+    // trace region each is published under — `canvas.dimension-vertex.N` and
+    // `canvas.markup-node.N` — and that difference is load-bearing, because a
+    // driven check that aimed at a ce dimension and hit a markup shape would
+    // report a working build as broken.
+    //
+    // ★★ `annotnodes::nodes` is empty for a shape with no editable geometry —
+    // a rectangle, an ellipse, a freehand mark — which is R9 exactly: **an
+    // unavailable capability renders nothing.** Not a greyed anchor, because
+    // greying is for a capability that is *temporarily* away and this one never
+    // arrives. The sentence that says so is
+    // `annotnodes::explain_unreshapable`'s, raised when the operator arms the
+    // tool that looks for nodes.
+    // ★ Each source is enumerated SEPARATELY and only then chained. Enumerating
+    // the chain would number a markup shape's first node `dimension_count`
+    // rather than 0 — invisible today, because the two lists are mutually
+    // exclusive by `AnnotKind` and one of them is always empty, and a defect the
+    // day anything makes them both non-empty. An index that is right by
+    // coincidence is the shape of bug this canvas has shipped before.
+    let anchors = crate::canvas::dimdrag::vertices(doc, selection)
         .into_iter()
         .enumerate()
-    {
+        .map(|(index, c)| (crate::canvas::dimdrag::VERTEX_REGION, index, c))
+        .chain(
+            crate::canvas::annotnodes::nodes(doc, selection)
+                .into_iter()
+                .enumerate()
+                .map(|(index, c)| (crate::canvas::annotnodes::NODE_REGION, index, c)),
+        );
+    for (region, index, centre) in anchors {
         let screen = map.to_screen(centre);
         let handle = egui::Rect::from_center_size(
             screen,
@@ -421,10 +467,7 @@ pub(super) fn draw(
         // Indexed, because *which* corner moved is the whole assertion: a drag
         // that reshapes the wrong vertex is a defect that looks exactly like a
         // working one until you compare the geometry.
-        crate::diag::ui_rect(
-            &format!("{}.{index}", crate::canvas::dimdrag::VERTEX_REGION),
-            handle,
-        );
+        crate::diag::ui_rect(&format!("{region}.{index}"), handle);
         painter.rect_filled(handle, 0.0, ui.visuals().extreme_bg_color);
         painter.rect_stroke(
             handle,
@@ -494,9 +537,21 @@ pub(super) fn draw(
     // dimension being dragged is the selected object, this is that object
     // following the pointer, and a third colour on the canvas would be a fourth
     // thing to learn for no information gained.
-    if let Some(segments) = f.dimension_preview
-        && let Some(page) = doc.pages.get(page_index)
+    //
+    // ★★ The markup-node preview shares this loop rather than getting its own,
+    // and that is the one place the two subjects are deliberately NOT kept
+    // apart: they are the same picture — a polyline in page space, in the
+    // selection stroke — and a second colour or a second weight would be a
+    // second thing for the operator to learn for no information gained. What is
+    // kept apart is which one is `Some`, which is what decides the verb, and
+    // that decision was made two modules ago.
+    for segments in [f.dimension_preview, f.markup_node_preview]
+        .into_iter()
+        .flatten()
     {
+        let Some(page) = doc.pages.get(page_index) else {
+            continue;
+        };
         let stroke = egui::Stroke::new(
             1.5,
             egui_shell::theme::Theme::canvas_selection_ink(ui.ctx()),

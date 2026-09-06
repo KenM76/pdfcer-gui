@@ -455,6 +455,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "block-padding"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "710f1dd022ef4e93f8a438b4ba958de7f64308434fa6a87104481645cc30068b"
+dependencies = [
+ "hybrid-array",
+]
+
+[[package]]
 name = "block2"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1700,6 +1709,7 @@ version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4250ce6452e92010fdf7268ccc5d14faa80bb12fc741938534c58f16804e03c7"
 dependencies = [
+ "block-padding",
  "hybrid-array",
 ]
 
@@ -2406,8 +2416,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-core"
-version = "0.39.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#b1033abbe37e0bf24b7e98b95af4ae7d36a68087"
+version = "0.40.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#03f6004156d90b4752ff706316b2bda979d88ea0"
 dependencies = [
  "aes",
  "brotli",
@@ -2447,8 +2457,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-print"
-version = "0.39.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#b1033abbe37e0bf24b7e98b95af4ae7d36a68087"
+version = "0.40.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#03f6004156d90b4752ff706316b2bda979d88ea0"
 dependencies = [
  "thiserror 2.0.20",
  "windows",
@@ -2456,8 +2466,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-render"
-version = "0.39.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#b1033abbe37e0bf24b7e98b95af4ae7d36a68087"
+version = "0.40.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#03f6004156d90b4752ff706316b2bda979d88ea0"
 dependencies = [
  "iccce-cmm",
  "iccce-color",

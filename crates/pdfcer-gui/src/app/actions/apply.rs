@@ -559,64 +559,25 @@ impl PdfcerApp {
             // future undo/redo surface could replay. Declining by name beats a
             // panic in the frame that is trying to draw, and it emphatically
             // beats authoring a shape nobody asked for.
-            // Deleting the selected annotation — an ANNOTATION verb, so its
-            // body lives in `annots` beside the ones the Format tab will add.
-            // This arm routes. See `annots::delete`.
-            // The move's twin, and it takes no page for the reason the variant
-            // states: `move_annotation` finds the annotation by id, and the
-            // disclosure this one owes is about a pop-up rather than a sheet.
-            Action::Annot(crate::app::actions::annot::AnnotAction::Move { id, dx, dy }) => {
-                super::annots::move_annot(doc, id, dx, dy)
-            }
-            Action::Annot(crate::app::actions::annot::AnnotAction::Resize {
-                id,
-                anchor,
-                sx,
-                sy,
-                uniform,
-                modifiers,
-            }) => super::annots::resize(doc, id, anchor, (sx, sy), uniform, modifiers),
-            // ★ Two rotation arms, not one with a kind flag: the engine refuses
-            // a ce dimension from the annotation verb by name. See
-            // `super::annots::rotate_dimension`.
-            Action::Annot(crate::app::actions::annot::AnnotAction::Rotate {
-                id,
-                pivot,
-                degrees,
-            }) => super::annots::rotate(doc, id, pivot, degrees),
-            Action::Annot(crate::app::actions::annot::AnnotAction::RotateDimension {
-                dimension,
-                annot,
-                pivot,
-                degrees,
-            }) => super::annots::rotate_dimension(doc, dimension, annot, pivot, degrees),
-            Action::Annot(crate::app::actions::annot::AnnotAction::Delete { page, id }) => {
-                super::annots::delete(doc, page, id);
-            }
-            // ★★★ The note on an annotation that already exists — the verb the
-            // Comments panel was waiting for since Phase 6.
+            // ★★★ **EVERY ANNOTATION VERB, IN ONE ARM** — moved out on
+            // 2026-09-05 under **R2**, when the three node verbs took this file
+            // past 1,500 lines.
             //
-            // The AUTHOR is read here rather than carried on the action, and
-            // that is the deliberate half of the split: `keep_author` is a fact
-            // about the *document* that the panel had in front of it, and the
-            // name is a fact about the *operator* that only this scope can see.
-            // A panel that carried a name would be reading preferences it is
-            // not handed; an apply arm that re-derived `keep_author` would be
-            // walking the annotation a second time for something already known.
-            Action::Annot(crate::app::actions::annot::AnnotAction::SetNote {
-                id,
-                text,
-                keep_author,
-            }) => {
-                let author = if keep_author {
-                    None
-                } else {
-                    Some(self.prefs.author_name.trim().to_owned()).filter(|a| !a.is_empty())
-                };
-                super::annots::set_note(doc, id, &text, author.as_deref());
-            }
-            Action::Annot(crate::app::actions::annot::AnnotAction::ClearNote { id }) => {
-                super::annots::clear_note(doc, id);
+            // The seam is this file's own, stated in its header and drawn
+            // twice already (`super::pages`, `super::annots`): **this file
+            // ROUTES and the family module DECIDES.** Eleven arms that each
+            // destructured one variant and called one function two lines long
+            // were routing spelled out eleven times; `annots::apply_action` is
+            // the same routing in the file that owns the subject, where the
+            // disclosure rules that govern all eleven are stated once.
+            //
+            // ★ The author name travels rather than being read there.
+            // `keep_author` is a fact about the DOCUMENT the raising surface
+            // had in front of it, and the name is a fact about the OPERATOR
+            // that only this scope can see — `AnnotAction::SetNote`'s own field
+            // doc carries that split, and `annots::set_note` still applies it.
+            Action::Annot(action) => {
+                super::annots::apply_action(doc, action, self.prefs.author_name.trim());
             }
             // ★ A paste is an `add_markup` and nothing more, which is the
             // whole reason this feature was buildable at all: the spec that

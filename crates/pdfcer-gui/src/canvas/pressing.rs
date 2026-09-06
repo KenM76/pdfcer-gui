@@ -54,7 +54,9 @@ use crate::canvas::handles::Grip;
 use crate::canvas::mapping::PageMapping;
 use crate::canvas::selection::{SelectionLevel, SelectionState};
 use crate::canvas::tool::CanvasTool;
-use crate::canvas::{annotdrag, dimdrag, handledrag, handles, overlay, widgetdrag, zoom};
+use crate::canvas::{
+    annotdrag, annotnodes, dimdrag, handledrag, handles, overlay, widgetdrag, zoom,
+};
 
 /// What the pointer may grab, and which grips that thing offers.
 ///
@@ -568,6 +570,26 @@ pub fn look(
             })
     });
 
+    // ★★ Which NODE of a selected markup shape the press landed on — `Pass
+    // 255.0`, and the operator's *"I also can't edit or delete nodes of a
+    // markup shape once it is drawn."*
+    //
+    // Sampled here with the other hit tests so a press has one meaning decided
+    // in one place (this module's header), and resolved to a VALUE rather than
+    // left as a flag, because `gesture::press_kind` needs the index and must
+    // stay free of geometry.
+    //
+    // ★ It OUTRANKS both flags below, and `press_kind`'s own arm says so: a
+    // node anchor sits on the shape, so every press that hits one also hits the
+    // body, and a node at a corner is also under a resize grip. Of the three
+    // readings the operator aimed at the small square they can see — the same
+    // precedence the ce-dimension corner takes over its body twenty lines up.
+    //
+    // Cheap to ask — it answers `None` immediately unless a markup annotation
+    // with editable geometry is selected, and the only shapes with editable
+    // geometry are `/Polygon`, `/PolyLine` and `/Line`.
+    let markup_node = origin.and_then(|p| annotnodes::node_at(doc, map, selection, p));
+
     // Whether the press landed inside a selected MARKUP annotation's own box.
     //
     // ★ Sampled here with the other hit tests, resolved to a bool rather than
@@ -637,6 +659,7 @@ pub fn look(
             handle,
             dimension,
             annot_rotate,
+            markup_node,
             markup_body,
             markup_grip,
             widget_body,

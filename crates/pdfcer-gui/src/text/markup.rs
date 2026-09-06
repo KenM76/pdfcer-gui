@@ -529,6 +529,219 @@ pub fn deletion_would_take(
     }
     Some(format!("If you delete this — {}.", parts.join("; ")))
 }
+
+// ===========================================================================
+// Editing the NODES of a markup shape — the operator's report of 2026-09-05
+// ===========================================================================
+//
+// > *"I also can't edit or delete nodes of a markup shape once it is drawn."*
+//
+// `canvas::annotnodes` draws an anchor on every node of a selected `/Polygon`,
+// `/PolyLine` or `/Line` and drags them. These are the sentences for the cases
+// where it cannot, and every one of them exists for the reason this project was
+// founded on: **a refusal must be a sentence, never a silence.** A drag that is
+// released and does nothing is the exact defect the operator reported, and a
+// shape that shows no anchors at all is the same defect one step earlier.
+
+/// **The operator's word for a shape**, which is not always the PDF name.
+///
+/// ★★ A mapping and not a passthrough, and each row is a place the file's
+/// vocabulary and the operator's disagree:
+///
+/// | `/Subtype` | what pdfcer's own ribbon calls it |
+/// |---|---|
+/// | `Square` | **rectangle** — the Rectangle tool draws it |
+/// | `Circle` | **ellipse** — it is an ellipse inscribed in `/Rect`, not a circle |
+/// | `Ink` | **freehand mark** — the Freehand tool draws it |
+/// | `Highlight`/`Underline`/`StrikeOut`/`Squiggly` | **text mark** |
+///
+/// Showing "Square" to an operator who drew a rectangle is the surface
+/// disagreeing with itself about what it just did, and it sends them looking
+/// for a Square tool that does not exist.
+///
+/// [`ShapeWord::Other`] is the honest arm for a subtype this shell has never
+/// heard of: the sentence it produces says *this kind of mark* rather than
+/// inventing a name, because a wrong name is worse than a general one.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ShapeWord {
+    /// `/Ink` — a freehand mark.
+    Ink,
+    /// `/Square` — a rectangle.
+    Rectangle,
+    /// `/Circle` — an ellipse.
+    Ellipse,
+    /// `/Line` — a straight line, including an arrow.
+    Line,
+    /// `/Highlight`, `/Underline`, `/StrikeOut`, `/Squiggly`.
+    TextMarkup,
+    /// Anything else — named generally rather than wrongly.
+    Other,
+}
+
+/// **Why a node edit did not happen**, in the shell's own vocabulary.
+///
+/// ★ `Copy` and fieldless-payloaded, because [`crate::app::status`]'s decline
+/// store is `Copy` and its `line()` returns `&'static str`. That constraint is
+/// the reason no sentence here quotes a *number* — a floor of 3 for a polygon
+/// and 2 for a polyline would each need their own static string, and the
+/// operator does not need the number to know what to do next. `VertexEditRefusal`
+/// makes the identical choice for ce dimensions, and this enum is deliberately
+/// its sibling rather than a reuse of it: the ce-dimension sentences say
+/// *"measurement"*, which is the wrong word for a comment shape (R8b rule 15),
+/// and one enum serving both would have to say something vague enough to be
+/// true of either.
+///
+/// ★★ The engine offers a `reason: &'static str` on
+/// `EditError::GeometryNotReshapable` and says a shell may show it verbatim.
+/// It is deliberately not shown: those sentences name PDF keys and engine verbs
+/// (*"author a PolyLine instead"*, *"use resize_annotation"*, *"/QuadPoints are
+/// text-anchored quadrilaterals"*) and are written for a developer at a CLI.
+/// They go to the trace, where that reader is. `canvas::annotnodes::refusal_for`
+/// carries the argument at the mapping site.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NodeEditRefusal {
+    /// `EditError::ReshapeWouldBreachVertexFloor` — the shape is at its floor.
+    ///
+    /// The one an operator meets by doing something perfectly reasonable: a
+    /// triangle they want to make into a line. The floors are the engine's own
+    /// (`/Polygon` keeps three, `/PolyLine` keeps two) and it refuses by name
+    /// rather than silently clamping or turning the shape into something else.
+    WouldLeaveTooFew,
+    /// `EditError::GeometryNotReshapable` — this kind of mark has no nodes to
+    /// edit, and the sentence says which kind it is.
+    ///
+    /// Reached two ways, which is why it carries the word rather than the
+    /// gesture: from a **drag** on a `/Line`'s end that asked to add or remove
+    /// one, and from [`crate::canvas::annotnodes::explain_unreshapable`] when
+    /// the operator arms the Points tool over a shape that shows no anchors at
+    /// all. The second is the one that answers *"where are the nodes?"*.
+    ShapeHasNoNodes {
+        /// What to call it. See [`ShapeWord`].
+        subtype: ShapeWord,
+    },
+    /// `EditError::AnnotationVertexNotPlaceable` — the coordinate is not a
+    /// usable page value.
+    ///
+    /// A non-finite number, which on this canvas means the page-space
+    /// conversion produced something the format cannot hold. Not an operator
+    /// mistake, and the sentence does not imply one.
+    Unplaceable,
+    /// `EditError::AnnotationLocked` — §12.5.3 Table 165 bit 8.
+    ///
+    /// The **file** says the user interface may not change this mark's position
+    /// or size. Should be unreachable from an anchor, because
+    /// `annotnodes::geometry` refuses a locked annotation before one is drawn —
+    /// worded anyway, because an unreachable refusal that becomes reachable
+    /// silently is how a grip comes to do nothing.
+    Locked,
+    /// Everything else the engine can say no with: an annotation that is no
+    /// longer there, a ce dimension arriving at the wrong verb, an index that
+    /// names nothing, an encrypted document, an enforced certification, a
+    /// subtype pdfcer does not model.
+    ///
+    /// One sentence for all of them rather than seven, because they divide into
+    /// *cannot happen from an anchor this shell drew* and *is a property of the
+    /// file that no wording about nodes would help with*, and neither class
+    /// gives the operator a next act about nodes. What they do get is the
+    /// knowledge that the press was heard.
+    Refused,
+}
+
+impl NodeEditRefusal {
+    /// The sentence, for `Declined::line`.
+    ///
+    /// Each names what is true rather than what the engine called it, and each
+    /// names a **next act** where there is one — which is the rule
+    /// `resize_not_rebuildable` states and the reason the ce-dimension twin
+    /// gives: at the moment it is read the operator has just released a drag
+    /// and seen nothing happen, and what they need is what to do, not a
+    /// diagnosis.
+    #[must_use]
+    pub const fn line(self) -> &'static str {
+        match self {
+            Self::WouldLeaveTooFew => {
+                "That shape has as few corners as it can have. Add one before \
+                 taking one away, or delete the whole mark."
+            }
+            Self::ShapeHasNoNodes { subtype } => subtype.no_nodes_line(),
+            Self::Unplaceable => {
+                "That corner cannot go there — the position is off the page's \
+                 usable range."
+            }
+            Self::Locked => {
+                "The file marks this as locked, so its shape cannot be changed \
+                 here. Unlock it in the program that made it."
+            }
+            Self::Refused => "The corner could not be changed. The drawing is unchanged.",
+        }
+    }
+}
+
+impl ShapeWord {
+    /// **Why this kind of mark shows no node anchors.**
+    ///
+    /// ★★ Every one of these says what the operator *can* do instead, because
+    /// each of them can do something: a rectangle and an ellipse resize, a
+    /// freehand mark moves and resizes as a whole, a line's two ends drag. A
+    /// sentence that only said "no" would leave them looking for a control that
+    /// does not exist.
+    ///
+    /// ★ The freehand sentence deliberately does **not** apologise or promise.
+    /// pdfcer refuses per-point ink editing on purpose — the engine's words:
+    /// *"an `/InkList` stroke is a recorded pen trace, and Acrobat has never
+    /// offered per-point ink editing at any version"* — so wording it as a
+    /// missing feature would be this surface predicting work nobody has agreed
+    /// to.
+    #[must_use]
+    pub const fn no_nodes_line(self) -> &'static str {
+        match self {
+            Self::Ink => {
+                "A freehand mark has no corners to edit — it is a recorded pen \
+                 stroke. You can move, resize or delete the whole mark."
+            }
+            Self::Rectangle => {
+                "A rectangle has no corners to drag one at a time. Use its \
+                 resize handles to change its shape."
+            }
+            Self::Ellipse => {
+                "An ellipse has no corners to drag one at a time. Use its \
+                 resize handles to change its shape."
+            }
+            Self::Line => {
+                "A line has two ends. You can drag either one, but a line \
+                 cannot gain or lose a corner — draw a polyline for that."
+            }
+            Self::TextMarkup => {
+                "A text mark follows the words it covers, so it has no corners \
+                 of its own to move."
+            }
+            Self::Other => "This kind of mark has no corners to edit.",
+        }
+    }
+}
+
+/// **The mark's stated measurement may now be wrong** — disclosed after a node
+/// edit, never guessed at.
+///
+/// `ReshapeForecast::measure_not_recomputed` is `true` when the annotation
+/// carries a `/Measure` dictionary (§12.9) whose number pdfcer did **not**
+/// recompute. The engine's account of why it does not is the reason this
+/// sentence exists rather than a silent fix:
+///
+/// > Acrobat recomputes the number and — a sourced user complaint — silently
+/// > clobbers any manual override in doing so. pdfcer's markup bake draws no
+/// > caption and reads no `/Measure`, so it neither recomputes nor clobbers.
+///
+/// ⇒ The geometry moved and the text did not. Saying so is the whole of R8b
+/// rule 4's honest half: an operator who is not told will read a number that
+/// describes the shape before their drag.
+#[must_use]
+pub const fn measure_stale() -> &'static str {
+    "This mark carries a measurement written by another program. Its shape has \
+     changed and that number has not — pdfcer will not overwrite it, because \
+     it may have been set by hand."
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

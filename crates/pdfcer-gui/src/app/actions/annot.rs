@@ -296,4 +296,112 @@ pub enum AnnotAction {
         /// The annotation, by stable object id.
         id: pdfcer_core::object::ObjId,
     },
+    // =======================================================================
+    // The NODES of a markup shape — the operator's report of 2026-09-05
+    // =======================================================================
+    //
+    // > *"I also can't edit or delete nodes of a markup shape once it is
+    // > drawn."*
+    //
+    // ★★★ **Three variants and not one with a `VertexEdit` inside it**, and the
+    // reason is `canvas::dimdrag::VertexIntent`'s: the three reach **three
+    // different engine wrappers**, and the one thing that must never happen on
+    // this canvas is a gesture aimed at the wrong verb. A single variant
+    // carrying `pdfcer_core::edit::VertexEdit` would compile, would be shorter,
+    // and would put the engine's own enum on this shell's action bus — where a
+    // future `VertexEdit` variant would arrive as a silent `..` match rather
+    // than as a compile error.
+    //
+    // ★ All three take **no page**, for [`Self::Move`]'s reason: the engine
+    // finds its operand by stable object id, and a page index would be a
+    // second, weaker name for a thing already named.
+    /// **Move one node of a markup shape** by a page-space delta, as one
+    /// undoable command. `EditSession::move_annotation_vertex`.
+    ///
+    /// Raised by `crate::canvas::annotnodes` on the release of a node drag, and
+    /// by nothing else.
+    ///
+    /// ★★ A **delta**, not a destination, and it is the same choice
+    /// `annotdrag::Move` made for the same reason one level up: the engine's
+    /// verb takes `(index, dx, dy)`, and a shell that sent an absolute point
+    /// would have to subtract the old one — which means reading the geometry a
+    /// second time, at apply time, and getting a different answer if anything
+    /// moved in between.
+    MoveNode {
+        /// The annotation, by stable object id.
+        id: pdfcer_core::object::ObjId,
+        /// Which node. For a `/Polygon` or `/PolyLine` this indexes
+        /// `/Vertices`; for a `/Line` it is 0 (start) or 1 (end).
+        index: usize,
+        /// Horizontal displacement, PDF points.
+        dx: f64,
+        /// Vertical displacement, PDF points. **Positive is up** — y increases
+        /// upward in PDF user space (§8.3.2.3).
+        dy: f64,
+    },
+    /// **Add a node immediately after `after`**, at `at`.
+    /// `EditSession::insert_annotation_vertex`.
+    ///
+    /// The new node's index is `after + 1`. There is deliberately no
+    /// "insert before the first" spelling — the engine refuses `after >= count`
+    /// and says to rotate the polygon's start instead, which is what every
+    /// other tool does as well.
+    ///
+    /// ★ `at` is **already snapped**. `annotnodes` resolves the destination
+    /// through the same `measure::snap_point` the preview drew a marker at, so
+    /// the point committed and the point shown are one value rather than two
+    /// derivations of one intention.
+    InsertNode {
+        /// The annotation, by stable object id.
+        id: pdfcer_core::object::ObjId,
+        /// The node the new one goes after.
+        after: usize,
+        /// Where it goes, in page space (PDF user space, y-up).
+        at: pdfcer_core::vector::Point,
+    },
+    /// **Take a node away.** `EditSession::remove_annotation_vertex`.
+    ///
+    /// ★ No destination, because a removal has none. The drop point of the
+    /// gesture that raised this is ignored on purpose, and `annotnodes` draws
+    /// no snap marker for it — a marker would point at a node that is about to
+    /// stop existing.
+    ///
+    /// The engine refuses below the shape's floor (`/Polygon` keeps three,
+    /// `/PolyLine` keeps two) and this shell asks it **before** the gesture
+    /// previews anything, so a release that reaches this variant is one the
+    /// preflight already allowed.
+    RemoveNode {
+        /// The annotation, by stable object id.
+        id: pdfcer_core::object::ObjId,
+        /// Which node to remove.
+        index: usize,
+    },
+    /// **A node edit did not happen, and the operator is owed the sentence.**
+    ///
+    /// ★★★ Raised on the release frame of a gesture whose preflight refused,
+    /// and by `annotnodes::explain_unreshapable` when the Points tool is armed
+    /// over a shape that shows no anchors. Carries no id and no index: the
+    /// operator is looking at the shape, and what they need is the reason.
+    ///
+    /// # Why a gesture with a preflight still needs this
+    ///
+    /// Because the preflight is what makes it the **only** report that exists.
+    /// `annotnodes` asks `reshape_annotation_preview` before it draws anything,
+    /// so a refused edit is never previewed and never raised as an action — the
+    /// engine is never asked to refuse, no funnel is entered, and no
+    /// `EditRefused` is recorded. Without this the operator drags a corner of a
+    /// triangle out of the shape, releases, and the triangle is still a
+    /// triangle with nothing anywhere saying why. **That silence is precisely
+    /// the shape of the report this whole feature answers.**
+    ///
+    /// ★ Handed inward as an action rather than recorded at the gesture,
+    /// because the decline store is `pub(super)` inside `crate::app` and the
+    /// canvas is outside that boundary. `DimensionAction::DeclineVertexEdit`
+    /// carries the same argument for the ce-dimension twin.
+    DeclineNodeEdit {
+        /// Which sentence. The mapping from `EditError` lives at
+        /// `canvas::annotnodes::refusal_for`, so the engine's vocabulary stays
+        /// out of the string catalog.
+        why: crate::text::markup::NodeEditRefusal,
+    },
 }

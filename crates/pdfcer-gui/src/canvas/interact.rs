@@ -656,6 +656,16 @@ pub(super) fn interact(
     // `drop(targets)`, since taking `&mut doc` inside the match is impossible
     // while the provider `Ref` is alive.
     let mut hold_after_drop: Option<crate::canvas::shapes::ShapePreview> = None;
+    // ★★★ **R9's other half: a shape with no nodes says so.** `Pass 255.0`.
+    //
+    // A rectangle, an ellipse and a freehand mark draw no node anchors, which
+    // is what R9 requires of an unavailable capability — and is also exactly
+    // what a build that forgot to draw them renders. The operator cannot tell
+    // those apart by looking, so the absence is stated in words at the moment
+    // they ask for it: the frame after they arm the Points tool. It fires once
+    // per (shape, tool) change and not per frame; `annotnodes` owns that guard
+    // and its header carries the argument.
+    crate::canvas::annotnodes::explain_unreshapable(&ctx, doc, &selection, actions);
     match outcome {
         // ★ A click is EITHER a measure pick or a selection, never both.
         //
@@ -1065,33 +1075,32 @@ pub(super) fn interact(
             )
             .map(|f| (grip, f));
         }
-        // ★ A perimeter's corner. Routed beside the Bézier handle it is
-        // modelled on, and to a different verb - `move_dimension_vertex` rather
-        // than `move_handle` - which is the whole reason they are two drag
-        // kinds rather than one with a flag in it.
-        //
-        // It reuses `dimension_preview` because the picture is the same shape:
-        // page-space segments of a polyline redrawn from the geometry the
-        // release will commit. A ghosted outline would be the wrong picture
-        // here for the same reason it is wrong for a label drag - moving one
-        // corner stretches two segments rather than translating a box.
+        // ★★★ A NODE DRAG, ROUTED — two subjects, two engine verb families, and
+        // `canvas::vertexroute` is where they part. It applies Shift and Alt
+        // once above its own fork (`drag-moves` D5, D6) and its header carries
+        // the whole argument; this file is wiring, which is the seam
+        // `canvas::dragroute` already draws one gesture along.
         GestureOutcome::DimensionVertex {
             index,
             from,
             at,
             phase,
+        }
+        | GestureOutcome::MarkupVertex {
+            index,
+            from,
+            at,
+            phase,
         } => {
-            // ★ SHIFT LOCKS A CORNER TO ONE AXIS, measured from the PRESS —
-            // so the grab point survives (`drag-moves` D8).
-            let at = crate::canvas::constrain::reposition(&ctx, shift, from, at);
-            // ★ ALT SUSPENDS THE SNAP, read live and asked of the same
-            // `snap_query_enabled` a measure pick asks. It is what makes a
-            // generous catch radius affordable: the offer is refusable, so it
-            // can afford to be eager.
-            let alt_held = ctx.input(|i| i.modifiers.alt);
-            let dragged = dimdrag::drag_vertex(
-                dimdrag::VertexFrame {
+            let subject = if matches!(outcome, GestureOutcome::MarkupVertex { .. }) {
+                crate::canvas::vertexroute::Subject::Markup
+            } else {
+                crate::canvas::vertexroute::Subject::CeDimension
+            };
+            let routed = crate::canvas::vertexroute::dragged(
+                crate::canvas::vertexroute::Frame {
                     ctx: &ctx,
+                    subject,
                     index,
                     from,
                     at,
@@ -1100,18 +1109,13 @@ pub(super) fn interact(
                     selection: &selection,
                     targets: targets.as_deref().map(|t| t as &dyn CanvasTargetProvider),
                     map,
-                    alt_held,
+                    shift,
                 },
                 actions,
             );
-            pv.dimension = dragged.segments;
-            // ★ The candidate travels to the painter rather than being
-            // re-queried there, which is `measure::Resolved`'s whole reason for
-            // existing: a marker resolved a second time is a second derivation,
-            // and this project has already shipped one that sat away from the
-            // point it described for four days because a raw screen position
-            // and a converted canvas one are the same type.
-            pv.vertex_snap = dragged.snap;
+            pv.dimension = routed.dimension;
+            pv.markup_nodes = routed.markup;
+            pv.vertex_snap = routed.snap;
         }
         GestureOutcome::Handle {
             node,
@@ -1321,6 +1325,7 @@ pub(super) fn interact(
             resize_ghost: pv.resize_ghost,
             handle_drag: pv.handle,
             dimension_preview: pv.dimension.as_deref(),
+            markup_node_preview: pv.markup_nodes.as_deref(),
             vertex_snap: pv.vertex_snap,
             rotate_ghost: pv.rotate_ghost,
             band: pv.band,

@@ -89,7 +89,25 @@ pub struct Slots {
     /// its extension lines* rather than translating a box. A ghost offset by a
     /// delta would draw the wrong picture entirely.
     pub dimension: Option<Vec<(Point, Point)>>,
-    /// What a perimeter corner is snapping to while it is being dragged.
+    /// ★★★ **A markup shape redrawn from its nodes' new positions**, as
+    /// page-space segments — `Pass 255.0`, and the operator's *"I also can't
+    /// edit or delete nodes of a markup shape once it is drawn."*
+    ///
+    /// Beside [`Self::dimension`] rather than sharing it, even though the two
+    /// are the same shape of value and can never both be `Some` on one frame.
+    /// They describe two different subjects reaching two different engine verb
+    /// families — R8b rule 15's distinction between a **ce dimension** and a
+    /// comment shape — and one `Vec` whose meaning depends on which selection
+    /// is live is a value the paint loop has to interrogate. `Self::annot_ghost`
+    /// makes the identical choice against `Self::ghost` for the identical
+    /// reason.
+    ///
+    /// ★ Not a ghosted outline: moving one node **stretches two segments**, so
+    /// a bounding box translated by a delta would draw a picture the release
+    /// does not commit.
+    pub markup_nodes: Option<Vec<(Point, Point)>>,
+    /// What a dragged node is snapping to — a ce dimension's corner or a markup
+    /// shape's node.
     ///
     /// ★ Separate from [`Self::dimension`] for the reason `dimdrag::VertexDrag`
     /// gives: the polyline is page-space geometry and this is one screen-space

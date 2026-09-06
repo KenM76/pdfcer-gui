@@ -218,6 +218,13 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // ⬜ REGISTERED AND NEVER RUN — written 2026-09-05 while another track
         // held the pointer. See its module header.
         Box::new(dimension_corner_count::ACornerCanBeAddedAndTakenAway),
+        // ★★★ Beside it, and after it, because they are the two halves of one
+        // report and this is the half that needed an engine Pass. It is placed
+        // second on purpose: if both fail, the ce-dimension one failing too
+        // says the fault is in the shared gesture grammar
+        // (`dimdrag::intent`, the Points tool, the modifier path) rather than
+        // in the markup side, and that is a different first place to look.
+        Box::new(markup_node_edit::AMarkupShapesNodesCanBeEdited),
         // ★ Early, and deliberately: it is the cheapest possible statement of
         // "can this program open the file at all", and a failure here changes
         // what every later failure on an encrypted document would mean.
@@ -522,6 +529,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // stamp — is in front of this one, so a failure there should be read
         // first.
         Box::new(std14_face::TheFaceChooserOffersAFaceTheDocumentDoesNotContain),
+        Box::new(refused_character_face::ARefusedCharacterOffersAFaceThatCanTypeIt),
         Box::new(font_group::TheFormatTabOffersFontControlsForSweptText),
         // ★ After `font_group`: same state, and that one asserts the sentence
         // while this asserts the control. Read a sentence failure first.

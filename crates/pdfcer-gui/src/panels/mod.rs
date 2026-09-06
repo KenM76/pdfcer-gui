@@ -806,6 +806,29 @@ pub struct PanelsState {
     /// armed in Edit — both be present at once. One struct with two stamps is
     /// one struct with two reset rules.
     text_object: properties::textobject::TextObjectDraft,
+    /// ★★★ **The character an edit was refused for, the face the operator
+    /// picked to answer it, and the revision both were live for** —
+    /// `OPERATOR_REQUESTS.md` O141.
+    ///
+    /// Held here for [`Self::text_style`]'s reason at its exact cost: filling
+    /// the offer's face list is one extraction with provenance capture plus one
+    /// `preview_font_resources`, which is 392 ms for the first alone on the
+    /// operator's benchmark sheet, so a block that re-read it every frame would
+    /// hold the program under three frames a second for as long as the refusal
+    /// was on screen. The struct carries a `(page, run, epoch)` stamp.
+    ///
+    /// ★★ It is also more than a cache, which is why it could not live behind
+    /// interior mutability on `OpenDoc` — this module's header draws that line
+    /// for the Layers checkbox and it binds here. `RefusedCharUi::taken` records
+    /// that **the operator pressed a row in this block**, which is an operator
+    /// instruction and the only thing that distinguishes the face swap they
+    /// asked for from any other edit that would retire the report.
+    ///
+    /// ★ Reset with the document by [`Self::forget_document`], for
+    /// [`Self::bookmarks`]' reason: a `(page, run)` pair names different text in
+    /// a different file, so an offer carried across would restyle a run nobody
+    /// asked about.
+    refused_char: properties::refusedchar::RefusedCharUi,
     /// ★ The memoised answer to *what would go with deleting the selected
     /// annotation?* — `EditSession::annotation_deletion_preview`.
     ///
@@ -1013,8 +1036,19 @@ impl PanelsState {
     /// `*self = Self::default()` rather than clearing fields one at a time,
     /// so a field added later is forgotten by construction. This is the one
     /// operation that must not need updating when the struct grows.
+    ///
+    /// ★★ **One thing this struct's reset cannot reach**, and it is named here
+    /// rather than left to be discovered: `properties::refusedchar` keeps the
+    /// refusal that has been *recorded and not yet adopted* in a thread-local,
+    /// because it is written by the dispatcher and read by a body that is handed
+    /// `&OpenDoc` shared — there is no `&mut` path between them. A refusal left
+    /// there when a document closes would be adopted by the next document's
+    /// first draw, where its `(page, run)` names different text. So the reset
+    /// says so explicitly, and the "forgotten by construction" property above
+    /// holds for every field that a `Default` can reach.
     pub fn forget_document(&mut self) {
         *self = Self::default();
+        properties::refusedchar::forget_document();
     }
 
     /// The operator's state in the Objects tree — what is expanded, and what
@@ -1144,6 +1178,15 @@ impl PanelsState {
     /// when what it holds is stale.
     pub fn text_object_mut(&mut self) -> &mut properties::textobject::TextObjectDraft {
         &mut self.text_object
+    }
+
+    /// The refused-character offer's state, for `properties::refusedchar`.
+    ///
+    /// No re-seed argument, like [`Self::text_style_mut`]: the struct owns its
+    /// own `(page, run, epoch)` stamp and its own retirement rule, and decides
+    /// for itself when what it holds has stopped being true.
+    pub fn refused_char_mut(&mut self) -> &mut properties::refusedchar::RefusedCharUi {
+        &mut self.refused_char
     }
 
     /// The selected annotation's memoised deletion collateral, for

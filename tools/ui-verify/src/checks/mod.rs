@@ -300,6 +300,12 @@ pub mod form_selection;
 /// it cannot perform to a defaulted page 0 and navigates anyway, which has no
 /// symptom an operator would report. Its header carries the argument.
 pub mod link_follow;
+/// ★★★ **A MARKUP shape's nodes can be moved and deleted, and a refusal is
+/// SHOWN** — the operator's report of 2026-09-05 in its literal form, for the
+/// half that is a comment shape rather than a ce dimension. It is the only
+/// instrument in this repository that asserts the reshape reaches the
+/// **pixels**, which is where the failure the engine warned about hides.
+pub mod markup_node_edit;
 /// ★ Markup ▸ Style — a ribbon group whose one item the manifest declared at S2
 /// and no renderer ever drew, so it shipped as a caption over an empty band.
 ///
@@ -621,6 +627,22 @@ pub mod scale_sweep;
 // control drawn with no frame, and a control drawn with no glyph. Written
 // 2026-09-04 with the fix it verifies, and deliberately left UNRUN -- see
 // its header for why, and for the command that runs it.
+/// ★★★ **The chooser offers a face the document does not contain** —
+/// `pdfcer-core` v0.15.0's standard-14 authoring, reached from a font list.
+///
+/// The engine shipped the capability and the shell could not reach it: the
+/// chooser built its list from `preview_font_resources`, which enumerates the
+/// *page's own* `/Font` resources, so the one thing the release note is about
+/// was absent from every surface in the program. Its header carries the six
+/// links and names the fourth as the one worth writing the check for on its own
+/// — pdfcer embeds nothing, so the text is drawn with the READER'S copy of the
+/// face, and a disclosure that is catalogued, unit-tested and never painted has
+/// discharged nothing.
+/// ★★★ **A refused character offers the face that can type it** — the engine
+/// refuses by name when a run's font carries no code for a character, and
+/// until O141 nothing joined that refusal to the chooser sitting one panel
+/// away that already offers faces which do carry it.
+pub mod refused_character_face;
 pub mod ribbon_mockup;
 /// ★★ **The ninth grip** — the rotate handle above the selection box, and the
 /// third word of the operator's *"reposition, resize, or rotate"*. Its header
@@ -637,17 +659,6 @@ pub mod scale_switch;
 /// OUTLIVES the release; its header carries why "built and never painted" needs
 /// a trace line of its own.
 pub mod shape_preview;
-/// ★★★ **The chooser offers a face the document does not contain** —
-/// `pdfcer-core` v0.15.0's standard-14 authoring, reached from a font list.
-///
-/// The engine shipped the capability and the shell could not reach it: the
-/// chooser built its list from `preview_font_resources`, which enumerates the
-/// *page's own* `/Font` resources, so the one thing the release note is about
-/// was absent from every surface in the program. Its header carries the six
-/// links and names the fourth as the one worth writing the check for on its own
-/// — pdfcer embeds nothing, so the text is drawn with the READER'S copy of the
-/// face, and a disclosure that is catalogued, unit-tested and never painted has
-/// discharged nothing.
 pub mod std14_face;
 
 /// **Text that does not run along the page's x axis** — the operator's

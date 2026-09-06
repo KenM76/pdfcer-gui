@@ -648,3 +648,275 @@ pub(super) fn clear_note(doc: &mut OpenDoc, id: ObjId) {
         })
     });
 }
+
+// ===========================================================================
+// The NODES of a markup shape — `Pass 255.0`, the operator's report of
+// 2026-09-05
+// ===========================================================================
+//
+// > *"I also can't edit or delete nodes of a markup shape once it is drawn."*
+//
+// Three engine wrappers over one planner. They share everything except which
+// `VertexEdit` they build, which is why they share [`reshape`] here rather than
+// each spelling the funnel out — the disclosure obligation is identical for all
+// three and stating it once is what stops the third one growing up without it.
+//
+// ★★★ **`reshape_annotation` and not the three wrappers**, and that is a
+// deliberate reversal of the obvious call. The wrappers are one-liners that
+// pass `modified: None`, so they can never stamp `/M`; this shell knows the
+// time and the engine reads no clock, on purpose:
+//
+// > pdfcer reads no clock (determinism — the same edit on the same file
+// > produces the same bytes), so the three convenience wrappers leave `/M`
+// > exactly as it was and say so.
+//
+// A reviewer's comment whose shape changed and whose modification date did not
+// is a comment that lies about when it was last touched, and §12.5.2 admits any
+// string for `/M`. So this shell supplies one, in the ASN.1 form §7.9.4
+// defines, and `AnnotationReshape::mod_date_written` reports whether it landed.
+
+// ★★ **The date comes from `app::clock::pdf_date_utc`, and this paragraph is
+// here because the first draft of this file did NOT.**
+//
+// A second civil-from-days implementation was written out in full — twelve
+// lines of Howard Hinnant's algorithm — before `cargo test` surfaced a doctest
+// for `app::clock::pdf_date_utc` doing the identical job, with the identical
+// UTC ruling and a better failure mode. ⇒ **Two copies of a calendar are two
+// calendars**, and the one nobody looks at is the one that claims 30 February.
+// The duplicate was deleted rather than kept beside it.
+//
+// Its `None` case is the one this call site cares about: a clock before the
+// Unix epoch yields no stamp, `/M` is left exactly as it was, and the
+// annotation's date is unchanged rather than false. `AnnotationReshape::
+// mod_date_written` reports which happened.
+
+/// **Apply one node edit to a markup annotation**, as one undoable command.
+///
+/// The one body behind [`move_node`], [`insert_node`] and [`remove_node`].
+///
+/// # ★★ What it discloses, and why both sentences are needed
+///
+/// | condition | sentence | why a canvas cannot say it |
+/// |---|---|---|
+/// | `measure_not_recomputed` | [`crate::text::markup::measure_stale`] | the number is baked into an appearance the shape still draws |
+/// | `dropped` is non-empty | [`crate::text::dropped::only_the_first`]-style listing, through `markup::dropped_properties` | the re-baked appearance *looks* right; what went is what pdfcer could not reproduce |
+///
+/// The first is the one the engine went out of its way to give us. Acrobat
+/// recomputes a `/Measure` number on a reshape and — a sourced user complaint —
+/// silently clobbers a manual override doing it. pdfcer does neither, so the
+/// geometry moves and the text does not, and **only a sentence can say so**.
+///
+/// # ★ The refusal is not caught here
+///
+/// `canvas::annotnodes` asks `reshape_annotation_preview` on **every frame** of
+/// the drag, so a release that reaches this function is one the engine already
+/// said yes to. A refusal arriving here would mean the document changed between
+/// the last preview frame and the release — which cannot happen inside one
+/// frame's `Vec<Action>` — and `vector_edit`'s own worded floor covers it.
+fn reshape(doc: &mut OpenDoc, id: ObjId, edit: pdfcer_core::edit::VertexEdit, label: &str) {
+    let modified = crate::app::clock::pdf_date_utc();
+    super::apply::vector_edit(doc, label, 0, 1, |session| {
+        session
+            .reshape_annotation(id, edit, modified.as_deref())
+            .map(|outcome| {
+                crate::diag::trace(|| {
+                    // ui-text-exempt: diagnostic trace, never displayed.
+                    //
+                    // ★ `nodes=` carries BEFORE→AFTER rather than a single
+                    // count, because that pair is what a wrong build gets
+                    // wrong invisibly: an insert that landed on the wrong
+                    // segment and a correct one both report one more node,
+                    // and only the before-and-after together with the index
+                    // in the shell's own line say which happened.
+                    // ★★ `rect=` carries the annotation's `/Rect` BEFORE and
+                    // AFTER, and it is the one number in this line a driven
+                    // check can compare against pixels. A reshape rewrites
+                    // three things — the geometry array, the `/Rect` and the
+                    // baked `/AP` — and the engine's own note is that a shell
+                    // which wrote only some of them looks correct in every
+                    // renderer and is wrong in the next tool that rebuilds the
+                    // appearance. The `/Rect` is the half that MOVES the
+                    // painted result, so a run where the nodes changed and this
+                    // pair did not is the shape of that defect, visible in one
+                    // line.
+                    //
+                    // `rect_before` is an `Option` because a malformed
+                    // annotation may carry no `/Rect` at all; the engine
+                    // surfaces that rather than repairing it, and so does this.
+                    let before = outcome
+                        .rect_before
+                        .map_or_else(|| "none".to_owned(), |r| format!("{r:?}"));
+                    format!(
+                        "{label}-applied id={} subtype={} edit={} nodes={}->{} \
+                         rect={before}->{:?} dropped={} measure_stale={} m={}",
+                        id.num,
+                        outcome.subtype,
+                        // ★ `as_str` and not `{:?}`: the engine spells these
+                        // "move" / "insert" / "remove" itself, and a trace that
+                        // read `Moved` while `pdfcer annotation-vertex` printed
+                        // `move` would be two vocabularies for one fact.
+                        outcome.edit.as_str(),
+                        outcome.vertices_before,
+                        outcome.vertices_after,
+                        outcome.rect_after,
+                        outcome.dropped.len(),
+                        outcome.measure_not_recomputed,
+                        outcome.mod_date_written
+                    )
+                });
+                let mut notes = Vec::new();
+                if outcome.measure_not_recomputed {
+                    notes.push(crate::text::markup::measure_stale().to_owned());
+                }
+                // ★ Carried into the disclosure list rather than discarded, on
+                // `SetMarkupStyle`'s stated rule: a reshape RE-BAKES the
+                // appearance, and re-baking loses anything the original
+                // expressed outside the model pdfcer draws — a border effect it
+                // does not author, a producer's own decoration. The dictionary
+                // key survives and the picture does not, so the canvas cannot
+                // show what went. Same catalog as the restyle's, because it is
+                // the same loss from the same bake.
+                notes.extend(
+                    outcome
+                        .dropped
+                        .iter()
+                        .map(|d| crate::text::panels::properties::markup_dropped(*d).to_owned()),
+                );
+                notes
+            })
+    });
+}
+
+/// **Move one node of a markup shape.** `EditSession::move_annotation_vertex`,
+/// reached through [`reshape`] so the `/M` stamp and the disclosures are one
+/// rule rather than three copies of one.
+pub(super) fn move_node(doc: &mut OpenDoc, id: ObjId, index: usize, dx: f64, dy: f64) {
+    reshape(
+        doc,
+        id,
+        pdfcer_core::edit::VertexEdit::Move { index, dx, dy },
+        "move-annotation-vertex",
+    );
+}
+
+/// **Add a node immediately after `after`**, at `at`.
+/// `EditSession::insert_annotation_vertex`.
+pub(super) fn insert_node(
+    doc: &mut OpenDoc,
+    id: ObjId,
+    after: usize,
+    at: pdfcer_core::vector::Point,
+) {
+    reshape(
+        doc,
+        id,
+        pdfcer_core::edit::VertexEdit::Insert { after, at },
+        "insert-annotation-vertex",
+    );
+}
+
+/// **Take a node away.** `EditSession::remove_annotation_vertex`.
+pub(super) fn remove_node(doc: &mut OpenDoc, id: ObjId, index: usize) {
+    reshape(
+        doc,
+        id,
+        pdfcer_core::edit::VertexEdit::Remove { index },
+        "remove-annotation-vertex",
+    );
+}
+
+// ===========================================================================
+// The router — moved here from `apply` on 2026-09-05 under R2
+// ===========================================================================
+
+/// **Route one annotation verb to its body.**
+///
+/// Called from `apply`'s single `Action::Annot(_)` arm, which replaced eleven
+/// that each destructured one variant and called one function two lines long.
+/// The seam is `apply`'s own, stated in its header and drawn twice already:
+/// **that file routes by family, and the family module decides.**
+///
+/// # ★ Why the author name is a parameter and not a read
+///
+/// [`crate::app::actions::annot::AnnotAction::SetNote`] carries `keep_author`
+/// — a fact about the **document** the raising surface had in front of it —
+/// and the name is a fact about the **operator** that only the apply scope can
+/// see. A panel that carried a name would be reading preferences it is not
+/// handed; a body that re-derived `keep_author` would be walking the annotation
+/// a second time for something already known. So one travels on the action and
+/// one travels as an argument, which is the split the field's own doc argues
+/// for.
+///
+/// The empty string means *no name is set*, and it is filtered here rather than
+/// at the call site so that every future caller of this router gets the same
+/// answer to *"what does a blank author preference mean?"*.
+pub(super) fn apply_action(
+    doc: &mut OpenDoc,
+    action: crate::app::actions::annot::AnnotAction,
+    author_name: &str,
+) {
+    use crate::app::actions::annot::AnnotAction as A;
+    match action {
+        // The move takes no page for the reason the variant states:
+        // `move_annotation` finds the annotation by id, and the disclosure it
+        // owes is about a pop-up rather than a sheet.
+        A::Move { id, dx, dy } => move_annot(doc, id, dx, dy),
+        A::Resize {
+            id,
+            anchor,
+            sx,
+            sy,
+            uniform,
+            modifiers,
+        } => resize(doc, id, anchor, (sx, sy), uniform, modifiers),
+        // ★ Two rotation arms, not one with a kind flag: the engine refuses a
+        // ce dimension from the annotation verb by name. See
+        // [`rotate_dimension`].
+        A::Rotate { id, pivot, degrees } => rotate(doc, id, pivot, degrees),
+        A::RotateDimension {
+            dimension,
+            annot,
+            pivot,
+            degrees,
+        } => rotate_dimension(doc, dimension, annot, pivot, degrees),
+        A::Delete { page, id } => delete(doc, page, id),
+        A::SetNote {
+            id,
+            text,
+            keep_author,
+        } => {
+            let author = if keep_author {
+                None
+            } else {
+                Some(author_name).filter(|a| !a.is_empty())
+            };
+            set_note(doc, id, &text, author);
+        }
+        A::ClearNote { id } => clear_note(doc, id),
+        // ★★★ The three node verbs — `Pass 255.0`, and the operator's *"I also
+        // can't edit or delete nodes of a markup shape once it is drawn."*
+        //
+        // Three arms and not one carrying a `VertexEdit`, matching the three
+        // variants: the shell's action bus does not carry the engine's enum, so
+        // a fourth `VertexEdit` variant arrives as a compile error in
+        // [`reshape`] rather than as a silent `..` here.
+        A::MoveNode { id, index, dx, dy } => move_node(doc, id, index, dx, dy),
+        A::InsertNode { id, after, at } => insert_node(doc, id, after, at),
+        A::RemoveNode { id, index } => remove_node(doc, id, index),
+        // ★★ **The only report a refused node edit produces.** The gesture
+        // preflights through `reshape_annotation_preview`, so no verb is
+        // reached, no funnel is entered and no `EditRefused` is recorded — if
+        // this arm is removed the operator drags a corner of a triangle out of
+        // the shape, releases, and the triangle is still a triangle with
+        // nothing anywhere saying why. That silence is the report this whole
+        // feature answers.
+        //
+        // ★ Recorded here rather than at the gesture because the decline store
+        // is `pub(super)` inside `crate::app` and the canvas is outside that
+        // boundary — the same crossing `DimensionAction::DeclineVertexEdit`
+        // makes for the ce-dimension twin.
+        A::DeclineNodeEdit { why } => {
+            crate::app::status::decline::record_markup_node_refused(why);
+        }
+    }
+}

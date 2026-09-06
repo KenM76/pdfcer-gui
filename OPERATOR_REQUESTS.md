@@ -188,9 +188,24 @@ follow from it and none of them is hidden:
   with it, which is why that is a checkbox and is off by default. Naming a
   standard-14 face is the opposite act: nothing of pdfcer's goes into your
   document. The engine says so itself on the run above: *"pdfcer ADDED one as
-  `/pdfceF6` — a standard-14 face … so **no font program is embedded and no bytes
+  `/pdfceF6` <!-- old-name-exempt: a PDF resource name the engine writes into the file, quoted verbatim; see the note below --> — a standard-14 face … so **no font program is embedded and no bytes
   of glyph outline were added**."* A dictionary entry naming a face, not a copy
   of one.
+
+  <!-- old-name-exempt: the resource name quoted two lines above is a PDF
+  RESOURCE NAME the engine writes into the file, reproduced verbatim from its
+  own output — it is data, not prose about the project. The engine still emits
+  that prefix after the rename (`edit.rs:31362`, `text_edit/addtext.rs:96`),
+  deliberately: the identifier crossed into the file format, and changing it
+  would alter the bytes of every document pdfcer has ever produced and break
+  round-tripping with them. The rename correctly stopped at that boundary, so
+  this is a permanent exemption rather than a deferred miss. -->
+  <!-- old-name-exempt: this second marker exists because the gate matches PER
+  LINE, and the first attempt at this exemption spilled the old name onto
+  unmarked continuation lines — the marker discharges the line it sits on, not
+  the paragraph it belongs to. Recorded so the next person wording an exemption
+  does not spend the same five minutes. -->
+
 
 ### Rule 4 — this is the case its surviving half was written for
 

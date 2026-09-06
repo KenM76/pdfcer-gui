@@ -229,6 +229,35 @@ pub enum DragKind {
         /// Which vertex of the selected perimeter, by index into its points.
         index: usize,
     },
+    /// The press was on a **node of a selected markup shape**: drag it, or —
+    /// with the Points tool armed and `Ctrl` held — add or remove one.
+    /// `Pass 255.0`, and the operator's *"I also can't edit or delete nodes of
+    /// a markup shape once it is drawn."*
+    ///
+    /// # ★★ A FOURTH vertex-shaped drag kind, and it has to be its own
+    ///
+    /// The three that exist already are [`Self::Handle`] (a Bézier control
+    /// point, `move_handle`), [`Self::DimensionVertex`] (a ce dimension's
+    /// corner, `move_dimension_vertex`) and this one (a comment shape's node,
+    /// `reshape_annotation`). They are the same *gesture* and three different
+    /// *subjects*, reaching three different verb families over three different
+    /// identity schemes — a paint-order index, a sidecar `DimensionId`, and a
+    /// stable `ObjId`. [`Self::DimensionVertex`]'s own note argues at length
+    /// against folding two of them into one variant with a discriminator; this
+    /// is that argument applied a third time rather than re-derived.
+    ///
+    /// # ★ Why the index is sampled at the PRESS
+    ///
+    /// The rule [`MarqueeIntent`] states — *a gesture means what it meant when
+    /// it began*. Resolving "which node" per frame would let a drag hop onto a
+    /// neighbour it passed over, and on a dense polygon that is a shape the
+    /// operator never asked for, committed by a verb that worked perfectly.
+    MarkupVertex {
+        /// Which node of the selected shape, by index into its geometry. For a
+        /// `/Polygon` or `/PolyLine` this indexes `/Vertices`; for a `/Line` it
+        /// is 0 (start) or 1 (end), which is how the engine addresses them.
+        index: usize,
+    },
     /// The press was on the page with the **text tool armed**, or in a mode that
     /// cannot select its content: **sweep a range of text**.
     ///
@@ -520,6 +549,21 @@ pub struct Press {
     /// **The selected annotation whose rotate handle this press is on**, if it
     /// is on one. See [`RotatableAnnot`].
     pub annot_rotate: Option<RotatableAnnot>,
+    /// ★★★ **Which node of a selected markup shape this press landed on**, if
+    /// any. `Pass 255.0`.
+    ///
+    /// Resolved in `canvas::pressing` with the other hit tests, so a press has
+    /// one meaning decided in one place and this function stays free of
+    /// geometry. It answers `None` immediately unless a markup shape with
+    /// editable geometry is selected.
+    ///
+    /// ★★ **It outranks [`Self::markup_body`] and [`Self::markup_grip`], and it
+    /// must.** A node anchor sits ON the shape's outline, so every press that
+    /// hits one also hits the body, and a node at a corner of the `/Rect` also
+    /// hits a resize grip. Of the three readings, the one the operator aimed at
+    /// is the small square they can see — `canvas::pressing`'s ce-dimension
+    /// note states the identical precedence for the identical reason.
+    pub markup_node: Option<usize>,
     /// Whether it landed inside a selected **markup** annotation's box.
     pub markup_body: bool,
     /// Whether it landed on one of that annotation's **resize grips**, which
@@ -547,6 +591,7 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
         handle,
         dimension,
         annot_rotate,
+        markup_node,
         markup_body,
         markup_grip,
         widget_body,
@@ -963,6 +1008,54 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
     // body test looks sufficient — and it is, for every press an operator makes
     // one pixel too far in. `canvas::pressing` computes the two grip flags and
     // its comment carries the measurement.
+    // ★★★ **A NODE OF A SELECTED MARKUP SHAPE, AND IT OUTRANKS THAT SHAPE'S
+    // BODY AND ITS EIGHT GRIPS.** 2026-09-05, `Pass 255.0`.
+    //
+    // The operator's report: *"I also can't edit or delete nodes of a markup
+    // shape once it is drawn."*
+    //
+    // ## Why it is a rung of its own, above the one below
+    //
+    // Because a node anchor sits **on** the shape, so a press on one satisfies
+    // the arm below as well:
+    //
+    // * `markup_body` is `grab_box().contains(p)`, and every node of a
+    //   `/Polygon` is inside its `/Rect` by construction;
+    // * `markup_grip` is a corner grip, and a node at a corner of the shape is
+    //   under one.
+    //
+    // ⇒ Without this rung, a press on a node becomes `DragKind::Move` or
+    // `DragKind::Resize` and the operator translates or scales the whole shape
+    // while trying to move one corner. That is **a working gesture aimed at the
+    // wrong verb**, which is the failure this canvas has now produced five
+    // times and which never looks broken from a chair, because something moves.
+    // `Grip::Rotate` was given its own arm to prevent exactly this shape of
+    // mistake, and `canvas::gesture::DragKind::Handle`'s note records the same
+    // precedence for a Bézier control point inside a content selection: **the
+    // most specific thing under the pointer wins.**
+    //
+    // ## Placement against the ce-dimension rung above, stated rather than
+    // relied upon
+    //
+    // Below it, and the two are mutually exclusive by `AnnotKind` — a ce
+    // dimension is `dimdrag`'s and a markup is `annotnodes`'. So the ordering
+    // is a **statement** rather than a tie-break, exactly as the markup-body
+    // rung's own note says of its position. `canvas::pressing` resolves
+    // `markup_node` only for `AnnotKind::Markup`, so the two can never both be
+    // `Some`.
+    //
+    // ## The capability, and why it is `author_markup`
+    //
+    // Reshaping a comment shape is authoring markup. It writes one annotation
+    // and touches no page content, so `edit_content` would be the wrong gate
+    // and — worse — would be **false in Review**, which is the mode markup is
+    // authored in. The rung above makes the identical argument for
+    // `author_measure` and a ce dimension; this is that argument applied to the
+    // other family rather than re-derived.
+    } else if caps.author_markup
+        && let Some(index) = markup_node
+    {
+        Some(DragKind::MarkupVertex { index })
     } else if (caps.author_markup && (markup_body || markup_grip))
         || (caps.edit_content && (widget_body || widget_grip))
     {

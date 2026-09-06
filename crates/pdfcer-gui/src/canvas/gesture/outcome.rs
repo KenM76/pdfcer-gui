@@ -243,6 +243,32 @@ pub enum GestureOutcome {
         /// Draw, or commit.
         phase: Phase,
     },
+    /// A **markup shape's node** being dragged — a `/Polygon`, `/PolyLine` or
+    /// `/Line` the operator drew as a comment. `Pass 255.0`.
+    ///
+    /// The same three fields as [`Self::DimensionVertex`], for the same reasons,
+    /// and a **separate variant** because it reaches a different family of
+    /// engine verbs: `reshape_annotation` and its three wrappers, against
+    /// `move_dimension_vertex` and its two. The one thing that must never
+    /// happen on this canvas is a gesture aimed at the wrong verb, and a shared
+    /// variant with a discriminator inside it is what invites exactly that —
+    /// `DragKind::DimensionVertex`'s own note makes the argument against
+    /// folding it into `Handle` in the same words.
+    ///
+    /// ★ R8b rule 15: this is a **markup shape**. A **ce dimension** is also a
+    /// `/Line` and is claimed by the variant above; **pdf dimensions** are CAD
+    /// page content and are not annotations at all.
+    MarkupVertex {
+        /// Which node, sampled at the press.
+        index: usize,
+        /// Where the press landed, in canvas space — so the grab point can be
+        /// preserved (`drag-moves` D8).
+        from: egui::Pos2,
+        /// Where the pointer is now, in canvas space.
+        at: egui::Pos2,
+        /// Draw, or commit.
+        phase: Phase,
+    },
     /// A **text sweep**: the two raw endpoints of the drag, in canvas space.
     ///
     /// Raw and in drag order, for the reason [`Self::Markup`] states at length
@@ -407,6 +433,12 @@ impl Drag {
                 phase,
             },
             DragKind::DimensionVertex { index } => GestureOutcome::DimensionVertex {
+                index,
+                from: self.origin,
+                at: self.latest,
+                phase,
+            },
+            DragKind::MarkupVertex { index } => GestureOutcome::MarkupVertex {
                 index,
                 from: self.origin,
                 at: self.latest,

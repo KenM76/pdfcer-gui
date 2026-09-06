@@ -121,7 +121,15 @@ pub fn cursor_for(
             // means "you have hold of something and it follows the pointer".
             // A distinct cursor would be teaching a distinction that changes
             // nothing about what the gesture does.
-            DragKind::Handle { .. } | DragKind::DimensionVertex { .. } => CursorIcon::Grabbing,
+            //
+            // ★ A markup shape's node joins them, and it is stated rather than
+            // wildcarded for the reason the marquee arm above states: a
+            // deliberate answer that happens to equal its neighbour's is one
+            // line to change the day it stops being equal, and a wildcard is
+            // not.
+            DragKind::Handle { .. }
+            | DragKind::DimensionVertex { .. }
+            | DragKind::MarkupVertex { .. } => CursorIcon::Grabbing,
             // ★ The I-beam for a sweep that began under the MODE rule rather
             // than under an armed tool — and that distinction is now the whole
             // of what this arm is for.

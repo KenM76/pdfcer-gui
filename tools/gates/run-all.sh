@@ -303,6 +303,44 @@ run "check-old-name-absent" bash "$HERE/check-old-name-absent.sh"
 run "check-engine-backlog --self-test" bash "$HERE/check-engine-backlog.sh" --self-test
 run "check-engine-backlog" bash "$HERE/check-engine-backlog.sh"
 
+# ★★★ `check-engine-api-drift`, added 2026-09-05 — and it exists because the
+# two gates immediately above are BLIND TO THE SAME THING.
+#
+# On 2026-09-04 `pdfcer-core` shipped `pdfcer_core::text_edit::RefusalKind`, a
+# coarse discriminant over `EditError`, in direct answer to a request this
+# project filed. It was pinned here and sat unconsumed for a day — beside
+# `crate::text::status::edit_declined_by_engine`, whose own doc comment said it
+# was "written to be deleted" the day `EditError` gained a coarse kind. That day
+# arrived and nothing noticed.
+#
+# ★★ Neither gate above could have noticed. `check-verb-coverage` reads
+# `impl EditSession`'s `pub fn`s; `check-engine-backlog` reads the engine's
+# prose feature table. **Both are keyed on EditSession's verbs**, so a new
+# TYPE, a new VARIANT, a new FIELD on an existing type and a new FREE FUNCTION
+# are invisible to the pair. Each previous fix widened the key by one notch and
+# left the next notch uncovered.
+#
+# This one does not pick a notch: it enumerates every `pub` item — 6,868 of
+# them — in every engine crate the manifest names, at the revision `Cargo.lock`
+# pins, and diffs against a committed snapshot. New, unconsumed and unwritten-
+# about is RED.
+#
+# ★ It found two things on its first real run. `EncryptError::RedactionPending`
+# — the Pass 250.3 refusal that says a deferred redaction is still armed — has
+# no arm in `protect/mod.rs`'s flattening and reaches the operator classed as a
+# WRITER error, while that enum's own doc comment claims a new engine variant
+# "turns into a compile error here"; it cannot, because `#[non_exhaustive]`
+# makes the catch-all mandatory. And `RenderPolicy::stroke_display` is the
+# engine-internal mirror of the field the O137 track wired. Both carry a
+# written verdict in the snapshot, printed on every run.
+#
+# ★★ ONE dispatch line, not two, and deliberately: the gate runs its own
+# self-test before it will measure anything. The ordering guarantee lives in
+# the gate rather than in this file, so it cannot be lost by an edit here —
+# which is the defect the "off by one, then by two" paragraph at the top of
+# this file records.
+run "check-engine-api-drift" bash "$HERE/check-engine-api-drift.sh"
+
 # `check-third-party-licences` regenerates THIRD_PARTY_LICENSES.md and fails if
 # the committed one differs. It is the SECOND gate written on 2026-09-01 for the
 # same underlying shape as `check-verb-coverage`: an ADDITION on the other side

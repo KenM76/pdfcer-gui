@@ -218,13 +218,110 @@ pub(crate) fn record_edit_text_refusal(
     use pdfcer_core::text_edit::RefusalClass;
 
     let kind = error.refusal_kind();
-    let why = crate::text::textedit::EditRefusal::of(kind, one_operator);
+    let missing = missing_character(error);
+    let why = crate::text::textedit::EditRefusal::of(kind, one_operator, missing.is_some());
     crate::diag::trace(|| {
+        // ★★★ **FLAT FIELDS, NOT `{:?}` ON A TUPLE — corrected 2026-09-05, by
+        // the first driven run this line was ever subjected to.**
+        //
+        // It used to emit `character={missing:?}`, which for
+        // `Option<(char, String)>` renders as `character=Some(('q',` followed
+        // by a space, the quoted base-font name, and two closing brackets.
+        // Three things are wrong with that in a `key=value` trace:
+        //
+        //   1. **It contains spaces and a comma**, so a reader splitting on
+        //      whitespace gets `character=Some(('q',` and drops the rest.
+        //   2. **It is a different shape from the field it must be compared
+        //      with.** `panels::properties::refusedchar` emits
+        //      `character='q'`. A check asserting *"the offer names the
+        //      character the refusal named"* compared a debug-formatted tuple
+        //      against `'q'` and reported **THE OFFER DOES NOT NAME THE
+        //      CHARACTER** — while quoting, in its own failure message, the
+        //      offer naming it. The application was correct throughout.
+        //   3. `{:?}` on a domain type makes the trace's vocabulary a
+        //      consequence of a Rust derive, so it changes silently when the
+        //      type does.
+        //
+        // ⇒ This is the project's standing finding once more: **a driven
+        // failure is a claim about the check too**, and the first run of a
+        // check written without the ability to drive it found an emitter
+        // defect rather than an application one. The repair is on this side
+        // deliberately — loosening the comparison would have left two surfaces
+        // describing the same character in two languages.
+        //
+        // `character` now carries the character alone, in the same `'c'`
+        // spelling the offer uses, and the font it was refused for gets its own
+        // field. `character=none` when the refusal named none, which is the
+        // R-INV-2/3/4 case where the encoding itself is unreadable.
         // ui-text-exempt: diagnostic trace, never displayed.
+        let (character, character_font) = match &missing {
+            Some((c, font)) => (format!("'{c}'"), font.clone()),
+            None => ("none".to_owned(), "none".to_owned()),
+        };
         format!(
             "edit-text-classified page={page} run={run} kind={kind:?} \
-             one_operator={one_operator} said={why:?}"
+             one_operator={one_operator} character={character} \
+             character_font={character_font} said={why:?}"
         )
     });
     record_edit_text(why);
+    // ★★★ **O141 — the offer, raised in the same breath as the sentence.**
+    //
+    // One event, two surfaces: the bar says *what stopped* and names where the
+    // answer is; `panels::properties::refusedchar` names the character and
+    // holds the control. They are written together here so a build cannot say
+    // one without the other — which is the state O141 was filed about, where
+    // the engine, the refusal, the character and the chooser all existed and
+    // nothing joined them.
+    if let Some((character, base_font)) = missing {
+        crate::panels::properties::refusedchar::record(page, run, character, base_font);
+    }
+}
+
+/// **The character the engine could not encode, and the face it was refused
+/// against** — or `None` when the refusal was not about one character.
+///
+/// # ★★★ Why reading a variant is licensed here, when this module's own header
+/// forbids it
+///
+/// The header forbids *"matching on `EditError`'s variants"* to derive **the
+/// operator's reason** — *"a second copy of `pdfcer-core`'s taxonomy living in
+/// this crate, which drifts and then tells the operator the wrong reason"*. That
+/// prohibition stands and is honoured above: the category still comes from
+/// `RefusalKind`, exhaustively, and [`crate::text::textedit::EditRefusal::of`]
+/// owns the joining rule.
+///
+/// What happens here is a different act. `RefusalKind` is deliberately coarse —
+/// four buckets, *"stable enough to match exhaustively"* — and `Refusal` carries
+/// **fields the bucket structurally cannot hold**. This reads two of them and
+/// derives nothing: no trigger id is inspected, no `Display` prose is grepped
+/// (exclusion 3 of `check-ui-strings.sh` rules that out in as many words), and
+/// no sentence is chosen from what is read. It is the identical licence
+/// `one_operator` already has — the sentence needs a fact the category does not
+/// carry — with the difference that this fact is the engine's own and is simply
+/// being passed through.
+///
+/// ★ The `_` arm is not laziness: `EditError` is `#[non_exhaustive]`, so an
+/// error the engine adds later must land somewhere honest, and *"this refusal
+/// was not about one character"* is true of every error that is not
+/// `Refused`. Getting that wrong in the other direction — inventing a character
+/// — would put a chooser in front of an operator whose font cannot be
+/// re-encoded at all, and every row in it would refuse.
+///
+/// # What `None` means, and it is a real answer
+///
+/// `Refusal::character` is `None` for the font-classification triggers —
+/// R-INV-2 (symbolic, built-in cmap), R-INV-3 (`/ToUnicode` only) and R-INV-4.
+/// Those are refusals about the font's whole code↔glyph relation rather than
+/// about one scalar, **no other face makes this run re-encodable**, and the
+/// existing `EditRefusal::UnsupportedFont` sentence is the true one for them.
+/// That is why the offer is keyed on the field being `Some` rather than on the
+/// kind being `UnsupportedFont`.
+fn missing_character(error: &pdfcer_core::text_edit::EditError) -> Option<(char, String)> {
+    match error {
+        pdfcer_core::text_edit::EditError::Refused(refusal) => {
+            Some((refusal.character?, refusal.base_font.clone()))
+        }
+        _ => None,
+    }
 }

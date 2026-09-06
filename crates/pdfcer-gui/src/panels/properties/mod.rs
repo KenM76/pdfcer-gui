@@ -200,6 +200,21 @@ mod markup;
 /// colour of a whole **selection** of paths, with the indeterminate state the
 /// product class already agrees on.
 mod paint;
+/// ★★★ **The character an edit was refused for, and the face that can type it**
+/// — `OPERATOR_REQUESTS.md` O141, 2026-09-05.
+///
+/// > *"if the character isn't available in a pdf are we able to change to a
+/// > different font?"*
+///
+/// Yes, and every piece existed on the day he asked: the engine refuses by name
+/// and hands back `Refusal::character`, [`face`] has offered the fourteen
+/// standard faces since `Pass 162.0`, and `set_font` authors a resource the page
+/// does not carry. **Nothing connected the refusal to the chooser.** This
+/// section is that connection.
+///
+/// `pub` for [`text`]'s reason: `crate::panels::PanelsState` holds its state,
+/// because the face list costs a provenance extraction and a pre-flight.
+pub mod refusedchar;
 /// ★★★ **One colour control, three honest states** — a swatch, an
 /// indeterminate swatch, and nothing at all over an ink pdfcer will not
 /// overwrite. Shared by [`paint`] and [`textobject`], because O89's two pieces
@@ -396,6 +411,23 @@ fn body_sections(
     // would make the panel change shape for a reason unconnected to what is
     // picked.
     let _drew_disclosure = disclose::section(ui, doc);
+    // ★★★ **The character an edit was refused for, and the way out of it** —
+    // `OPERATOR_REQUESTS.md` O141, 2026-09-05.
+    //
+    // Directly under the disclosure block and above everything else, on the same
+    // rule that puts the disclosure first: everything below describes what is
+    // *selected*, and this describes what the operator's **last keystroke** ran
+    // into. A refusal read after a description of a selection arrives too late to
+    // explain it — and here it would arrive after the *This text* section's own
+    // face chooser, which is the control this block exists to hand them, so the
+    // operator would meet the answer before the question.
+    //
+    // ★ NOT part of `something_drew`, for `disclose::section`'s reason stated one
+    // notch more sharply: this block is scoped to an **edit**, not to a
+    // selection, and by the time it draws the caret that raised it has already
+    // been abandoned. Folding it in would let a refusal suppress *"nothing is
+    // selected"* while genuinely nothing is.
+    let _drew_refused_char = refusedchar::section(ui, doc, state.refused_char_mut(), actions);
     // ★★★ **The armed tool's settings, second** — the controls that were in
     // the Tool panel until O123 moved them here.
     //

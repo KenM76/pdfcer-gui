@@ -574,6 +574,45 @@ pub(crate) enum Declined {
     /// still true would pay for it sixty times a second to learn an answer that
     /// cannot change without a command.
     VertexEditRefused(crate::text::measure::VertexEditRefusal),
+    /// ★★★ **A node of a MARKUP shape could not be moved, added or taken
+    /// away** — the other half of the operator's report of 2026-09-05:
+    ///
+    /// > *"I also can't edit or delete nodes of a markup shape once it is
+    /// > drawn."*
+    ///
+    /// [`Self::VertexEditRefused`] answers for a **ce dimension** and this for
+    /// a comment shape, and they are two variants rather than one for R8b rule
+    /// 15's reason: the ce-dimension sentences say *"measurement"*, which is
+    /// the wrong word for a polygon somebody drew as a comment, and one enum
+    /// serving both would have to say something vague enough to be true of
+    /// either. See [`crate::text::markup::NodeEditRefusal`].
+    ///
+    /// # ★★ Why a gesture with a preflight still needs a decline
+    ///
+    /// `canvas::annotnodes` asks `EditSession::reshape_annotation_preview`
+    /// before it draws anything, so a refused edit is never previewed and never
+    /// raised — the engine is never asked to refuse. That is the right design
+    /// and it makes this sentence **the only report of the refusal that
+    /// exists**: no action, no funnel, no `EditRefused`. Without it the
+    /// operator drags a corner of a triangle out of the shape, releases, and
+    /// the triangle is still a triangle with nothing anywhere saying why.
+    ///
+    /// # ★ It is also raised where there was never a gesture
+    ///
+    /// `annotnodes::explain_unreshapable` raises it when the operator arms the
+    /// **Points tool** over a shape that shows no anchors at all — a rectangle,
+    /// an ellipse, a freehand mark. R9 says an unavailable capability renders
+    /// nothing, and *nothing* is also what a build that forgot to draw the
+    /// anchors renders. The operator cannot tell those apart by looking, so the
+    /// absence is stated.
+    ///
+    /// # Retired by the operator's next act
+    ///
+    /// [`Self::still_true`] answers `true`, joining the group whose reason is
+    /// *nothing happened*: the edit was refused before it began, so the epoch
+    /// did not move and there is no state for a later frame to find the
+    /// sentence stale against.
+    MarkupNodeRefused(crate::text::markup::NodeEditRefusal),
     /// **The field-group deletion PREVIEW refused**, so the operator was never
     /// offered the confirmation.
     ///
@@ -996,7 +1035,8 @@ impl Declined {
             | Self::FieldGroupDeleteRefused
             | Self::BookmarkMoveIntoOwnSubtree
             | Self::BookmarkMoveRefused
-            | Self::VertexEditRefused(_) => true,
+            | Self::VertexEditRefused(_)
+            | Self::MarkupNodeRefused(_) => true,
             // ★ Same ruling, third and fourth cases. A name is not going to
             // stop being taken, and a widget is not going to grow a `/T`,
             // between one frame and the next. Both are corrected by the
@@ -1161,6 +1201,13 @@ impl Declined {
             // one's subject is what a ce dimension measures — where the
             // vertex-move disclosure it is the refusal twin of already lives.
             Self::VertexEditRefused(why) => why.line(),
+            // ★ Reaches across to `crate::text::markup` on the same rule
+            // every arm above uses: a string lives with the surface that owns
+            // its subject, and this one's subject is a markup shape — where the
+            // other twenty sentences about markup already live, so a second
+            // wording of "that shape did not change" cannot grow up beside
+            // them.
+            Self::MarkupNodeRefused(why) => why.line(),
         }
     }
 }

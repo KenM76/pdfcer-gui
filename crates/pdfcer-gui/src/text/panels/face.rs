@@ -182,6 +182,134 @@ pub const fn face_addable_disclosure() -> &'static str {
      the letters may be set a little differently from what you see here."
 }
 
+// ===========================================================================
+// ★★★ O141 — the offer that turns a refused character into a face that has it
+// ===========================================================================
+//
+// The operator, 2026-09-05: *"if the character isn't available in a pdf are we
+// able to change to a different font?"*
+//
+// Yes, and every piece already existed — the engine refuses by name, the
+// refusal carries the character, and this chooser has offered the standard
+// fourteen since `Pass 162.0`. **Nothing connected the refusal to the
+// chooser.** These five strings are the connection's words; the surface is
+// `crate::panels::properties::refusedchar`.
+//
+// ★ They live in THIS module rather than in `crate::text::textedit` because
+// the surface they belong to *is* a face chooser: it draws the same two-group
+// popup through `panels::properties::face::popup_body` and owes the same
+// disclosure. Splitting the offer's words from the chooser's words is how two
+// wordings of one act grow up beside each other, which is the divergence this
+// module's own header exists to record.
+
+/// The heading over the offer block.
+///
+/// ★★ It names the **character's** problem, not the font's, and not the
+/// operator's. *"Unsupported font"* would be the engine's noun; *"That
+/// character isn't available"* would be the operator's own phrasing handed back
+/// to them without an answer. What an operator needs at the top of this block
+/// is the fact that decides what they do next: this font, this character, no.
+#[must_use]
+pub const fn refused_char_heading() -> &'static str {
+    "A character this font cannot type"
+}
+
+/// ★★★ **The sentence that names the character** — the half `Declined::line`
+/// structurally cannot say.
+///
+/// The status bar's `⊗` slot returns `&'static str` and is truncated to 45 % of
+/// the bar; a panel can interpolate and wrap. So the naming happens here, beside
+/// the control that answers it, which is also where
+/// `REVIEW_TRIAGE.md`'s *"every disclosure above the thing it qualifies"* wants
+/// it.
+///
+/// # Why the FONT is named too
+///
+/// Because the operator's next question is *"which font?"*, and on a page with
+/// four faces the answer decides whether they believe the block at all. It is
+/// the shortened `/BaseFont` — the same spelling the chooser's rows use — so the
+/// name in this sentence and the name in the list are the same string.
+///
+/// # ★★ Why *"the letters your page already prints"* and never *"subset"*
+///
+/// O141's framing, in the operator's own words: he asked this question without
+/// the word, and *"the operator should be able to get from the refusal to a face
+/// that can type it, without knowing what a subset is."* The clause also happens
+/// to be the whole mechanism — a producer embeds the letters the page used and
+/// no others — so nothing is lost by saying it in English.
+#[must_use]
+pub fn refused_char_named(character: char, font: &str) -> String {
+    format!(
+        "The “{character}” is not one of the letters {font} carries. Fonts inside a PDF usually \
+         hold only the letters your page already prints, and pdfcer cannot add one to a font that \
+         is already in the file."
+    )
+}
+
+/// The instruction under [`refused_char_named`], and the label on the chooser.
+///
+/// ★★ It states **both** steps before either is taken. The face swap alone does
+/// not put the character on the page — the operator has to type it again, in a
+/// fresh caret — and a block that offered a font list without saying so would be
+/// a route that stops one gesture short. The follow-up
+/// ([`refused_char_swapped`]) repeats it after the swap; this says it before, so
+/// the operator knows what they are starting.
+#[must_use]
+pub fn refused_char_offer(character: char) -> String {
+    format!("Pick a font that has the “{character}”, then click in the text and type it again:")
+}
+
+/// ★★★ **The honest limit on the offer**, filed rather than hidden.
+///
+/// `preview_font_resources` coverage-tests **the characters already in the
+/// run**, not the one about to be typed. So a row in this list can be a face
+/// that then refuses the operator's character, and the refusal is a sentence
+/// rather than a greyed-out row.
+///
+/// # Why the list is not silently filtered to look confident
+///
+/// The standing ruling on this exact surface, taken from the Bold button: *"Do
+/// not grey out a bold button. Offer it, and surface the disclosure."* Filtering
+/// would need this crate to re-derive which face uses `WinAnsiEncoding`, which
+/// two use a built-in symbolic one, and what that leaves unmapped —
+/// `FontPreflight`'s own invariant (`R221`) forbids exactly that, and a second
+/// copy of the rule in `pdfcer-gui` drifts from the commit path the first time
+/// the rule changes. Filed at the engine as
+/// `request_font_preflight_tests_the_text_that_is_there_not_the_text_about_to_be_typed.md`;
+/// nothing is blocked on the reply.
+///
+/// ★ The sentence promises what happens on the bad case — *pdfcer will say so
+/// and change nothing* — because a caveat that names a risk without naming its
+/// consequence reads as a reason not to press the control.
+#[must_use]
+pub fn refused_char_untested(character: char) -> String {
+    format!(
+        "pdfcer checked these fonts against the words already here, not against the \
+         “{character}”. If the one you pick cannot type it either, pdfcer will say so and change \
+         nothing."
+    )
+}
+
+/// ★★ **What the block says once the face has been swapped** — the second half
+/// of the route.
+///
+/// The swap is an edit, so it retires the offer; without this the block would
+/// vanish at the moment the operator most needs to be told what to do next, and
+/// they would be back at a caret with no reason to try again.
+///
+/// ★ It names the face that is now in force, because that is the one fact the
+/// canvas cannot show them: on a metric-compatible swap — `Arimo-Bold` to
+/// `Helvetica-Bold` moved the operator's own line by 0.005 pt — the page looks
+/// exactly as it did, and a block saying only *"try again"* would leave them
+/// unsure whether anything happened at all.
+#[must_use]
+pub fn refused_char_swapped(character: char, font: &str) -> String {
+    format!(
+        "This text is now set in {font}. Click in it and type the “{character}” again, and it \
+         will go in."
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -240,5 +368,91 @@ mod tests {
         let line = text_face_none();
         assert!(line.contains("this page"), "{line}");
         assert!(line.contains("fourteen"), "{line}");
+    }
+
+    /// ★★★ **The offer names the character, every time, in every sentence that
+    /// mentions it** — `OPERATOR_REQUESTS.md` O141.
+    ///
+    /// The whole of what the status bar cannot do. A block that said *"a
+    /// character in this text"* would have moved the refusal to a wider surface
+    /// and added nothing: the operator already knows they typed something, and
+    /// what they do not know is **which** keystroke the document refused — on a
+    /// pasted line it can be a character they never saw themselves type.
+    ///
+    /// ★ Asserted over a character outside ASCII on purpose. A build that
+    /// formatted with `{:?}` or escaped for a byte-oriented surface would print
+    /// `'\u{20ac}'` and pass a test written against `'q'`.
+    #[test]
+    fn every_sentence_in_the_offer_names_the_character_itself() {
+        for line in [
+            refused_char_named('€', "Arimo-Bold"),
+            refused_char_offer('€'),
+            refused_char_untested('€'),
+            refused_char_swapped('€', "Helvetica-Bold"),
+        ] {
+            assert!(
+                line.contains('€'),
+                "the character is the one fact the status bar cannot carry: {line}"
+            );
+            assert!(
+                !line.contains("20ac") && !line.contains("20AC"),
+                "a code point is not what the operator typed: {line}"
+            );
+        }
+    }
+
+    /// ★★ **Both font-naming sentences name the font**, and they name two
+    /// different ones.
+    ///
+    /// [`refused_char_named`] names the face that **refused**;
+    /// [`refused_char_swapped`] names the face that is **now in force**. A build
+    /// that fed either the wrong one would tell the operator that the font they
+    /// just chose is the font that cannot type their character — which reads as
+    /// the feature not working, on a swap that worked.
+    #[test]
+    fn the_offer_names_the_font_that_refused_and_the_font_that_replaced_it() {
+        let refused = refused_char_named('q', "AAAAAA+Arimo-Bold");
+        assert!(refused.contains("AAAAAA+Arimo-Bold"), "{refused}");
+        let swapped = refused_char_swapped('q', "Helvetica-Bold");
+        assert!(swapped.contains("Helvetica-Bold"), "{swapped}");
+        assert!(
+            !swapped.contains("cannot"),
+            "the follow-up reports a success and must not read like a second refusal: {swapped}"
+        );
+    }
+
+    /// ★★★ **The offer states BOTH steps before either is taken.**
+    ///
+    /// Choosing a face does not put the character on the page; the operator has
+    /// to type it again. A block that listed fonts and stopped would be a route
+    /// that ends one gesture short of the thing it promised, which is the class
+    /// of defect O141 was filed against in the first place.
+    #[test]
+    fn the_offer_says_to_type_the_character_again() {
+        for line in [
+            refused_char_offer('%'),
+            refused_char_swapped('%', "Courier"),
+        ] {
+            assert!(
+                line.contains("type it again") || line.contains("type the “%” again"),
+                "the second step is not guessable from a font list: {line}"
+            );
+        }
+    }
+
+    /// ★★ **The caveat names the limit AND what happens when it bites.**
+    ///
+    /// `preview_font_resources` tests the text that is there, not the text about
+    /// to be typed, so a row can still refuse. Saying so without saying that the
+    /// document survives it would make the caveat read as a reason not to press
+    /// the control — which is how an honest disclosure turns into a deterrent.
+    #[test]
+    fn the_caveat_says_what_happens_when_the_face_refuses_too() {
+        let line = refused_char_untested('€');
+        assert!(line.contains("not against"), "{line}");
+        assert!(
+            line.contains("change nothing"),
+            "the consequence is the half that keeps this from reading as a warning: {line}"
+        );
     }
 }

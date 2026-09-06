@@ -180,6 +180,10 @@ pub mod annotclip;
 /// DELTA and not a rectangle: a move has two halves and a renderer can only
 /// see one of them.
 pub mod annotdrag;
+// The nodes of a markup shape a `/Polygon`, `/PolyLine` or `/Line` and the
+// drag that moves, adds or removes one. The operator's *"I also can't edit or
+// delete nodes of a markup shape once it is drawn."*
+pub mod annotnodes;
 /// ★ Dragging a **Bézier handle** — the last Phase 1 row, and one `pdfcer`'s
 /// own `gui` column ticked `[x]` while nothing here drew a handle at all.
 /// `EditSession::move_handle` had existed since Pass 30.1; what was missing was
@@ -403,6 +407,10 @@ pub mod trace;
 // Which pointer tool the canvas is in — select or hand — and the space bar
 // that borrows the hand for as long as it is held.
 pub mod tool;
+// Which of the two node-edit verb families one drag reaches — a ce dimension's
+// corner or a markup shape's node. The R2 seam that kept `interact` under its
+// ceiling when markup node editing landed.
+pub mod vertexroute;
 // The anchor rule, the two-frame handshake it rides on, and the five zoom
 // paths that route through it.
 pub mod zoom;

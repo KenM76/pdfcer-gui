@@ -358,3 +358,20 @@ pub(crate) fn record_history_empty(declined: Declined) {
 pub(crate) fn record_adopt_refusal(declined: Declined) {
     LAST.with_borrow_mut(|slot| *slot = Some(declined));
 }
+
+/// Record that a **node of a markup shape** could not be moved, added or taken
+/// away — [`super::Declined::MarkupNodeRefused`].
+///
+/// Called from `app::actions::apply`'s `AnnotAction::DeclineNodeEdit` arm,
+/// which is where the canvas's gesture and `annotnodes::explain_unreshapable`
+/// both land. Two raisers, one recorder, because they are one event from the
+/// operator's side: *I looked for a node edit and did not get one.*
+///
+/// ★ This is the **only** report of that refusal. The gesture preflights
+/// through `EditSession::reshape_annotation_preview`, so no action reaches an
+/// engine verb, no funnel is entered and no `EditRefused` is recorded; if this
+/// call is removed the operator gets a drag that does nothing and says nothing,
+/// which is the exact defect the variant exists for.
+pub(crate) fn record_markup_node_refused(why: crate::text::markup::NodeEditRefusal) {
+    LAST.with_borrow_mut(|slot| *slot = Some(Declined::MarkupNodeRefused(why)));
+}
