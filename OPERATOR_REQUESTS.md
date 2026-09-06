@@ -14101,3 +14101,53 @@ that a layout you left behind on some earlier day can put **Comments** behind
 that chevron too — and Comments is the surface Review exists for. Nothing is
 lost and one click brings it back; say the word if you would rather Review
 always opened on the comment list.
+
+---
+
+## O143 — ✅ **DONE 2026-09-05 23:26 — "once you are done that please make a new release and also on GitHub"**
+
+**Published.** `OneDrive\pdfcer-gui2` holds the new build; **`pdfcer-gui1`
+(2026-09-05 03:32) is untouched and is your fallback**, which is the whole point
+of alternating the slots. GitHub: `v0.5.0-dev.20260905.2`, pre-release, zip
+attached.
+
+Built from shell `b012b57` on engine `56dde4d` (v0.40.0).
+
+### ★★ The order matters and it is why this took an extra twenty minutes
+
+`tools/package-portable.py` runs `cargo update` **before it builds**, so a
+green test run taken beforehand describes a *different engine* from the one
+that ships. This project retracted a build from its slot on 2026-08-30 for
+exactly that. So the pin was moved **first**, deliberately, and tested:
+
+```
+cargo update -p pdfcer-core -p pdfcer-render -p pdfcer-print   -> v0.41.0
+cargo test --workspace                                          -> DOES NOT COMPILE
+git checkout -- Cargo.lock                                      -> back to 56dde4d
+cargo test --workspace         3,592 passing, 0 failing
+tools/gates/run-all.sh         30 of 30, 0 skipped
+smoke launch, off-screen       292 diag lines, no panic, canvas covered=1.000
+package-portable --no-update --slot pdfcer-gui2 --verify
+```
+
+⇒ **The newest engine breaks our build**, and finding that out *before*
+packaging rather than after is the rule working. `RESUME.md` names it as the
+next action: `invocation_set` changed shape, one call site — and behind that
+sits `Pass 257.0`, the engine's answer to the O141 measurement filed today.
+
+### ⚠ What the release notes say is still broken, in your words
+
+Your `clien` typo. **The font explanation I gave you was wrong and the release
+notes retract it in as many words**, because a limitation stated to an operator
+is a claim and a wrong one costs more than silence. The engine shipped the
+capability that fixes it *today* — matching a search across letters written one
+show operator at a time — and connecting it is the first thing after the
+engine bump.
+
+### ★ And a check that came out of your other message
+
+You said you saw *"a lot of residual background tasks"*. Measured rather than
+assumed: no `pdfcer-gui`, `ui-verify`, `cargo`, `rustc` or stray shell
+processes were running on the machine. The entries are completed tasks that
+stay listed. One genuinely stuck watchdog was killed earlier in the session and
+is recorded in `HANDOFF.md`.
