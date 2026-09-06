@@ -1,6 +1,305 @@
 # RESUME — read this, then say "continue"
 
 
+> ★★★ **LAST SESSION: 2026-09-06 (late morning). A PLACED MARKUP CAN NOW BE
+> FULLY EDITED — AND NOT ONE PRESS OF IT HAS BEEN DRIVEN.** His instruction:
+> *"getting full editing working for the Markup tools. Also make sure you've
+> used the same default colours and style look for these things as Adobe."*
+> Seven parallel tracks in one tree, two commits — `99e4a01` and `f4aeee6` —
+> **read both messages in full with `git log -2 --format=%B` before doing
+> anything else.** They are the authoritative record and carry far more than
+> this block.
+>
+> **State, every number re-measured 2026-09-06 in the session that wrote this
+> block, not copied from the one that shipped it:**
+>
+> | | | measured with |
+> |---|---|---|
+> | tests | **3,770 passing, 0 failing**, 33 ignored, 18 suites | `cargo test --workspace`, summing every `test result:` line through `awk` |
+> | gates | **31 of 31, 0 skipped** | `bash tools/gates/run-all.sh` |
+> | engine | `pdfcer-core` **v0.42.0 at `821ab47`** | `grep -A4 'name = "pdfcer-core"' Cargo.lock` |
+> | shell | `f4aeee6`, on `origin/main` | `git log -1` |
+> | driven checks registered | **188** | `Box::new(` lines in `tools/ui-verify/src/checks/roster.rs`'s `all()` |
+>
+> **Released 2026-09-06 11:30** from `f4aeee6`: OneDrive **`pdfcer-gui2` is the
+> new build** (its `BUILD-INFO.txt` reads `Built: 2026-09-06 11:30:22`, engine
+> `821ab47`, shell `f4aeee6`), so **`pdfcer-gui1` (08:31) is the fallback**.
+> GitHub `v0.5.0-dev.20260906.4`.
+>
+> ⚠ **`git tag` does not show that release, and a cold session will believe the
+> last one was `.3`.** The remote carries `refs/tags/v0.5.0-dev.20260906.4` →
+> `f4aeee6` (measured with `git ls-remote --tags origin`), and it is
+> **lightweight** where `.1`–`.3` are annotated — so it has no `^{}` deref line
+> and it was never fetched into this clone. `git fetch --tags` before reading the
+> local tag list as a release history.
+>
+> ★ **The pin and the engine tree agree exactly today**, which is unusual and
+> will not last: `D:\Dev\pdfcer`'s `HEAD` is also `821ab47`. Re-measure rather
+> than assuming it still holds.
+>
+> ---
+>
+> ## ⬜⬜⬜ THE SINGLE MOST VALUABLE NEXT ACT: **DRIVE TODAY'S WORK**
+>
+> **NOTHING FROM 2026-09-06's MARKUP SESSION HAS BEEN THROUGH
+> `tools/ui-verify`. Not one control.** That is not an inference from a commit
+> message — it is a measurement of the tree:
+>
+> ```sh
+> find evidence -newermt "2026-09-06 08:00"    # → nothing at all
+> git log -2 --format='%h %ad' --date=iso      # → 11:03:58 and 11:23:18
+> ```
+>
+> The newest artefact in `evidence/` is `evidence/sign-final`, written **07:56**
+> — three hours *before* the first of today's two commits. Seven tracks shared
+> one working tree all session and the harness **moves the real pointer**, one
+> driven run at a time, so the whole of it is `⬜ BUILT AND UNDRIVEN` in
+> `FEATURES.md` and every new row in `OPERATOR_REQUESTS.md` says so in those
+> words.
+>
+> R1 is this project's founding rule: **a passing test is not a report of
+> working software.** 3,770 green tests and 31 green gates say nothing about
+> whether a single one of the five Format ▸ Markup controls draws, commits or
+> greys correctly on screen. Drive them, in slices of six to eight, with a
+> profile nobody else holds (see below). **That is the first job of the next
+> session with the machine to itself.**
+>
+> ---
+>
+> ## ★★★ THE FINDING OF THE DAY: **A STAGE'S TRACE RECORDS WHAT THE STAGE
+> DECIDED, NOT WHAT THE FRAME SETTLED ON**
+>
+> *"Open in the mode you were last in"* has been **dead since the day it
+> shipped** — ten days — and the start-up trace reported it **working** the whole
+> time. `f4aeee6`'s message carries the full account; the shape is this:
+>
+> `modes::assemble` emits
+> `mode-restore stored=Some("review") using=Some("review")`, which is a **true
+> statement about what that stage adopted**. Forty lines further down the *same*
+> 230-line trace: `mode-changed from=Some("review") to=read remembered=true`.
+> `PdfcerApp::new` builds `RibbonState` **before** it calls `modes::start` and
+> seeds it with `modes().first()` — Read — and `PdfcerApp::docks` reconciles the
+> pair once a frame treating the **ribbon** as authoritative. The restored mode
+> lives exactly one frame and is then thrown away.
+>
+> ⇒ **Those two lines answer different questions, and a harness grepping only
+> the first would report a working feature.** Same family as *"traces perfectly
+> and does nothing"*, with the twist that **the trace is not lying** — it is
+> answering a narrower question than its reader is asking. Wherever a later
+> stage may overrule an earlier one, a stage-scoped trace line is **not evidence
+> about the frame**.
+>
+> ★★ **It bit markup hardest, which is how it surfaced.** Markup is authored in
+> **Review**, and the program has been reopening in **Read** every single launch
+> — so the whole of this session's work was one mode-click away from being
+> unreachable on every start-up.
+>
+> ★ **A test that cannot fail is not evidence.** A first attempt asserted
+> `app.ribbon.mode() == app.modes.active()` after `PdfcerApp::new()`; it stayed
+> **green with the fix deleted**, because `new` reads the real layout file and on
+> a machine with no stored mode both sides are Read for a trivial reason. It was
+> **removed** rather than left to imply coverage it did not have, and the
+> off-screen launch is the oracle instead.
+>
+> ---
+>
+> ## ★★★ THE SIBLING TEST — how a registry-sourced value is proved factory
+>
+> **`ACROBAT_DEFAULTS.md` is new in the repo root** and is the source of truth
+> for every per-kind default colour this shell now authors. Read it before
+> changing any of them; it carries the floats, the hex, an adopted/declined
+> verdict per row, and the command to re-run the measurement.
+>
+> ★★★ **The discriminator is a SIBLING, not a plausibility judgement.** A value
+> repeated across registry keys **nobody would set together** — `cSound`
+> carrying the highlighter's `1.0 0.384308 0.0` to six decimals — is a shipped
+> factory table. A value that appears **once** is unproven in either direction,
+> and the file says so per row rather than guessing.
+>
+> ★★ **The test did work in both directions on the same day, which is the whole
+> reason to trust it.** It **overturned this session's own first verdict** — the
+> file had argued at length for keeping yellow and dismissing Acrobat's orange as
+> a personal setting; the operator answered *"change the highlighter colour to
+> match adobe"* within the hour, and the corroboration (`cInk:InkHighlight`, a
+> *different tool*, identical to six decimals) had been sitting unread in the
+> same dump. It then correctly **rejected** a lone green
+> `crichDefaults\ctextColor`, which appears in exactly one key. The
+> struck-through paragraph is kept in the file because the shape of the mistake
+> is the useful part.
+>
+> ⇒ And the framing lesson underneath it: *"is this Adobe's factory default or
+> Ken's personal setting?"* was **the wrong question**. He asked to match the
+> program on his desk, and the program on his desk highlights in orange.
+>
+> ⚠ **A recursive dump and a two-level dump disagree silently**, and the
+> two-level one looks complete: `crichDefaults\ctextColor` is a third-level key
+> and the first sweep of the hive never saw it.
+>
+> ---
+>
+> ## ⚠ A PROFILE-BACKED MEASUREMENT NEEDS A PROFILE NOBODY ELSE HOLDS
+>
+> The first off-screen measurement of the mode-restore defect was **invalid**:
+> two `pdfcer-gui.exe` instances were alive at once, contending on one portable
+> `userdata/` directory, and the second read a layout the first had rewritten.
+> The rerun used a directory made for the purpose. ⇒ **Any check whose oracle is
+> a stored preference — layout, mode, settings, recent files — must own its
+> profile**, and on this machine that also means confirming nothing else is
+> running before believing the reading.
+>
+> ---
+>
+> ## ⚠⚠ THIS FILE'S OWN PREVIOUS BLOCK WAS STALE, AND IT IS CORRECTED BELOW
+>
+> The 2026-09-05 block's closing line read:
+>
+> > ⬜ **OPEN AT THE ENGINE (4):** the page-tree ancestor count; markup vertices
+> > unreadable (`/Vertices`, `/InkList` unmodelled — **nothing was faked**); no
+> > verb authors a reply (`/IRT`); `/State` unmodelled; and **O137 — a
+> > line-weights-off display mode**…
+>
+> **It was wrong in three separate ways at once**, every one of them measurable
+> in under a minute. The corrected line now sits in that block with the
+> superseded text beside it:
+>
+> 1. **Markup vertices had SHIPPED** — `Pass 255.0`, `35ca5be`,
+>    `reply_2026-09-05-markup-vertices-SHIPPED.md` in the request channel — and
+>    `canvas/annotnodes.rs` has consumed `/Vertices`, `/L` and `/InkList` since.
+>    It is in the build: `git -C D:/Dev/pdfcer merge-base --is-ancestor 35ca5be
+>    821ab47` → **yes**.
+> 2. **The page-tree ancestor count had been FIXED** — `Pass 251.1`, `e4cefcd`,
+>    `reply_2026-09-05-delete-pages-ancestor-count-FIXED.md`. Also an ancestor of
+>    the pin, measured the same way.
+> 3. **The header said four and the list held five.** The three genuinely open
+>    items are `/IRT` (`request_a_reply_can_be_read_and_never_written.md`),
+>    review status (`request_review_status_is_not_modelled_at_all.md`) and O137
+>    (`request_a_line_weights_off_display_mode_for_dense_cad_drawings.md`) — no
+>    `reply_*` file exists beside any of the three.
+>
+> ★★★ **The lesson is about WHICH document went stale, and it is not the
+> obvious one.** `ENGINE_BACKLOG.md` was current. `FEATURES.md` was current — its
+> own markup-nodes row names `Pass 255.0` by number. **Only `RESUME.md` was
+> wrong**, and `RESUME.md` is the one document a cold session reads *first* and
+> trusts *most*. ⇒ **The document with the widest readership had the weakest
+> mechanism.** The backlog has `check-engine-backlog.sh`; `FEATURES.md` has a
+> written bar and the `⬜ BUILT AND UNDRIVEN` convention; this file's top block
+> is prose that nothing checks. Until it has a gate, **treat every "open at the
+> engine" claim here as dated, and re-grep
+> `D:\Dev\FeatureRequests\pdfce_FeatureRequests\open\` for a `reply_*` or
+> `done_*` file before repeating it.** A `request_*` with no reply beside it is
+> the only evidence that something is still open.
+>
+> ---
+>
+> ## ⚠ R2 HEADROOM — re-measured 2026-09-06
+>
+> `bash tools/gates/check-file-size.sh` is **clean** — 887 `.rs` files scanned,
+> none over 1,500 — but it prints only the largest **three**, which is not enough
+> to plan a split against. ⚠ **That 887 is the gate's own walk and `git ls-files
+> '*.rs' | wc -l` says 893; the two disagree by six and both are correct for
+> their method.** Do not quote one as the other — `FEATURES.md`'s Source row uses
+> the git figure deliberately, because it is counting what is *tracked*, and the
+> gate is counting what it *scanned*. The full list of files within twenty lines of the
+> ceiling, from `git ls-files '*.rs' | xargs -d '\n' wc -l | sort -rn`:
+>
+> | lines | file | headroom |
+> |---:|---|---:|
+> | **1500** | `crates/pdfcer-gui/src/app/lifecycle.rs` | **0** |
+> | **1500** | `crates/egui-shell/src/manifest/merge.rs` | **0** |
+> | 1498 | `crates/pdfcer-gui/src/icons/catalog/mod.rs` | 2 |
+> | 1492 | `crates/pdfcer-gui/src/app/dispatch.rs` | 8 |
+> | 1491 | `crates/pdfcer-gui/src/app/actions/apply.rs` | 9 |
+> | 1488 | `crates/pdfcer-gui/src/text/status/mod.rs` | 12 |
+> | 1487 | `crates/pdfcer-gui/src/shell/manifest/mod.rs` | 13 |
+> | 1486 | `crates/pdfcer-gui/src/app/save.rs` | 14 |
+> | 1484 | `crates/pdfcer-gui/src/canvas/forms/boxes.rs` | 16 |
+> | 1484 | `crates/pdfcer-gui/src/app/state.rs` | 16 |
+> | 1484 | `crates/egui-shell/src/dock/mod.rs` | 16 |
+> | 1483 | `crates/pdfcer-gui/src/canvas/notepopup/mod.rs` | 17 |
+> | 1480 | `crates/pdfcer-gui/src/app/actions/forms.rs` | 20 |
+>
+> ★ **Two of the three files the 08:40 block named at 1500 have headroom
+> again** — `app/dispatch.rs` was split twice this session and is at **1,492**;
+> `app/actions/action.rs` is at **1,479** and is off the list entirely.
+> `app/lifecycle.rs` and `egui-shell/src/manifest/merge.rs` are the two that did
+> **not** move, and **one added line in either fails the build**. Split before
+> adding, not after. **Markup remains the next R2 candidate** — that nomination
+> is unchanged and is now backed by two new 1,100-line markup modules
+> (`app/markupband.rs` 1,176; `panels/properties/markup.rs` 1,140).
+>
+> ---
+>
+> ## What is now reachable that was not this morning, in one list
+>
+> All ⬜ **BUILT AND UNDRIVEN**; `FEATURES.md` carries the full rows and
+> `OPERATOR_REQUESTS.md` O144 carries the operator-facing account.
+>
+> * **Format ▸ Markup** — line colour, fill (with *No fill*), line width,
+>   opacity, arrowhead position, as five `Item::Custom` controls in
+>   `app/markupband.rs` on `fontband`'s architecture. `RIBBON_IA.md` §5.8 has
+>   specified this row since 2026-08-12 and it was empty for twenty-five days.
+> * **Fill (`/IC`) and arrowheads (`/LE`)** in `panels/properties/markup.rs` —
+>   two `MarkupStyle` fields the engine has shipped for weeks with **zero GUI
+>   callers**.
+> * **A `canvas.markup` context menu** — *Add a point here* / *Remove this
+>   point*, the discoverable form of node verbs that until now needed the Points
+>   tool armed **plus** `Ctrl` / `Ctrl+Shift` and were announced nowhere. **Every
+>   row asks `reshape_annotation_preview`** with the exact edit it would commit
+>   and reads the **error variant**: greyed-with-reason at the vertex floor,
+>   absent for a shape that will never have points. **No subtype list anywhere in
+>   the shell.**
+> * **Typed X / Y / W / H** for a selected annotation, and **Ctrl+D** duplicate.
+> * **Arrow-key nudge** — 1 pt bare, 0.25 pt with `Ctrl` (Acrobat's direction:
+>   the modifier makes the step *smaller*; Shift is untouched because it already
+>   means *constrain to one axis* on this canvas) — and **z-order** front /
+>   forward / backward / back, on an **Arrange** group that is **new on the
+>   Markup tab** and is recorded as an amendment in `RIBBON_IA.md` §5.5.
+> * **Acrobat's per-kind default colours**, measured from its registry. The
+>   highlighter is **orange `#FF6200`, not yellow** — what everybody knows was
+>   wrong, and this shell's `(1.0, 1.0, 0.0)` had been written from memory.
+>
+> **Five defects were found on the way, and they are worth more than the
+> features** — the mode-restore death above, plus:
+>
+> * ⚠ **A sticky note / text box / stamp's style controls were drawn and could
+>   not commit.** `spec_from_dict` matches ten `/Subtype`s and `/Text`,
+>   `/FreeText` and `/Stamp` are not among them, so every press was refused
+>   while the swatch and the opacity row sat there live. Reachability now comes
+>   from that same reader **succeeding**, carried out of the call the panel
+>   already made — never from a hand-written list, which is the thing that goes
+>   stale the day the engine adds a subtype.
+> * ⚠⚠ **`visible_when` was never read by the menu resolver, and never had
+>   been.** `menu::plan::resolve` never called `Item::visible_condition()`; only
+>   the ribbon did. So **every menu row meant to vanish was greyed instead — R9
+>   inverted** — including two pre-existing `format.delete` rows and the dock
+>   tab's Float/Dock pair, with prose at each site describing behaviour that was
+>   not happening. **No test could see it: every one asked the model rather than
+>   the resolution.** Three lines, calling the ribbon's own `sizing::visible` so
+>   the two surfaces cannot disagree.
+> * ⚠ **One edit draft was shared between a content object and an annotation
+>   with the same number.** The geometry panel keyed its draft on
+>   `(page, usize, epoch)`; content objects are numbered by paint order and
+>   annotations by object id, both small integers, so selecting content object 7
+>   and then annotation `7 0 R` on one page did not re-seed the draft and Apply
+>   would have moved the annotation by the difference between two unrelated
+>   boxes. Now a `Subject` enum.
+> * ⚠ **`Alt+Arrow` would have nudged and paged at once.** egui's `consume_key`
+>   matches with `matches_logically`, which **ignores extra Shift and Alt** — so
+>   a bare-arrow consumer also fires on `Alt+Arrow`, which the keymap binds to
+>   `pages.move_up`. The nudge reads `i.modifiers` itself. ⇒ **Assume nothing
+>   about `consume_key` and modifier exclusivity.**
+>
+> ⬜ **Four engine gaps were filed today**, one topic per file, all in
+> `D:\Dev\FeatureRequests\pdfce_FeatureRequests\open\` and all rowed in
+> `ENGINE_BACKLOG.md` under `blocked`: a dashed border cannot be expressed *or
+> preserved*; `set_markup_style` accepts a `width` for a text markup and
+> **silently discards it**; `MarkupStyle::endings` is not a `StyleEdit`, so
+> `/LE` can be set and never removed; and a `/FreeText`'s **painted words**
+> cannot be rewritten — the engine commits the dictionary and leaves the `/AP`
+> stream, which this shell discloses twice, off-canvas, before and after the
+> write.
+
+
 > ★★★ **LAST SESSION: 2026-09-06. HE CAN SIGN A DOCUMENT.** His report of
 > 2026-09-03 — *"a document cannot be signed"* — is closed: **File > Security >
 > `Sign…`**, driven end to end, with the verdict taken by **a different
@@ -318,15 +617,44 @@
 > add/remove; read mode says how to leave; ribbon + rail auto-hide; grips that
 > work on a 0.85 pt object.
 >
-> ⬜ **OPEN AT THE ENGINE (4):** the page-tree ancestor count; markup vertices
-> unreadable (`/Vertices`, `/InkList` unmodelled — **nothing was faked**); no
-> verb authors a reply (`/IRT`); `/State` unmodelled; and **O137 — a
-> line-weights-off display mode**, which he asked for by name. ⚠ The last is
-> AutoCAD's `LWDISPLAY` off (**thick → thin**), *not* Acrobat's "enhance thin
-> lines" (**thin → thick**). They are opposites.
+> ⚠⚠⚠ **CORRECTED 2026-09-06 — THIS LINE WAS WRONG IN THREE WAYS AND IS THE
+> WORKED EXAMPLE THE TOP BLOCK IS BUILT ON. The superseded text is kept, struck
+> through, because the shape of the mistake is the part worth having:**
+>
+> > ~~⬜ **OPEN AT THE ENGINE (4):** the page-tree ancestor count; markup
+> > vertices unreadable (`/Vertices`, `/InkList` unmodelled — **nothing was
+> > faked**); no verb authors a reply (`/IRT`); `/State` unmodelled; and
+> > **O137 — a line-weights-off display mode**, which he asked for by name.~~
+>
+> Wrong (1) because **markup vertices had already shipped** when this was
+> written — `Pass 255.0`, `35ca5be`, answered in
+> `reply_2026-09-05-markup-vertices-SHIPPED.md` and consumed by
+> `canvas/annotnodes.rs` since; wrong (2) because **the page-tree ancestor count
+> had already been fixed** — `Pass 251.1`, `e4cefcd`,
+> `reply_2026-09-05-delete-pages-ancestor-count-FIXED.md`; and wrong (3) because
+> **the header said four and the list held five.** Both fixes are in the pin,
+> measured with `git -C D:/Dev/pdfcer merge-base --is-ancestor <commit> 821ab47`,
+> not read off a changelog.
+>
+> ⬜ **OPEN AT THE ENGINE (3), re-measured 2026-09-06** — and the measurement is
+> *a `request_*` file in `D:\Dev\FeatureRequests\pdfce_FeatureRequests\open\`
+> with no `reply_*` or `done_*` beside it*, which is the only evidence that
+> something is still open:
+>
+> 1. **No verb authors a reply (`/IRT`)** — `request_a_reply_can_be_read_and_never_written.md`.
+> 2. **Review status is not modelled at all** — `request_review_status_is_not_modelled_at_all.md`.
+>    (This line previously said *"`/State` unmodelled"*, which named the key
+>    rather than the filing.)
+> 3. **O137 — a line-weights-off display mode**, which he asked for by name —
+>    `request_a_line_weights_off_display_mode_for_dense_cad_drawings.md`. ⚠ It is
+>    AutoCAD's `LWDISPLAY` off (**thick → thin**), *not* Acrobat's "enhance thin
+>    lines" (**thin → thick**). They are opposites.
 >
 > ⚠ **Zero headroom:** `app/actions/action.rs` and `app/lifecycle.rs` at exactly
-> **1500**.
+> **1500**. ⚠ **Re-measured 2026-09-06: `app/actions/action.rs` is at 1,479** —
+> a track split it — **and `app/lifecycle.rs` is still at exactly 1,500**, joined
+> there by `crates/egui-shell/src/manifest/merge.rs`. The full within-twenty-lines
+> table is in the 2026-09-06 (late morning) block at the top of this file.
 
 
 > ★★★ **LAST SESSION: 2026-09-05 (overnight). NINE TRACKS LANDED AND A BUILD

@@ -196,14 +196,34 @@ was wrong the moment eight rows' *bodies* were rewritten while their *headings*
 stayed put. Seven of those moved to `shipped` on 2026-09-05 and one was
 retracted out of it.
 
-| verdict | rows |
-|---|---|
-| `shipped` — the engine's `[ ]` is stale | **79** |
-| `wanted` — a real gap | **24** |
-| `declined` — deliberately no surface | **5** |
-| `blocked` — waiting on something named | **3** |
-| `unknown` | **0** |
-| **total** | **111** |
+| verdict | rows (2026-09-05) | ⚠ **re-counted 2026-09-06** |
+|---|---|---|
+| `shipped` — the engine's `[ ]` is stale | 79 | **79** — unchanged |
+| `wanted` — a real gap | 24 | **28** — ⚠ **it was already 28 at HEAD before today's edits** |
+| `declined` — deliberately no surface | 5 | **5** — unchanged |
+| `blocked` — waiting on something named | 3 | **7** — four rows added 2026-09-06 |
+| `unknown` | 0 | **0** |
+| **total** | 111 | **119** |
+
+⚠⚠ **AND THE 2026-09-05 COLUMN WAS ALREADY WRONG WHEN THIS FILE WAS COMMITTED,
+which is the third recurrence in this table alone.** The re-count was run twice
+on 2026-09-06 — once against `git show HEAD:ENGINE_BACKLOG.md` and once against
+the working tree — precisely so the two causes could be told apart, and they
+were: **at HEAD the file already held 28 `wanted` rows while its own tally said
+24 and its own section heading said *"24 of 111"*.** Four `wanted` rows were
+added by other sessions without the tally being re-run. Only the **four
+`blocked`** rows (3 → 7, total 115 → 119) are today's.
+
+⇒ ★★★ **A tally that is re-counted by script and then never re-run is a typed
+number again by the next commit.** The 2026-09-05 entry above says in as many
+words *"Do NOT hand-increment these. Re-run the count"* — and the very next
+sessions to add rows did neither. The instruction is correct and it is not
+sufficient, because **nothing fails when it is ignored**: `check-engine-backlog.sh`
+proves each row is ACCOUNTED FOR and reads no heading and no total. Until a gate
+counts these sections, **the only safe reading of any figure in this file is the
+one you produce yourself**, and the walk is fifteen lines of Python: for each
+`## \`verdict\`` section, count lines starting with `|` whose first cell is
+neither a `---` separator nor a `Row (` header.
 
 ⚠ **Every figure in this table was wrong on 2026-09-05 and is now COUNTED, not
 typed.** It read 79 / 12 / 5 / 2 / 0 = 98 while the file held 108 rows and the
@@ -214,7 +234,11 @@ tables reports, and the section headings were reset from the same walk. ⇒ **Do
 not hand-increment these.** Re-run the count; `check-engine-backlog.sh` prints
 the register total on every run and is the cheapest cross-check.
 
-⚠ **The engine-side figure moved too, and in the other direction.** The gate now
+⚠ **The engine-side figure moved too, and in the other direction.** ⚠ **Re-run
+2026-09-06: the gate now measures **36** engine rows against **119** register
+entries and reports 83 as `note:`-level orphans — and it prints the register
+total on every run, which is the cheapest cross-check there is and agrees with
+the walk above to the row.** The 2026-09-05 text follows unchanged: The gate now
 measures **34** rows reading `[x] core / [ ] gui` in the engine's file, against
 the 90 recorded above — the engine ticked 63 boxes on 2026-09-04. A register
 entry whose row has been ticked is **kept**, because the argument is the
@@ -230,7 +254,7 @@ account is true.**
 
 ---
 
-## `wanted` — 24 of 111 (re-counted 2026-09-05 by script, not by eye)
+## `wanted` — **28 of 119** (re-counted 2026-09-06 by script; this heading said *"24 of 111"* and both figures were already wrong at HEAD — see the tally above)
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -329,7 +353,7 @@ from here and no box in it is ticked by this pass.
 
 ---
 
-## `blocked` — 3 of 111
+## `blocked` — **7 of 119** (was *"3 of 111"*; four rows filed 2026-09-06 — re-counted, not incremented)
 
 Wanted, and waiting on something named. Every row here says **what** it is waiting on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat, and this project has found seven stale blockers already.
 
@@ -344,6 +368,32 @@ Wanted, and waiting on something named. Every row here says **what** it is waiti
 | Row (`FEATURES.md`, blocked) | Why |
 |---|---|
 | **Session verbs plan against the SESSION graph, not the base revision** — every text-edit planner takes `&DocumentView<'_>` and every `EditSession` verb passes `self.view()` … | **BLOCKED ON THE ENGINE PIN, and it is the answer to a measurement THIS repository made yesterday.** `Pass 257.0`. Commit `f9ded5a` recorded O141's font escape hatch failing at its last step and killed the shell-side hypothesis by construction: one `EditSession`, `format_text` then `edit_text` located by `find` text alone — **refused**; the identical pair with a save and reopen between them — **succeeds**. That is exactly the staleness this Pass removes: a `/Font` that `format_text` authored this session is typeable by the next `edit_text` at once, and handing a planner the base revision is now a compile error upstream. ⚠ **It is not in the build this shell compiles**: `Cargo.lock` pins `56dde4d` and this landed six commits later, unreleased — measured, not assumed (`git log 56dde4d..HEAD` in `D:/Dev/pdfcer`). The pin is deliberately not moved from inside a session cutting a release from it. **What it costs once the pin moves:** the save-and-reopen workaround this shell wrote around the old behaviour must be RE-MEASURED and, if it is dead, deleted with its test — a workaround kept past its cause is the stale-blocker shape this file exists to catch. |
+
+### Annotations & markup — ★★★ four rows added 2026-09-06, and all four are OUR asks rather than the engine's offers
+
+★★★ **These four are a different shape from every other row in this file, and
+the difference is worth stating before they are read.** Every row above is keyed
+on a capability the ENGINE'S OWN `FEATURES.md` advertises, and the verdict says
+whether this shell has it. These four are keyed on **absences this shell
+measured while building against the engine on 2026-09-06** and filed, one topic
+per file, in `D:\Dev\FeatureRequests\pdfce_FeatureRequests\open\`. They will
+never be surfaced by `check-engine-backlog.sh`, because that gate reads the
+engine's table and an absence is not in it. ⇒ **A gap this shell finds has no
+gate; it has only this file.** That is the same asymmetry the gate's own header
+records for prose-announced capabilities, running in the opposite direction, and
+it is why these rows are written here rather than left in the request channel to
+be found by accident.
+
+⚠ **All four were filed the same day and none has a reply.** Re-grep the channel
+for a `reply_*` or `done_*` file before repeating any of them as open — two
+entries in `RESUME.md` were stale on exactly that test on 2026-09-06.
+
+| Row (this shell's filing, blocked) | Why |
+|---|---|
+| **`MarkupStyle` cannot express a dashed border** — `request_markupstyle_cannot_express_a_dashed_border.md` | **BLOCKED ON A FIELD THAT DOES NOT EXIST, and it is the eighth of eight.** `RIBBON_IA.md` §5.8 has specified the Format tab's Markup row as eight entries since 2026-08-12 — Colour · Fill · **Line style** · Line width · Opacity · Arrowheads · Note text · Delete. Seven shipped on 2026-09-06 and every one of them landed on a verb the engine already had. `MarkupStyle` carries exactly five fields — `stroke`, `interior`, `width`, `opacity`, `endings` — and **no border style and no dash array**, so a shell has nothing to set. ★★ **The absence is two-sided and the engine says so itself, twice**: its `DroppedProperty` enum carries the consequence in two adjacent variants, so a dash a caller cannot *set* is also a dash the engine cannot *preserve* — a producer's dashed border is silently normalised whether or not this shell ever offers a control. ★ **It is reported as an absence rather than guessed at**: nothing was called, nothing was worked around, and `shell::manifest::PLANNED` carries the reason in writing instead of a scheduling note. **Priority: low, and the filing says so** — it is the smallest of the markup-editing gaps and was filed only because the rest of the row shipped that day. |
+| **`set_markup_style` accepts a `width` for a text markup and does nothing with it** — `request_set_markup_style_accepts_a_width_for_a_text_markup_and_does_nothing_with_it.md` | **BLOCKED ON A REPORT, NOT ON A PICTURE — and this is the one failure shape this project treats as worse than a refusal.** `set_markup_style(highlight_id, &MarkupStyle { width: Some(2.0), .. })` returns `Ok(MarkupStyleChange { .. })` with an **empty `dropped` list**, and the annotation is unchanged: `MarkupSpec::TextMarkup` has no border-width field, so the value is discarded without a word. Same for `/Underline`, `/StrikeOut` and `/Squiggly`. ★★★ **The picture is correct and the RETURN VALUE is wrong, which is why it is worth a Pass.** Everywhere else this verb is scrupulous: a `/BE` it cannot reproduce is `DroppedProperty::BorderEffect`, a dash is `DashPattern`, an exotic `/LE` is `LineEnding`, and a foreign appearance is `ForeignAppearance` **measured** rather than assumed — the engine's own comment says the measurement is the point, because *"a disclosure that fires on the overwhelmingly common path is one an operator learns to skip."* A width silently swallowed is the mirror image: **a disclosure that does not fire on a path where something WAS ignored.** A shell that trusted `Ok` plus an empty `dropped` would be entitled to tell the operator the width took. ★ **This shell does not send it** — `app::markupband` and `panels::properties::markup` both **hide** the width control for a text markup, on the shell's own knowledge that a highlight has no border — and it is filed anyway, because a workaround that depends on the caller knowing is a workaround the next caller will not have. |
+| **`MarkupStyle::endings` is not a `StyleEdit`, so `/LE` can be set and never removed** — `request_markupstyle_endings_is_not_a_styleedit_so_line_endings_cannot_be_removed.md` | **BLOCKED ON AN ASYMMETRY IN ONE FIELD OF AN OTHERWISE CONSISTENT STRUCT.** Four of `MarkupStyle`'s five fields distinguish *set* from *clear* through `StyleEdit`; `endings` is a bare `Option<(LineEnding, LineEnding)>`, so the nearest a caller can get to removing `/LE` is `Some((None, None))`, which **writes** `/LE [/None /None]` rather than removing the key. ★★ **Same picture, different bytes — and this project has been bitten before by treating those as equivalent.** An operator who turns an arrow's heads off and changes their mind has a document that no longer matches the one they opened, in a key nothing in either UI shows; undo covers the session and does not cover *"is this byte-identical to what my client sent me"*, which for a signed drawing is a question that gets asked. ★ It also **breaks the symmetry a caller reasons from**: this shell's two markup surfaces handle `stroke`, `interior` and `opacity` through one code path that understands `Set`/`Clear`, and `endings` needs a special case in both. **Small, and filed because the inconsistency is the kind that gets copied.** |
+| **A `/FreeText`'s painted words cannot be rewritten** — `request_a_text_boxs_painted_words_cannot_be_rewritten.md` | **BLOCKED ON A SECOND OBJECT THE COMMAND DOES NOT CARRY, and the divergence has no visible first moment.** `set_markup_note` on a `/FreeText` changes `/Contents` and leaves the page painting the old words. Three measured facts, all read out of engine source rather than inferred: (1) `annot_author::free_text` builds the `/AP` `/N` content from the caller's `text` and then writes **the same string** into `/Contents`, so at the instant a text box is placed the appearance and the dictionary **agree exactly**; (2) `write_markup_note`'s `Command` carries `objects: vec![ObjectWrite { id: annot_id, .. }]` — the `/AP` `/N` stream is a **separate object**, not in the command, not rewritten and not versioned with the change; (3) R43, in the engine's own words: *"pdfcer paints from `/AP` or not at all"*, so the stale stream is not a hypothetical about a stricter reader. ★★★ **The filing is NARROWER than it was briefed, and that is the part worth keeping.** A sticky note's `/Contents` is never painted and a stamp's is never written, so warning about those would have been **two invented defects**. Only `/FreeText` diverges. ★ This shell **discloses it twice, off-canvas, before and after the write**, and the request names a single unblocker rather than a wish list. |
 
 ### Reading, navigation & printing
 
@@ -362,14 +412,14 @@ rule.
 
 ---
 
-## `unknown` — 0 of 111
+## `unknown` — **0 of 119** (was *"0 of 111"*)
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess. **This section is empty**, and that is a claim: see *★★ Why nothing is `unknown`* in the header before you trust it.
 
 
 ---
 
-## `declined` — 5 of 111
+## `declined` — **5 of 119** (was *"5 of 111"*; the row count did not move, the total did)
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -396,7 +446,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — 79 of 111 (re-counted 2026-09-05)
+## `shipped` — **79 of 119** (was *"79 of 111"*; re-counted 2026-09-06, the row count did not move)
 
 **The engine's row is stale: an operator can reach this today.** Sixty-five of ninety (★ 64 → 65 on 2026-09-04, when the encryption-authoring row moved out of `blocked` on the operator's O119 ruling), which is the single largest finding of this triage. Each row names the surface or the call site, and where this project's own record dates the work, the date. These rows are kept, never deleted — `EDITABLE_SURFACES.md`'s own rule, and the argument is the valuable part.
 

@@ -80,6 +80,144 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
+## O144 — ◑ **BUILT 2026-09-06, AND NOT ONE PART OF IT HAS BEEN DRIVEN** — "getting full editing working for the Markup tools", and Adobe's own colours
+
+**Your words, 2026-09-06:**
+
+> *"getting full editing working for the Markup tools. Also make sure you've
+> used the same default colours and style look for these things as Adobe."*
+
+⚠ **Read the last section of this row before you read the rest of it.** All of
+what follows is written, tested and in the build you have. **None of it has been
+put in front of a real pointer**, and by this file's own contract that means it
+is not done, however much of it there is.
+
+### What a mark you had drawn could not do that morning
+
+You could move it, resize it, rotate it, delete it, copy it and drag its
+corners. You could change its colour, its width and its transparency — but only
+in the panel on the right. Everything below was simply not there.
+
+### 1. The Format tab has a Markup band now
+
+Select a shape and the **Format** tab that appears carries five controls:
+**line colour**, **fill** (including *No fill*), **line width**,
+**transparency**, and **which ends of a line get an arrowhead**. That row has
+been written down as part of the plan since 12 August and had been empty ever
+since — the note in the program that explained *why* it was empty had been
+wrong since 18 August, and nobody re-read it for eighteen days.
+
+**Fill and arrowheads had never had a control anywhere**, on either surface,
+although the engine has been able to do both for weeks.
+
+### 2. Right-click a shape and you can add or remove a corner
+
+This is the half of your report of 5 September that got written down and not
+built. Adding and removing corners worked, but only if you knew to press `A`
+first and then hold `Ctrl`, or `Ctrl+Shift` — and **nothing on screen said so**.
+Now right-clicking a shape offers **Add a point here** and **Remove this
+point** in plain words.
+
+The menu never guesses. Before it draws either row it asks the engine what
+would happen if you pressed it:
+
+| what you right-clicked | what you get |
+|---|---|
+| a five-corner shape, on a corner | both rows, live |
+| a three-corner shape, on a corner | *Remove this point* greyed, and the tooltip says why — a triangle cannot lose a corner |
+| a rectangle, an ellipse, a freehand stroke | neither row appears at all — those shapes will never have corners |
+| a shape, but not on a corner | *Remove this point* is absent — you did not point at one |
+
+### 3. Position by typing, duplicate, nudge, and re-stack
+
+* **Type the position and size.** Select a mark and you can type its X, Y,
+  width and height instead of dragging — the same way you already can for the
+  drawing's own objects.
+* **`Ctrl+D` duplicates it.**
+* **The arrow keys nudge it** — one point per press, or a quarter of a point
+  with `Ctrl` held. That is Acrobat's direction: the modifier makes the step
+  *smaller*, not bigger. `Shift` is left alone because on this canvas it already
+  means *keep it on one axis*.
+* **Bring to front / forward / backward / send to back**, in a new **Arrange**
+  group on the Markup tab — so when two marks overlap you can choose which one
+  is on top. The engine has been able to do this since 2 September and nothing
+  in the program had ever asked it to.
+
+### 4. The colours are Adobe's, read out of Acrobat rather than remembered
+
+This was the second half of your instruction and it was treated as a claim to
+verify rather than a preference to guess at, because a colour this program picks
+gets written into your file and travels to whoever you send it to.
+
+Acrobat DC is installed on this machine and keeps its per-tool defaults in the
+registry. Two separate reads, minutes apart, agreed to six decimal places.
+Shapes are **red #DB3425**, underline **blue #1373E8**, strikeout
+**salmon #F86464**, sticky notes **violet #9643FC**, a text box red on white.
+
+★ **Your highlighter was yellow and Acrobat's is orange.** You settled that one
+yourself in a sentence — *"change the highlighter colour to match adobe"* — and
+you were right against a page of reasoning that said keep yellow. The full
+table, every number, and the argument you overruled are written up in a new file
+in the project so the next person can disagree with a measurement rather than
+with an opinion.
+
+⚠ **One thing was deliberately not copied.** Acrobat stores no line width at
+all — it simply leaves the setting out, which means one point. This program
+stays at **two points**, on your own argument about dense CAD drawings: a
+hairline disappears among a drawing's own quarter-point linework.
+
+### 5. Five things that were broken, found while building this
+
+Two of them you would have felt every day.
+
+1. ★★★ **The program had stopped opening in the mode you left it in** — and it
+   had been doing that silently since the day that feature shipped, ten days
+   ago. It hit markup hardest of all, because marking up happens in **Review**
+   and the program was reopening in **Read** every single time. Fixed, and
+   measured on the real program rather than in a test: before the fix two tabs
+   came back on start-up, after it five.
+2. **A sticky note, text box or stamp showed you style controls that could not
+   work.** The colour swatch and the transparency slider appeared, looked live,
+   and every press was refused. Those three kinds are not ones the engine will
+   restyle. The controls now appear only when the engine says yes.
+3. **Menu rows that were supposed to disappear were being greyed out instead** —
+   everywhere, in every menu, since the beginning. Two *Delete* rows and the
+   panel float/dock pair had been doing it in front of you.
+4. **Two different things could share one editing draft** if a shape and a piece
+   of the drawing happened to have the same number, which would have moved your
+   mark to the wrong place when you pressed Apply.
+5. **`Alt` + an arrow key would have nudged a mark and turned the page at the
+   same time.**
+
+### 6. What is still not possible, named rather than left implied
+
+**A dashed border.** It is the one item of the five-control row that has no
+control, and it is not a scheduling decision — the engine has no setting for it
+to reach. Filed, along with two smaller things: a width sent for a highlight is
+silently thrown away rather than refused, and an arrowhead can be switched on
+and never fully switched off.
+
+**A text box's words go stale if you edit them.** Changing the note text on a
+text box changes what the program records and not what is painted on the page.
+The program now tells you so, twice, at the moment you do it — rather than
+letting you find out later. Filed with the engine as the fix.
+
+### ⚠ NOT DRIVEN — none of it, and this is the part that decides whether to trust the build
+
+**Nothing in this row has been through the harness that drives the real
+program.** Seven jobs were working in one copy of the code all day and that
+harness takes over the mouse pointer, so only one can run at a time and none of
+them did. What exists instead is 3,770 passing tests and 31 passing checks, and
+this project's founding rule is that neither of those is a report of working
+software — it has a shipped defect in its own history that proves it.
+
+So: **built, awaiting your verdict, and awaiting a driven run before anybody
+should call it more than that.** Driving it is the first job of the next
+session. Everything above is in the release on OneDrive in **`pdfcer-gui2`**;
+**`pdfcer-gui1` from 08:31 is your fallback** if any of it misbehaves.
+
+---
+
 ## O141 — ✅ **COMPLETE 2026-09-06 — "IF THE CHARACTER ISN'T AVAILABLE IN A PDF ARE WE ABLE TO CHANGE TO A DIFFERENT FONT?" — yes, and the letter now goes in on the same press**
 
 **The last step of this works now.** Yesterday pdfcer could offer you a face that
@@ -862,15 +1000,27 @@ test ignoring a field the program prints and reading a change-log as a snapshot.
 **a failure at every rung of a sweep is evidence about the instrument, not
 about the thing being swept.**
 
-## O132 — ◑ **HALF BUILT 2026-09-05, AND THE OTHER HALF IS AT THE ENGINE** — you cannot edit or delete the nodes of a shape you have drawn
+## O132 — ◑ **ALL THREE PARTS ARE NOW BUILT — 2026-09-06, AWAITING YOUR VERDICT** — you cannot edit or delete the nodes of a shape you have drawn
+
+> ⚠ **This row was headed *“HALF BUILT 2026-09-05, AND THE OTHER HALF IS AT THE
+> ENGINE”* until 2026-09-06.** The heading and the two sections it was wrong about
+> are corrected below and the superseded text is kept, struck through, because
+> the shape of the correction is the useful part — in this case that a blocker
+> named at the engine was answered by the engine **the same day**, and that a
+> thing declined for being in another job's file was built as soon as that job
+> finished. **Neither was closed by us. Only you close a row.**
 
 **Your words, 2026-09-05:**
 
 > *"I also can't edit or delete nodes of a markup shape once it is drawn."*
 
 One sentence, and when it was measured it turned out to be **three different
-things**, wearing one complaint. Two of them are fixed today. The third cannot
-be fixed here at all, and it is filed rather than fudged.
+things**, wearing one complaint. ⚠ **This paragraph read *“Two of them are fixed
+today. The third cannot be fixed here at all, and it is filed rather than
+fudged”* on 2026-09-05, and it stopped being true within six hours.** All three
+are fixed, and the fourth thing at the bottom of this row — the right-click menu
+— was built on 2026-09-06. **Nothing here is closed; it is done and waiting on
+your verdict.**
 
 ### 1. ✅ A measurement you have drawn can now gain and lose corners
 
@@ -922,30 +1072,70 @@ by the `A` key and **not** from the ribbon or the rail, because the button that
 arms it is still hidden outside Edit. That button lives in a file another job
 was working in today. Say the word and it gets a row of its own.
 
-### 3. ⬜ A markup shape — a cloud, a polygon, an ink stroke — still cannot be edited, and that one is not ours
+### 3. ✅ A markup shape — a cloud, a polygon, an ink stroke — CAN be edited, since 2026-09-05
 
-This is the literal thing you asked about, and it stops at the engine.
-`pdfcer-core` does not model a markup annotation's geometry at all: there is no
-way to *read* where a cloud's corners are, let alone move one. So we cannot
-even draw the little squares, never mind let you grab one.
+⚠ **This section said the opposite, and it was true for about six hours.** The
+engine answered the filing the same day it was made: it can now read where a
+shape's corners are and move, add and remove one, and this program has been
+drawing the little squares and letting you grab them since 2026-09-05. Select a
+polygon or a polyline and every corner gets a handle; a line shows its two ends.
+A rectangle, an ellipse and a freehand stroke draw **nothing** — not greyed
+handles — and if you go looking for them the program says in words why that
+shape has none.
 
-We could have guessed at it by re-reading the raw file ourselves. We did not,
-and that is a deliberate refusal: it would be a second, weaker copy of
-something the engine owns, and it would go wrong the first time a new shape was
-added. The last time this project refused a workaround like that, the engine
-shipped the real answer within hours.
+★ **The lesson is about the refusal, not about the feature.** The paragraph
+below refused to guess at the shape by re-reading the raw file, and said so and
+why. That refusal is the reason the correct thing exists a day later instead of
+a plausible thing existing forever. **The original text follows unchanged:**
 
-**Filed as** `request_a_markup_shapes_vertices_cannot_be_read_or_edited.md`,
-asking for three things in the order we would use them: read the corners, move
-one, then add and remove.
+> ~~### 3. ⬜ A markup shape — a cloud, a polygon, an ink stroke — still cannot be edited, and that one is not ours~~
 
-### And one thing we would build next if you want it
+> ~~This is the literal thing you asked about, and it stops at the engine.
+> `pdfcer-core` does not model a markup annotation's geometry at all: there is no
+> way to *read* where a cloud's corners are, let alone move one. So we cannot
+> even draw the little squares, never mind let you grab one.~~
+>
+> ~~We could have guessed at it by re-reading the raw file ourselves. We did not,
+> and that is a deliberate refusal: it would be a second, weaker copy of
+> something the engine owns, and it would go wrong the first time a new shape was
+> added. The last time this project refused a workaround like that, the engine
+> shipped the real answer within hours.~~
+>
+> ~~**Filed as** `request_a_markup_shapes_vertices_cannot_be_read_or_edited.md`,
+> asking for three things in the order we would use them: read the corners, move
+> one, then add and remove.~~
 
-The natural way to add or remove a corner is a **right-click on the shape** —
-*"add a point here"*, *"remove this point"* — which is how the engine itself
-describes these two operations. The chords above are a stopgap. The right-click
-menu lives in a file another job was working in today, so it is written down
-here rather than half-built.
+★★ **"The last time this project refused a workaround like that, the engine
+shipped the real answer within hours" — it happened again, and faster.** The
+filing went out on 2026-09-05 and came back the same day. That is now twice, and
+it is the argument for refusing a plausible workaround rather than a hope.
+
+### And one thing we would build next if you want it — ✅ **BUILT 2026-09-06, WITHOUT WAITING TO BE ASKED**
+
+✅ **BUILT 2026-09-06 — and it is the one thing in this row you asked for
+twice without saying so.** Right-click a shape and the menu offers **Add a point
+here** and **Remove this point** in plain words. The chords still work; they are
+no longer the only way to find the feature.
+
+The menu never guesses what a shape can do. Before it draws either row it asks
+the engine what would happen if you pressed it, so a triangle greys *Remove this
+point* with the reason in its tooltip, a rectangle is offered neither row at all,
+and right-clicking a shape somewhere other than on a corner offers no *Remove*
+either — because you did not point at one.
+
+★ **The superseded text is kept, because the reason it gave was a good one and
+it came true:**
+
+> ~~The natural way to add or remove a corner is a **right-click on the shape** —
+> *"add a point here"*, *"remove this point"* — which is how the engine itself
+> describes these two operations. The chords above are a stopgap. The right-click
+> menu lives in a file another job was working in today, so it is written down
+> here rather than half-built.~~
+
+⚠ **Still not driven, and that has not changed.** The right-click menu, like
+everything else built on 2026-09-06, has never been opened in a running window —
+see **O144**. The corner gestures below were driven on 2026-09-05; the menu that
+makes them findable was not.
 
 **Verified:** 14 unit tests, six of them new and every one **falsified** — the
 guard was removed, the test was watched go red, and the code was put back.

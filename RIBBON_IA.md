@@ -17,7 +17,192 @@ on top of everything here).
 
 ---
 
-## ★★★ Amendment, 2026-09-05 (LATEST) — the band was DRIVEN, and the three-row change had reached nothing on screen
+## ★★★ Amendment, 2026-09-06 (LATEST) — §5.8's Markup row is **seven of eight**, and §5.5 gained a **sixth group** this document does not specify
+
+**Operator instruction:** *"getting full editing working for the Markup tools.
+Also make sure you've used the same default colours and style look for these
+things as Adobe."*
+
+Two amendments in one, because they landed in one session (commits `99e4a01`
+and `f4aeee6`, released as `v0.5.0-dev.20260906.4`). ⬜ **Neither has been
+driven.** `find evidence -newermt "2026-09-06 08:00"` returns nothing and the
+two commits landed at 11:03 and 11:23, so every rectangle described below is a
+claim about the manifest and the code, **not** a measurement of the running
+band — which is exactly the distinction the 2026-09-05 amendment above was
+written to enforce. **Do not read a count here as a driven count.**
+
+---
+
+### 1. §5.8's **Markup** row — seven of eight, and the eighth has no verb
+
+The amendment further down this section (*"the Markup group, and a stale
+blocker that cost eighteen days"*) says *"Five of the row's eight entries are
+built"* and then accounts for Delete separately. Both statements are true and
+together they under-report what an operator can reach, so the whole row is
+tabulated here once:
+
+| §5.8 entry | where it lives | state |
+|---|---|---|
+| **Colour** | Format ▸ Markup band | ⬜ built, undriven |
+| **Fill** | Format ▸ Markup band | ⬜ built, undriven — new 2026-09-06 |
+| **Line width** | Format ▸ Markup band | ⬜ built, undriven |
+| **Opacity** | Format ▸ Markup band | ⬜ built, undriven |
+| **Arrowheads** | Format ▸ Markup band | ⬜ built, undriven — new 2026-09-06 |
+| **Note text** | **Properties panel**, not the tab | ✅ built — `/Contents` is a different struct behind a different verb, and a note is *prose*: a ribbon band is the wrong surface for a paragraph. §5.8's own division of labour puts everything not reached for mid-gesture in the panel |
+| **Delete** | the **Selection** group | ✅ built — exactly as it is for every other row of §5.8's table |
+| **Line style** (dashed) | **nowhere** | ⛔ **no engine verb exists** |
+
+⇒ **Seven of eight.** The row as written on 2026-08-12 is materially delivered.
+
+**★★★ Line style is the eighth and it is not a scheduling deferral.**
+`MarkupStyle` carries exactly five fields — `stroke`, `interior`, `width`,
+`opacity`, `endings` — and **no dash pattern and no border style**, so there is
+nothing for a control to call. It stays in `shell::manifest::PLANNED` with that
+reason written in, and it is **filed at the engine**:
+`request_markupstyle_cannot_express_a_dashed_border.md`, in
+`D:\Dev\FeatureRequests\pdfce_FeatureRequests\open\`, with a row in
+`ENGINE_BACKLOG.md` naming what it waits on.
+
+★★ **The absence is two-sided and the filing says so, which is the part worth
+recording here.** The engine's own `DroppedProperty` enum states the
+consequence twice, in two adjacent variants: a dash a caller cannot *set* is
+also a dash the engine cannot *preserve*. So the missing control is the visible
+half of a round-trip gap — a producer's dashed border is silently normalised
+whether or not this shell ever offers the setting. **A specification entry with
+no verb behind it is a blocker with a name, not a to-do**, and the distinction
+is the one the amendment below spent eighteen days learning.
+
+⚠ **Two further engine gaps were found while wiring the five that shipped**, and
+they belong here because they constrain what the row may ever offer:
+`set_markup_style` accepts a `width` for a text markup and **silently discards
+it** (so both surfaces hide the width control for a highlight, on the shell's own
+knowledge that a highlight has no border), and `MarkupStyle::endings` is not a
+`StyleEdit`, so `/LE` can be **set and never removed** — the nearest a caller
+gets to *off* is writing `/LE [/None /None]`. Both are filed, one topic per
+file.
+
+---
+
+### 2. §5.5 gained an **Arrange** group, which this document does not specify
+
+§5.5 names five groups — Shapes, Text markup, Notes, Style, Comments. There are
+now **six**: an **Arrange** group carrying **Bring to front · Bring forward ·
+Send backward · Send to back**, placed **after Style and before Comments**, two
+rows rather than four.
+
+**Why it was placed rather than proposed.** `RIBBON_IA.md` is a settled spec and
+the standing rule is *propose, do not improvise*. The operator's directive of
+2026-09-06 suspends that for this work by name — *"never ask — placement,
+wording and scope are yours"* — so the group was placed and the reasoning was
+written at the code site to be reflected back here. **This section is that
+reflection. Do not read the absence of a §5.5 row as this group being
+unplanned.**
+
+**★★★ Why a group of its own rather than four rows in Style.** Because Style and
+Arrange answer **opposite questions about tense**, and §5.5's own closing
+sentence is the rule: *"the Style group sets the style of the NEXT markup. Not
+of the selected one."* Style is a **pen**. These four act on a mark that is
+**already placed**, are drawn only while one is selected, and reach a different
+engine verb entirely — `reorder_annotations`, which permutes the page's
+`/Annots`, not `set_markup_style`. Folding them into Style would put a live
+control and a greyed one under one caption whose word describes neither.
+
+**★★ Why after Style and before Comments.** The tab reads left to right as a
+sequence of tenses, and this is the seam between its two halves:
+
+| groups | tense |
+|---|---|
+| Shapes · Text markup · Notes | what I am about to add |
+| Style | how the next one will look |
+| **Arrange** | **what I have already added** |
+| Comments | what everyone has added |
+
+Placing it **before** Style would split the three authoring groups from the pen
+that governs them. Placing it **after** Comments would put a selection-scoped
+group after a document-scoped panel toggle, which is the widening the order
+otherwise never reverses.
+
+**★ Why the four are labelled and not icon-only, and why that is a refusal
+rather than an omission.** There is no front, back, arrange or stacking glyph in
+the icon set, and the two near-misses were both refused for stated reasons:
+`chevron-up`/`chevron-down` already mean *move this up the PAGE LIST* — they are
+`pages.move_up`'s glyphs, and borrowing them here would tell an operator that
+Bring forward reorders the document; `show-points` and `edit-objects` depict a
+shape's anatomy, not its depth, and a picture that describes the wrong operation
+is worse than a word. Since no glyphs exist, asking for `icon_only` would fall
+back to labels anyway, so requesting it would be *a line of code stating an
+intention the build does not honour*. Four labelled controls in a captioned
+group read correctly, and the four words are the ones every drawing program
+uses.
+
+**★ Two rows, not four** — O97's shape (*"our display buttons should be on two
+rows to save space"*). It is a **hint**, not a layout: the packer reads it as
+*skip the fits-already short-circuit and search*, then returns the narrowest
+packing within the band's row ceiling. The item order therefore decides which
+controls share a row, and the two that move a mark **forward** come first with
+the two that move it **back** following — the reading that survives whichever
+shape the packer picks. ⬜ **Unmeasured on screen**, for the reason at the head
+of this amendment.
+
+**★★★ §5.4 ALREADY SPECIFIES A GROUP CALLED *Arrange*, AND IT IS NOT THIS ONE
+— found while writing this amendment, and it is the kind of collision that gets
+read as a built feature.** The **Edit** tab's §5.4 table carries:
+
+> | Group | Commands | |
+> |---|---|---|
+> | **Arrange** | Align ⌄ · Distribute ⌄ | **N** |
+> | | Bring forward / Send backward | **N** |
+> | | Group / Ungroup | **N** |
+> | | Flip horizontal / vertical | **N** |
+
+So there are now **two groups captioned Arrange on two different tabs**, and two
+of the four command *names* are the same words. They are not duplicates in the
+P1 sense and neither should move, because **their subjects are disjoint**:
+
+| | Edit ▸ Arrange (§5.4) | Markup ▸ Arrange (this amendment) |
+|---|---|---|
+| acts on | the **drawing's own** objects — page content | a **markup annotation** you placed |
+| what it reorders | paint order inside the content stream | the page's `/Annots` array |
+| engine verb | none yet | `reorder_annotations` |
+| state | **N — still entirely unbuilt** | ⬜ built 2026-09-06, undriven |
+
+⚠ **The hazard is one-directional and worth naming.** A reader who meets *Bring
+forward* on the Markup tab and then reads §5.4's row will reasonably conclude
+that Edit ▸ Arrange is built too. **It is not** — the 2026-09-05 mockup
+amendment further down this file records that group as absent by R9, quoting
+`manifest::PLANNED`'s own words: *"the whole Edit ▸ Arrange group is unbuilt, so
+the GROUP is absent too."* That remains true. **Nothing about page-content
+z-order shipped on 2026-09-06.**
+
+★ **The captions are deliberately not disambiguated.** Renaming either to
+*Arrange marks* / *Arrange objects* would be a caption that explains the ribbon
+to itself; the contextual rule already disambiguates them, since one appears on
+the Markup tab beside markup tools and the other on Edit beside content tools,
+and no operator sees both at once with one selection.
+
+**★ The ids are `markup.*` although the group is called Arrange.** A command's
+handler token must sit inside the hundred belonging to its id's prefix, and
+*Arrange* names a **group**, not a tab. §5 has always named groups freely and
+ids by tab — `markup.highlight` is in Text markup, `file.encrypt` in Security —
+so the id prefix says which tab, the group name says which band, and neither is
+an abbreviation of the other.
+
+---
+
+### 3. What this amendment does **not** claim
+
+⬜ **Nothing here has been through `tools/ui-verify`.** Seven tracks shared one
+working tree all session and the harness moves the real pointer, so no group
+rectangle, no row count and no wrap decision below has been read out of a
+running binary's own trace. The 2026-09-05 amendment above exists precisely
+because a table computed from the mock's rectangles and this shell's unit tests
+described *a layout the running binary did not produce*. **Treat every layout
+statement in this section as a prediction until a driven run has published
+`ribbon.group.markup.arrange`.**
+
+---
+
+## ★★★ Amendment, 2026-09-05 — the band was DRIVEN, and the three-row change had reached nothing on screen
 
 The amendment below this one ends with a block headed **"⬜ What is STILL
 unmeasured, named rather than implied"**, which says that every number in it
@@ -894,6 +1079,7 @@ class of failure, not fixing a current one.
 | | Callout | **N** |
 | | Stamp ⌄ | **G** *(`Draft stamp`; needs a gallery)* |
 | **Style** | Colour · Line width · Fill · Opacity | **partial G** — colour only |
+| **Arrange** | Bring to front · Bring forward · Send backward · Send to back | **★ ADDED 2026-09-06 — a SIXTH group this section did not specify; see the amendment at the top of this file for the placement argument** |
 | **Comments** | Comments panel | **G** |
 | | Clear page · Clear all | **N** |
 
@@ -905,6 +1091,16 @@ is not in that list and matters most for this audience.
 *existing* markup's style happens on the contextual **Format** tab. Both
 must exist; today only the first does, which is why a placed markup
 feels final.
+
+★★★ **AMENDED 2026-09-06: both now exist.** The Format tab's
+**Markup** band shipped that day with five controls, so the closing sentence
+above — *"today only the first does, which is why a placed markup feels
+final"* — is answered. It is kept rather than deleted because the sentence is
+the reason the band was built, and because the distinction it draws is the one
+that keeps the two surfaces from becoming one: **Style is the pen, the Format
+tab is the mark you already made.** The new **Arrange** group sits on the same
+side of that line as the Format tab — it acts on a placed mark — which is why it
+is a group of its own and not four rows inside Style. ⬜ Neither has been driven.
 
 ---
 
@@ -986,7 +1182,7 @@ Contents vary by selection type:
 
 | Selection | Groups |
 |---|---|
-| Markup | **Colour · Fill · Line width · Opacity · Arrowheads** · ~~Line style · Note text~~ · Delete — ★ **BUILT 2026-09-06, see the amendment below** |
+| Markup | **Colour · Fill · Line width · Opacity · Arrowheads** · ~~Line style~~ · *Note text* · Delete — ★★ **SEVEN OF EIGHT BUILT 2026-09-06; see the LATEST amendment at the top of this file for the row-by-row table.** *Note text* is built and lives in the **Properties panel** rather than on the tab (a note is prose; a ribbon band is the wrong surface for a paragraph) — it was struck here on the day the band shipped, which under-reported it. ~~Line style~~ is the only entry with **no engine verb at all** and is filed as `request_markupstyle_cannot_express_a_dashed_border.md`. ⬜ None of the five band controls has been driven |
 | ce dimension | Group · Scale · Precision · Units · Standard · Witness lines · Delete |
 | Image | Size · Position · Crop · Opacity · Replace · Delete |
 | Vector object | Stroke · Fill · Winding rule · Node tools · Delete |
