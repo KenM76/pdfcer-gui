@@ -1113,9 +1113,25 @@ impl Declined {
     /// The mapping is the whole of this module's contribution to the copy;
     /// every word an operator reads is [`crate::text::status`]'s, under rule
     /// R1.
+    ///
+    /// # ★★★ Why this returns a [`Cow`] rather than `&'static str`
+    ///
+    /// Because exactly one decline in this enum has a **subject the operator can
+    /// see** — `OPERATOR_REQUESTS.md` O141's *"pdfcer cannot type a `q` into
+    /// this text"* — and while the return type was `&'static str` it could not
+    /// say which character. The sentence was written generically for that
+    /// reason, and the reason was recorded in three separate doc comments as
+    /// though it were a design choice; it was a return type.
+    ///
+    /// The cost is one arm. Every other sentence here is still borrowed static
+    /// prose returned through `fixed` below, so the bar — which redraws every
+    /// frame — allocates nothing except on the frames that are reporting that
+    /// one refusal.
     #[must_use]
-    fn line(self) -> &'static str {
-        match self {
+    fn line(self) -> std::borrow::Cow<'static, str> {
+        // ★ Bound through a `&'static str` so only the arms that interpolate
+        // carry machinery. They `return`; the catalog below is unchanged.
+        let fixed: &'static str = match self {
             Self::NothingToFrame => t::zoom_declined_no_selection(),
             Self::CanvasNotDrawn => t::zoom_declined_not_drawn(),
             Self::InsideForm => t::selection_inside_form_declined(),
@@ -1195,7 +1211,13 @@ impl Declined {
             // `t::edit_declined_by_engine` — the line `Self::EditRefused` shows
             // — so the un-categorised case is the *same string*, in one place,
             // and cannot drift into two voices for one condition.
-            Self::EditText(why) => why.line(),
+            //
+            // ★★★ **And it is the one arm that leaves through a `return`.**
+            // `EditRefusal::line` answers a [`Cow`] since 2026-09-05 because
+            // its `FontLacksTheCharacter` sentence names the character the
+            // engine refused. Everything else in this match is fixed prose and
+            // is unaffected.
+            Self::EditText(why) => return why.line(),
             // ★ Reaches across to `crate::text::measure` on the same rule: a
             // string lives with the surface that owns its subject, and this
             // one's subject is what a ce dimension measures — where the
@@ -1208,7 +1230,8 @@ impl Declined {
             // wording of "that shape did not change" cannot grow up beside
             // them.
             Self::MarkupNodeRefused(why) => why.line(),
-        }
+        };
+        std::borrow::Cow::Borrowed(fixed)
     }
 }
 
@@ -1374,7 +1397,7 @@ pub(super) fn show(ui: &mut egui::Ui, doc: &OpenDoc) {
     let Some(declined) = live(ui.ctx(), doc) else {
         return;
     };
-    super::disclosure::disclosure_line(ui, REGION_DECLINE, declined.line());
+    super::disclosure::disclosure_line(ui, REGION_DECLINE, &declined.line());
 }
 
 /// ★ **The funnel's floor**, split out under R2 when this file reached 1,530

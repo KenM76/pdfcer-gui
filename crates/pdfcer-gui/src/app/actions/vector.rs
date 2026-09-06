@@ -154,6 +154,139 @@ pub enum VectorAction {
         /// Leaf indices, ascending and unique.
         leaves: Vec<usize>,
     },
+    /// ★★★ **Remove ONE subpath of one path object** — `EditSession::delete_
+    /// subpath`, Pass 25.2, and the Part rung's delete verb.
+    ///
+    /// # What it closes
+    ///
+    /// Its move twin [`Self::MoveSubpath`] shipped on the day the Part rung
+    /// landed and this did not, so for a fortnight a line could be entered,
+    /// selected and **dragged** and could not be removed. Delete at that rung
+    /// traced `canvas-delete-declined … reason=no-verb-for-rung` and did
+    /// nothing at all.
+    ///
+    /// The engine's own reason for the verb is the operator's file: *"one
+    /// stroked path with 1194 subpaths covering a whole isometric view"*, on
+    /// which `delete_object` can only remove the entire view. *"Delete this
+    /// line"* is what he means, and this is that operation.
+    ///
+    /// # ★ Deleting the only subpath deletes the object, and that is the verb's
+    /// rule rather than this shell's
+    ///
+    /// A painting operator with no path left is not a smaller object; it is
+    /// meaningless. So a one-subpath path object vanishes, which is both
+    /// correct and exactly what the operator asked for — they entered the
+    /// object, found it had one line in it, and deleted that line.
+    ///
+    /// # Disclosures
+    ///
+    /// **Always empty**, measured against the locked engine rather than assumed:
+    /// both arms of `plan_delete_subpath` return `disclosures: Vec::new()`.
+    /// The arm below still routes them, because the funnel does that for every
+    /// verb and a hand-written exception here would be the thing that stops
+    /// being true when the planner grows a re-spelling path.
+    DeleteSubpath {
+        /// The 0-based page.
+        page: usize,
+        /// The enclosing object, by paint-order index.
+        object: usize,
+        /// The subpath, in decomposition order — the order
+        /// `hit_test_subpaths` returns, so a picked line goes straight here.
+        subpath: usize,
+    },
+    /// ★★★ **Remove ONE label off a sheet that holds all of them in one text
+    /// object** — `EditSession::delete_text_run`, `Pass 32.0`.
+    ///
+    /// # The defect this closes, in the engine's own measurement
+    ///
+    /// > *"on the operator's drawing **one text object holds all 237 dimension
+    /// > labels**, so deleting 'a label' deleted every one of them."*
+    ///
+    /// A CAD exporter's `BT`…`ET` boundary reflects its own batching and
+    /// nothing the draughtsman drew. The hit test has been per-run since Pass
+    /// 18.5 — so a label could already be **selected** — and until 2026-09-05
+    /// the only Delete this shell offered at that moment removed the whole
+    /// text object, which is every label on the sheet.
+    ///
+    /// ★ Those 237 are **pdf dimensions** (R8b Rule 15): page content pdfcer
+    /// reads and must not silently alter. A **ce dimension** is one pdfcer
+    /// authors, lives in `super::dimensions`, and has nothing to do with this
+    /// variant.
+    ///
+    /// # ★★ The refusal that is asked BEFORE the press, and where
+    ///
+    /// §9.4.2: a following run with no positioning operator of its own starts
+    /// wherever this one ends, so excising this one **slides it**. The engine
+    /// refuses with `DeleteWouldMoveNextRun`, and
+    /// `crate::canvas::deleting` asks the identical question ahead of the
+    /// press through `ObjectModelProvider::text_run_delete_would_move_next` —
+    /// R83 — so the operator gets the remedy (*delete the later label first*)
+    /// instead of a cause-less decline. This variant is therefore never raised
+    /// for a run the guard would refuse; if one arrives anyway the engine
+    /// still refuses it and the funnel still declines in words.
+    ///
+    /// # Disclosures
+    ///
+    /// **Always empty** — `plan_delete_text_run` returns `Vec::new()` on both
+    /// of its arms. Routed anyway, for [`Self::DeleteSubpath`]'s reason.
+    DeleteTextRun {
+        /// The 0-based page.
+        page: usize,
+        /// The enclosing text object, by paint-order index.
+        object: usize,
+        /// The run, in content order — the numbering the hit test returns.
+        run: usize,
+    },
+    /// ★★★ **Remove ONE anchor of one path object** — `EditSession::delete_
+    /// node`, Pass 36.1, and the Node rung's delete verb.
+    ///
+    /// Its twins [`Self::MoveNode`] and [`Self::MoveNodes`] have been wired
+    /// since Pass 28.0, so on a CAD export the operator could nudge one point
+    /// of a polyline and could not remove it.
+    ///
+    /// ⚠ **This is not the markup-annotation vertex verb.** That family edits
+    /// an annotation's `/Vertices` through `reshape_annotation` and its
+    /// helpers in `super::annots` are confusingly called `move_node` and
+    /// `remove_node`. They share nothing with this but a name — different
+    /// address space, different engine verb, different undo command — and the
+    /// collision deferred this gap by an evening once already.
+    ///
+    /// # ★★★ THE DISCLOSURE THIS ONE OWES, and it is the whole reason the arm
+    /// is not one line
+    ///
+    /// `delete_node` returns a disclosure list that is **non-empty when
+    /// deleting the point discarded a curve**:
+    ///
+    /// > *"The curve that ran into this point was removed along with it, so the
+    /// > shape now goes straight from the point before to the point after."*
+    ///
+    /// That is a shape change the operator **cannot reverse by re-adding a
+    /// point** — the two control points are gone — and the engine's own doc
+    /// says rule 4 forbids letting them find it out from a diff: *"the caller
+    /// must surface these."*
+    ///
+    /// ★ The surfacing is `super::funnel::vector_edit_on_page`'s, not this
+    /// arm's, and that is the point: the funnel records **every** verb's
+    /// disclosure list to the status bar's row, stamped with the epoch the edit
+    /// produced. So returning the list from the closure *is* surfacing it, and
+    /// a hand-written `record_note` beside it would be a second mechanism for
+    /// the same sentence — the one that later forgets to retire itself.
+    ///
+    /// The one refusal worth knowing about, because it is the commonest:
+    /// `NodeDeleteWouldEmptySubpath`, when the line has only two points left.
+    /// Left to the engine, where it is judged against the bytes.
+    DeleteNode {
+        /// The 0-based page.
+        page: usize,
+        /// The enclosing object, by paint-order index.
+        object: usize,
+        /// The anchor, **object-scoped** — the numbering
+        /// [`Self::MoveNode`] takes, `vector::anchor_count` reports and
+        /// `pdfcer node-move --node N` addresses. A second numbering would make
+        /// the number pdfcer shows disagree with the number the operator can
+        /// act on.
+        node: usize,
+    },
     /// ★★ Move one **Bézier control point of an object inside a form
     /// XObject** — `EditSession::move_handle_in_form`. O70.
     ///
@@ -457,6 +590,85 @@ pub enum VectorAction {
     },
 }
 
+/// **How many objects the page has, and how many parts one of them has** —
+/// read once, for the trace line the three part-deletes write.
+///
+/// # ★★★ Why this is measured at all, and why BOTH numbers
+///
+/// `RESUME.md`'s standing rule: *a trace line must carry the number a wrong
+/// build would get wrong.* For a part-delete that number is not "did something
+/// get deleted" — it is **whether the enclosing object survived**. That is the
+/// entire subject of `Pass 32.0`: on the operator's drawing one text object
+/// holds all 237 pdf-dimension labels, and a build that deleted the object
+/// instead of the label removes every label on the sheet while looking, from a
+/// trace that reported only success, exactly like a build that worked.
+///
+/// So the pair is:
+///
+/// * `objects` — the page's own paint-order count. **Unchanged** is the whole
+///   claim: the enclosing object is still there.
+/// * `parts` — the entered object's lines, runs or points. **One fewer** is the
+///   other half: something really was removed.
+///
+/// Either number alone is satisfiable by a wrong build. `parts` alone is
+/// ambiguous after a whole-object delete, because deletion **renumbers** — the
+/// index the caller held then names a different object, and asking it for a run
+/// count answers about whatever moved into the slot. `objects` alone cannot
+/// tell a delete that removed a line from one that removed nothing.
+///
+/// # Reading it costs a decomposition, and that is already paid
+///
+/// `page_objects` is keyed on `(page, edit_epoch)`. The "before" read is the
+/// decomposition the canvas already built to draw the selection outline the
+/// operator is looking at; the "after" read is the one the very next frame will
+/// build anyway to re-resolve the selection. Neither is a second walk.
+///
+/// ★ The `Ref` is dropped at the end of the statement, before `vector_edit`
+/// takes `&mut doc` — the same ordering `DeleteSelection`'s erase preview has
+/// to observe, and for the same reason.
+fn census(
+    doc: &crate::app::state::OpenDoc,
+    object: usize,
+    parts: impl Fn(&crate::panels::objects::provider::ObjectModelProvider, usize) -> usize,
+) -> (usize, usize) {
+    doc.page_objects().map_or((0, 0), |provider| {
+        (
+            provider.page_objects().objects.len(),
+            parts(&provider, object),
+        )
+    })
+}
+
+/// Write the census line for one part-delete.
+///
+/// `unit` is the operator's word for what was counted — `lines`, `runs`,
+/// `points` — so a reader of the trace does not have to know which verb wrote
+/// it to know what the number means. It reaches the diagnostic channel only;
+/// `check-ui-strings.sh`'s exemption is on the literal below.
+fn trace_part_delete(
+    label: &'static str,
+    unit: &'static str,
+    page: usize,
+    object: usize,
+    part: usize,
+    before: (usize, usize),
+    after: (usize, usize),
+) {
+    crate::diag::trace(move || {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI.
+        //
+        // trace-name-exempt is NOT needed: every label here carries the
+        // `-applied` suffix the naming convention requires, so none of them
+        // collides with the funnel's bare `delete-subpath` / `delete-text-run`
+        // / `delete-node`.
+        format!(
+            "{label} page={page} object={object} part={part} \
+             objects_before={} objects_after={} {unit}_before={} {unit}_after={}",
+            before.0, after.0, before.1, after.1,
+        )
+    });
+}
+
 /// **Apply one geometry verb**, as one undoable command.
 ///
 /// Routed here from `super::apply` rather than living there, which is the shape
@@ -563,6 +775,69 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
                     },
                 );
             }
+        }
+        // ★★★ The three deeper-rung deletes, and the census line each writes.
+        //
+        // `-applied` suffixes, per `tools/gates/check-trace-names.py`: the
+        // funnel writes `delete-subpath page=… n=… epoch=… disclosures=…` under
+        // the bare label, and a module line sharing that first token would be
+        // the one `Trace::last` returns — which is how a driven check reports
+        // *"the verb did nothing"* about a verb that worked. Three recorded
+        // instances; this is the convention that ended them.
+        VectorAction::DeleteSubpath {
+            page,
+            object,
+            subpath,
+        } => {
+            let before = census(doc, object, |p, o| p.subpath_count(o));
+            vector_edit_on_page(doc, "delete-subpath", page, 1, |session| {
+                session.delete_subpath(page, object, subpath)
+            });
+            let after = census(doc, object, |p, o| p.subpath_count(o));
+            trace_part_delete(
+                "delete-subpath-applied",
+                "lines",
+                page,
+                object,
+                subpath,
+                before,
+                after,
+            );
+        }
+        VectorAction::DeleteTextRun { page, object, run } => {
+            let before = census(doc, object, |p, o| p.text_run_count(o));
+            vector_edit_on_page(doc, "delete-text-run", page, 1, |session| {
+                session.delete_text_run(page, object, run)
+            });
+            let after = census(doc, object, |p, o| p.text_run_count(o));
+            trace_part_delete(
+                "delete-text-run-applied",
+                "runs",
+                page,
+                object,
+                run,
+                before,
+                after,
+            );
+        }
+        // ★ The disclosures are surfaced by the funnel, not here — see the
+        // variant's own docs for why a second `record_note` beside it would be
+        // the mechanism that forgets to retire itself.
+        VectorAction::DeleteNode { page, object, node } => {
+            let before = census(doc, object, |p, o| p.object_node_points(o).len());
+            vector_edit_on_page(doc, "delete-node", page, 1, |session| {
+                session.delete_node(page, object, node)
+            });
+            let after = census(doc, object, |p, o| p.object_node_points(o).len());
+            trace_part_delete(
+                "delete-node-applied",
+                "points",
+                page,
+                object,
+                node,
+                before,
+                after,
+            );
         }
         VectorAction::MoveHandleInForm {
             page,
@@ -688,17 +963,27 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
             // `vector_edit` owns the borrow of the session and the note has
             // to be recorded against the epoch the edit produced — which
             // does not exist until `vector_edit` has returned.
-            let mut said = Vec::new();
+            // ★★★ **A HAND-WRITTEN RE-RECORD STOOD HERE AND WAS DELETED
+            // 2026-09-05**, while wiring the three deeper-rung deletes, because
+            // it was the second mechanism for one sentence — and the second
+            // mechanism was the LOSSY one.
+            //
+            // It cloned the disclosure list out of the closure and then called
+            // `record_note` once per sentence. `record_note` is the singular of
+            // `record_notes`, and the slot holds **one** disclosure rather than
+            // a queue: a second call REPLACES the first. So a two-sentence
+            // answer showed only the second, chosen by loop order — which is
+            // exactly the hazard `record_notes`' own doc comment was written
+            // about, reproduced two files away from where it is described.
+            //
+            // ⇒ Returning the list from the closure is the whole of the job.
+            // `vector_edit_on_page` records it, in one call, stamped with the
+            // epoch the edit produced, for every verb in this module. That is
+            // why `DeleteNode` below needs no code of its own for a disclosure
+            // the engine's docs call mandatory.
             vector_edit_on_page(doc, "move-handle", page, 1, |session| {
-                let out = session.move_handle(page, object, node, handle, to);
-                if let Ok(disclosures) = &out {
-                    said.clone_from(disclosures);
-                }
-                out
+                session.move_handle(page, object, node, handle, to)
             });
-            for sentence in said {
-                crate::app::actions::record_note(doc.edit_epoch, sentence);
-            }
         }
         VectorAction::MoveNodes {
             page,

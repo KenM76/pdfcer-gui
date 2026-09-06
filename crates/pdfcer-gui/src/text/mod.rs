@@ -113,6 +113,20 @@ pub mod compact;
 /// The three sentences a held Shift puts on the status row while it is
 /// constraining a drag. Consumed by [`crate::canvas::constrain::caption`].
 pub mod constrain;
+/// ★★ **The three sentences a Delete that removed nothing shows** — for
+/// [`crate::canvas::deleting`], the module that routes a Delete to the verb for
+/// the rung the operator is on.
+///
+/// Three of eleven refusals speak, and its header carries the rule that decides
+/// which: an operator meets these three **having done nothing wrong**, with an
+/// outline on screen round the thing they want gone and a key that does
+/// nothing. The other eight describe states they can already see, and
+/// `canvas::moving::decline`'s rule applies unchanged — a surface that narrates
+/// the obvious stops being read.
+///
+/// It inherits [`dimension_groups`]' rule 15 discipline and asserts it: the
+/// word on screen is **label**, never a bare "dimension".
+pub mod deleting;
 /// Every word the Render-diagnostics dialog adds around the findings — the
 /// title, the three measurements of the render itself, and the two states in
 /// which there is nothing to report. The findings themselves stay in

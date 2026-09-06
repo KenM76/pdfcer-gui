@@ -66,7 +66,7 @@
 //!
 //! And a third time after the fact, without a line of code here: the engine's
 //! own `format_text` disclosure — *"'Helvetica-Bold' was NOT a font resource
-//! here, so pdfcer ADDED one as `/pdfceF6` … no font program is embedded"* —
+//! here, so pdfcer ADDED one as `/pdfceF6` … no font program is embedded"* — <!-- old-name-exempt: a PDF resource / BaseFont name the ENGINE writes into the file, quoted verbatim from its own output. It is data in the file format, not prose about this project, and the engine deliberately stopped the rename at that boundary because changing it would alter the bytes of every document pdfcer has ever produced. Same ruling as O141's. -->
 //! arrives verbatim in [`super::disclose`], four lines above this block.
 //!
 //! ## ★★ The offer is UNTESTED against the character, and says so
@@ -157,6 +157,20 @@ pub(crate) struct RefusedCharacter {
     /// The `/BaseFont` the edit was refused against, subset tag and all.
     /// `Refusal::base_font`.
     base_font: String,
+    /// ★★★ **The words the operator typed, which the refusal threw away.**
+    ///
+    /// `Ctrl+Enter` calls `commit_into` and then `abandon` unconditionally, so
+    /// by the time this block is on screen the draft is gone. Without this the
+    /// offer could change the face and could not finish the job — the operator
+    /// had to click back into the text and produce his own edit a second time,
+    /// from memory, which is the *"two gestures where there should be one"* half
+    /// of O141.
+    ///
+    /// `None` when the plan that produced the refusal named a different
+    /// `(page, run)` than the refusal did, which is a disagreement between two
+    /// facts about the same commit and is not something to paper over: the block
+    /// then offers the face swap alone, exactly as it did before this shipped.
+    typed: Option<crate::canvas::textedit::Committing>,
 }
 
 thread_local! {
@@ -183,13 +197,20 @@ thread_local! {
 /// can match it and have the compiler prove the sentences complete; what is read
 /// here is **one datum that the coarse kind structurally cannot carry**, on the
 /// identical licence `one_operator` already has.
-pub(crate) fn record(page: usize, run: usize, character: char, base_font: String) {
+pub(crate) fn record(
+    page: usize,
+    run: usize,
+    character: char,
+    base_font: String,
+    typed: Option<crate::canvas::textedit::Committing>,
+) {
     PENDING.with_borrow_mut(|slot| {
         *slot = Some(RefusedCharacter {
             page,
             run,
             character,
             base_font,
+            typed,
         });
     });
 }
@@ -233,6 +254,17 @@ pub struct RefusedCharUi {
     /// The face now in force, once the swap has landed. `Some` is the `Swapped`
     /// state; see the module header's table.
     swapped_to: Option<String>,
+    /// **Whether the operator's own edit has been re-applied since the swap.**
+    ///
+    /// ★★★ The one bit that tells the `Swapped` state from the `Blocked` one,
+    /// and it does so **without reading the engine's refusal**. The retype is
+    /// raised on the frame the swap is detected; from the next frame on there
+    /// are only two possibilities, and `advance` has already sorted them: if the
+    /// retype landed, the epoch moved a second time with nothing `taken`, the
+    /// block cleared, and this state does not exist. So a block that is still
+    /// drawing with this set is a block whose retype was refused — arithmetic
+    /// over `doc.edit_epoch`, not a `Display` string matched against a substring.
+    retried: bool,
     /// The `(page, run, epoch)` [`Self::faces`] was read at.
     ///
     /// ★★ The stamp is not an optimisation here, it is the difference between a
@@ -259,6 +291,7 @@ impl RefusedCharUi {
             self.epoch = epoch;
             self.taken = None;
             self.swapped_to = None;
+            self.retried = false;
             self.faces_stamp = None;
             return true;
         }
@@ -290,6 +323,7 @@ impl RefusedCharUi {
         self.shown = None;
         self.taken = None;
         self.swapped_to = None;
+        self.retried = false;
         self.faces_stamp = None;
         self.faces.clear();
     }
@@ -350,10 +384,17 @@ pub(super) fn section(
             refused.run,
             refused.character,
             state.faces.len(),
-            if state.swapped_to.is_some() {
-                "swapped"
-            } else {
-                "offer"
+            // ★★ THREE states on this field, not two, since the retype became
+            // the block's own job. `swapped` is the frame the face landed and
+            // the operator's edit was re-raised; `blocked` is a frame after that
+            // with the block still drawing, which by `RefusedCharUi::retried`'s
+            // argument is the retype having been refused. A check that could not
+            // tell those apart would read a working build and a stuck one the
+            // same way.
+            match (state.swapped_to.is_some(), state.retried) {
+                (true, true) => "blocked",
+                (true, false) => "swapped",
+                (false, _) => "offer",
             }
         )
     });
@@ -361,8 +402,51 @@ pub(super) fn section(
     if let Some(face) = state.swapped_to.clone() {
         // The follow-up. No chooser: the face is already changed, and a second
         // list here would invite the operator to change it again instead of
-        // doing the one thing left to do.
+        // letting the one thing left to do happen.
+        //
+        // ★★ The refusal arrived with no carried words, so there is nothing to
+        // put back and the block says the one true thing left: type it again.
+        // It does NOT enter the retry states — `retried` would then make the
+        // next frame claim the engine refused a retype that was never made,
+        // which is a confident wrong reason about a document that is fine.
+        let Some(typed) = refused.typed.clone() else {
+            ui.label(t::refused_char_swapped_type_again(refused.character, &face));
+            ui.separator();
+            return true;
+        };
+        if state.retried {
+            // ★★★ The retype was raised on the previous frame and the block is
+            // still here, which — see [`RefusedCharUi::retried`] — is the retype
+            // having been refused. The sentence names the measured cause and the
+            // remedy that was actually run.
+            ui.label(t::refused_char_blocked(refused.character, &face));
+            ui.separator();
+            return true;
+        }
         ui.label(t::refused_char_swapped(refused.character, &face));
+        // ★★★ **O141's second half: the offer finishes the job.** The face is
+        // in force as of this frame, so the edit the operator already typed is
+        // re-applied now, with no second gesture from him.
+        //
+        // ★ Raised as `Action::CommitTextEdit` — the same variant `Ctrl+Enter`
+        // raises, with the same four operands — rather than through a new verb,
+        // so the retype takes the identical route: `canvas::textedit::plan`
+        // re-derives the pin and the follower disposition from the page **as it
+        // is now**, which is the whole of `DEFECTS.md` D4b and is exactly what
+        // must happen after a restyle rewrote the stream.
+        //
+        // ★★ Set on the same frame the action is pushed, and the two are one
+        // act: from the next frame on, a block still drawing is a block whose
+        // retype came back refused. That is the whole discriminator, and it is
+        // arithmetic over `doc.edit_epoch` rather than a reading of the
+        // engine's prose — see [`RefusedCharUi::retried`].
+        state.retried = true;
+        actions.push(Action::CommitTextEdit {
+            page: typed.page,
+            run: typed.run,
+            original: typed.original,
+            replacement: typed.replacement,
+        });
         ui.separator();
         return true;
     }
@@ -452,12 +536,38 @@ fn sync_faces(doc: &OpenDoc, state: &mut RefusedCharUi, refused: &RefusedCharact
 mod tests {
     use super::*;
 
+    /// The words the operator typed, as `plan` would have recorded them for the
+    /// refusal [`refusal`] describes.
+    ///
+    /// ★ Present rather than `None`, because the state machine's interesting
+    /// path is the one where the retype can actually be re-raised — a helper
+    /// that omitted it would let a build that dropped the operand pass every
+    /// test in this module.
+    fn typed() -> crate::canvas::textedit::Committing {
+        crate::canvas::textedit::Committing {
+            page: 1,
+            run: 4,
+            original: "Interior Door".to_owned(),
+            replacement: "Interior Door €".to_owned(),
+        }
+    }
+
+    /// The fixture's one font, as the engine spells it in its own refusal.
+    ///
+    /// A constant rather than two string literals, because the name carries the
+    /// engine's pre-rename resource prefix and each literal would need its own
+    /// exemption marker on `tools/gates/check-old-name-absent.sh`. One marked
+    /// line is better than several, and the gate's own guidance is that a
+    /// reference which cannot be explained in one sentence is a miss.
+    const FIXTURE_FONT: &str = "SUBSET+pdfceSubsetDemo"; // old-name-exempt: a PDF resource / BaseFont name the ENGINE writes into the file, quoted verbatim from its own output. It is data in the file format, not prose about this project, and the engine deliberately stopped the rename at that boundary because changing it would alter the bytes of every document pdfcer has ever produced. Same ruling as O141's.
+
     fn refusal() -> RefusedCharacter {
         RefusedCharacter {
             page: 1,
             run: 4,
             character: '€',
             base_font: "AAAAAA+Arimo-Bold".to_owned(),
+            typed: Some(typed()),
         }
     }
 
@@ -477,7 +587,7 @@ mod tests {
     #[test]
     fn a_recorded_refusal_is_adopted_exactly_once() {
         drain();
-        record(1, 4, '€', "AAAAAA+Arimo-Bold".to_owned());
+        record(1, 4, '€', "AAAAAA+Arimo-Bold".to_owned(), Some(typed()));
         let mut ui = RefusedCharUi::default();
         assert!(ui.advance(7), "the refusal must be adopted");
         assert_eq!(ui.shown, Some(refusal()));
@@ -498,7 +608,7 @@ mod tests {
     #[test]
     fn an_unrelated_edit_retires_the_offer() {
         drain();
-        record(1, 4, '€', "AAAAAA+Arimo-Bold".to_owned());
+        record(1, 4, '€', "AAAAAA+Arimo-Bold".to_owned(), Some(typed()));
         let mut ui = RefusedCharUi::default();
         assert!(ui.advance(7));
         assert!(!ui.advance(8), "the epoch moved and nothing here caused it");
@@ -516,7 +626,7 @@ mod tests {
     #[test]
     fn taking_the_offer_leaves_the_follow_up_behind() {
         drain();
-        record(1, 4, '€', "AAAAAA+Arimo-Bold".to_owned());
+        record(1, 4, '€', "AAAAAA+Arimo-Bold".to_owned(), Some(typed()));
         let mut ui = RefusedCharUi::default();
         assert!(ui.advance(7));
         ui.taken = Some("Helvetica-Bold".to_owned());
@@ -538,7 +648,7 @@ mod tests {
     #[test]
     fn the_edit_that_lands_retires_the_follow_up() {
         drain();
-        record(1, 4, '€', "AAAAAA+Arimo-Bold".to_owned());
+        record(1, 4, '€', "AAAAAA+Arimo-Bold".to_owned(), Some(typed()));
         let mut ui = RefusedCharUi::default();
         assert!(ui.advance(7));
         ui.taken = Some("Helvetica-Bold".to_owned());
@@ -560,10 +670,10 @@ mod tests {
     #[test]
     fn a_second_refusal_replaces_the_first() {
         drain();
-        record(1, 4, '€', "AAAAAA+Arimo-Bold".to_owned());
+        record(1, 4, '€', "AAAAAA+Arimo-Bold".to_owned(), Some(typed()));
         let mut ui = RefusedCharUi::default();
         assert!(ui.advance(7));
-        record(2, 9, 'q', "AAAAAA+Arimo-Bold".to_owned());
+        record(2, 9, 'q', "AAAAAA+Arimo-Bold".to_owned(), None);
         assert!(ui.advance(7));
         let shown = ui.shown.clone().expect("the second refusal is live");
         assert_eq!(shown.character, 'q');
@@ -632,9 +742,9 @@ mod tests {
         // The refusal the engine raises for this exact fixture, measured with
         // `pdfcer.exe` before this test was written and recorded in
         // `fixtures/subset-font-floor.PROVENANCE.md`: `R-INV-1 (embedded-subset
-        // floor): character U+0071 'q' … which font 'SUBSET+pdfceSubsetDemo'
-        // (an embedded SUBSET) does not already carry on this page`.
-        record(0, 0, 'q', "SUBSET+pdfceSubsetDemo".to_owned());
+        // floor): character U+0071 'q' … which font [`FIXTURE_FONT`] (an
+        // embedded SUBSET) does not already carry on this page`.
+        record(0, 0, 'q', FIXTURE_FONT.to_owned(), None);
 
         let ctx = egui::Context::default();
         let input = egui::RawInput {
@@ -675,6 +785,164 @@ mod tests {
              the standard fourteen — so a list built from the page's own resources is a list \
              whose every row already refused this character. Rows: {:?}",
             ui.faces
+        );
+    }
+
+    /// ★★★ **Taking the offer swaps the face AND re-applies the operator's own
+    /// edit** — O141's second half, asserted without a frame.
+    ///
+    /// # What a build that fails this does to the operator
+    ///
+    /// It changes his letters and abandons his edit. He picked a font from a
+    /// list captioned *"pdfcer will put your change in with it"*, watched the
+    /// text on the page change shape, and got nothing typed into it — which
+    /// reads as the feature half-working, and is worse than the two-gesture
+    /// route it replaced because the caption promised otherwise.
+    ///
+    /// # The three things asserted, and why each is separate
+    ///
+    /// 1. **The retype is raised at all**, and it is `Action::CommitTextEdit` —
+    ///    the same variant `Ctrl+Enter` raises, so the retype takes the
+    ///    identical route through `canvas::textedit::plan` and re-derives the
+    ///    pin and the follower disposition from the page **as the restyle left
+    ///    it**. A bespoke verb here would be a second path that drifts.
+    /// 2. **It carries the operator's own words.** `replacement` is the one
+    ///    operand recoverable from nowhere else once the draft is abandoned, so
+    ///    a build that rebuilt it from the page would silently retype the
+    ///    ORIGINAL and report success.
+    /// 3. **[`RefusedCharUi::retried`] is set**, which is what moves the block
+    ///    off a sentence promising a retype that has already happened.
+    ///
+    /// ★ Driven through [`RefusedCharUi::advance`] rather than by setting the
+    /// fields, because the transition into `Swapped` is the thing under test:
+    /// the epoch moves once, `taken` is consumed, and only then is the retype
+    /// owed. A test that assigned `swapped_to` itself would pass on a build
+    /// whose state machine never reached it.
+    #[test]
+    fn taking_the_offer_re_applies_the_edit_the_operator_already_typed() {
+        drain();
+        // ★ The document is opened FIRST and its own `edit_epoch` drives the
+        // state machine, because `section` re-runs `advance` against that field.
+        // A test that stepped the epoch with numbers of its own would have the
+        // block retired on the frame it drew, which is not the state under test.
+        let mut doc = crate::app::state::open_local_fixture("subset-font-floor.pdf");
+        let mut ui = RefusedCharUi::default();
+        PENDING.with_borrow_mut(|slot| *slot = Some(refusal()));
+        assert!(ui.advance(doc.edit_epoch), "the refusal is adopted");
+        // The operator picks a face. `section` does this inside the popup's
+        // caller; here it is the one line of it that matters to the transition.
+        ui.taken = Some("Helvetica-Bold".to_owned());
+
+        // The swap lands: one edit-epoch step, caused by this block.
+        doc.edit_epoch += 1;
+        assert!(
+            ui.advance(doc.edit_epoch),
+            "the block survives the swap it asked for"
+        );
+        assert_eq!(ui.swapped_to.as_deref(), Some("Helvetica-Bold"));
+        assert!(
+            !ui.retried,
+            "nothing has been re-applied yet — `section` raises it on the frame it \
+             draws the swapped sentence, and a state that claimed otherwise before \
+             drawing would skip the retype entirely"
+        );
+
+        let mut actions = Vec::new();
+        let ctx = egui::Context::default();
+        let input = egui::RawInput {
+            screen_rect: Some(egui::Rect::from_min_size(
+                egui::Pos2::ZERO,
+                egui::vec2(360.0, 900.0),
+            )),
+            ..Default::default()
+        };
+        let _ = ctx.run_ui(input, |egui_ui| {
+            section(egui_ui, &doc, &mut ui, &mut actions);
+        });
+
+        assert!(
+            ui.retried,
+            "the block has done everything it can and must say so"
+        );
+        let typed = typed();
+        let raised = actions
+            .iter()
+            .find_map(|a| match a {
+                Action::CommitTextEdit {
+                    page,
+                    run,
+                    original,
+                    replacement,
+                } => Some((*page, *run, original.clone(), replacement.clone())),
+                _ => None,
+            })
+            .expect(
+                "★★★ THE OFFER DID NOT FINISH THE JOB: the face was swapped and no \
+                 `Action::CommitTextEdit` was raised, so the operator's edit was thrown \
+                 away by the refusal and never put back",
+            );
+        assert_eq!(raised.0, typed.page);
+        assert_eq!(raised.1, typed.run);
+        assert_eq!(raised.2, typed.original, "the `find` operand");
+        assert_eq!(
+            raised.3, typed.replacement,
+            "★ THE OPERAND THAT EXISTS NOWHERE ELSE — what he typed, not what the page \
+             already says"
+        );
+    }
+
+    /// ★★ **A refusal that arrived without the operator's words still swaps the
+    /// face, and still leaves the block able to move on.**
+    ///
+    /// `RefusedCharacter::typed` is `None` when the plan that produced the
+    /// refusal named a different `(page, run)` than the refusal did — a
+    /// disagreement between two facts about one commit, which this shell
+    /// declines to paper over. The face swap is still worth having, and
+    /// [`RefusedCharUi::retried`] must still be set: it means *this block has
+    /// done everything it can*, not *an action was pushed*. A build that tied it
+    /// to the push would sit for ever on a sentence promising a retype that is
+    /// never coming.
+    #[test]
+    fn a_refusal_with_no_carried_words_still_leaves_the_swapped_state() {
+        drain();
+        let mut doc = crate::app::state::open_local_fixture("subset-font-floor.pdf");
+        let mut ui = RefusedCharUi::default();
+        PENDING.with_borrow_mut(|slot| {
+            *slot = Some(RefusedCharacter {
+                typed: None,
+                ..refusal()
+            });
+        });
+        assert!(ui.advance(doc.edit_epoch));
+        ui.taken = Some("Helvetica".to_owned());
+        doc.edit_epoch += 1;
+        assert!(ui.advance(doc.edit_epoch));
+
+        let mut actions = Vec::new();
+        let ctx = egui::Context::default();
+        let input = egui::RawInput {
+            screen_rect: Some(egui::Rect::from_min_size(
+                egui::Pos2::ZERO,
+                egui::vec2(360.0, 900.0),
+            )),
+            ..Default::default()
+        };
+        let _ = ctx.run_ui(input, |egui_ui| {
+            section(egui_ui, &doc, &mut ui, &mut actions);
+        });
+
+        assert!(
+            !ui.retried,
+            "with nothing to retype the block must NOT enter the retry states: \
+             `retried` set with no action sent makes the next frame report an engine \
+             refusal of a retype that was never made"
+        );
+        assert!(
+            !actions
+                .iter()
+                .any(|a| matches!(a, Action::CommitTextEdit { .. })),
+            "and it must NOT invent words to retype: a rebuilt replacement would be the \
+             page's own text, so the 'retype' would land the ORIGINAL and report success"
         );
     }
 

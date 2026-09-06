@@ -238,9 +238,9 @@
 
 use egui::Key;
 
-use crate::app::actions::{Action, VectorAction};
+use crate::app::actions::Action;
 use crate::app::modes::Capabilities;
-use crate::canvas::selection::{SelectionLevel, SelectionState};
+use crate::canvas::selection::SelectionState;
 use crate::canvas::zoom;
 
 /// Escape and Delete, for the canvas selection.
@@ -401,6 +401,45 @@ pub(super) struct Keys<'a> {
     pub field_delete_refused: bool,
     /// Whether Escape was already spent by a drag this frame.
     pub escape_consumed: bool,
+    /// ★★★ **The page's object model**, so Delete can reach the deeper rungs.
+    ///
+    /// # Why this field exists at all
+    ///
+    /// Until 2026-09-05 Delete acted at the Object rung only and needed nothing
+    /// but the selection: an entry already holds a resolved `TargetId`, and the
+    /// operand list is a filter over four integers. The Part and Node rungs are
+    /// different in kind — a subpath and a text run wear the *same*
+    /// `subpath: Some(n)` field on a [`crate::canvas::selection::Selection`] and
+    /// reach **different engine verbs** (`delete_subpath` and
+    /// `delete_text_run`) — so something has to say which kind of part it is,
+    /// and only the decomposition knows.
+    ///
+    /// # ★★ It is an `Option`, and the `None` case is not a formality
+    ///
+    /// `canvas::interact` builds the provider only when the frame needs one
+    /// (`needs_targets`), because `decompose_page` walks every content stream on
+    /// the page with no cache anywhere in `pdfcer-core`. On a frame that did not
+    /// need it this is `None`, and [`crate::canvas::deleting::subject`] declines
+    /// the deeper rungs by name rather than guessing at a part kind — while the
+    /// **Object rung still works**, because it never needed the model. A
+    /// signature that demanded one would have made a page that will not
+    /// decompose un-deletable at the rung where deletion needs no decomposition
+    /// at all.
+    ///
+    /// ★ It does not violate this struct's *"no `&OpenDoc`"* rule: a provider is
+    /// a decomposition, not the application state, and the eleven unit tests
+    /// below pass `None` and still exercise every rung of the ladder.
+    pub targets: Option<&'a crate::panels::objects::provider::ObjectModelProvider>,
+    /// The revision currently on screen — [`crate::app::state::OpenDoc::edit_epoch`].
+    ///
+    /// Carried for one purpose: a refusal that owes the operator a sentence is
+    /// stamped with it, so the sentence stands from now until the next real edit
+    /// moves past it and is retired without anything having to remember to. See
+    /// `crate::app::actions::disclosure::record_note`, whose contract is that
+    /// the epoch passed for a **non-edit** is the current one and not a new one.
+    ///
+    /// A plain integer, so it costs the unit tests nothing.
+    pub edit_epoch: u64,
 }
 
 pub(super) fn canvas_keys(
@@ -417,6 +456,8 @@ pub(super) fn canvas_keys(
         annot_delete_refused,
         field_delete_refused,
         escape_consumed,
+        targets,
+        edit_epoch,
     } = keys;
     // ★ Claimant 0, and it is read BEFORE the D1 guard rather than after it.
     //
@@ -915,67 +956,48 @@ pub(super) fn canvas_keys(
         return;
     }
 
-    // ★ Delete acts at the OBJECT rung only, and the guard is not caution —
-    // without it this is a destructive wrong action. The rule itself lives on
-    // [`SelectionState::deletable_objects_on`], which carries the full
-    // argument, because the ribbon's `format.delete` needs the identical
-    // answer and a rule stated in two places is a rule that drifts.
+    // ★★★ **DELETE REACHES THE RUNG THE OPERATOR IS ON**, 2026-09-05.
     //
-    // What is decided *here* is only how to report a refusal: a rung with no
-    // delete verb is a distinct event from an empty selection, and a harness
-    // reading `canvas-delete-declined` is entitled to know which happened.
-    let objects = selection.deletable_objects_on(page_index);
-    if objects.is_empty() {
-        // ★★★ **…unless what is selected lives INSIDE a form**, 2026-09-01 —
-        // `OPERATOR_REQUESTS.md` O70, the same slice that made such a thing
-        // draggable.
-        //
-        // `deletable_objects_on` answers about the page's own paint order and
-        // drops every form-interior target, correctly: no paint-order verb can
-        // address one. `pdfcer-core` Pass 188.0 shipped one that can, and Delete
-        // is the second of the six to be wired.
-        //
-        // ★ At the Object rung only, exactly as the page-level rule above —
-        // the deeper rungs have no delete verb in either address space, and a
-        // rung with no verb is reported as its own event two lines down.
-        if selection.level() == SelectionLevel::Object {
-            let leaves = selection.leaf_indices_on(page_index);
-            if !leaves.is_empty() {
-                actions.push(
-                    VectorAction::DeleteLeavesInForm {
-                        page: page_index,
-                        leaves,
-                    }
-                    .into(),
-                );
-                return;
-            }
-        }
-        if selection.level() != SelectionLevel::Object {
-            crate::diag::trace(|| {
-                format!(
-                    // ui-text-exempt: diagnostic trace, never displayed in the UI
-                    "canvas-delete-declined level={:?} reason=no-verb-for-rung",
-                    selection.level()
-                )
-            });
-        }
-        return;
+    // What stood here decided the whole question itself: `deletable_objects_on`
+    // (Object rung only), a leaf fallback, and — for every deeper rung —
+    //
+    //     canvas-delete-declined level=Part reason=no-verb-for-rung
+    //
+    // and nothing else. No sentence, no sound, nothing on screen. The refusal
+    // was honest when it was written and stopped being honest the moment the
+    // engine shipped `delete_subpath`, `delete_text_run` and `delete_node`,
+    // whose MOVE twins this shell had wired: on a CAD export a line could be
+    // entered, selected and **dragged**, and could not be removed.
+    //
+    // ★★ The decision moved to [`crate::canvas::deleting::subject`] and did not
+    // merely move — it is now asked by the ribbon's `format.delete` as well, so
+    // Delete-the-key and Delete-the-command cannot act on different things.
+    // That divergence is not hypothetical: it happened once already over form
+    // fields (`app::dispatch::format`'s own arm records it), and it is what
+    // `app::keyboard`'s header calls the defect the single dispatcher exists to
+    // make impossible. A destructive rule stated in two places is a rule that
+    // drifts, and the drift here removes a drawing view instead of a line.
+    //
+    // ★ `deletable_objects_on` is NOT deleted. It is still the answer to *"what
+    // may a Delete act on at the Object rung"* and `app::conditions` and the
+    // tests read it; what changed is that this ladder no longer treats its
+    // empty answer as the end of the question.
+    match crate::canvas::deleting::subject(selection, page_index, targets) {
+        // The selection is NOT cleared on any of these arms. The delete is an
+        // action, applied after this frame; the epoch it bumps makes
+        // `SelectionState::resolve` drop exactly the entries whose objects no
+        // longer exist, on the next frame. Clearing here as well would be a
+        // second mechanism for the same outcome, and the two would disagree the
+        // first time the engine refused the edit.
+        Ok(subject) => actions.push(crate::canvas::deleting::action(subject).into()),
+        // ★★ A silent decline IS the defect, and this is where it ends. Three
+        // of the eleven refusals put a sentence on the status row — the three an
+        // operator meets having done nothing wrong — and every one of the eleven
+        // is named on the trace. `deleting::decline` owns which is which and
+        // `text::deleting` owns the words; neither decision belongs in a key
+        // handler.
+        Err(reason) => crate::canvas::deleting::decline(selection, reason, edit_epoch),
     }
-
-    // The selection is NOT cleared here. The delete is an action, applied
-    // after this frame; the epoch it bumps makes `SelectionState::resolve`
-    // drop exactly the entries whose objects no longer exist, on the next
-    // frame. Clearing here as well would be a second mechanism for the same
-    // outcome, and the two would disagree the first time the engine refused
-    // the edit.
-    actions.push(
-        VectorAction::DeleteSelection {
-            page: page_index,
-            objects,
-        }
-        .into(),
-    );
 }
 
 #[cfg(test)]

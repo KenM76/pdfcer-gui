@@ -207,6 +207,20 @@ pub mod constrain;
 /// from the cheap side. Its header carries why it mirrors their rule instead of
 /// calling it, and why the mirror is deliberately permissive.
 pub mod cutgate;
+/// ★★★ **Which delete verb the rung the operator is on reaches** — the twin of
+/// [`moving`]'s `eligible`, and the answer to a Delete that traced
+/// `no-verb-for-rung` and did nothing at all for the whole life of this shell.
+///
+/// Three engine verbs — `delete_subpath`, `delete_text_run`, `delete_node` —
+/// had their MOVE twins wired and themselves called by nothing, so on a CAD
+/// export a line could be entered, selected and dragged and could not be
+/// removed. Its header carries the whole argument, including why one refusal is
+/// pre-empted (R83) and the rest are left to the engine.
+///
+/// Pure — no egui, no pointer, no document — because both the Delete key and
+/// the ribbon's `format.delete` ask it, and a destructive rule stated twice is
+/// a rule that drifts.
+pub mod deleting;
 /// Arriving where a bookmark points, once the viewport is known. Split from
 /// `interact` under R2: landing on a destination is its own subject.
 pub mod destination;

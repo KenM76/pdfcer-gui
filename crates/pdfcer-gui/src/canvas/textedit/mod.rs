@@ -231,6 +231,11 @@ pub mod disposition;
 // shell's own `EditOptions::default()` run beside it as the falsifier.
 // `#[cfg(test)]` inside; it compiles to nothing in a release build.
 mod proof;
+// ★★★ The experiment that decides whose defect O141's last step is: ONE
+// `EditSession`, `format_text` then `edit_text`, located by find text alone so
+// no operand this shell computes is in the request. It refuses; the same pair
+// with a reopen between them succeeds. `#[cfg(test)]` inside.
+mod facewall;
 // The per-keystroke re-measure measurement `DEFECTS.md` D4b's fix would need,
 // and the reason it is not wired. `#[ignore]`d; run it and read the numbers.
 mod cost;
@@ -931,12 +936,101 @@ pub fn plan(doc: &OpenDoc, page: usize, run: usize, original: &str, replacement:
     }
 
     let reason = disposition::choose(matrices.0, matrices.1, shares_the_line, finding);
+    // ★★★ **The words the operator typed, kept where a refusal can find them**
+    // — `OPERATOR_REQUESTS.md` O141, 2026-09-05. See [`LAST_COMMIT`].
+    LAST_COMMIT.with_borrow_mut(|slot| {
+        *slot = Some(Committing {
+            page,
+            run,
+            original: original.to_owned(),
+            replacement: replacement.to_owned(),
+        });
+    });
     Plan {
         request,
         options: disposition::options(reason),
         reason,
         one_operator,
     }
+}
+
+/// **What the text edit currently being applied is trying to write** — the four
+/// operands of the `Action::CommitTextEdit` that [`plan`] was called for.
+///
+/// ## ★★★ Why this exists, and it is O141's second half rather than a cache
+///
+/// When the engine refuses a commit because the run's font has no code for the
+/// character just typed, the shell offers a face that carries it
+/// (`panels::properties::refusedchar`). Taking that offer used to be **two**
+/// gestures: the face swap, and then clicking back into the text and typing the
+/// character a second time — because `Ctrl+Enter` calls `commit_into` and then
+/// `abandon` unconditionally, so by the time the offer is on screen the draft
+/// the operator wrote is gone.
+///
+/// The replacement text is the one operand of the retry that cannot be recovered
+/// from anywhere else: the page still holds the *original* words (the refusal
+/// changed nothing), and the page index and run index travel on the refusal
+/// already — but **what the operator typed exists only in a draft that has been
+/// abandoned**. So it is kept here, at the one function every text commit goes
+/// through, and the offer re-applies the edit itself.
+///
+/// ## Why a slot here rather than a parameter on the refusal recorder
+///
+/// `app::status::decline::textedit::record_edit_text_refusal` is called from
+/// **inside** `vector_edit`'s closure in `app::actions::apply`, where the only
+/// things in scope are the session and the engine's error. Widening its
+/// parameter list means widening the router's call, and `app/actions/apply.rs`
+/// is a file whose whole job is to route — it decides nothing, and it stands a
+/// few dozen lines under R2's 1,500-line ceiling.
+///
+/// More importantly the datum is not the router's. *What this edit is trying to
+/// write* is a fact about the edit, and [`plan`] is the one function that has
+/// it: every `CommitTextEdit` passes through it, exactly once, immediately
+/// before `EditSession::edit_text` is called with the request it built. There is
+/// no path from a caret to the engine that does not cross this line.
+///
+/// ## ★ Why staleness cannot bite, stated rather than assumed
+///
+/// The slot is written on **every** call and read only by
+/// `panels::properties::refusedchar::record`, which is itself called only from
+/// the refusal arm of the very `edit_text` this plan was built for. So the value
+/// read is always the one written microseconds earlier in the same call stack.
+/// It is a thread-local for the reason `refusedchar::PENDING` is one — the
+/// writer is the dispatcher and the reader is a panel body handed `&OpenDoc`
+/// shared — and the shell is single-threaded at the UI.
+///
+/// `canvas::textedit::last_commit_is_the_one_just_planned` asserts the round
+/// trip, so a build that stopped writing it, or that wrote it before the
+/// operands were known, goes red rather than silently retyping the wrong words.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Committing {
+    /// The 0-based page the commit named.
+    pub page: usize,
+    /// The run index the caret was in.
+    pub run: usize,
+    /// The run's text when the caret landed on it — `EditRequest::find`, and
+    /// the `original` operand of a re-raised `Action::CommitTextEdit`.
+    pub original: String,
+    /// **What the operator typed.** The operand that exists nowhere else once
+    /// the draft has been abandoned.
+    pub replacement: String,
+}
+
+thread_local! {
+    /// See [`Committing`].
+    static LAST_COMMIT: std::cell::RefCell<Option<Committing>> =
+        const { std::cell::RefCell::new(None) };
+}
+
+/// **The operands of the text commit that is being applied right now**, or
+/// `None` if no commit has been planned in this process yet.
+///
+/// See [`Committing`] for the whole argument. Cloned rather than borrowed
+/// because the caller stores it: the offer outlives the frame it was recorded
+/// on, which is the entire point of it.
+#[must_use]
+pub fn last_commit() -> Option<Committing> {
+    LAST_COMMIT.with_borrow(Clone::clone)
 }
 
 // ===========================================================================

@@ -1,5 +1,15 @@
 # `subset-font-floor.pdf` — a page whose font carries only the letters it prints
 
+<!-- old-name-exempt-file: this whole document is about a fixture whose one embedded
+font is NAMED `SUBSET+pdfceSubsetDemo`, and every occurrence of the old spelling below
+is that identifier or the engine's own command-line output quoting it. It is data inside
+a PDF, not prose about this project: the engine deliberately stopped its rename at the
+file-format boundary, because changing a resource name would alter the bytes of every
+document pdfcer has ever produced and break round-tripping with them. Marking eight
+individual lines would bury the account in machinery, which is the case this gate's
+file-level exemption exists for. If this file ever stops being about that fixture, the
+marker goes with the subject. -->
+
 **Copied on 2026-09-05 from `D:\Dev\pdfcer\fixtures\synthetic\text\subset-simple-embedded.pdf`**,
 byte for byte, and renamed for what this repository uses it for. The engine
 generates it with `tools/gen-subset-font-fixtures.py` (in `D:\Dev\pdfcer`); that

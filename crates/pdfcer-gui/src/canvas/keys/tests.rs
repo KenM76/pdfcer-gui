@@ -24,7 +24,11 @@
 #![cfg(test)]
 
 use super::*;
-use crate::canvas::selection::ClickHit;
+// ★ Both re-imported here on 2026-09-05, when `canvas::keys` stopped naming
+// them: the Delete decision moved to `canvas::deleting` and `super::*` no
+// longer re-exports what these assertions read.
+use crate::app::actions::VectorAction;
+use crate::canvas::selection::{ClickHit, SelectionLevel};
 use crate::canvas::target::TargetId;
 use egui::{Context, Event, Modifiers, RawInput};
 
@@ -87,6 +91,8 @@ fn keys_for(input: RawInput, selection: &mut SelectionState) -> Vec<Action> {
                 selected_field: None,
                 annot_delete_refused: false,
                 field_delete_refused: false,
+                targets: None,
+                edit_epoch: 0,
                 escape_consumed: false,
             },
             selection,
@@ -137,6 +143,8 @@ fn delete_removes_a_selected_form_field_and_nothing_else() {
                 selected_field: Some(&field),
                 annot_delete_refused: false,
                 field_delete_refused: false,
+                targets: None,
+                edit_epoch: 0,
                 escape_consumed: false,
             },
             &mut selection,
@@ -209,6 +217,8 @@ fn delete_does_not_act_on_a_form_field_whose_deletion_would_be_refused() {
                 selected_field: Some(&field),
                 annot_delete_refused: false,
                 field_delete_refused: true,
+                targets: None,
+                edit_epoch: 0,
                 escape_consumed: false,
             },
             &mut selection,
@@ -268,6 +278,8 @@ fn delete_acts_on_a_form_field_when_the_gate_is_open() {
                 selected_field: Some(&field),
                 annot_delete_refused: false,
                 field_delete_refused: false,
+                targets: None,
+                edit_epoch: 0,
                 escape_consumed: false,
             },
             &mut selection,
@@ -320,20 +332,45 @@ fn delete_with_nothing_selected_raises_nothing() {
     assert!(keys_for(key(Key::Delete), &mut selection).is_empty());
 }
 
-/// ★ **Delete inside an object deletes NOTHING, rather than the object.**
+/// ★★★ **Delete inside an object NEVER borrows the Object rung's verb.**
 ///
-/// The destructive wrong action this stage must not ship: the selection
-/// names a subpath, the only wired verb removes whole objects, and one
-/// measured CAD export holds an entire drawing view as a single path
-/// object with 1,194 subpaths. "They can undo it" is not an answer to a
-/// keypress that removes a drawing.
+/// The destructive wrong action this ladder must not ship, and the assertion
+/// has outlived the reason originally given for it — which is why the reason is
+/// rewritten here rather than left standing.
+///
+/// **It used to be:** *"the Part rung has no delete verb wired"*. True until
+/// 2026-09-05, when `delete_subpath`, `delete_text_run` and `delete_node` were
+/// wired through [`crate::canvas::deleting`]. The rung has a verb now.
+///
+/// **What is asserted is unchanged and is the part that mattered all along:**
+/// the Part rung must not raise `DeleteSelection`. One measured CAD export
+/// holds an entire drawing view as a single path object with 1,194 subpaths and
+/// one text object with all 237 pdf-dimension labels in it, so borrowing the
+/// Object rung's verb removes a drawing in answer to *"remove this line"*.
+/// *"They can undo it"* is not an answer to that.
+///
+/// ★ Here it raises nothing at all, and the reason is stated so the assertion
+/// is not read as stronger than it is: these tests pass `targets: None`, so
+/// `deleting::subject` declines `NoObjectModel` — a deeper rung with no
+/// decomposition cannot know whether it is looking at a subpath or a label, and
+/// guessing is the one thing it must not do. Which verb it reaches **with** a
+/// model is asserted exhaustively in `canvas::deleting::tests`, over real
+/// documents, because a text run needs a resolved font to exist at all.
 #[test]
-fn delete_inside_an_object_refuses_rather_than_deleting_the_object() {
+fn delete_inside_an_object_never_borrows_the_object_rungs_verb() {
     let mut selection = part_entered();
     assert_eq!(selection.level(), SelectionLevel::Part);
+    let raised = keys_for(key(Key::Delete), &mut selection);
     assert!(
-        keys_for(key(Key::Delete), &mut selection).is_empty(),
-        "the Part rung has no delete verb wired, and must not borrow the Object rung's"
+        !raised
+            .iter()
+            .any(|a| matches!(a, Action::Vector(VectorAction::DeleteSelection { .. }))),
+        "the Part rung must never raise the whole-object delete"
+    );
+    assert!(
+        raised.is_empty(),
+        "and with no object model it raises nothing at all, because it cannot \
+         tell a subpath from a label"
     );
     assert_eq!(selection.len(), 1, "and the selection is left alone");
 }
@@ -357,6 +394,8 @@ fn an_escape_spent_on_a_drag_leaves_the_rung_alone() {
                 selected_field: None,
                 annot_delete_refused: false,
                 field_delete_refused: false,
+                targets: None,
+                edit_epoch: 0,
                 escape_consumed: true,
             },
             &mut selection,
@@ -394,6 +433,8 @@ fn escape_retires_an_armed_region_zoom_before_it_touches_the_ladder() {
                 selected_field: None,
                 annot_delete_refused: false,
                 field_delete_refused: false,
+                targets: None,
+                edit_epoch: 0,
                 escape_consumed: false,
             },
             &mut selection,
@@ -434,6 +475,8 @@ fn escape_reaches_the_ladder_again_once_nothing_is_armed() {
                 selected_field: None,
                 annot_delete_refused: false,
                 field_delete_refused: false,
+                targets: None,
+                edit_epoch: 0,
                 escape_consumed: false,
             },
             &mut selection,
@@ -469,6 +512,8 @@ fn an_escape_spent_on_a_drag_leaves_the_armed_zoom_alone() {
                 selected_field: None,
                 annot_delete_refused: false,
                 field_delete_refused: false,
+                targets: None,
+                edit_epoch: 0,
                 escape_consumed: true,
             },
             &mut selection,
@@ -537,6 +582,8 @@ fn a_focused_text_field_keeps_delete_for_itself() {
                 selected_field: None,
                 annot_delete_refused: false,
                 field_delete_refused: false,
+                targets: None,
+                edit_epoch: 0,
                 escape_consumed: false,
             },
             &mut selection,
@@ -584,6 +631,8 @@ fn escape_retires_the_markup_tool_before_the_region_zoom() {
                 selected_field: None,
                 annot_delete_refused: false,
                 field_delete_refused: false,
+                targets: None,
+                edit_epoch: 0,
                 escape_consumed: false,
             },
             &mut selection,
@@ -638,6 +687,8 @@ fn an_escape_spent_on_a_markup_drag_leaves_the_tool_armed() {
                 selected_field: None,
                 annot_delete_refused: false,
                 field_delete_refused: false,
+                targets: None,
+                edit_epoch: 0,
                 escape_consumed: true,
             },
             &mut selection,
@@ -676,6 +727,8 @@ fn escape_still_reaches_the_zoom_and_the_ladder_with_no_markup_armed() {
                     selected_field: None,
                     annot_delete_refused: false,
                     field_delete_refused: false,
+                    targets: None,
+                    edit_epoch: 0,
                     escape_consumed: false,
                 },
                 &mut selection,
@@ -726,6 +779,8 @@ fn escape_abandons_a_guide_drag_before_it_touches_the_region_zoom() {
                 selected_field: None,
                 annot_delete_refused: false,
                 field_delete_refused: false,
+                targets: None,
+                edit_epoch: 0,
                 escape_consumed: false,
             },
             &mut selection,
@@ -791,6 +846,8 @@ fn escape_abandons_a_circle_fit_before_it_puts_the_measure_tool_down() {
                 selected_field: None,
                 annot_delete_refused: false,
                 field_delete_refused: false,
+                targets: None,
+                edit_epoch: 0,
                 escape_consumed: false,
             },
             &mut selection,
@@ -820,6 +877,8 @@ fn escape_abandons_a_circle_fit_before_it_puts_the_measure_tool_down() {
                 selected_field: None,
                 annot_delete_refused: false,
                 field_delete_refused: false,
+                targets: None,
+                edit_epoch: 0,
                 escape_consumed: false,
             },
             &mut selection,
@@ -892,6 +951,8 @@ fn escape_abandons_a_vertex_run_before_it_puts_the_markup_tool_down() {
                 selected_field: None,
                 annot_delete_refused: false,
                 field_delete_refused: false,
+                targets: None,
+                edit_epoch: 0,
                 escape_consumed: false,
             },
             &mut selection,
@@ -921,6 +982,8 @@ fn escape_abandons_a_vertex_run_before_it_puts_the_markup_tool_down() {
                 selected_field: None,
                 annot_delete_refused: false,
                 field_delete_refused: false,
+                targets: None,
+                edit_epoch: 0,
                 escape_consumed: false,
             },
             &mut selection,
@@ -970,6 +1033,8 @@ fn a_second_escape_retires_the_zoom_the_guide_drag_protected() {
                     selected_field: None,
                     annot_delete_refused: false,
                     field_delete_refused: false,
+                    targets: None,
+                    edit_epoch: 0,
                     escape_consumed: false,
                 },
                 &mut selection,
@@ -1045,6 +1110,8 @@ fn delete_does_not_act_on_an_annotation_whose_deletion_would_be_refused() {
                 selected_field: None,
                 annot_delete_refused: true,
                 field_delete_refused: false,
+                targets: None,
+                edit_epoch: 0,
                 escape_consumed: false,
             },
             &mut selection,

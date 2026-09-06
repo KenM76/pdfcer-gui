@@ -80,7 +80,7 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
-## O141 — ⬜ **"IF THE CHARACTER ISN'T AVAILABLE IN A PDF ARE WE ABLE TO CHANGE TO A DIFFERENT FONT?" — YES. It already works, pdfcer just never offers it to you**
+## O141 — ◑ **BUILT AND DRIVEN 2026-09-05, AWAITING YOUR VERDICT — "IF THE CHARACTER ISN'T AVAILABLE IN A PDF ARE WE ABLE TO CHANGE TO A DIFFERENT FONT?" — YES, and now pdfcer offers it at the moment you hit the wall**
 
 > *"if the character isn't available in a pdf are we able to change to a
 > different font?"*
@@ -136,7 +136,13 @@ message.
 
 **Route 2 is built.** Select the text, go to **Properties ▸ This text**, and the
 face chooser lists the faces that will work. That control has been there since
-2026-08-27. Nothing in the program connects it to the refusal you just met.
+2026-08-27.
+
+★★★ **Nothing in the program connected it to the refusal you just met, and
+that is what was built on 2026-09-05** — see *What you get now* below. The
+sentence you meet first names the character; the offer is in Properties the moment
+the refusal happens; and taking it re-applies the edit you already typed, so the
+route is one gesture rather than a font list and a second attempt.
 
 ### Proved end to end on your own file before this row was written
 
@@ -227,42 +233,97 @@ edit lands — and draws nothing on the page. Half of that already exists: the
 chooser's own rows already say *"pdfcer can add this one; the reader's copy draws
 it"*.
 
-### ⬜ What is left to build, and it is shell work, not engine work
+### ✅ WHAT YOU GET NOW, end to end, in one gesture
 
-**The offer.** When an edit is refused because a character is not in the font,
-pdfcer should say the character by name — *"the `€` is not one of the letters
-this font carries"* — and put the face chooser right there, instead of leaving
-you to find it in a panel and work out that it is the same problem. Everything
-needed is already in the refusal the engine hands back: which character, which
-font, and why.
+Put the cursor in a piece of text, type a character its font does not carry, and
+press `Ctrl+Enter`:
 
-**⚠ One honest limit on that offer, and it is filed rather than hidden.** The
-chooser's list is tested against the characters **already in** the text, not
-against the character you are about to type. So it can offer a face that then
-refuses your `€`, and the refusal is a sentence rather than a greyed-out row.
-That is the standing ruling on this surface (*offer it and say what happened*,
-same as the Bold button) and it is a coherent way to ship — it is simply less
-exact than it could be. Filed as
-`request_font_preflight_tests_the_text_that_is_there_not_the_text_about_to_be_typed.md`,
-asking for a coverage query that takes the text you intend to write. **Nothing is
-blocked on the reply.**
+1. **The status bar names the character.** *"pdfcer cannot type 'q' into this
+   text. The font here was built with only the letters your page already prints,
+   and pdfcer cannot add one to a font that is already inside the file. Your
+   document is unchanged — open Properties, which names the character and offers
+   the faces that can type it."* Until today that sentence said *"that
+   character"*, and the reason was not a judgement about the wording — the slot
+   could not hold a value. It can now.
+2. **Properties carries the offer.** It names the character, names the font that
+   refused it, and lists the faces that can hold it — the page's own, and the
+   fourteen standard ones pdfcer can add.
+3. **★★★ Picking one does the whole thing.** The face changes AND the words you
+   already typed go back in, by themselves. You do not click into the text again
+   and you do not retype the character. That was the half the first cut left
+   undone: `Ctrl+Enter` throws the draft away when the engine refuses, so your
+   edit had to be produced a second time from memory. It is kept now and
+   re-applied for you.
+4. **Rule 4 is discharged off the canvas, twice**, before you can act on it: a
+   standard-14 face is a *name* in your file rather than a font program, so your
+   client's reader supplies the letterforms — the one consequence you cannot see
+   by looking at your own screen. Nothing is badged, tinted or outlined on the
+   page.
 
-### ⚠ And one thing that would have made this row wrong if it had gone unchecked
+### ⚠ AND ONE STEP STILL STOPS, ON A SINGLE-FONT DOCUMENT — it is pdfcer's own limit and it is now measured
 
-**On the apartment file specifically, this whole route is unreachable from your
-cursor**, and not for a font reason. That page is written one letter per piece,
-so the caret refuses before the font question is ever asked (O140). The two-step
-above worked because the command line searches the whole page. Any claim that
-"you can fix this by changing the font" would be false **on the one document you
-asked the question about**, and true on most others.
+On a document that carries **another usable face already**, the route above
+lands and your character is in the page. On a document whose only font is the
+one that refused — which is the case your apartment quote is, and the case the
+test fixture is — pdfcer has to **add** the face, and it cannot then type into a
+face it has just added until the file has been saved and opened again.
 
-### ⬜ NOT VERIFIED
+So the block tells you exactly that, and it is the sentence you get:
 
-No window was rendered. The engine behaviour above is driven on your own file
-through `pdfcer.exe` 0.39.0; the face chooser's on-screen behaviour is covered by
-unit tests and by `the_face_chooser_offers_a_face_the_document_does_not_contain`,
-which has **not** been run against this build. The offer described under *What is
-left to build* does not exist yet — it is a design, and it is named as one.
+> *"This text is now set in Helvetica, and the 'q' still would not go in: pdfcer
+> cannot type into a font it has just added to a file until that file has been
+> saved and opened again. Save this document, open it, and type the 'q' once
+> more — it will go in then. This limit is pdfcer's own and is on the list to
+> fix."*
+
+**That is two more gestures than you should need, and it is not a guess about
+what went wrong.** It was measured three ways, in one process, on the fixture:
+
+| experiment | result |
+|---|---|
+| one editing session: change the face, then type the character | **refused** |
+| the same two steps with a **save and reopen** between them | **works** — the character is in the page |
+| change to a face the document **already carries**, then type | **works at once** |
+
+⇒ So the trigger is the face pdfcer had to *add*, and nothing else. Filed at
+the engine as
+`request_edit_text_resolves_font_names_against_the_base_revision.md`, with the
+reproduction. **The three measurements are kept as tests**
+(`canvas::textedit::facewall`), so the day the engine fixes it the first one goes
+red and pdfcer finds out from a test run rather than from somebody re-reading a
+paragraph — which is how this project has been wrong about the engine four times
+in a fortnight.
+
+### ✅ DRIVEN, in a real window, and falsified
+
+`a_refused_character_offers_a_face_that_can_type_it` — the harness opens the
+program, clicks your text, types the character, presses `Ctrl+Enter`, reads the
+refusal, scrolls the panel, opens the font list, clicks a face, and then
+**stops touching the machine** and watches what the program does by itself. It
+passes.
+
+It was proved able to fail twice, against builds made on purpose: with the
+automatic retype removed it reports *"THE OFFER DOES NOT FINISH THE JOB"*, and
+with the third state disabled it reports *"THE RETYPE WAS REFUSED AND THE BLOCK
+DOES NOT SAY SO"*. The full record, both runs, is `evidence/refused-char-run.md`.
+
+★ **The run that found this was the one that FAILED**, on 2026-09-05, and its own
+written diagnosis blamed the shell. It was wrong; the measurement the next
+morning put it in the engine. A driven failure is a claim about the check too —
+and about the paragraph the check writes when it fails.
+
+### ⚠ One honest limit that remains, and the engine has already answered it
+
+The face list is coverage-tested against the characters **already in** your text,
+not against the one you are about to type — so a row can be a face that then
+refuses your `€`, and you get a sentence rather than a greyed-out row. That is
+said on screen, beside the list, rather than hidden.
+
+**The engine shipped the fix for it today** (`preview_font_resources_for`, with a
+candidate string), in direct answer to this project's request of the same
+morning. It is not in the build you are running: this shell is pinned to engine
+v0.40.0 and the capability landed after it. `ENGINE_BACKLOG.md` carries the row,
+what it costs to consume, and what gets deleted when it is.
 
 ### While measuring this, two engine defects turned up and are filed
 

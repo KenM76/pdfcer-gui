@@ -219,7 +219,16 @@ pub(crate) fn record_edit_text_refusal(
 
     let kind = error.refusal_kind();
     let missing = missing_character(error);
-    let why = crate::text::textedit::EditRefusal::of(kind, one_operator, missing.is_some());
+    // ★★ The character itself, not a predicate over it — `EditRefusal::of`
+    // took a `bool` until 2026-09-05, which meant the classification knew that
+    // *a* character had been refused and the sentence could not say which. The
+    // datum was already in hand here; only the status bar's return type stopped
+    // it reaching the operator, and that is now a `Cow`.
+    let why = crate::text::textedit::EditRefusal::of(
+        kind,
+        one_operator,
+        missing.as_ref().map(|(c, _)| *c),
+    );
     crate::diag::trace(|| {
         // ★★★ **FLAT FIELDS, NOT `{:?}` ON A TUPLE — corrected 2026-09-05, by
         // the first driven run this line was ever subjected to.**
@@ -254,6 +263,10 @@ pub(crate) fn record_edit_text_refusal(
         // field. `character=none` when the refusal named none, which is the
         // R-INV-2/3/4 case where the encoding itself is unreadable.
         // ui-text-exempt: diagnostic trace, never displayed.
+        // ★★ `said` is `EditRefusal::name`, NOT `{why:?}` — see that function.
+        // A payload added to a variant changed this field's spelling once, and
+        // two driven checks went red against a build that was working.
+        let said = why.name();
         let (character, character_font) = match &missing {
             Some((c, font)) => (format!("'{c}'"), font.clone()),
             None => ("none".to_owned(), "none".to_owned()),
@@ -261,7 +274,7 @@ pub(crate) fn record_edit_text_refusal(
         format!(
             "edit-text-classified page={page} run={run} kind={kind:?} \
              one_operator={one_operator} character={character} \
-             character_font={character_font} said={why:?}"
+             character_font={character_font} said={said}"
         )
     });
     record_edit_text(why);
@@ -274,7 +287,26 @@ pub(crate) fn record_edit_text_refusal(
     // the engine, the refusal, the character and the chooser all existed and
     // nothing joined them.
     if let Some((character, base_font)) = missing {
-        crate::panels::properties::refusedchar::record(page, run, character, base_font);
+        // ★★★ **The words the operator typed travel with the refusal** — O141's
+        // second half, 2026-09-05. Without them the offer can change the face
+        // and cannot finish the job: `Ctrl+Enter` calls `commit_into` and then
+        // `abandon` whether or not the engine accepted, so the draft is gone by
+        // the time the block draws, and taking the offer used to leave the
+        // operator to click back into the text and type the character a second
+        // time.
+        //
+        // ★ Read from `canvas::textedit::last_commit` rather than passed in,
+        // and that module's [`Committing`] doc carries the whole argument: the
+        // one call site of this function is inside `vector_edit`'s closure in
+        // `app::actions::apply`, where nothing but the session and the error is
+        // in scope — and *what this edit is trying to write* is a fact about the
+        // edit, owned by the function that planned it, not by the router that
+        // dispatched it.
+        //
+        // [`Committing`]: crate::canvas::textedit::Committing
+        let typed =
+            crate::canvas::textedit::last_commit().filter(|c| c.page == page && c.run == run);
+        crate::panels::properties::refusedchar::record(page, run, character, base_font, typed);
     }
 }
 

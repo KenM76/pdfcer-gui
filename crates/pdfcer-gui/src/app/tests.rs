@@ -255,45 +255,74 @@ fn select_the_form_with_no_form_selected_says_why() {
     );
 }
 
-/// ★★ **Delete on a form-interior selection explains itself.**
+/// ★★★ **The ribbon's Delete removes a form-interior object, exactly as the
+/// key does** — and until 2026-09-05 it did not.
 ///
-/// The state this closes: the operator has an outline round the thing they
-/// want gone, presses Delete, and nothing at all happens. From where they
-/// sit, Delete is broken. It is not — no paint-order verb can address a
-/// leaf — but a program that cannot say so has, for practical purposes,
-/// the defect anyway.
+/// # What this test used to assert, and why it was right and then wrong
 ///
-/// And the negative: at the Part or Node rung the operand list is empty for
-/// a completely different reason, one the operator can see and put
-/// themselves in, and that case stays silent. A bar that narrates the
-/// obvious stops being read.
+/// It asserted that `format.delete` on a leaf selection **raised nothing** and
+/// recorded `Declined::InsideForm`. That was correct when it was written on
+/// 2026-08-27: no paint-order verb can address a leaf, so the honest response
+/// was a sentence, and the state it closed was real — an outline round the
+/// thing the operator wants gone and a Delete that does nothing.
+///
+/// **`pdfcer-core` Pass 188.0 shipped `delete_objects_in_form` and O70 wired it
+/// to the Delete KEY on 2026-09-01. This arm was not updated.** So for four
+/// days the key deleted a form-interior object and the ribbon command explained
+/// why it could not — the same divergence `app::keyboard`'s header calls the
+/// defect the single dispatcher exists to make impossible, and the same one
+/// that had already happened once over form fields.
+///
+/// ⇒ The test was pinning the divergence. Both routes now ask
+/// [`crate::canvas::deleting::subject`], so they cannot differ; what is asserted
+/// here is that they do not.
+///
+/// # ★ The sentence did not disappear — the state it described did
+///
+/// `Declined::InsideForm` is still recorded, by `format.select_form` with
+/// nothing selected (asserted one test up) and by `canvas::moving` on a drag it
+/// cannot route. What no longer records it is a Delete that now works.
 #[test]
-fn delete_on_a_form_interior_selection_explains_itself() {
+fn delete_on_a_form_interior_selection_removes_it_exactly_as_the_key_does() {
     let mut app = opened_with_a_form();
     let ctx = egui::Context::default();
     select_leaf(&mut app, 1);
 
     let mut actions = Vec::new();
     app.dispatch_command(&ctx, "format.delete", &mut actions);
+    assert_eq!(
+        actions.len(),
+        1,
+        "`delete_objects_in_form` is an operand for exactly this selection, and \
+         the Delete key has raised it since 2026-09-01"
+    );
     assert!(
-        actions.is_empty(),
-        "nothing may be raised: there is no operand"
+        matches!(
+            actions.first(),
+            Some(crate::app::actions::Action::Vector(
+                crate::app::actions::VectorAction::DeleteLeavesInForm { .. }
+            ))
+        ),
+        "the LEAF verb, not the paint-order one: a leaf's token range indexes the \
+         form's content stream, and in-range-wrong-buffer is silent corruption"
     );
     assert_eq!(
         crate::app::status::decline::recorded_for_test(),
-        Some(crate::app::status::decline::Declined::InsideForm),
+        None,
+        "a command that ran owes no explanation for not running"
     );
 
-    // …and an ordinary object still deletes, with no sentence.
+    // …and an ordinary object still deletes, through the page's own verb.
     select_object(&mut app, 0, false);
     let mut actions = Vec::new();
     app.dispatch_command(&ctx, "format.delete", &mut actions);
     assert_eq!(actions.len(), 1, "the form itself is perfectly deletable");
-    assert_eq!(
-        crate::app::status::decline::recorded_for_test(),
-        None,
-        "a command that ran retires the sentence rather than adding to it"
-    );
+    assert!(matches!(
+        actions.first(),
+        Some(crate::app::actions::Action::Vector(
+            crate::app::actions::VectorAction::DeleteSelection { .. }
+        ))
+    ));
 }
 
 #[test]

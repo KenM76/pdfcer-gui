@@ -304,40 +304,7 @@ pub(crate) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>)
                         "format-delete-declined reason=mode-cannot-edit-content".to_owned()
                     });
                 } else {
-                    let page = doc.view.page_index;
-                    let objects = doc.selection.deletable_objects_on(page);
-                    if objects.is_empty() {
-                        // ★★ **Say why, when there is a why worth saying.**
-                        //
-                        // An empty operand list has two very different
-                        // causes, and until 2026-08-27 only one of them
-                        // existed. It can mean the operator is at the Part
-                        // or Node rung, where no delete verb applies —
-                        // silence is right for that, because the rung is
-                        // visible on screen and they put themselves in it.
-                        //
-                        // Or it can mean every selected object is drawn
-                        // inside a form XObject, in which case the operator
-                        // is looking at an outline round the thing they
-                        // want gone, pressing Delete, and getting nothing
-                        // at all. That is the state a program must never
-                        // leave unexplained: from where they sit, Delete is
-                        // broken.
-                        //
-                        // `leaf_indices_on` is the same accessor
-                        // `crate::app::conditions` publishes
-                        // `selection.in_form` from, so the sentence and the
-                        // greyed `format.select_form` beside it come from
-                        // one question.
-                        if !doc.selection.leaf_indices_on(page).is_empty() {
-                            crate::app::status::decline::record_inside_form();
-                        }
-                    } else {
-                        actions.push(
-                            crate::app::actions::VectorAction::DeleteSelection { page, objects }
-                                .into(),
-                        );
-                    }
+                    delete_the_selection(doc, actions);
                 }
             }
         }
@@ -587,5 +554,65 @@ pub(crate) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>)
         // ui-text-exempt: a panic message, read from a stack trace by whoever
         // adds an id to `handles` and forgets the arm. Never rendered.
         other => unreachable!("dispatch::format was handed `{other}`, which it does not claim"),
+    }
+}
+
+/// **The ribbon's Delete, asked through the same function as the key.**
+///
+/// # ★★★ Why this is a function and not four lines inside the arm
+///
+/// Because the arm used to hold the rule, and the rule is destructive.
+/// `format.delete` read `SelectionState::deletable_objects_on` — Object rung
+/// only — and, on an empty answer, either recorded the inside-a-form decline or
+/// said nothing at all. The Delete **key** did the same thing five hundred lines
+/// away in `canvas::keys`, from the same method, by hand.
+///
+/// Two hand-written copies of one destructive rule is exactly what
+/// `deletable_objects_on`'s own header refuses, and the divergence is not
+/// hypothetical: it happened once already over form fields — the key reached a
+/// selected widget for a day while this command did not, so Delete-the-key and
+/// Delete-the-command acted on different things, which `app::keyboard`'s header
+/// calls the defect the single dispatcher exists to make impossible.
+///
+/// So the decision moved to [`crate::canvas::deleting::subject`] and **both**
+/// callers ask it. The Part and Node rungs came with it: as of 2026-09-05 the
+/// ribbon's Delete removes one line, one label or one corner point, exactly as
+/// the key does, because there is only one answer to ask for.
+///
+/// # ★★ The provider, and why it is read here rather than passed in
+///
+/// The dispatcher has no `egui::Context` and no frame, so it cannot inherit the
+/// canvas's borrow the way `canvas::keys` does. `doc.page_objects()` is keyed on
+/// `(page, edit_epoch)` and the canvas built it on the frame that drew the
+/// selection outline the operator is looking at, so this is a cache read rather
+/// than a second `decompose_page` — the same key, the same epoch, the same
+/// `Ref`.
+///
+/// The `Ref` is taken and dropped inside the `map_or_else` below, before
+/// anything is pushed, because `doc` is borrowed immutably for the whole arm and
+/// holding a `RefCell` guard across an `actions.push` is how a re-entrant read
+/// becomes a panic nobody can reproduce.
+///
+/// # What it deliberately does NOT do
+///
+/// It does not clear the selection, it does not take the erase preview, and it
+/// does not word anything. The first two belong to `actions::vector::apply`
+/// (which owns the four-step protocol and the O63 preview) and the third to
+/// [`crate::text::deleting`]. This function's whole job is *ask, then raise*.
+fn delete_the_selection(doc: &crate::app::state::OpenDoc, actions: &mut Vec<Action>) {
+    let page = doc.view.page_index;
+    let outcome = {
+        let targets = doc.page_objects();
+        crate::canvas::deleting::subject(&doc.selection, page, targets.as_deref())
+    };
+    match outcome {
+        Ok(subject) => actions.push(crate::canvas::deleting::action(subject).into()),
+        // ★ The identical channel the key uses, epoch and all — see
+        // `deleting::decline` for which of the eleven refusals speak and why the
+        // other eight are silent on purpose. Before this, an empty operand list
+        // here recorded the inside-a-form decline and nothing else, so a Part or
+        // Node rung reached the ribbon's Delete and produced no trace line at
+        // all: the command was quieter than the key.
+        Err(reason) => crate::canvas::deleting::decline(&doc.selection, reason, doc.edit_epoch),
     }
 }

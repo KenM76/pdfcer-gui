@@ -569,15 +569,28 @@ pub enum EditRefusal {
     /// on the identical licence `one_operator` has: the sentence needs a fact
     /// the category does not hold.
     ///
-    /// # ★ The character is NOT in this sentence, and that is a layout fact
+    /// # ★★★ The character IS in this sentence, and it was not on the day the
+    /// variant shipped
     ///
-    /// `Declined::line` returns `&'static str`, so the status bar's `⊗` slot
-    /// cannot interpolate a runtime character, and `disclosure_line` truncates
-    /// it to 45 % of the bar besides. The named character and the chooser that
-    /// answers it are in `panels::properties::refusedchar`, which is a panel and
-    /// can hold both. This sentence's job is to name the obstacle and say where
-    /// the answer is.
-    FontLacksTheCharacter,
+    /// It shipped carrying no payload, and the reason written here was a
+    /// constraint of the surface rather than a judgement about the copy:
+    /// *"`Declined::line` returns `&'static str`, so the status bar's `⊗` slot
+    /// cannot interpolate a runtime character."* That was true, and it made the
+    /// one decline in this catalog with a specific subject read exactly like the
+    /// five that have none — which is the shape an operator learns to skip.
+    ///
+    /// [`Self::line`] returns a [`Cow`] now, and the whole cost of that was one
+    /// arm of `Declined::line`: every other sentence in the shell is still
+    /// borrowed static prose and allocates nothing. The character rides on the
+    /// variant as a `char`, so [`EditRefusal`] and `Declined` both stay `Copy`.
+    ///
+    /// ★ The panel is still where the **route** is —
+    /// `panels::properties::refusedchar` holds the chooser, rule 4's disclosure
+    /// and the retype — because `disclosure_line` truncates the bar's slot to
+    /// 45 % and hangs the rest on hover, and a route that ends in a hover is a
+    /// route the operator does not find. What changed is that the bar now names
+    /// the obstacle *specifically* before pointing at the panel.
+    FontLacksTheCharacter(char),
     /// `RefusalKind::StructureFrozen` — encryption, an enforced certification
     /// signature, or a suppressed object set.
     DocumentProtected,
@@ -614,13 +627,20 @@ impl EditRefusal {
     /// the plan could not read provenance at all, so an unmeasured run falls to
     /// [`Self::TextMovedAway`] — a sentence that is honest about a page that
     /// moved and never claims a structure this shell did not observe.
-    /// # ★★★ `names_a_character` is the second fact the category cannot hold
+    /// # ★★★ `character` is the second fact the category cannot hold
     ///
-    /// `OPERATOR_REQUESTS.md` O141. `true` when the engine's refusal carried a
+    /// `OPERATOR_REQUESTS.md` O141. `Some` when the engine's refusal carried a
     /// `Refusal::character` — i.e. the inverse-encoding gate stopped on **one
     /// scalar it has no code for** (R-INV-1, 6, 7, 8) rather than on the font's
     /// whole code↔glyph relation being unreadable (R-INV-2, 3, 4). Both arrive
     /// as `RefusalKind::UnsupportedFont`, and only the first has a remedy.
+    ///
+    /// ★★ It arrives as the character itself rather than as a `bool` since
+    /// 2026-09-05, and the widening is the whole of what let the status bar name
+    /// it. The datum was already being read at the call site — the recorder
+    /// needs it for the panel either way — and passing the answer instead of a
+    /// predicate over it removes the state where two surfaces agree that *a*
+    /// character was refused and only one of them can say which.
     ///
     /// ★ It is consulted **only** inside `UnsupportedFont`, on the same rule the
     /// `NotFound` split follows: the engine's category wins wherever it has one,
@@ -630,16 +650,58 @@ impl EditRefusal {
     pub const fn of(
         kind: pdfcer_core::text_edit::RefusalKind,
         one_operator: bool,
-        names_a_character: bool,
+        character: Option<char>,
     ) -> Self {
         use pdfcer_core::text_edit::RefusalKind as K;
-        match kind {
-            K::UnsupportedFont if names_a_character => Self::FontLacksTheCharacter,
-            K::UnsupportedFont => Self::UnsupportedFont,
-            K::StructureFrozen => Self::DocumentProtected,
-            K::NotFound if !one_operator => Self::SplitAcrossPieces,
-            K::NotFound => Self::TextMovedAway,
-            K::Other => Self::Unstated,
+        // ★ Matched as a PAIR rather than with an `if let` guard, so the arms
+        // are exhaustive over both facts by construction and the compiler proves
+        // the split rather than a reader checking it. The `_` in the three arms
+        // below the font pair is not laziness: the character is meaningful only
+        // where the font stopped the edit, and reading it anywhere else would be
+        // the shell inventing a remedy for a refusal that has none.
+        match (kind, character) {
+            (K::UnsupportedFont, Some(c)) => Self::FontLacksTheCharacter(c),
+            (K::UnsupportedFont, None) => Self::UnsupportedFont,
+            (K::StructureFrozen, _) => Self::DocumentProtected,
+            (K::NotFound, _) if !one_operator => Self::SplitAcrossPieces,
+            (K::NotFound, _) => Self::TextMovedAway,
+            (K::Other, _) => Self::Unstated,
+        }
+    }
+
+    /// **The category's stable name, for the trace** — not `{:?}`, and the
+    /// difference cost a driven run on 2026-09-05.
+    ///
+    /// # Why this exists rather than a derive
+    ///
+    /// `app::status::decline::textedit` publishes `said=` beside `kind=` so a
+    /// build that read the engine's category correctly and then chose the wrong
+    /// sentence goes red, and `tools/ui-verify`'s
+    /// `a_refused_character_offers_a_face_that_can_type_it` and
+    /// `a_refused_typo_fix_says_why_it_was_refused` both match on that field.
+    ///
+    /// It was `{why:?}`. The moment [`Self::FontLacksTheCharacter`] gained its
+    /// payload the field became `FontLacksTheCharacter('q')` and both checks
+    /// went red against a build that was working perfectly — the same failure,
+    /// in the same file, that the trace's own comment had already recorded once:
+    /// *"`{:?}` on a domain type makes the trace's vocabulary a consequence of a
+    /// Rust derive, so it changes silently when the type does."* The note did
+    /// not prevent the second occurrence; this function does, because a variant
+    /// added without a name is a compile error here.
+    ///
+    /// ★ The payload is deliberately **not** in the name. The character already
+    /// has its own `character=` field on the same line, and one datum spelled
+    /// two ways in one trace line is how a reader and a check come to disagree
+    /// about which is authoritative.
+    #[must_use]
+    pub const fn name(self) -> &'static str {
+        match self {
+            Self::SplitAcrossPieces => "SplitAcrossPieces",
+            Self::UnsupportedFont => "UnsupportedFont",
+            Self::FontLacksTheCharacter(_) => "FontLacksTheCharacter",
+            Self::DocumentProtected => "DocumentProtected",
+            Self::TextMovedAway => "TextMovedAway",
+            Self::Unstated => "Unstated",
         }
     }
 
@@ -665,9 +727,30 @@ impl EditRefusal {
     /// pdf is not."* A sentence that explains the refusal and ignores the
     /// contrast reads as evasive, because he has already worked out that the
     /// two cases differ and is waiting to hear why.
+    ///
+    /// # ★★★ Why this returns a [`Cow`] and every other catalog function does not
+    ///
+    /// Because exactly one of these sentences has a **subject the operator can
+    /// see** — the character they just typed — and until 2026-09-05 it could not
+    /// say it. The five sentences around it are about a property of the document
+    /// (its font, its protection, how its producer wrote the line) and are
+    /// complete as fixed prose; this one was the general statement of a specific
+    /// event, and it read like every other decline in the bar as a result.
+    ///
+    /// [`Cow::Borrowed`] is what five of the six arms return, so the change
+    /// costs no allocation on any frame that is not reporting this one refusal —
+    /// and the bar redraws every frame, which is why that mattered enough to
+    /// state. The alternative, a `String` return, would have allocated the same
+    /// five static sentences over and over for the life of the process.
     #[must_use]
-    pub const fn line(self) -> &'static str {
-        match self {
+    pub fn line(self) -> std::borrow::Cow<'static, str> {
+        use std::borrow::Cow;
+        // ★ Bound through a `&'static str` so that only the ONE arm which
+        // interpolates carries any machinery: it returns, and every other arm
+        // stays the plain catalog entry it was. Wrapping all six in
+        // `Cow::Borrowed(..)` would have put five words in front of every
+        // sentence in the file for the sake of one of them.
+        let fixed: &'static str = match self {
             // ★★★ The remedy clause is the one this project checked before
             // writing. `pdfcer-core` can edit a piece: `--find "n" --replace
             // "t"` succeeded on this very run. What it cannot do is address ONE
@@ -707,14 +790,17 @@ impl EditRefusal {
             // to the surface that does. `panels::properties::refusedchar` names
             // it, offers the faces, and carries rule 4's disclosure.
             //
-            // ★ "the letters your page prints" rather than "the subset": the
-            // operator asked this question without the word, and O141's own
-            // framing is that they should not have to learn it.
-            Self::FontLacksTheCharacter => {
-                "pdfcer cannot type that character into this text. The font here was built with \
-                 only the letters your page already prints, and pdfcer cannot add one to a font \
-                 that is already inside the file. Your document is unchanged — open Properties, \
-                 which names the character and offers the faces that can type it."
+            // ★★★ The one sentence in this catalog built from a runtime value,
+            // so it leaves through a `return` rather than through `fixed`. The
+            // character is quoted with the SAME `'c'` spelling the Properties
+            // block and the classification trace use, so an operator reading the
+            // bar and the panel sees one character described one way — and a
+            // driven check comparing the two surfaces compares like with like.
+            // `app::status::decline::textedit` learned the cost of two spellings
+            // on 2026-09-05, when a debug-formatted tuple in the trace made a
+            // correct build report itself broken.
+            Self::FontLacksTheCharacter(c) => {
+                return std::borrow::Cow::Owned(font_lacks_the_character(c));
             }
             Self::DocumentProtected => {
                 "This document's protection does not allow its text to be changed, so pdfcer left \
@@ -732,8 +818,55 @@ impl EditRefusal {
             // copy of their taxonomy that drifts and then tells the operator
             // the WRONG reason" that `RefusalKind` exists to prevent.
             Self::Unstated => crate::text::status::edit_declined_by_engine(),
-        }
+        };
+        Cow::Borrowed(fixed)
     }
+}
+
+/// ★★★ **"pdfcer cannot type a `q` into this text"** — the status bar's `⊗`
+/// sentence for `OPERATOR_REQUESTS.md` **O141**, with the character in it.
+///
+/// The operator, 2026-09-05: *"if the character isn't available in a pdf are we
+/// able to change to a different font?"*
+///
+/// # Why the character is worth the one allocation this catalog makes
+///
+/// Because the generic form of this sentence is what he meets first, and it is
+/// indistinguishable from the five other declines he might have earned. *"pdfcer
+/// cannot type that character"* asks him to remember what he typed and to
+/// believe pdfcer knows; *"pdfcer cannot type a `q`"* is a report he can check
+/// against the keyboard in front of him. The engine handed the character over
+/// (`Refusal::character`) and two surfaces already had it; only the bar could
+/// not say it, and only because of a return type.
+///
+/// # ★★ The clauses, in the order the bar truncates them
+///
+/// `app::status::disclosure::disclosure_line` draws at most 45 % of the bar and
+/// hangs the rest on hover, so the order is not style:
+///
+/// 1. **what pdfcer cannot do, with the character** — the claim, which must
+///    survive truncation;
+/// 2. **why**, in his words rather than the format's: the font was built with
+///    only the letters the page already prints. O141's framing is that he should
+///    not have to learn the word *subset* to understand his own file;
+/// 3. **his document is unchanged** — the reassurance every decline in this
+///    catalog carries, because the operator's first question after a refusal is
+///    whether something happened anyway;
+/// 4. **where the route is.** The bar cannot hold a chooser; Properties can, and
+///    the sentence says so by name.
+///
+/// ⚠ It deliberately does not say *"choose another font"* on its own. That is
+/// the answer, and an answer with no control beside it is O141 filed all over
+/// again — *"that last clause is the answer to your question, and it is buried
+/// in an error message."*
+#[must_use]
+pub fn font_lacks_the_character(character: char) -> String {
+    format!(
+        "pdfcer cannot type '{character}' into this text. The font here was built with only the \
+         letters your page already prints, and pdfcer cannot add one to a font that is already \
+         inside the file. Your document is unchanged — open Properties, which names the \
+         character and offers the faces that can type it."
+    )
 }
 
 #[cfg(test)]
@@ -752,7 +885,9 @@ mod tests {
     const EVERY: [EditRefusal; 6] = [
         EditRefusal::SplitAcrossPieces,
         EditRefusal::UnsupportedFont,
-        EditRefusal::FontLacksTheCharacter,
+        // ★ The character is arbitrary here on purpose: this list exists to
+        // sweep the sentences, and `'q'` is the operator's own example.
+        EditRefusal::FontLacksTheCharacter('q'),
         EditRefusal::DocumentProtected,
         EditRefusal::TextMovedAway,
         EditRefusal::Unstated,
@@ -799,7 +934,7 @@ mod tests {
         for why in [
             EditRefusal::SplitAcrossPieces,
             EditRefusal::UnsupportedFont,
-            EditRefusal::FontLacksTheCharacter,
+            EditRefusal::FontLacksTheCharacter('q'),
             EditRefusal::DocumentProtected,
             EditRefusal::TextMovedAway,
         ] {
@@ -827,7 +962,7 @@ mod tests {
         // The two that ignore both shell-side facts, asserted every way so a
         // stray condition added to either goes red.
         for one in [true, false] {
-            for named in [true, false] {
+            for named in [Some('q'), None] {
                 assert_eq!(
                     EditRefusal::of(K::StructureFrozen, one, named),
                     EditRefusal::DocumentProtected
@@ -838,12 +973,12 @@ mod tests {
         // ★ And the two that do not. `one_operator == false` means the run is
         // written in several pieces, which is the operator's own document.
         assert_eq!(
-            EditRefusal::of(K::NotFound, false, false),
+            EditRefusal::of(K::NotFound, false, None),
             EditRefusal::SplitAcrossPieces,
             "a split run's NotFound is the split, not a page that moved"
         );
         assert_eq!(
-            EditRefusal::of(K::NotFound, true, false),
+            EditRefusal::of(K::NotFound, true, None),
             EditRefusal::TextMovedAway,
             "a single-operator run's NotFound has no split to blame, and claiming one \
              would be a structure this shell did not observe"
@@ -875,13 +1010,13 @@ mod tests {
         use pdfcer_core::text_edit::RefusalKind as K;
         for one in [true, false] {
             assert_eq!(
-                EditRefusal::of(K::UnsupportedFont, one, true),
-                EditRefusal::FontLacksTheCharacter,
+                EditRefusal::of(K::UnsupportedFont, one, Some('q')),
+                EditRefusal::FontLacksTheCharacter('q'),
                 "a refusal naming one character is a repertoire fact, and changing the face \
                  is the remedy pdfcer already has"
             );
             assert_eq!(
-                EditRefusal::of(K::UnsupportedFont, one, false),
+                EditRefusal::of(K::UnsupportedFont, one, None),
                 EditRefusal::UnsupportedFont,
                 "a refusal naming NO character is about the font's whole code-to-glyph \
                  relation, and no other face makes this run re-encodable"
@@ -898,7 +1033,7 @@ mod tests {
     /// message."*
     #[test]
     fn the_missing_character_sentence_names_the_surface_that_answers_it() {
-        let s = EditRefusal::FontLacksTheCharacter.line();
+        let s = EditRefusal::FontLacksTheCharacter('q').line();
         assert!(
             s.contains("Properties"),
             "a decline with a remedy must name where the remedy is: {s:?}"

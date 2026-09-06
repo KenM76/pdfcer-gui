@@ -174,7 +174,10 @@ therefore derived:
     deliberate over-reporting note below.
   * **Where the engine is.** `tools/engine_path.locate()`, which reads the git
     URL out of the manifest Cargo itself builds from. **Never a literal.** On
-    2026-09-03 a hard-coded `D:/Dev/pdfce` survived this project's rename,
+    2026-09-03 a hard-coded `D:/Dev/pdfce` survived this project's rename,  # old-name-exempt-file:
+    this gate's prose is ABOUT the rename and quotes the pre-rename path it was
+    written to catch; a sibling gate's docstring cannot describe a miss without
+    spelling it, which is the case the file-level exemption exists for.
     pointed at a directory that did not exist, and made
     `check-verb-coverage.sh` print `PASS: all 0 uncalled verb(s)` having
     examined nothing at all. That is the defect `engine_path.py` was written

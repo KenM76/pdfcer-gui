@@ -1225,6 +1225,8 @@ pub(super) fn interact(
             annot_delete_refused: crate::panels::properties::annotdelete::refuses(doc, &selection),
             field_delete_refused: crate::panels::properties::formfield::refuses_delete(doc),
             escape_consumed: matches!(outcome, GestureOutcome::Cancelled),
+            targets: targets.as_deref(), // ★★ the drag's own borrow, never a second decompose
+            edit_epoch: doc.edit_epoch,  // for a refusal's sentence; both argued on `keys::Keys`
         },
         &mut selection,
         &mut text_selection,

@@ -248,15 +248,22 @@ pub fn refused_char_named(character: char, font: &str) -> String {
 
 /// The instruction under [`refused_char_named`], and the label on the chooser.
 ///
-/// ★★ It states **both** steps before either is taken. The face swap alone does
-/// not put the character on the page — the operator has to type it again, in a
-/// fresh caret — and a block that offered a font list without saying so would be
-/// a route that stops one gesture short. The follow-up
-/// ([`refused_char_swapped`]) repeats it after the swap; this says it before, so
-/// the operator knows what they are starting.
+/// # ★★★ It promised TWO gestures until 2026-09-05, and now promises one
+///
+/// It read: *"Pick a font that has the “q”, then click in the text and type it
+/// again"* — an accurate description of a route that stopped one gesture short
+/// of what the operator asked for. `Ctrl+Enter` calls `commit_into` and then
+/// `abandon` whether or not the engine accepted, so the words he typed were
+/// thrown away by the refusal and he had to produce them a second time from
+/// memory.
+///
+/// They are kept now ([`crate::canvas::textedit::Committing`]) and travel with
+/// the refusal, so **taking the offer re-applies the edit he already made**. The
+/// sentence says so, because a control that quietly does more than it claims is
+/// as hard to trust as one that does less.
 #[must_use]
 pub fn refused_char_offer(character: char) -> String {
-    format!("Pick a font that has the “{character}”, then click in the text and type it again:")
+    format!("Pick a font that has the “{character}” and pdfcer will put your change in with it:")
 }
 
 /// ★★★ **The honest limit on the offer**, filed rather than hidden.
@@ -290,23 +297,88 @@ pub fn refused_char_untested(character: char) -> String {
     )
 }
 
-/// ★★ **What the block says once the face has been swapped** — the second half
-/// of the route.
+/// ★★ **What the block says on the frame the face swap lands** — the second
+/// half of the route, now carried out rather than described.
 ///
 /// The swap is an edit, so it retires the offer; without this the block would
-/// vanish at the moment the operator most needs to be told what to do next, and
-/// they would be back at a caret with no reason to try again.
+/// vanish at the moment the operator most needs to be told what happened, and
+/// they would be left looking at a page that changed for a reason nothing named.
 ///
 /// ★ It names the face that is now in force, because that is the one fact the
 /// canvas cannot show them: on a metric-compatible swap — `Arimo-Bold` to
 /// `Helvetica-Bold` moved the operator's own line by 0.005 pt — the page looks
-/// exactly as it did, and a block saying only *"try again"* would leave them
-/// unsure whether anything happened at all.
+/// exactly as it did, and a block saying nothing would leave them unsure whether
+/// anything happened at all.
+///
+/// ★★★ It said *"Click in it and type the “q” again"* until 2026-09-05. It does
+/// not any more, because the block re-applies the edit itself on this very
+/// frame — and an instruction to do something the program has already done is
+/// worse than none: the operator follows it, types the character into a document
+/// that already has it, and gets a second copy.
 #[must_use]
 pub fn refused_char_swapped(character: char, font: &str) -> String {
+    format!("This text is now set in {font}, and pdfcer is putting your “{character}” in with it.")
+}
+
+/// ★★ **The one state that still asks the operator to type it again**, and it
+/// is the wording every other sentence here retired on 2026-09-05.
+///
+/// Reached when the refusal arrived with **no carried words** —
+/// `RefusedCharacter::typed` is `None`, which happens if the plan that produced
+/// the refusal named a different `(page, run)` than the refusal did. That is a
+/// disagreement between two facts about one commit, and this shell declines to
+/// paper over it: rather than guess at what the operator typed, it swaps the
+/// face (which is real and useful on its own) and asks for the character again.
+///
+/// ★ So this is not a leftover. It is the honest sentence for the one state in
+/// which the instruction is true, and keeping it is what lets
+/// [`refused_char_swapped`] and [`refused_char_blocked`] be unambiguous about
+/// their own states. A single sentence covering all three would have to hedge,
+/// and a hedged instruction is one the operator cannot follow.
+#[must_use]
+pub fn refused_char_swapped_type_again(character: char, font: &str) -> String {
     format!(
-        "This text is now set in {font}. Click in it and type the “{character}” again, and it \
-         will go in."
+        "This text is now set in {font}. Click in it and type the \u{201c}{character}\u{201d} \
+         again, and it will go in."
+    )
+}
+
+/// ★★★ **What the block says when the swap landed and the character still would
+/// not go in** — the third state, added 2026-09-05.
+///
+/// # It reports a MEASURED engine limit, not a guess about one
+///
+/// [`crate::canvas::textedit::facewall`] is the experiment: one `EditSession`,
+/// `format_text` then `edit_text`, and the second call is refused because the
+/// `/Font` resource the first call created lives only in the session's overlay
+/// while `edit_text` resolves font names against the base revision. The same
+/// pair with a save and a reopen between them succeeds, and a swap to a face the
+/// page **already carries** succeeds at once — all three measured, all three
+/// asserted, so this sentence goes stale loudly rather than quietly. Filed at
+/// the engine as
+/// `request_edit_text_resolves_font_names_against_the_base_revision.md`.
+///
+/// # ★★ Why this state is reached by ARITHMETIC and not by reading the error
+///
+/// The block never inspects the engine's refusal. It knows what it asked for and
+/// it watches `doc.edit_epoch`: the swap moves it once, and had the retype
+/// landed it would move again and the block would retire on the next frame. So a
+/// block still on screen one frame after the retype **is** the retype having
+/// been refused — no prose grepped, no second copy of the engine's taxonomy,
+/// which is precisely what `app::status::decline::textedit`'s header forbids and
+/// what a string match on *"unresolvable"* would have been.
+///
+/// # The remedy is the one that was run, not the one that sounds right
+///
+/// Save and reopen. That is literally what two invocations of `pdfcer.exe` do,
+/// and `fixtures/subset-font-floor.PROVENANCE.md` records the four commands.
+#[must_use]
+pub fn refused_char_blocked(character: char, font: &str) -> String {
+    format!(
+        "This text is now set in {font}, and the “{character}” still would not go in: pdfcer \
+         cannot type into a font it has just added to a file until that file has been saved and \
+         opened again. Save this document, open it, and type the “{character}” once more — it \
+         will go in then. This limit is pdfcer's own and is on the list to fix."
     )
 }
 
@@ -421,23 +493,76 @@ mod tests {
         );
     }
 
-    /// ★★★ **The offer states BOTH steps before either is taken.**
+    /// ★★★ **The offer promises that pdfcer will finish the job, and neither
+    /// sentence tells the operator to retype anything.**
     ///
-    /// Choosing a face does not put the character on the page; the operator has
-    /// to type it again. A block that listed fonts and stopped would be a route
-    /// that ends one gesture short of the thing it promised, which is the class
-    /// of defect O141 was filed against in the first place.
+    /// # This test asserted the OPPOSITE until 2026-09-05, and the inversion is
+    /// the point
+    ///
+    /// It was `the_offer_says_to_type_the_character_again`, and it required both
+    /// sentences to contain *"type it again"* — a correct assertion about a
+    /// route that stopped one gesture short of what the operator asked for.
+    /// `Ctrl+Enter` threw his draft away on the refusal, so choosing a face left
+    /// him to produce his own edit a second time from memory.
+    ///
+    /// The block re-applies it now
+    /// ([`crate::panels::properties::refusedchar`]), so the instruction is not
+    /// merely unnecessary — it is **harmful**: an operator who follows it types
+    /// the character into a document that already has it and gets two.
+    ///
+    /// ★ Asserted in the negative as well as the positive, because a build that
+    /// re-applied the edit *and* kept the old wording would pass a
+    /// promise-only test while producing exactly that double edit.
     #[test]
-    fn the_offer_says_to_type_the_character_again() {
-        for line in [
-            refused_char_offer('%'),
-            refused_char_swapped('%', "Courier"),
-        ] {
+    fn the_offer_promises_pdfcer_finishes_the_job_and_never_asks_for_a_retype() {
+        let offer = refused_char_offer('%');
+        assert!(
+            offer.contains("pdfcer will put your change in"),
+            "the operator must know his edit is coming with the swap, or the font list \
+             reads as a route that ends in a list: {offer}"
+        );
+        let swapped = refused_char_swapped('%', "Courier");
+        assert!(
+            swapped.contains("putting your “%” in"),
+            "the follow-up must report what is happening to his edit: {swapped}"
+        );
+        for line in [offer, swapped] {
             assert!(
-                line.contains("type it again") || line.contains("type the “%” again"),
-                "the second step is not guessable from a font list: {line}"
+                !line.contains("again"),
+                "asking for a retype after the retype has been made produces a second \
+                 copy of the character: {line}"
             );
         }
+    }
+
+    /// ★★★ **The third state names the obstacle, the remedy and whose limit it
+    /// is** — and it is the one sentence here that asks the operator to type
+    /// again, because in that state it is true.
+    ///
+    /// The face swap landed and the character still would not go in, for a
+    /// measured reason in `pdfcer-core`:
+    /// [`crate::canvas::textedit::facewall`] proves that a `/Font` resource
+    /// created inside an `EditSession` cannot be resolved by that session's own
+    /// `edit_text`, and that saving and reopening fixes it. So the remedy in this
+    /// sentence is the one that was actually run, and the three obligations
+    /// asserted below are what stop it degenerating into *"something went
+    /// wrong"*.
+    #[test]
+    fn the_blocked_sentence_says_what_to_do_and_that_the_limit_is_pdfcers() {
+        let line = refused_char_blocked('%', "Courier");
+        assert!(
+            line.contains("Courier"),
+            "the face that IS in force: {line}"
+        );
+        assert!(
+            line.contains("saved and opened again") && line.contains("Save this document"),
+            "the remedy is the whole reason this state has a sentence: {line}"
+        );
+        assert!(
+            line.contains("pdfcer's own"),
+            "an operator told only that it did not work will look for what he did \
+             wrong: {line}"
+        );
     }
 
     /// ★★ **The caveat names the limit AND what happens when it bites.**

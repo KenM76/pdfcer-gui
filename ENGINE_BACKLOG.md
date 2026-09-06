@@ -313,7 +313,7 @@ from here and no box in it is ticked by this pass.
 
 ---
 
-## `blocked` — 2 of 97
+## `blocked` — 4
 
 Wanted, and waiting on something named. Every row here says **what** it is waiting on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat, and this project has found seven stale blockers already.
 
@@ -322,6 +322,13 @@ Wanted, and waiting on something named. Every row here says **what** it is waiti
 | Row (`FEATURES.md`, blocked) | Why |
 |---|---|
 | Split a document — `EveryN` only; no bookmark- or size-based … | The engine's own row states the block and states it correctly: *"blocked on a decision (no boundary chooser, output directory or name template — no honest default exists for a UI that hasn't asked)"*. `EveryN` is the only criterion the engine offers, and a Split button that silently chose every-1-page and a directory would be R9's placeholder rule broken at the scale of a command. **Needs an operator ruling on the chooser**, not engineering. |
+
+### Text
+
+| Row (`FEATURES.md`, blocked) | Why |
+|---|---|
+| **Edit text across show operators** — a `find` matches across consecutive … | **BLOCKED ON THE ENGINE PIN, and only on that.** This is `Pass 256.0`, and it is the engine's answer to `OPERATOR_REQUESTS.md` **O140** — the operator's *"I try to edit the edit is not accepted"* on a document whose producer wrote the line ONE GLYPH PER SHOW OPERATOR. This shell's `EditRefusal::SplitAcrossPieces` exists to explain exactly that refusal, and the sentence it shows ends *"this limit is on the list to fix"*. It is fixed, upstream. ⚠ **It is not in the build this shell compiles**: `Cargo.lock` pins `03f6004` (v0.40.0) and the capability landed at `1343f0e`, ten commits later, unreleased. Consuming it is `cargo update -p pdfcer-core`, which is deliberately NOT done inside a session where another track is building against the same engine — an engine bump under a parallel track is a rebuild it did not ask for and a set of failures it cannot attribute. **What it costs once the pin moves:** nothing but re-measurement. `EditReport::operators_spanned` is new and wants disclosing (rule 4 — an edit that rewrote five operators is a fact about the document the canvas cannot show), and `Plan::one_operator` stops being the thing that routes `SplitAcrossPieces`, so O140's sentence must be re-derived from the engine's answer rather than deleted on the assumption it is dead. |
+| **Ask which face can hold the text about to be TYPED**, not only the text … | **BLOCKED ON THE ENGINE PIN, and it is the reply to this project's own request.** `request_font_preflight_tests_the_text_that_is_there_not_the_text_about_to_be_typed.md`, filed 2026-09-05 while building **O141**, asked for a coverage query taking the text the operator intends to write. `preview_font_resources_for(page, find, pinned_span, candidate)` is that query, and it closes the one honest limit the offer carries today: `panels::properties::refusedchar` lists faces coverage-tested against the characters ALREADY in the run, so a row can be a face that then refuses the operator's `€` — disclosed rather than filtered, on the Bold button's standing ruling (`text::panels::face::refused_char_untested`). ⚠ **Not in the pinned build**: `Cargo.lock` is at `03f6004` and this landed after it; see the row above for why the pin is not moved inside this session. **What it costs once the pin moves:** one call swapped in `canvas::textedit::pin::font_preflight`, the candidate being the refused character, and `refused_char_untested` DELETED — with its unit test, which asserts the disclosure exists and would otherwise keep a caveat alive after the thing it warns about has gone. |
 
 ### Reading, navigation & printing
 
