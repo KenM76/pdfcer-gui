@@ -370,6 +370,48 @@ and the shell's guard is the belt to that braces.
 > between him and an encrypted file full of un-redacted content.
 
 
+### ★★★ The three the ENGINE BUMP brought, 2026-09-06 — v0.41.0, and two of them changed what the shell SAYS rather than what it can do
+
+The lead bumped the lock to **`pdfcer-core` v0.41.0 (`f9bc7c8`)**, which carries
+`Pass 256.0`, `Pass 256.1` and `Pass 257.0`. None of the three adds an
+`EditSession` verb, so `check-verb-coverage.sh` had nothing to say about any of
+them — which is the point of this section. **Two of the three were capabilities
+this shell was already calling the verb for and getting the wrong answer from,
+and the third made a sentence in this shell false.** A gate keyed on verb names
+is structurally blind to all three.
+
+| Pass | What it changed | What this shell does about it |
+|---|---|---|
+| **257.0** — session verbs plan against the session graph | Every text-edit planner takes `&DocumentView<'_>`; `EditSession` verbs pass `self.view()`. A `/Font` authored by `format_text` this session is now resolvable by the next `edit_text`. | **Consumed by deletion.** `canvas::textedit::facewall`'s tripwire went red on the first run after the bump and now asserts the SUCCESS. `text::panels::face::refused_char_blocked` kept its state and lost its cause — see below. The only *signature* change, `text_edit::forms::invocation_set` losing its leading `&Document`, is at `app::actions::xobject::fanout`. |
+| **256.0** — `edit_text` matches a `find` across consecutive show operators | A run written one glyph per operator is editable by `find`, **provided the request is not pinned**. | **This is what fixed his typo**, and the shell's half was to stop sending the pin. `canvas::textedit::plan`, guarded by `Plan::occurrences`. |
+| **256.1** — `/ToUnicode` collisions refuse per CHARACTER, not per font | A composite font with two CIDs mapping to one character used to be refused wholesale (`R-INV-4`). Now every unambiguous character edits and only the colliding one refuses, carrying `RInvTrigger::Ambiguous`. | **Consumed 2026-09-06.** `app::status::decline::textedit::refused_char_kind` reads `Refusal::trigger`; `text::textedit::EditRefusal::FontHasTwoGlyphsFor` is the sentence. |
+
+#### ★★★ Why 256.1 was worth consuming when the remedy did not change
+
+Both refusals arrive as `RefusalKind::UnsupportedFont` and both are answered by
+the same control — the face offer in the Properties panel. So the *route* needed
+nothing. What needed changing is that the shell was **saying something false**:
+
+> *"The font here was built with only the letters your page already prints."*
+
+On an ambiguous character that is the opposite of the truth. The letter is on his
+page, in that font, drawn two different ways, and pdfcer is declining to choose
+between two glyphs rather than failing to find one. An operator given the old
+sentence would go hunting for a missing letter that is in front of him.
+
+⇒ **A capability landing can make an existing sentence wrong without making any
+verb call wrong**, and nothing in this project's gate set can see that happen.
+It was caught by reading the reply, which is the mechanism `RESUME.md` already
+names — *"a reply arriving is not a capability landing"* — running in the other
+direction.
+
+★ `ToUnicodeCMap::partial_inverse()`, `CompositeEncoding::ambiguous_chars()` and
+`PartialInverse` are **not** called here and do not need to be: they are the
+engine's own internals for producing the refusal, and the disclosure of a font's
+first eight ambiguous characters rides on `EditReport` for a UI that wants to
+warn before the keystroke. This shell warns after it, which is the honest
+position while nothing is asking for the other.
+
 ### Not gaps — alternate spellings of a verb the shell already calls
 
 | Verb | What the shell calls instead |

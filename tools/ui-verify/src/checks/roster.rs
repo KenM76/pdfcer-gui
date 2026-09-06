@@ -579,7 +579,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // checks together and both after the reflow, which is the order a
         // reader debugging "text editing does not work" wants: can it commit,
         // can it break a line, can it explain itself.
-        Box::new(typo_refusal::ARefusedTypoFixSaysWhyItWasRefused),
+        Box::new(typo_refusal::HisTypoCanBeCorrectedOnHisOwnFile),
         // ★ Directly after `redaction`, and before the two selection checks,
         // because it is the second most expensive check in the suite — it
         // launches the binary twice, for the same reason `save_copy` does — and

@@ -80,6 +80,19 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
+## O141 — ✅ **COMPLETE 2026-09-06 — "IF THE CHARACTER ISN'T AVAILABLE IN A PDF ARE WE ABLE TO CHANGE TO A DIFFERENT FONT?" — yes, and the letter now goes in on the same press**
+
+**The last step of this works now.** Yesterday pdfcer could offer you a face that
+could type your character, change the text to it, and then still refuse the
+letter — and it told you to save the file, open it again, and type it once more.
+That was true and it was two gestures more than you should have needed.
+
+**The engine fixed it and this build has it.** Choose the face and the letter
+goes in, in the same press, with no save and no reopen. Driven end to end; the
+sentence about saving and reopening is deleted, because it now describes nothing.
+
+### The old row follows, as the record of how it got here
+
 ## O141 — ◑ **BUILT AND DRIVEN 2026-09-05, AWAITING YOUR VERDICT — "IF THE CHARACTER ISN'T AVAILABLE IN A PDF ARE WE ABLE TO CHANGE TO A DIFFERENT FONT?" — YES, and now pdfcer offers it at the moment you hit the wall**
 
 > *"if the character isn't available in a pdf are we able to change to a
@@ -377,7 +390,40 @@ engine's own geometry and would drift from it.
 
 ---
 
-## O140 — ◑ **FIXED 2026-09-05, AWAITING YOUR VERDICT** — you tried to fix a typo, the program ignored you, and it now tells you why in your own words
+## O140 — ✅ **YOUR TYPO IS FIXED, 2026-09-06** — the correction goes in now, on your own file, in one gesture
+
+> *"on page 2 there is a spelling mistake — clien instead of client. if I try to
+> edit the edit is not accepted. **the lines I added below `price)` are
+> editable, but everything else that existed when I got the pdf is not.**"*
+>
+> — 2026-09-05, on `apartment work - signed.pdf`
+
+**Click in the line, fix the spelling, press Ctrl+Enter. It goes in.** Driven on
+a copy of your own file, page 2, at the line that reads *"Final quality
+walkthrough with clien"* — the correction lands and nothing declines it.
+
+### What was actually wrong, and it was not what yesterday's note said
+
+Yesterday this row told you the program that made your file *"wrote the line one
+letter at a time"* and that pdfcer could not put a word back into a line written
+that way. **The first half was true and the second half stopped being true.**
+pdfcer's engine learned to edit across those pieces, and pdfcer itself was still
+asking it the wrong question — it was pointing at **one** letter and handing over
+a whole line to look for, so the answer was always *"not found"*. It points at
+the line now.
+
+### ★ One thing it will still refuse, on purpose
+
+If the words you are correcting appear **more than once on the same page**,
+pdfcer stops and says so, naming how many times it found them. It has no way to
+tell which one you meant, and this is a signed document — guessing and correcting
+the wrong one is not a mistake you would find until after you had sent it.
+Include more of the line in your change and it becomes unique, and the
+correction goes through.
+
+### What the old row said, kept because it is still the honest reading of the file
+
+
 
 > *"on page 2 there is a spelling mistake — clien instead of client. if I try to
 > edit the edit is not accepted. **the lines I added below `price)` are

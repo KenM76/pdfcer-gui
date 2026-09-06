@@ -87,29 +87,64 @@
 //! to reflow after an in-session edit of the same page"* about the same class of
 //! staleness).
 //!
-//! So `panels::properties::refusedchar` does the two honest things instead: it
+//! So `panels::properties::refusedchar` did the two honest things instead: it
 //! **re-applies the operator's edit itself** the moment the face lands, so the
 //! route is one gesture and lands outright on any document carrying a second
-//! usable face; and when the retype is refused it says so, names the remedy that
-//! was measured to work, and says the limit is pdfcer's own
+//! usable face; and when the retype is refused it says so
 //! (`text::panels::face::refused_char_blocked`).
 //!
-//! ## What must happen to this file when the engine ships the fix
+//! ⚠ **Both halves survive the fix, and only one of them changed.** The
+//! re-apply is now the whole route — it lands on the fixture this module drives,
+//! not just on a document that happened to carry a second usable face. The
+//! refusal sentence kept its state and lost its *cause*: it used to name the
+//! save-and-reopen remedy measured below, and that remedy is now a remedy for
+//! nothing. See the section at the foot of this header.
 //!
-//! [`the_engine_cannot_type_into_a_face_it_just_swapped_in`] **goes red**, on
-//! purpose. It asserts the refusal, not the success. That is the whole design:
-//! this project's standing failure mode is a sentence recording a limitation
-//! that stopped being true and nothing noticing, and the fix for it is to make
-//! the claim executable. When it goes red:
+//! ## ★★★ THE ENGINE SHIPPED THE FIX — 2026-09-06, engine v0.41.0
 //!
-//! 1. delete that test;
-//! 2. delete `text::panels::face::refused_char_blocked` and the `retried` arm of
-//!    `refusedchar::section` that shows it — the state becomes unreachable,
-//!    because the retype will land and the block will retire on the next frame;
-//! 3. tighten `tools/ui-verify`'s `a_refused_character_offers_a_face_that_can
-//!    _type_it` from *"the retype was raised and its outcome was one of these
-//!    two"* to *"the character went in"*, which is the assertion its own module
-//!    header records as the one it wants back.
+//! [`the_engine_types_into_a_face_it_just_swapped_in`] is the same test with its
+//! assertion inverted. It went red on the first run after the pin moved to
+//! v0.41.0, from its own `expect_err` message, which is the entire design
+//! working: this project's standing failure mode is a sentence recording a
+//! limitation that stopped being true and nothing noticing, and the fix for it
+//! is to make the claim executable. `Pass 257.0` (`5e95805`) is the answer —
+//! every text-edit planner and helper takes `&DocumentView<'_>`, every
+//! `EditSession` verb passes `self.view()`, and with no `&Document →
+//! &DocumentView` coercion the class is now a **compile error**.
+//!
+//! ### The three-step plan this header used to carry, and the one step of it
+//! that was WRONG
+//!
+//! It said: (1) delete the test; (2) delete
+//! `text::panels::face::refused_char_blocked` and the `retried` arm of
+//! `refusedchar::section` that shows it, *"the state becomes unreachable,
+//! because the retype will land and the block will retire on the next frame"*;
+//! (3) tighten the driven check to *"the character went in"*.
+//!
+//! **Steps 1 and 3 were right and are done. Step 2 was wrong**, and the way it
+//! was wrong is worth more than the instruction was:
+//!
+//! > The `retried` arm is **not** reached by recognising this cause. It is
+//! > reached by arithmetic — the retype was raised and `doc.edit_epoch` did not
+//! > move — and that condition is agnostic about **why**. Other whys exist: an
+//! > offered face that does not cover the character after all, a run whose
+//! > operators a pinned request cannot span, a refusal nothing here has met.
+//! > Deleting the arm converts every one of them into **silence**, which is a
+//! > defect already on this project's own list.
+//!
+//! ⇒ ★★ **A state and its explanation have different lifetimes, and a plan
+//! written from one cause will happily delete the handling for all of them.**
+//! The explanation expired; the state did not. So the cause was struck from the
+//! sentence and the state kept its voice. `refused_char_blocked`'s own doc
+//! comment carries the full reasoning and its test now asserts that the sentence
+//! names **no** cause — including, by name, the two the old wording used, so
+//! that a later session improving the prose cannot reinstate a falsehood from
+//! this file's git history.
+//!
+//! Step 1 became an inversion rather than a deletion for the same family of
+//! reason: the test still buys something. It holds the fix down in **both**
+//! request shapes, and the `find` shape is the one whose regression would come
+//! back quietly, as a "no match" that reads like a bad search.
 
 #![cfg(test)]
 // ---------------------------------------------------------------------------
@@ -249,28 +284,59 @@ fn page_text(session: &EditSession) -> String {
     text.runs.iter().map(|r| r.text.as_str()).collect()
 }
 
-/// ★★★ **The measurement.** One session, `format_text` then `edit_text`, and
-/// the second call is refused for a reason that is about the resource the first
-/// call created.
+/// ★★★ **The measurement, INVERTED on 2026-09-06 because the engine shipped the
+/// fix.** One session, `format_text` then `edit_text`, and the second call now
+/// **succeeds** — in both request shapes, with no save and no reopen between
+/// them.
 ///
-/// The assertion is on the **refusal**, and on the *substance* of its sentence
-/// rather than on the sentence itself: a re-worded refusal should not make this
-/// go red, and a refusal that stops happening must. The two words asserted —
-/// `unresolvable` and `resources` — are the load-bearing ones, and they are what
-/// distinguishes this refusal from the subset floor (`R-INV-1`) that the same
-/// call raises before the swap.
+/// # What this test asserted until 2026-09-06, and why the inversion is the
+/// design working rather than the design failing
 ///
-/// ⚠ **When this goes red, the engine has fixed it.** Read this module's header
-/// before doing anything else: the correct response is deletion, here and at the
-/// shell's workaround, not a widened assertion.
+/// It asserted the **refusal**: that the `/Font` object `format_text` had just
+/// allocated lived only in the session overlay, that `edit_text` planned with
+/// `plan_edit(&self.base, …)`, and that `resolve_font_dict` therefore
+/// dereferenced the run's `Tf` name through a revision that predated the
+/// resource — answering `None`, which surfaced as *"the run's font resource is
+/// unresolvable in the target stream's resources"*.
+///
+/// That assertion was written **so that it would go red**, and on the engine
+/// bump to v0.41.0 it did, on the first run, with its own `expect_err` message
+/// naming the response. `Pass 257.0` (`5e95805`) made every text-edit planner
+/// and helper take `&DocumentView<'_>` and every `EditSession` verb pass
+/// `self.view()`; there is no `&Document → &DocumentView` coercion, so handing
+/// a planner the base revision is now a **compile error** rather than a latent
+/// wrong answer, and the class cannot return by the route it arrived.
+///
+/// ⇒ The lesson worth keeping is the one `RESUME.md` states: **a sentence about
+/// what the engine cannot do is a dated citation with a shelf life measured in
+/// hours, and where the claim can be an assertion it must be one.** This file
+/// cost one test and returned the day the limit stopped being true, which is
+/// what a paragraph cannot do.
+///
+/// # Why BOTH shapes are still asserted, now that both pass
+///
+/// They failed in **different voices** and the difference was the finding: the
+/// pinned form reached `resolve_font_dict` and named the resource, while the
+/// `find` form never got that far — locating a run by its text means decoding
+/// every show operator, decoding needs the font, and the font was the thing
+/// that would not resolve, so the answer was the locational `NoMatch`, *"text
+/// to edit was not found in an editable run on the page"*, which told the
+/// operator their text was absent from a page that was plainly printing it.
+///
+/// A regression could come back through either door, and the `find` door is the
+/// one that would come back **quietly** — as a "no match", which reads like a
+/// bad search rather than like a broken session. So both are driven, each in
+/// its **own session**, because a successful edit rewrites the run and the
+/// second shape would otherwise be searching a page the first one changed.
 #[test]
-fn the_engine_cannot_type_into_a_face_it_just_swapped_in() {
-    let mut session = session();
-
-    // The control, and it is not decoration: it establishes that this fixture
-    // reaches the wall O141 is about, so a later assertion about the remedy
-    // cannot pass on a document that never had the problem.
-    let before = type_the_character(&mut session)
+fn the_engine_types_into_a_face_it_just_swapped_in() {
+    // ── The control, and it is not decoration ──────────────────────────────
+    // It establishes that this fixture still reaches the wall O141 is about, so
+    // the success asserted below cannot pass on a document that never had the
+    // problem. If the engine ever taught the subset floor to widen a font
+    // automatically, THIS is the assertion that would go red and tell us the
+    // remedy under test had become unreachable rather than unnecessary.
+    let before = type_the_character(&mut session())
         .expect_err("the subset font has no code for 'q'; the floor must fire");
     assert!(
         before.contains("R-INV-1") || before.contains("SUBSET"),
@@ -278,52 +344,33 @@ fn the_engine_cannot_type_into_a_face_it_just_swapped_in() {
          swap is the remedy for. Got: {before}"
     );
 
-    swap_face(&mut session);
-
-    // ★★ Both request shapes, because they refuse with different sentences and
-    // the difference is itself part of the finding.
-    //
-    // * **Pinned** — the shell's own shape — reaches `resolve_font_dict` with
-    //   the operator already identified and gets the sentence the driven check
-    //   reports: *"the run's font resource is unresolvable in the target
-    //   stream's resources"*.
-    // * **By `find`** never gets that far. Locating a run by its text means
-    //   DECODING every show operator, decoding needs the font, and the font is
-    //   the thing that will not resolve — so the run is skipped and the answer
-    //   is the locational `NoMatch`, *"text to edit was not found in an
-    //   editable run on the page"*.
-    //
-    // ⇒ **The same defect wears two faces, and the second one is worse**: it
-    // tells the operator their text is absent from a page that is plainly
-    // printing it. Recorded here rather than only in the request, because it is
-    // the reason a session that guessed and retried without the pin would get a
-    // *less* honest refusal, not a better one.
-    let pinned = type_the_character_pinned(&mut session).expect_err(
-        "MEASURED 2026-09-05: the engine refuses. If this now SUCCEEDS the engine has \
-         shipped the fix — delete this test and the shell's reopen workaround; see the \
-         module header",
+    // ── Shape 1: pinned, which is what the shell itself builds ─────────────
+    let mut pinned_session = session();
+    swap_face(&mut pinned_session);
+    type_the_character_pinned(&mut pinned_session).expect(
+        "SHIPPED in engine v0.41.0 (Pass 257.0): a face swapped in THIS session is \
+         resolvable by the next edit_text, because the planner reads the session view \
+         rather than the base revision. If this refuses again, the class has returned \
+         and `panels::properties::refusedchar`'s blocked arm is load-bearing once more",
     );
     assert!(
-        pinned.contains("unresolvable") && pinned.contains("resources"),
-        "the pinned refusal is the one this experiment is about: the run's font name \
-         cannot be resolved in the target stream's resources, because the object it \
-         names exists only in the session overlay while `edit_text` resolves against \
-         `self.base`. Got: {pinned}"
-    );
-    assert!(
-        !pinned.contains("R-INV-1"),
-        "it must NOT be the subset floor again — if it were, the swap did not reach the \
-         run and the defect would be the shell's operand, which is the hypothesis this \
-         experiment exists to falsify. Got: {pinned}"
+        page_text(&pinned_session).contains(TYPED),
+        "the character must be IN the page, not merely un-refused: a verb that returns \
+         Ok and leaves the run unchanged is the failure this assertion exists to catch"
     );
 
-    let by_find = type_the_character(&mut session)
-        .expect_err("the same session refuses the unpinned request too");
+    // ── Shape 2: by `find` alone, the quieter door ─────────────────────────
+    let mut find_session = session();
+    swap_face(&mut find_session);
+    type_the_character(&mut find_session).expect(
+        "the unpinned request must succeed too. Its old refusal was the locational \
+         NoMatch — the one that claimed the operator's text was absent from a page \
+         printing it — so a regression here would read as a bad search rather than as \
+         a broken session, which is why it is asserted separately",
+    );
     assert!(
-        by_find.contains("was not found in an editable run"),
-        "and by `find` the SAME state reports the text as absent, because locating by \
-         text decodes every operator and decoding needs the font that will not resolve. \
-         Got: {by_find}"
+        page_text(&find_session).contains(TYPED),
+        "and the find-located edit must reach the page as well"
     );
 }
 
@@ -347,14 +394,20 @@ fn the_engine_cannot_type_into_a_face_it_just_swapped_in() {
 /// object is allocated — and the character the original subset font refused is
 /// typed straight into it. It lands.
 ///
-/// ⇒ **The trigger is the newly-created object, not the face swap.** A restyle
-/// that resolves to a resource the file already had leaves nothing for
-/// `edit_text` to fail to find. It is only the standard-14 offer — the one that
+/// ⇒ **The trigger was the newly-created object, not the face swap.** A restyle
+/// that resolves to a resource the file already had left nothing for
+/// `edit_text` to fail to find. It was only the standard-14 offer — the one that
 /// has to author a resource, which is the only remedy a single-font document has
-/// — that cannot be typed into until the file is saved and reopened.
+/// — that could not be typed into until the file was saved and reopened.
 ///
-/// That is the sentence `text::panels::face::refused_char_blocked` shows, and
-/// this test is where it comes from.
+/// ⚠ **Past tense throughout, since engine v0.41.0.** `Pass 257.0` fixed the
+/// newly-created-object case, so this test no longer *bounds* a live defect. It
+/// is kept because it still holds down the half that was never broken, and
+/// because it is the control that would tell a future session whether a
+/// returning refusal was the whole class coming back or only the authored-object
+/// corner of it. It was also the measurement behind
+/// `text::panels::face::refused_char_blocked`'s original wording — the wording
+/// that has now been struck; that function's doc comment records why.
 ///
 /// ★ The swap **back to the original subset face** was the first shape of this
 /// test and it is not usable, which is worth recording so it is not tried again:

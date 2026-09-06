@@ -53,14 +53,22 @@
 //!   the block must be **absent**. That is what a build drawing it
 //!   unconditionally fails.
 //! * **step 7** — the block must be seen to **walk its own state machine**:
-//!   `offer` → `swapped` → `blocked` on its own trace line, three states each
-//!   caused by a different thing happening to the document. A block frozen on
-//!   one state cannot produce that sequence.
+//!   `offer` → `swapped` on its own trace line, two states each caused by a
+//!   different thing happening to the document. A block frozen on one state
+//!   cannot produce that sequence.
 //!
-//! ★ On the branch where the character actually goes in (see below), the
-//! stronger classical control applies instead and is asserted there: the offer
-//! must be **gone** after a commit that succeeded, and its absence is made
-//! non-vacuous by first proving frames were painted after that commit.
+//! ★★ That sequence USED to be three states, `offer` → `swapped` →
+//! `blocked`, and shortening it was not a loosening. `blocked` was the retype
+//! coming back refused; on a build carrying engine v0.41.0 the retype lands, so
+//! the block retires without ever declaring a third state. **Requiring
+//! `blocked` here would now require the defect.** Its presence is failed by
+//! name rather than ignored, because it remains a reachable state for other
+//! causes — see step 6.
+//!
+//! ★ The stronger classical control applies on top of it and is asserted in
+//! step 6: the offer must be **gone** after a commit that succeeded, and its
+//! absence is made non-vacuous by first proving frames were painted after that
+//! commit.
 //!
 //! ## The states it walks, all measured with `pdfcer.exe` first
 //!
@@ -71,38 +79,64 @@
 //! | 2 | — | the disclosure is on screen and **does not overlap the page** (rule 4) |
 //! | 3 | open the chooser, click the first addable row | `format-text` reaches the document |
 //! | 4 | **nothing** | the block re-applies the operator's own edit by itself — a commit follows with no further input |
-//! | 5 | — | that commit either **lands** (the character goes in, one gesture, and the block retires) or is refused by the engine's base-revision limit, in which case the block must move to `state=blocked` and say so |
+//! | 5 | — | that commit **lands**: the character goes in, in one gesture, and the block retires |
 //!
-//! ## ★★★ WHY STEP 5 HAS TWO ACCEPTED OUTCOMES, AND IT IS NOT A SOFTENED ASSERTION
+//! ## ★★★ STEP 5 HAD TWO ACCEPTED OUTCOMES UNTIL 2026-09-06, AND NOW HAS ONE
 //!
-//! Because the last step is currently blocked by a defect in `pdfcer-core`, and
-//! that was **measured rather than inferred**.
-//! `pdfcer-gui`'s `canvas::textedit::facewall` holds three experiments:
+//! **This is the most important paragraph in the file**, because it is the one
+//! that records a check being tightened rather than a program being fixed, and
+//! the two are easy to confuse when reading a diff.
+//!
+//! Until the engine bump to v0.41.0 the last step of this route was blocked by
+//! a defect in `pdfcer-core`, and that was **measured rather than inferred**.
+//! `pdfcer-gui`'s `canvas::textedit::facewall` held three experiments:
 //!
 //! 1. **one** `EditSession`, `format_text` then `edit_text`, located by find
 //!    text alone so **no operand this shell computes is in the request** —
 //!    refused;
-//! 2. the identical pair with a **save and reopen** between them — succeeds,
-//!    and the character is in the extracted text;
-//! 3. a swap to a face the page **already carries** — succeeds at once.
+//! 2. the identical pair with a **save and reopen** between them — succeeded,
+//!    and the character was in the extracted text;
+//! 3. a swap to a face the page **already carries** — succeeded at once.
 //!
-//! So the trigger is the `/Font` object `format_text` creates: it lives in the
-//! session's overlay, and `edit_text` plans with `plan_edit(&self.base, …)`, so
-//! the name in the rewritten stream resolves to nothing. Filed as
-//! `request_edit_text_resolves_font_names_against_the_base_revision.md`.
+//! So the trigger was the `/Font` object `format_text` creates: it lived in the
+//! session's overlay, and `edit_text` planned with `plan_edit(&self.base, …)`,
+//! so the name in the rewritten stream resolved to nothing. Filed as
+//! `request_edit_text_resolves_font_names_against_the_base_revision.md`, and
+//! while it stood this check accepted the refusal **provided the block said so**
+//! — which asserted the shell's half of a route whose other half was owed.
 //!
-//! ⇒ The two outcomes are therefore **the engine fixed and the engine not
-//! fixed**, and the check reports which. What it will **not** accept is any
-//! other refusal: a second embedded-subset refusal means the swap never reached
-//! the run the refusal named, which is the shell defect this file was written to
-//! catch, and it is failed by name. Nor will it accept a build that is blocked
-//! and does not say so — `state=blocked` is required, because a block still
-//! promising the operator that his character is going in, over a document where
-//! it did not, is the confident small lie `app::status::decline`'s own header
-//! forbids.
+//! ★★★ **`Pass 257.0` paid it** (engine `5e95805`, released in v0.41.0). Every
+//! text-edit planner and helper takes `&DocumentView<'_>`, every `EditSession`
+//! verb passes `self.view()`, and with no `&Document → &DocumentView` coercion
+//! the class is a **compile error** rather than a latent refusal. `facewall`'s
+//! first test went red on the first run after the pin moved, from its own
+//! `expect_err` message, and now asserts the SUCCESS in both request shapes.
 //!
-//! When the engine ships the fix, `facewall`'s first test goes red and this
-//! check should be tightened to REQUIRE the landing branch. Both files say so.
+//! ⇒ **So the refusal branch is gone.** Keeping it would leave this check unable
+//! to fail on the exact regression it is now the only instrument for: a build
+//! where the engine's fix is present and the SHELL stops finishing the route
+//! would take the refusal branch, print a confident note naming an engine defect
+//! that no longer exists, and pass. **A check that accepts the outcome it exists
+//! to forbid is not a check.**
+//!
+//! What it will **not** accept, and each fails by name and separately, because
+//! the three send a reader to different files:
+//!
+//! * a second **embedded-subset** refusal — the swap never reached the run the
+//!   refusal named, which is the shell defect this file was written to catch;
+//! * **any other** refusal — the character did not go in; the failure message
+//!   carries the one command that decides which repository to open
+//!   (`cargo test -p pdfcer-gui --lib canvas::textedit::facewall`: red means the
+//!   engine regressed, green means the shell is handing it something stale);
+//! * a state sequence ending in **`blocked`** — the retype came back refused.
+//!
+//! ★★ `state=blocked` and `text::panels::face::refused_char_blocked` were
+//! **deliberately not deleted** when the engine shipped, and `facewall`'s header
+//! records why the instruction to delete them was wrong: that arm is reached by
+//! arithmetic (*the retype was raised and `doc.edit_epoch` did not move*), which
+//! is agnostic about the cause, so deleting it would convert every other cause
+//! into silence. It must not occur on **this** route on **this** fixture — which
+//! is asserted — but it is still the shell's voice when something else refuses.
 //!
 //! ## ★★ Why `q` and not `€`
 //!
@@ -850,130 +884,189 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
          pressed nothing"
     ));
 
-    // --- 6: which of the two outcomes, and both are accounted for ----------
+    // --- 6: THE CHARACTER MUST GO IN. ONE OUTCOME NOW, NOT TWO ------------
     //
-    // THIS IS WHERE THE ROUTE CURRENTLY STOPS, AND THE REASON IS THE ENGINE'S
-    // \u{2014} measured, not inferred.
+    // \u{2605}\u{2605}\u{2605} REWRITTEN 2026-09-06, ON THE ENGINE BUMP TO v0.41.0, AND THE
+    // OLD SHAPE IS RECORDED HERE BECAUSE THE REWRITE IS THE POINT.
     //
-    // `pdfcer-gui`'s `canvas::textedit::facewall` is one `EditSession` calling
-    // `format_text` then `edit_text`, located by find text alone so that no
-    // operand this shell computes is in the request. It is refused. The same
-    // pair with a save and a reopen between them succeeds; a swap to a face the
-    // page ALREADY carries succeeds at once. So the trigger is the `/Font`
-    // object `format_text` creates, which lives in the session's overlay while
-    // `edit_text` resolves font names against `self.base`
-    // (`pdfcer-core/src/edit.rs`, `plan_edit(&self.base, ...)`). Filed as
-    // `request_edit_text_resolves_font_names_against_the_base_revision.md`.
+    // Until today this step accepted EITHER outcome. The character going in was
+    // a pass; the retype being refused was also a pass, provided the block said
+    // so by moving to `state=blocked`. That was the honest construction at the
+    // time and it was deliberate: `edit_text` resolved font names against
+    // `self.base` while `format_text` allocated the new `/Font` in the session
+    // overlay, so the last step of the route was blocked by a defect in
+    // `pdfcer-core` that this project had measured, filed and could not fix.
+    // Accepting the refusal was how the check asserted **the shell's** half of a
+    // route whose other half was owed.
     //
-    // So this step asserts the shell's half and NAMES the engine's, and it is
-    // written so that the day the engine ships the fix this check goes green by
-    // the better route and says so in its own notes. It cannot pass by
-    // accepting any refusal: a second subset-floor refusal would mean the swap
-    // never reached the run, which is the shell defect this file was written to
-    // catch, and that is failed by name below.
-    if let Some((landed_at, landed_raw)) = landed {
-        report.note(format!(
-            "\u{2605}\u{2605}\u{2605} THE CHARACTER WENT IN: `{landed_raw}` \u{2014} from a \
-             refusal that named it, through a face the document did not contain, to an edit \
-             that reached the page, in ONE gesture.\n\
-             \u{26a0} If this is the branch you are reading, the engine has shipped the fix \
-             for `request_edit_text_resolves_font_names_against_the_base_revision.md`. \
-             `pdfcer-gui`'s `canvas::textedit::facewall::\
-             the_engine_cannot_type_into_a_face_it_just_swapped_in` will be RED, and this \
-             check should be tightened to REQUIRE this branch rather than accept it."
-        ));
-        if let Some(why) = offer_must_retire(ctx, &session, &trace, landed_at, &landed_raw) {
-            let shot = ctx.out("refused-character-face.offer-survived.png");
-            if crate::capture::window_to_png(&session, &shot).is_ok() {
-                report.artifact(shot);
-            }
-            return Ok(Some(why));
+    // `Pass 257.0` (engine `5e95805`, released in v0.41.0) paid it. Every
+    // text-edit planner takes `&DocumentView<'_>`; every `EditSession` verb
+    // passes `self.view()`; handing a planner the base revision is a compile
+    // error. `pdfcer-gui`'s `canvas::textedit::facewall::\
+    // the_engine_types_into_a_face_it_just_swapped_in` asserts the SUCCESS now,
+    // in both request shapes.
+    //
+    // \u{21d2} So the second branch is gone. Keeping it would leave this check
+    // unable to fail on the exact regression it is now the only instrument for:
+    // a build where the engine's fix is present and the SHELL stops finishing
+    // the route would take the refusal branch, print a confident note naming an
+    // engine defect that no longer exists, and pass. A check that accepts the
+    // outcome it exists to forbid is not a check.
+    //
+    // \u{26a0} It still cannot pass by accepting any refusal for the opposite
+    // reason either: a second subset-floor refusal means the swap never reached
+    // the run, which is the SHELL defect this file was written to catch, and
+    // that is failed by name and separately below \u{2014} because the two failures
+    // send a reader to different files.
+    let Some((landed_at, landed_raw)) = landed else {
+        let refused_raw = refused_again.unwrap_or_default();
+        let shot = ctx.out("refused-character-face.retype-refused.png");
+        if crate::capture::window_to_png(&session, &shot).is_ok() {
+            report.artifact(shot);
         }
-        report.note(
-            "\u{2605}\u{2605}\u{2605} and the offer RETIRED for it: frames were painted after \
-             the successful commit and none of them declared the block. The instrument speaks \
-             for the character the font could not type and is silent for the one it could",
-        );
-        return Ok(None);
-    }
-
-    let refused_raw = refused_again.unwrap_or_default();
-    if refused_raw.contains("R-INV-1") || refused_raw.contains("SUBSET") {
+        if refused_raw.contains("R-INV-1") || refused_raw.contains("SUBSET") {
+            return Ok(Some(format!(
+                "\u{2605}\u{2605}\u{2605} THE FACE SWAP DID NOT REACH THE RUN THE REFUSAL \
+                 NAMED. The retype was refused by the **same embedded-subset floor** as the \
+                 first commit: `{refused_raw}`.\n\
+                 `format-text` reported that it landed, so the restyle went somewhere \
+                 \u{2014} just not to the run under the caret. The operand is what to read: \
+                 `refusedchar::section` sends `runs: vec![<the run the REFUSAL named>]`, not \
+                 the current selection, because the caret is gone by the time the block is on \
+                 screen. A build that used the selection here would restyle nothing, or \
+                 something else. Trace: {}.",
+                session.trace_path().display()
+            )));
+        }
+        // Any other refusal. Before v0.41.0 this was the expected outcome and a
+        // pass; it is a failure now, and the message has to carry enough for a
+        // reader to tell a returned engine defect from a new shell one, because
+        // those are repaired in different repositories.
+        let blocked = trace
+            .events(OFFER_EVENT)
+            .filter(|l| l.lineno > styled_at)
+            .filter_map(|l| l.get("state").map(str::to_owned))
+            .last();
         return Ok(Some(format!(
-            "\u{2605}\u{2605}\u{2605} THE FACE SWAP DID NOT REACH THE RUN THE REFUSAL NAMED. \
-             The retype was refused by the **same embedded-subset floor** as the first \
-             commit: `{refused_raw}`.\n\
-             `format-text` reported that it landed, so the restyle went somewhere \u{2014} just \
-             not to the run under the caret. The operand is what to read: \
-             `refusedchar::section` sends `runs: vec![<the run the REFUSAL named>]`, not the \
-             current selection, because the caret is gone by the time the block is on screen. \
-             A build that used the selection here would restyle nothing, or something else. \
-             Trace: {}.",
+            "\u{2605}\u{2605}\u{2605} THE CHARACTER DID NOT GO IN. The face swap landed and \
+             the re-applied edit was refused: `{refused_raw}`. The block's last state is \
+             {blocked:?}.\n\
+             \u{2605} THIS USED TO BE A PASS AND IS NOT ONE SINCE ENGINE v0.41.0. Until \
+             `Pass 257.0` the last step of this route was blocked by `pdfcer-core` resolving \
+             `/Font` names against `self.base` while `format_text` wrote the new resource \
+             into the session overlay, and this check accepted the refusal provided the \
+             block said so. The engine fixed that, so the refusal is a defect again.\n\
+             \u{2605}\u{2605} READ THIS FIRST, because it decides which repository to open: \
+             run `cargo test -p pdfcer-gui --lib canvas::textedit::facewall`. That module \
+             makes one `EditSession`, calls `format_text` then `edit_text`, and locates both \
+             by find text alone \u{2014} **no operand this shell computes is in the request**. \
+             If it is RED the engine has regressed and the fix is not here. If it is GREEN \
+             the engine is fine and the shell is handing it something stale: read \
+             `canvas::textedit::plan`, which re-derives the pin from the page as it now \
+             stands, and `refusedchar::section`'s retype arm.\n\
+             \u{26a0} If the refusal you are reading says the run's font resource is \
+             `unresolvable in the target stream's resources`, that IS the old engine defect \
+             returning by its own route, and \
+             `request_edit_text_resolves_font_names_against_the_base_revision.md` is its \
+             history. Trace: {}.",
             session.trace_path().display()
         )));
-    }
-    // The engine's own limit. The shell's obligation is to SAY so, off the
-    // canvas, in the operator's terms \u{2014} and the block's third state is that
-    // sentence. A block that stayed on `swapped` would be promising the
-    // character is going in while it is not.
-    let blocked = trace
-        .events(OFFER_EVENT)
-        .filter(|l| l.lineno > styled_at)
-        .filter_map(|l| l.get("state").map(str::to_owned))
-        .last();
-    if blocked.as_deref() != Some("blocked") {
-        return Ok(Some(format!(
-            "\u{2605}\u{2605} THE RETYPE WAS REFUSED AND THE BLOCK DOES NOT SAY SO. The engine \
-             answered `{refused_raw}`, and the last `{OFFER_EVENT}` state after the swap is \
-             {blocked:?} rather than `blocked`.\n\
-             `RefusedCharUi::retried` is what tells the two apart, and it does it by \
-             arithmetic rather than by reading the engine's prose: the swap moves \
-             `doc.edit_epoch` once, and had the retype landed it would move again and the \
-             block would have retired. A block still drawing `swapped` is one promising the \
-             operator that his character is going in, over a document where it did not \u{2014} \
-             which is the confident small lie `app::status::decline`'s own header forbids. \
-             Trace: {}.",
-            session.trace_path().display()
-        )));
-    }
+    };
     report.note(format!(
-        "\u{2605}\u{2605} the retype was refused by the ENGINE \u{2014} `{refused_raw}` \u{2014} \
-         and the block moved to `state=blocked`, which is the sentence naming the measured \
-         cause and the remedy (save, reopen, type it once more). This is \
-         `request_edit_text_resolves_font_names_against_the_base_revision.md`, filed \
-         2026-09-05 with a copy-pasteable reproduction; `pdfcer-gui`'s \
-         `canvas::textedit::facewall` asserts all three of its measurements, so the day it \
-         ships this check takes the branch above instead"
+        "\u{2605}\u{2605}\u{2605} THE CHARACTER WENT IN: `{landed_raw}` \u{2014} from a \
+         refusal that named it, through a face the document did not contain, to an edit \
+         that reached the page, in ONE gesture and with the harness pressing nothing after \
+         the face was chosen. This is the whole of O141 and it is the REQUIRED outcome as \
+         of engine v0.41.0"
     ));
+    // ★★★ **A REPAINT HAS TO BE PROVOKED HERE, AND THE REASON IS THE ENGINE
+    // FIX** — found by the first driven run after the pin moved to v0.41.0.
+    //
+    // [`offer_must_retire`] refuses to judge an absence over zero painted
+    // frames, which is right: *"the block is not on screen"* is satisfied for
+    // ever by a build that stopped painting. But on a build where the retype
+    // **lands**, the block retires, the document settles, and egui is a
+    // reactive UI — with nothing left changing it draws no further frame, so
+    // there is no `ui-rect` after the commit and the guard fires over a working
+    // program.
+    //
+    // ⇒ That branch had never run before today. While the retype was refused
+    // the block stayed on screen and went on publishing its region every frame,
+    // so frames after the commit were free. **The engine's fix removed the very
+    // activity the check was relying on to prove the application was alive** —
+    // which is this project's standing finding once more: a driven failure is a
+    // claim about the check too, and the first run of a branch is where it is
+    // tested.
+    //
+    // ★ The pointer is MOVED rather than a key pressed, and that is deliberate:
+    // a move over the window makes egui repaint on hover and **writes nothing to
+    // the document**. A keystroke would be an input the check's own note ("the
+    // harness pressed nothing after the face was chosen") says was not made, and
+    // would make that note false.
+    //
+    // ★ It moves back to the aim point — the text itself — which is a genuine
+    // move, because the last thing the pointer did was click the chooser's row
+    // some way away from it. Moving to where the pointer already is would be no
+    // move at all and would provoke nothing.
+    driver.move_to(at)?;
+    session.settle(10);
+    let trace = session.trace()?;
+    if let Some(why) = offer_must_retire(ctx, &session, &trace, landed_at, &landed_raw) {
+        let shot = ctx.out("refused-character-face.offer-survived.png");
+        if crate::capture::window_to_png(&session, &shot).is_ok() {
+            report.artifact(shot);
+        }
+        return Ok(Some(why));
+    }
+    report.note(
+        "\u{2605}\u{2605}\u{2605} and the offer RETIRED for it: frames were painted after \
+         the successful commit and none of them declared the block. The instrument speaks \
+         for the character the font could not type and is silent for the one it could",
+    );
 
-    // --- 7: THE DYNAMIC RANGE, in the branch that keeps the block alive ----
+    // --- 7: THE DYNAMIC RANGE ---------------------------------------------
     //
     // The oracle in steps 1-4 is *"a region was published"*, and a probe whose
     // baseline has no dynamic range cannot produce a verdict. Step 0b holds one
     // side of it \u{2014} the block is absent on a document nothing has been done
     // to, so a build drawing it unconditionally is already red. This holds the
-    // other: the block has moved through THREE distinct states on its own trace
-    // line, `offer` -> `swapped` -> `blocked`, each caused by a different thing
-    // happening to the document. A block that never advanced could not produce
-    // that sequence, and a stale-refusal block frozen on one state could not
-    // either.
+    // other: the block moved through DISTINCT states on its own trace line,
+    // each caused by a different thing happening to the document. A block that
+    // never advanced could not produce a sequence, and a stale-refusal block
+    // frozen on one state could not either.
+    //
+    // \u{2605}\u{2605} The expected sequence CHANGED with the engine fix, and the change is
+    // itself an assertion. It used to be `offer` -> `swapped` -> `blocked`,
+    // where `blocked` was the retype coming back refused. On a build carrying
+    // `Pass 257.0` the retype LANDS, so the block retires on the next frame and
+    // never reaches `blocked` \u{2014} the sequence is `offer` -> `swapped` and
+    // stops. Requiring `blocked` here would now require the defect.
+    //
+    // \u{26a0} `blocked` is still a REACHABLE state and was deliberately not deleted:
+    // `RefusedCharUi::retried` is reached by arithmetic (the retype was raised
+    // and `doc.edit_epoch` did not move), which is agnostic about WHY, and other
+    // whys exist. It must simply not occur on THIS route, on THIS fixture, on a
+    // correct build \u{2014} so its presence is failed by name rather than ignored.
     let walked = states_walked(&trace);
-    if walked != ["offer", "swapped", "blocked"] {
+    if walked != ["offer", "swapped"] {
         return Ok(Some(format!(
             "\u{2605}\u{2605}\u{2605} THE BLOCK DID NOT WALK ITS OWN STATE MACHINE, so the \
              assertions above are not a verdict. `{OFFER_EVENT}` reported the state sequence \
-             {walked:?}, and the three states this route passes through are `offer` (a \
-             character was refused), `swapped` (the face landed and the operator's edit was \
-             re-raised) and `blocked` (the retype came back refused).\n\
-             A build that drew the block unconditionally, or never retired a stale refusal, \
-             would satisfy every region assertion above for ever while producing one state \
-             and never leaving it. Trace: {}.",
+             {walked:?}, and on a correct build carrying engine v0.41.0 this route passes \
+             through exactly two: `offer` (a character was refused) and `swapped` (the face \
+             landed and the operator's edit was re-raised), after which the retype lands and \
+             the block retires without ever declaring a state again.\n\
+             If the sequence ends in `blocked`, the retype was refused \u{2014} see the \
+             failure message in step 6, which names the two repositories to look in and how \
+             to tell them apart. If the sequence is one state and never leaves it, the block \
+             is drawn unconditionally or a stale refusal is never retired, and every region \
+             assertion above is vacuous. Trace: {}.",
             session.trace_path().display()
         )));
     }
     report.note(format!(
         "\u{2605}\u{2605}\u{2605} and the instrument has dynamic range: the block walked \
-         {walked:?} across the run, three states each caused by a different thing happening \
+         {walked:?} across the run, each state caused by a different thing happening \
          to the document \u{2014} it is not a region drawn unconditionally"
     ));
 
@@ -1016,16 +1109,44 @@ fn offer_must_retire(
     landed_raw: &str,
 ) -> Option<String> {
     let _ = ctx;
+    // ★★★ **LIVENESS IS COUNTED ON `canvas-pos`, NOT ON `ui-rect`, AND THE
+    // CORRECTION CAME FROM THE FIRST DRIVEN RUN OF THIS BRANCH** — 2026-09-06,
+    // on the engine bump to v0.41.0.
+    //
+    // The absence asserted below — *"the offer is gone"* — is only a verdict
+    // over frames the application actually painted; on a build that had stopped
+    // painting it would hold vacuously. So a liveness count has to come first,
+    // and it used to count `ui-rect` lines.
+    //
+    // ⇒ **That was wrong, and it could not be seen to be wrong until the engine
+    // shipped.** `ui-rect` is published by a control when it draws, not once per
+    // frame. While the retype was refused the block stayed on screen publishing
+    // its own region every frame, so `ui-rect` lines were free and counting them
+    // looked like counting frames. On a build where the retype **lands** the
+    // block retires, nothing else on that screen publishes a region, and the
+    // count is zero over an application that is painting perfectly — the guard
+    // fired, and its message said the application had drawn no frame while the
+    // trace held hundreds of lines proving it had.
+    //
+    // `canvas-pos` is written once per painted frame by the canvas, which is
+    // what *"is this application alive?"* actually means. Five other checks in
+    // this crate already use it as their frame clock.
+    //
+    // ★ This is the project's standing finding for the fourth time this month:
+    // **ask what the check SAMPLED before asking what is broken**, and the first
+    // run of a branch is where a proxy that has always agreed with the thing it
+    // stands for gets to disagree with it.
     let frames_after = trace
         .lines
         .iter()
-        .filter(|l| l.event == "ui-rect" && l.lineno > landed_at)
+        .filter(|l| l.event == "canvas-pos" && l.lineno > landed_at)
         .count();
     if frames_after == 0 {
         return Some(format!(
-            "no `ui-rect` line at all after the successful commit, so the application drew no \
-             frame this check can read and the absence asserted below would be vacuous \u{2014} \
-             it would hold on a build that had simply stopped painting. Trace: {}.",
+            "no `canvas-pos` line at all after the successful commit, so the application \
+             painted no frame this check can read and the absence asserted below would be \
+             vacuous \u{2014} it would hold on a build that had simply stopped painting. \
+             Trace: {}.",
             session.trace_path().display()
         ));
     }

@@ -213,6 +213,7 @@ pub(crate) fn record_edit_text_refusal(
     page: usize,
     run: usize,
     one_operator: bool,
+    occurrences: Option<usize>,
     error: &pdfcer_core::text_edit::EditError,
 ) {
     use pdfcer_core::text_edit::RefusalClass;
@@ -224,10 +225,16 @@ pub(crate) fn record_edit_text_refusal(
     // *a* character had been refused and the sentence could not say which. The
     // datum was already in hand here; only the status bar's return type stopped
     // it reaching the operator, and that is now a `Cow`.
+    // ★★ Pass 256.1: the CASE, not just the character. `refused_char_kind`
+    // reads `Refusal::trigger` to tell "the font has no such letter" from "the
+    // font has two of them", which arrive as the same `RefusalKind` and need
+    // opposite sentences. `missing` is still what the offer is keyed on, because
+    // the remedy — change the face — is the same for both.
     let why = crate::text::textedit::EditRefusal::of(
         kind,
         one_operator,
-        missing.as_ref().map(|(c, _)| *c),
+        refused_char_kind(error),
+        occurrences,
     );
     crate::diag::trace(|| {
         // ★★★ **FLAT FIELDS, NOT `{:?}` ON A TUPLE — corrected 2026-09-05, by
@@ -271,9 +278,14 @@ pub(crate) fn record_edit_text_refusal(
             Some((c, font)) => (format!("'{c}'"), font.clone()),
             None => ("none".to_owned(), "none".to_owned()),
         };
+        // ★ A bare number, or `none` — never a debug-formatted `Option`, for
+        // the three reasons numbered above. Same field name and same spelling
+        // as `edit-text-pin`'s, so a check reading both lines compares like
+        // with like rather than parsing two dialects of one datum.
+        let occurrences = occurrences.map_or_else(|| "none".to_owned(), |n| n.to_string());
         format!(
             "edit-text-classified page={page} run={run} kind={kind:?} \
-             one_operator={one_operator} character={character} \
+             one_operator={one_operator} occurrences={occurrences} character={character} \
              character_font={character_font} said={said}"
         )
     });
@@ -356,4 +368,57 @@ fn missing_character(error: &pdfcer_core::text_edit::EditError) -> Option<(char,
         }
         _ => None,
     }
+}
+
+/// **Which of the two character-level refusals this is** — `Pass 256.1`,
+/// consumed 2026-09-06.
+///
+/// # ★★★ Why the shell reads `trigger` here when it reads no other trigger id
+///
+/// `app::status::decline::textedit`'s own header forbids building a second copy
+/// of the engine's taxonomy, and grepping `Display` prose for a cause is exactly
+/// what it forbids. This is neither. It reads **one field of a structured
+/// refusal** — the same licence `Refusal::character` is read on, and for the
+/// same reason: the coarse `RefusalKind` structurally cannot carry it, and
+/// without it the shell says something **false** to the operator.
+///
+/// `RefusalKind` maps `EditError::Refused(_)` to `UnsupportedFont` wholesale, so
+/// these two arrive identically:
+///
+/// | trigger | what is true of the document | what the operator can do |
+/// |---|---|---|
+/// | `TargetAbsent` (R-INV-1) | the character is **not in the font** | change the face |
+/// | `Ambiguous` (R-INV-5, composite) | the character is in the font **twice** — two CIDs map to it | change the face |
+///
+/// The remedy is the same, which is why the face offer is raised for both. **The
+/// sentence is not.** [`crate::text::textedit::font_lacks_the_character`] says
+/// *"The font here was built with only the letters your page already prints"*,
+/// and on an ambiguous character that is simply untrue — the letter is there,
+/// twice over, and pdfcer is declining to guess which glyph he meant. An
+/// operator told the false version would go looking for a missing letter that is
+/// on his page in front of him.
+///
+/// ★ `Pass 256.1`'s own reply names the sentence it wants: *"this letter has two
+/// glyphs in this font; pick another font for it"*. That is what
+/// [`crate::text::textedit::font_has_two_glyphs_for`] says.
+///
+/// ⚠ **Test the trigger, not `is_hard()`.** The engine's rustdoc is explicit:
+/// on a composite font `Ambiguous` arrives inside a `Refusal`, and a `Refusal`
+/// is hard by construction, so `is_hard()` answers the simple-font disposition
+/// and is the wrong question here.
+fn refused_char_kind(
+    error: &pdfcer_core::text_edit::EditError,
+) -> Option<crate::text::textedit::RefusedCharacter> {
+    use crate::text::textedit::RefusedCharacter;
+    use pdfcer_core::text_edit::RInvTrigger;
+
+    let pdfcer_core::text_edit::EditError::Refused(refusal) = error else {
+        return None;
+    };
+    let c = refusal.character?;
+    Some(if refusal.trigger == RInvTrigger::Ambiguous {
+        RefusedCharacter::TwoGlyphsFor(c)
+    } else {
+        RefusedCharacter::NotInTheFont(c)
+    })
 }

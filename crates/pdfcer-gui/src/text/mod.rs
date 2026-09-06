@@ -369,6 +369,11 @@ pub mod settings;
 /// Every string the status bar shows. Consumed by `crate::app::status`.
 pub mod status;
 
+/// ★★ **Why a committed text edit was refused** — split out of [`textedit`] on
+/// 2026-09-06 under R2, along the seam that file's own section banner had
+/// already drawn. Everything in it is re-exported from [`textedit`], so no call
+/// site moved.
+pub mod editrefusal;
 pub mod textannot;
 pub mod textedit;
 /// Every sentence the text-EDITING tool shows: the three refusals a caret can

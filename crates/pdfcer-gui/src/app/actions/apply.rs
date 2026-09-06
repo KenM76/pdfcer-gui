@@ -868,6 +868,10 @@ impl PdfcerApp {
                 // out of the plan before the closure takes `plan` by reference,
                 // because the classification below runs inside it.
                 let one_operator = plan.one_operator;
+                // ★★★ O142 — copied out for the same reason `one_operator` is,
+                // and it is the fact that decides between two refusals both of
+                // which are true. See `canvas::textedit::Plan::occurrences`.
+                let occurrences = plan.occurrences;
                 vector_edit(doc, "edit-text", page, 1, |session| {
                     session
                         .edit_text(&plan.request, &plan.options)
@@ -892,6 +896,7 @@ impl PdfcerApp {
                                 page,
                                 run,
                                 one_operator,
+                                occurrences,
                                 error,
                             );
                         })

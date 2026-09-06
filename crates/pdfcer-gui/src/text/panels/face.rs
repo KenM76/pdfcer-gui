@@ -344,19 +344,55 @@ pub fn refused_char_swapped_type_again(character: char, font: &str) -> String {
 }
 
 /// ★★★ **What the block says when the swap landed and the character still would
-/// not go in** — the third state, added 2026-09-05.
+/// not go in** — the third state, added 2026-09-05, and **re-worded on
+/// 2026-09-06 when the one cause it used to name stopped existing.**
 ///
-/// # It reports a MEASURED engine limit, not a guess about one
+/// # ★★★ What this sentence used to say, and why saying it now would be a lie
 ///
-/// [`crate::canvas::textedit::facewall`] is the experiment: one `EditSession`,
-/// `format_text` then `edit_text`, and the second call is refused because the
-/// `/Font` resource the first call created lives only in the session's overlay
-/// while `edit_text` resolves font names against the base revision. The same
-/// pair with a save and a reopen between them succeeds, and a swap to a face the
-/// page **already carries** succeeds at once — all three measured, all three
-/// asserted, so this sentence goes stale loudly rather than quietly. Filed at
-/// the engine as
-/// `request_edit_text_resolves_font_names_against_the_base_revision.md`.
+/// Until engine v0.41.0 it read, in full:
+///
+/// > *"…pdfcer cannot type into a font it has just added to a file until that
+/// > file has been saved and opened again. Save this document, open it, and
+/// > type the "q" once more — it will go in then. This limit is pdfcer's own
+/// > and is on the list to fix."*
+///
+/// Every clause of that was true and measured. `EditSession::format_text`
+/// allocated the new `/Font` in the session overlay; `EditSession::edit_text`
+/// planned with `plan_edit(&self.base, …)`; `resolve_font_dict` dereferenced
+/// the run's `Tf` name through the base revision and answered `None`. The save
+/// and the reopen were not a guess at a remedy — they were literally what two
+/// invocations of `pdfcer.exe` did, and
+/// `fixtures/subset-font-floor.PROVENANCE.md` records the four commands.
+///
+/// **`Pass 257.0` (engine `5e95805`, released in v0.41.0) removed that cause.**
+/// Every text-edit planner takes `&DocumentView<'_>`, every `EditSession` verb
+/// passes `self.view()`, and there is no coercion from `&Document`, so the
+/// class is a compile error rather than a refusal.
+/// [`crate::canvas::textedit::facewall`] now asserts the **success** in both
+/// request shapes, with no save and no reopen between the verbs.
+///
+/// # ★★★ So why does this sentence still exist? Because the STATE does.
+///
+/// [`crate::canvas::textedit::facewall`]'s own module header instructed its
+/// reader to **delete** this function and the `retried` arm that shows it, on
+/// the reasoning that the retype would now always land and the state would
+/// become unreachable. **That reasoning is wrong, and the error is worth
+/// naming**, because it is the same shape as the defect the sentence was about.
+///
+/// The block is not reached by recognising this cause. It is reached by
+/// **arithmetic**, as the section below explains: *the retype was raised and
+/// the document did not change*. That condition is agnostic about **why**, and
+/// there are other whys — an offered face that turns out not to cover the
+/// character after all, a run whose operators the pinned request cannot span, a
+/// document the engine declines for a reason nothing here has met yet. Deleting
+/// the arm would convert every one of those into **silence**, which is the
+/// standing cross-cutting defect this project already has on its own list
+/// (*"every engine refusal reaches the operator as SILENCE"*).
+///
+/// ⇒ **A state and its explanation have different lifetimes.** The explanation
+/// expired; the state did not. So the cause is struck and the state keeps its
+/// voice — which is the conservative direction, because an operator told *"it
+/// did not go in"* can still act, and one told nothing cannot.
 ///
 /// # ★★ Why this state is reached by ARITHMETIC and not by reading the error
 ///
@@ -368,17 +404,27 @@ pub fn refused_char_swapped_type_again(character: char, font: &str) -> String {
 /// which is precisely what `app::status::decline::textedit`'s header forbids and
 /// what a string match on *"unresolvable"* would have been.
 ///
-/// # The remedy is the one that was run, not the one that sounds right
+/// ★ That mechanism is exactly why the old wording was a hazard the moment the
+/// engine moved: **a surface that cannot see a cause must not name one.** It
+/// named the only cause anybody had met, which read as a measurement and was an
+/// inference. The replacement says what the block actually knows — the face
+/// changed, the character did not go in — and stops there.
 ///
-/// Save and reopen. That is literally what two invocations of `pdfcer.exe` do,
-/// and `fixtures/subset-font-floor.PROVENANCE.md` records the four commands.
+/// # What it must NOT do
+///
+/// It must not say *"something went wrong"*: the face swap **did** land, that
+/// is a real change to his document, and a sentence that implies otherwise
+/// would send him looking for damage that is not there. And it must not
+/// prescribe save-and-reopen, which is now a remedy for nothing and would cost
+/// him two gestures to learn that.
 #[must_use]
 pub fn refused_char_blocked(character: char, font: &str) -> String {
     format!(
-        "This text is now set in {font}, and the “{character}” still would not go in: pdfcer \
-         cannot type into a font it has just added to a file until that file has been saved and \
-         opened again. Save this document, open it, and type the “{character}” once more — it \
-         will go in then. This limit is pdfcer's own and is on the list to fix."
+        "This text is now set in {font} — that part worked and is in your document. The \
+         “{character}” still would not go in, and pdfcer has not been told why. Nothing was \
+         damaged: the text is exactly as it was, in the new face. Try typing the \
+         “{character}” again, and if it is still refused the reason will be named in the \
+         status bar."
     )
 }
 
@@ -539,29 +585,46 @@ mod tests {
     /// is** — and it is the one sentence here that asks the operator to type
     /// again, because in that state it is true.
     ///
-    /// The face swap landed and the character still would not go in, for a
-    /// measured reason in `pdfcer-core`:
-    /// [`crate::canvas::textedit::facewall`] proves that a `/Font` resource
-    /// created inside an `EditSession` cannot be resolved by that session's own
-    /// `edit_text`, and that saving and reopening fixes it. So the remedy in this
-    /// sentence is the one that was actually run, and the three obligations
-    /// asserted below are what stop it degenerating into *"something went
-    /// wrong"*.
+    /// The face swap landed and the character still would not go in — and since
+    /// 2026-09-06 **pdfcer does not know why**, because `Pass 257.0` removed the
+    /// only cause this state had ever been observed to have and the block is
+    /// reached by arithmetic rather than by recognising a refusal.
+    ///
+    /// ★★★ So the obligations asserted here changed direction. The old test
+    /// required the sentence to carry the *remedy* (*"saved and opened again"*).
+    /// This one requires it to carry **no cause at all**, which is the harder
+    /// property to hold: a later session improving the wording will be tempted
+    /// to put an explanation back, and the explanation it reaches for will be
+    /// the one written in the git history of this very file — which is now
+    /// false. The negative assertions below exist to stop exactly that.
     #[test]
-    fn the_blocked_sentence_says_what_to_do_and_that_the_limit_is_pdfcers() {
+    fn the_blocked_sentence_names_no_cause_it_cannot_see() {
         let line = refused_char_blocked('%', "Courier");
         assert!(
             line.contains("Courier"),
-            "the face that IS in force: {line}"
+            "the face that IS in force, because it really is in force: {line}"
         );
         assert!(
-            line.contains("saved and opened again") && line.contains("Save this document"),
-            "the remedy is the whole reason this state has a sentence: {line}"
+            line.contains("not been told why"),
+            "the block cannot see the refusal — it infers one from the edit epoch not \
+             moving — so the sentence must say so rather than pick a cause: {line}"
         );
         assert!(
-            line.contains("pdfcer's own"),
-            "an operator told only that it did not work will look for what he did \
-             wrong: {line}"
+            !line.contains("saved and opened again") && !line.contains("Save this document"),
+            "★ save-and-reopen was the remedy for the base-revision font resolution the \
+             engine fixed in v0.41.0 (Pass 257.0). Prescribing it now costs the operator \
+             two gestures to learn it does nothing: {line}"
+        );
+        assert!(
+            !line.contains("cannot type into a font it has just added"),
+            "★★ and it must not name that cause either. It was measured, it was true, \
+             and it stopped being true — which is why this assertion is here rather \
+             than a comment: {line}"
+        );
+        assert!(
+            line.contains("Nothing was damaged"),
+            "the swap DID reach his document, so an operator reading a failure notice \
+             must be told what survived or he will go looking for damage: {line}"
         );
     }
 

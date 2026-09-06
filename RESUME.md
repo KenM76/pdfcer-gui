@@ -20,29 +20,104 @@
 >
 > ---
 >
-> ⬜ **DO THIS FIRST: the engine is at v0.41.0 and it BREAKS OUR BUILD.**
-> Deliberately not pulled while cutting the release. One mechanical call site:
-> `pdfcer_core::text_edit::invocation_set` went from `(document, page, object)`
-> to **`(view: &DocumentView, object)`** — `app/actions/xobject.rs:368`.
+> ✅ **DONE 2026-09-06: the engine is at v0.41.0, this shell is on it, and HIS
+> TYPO IS FIXED.** Struck in the same commit as the code, which is what the
+> paragraph three blocks below asks for and what nobody had done twice before.
 >
-> ⚠ **Fixing the call site is the easy half.** v0.41.0 also carries `Pass 257.0`
-> — *session verbs plan against the session graph, not `self.base`* — which is
-> the engine's answer to the measurement this project filed about O141, and it
-> changes **seven planner call sites**. It should make the in-session font swap
-> work end to end. **Re-drive `a_refused_character_offers_a_face_that_can_type_it`
-> after the bump**: it currently PASSES by asserting the refusal *and* the
-> honest "save and reopen" sentence, so a build where the swap succeeds will
-> turn it red for the right reason, and the check needs rewriting rather than
-> the fix reverting.
+> **`Cargo.lock` is at `f9bc7c8` (v0.41.0).** `cargo test --workspace` = **3,596
+> passing, 0 failing**. Gates **30 of 30, 0 skipped**. Both rewritten driven
+> checks pass on the real binary and both were **falsified** — planted, the
+> plant grepped out of the trace artifact, the check's own `[FAIL]` line
+> required, restored from a byte copy. **Re-measure before quoting any of this.**
 >
-> ★ Why it was skipped: `tools/package-portable.py` runs `cargo update` before
-> it builds, so packaging on an untested engine is the documented way this
-> project has already shipped a regression once. The pin was moved deliberately
-> **before** testing, and rolled back when v0.41.0 failed to compile — which is
-> the rule working.
+> ★★★ **HIS TYPO GOES IN NOW, driven on a copy of his own file**
+> (`apartment work - signed.pdf`, page 2, doc-point `1,200.4,537.1`):
 >
-> ---
+> ```text
+> text-edit-caret kind=Edit page=1 run=12 len=36
+> edit-text-pin page=1 run=12 one_operator=false find_len=36 occurrences=1 pinned=false
+> edit-text page=1 n=1 epoch=1   ← "clien" -> "client", 36 operators spanned
+> ```
 >
+> ★★★ **AND THE BRIEF'S DIAGNOSIS WAS WRONG, which is the most useful thing in
+> this block.** The standing theory — repeated in three files — was that the
+> shell sends the whole run as `find`, that `text_extract` synthesises the spaces
+> inside it, and that no matcher could ever reach a string containing characters
+> no operator wrote. **On his file that is false.** Measured, one `EditSession`
+> per shape:
+>
+> | request | result |
+> |---|---|
+> | whole-run `find` **+ pin** — what the shell sent | `NotFound` |
+> | whole-run `find`, **no pin** | **OK**, `operators_spanned=36` |
+> | `"clien"` **+ pin** | `NotFound` |
+> | `"clien"`, **no pin** | **OK**, `operators_spanned=5` |
+>
+> Thirty-six characters, thirty-six operators: **the spaces are in the
+> operators.** The culprit was `Pass 256.0`'s clause *"a pinned request never
+> spans"* — the shell sent a `find` **and** a `pinned_span`, so the engine looked
+> for a 36-character string inside the one operator the pin named, which holds a
+> single character. ⇒ **Drop the pin.** The synthesised-space case is real, is
+> still documented, and belongs to his CAD drawings, not to this.
+>
+> ⚠ **The obvious remedy — "send only the part that changed" — would have been
+> strictly worse.** The changed span alone (`"n"` → `"nt"`) occurs **33 times**
+> on that page; the whole run occurs once. Narrowing the `find` narrows the
+> match and *widens* the ambiguity.
+>
+> ★★★ **So the pin comes off ONLY when the text is unique on the page**, and
+> that guard is the most important thing added today. `EditRequest` carries **no
+> occurrence index** — `pinned_span` is its only disambiguator — so dropping it
+> on a page holding the same words twice hands the choice to the engine's scan
+> order. That document is a **signed quotation**. Where uniqueness cannot be
+> established the shell refuses **by name** (`AmbiguousOnThePage`) and says how
+> many it found. `canvas::textedit::page_occurrences` deliberately **over**-counts
+> — every way it can be wrong refuses a safe edit rather than licensing an unsafe
+> one — and `canvas::textedit::glyphwall` holds both directions on two authored
+> fixtures, one where the edit must land and one where it must be refused.
+>
+> ★★ **`Pass 257.0` is real: the in-session font swap works end to end.**
+> `facewall`'s tripwire went red on the first run after the bump, from its own
+> `expect_err` message, and now asserts the success in both request shapes. O141
+> is complete; the block walks `["offer", "swapped"]` and never reaches
+> `"blocked"`.
+>
+> ★★★ **AND `facewall`'s OWN INSTRUCTION WAS WRONG — the finding to carry.** Its
+> header told its reader to delete the shell's blocked-state sentence when the
+> engine shipped, *"the state becomes unreachable"*. **It is not.** That arm is
+> reached by **arithmetic** — the retype was raised and the edit epoch did not
+> move — which is agnostic about the cause, and the falsification run proved it:
+> with a refusing retype planted, the block reached `state=blocked` exactly as
+> before. Deleting it would have converted every other cause into **silence**,
+> which is this project's own standing cross-cutting defect. ⇒ **A state and its
+> explanation have different lifetimes, and a plan written from one cause will
+> happily delete the handling for all of them.** The sentence kept its state and
+> lost its cause; its test now asserts it names **no** cause, naming the two old
+> wordings so a future improvement cannot reinstate a falsehood from git history.
+>
+> ★★ **Two harness defects, both found by the first run of a branch.**
+> `offer_must_retire` counted `ui-rect` lines to prove the application was alive
+> — and `ui-rect` is published by a **control when it draws**, not once per
+> frame. While the retype was refused the block stayed on screen publishing its
+> region every frame, so the proxy always agreed with the thing it stood for. On
+> a build where the retype **lands** the block retires, nothing publishes, and
+> the guard reported *"the application drew no frame"* over a trace holding
+> hundreds of lines proving it had. It counts `canvas-pos` now. ⇒ **Ask what the
+> check SAMPLED**, fourth time this month, and **the first run of a branch is
+> where a proxy gets to disagree.**
+>
+> ★ **`Pass 256.1` is consumed**: an ambiguous `/ToUnicode` inverse gets its own
+> sentence. Same engine category, same remedy, **opposite fact** — the old
+> wording said the font *"was built with only the letters your page already
+> prints"*, and for an ambiguous character the letter is on his page twice.
+>
+> ⚠ **R2 fired twice and both splits were along seams already drawn in the
+> source.** `canvas/textedit/mod.rs` → `+ plan.rs` (the section banner *"Planning
+> the commit"* was the seam), and `text/textedit.rs` → `+ text/editrefusal.rs`
+> (banner: *"Why an edit the operator committed did not happen"*). Everything is
+> re-exported, so **no call site moved**. `app/actions/action.rs` and
+> `app/lifecycle.rs` are still at exactly **1500 — zero headroom**.
+
 > ✅ **The two "DO THIS FIRST" items that stood here are DONE, and this line
 > replaces them because a completed instruction left standing is worse than no
 > instruction.** A cold session read them, went to do the work, and found it

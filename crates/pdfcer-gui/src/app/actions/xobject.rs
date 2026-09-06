@@ -357,19 +357,24 @@ fn unshare(doc: &mut OpenDoc, page: usize, form: ObjId) {
 /// but the scan never saw it — is treated the same way and for the same reason:
 /// the two disagree, and the honest response to a disagreement is not a claim.
 ///
-/// # ★★ Read through `session.view()`, paired with `session.document()`
+/// # ★★ Read through `session.view()` ALONE, since engine v0.41.0
 ///
-/// The pairing `EditSession` itself uses at its two internal `invocation_map`
-/// call sites: the **graph** comes from the base document and the **bytes**
-/// come from the session-aware view, so a form whose stream the operator has
+/// Until v0.41.0 this call took a **pair** — the object **graph** from
+/// `session.document()` (the base revision) and the **bytes** from
+/// `session.view()` (session-aware) — because that is the pairing
+/// `EditSession` used at its own two internal `invocation_map` call sites.
+/// `Pass 257.0` removed the split: a `DocumentView` now carries both halves,
+/// every text-edit planner and helper takes `&DocumentView<'_>`, and there is
+/// no `&Document → &DocumentView` coercion, so handing one of them a base
+/// revision is a **compile error** rather than a latent wrong answer.
+///
+/// The behaviour this site wanted is unchanged and is now the only behaviour
+/// available: a form whose stream *or whose resource objects* the operator has
 /// already edited in this session is walked as it now stands rather than as it
-/// was on disk.
+/// was on disk. The half that silently read the base — the graph — was the
+/// half that could disagree with the bytes, and it is gone.
 fn fanout(doc: &OpenDoc, page: usize, form: ObjId) -> Option<crate::text::unshare::Fanout> {
-    let set = pdfcer_core::text_edit::invocation_set(
-        doc.session.document(),
-        &doc.session.view(),
-        form.num,
-    );
+    let set = pdfcer_core::text_edit::invocation_set(&doc.session.view(), form.num);
     // ★ Counted rather than read off `set.pages.len()`, because "other" is this
     // verb's whole subject: the page in front of the operator is not one of the
     // pages that keeps the original, and a build that forgot to subtract it

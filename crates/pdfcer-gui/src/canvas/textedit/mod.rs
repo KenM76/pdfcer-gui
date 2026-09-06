@@ -236,6 +236,20 @@ mod proof;
 // no operand this shell computes is in the request. It refuses; the same pair
 // with a reopen between them succeeds. `#[cfg(test)]` inside.
 mod facewall;
+/// ★★ **Planning the commit** — the whole of what a text edit decides, from a
+/// caret and two strings to one `EditRequest`. Split out of this file on
+/// 2026-09-06 under R2, along the seam its own section banner had already
+/// named; `plan` and `Plan` are re-exported below so no call site moved.
+mod plan;
+pub use plan::{Plan, plan};
+// ★★★ O142 — his typo, and the guard that stops the fix for it becoming a worse
+// defect. A run written one glyph per show operator can only be reached by
+// `find`, and `Pass 256.0`'s contract says a PINNED request never spans — so the
+// pin must come off, and the pin is the only thing `EditRequest` carries that
+// can choose between two identical strings on a page. Two fixtures: one where
+// the run is unique and the edit must LAND, one where it appears twice and the
+// edit must be REFUSED. `#[cfg(test)]` inside.
+mod glyphwall;
 // The per-keystroke re-measure measurement `DEFECTS.md` D4b's fix would need,
 // and the reason it is not wired. `#[ignore]`d; run it and read the numbers.
 mod cost;
@@ -245,14 +259,8 @@ mod cost;
 /// in `egui::Memory` where the markup pen does not.
 pub mod pen;
 
-use pdfcer_core::text_edit::{
-    BlockRecognitionOptions, EditOptions, EditRequest, EditableTextModel, ReflowEngine,
-    TextPosition, reflow_recognition_options,
-};
-
 use crate::app::state::OpenDoc;
 use crate::canvas::mapping::PageMapping;
-use disposition::Reason;
 
 /// `egui::Memory` key for the in-flight draft.
 ///
@@ -697,260 +705,6 @@ pub(super) fn commit_into(
             });
         }
         _ => {}
-    }
-}
-
-// ===========================================================================
-// Planning the commit — where D4b's two fixes actually take effect
-// ===========================================================================
-
-/// A planned in-place edit: the request, the options, and the disclosure the
-/// engine will not write for us.
-pub struct Plan {
-    /// The request, with its provenance pin.
-    pub request: EditRequest,
-    /// ★ The options, with the [`disposition`] this module exists to choose.
-    pub options: EditOptions,
-    /// Why that disposition, for the trace and the disclosure.
-    pub reason: Reason,
-    /// ★★★ **Whether the run being edited is ONE show operator** —
-    /// `OPERATOR_REQUESTS.md` **O140**, and the only field here that exists to
-    /// explain a *failure* rather than to shape a request.
-    ///
-    /// [`pin::spans_one_operator`]'s answer, already computed a few lines below
-    /// to decide whether the `find` may be dropped, and until O140 it was traced
-    /// and then thrown away. It is carried out because the apply arm cannot
-    /// otherwise tell two identical engine refusals apart:
-    ///
-    /// | run | what `EditError::NoMatch` means |
-    /// |---|---|
-    /// | one operator | the page moved under the caret — *"pdfcer could not find the text this edit named"* |
-    /// | several | **the reconstructed `find` could never have matched**, because no single operator holds it |
-    ///
-    /// The engine answers `RefusalKind::NotFound` for both, correctly and
-    /// necessarily: from its side the request named text that is not in any one
-    /// editable run, and it has no way to know the shell rebuilt that string
-    /// from a run it had segmented itself. **This shell does know**, and this
-    /// field is the whole of that knowledge.
-    ///
-    /// ★ `true` when there is no pin at all, which is the honest default: with
-    /// no provenance the shell has measured nothing, and claiming a split it
-    /// did not observe would put a confident wrong sentence in front of the
-    /// operator — the one outcome `crate::text::textedit::EditRefusal`'s header
-    /// argues is worse than the silence it replaces.
-    pub one_operator: bool,
-}
-
-/// **Plan a commit against the page as it is now.**
-///
-/// Called from the apply arm rather than from the canvas, because it needs the
-/// document and an `Action` is plain data. It is still one function in one place
-/// — the arm routes to it and computes nothing itself.
-///
-/// The three things it derives, all from `(page_text, run)`:
-///
-/// 1. **the provenance pin** — `operator_span`, which is how the surgery finds
-///    *this* show operator rather than the first one whose text matches. Without
-///    it, editing the second `TITLE` on a title-block sheet edits the first.
-/// 2. **the matrices** — `Tm` and the CTM in force at the run's first glyph,
-///    which is what [`disposition::is_upright`] reads.
-/// 3. **the block alignment** — through `ReflowEngine::detect_alignment` on a
-///    model recognised with [`reflow_recognition_options`], i.e. the **relaxed**
-///    recogniser. That is the old shell's own choice for its reflow target and
-///    the reason carries here unchanged: the default recogniser splits on
-///    indentation, so a right-aligned block whose lines start at different x —
-///    which is what right alignment *is* — is exactly the shape it fragments,
-///    and a fragmented block is a one-line block, and a one-line block reports
-///    `SingleLineDefault`. Using the default model would make the alignment
-///    fix unreachable on precisely the documents it is for.
-#[must_use]
-pub fn plan(doc: &OpenDoc, page: usize, run: usize, original: &str, replacement: &str) -> Plan {
-    let mut request = EditRequest::find_replace(page, original, replacement);
-    let mut matrices = (
-        [1.0_f32, 0.0, 0.0, 1.0, 0.0, 0.0],
-        [1.0_f32, 0.0, 0.0, 1.0, 0.0, 0.0],
-    );
-    let mut finding = None;
-    // ★★ Whether the caret's visual line is made of more than one show
-    // operator, re-derived here rather than carried on the `Anchor`.
-    //
-    // The `Anchor` docs give the rule and it applies unchanged: everything but
-    // the original text is a pure function of `(page_text, run)`, and a copy
-    // taken when the operator clicked would go stale when the page is rebuilt.
-    //
-    // Defaults to `false`, which is the *permissive* direction — `Reflow` — and
-    // that is the honest default for the same reason the identity matrices below
-    // are: it is what a page whose provenance could not be read gets, and a
-    // shell that pinned on no evidence would be claiming to have measured
-    // something it never saw. The single-run case is also the overwhelmingly
-    // commoner one in ordinary prose documents.
-    let mut shares_the_line = false;
-    // ★★★ **Defaults to `true`, and the default is a claim about knowledge
-    // rather than about the run** — see [`Plan::one_operator`]. If the
-    // extraction fails, or the run carries no provenance, this shell has
-    // measured nothing; answering `false` there would let the apply arm tell
-    // the operator his line is written one letter at a time on the strength of
-    // an extraction that never ran.
-    let mut one_operator = true;
-
-    // ★★ **This extraction is its own, and it is NOT `doc.page_text()`.**
-    //
-    // That was the first shape of this function and it was silently broken.
-    // `app::cache`'s extraction runs with `ExtractOptions::default()`, and
-    // `capture_provenance` **defaults to off** — the engine says so in terms:
-    // *"`None` unless the extraction set `ExtractOptions::capture_provenance`;
-    // this keeps the default Pass 4 output byte-for-byte unchanged."* With it
-    // off, `model.provenance(..)` answers `None` for every glyph, and this
-    // function would have:
-    //
-    // * left `pinned_span` at `None`, so the surgery would locate the **first**
-    //   operator whose text matches rather than the one the caret is in — which
-    //   on a title-block sheet with two runs reading `REV A` edits the wrong
-    //   one; and
-    // * fallen back to the identity matrices below, so **the rotation guard
-    //   would never fire** and D4b case 2 would be unfixed while every unit test
-    //   in `disposition` stayed green. That is precisely `HANDOFF.md` §2's
-    //   shape: a correct decision function, wired to a value that is always the
-    //   same.
-    //
-    // Widening the shared cache was the other option and is the worse one: every
-    // caller of `page_text()` — Find, both copy verbs, the text sweep — would
-    // then pay for provenance on every page, and `app::cache`'s own header
-    // records that extraction is the expensive thing this shell does (392 ms on
-    // the benchmark sheet). Paying it **once per commit**, here, is the whole
-    // cost, and a commit is already an operation that saves and re-rasters.
-    //
-    // The run index is shared between the two extractions, which is safe and is
-    // worth stating: `capture_provenance` populates a field and changes no
-    // segmentation, so `runs[i]` names the same run under both options.
-    if let Some(page_ref) = doc.pages.get(page) {
-        // ★ The funnel's output, MODIFIED — not a second construction.
-        //
-        // `with_provenance(true)` is the one thing no setting governs: it is the
-        // substrate for editing text, and `app::cache`'s read-only extraction
-        // deliberately leaves it off because it costs and it is not needed
-        // there. Everything else — the word gap, the unmappable sentinel, the
-        // replacement-text precedence — comes from the operator, so the runs
-        // this editor addresses are segmented exactly as the runs the canvas
-        // paints and the find bar searches. Two extractions of one page under
-        // two configurations would put the glyph the operator clicked and the
-        // glyph this code edits one step out of step.
-        use crate::app::settings::SettingsExt;
-        let opts = doc.settings.extract_options().with_provenance(true);
-        if let Ok(text) =
-            pdfcer_core::text_extract::extract_page_view(&doc.session.view(), page_ref, page, &opts)
-        {
-            let model = EditableTextModel::recognize(&text, &BlockRecognitionOptions::default());
-            // ★★ The pin, and the buffer it indexes — [`pin::of_run`].
-            //
-            // Both facts, from one call, over the model just recognised. They
-            // lived here inline until 2026-08-27; `format_text` became the
-            // second verb that needs exactly the same measurement, and the
-            // sixty lines of argument behind the `EditTarget` choice are what
-            // makes it right, so they moved somewhere both callers reach them
-            // rather than being paraphrased twice.
-            if let Some(p) = pin::of_run(&model, run) {
-                request.pinned_span = Some(p.span);
-                matrices = (p.text_matrix, p.ctm);
-                request.target = p.target;
-                // ★★★ **The find string is DROPPED when the pin is exact.**
-                //
-                // `EditRequest::whole_operator` (`Pass 152.0`): an empty `find`
-                // beside a pin means *"this whole show operator"*, which is
-                // precisely what a caret in a run means and what a rebuilt
-                // `find` was only ever an approximation of.
-                //
-                // ## Why the approximation had to go
-                //
-                // A run's `text` is not in 1:1 correspondence with its glyphs —
-                // `/ToUnicode` may map one glyph to several characters — so the
-                // reconstructed find *"fails invisibly on unligatured test text
-                // and routinely on real typeset copy"*, in the engine's words.
-                // On this operator's own CAD drawings it is worse than that:
-                // `text_extract` synthesises inter-glyph spacing (a trace of one
-                // of his title-block cells showed **twenty-one** spaces), so the
-                // string this shell holds contains characters no show operator
-                // ever wrote and the match can never succeed.
-                //
-                // ⇒ That was reported as *"text editing is weird"*, filed as a
-                // defect against the engine, and answered by naming a capability
-                // that already existed. The workaround is deleted rather than
-                // kept beside the fix.
-                //
-                // ## ★★ And why only when the run is one operator
-                //
-                // See [`pin::spans_one_operator`]. On a split run the whole
-                // -operator form would replace one fragment's text with the
-                // whole replacement and leave the other fragments painting their
-                // old glyphs — visible corruption reported as success. The
-                // find-based form fails cleanly there instead, which is the
-                // right outcome for a case this shell cannot yet edit at all.
-                // ★★★ THE DECISION IS TRACED, because without it the two
-                // outcomes are indistinguishable from outside the process and
-                // one of them is correct.
-                //
-                // A driven run on the operator's own drawing produced
-                // `edit-text-refused … detail=text to edit ("0.00[21 spaces]0.030")
-                // was not found in an editable run`, and **nothing anywhere said
-                // whether the pin path had been taken.** So the check reported a
-                // program defect and aimed the reader at `pdfcer-core`, when the
-                // honest reading might have been *"this run spans two operators,
-                // the find-based form was used deliberately, and it failed
-                // cleanly as designed"*.
-                //
-                // ⇒ Those two need different responses — one is a request to the
-                // engine, the other is the shell working — and a trace that
-                // cannot separate them turns a correct build into a filed
-                // defect. `find_len` carries the number that made the string
-                // unmatchable, because a reader seeing 30 characters for a
-                // six-character cell has the whole story in one line.
-                one_operator = pin::spans_one_operator(&model, run);
-                crate::diag::trace(|| {
-                    // ui-text-exempt: diagnostic trace, never displayed.
-                    format!(
-                        "edit-text-pin page={page} run={run} one_operator={one_operator} \
-                         find_len={}",
-                        request.find.chars().count()
-                    )
-                });
-                if one_operator {
-                    request.find.clear();
-                }
-            }
-            // ★ The SAME model the caret's hit test used, with the same
-            // options — `BlockRecognitionOptions::default()` — because the
-            // question is *how did the thing the operator clicked get
-            // segmented*, and asking it of a differently-recognised model would
-            // answer about a different segmentation. The relaxed model below is
-            // for alignment detection, which is a different question about the
-            // same page.
-            if let Some((from, to)) = model.line_range_at(TextPosition::new(run, 0)) {
-                shares_the_line = from.run != to.run;
-            }
-            let relaxed = EditableTextModel::recognize(&text, &reflow_recognition_options());
-            finding = relaxed
-                .block_at(TextPosition::new(run, 0))
-                .and_then(|b| ReflowEngine::new(&relaxed).detect_alignment(b).ok())
-                .map(disposition::from_detection);
-        }
-    }
-
-    let reason = disposition::choose(matrices.0, matrices.1, shares_the_line, finding);
-    // ★★★ **The words the operator typed, kept where a refusal can find them**
-    // — `OPERATOR_REQUESTS.md` O141, 2026-09-05. See [`LAST_COMMIT`].
-    LAST_COMMIT.with_borrow_mut(|slot| {
-        *slot = Some(Committing {
-            page,
-            run,
-            original: original.to_owned(),
-            replacement: replacement.to_owned(),
-        });
-    });
-    Plan {
-        request,
-        options: disposition::options(reason),
-        reason,
-        one_operator,
     }
 }
 

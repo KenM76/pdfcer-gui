@@ -1,41 +1,115 @@
-//! # `typo_refusal` — **a refusal an operator can read**, driven on the file he
+//! # `typo_refusal` — **his spelling mistake, corrected**, driven on the file he
 //! reported it on
 //!
-//! `OPERATOR_REQUESTS.md` **O140**. The operator, 2026-09-05:
+//! `OPERATOR_REQUESTS.md` **O140** and **O142**. The operator, 2026-09-05:
 //!
 //! > *"on page 2 there is a spelling mistake — clien instead of client. if I try
 //! > to edit the edit is not accepted. **the lines I added below `price)` are
 //! > editable, but everything else that existed when I got the pdf is not.**"*
 //!
 //! Two sentences, and the second is a complete diagnosis he made himself. This
-//! check drives both halves of it in **one launch**, because a check that only
-//! drove the first half would be measuring a region with no dynamic range.
+//! check drives both halves of it in **one launch**.
+//!
+//! ## ★★★ THIS CHECK CHANGED SUBJECT ON 2026-09-06, AND THAT IS THE FIRST
+//! THING TO KNOW ABOUT IT
+//!
+//! It used to be `a_refused_typo_fix_says_why_it_was_refused`, and it asserted
+//! that the commit was **refused** and that the refusal was disclosed and
+//! correctly categorised. That was the honest thing to assert while it was true.
+//! It is not true any more, and a check left asserting it would be describing a
+//! program that no longer exists — worse, it would go on **passing** on a build
+//! where the fix had been reverted.
+//!
+//! ### What was actually wrong, which is not what it looked like
+//!
+//! His producer writes **one glyph per show operator** — a thirty-six character
+//! line is thirty-six `Tj`s on one row, stepped by x-only `Td`s. `Pass 256.0`
+//! taught `edit_text` to match a `find` across exactly that shape and the engine
+//! measured `"clien"->"client"` on his own file, `operators_spanned=5`.
+//! **That capability was in this shell's pin and his typo still failed.**
+//!
+//! The standing diagnosis was that the shell sends the run's whole text as
+//! `find` and that extraction synthesises the spaces inside it, so the string
+//! named characters no operator wrote. ⇒ **Measured on his file, that is false.**
+//! One `EditSession` per shape, page 2, the run he reported:
+//!
+//! | request | result |
+//! |---|---|
+//! | whole-run `find` **+ pin** — what this shell sent | `NotFound` |
+//! | whole-run `find`, **no pin** | **OK**, `operators_spanned=36` |
+//! | `"clien"` **+ pin** | `NotFound` |
+//! | `"clien"`, **no pin** | **OK**, `operators_spanned=5` |
+//!
+//! Thirty-six characters, thirty-six operators: **the spaces are in the
+//! operators**, and the whole-run `find` matches perfectly once the pin is off.
+//! The pin was the defect. `Pass 256.0`'s contract says *"a pinned request never
+//! spans"*, so a `find` sent beside a pin is confined to the one operator the
+//! pin names — which on his line holds a single character. The engine was
+//! answering the question it was asked, correctly, every time.
 //!
 //! ## ★★★ What is asserted, and why it is TWO gestures and not one
 //!
 //! | gesture | what must happen |
 //! |---|---|
-//! | edit text pdfcer cannot write into | the engine refuses **and the status bar's `⊗` slot draws** |
-//! | commit text pdfcer *can* write | the edit lands **and no `⊗` slot draws after it** |
+//! | correct the typo in text the document arrived with | the commit **lands**, `occurrences=1 pinned=false` on the plan's own line, and **no `⊗` slot draws** |
+//! | commit text pdfcer itself wrote | the edit lands **and no `⊗` slot draws after it** |
 //!
-//! The second row is the whole reason this file is 300 lines instead of 120.
-//! The oracle here is *"a decline region was published"*, and a probe whose
-//! baseline has no dynamic range **cannot produce a verdict**: a build that
-//! published `status-group:decline` on every frame regardless — because the
-//! slot never retires, because a stale sentence from launch is still live,
-//! because the region is declared unconditionally and only its contents are
-//! gated — would satisfy a one-sided check *permanently*. This project has
-//! filed three such false reports in a single day.
+//! The second row is the whole reason this file is long. The oracle for the
+//! decline half is *"a region was published"*, and a probe whose baseline has no
+//! dynamic range **cannot produce a verdict**. It is the contrast the operator
+//! noticed — text pdfcer authored commits, text that arrived does not — so the
+//! check's two rows and his two sentences are the same two facts. ★ Since the
+//! inversion **both** rows now succeed, which is the point: his complaint was
+//! that they differed.
 //!
-//! So the successful edit is not a courtesy; it is the **negative control**,
-//! taken through the same instrument, in the same process, after the positive
-//! one. If both fire, the instrument is measuring the frame count and not the
-//! program.
+//! ## ★★★ THE ASSERTION THAT CARRIES THE VERDICT IS NOT "THE EDIT LANDED"
 //!
-//! ★ And the negative control is not an arbitrary second gesture. It is
-//! *literally the contrast the operator noticed* — text pdfcer itself authored
-//! commits, text that arrived in the document does not — so the check's two
-//! rows and his two sentences are the same two facts.
+//! It is `edit-text-pin … occurrences=1 pinned=false`, and the distinction is
+//! the difference between a working program and a dangerous one.
+//!
+//! The pin is the **only** disambiguator `EditRequest` carries — there is no
+//! occurrence index on it — so dropping it hands the choice of *which*
+//! occurrence to edit to the engine's left-to-right scan. On a page holding the
+//! same words twice that silently corrects whichever it reaches first. **The
+//! document this was reported against is a signed quotation**: a wrong edit
+//! there is not a defect he reports, it is one he finds later in a file he has
+//! already sent.
+//!
+//! ⇒ So a build that dropped the pin **unconditionally** would land this edit,
+//! satisfy a naive assertion for ever, and be exactly the build that must never
+//! ship. The plan's own line is what tells the two apart, and this check reads
+//! it. `canvas::textedit::Plan::occurrences` carries the reasoning;
+//! `canvas::textedit::glyphwall` holds it as unit tests over two authored
+//! fixtures — one where the run is unique and the edit must land, one where it
+//! appears twice and the edit must be refused **by name**.
+//!
+//! ## The oracle, and its one honest weakness
+//!
+//! `status-group:decline` is a `ui-rect` region published on the frame it
+//! draws. The harness cannot read rendered text — there is no accessibility
+//! reader and no OCR — so this check asserts that the slot **did not draw**, not
+//! what it would have said. The wording is held by unit tests in
+//! `app::status::decline` and `text::textedit`, and by `check-ui-strings.sh`.
+//!
+//! ★ Ordering is load-bearing and is asserted by `lineno`. A whole-capture
+//! `last(...)` is a fossil finder; every region read here is anchored to a cause
+//! that must precede it — the successful commit for both arms.
+//!
+//! ## Aim
+//!
+//! `--doc-point PAGE,X,Y` in PDF user space, on a run the document arrived
+//! with. For the operator's own file:
+//!
+//! ```text
+//! --pdf "…/apartment work - signed.pdf" --doc-point 1,200.4,537.1
+//! ```
+//!
+//! — the centre of *"Final quality walkthrough with clien"*, whose box
+//! `extract-text --pages 2 --json` reports as `[33.47, 526.22, 367.26, 547.90]`.
+//! ★ `PAGE` is **0-based**; his page 2 is `1`.
+//!
+//! ⚠ **Copy his file to scratch and drive the copy.** The edit under test writes
+//! to the document; never point this at OneDrive.
 //!
 //! ## ★★ Why the caret is expected to be OFFERED, not withheld
 //!
@@ -61,61 +135,6 @@
 //! project has already committed once (`Refusal::InsideForm`, whose whole
 //! episode is written at `canvas::textedit::Refusal`). **The caret stays. The
 //! silence goes.**
-//!
-//! ## The oracle, and its one honest weakness
-//!
-//! `status-group:decline` is a `ui-rect` region published on the frame it
-//! draws. The harness cannot read rendered text — there is no accessibility
-//! reader and no OCR — so this check asserts that the slot **drew**, not what
-//! it said. The wording is held by unit tests in `app::status::decline` and by
-//! `check-ui-strings.sh`; what only driving can establish is that anything at
-//! all reaches the screen, which is the half that was missing.
-//!
-//! ★ Ordering is load-bearing and is asserted by `lineno`. A decline left in
-//! the slot by an earlier gesture would otherwise satisfy the positive arm, and
-//! a whole-capture `last(...)` is a fossil finder. Every region read here is
-//! anchored to a cause that must precede it — the refusal for the positive arm,
-//! the successful commit for the negative one.
-//!
-//! ## ★★ The cause, on the trace — and the assertion that has teeth
-//!
-//! Since O140 the `edit_text` arm traces `edit-text-classified … kind=<k>
-//! one_operator=<b> said=<s>`, where `k` is
-//! `pdfcer_core::text_edit::RefusalKind` — the coarse, stable,
-//! exhaustively-matchable discriminant the engine shipped at `b1033ab` in
-//! answer to this project's own 2026-09-04 request, and which nothing here had
-//! consumed because both engine-watching gates are keyed on `EditSession`'s
-//! **verbs** and a new *type* is invisible to them.
-//!
-//! The line must be **present**, because a build that reverted to the
-//! cause-free sentence would still draw the region and would still pass a
-//! region-only check.
-//!
-//! ★★★ And where `k` is `NotFound`, `said` must **agree with the shell's own
-//! measurement**. That is the one bucket where the engine's answer is true and
-//! unusable at the same time: *"pdfcer couldn't find what the edit named"*
-//! reads, from his chair, as *"your search string is wrong"*, and he typed no
-//! search string. `edit-text-pin … one_operator=` carries the fact that
-//! resolves it, independently, and the two must match — getting it backwards
-//! tells him either that his page moved (it did not) or that his line is
-//! written one letter at a time (it is not), which `RefusalKind`'s own header
-//! calls strictly worse than the silence it replaced.
-//!
-//! ★ Which category a given document falls in is otherwise a fact about the
-//! document, so nothing else about `k` is asserted.
-//!
-//! ## Aim
-//!
-//! `--doc-point PAGE,X,Y` in PDF user space, on a run the document arrived
-//! with. For the operator's own file:
-//!
-//! ```text
-//! --pdf "C:/Users/Ken/OneDrive/pdfTests/apartment work.pdf" --doc-point 1,200,537
-//! ```
-//!
-//! — the centre of *"Final quality walkthrough with clien"*, whose box
-//! `extract-text --pages 2 --json` reports as `[33.47, 526.22, 367.26, 547.90]`.
-//! ★ `PAGE` is **0-based**; his page 2 is `1`.
 //!
 //! The negative control needs no aim of its own: it arms **Add text** and
 //! clicks the very same coordinate, which `place::click`'s `Add` arm turns into
@@ -180,17 +199,16 @@ const CARET_EVENT: &str = "text-edit-caret";
 const DECLINED_EVENT: &str = "text-edit-declined";
 /// `edit-text-refused page=… n=… detail=… kind=…` — the funnel's error arm.
 const REFUSED_EVENT: &str = "edit-text-refused";
-/// `edit-text-classified page=… run=… kind=… one_operator=… said=…` — the
-/// `edit_text` arm's own line, written from inside the funnel's closure when
-/// the engine refuses.
+/// `edit-text page=… n=…` — the funnel's SUCCESS arm, and since 2026-09-06 the
+/// line this check's positive assertion rests on.
 ///
-/// ★ It is a second line rather than a field on `edit-text-refused`, and that
-/// is a consequence of where the classification happens: `Result::inspect_err`
-/// runs before the closure returns, so the funnel's error arm — which owns the
-/// `edit-text-refused` line and is generic over `E: Display` — has already been
-/// written and cannot see a category. Two lines, one event, and the ordering is
-/// classified-then-refused.
-const CLASSIFIED_EVENT: &str = "edit-text-classified";
+/// ★ The bare verb name, not `edit-text-applied`: `vector_edit` names its
+/// success line after the verb it was given, and this check is aimed at
+/// `"edit-text"`. Spelling it `edit-text-applied` here would look right, find
+/// nothing, and report a correct build as one whose edit never reached the
+/// engine — the failure mode `RESUME.md` records as *"ask what the check
+/// SAMPLED before asking what is broken"*.
+const APPLIED_EVENT: &str = "edit-text";
 /// `add-text page=… n=…` — the funnel's success arm for new page text.
 const ADD_EVENT: &str = "add-text";
 /// The `⊗` slot in the status bar. `app::status::decline` draws into it, and it
@@ -215,17 +233,17 @@ const NOTCHES: i32 = 3;
 const MAX_SCROLL_STEPS: usize = 40;
 
 /// See the module documentation.
-pub struct ARefusedTypoFixSaysWhyItWasRefused;
+pub struct HisTypoCanBeCorrectedOnHisOwnFile;
 
-impl Check for ARefusedTypoFixSaysWhyItWasRefused {
+impl Check for HisTypoCanBeCorrectedOnHisOwnFile {
     fn name(&self) -> &'static str {
-        "a_refused_typo_fix_says_why_it_was_refused"
+        "his_typo_can_be_corrected_on_his_own_file"
     }
 
     fn defect(&self) -> &'static str {
-        "text the document arrived with is committed for edit, the engine refuses it, and the \
-         operator is told nothing — while text pdfcer itself added edits fine, so from his chair \
-         the program silently ignores corrections to exactly the words he wants to correct"
+        "a spelling mistake in text the document arrived with cannot be corrected — the commit \
+         is refused — while text pdfcer itself added edits fine, so from his chair the program \
+         silently ignores corrections to exactly the words he wants to correct"
     }
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
@@ -417,129 +435,156 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     session.settle(34);
 
     let trace = session.trace()?;
-    let Some(refused) = trace.events(REFUSED_EVENT).last() else {
-        // Not a failure of THIS check's subject: if the edit succeeded, the
-        // document under the pointer is not one that carries the defect, and a
-        // check that failed here would be asserting a limitation.
-        return Err(Error::new(format!(
-            "the commit was NOT refused — no `{REFUSED_EVENT}` line. This check needs a run the \
-             engine declines to edit, and at ({:.1}, {:.1}) on page {} it accepted one. That is \
-             a fact about the aim, not about the build: pick a run the document ARRIVED with, \
-             which `pdfcer edit-text --page N --find … --replace …` refuses at the command line. \
-             Trace: {}.",
-            target.x,
-            target.y,
-            target.page + 1,
-            session.trace_path().display()
-        )));
-    };
-    let refusal_at = refused.lineno;
-    let refusal_raw = refused.raw.clone();
-    // ★ The classification is a SEPARATE line, and it precedes the refusal in
-    // the trace: it is written from inside `vector_edit`'s closure through
-    // `Result::inspect_err`, and the funnel's own error arm runs after the
-    // closure returns. So it is looked for by event and not by a field on the
-    // refusal — and it must not be anchored `> refusal_at`, which would be
-    // asserting the opposite of the true ordering and would fail on a correct
-    // build.
-    let classified = trace.events(CLASSIFIED_EVENT).last();
-    let kind = classified.and_then(|l| l.get("kind")).map(str::to_owned);
-    let said = classified.and_then(|l| l.get("said")).map(str::to_owned);
-    report.note(format!("★★ the engine refused the commit: `{refusal_raw}`"));
 
-    // ★★ THE CAUSE, ON THE TRACE. A build that reverted to the cause-free
-    // sentence still draws the region and still passes a region-only check, so
-    // the discriminant is asserted separately from the disclosure.
-    let (Some(kind), Some(said)) = (kind, said) else {
+    // ═══════════════════════════════════════════════════════════════════════
+    // ★★★ 2: THE CORRECTION MUST LAND. This arm was INVERTED on 2026-09-06,
+    //        and the inversion is the whole subject of this file now.
+    // ═══════════════════════════════════════════════════════════════════════
+    //
+    // Until today this check required the commit to be **refused**, and then
+    // asserted that the refusal was disclosed and correctly categorised. That
+    // was the honest thing to assert while it was true: the shell sent the run's
+    // whole text as `find` **beside a provenance pin**, and `Pass 256.0`'s
+    // contract says *"a pinned request never spans"* — so the request was
+    // confined to the one show operator the pin named, which on his line holds a
+    // single character, and a thirty-six character `find` could not match inside
+    // it. He reported it as *"if I try to edit the edit is not accepted."*
+    //
+    // The shell now drops the pin when the run spans operators **and** the text
+    // occurs exactly once on the page (`canvas::textedit::Plan::occurrences`),
+    // which lets the engine's cross-operator matcher reach it. So the refusal is
+    // gone and this arm asserts the correction instead.
+    //
+    // ⚠ **A check that still accepted the refusal would be describing a program
+    // that no longer exists**, and worse: it would go on passing on a build
+    // where the fix had been reverted, which is the single regression this file
+    // is now the only driven instrument for.
+    if let Some(refused) = trace.events(REFUSED_EVENT).last() {
+        let refusal_raw = refused.raw.clone();
+        let shot = ctx.out("typo-refusal-still-refused.png");
+        if crate::capture::window_to_png(&session, &shot).is_ok() {
+            report.artifact(shot);
+        }
+        let pin = trace.events("edit-text-pin").last().map_or_else(
+            || "— no `edit-text-pin` line at all".to_owned(),
+            |l| format!("`{}`", l.raw),
+        );
         return Ok(Some(format!(
-            "THE REFUSAL NAMES NO CATEGORY. No `{CLASSIFIED_EVENT} … kind=… said=…` line, so the \
-             shell did not classify the engine's answer and cannot have worded it. \
-             `pdfcer_core::text_edit::RefusalKind` is the coarse, stable, exhaustively-matchable \
-             discriminant the engine shipped at `b1033ab` in answer to this project's own \
-             request; a build that does not read it is back to one un-categorised sentence for \
-             every refusal there is. The refusal was: `{refusal_raw}`. Trace: {}.",
+            "★★★ HIS TYPO STILL CANNOT BE CORRECTED. The caret was placed on the run he \
+             reported, `Ctrl+Enter` committed, and the engine refused: `{refusal_raw}`.\n\
+             ★ READ THE PLAN'S OWN LINE FIRST — it says which half is wrong: {pin}.\n\
+             · `pinned=true` with `one_operator=false` is the defect he reported, returned. \
+             `Pass 256.0`: *a pinned request never spans*, so a `find` sent beside a pin is \
+             confined to one show operator, and his producer writes one glyph per operator. \
+             `canvas::textedit::plan` must drop the pin when `occurrences == 1`.\n\
+             · `occurrences=` greater than 1 is the AMBIGUITY GUARD firing, and that is \
+             correct behaviour on a page holding the same words twice — but not on this one. \
+             Re-aim, or check `canvas::textedit::page_occurrences`.\n\
+             · no `edit-text-pin` line means the plan read no provenance at all, so nothing \
+             was measured and the pin was never even a decision.\n\
+             ★★ `canvas::textedit::glyphwall` holds this as unit tests over two authored \
+             fixtures; run it first, because if it is GREEN the planner is fine and the \
+             problem is between the caret and the plan. Trace: {}.",
+            session.trace_path().display()
+        )));
+    }
+
+    let Some(applied) = trace.events(APPLIED_EVENT).last() else {
+        // Neither applied nor refused. Not this check's subject and not a
+        // verdict about the build's editing: the gesture never reached the
+        // engine at all.
+        return Err(Error::new(format!(
+            "the commit produced NEITHER `{APPLIED_EVENT}` nor `{REFUSED_EVENT}`, so nothing \
+             reached the engine and there is no edit to judge. Either the caret was abandoned \
+             before `Ctrl+Enter` or the chord did not arrive. This is reported as SKIPPED \
+             rather than failed because a check that did not run has learned nothing. \
+             Trace: {}.",
             session.trace_path().display()
         )));
     };
+    let applied_at = applied.lineno;
+    let applied_raw = applied.raw.clone();
     report.note(format!(
-        "★★ and it named the CATEGORY: the engine's kind={kind}, the sentence chosen={said} — so \
-         what the operator read was chosen rather than defaulted"
+        "★★★ THE CORRECTION LANDED ON HIS OWN FILE: `{applied_raw}` — the run he reported, in \
+         text the document arrived with, committed from a caret in one gesture"
     ));
-    // ★★★ THE ASSERTION THAT MAKES THE CATEGORY MEAN SOMETHING, and it is the
-    // one an un-driven build gets wrong.
+
+    // ★★★ THE DECISION THAT MADE IT POSSIBLE, asserted separately from the
+    // outcome — because an edit that landed for the WRONG reason is a build
+    // waiting to edit the wrong occurrence on a page that has two.
     //
-    // `RefusalKind::NotFound` is the engine's honest answer for the operator's
-    // own document — its `find` genuinely matched no editable run — and *"pdfcer
-    // couldn't find what the edit named"* is the sentence that reads, from his
-    // chair, as *"your search string is wrong"*. He typed no search string. A
-    // shell that forwarded the category unmodified would have swapped one
-    // useless sentence for a misleading one, which is worse.
-    //
-    // So a `NotFound` may NOT be worded as `TextMovedAway` unless the shell also
-    // measured the run as a single show operator. `edit-text-pin` carries that
-    // measurement independently, and the two must agree.
-    if kind == "NotFound" {
-        let split = trace
-            .events("edit-text-pin")
-            .last()
-            .map(|l| l.get("one_operator") == Some("false"));
-        let expected = match split {
-            Some(true) => "SplitAcrossPieces",
-            _ => "TextMovedAway",
-        };
-        if said != expected {
+    // A build that dropped the pin unconditionally passes the assertion above
+    // for ever and is exactly the dangerous one: on a page holding the same
+    // words twice it would silently correct whichever the engine reached first,
+    // on a signed quotation. So the plan's own line must show that the pin came
+    // off *because the text was counted and found unique*, not by default.
+    let pin_line = trace.events("edit-text-pin").last();
+    let counted = pin_line
+        .and_then(|l| l.get("occurrences"))
+        .map(str::to_owned);
+    let pinned = pin_line.and_then(|l| l.get("pinned")).map(str::to_owned);
+    match (counted.as_deref(), pinned.as_deref()) {
+        (Some("1"), Some("false")) => {
+            report.note(
+                "★★★ and it landed for the RIGHT reason: `edit-text-pin` reports \
+                 `occurrences=1 pinned=false` — the run spans show operators, the text occurs \
+                 once on the page, and the pin was dropped BECAUSE it was counted unique. On a \
+                 page with two candidates the same code keeps the pin and refuses",
+            );
+        }
+        (Some(n), Some(p)) => {
             return Ok(Some(format!(
-                "THE CATEGORY AND THE MEASUREMENT DISAGREE. The engine answered `NotFound`, \
-                 `edit-text-pin` reported the run as {} a single show operator, and the shell \
-                 chose `{said}` where `{expected}` is the only sentence those two facts \
-                 support.\n\
-                 ★ This matters more than an ordinary mismatch: `NotFound` is the ONE bucket \
-                 where the engine's answer is true and unusable at once, and \
-                 `EditRefusal::of`'s whole job is to resolve it with a fact the engine cannot \
-                 see. Getting it backwards tells the operator either that his page moved (it \
-                 did not) or that his line is written one letter at a time (it is not) — a \
-                 confident wrong reason, which `RefusalKind`'s own header calls strictly worse \
-                 than the silence it replaced. Trace: {}.",
-                match split {
-                    Some(true) => "NOT",
-                    Some(false) => "as",
-                    None =>
-                        "— no `edit-text-pin` line at all, so the plan read no provenance and \
-                             the shell measured nothing about",
-                },
+                "★★★ THE EDIT LANDED BUT THE GUARD DID NOT DECIDE IT. `edit-text-pin` reports \
+                 `occurrences={n} pinned={p}`, and the only combination that licenses an \
+                 unpinned request is `occurrences=1 pinned=false`.\n\
+                 ⚠ `pinned=false` with any other count is the dangerous build: the pin is the \
+                 ONLY disambiguator `EditRequest` carries — there is no occurrence index — so \
+                 dropping it on a page holding the same words twice hands the choice to the \
+                 engine's scan order. This document is a signed quotation. A wrong edit here \
+                 is one he finds later, in a file he has already sent.\n\
+                 See `canvas::textedit::Plan::occurrences` and the guard test \
+                 `glyphwall::a_typo_that_appears_twice_on_the_page_is_refused_rather_than_guessed`. \
+                 Trace: {}.",
                 session.trace_path().display()
             )));
         }
-        report.note(format!(
-            "★★★ and the category was RESOLVED rather than forwarded: the engine's `NotFound` \
-             plus the shell's own `edit-text-pin` measurement produced `{said}` — the sentence \
-             that names the cause instead of the symptom"
-        ));
+        _ => {
+            return Ok(Some(format!(
+                "★★ THE EDIT LANDED AND THE PLAN SAID NOTHING ABOUT WHY. No `edit-text-pin` \
+                 line carrying both `occurrences=` and `pinned=`, so this check cannot tell a \
+                 build that counted the occurrences from one that drops the pin \
+                 unconditionally — and those two are a working program and a silent \
+                 wrong-edit waiting to happen. The trace field is the whole instrument here; \
+                 `canvas::textedit::plan` writes it. Trace: {}.",
+                session.trace_path().display()
+            )));
+        }
     }
 
-    // ★ The disclosure itself, anchored AFTER the refusal. A whole-capture
-    // `last(...)` would find a fossil; a region published before the cause
-    // cannot have been published because of it.
-    let disclosed = trace.lines.iter().any(|r| {
-        r.event == "ui-rect" && r.lineno > refusal_at && r.get("name") == Some(DECLINE_REGION)
-    });
-    if !disclosed {
-        let shot = ctx.out("typo-refusal-silent.png");
+    // ★★ AND THE OPERATOR IS NOT TOLD IT FAILED. A build that applied the edit
+    // and left a decline in the slot would be reporting a failure over a
+    // document that is fine, which is its own defect — and this is the region
+    // the check's previous incarnation existed to see drawn.
+    if trace.lines.iter().any(|r| {
+        r.event == "ui-rect" && r.lineno > applied_at && r.get("name") == Some(DECLINE_REGION)
+    }) {
+        let shot = ctx.out("typo-declined-a-success.png");
         if crate::capture::window_to_png(&session, &shot).is_ok() {
             report.artifact(shot);
         }
         return Ok(Some(format!(
-            "THE ENGINE REFUSED THE EDIT AND THE OPERATOR WAS TOLD NOTHING. A caret was placed, \
-             a letter was seeded, Ctrl+Enter committed and the engine refused: `{refusal_raw}`. \
-             That verdict is the engine's and is not the defect. **The defect is the silence \
-             after it**: no `{DECLINE_REGION}` region was published on any frame following the \
-             refusal, so the status bar's `⊗` slot never drew. This is the operator's own \
-             report — *\"if I try to edit the edit is not accepted\"* — and it is this project's \
-             founding defect class. Trace: {}.",
+            "★★ THE CORRECTION LANDED AND THE STATUS BAR STILL DECLINED IT. `{applied_raw}` \
+             was followed by a `{DECLINE_REGION}` region. Either the slot is not retiring a \
+             stale sentence or a success is being recorded as a refusal; from his chair both \
+             read as the program telling him his correction did not take, over a document \
+             where it did. Trace: {}.",
             session.trace_path().display()
         )));
     }
-    report.note("★★★ the refusal was DISCLOSED — the `⊗` slot drew on a frame after it");
+    report.note(
+        "★★ and nothing declined it: no `⊗` slot drew on any frame after the commit, so the \
+         program does not report a failure over a document it just corrected",
+    );
 
     // --- 3: the NEGATIVE CONTROL — the contrast the operator noticed --------
     //
@@ -612,7 +657,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let trace = session.trace()?;
     let Some(origin) = trace
         .events(CARET_EVENT)
-        .filter(|l| l.lineno > refusal_at && l.get("origin").is_some())
+        .filter(|l| l.lineno > applied_at && l.get("origin").is_some())
         .last()
     else {
         return Err(Error::new(format!(
@@ -636,7 +681,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let trace = session.trace()?;
     let Some(added) = trace
         .events(ADD_EVENT)
-        .filter(|l| l.lineno > refusal_at)
+        .filter(|l| l.lineno > applied_at)
         .last()
     else {
         return Err(Error::new(format!(
