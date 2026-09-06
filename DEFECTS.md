@@ -1957,3 +1957,80 @@ still takes the point path byte for byte.
 another session held the desktop. It is registered anyway, on the precedent
 `left_rail`, `properties_tool` and `protect` set: a check that is not in the list
 is a check nobody will ever run.
+
+---
+
+## D23 — A link jumps to the page it names and is then dragged back, because the fit that follows it re-places the view — **DIAGNOSED 2026-09-06, NOT FIXED**
+
+**A clickable table of contents is a page of dead text.** Click a link, the view
+goes to the right place for a moment, and comes back.
+
+### Measured, not inferred
+
+`a_link_goes_to_the_page_it_names` in `tools/ui-verify`, on
+`fixtures/goto-actions.pdf`, driven against the released binary. It reports:
+
+> **THE LINK WENT TO THE WRONG PAGE: 0 → 0, where 3 was named** (page 4,
+> 1-based). It landed on page 0, which is the signature failure: a destination
+> that could not be resolved, defaulted to index 0, and navigated anyway.
+
+★ **That last sentence is the check's hypothesis and it is WRONG**, which is why
+this entry exists rather than a one-line fix. Everything upstream is correct:
+
+| link in the chain | measured |
+|---|---|
+| the engine resolves the destination | `pdfcer list-links` → `index=2 … dest=page target=4 view=FitH` |
+| the shell reads all four links | `page-links page=0 links=4 unresolvable=0 named=0` |
+| the click reaches the link | `link-click page=0 index=2 kind=page` |
+| the view **moves** | `canvas-pos at=-19.3,-7.7` → `at=-8.0,1844.3` |
+| and then moves **back** | → `at=-8.0,724.3`, where it stays |
+
+So the destination is resolved, the jump happens, and **something after it
+re-places the view**. Nothing defaulted to zero; the check's "defaulted to index
+0" reading is an inference from the endpoint, and the endpoint is a *second*
+scroll rather than a failed first one.
+
+⇒ **A check that names a cause is naming a hypothesis.** This one's message is
+well-written and would have sent a reader to `DestinationReader` — three layers
+above where the evidence points. Read the trace, not the verdict.
+
+### The suspect
+
+`app::actions::destination::actions_for` pushes, in order:
+
+```rust
+out.push(Action::GoToPage(page_index));
+…
+DestView::FitH { .. } => {
+    out.push(Action::Fit(crate::viewer::FitMode::Width));
+    out.push(Action::GoToDestination(Point { page: page_index, … }));
+}
+```
+
+**`Action::Fit` stopped being a pure zoom on 2026-09-05.** O28 — *"a fit now
+**places the view**, not just the scale. It pins the axes whose extent it
+decided and keeps the operator's position on the rest, clamped to the page."*
+That is correct for a fit the operator asked for, and it is exactly wrong in the
+middle of a navigation: the `Fit(Width)` between the page jump and the
+destination scroll pins the vertical axis, and the jump is vertical.
+
+The `XYZ` arm above it carries a comment that is the same insight one step short
+of this one — *"`zoom` first, because the scroll is expressed in the zoom that
+will be in force when it lands. Reversing them scrolls to a point…"* — written
+when a fit only changed the scale. It has since grown a second effect and the
+ordering argument was not revisited.
+
+### Why no test sees it
+
+Every unit test over `actions_for` asserts **which actions are raised**, and the
+right actions *are* raised, in an order that was right when it was written. The
+defect is what one of them does to another's result, one apply-loop later. Only
+a driven run that reads `canvas-pos` across frames can see the view arrive and
+leave.
+
+### What to check first
+
+Whether `Fit` should take a "do not place" variant for the navigation path, or
+whether `GoToDestination` should simply come last and win. **Do not reorder by
+eye** — `viewer`'s fit code has a recorded feedback loop (R128) and the
+`canvas-pos` trace is the only oracle that has ever settled a question in it.
