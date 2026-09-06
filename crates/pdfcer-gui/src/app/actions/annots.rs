@@ -558,13 +558,27 @@ fn refusal_for(error: &pdfcer_core::edit::EditError) -> crate::text::rotating::R
 /// whole argument for UTC; `None` there means the system clock is before 1970,
 /// and omitting `/M` beats writing a comment dated 1969.
 ///
-/// # ★ The disclosure is about the words that are gone
+/// # ★ TWO disclosures, and they are about opposite things
 ///
-/// A note that replaced another one leaves **no trace on the canvas**: the
-/// shape is unchanged, and a sticky's words live in a pop-up window this shell
-/// does not draw. `MarkupNoteChange::replaced` carries the previous text — the
-/// text, not a count — precisely so the operator can be offered it back, which
-/// is what `crate::text::markup::note_replaced` does.
+/// **The words that are gone.** A note that replaced another one usually
+/// leaves no trace on the canvas: the shape is unchanged, and a sticky's words
+/// live in a pop-up window this shell does not draw.
+/// `MarkupNoteChange::replaced` carries the previous text — the text, not a
+/// count — precisely so the operator can be offered it back, which is what
+/// `crate::text::markup::note_replaced` does.
+///
+/// ★ *"usually"* is doing work there, and it is the one subtype that breaks
+/// the family: a `/FreeText`'s `/Contents` **is** its painted words, so on one
+/// the replaced text was on the canvas, and as of `pdfcer-core` `95a936e` the
+/// engine re-bakes the appearance in this same command so the page follows the
+/// edit.
+///
+/// **The half that did not move.** Which is the second disclosure, and it fires
+/// on exactly one shape of outcome — a `/FreeText` whose appearance pdfcer did
+/// not author, which is preserved rather than replaced. See the call site below
+/// and `crate::text::textannot`'s edit-time banner, which carries the four-row
+/// table and the record of the disclosure that was deleted when the engine
+/// closed its cause.
 pub(super) fn set_note(doc: &mut OpenDoc, id: ObjId, text: &str, author: Option<&str>) {
     // Builders, not a struct literal: `MarkupNote` is `#[non_exhaustive]`,
     // which is what keeps a future field a non-breaking addition for us.
@@ -588,25 +602,47 @@ pub(super) fn set_note(doc: &mut OpenDoc, id: ObjId, text: &str, author: Option<
                 // the engine's own answer to "what actually moved", and the
                 // whole `/T`-preservation contract above is invisible from a
                 // screenshot and from the saved page alike.
+                //
+                // ★ `rebaked` is the ONLY oracle for the half of this edit a
+                // screenshot of the panel cannot see. The status line speaks
+                // for the `false`-on-a-`/FreeText` case alone (correctly — see
+                // below), so without this field a driven check could not tell
+                // a re-baked text box from a sticky note, which are the two
+                // outcomes that look identical from outside.
                 format!(
-                    "set-markup-note-applied id={} chars={} keys={} replaced={}",
+                    "set-markup-note-applied id={} chars={} keys={} replaced={} \
+                     subtype={} rebaked={}",
                     id.num,
                     text.chars().count(),
                     change.keys_written.join("+"),
-                    change.replaced.is_some()
+                    change.replaced.is_some(),
+                    change.subtype,
+                    change.appearance_rebaked
                 )
             });
             // ★★★ The text box's disclosure goes FIRST, and the order is the
             // decision. `record_notes` documents the first sentence as the one
             // an operator reads if they read only one — and between "here are
-            // the words you replaced" and "the page did not change", only the
-            // second is something they cannot find out any other way.
+            // the words you replaced" and "the page kept an appearance this
+            // edit did not move", only the second is something they cannot
+            // find out any other way.
             //
-            // Gated on the ENGINE's own `/Subtype`, not on anything this shell
-            // inferred about the selection. The reasoning, the measurement and
-            // the choice to disclose rather than refuse are all at
+            // ★★ **Two gates, both the ENGINE's own answer**, and neither is
+            // anything this shell inferred about the selection:
+            //
+            // 1. `MarkupNoteChange::subtype` — the raw `/Subtype`.
+            // 2. `MarkupNoteChange::appearance_rebaked` — whether the picture
+            //    moved with the words. `set_markup_note` re-bakes a
+            //    `/FreeText`'s `/AP` itself as of `pdfcer-core` `95a936e`,
+            //    which is why this is now a condition rather than a constant.
+            //
+            // `false` is **not a failure**: it is correct and final on a
+            // sticky and on a stamp, and the sentence must not fire for them.
+            // The four-row table, the deleted before-the-write hint and the
+            // record of the morning this shell spent disclosing a defect the
+            // engine closed by the afternoon are all at
             // `crate::text::textannot`'s edit-time banner.
-            crate::text::textannot::note_edit_disclosure(&change.subtype)
+            crate::text::textannot::note_edit_disclosure(&change.subtype, change.appearance_rebaked)
                 .map(str::to_owned)
                 .into_iter()
                 .chain(
@@ -646,27 +682,38 @@ pub(super) fn clear_note(doc: &mut OpenDoc, id: ObjId) {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed.
                 format!(
-                    "clear-markup-note-applied id={} keys={} had_note={} had_author={}",
+                    "clear-markup-note-applied id={} keys={} had_note={} had_author={} \
+                     subtype={} rebaked={}",
                     id.num,
                     change.keys_written.join("+"),
                     change.replaced.is_some(),
-                    change.replaced_author.is_some()
+                    change.replaced_author.is_some(),
+                    change.subtype,
+                    change.appearance_rebaked
                 )
             });
             // First, for the same reason as `set_note` — and the surprise is
-            // worse here. Removing the comment takes away the only copy the
-            // operator can edit and leaves the copy they cannot, still on the
-            // page, saying what it always said.
-            crate::text::textannot::note_clear_disclosure(&change.subtype)
-                .map(str::to_owned)
-                .into_iter()
-                .chain(
-                    change
-                        .replaced
-                        .as_deref()
-                        .and_then(crate::text::markup::note_removed),
-                )
-                .collect()
+            // worse here. On a text box whose appearance pdfcer did not draw,
+            // removing the comment takes away the only copy the operator can
+            // edit and leaves the copy they cannot, still on the page, saying
+            // what it always said.
+            //
+            // ★ On one it DID draw, `clear_markup_note` empties the painted
+            // box in the same command — so `appearance_rebaked` is `true`,
+            // nothing is left unsaid, and this stays quiet.
+            crate::text::textannot::note_clear_disclosure(
+                &change.subtype,
+                change.appearance_rebaked,
+            )
+            .map(str::to_owned)
+            .into_iter()
+            .chain(
+                change
+                    .replaced
+                    .as_deref()
+                    .and_then(crate::text::markup::note_removed),
+            )
+            .collect()
         })
     });
 }

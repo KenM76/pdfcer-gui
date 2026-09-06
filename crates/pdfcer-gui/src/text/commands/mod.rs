@@ -1054,7 +1054,8 @@ pub use annotate::{
 pub mod markupstyle;
 
 pub use markupstyle::{
-    format_arrowheads, format_colour, format_fill, format_line_width, format_opacity,
+    format_arrowheads, format_colour, format_fill, format_line_style, format_line_width,
+    format_opacity,
 };
 
 /// ★ The four Markup ▸ Arrange controls, split out on 2026-09-06 under **R2**

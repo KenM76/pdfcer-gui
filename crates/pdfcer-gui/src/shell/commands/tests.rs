@@ -310,9 +310,16 @@ fn registration_succeeds_and_registers_every_command() {
     // called Arrange: the block table below asserts a token sits in the hundred
     // belonging to its id's PREFIX, and *Arrange* names a group rather than a
     // tab. See `catalog::arrange`'s header.
+    //
+    // ★★★ 155 → 156 later the SAME DAY: `format.line_style`. It is the eighth
+    // control of `RIBBON_IA.md` §5.8's Markup row and the only one of the eight
+    // that had **no engine verb at all** — that morning it was a row in
+    // `manifest::registers`' planned register carrying an argued "engine gap"
+    // note, and `MarkupStyle::dash` shipped that afternoon. That register's own
+    // entry records the six-hour life of the note.
     assert_eq!(
         registry().len(),
-        155 + usize::from(cfg!(feature = "signing"))
+        156 + usize::from(cfg!(feature = "signing"))
     );
 }
 
@@ -916,8 +923,16 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
         // group read correctly, and the four words are the most findable thing
         // about the feature (`catalog::arrange`'s header carries the whole
         // argument, including why *z-order* appears in none of them).
+        //
+        // ★★★ 16 → 17 on 2026-09-06 — `format.line_style`, and it is a
+        // **MISSING SLOT** refusal exactly like the three Font controls and
+        // the five Markup ones above it. It is drawn by an `Item::Custom` as
+        // an `egui::ComboBox`, and a combo box has nowhere to put a glyph. No
+        // amount of drawing touches it, which is the distinction this ledger
+        // exists to keep: a refusal about SUPPLY has an expiry date and gets
+        // discharged, a refusal about a control's SHAPE does not.
         refused,
-        16,
+        17,
         "commands with no icon, each argued at its registration"
     );
     // Each refusal is argued at its own registration and listed in the

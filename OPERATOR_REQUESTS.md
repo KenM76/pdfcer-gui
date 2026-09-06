@@ -191,11 +191,27 @@ Two of them you would have felt every day.
 
 ### 6. What is still not possible, named rather than left implied
 
-**A dashed border.** It is the one item of the five-control row that has no
-control, and it is not a scheduling decision — the engine has no setting for it
-to reach. Filed, along with two smaller things: a width sent for a highlight is
-silently thrown away rather than refused, and an arrowhead can be switched on
-and never fully switched off.
+~~**A dashed border.**~~ ✅ **BUILT the same afternoon — all three of these
+were.** This paragraph said a dashed border *"has no control, and it is not a
+scheduling decision — the engine has no setting for it to reach"*, and listed
+two smaller things beside it: a width sent for a highlight silently thrown away
+rather than refused, and an arrowhead that could be switched on and never fully
+switched off.
+
+All three were written up and sent to the engine, and **all three came back
+finished within hours**:
+
+* **Dashed lines** — you can draw one, keep one, and change one. Solid, dashed,
+  long dash and dash-dot, on the ribbon, in the properties panel, and on the pen
+  that decides what the *next* mark looks like. And the engine found it was
+  worse than we reported: a dash was being flattened to solid by **resizing a
+  mark or dragging one of its corners**, not only by changing its colour.
+* **A width on a highlight** is now refused by name instead of being swallowed,
+  and the program no longer offers the control at all — it asks the engine which
+  marks have a border rather than keeping its own list.
+* **An arrowhead can be taken off properly**, so a mark that arrived without one
+  goes back out the way it came in. On a signed drawing that is the difference
+  between an unchanged file and one somebody has to explain.
 
 **A text box's words go stale if you edit them.** Changing the note text on a
 text box changes what the program records and not what is painted on the page.

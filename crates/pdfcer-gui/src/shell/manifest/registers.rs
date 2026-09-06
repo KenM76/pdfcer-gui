@@ -629,12 +629,33 @@ pub const PLANNED: &[(&str, &str)] = &[
     // property editors were written once — which is §5.8's whole argument for
     // ordering it that way.
     //
-    // ★ `format.line_style` and `format.note_text` STAY, and the distinction is
-    // the one this register is for. Those two are not deferred by build order;
-    // `MarkupStyle` carries no dash pattern at all, so `format.line_style` has
-    // no verb to reach, and a note's `/Contents` is `MarkupNote`'s — a different
-    // struct, a different verb, and a control the ribbon is the wrong surface
-    // for because it is prose.
+    // ★★★ `format.line_style` LEFT TOO, the same day, and its row is the one
+    // worth reading twice. It said:
+    //
+    //   > "N — markup property; no verb: `MarkupStyle` has no dash pattern, so
+    //   > there is nothing for a control to reach. Not deferred by build order
+    //   > like the five that shipped beside it on 2026-09-06 — this one is an
+    //   > engine gap."
+    //
+    // Every word of that was true when it was written **that morning**, and it
+    // was false by the same afternoon: `MarkupStyle::dash` shipped with the
+    // preserve and author halves beside it (`pdfcer-core` `edit.rs:4422`,
+    // `edit.rs:4782`), in answer to the request this shell filed against exactly
+    // this row. The entry lasted about six hours.
+    //
+    // ⇒ The lesson is not that the note was wrong; it is that **a genuine engine
+    // gap has an hours-long shelf life on this project**, and a register whose
+    // rows are prose cannot know when one closes. What keeps this one honest is
+    // that `planned_commands_are_genuinely_absent` asserts in BOTH directions —
+    // registering the command made this row fail the suite by name rather than
+    // leaving a false sentence sitting in a table nobody re-reads. A blocker
+    // that is a test is a blocker that expires.
+    //
+    // ★ `format.note_text` STAYS, and the distinction is the one this register
+    // is for: it is not deferred by build order either, but its reason is
+    // **surface** rather than capability — a note's `/Contents` is `MarkupNote`'s
+    // and the control is prose, which a ribbon band is the wrong shape for. That
+    // reason does not expire when an engine ships something.
     //
     // ★★ The removal is not optional bookkeeping.
     // `planned_commands_are_genuinely_absent` asserts in BOTH directions —
@@ -644,13 +665,6 @@ pub const PLANNED: &[(&str, &str)] = &[
     // was built for, and this is the second time it has been exercised by a
     // deletion (the first was `format.font` and `format.font_size` on
     // 2026-08-27).
-    (
-        "format.line_style",
-        // ui-text-exempt: developer note about an ABSENT command; never rendered.
-        "N — markup property; no verb: `MarkupStyle` has no dash pattern, so there is nothing \
-         for a control to reach. Not deferred by build order like the five that shipped beside \
-         it on 2026-09-06 — this one is an engine gap.",
-    ),
     (
         "format.note_text",
         // ui-text-exempt: developer note about an ABSENT command; never rendered.

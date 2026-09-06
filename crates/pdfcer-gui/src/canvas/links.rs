@@ -222,12 +222,30 @@ pub fn follow(hit: &Hit, doc: &OpenDoc, actions: &mut Vec<Action>) {
         }
         // `/URI`, `/Launch`, `/JavaScript`, `/SubmitForm`, … Recognised and
         // disclosed, never executed.
-        Destination::NonNavigation { action } => {
+        // ★★ `file` arrived 2026-09-06, and it is the reason this arm is no
+        // longer the end of the sentence for a `/Launch`.
+        //
+        // The engine already resolved a file specification for `/GoToR` and
+        // **threw it away for `/Launch`** — the same key, the same question,
+        // answered in one case and not the other. It now reads Table 203's `/F`
+        // and the deprecated `/Win` fallback, so *"which file does this open?"*
+        // has an answer where one is written.
+        //
+        // ★ `/Launch` stays NON-navigation. It starts an application; it does
+        // not go to a page, and pdfcer will not run it (R13). What changed is
+        // only that the disclosure can now NAME the file instead of saying
+        // "this is a Launch action" and stopping — which is the difference
+        // between a sentence an operator can act on and one they cannot.
+        Destination::NonNavigation { action, file } => {
             let named = action.as_ref().map_or_else(
                 || unknown_action().to_owned(),
                 |a| String::from_utf8_lossy(&a.0).into_owned(),
             );
-            crate::app::actions::record_note(doc.edit_epoch, t::non_navigation(&named));
+            let note = match file.as_ref() {
+                Some(bytes) => t::non_navigation_file(&named, &String::from_utf8_lossy(bytes)),
+                None => t::non_navigation(&named),
+            };
+            crate::app::actions::record_note(doc.edit_epoch, note);
         }
         // ★ `Destination` is `#[non_exhaustive]`. A variant added by a later
         // engine Pass must not silently become "nothing happened": this arm
@@ -355,7 +373,10 @@ mod tests {
             Destination::Named {
                 name: b"absent".to_vec(),
             },
-            Destination::NonNavigation { action: None },
+            Destination::NonNavigation {
+                action: None,
+                file: None,
+            },
         ] {
             assert!(
                 !hit_with(other.clone()).navigable(),
@@ -382,7 +403,10 @@ mod tests {
                 view: pdfcer_core::outline::DestView::Fit,
             }),
             kind_token(&Destination::Named { name: Vec::new() }),
-            kind_token(&Destination::NonNavigation { action: None }),
+            kind_token(&Destination::NonNavigation {
+                action: None,
+                file: None,
+            }),
         ];
         for (i, a) in tokens.iter().enumerate() {
             for b in &tokens[i + 1..] {

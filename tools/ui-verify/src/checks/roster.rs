@@ -138,6 +138,23 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // the two typing checks because a run that fails here should fail
         // before paying for a keystroke that may never arrive.
         Box::new(markup_move::DraggingAMarkupMovesIt),
+        // ★ Immediately after the move, because the two share their first two
+        // steps — arm the rectangle tool through `PDFCER_DIAG_INVOKE`, draw a
+        // shape with one drag — and a reader who sees both fail at that step
+        // should read it as one defect in authoring rather than two.
+        //
+        // This one goes SECOND of the pair for the reason the cheaper check
+        // usually goes first, inverted: it is the cheaper one (one drag, two
+        // captures, no selection and no second gesture) but its subject is
+        // downstream of the other's. A rectangle whose colour is wrong is worth
+        // knowing about only once there is a rectangle at all.
+        Box::new(markup_palette::ANewMarkupIsDrawnInAcrobatsRed),
+        // ★ Third of the three that begin the same way, and the most expensive:
+        // it draws the shape, selects it, raises a contextual tab, drags a
+        // spinner and photographs the page twice. Last of the group so that a
+        // reader who sees all three fail at the drawing step reads it as one
+        // defect in authoring rather than three.
+        Box::new(markup_band::TheFormatTabRestylesASelectedMark),
         // ★★★ Immediately after the move, and deliberately: the two share
         // steps 1-3 verbatim in shape — draw a rectangle, put the pen down,
         // click it — so a failure in EITHER of those here should be read

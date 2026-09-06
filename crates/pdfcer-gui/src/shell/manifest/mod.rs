@@ -747,14 +747,14 @@ pub const RECENT_FILES: &str = "recent_files"; // ui-text-exempt: a custom-item 
 /// that does not exist.
 pub const COLOUR_SWATCH: &str = "colour_swatch"; // ui-text-exempt: a custom-item kind, never displayed
 
-/// **The `Item::Custom` kinds of the Format ▸ Markup controls** — the five
+/// **The `Item::Custom` kinds of the Format ▸ Markup controls** — the six
 /// that restyle a mark already on the page.
 ///
 /// `RIBBON_IA.md` §5.8's *Markup annotation* row, drawn by
 /// [`crate::app::markupband`]. Each clears [`CUSTOM_BACKED`]'s bar in the same
 /// shape the Font group's three do: the command needs an **operand a button
 /// cannot ask for** — two colours that must also *show* the current one, a
-/// number the operator drags, a percentage, and a four-way choice.
+/// number the operator drags, a percentage, and two multi-way choices.
 ///
 /// ★★ They are **registered commands**, unlike [`COLOUR_SWATCH`] one screen up,
 /// and the difference is the same one that separates the Font group from the
@@ -778,6 +778,10 @@ pub const MARKUP_WIDTH: &str = "markup_width"; // ui-text-exempt: a custom-item 
 pub const MARKUP_OPACITY: &str = "markup_opacity"; // ui-text-exempt: a custom-item kind, never displayed
 /// See [`MARKUP_STROKE`].
 pub const MARKUP_ENDINGS: &str = "markup_endings"; // ui-text-exempt: a custom-item kind, never displayed
+/// See [`MARKUP_STROKE`]. The sixth, added 2026-09-06 with the engine verb it
+/// had been waiting for — `RIBBON_IA.md` §5.8's *Line style*, which was the one
+/// entry in that row with **no engine verb at all** until `MarkupStyle::dash`.
+pub const MARKUP_DASH: &str = "markup_dash"; // ui-text-exempt: a custom-item kind, never displayed
 
 // ===========================================================================
 // CUSTOM_BACKED
@@ -914,6 +918,15 @@ pub const CUSTOM_BACKED: &[(&str, &str, &str)] = &[
         "The opacity field in Format ▸ Markup. A percentage is a number the operator drags, and \
          a button is a control with one value. Same release-not-change commit rule as the width \
          field beside it, and for the same reason.",
+    ),
+    (
+        "format.line_style",
+        MARKUP_DASH,
+        "The line-style chooser in Format ▸ Markup. Solid or one of three dashes is a four-way \
+         choice and the control must also show the current answer — and it has a FIFTH thing to \
+         say that no button and no four-position toggle can: the mark carries a dash the file \
+         states and this shell does not offer, which the engine now preserves through a restyle \
+         rather than solidifying. It is drawn only for the subtypes with a border.",
     ),
     (
         "format.arrowheads",

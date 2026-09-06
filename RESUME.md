@@ -289,15 +289,34 @@
 >   `pages.move_up`. The nudge reads `i.modifiers` itself. ⇒ **Assume nothing
 >   about `consume_key` and modifier exclusivity.**
 >
-> ⬜ **Four engine gaps were filed today**, one topic per file, all in
-> `D:\Dev\FeatureRequests\pdfce_FeatureRequests\open\` and all rowed in
-> `ENGINE_BACKLOG.md` under `blocked`: a dashed border cannot be expressed *or
-> preserved*; `set_markup_style` accepts a `width` for a text markup and
-> **silently discards it**; `MarkupStyle::endings` is not a `StyleEdit`, so
-> `/LE` can be set and never removed; and a `/FreeText`'s **painted words**
-> cannot be rewritten — the engine commits the dictionary and leaves the `/AP`
-> stream, which this shell discloses twice, off-canvas, before and after the
-> write.
+> ✅ **ALL FOUR OF TODAY'S ENGINE GAPS SHIPPED AND ARE WIRED — same day, and
+> the turnaround is the finding.** They were filed one topic per file, rowed
+> `blocked`, and answered in a single reply
+> (`reply_2026-09-06-all-four-markup-requests-SHIPPED.md`) hours later. What was
+> filed: a dashed border cannot be expressed *or preserved*; `set_markup_style`
+> accepts a `width` for a text markup and **silently discards it**;
+> `MarkupStyle::endings` is not a `StyleEdit`, so `/LE` can be set and never
+> removed; and a `/FreeText`'s **painted words** cannot be rewritten.
+>
+> ★★★ **Two of the four were WORSE than reported, in directions this shell could
+> not see.** The dash was being solidified by **four** verbs, not one — a
+> resize or a vertex drag destroyed it exactly as a recolour did — so fixing the
+> route named would have left three to be discovered one at a time. And
+> `set_markup_note` now **re-bakes the appearance itself**, so this morning's
+> twice-stated stale-words disclosure was deleted the same day it shipped;
+> `MarkupNoteChange::appearance_rebaked` replaces it, and **false is not a
+> failure** — it is correct and final on a sticky, a stamp, and a `/FreeText`
+> pdfcer did not author.
+>
+> ⇒ **A limitation sentence on this project has a shelf life measured in hours.**
+> Spell every engine-limit claim as a dated assertion and re-read it before
+> quoting it; three documents still carried the filed wording after the reply
+> landed and had to be corrected by hand.
+>
+> ★★ **`MarkupStyleSupport::for_subtype` deleted this shell's copy of the
+> engine's subtype table** — six sites, one of them carrying a comment claiming
+> the list had been *"checked against the engine source, not assumed"*. A
+> comment recording a check ages; a call cannot.
 
 
 > ★★★ **LAST SESSION: 2026-09-06. HE CAN SIGN A DOCUMENT.** His report of

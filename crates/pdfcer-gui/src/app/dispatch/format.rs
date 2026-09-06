@@ -80,14 +80,20 @@ pub(crate) fn handles(id: &str) -> bool {
             | "format.font_colour"
             | "format.bold"
             | "format.italic"
-            // The Markup group, 2026-09-06. All five are drawn by an
+            // The Markup group, 2026-09-06. All six are drawn by an
             // `Item::Custom` — `app::markupband` REPORTS (it parks a
             // `(target, edit)` pair and returns a token) and this file ACTS, so
             // every one of them arrives here and none has a second
             // implementation inside the renderer.
+            //
+            // ★ `format.line_style` joined them later the same day, when
+            // `MarkupStyle::dash` shipped. It needed no new machinery here at
+            // all — it parks a `MarkupEdit` like the other five — which is what
+            // that type's one-field-per-variant design buys.
             | "format.colour"
             | "format.fill"
             | "format.line_width"
+            | "format.line_style"
             | "format.opacity"
             | "format.arrowheads"
     )
@@ -590,8 +596,14 @@ pub(crate) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>)
         // to one of the five ids produces, because a chord cannot park an
         // operand. Silence is the honest answer — there is no value to apply
         // and nothing was refused.
+        // ★ `format.line_style` joined the group on 2026-09-06 and needed no
+        // other change here: it parks a `MarkupEdit` like the other five, so it
+        // is the same operand shape reaching the same verb. That is the property
+        // `MarkupEdit`'s one-field-per-variant design buys — a sixth control was
+        // an enum variant and an arm of this list, and nothing about the
+        // dispatch had to learn what a dash is.
         "format.colour" | "format.fill" | "format.line_width" | "format.opacity"
-        | "format.arrowheads" => {
+        | "format.line_style" | "format.arrowheads" => {
             // Taken before the document is borrowed: `take` needs `&mut app`
             // and the check below needs `&app.status`.
             let Some((target, edit)) = app.markup_change.take() else {

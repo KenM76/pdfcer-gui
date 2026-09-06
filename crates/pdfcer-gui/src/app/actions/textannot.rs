@@ -101,6 +101,26 @@ pub(super) fn commit(
     // `MarkupOptions::note` writes `/Contents` again over the top.
     // Identical bytes, so the file is unchanged by the duplication.
     //
+    // ★★★ **…and "identical" is now enforced by the engine, on pain
+    // of the whole gesture being refused.** As of `pdfcer-core`
+    // `95a936e`, passing a `TextAnnotSpec::FreeText { text }` and a
+    // `MarkupOptions::note` whose words differ is
+    // `EditError::FreeTextNoteConflictsWithText` — refused before
+    // anything is written, because for that one subtype the two
+    // arguments are the same PDF key and there is no defensible way
+    // to pick a winner. This shell reported the trap; this is the
+    // side of it that has to stay clear of the muzzle.
+    //
+    // ⇒ Both strings therefore come from
+    // `crate::canvas::textannot::painted_text`, ONE function, rather
+    // than from one variable normalised in one of its two readers.
+    // Before 2026-09-06 they did not: `spec` trimmed and
+    // `MarkupNote::new` did not, so a text box typed with a trailing
+    // space — a stray space bar, invisible in the box — would have
+    // been refused outright, authoring nothing and showing the
+    // operator only the generic decline sentence. The engine turned a
+    // latent mess into a loud refusal, and the refusal found this.
+    //
     // ⇒ The note is passed anyway because **`/T` and `/M` are only
     // reachable through it.** The engine writes the three as a
     // group or not at all, so a shell that wanted an author had to
@@ -127,6 +147,13 @@ pub(super) fn commit(
     // non-breaking addition for us. `by` and `at` take the value,
     // so both are applied conditionally rather than passed as
     // `Option`.
+    //
+    // ★ **Shadowed, not a second name.** `text` the parameter is gone from
+    // this scope after this line, so a later reader cannot reach the raw
+    // string even by accident — the two callers below have nothing else to
+    // pass. A `let words = …` beside a live `text` would have left the
+    // mistake representable, and it is a mistake that compiles.
+    let text = crate::canvas::textannot::painted_text(text);
     let mut note = pdfcer_core::edit::MarkupNote::new(text);
     let author = prefs.author_name.trim();
     if !author.is_empty() {
@@ -137,6 +164,13 @@ pub(super) fn commit(
     }
     let options = MarkupOptions {
         note: Some(note),
+        // ★ No dash on a note, a text box or a stamp, and that is a decision
+        // rather than a default taken by omission. `MarkupOptions::dash`
+        // arrived 2026-09-06 and applies to any mark; these three are the ones
+        // whose border is a *container* for words rather than a drawn line, and
+        // a dashed box around a comment reads as provisional — which R8b
+        // forbids content from doing. The dashed control belongs to the shapes.
+        dash: None,
         // ★ The pen's opacity reaches the sticky note, the text box
         // and the stamp as well, and it has to: a stamp is the
         // markup most likely to be placed over drawing content, and

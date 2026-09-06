@@ -246,6 +246,11 @@ impl PenSlot {
 /// committed would conflict with the `&mut self` the commit needs, and the
 /// alternative — cloning at each call — would be the same bytes with a
 /// question about whether the copy is stale.
+///
+/// ⚠ **Keeping it `Copy` is what decided [`super::linestyle::LineStyle`]'s
+/// shape.** The engine's `BorderDash` owns a `Vec<f64>` and would have taken
+/// `Copy` away from every caller in `canvas::markup` and `app::actions`; see
+/// that type's header.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Pen {
     /// The comment-linework colour, as PDF `/DeviceRGB` components in
@@ -306,6 +311,37 @@ pub struct Pen {
     /// reporting success"* — so a value that escaped this range would produce a
     /// refusal, not a silent surprise.
     pub opacity: f64,
+    /// ★★★ **The border line style the next mark is drawn in** — `/BS` `/S` and
+    /// `/D` (§12.5.4, Table 166).
+    ///
+    /// # It is a [`super::linestyle::LineStyle`] and not a `BorderDash`
+    ///
+    /// Because that type is `Copy` and the engine's is not — see its header,
+    /// which carries the whole argument and the reason this struct's `Copy` is
+    /// load-bearing. [`Self::dash_option`] is the boundary that builds the
+    /// engine's value.
+    ///
+    /// # ★★ Solid ships, and that keeps the standing rule
+    ///
+    /// [`Self::opacity`]'s doc states the rule this project applies when a
+    /// capability becomes choosable: *"a build which omits nothing must behave
+    /// as it did before the choice existed, byte for byte."* Unlike the colour
+    /// change of 2026-09-06, this one **does** keep it: the default is
+    /// [`super::linestyle::LineStyle::Solid`], `dash_option` answers `None`, and
+    /// `MarkupOptions::dash: None` authors *"the solid border pdfcer authored
+    /// exclusively before `Pass 258.0`"*
+    /// (`D:\Dev\pdfcer\crates\pdfcer-core\src\edit.rs:4772-4774`). An operator
+    /// who never opens the chooser gets the file they got yesterday.
+    ///
+    /// # ⚠ Ignored by the text-markup family, and that is the format
+    ///
+    /// A highlight is a colour wash and an underline is its own line; neither
+    /// draws a `/BS` border, so `MarkupOptions::dash` is ignored for all four
+    /// (`edit.rs:4776-4781`). The pen carries one value and the highlighter
+    /// shares it, so the chooser's tooltip says so —
+    /// [`crate::text::markup::pen_dash_tooltip`] — rather than leaving an
+    /// operator to conclude the setting did not take.
+    pub dash: super::linestyle::LineStyle,
 }
 
 /// The thinnest pen offered.
@@ -441,6 +477,12 @@ impl Default for Pen {
             // doc comment. This is what every markup this shell authored before
             // 2026-08-28 did, so the default is the old behaviour exactly.
             opacity: 1.0,
+            // Solid, which writes no dash at all — see the field's own doc
+            // comment. Unlike the eight colours above, this default DOES keep
+            // the "omits nothing" rule: a build whose operator never opens the
+            // chooser authors the same bytes it authored before the chooser
+            // existed.
+            dash: super::linestyle::LineStyle::Solid,
         }
     }
 }
@@ -644,6 +686,26 @@ impl Pen {
     #[must_use]
     pub fn opacity_option(&self) -> Option<f64> {
         (self.opacity < 1.0).then_some(self.opacity)
+    }
+
+    /// **The `/BS` dash to author with, or `None` for "write a solid border".**
+    ///
+    /// The exact twin of [`Self::opacity_option`], and for the same reason it is
+    /// a method rather than a comparison at each call site: `None` is what
+    /// preserves this shell's pre-2026-09-06 bytes, and the call site that
+    /// forgot would be the one that made a pdfcer annotation textually unlike
+    /// every one it had authored before.
+    ///
+    /// ⚠ **Not passed on the text-markup route.** `app::actions::apply`'s
+    /// `CommitMarkup` arm sends it; `CommitTextMarkup` does not, because a
+    /// highlight, underline, strikeout and squiggly draw no `/BS` border and the
+    /// engine ignores the field for all four (`edit.rs:4776-4781`). Sending a
+    /// value that is documented as ignored would be this shell asking for
+    /// something and calling the silence success — which is the exact failure
+    /// shape `MarkupStyleSupport` was shipped to end.
+    #[must_use]
+    pub fn dash_option(&self) -> Option<pdfcer_core::annot_author::BorderDash> {
+        self.dash.dash()
     }
 
     /// Set the highlighter colour from a screen colour. As [`Self::set_ink`].

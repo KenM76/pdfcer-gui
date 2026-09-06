@@ -1,0 +1,105 @@
+ui-verify — PER-CHECK PROFILE ISOLATION, measured both ways
+2026-09-06, Track M
+
+WHAT THIS PROVES
+----------------
+`pdfcer-gui` is portable: it resolves `userdata/` BESIDE THE EXECUTABLE, so a
+sweep that points every check at one `--exe` gives every check one profile.
+That was harmless only while the application discarded the stored mode on every
+launch, which was fixed the same day (f4aeee6). From that commit onward a check
+that clicks a mode segment leaves that mode on disk for every later check.
+
+The fix is `tools/ui-verify/src/sandbox.rs`: one directory per check, holding a
+hard link to the binary, deleted when the check ends. `--shared-profile`
+restores the old behaviour and is the control below.
+
+THE PAIR
+--------
+Same binary, same fixture, same two checks, same invocation, four minutes
+apart. `delete_key_after_canvas_click` clicks the Edit mode segment;
+`a_link_goes_to_the_page_it_names` is sensitive to the mode, because in Edit a
+click on a link SELECTS it rather than following it — deliberately.
+
+  ui-verify --exe <scratch>/pdfcer-gui.exe --pdf fixtures/a1-titleblock.pdf \
+            --second-pdf fixtures/four-pages.pdf --doc-point 0,300,500 \
+            --check delete_key_after_canvas_click \
+            --check a_link_goes_to_the_page_it_names
+
+(A) WITH --shared-profile  — one userdata/ for both checks
+----------------------------------------------------------
+  [PASS] delete_key_after_canvas_click
+         ... clicked the Edit mode segment first ...
+         the page object count fell from 28 to 27 across the keystroke
+
+  [FAIL] a_link_goes_to_the_page_it_names
+         → ★★★ THE CLICK ON A LINK PRODUCED NOTHING. No `link-click` line
+           followed a press at the centre of a `/Link` whose rectangle the
+           engine reports as 36,620–200,650 on this page. ... Either
+           `canvas::links::under_pointer` found no link (check `page-links`:
+           not traced at all) or the arm that consumes it never ran ...
+
+  $ grep -o 'mode: [^,]*' <scratch>/userdata/layout.ron
+  mode: Some("edit")            ← left behind by the FIRST check
+
+(B) WITHOUT it — the default, one profile per check
+---------------------------------------------------
+  [PASS] delete_key_after_canvas_click
+         launched ...\.ui-verify-profiles\delete_key_after_canvas_click\pdfcer-gui.exe
+         the page object count fell from 28 to 27 across the keystroke
+
+  [FAIL] a_link_goes_to_the_page_it_names
+         launched ...\.ui-verify-profiles\a_link_goes_to_the_page_it_names\pdfcer-gui.exe
+         · the click reached a link: `pdfcer-diag link-click page=0 index=2 kind=page`
+         → ★★ THE LINK WENT TO THE WRONG PAGE: 0 → 0, where 3 was named
+           (page 4, 1-based — the engine's `list-links` prints `target=4`).
+           ★★★ It landed on page 0, which is the signature failure: a
+           destination that could not be resolved, defaulted to index 0, and
+           navigated anyway.
+
+  $ ls <scratch>/userdata
+  ls: cannot access ... : No such file or directory     ← never created
+  $ ls <scratch>/.ui-verify-profiles
+  (empty — each sandbox is removed when its check ends)
+
+★★★ WHAT THE PAIR SHOWS, BEYOND "IT WORKS"
+------------------------------------------
+The contaminated run did not merely produce a wrong verdict. It produced a
+CONFIDENT, ARTICULATE, DETAILED wrong verdict — "the click produced nothing",
+naming `canvas::links::under_pointer` and the press ladder — and it HID A REAL
+DEFECT that was sitting underneath it. On a clean profile the same check
+reaches the link and reports the actual bug: the link resolves to page 0 where
+page 4 was named.
+
+⇒ A suite that shares persistent state measures the order it ran in, the
+  contamination is invisible in the failing check's own report, and what it
+  costs is not only a wasted investigation but a defect that stays hidden
+  behind the wrong one.
+
+(The page-0 link failure is a pre-existing application defect: this check is
+one of the three known failures on both this release and the previous one, per
+`evidence/ui-verify-20260906-pass1.txt`. What is new here is that its REASON
+was being misreported.)
+
+THE CHECKS THAT DELIBERATELY USE `userdata/` STILL WORK
+--------------------------------------------------------
+Isolation gives each check its OWN `userdata/`, which is exactly what those
+checks want: their state is written and read inside one check, across its own
+two launches, and is then thrown away.
+
+  [PASS] a_page_display_choice_survives_a_close_and_reaches_a_new_document
+  [PASS] ui_scale_resizes_the_chrome
+  [FAIL] panels_float_close_and_dock
+
+`panels_float_close_and_dock` fails IDENTICALLY with --shared-profile on the
+same binary, so it is not caused by the isolation. It was passing in
+`ui-verify-20260906-pass1.txt`; the tree has moved several times since (three
+other agents were editing crates/ through the afternoon). Reported, not
+diagnosed — it is not this track's file.
+
+★ `ui_scale`'s roster note says it is placed LAST because it writes
+`userdata/preferences.txt` and deliberately does not restore it, so "the next
+run's base launch then has something to move away from". Under isolation that
+inheritance no longer happens and the check still passes, because its own two
+launches share its own sandbox. Its `RestoreScale` guard is now belt to a pair
+of braces rather than the only thing standing between the suite and a 611 pt
+window — worth knowing before anyone deletes it.

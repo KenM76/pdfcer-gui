@@ -247,7 +247,24 @@ pub mod insert_image_place;
 /// The left rail — O123 part 7. ⚠ WRITTEN, NOT RUN: see the module header.
 pub mod left_rail;
 pub mod legibility;
+/// ★★★ **The Format ▸ Markup band**, driven from a drawn shape to a thicker line
+/// on the glass. Seven links stand between `manifest::format`'s six declared items
+/// and a restyle an operator can see, and no test in the workspace observes two of
+/// them joined. It carries the only assertion in the suite that a control is
+/// **absent rather than greyed** — R9 — paired with four siblings that did draw on
+/// the same frame, because a negative with no control beside it is the vacuous
+/// assertion this project has already shipped once.
+pub mod markup_band;
 pub mod markup_move;
+/// ★★★ **The colour a comment shape comes out**, measured off the glass rather
+/// than asserted against the table it was written from. `palette::tests` divides
+/// each byte by 255 and compares it against Acrobat's own registry float, sixteen
+/// ways, and every one of them passes on a build whose rectangles draw black:
+/// there are six links between `MARKUP_RED` and a red line on a page and no test
+/// in the workspace observes more than one. It also carries the only reading in
+/// the suite that takes the *darkest* pixels rather than the dominant bucket, and
+/// its header says why a legibility oracle cannot answer *"what colour is this"*.
+pub mod markup_palette;
 pub mod markup_rectangle;
 /// ★ The three Phase 6 markup kinds that are **not drag-shaped** — Freehand,
 /// Polyline and Polygon — and the one control in this application whose

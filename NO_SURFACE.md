@@ -31,6 +31,7 @@ the useful bit:
 | Fill | ⛔ **design decision, not a gap.** `spec` passes `interior: None` with a note: *"a filled comment shape hides the drawing it is a comment about, which on a CAD sheet is the whole content under it."* Reversing that is the operator's call |
 | Opacity | ✅ **SHIPPED 2026-08-28, and the blocker was false twice.** The row below stands as the record of both. What this row said originally:  `EditSession::set_markup_style` takes a `MarkupStyle { opacity: Some(StyleEdit::Set(a)) }` and writes `/CA` (`edit.rs:13093`); `StyleEdit::Clear` removes it. What is genuinely absent is opacity **at author time** — `MarkupSpec` carries no alpha, so a shell that wanted to place a 40%-opaque highlight must author it and then restyle it, which is two verbs and two undo entries. That is a boundary observation and is filed as one, not a blocker. See §1b |
 | Arrowheads, ink tolerance, note text | ⬜ still open — the rows below stand |
+| Line style | ✅ **SHIPPED 2026-09-06**, and it is the one row this sweep could never have found. A hard-coded solid border is not a *"tunable with no surface"* while the engine has no field to accept a dash: `MarkupStyle` carried five fields and none of them was one, so there was nothing to expose. It became a row and was answered on the same day, which is why it is listed **as a correction to this document's own method**: this inventory finds constants a control could reach, and is blind to constants the engine cannot yet be told about. See §1d |
 
 Everything in sections 2 to 5 was verified after those commits and stands as
 written — **except one sentence in §4's widget census, which did not survive
@@ -67,6 +68,7 @@ Colour and width are live as of `4035b64`. The rows below are what is left.
 | Preview band alpha | 90 | `canvas/markup/band.rs:311` | **none** — the cursor again | — |
 | Ellipse tessellation | 48 segments | `canvas/markup/band.rs:183` | **none** — the cursor again | — |
 | Author / subject / note text | not authored at all | — | **none** | Format ▸ Note text |
+| ~~Line style (solid / dashed)~~ | ~~always solid; `/BS` `/S /S`~~ — now `Pen::dash`, default `LineStyle::Solid` | `canvas/markup/linestyle.rs` | ✅ **Markup ▸ Style — 2026-09-06**, plus Format ▸ Markup and the Properties panel for a mark already placed. ★ This row never existed, and the reason it did not is the finding: the value was not *"a constant with no control"* — until that afternoon it was **a constant with no verb**, because `MarkupStyle` and `MarkupOptions` had no dash field at all. A sweep for hard-coded tunables cannot see a value the engine has no way to accept, which is a blind spot of this whole document worth naming once | — |
 
 ### ★ Three of those rows were wrong, and in two different ways — 2026-08-17
 
@@ -202,6 +204,60 @@ are worth:
 
 Written to `D:\dev\rag\rust\` as well, because the property is about
 cross-repository dependency claims and not about PDF.
+
+### 1d. ★★★ The line style, and the blind spot this document has had all along
+
+**A dash shipped on 2026-09-06 and this file had never listed it.** That is not
+an oversight in the sweep; it is a property of the sweep, and naming it is worth
+more than the row.
+
+This document's rule is *"every tunable an operator would plausibly want to
+change and cannot: a compiled-in constant, a `Default` impl, or a field only
+settable from code."* A markup's border was solid in every file this shell had
+ever written, and there was **no constant to point at**. `canvas::markup::spec`
+did not pass `dash: false`; it passed nothing, because `MarkupOptions` had no
+such field and `MarkupStyle` had no such field. The value was not hard-coded in
+this crate — it was **absent from the vocabulary the engine and this shell
+share**.
+
+⇒ So the inventory's method finds *a constant a control could reach* and is
+structurally blind to *a behaviour the engine cannot yet be told about*. Both
+reach the operator identically: they press nothing, and the mark comes out the
+way it always does. The second kind is found by reading the **engine's** input
+structs against what an operator would want, which is a different sweep from
+this one and has not been done systematically.
+
+**What shipped.** `canvas::markup::linestyle` — four choices (Solid, Dashed,
+Long dash, Dash-dot) on three surfaces: the pen (`Pen::dash`, default Solid, so
+a build whose operator never opens it writes the bytes it always did), the
+Format ▸ Markup band, and the Properties panel.
+
+### ⚠ A live boundary, recorded here rather than filed — the dash cannot be READ
+
+`annot_author::read_border_dash` is **`pub(crate)`**
+(`D:\Dev\pdfcer\crates\pdfcer-core\srcnnot_author.rs:840`, read
+2026-09-06), and `spec_from_dict` does not carry a dash: it cuts across
+`MarkupSpec`'s variants, so the engine travels it in `AppearanceOptions` beside
+the spec rather than inside it (`annot_author.rs:1633-1673`). There is
+therefore **no public route from an annotation dictionary to *is this mark
+dashed, and how***, and a chooser that cannot show the current value is a
+chooser that shows an invented one.
+
+`canvas::markup::linestyle::read` is this shell's copy of that function,
+declared as a copy in its own header with Table 166's table transcribed from the
+engine's doc comment rather than re-derived. **What bounds the risk** is that
+the copy can only ever affect the *display*: picking an entry sends an absolute
+`Set(pattern)` or `Clear` that does not depend on what was read, so a drift
+shows a wrong current style until the control is touched and can never silently
+rewrite a pattern. That bound is the reason the copy is acceptable, and it is
+the thing to re-check if anybody makes the reading decide what gets **written**.
+
+⇒ **If `read_border_dash` is ever published, delete the copy and call it.** It
+is recorded here rather than filed as a request because the shell is not blocked
+— a fifteen-line dictionary read is a smaller cost than a round trip, and §3's
+own rule about the width list (*"that list is the engine's to know"*) applies to
+a **decision**, which this is not: Table 166 is in the standard and both readers
+are reading it.
 
 ---
 

@@ -104,6 +104,7 @@
 //! | [`pixels`] | **the pixel oracle** — `contrast_at`, `region_not_uniform` |
 //! | [`fixture`] | what the harness knows about the document it opened |
 //! | [`report`] | PASS / FAIL / SKIPPED and how a run is summarised |
+//! | [`sandbox`] | **a profile directory per check** — the portable binary keeps its settings beside itself, so a shared `--exe` is a shared profile and a suite built on one measures the order it ran in |
 //! | [`checks`] | the three named checks |
 //! | [`sys`] | every `unsafe` line in the crate, isolated |
 //!
@@ -129,5 +130,6 @@ pub mod pixels;
 pub mod png;
 pub mod profile;
 pub mod report;
+pub mod sandbox;
 pub mod sys;
 pub mod trace;

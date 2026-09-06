@@ -330,6 +330,13 @@ pub(super) fn band() -> Vec<Command> {
         command("format.fill", t::format_fill(), 810).enabled_when(MARKUP_RESTYLABLE),
         command("format.line_width", t::format_line_width(), 811).enabled_when(MARKUP_RESTYLABLE),
         command("format.opacity", t::format_opacity(), 812).enabled_when(MARKUP_RESTYLABLE),
+        // ★ The eighth control of `RIBBON_IA.md` §5.8's Markup row, and the last
+        // to arrive: it read **⛔ no engine verb exists** until `MarkupStyle::dash`
+        // shipped on the afternoon of 2026-09-06. No icon, for the structural
+        // reason above — a `ComboBox` has no icon slot — and `enabled_when` for
+        // the same predicate as the five beside it, because a line style is a
+        // markup restyle like every other.
+        command("format.line_style", t::format_line_style(), 814).enabled_when(MARKUP_RESTYLABLE),
         command("format.arrowheads", t::format_arrowheads(), 813).enabled_when(MARKUP_RESTYLABLE),
     ]
 }

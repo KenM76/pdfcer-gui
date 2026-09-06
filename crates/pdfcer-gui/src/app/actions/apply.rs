@@ -661,8 +661,14 @@ impl PdfcerApp {
                     // writes no `/CA` at all — so a build whose operator never
                     // touches the control authors the same bytes it did before
                     // the control existed.
+                    // ★ `dash_option()` is `opacity_option`'s exact twin — see
+                    // its doc — and it is sent HERE and not from
+                    // `CommitTextMarkup` below, because a text markup draws no
+                    // `/BS` border and the engine documents the field as ignored
+                    // for all four of them.
                     let options = pdfcer_core::edit::MarkupOptions {
                         opacity: pen.opacity_option(),
+                        dash: pen.dash_option(),
                         ..Default::default()
                     };
                     vector_edit(doc, "add-markup", page, 1, |session| {

@@ -155,8 +155,32 @@ pub(crate) fn write_merge(status: &crate::app::state::Status, sources: &[PathBuf
         })
         .collect();
 
+    // ★★ The FILE NAMES, which are a different list from the titles above and
+    // are what re-point a cross-file bookmark — `Pass` of 2026-09-06.
+    //
+    // A bookmark in one source that opens another of the files being merged
+    // used to be **dropped**; given these it is repointed at that file's pages
+    // inside the combined document, and `AssembleReport::outline_items_relinked`
+    // counts how many. The engine shipped this unasked, with `&[]` preserving
+    // the old behaviour — and `&[]` is exactly what a mechanical fix to the new
+    // three-argument signature would have passed, silently keeping the drop.
+    //
+    // ⇒ **A compile error is an invitation to read the reply, not to satisfy
+    // the compiler.** The full file NAME here, not the stem: it is matched
+    // against a `/Launch` or `/GoToR` file specification written by whoever
+    // authored the bookmark, and that specification carries the extension.
+    let files: Vec<Vec<u8>> = sources
+        .iter()
+        .map(|p| {
+            p.file_name()
+                .map(|s| s.to_string_lossy().into_owned())
+                .unwrap_or_default()
+                .into_bytes()
+        })
+        .collect();
+
     // 3. The merge itself.
-    let (bytes, report) = match pdfcer_core::pageops::merge(&views, &titles) {
+    let (bytes, report) = match pdfcer_core::pageops::merge(&views, &titles, &files) {
         Ok(pair) => pair,
         Err(error) => {
             crate::diag::trace(|| {

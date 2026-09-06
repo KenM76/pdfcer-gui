@@ -655,38 +655,48 @@ mod tests {
         }
     }
 
-    /// ★★★ **The note editor's painted-words warning fires on exactly one of
-    /// the subtypes this panel lets an operator edit — and it is asked in the
-    /// SAME vocabulary the panel stores.**
+    /// ★★★ **The subtype a note edit is judged on is the ENGINE's, and this
+    /// panel's copy of the same vocabulary must not drift from it.**
     ///
-    /// The wiring guard for `panels::comments::note_editor`, and it is about a
-    /// coupling rather than about prose. [`CommentRow::subtype`] is filled from
-    /// `pdfcer-core`'s own `Annotation::subtype_label` (`annot.rs:640`) — the
-    /// raw `/Subtype` name — and `crate::text::textannot::paints_its_note` is a
-    /// **string match on that same vocabulary**. Nothing but this test holds
-    /// the two together: a well-meant change that title-cased the panel's
-    /// subtype for display, or that swapped it for an enum, would leave the
-    /// warning silently never firing, and the symptom is a *missing* sentence,
-    /// which no screenshot shows and no other test asks about.
+    /// This test replaced `only_the_text_box_row_warns_that_the_page_will_not_change`
+    /// on 2026-09-06, and what changed underneath it is worth stating rather
+    /// than losing in a diff.
+    ///
+    /// The old test wired the note editor's **before-the-write** warning — a
+    /// line saying a text box's painted words could not be changed once it was
+    /// placed. `pdfcer-core` `95a936e` made that false the same afternoon
+    /// (`set_markup_note` re-bakes the `/AP` itself), the warning was deleted
+    /// from [`super::editor`], and a test whose whole subject is a deleted
+    /// control is not a guard, it is scenery.
+    ///
+    /// ★ What the old test guarded that is still real: [`CommentRow::subtype`]
+    /// is filled from `pdfcer-core`'s own `Annotation::subtype_label` — the raw
+    /// `/Subtype` name — and `crate::text::textannot::paints_its_note` is a
+    /// **string match on that same vocabulary**. The surviving status-line
+    /// disclosure asks it with `MarkupNoteChange::subtype`, which is the same
+    /// string from the same producer, so the coupling did not go away; it moved
+    /// one surface over. A well-meant change that title-cased this panel's
+    /// subtype for display, or swapped it for an enum, would still be the first
+    /// step toward the two coming apart, and the symptom is a *missing*
+    /// sentence, which no screenshot shows.
     ///
     /// Reusing the row above's list is the point — it is this panel's own
     /// enumeration of what displays its `/Contents`, i.e. exactly the rows that
     /// get an editor — so the two cannot be brought into disagreement by adding
     /// a subtype to one list and not the other.
     ///
-    /// The both-directions shape is deliberate. The costly failure is the
-    /// **false positive**: a sticky note that started warning that the page did
-    /// not change would be describing a page that never showed those words, and
-    /// an operator who learns to dismiss this sentence loses the one case where
-    /// it is true.
+    /// The positive assertion is first and is load-bearing. A version that only
+    /// looped the `!paints_its_note` claims would pass on a `paints_its_note`
+    /// that had been reduced to `false`, which is the exact hole the engine
+    /// warned about when it shipped `Pass 258.1`.
     #[test]
-    fn only_the_text_box_row_warns_that_the_page_will_not_change() {
-        use crate::text::textannot::note_edit_hint;
+    fn the_panels_subtype_vocabulary_is_the_one_the_disclosure_asks() {
+        use crate::text::textannot::paints_its_note;
 
         assert!(
-            note_edit_hint("FreeText").is_some(),
-            "a /FreeText paints its /Contents (annot_author.rs:3131), so editing a \
-             text box's note leaves the page stale and the editor must say so"
+            paints_its_note("FreeText"),
+            "a /FreeText paints its /Contents, so a note edit on one can leave a \
+             foreign appearance behind and the status line must be able to say so"
         );
         for s in [
             "Text",
@@ -710,10 +720,10 @@ mod tests {
                 "the list this test shares with its neighbour drifted: {s}"
             );
             assert!(
-                note_edit_hint(s).is_none(),
+                !paints_its_note(s),
                 "/{s} does not paint its /Contents, so a note edit on one is \
-                 complete -- warning about it teaches the operator to ignore \
-                 the warning that matters"
+                 complete -- disclosing about it teaches the operator to ignore \
+                 the sentence that matters"
             );
         }
     }

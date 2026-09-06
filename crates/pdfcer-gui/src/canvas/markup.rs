@@ -254,6 +254,18 @@ use crate::canvas::mapping::PageMapping;
 pub mod band;
 /// Freehand: press, follow the pointer, release. `/Ink`.
 pub mod ink;
+
+/// ★★★ **Solid or dashed** — `/BS` `/S` and `/D` (§12.5.4, Table 166), as the
+/// four choices this shell offers and the one reading it can only report.
+///
+/// `RIBBON_IA.md` §5.8's *Line style*, the eighth of that row's eight controls
+/// and the only one that had **no engine verb at all** until the afternoon of
+/// 2026-09-06. Three surfaces read it — the pen that authors, the Format ▸
+/// Markup band and the Properties panel that restyle — and the module header
+/// says why it is one list rather than three, why there is no phase control, and
+/// why the shell refuses an unusable pattern by *offering only valid ones*
+/// rather than by validating an entry it never takes.
+pub mod linestyle;
 /// Which markup gesture one drag reaches — band, freehand trail, or the
 /// line-grouped quads of a highlight that found text. Split out of
 /// `canvas::interact` under R2; its header carries the fallback ordering.

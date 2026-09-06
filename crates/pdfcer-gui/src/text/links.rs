@@ -106,6 +106,33 @@ pub fn non_navigation(action: &str) -> String {
     )
 }
 
+/// As [`non_navigation`], **naming the file the action opens**.
+///
+/// ## ★ Why the file is worth its own sentence
+///
+/// The engine began resolving a `/Launch` action's file specification on
+/// 2026-09-06, having previously resolved one for `/GoToR` and discarded it
+/// here — the same key, the same question, answered in one case only. The
+/// operator case that drove it is one this audience has: a table-of-contents
+/// PDF whose entries open the other drawings in a folder.
+///
+/// Before this, such a link said *"this is a Launch action"* and stopped,
+/// which tells an operator that something exists and nothing about it. The
+/// file name is the whole content of the link.
+///
+/// ## ★★ It still says pdfcer does not run it, and that clause is not padding
+///
+/// R13 — recognised and disclosed, **never executed**. Naming a file is the
+/// point at which a reader might reasonably expect a click to open it, so the
+/// refusal has to travel in the same sentence as the name. A disclosure that
+/// grew more informative and quietly dropped its refusal would be the worse
+/// half of this change.
+pub fn non_navigation_file(action: &str, file: &str) -> String {
+    format!(
+        "This link is a {action} action that opens {file}. pdfcer shows what it is and does not run it."
+    )
+}
+
 /// **A remote file and a page number**, for [`remote`]'s hole.
 ///
 /// ★★ `page` arrives **1-based**. `RemoteTarget::PageNumber` is 0-based, as

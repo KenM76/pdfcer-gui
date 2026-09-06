@@ -50,27 +50,50 @@ tabulated here once:
 | **Arrowheads** | Format ▸ Markup band | ⬜ built, undriven — new 2026-09-06 |
 | **Note text** | **Properties panel**, not the tab | ✅ built — `/Contents` is a different struct behind a different verb, and a note is *prose*: a ribbon band is the wrong surface for a paragraph. §5.8's own division of labour puts everything not reached for mid-gesture in the panel |
 | **Delete** | the **Selection** group | ✅ built — exactly as it is for every other row of §5.8's table |
-| **Line style** (dashed) | **nowhere** | ⛔ **no engine verb exists** |
+| **Line style** (dashed) | Format ▸ Markup band **and** the Properties panel | ⬜ built, undriven — new 2026-09-06, **later the same day** |
 
-⇒ **Seven of eight.** The row as written on 2026-08-12 is materially delivered.
+⇒ **EIGHT OF EIGHT.** The row as written on 2026-08-12 is delivered in full.
 
-**★★★ Line style is the eighth and it is not a scheduling deferral.**
-`MarkupStyle` carries exactly five fields — `stroke`, `interior`, `width`,
-`opacity`, `endings` — and **no dash pattern and no border style**, so there is
-nothing for a control to call. It stays in `shell::manifest::PLANNED` with that
-reason written in, and it is **filed at the engine**:
-`request_markupstyle_cannot_express_a_dashed_border.md`, in
-`D:\Dev\FeatureRequests\pdfce_FeatureRequests\open\`, with a row in
-`ENGINE_BACKLOG.md` naming what it waits on.
+**★★★ Line style was the eighth, and its blocker lasted about six hours.**
+This section read, that morning:
 
-★★ **The absence is two-sided and the filing says so, which is the part worth
-recording here.** The engine's own `DroppedProperty` enum states the
-consequence twice, in two adjacent variants: a dash a caller cannot *set* is
-also a dash the engine cannot *preserve*. So the missing control is the visible
-half of a round-trip gap — a producer's dashed border is silently normalised
-whether or not this shell ever offers the setting. **A specification entry with
-no verb behind it is a blocker with a name, not a to-do**, and the distinction
-is the one the amendment below spent eighteen days learning.
+> **Line style is the eighth and it is not a scheduling deferral.**
+> `MarkupStyle` carries exactly five fields — `stroke`, `interior`, `width`,
+> `opacity`, `endings` — and **no dash pattern and no border style**, so there
+> is nothing for a control to call. … ★★ The absence is two-sided and the
+> filing says so … a dash a caller cannot *set* is also a dash the engine
+> cannot *preserve*. So the missing control is the visible half of a round-trip
+> gap — a producer's dashed border is silently normalised whether or not this
+> shell ever offers the setting.
+
+Every word of that was accurate, and the framing in its second paragraph is
+what the engine acted on. `request_markupstyle_cannot_express_a_dashed_border.md`
+asked for **preservation** and said this shell would take that alone; the reply
+that afternoon shipped all three halves, on the reasoning that once the dash was
+in the pipeline the other two were nearly free — the same thing that happened to
+`/BE` in `Pass 98.0`:
+
+| half | engine | surface here |
+|---|---|---|
+| **preserve** | `/BS` `/S` and `/D` read back on the way in; a restyle that does not mention `dash` keeps one, **including a dash pdfcer never authored** | nothing to build — it is what makes the control safe |
+| **author** | `MarkupOptions::dash` | the Markup ▸ Style pen's chooser |
+| **restyle** | `MarkupStyle::dash: Option<StyleEdit<BorderDash>>` | this row's two controls |
+
+★★★ **And the defect was worse than this shell reported it.** The filing named
+the recolour path. The reply records that `resize_annotation`,
+`reshape_annotation` and authoring each baked an appearance too, and every one
+of them solidified a dash — so a producer's dash was destroyed by **dragging a
+resize handle or a vertex**, not only by pressing the colour swatch. All four
+carry it now, each proven by separate sabotage. The lesson for this document is
+about the *shape* of a report rather than its accuracy: a defect reported at one
+route is a defect that gets fixed at one route unless the report says what the
+route is an instance of.
+
+★ **The two-sidedness above was right and is now the reason the control is
+honest.** Because the engine preserves a dash it did not author, the chooser can
+show a fifth state — *the file's own pattern* — and mean it: leaving the control
+alone genuinely keeps it. A Line style control over the old engine would have
+been a control its own neighbours undid.
 
 ⚠ **Two further engine gaps were found while wiring the five that shipped**, and
 they belong here because they constrain what the row may ever offer:
@@ -1182,7 +1205,7 @@ Contents vary by selection type:
 
 | Selection | Groups |
 |---|---|
-| Markup | **Colour · Fill · Line width · Opacity · Arrowheads** · ~~Line style~~ · *Note text* · Delete — ★★ **SEVEN OF EIGHT BUILT 2026-09-06; see the LATEST amendment at the top of this file for the row-by-row table.** *Note text* is built and lives in the **Properties panel** rather than on the tab (a note is prose; a ribbon band is the wrong surface for a paragraph) — it was struck here on the day the band shipped, which under-reported it. ~~Line style~~ is the only entry with **no engine verb at all** and is filed as `request_markupstyle_cannot_express_a_dashed_border.md`. ⬜ None of the five band controls has been driven |
+| Markup | **Colour · Fill · Line width · Line style · Opacity · Arrowheads** · *Note text* · Delete — ★★ **EIGHT OF EIGHT BUILT 2026-09-06; see the LATEST amendment at the top of this file for the row-by-row table.** *Note text* is built and lives in the **Properties panel** rather than on the tab (a note is prose; a ribbon band is the wrong surface for a paragraph) — it was struck here on the day the band shipped, which under-reported it. **Line style** was the eighth: it was struck as *"the only entry with no engine verb at all"* that morning and unstruck the same afternoon, when `MarkupStyle::dash` shipped in answer to `request_markupstyle_cannot_express_a_dashed_border.md`. ⬜ None of the six band controls has been driven |
 | ce dimension | Group · Scale · Precision · Units · Standard · Witness lines · Delete |
 | Image | Size · Position · Crop · Opacity · Replace · Delete |
 | Vector object | Stroke · Fill · Winding rule · Node tools · Delete |
@@ -1304,10 +1327,18 @@ asserts in both directions, and the prose in the module header was checked by
 nothing. The header now carries the old text as a quotation, because the shape
 of the mistake is worth more than the correction.
 
-**Line style was dropped, and it is not a scheduling deferral.** `MarkupStyle`
-carries no dash pattern at all, so there is no verb for a control to reach. It
-stays in `manifest::PLANNED` with that reason written in, replacing the "panel
-first" note that read as a scheduling fact and was not one.
+**Line style was dropped, and it was not a scheduling deferral.** `MarkupStyle`
+carried no dash pattern at all, so there was no verb for a control to reach, and
+it stayed in `manifest::PLANNED` with that reason written in — replacing the
+"panel first" note that read as a scheduling fact and was not one.
+
+⚠ **That row was removed from `manifest::PLANNED` later the same day**, when
+`MarkupStyle::dash` shipped. The amendment at the top of this file carries the
+account. What is worth keeping *here* is that the distinction this paragraph
+drew — a **capability** blocker, not a **scheduling** one — was the right
+distinction and is what got the gap filed and closed in an afternoon; the
+paragraph beside it about *Note text* draws the other kind, and that one has not
+expired.
 
 **Note text was dropped**, for a different reason and it is worth keeping the
 two apart: `/Contents` is `MarkupNote`'s, a different struct behind a different

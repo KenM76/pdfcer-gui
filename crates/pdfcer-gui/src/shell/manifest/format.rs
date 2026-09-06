@@ -101,9 +101,25 @@
 //! written once, in `panels::properties`, and the band reads the same actions.
 //!
 //! What is left of §5.8's table in [`super::PLANNED`] is now the rows with no
-//! verb behind them — a markup's line style (`MarkupStyle` carries no dash
-//! pattern), a note's text (`MarkupNote`, a different struct), the dimension
-//! property editors, and the vector-object rows.
+//! verb behind them — a note's text (`MarkupNote`, a different struct), the
+//! dimension property editors, and the vector-object rows.
+//!
+//! ⚠ **This paragraph named a markup's line style too, on the reasoning that
+//! `MarkupStyle` carried no dash pattern.** That was true when it was written
+//! on the morning of 2026-09-06 and false about six hours afterwards:
+//! `MarkupStyle::dash` shipped that afternoon (`pdfcer-core` `edit.rs:4422`)
+//! with the preserve and author halves beside it, and `format.line_style` is
+//! now a registered command and the **sixth** control of the Markup group.
+//!
+//! ⇒ Corrected rather than deleted, because it is the **third** stale-blocker
+//! correction in this one header. The two above it stood for nineteen days
+//! each; this one stood for an afternoon. The rule the header already states is
+//! unchanged — *a blocker is a measurement with a date* — and what this instance
+//! adds is the interval: **no reading of a blocker is fresh enough to skip
+//! re-checking.** The register half of it *was* caught automatically, by
+//! `planned_commands_are_genuinely_absent` failing by name the moment the
+//! command was registered, which is the difference between a blocker that is a
+//! row in a table and a blocker that is prose in a header.
 //!
 //! **Delete** is the row that appears in *every* selection type's list in
 //! §5.8's table. An unarmed canvas already does modeless select-and-delete —
@@ -384,6 +400,12 @@ pub(super) fn tab() -> Tab {
                     Item::custom(super::MARKUP_STROKE).shown_when(MARKUP_VISIBLE_WHEN),
                     Item::custom(super::MARKUP_FILL).shown_when(MARKUP_VISIBLE_WHEN),
                     Item::custom(super::MARKUP_WIDTH).shown_when(MARKUP_VISIBLE_WHEN),
+                    // ★ Beside the width and not at the end of the row: the two
+                    // are one subject — *what the line looks like* — and §5.8's
+                    // Markup row lists them adjacent for that reason. An
+                    // operator setting a mark's linework should not have to
+                    // cross an opacity field to finish the thought.
+                    Item::custom(super::MARKUP_DASH).shown_when(MARKUP_VISIBLE_WHEN),
                     Item::custom(super::MARKUP_OPACITY).shown_when(MARKUP_VISIBLE_WHEN),
                     Item::custom(super::MARKUP_ENDINGS).shown_when(MARKUP_VISIBLE_WHEN),
                 ],
@@ -610,8 +632,8 @@ mod tests {
             );
         }
         assert_eq!(
-            seen, 8,
-            "three Font controls and five Markup controls. A count, because the loop above \
+            seen, 9,
+            "three Font controls and six Markup controls. A count, because the loop above \
              passes trivially over an empty tab — which is what a renamed variant or a group \
              lost to an editing accident would leave it"
         );

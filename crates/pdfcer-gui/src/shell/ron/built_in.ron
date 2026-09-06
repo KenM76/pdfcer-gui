@@ -482,6 +482,7 @@
                         Custom(kind: "markup_stroke", visible_when: "selection.markup_restylable"),
                         Custom(kind: "markup_fill", visible_when: "selection.markup_restylable"),
                         Custom(kind: "markup_width", visible_when: "selection.markup_restylable"),
+                        Custom(kind: "markup_dash", visible_when: "selection.markup_restylable"),
                         Custom(kind: "markup_opacity", visible_when: "selection.markup_restylable"),
                         Custom(kind: "markup_endings", visible_when: "selection.markup_restylable"),
                     ],

@@ -173,98 +173,113 @@ pub const fn cancel() -> &'static str {
 // EDITING a note that already exists — the other end of the same distinction
 // ===========================================================================
 //
-// ★★★ **A `/FreeText`'s `/Contents` and the words painted in it start
-// IDENTICAL and then silently diverge, and only this module is in a position
-// to say so.**
+// ★★★ **A `/FreeText`'s `/Contents` and the words painted in it are kept in
+// step BY THE ENGINE now, in the same command and the same undo entry. The
+// disclosure this section carried for one morning is deleted; the shape of the
+// correction is kept, because the shape is the useful part.**
 //
-// The module header's rule — *a text box is painted on the page, a sticky note
-// is not* — was written about the authoring dialog, where the operator is
-// choosing which kind to place. It has a second, sharper consequence that was
-// unstated until it was measured on 2026-09-06, and the strings below are
-// that consequence.
+// # What was measured here on 2026-09-06, and it was correct when written
 //
-// # What was measured, in the engine, at the pin this build takes
+// At `pdfcer-core` v0.42.0 (`821ab47`, the pin this shell then took):
 //
-// `pdfcer-core` v0.42.0 (`821ab47`, the `Cargo.lock` pin — read, not quoted):
+// 1. `annot_author::free_text` writes the operator's words TWICE — into the
+//    `/AP` `/N` appearance stream that is what the page actually shows, and
+//    into `/Contents`. At the moment a text box is placed the two are the same
+//    string, so the divergence had no visible first moment.
+// 2. `EditSession::set_markup_note` committed **one object** — the annotation
+//    dictionary. The `/AP` stream is a separate object and was not in the
+//    command.
+// 3. R43, in the engine's own words: *"pdfcer paints from `/AP` or not at
+//    all."*
 //
-// 1. `annot_author::free_text` (`annot_author.rs:3082`) writes the operator's
-//    words TWICE: into the `/AP` `/N` appearance stream that is what the page
-//    actually shows, and into `/Contents` at `annot_author.rs:3131`. At the
-//    moment a text box is placed the two are the same string.
-// 2. `EditSession::set_markup_note` (`edit.rs:25827`) commits **one object** —
-//    the annotation dictionary (`edit.rs:25930-25940`). The `/AP` stream is a
-//    separate object and is not in the command.
-// 3. R43, in the engine's own words at `edit.rs:25992`: *"pdfcer paints from
-//    `/AP` or not at all."*
-//
-// ⇒ Editing a placed text box's note rewrites `/Contents` and leaves the page
+// ⇒ Editing a placed text box's note rewrote `/Contents` and left the page
 // showing the words the box was made with. Not a bug in the call — the call
-// does exactly what it documents — but an operator typing into a box and
-// watching the page not change has been told nothing.
+// did exactly what it documented — but an operator typing into a box and
+// watching the page not change had been told nothing.
 //
-// # Why the engine cannot simply re-bake it, so nobody re-derives this
+// It could not be closed from this side. Regenerating an appearance needs the
+// annotation read back into a `TextAnnotSpec`, and there was no reader for the
+// text-bearing family anywhere in the crate. So this shell did the only two
+// things open to it: it **disclosed**, off-canvas and twice — a line in the
+// note editor before the write, and the first sentence of the status line
+// after it — and it **filed**
+// `request_a_text_boxs_painted_words_cannot_be_rewritten.md`, naming
+// `annot_author::text_spec_from_dict` as the single unblocker.
 //
-// `set_markup_style` (`edit.rs:26055`) DOES regenerate an appearance, and it
-// refuses `FreeText` **by name** in its own error list (`edit.rs:26041`). The
-// reason is one level down: regeneration reads the annotation back into a spec
-// with `annot_author::spec_from_dict` (`annot_author.rs:461`), whose arms are
-// the geometric family only. There is no `TextAnnotSpec` reader anywhere in
-// the crate, and the engine says so itself, in the sentence it shows an
-// operator who pastes one (`edit.rs:41443`):
+// # ★★ What replaced it, the same afternoon
 //
-// > *"pdfcer can author this kind of annotation but cannot yet read one back
-// > off a page into the model the clipboard carries."*
+// `pdfcer-core` `95a936e` (`Pass 258.1`) shipped that reader and did not stop
+// there: **`set_markup_note` re-bakes the appearance itself**, opt-out-free,
+// inside the same command, so the two halves share one undo entry and can
+// never be undone apart. Read, not quoted:
 //
-// `regenerate_appearances` (`edit.rs:31424`) is not the escape hatch either —
-// it needs an `/AcroForm` and walks fields, not annotations.
+// * `edit.rs:26137` — `pub fn set_markup_note`.
+// * `edit.rs:26272-26289` — the `/FreeText` arm; on a hit the command carries
+//   **two** `ObjectWrite`s, the dictionary and the `/AP` stream, and
+//   `appearance_rebaked` is `rebake.is_some()`.
+// * `edit.rs:27000` — `rebake_free_text_appearance`, which reads the ORIGINAL
+//   dictionary into a spec, re-bakes and commits.
 //
-// # ★★ Why this DISCLOSES rather than refuses, which was the live choice
+// So the before-the-write hint is **deleted**. There is nothing left for it to
+// warn about, and it could not warn about what remains: whether an appearance
+// is foreign is measured *inside* the verb, by baking and comparing bytes, so
+// no editor drawn before the call can know it. The two status-line sentences
+// survive, narrowed to the one case that is still real, and they key on the
+// engine's own answer instead of on a subtype this shell classified.
 //
-// Refusing the edit by name was weighed and rejected, and the reasoning is
-// recorded because the opposite call would also have been defensible:
+// ★ This deletion is the standing rule, not a tidy-up: *delete the workaround
+// when the cause is removed.* A mechanism with no caller rots, and a
+// limitation sentence has an hours-long shelf life. A shell still warning an
+// operator about a defect the engine closed the same afternoon is lying to
+// them, and it is the kind of lie nobody notices because it reads as caution.
 //
-// - A `/FreeText`'s `/Contents` is **not only** the painted text. It is the
-//   comment body this shell's own Comments panel lists and a reader's comment
-//   list shows. `canvas::notepopup::model`'s own header already argued this,
-//   before the divergence was measured: *"a reviewer correcting a typo needs
-//   the second one."*
-// - Refusing would put the Comments panel back to read-only for one subtype —
-//   which is the exact defect `set_markup_note` was built to close. The engine
-//   names it (`edit.rs:25767`): *"what they actually shipped was the fourth
-//   option: their Comments panel is read-only."*
-// - The act is recoverable: it is one undo entry, and `MarkupNoteChange`
-//   carries the replaced words back.
+// # ★★★ The half that survives, and why the subtype test is no longer enough
 //
-// So the edit happens and renders exactly as it will save (R8b), and the
-// operator is told — **twice, and off-canvas both times**: once in the editor
-// before they type, once in the status line after it is written. Nothing is
-// drawn onto the page; R8b's surviving half is that an inference the operator
-// cannot see still owes a report, and one report before the fact is worth more
-// than one after it.
+// [`pdfcer_core::edit::MarkupNoteChange::appearance_rebaked`] is `false` on
+// three quite different occasions and **only one of them owes an operator a
+// sentence**:
 //
-// Filed at the engine as `request_a_text_boxs_painted_words_cannot_be_rewritten.md`.
+// | `/Subtype` | `appearance_rebaked` | what it means | what is said |
+// |---|---|---|---|
+// | `Text` (sticky) | `false` | a sticky paints no words — a reader's popup shows them — so `/Contents` is the whole of the content | nothing |
+// | `Stamp` | `false` | `/Contents` is a comment *about* the stamp; `annot_author::stamp` never writes the key at all | nothing |
+// | `FreeText`, appearance pdfcer's own | **`true`** | the words on the page moved with the note, in one undo entry | nothing — the page itself shows it |
+// | `FreeText`, appearance FOREIGN | `false` | a designer's box with a shadow, a gradient or an image in it keeps it, rather than being replaced by pdfcer's plainer rendering. **The note still commits** | **this row, and only this row** |
+//
+// ⇒ The guard is therefore `paints_its_note(subtype) && !appearance_rebaked`,
+// and both halves are load-bearing in opposite directions:
+//
+// - Drop the **subtype** half and the sentence fires on every sticky note in
+//   the document — the failure the engine names itself, *a disclosure that
+//   fires on the overwhelmingly common path is one an operator learns to
+//   skip*, and skipping it costs the case that is real.
+// - Drop the **`appearance_rebaked`** half and the deleted lie is back: every
+//   text-box note edit told the page did not move, on a build where it did.
 
 /// Whether this `/Subtype` PAINTS its `/Contents` onto the page.
 ///
-/// The single subtype test the three strings below share, so the question is
-/// asked in one place rather than three. `subtype` is `pdfcer-core`'s own
-/// `Annotation::subtype_label` output (`annot.rs:640`) — the raw `/Subtype`
-/// name, not a label of ours.
+/// The first half of the surviving disclosure's guard — the second is the
+/// engine's `appearance_rebaked` — so the question is asked in one place
+/// rather than two. `subtype` is `pdfcer-core`'s own `Annotation::subtype_label`
+/// output, reaching this shell as
+/// [`pdfcer_core::edit::MarkupNoteChange::subtype`]: the raw `/Subtype` name,
+/// not a label of ours.
 ///
 /// # ★ Why the answer is `FreeText` and NOT the other two note-bearing kinds
 ///
 /// Measured per kind rather than assumed for the family, and the family turns
 /// out not to be uniform:
 ///
-/// | `/Subtype` | `/Contents` painted? | measured at |
+/// | `/Subtype` | `/Contents` painted? | re-baked by `set_markup_note`? |
 /// |---|---|---|
-/// | `FreeText` | **yes** — it is the appearance's own input | `annot_author.rs:3131` |
-/// | `Text` (sticky) | no — *"shown by the reader's popup, never painted on the page"* | `annot_author.rs:3197` |
-/// | `Stamp` | no — `stamp()` writes `/Name` and never writes `/Contents` at all; the painted label comes from the name | `annot_author.rs:3298` |
+/// | `FreeText` | **yes** — it is the appearance's own input | yes, when the appearance on disk is one pdfcer would have drawn |
+/// | `Text` (sticky) | no — *"shown by the reader's popup, never painted on the page"* | no, and nothing is stale |
+/// | `Stamp` | no — `stamp()` writes `/Name` and never writes `/Contents` at all; the painted label comes from the name | no, and nothing is stale |
 ///
-/// ⇒ Editing a sticky note's or a stamp's note is **completely correct today**
-/// and owes no disclosure. Saying otherwise would be a warning an operator
-/// learns to ignore, which costs the one case that is real.
+/// ⇒ Editing a sticky note's or a stamp's note is **complete** and owes no
+/// disclosure, whatever `appearance_rebaked` says — for those two `false` is
+/// the correct and final answer, not a failure. Saying otherwise would be a
+/// warning an operator learns to ignore, which costs the one case that is real.
 ///
 /// ★ The stamp row is the one worth reading twice. A stamp's `/Contents` is a
 /// comment *about* the stamp, not the stamp's words — so it is not stale, it
@@ -276,32 +291,26 @@ pub fn paints_its_note(subtype: &str) -> bool {
     subtype == "FreeText"
 }
 
-/// Shown in the note editor **before** the operator types, or `None` for a
-/// subtype whose note edit is complete.
+/// The status-line disclosure **after** a note is written, or `None` when the
+/// edit was complete and nothing is owed.
 ///
-/// The before half. It is the one that can still change what the operator
-/// does — a disclosure that arrives after the write can only explain.
-#[must_use]
-pub fn note_edit_hint(subtype: &str) -> Option<&'static str> {
-    paints_its_note(subtype).then_some(
-        "The words printed in this box cannot be changed once it is placed. \
-         What you type here is the comment attached to it: the Comments panel \
-         and a reader's comment list show it, and the box on the page keeps \
-         the words it was made with.",
-    )
-}
-
-/// The status-line disclosure **after** a note is written, or `None`.
+/// `appearance_rebaked` is [`pdfcer_core::edit::MarkupNoteChange::appearance_rebaked`]
+/// passed through unexamined — the engine's answer to *which half moved*, not
+/// an inference of ours. See the section banner for the four-row table this
+/// implements and for why `false` alone is not the condition.
 ///
 /// ★ States the two halves separately and in that order — what did change,
 /// then what did not — because an operator who reads only the first clause
-/// must not come away believing the page moved.
+/// must not come away believing the page moved. It also says **why** the
+/// picture was left alone, since "it was not redrawn" without "because it is
+/// not ours to redraw" reads as a failure rather than as preservation.
 #[must_use]
-pub fn note_edit_disclosure(subtype: &str) -> Option<&'static str> {
-    paints_its_note(subtype).then_some(
+pub fn note_edit_disclosure(subtype: &str, appearance_rebaked: bool) -> Option<&'static str> {
+    (paints_its_note(subtype) && !appearance_rebaked).then_some(
         "The comment on this text box was changed. The words printed on the \
-         page were NOT: pdfcer cannot redraw a text box once it is placed, so \
-         the box still reads what it did before.",
+         page were NOT redrawn: this box was drawn by another program, so \
+         pdfcer keeps its appearance exactly as it is rather than replacing it \
+         with a plainer version, and the page still reads what it did before.",
     )
 }
 
@@ -312,13 +321,14 @@ pub fn note_edit_disclosure(subtype: &str) -> Option<&'static str> {
 /// shared sentence is one an author can reword for one and silently change for
 /// the other. Removing is also the worse surprise — the comment is gone from
 /// every list and the page is unchanged, so the operator has deleted the only
-/// copy they could see and kept the one they cannot edit.
+/// copy they could see and kept the one they cannot.
 #[must_use]
-pub fn note_clear_disclosure(subtype: &str) -> Option<&'static str> {
-    paints_its_note(subtype).then_some(
+pub fn note_clear_disclosure(subtype: &str, appearance_rebaked: bool) -> Option<&'static str> {
+    (paints_its_note(subtype) && !appearance_rebaked).then_some(
         "The comment on this text box was removed. The words printed on the \
-         page were NOT: pdfcer cannot redraw a text box once it is placed, so \
-         the box still reads what it did before.",
+         page were NOT redrawn: this box was drawn by another program, so \
+         pdfcer keeps its appearance exactly as it is rather than emptying it, \
+         and the page still reads what it did before.",
     )
 }
 
@@ -392,55 +402,121 @@ mod tests {
         }
     }
 
-    /// ★★★ **Only the text box owes the painted-words disclosure, and the
-    /// other two owe it in neither direction.**
+    /// The three subtypes an operator can write a note onto, plus a handful of
+    /// geometric ones, as the four-row table in the section banner asks them.
     ///
-    /// The guard on the measurement in the section banner. It is written as a
-    /// both-directions assertion rather than one `assert!(paints_its_note(
-    /// "FreeText"))` because the expensive mistake is the *false positive*: a
-    /// sticky note that started warning "the words printed on the page were
-    /// NOT changed" would be telling the operator about a page that never
-    /// showed those words, and a warning an operator learns to dismiss is
-    /// worse than none — it costs the one case that is real.
+    /// Shared by the two tests below so the table is enumerated once. Adding a
+    /// subtype here makes both of them ask about it.
+    const QUIET: [&str; 6] = ["Text", "Stamp", "Square", "Highlight", "Line", "Polygon"];
+
+    /// ★★★ **Exactly one of the four rows owes the operator a sentence: a
+    /// `/FreeText` whose appearance the engine did NOT re-bake.**
     ///
-    /// `Stamp` is in the list on its own footing. Its `/Contents` is a comment
-    /// ABOUT the stamp; `annot_author::stamp` never writes that key at all, so
-    /// there is nothing for an edit to make stale.
+    /// The guard on the section banner's table, and it is deliberately built
+    /// **positive first**. The engine's own methodology note, sent with
+    /// `Pass 258.1` and aimed at this side of the wire:
+    ///
+    /// > Our first version of the foreign-appearance test asserted
+    /// > `!appearance_rebaked` — and **passed with the entire re-bake
+    /// > disabled**. A "not X" assertion is vacuous when the thing that would
+    /// > produce X is absent.
+    ///
+    /// So the first four assertions here establish that these functions *can*
+    /// speak, and every `is_none()` below them is a claim about a condition
+    /// rather than about a function that never returns anything. Sabotaging
+    /// either half of the guard — deleting the `paints_its_note` term or the
+    /// `!appearance_rebaked` term — turns this test red, which is the property
+    /// a vacuous version would not have.
+    ///
+    /// The two silences are owed in *opposite* directions and both are
+    /// expensive:
+    ///
+    /// - a sticky or a stamp that started warning "the words printed on the
+    ///   page were NOT redrawn" describes a page that never showed those
+    ///   words, and a warning an operator learns to dismiss costs the one case
+    ///   where it is true;
+    /// - a re-baked text box that warned anyway would be the deleted lie
+    ///   restored, on a build where the page demonstrably moved.
     #[test]
-    fn only_a_text_box_paints_the_words_its_note_edit_changes() {
+    fn only_a_foreign_text_box_appearance_owes_the_operator_a_sentence() {
+        // ROW 4 — the disclosure. The positive control, first, because it is
+        // what stops everything below it being vacuous.
         assert!(
-            paints_its_note("FreeText"),
-            "a /FreeText's /Contents IS its appearance's input (annot_author.rs:3131)"
+            note_edit_disclosure("FreeText", false).is_some(),
+            "a /FreeText whose appearance pdfcer did not author keeps that \
+             appearance, so the note moved and the page did not"
         );
-        for quiet in ["Text", "Stamp", "Square", "Highlight", "Line", "Polygon"] {
+        assert!(
+            note_clear_disclosure("FreeText", false).is_some(),
+            "removing the note is the worse surprise of the two and must speak \
+             at least as loudly"
+        );
+
+        // ROW 3 — same subtype, appearance re-baked. The page moved with the
+        // words, in one undo entry, and the operator can see it.
+        assert!(
+            note_edit_disclosure("FreeText", true).is_none(),
+            "set_markup_note re-baked the appearance (edit.rs:26272), so there \
+             is no second half left to disclose"
+        );
+        assert!(
+            note_clear_disclosure("FreeText", true).is_none(),
+            "the box was emptied along with its note; warning otherwise is the \
+             deleted limitation sentence coming back"
+        );
+
+        // ROWS 1 and 2 — a sticky and a stamp, in BOTH values of the flag,
+        // because for them `false` is correct and final rather than a failure.
+        for quiet in QUIET {
             assert!(
                 !paints_its_note(quiet),
-                "/{quiet} does not paint its /Contents, so a note edit on one is complete \
-                 and owes no disclosure"
+                "/{quiet} does not paint its /Contents, so a note edit on one \
+                 is complete"
             );
-            assert!(note_edit_hint(quiet).is_none(), "/{quiet} was warned");
-            assert!(note_edit_disclosure(quiet).is_none(), "/{quiet} was warned");
-            assert!(
-                note_clear_disclosure(quiet).is_none(),
-                "/{quiet} was warned"
-            );
+            for rebaked in [false, true] {
+                assert!(
+                    note_edit_disclosure(quiet, rebaked).is_none(),
+                    "/{quiet} was warned with appearance_rebaked={rebaked}; \
+                     false is the correct and final answer for this subtype"
+                );
+                assert!(
+                    note_clear_disclosure(quiet, rebaked).is_none(),
+                    "/{quiet} was warned with appearance_rebaked={rebaked}"
+                );
+            }
         }
+
+        assert!(
+            paints_its_note("FreeText"),
+            "a /FreeText's /Contents IS its appearance's input"
+        );
     }
 
-    /// ★★ **Each disclosure says what did NOT change, not only what did.**
+    /// ★★ **Each disclosure says what did NOT change, and WHY it was left
+    /// alone.**
     ///
-    /// The one property that makes these sentences worth drawing. A disclosure
-    /// reading only *"the comment was changed"* is true, is what the operator
-    /// already knows, and leaves the whole defect unsaid — so the negative
-    /// clause is asserted rather than trusted to review.
+    /// The negative clause was the whole point of these sentences when they
+    /// were written and it still is: a disclosure reading only *"the comment
+    /// was changed"* is true, is what the operator already knows, and leaves
+    /// the whole of the surviving half unsaid.
     ///
-    /// Checked on the word `NOT` in capitals: it is the only token in either
-    /// string that cannot survive an author trimming the sentence down to its
-    /// cheerful half.
+    /// ★ The *why* clause is new, and it is what stops the sentence reading as
+    /// a defect report. On the old build the picture did not move because
+    /// pdfcer could not move it; on this one it did not move because moving it
+    /// would have thrown away a shadow, a gradient or an image that another
+    /// program drew — preservation, not failure. Asserted on *"another
+    /// program"* rather than on a verb, because the verb is rewordable
+    /// (`keeps`, `leaves`, `preserves` are all honest) while the **cause** is
+    /// not: drop that clause and the sentence reports a capability pdfcer is
+    /// missing instead of a decision it made, which is the whole difference
+    /// between this sentence and the one it replaced.
+    ///
+    /// Checked on `NOT` in capitals for the same reason: it is the only token
+    /// that cannot survive a trim down to the cheerful half.
     #[test]
-    fn both_disclosures_state_the_half_that_did_not_move() {
-        let edited = note_edit_disclosure("FreeText").expect("a text box discloses");
-        let cleared = note_clear_disclosure("FreeText").expect("a text box discloses");
+    fn both_disclosures_state_the_half_that_did_not_move_and_why() {
+        let edited = note_edit_disclosure("FreeText", false).expect("a foreign box discloses");
+        let cleared = note_clear_disclosure("FreeText", false).expect("a foreign box discloses");
         for (what, s) in [("edit", edited), ("clear", cleared)] {
             assert!(
                 s.contains("NOT"),
@@ -450,35 +526,21 @@ mod tests {
                 s.contains("printed on the page"),
                 "the {what} disclosure must name the page, not just the box: {s:?}"
             );
+            assert!(
+                s.contains("another program"),
+                "the {what} disclosure must name WHY the appearance was left \
+                 alone, or it reports a capability pdfcer is missing instead \
+                 of a decision it made: {s:?}"
+            );
+            assert!(
+                !s.contains("cannot redraw"),
+                "the {what} disclosure still claims pdfcer cannot redraw a text \
+                 box; set_markup_note has re-baked since 95a936e: {s:?}"
+            );
         }
         assert_ne!(
             edited, cleared,
             "changing a note and removing one are different acts and must not share a string"
-        );
-    }
-
-    /// The hint reaches the operator BEFORE the write, and says the same thing
-    /// as the disclosure that follows it.
-    ///
-    /// Both halves matter. A hint that contradicted the status line would be
-    /// two answers to one question; a hint that merely repeated it would be
-    /// spent in the wrong place, since only the hint can still change what the
-    /// operator does.
-    #[test]
-    fn the_editor_hint_warns_before_the_write_and_agrees_with_it() {
-        let hint = note_edit_hint("FreeText").expect("a text box hints");
-        assert!(
-            hint.contains("cannot be changed"),
-            "the hint must say the painted words are fixed: {hint:?}"
-        );
-        assert!(
-            hint.contains("comment"),
-            "the hint must say what the operator IS editing, or it is only a refusal: {hint:?}"
-        );
-        assert_ne!(
-            Some(hint),
-            note_edit_disclosure("FreeText"),
-            "the before and after strings address different moments and are not one string"
         );
     }
 }

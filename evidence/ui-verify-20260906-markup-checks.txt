@@ -1,0 +1,105 @@
+ui-verify — TWO NEW DRIVEN CHECKS FOR THE MARKUP EDITING THAT LANDED TODAY
+2026-09-06, Track M.  Fixture fixtures/a1-titleblock.pdf, --doc-point 0,300,500
+(0-BASED), 1100x800 window, fit-page = 20 % zoom.
+
+=====================================================================
+1. a_new_markup_is_drawn_in_acrobats_red
+=====================================================================
+Draws a rectangle in Review with the Rectangle tool, parks the pointer on blank
+paper, photographs a strip along the shape's top edge and a box well inside it.
+
+FINAL RUN — PASS
+  · before the drag: edge strip #F9F9F9 on paper #F9F9F9 from 0 ink px of 168
+    sampled · interior #F9F9F9 on paper #F9F9F9 from 0 ink px of 1175 sampled
+  · ★ a rectangle was authored: `markup-commit kind=Rectangle page=0
+    x0=835.42 y0=589.71 x1=1309.16 y1=844.41`
+  · after the drag: edge strip #EB9D96 on paper #F9F9F9 from 56 ink px of 168
+    sampled · interior #F9F9F9 from 0 ink px of 1175 sampled
+  · ★★★ a freshly drawn rectangle paints in Acrobat's red: the stroke reads
+    #EB9D96 on paper #F9F9F9, a direction of [0.141, 0.929, 1.000] against
+    #DB3425's [0.165, 0.931, 1.000], 0.024 apart (tolerance 0.1) — and the box
+    inside it is still blank paper, so the shape is an outline and not a fill
+
+★★ THE ORACLE HAD TO BE REPLACED, AND THE FIRST RUN IS WHY
+   A 2 pt stroke at 20 % zoom is 0.36 px wide: every pixel it lays down is a
+   blend with the paper, and the darkest quarter of the strip's ink averaged to
+   #EB9D96 — 105 away from #DB3425 in blue. No absolute tolerance can call that
+   red without calling almost anything red.
+   The measure that survives it is the DIRECTION from the paper to the ink:
+   compositing scales that vector and does not turn it, so the dilution divides
+   out exactly. Measured 0.025 from the right answer and 0.315 from the nearest
+   wrong one (Acrobat's highlighter orange) — a factor of twelve.
+
+★★ AND THE FIRST RUN FAILED FOR A REASON THAT WAS THE POINTER
+   The first run reported "THE SHAPE IS FILLED, NOT OUTLINED": 14 near-black ink
+   pixels inside the shape. The capture showed a tooltip — "No note has been
+   written on this markup." — popped by the pointer resting on the corner where
+   the drag ended, sitting exactly over the box being measured. A driven check
+   photographs the pointer as well as the program. The park is now a step.
+
+FALSIFICATION — the expected colour set to Acrobat's highlighter orange
+(#FF6200), rebuilt, driven, restored from a copy:
+  → ★★★ A NEW COMMENT SHAPE IS NOT ACROBAT'S RED. The stroke reads #EB9D96 on
+    paper #F9F9F9, which pulls away from that paper in the direction
+    [0.141, 0.929, 1.000] where Acrobat's #DB3425 would pull
+    [0.000, 0.616, 1.000] — 0.314 apart, against a tolerance of 0.1.
+  ⇒ FAIL. Restored, re-run, PASS.
+  ⚠ This falsifies the oracle and the plumbing that feeds it, not the
+    application's own constant: the crates/ tree is owned by other agents this
+    session and was not edited. The discrimination itself is covered by four
+    unit tests, including one that composites Acrobat's red at every strength
+    from 10 % to 100 % and requires the same verdict, and one that requires a
+    20 %-strength ORANGE to still be refused.
+
+=====================================================================
+2. the_format_tab_restyles_a_selected_mark
+=====================================================================
+Draws a rectangle, selects it, raises the contextual Format tab, asserts the
+band, drives the line-width field, and photographs the page again.
+
+FINAL RUN — FAIL, on a real application defect (see below). Everything else in
+the check passed on the way:
+  · the 2 pt line as drawn: longest vertical ink run 1 px, 56 ink px of 728
+  · ★ the shape was selected: `annot-select page=0 id=ObjId { num: 47 }
+    kind=Markup subtype=Square locked=false`
+  · ★ all four controls a /Square has are drawn and substantial
+  · ★★ and the arrowhead chooser is ABSENT, not greyed
+  · ★★ the width field reached the engine: `set-markup-style page=0 n=1 epoch=2
+    disclosures=none`
+  · the line after the restyle: longest vertical ink run 3 px, 168 ink px of 784
+  · ★★★ and the LINE ON THE PAGE is thicker: 56 → 168 ink px (3.00x, floor
+    1.50x) with nothing selected
+
+APPLICATION DEFECT FOUND — the line-width spinner cannot be DRAGGED
+  → A 200 px drag across `ribbon.item.format.line_width` produced no
+    `set-markup-style`. TYPING `12` into the same field produced one. So
+    everything downstream of the commit works and the drag gate alone does not.
+  Shape, from `crates/pdfcer-gui/src/app/markupband.rs::width`:
+      let mut value = was;                       // `was` re-read every frame
+      ... DragValue::new(&mut value) ...
+      if (response.drag_stopped() || response.lost_focus())
+         && (value - was).abs() > f64::EPSILON { commit }
+    `drag_stopped()` is true on the frame the button comes UP, and on that frame
+    the pointer has not moved, so `DragValue` adds nothing to a `value` that was
+    just re-seeded from the document. The difference is exactly zero and the
+    commit is skipped, every time.
+  ⚠ REPORTED, NOT FIXED — crates/ is owned by other agents this session. Worth
+    checking on the opacity field beside it, which is built the same way, and on
+    any other DragValue in the shell whose backing value is re-read per frame
+    rather than held as a draft.
+
+HARNESS FINDING, worth carrying to any other band-item check
+  A band item's published `ui-rect` is where the control was ALLOCATED, not
+  where it is hittable: `markupband::width` pads the item out to a fixed 46 px
+  with `ui.allocate_space` AFTER the widget, so a press at the rect's centre can
+  land in empty ribbon. The first two runs of this check reported the dispatch
+  broken for that reason. It now grabs the left third.
+
+FALSIFICATION — the typed width set to 1 pt, thinner than the 2 pt the shape is
+drawn with, so the restyle still commits and the page must NOT thicken:
+  · the line after the restyle: longest vertical ink run 0 px, 0 ink px of 784
+  → ★★★ THE MARK WAS RESTYLED AND THE PAGE DID NOT CHANGE. `set-markup-style`
+    is in the trace ... the strip went from 56 ink px to 0: 0.00x, against a
+    floor of 1.5x. **This is precisely the failure no trace assertion can see.**
+  ⇒ FAIL, on the pixel branch, with the trace branch green — which is exactly
+    the pair the check exists to tell apart. Restored from a copy.

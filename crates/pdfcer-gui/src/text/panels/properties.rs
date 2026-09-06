@@ -434,6 +434,23 @@ pub const fn markup_width_suffix() -> &'static str {
     " pt"
 }
 
+/// The Line style row's label.
+///
+/// ★ *"Line style"* is `RIBBON_IA.md` §5.8's own name for the row and is what
+/// the Format tab's command is called, so the two surfaces agree. It sits
+/// directly under *Line width*, and the shared first word is doing work: the two
+/// rows are one subject and read as a pair.
+///
+/// ★★ Not *"Dash pattern"*. The chooser's first entry is **Solid**, and under a
+/// label reading *Dash pattern* that entry would read as *no dash pattern* — the
+/// absence of the thing the label names rather than one of its values. The entry
+/// names themselves are `crate::text::markup`'s, because three surfaces show
+/// them and only one of the three is this panel.
+#[must_use]
+pub const fn markup_line_style_label() -> &'static str {
+    "Line style"
+}
+
 /// The opacity control's label.
 #[must_use]
 pub const fn markup_opacity_label() -> &'static str {
@@ -608,6 +625,71 @@ pub const fn markup_line_ending_note() -> &'static str {
      No end here, and redrawing it does not put that end back."
 }
 
+/// **The fifth state of the arrowhead controls — take the setting OUT of the
+/// file rather than write "none" into it.**
+///
+/// # ★★★ Two states, one picture, and why the operator is offered both
+///
+/// `MarkupStyle::endings` became a `StyleEdit` on 2026-09-06, in answer to this
+/// shell's own request (`pdfcer-core` `edit.rs:4390`, and the field's own doc
+/// comment at `edit.rs:4373`): `Set` writes `/LE`, and `Clear` **removes the
+/// key**. Until that day *"draw no arrowheads"* was expressible and *"have no
+/// `/LE` at all"* was not, so an operator who turned an arrow's heads off got a
+/// document that no longer matched the one they opened, differing in a key
+/// neither this panel nor the Format tab shows.
+///
+/// Table 176 makes `/None` the default for both ends, so `/LE [/None /None]`
+/// and an absent `/LE` draw the same line. The difference is **bytes**, and
+/// this project does not treat different bytes as the same document. The
+/// engine's reply names the argument that decided it over a cheaper
+/// doc-comment fix: a **signed** drawing, and the question *"is this
+/// byte-identical to what my client sent me"* — a question undo does not
+/// answer, because undo covers the session and not the round trip.
+///
+/// # ★★ Why these words
+///
+/// *"Clear"* is the verb this panel already uses for `/C`, `/IC` and `/CA`, and
+/// [`markup_clear`] argues it: the word is honest about the **act** — the key
+/// goes, and what applies afterwards is the standard's default rather than
+/// anything pdfcer remembers — where *"Reset"* or *"Default"* would promise a
+/// return to a previous state pdfcer never recorded.
+///
+/// ★ It carries a noun where the other three do not. A bare *"Clear"* in a list
+/// whose first entry is already *"No arrowheads"* reads as a second name for
+/// that entry, which is the one misreading this control cannot afford: those
+/// two produce identical pictures and different files, so an operator who
+/// confuses them cannot discover the mistake by looking.
+///
+/// ⚠ It deliberately does **not** say `/LE`, *key*, or *dictionary*. The
+/// operator is a drafter; the fact they need is *the file goes back out the way
+/// it came in*, and [`markup_endings_clear_hint`] says exactly that.
+#[must_use]
+pub const fn markup_endings_clear() -> &'static str {
+    "Clear the setting"
+}
+
+/// Why an operator would press [`markup_endings_clear`] when the line looks
+/// identical either way.
+///
+/// ★ The hover carries the whole distinction, because the control cannot: the
+/// two states are indistinguishable on the page and the difference only shows
+/// up in a byte comparison of the saved file. `REVIEW_TRIAGE.md`'s rule — a
+/// caveat below the thing it qualifies arrives after the operator has drawn
+/// their conclusion — is why it is a hover on the control rather than a note
+/// underneath it.
+///
+/// ★ It names the **consequence** an operator has met (a drawing that comes
+/// back different from the one that went out) rather than the mechanism (a
+/// dictionary key). Both surfaces read this one string, so the Format tab and
+/// this panel cannot come to explain the same act two different ways.
+#[must_use]
+pub const fn markup_endings_clear_hint() -> &'static str {
+    "Takes the arrowhead setting out of the file instead of writing \"no arrowheads\" into it. \
+     The line looks the same either way. Use it when a mark arrived without arrowheads and you \
+     want it to go back out the way it came in — on a signed or issued drawing, a setting that \
+     was not there before is a difference someone will find."
+}
+
 /// ★★★ The narrowing the colour swatches perform, said where the operator can
 /// see it — **before** the click rather than after.
 ///
@@ -640,6 +722,42 @@ pub const fn markup_colour_narrowed() -> &'static str {
 /// operator who is told *"the `/BE` border effect was dropped"* has been told
 /// nothing; one who is told *"its cloudy edge is now a plain outline"* can look
 /// at the page and decide whether they mind.
+///
+/// # ★★★ TWO OF THESE NARROWED ON 2026-09-06, AND ONE OF THEM WAS LEFT SAYING
+/// # SOMETHING FALSE
+///
+/// `DroppedProperty::BorderStyle` and `::DashPattern` *"now fire much less
+/// often"* — the engine's words — because a dashed border is read back and
+/// re-authored rather than solidified
+/// (`D:\Dev\pdfcer\crates\pdfcer-core\src\edit.rs:4220-4241`, and the variants'
+/// own docs at `edit.rs:4884-4904`). That is the same narrowing `BorderEffect`
+/// took after `Pass 98.0`, and it is disclosed here because **a narrowed
+/// disclosure whose wording was written for the wide case is a false
+/// disclosure**, which rule 4 forbids in exactly the direction it forbids
+/// silence.
+///
+/// What each one now means, read out of the emission site rather than assumed:
+///
+/// | variant | fires when |
+/// |---|---|
+/// | `BorderStyle` | `/BS` `/S` names a style pdfcer does not redraw — `/B`, `/I`, `/U` — **or `/S /D` whose dash was not carried** |
+/// | `DashPattern` | `/BS` `/D` is present and the dash was not carried: an array §8.4.3.6 does not admit, or a caller that **cleared** it |
+///
+/// ⚠ **The `BorderStyle` string used to name only a bevel, an inset and an
+/// underline, and after the narrowing that became wrong.** The `/S /D` row is
+/// new to it: an operator who presses **Solid** on a dashed mark clears the
+/// dash, the original dictionary still says `/S /D`, and both variants fire — so
+/// the old wording would have told them their mark had a *bevel*. It now names
+/// the dash case too, and both sentences are phrased as facts about the new
+/// outline rather than about a cause, so each is true whether the change was
+/// asked for or merely disclosed.
+///
+/// ★ The redundancy on a requested clear is accepted rather than engineered
+/// away. Suppressing a disclosure when the shell believes the operator asked for
+/// it would put the decision *"was this loss requested?"* into
+/// `app::actions::apply`'s routing arm, which that arm's own note forbids — it
+/// routes and does not compute — and a suppression rule that got it wrong would
+/// hide a real loss. A true sentence twice beats a missing one once.
 #[must_use]
 pub const fn markup_dropped(dropped: pdfcer_core::edit::DroppedProperty) -> &'static str {
     use pdfcer_core::edit::DroppedProperty as D;
@@ -648,9 +766,11 @@ pub const fn markup_dropped(dropped: pdfcer_core::edit::DroppedProperty) -> &'st
             "This mark had a cloudy or hand-drawn edge that pdfcer does not redraw. It is now a plain outline."
         }
         D::BorderStyle => {
-            "This mark had a border style pdfcer does not redraw — a bevel, an inset or an underline. It is now a plain outline."
+            "This mark's border was declared in a style that is not in the new outline — a bevel, an inset, an underline, or a dash. It is drawn as a plain line now."
         }
-        D::DashPattern => "This mark's dashed outline is now a solid one.",
+        D::DashPattern => {
+            "This mark carried a dash pattern that is not in the new outline. Its border is drawn solid now."
+        }
         D::RectDifferences => {
             "This mark's own box was inset from the area it covered, and that inset is gone. The mark is drawn to the box now."
         }

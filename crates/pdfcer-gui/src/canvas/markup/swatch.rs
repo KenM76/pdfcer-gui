@@ -31,6 +31,15 @@
 //! | **Line width** | ✅ | a drag value in points, over the pen's own range |
 //! | **Fill** | ⬜ | **a design decision about the PEN, and only about the pen** — see the row's own correction below |
 //! | **Opacity** | ✅ | **shipped 2026-08-28** — a percentage drag value writing `/CA`. This row said *"blocked on the engine"* for four months after it stopped being true; see below |
+//! | **Line style** | ✅ | **shipped 2026-09-06** — a four-entry chooser writing `/BS` `/S` and `/D`. §5.5 does not list it; it is here because it is a property of the next mark exactly as the four above are, and because the engine shipped the author-time half (`MarkupOptions::dash`) beside the restyle half on the day the Format tab got its own copy. See [`super::linestyle`] |
+//!
+//! ⚠ The table is now **five rows over a four-item specification**, which is a
+//! table that has outgrown its source rather than one that is wrong. §5.5 was
+//! written before a dash was expressible at all; the *Line style* row is the
+//! one entry here that this shell added rather than answered. It is called out
+//! so that the next reader does not spend a minute looking for a fifth bullet in
+//! `RIBBON_IA.md` §5.5 that is not there — the entry they will find is §5.8's,
+//! about the **other** surface.
 //!
 //! ### ★★★ The Fill row, corrected: it was describing ONE of two surfaces and
 //! ### did not say which
@@ -129,6 +138,14 @@ pub const REGION_HIGHLIGHTER: &str = "markup.style.highlighter"; // ui-text-exem
 pub const REGION_WIDTH: &str = "markup.style.width"; // ui-text-exempt: trace region name, never displayed
 /// As [`REGION_INK`], for the opacity.
 pub const REGION_OPACITY: &str = "markup.style.opacity"; // ui-text-exempt: trace region name, never displayed
+/// As [`REGION_INK`], for the line-style chooser.
+///
+/// ★ It doubles as the combo's `id_salt`, which is deliberate and is the one
+/// place in this module where a region name is load-bearing twice: a driven
+/// check finds the control by this name, and `egui` remembers the popup's open
+/// state under it. Two spellings of one control would give the harness a rect
+/// for a widget whose popup lives under a different key.
+pub const REGION_DASH: &str = "markup.style.dash"; // ui-text-exempt: trace region name, never displayed
 /// The palette grid inside an open swatch popup.
 ///
 /// ★ Published only while a popup is open, which is the point: a driven check
@@ -255,8 +272,59 @@ pub fn show(ui: &mut Ui, pen: &mut Pen) {
         if (pen.opacity - before).abs() > f64::EPSILON {
             trace(*pen);
         }
+
+        // ★★★ LINE STYLE — `RIBBON_IA.md` §5.8's eighth control, and the last
+        // of the eight to get an engine verb.
+        //
+        // It is on the **Style** group rather than only on the contextual Format
+        // tab because this group's whole subject is *what the next mark looks
+        // like*, and "solid or dashed" is as much a property of the next mark as
+        // its colour and its width are. `MarkupOptions::dash` is the author-time
+        // half the engine shipped alongside the restyle half
+        // (`D:\Dev\pdfcer\crates\pdfcer-core\src\edit.rs:4782`), so a shape can
+        // be DRAWN dashed rather than drawn solid and then corrected — which is
+        // one gesture and one undo entry instead of two, the same argument
+        // `add_markup_with` makes about opacity three controls to the left.
+        //
+        // ★ A ComboBox and not a set of toggle buttons: four entries whose
+        // difference is a line pattern cannot be told apart by a 16-point icon,
+        // and there is no room on a ribbon band for four labelled buttons. The
+        // arrowhead chooser on the Format tab is the same shape for the same
+        // reason.
+        //
+        // ⚠ It reports on `.clicked()` inside the popup, so there is no
+        // `drag_stopped`/`lost_focus` guard here and none is wanted: unlike the
+        // two `DragValue`s above, a combo produces exactly one change per
+        // decision.
+        let before = pen.dash;
+        let combo = ui.push_id(REGION_DASH, |ui| {
+            crate::canvas::markup::linestyle::chooser(
+                ui,
+                REGION_DASH,
+                crate::canvas::markup::linestyle::DashReading::Offered(pen.dash),
+                DASH_WIDTH,
+            )
+        });
+        if let Some(style) = combo.inner {
+            pen.dash = style;
+        }
+        let dash_response = combo.response.on_hover_text(t::pen_dash_tooltip());
+        crate::diag::ui_rect(REGION_DASH, dash_response.rect);
+        if pen.dash != before {
+            trace(*pen);
+        }
     });
 }
+
+/// The width of the line-style chooser, in points.
+///
+/// ★ Wide enough for its longest entry — *"Dashed (the file's own pattern)"* is
+/// longer still but is a **reading** and never appears on this surface, because
+/// the pen always holds one of the four. Sized against the two `DragValue`s
+/// beside it rather than to look comfortable on its own: the Style group already
+/// carries two chips and two numbers, and a fifth control that took a third of
+/// the band would push the group into the overflow on a narrow window.
+const DASH_WIDTH: f32 = 92.0;
 
 /// **The side of one colour chip and of one palette cell**, in points.
 ///
@@ -490,7 +558,8 @@ fn trace(pen: Pen) {
     crate::diag::trace(|| {
         format!(
             // ui-text-exempt: diagnostic trace, never displayed in the UI
-            "markup-pen ink={:?} highlighter={:?} width_pts={} opacity={} ca={:?}",
+            "markup-pen ink={:?} highlighter={:?} width_pts={} opacity={} ca={:?} \
+             dash={:?} d={:?}",
             pen.ink,
             pen.highlighter,
             pen.width_pts,
@@ -502,6 +571,14 @@ fn trace(pen: Pen) {
             // key" from "the option was dropped on the way to the engine",
             // which is exactly the failure a driven check exists to catch.
             pen.opacity_option(),
+            // ★ BOTH again, for the identical reason one step along: `dash` is
+            // the chooser's entry and `d` is the run lengths `/BS` `/D` will
+            // carry — `None` meaning no dash key at all. A trace with only the
+            // first could not tell "Solid, so no key" from "the pattern was
+            // dropped between the chooser and the engine", which is precisely
+            // the defect this control was built to fix on the restyle side.
+            pen.dash,
+            pen.dash_option().map(|d| d.pattern().to_vec()),
         )
     });
 }
@@ -527,6 +604,7 @@ mod tests {
             REGION_HIGHLIGHTER,
             REGION_WIDTH,
             REGION_OPACITY,
+            REGION_DASH,
             REGION_PALETTE,
             REGION_MORE_COLOURS,
         ];

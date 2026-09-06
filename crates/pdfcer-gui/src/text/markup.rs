@@ -1,11 +1,19 @@
 //! # `text::markup` — the words the Markup ▸ Style group shows
 //!
-//! Four tooltips, two suffixes and **ten colour names**, which is the whole
-//! operator-visible surface of `canvas::markup::swatch`. The controls themselves
-//! are colour chips and two numbers: none of them can carry a label without
-//! doubling the width of a ribbon group, so **the tooltip is the only place they
-//! say what they are** — which makes these strings load-bearing rather than
-//! supplementary.
+//! Five tooltips, two suffixes, **ten colour names** and the **five names a
+//! line style goes by**, which is the whole operator-visible surface of
+//! `canvas::markup::swatch` and of `canvas::markup::linestyle`. Most of the
+//! controls are colour chips and numbers: none of those can carry a label
+//! without doubling the width of a ribbon group, so **the tooltip is the only
+//! place they say what they are** — which makes these strings load-bearing
+//! rather than supplementary.
+//!
+//! ★ The line-style names are the exception, and they are here rather than in
+//! `text::ribbon` or `text::panels::properties` for a reason worth stating:
+//! **three surfaces show them** — the pen that authors, the Format ▸ Markup band
+//! that restyles, and the Properties panel that restyles — and a name that lived
+//! on one surface would be re-spelled on the other two. `canvas::markup::linestyle`
+//! is the one module all three read, and this is the one place its words live.
 //!
 //! ⚠ The count in that first sentence has been wrong before. It read *"Three
 //! tooltips and one suffix"* while the opacity tooltip and the percent suffix
@@ -97,6 +105,112 @@ pub const fn pen_opacity_tooltip() -> &'static str {
 #[must_use]
 pub const fn opacity_suffix() -> &'static str {
     "%"
+}
+
+/// Hover text for the pen's line-style chooser.
+///
+/// # ★★★ Why this sentence is about the DRAWING and not about the dash
+///
+/// "Choose a dash pattern" tells an operator what the widget obviously is. What
+/// they cannot see from the control is *when* it applies — this is the pen, so
+/// it governs the **next** mark and not the one they are looking at — and that
+/// is the half every tooltip in this module leads with, for the reason its
+/// header gives.
+///
+/// ★ It also names the one subtype family the setting does nothing for.
+/// `MarkupOptions::dash` is *"ignored by the text-markup family"*
+/// (`D:\Dev\pdfcer\crates\pdfcer-core\src\edit.rs:4776-4781`): a highlight is a
+/// colour wash and an underline is its own line, and neither draws a `/BS`
+/// border for a dash to be in. The chooser is on the Style group beside the pen
+/// colour, which serves the highlighter too, so an operator who set it and then
+/// drew a highlight would otherwise be owed an explanation nobody gave them.
+#[must_use]
+pub const fn pen_dash_tooltip() -> &'static str {
+    "Whether the next shape, arrow, line or freehand mark is drawn with a solid \
+     line or a dashed one. Highlights, underlines and strikeouts have no outline \
+     to dash, so it does not change those."
+}
+
+// ---------------------------------------------------------------------------
+// The line styles — the five things a border can be called
+// ---------------------------------------------------------------------------
+//
+// ★★ FOUR ENTRIES AND A FIFTH STATE, and the fifth is not an entry.
+//
+// `canvas::markup::linestyle::LineStyle` has four variants and every one of
+// them is offered. `DashReading::Foreign` is a fifth thing the closed chooser
+// can say and is deliberately NOT in the list: it means *the file states a dash
+// this shell does not offer*, and there is no press that produces it.
+//
+// ★ THE NAMES ARE WHAT A DRAUGHTSMAN SAYS, NOT WHAT THE FILE STORES. Not
+// "[8 3 1 3]", not "/S /D" — the run lengths are in `LineStyle::pattern` where a
+// number is useful, and a combo entry reading `[8 3 1 3]` would make an operator
+// open all four to find out which is which.
+
+/// The chooser's first entry — no dash at all.
+///
+/// ★ *Solid*, not *None*. "None" is the word this shell uses for the **absence
+/// of a property** — `markup_fill_none`, the arrowhead chooser's first position
+/// — and a solid line is not an absence, it is a line. Table 166 agrees: `/S`
+/// is a named border style, not a missing one.
+#[must_use]
+pub const fn line_style_solid() -> &'static str {
+    "Solid"
+}
+
+/// Table 166's own default dash, `[3]`.
+///
+/// The plain word, because it is the plain case: an operator who wants "a dashed
+/// line" and does not care which dash should find the entry they would have
+/// named, and it should be the one the standard itself would have given them.
+#[must_use]
+pub const fn line_style_dashed() -> &'static str {
+    "Dashed"
+}
+
+/// `[8 4]`.
+///
+/// ★ Named by its **appearance**, not by what it is conventionally used for. The
+/// tempting name was "Hidden" — the draughting convention this pattern echoes —
+/// and it was rejected for `text::markup`'s standing reason about the palette
+/// cells: a mark drawn in it is not thereby hidden, and a name that describes a
+/// convention rather than the thing on screen makes a claim about the operator's
+/// drawing that the annotation does not make.
+#[must_use]
+pub const fn line_style_long_dash() -> &'static str {
+    "Long dash"
+}
+
+/// `[8 3 1 3]`.
+///
+/// Named for what it draws, for [`line_style_long_dash`]'s reason — the centre-
+/// line convention it echoes is in `LineStyle`'s doc comment, where a reader who
+/// wants the rationale is.
+#[must_use]
+pub const fn line_style_dash_dot() -> &'static str {
+    "Dash-dot"
+}
+
+/// What the closed chooser says for a dash the file states and this shell does
+/// not offer.
+///
+/// # ★★★ It names the FILE, and that is the whole job of this string
+///
+/// The engine preserves a foreign dash through a restyle that does not mention
+/// one (`D:\Dev\pdfcer\crates\pdfcer-core\src\edit.rs:4396-4425`), so this state
+/// is not a defect and is not going to be corrected by anything the operator
+/// does — it is simply what their producer wrote. Showing *Dashed* for it would
+/// be the quiet lie the colour swatch's CMYK arm was rewritten to stop telling:
+/// a control claiming a value that is not the file's, which the operator would
+/// discover by pressing something else and watching the pattern change.
+///
+/// ★ The parenthetical is what keeps it from reading as an error. *"Dashed (the
+/// file's own pattern)"* says **this is fine and it is theirs**; a bare
+/// *"Unknown dash"* would read as damage and would send an operator looking for
+/// a repair that is not needed.
+#[must_use]
+pub const fn line_style_foreign() -> &'static str {
+    "Dashed (the file's own pattern)"
 }
 
 // ---------------------------------------------------------------------------
@@ -986,24 +1100,67 @@ mod tests {
             .lines()
             .find(|l| l.contains("tooltips"))
             .expect("the header's opening sentence names a count of tooltips");
-        // Four: pen colour, highlighter colour, width, opacity. Counted here
-        // rather than derived, because the point is to compare the prose against
-        // a number a human had to think about.
+        // Five: pen colour, highlighter colour, width, opacity, line style.
+        // Counted here rather than derived, because the point is to compare the
+        // prose against a number a human had to think about.
         let tooltips = [
             pen_colour_tooltip(),
             highlighter_colour_tooltip(),
             pen_width_tooltip(),
             pen_opacity_tooltip(),
+            pen_dash_tooltip(),
         ];
-        assert_eq!(tooltips.len(), 4);
+        assert_eq!(tooltips.len(), 5);
         assert!(
-            first_line.contains("Four tooltips"),
+            first_line.contains("Five tooltips"),
             "this module holds {} tooltips and its header says: {first_line:?}",
             tooltips.len()
         );
         let suffixes = [opacity_suffix(), width_suffix()];
         assert_eq!(suffixes.len(), 2);
         assert!(first_line.contains("two suffixes"), "{first_line:?}");
+    }
+
+    /// ★★ **The five line-style names are distinct, and none of them is a
+    /// pattern.**
+    ///
+    /// The first half is the ordinary anti-collision assertion: a combo whose
+    /// two entries read the same is a control an operator cannot use.
+    ///
+    /// ★ The second half is the one worth having. These names are the whole
+    /// reason `LineStyle::pattern`'s run lengths never reach an operator, and
+    /// the cheap way to add a fifth style is to name it after its array. This
+    /// asserts no name contains a digit — which is what a `[8 4]` or an
+    /// `8, 4` creeping into the list would trip.
+    ///
+    /// Falsified by renaming *Long dash* to `"Dashed 8 4"`, which turned the
+    /// digit assertion red.
+    #[test]
+    fn the_line_style_names_are_words_rather_than_arrays() {
+        let names = [
+            line_style_solid(),
+            line_style_dashed(),
+            line_style_long_dash(),
+            line_style_dash_dot(),
+            line_style_foreign(),
+        ];
+        for name in names {
+            assert!(!name.trim().is_empty());
+            assert!(
+                !name.chars().any(|c| c.is_ascii_digit()),
+                "a line style is named for what it draws, not for its run lengths: {name:?}"
+            );
+        }
+        let mut sorted = names.to_vec();
+        let total = sorted.len();
+        sorted.sort_unstable();
+        sorted.dedup();
+        assert_eq!(sorted.len(), total, "two line styles share a name");
+        assert!(
+            line_style_foreign().contains("file"),
+            "the foreign reading must name the FILE, or it reads as one of ours: {:?}",
+            line_style_foreign()
+        );
     }
 
     /// The two colour tooltips are different sentences about different pens.

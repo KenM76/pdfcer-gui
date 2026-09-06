@@ -1,5 +1,5 @@
 //! # `text::commands::markupstyle` — the labels and tooltips of **Format ▸
-//! Markup**, the five controls that restyle a mark that is already on the page
+//! Markup**, the six controls that restyle a mark that is already on the page
 //!
 //! ## ★ Why this is a file of its own
 //!
@@ -20,6 +20,14 @@
 //! different question in the ribbon (*what is selected?*, not *what am I about
 //! to draw?*).
 //!
+//! ⚠ **Five became six on the afternoon of 2026-09-06** and the counts above
+//! were corrected with it. `format_line_style` is the sixth — `RIBBON_IA.md`
+//! §5.8's *Line style*, which was the only entry in that eight-control row with
+//! **no engine verb at all** until `MarkupStyle::dash` shipped that afternoon.
+//! The R2 arithmetic in the paragraph above is left at its original figures on
+//! purpose: it is the record of a decision taken at a particular size, not a
+//! running measurement of this file.
+//!
 //! ## ★★★ Every tooltip below has to read correctly in TWO states
 //!
 //! The same constraint that shaped the Font block in [`super`], for the same
@@ -39,7 +47,7 @@
 //!
 //! ⇒ The Font tooltips end *"Sweeping text with the Text tool (T) chooses what
 //! it applies to"* because an operator meets those controls greyed and has no
-//! way to guess the gesture. These five are **absent** in that situation rather
+//! way to guess the gesture. These six are **absent** in that situation rather
 //! than greyed — the group is not drawn at all until a mark is selected — so an
 //! operator only ever meets them with an operand already in hand, and a clause
 //! telling them to select something would be describing the thing they just
@@ -202,11 +210,50 @@ pub const fn format_arrowheads() -> CommandText {
     )
 }
 
+/// `format.line_style` — `/BS` `/S` and `/D`, the border's line style.
+///
+/// # ★★★ Why the tooltip says what LEAVING IT ALONE does
+///
+/// Because that is the one thing about this control an operator cannot see, and
+/// it is the thing the engine changed on 2026-09-06. Before that Pass a dashed
+/// mark was **silently solidified** by anything that re-baked its appearance —
+/// a colour change, a resize, a dragged vertex — so a dash in the operator's
+/// file was a value they could lose by touching a different control. It is now
+/// preserved: a restyle that does not mention the dash keeps one, including a
+/// dash pdfcer never authored
+/// (`D:\Dev\pdfcer\crates\pdfcer-core\src\edit.rs:4396-4425`).
+///
+/// ⇒ So the sentence a hover most needs to carry is *your producer's dash is
+/// safe*. An operator marking up a consultant's drawing has no other way to
+/// learn it, and the wrong belief — *"if I recolour this it will go solid"* — is
+/// one they would have been right to hold a day earlier.
+///
+/// ★ It names the `/Line`-and-shapes restriction the same way
+/// [`format_arrowheads`] names its own, and for that string's reason: the
+/// control is **absent** for a highlight, an underline, a strikeout and a
+/// squiggly, and an operator who saw it on a cloud and then not on a highlight
+/// is owed the rule rather than left to infer one.
+///
+/// ★ *"Line style"* and not *"Dash pattern"*: §5.8 names the row *Line style*,
+/// and the chooser's first entry is **Solid** — a label reading *Dash pattern*
+/// would make the first entry read as *no dash pattern*, which is the absence
+/// of the thing the label promises rather than one of its values.
+#[must_use]
+pub const fn format_line_style() -> CommandText {
+    CommandText::new(
+        "Line style",
+        "Draw the selected mark's outline solid or dashed. A dash the file already carries is \
+         kept when you change anything else about the mark, so this is the only control that \
+         changes it. Highlights, underlines and strikeouts have no outline, so it is not \
+         offered for those.",
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    /// The five hold the catalog's two copy rules — a label is a name and
+    /// The six hold the catalog's two copy rules — a label is a name and
     /// takes no trailing period, a tooltip is prose and ends in one.
     ///
     /// ★ Asserted **here** rather than by adding five rows to
@@ -222,13 +269,14 @@ mod tests {
     /// ⚠ Recorded rather than silently chosen, because the whole-catalog check
     /// is the better one and should get these five when the tree is quiet.
     #[test]
-    fn the_five_markup_style_strings_hold_the_catalog_conventions() {
+    fn the_six_markup_style_strings_hold_the_catalog_conventions() {
         let all = [
             format_colour(),
             format_fill(),
             format_line_width(),
             format_opacity(),
             format_arrowheads(),
+            format_line_style(),
         ];
         for t in all {
             assert!(!t.label.trim().is_empty(), "empty label: {t:?}");
@@ -248,7 +296,7 @@ mod tests {
         let total = labels.len();
         labels.sort_unstable();
         labels.dedup();
-        assert_eq!(labels.len(), total, "two of these five share a label");
+        assert_eq!(labels.len(), total, "two of these six share a label");
     }
 
     /// ★ **None of the five reuses a label the Font group already carries.**
@@ -278,6 +326,7 @@ mod tests {
             format_line_width(),
             format_opacity(),
             format_arrowheads(),
+            format_line_style(),
         ] {
             assert!(
                 !font.contains(&t.label),

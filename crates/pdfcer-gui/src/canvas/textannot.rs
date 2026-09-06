@@ -210,6 +210,40 @@ pub const MAX_TEXT_CHARS: usize = 512;
 /// how big a box they happened to drag.
 pub const TEXT_SIZE_PT: f64 = 11.0;
 
+/// **The one normalisation applied to what the operator typed**, exposed so
+/// that the caller writing `/Contents` a second way can apply exactly the same
+/// one.
+///
+/// # ★★★ Why this is a named function rather than a `.trim()` in two places
+///
+/// Because for a `/FreeText` the two places are **the same PDF key**, and as of
+/// `pdfcer-core` `95a936e` a disagreement between them is a hard refusal rather
+/// than a silent mess:
+///
+/// > `EditError::FreeTextNoteConflictsWithText` — *"a `/FreeText`'s note and
+/// > its painted text are the same key (`/Contents`) and cannot differ"*.
+/// > Identical strings are still fine.
+///
+/// [`spec`] normalises the words it bakes into the appearance;
+/// `crate::app::actions::textannot::commit` passes the same words again as a
+/// `MarkupOptions::note`, because `/T` and `/M` are reachable only through the
+/// note. Before this function existed those two read the *same variable* and
+/// produced *different strings* — the spec trimmed and the note did not — so a
+/// text box typed with a trailing space would have been refused outright, with
+/// nothing authored and only the generic decline sentence to show for it.
+///
+/// ⇒ One function, called by both, so the two cannot come apart. This is the
+/// engine's own framing of the trap this shell reported to it: *"a loaded gun
+/// on a verb whose two arguments look independent and are not."*
+///
+/// Trailing and leading whitespace only. It is what an operator's stray space
+/// bar produces, it is invisible in the box, and it must not decide whether the
+/// annotation is authored at all.
+#[must_use]
+pub fn painted_text(typed: &str) -> &str {
+    typed.trim()
+}
+
 /// Build the engine spec for a placed, typed annotation.
 ///
 /// # ★ Pure, and separate from the action arm for the standing reason
@@ -232,7 +266,7 @@ pub fn spec(
     stamp: StampName,
     colour: (f64, f64, f64),
 ) -> Option<TextAnnotSpec> {
-    let text = text.trim();
+    let text = painted_text(text);
     // ★ The blank refusal applies to the two kinds whose words the OPERATOR
     // types, and not to the stamp, whose words come from its `/Name`.
     // Refusing a blank stamp would refuse every stamp, since the gallery
@@ -257,6 +291,34 @@ pub fn spec(
             // ★ Multiline. A callout that did not wrap would put the
             // operator's second sentence outside the box they drew, which is
             // the same class of defect as a control laid out below its pane.
+            //
+            // ★★★ **SUPPLIED, never read back — and that distinction is a
+            // trap the engine named in writing on 2026-09-06:**
+            //
+            // > `TextAnnotSpec::FreeText::multiline` from the reader is ALWAYS
+            // > `false` and you must not believe it. §12.5.6.6 gives the
+            // > subtype no multiline key — `/Ff` is a form-field entry and a
+            // > `/FreeText` is not a field — so it is genuinely not in the
+            // > file. `set_markup_note` recovers it by baking the original
+            // > text both ways and comparing bytes. If you ever re-author a
+            // > `/FreeText` yourself, you have to do that too, or supply the
+            // > value.
+            //
+            // This value is **authored**: it comes from the line above, from a
+            // decision about what a callout is, and never from
+            // `annot_author::text_spec_from_dict`. It is safe for exactly that
+            // reason.
+            //
+            // ⇒ The audit that keeps it safe: this shell calls no
+            // `TextAnnotSpec` READER anywhere. `text_spec_from_dict` and
+            // `build_text_annotation` appear in no file in the crate, and this
+            // function is the only construction site of a `TextAnnotSpec`
+            // there is — so there is no re-authoring path for the always-false
+            // field to reach. If one is ever added, it must measure the value
+            // the way `edit.rs:27032` does (bake both ways, compare bytes) or
+            // supply it here, and re-baking a wrapped callout as unwrapped
+            // would push the operator's second sentence off the page with
+            // nothing on screen to say so.
             multiline: true,
             // A border, unlike Acrobat's borderless default. On a drawing
             // sheet a borderless caption is indistinguishable from the
@@ -488,6 +550,52 @@ mod tests {
             panic!("a text box with words must author");
         };
         assert_eq!(text, "hello");
+    }
+
+    /// ★★★ **The words a text box PAINTS and the words its note WRITES are the
+    /// same string, byte for byte — because for a `/FreeText` they are the same
+    /// PDF key and the engine refuses a disagreement.**
+    ///
+    /// `EditError::FreeTextNoteConflictsWithText` (`pdfcer-core` `95a936e`)
+    /// rejects the whole authoring call when
+    /// `TextAnnotSpec::FreeText { text }` and `MarkupOptions::note` differ.
+    /// `crate::app::actions::textannot::commit` passes both — it must, since
+    /// `/T` and `/M` are reachable only through the note — so this is the
+    /// assertion standing between an operator's stray space bar and a gesture
+    /// that authors nothing.
+    ///
+    /// # ★★ Two assertions, and the second is what makes the first a test
+    ///
+    /// Asserting only `text == painted_text(typed)` passes on a
+    /// [`painted_text`] reduced to the identity function AND on a [`spec`] that
+    /// had stopped normalising — the two would agree by both doing nothing,
+    /// which is precisely the shape the engine warned about when it shipped
+    /// `Pass 258.1`. So the input carries whitespace that must not survive, and
+    /// the second assertion says out loud that something was removed.
+    #[test]
+    fn the_words_a_text_box_paints_are_the_words_its_note_will_carry() {
+        let typed = "  hello  ";
+        let Some(TextAnnotSpec::FreeText { text, .. }) = spec(
+            TextAnnotKind::TextBox,
+            rect(),
+            typed,
+            DEFAULT_STAMP,
+            (0.0, 0.0, 0.0),
+        ) else {
+            panic!("a text box with words must author");
+        };
+        assert_eq!(
+            text,
+            painted_text(typed),
+            "the painted words and the /Contents the note writes must be one \
+             string; the engine refuses the call outright when they differ"
+        );
+        assert_ne!(
+            text, typed,
+            "this input was chosen because it MUST be normalised -- if nothing \
+             was removed, the assertion above is two functions agreeing to do \
+             nothing"
+        );
     }
 
     /// ★ A text box wraps, and a sticky's words are never painted.

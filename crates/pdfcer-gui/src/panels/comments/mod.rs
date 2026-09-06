@@ -1204,25 +1204,32 @@ fn editor(
         return;
     }
 
-    // ★★★ **The text box's warning goes ABOVE the keyboard hint, and it is the
-    // only line in this editor that is not `.weak()`.**
+    // ★★★ **A `/FreeText` row's before-the-write warning was DELETED here on
+    // 2026-09-06, hours after it was added, and the deletion is the record.**
     //
-    // Both are deliberate. It is the one thing here an operator cannot find out
-    // by trying — Enter-versus-Save is discovered in a second by pressing
-    // Enter, while "the words on the page will not change" is discovered only
-    // by saving, looking at the page, and not believing your eyes. Drawing it
-    // in the same grey as the key hints would file it with the trivia.
+    // It said, in un-`.weak()` type above the keyboard hint, that the words
+    // printed in a text box could not be changed once it was placed and that
+    // saving would leave the page reading what it did before. That was true and
+    // measured when it was written: `EditSession::set_markup_note` committed
+    // the annotation dictionary and not the `/AP` stream that paints the words.
     //
-    // Placed BEFORE the write on purpose. The status line says the same thing
-    // afterwards (`app::actions::annots::set_note`), but only this one can
-    // still change what the operator does. The measurement and the decision to
-    // disclose rather than refuse are at `crate::text::textannot`.
+    // `pdfcer-core` `95a936e` closed it the same afternoon — `set_markup_note`
+    // now re-bakes the appearance itself, in the same command and the same undo
+    // entry — so the sentence became false while still reading as caution,
+    // which is the kind of lie nobody notices. Deleted rather than reworded.
     //
-    // R8b: off-canvas, in the editor. Nothing is drawn onto the page, and the
-    // box renders exactly as it will save.
-    if let Some(warning) = crate::text::textannot::note_edit_hint(&comment.subtype) {
-        ui.label(egui::RichText::new(warning).small());
-    }
+    // ★★ And it could not be reworded to cover what survives. The one case
+    // still owed a sentence is a text box whose appearance **another program**
+    // drew, which pdfcer preserves rather than replaces — and that is decided
+    // by baking the words and comparing bytes, *inside* `set_markup_note`.
+    // Nothing drawn before the call can know it, so the surviving disclosure is
+    // necessarily an after-the-fact one, on the status line, gated on
+    // `MarkupNoteChange::appearance_rebaked`
+    // (`crate::app::actions::annots::set_note`). The whole table is at
+    // `crate::text::textannot`'s edit-time banner.
+    //
+    // R8b is unchanged and still met: the report is off-canvas, and the box
+    // renders exactly as it will save.
 
     ui.label(
         egui::RichText::new(t::comment_row_note_hint())

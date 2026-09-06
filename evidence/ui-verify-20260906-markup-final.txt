@@ -1,0 +1,57 @@
+ui-verify — profile `pdfcer-gui` (the application this project is building (crates/pdfcer-gui))
+  NOTE: this harness drives the REAL cursor and keyboard. It raises the target window, moves the pointer, and types into it. The pointer is put back where it was when the run ends. Pass --no-input to disable (checks that need input then report SKIPPED, never PASS).
+
+  isolation: each check drives its own copy of the binary, under a `.ui-verify-profiles` directory beside C:/Users/Ken/AppData/Local/Temp/claude/D--Dev-pdfcer-gui/0a342979-67dc-4ff5-bf1b-8a553cac669d/scratchpad/trackm/pdfcer-gui.exe. Nothing a check remembers reaches the next one.
+
+[PASS] a_new_markup_is_drawn_in_acrobats_red
+       detects: a comment shape drawn in pdfcer comes out a colour Acrobat never uses — the palette was written from memory rather than read, or the pen's colour never reaches the authored `/C`, or it reaches it and the baked appearance paints something else. Every one of those is invisible to the sixteen unit tests beside the palette, which assert the table and never the drawing
+       · launched C:/Users/Ken/AppData/Local/Temp/claude/D--Dev-pdfcer-gui/0a342979-67dc-4ff5-bf1b-8a553cac669d/scratchpad/trackm\.ui-verify-profiles\a_new_markup_is_drawn_in_acrobats_red\pdfcer-gui.exe as pid 25692 with PDFCER_DIAG_INVOKE=mode.review,markup.rectangle
+       · before the drag: edge strip #F9F9F9 on paper #F9F9F9 from 0 ink px of 168 sampled · interior #F9F9F9 on paper #F9F9F9 from 0 ink px of 1175 sampled
+       · ★ a rectangle was authored: `pdfcer-diag markup-commit kind=Rectangle page=0 x0=835.42 y0=589.71 x1=1309.16 y1=844.41`
+       · after the drag: edge strip #EB9D96 on paper #F9F9F9 from 56 ink px of 168 sampled · interior #F9F9F9 on paper #F9F9F9 from 0 ink px of 1175 sampled
+       · ★★★ a freshly drawn rectangle paints in Acrobat's red: the stroke reads #EB9D96 on paper #F9F9F9, a direction of [0.141, 0.929, 1.000] against #DB3425's [0.165, 0.931, 1.000], 0.024 apart (tolerance 0.1) — and the box inside it is still blank paper, so the shape is an outline and not a fill
+       artifact: C:/Users/Ken/AppData/Local/Temp/claude/D--Dev-pdfcer-gui/0a342979-67dc-4ff5-bf1b-8a553cac669d/scratchpad/trackm/out\markup-palette.trace.txt
+       artifact: C:/Users/Ken/AppData/Local/Temp/claude/D--Dev-pdfcer-gui/0a342979-67dc-4ff5-bf1b-8a553cac669d/scratchpad/trackm/out\markup_palette_before.png
+       artifact: C:/Users/Ken/AppData/Local/Temp/claude/D--Dev-pdfcer-gui/0a342979-67dc-4ff5-bf1b-8a553cac669d/scratchpad/trackm/out\markup_palette_after.png
+
+[FAIL] the_format_tab_restyles_a_selected_mark
+       detects: selecting a comment shape does not raise the Format ▸ Markup band, or raises it with controls that took no space, or with the arrowhead chooser GREYED where R9 says it must be absent — or the width field commits to the trace and the line on the page never changes, which is the failure a trace assertion cannot see
+       · launched C:/Users/Ken/AppData/Local/Temp/claude/D--Dev-pdfcer-gui/0a342979-67dc-4ff5-bf1b-8a553cac669d/scratchpad/trackm\.ui-verify-profiles\the_format_tab_restyles_a_selected_mark\pdfcer-gui.exe as pid 10744 with PDFCER_DIAG_INVOKE=mode.review,markup.rectangle
+       · ★ a rectangle was authored: `pdfcer-diag markup-commit kind=Rectangle page=0 x0=835.42 y0=589.71 x1=1309.16 y1=844.41`
+       · the 2 pt line as drawn: longest vertical ink run 1 px, 56 ink px of 728 sampled
+       · ★ the shape was selected: `pdfcer-diag annot-select page=0 id=ObjId { num: 47, generation: 0 } kind=Markup subtype=Square locked=false rect=[[835.4 839.4] - [1309.2 1094.1]]`
+       · ★ all four controls a `/Square` has are drawn and substantial: ribbon.item.format.colour, ribbon.item.format.fill, ribbon.item.format.line_width, ribbon.item.format.line_style, ribbon.item.format.opacity, ribbon.item.format.arrowheads, ribbon.item.format.properties, ribbon.item.format.delete
+       · ★★ and the arrowhead chooser is ABSENT, not greyed — `/LE` means nothing to a `/Square` and R9 says an unavailable capability renders nothing
+       · ⚠ the drag across the width field committed nothing — no `set-markup-style`. The check now types a value into the same field, which is what tells a broken control apart from a broken dispatch; see the verdict below.
+       · ★★ the width field reached the engine: `pdfcer-diag set-markup-style page=0 n=1 epoch=2 disclosures=none`
+       · the line after the restyle: longest vertical ink run 3 px, 168 ink px of 784 sampled
+       · ★★★ and the LINE ON THE PAGE is thicker: the strip went from 56 ink px to 168 (3.00x, floor 1.5x) with nothing selected, so what grew is the annotation's own appearance and not a selection outline
+       → ★★★ THE LINE-WIDTH SPINNER CANNOT BE DRAGGED. A 200 px drag across
+         `ribbon.item.format.line_width` produced no `set-markup-style`; TYPING `12`
+         into the same field produced one — `pdfcer-diag set-markup-style page=0
+         n=1 epoch=2 disclosures=none` — so everything downstream of the commit
+         works and the drag gate alone does not. ★ The shape of it, from
+         `markupband::width`: the control is drawn as `DragValue::new(&mut value)`
+         over `let mut value = was`, where `was` is read fresh from the annotation's
+         dictionary **on every frame**, and the commit is gated on
+         `response.drag_stopped() && (value - was).abs() > f64::EPSILON`.
+         `drag_stopped()` is true on the frame the button comes UP, and on that frame
+         the pointer has not moved, so `DragValue` adds nothing to a `value` that was
+         just re-seeded from the document: the difference is exactly zero and the
+         commit is skipped. A spinner an operator drags is a spinner that does
+         nothing. ⚠ Reported, not fixed — this file owns the harness. The same
+         shape is worth checking on the opacity field beside it, which `markupband`
+         says takes the same shape as `width`, and on any other `DragValue` in the
+         shell whose backing value is re-read per frame rather than held as a draft.
+         Trace:
+         C:/Users/Ken/AppData/Local/Temp/claude/D--Dev-pdfcer-gui/0a342979-67dc-4ff5-bf1b-8a553cac669d/scratchpad/trackm/out\markup-band.trace.txt.
+       artifact: C:/Users/Ken/AppData/Local/Temp/claude/D--Dev-pdfcer-gui/0a342979-67dc-4ff5-bf1b-8a553cac669d/scratchpad/trackm/out\markup-band.trace.txt
+       artifact: C:/Users/Ken/AppData/Local/Temp/claude/D--Dev-pdfcer-gui/0a342979-67dc-4ff5-bf1b-8a553cac669d/scratchpad/trackm/out\markup_band_blank.png
+       artifact: C:/Users/Ken/AppData/Local/Temp/claude/D--Dev-pdfcer-gui/0a342979-67dc-4ff5-bf1b-8a553cac669d/scratchpad/trackm/out\markup_band_thin.png
+       artifact: C:/Users/Ken/AppData/Local/Temp/claude/D--Dev-pdfcer-gui/0a342979-67dc-4ff5-bf1b-8a553cac669d/scratchpad/trackm/out\markup_band_ribbon.png
+       artifact: C:/Users/Ken/AppData/Local/Temp/claude/D--Dev-pdfcer-gui/0a342979-67dc-4ff5-bf1b-8a553cac669d/scratchpad/trackm/out\markup_band_thick.png
+
+------------------------------------------------------------------------
+  1 passed, 1 failed, 0 skipped
+
+RESULT: FAIL — a check drove the application and the assertion did not hold.

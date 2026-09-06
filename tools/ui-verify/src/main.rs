@@ -35,6 +35,7 @@ use ui_verify::coords::DocPoint;
 use ui_verify::pixels;
 use ui_verify::profile;
 use ui_verify::report::RunReport;
+use ui_verify::sandbox::Sandbox;
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -134,6 +135,7 @@ fn run(args: &[String]) -> Result<ExitCode, String> {
     let mut source_root: Option<PathBuf> = Some(PathBuf::from("crates"));
     let mut page_size: Option<(f64, f64)> = None;
     let mut target: Option<DocPoint> = None;
+    let mut isolate = true;
 
     let mut i = 0usize;
     while i < args.len() {
@@ -167,6 +169,7 @@ fn run(args: &[String]) -> Result<ExitCode, String> {
                 page_size = Some(parse_page_size(&v)?);
             }
             "--no-input" => allow_input = false,
+            "--shared-profile" => isolate = false,
             "--allow-stale" => allow_stale = true,
             "--source-root" => source_root = Some(PathBuf::from(value("--source-root")?)),
             "--no-staleness-check" => source_root = None,
@@ -227,6 +230,39 @@ fn run(args: &[String]) -> Result<ExitCode, String> {
     }
     println!();
 
+    // ★★★ **One profile directory per check** — see [`ui_verify::sandbox`].
+    //
+    // The binary is portable: it keeps its settings in `userdata/` BESIDE
+    // ITSELF, so every check pointed at one `--exe` shares one profile. That
+    // was harmless only while the application discarded the stored mode on
+    // every launch, which it stopped doing on 2026-09-06 — and the first thing
+    // it cost was an investigation into `a_link_goes_to_the_page_it_names`
+    // reporting a click that "produced nothing", which was an earlier check's
+    // Edit mode still on disk and not a defect at all.
+    //
+    // The resolution happens ONCE, here, and not per check, because
+    // `CheckContext::resolve_exe` would otherwise resolve the *sandbox* on the
+    // second lap.
+    let source_exe = ctx.resolve_exe();
+    if isolate {
+        if let Some(exe) = &source_exe {
+            println!(
+                "  isolation: each check drives its own copy of the binary, under a `{}` \
+                 directory beside {}. Nothing a check remembers reaches the next one.",
+                ui_verify::sandbox::ROOT,
+                exe.display()
+            );
+        }
+    } else {
+        println!(
+            "  ⚠ --shared-profile: every check writes to ONE `userdata/` beside the \
+             binary. A check that switches mode leaves that mode on disk for every later \
+             check, and the contamination is invisible in the failing check's own report. \
+             Use it to reproduce an old run, not to produce a new verdict."
+        );
+    }
+    println!();
+
     let mut run = RunReport::default();
     let mut ran_one = false;
     for check in &all {
@@ -279,7 +315,38 @@ fn run(args: &[String]) -> Result<ExitCode, String> {
             std::thread::sleep(std::time::Duration::from_millis(1000));
         }
         ran_one = true;
+
+        // The sandbox lives exactly as long as the check: it is created here,
+        // handed to the check as its `--exe`, and its `Drop` removes the
+        // directory — including whatever `userdata/` the driven process wrote
+        // into it — before the next check begins.
+        //
+        // ★ A sandbox that cannot be made is a HARNESS error and is reported as
+        // the check's own result, not swallowed. Falling back to the shared
+        // profile would be an isolation that quietly did not happen, wearing a
+        // passing run as a disguise, which is the defect this closes.
+        let sandbox = match (isolate, source_exe.as_ref()) {
+            (true, Some(exe)) => match Sandbox::for_check(exe, check.name()) {
+                Ok(sandbox) => Some(sandbox),
+                Err(why) => {
+                    run.checks.push(
+                        ui_verify::report::CheckReport::new(
+                            check.name(),
+                            "the harness could not give this check a private profile directory",
+                        )
+                        .from_error(&why),
+                    );
+                    continue;
+                }
+            },
+            _ => None,
+        };
+        let mut ctx = ctx.clone();
+        if let Some(sandbox) = &sandbox {
+            ctx.exe = Some(sandbox.exe().to_path_buf());
+        }
         run.checks.push(check.run(&ctx));
+        drop(sandbox);
     }
     run.print();
     Ok(ExitCode::from(u8::try_from(run.exit_code()).unwrap_or(1)))
@@ -371,6 +438,13 @@ OPTIONS
                      (default target/ui-verify).
   --no-input         do not touch the real pointer or keyboard. Checks that
                      need input then report SKIPPED — never PASS.
+  --shared-profile   do NOT give each check its own profile directory. Off by
+                     default: the binary is portable and keeps its settings
+                     beside itself, so one --exe is one profile, and a check
+                     that switches mode leaves that mode on disk for every
+                     later check. The contamination is invisible in the failing
+                     check's own report. Pass this only to reproduce a run made
+                     before isolation existed.
   --allow-stale      drive a binary older than its sources. Off by default:
                      a missing trace from an unbuilt change looks exactly like
                      a broken feature.
