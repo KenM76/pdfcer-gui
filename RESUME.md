@@ -112,11 +112,14 @@
 > throughout this file is stale by construction: MEASURE, do not quote.** The
 > commands are further down.
 >
-> **Released 2026-09-06 01:54** from shell `d69c99f`: `OneDrive\pdfcer-gui1` is
-> the new build, **`pdfcer-gui2` (2026-09-05 23:33) is the fallback**. GitHub
-> `v0.5.0-dev.20260906`. Two releases were cut in eight hours and **the slots
-> alternated both times**, which is the whole point of them: whatever he is
+> **Released 2026-09-06 05:37** from shell `874a670`: `OneDrive\pdfcer-gui2` is
+> the new build, **`pdfcer-gui1` (02:01) is the fallback**. GitHub
+> `v0.5.0-dev.20260906.2`. Three releases in twelve hours and **the slots
+> alternated every time**, which is the whole point of them: whatever he is
 > running, the previous build is still on disk beside it.
+>
+> ⚠ **Gates are 31, not 30** — `check-forwarded-features.sh` joined on
+> 2026-09-06. Re-measure rather than quoting either number.
 >
 > ---
 >
