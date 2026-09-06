@@ -199,11 +199,20 @@ retracted out of it.
 | verdict | rows |
 |---|---|
 | `shipped` — the engine's `[ ]` is stale | **79** |
-| `wanted` — a real gap | **12** |
+| `wanted` — a real gap | **24** |
 | `declined` — deliberately no surface | **5** |
-| `blocked` — waiting on something named | **2** |
+| `blocked` — waiting on something named | **3** |
 | `unknown` | **0** |
-| **total** | **98** |
+| **total** | **111** |
+
+⚠ **Every figure in this table was wrong on 2026-09-05 and is now COUNTED, not
+typed.** It read 79 / 12 / 5 / 2 / 0 = 98 while the file held 108 rows and the
+`wanted` heading three lines below said *"11 of 97"* — three different numbers
+for one set, none of them right, in a file whose whole subject is prose going
+stale. The counts above are what a script that walks each `## verdict` section's
+tables reports, and the section headings were reset from the same walk. ⇒ **Do
+not hand-increment these.** Re-run the count; `check-engine-backlog.sh` prints
+the register total on every run and is the cheapest cross-check.
 
 ⚠ **The engine-side figure moved too, and in the other direction.** The gate now
 measures **34** rows reading `[x] core / [ ] gui` in the engine's file, against
@@ -221,7 +230,7 @@ account is true.**
 
 ---
 
-## `wanted` — 11 of 97 (re-counted 2026-09-05)
+## `wanted` — 24 of 111 (re-counted 2026-09-05 by script, not by eye)
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -236,6 +245,9 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 | List the form XObjects a page paints, and how many places … | The engine answers *"how many places paint this form?"* only where this shell already asks it — `canvas::textedit::report` prints `invocations=` and `pages=` at the moment of an in-form **text** edit, via `text_edit::invocation_set`. There is no standing listing. ★ That matters more than it sounds on a SolidWorks set, where one title block is a single form drawn on thirty-six sheets: the operator wants to know the blast radius **before** picking up the tool, not in the disclosure afterwards. |
+| **`/ToUnicode` partial inversion** — a composite font's character map is inverted per CHARACTER, not per font … | **A real gap, and it is in the pin already — `56dde4d` IS `Pass 256.1`.** The engine now refuses an `edit_text` **at the ambiguous character**, naming every candidate code (`RInvTrigger::Ambiguous`), instead of refusing the whole font; only a map with nothing invertible still refuses everything. ★ **Most of it arrives here for free** — `edit-text` reaches it with no new flag, so a run this shell could not edit yesterday may simply edit today. **What is NOT free, and is the gap:** `EditReport` names the font's ambiguous characters even on an edit that avoided them, and **nothing in `crates/pdfcer-gui` mentions `RInvTrigger`, `partial_inverse` or `ambiguous_chars`** (grepped 2026-09-05) — so a refusal that could say *'this one character of this font is not addressable, the rest of it edits'* still reaches the operator through `EditRefusal::of`'s four coarse buckets. That sentence is the whole value of the Pass and it is the work. ★ **The API surface it arrives on, spelled out so the drift gate is discharged by a reading rather than by an exemption:** `ToUnicodeCMap::partial_inverse` returns a `PartialInverse` whose four fields split the map four ways — `unambiguous` (a character exactly one code produces, which is the editable set), `ambiguous` (a character several codes produce, which is where the per-character refusal comes from), `multi_char_codes` (a code mapping to a string rather than a character, e.g. an `ffi` ligature) and `empty_codes` (a code mapping to nothing at all). `CompositeEncoding::ambiguous_chars` is the same answer asked of an encoding rather than of a raw map, and it is the one an operator-facing sentence would call. ⚠ Not this track's subject; named rather than implied. |
+| **Edit text across show operators** — a `find` matches across consecutive … | **UNBLOCKED 2026-09-05 — the pin moved and this row's own blocker is discharged.** `Cargo.lock` now reads `56dde4d`, so the capability is in the build this shell compiles. The argument below is kept verbatim because it is the part worth keeping, and its *'not in the pinned build'* sentence is superseded by this one rather than deleted — a corrected claim whose history is erased is a claim the next session cannot audit. **Was: BLOCKED ON THE ENGINE PIN, and only on that.** This is `Pass 256.0`, and it is the engine's answer to `OPERATOR_REQUESTS.md` **O140** — the operator's *"I try to edit the edit is not accepted"* on a document whose producer wrote the line ONE GLYPH PER SHOW OPERATOR. This shell's `EditRefusal::SplitAcrossPieces` exists to explain exactly that refusal, and the sentence it shows ends *"this limit is on the list to fix"*. It is fixed, upstream. ⚠ **It is not in the build this shell compiles**: `Cargo.lock` pins `03f6004` (v0.40.0) and the capability landed at `1343f0e`, ten commits later, unreleased. Consuming it is `cargo update -p pdfcer-core`, which is deliberately NOT done inside a session where another track is building against the same engine — an engine bump under a parallel track is a rebuild it did not ask for and a set of failures it cannot attribute. **What it costs once the pin moves:** nothing but re-measurement. `EditReport::operators_spanned` is new and wants disclosing (rule 4 — an edit that rewrote five operators is a fact about the document the canvas cannot show), and `Plan::one_operator` stops being the thing that routes `SplitAcrossPieces`, so O140's sentence must be re-derived from the engine's answer rather than deleted on the assumption it is dead. |
+| **Ask which face can hold the text about to be TYPED**, not only the text … | **UNBLOCKED 2026-09-05 — the pin moved and this row's own blocker is discharged.** `Cargo.lock` now reads `56dde4d`, so the capability is in the build this shell compiles. The argument below is kept verbatim because it is the part worth keeping, and its *'not in the pinned build'* sentence is superseded by this one rather than deleted — a corrected claim whose history is erased is a claim the next session cannot audit. **Was: BLOCKED ON THE ENGINE PIN, and it is the reply to this project's own request.** `request_font_preflight_tests_the_text_that_is_there_not_the_text_about_to_be_typed.md`, filed 2026-09-05 while building **O141**, asked for a coverage query taking the text the operator intends to write. `preview_font_resources_for(page, find, pinned_span, candidate)` is that query, and it closes the one honest limit the offer carries today: `panels::properties::refusedchar` lists faces coverage-tested against the characters ALREADY in the run, so a row can be a face that then refuses the operator's `€` — disclosed rather than filtered, on the Bold button's standing ruling (`text::panels::face::refused_char_untested`). ⚠ **Not in the pinned build**: `Cargo.lock` is at `03f6004` and this landed after it; see the row above for why the pin is not moved inside this session. **What it costs once the pin moves:** one call swapped in `canvas::textedit::pin::font_preflight`, the candidate being the refused character, and `refused_char_untested` DELETED — with its unit test, which asserts the disclosure exists and would otherwise keep a caveat alive after the thing it warns about has gone. ★★ **And the reply carried MORE than was asked for, which is a second gap and is written down here rather than discovered later:** `FontPreflight` gained a `standard_14` field — a `Std14Entry` per standard-14 face, carrying `base_font`, its `acceptance` (can this face hold the candidate text?) and a `presence` of `Std14Presence::OnPage` or `Std14Presence::WouldBeAdded`. That last distinction is exactly the one **O47** turned into an operator-visible opt-in: a face already on the page adds a name and no font program, while one that `Std14Presence::WouldBeAdded` describes is pdfcer authoring a resource — which under O47 is the operator's licence decision to make, not this shell's. `panels::properties::face`'s header already says in as many words that a preflight *'that also surveyed the fourteen would let this list'* stop guessing; it now exists and nothing here reads it. Verdict **wanted**, same track as the row above, and the two should land together — offering the fourteen without saying which are already on the page is the half-answer O47 was reopened over. |
 
 ### Vector objects (Inkscape-style editing)
 
@@ -313,7 +325,7 @@ from here and no box in it is ticked by this pass.
 
 ---
 
-## `blocked` — 4
+## `blocked` — 3 of 111
 
 Wanted, and waiting on something named. Every row here says **what** it is waiting on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat, and this project has found seven stale blockers already.
 
@@ -327,8 +339,7 @@ Wanted, and waiting on something named. Every row here says **what** it is waiti
 
 | Row (`FEATURES.md`, blocked) | Why |
 |---|---|
-| **Edit text across show operators** — a `find` matches across consecutive … | **BLOCKED ON THE ENGINE PIN, and only on that.** This is `Pass 256.0`, and it is the engine's answer to `OPERATOR_REQUESTS.md` **O140** — the operator's *"I try to edit the edit is not accepted"* on a document whose producer wrote the line ONE GLYPH PER SHOW OPERATOR. This shell's `EditRefusal::SplitAcrossPieces` exists to explain exactly that refusal, and the sentence it shows ends *"this limit is on the list to fix"*. It is fixed, upstream. ⚠ **It is not in the build this shell compiles**: `Cargo.lock` pins `03f6004` (v0.40.0) and the capability landed at `1343f0e`, ten commits later, unreleased. Consuming it is `cargo update -p pdfcer-core`, which is deliberately NOT done inside a session where another track is building against the same engine — an engine bump under a parallel track is a rebuild it did not ask for and a set of failures it cannot attribute. **What it costs once the pin moves:** nothing but re-measurement. `EditReport::operators_spanned` is new and wants disclosing (rule 4 — an edit that rewrote five operators is a fact about the document the canvas cannot show), and `Plan::one_operator` stops being the thing that routes `SplitAcrossPieces`, so O140's sentence must be re-derived from the engine's answer rather than deleted on the assumption it is dead. |
-| **Ask which face can hold the text about to be TYPED**, not only the text … | **BLOCKED ON THE ENGINE PIN, and it is the reply to this project's own request.** `request_font_preflight_tests_the_text_that_is_there_not_the_text_about_to_be_typed.md`, filed 2026-09-05 while building **O141**, asked for a coverage query taking the text the operator intends to write. `preview_font_resources_for(page, find, pinned_span, candidate)` is that query, and it closes the one honest limit the offer carries today: `panels::properties::refusedchar` lists faces coverage-tested against the characters ALREADY in the run, so a row can be a face that then refuses the operator's `€` — disclosed rather than filtered, on the Bold button's standing ruling (`text::panels::face::refused_char_untested`). ⚠ **Not in the pinned build**: `Cargo.lock` is at `03f6004` and this landed after it; see the row above for why the pin is not moved inside this session. **What it costs once the pin moves:** one call swapped in `canvas::textedit::pin::font_preflight`, the candidate being the refused character, and `refused_char_untested` DELETED — with its unit test, which asserts the disclosure exists and would otherwise keep a caveat alive after the thing it warns about has gone. |
+| **Session verbs plan against the SESSION graph, not the base revision** — every text-edit planner takes `&DocumentView<'_>` and every `EditSession` verb passes `self.view()` … | **BLOCKED ON THE ENGINE PIN, and it is the answer to a measurement THIS repository made yesterday.** `Pass 257.0`. Commit `f9ded5a` recorded O141's font escape hatch failing at its last step and killed the shell-side hypothesis by construction: one `EditSession`, `format_text` then `edit_text` located by `find` text alone — **refused**; the identical pair with a save and reopen between them — **succeeds**. That is exactly the staleness this Pass removes: a `/Font` that `format_text` authored this session is typeable by the next `edit_text` at once, and handing a planner the base revision is now a compile error upstream. ⚠ **It is not in the build this shell compiles**: `Cargo.lock` pins `56dde4d` and this landed six commits later, unreleased — measured, not assumed (`git log 56dde4d..HEAD` in `D:/Dev/pdfcer`). The pin is deliberately not moved from inside a session cutting a release from it. **What it costs once the pin moves:** the save-and-reopen workaround this shell wrote around the old behaviour must be RE-MEASURED and, if it is dead, deleted with its test — a workaround kept past its cause is the stale-blocker shape this file exists to catch. |
 
 ### Reading, navigation & printing
 
@@ -347,14 +358,14 @@ rule.
 
 ---
 
-## `unknown` — 0 of 97
+## `unknown` — 0 of 111
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess. **This section is empty**, and that is a claim: see *★★ Why nothing is `unknown`* in the header before you trust it.
 
 
 ---
 
-## `declined` — 5 of 97
+## `declined` — 5 of 111
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -381,7 +392,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — 79 of 97 (re-counted 2026-09-05)
+## `shipped` — 79 of 111 (re-counted 2026-09-05)
 
 **The engine's row is stale: an operator can reach this today.** Sixty-five of ninety (★ 64 → 65 on 2026-09-04, when the encryption-authoring row moved out of `blocked` on the operator's O119 ruling), which is the single largest finding of this triage. Each row names the surface or the call site, and where this project's own record dates the work, the date. These rows are kept, never deleted — `EDITABLE_SURFACES.md`'s own rule, and the argument is the valuable part.
 

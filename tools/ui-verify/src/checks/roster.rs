@@ -537,6 +537,13 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(multi_node::MultiNodeMoveMovesEveryPickedAnchor),
         Box::new(shape_preview::DraggingANodeBendsTheLine),
         Box::new(bezier_handle::BezierHandleDragChangesACurve),
+        // The three deeper-rung deletes. The first two share `bezier_handle`'s
+        // fixture; the third needs a text object holding SEVERAL runs and SKIPs
+        // without one, because the whole point of `Pass 32.0` is that the other
+        // runs survive.
+        Box::new(deeper_rung_delete::DeletingALineLeavesTheRestOfTheShapeAlone),
+        Box::new(deeper_rung_delete::DeletingAPointLeavesTheRestOfTheLineAlone),
+        Box::new(deeper_rung_delete::DeletingALabelLeavesTheOtherLabelsAlone),
         Box::new(tool_row::TheTextToolTypesOnOneClick),
         Box::new(tool_row::ThePointsToolShowsPointsOnOneClick),
         Box::new(tool_row::ShowPointsDrawsAnObjectsPointsWithoutDescending),

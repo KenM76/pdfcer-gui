@@ -134,9 +134,13 @@ use pdfcer_core::text_edit::{
 ///
 /// `q` rather than `€` deliberately: the driven check types `q`, and O141's
 /// whole point to the operator is that the wall is **not** about accents or
-/// symbols — `SUBSET+pdfceSubsetDemo` carries `A`, `B` and `C` because those are
-/// the letters the page prints, and nothing else, a plain lowercase `q`
-/// included.
+/// symbols — the fixture's subset face
+/// `SUBSET+pdfceSubsetDemo` (old-name-exempt: a font NAME inside
+/// `fixtures/subset-font-floor.pdf`'s own bytes, verified with a byte grep; it
+/// belongs to the engine's synthetic fixture and did not rename when this
+/// project did, so spelling it the new way would name a font no document
+/// contains) carries `A`, `B` and `C` because those are the letters the page
+/// prints, and nothing else, a plain lowercase `q` included.
 const RUN_TEXT: &str = "ABC";
 const TYPED: &str = "ABCq";
 
@@ -354,8 +358,9 @@ fn the_engine_cannot_type_into_a_face_it_just_swapped_in() {
 ///
 /// ★ The swap **back to the original subset face** was the first shape of this
 /// test and it is not usable, which is worth recording so it is not tried again:
-/// `format_text` refuses it with `CoverageFailure … 'SUBSET+pdfceSubsetDemo' is
-/// an embedded SUBSET that does not already carry code 65 for … 'A'`. The
+/// `format_text` refuses it with `CoverageFailure … is an embedded SUBSET that
+/// does not already carry code 65 for … 'A'`, naming the face
+/// `SUBSET+pdfceSubsetDemo`. (old-name-exempt: see `RUN_TEXT`.) The
 /// subset's own three letters are not addressable by the codes the standard-14
 /// run now uses, so the page's own original face is not a face the page can go
 /// back to.

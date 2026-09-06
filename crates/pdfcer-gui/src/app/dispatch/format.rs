@@ -613,6 +613,14 @@ fn delete_the_selection(doc: &crate::app::state::OpenDoc, actions: &mut Vec<Acti
         // here recorded the inside-a-form decline and nothing else, so a Part or
         // Node rung reached the ribbon's Delete and produced no trace line at
         // all: the command was quieter than the key.
-        Err(reason) => crate::canvas::deleting::decline(&doc.selection, reason, doc.edit_epoch),
+        // ★ `true` for `model_attempted`, and it is a fact rather than a
+        // convenience: this arm asks `doc.page_objects()` unconditionally three
+        // lines above, so a `None` here can only mean the page would not
+        // decompose. That is also why the ribbon's Delete worked at the deeper
+        // rungs on the commit where the KEY did not — the key inherited the
+        // canvas's conditional borrow and this route never had one.
+        Err(reason) => {
+            crate::canvas::deleting::decline(&doc.selection, reason, doc.edit_epoch, true);
+        }
     }
 }

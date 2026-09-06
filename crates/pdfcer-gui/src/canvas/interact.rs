@@ -495,134 +495,46 @@ pub(super) fn interact(
 
     let outcome = gestures.update(frame, press_kind);
 
-    // ---- 4. the decomposition, only if a HIT TEST needs one -------------
+    // ---- 4. the decomposition, only if something this frame does needs one -
+    //
+    // ★★★ **THE QUESTION IS NOT ASKED HERE ANY MORE**, and moving it out was
+    // the fix rather than a tidy-up. What stood on these lines was a
+    // hand-maintained `matches!` over `GestureOutcome`, and that list had been
+    // the defect **four times** — `Resize`, `Handle` and `DimensionVertex` each
+    // shipped needing the model and not asking for it, and then the **Delete
+    // key** did, which no list of gesture outcomes could ever have covered
+    // because a keystroke is not a gesture. `canvas::modelneed` owns the
+    // question now: its gesture half is an exhaustive match (a new variant is a
+    // compile error), its keyboard half is the term this file could not
+    // express, and its header carries all four incidents and the 531 ms
+    // measurement that decided how narrow the keyboard term should be.
     //
     // ★ `doc.page_objects()` — THE decomposition, the one the Objects panel
     // lists and the `objects n=` trace counts. The canvas used to build its
     // own here (module docs, seam 2); that second `decompose_page` over the
-    // same page is gone.
-    //
-    // The gate is kept even though the value is now cached, and it still buys
-    // something real: `page_objects()` builds on first use, so asking for it
-    // on a frame that has no hit test to do would decompose the page the first
-    // time the operator merely zoomed — with the Objects panel closed, that is
-    // a whole content-stream walk bought by a mouse wheel. Drawing needs no
-    // provider at all (the outlines are cached in canvas space, which is
-    // zoom-independent), so on the overwhelming majority of frames nothing is
-    // asked for and nothing is built.
+    // same page is gone. The gate is kept even though the value is cached,
+    // because `page_objects()` builds on first use: asking for it on a frame
+    // with nothing to resolve would decompose the page the first time the
+    // operator merely zoomed.
     //
     // Not "if a resolve needs one" — see step 6 for why the resolve's build
     // has to happen after the keys rather than before them.
     //
-    // A **right-click** is in this set for the same reason a click is: it has
-    // to know what is under the pointer in order to select it, and a menu
-    // about the wrong object is worse than no menu. It is a rare event, so
-    // the gate still buys what it always bought — a zoom or a pan with the
-    // Objects panel closed decomposes nothing.
-    // A **move drag** is in the set too, at either phase, and it is the one
-    // member that is not a hit test — which is why the flag is named for what
-    // it gates rather than for what most of its members do. It needs the model
-    // to answer two questions the selection alone cannot: *is every selected
-    // object a path* (a non-path refuses the whole move, and a ghost drawn over
-    // one would promise a move that gets refused), and, at the Node rung,
-    // *where is the anchor now* (`move_node` takes a destination, not a delta).
-    //
-    // Asking on every frame of an in-flight drag is affordable because the
-    // answer is already built: the selection cannot have outlines to drag
-    // without a decomposition, so `page_objects()` is a cache hit for the
-    // whole gesture. The gate still buys what it always bought — a zoom or a
-    // pan with nothing being dragged decomposes nothing.
-    //
-    // ★ A **zoom** marquee is deliberately NOT in the set. It selects nothing,
-    // so it hit-tests nothing, so it decomposes nothing — a region zoom over a
-    // 129,758-object drawing costs one scroll offset. That falls out of the
-    // intent being carried on the outcome rather than being asked for at the
-    // release, and it is the concrete payoff for sampling it at the press.
-    // ★ A mode that cannot edit content hit-tests **nothing**, and this is the
-    // one line that says so for the whole step.
-    //
-    // The gesture gate above already means no `Click`, `Move` or select-marquee
-    // outcome can arrive here, so the `matches!` below is dead in Read either
-    // way. The right-click is *not* covered by it — a secondary click is not a
-    // gesture — so without this conjunction Read would decompose the page on
-    // every right-click in order to find an object it may not offer a verb for.
-    // On the benchmark drawing that is 129,758 objects built to be discarded.
-    //
-    // It also decides the menu: with no object under the pointer, `attach`
-    // resolves to `canvas.empty`, whose three items are named zoom levels. That
-    // is the correct menu for a reader — it is about the view, because there is
-    // nothing here that is theirs to act on — and it is reached by the menu
-    // system's own rule rather than by a second mode branch inside it.
-    // ★★★ **Every mode hears a right-click**; which menu opens is
-    // `canvas::menus::attach`'s decision — O71, 2026-09-01. Its `reading` arm
-    // carries why the gate moved off this line.
-    let secondary_clicked = response.secondary_clicked();
-    // ★ An armed measure tool needs the decomposition **on every frame**, not
-    // only on the frame of a click.
-    //
-    // Two distinct consumers, and the second is the one that makes this a
-    // per-frame term rather than a per-click one:
-    //
-    // * the **two-line pick** reads the page's geometry through
-    //   `pick_line_in_page` — picking a line is *reading* the page, not
-    //   selecting it, which is why this is its own term rather than a
-    //   relaxation of `caps.edit_content`;
-    // * the **snap query** runs while the operator is still deciding where to
-    //   click, because an indicator that appeared only on the click it is
-    //   meant to guide would be useless. That applies to every measure kind,
-    //   which is why this is not narrowed to `TwoLine`.
-    //
-    // The cost is bounded by the same cache every other consumer shares:
-    // `page_objects()` is one decomposition per `(page, epoch)`, so an armed
-    // tool pays for the first frame and then hits the cache. An **un-armed**
-    // canvas is untouched — the whole term is false — so panning a 129,758-
-    // object drawing still decomposes nothing.
-    let measure_needs_model = active_tool.measure_kind().is_some();
-    let needs_targets = secondary_clicked
-        || measure_needs_model
-        || matches!(
-            outcome,
-            GestureOutcome::Click { .. }
-                | GestureOutcome::Move { .. }
-                // ★★ Resize joined this list on 2026-08-19, and its absence
-                // was the second defect the first driven resize found.
-                //
-                // The decomposition is what `canvas::resizing` reads every node
-                // position out of, so without it the commit declined with
-                // `NoObjectModel` — a refusal that is correct for "the model
-                // could not be read" and was here reporting "nobody asked for
-                // it". The list was written when a resize committed nothing, so
-                // there was genuinely nothing for it to need.
-                | GestureOutcome::Resize { .. }
-                // ★ Same reason as `Resize`, and it was learned there: the
-                // commit needs the object model to refuse a stale index, and a
-                // gesture that ran on a canvas which never asked for a provider
-                // gets `None` and declines. The resize spent a whole driving
-                // session on exactly this.
-                | GestureOutcome::Handle { .. }
-                // ★★ …and `DimensionVertex`, added 2026-08-20 when the vertex
-                // drag learned to snap. THIRD time this list has been the
-                // defect: `Resize` and `Handle` both shipped needing the model
-                // and not asking for it, and both spent a driving session
-                // presenting as "the gesture does nothing".
-                //
-                // The failure here would have been quieter than either, because
-                // the drag works perfectly without the model — it just never
-                // snaps, and a snap that never fires is indistinguishable from
-                // a snap that found nothing nearby. That is precisely the class
-                // of defect that survives a green suite.
-                | GestureOutcome::DimensionVertex { .. }
-                // ★ …and `Rotate`, for the same reason as `Resize` one line
-                // above: the commit resolves paint-order indices, and a gesture
-                // on a canvas that never asked for a provider would address
-                // indices nothing has verified.
-                | GestureOutcome::Rotate { .. }
-                | GestureOutcome::Marquee {
-                    phase: Phase::Complete,
-                    intent: MarqueeIntent::Select,
-                    ..
-                }
-        );
+    // ⚠ The Delete term is read with `key_pressed`, which does NOT consume, so
+    // `keys::canvas_keys` below still sees the same keystroke. Reading it here
+    // asks a question about the frame; it does not answer it.
+    let (delete_pressed, secondary_clicked) = (
+        ctx.input(|i| i.key_pressed(Key::Delete) || i.key_pressed(Key::Backspace)),
+        response.secondary_clicked(),
+    );
+    let needs_targets = crate::canvas::modelneed::Need {
+        outcome: &outcome,
+        secondary_clicked,
+        measure_armed: active_tool.measure_kind().is_some(),
+        delete_pressed,
+        selection: &selection,
+    }
+    .wanted();
     // ★ Drop a held preview that has stopped being live — the raster caught up,
     // the edit was refused, or the backstop fired.
     //
@@ -1227,6 +1139,12 @@ pub(super) fn interact(
             escape_consumed: matches!(outcome, GestureOutcome::Cancelled),
             targets: targets.as_deref(), // ★★ the drag's own borrow, never a second decompose
             edit_epoch: doc.edit_epoch,  // for a refusal's sentence; both argued on `keys::Keys`
+            // ★★★ Whether this frame ASKED, which is a different fact from
+            // whether it GOT one — see `keys::Keys::model_attempted` for the
+            // two-row table, and `canvas::modelneed` for what decides it.
+            // Passing `targets.is_some()` here would collapse the two causes
+            // back together and disarm the tripwire.
+            model_attempted: needs_targets,
         },
         &mut selection,
         &mut text_selection,

@@ -665,6 +665,11 @@ not exercise the case.
 | `exporting_form_data_writes_a_file` | `fixtures/text-field-with-appearance.pdf` | `0,300,500` |
 
 | `the_format_tab_offers_font_controls_for_swept_text` | `fixtures/paragraph.pdf` | `0,90,703` |
+| `deleting_a_label_leaves_the_other_labels_alone` | `D:/Dev/pdfTests/SW41177/SW41177.pdf` | `0,1140,62` |
+| `deleting_a_line_leaves_the_rest_of_the_shape_alone` | ★★ `fixtures/hole-in-a-big-object.pdf` | `0,336,500` |
+| `deleting_a_point_leaves_the_rest_of_the_line_alone` | `fixtures/polyline-nodes.pdf` | `0,150,260` |
+
+★★ **The line rung is the second check to need `hole-in-a-big-object.pdf` and for the same reason `three_clicks_round_a_hole_measure_the_hole` does**: it is ONE path object holding a circle and forty unrelated segments, which is the shape of his own export. On `polyline-nodes.pdf` — which this table's geometry row would have sent it to — the page's single object holds ONE subpath, so the delete is correct, takes the whole object with it (also correct), and the check **SKIPs** because a right build and a wrong build produce the identical census. Regenerate with `python tools/gen-hole-in-a-big-object-fixture.py`.
 
 ★★★ **And two checks now PIN their own fixture and ignore `--pdf` entirely** —
 `ocr_recognises_a_page_and_the_document_keeps_it` and, since 2026-09-03,

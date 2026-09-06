@@ -440,6 +440,25 @@ pub(super) struct Keys<'a> {
     ///
     /// A plain integer, so it costs the unit tests nothing.
     pub edit_epoch: u64,
+    /// ★★★ **Whether this frame ASKED for the decomposition** — the tripwire
+    /// half of [`Self::targets`], and it exists because those two facts are
+    /// different and were for one commit indistinguishable.
+    ///
+    /// `targets: None` has two causes and only one of them is honest:
+    ///
+    /// | cause | `model_attempted` | what it means |
+    /// |---|---|---|
+    /// | the page would not decompose | `true` | a real limit; `Refusal::NoObjectModel` is the correct answer and the operator is owed a sentence |
+    /// | **nobody asked for it** | `false` | the 2026-09-05 defect, four times over: a working verb reachable by nothing, and a key that silently does nothing |
+    ///
+    /// Carried so the second can be made **loud** rather than being reported
+    /// in the first's words. See the `debug_assert` at the decline site below,
+    /// and `canvas::modelneed` for why a frame might not have asked.
+    ///
+    /// A plain `bool`, so the unit tests below pass `false` and still exercise
+    /// every rung of the ladder — they never reach the assert, because they
+    /// never supply a selection at a deeper rung without a provider.
+    pub model_attempted: bool,
 }
 
 pub(super) fn canvas_keys(
@@ -458,6 +477,7 @@ pub(super) fn canvas_keys(
         escape_consumed,
         targets,
         edit_epoch,
+        model_attempted,
     } = keys;
     // ★ Claimant 0, and it is read BEFORE the D1 guard rather than after it.
     //
@@ -996,7 +1016,40 @@ pub(super) fn canvas_keys(
         // is named on the trace. `deleting::decline` owns which is which and
         // `text::deleting` owns the words; neither decision belongs in a key
         // handler.
-        Err(reason) => crate::canvas::deleting::decline(selection, reason, edit_epoch),
+        Err(reason) => {
+            // ★★★ **THE TRIPWIRE FOR THE FIFTH RECURRENCE**, and it is here
+            // rather than in `deleting::decline` because this is the only
+            // place that knows both halves of the question.
+            //
+            // `Refusal::NoObjectModel` has two causes that produce the
+            // identical refusal, and telling them apart is the whole point:
+            //
+            // * **the page would not decompose** — honest, a real limit, the
+            //   operator is owed the sentence `text::deleting` now gives it;
+            // * **this frame never asked for the decomposition** — a defect
+            //   that has now shipped four times, presenting each time as a
+            //   gesture or a key that silently does nothing while a working
+            //   engine verb sat one call away.
+            //
+            // `canvas::modelneed` is what makes the second answerable, and
+            // this assert is what makes it *loud*. If it fires, do not widen
+            // anything here — go and add the missing term to that module,
+            // where every other reason a frame needs the model already lives.
+            //
+            // ★ Release builds are not left silent either: `decline` carries
+            // `model_attempted` onto the trace as `asked=`, so a driven check
+            // reads the same distinction the assert makes.
+            debug_assert!(
+                reason != crate::canvas::deleting::Refusal::NoObjectModel || model_attempted,
+                "Delete was declined `NoObjectModel` on a frame that never ASKED for the \
+                 page's decomposition. That is not a limit of the document — it is \
+                 `canvas::modelneed` failing to name a reason this frame needs the model, \
+                 which is the same defect as `Resize` (2026-08-19), `Handle` (2026-08-19), \
+                 `DimensionVertex` (2026-08-20) and the Delete key (2026-09-05). Add the \
+                 term there, not a fallback here."
+            );
+            crate::canvas::deleting::decline(selection, reason, edit_epoch, model_attempted);
+        }
     }
 }
 

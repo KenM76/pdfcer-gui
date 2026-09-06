@@ -515,6 +515,7 @@ pub mod colour_clicked_text;
 /// working one from inside a test suite.
 pub mod deep_pan;
 pub mod deep_zoom;
+pub mod deeper_rung_delete;
 /// ★★ **Drag-and-drop**, driven through the one seam that can carry it — a drop
 /// originates in Explorer and cannot be synthesised by moving a mouse, so
 /// without `PDFCER_DIAG_DROP_PATH` this would be the single feature in the shell

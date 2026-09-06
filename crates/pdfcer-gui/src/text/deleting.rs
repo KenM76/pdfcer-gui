@@ -1,11 +1,11 @@
 //! # `text::deleting` — the sentences a Delete that removed nothing shows
 //!
-//! Three of them, for [`crate::canvas::deleting`], plus the rule that decides
+//! Four of them, for [`crate::canvas::deleting`], plus the rule that decides
 //! which refusals get one at all.
 //!
-//! ## ★★ Why three and not eleven
+//! ## ★★ Why four and not eleven
 //!
-//! [`crate::canvas::deleting::Refusal`] has eleven variants and eight of them
+//! [`crate::canvas::deleting::Refusal`] has eleven variants and seven of them
 //! describe a state the operator put themselves in and can **see** on screen:
 //! nothing is selected, they are inside an image that has no parts, they are at
 //! the point rung on a line of text. `canvas::moving::decline` settled the rule
@@ -14,12 +14,25 @@
 //! surface, because the next real sentence lands in a place their eye has
 //! learned to skip.
 //!
-//! The three below are the ones an operator meets **having done nothing
+//! The four below are the ones an operator meets **having done nothing
 //! wrong**: the shape they picked is inside a container pdfcer cannot cut into,
-//! the file's own structure forbids removing this label before the next one, or
-//! they picked four points and pdfcer removes one at a time. In every one of
-//! those the outline is on screen, round the thing they want gone, and the key
-//! does nothing. From where they sit, Delete is broken.
+//! the file's own structure forbids removing this label before the next one,
+//! they picked four points and pdfcer removes one at a time, or the page's
+//! contents will not decompose at all. In every one of those the outline is on
+//! screen, round the thing they want gone, and the key does nothing. From where
+//! they sit, Delete is broken.
+//!
+//! ★★★ **The fourth joined them on 2026-09-05, and the reason it was silent is
+//! worth keeping.** `NoObjectModel` was classified as obvious because for the
+//! whole life of the deeper rungs it was only ever reachable through a frame
+//! that had **forgotten to ask** for the decomposition — so it was not a state
+//! the operator had put themselves in, it was a bug wearing a refusal's name,
+//! and no sentence is right for a bug. `canvas::modelneed` now asks on the
+//! frame the key arrives, so reaching this means the document really is
+//! unreadable at that depth, and that is a limit the operator is owed in words.
+//! ⇒ **A refusal classified as "obvious" while it was unreachable-except-by-bug
+//! has to be re-classified when the bug is fixed**, or the fix ships a new
+//! silence.
 //!
 //! ## The rule every sentence follows
 //!
@@ -95,12 +108,20 @@ pub const fn refusal(reason: Refusal) -> Option<&'static str> {
         Refusal::ManyNodes(_) => {
             Some("pdfcer removes one corner point at a time. Click a single point, then Delete.")
         }
-        // The eight that say nothing, listed rather than caught by a wildcard:
+        // ★★★ The page will not decompose, so nothing INSIDE an object can be
+        // named — see this module's header for why this one is new. The
+        // sentence names what the operator can still do, because they can: the
+        // Object rung never needed the decomposition, so Escape and Delete
+        // removes the whole shape on a page whose interior pdfcer cannot read.
+        Refusal::NoObjectModel => Some(
+            "pdfcer could not read the inside of this page, so it cannot remove one piece of a \
+             shape here. Press Escape to step back out to the whole shape, then Delete.",
+        ),
+        // The seven that say nothing, listed rather than caught by a wildcard:
         // a new variant must be classified by whoever adds it, and `_ => None`
         // would classify it as "obvious" by default — which is the direction
         // that ships a silent Delete.
-        Refusal::NoObjectModel
-        | Refusal::NothingSelected
+        Refusal::NothingSelected
         | Refusal::NoPartEntered
         | Refusal::NoNodeEntered
         | Refusal::UnaddressableObject
@@ -126,6 +147,7 @@ mod tests {
             Refusal::RunWouldMoveNext(3),
             Refusal::InsideForm,
             Refusal::ManyNodes(4),
+            Refusal::NoObjectModel,
         ] {
             let sentence = refusal(reason).expect("this refusal is meant to speak");
             assert!(
@@ -152,6 +174,7 @@ mod tests {
             Refusal::RunWouldMoveNext(0),
             Refusal::InsideForm,
             Refusal::ManyNodes(2),
+            Refusal::NoObjectModel,
         ] {
             if let Some(sentence) = refusal(reason) {
                 assert!(
@@ -162,13 +185,12 @@ mod tests {
         }
     }
 
-    /// The eight that are deliberately silent stay silent — so that a future
+    /// The seven that are deliberately silent stay silent — so that a future
     /// edit which starts narrating "nothing selected" has to change a test that
     /// says why it should not.
     #[test]
     fn the_states_the_operator_can_see_say_nothing() {
         for reason in [
-            Refusal::NoObjectModel,
             Refusal::NothingSelected,
             Refusal::NoPartEntered,
             Refusal::NoNodeEntered,

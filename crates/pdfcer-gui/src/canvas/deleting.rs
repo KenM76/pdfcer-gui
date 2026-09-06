@@ -405,8 +405,16 @@ pub fn action(subject: DeleteSubject) -> crate::app::actions::VectorAction {
 ///
 /// # ★★ Which refusals get a sentence, and the rule behind the split
 ///
-/// Three do, and they are the three an operator meets **without having made a
+/// Four do, and they are the four an operator meets **without having made a
 /// mistake**:
+///
+/// * [`Refusal::NoObjectModel`] — the page's content would not decompose, so
+///   nothing inside an object can be addressed. **Added 2026-09-05**: it was
+///   silent while it was only ever reachable through a frame that forgot to
+///   ask, which made it a bug report rather than a message. Now that
+///   `canvas::modelneed` asks on the frame the key arrives, reaching it means
+///   the document really is unreadable at that depth — and an operator who
+///   selected a line, pressed Delete and got nothing is owed that sentence.
 ///
 /// * [`Refusal::RunWouldMoveNext`] — they picked a label, pressed Delete, and
 ///   the file's own structure forbids it. There is a remedy and it always
@@ -430,14 +438,27 @@ pub fn action(subject: DeleteSubject) -> crate::app::actions::VectorAction {
 /// epoch moved, and the operator is owed a sentence anyway. The epoch passed is
 /// the **current** one, so the sentence stands until the next real edit moves
 /// past it, which is what retires it without anything having to remember to.
-pub fn decline(selection: &SelectionState, reason: Refusal, epoch: u64) {
+/// # ★★★ `model_attempted`, and why a refusal carries how it was reached
+///
+/// [`Refusal::NoObjectModel`] is raised for two causes that look identical from
+/// here: the page genuinely would not decompose, or **this frame never asked**
+/// for the decomposition. The second is a defect that has shipped four times
+/// (see `canvas::modelneed`), and for one commit it was reported in the first's
+/// words — `reason=NoObjectModel`, with nothing to say which.
+///
+/// So the flag travels onto the trace as `asked=`. A `debug_assert` at
+/// `canvas::keys`' call site turns the bad case into a panic under test; this
+/// is the half that survives into a release build, where a driven check reads
+/// it. **It is not shown to the operator** — from their chair both causes are
+/// the same event and both are answered by the same sentence.
+pub fn decline(selection: &SelectionState, reason: Refusal, epoch: u64, model_attempted: bool) {
     if let Some(sentence) = crate::text::deleting::refusal(reason) {
         crate::app::actions::record_note(epoch, sentence.to_owned());
     }
     crate::diag::trace(|| {
         format!(
             // ui-text-exempt: diagnostic trace, never displayed in the UI
-            "canvas-delete-declined level={:?} sel={} reason={reason:?}",
+            "canvas-delete-declined level={:?} sel={} reason={reason:?} asked={model_attempted}",
             selection.level(),
             selection.len(),
         )

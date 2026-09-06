@@ -15,6 +15,25 @@
 //! ⇒ So this is a split between **the ladder** and **the enumeration of the
 //! ladder**, a subject boundary rather than a size-driven cut — the same one
 //! `gesture::meaning` took three commits earlier.
+//!
+//! ## ★★★ Every case below passes `targets: None` **and**
+//! ## `model_attempted: true`, and the pairing is deliberate
+//!
+//! Those two fields answer different questions and a unit test is the one place
+//! it is easy to set them inconsistently:
+//!
+//! * `targets: None` — *there is no decomposition*, which is what lets these
+//!   run without opening a file;
+//! * `model_attempted: true` — *the frame asked for one and did not get it*,
+//!   which is the **page-would-not-decompose** case.
+//!
+//! The other combination — asked `false` — is the 2026-09-05 defect, four times
+//! recurrent, and `super`'s Delete arm carries a `debug_assert` that panics on
+//! it. Writing `false` here would therefore make every deeper-rung case below
+//! fail with that assert's message rather than its own, which is the correct
+//! behaviour and the reason the value is not simply `false` for tidiness. See
+//! `canvas::modelneed` for the four incidents and `keys::Keys::model_attempted`
+//! for the table.
 
 // ★★ The INNER attribute, not just the `mod tests;` declaration in the parent.
 // `check-ui-strings.sh`'s exclusion 2b recognises a whole test file **from the
@@ -93,6 +112,7 @@ fn keys_for(input: RawInput, selection: &mut SelectionState) -> Vec<Action> {
                 field_delete_refused: false,
                 targets: None,
                 edit_epoch: 0,
+                model_attempted: true,
                 escape_consumed: false,
             },
             selection,
@@ -145,6 +165,7 @@ fn delete_removes_a_selected_form_field_and_nothing_else() {
                 field_delete_refused: false,
                 targets: None,
                 edit_epoch: 0,
+                model_attempted: true,
                 escape_consumed: false,
             },
             &mut selection,
@@ -219,6 +240,7 @@ fn delete_does_not_act_on_a_form_field_whose_deletion_would_be_refused() {
                 field_delete_refused: true,
                 targets: None,
                 edit_epoch: 0,
+                model_attempted: true,
                 escape_consumed: false,
             },
             &mut selection,
@@ -280,6 +302,7 @@ fn delete_acts_on_a_form_field_when_the_gate_is_open() {
                 field_delete_refused: false,
                 targets: None,
                 edit_epoch: 0,
+                model_attempted: true,
                 escape_consumed: false,
             },
             &mut selection,
@@ -396,6 +419,7 @@ fn an_escape_spent_on_a_drag_leaves_the_rung_alone() {
                 field_delete_refused: false,
                 targets: None,
                 edit_epoch: 0,
+                model_attempted: true,
                 escape_consumed: true,
             },
             &mut selection,
@@ -435,6 +459,7 @@ fn escape_retires_an_armed_region_zoom_before_it_touches_the_ladder() {
                 field_delete_refused: false,
                 targets: None,
                 edit_epoch: 0,
+                model_attempted: true,
                 escape_consumed: false,
             },
             &mut selection,
@@ -477,6 +502,7 @@ fn escape_reaches_the_ladder_again_once_nothing_is_armed() {
                 field_delete_refused: false,
                 targets: None,
                 edit_epoch: 0,
+                model_attempted: true,
                 escape_consumed: false,
             },
             &mut selection,
@@ -514,6 +540,7 @@ fn an_escape_spent_on_a_drag_leaves_the_armed_zoom_alone() {
                 field_delete_refused: false,
                 targets: None,
                 edit_epoch: 0,
+                model_attempted: true,
                 escape_consumed: true,
             },
             &mut selection,
@@ -584,6 +611,7 @@ fn a_focused_text_field_keeps_delete_for_itself() {
                 field_delete_refused: false,
                 targets: None,
                 edit_epoch: 0,
+                model_attempted: true,
                 escape_consumed: false,
             },
             &mut selection,
@@ -633,6 +661,7 @@ fn escape_retires_the_markup_tool_before_the_region_zoom() {
                 field_delete_refused: false,
                 targets: None,
                 edit_epoch: 0,
+                model_attempted: true,
                 escape_consumed: false,
             },
             &mut selection,
@@ -689,6 +718,7 @@ fn an_escape_spent_on_a_markup_drag_leaves_the_tool_armed() {
                 field_delete_refused: false,
                 targets: None,
                 edit_epoch: 0,
+                model_attempted: true,
                 escape_consumed: true,
             },
             &mut selection,
@@ -729,6 +759,7 @@ fn escape_still_reaches_the_zoom_and_the_ladder_with_no_markup_armed() {
                     field_delete_refused: false,
                     targets: None,
                     edit_epoch: 0,
+                    model_attempted: true,
                     escape_consumed: false,
                 },
                 &mut selection,
@@ -781,6 +812,7 @@ fn escape_abandons_a_guide_drag_before_it_touches_the_region_zoom() {
                 field_delete_refused: false,
                 targets: None,
                 edit_epoch: 0,
+                model_attempted: true,
                 escape_consumed: false,
             },
             &mut selection,
@@ -848,6 +880,7 @@ fn escape_abandons_a_circle_fit_before_it_puts_the_measure_tool_down() {
                 field_delete_refused: false,
                 targets: None,
                 edit_epoch: 0,
+                model_attempted: true,
                 escape_consumed: false,
             },
             &mut selection,
@@ -879,6 +912,7 @@ fn escape_abandons_a_circle_fit_before_it_puts_the_measure_tool_down() {
                 field_delete_refused: false,
                 targets: None,
                 edit_epoch: 0,
+                model_attempted: true,
                 escape_consumed: false,
             },
             &mut selection,
@@ -953,6 +987,7 @@ fn escape_abandons_a_vertex_run_before_it_puts_the_markup_tool_down() {
                 field_delete_refused: false,
                 targets: None,
                 edit_epoch: 0,
+                model_attempted: true,
                 escape_consumed: false,
             },
             &mut selection,
@@ -984,6 +1019,7 @@ fn escape_abandons_a_vertex_run_before_it_puts_the_markup_tool_down() {
                 field_delete_refused: false,
                 targets: None,
                 edit_epoch: 0,
+                model_attempted: true,
                 escape_consumed: false,
             },
             &mut selection,
@@ -1035,6 +1071,7 @@ fn a_second_escape_retires_the_zoom_the_guide_drag_protected() {
                     field_delete_refused: false,
                     targets: None,
                     edit_epoch: 0,
+                    model_attempted: true,
                     escape_consumed: false,
                 },
                 &mut selection,
@@ -1112,6 +1149,7 @@ fn delete_does_not_act_on_an_annotation_whose_deletion_would_be_refused() {
                 field_delete_refused: false,
                 targets: None,
                 edit_epoch: 0,
+                model_attempted: true,
                 escape_consumed: false,
             },
             &mut selection,
@@ -1166,4 +1204,54 @@ fn delete_acts_on_an_annotation_when_the_gate_is_open() {
          finds it wherever it lives, so the page travels for the message rather \
          than for the verb"
     );
+}
+
+/// ★★★ **THE TRIPWIRE FIRES.** A Delete declined `NoObjectModel` on a frame
+/// that never ASKED for the decomposition panics, loudly, naming the class.
+///
+/// # Why this test exists rather than only the assert
+///
+/// A `debug_assert` nobody has watched fire is a comment with a semicolon. This
+/// is the fourth recurrence of one defect — `Resize` (2026-08-19), `Handle`
+/// (2026-08-19), `DimensionVertex` (2026-08-20) and the Delete key
+/// (2026-09-05) — and the first three were each fixed by adding a variant to a
+/// list, which is why there was a fourth. The guard that is supposed to make a
+/// fifth loud has to be **seen** to be loud.
+///
+/// ⚠ It is the ONE case in this file that passes `model_attempted: false`, and
+/// it is why every other case passes `true`: `false` means *nobody asked*, and
+/// nobody asking at a deeper rung is not a state the program is allowed to be
+/// in. See this module's header.
+///
+/// ★ `should_panic` matches on a fragment of the assert's own message rather
+/// than on the bare fact of a panic, because a panic from somewhere else in
+/// `canvas_keys` would satisfy an unqualified `should_panic` and report this
+/// tripwire as working when it had not run at all.
+#[test]
+#[should_panic(expected = "never ASKED for the")]
+fn a_delete_declined_for_want_of_asking_is_not_allowed_to_be_quiet() {
+    let ctx = Context::default();
+    let mut selection = part_entered();
+    let mut actions = Vec::new();
+    let mut text_selection = None;
+    let _ = ctx.run_ui(key(Key::Delete), |ui| {
+        canvas_keys(
+            Keys {
+                ctx: ui.ctx(),
+                page_index: 0,
+                caps: Capabilities::FULL,
+                selected_field: None,
+                annot_delete_refused: false,
+                field_delete_refused: false,
+                targets: None,
+                edit_epoch: 0,
+                // The whole point of the case: the frame did not ask.
+                model_attempted: false,
+                escape_consumed: false,
+            },
+            &mut selection,
+            &mut text_selection,
+            &mut actions,
+        );
+    });
 }

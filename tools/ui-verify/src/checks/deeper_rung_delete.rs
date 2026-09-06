@@ -92,20 +92,39 @@
 //!
 //! | check | fixture | `--doc-point` | why |
 //! |---|---|---|---|
-//! | label | `D:/Dev/pdfTests/SW41177/SW41177.pdf` | `0,1140,62` | needs a text object holding **several** runs; on a one-run object `delete_text_run` correctly deletes the object and the check cannot tell right from wrong |
-//! | line | `fixtures/polyline-nodes.pdf` | `0,150,260` | needs a path object holding **several** subpaths |
-//! | point | `fixtures/polyline-nodes.pdf` | `0,150,260` | needs a subpath with **three or more** anchors — `delete_node` refuses one that would leave fewer than two, correctly |
+//! | label | `D:/Dev/pdfTests/SW41177/SW41177.pdf` | `0,1140,62` | needs a text object holding **several** runs; on a one-run object `delete_text_run` correctly deletes the object and the check cannot tell right from wrong. Measured on that point: **18 runs**, page objects **5,903** |
+//! | line | `fixtures/hole-in-a-big-object.pdf` | `0,336,500` | needs a path object holding **several** subpaths. Measured: **41** — a circle and forty unrelated segments in ONE object, which is the shape of the operator's own export |
+//! | point | `fixtures/polyline-nodes.pdf` | `0,150,260` | needs a subpath with **three or more** anchors — `delete_node` refuses one that would leave fewer than two, correctly. Measured: **6** |
+//!
+//! ★★★ **The line rung's fixture was WRONG in the first version of this table
+//! and the check said so rather than passing.** It named `polyline-nodes.pdf`
+//! at `0,150,260`; that page is one path object holding **one** subpath, so the
+//! delete committed correctly, took the whole object with it (which is right —
+//! a path with no subpaths is not a smaller object but a meaningless one), and
+//! the check SKIPPED with *"the object under --doc-point held 1 line(s), and
+//! this check needs at least 2"*. That is the fixture guard doing its job: the
+//! discrimination this check exists for is unavailable on a one-part object,
+//! and reporting a PASS there would have been reporting nothing.
 //!
 //! Every one of them SKIPs rather than FAILs when it does not find what it
 //! needs, which is the standing rule: a check that cannot establish its
 //! precondition must not report on the property beyond it.
 //!
-//! # ⚠ NOT RUN
+//! # ✅ DRIVEN 2026-09-05 — and the first run found two things
 //!
-//! Written 2026-09-05 and **not executed**: another track owned the driven
-//! harness for the session. Registered anyway — an unregistered check is one
-//! nobody will ever run — and this notice stays until somebody drives it and
-//! replaces it with what they saw.
+//! All three **PASS**. What the first run found, in the order it found it:
+//!
+//! 1. **The two shape rungs FAILED** — `canvas-delete-declined level=Part
+//!    sel=1 reason=NoObjectModel`. Not *"no verb for the rung"*: the routing
+//!    was there and the frame had simply never asked for the page's
+//!    decomposition, because `canvas::interact` gated it on a hand-maintained
+//!    list of **gesture outcomes** and Delete is a keystroke. Fixed by
+//!    `canvas::modelneed`, whose header carries all four recurrences of that
+//!    defect and the 531 ms measurement behind the fix's shape.
+//! 2. **The label rung SKIPPED, and the check was the thing that was wrong** —
+//!    it double-clicked, and a double-click on text opens a caret by the
+//!    operator's own ruling (O70). See [`Rung::arms_the_points_tool`] for the
+//!    trace lines and the route that does exist.
 
 use crate::checks::driving::{self, SHELL_DIAG_ENV, click_mode_segment};
 use crate::checks::{Check, CheckContext};
@@ -186,11 +205,60 @@ impl Rung {
     ///
     /// One double-click enters the Part rung; a second descends to the Node
     /// rung. `canvas::selection::descend` is the rule.
+    ///
+    /// ★★★ **Zero for the label, and that is a fact about the program rather
+    /// than a shortcut.** See [`Self::arms_the_points_tool`].
     const fn descents(self) -> usize {
         match self {
-            Self::Label | Self::Line => 1,
+            Self::Label => 0,
+            Self::Line => 1,
             Self::Point => 2,
         }
+    }
+
+    /// ★★★ **Whether this rung is reached with the Points tool rather than
+    /// with a double-click**, and the answer is *only the label*.
+    ///
+    /// # The measurement that put this here
+    ///
+    /// This check was written assuming one double-click enters the Part rung
+    /// on any object, as it does on a path. Driven for the first time on
+    /// 2026-09-05 against `SW41177.pdf` at `0,1140,62`, it reported
+    ///
+    /// ```text
+    /// [SKIP] the ladder is at `Object` and this check needs `Part`
+    /// ```
+    ///
+    /// …and the trace said why, in the application's own words:
+    ///
+    /// ```text
+    /// pdfcer-diag text-edit-caret kind=Edit page=0 run=424 len=29
+    /// pdfcer-diag canvas-double-click-text via=descend
+    /// ```
+    ///
+    /// **A double-click on a text object opens a caret and returns**, before
+    /// the ladder is touched at all — `canvas::clicking`'s O70 arm, which is
+    /// the operator's own ruling: *"double-clicking inside the bounding box
+    /// should edit the text."* So the Part rung on text is not reachable by
+    /// double-click, by design, and a check that keeps trying is measuring a
+    /// gesture the program deliberately does not have.
+    ///
+    /// # The route that does exist
+    ///
+    /// The **Points** tool (`view.tool_node`, chord `A`, labelled *Points*
+    /// because a draughtsman says point). `canvas::clicking`'s node-tool
+    /// branch takes a click before every other claimant and calls
+    /// `SelectionState::click_direct`, which lands on the Part rung whenever
+    /// the probe found a part — and `provider::part_hits` dispatches on the
+    /// object's kind, so on a text object a "part" **is** a show operator.
+    /// One click, one label selected, no double-click anywhere near the caret.
+    ///
+    /// ⚠ So this is not the check being lenient: it is the check driving the
+    /// gesture the program actually offers, which is the whole point of
+    /// driving rather than unit-testing. The path rungs keep the double-click
+    /// because that is *their* real route.
+    const fn arms_the_points_tool(self) -> bool {
+        matches!(self, Self::Label)
     }
 
     /// The rung name the application publishes on `canvas-selection level=`.
@@ -381,6 +449,19 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport, rung: Rung) -> Result<Opt
     session.settle(20);
 
     // --- 2: select the object, then descend to the rung ---------------------
+    //
+    // ★★★ The label rung arms the **Points** tool first, because a
+    // double-click on text opens a caret and never touches the ladder. The
+    // measurement that established that, and the trace lines it was read out
+    // of, are on `Rung::arms_the_points_tool`.
+    //
+    // ★ Pressed BEFORE the click rather than after it: with the arrow armed,
+    // the first click would select the whole text object and the Points tool's
+    // own branch would then be entering an object it did not pick.
+    if rung.arms_the_points_tool() {
+        driver.press(vk::A)?;
+        session.settle(10);
+    }
     let trace = session.trace()?;
     let mapping = CanvasMapping::from_trace(&trace, vocab, page, target.page)?;
     let window_point = mapping.doc_to_window(DocPoint::new(target.page, target.x, target.y))?;

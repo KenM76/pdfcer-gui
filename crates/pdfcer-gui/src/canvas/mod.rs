@@ -285,6 +285,14 @@ pub mod marquee;
 pub mod markup;
 pub mod measure;
 pub mod menus;
+// ★★★ The frame's ONE question about the page's object model: does anything
+// this frame does need a decomposition? It was four lines inside
+// `canvas::interact` — a hand-maintained `matches!` over `GestureOutcome` that
+// had been the defect four separate times, most recently for a subject a list
+// of gestures structurally cannot hold, because Delete is a keystroke. Its own
+// header carries the table of all four and the 531 ms measurement that decided
+// the keyboard term's shape.
+pub mod modelneed;
 // Dragging a selection: which verb each rung reaches, the canvas→page delta,
 // and the ghost's honesty rule. Kept out of `selection` deliberately — that
 // module is already 1,352 lines and owns *what is selected*, while this owns
