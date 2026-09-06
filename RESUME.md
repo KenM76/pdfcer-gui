@@ -9,14 +9,16 @@
 > to save up for. ⚠ **One driven run at a time** — the harness moves the real
 > cursor; check `tasklist | grep -icE "^(pdfcer-gui|ui-verify)\.exe"` first.
 >
-> **State: engine v0.40.0 at `56dde4d`** — read from `Cargo.lock`, which is the
+> **State: engine v0.41.0 at `f9bc7c8`** — read from `Cargo.lock`, which is the
 > only thing here worth trusting without re-running it. **Every count below and
 > throughout this file is stale by construction: MEASURE, do not quote.** The
 > commands are further down.
 >
-> **Released 2026-09-05 23:26** from shell `b012b57`: `OneDrive\pdfcer-gui2` is
-> the new build, **`pdfcer-gui1` (03:32) is the fallback**. GitHub
-> `v0.5.0-dev.20260905.2`.
+> **Released 2026-09-06 01:54** from shell `d69c99f`: `OneDrive\pdfcer-gui1` is
+> the new build, **`pdfcer-gui2` (2026-09-05 23:33) is the fallback**. GitHub
+> `v0.5.0-dev.20260906`. Two releases were cut in eight hours and **the slots
+> alternated both times**, which is the whole point of them: whatever he is
+> running, the previous build is still on disk beside it.
 >
 > ---
 >
