@@ -140,6 +140,30 @@ fn ink_at(display: StrokeDisplay) -> (u64, u64) {
     (ink, total)
 }
 
+/// How many strokes the renderer THINNED at `display`, on the pinned fixture.
+///
+/// ★ A sibling of [`ink_at`] rather than a second return value from it,
+/// deliberately: that function is about pixels and this one is about the
+/// engine's own count, and a caller reading `(ink, total, thinned)` would have
+/// to remember which two are pixels. Both build their options the same way —
+/// `RenderOptions::default()` plus one assignment — so neither is measuring a
+/// third code path.
+fn hairlined_at(display: StrokeDisplay) -> usize {
+    let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../fixtures/a1-titleblock.pdf");
+    let doc = Document::load(&path).expect("the fixture loads");
+    let pages = pdfcer_core::page_tree::pages(&doc).expect("a page tree");
+    let session = pdfcer_core::edit::EditSession::new(doc);
+
+    let mut options = pdfcer_render::RenderOptions::default();
+    options.stroke_display = display;
+
+    pdfcer_render::render_page_with_view(&session.view(), &pages[0], SCALE, &options)
+        .expect("the page rasterizes")
+        .diagnostics
+        .strokes_hairlined
+}
+
 /// ★★★ **Turning line weights off puts strictly LESS ink on the page** — the
 /// one assertion in the whole feature that a build with perfect plumbing and an
 /// indifferent renderer cannot satisfy.
@@ -247,5 +271,52 @@ fn the_two_modes_are_identical_where_there_is_nothing_to_cap() {
          one device pixel must change nothing. A difference here means the mode is SETTING the \
          width rather than capping it — which on a drawing that already uses hairlines would \
          make them thicker, i.e. the opposite convention"
+    );
+}
+
+/// ★★★ **BOTH SENTENCES ARE REACHABLE, and the zero one is not hypothetical.**
+///
+/// `app::status::disclosure::line_weights_disclosure` picks between
+/// `text::status::line_weights_off` and `line_weights_no_effect` on
+/// `Diagnostics::strokes_hairlined == 0`. A disclosure whose trigger never
+/// occurs is indistinguishable from one that is broken, so this pins the
+/// **condition** rather than the sentence — the sentence is a `const fn` and
+/// needs no test.
+///
+/// | render | `strokes_hairlined` | which sentence |
+/// |---|---|---|
+/// | a real CAD sheet, mode ON | **> 0** | *line weights are off* |
+/// | the same sheet, mode OFF | **0** | — (no disclosure at all; the toggle is on) |
+///
+/// ★★ **The second row is the control and it is the load-bearing one.** With
+/// the mode off nothing is thinned, so the counter must be zero — and if it
+/// were not, it would be counting *strokes drawn* rather than *strokes
+/// thinned*, and the zero sentence would then never appear on any drawing with
+/// linework. The engine states that distinction explicitly (*"it counts strokes
+/// thinned, not strokes drawn"*) and this is what holds them to it.
+///
+/// ⚠ It does **not** assert a zero count with the mode ON, because this fixture
+/// cannot produce one: `a1-titleblock.pdf` is a real drawing with real
+/// linework. The zero-with-mode-on case is reached by scrolling to blank paper,
+/// which is a region question and belongs to a driven check, not here.
+#[test]
+fn the_hairline_counter_counts_what_was_thinned_and_not_what_was_drawn() {
+    let thinned = hairlined_at(StrokeDisplay::Hairline);
+    let untouched = hairlined_at(StrokeDisplay::Actual);
+
+    assert!(
+        thinned > 0,
+        "line weights OFF thinned {thinned} strokes on a real CAD sheet. Zero means the \
+         disclosure would say `line_weights_no_effect` on a drawing full of linework — which is \
+         the sentence's exact opposite — so either `stroke_display` is not reaching the \
+         renderer, or `strokes_hairlined` is not being incremented."
+    );
+    assert_eq!(
+        untouched, 0,
+        "line weights ON thinned {untouched} strokes, and it must thin none: with \
+         `StrokeDisplay::Actual` every width is faithful. A non-zero here means the counter is \
+         reporting strokes DRAWN rather than strokes THINNED — in which case \
+         `line_weights_no_effect` could never appear, and the operator loses the one sentence \
+         that tells `nothing here was thick enough` from `the setting is broken`."
     );
 }

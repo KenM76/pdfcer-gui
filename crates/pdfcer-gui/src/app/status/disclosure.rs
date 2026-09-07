@@ -409,7 +409,27 @@ fn line_weights_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
     if doc.view.line_weights {
         return;
     }
-    disclosure_line(ui, REGION_LINE_WEIGHTS, t::line_weights_off());
+    // ★★★ **Which of the two sentences** — `Pass 254.1`, wired 2026-09-07.
+    //
+    // `Diagnostics::strokes_hairlined` counts strokes this render actually
+    // **thinned**. Zero means the mode reached the renderer and had nothing to
+    // do here, which from a chair is the identical screenshot to *the setting
+    // is broken*. This shell asked the engine for that count precisely because
+    // the two are indistinguishable without it, and shipping the toggle without
+    // consuming it would leave criterion 3 of our own request unbuilt.
+    //
+    // ⚠ **A MISSING TEXTURE IS NOT A ZERO.** Before the first raster lands —
+    // and on a page whose content streams will not decode — `page_texture` is
+    // `None`, and there is no count either way. Saying *"nothing was thick
+    // enough to thin"* there would be reporting an absence of evidence as
+    // evidence of absence, on the frame where the operator is most likely to be
+    // looking. The general sentence is the honest fallback: it is true whatever
+    // the count turns out to be.
+    let line = match doc.page_texture.as_ref() {
+        Some(t) if t.diagnostics.strokes_hairlined == 0 => t::line_weights_no_effect(),
+        _ => t::line_weights_off(),
+    };
+    disclosure_line(ui, REGION_LINE_WEIGHTS, line);
 }
 
 /// Draw all of them, in the order the parent expects.

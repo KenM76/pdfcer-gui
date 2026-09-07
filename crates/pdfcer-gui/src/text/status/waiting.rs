@@ -119,3 +119,47 @@ pub const fn line_weights_off() -> &'static str {
     "Line weights are off \u{2014} every line is drawn one pixel wide. Printing and exporting \
      still use the real widths."
 }
+
+/// ★★★ **The line-weights mode is on and it changed NOTHING in view** —
+/// `OPERATOR_REQUESTS.md` **O137**, and the half this shell asked the engine
+/// for by name.
+///
+/// # The two states this sentence exists to tell apart
+///
+/// | what the operator sees | what is true | without this line |
+/// |---|---|---|
+/// | flipped the switch, nothing changed | **this view has no strokes thick enough to thin** | *"the setting is broken"* |
+/// | flipped the switch, nothing changed | the setting really is not reaching the renderer | *"the setting is broken"* — and right |
+///
+/// Those are the same screenshot. `pdfcer-core`'s reply put it exactly:
+/// *"nothing reported whether the mode had done anything, so an operator could
+/// switch it on, see no change, and have no way to tell 'this drawing has no
+/// strokes thin enough to matter' from 'the setting is broken'."*
+/// `Diagnostics::strokes_hairlined` (`Pass 254.1`) is that count, and it counts
+/// strokes **thinned**, not strokes drawn.
+///
+/// # ★★★ IT SAYS "IN VIEW", AND THAT WORD IS LOAD-BEARING
+///
+/// The count is a property of **the region that was rasterised**, not of the
+/// document or even of the page. Scroll to a corner with no linework and it
+/// falls to zero — truthfully. A sentence saying *"this drawing has no thin
+/// lines"* would then be a claim about the drawing, made from a measurement of
+/// a patch of white paper, and it would flip back the moment he scrolled.
+///
+/// ⇒ `blend_space_disclosure` two screens up records the same hazard from the
+/// other side and chose the opposite field for it: it keys on
+/// `cmyk_buffer_refused` — true of the whole page — rather than on the count of
+/// blends that then went wrong, precisely because the count *"is zero on a page
+/// whose transparency is outside the rendered region, so keying on it would go
+/// quiet exactly where the operator scrolled away from the affected patch and
+/// back."*
+///
+/// Here the region-scoped reading is the **correct** one rather than a
+/// limitation, because the question the operator is asking is about what he is
+/// looking at: *why does this look the same?* So the fix is not a different
+/// field, it is honest scoping in the words.
+#[must_use]
+pub const fn line_weights_no_effect() -> &'static str {
+    "Line weights are off and nothing in view was thick enough to thin — this part of the \
+     drawing looks the same either way."
+}

@@ -103,6 +103,7 @@ const ITEM: &str = "ribbon.item.view.line_weights";
 /// The status-bar disclosure's published region.
 const DISCLOSURE: &str = "status-group:line-weights";
 /// `view-chrome LineWeights on=…` — the application's own report of the toggle.
+const HAIRLINE_EVENT: &str = "canvas-hairline";
 const CHROME_EVENT: &str = "view-chrome";
 
 /// The zoom the run must reach before the assertion means anything.
@@ -195,6 +196,77 @@ fn ink_in(image: &Image, region: crate::geom::PixRect) -> u64 {
         .count() as u64
 }
 
+/// **Where the densest patch of ink sits inside `canvas`**, as fractions of the
+/// canvas rect, or `None` when the canvas carries no ink at all.
+///
+/// # ★★★ Why the climb has to be aimed, and what NOT aiming it cost
+///
+/// `Ctrl+wheel` zooms **about the pointer**, so whatever is under the cursor
+/// stays under it for the whole climb. Aiming at the canvas's geometric centre
+/// therefore does not zoom into the drawing — it zooms into whatever happens to
+/// be in the middle of the sheet, and on a CAD sheet that is **blank paper**:
+/// the linework is a border and a title block around the edges.
+///
+/// This check SKIPPED on `fixtures/a1-titleblock.pdf` for exactly that reason,
+/// and its skip message named the repair without performing it — *"aim the view
+/// at content before climbing"*. **A SKIP is not red**, so it had been telling
+/// nobody anything for as long as it had been running.
+///
+/// # ★★ Why a patch and not the ink's bounding box
+///
+/// Measured on that fixture at scale 0.25: the ink spans **24–2356 pt
+/// horizontally and 28–1660 vertically** — very nearly the whole A1 sheet — and
+/// the centre of that box is the blank middle. A bounding box says where the
+/// drawing *is*; it does not say where the drawing is *dense*, and those are
+/// opposite answers on a sheet whose content is a frame.
+///
+/// # The method, and why it is deliberately coarse
+///
+/// Divide the canvas into a `GRID × GRID` lattice, count dark pixels per cell,
+/// return the fullest cell's centre as fractions. Eight cells per axis is
+/// enough to separate a title block from a border on any sheet size, and coarse
+/// on purpose: a fine grid finds a single thick line and aims at a spot that
+/// leaves the viewport as soon as the zoom climbs, while a coarse one finds a
+/// *region* that stays populated all the way up.
+///
+/// ★ It answers the cell's **centre**, not the darkest pixel, for the same
+/// reason — the exact pixel of a stroke is a knife edge at 400 %, and one
+/// rounding in the pointer's position falls off it.
+///
+/// ★★ Fractions rather than a screen point, so the caller converts through
+/// `Frame::declared_at` like every other aim in this harness. `coords`' rule is
+/// that a coordinate is **produced by a conversion and never assembled**, and
+/// returning pixels here would be assembling one two conversions away from the
+/// rect it belongs to.
+fn densest_ink(image: &Image, canvas: crate::geom::PixRect) -> Option<(f32, f32)> {
+    /// Cells per axis. See the note above on why this is coarse.
+    const GRID: u32 = 8;
+    if canvas.w < GRID || canvas.h < GRID {
+        return None;
+    }
+    let (cw, ch) = (canvas.w / GRID, canvas.h / GRID);
+    let mut best: Option<(u64, u32, u32)> = None;
+    for gy in 0..GRID {
+        for gx in 0..GRID {
+            let cell = crate::geom::PixRect {
+                x: canvas.x + gx * cw,
+                y: canvas.y + gy * ch,
+                w: cw,
+                h: ch,
+            };
+            let ink = ink_in(image, cell);
+            if ink > 0 && best.is_none_or(|(most, _, _)| ink > most) {
+                best = Some((ink, gx, gy));
+            }
+        }
+    }
+    best.map(|(_, gx, gy)| {
+        #[allow(clippy::cast_precision_loss)]
+        let f = |g: u32| (g as f32 + 0.5) / GRID as f32;
+        (f(gx), f(gy))
+    })
+}
+
 #[allow(clippy::too_many_lines)]
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
@@ -271,9 +343,46 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let driver = Driver::new(session.window());
     let canvas = declared(&trace, ui_rect, CANVAS_REGION)
         .ok_or_else(|| Error::new(format!("no `{CANVAS_REGION}`; is a document open?")))?;
-    // ★ Aimed once and left there: Ctrl+wheel zooms about the pointer, so the
-    // point under the cursor stays under it for the whole climb.
-    let at = frame.declared_center(canvas);
+
+    // ★★★ **AIMED AT MEASURED INK, not at the canvas's centre** — 2026-09-07.
+    //
+    // `Ctrl+wheel` zooms about the pointer, so this one point decides what the
+    // whole climb lands on. It used to be `frame.declared_center(canvas)`, and
+    // on a CAD sheet that is blank paper: the linework is a border and a title
+    // block round the edges. This check reported **136 ink pixels of 286,528**
+    // and SKIPPED — correctly, and invisibly, because a SKIP is not red.
+    //
+    // ⇒ One capture at the opening zoom, [`densest_ink`] over it, and the aim
+    // is a fact about this document rather than an assumption about where
+    // drawings put their content. See that function for why a *patch* and not
+    // the ink's bounding box.
+    let fit_shot = ctx.out("line_weights.fit.png");
+    let at_fit = crate::capture::window_to_png(&session, &fit_shot)?;
+    report.artifact(fit_shot);
+    let canvas_px = frame.logical_to_capture_pixels(canvas);
+    let at = match densest_ink(&at_fit, canvas_px) {
+        Some((fx, fy)) => {
+            report.note(format!(
+                "aimed the zoom at the densest ink in view ({:.0} %, {:.0} % across the canvas) \
+                 rather than at its centre — on a CAD sheet the centre is blank paper",
+                fx * 100.0,
+                fy * 100.0
+            ));
+            frame.declared_at(canvas, fx, fy)
+        }
+        None => {
+            // ★ Not an error, and it must not become one: a page really can be
+            // blank at the opening zoom, and the ink floor further down is the
+            // assertion that owns that case and words it properly. Falling back
+            // to the centre keeps this function's failure mode identical to
+            // what it was before the aim existed.
+            report.note(
+                "no ink anywhere in the canvas at the opening zoom, so the climb is aimed at \
+                 the centre as it always was — the ink floor below will report what that means",
+            );
+            frame.declared_center(canvas)
+        }
+    };
 
     let mut batches = 0;
     loop {
@@ -464,13 +573,77 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         "the drawing lost {:.1} % of its ink",
         dropped * 100.0
     ));
-    if dropped < MIN_INK_DROP {
+
+    // ★★★ **THE ENGINE'S OWN COUNT IS THE PRIMARY ORACLE** — 2026-09-07.
+    //
+    // The ink ratio below used to be the only one, and it failed a **working
+    // build**: on `a1-titleblock.pdf` at 394 % the drawing lost 1.39 %, under
+    // the floor, because the strokes in the aimed region were already close to
+    // one device pixel and the §8.4.3.2 floor had nothing left to take. The
+    // measurement was calibrated on a different drawing.
+    //
+    // ⇒ **Never widen a tolerance when the measurement runs out — read a better
+    // instrument.** `Diagnostics::strokes_hairlined` (`Pass 254.1`) is the
+    // count of strokes this raster actually THINNED, published on the
+    // `canvas-hairline` line, and it separates the two states the pixel ratio
+    // cannot:
+    //
+    // | strokes thinned | ink moved | verdict |
+    // |---|---|---|
+    // | **0** | — | **SKIP** — the mode reached the renderer and had nothing to cap in this view. Not a defect, and it is what the operator is told too |
+    // | **> 0** | down | **PASS** — the mode did work and put less ink down |
+    // | **> 0** | up or level | **FAIL** — handled above; the wrong convention, or a stale raster |
+    //
+    // ★ This shell asked the engine for that count precisely because *"an
+    // operator could switch it on, see no change, and have no way to tell 'this
+    // drawing has no strokes thin enough to matter' from 'the setting is
+    // broken'"*. The harness had the identical problem and is fixed the
+    // identical way.
+    let thinned = trace
+        .events(HAIRLINE_EVENT)
+        .last()
+        .and_then(|l| l.get("thinned"))
+        .map(std::borrow::ToOwned::to_owned);
+    match thinned.as_deref() {
+        Some("0") => {
+            return Err(Error::new(format!(
+                "the mode is on and the engine thinned **0 strokes** in this view: \
+                 `{HAIRLINE_EVENT} thinned=0`. That is not a defect — every stroke here is \
+                 already at or below one device pixel, so the ceiling is a no-op and the page \
+                 renders byte-identically either way. The application says the same thing to \
+                 the operator (`line_weights_no_effect`).\n\
+                 SKIPPED rather than passed, because a mode with nothing to do proves nothing \
+                 about a mode that has something to do. Aim at heavier linework or drop the \
+                 zoom, where the strokes are wider in device pixels. Trace: {}.",
+                session.trace_path().display()
+            )));
+        }
+        None => {
+            report.note(format!(
+                "the application published no `{HAIRLINE_EVENT}` line, so the ink ratio below \
+                 is the only oracle this run has — that is how this check worked before \
+                 2026-09-07 and it is why it once failed a working build"
+            ));
+        }
+        Some(n) => {
+            report.note(format!(
+                "★★ the engine reports {n} stroke(s) thinned, so the mode reached the renderer \
+                 and did work — which is what the ink ratio below can only infer"
+            ));
+        }
+    }
+
+    // ★ The ink ratio is kept as a SECOND opinion rather than deleted, and the
+    // floor is only applied when the count could not be read. With the count in
+    // hand the pixels answer a different and weaker question — *did the picture
+    // visibly change* — and a build that thinned strokes and drew them anyway
+    // would satisfy the count and fail here, which is worth catching.
+    if thinned.is_none() && dropped < MIN_INK_DROP {
         return Ok(Some(format!(
             "the canvas lost only {:.2} % of its ink ({ink_before} -> {ink_after}) at zoom \
-             {:.0}%. The unit measurement on a1-titleblock.pdf at scale 4 is 17.7 %. A change \
-             this small is inside antialiasing noise and does not demonstrate that every \
-             stroke was capped — it is consistent with the ceiling reaching some strokes and \
-             not others. Trace: {}.",
+             {:.0}%, and no `{HAIRLINE_EVENT}` line was published to say whether that is \
+             because nothing needed thinning. The unit measurement on a1-titleblock.pdf at \
+             scale 4 is 17.7 %. Trace: {}.",
             dropped * 100.0,
             reached * 100.0,
             session.trace_path().display()

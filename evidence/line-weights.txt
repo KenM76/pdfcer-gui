@@ -1,0 +1,28 @@
+ui-verify — profile `pdfcer-gui` (the application this project is building (crates/pdfcer-gui))
+  NOTE: this harness drives the REAL cursor and keyboard. It raises the target window, moves the pointer, and types into it. The pointer is put back where it was when the run ends. Pass --no-input to disable (checks that need input then report SKIPPED, never PASS).
+
+  isolation: each check drives its own copy of the binary, under a `.ui-verify-profiles` directory beside target/release/pdfcer-gui.exe. Nothing a check remembers reaches the next one.
+
+[PASS] line_weights
+       detects: the control that draws every line one pixel wide is on the ribbon and does nothing — which is the operator's own report about its predecessor — or it changes the picture in the WRONG DIRECTION (thickening thin strokes, Acrobat's "enhance thin lines", the opposite convention), or it changes the canvas without saying that the canvas no longer shows what will print
+       · no line-weights disclosure on open, which is correct
+       · aimed the zoom at the densest ink in view (81 %, 69 % across the canvas) rather than at its centre — on a CAD sheet the centre is blank paper
+       · climbed to zoom 394% in 5 batch(es)
+       · 77050 ink pixels in the canvas with real widths
+       · the application reports line weights OFF
+       · 75978 ink pixels with line weights off
+       · the drawing lost 1.4 % of its ink
+       · ★★ the engine reports 10 stroke(s) thinned, so the mode reached the renderer and did work — which is what the ink ratio below can only infer
+       · the status bar discloses that this is not what will print
+       · 76914 ink pixels once turned back on
+       · the disclosure retired itself when the mode was switched off
+       artifact: target/ui-verify\line_weights.trace.txt
+       artifact: target/ui-verify\line_weights.fit.png
+       artifact: target/ui-verify\line_weights.before.png
+       artifact: target/ui-verify\line_weights.after.png
+       artifact: target/ui-verify\line_weights.restored.png
+
+------------------------------------------------------------------------
+  1 passed, 0 failed, 0 skipped
+
+RESULT: PASS — every check drove the application and every assertion held.

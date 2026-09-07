@@ -212,4 +212,35 @@ pub(super) fn publish_coverage(
             doc.view.zoom
         )
     });
+    // ★★★ **How many strokes this raster THINNED** — `Diagnostics::strokes_hairlined`,
+    // `pdfcer-core` `Pass 254.1`, traced 2026-09-07.
+    //
+    // The disclosure in `app::status::disclosure::line_weights_disclosure`
+    // reads the same field to choose which sentence the operator sees. This
+    // line is the machine-readable twin, and it exists because the harness had
+    // the same problem the operator does: `tools/ui-verify`'s `line_weights`
+    // judged the mode by **counting dark pixels before and after**, which
+    // cannot tell *the mode reached the renderer and had nothing to cap here*
+    // from *the mode is not reaching the renderer at all*. Measured on
+    // `a1-titleblock.pdf` at 394 %: the drawing lost **1.39 %** of its ink,
+    // below the check's floor, and the check failed a working build.
+    //
+    // ⇒ **Never widen a tolerance when the measurement runs out — read a better
+    // instrument.** This is the better instrument, and it is the engine's own
+    // count rather than a second inference from pixels.
+    //
+    // ★ `trace_on_change`, like the coverage line above it, so a still canvas
+    // does not fill the trace. It is keyed on the whole formatted line, so a
+    // count that goes 10 → 0 → 10 across a pan is three events and not one.
+    crate::diag::trace_on_change("canvas-hairline", || {
+        format!(
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            "thinned={} mode={}",
+            doc.page_texture.as_ref().map_or_else(
+                || "none".to_owned(),
+                |t| t.diagnostics.strokes_hairlined.to_string()
+            ),
+            u8::from(!doc.view.line_weights),
+        )
+    });
 }
