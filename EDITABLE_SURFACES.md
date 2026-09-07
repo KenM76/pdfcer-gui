@@ -412,6 +412,33 @@ first eight ambiguous characters rides on `EditReport` for a UI that wants to
 warn before the keystroke. This shell warns after it, which is the honest
 position while nothing is asking for the other.
 
+### ★★★ The one COMING, 2026-09-06 evening — `place_text`, and it is the first verb entered here BEFORE the lock could call it
+
+`tools/verb-coverage.py` prints it under **COMING**, not among the misses, and
+that is this file's own 2026-08-29 distinction doing its job: *"nothing here
+calls it"* and *"we could not call it if we wanted to"* are two facts, and this
+is the second one. Re-measured in the session that wrote this section, with the
+pin deliberately held at `d2ea5de` while a release is packaged on it:
+
+```
+208 EditSession verbs (lock d2ea5de), 171 named somewhere in the shell, 37 named nowhere.
+COMING (1): in the engine's WORKING TREE and not in the locked revision — place_text
+```
+
+⇒ **`check-verb-coverage.sh` is green today and goes red on the first `cargo
+update`**, because the gate is keyed on the lock and the verb is not in it. The
+row is written now, ahead of the bump, for the reason the header of the misses
+section already gives: *the argument is the valuable part*, and it is worth the
+same whether or not a gate is currently asking for it. ★ This is also the first
+time this register has been able to write a row **before** a capability became
+reachable — every previous section here was written after a gate went red, which
+is one bump too late by construction.
+
+| Verb | Engine Pass | Status |
+|---|---|---|
+| `place_text` | 252.0 (`cd3933c`, 2026-09-06 20:26) | ⬜ **A gap, and it is COMING rather than missed.** `EditSession::place_text(text, &PageTemplate, InsertPosition)` at `crates/pdfcer-core/src/edit.rs:11017` — in the engine's `HEAD` (`e1bdb6c`) and **not** in the lock, so nothing here can call it yet. It is the return journey of File ▸ Export ▸ Text: a plain-text file paginated into as many pages as it needs and spliced into the open document, which this shell has no route for at all — a drawing register or a revision schedule can leave pdfcer as text and cannot come back. **It already carries an `ENGINE_BACKLOG.md` row**, under `wanted` in the Text section, and that row holds the full API surface and the argument; this entry exists because `check-verb-coverage.sh` reads **this** file and nothing else, so a row in the sibling register does not discharge it — which is worth knowing in itself, since the same capability now owes two documents an entry for two different reasons. ★★ **Three facts a wiring session should not have to re-derive.** **(1)** `text_edit::blank_document` is the primitive underneath it and **nothing in the engine could create a page before, only copy one** — so this is the first verb in this register that *makes* a document rather than editing one, and it still routes through `Document::from_bytes`, so there is exactly one way a document comes into existence. **(2)** The **one undo entry** is `CommandKind::PlaceText { pages }`, and the engine's own doc at `edit.rs:10953-10960` says the fold is *checked, not assumed*: past `MAX_UNDO_DEPTH` — more than 255 non-blank pages — every page is still placed and only the grouping fails, reported as `PlaceTextReport::coalesced == false` with `undo_entries` carrying the real count. ⇒ A surface that promises one `Ctrl+Z` without reading `coalesced` is promising something the engine has already warned it about, and this is precisely the class of claim this register exists to stop being re-derived wrongly. **(3)** The refusals are the operator-facing half and two of them are **pre-emptible rather than reportable**: `PlaceTextError::NoColumn` and `::PageTooShort` mean the chosen margins leave no room on the chosen sheet, which is a *chooser* problem answerable before the press; `::NoPageToInsertBeside` is an append into a document with no page to splice beside. Under the default `Unmappable::Refuse` a character the face cannot encode refuses the whole import and names every one, which is R8b Rule 4's shape and not a defect to work around. ⚠ **Not built, and named rather than implied**: it needs a File ▸ Import entry, a `PageTemplate` chooser (his sheets are A1, not Letter) and an `InsertPosition` control — and the Pages panel already knows how to ask that last question for a page insert, so it should be read before a second way of asking it is invented. |
+
+
 ### Not gaps — alternate spellings of a verb the shell already calls
 
 | Verb | What the shell calls instead |
