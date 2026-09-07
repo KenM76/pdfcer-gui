@@ -2015,6 +2015,53 @@ cases.
 view ended up.** The evidence that settles it is not at the end of the trace; it
 is the pair of frames in the middle.
 
+### ★★★ THIRD READING, and this one is arithmetic rather than narrative
+
+Two hypotheses were already wrong here — the check's *"defaulted to index 0"*
+and this entry's *"the fit re-places the view"*. So this one is stated with the
+numbers that force it, and it is still labelled a **lead**, not a verdict.
+
+`canvas::zoom::frame_rect` plans the framing against **`last_frame(ctx)` — the
+PREVIOUS frame's canvas**. `arrive` runs during the canvas draw, before that
+frame's own `canvas` trace line is emitted. So the geometry it plans against is
+one frame stale, and one frame stale is exactly the frame before the page turn
+and the fit landed:
+
+| trace line | frame | zoom | offset | page |
+|---|---|---|---|---|
+| 211 | the one `frame_rect` actually reads | 0.7277 | `584.3` | **0** |
+| 300 | the frame `arrive` runs on | 0.7647 | `2436.8` | **3** |
+| 317 | after the zoom lands | 3.1200 | `1316.6` | **0** |
+
+`doc.zoom_anchor` is therefore built from `offset_before = 584.3` — a **page 0**
+offset — and `display_before` from the 0.7277 display. `consume_anchor` solves
+that faithfully on the next frame and puts the view back where the anchor says,
+which is page 0, magnified 3.12×. The mechanism is working exactly as designed
+on an input taken one frame too early.
+
+⇒ **`last_frame` is a lie during the frame that changed the view.** Anything
+that plans geometry inside a draw, after the queue has already moved the
+document, is planning against the state the operator was in before their own
+gesture.
+
+Note the shape of the near-miss: `consume_anchor` already carries a one-frame
+grace (`AnchorStep::Hold`, the `waited` flag) for the *output* side of this
+problem — the display not having settled when the anchor is solved. The
+**input** side has no equivalent.
+
+### ⚠ Why this is a lead and not a fix
+
+`frame_rect` is shared by the zoom marquee, `view.zoom_selection` and every
+bookmark, so changing when it reads its geometry moves three surfaces at once —
+and `viewer`'s zoom-anchor code is R128 territory. The two obvious repairs
+(defer `arrive` a frame when the page changed; give `frame_rect` the current
+frame's geometry) are **not** equivalent and one of them re-creates the
+feedback loop.
+
+**The oracle exists and is cheap**: `a_link_goes_to_the_page_it_names`, plus the
+bookmark family, driven. Whoever takes it should run both before and after and
+compare `off=` across the three frames above.
+
 ### What actually happens, frame by frame
 
 | frame | trace | reading |
