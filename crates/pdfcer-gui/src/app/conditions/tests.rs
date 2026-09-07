@@ -955,6 +955,7 @@ fn the_markup_style_group_follows_the_kind_of_annotation_and_the_mode() {
                 locked,
             },
             outline: egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(10.0, 10.0)),
+            oriented: None,
         });
     };
 

@@ -292,11 +292,16 @@ pub(super) fn resize(
 /// selection outline **from `/Rect`**, so an operator turning a stamp 30°
 /// watches a dashed box swell around artwork that did not change size.
 ///
-/// ⇒ Rule 4's surviving half exactly — a consequence the operator can see but
-/// cannot *explain* still owes an off-canvas report. Render normally; report
-/// separately. Both. [`crate::text::rotating::rect_grew`] is the sentence, and
-/// it answers `None` at a quarter turn so the commonest rotation there is stays
-/// silent.
+/// ⇒ **That was Rule 4's surviving half, and it stopped applying on
+/// 2026-09-07.** `canvas::annotquad` draws the outline at the mark's own angle
+/// (`OPERATOR_REQUESTS.md` O147), so the box hugs the artwork and no longer
+/// swells — the consequence had a subject and the subject is gone. The
+/// disclosure `text::rotating::rect_grew` used to return here is deleted, and
+/// the reason it must not be restored for the O145 growth defect is recorded at
+/// its old site.
+///
+/// ⚠ **`/Rect` still grows.** That is correct and normative and is now simply
+/// invisible, which is the right place for a fact an operator cannot act on.
 ///
 /// # ★ What is deliberately NOT disclosed
 ///
@@ -367,18 +372,16 @@ pub(super) fn rotate(doc: &mut OpenDoc, id: ObjId, pivot: (f64, f64), degrees: f
                         outcome.to.ury - outcome.to.lly,
                     )
                 });
-                crate::text::rotating::rect_grew(
-                    (
-                        outcome.from.urx - outcome.from.llx,
-                        outcome.from.ury - outcome.from.lly,
-                    ),
-                    (
-                        outcome.to.urx - outcome.to.llx,
-                        outcome.to.ury - outcome.to.lly,
-                    ),
-                )
-                .into_iter()
-                .collect()
+                // ★★★ **NO DISCLOSURE, since 2026-09-07.** `rect_grew` used to
+                // return a sentence here explaining that the dashed box had
+                // swelled while the artwork had not. The outline is now drawn
+                // at the mark's own angle (`canvas::annotquad`,
+                // `OPERATOR_REQUESTS.md` O147), so it hugs the artwork and
+                // there is no swelling box to explain. The full account,
+                // including why it must not be restored for the O145 growth
+                // defect, is at the deleted function's site in
+                // `text::rotating`.
+                Vec::new()
             })
     });
 }

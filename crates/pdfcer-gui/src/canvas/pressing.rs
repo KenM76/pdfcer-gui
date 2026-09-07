@@ -71,8 +71,21 @@ use crate::canvas::{
 /// worse — an invisible target that steals the press aimed at what is under it.
 #[derive(Debug, Clone, Copy)]
 pub struct Grabbable {
-    /// The box, in screen space, or `None` when nothing is grabbable.
-    pub bounds: Option<egui::Rect>,
+    /// The frame the grips are laid out in, in screen space, or `None` when
+    /// nothing is grabbable.
+    ///
+    /// ★★★ **A [`handles::GripFrame`] rather than a `Rect` since 2026-09-07**
+    /// (`OPERATOR_REQUESTS.md` O147). A turned annotation's grips sit on the
+    /// turned outline, and this is the one value the painter, the hit test and
+    /// the cursor all read — so it is the only place the two frames can be
+    /// distinguished without three surfaces re-deciding it independently, which
+    /// is the failure H7 exists to prevent.
+    ///
+    /// Every producer below that has no orientation answers
+    /// `GripFrame::Upright`, and every consumer that wants an axis-aligned
+    /// extent calls [`handles::GripFrame::bounds`] — so nothing but a turned
+    /// annotation takes a new code path.
+    pub bounds: Option<handles::GripFrame>,
     /// Which grips it offers, because it has a verb behind each.
     pub offer: handles::GripSet,
     /// ★★★ **Whether the box is a BOUNDING box or the subject itself** —
@@ -174,7 +187,7 @@ pub fn grabbable(
     map: &PageMapping,
     selection: &SelectionState,
 ) -> Grabbable {
-    if let Some(bounds) = dimdrag::grab_box(doc, map, selection) {
+    if let Some(bounds) = dimdrag::grab_box(doc, map, selection).map(handles::GripFrame::Upright) {
         // ★★ The rotate handle and NOT the eight. A ce dimension's extent is
         // its measurement, so `pdfcer-core` declines a scale by name and says it
         // will keep declining it; a rotation is an isometry, so the measured
@@ -220,7 +233,7 @@ pub fn grabbable(
             outline: true,
         };
     }
-    if let Some(bounds) = widgetdrag::grab_box(ctx, doc, map) {
+    if let Some(bounds) = widgetdrag::grab_box(ctx, doc, map).map(handles::GripFrame::Upright) {
         // ★★ The eight and NOT the ninth, and the asymmetry is §12.5.6.19's.
         // A widget's rotation is `/MK /R` — a quantised 0/90/180/270
         // *declaration* the field's appearance generator reads, not a
@@ -263,7 +276,7 @@ pub fn grabbable(
     // threaded through two call chains to answer one boolean.
     let editable = crate::app::modes::capability::edit_content_now(ctx);
     Grabbable {
-        bounds,
+        bounds: bounds.map(handles::GripFrame::Upright),
         offer: if at_object_rung && editable {
             handles::GripSet::all()
         } else {
@@ -422,7 +435,7 @@ pub fn look(
 
     let grip = grip_box
         .zip(origin)
-        .and_then(|(bounds, p)| handles::grip_at(bounds, p, offer));
+        .and_then(|(frame, p)| handles::grip_at_in(frame, p, offer));
 
     // ★★★ **A press on empty paper inside the selection's BOUNDING box is not
     // a press on the selection** — `OPERATOR_REQUESTS.md` O72.
@@ -597,8 +610,14 @@ pub fn look(
     // — this module's stated contract. `annotdrag::grab_box` answers `None`
     // unless the selection is a markup this shell can actually move, so no
     // gesture is started that could not commit.
-    let markup_body =
-        origin.is_some_and(|p| annotdrag::grab_box(map, selection).is_some_and(|b| b.contains(p)));
+    let markup_body = origin.is_some_and(|p| {
+        // ★ The UPRIGHT bound, on the same argument `handles::grip_at_in`
+        // makes about `Grip::Move`: this decides whether the press landed
+        // *on the object*, and narrowing it to a turned quad would make a
+        // turned mark harder to pick up than an upright one. The eight
+        // squares moved into the turned frame; the body did not.
+        annotdrag::grab_box(map, selection).is_some_and(|f| f.bounds().contains(p))
+    });
 
     // Whether the press landed inside the selected FORM FIELD's box.
     //

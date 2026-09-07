@@ -109,7 +109,7 @@ use pdfcer_core::graph::ObjectGraph;
 use pdfcer_core::object::ObjId;
 use pdfcer_core::page_tree::Page;
 
-use crate::canvas::mapping::annot_canvas_rect;
+use crate::canvas::mapping::{annot_canvas_rect, oriented_canvas_quad};
 
 /// Which family an annotation belongs to, and therefore **which verb may
 /// restyle it**.
@@ -175,6 +175,25 @@ pub struct AnnotSelection {
     /// content selection's outlines are also cached in, so a zoom or a pan
     /// moves where this is drawn without changing what it is.
     pub outline: Rect,
+    /// ★ **Where the artwork ACTUALLY sits**, when that differs from
+    /// [`Self::outline`] — the four corners of the appearance's placed
+    /// `/BBox`, canvas space, in the artwork's own frame (see
+    /// [`crate::canvas::annotquad`]).
+    ///
+    /// `None` for the overwhelmingly common unturned case **and** for any
+    /// annotation with no usable appearance stream, and both mean the same
+    /// thing to a caller: *use the rectangle, it is the truth here.*
+    ///
+    /// # Why this rides on the selection rather than being re-read at paint
+    ///
+    /// Because the outline, the grips and the hit test must agree about where
+    /// the object is, and this project has been bitten three times by two
+    /// surfaces deriving the same geometry independently — most recently when a
+    /// dimension's vertex handles were painted from the selection and
+    /// hit-tested from a capability check, so they were visible and untouchable
+    /// in the very mode that authors dimensions. One value, one decision, every
+    /// consumer.
+    pub oriented: Option<[Pos2; 4]>,
 }
 
 /// Every annotation on `page_index` that a click may select, topmost last.
@@ -288,6 +307,17 @@ pub fn selectable_on<G: ObjectGraph + ?Sized>(
             // worse failure than claiming too much. Absent means "not known",
             // and not-known falls back to the rectangle.
             shape: shapes.get(&id).filter(|s| !s.is_empty()).cloned(),
+            // ★★ The turned outline, and **only when it is actually turned**.
+            //
+            // `is_upright` answering `true` collapses to `None` right here
+            // rather than at the painter, so every downstream consumer gets one
+            // fact — *is there a second frame to honour?* — instead of each one
+            // re-deciding what counts as upright. The unturned path is then
+            // bit-for-bit the code it has always been, which is why this change
+            // cannot regress the 99 % of annotations nobody has rotated.
+            oriented: crate::canvas::annotquad::oriented(graph, id)
+                .filter(|q| !q.is_upright())
+                .and_then(|q| oriented_canvas_quad(q.corners, page)),
         });
     }
     out
@@ -362,6 +392,7 @@ pub fn hit(candidates: &[Candidate], point: Pos2, tolerance: f32) -> Option<Anno
         .map(|c| AnnotSelection {
             target: c.target.clone(),
             outline: c.outline,
+            oriented: c.oriented,
         })
 }
 
@@ -383,6 +414,16 @@ pub struct Candidate {
     /// annotation unselectable, which is a worse failure than claiming too
     /// much. The builder drops to `None` instead.
     pub shape: Option<Vec<(Pos2, Pos2)>>,
+    /// The artwork's four placed corners, canvas space — see
+    /// [`AnnotSelection::oriented`], which this becomes on selection.
+    ///
+    /// ★ **Carried but NOT hit-tested against**, deliberately. Narrowing the
+    /// click target to the turned quad would be more precise and would be the
+    /// wrong trade: `/Rect` already contains the pen half-width (the engine's
+    /// own argument for testing it bare), and a turned mark is exactly the case
+    /// where an operator's aim is least reliable. Selection stays generous;
+    /// only the *drawing* gets more honest.
+    pub oriented: Option<[Pos2; 4]>,
 }
 
 impl Candidate {
@@ -529,6 +570,7 @@ mod tests {
             target,
             outline,
             shape: None,
+            oriented: None,
         }
     }
 
@@ -538,6 +580,7 @@ mod tests {
             target,
             outline,
             shape: Some(shape),
+            oriented: None,
         }
     }
 

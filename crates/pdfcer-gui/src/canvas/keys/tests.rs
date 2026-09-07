@@ -183,6 +183,7 @@ fn an_arrow_key_reaches_the_nudge_through_canvas_keys() {
             locked: false,
         },
         outline: egui::Rect::from_min_size(egui::pos2(10.0, 20.0), egui::vec2(40.0, 30.0)),
+        oriented: None,
     });
 
     let ctx = Context::default();
@@ -1243,6 +1244,7 @@ fn delete_does_not_act_on_an_annotation_whose_deletion_would_be_refused() {
             locked: false,
         },
         outline: egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(10.0, 10.0)),
+        oriented: None,
     });
 
     let ctx = Context::default();
@@ -1303,6 +1305,7 @@ fn delete_acts_on_an_annotation_when_the_gate_is_open() {
             locked: false,
         },
         outline: egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(10.0, 10.0)),
+        oriented: None,
     });
 
     let actions = keys_for(key(Key::Delete), &mut selection);

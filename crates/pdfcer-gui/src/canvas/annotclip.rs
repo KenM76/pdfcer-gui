@@ -832,6 +832,7 @@ mod tests {
                 locked: false,
             },
             outline: egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(10.0, 10.0)),
+            oriented: None,
         });
         doc
     }
@@ -1125,6 +1126,7 @@ mod tests {
                 locked: false,
             },
             outline: egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(10.0, 10.0)),
+            oriented: None,
         });
         assert_eq!(
             selected(&stale),
@@ -1252,6 +1254,7 @@ mod tests {
                 locked: false,
             },
             outline: egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(10.0, 10.0)),
+            oriented: None,
         });
         let mut actions = Vec::new();
         assert_eq!(duplicate(&doc, &mut actions), Err(Refusal::Unreadable));

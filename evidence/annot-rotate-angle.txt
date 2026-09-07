@@ -1,0 +1,47 @@
+ui-verify — profile `pdfcer-gui` (the application this project is building (crates/pdfcer-gui))
+  NOTE: this harness drives the REAL cursor and keyboard. It raises the target window, moves the pointer, and types into it. The pointer is put back where it was when the run ends. Pass --no-input to disable (checks that need input then report SKIPPED, never PASS).
+
+  isolation: each check drives its own copy of the binary, under a `.ui-verify-profiles` directory beside target/release/pdfcer-gui.exe. Nothing a check remembers reaches the next one.
+
+[PASS] dragging_a_markup_moves_it
+       detects: a placed markup can be selected, restyled and deleted and cannot be MOVED — the drag is consumed by the annotation branch of the canvas fork and discarded there, so an operator drags a stamp across the sheet, lets go, and it is where it started with no message anywhere
+       · launched target/release\.ui-verify-profiles\dragging_a_markup_moves_it\pdfcer-gui.exe as pid 49032 with PDFCER_DIAG_INVOKE=mode.review,markup.rectangle
+       · ★ a rectangle was authored: `pdfcer-diag markup-commit kind=Rectangle page=0 x0=835.42 y0=590.32 x1=1309.16 y1=839.92`
+       · ★ the shape was selected: `pdfcer-diag annot-select page=0 id=ObjId { num: 65, generation: 0 } kind=Markup subtype=Square locked=false rect=[[835.4 843.9] - [1309.2 1093.5]]`
+       · ★★ the drag decided to move it: `pdfcer-diag annot-drag id=65 dx=402.427 dy=305.641`
+       · ★★★ the engine moved it: `pdfcer-diag move-annotation-applied id=65 dx=402.427 dy=305.641 keys=0 popup=false`
+       · ★ moved dx=402.43 pt, dy=305.64 pt — both axes travelled, geometry keys reported as 0
+       artifact: target/ui-verify\markup-move.trace.txt
+
+[PASS] rotating_a_markup_turns_it
+       detects: a placed markup can be moved and scaled and cannot be TURNED — it is offered eight grips and no ninth, so `rotate_annotation` is unreachable from the canvas. Or the handle is drawn and a press on it MOVES the shape, or rotates the page content behind it, which are working gestures aimed at the wrong verb and look entirely deliberate
+       · launched target/release\.ui-verify-profiles\rotating_a_markup_turns_it\pdfcer-gui.exe as pid 50448 with PDFCER_DIAG_INVOKE=mode.review,markup.rectangle
+       · ★ a rectangle was authored
+       · ★ the shape was selected: `pdfcer-diag annot-select page=0 id=ObjId { num: 65, generation: 0 } kind=Markup subtype=Square locked=false rect=[[835.4 843.9] - [1309.2 1093.5]]`
+       · ★★★ the ninth handle is painted: `canvas.rotate-handle` at (502.5,442.7)-(510.5,450.7)
+       · ★★★ the drag routed to the ANNOTATION verb: `pdfcer-diag rotate-annot-commit id=65 deg=-89.15 px=1072.29 py=715.12`
+       · ★★ and it turned the right way: -89.15° in page space for a clockwise drag on screen
+       · ★★★ the engine turned it: `pdfcer-diag rotate-annotation-applied id=65 deg=-89.15 px=1072.29 py=715.12 keys=0 matrix=1 from=473.7x249.6 to=256.6x477.4`
+       · the appearance matrix was composed: 1; /Rect went 473.7x249.6 → 256.6x477.4 (a quarter turn must not grow it, and this is reported rather than asserted — see the module header)
+       · ★★★ the outline is drawn at the mark's own angle: `pdfcer-diag canvas-selection-angle turned=1 corners=[(481, 445), (483, 538), (532, 537), (530, 444)]`
+       · ★★ and the Properties panel agrees: angle=270.85°, turn=none
+       artifact: target/ui-verify\annot-rotate.trace.txt
+
+[PASS] a_markup_shapes_nodes_can_be_edited
+       detects: a shape the operator has drawn as a comment shows no node anchors, or shows them and a drag on one moves the whole shape, or moves the node in the model and never repaints, or deletes a node and cannot say why when it will not delete another. His report, verbatim: "I also can't edit or delete nodes of a markup shape once it is drawn." The engine's four verbs for this landed on 2026-09-05 and this shell called none of them
+       · launched target/release\.ui-verify-profiles\a_markup_shapes_nodes_can_be_edited\pdfcer-gui.exe as pid 24184
+       · a four-node polygon was drawn and reached the engine
+       · before the drag: destination longest vertical ink run 0 px, 0 ink px of 1369 sampled · origin longest vertical ink run 19 px, 36 ink px of 1406 sampled
+       · ★ a node was MOVED and reached the engine: `pdfcer-diag markup-node-move id=65 index=1 nodes=4 x=2027.42 y=1260.98 snap=none`
+       · ★ and the DRAWING changed, in both directions: the destination gained 39 ink pixels and the origin lost 36
+       · ★ a node was DELETED and reached the engine: `pdfcer-diag markup-node-remove id=65 index=1 nodes=3 x=285.26 y=1260.98 snap=none`
+       · ★ and the refusal was SHOWN: the status bar published its decline slot
+       artifact: target/ui-verify\markup_node_edit.trace.txt
+       artifact: target/ui-verify\markup_node_before.png
+       artifact: target/ui-verify\markup_node_after.png
+       artifact: target/ui-verify\markup_node_refused.png
+
+------------------------------------------------------------------------
+  3 passed, 0 failed, 0 skipped
+
+RESULT: PASS — every check drove the application and every assertion held.

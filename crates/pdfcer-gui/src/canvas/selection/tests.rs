@@ -53,6 +53,7 @@ fn selecting_an_annotation_and_selecting_content_replace_each_other() {
             locked: false,
         },
         outline: Rect::from_min_size(Pos2::ZERO, egui::vec2(20.0, 10.0)),
+        oriented: None,
     };
 
     // content ▸ annotation
@@ -117,6 +118,7 @@ fn a_selected_annotation_is_not_an_empty_selection() {
             locked: false,
         },
         outline: Rect::from_min_size(Pos2::ZERO, egui::vec2(5.0, 5.0)),
+        oriented: None,
     });
     assert!(!state.is_empty());
     assert!(state.clear_annot(), "…and reports that it dropped one");

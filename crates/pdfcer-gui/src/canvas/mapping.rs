@@ -418,6 +418,48 @@ pub fn annot_canvas_rect(rect: [f64; 4], page: &pdfcer_core::page_tree::Page) ->
     bounds.filter(|r| r.width() > 0.0 && r.height() > 0.0 && r.is_finite())
 }
 
+/// The four **placed corners** of an annotation's artwork, projected into canvas
+/// space, preserving their order.
+///
+/// # ★★★ Why this cannot reuse [`annot_canvas_rect`], which does the same
+/// projection
+///
+/// Because that function **bounds** its four mapped corners into an upright
+/// `Rect`, and bounding is precisely what destroys the answer here. It is the
+/// right thing for a `/Rect` — §12.5.2 requires that upright, so the bound *is*
+/// the value — and the wrong thing for a quadrilateral whose whole content is
+/// the angle its corners sit at.
+///
+/// ⇒ Two functions rather than a flag, because they answer different questions
+/// and a caller that passed the wrong flag would get a plausible rectangle with
+/// no way to tell it had lost the orientation.
+///
+/// # The page's own `/Rotate` is applied here, and that is the point
+///
+/// `viewer::pdf_space_to_canvas` folds in the page rotation, so a 30° mark on a
+/// `/Rotate 90` sheet comes out at the angle the *operator sees*, not the angle
+/// stored in the file. Anything that mapped the artwork's angle and the page's
+/// rotation separately would be a second implementation of the projection and
+/// would disagree on rotated sheets only — which is the shape of defect that
+/// survives every test written on an unrotated fixture.
+///
+/// Returns `None` when any corner falls outside the projection's domain, for
+/// the same reason [`annot_canvas_rect`] does: three good corners and one
+/// missing is not three quarters of an outline, it is a wrong one.
+#[must_use]
+pub fn oriented_canvas_quad(
+    corners: [(f64, f64); 4],
+    page: &pdfcer_core::page_tree::Page,
+) -> Option<[Pos2; 4]> {
+    let mut out = [Pos2::ZERO; 4];
+    for (slot, (x, y)) in out.iter_mut().zip(corners) {
+        *slot = crate::viewer::pdf_space_to_canvas(Pos2::new(x as f32, y as f32), page)?;
+    }
+    out.iter()
+        .all(|p| p.x.is_finite() && p.y.is_finite())
+        .then_some(out)
+}
+
 #[cfg(test)]
 mod tests {
 

@@ -78,6 +78,7 @@ fn annot_selection(kind: AnnotKind, locked: bool) -> SelectionState {
             locked,
         },
         outline: egui::Rect::from_min_size(egui::pos2(10.0, 20.0), egui::vec2(40.0, 30.0)),
+        oriented: None,
     });
     state
 }

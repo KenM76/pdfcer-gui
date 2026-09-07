@@ -392,7 +392,7 @@ pub(super) fn draw(
             &painter,
             map,
             selection,
-            crate::canvas::handles::Grip::Rotate.pivot(bounds),
+            bounds.pivot(crate::canvas::handles::Grip::Rotate),
             radians,
         );
     }

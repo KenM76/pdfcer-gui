@@ -80,6 +80,112 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
+## O145 — ⬜ **FILED AT THE ENGINE 2026-09-07 — "the object gets larger with each enactment of the tool"** — you are right, and it is worse than the box
+
+**Your words, 2026-09-07:**
+
+> *"fixed the rotate bug in the review objects where the object gets larger with
+> each enactment of the tool."*
+
+**Reproduced in pixels within the hour, and the cause is in the engine, not in
+this shell.** A 140 × 60 pt box, turned 15° four times, is drawn **1.93× wider
+and 1.42× taller** than the same box turned 60° once. Same total angle;
+different picture. Measured by rendering both and diffing each against a render
+of the same page with no annotation on it, so what is measured is the mark and
+nothing else.
+
+It is not the *"the outline box grows"* effect the program used to explain to
+you. **The ink itself grows.** The engine turns the mark by composing the
+rotation into the artwork's own matrix — correct — and separately sets the
+upright rectangle to the box that bounds the *previous* rectangle turned. After
+one turn those two agree exactly. After two they do not, and the standard's
+placement rule then **stretches the artwork to fill the oversized rectangle**.
+Every further turn multiplies it.
+
+**Filed at the engine** with the reproduction attached as a test that runs here
+on every commit. There is **no workaround available to this shell** — turning it
+back grows it too, and the resize verb would redraw the artwork and destroy the
+rotation. That is stated plainly in the request rather than worked around
+quietly.
+
+⬜ **Status: filed, not fixed. It will still grow until the engine ships.** The
+engine session paused for the day shortly after the request landed, so it has
+not been picked up yet.
+
+⚠ **The typed Angle field in O146 has exactly the same defect and no other** —
+it reaches the same verb. Neither is worse than the other and both become
+correct in one engine change.
+
+## O146 — ◑ **BUILT 2026-09-07 — "the angle should be editable from the properties"** — it is there, and half of it is driven
+
+**Your words, 2026-09-07:**
+
+> *"also the angle should be editable from the properties."*
+
+**Select a mark and the Properties panel now has an Angle field**, under Width
+and Height, showing the mark's real orientation in degrees. Type a number,
+press Apply, and it turns.
+
+The number is read from the drawing itself rather than remembered, so it is
+right after you save and reopen, right on a mark somebody else's program made,
+and right after you turn it with the handle instead of the field.
+
+### What is verified and what is not
+
+✅ **The read is driven.** A rectangle was drawn, turned a quarter turn with the
+handle, and the panel read **270.85°** for a **−89.15°** turn — the two agree to
+a hundredth of a degree, and the check now asserts that on every run.
+
+⬜ **Typing into it and pressing Apply has NOT been driven.** It is written and
+tested in process, and by this project's own rule that is not a report of
+working software. Neither have the Left/Bottom/Width/Height fields beside it,
+which have been there since 2026-09-06 — that gap is older than this field and
+is now written down rather than assumed away.
+
+### One thing it will not show you
+
+A mark whose artwork has been **skewed or mirrored** by the program that made it
+gets **no Angle field at all** — not a greyed one. There is no single angle that
+describes a skew, and a field showing `0` for one would invite you to type `0`
+back in and make it worse. Rectangles, circles, lines, arrows, clouds and stamps
+that pdfcer or Acrobat authored all have one.
+
+## O147 — ✅ **DONE 2026-09-07 — "the box outlined when an object is selected should be in the same angled orientation as the object"** — and it found a second bug on the way
+
+**Your words, 2026-09-07:**
+
+> *"and the box outlined when an object is selected should be in the same angled
+> orientation as the object."*
+
+**Done, and driven.** Turn a mark and the dashed outline turns with it, hugging
+the artwork instead of boxing it. The eight corner handles and the rotate handle
+move onto that turned outline too, so they sit on the mark rather than floating
+in the space beside it.
+
+The outline is computed by running the PDF standard's own appearance-placement
+rule forwards — the same arithmetic the renderer uses to decide where to paint
+the mark — so the box lands exactly where the ink lands, including on marks
+Acrobat or a CAD exporter made.
+
+### ★ The second bug, and it is the more valuable half
+
+Driving this found that **the selection outline was stale after every single
+edit to a mark** — not just a rotation. Move a comment, resize it, turn it, type
+a new size into the panel, or undo any of those, and the dashed box and all nine
+handles stayed at the mark's *previous* position until you clicked somewhere
+else and clicked it again.
+
+The measurement: a quarter turn took the mark's box from 473.7 × 249.6 points to
+256.6 × 477.4, and the outline went on being drawn at the first one.
+
+That is why the handles sometimes felt like they were in the wrong place. It is
+fixed: the outline and the handles are now re-read from the document on the
+frame after any edit.
+
+⇒ **This is the founding rule of the project earning its keep.** 3,074 unit
+tests and 31 gates were green while that was happening. The driven run found it
+in ninety seconds.
+
 ## O144 — ◑ **BUILT 2026-09-06, AND NOT ONE PART OF IT HAS BEEN DRIVEN** — "getting full editing working for the Markup tools", and Adobe's own colours
 
 **Your words, 2026-09-06:**

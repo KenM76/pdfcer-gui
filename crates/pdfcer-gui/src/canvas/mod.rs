@@ -184,6 +184,15 @@ pub mod annotdrag;
 // drag that moves, adds or removes one. The operator's *"I also can't edit or
 // delete nodes of a markup shape once it is drawn."*
 pub mod annotnodes;
+/// ★ **Where an annotation's artwork ACTUALLY sits** — its four page-space
+/// corners, at whatever angle its appearance `/Matrix` puts them, plus the
+/// angle itself when the matrix is one. The operator's *"the box outlined when
+/// an object is selected should be in the same angled orientation as the
+/// object"* (O147). Runs §12.5.5's placement algorithm forwards, because
+/// `/Rect` is required upright and therefore cannot answer the question.
+/// **A declared workaround** — its header says what is filed at the engine and
+/// carries the tripwire that fires when the answer arrives.
+pub mod annotquad;
 /// ★ Dragging a **Bézier handle** — the last Phase 1 row, and one `pdfcer`'s
 /// own `gui` column ticked `[x]` while nothing here drew a handle at all.
 /// `EditSession::move_handle` had existed since Pass 30.1; what was missing was

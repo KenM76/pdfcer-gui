@@ -260,7 +260,58 @@ pub fn draw_selection(
     if let Some(annot) = selection.annot() {
         let screen =
             visible_outline_rect(mapping.rect_to_screen(annot.outline), MIN_OUTLINE_EXTENT_PX);
-        painter.rect_stroke(screen, CornerRadius::ZERO, stroke, StrokeKind::Middle);
+        // ★★★ **THE OUTLINE IS DRAWN AT THE MARK'S OWN ANGLE** —
+        // `OPERATOR_REQUESTS.md` O147, 2026-09-07: *"the box outlined when an
+        // object is selected should be in the same angled orientation as the
+        // object."*
+        //
+        // `annot.oriented` is `None` for everything that is not turned, so the
+        // line below this is the code it has always been for the overwhelming
+        // majority of selections. When it is `Some`, `/Rect` is **not** where
+        // the mark is: §12.5.2 requires that rectangle upright, so it bounds a
+        // turned mark rather than describing it, and an operator who turned a
+        // stamp 30° was watching a box swell around artwork that had not
+        // changed size. This shell used to *explain* that in a sentence. He did
+        // not want it explained.
+        //
+        // ★★ The published region stays the UPRIGHT bound, deliberately. Every
+        // driven check that aims at this selection derives grips and offsets
+        // from it, and a region that changed shape with the annotation's angle
+        // would break each of them for a fact none of them is asking about.
+        // `canvas.selection-angle` below is where the angle is stated, in the
+        // trace, where a machine can read it without a screenshot.
+        let frame = annot
+            .oriented
+            .map_or(crate::canvas::handles::GripFrame::Upright(screen), |quad| {
+                crate::canvas::handles::GripFrame::Turned(quad.map(|p| mapping.to_screen(p)))
+            });
+        match frame {
+            crate::canvas::handles::GripFrame::Turned(corners) => {
+                for i in 0..4 {
+                    painter.line_segment([corners[i], corners[(i + 1) % 4]], stroke);
+                }
+            }
+            crate::canvas::handles::GripFrame::Upright(box_) => {
+                painter.rect_stroke(box_, CornerRadius::ZERO, stroke, StrokeKind::Middle);
+            }
+        }
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed.
+            //
+            // ★★ It carries `turned=1|0` **and the corners**, because a build
+            // that drew the upright box and one that drew a quad which happened
+            // to coincide with it are the same screenshot — and the second is
+            // the one a broken projection produces. A check reading only
+            // `turned=` would pass on a quad drawn in the wrong place.
+            format!(
+                "canvas-selection-angle turned={} corners={:?}",
+                u8::from(matches!(
+                    frame,
+                    crate::canvas::handles::GripFrame::Turned(_)
+                )),
+                frame.corners_for_trace()
+            )
+        });
         // ★★ Published under the SAME region name the content selection uses,
         // so a driven check aiming at a grip reads one name whatever is
         // selected. `handles::grip_rects` derives all eight from this box, so a
@@ -277,7 +328,7 @@ pub fn draw_selection(
         // — no box at all from `grabbable`, so nothing is painted and nothing
         // is grabbable. **R9**: rendering nothing is the honest answer for a
         // capability that does not exist.
-        draw_grips(painter, visuals, screen, grab.offer);
+        draw_grips_in(painter, visuals, frame, grab.offer);
         return;
     }
 
@@ -377,10 +428,32 @@ pub fn draw_grips(
     bounds: Rect,
     offer: crate::canvas::handles::GripSet,
 ) {
+    draw_grips_in(
+        painter,
+        visuals,
+        crate::canvas::handles::GripFrame::Upright(bounds),
+        offer,
+    );
+}
+
+/// [`draw_grips`] in an arbitrary [`handles::GripFrame`].
+///
+/// ★★ The eight squares and the rotate handle follow the frame, so on a turned
+/// annotation they sit on the outline that is actually drawn. Anchoring them to
+/// the upright bound while the outline turned would leave eight squares
+/// floating in the space between the mark and its bounding box — a picture that
+/// says nothing true about anything.
+pub fn draw_grips_in(
+    painter: &Painter,
+    visuals: &Visuals,
+    frame: crate::canvas::handles::GripFrame,
+    offer: crate::canvas::handles::GripSet,
+) {
+    let bounds = frame.bounds();
     let ink = ink(painter);
     let stroke = Stroke::new(1.0, ink);
     if offer.resize {
-        for (_, rect) in handles::grip_rects(bounds) {
+        for (_, rect) in handles::grip_rects_in(frame) {
             painter.rect(
                 rect,
                 CornerRadius::ZERO,
@@ -408,12 +481,16 @@ pub fn draw_grips(
     // circle on a stem over a dimension is therefore the correct picture rather
     // than an incomplete one.
     if offer.rotate {
-        let handle = handles::rotate_rect(bounds);
+        let handle = handles::rotate_rect_in(frame);
         let centre = handle.center();
-        painter.line_segment(
-            [egui::pos2(centre.x, bounds.top()), centre],
-            Stroke::new(1.0, ink),
-        );
+        // ★ The stem runs from the frame's own top edge, not from the page's.
+        // On a turned frame those are different points, and a stem drawn to the
+        // page's top edge would cross the mark diagonally at any angle past a
+        // few degrees — reading as a line through the object rather than as the
+        // handle's tether.
+        let foot = frame.anchor(crate::canvas::handles::Grip::North);
+        let _ = bounds;
+        painter.line_segment([foot, centre], Stroke::new(1.0, ink));
         painter.circle(
             centre,
             handles::GRIP_SIZE_PX / 2.0,

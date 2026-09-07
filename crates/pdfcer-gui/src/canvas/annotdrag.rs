@@ -155,9 +155,19 @@ fn eligible(selection: &SelectionState) -> Option<(pdfcer_core::object::ObjId, R
 pub fn grab_box(
     map: &crate::canvas::mapping::PageMapping,
     selection: &SelectionState,
-) -> Option<Rect> {
+) -> Option<crate::canvas::handles::GripFrame> {
     let (_, outline) = eligible(selection)?;
-    Some(map.rect_to_screen(outline))
+    // ★★★ **The TURNED frame when there is one** — `OPERATOR_REQUESTS.md` O147.
+    //
+    // `AnnotSelection::oriented` is `Some` only when the mark's appearance
+    // carries a rotation that `/Rect` therefore cannot describe. It is read
+    // here, at the one place that answers *"what can be grabbed and where"*, so
+    // the painter and the hit test cannot disagree about it — the pair that
+    // `Grabbable`'s own header records going wrong on 2026-08-20.
+    Some(selection.annot().and_then(|a| a.oriented).map_or_else(
+        || crate::canvas::handles::GripFrame::Upright(map.rect_to_screen(outline)),
+        |quad| crate::canvas::handles::GripFrame::Turned(quad.map(|p| map.to_screen(p))),
+    ))
 }
 
 /// Drive one frame of the drag.
@@ -230,6 +240,7 @@ mod tests {
                 locked,
             },
             outline: Rect::from_min_size(egui::pos2(10.0, 20.0), egui::vec2(40.0, 30.0)),
+            oriented: None,
         });
         state
     }

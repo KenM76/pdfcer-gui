@@ -151,15 +151,40 @@ pub struct SelectionState {
     /// Here, [`Self::select_annot`] and the content paths are the only writers
     /// and each clears the other. One canvas, one selection.
     ///
-    /// # Why it needs no `resolved_for` twin
+    /// # ★★★ Why it needs a `resolved_for` twin AFTER ALL — corrected 2026-09-07
     ///
-    /// [`Self::outlines`] is cached against `(page, epoch)` because content
-    /// bounds cost a `decompose_page` — a full content-stream walk with no
-    /// cache anywhere in `pdfcer-core`. An annotation's outline is its `/Rect`,
-    /// four numbers in a dictionary, so it is re-read on the frame the
-    /// selection is made and carried on the selection itself. See
-    /// [`annot`]'s header table for the four ways the two differ.
+    /// This note used to read *"an annotation's outline is its `/Rect`, four
+    /// numbers in a dictionary, so it is re-read on the frame the selection is
+    /// made and carried on the selection itself."* Every clause of that is
+    /// true, and the conclusion drawn from it was wrong: **carrying it means it
+    /// goes stale the moment an edit changes the `/Rect`**, and nothing was
+    /// re-reading it.
+    ///
+    /// The measurement, from a driven run: draw a rectangle, select it, turn it
+    /// a quarter turn with the rotate handle. The engine reports
+    /// `/Rect` `473.7 × 249.6 → 256.6 × 477.4`; the painter goes on stroking
+    /// the outline it cached at click time, which is still 473.7 × 249.6 and in
+    /// the wrong place. It only came back to its mark when the operator clicked
+    /// somewhere else and clicked the shape again.
+    ///
+    /// ⇒ [`Self::resolve_annot`] is the twin, keyed on `(page, epoch)` exactly
+    /// as [`Self::resolve`] is. It is **cheap in the way the old note claimed**
+    /// — one `/Annots` walk, no decomposition — which is why the fix is to run
+    /// it rather than to invalidate more aggressively.
+    ///
+    /// ★ The lesson generalises past this field: *"it is cheap to read"* and
+    /// *"it does not need re-reading"* are different claims, and the first was
+    /// used here to justify the second. See [`annot`]'s header table for the
+    /// four ways content and annotation selections differ.
     annot: Option<AnnotSelection>,
+    /// The `(page, edit epoch)` [`Self::annot`]'s geometry was last re-read
+    /// for, or `None` before the first resolve.
+    ///
+    /// Separate from [`Self::resolved_for`] because the two are refreshed by
+    /// different work — one needs a decomposition and the other needs an
+    /// `/Annots` walk — and a shared key would make an undecodable page stop
+    /// refreshing the annotation outline as well.
+    annot_resolved_for: Option<(usize, u64)>,
 }
 
 impl SelectionState {
@@ -201,6 +226,7 @@ impl SelectionState {
         self.entries.clear();
         self.outlines.clear();
         self.resolved_for = None;
+        self.annot_resolved_for = None;
         self.level = SelectionLevel::Object;
         self.annot = Some(selection);
     }
@@ -256,6 +282,7 @@ impl SelectionState {
         self.outlines.clear();
         self.level = SelectionLevel::Object;
         self.resolved_for = None;
+        self.annot_resolved_for = None;
         true
     }
 
@@ -870,6 +897,90 @@ impl SelectionState {
             .collect();
     }
 
+    /// ★★★ **Re-read the selected annotation's geometry from the document** —
+    /// the annotation half of invariant 3, added 2026-09-07.
+    ///
+    /// Called every frame from `canvas::interact`'s step 7, beside
+    /// [`Self::resolve`]; does real work only when `(page, epoch)` has moved,
+    /// which for an annotation means *an edit happened*.
+    ///
+    /// # What goes stale, and what it looked like
+    ///
+    /// [`AnnotSelection::outline`] and [`AnnotSelection::oriented`] are both
+    /// cached at click time. Every verb that changes an annotation's `/Rect` —
+    /// move, resize, rotate, a typed Apply in the properties panel, an undo of
+    /// any of them — therefore left the painter stroking a box the mark had
+    /// left. A driven run measured it: a quarter turn took the `/Rect` from
+    /// 473.7 × 249.6 to 256.6 × 477.4 and the outline stayed at the first,
+    /// with its grips on it, until the operator clicked away and back.
+    ///
+    /// ⇒ **The grips are the part that made this more than cosmetic.** They are
+    /// laid out on the same box, so after any edit the eight squares and the
+    /// rotate handle were somewhere the mark was not — and a press on the mark
+    /// itself could miss the body test entirely.
+    ///
+    /// # Not found is left alone, deliberately
+    ///
+    /// An annotation the walk cannot find has been deleted, and this function
+    /// does **not** drop the selection for it. Deselection on delete is
+    /// `panels::properties::annotdelete`'s job and it has an operator-facing
+    /// disclosure attached; a silent drop here would race it and produce two
+    /// different behaviours for one event depending on which ran first.
+    ///
+    /// # Cost
+    ///
+    /// One `/Annots` walk of the current page, bounded by
+    /// `pdfcer_core::annot::MAX_ANNOTS_PER_PAGE`, on the frames after an edit
+    /// only. No decomposition, no content stream, no raster.
+    pub fn resolve_annot<G: pdfcer_core::graph::ObjectGraph + ?Sized>(
+        &mut self,
+        graph: &G,
+        page: Option<&pdfcer_core::page_tree::Page>,
+        page_index: usize,
+        epoch: u64,
+    ) {
+        if self.annot_resolved_for == Some((page_index, epoch)) {
+            return;
+        }
+        // ★ The key is recorded even when there is nothing to do, on
+        // `resolve`'s own argument: a page with no annotation selected must not
+        // re-walk `/Annots` on every frame merely because it found nothing to
+        // update the first time.
+        self.annot_resolved_for = Some((page_index, epoch));
+        let (Some(selected), Some(page)) = (self.annot.as_mut(), page) else {
+            return;
+        };
+        if selected.target.page != page_index {
+            // The selection is on another page and this walk has nothing to say
+            // about it — the same rule `resolve` states at length for content.
+            return;
+        }
+        let Some(found) = pdfcer_core::annot::page_annotations(graph, page.id)
+            .into_iter()
+            .find(|a| a.id == Some(selected.target.id))
+        else {
+            return;
+        };
+        let Some(rect) = found.rect else {
+            return;
+        };
+        let Some(outline) = crate::canvas::mapping::annot_canvas_rect(
+            [rect.llx, rect.lly, rect.urx, rect.ury],
+            page,
+        ) else {
+            return;
+        };
+        selected.outline = outline;
+        // ★★ The `/F` bit 8 flag is re-read too. A lock applied while the mark
+        // is selected must take the grips away on the next frame, not on the
+        // next click — `Grabbable`'s annotation arm reads `target.locked` and
+        // would otherwise go on offering nine handles the file forbids.
+        selected.target.locked = found.flags.locked();
+        selected.oriented = crate::canvas::annotquad::oriented(graph, selected.target.id)
+            .filter(|q| !q.is_upright())
+            .and_then(|q| crate::canvas::mapping::oriented_canvas_quad(q.corners, page));
+    }
+
     /// Whether [`Self::resolve`] would do any work for `(page, epoch)`.
     ///
     /// The canvas asks **before** building a decomposition, because building
@@ -1096,6 +1207,7 @@ impl SelectionState {
         // them stale, and a stale outline is a box drawn around something the
         // operator no longer has selected.
         self.resolved_for = None;
+        self.annot_resolved_for = None;
     }
 }
 

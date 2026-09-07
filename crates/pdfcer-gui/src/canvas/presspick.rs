@@ -327,8 +327,8 @@ fn covers(
     point: egui::Pos2,
 ) -> bool {
     let grabbable = crate::canvas::pressing::grabbable(ctx, doc, map, selection);
-    let grip = grabbable.bounds.and_then(|b| {
-        crate::canvas::handles::grip_at(b, point, crate::canvas::handles::GripSet::all())
+    let grip = grabbable.bounds.and_then(|f| {
+        crate::canvas::handles::grip_at_in(f, point, crate::canvas::handles::GripSet::all())
     });
     let Some(grip) = grip else {
         return false;

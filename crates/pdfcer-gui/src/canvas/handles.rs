@@ -337,6 +337,34 @@ impl Grip {
     /// reached here for it has already gone wrong. Returning the centre is the
     /// harmless answer — a scale about the centre with factors of 1.0 is the
     /// identity — rather than a panic in a frame that is trying to draw.
+    /// The grip **diagonally opposite** this one — the one whose anchor is this
+    /// grip's pivot.
+    ///
+    /// ★ Factored out of [`Self::pivot`] rather than duplicated in
+    /// [`GripFrame::pivot`], because "which grip stays still" is a fact about
+    /// the *enum*, not about the frame it is laid out in. Spelling it twice is
+    /// how a turned frame and an upright one end up disagreeing about which
+    /// corner a drag anchors to — an object that jumps on release by exactly
+    /// the box's size, which is the failure `pivot`'s own doc comment names.
+    ///
+    /// [`Self::Move`] and [`Self::Rotate`] are their own opposite: neither has a
+    /// corner that must not move, and both already answer with the centre.
+    #[must_use]
+    pub const fn opposite(self) -> Self {
+        match self {
+            Self::NorthWest => Self::SouthEast,
+            Self::North => Self::South,
+            Self::NorthEast => Self::SouthWest,
+            Self::East => Self::West,
+            Self::SouthEast => Self::NorthWest,
+            Self::South => Self::North,
+            Self::SouthWest => Self::NorthEast,
+            Self::West => Self::East,
+            Self::Move => Self::Move,
+            Self::Rotate => Self::Rotate,
+        }
+    }
+
     #[must_use]
     pub fn pivot(self, bounds: Rect) -> Pos2 {
         let mid = bounds.center();
@@ -385,6 +413,26 @@ pub const ROTATE_STEM_PX: f32 = 20.0;
 /// Drawn as a circle at this rect's centre; see [`Grip::Rotate`].
 #[must_use]
 pub fn rotate_rect(bounds: Rect) -> Rect {
+    rotate_rect_in(GripFrame::Upright(bounds))
+}
+
+/// [`rotate_rect`] in an arbitrary [`GripFrame`].
+///
+/// In a turned frame the stem points out along the frame's own outward normal,
+/// so the handle stays above the mark's own top edge at every angle rather than
+/// above the page's. A handle that stayed at the page's top would end up
+/// *inside* the mark for any turn past 90°.
+#[must_use]
+pub fn rotate_rect_in(frame: GripFrame) -> Rect {
+    let bounds = match frame {
+        GripFrame::Turned(_) => {
+            return Rect::from_center_size(
+                frame.pushed().anchor(Grip::Rotate),
+                Vec2::splat(GRIP_SIZE_PX),
+            );
+        }
+        GripFrame::Upright(bounds) => bounds,
+    };
     // Anchored to the pushed box for the same reason the eight scale grips are:
     // on a tiny selection the rotate handle would otherwise sit *inside* the
     // body it is supposed to hover above. See [`grip_bounds`].
@@ -469,6 +517,186 @@ pub fn grip_bounds(bounds: Rect) -> Rect {
     bounds.expand2(push)
 }
 
+/// **The frame the grips are laid out in** — an upright box, or a turned one.
+///
+/// # ★★★ Why a type rather than an `Option<[Pos2; 4]>` parameter everywhere
+///
+/// Because six functions need the same question answered — the painter, the hit
+/// test, the rotate handle, the ghost, the cursor and the drag — and this
+/// project's standing rule (H7) is *one value, one decision, every consumer*.
+/// The 2026-08-20 incident it comes from is a dimension's vertex handles being
+/// painted from the selection and hit-tested from a capability check: each half
+/// self-consistent, the pair invisible to any test of either half, and the
+/// symptom a handle that was visible and untouchable in the mode that authors
+/// dimensions.
+///
+/// # The upright case is bit-for-bit what it always was
+///
+/// [`GripFrame::Upright`] carries the same `Rect` the old signature took and
+/// every arm below reduces to the old arithmetic for it. That is deliberate and
+/// it is what makes this change unable to regress the overwhelming majority of
+/// selections — nothing that is not *turned* takes a new code path.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum GripFrame {
+    /// An axis-aligned screen box: every content selection, every form field,
+    /// and every annotation whose appearance is not turned.
+    Upright(Rect),
+    /// A turned annotation's four **placed corners** in screen space, in the
+    /// artwork's own frame: `[lower-left, lower-right, upper-right, upper-left]`
+    /// as [`crate::canvas::annotquad::OrientedBox::corners`] orders them.
+    ///
+    /// ★ "Lower" and "upper" name the *artwork's* edges, not the page's, which
+    /// is the whole content of this variant: after a 100° turn the artwork's
+    /// lower-left corner is at the top of the screen, and a grip the operator
+    /// grabs there must be the one that belongs to that corner of the mark.
+    Turned([Pos2; 4]),
+}
+
+impl GripFrame {
+    /// The upright box that bounds this frame — what a caller needs when it
+    /// genuinely wants an axis-aligned extent (a published diagnostic region, a
+    /// containment pre-filter, a degenerate-size test).
+    #[must_use]
+    pub fn bounds(self) -> Rect {
+        match self {
+            Self::Upright(r) => r,
+            Self::Turned(q) => q
+                .iter()
+                .skip(1)
+                .fold(Rect::from_two_pos(q[0], q[0]), |acc, p| {
+                    acc.union(Rect::from_two_pos(*p, *p))
+                }),
+        }
+    }
+
+    /// This frame's corners rounded to whole points, for a diagnostic line.
+    ///
+    /// ★ Rounded, and that is the point rather than tidiness: a trace is
+    /// compared by a driven check, and a float printed with full precision
+    /// differs between a debug and a release build on the last digit. Whole
+    /// screen points are the resolution the assertion is about anyway.
+    #[must_use]
+    pub fn corners_for_trace(self) -> [(i32, i32); 4] {
+        self.corners()
+            .map(|p| (p.x.round() as i32, p.y.round() as i32))
+    }
+
+    /// This frame's corners, always four, in the same order either way:
+    /// `[SW, SE, NE, NW]` **of the frame**.
+    #[must_use]
+    fn corners(self) -> [Pos2; 4] {
+        match self {
+            Self::Upright(r) => [
+                r.left_bottom(),
+                r.right_bottom(),
+                r.right_top(),
+                r.left_top(),
+            ],
+            Self::Turned(q) => q,
+        }
+    }
+
+    /// This frame grown outward until it can hold its own grips — the turned
+    /// counterpart of [`grip_bounds`], and it must exist for the same reason.
+    ///
+    /// # ★★ The defect it inherits, and why it could not simply be skipped
+    ///
+    /// [`grip_bounds`]'s own header records it: a 0.85 pt cell's grips land on
+    /// top of each other and on its body, so there is nothing to aim at. That
+    /// is not a property of *upright* selections — a 0.85 pt mark turned 30° is
+    /// exactly as unreachable — so a turned frame that skipped the push would
+    /// have re-opened the defect for precisely the annotations this change is
+    /// about.
+    ///
+    /// ★ The push is along the frame's **own** axes, not the page's, which is
+    /// what keeps a pushed turned frame a rectangle. Expanding an axis-aligned
+    /// bound instead would move the corners off the mark's diagonal and the
+    /// grips would no longer sit on the outline they are drawn against.
+    ///
+    /// A degenerate frame (coincident corners) has no axes to push along;
+    /// `normalized` answers zero there and the frame is returned unchanged,
+    /// rather than becoming a NaN box that paints nothing anywhere.
+    #[must_use]
+    fn pushed(self) -> Self {
+        let Self::Turned(q) = self else {
+            return self;
+        };
+        let (u, v) = ((q[1] - q[0]), (q[3] - q[0]));
+        let (w, h) = (u.length(), v.length());
+        if !w.is_finite() || !h.is_finite() || w <= f32::EPSILON || h <= f32::EPSILON {
+            return self;
+        }
+        let (u, v) = (u / w, v / h);
+        let half_w = w / 2.0 + ((MIN_BODY_STRIP_PX - w) / 2.0).max(0.0);
+        let half_v = h / 2.0 + ((MIN_BODY_STRIP_PX - h) / 2.0).max(0.0);
+        let centre = q[0] + (q[2] - q[0]) / 2.0;
+        Self::Turned([
+            centre - u * half_w - v * half_v,
+            centre + u * half_w - v * half_v,
+            centre + u * half_w + v * half_v,
+            centre - u * half_w + v * half_v,
+        ])
+    }
+
+    /// Where `grip`'s centre sits in this frame.
+    ///
+    /// The turned arm is the upright arm's arithmetic written in terms of the
+    /// frame's own corners rather than the page's axes — a mid-edge grip is the
+    /// midpoint of the two corners it lies between, and the rotate handle is
+    /// [`ROTATE_STEM_PX`] out along the frame's **own** outward normal from the
+    /// top edge, so the stem still points away from the mark at every angle.
+    #[must_use]
+    pub fn anchor(self, grip: Grip) -> Pos2 {
+        if let Self::Upright(r) = self {
+            return grip.anchor(r);
+        }
+        let [sw, se, ne, nw] = self.corners();
+        let mid = |a: Pos2, b: Pos2| a + (b - a) / 2.0;
+        let centre = mid(mid(sw, ne), mid(se, nw));
+        match grip {
+            Grip::SouthWest => sw,
+            Grip::South => mid(sw, se),
+            Grip::SouthEast => se,
+            Grip::East => mid(se, ne),
+            Grip::NorthEast => ne,
+            Grip::North => mid(ne, nw),
+            Grip::NorthWest => nw,
+            Grip::West => mid(nw, sw),
+            Grip::Move => centre,
+            Grip::Rotate => {
+                let top = mid(ne, nw);
+                // Outward from the centre through the top edge's midpoint. On a
+                // degenerate frame (every corner coincident) the direction is
+                // zero-length and `normalized` answers zero, so the handle lands
+                // on the box rather than at infinity — the same "degenerate is
+                // survivable, NaN is not" posture `screen_vec_to_page` takes.
+                top + (top - centre).normalized() * ROTATE_STEM_PX
+            }
+        }
+    }
+
+    /// The point a drag on `grip` must leave exactly where it is — the mirror of
+    /// [`Self::anchor`], and the same fact as [`Grip::pivot`] in a turned frame.
+    ///
+    /// ⚠ **[`Grip::Move`] and [`Grip::Rotate`] are handled before
+    /// [`Grip::opposite`] is consulted, and getting that wrong is a real trap.**
+    /// Both are their own opposite, so routing them through `anchor` would
+    /// answer with the *rotate handle's position on its stem* — a point outside
+    /// the box — where the correct answer for a rotation is the centre. The
+    /// upright arm has never had this hazard because [`Grip::pivot`] answers
+    /// both arms directly.
+    #[must_use]
+    pub fn pivot(self, grip: Grip) -> Pos2 {
+        if let Self::Upright(r) = self {
+            return grip.pivot(r);
+        }
+        match grip {
+            Grip::Move | Grip::Rotate => self.anchor(Grip::Move),
+            other => self.anchor(other.opposite()),
+        }
+    }
+}
+
 /// The grips to draw for a screen-space selection box, with their squares.
 ///
 /// Mid-edge grips are omitted on an axis shorter than
@@ -481,6 +709,48 @@ pub fn grip_bounds(bounds: Rect) -> Rect {
 /// line, which is both unaimable and a fair description of nothing.
 #[must_use]
 pub fn grip_rects(bounds: Rect) -> Vec<(Grip, Rect)> {
+    grip_rects_in(GripFrame::Upright(bounds))
+}
+
+/// [`grip_rects`] in an arbitrary [`GripFrame`] — the general form, and what
+/// every painter and hit test now calls.
+///
+/// # ★ The mid-edge omission test is taken on the frame's OWN edges
+///
+/// A turned box's screen width says nothing about whether its grips pile up:
+/// a 200 × 10 pt bar turned 45° has a screen bound of ~148 × 148, which would
+/// pass a width test while its two mid-edge grips sat 7 px apart on the short
+/// edge. Measuring the frame's own edge lengths is the same question the
+/// upright arm asks, asked correctly.
+#[must_use]
+pub fn grip_rects_in(frame: GripFrame) -> Vec<(Grip, Rect)> {
+    let bounds = match frame.pushed() {
+        GripFrame::Turned(quad) => {
+            let frame = GripFrame::Turned(quad);
+            let edge = |a: Pos2, b: Pos2| (b - a).length();
+            let wide = edge(quad[0], quad[1]) >= MIN_MID_GRIP_EXTENT_PX;
+            let tall = edge(quad[1], quad[2]) >= MIN_MID_GRIP_EXTENT_PX;
+            return Grip::RESIZE
+                .into_iter()
+                .filter(|g| match g {
+                    Grip::North | Grip::South => wide,
+                    Grip::East | Grip::West => tall,
+                    _ => true,
+                })
+                .map(|g| {
+                    (
+                        g,
+                        Rect::from_center_size(frame.anchor(g), Vec2::splat(GRIP_SIZE_PX)),
+                    )
+                })
+                .collect();
+        }
+        // ★ `pushed` is the identity on an upright frame, so this is the same
+        // `bounds` the caller handed in — matched rather than re-destructured
+        // with an `unreachable!`, because a panic macro in a shipped painter is
+        // a crash where a compiler-checked match is nothing.
+        GripFrame::Upright(bounds) => bounds,
+    };
     // ★★★ Everything below anchors to the PUSHED box, never to `bounds`.
     //
     // [`grip_bounds`] grows the anchor box outward when the selection is too
@@ -678,6 +948,28 @@ impl GripSet {
 }
 
 pub fn grip_at(bounds: Rect, pointer: Pos2, offer: GripSet) -> Option<Grip> {
+    grip_at_in(GripFrame::Upright(bounds), pointer, offer)
+}
+
+/// [`grip_at`] in an arbitrary [`GripFrame`] — the general form, and the one
+/// the canvas calls.
+///
+/// # ★★★ The body test stays on the UPRIGHT bound, and that is not an oversight
+///
+/// The eight squares and the rotate handle move into the turned frame, because
+/// they are affordances the operator aims at and they must be where they are
+/// drawn. [`Grip::Move`] is different: it means *"the press landed on the
+/// object"*, and narrowing it to the turned quad would make a turned mark
+/// **harder to grab than an upright one**, on exactly the marks whose extent is
+/// least obvious.
+///
+/// That is also the rule `selection::annot::Candidate` already follows for
+/// selection itself, and it comes from the engine's own argument: `/Rect`
+/// contains the pen half-width, so it is the geometry *plus* the tolerance a
+/// hit test would otherwise have to add. Selection stays generous; only the
+/// drawing gets more honest.
+pub fn grip_at_in(frame: GripFrame, pointer: Pos2, offer: GripSet) -> Option<Grip> {
+    let bounds = frame.bounds();
     if offer.rotate {
         // ★★ The rotate handle FIRST, and the reason is H7 rather than
         // geometry: it sits outside the box, so it collides with nothing and
@@ -691,7 +983,7 @@ pub fn grip_at(bounds: Rect, pointer: Pos2, offer: GripSet) -> Option<Grip> {
         // handles were painted from the selection and hit-tested behind a
         // capability the mode did not have, so they were visible and untouchable
         // in the very mode that authors dimensions.
-        if rotate_rect(bounds)
+        if rotate_rect_in(frame)
             .expand(GRIP_GRAB_SLACK_PX)
             .contains(pointer)
         {
@@ -702,7 +994,7 @@ pub fn grip_at(bounds: Rect, pointer: Pos2, offer: GripSet) -> Option<Grip> {
     // above, which is the whole reason `GripSet` has two fields. An annotation
     // offers these and not that one.
     if offer.resize {
-        for (grip, rect) in grip_rects(bounds) {
+        for (grip, rect) in grip_rects_in(frame) {
             if rect.expand(GRIP_GRAB_SLACK_PX).contains(pointer) {
                 return Some(grip);
             }

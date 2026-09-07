@@ -992,6 +992,7 @@ mod tests {
                 locked: false,
             },
             outline,
+            oriented: None,
         });
         selection
     }

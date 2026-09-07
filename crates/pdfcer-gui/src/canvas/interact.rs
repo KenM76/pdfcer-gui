@@ -921,7 +921,9 @@ pub(super) fn interact(
                     // ★★★ `grabbable`, NOT `overlay::grip_box` — the one line
                     // the annotation rotation hangs on; `canvas::rotating`'s
                     // header is the argument.
-                    bounds: crate::canvas::pressing::grabbable(&ctx, doc, map, &selection).bounds,
+                    bounds: crate::canvas::pressing::grabbable(&ctx, doc, map, &selection)
+                        .bounds
+                        .map(crate::canvas::handles::GripFrame::bounds),
                     page_index,
                     constrain: shift,
                     map: Some(map),
@@ -974,7 +976,9 @@ pub(super) fn interact(
                     grip,
                     delta,
                     phase,
-                    bounds: crate::canvas::pressing::grabbable(&ctx, doc, map, &selection).bounds,
+                    bounds: crate::canvas::pressing::grabbable(&ctx, doc, map, &selection)
+                        .bounds
+                        .map(crate::canvas::handles::GripFrame::bounds),
                     page_index,
                     constrain: crate::canvas::constrain::resize(&ctx, shift),
                     map: Some(map),
@@ -1175,6 +1179,25 @@ pub(super) fn interact(
     }
     selection.resolve(
         targets.as_ref().map(|t| &**t as &dyn CanvasTargetProvider),
+        page_index,
+        doc.edit_epoch,
+    );
+    // ★★★ **And the ANNOTATION half of the same invariant** — 2026-09-07.
+    //
+    // Beside `resolve` rather than anywhere else, because they answer the same
+    // question about two subjects and are due on the same condition. Until this
+    // line existed, every verb that changed an annotation's `/Rect` left the
+    // outline and all nine handles behind at the mark's previous position until
+    // the operator clicked away and back; `SelectionState::annot_resolved_for`
+    // carries the measurement that found it.
+    //
+    // ★ It takes the session graph rather than the decomposition: an
+    // annotation is not page content and `targets` has nothing to say about
+    // one. That is also why an undecodable page — `targets == None` — still
+    // refreshes the annotation correctly.
+    selection.resolve_annot(
+        &doc.session.graph(),
+        doc.current_page(),
         page_index,
         doc.edit_epoch,
     );

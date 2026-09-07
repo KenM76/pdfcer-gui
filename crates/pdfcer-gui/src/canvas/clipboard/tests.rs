@@ -74,6 +74,7 @@ fn a_cut_that_cannot_delete_does_not_copy_either() {
             locked: false,
         },
         outline: egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(10.0, 10.0)),
+        oriented: None,
     });
 
     let mut actions = Vec::new();
@@ -154,6 +155,7 @@ fn with_annot_selected(index: usize) -> crate::app::state::OpenDoc {
             locked: false,
         },
         outline: egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(10.0, 10.0)),
+        oriented: None,
     });
     doc
 }

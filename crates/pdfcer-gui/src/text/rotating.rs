@@ -189,50 +189,41 @@ impl RotateRefusal {
     }
 }
 
-/// **Disclosure: the selection box grew and the artwork did not.**
-///
-/// ★★★ The one thing about this feature that *will* look like a bug, and
-/// `pdfcer-core` flagged it before this shell had drawn a single rotated shape:
-///
-/// > **`/Rect` gets bigger.** §12.5.2 requires it upright, and the upright box
-/// > bounding a rotated shape is larger unless the angle is a multiple of 90°.
-/// > **The artwork does not grow; the rectangle around it does.**
-///
-/// ★★ It matters *here*, on this canvas, more than it would in a headless
-/// tool — because **this shell draws its selection outline from `/Rect`**.
-/// So the operator turns a stamp 30°, the stamp turns, and the dashed box
-/// around it visibly swells. Nothing on the page can explain that, which puts
-/// it squarely inside Rule 4's surviving half: *an inference or a consequence
-/// the operator cannot see still owes an off-canvas report.* Render normally;
-/// report separately. Both.
-///
-/// ★ **`None` at a quarter turn**, which is not an optimisation but the same
-/// rule every disclosure in this crate follows: a sentence that fires on every
-/// gesture is a sentence nobody reads by the third time. At 90°, 180° and 270°
-/// the upright bounding box is the original box with its sides swapped or
-/// unchanged, so there is genuinely nothing to disclose — and an operator
-/// turning a stamp upright is doing the commonest rotation there is.
-///
-/// The threshold is one PDF point in either extent. Below that the growth is
-/// invisible at any zoom this shell offers and a sentence about it would be
-/// reporting rounding.
-///
-/// # Why it says nothing about *why*
-///
-/// §12.5.2 and the phrase "upright bounding box" are correct, unactionable and
-/// too long for a status row. What the operator needs is *the shape is the size
-/// it was; the box is not the shape*, and the second clause is what stops them
-/// pressing Ctrl+Z on a rotation that worked perfectly.
-#[must_use]
-pub fn rect_grew(from: (f64, f64), to: (f64, f64)) -> Option<String> {
-    let grew = (to.0 - from.0) > 1.0 || (to.1 - from.1) > 1.0;
-    grew.then(|| {
-        "The dashed box around this mark is now larger, because a box that is square to the page \
-         has to be bigger to hold something turned at an angle. The mark itself is exactly the \
-         size it was."
-            .to_owned()
-    })
-}
+// **★★★ DELETED 2026-09-07 — the consequence this sentence explained no longer
+// happens, and the sentence had become false.**
+//
+// It read:
+//
+// > *"The dashed box around this mark is now larger, because a box that is
+// > square to the page has to be bigger to hold something turned at an angle.
+// > The mark itself is exactly the size it was."*
+//
+// Every word of that was true while **this shell drew its selection outline
+// from `/Rect`**. §12.5.2 requires that rectangle upright, so a turned mark
+// was boxed rather than described, and the operator watched a dashed box swell
+// around artwork that had not changed size. Rule 4's surviving half applied
+// exactly — a consequence the operator can see and cannot explain owes an
+// off-canvas report — and this was that report.
+//
+// **`canvas::annotquad` removed the subject.** The outline is now drawn at the
+// mark's own angle (`OPERATOR_REQUESTS.md` O147), hugging the artwork, so
+// there is no swelling box and nothing to explain. A status row still saying
+// *"the dashed box is now larger"* would describe something that does not
+// happen, which is worse than saying nothing: it teaches an operator to worry
+// about a thing that is right, and the next time he sees a box that really is
+// wrong he will have been trained to ignore it.
+//
+// ⚠ **Do not restore it for O145.** A mark rotated twice really does get
+// bigger — *the ink, not the box* — and that is an engine defect
+// (`request_rotate_annotation_grows_the_artwork_when_applied_twice.md`,
+// reproduced in `tests/annotation_rotation_grows.rs`), not a consequence to be
+// disclosed. Disclosing a defect as though it were correct behaviour is how
+// this project's predecessor accumulated its red flags.
+//
+// ⇒ The general rule, and it is why this comment is kept rather than the code:
+// **a disclosure has a subject, and when the subject goes the disclosure is a
+// lie with a citation attached.** Deleting one is as much a part of the work
+// as writing one.
 
 /// **Disclosure: a dimension that was locked to horizontal or vertical is no
 /// longer locked.**
@@ -278,38 +269,17 @@ pub fn axis_lock_relaxed() -> String {
 mod tests {
     use super::*;
 
-    /// ★★ **A quarter turn discloses nothing**, which is the commonest
-    /// rotation there is.
-    ///
-    /// The upright box bounding a rectangle turned by a multiple of 90° is the
-    /// original box with its sides swapped, so there is nothing to report — and
-    /// a build that reported anyway would put a sentence on the status row for
-    /// every single rotation an operator makes, which is how a disclosure stops
-    /// being read.
-    #[test]
-    fn a_quarter_turn_discloses_nothing() {
-        // 100×50 turned 90° → 50×100: one extent grew, so this is deliberately
-        // NOT the swapped case. The swapped case is below.
-        assert!(rect_grew((100.0, 50.0), (100.0, 50.0)).is_none());
-        assert!(
-            rect_grew((100.0, 50.0), (100.0, 50.5)).is_none(),
-            "rounding"
-        );
-    }
-
-    /// ★ **A box that swelled on either axis discloses**, and one that shrank
-    /// on the other still does.
-    ///
-    /// The `||` rather than `&&` is the load-bearing choice: turning a tall
-    /// thin rectangle towards horizontal grows its width and shrinks its
-    /// height, and the operator watching the box widen is owed the sentence
-    /// whether or not the other extent cooperated.
-    #[test]
-    fn a_grown_box_discloses_on_either_axis() {
-        assert!(rect_grew((100.0, 50.0), (120.0, 40.0)).is_some());
-        assert!(rect_grew((100.0, 50.0), (90.0, 70.0)).is_some());
-        assert!(rect_grew((100.0, 50.0), (120.0, 70.0)).is_some());
-    }
+    // ★★★ TWO TESTS WERE DELETED HERE ON 2026-09-07, WITH THEIR SUBJECT.
+    //
+    // `a_quarter_turn_discloses_nothing` and `a_grown_box_discloses_on_either_axis`
+    // both asserted on `rect_grew`, which is gone: the selection outline is now
+    // drawn at the mark's own angle, so no box swells and there is nothing to
+    // disclose. The account is at the deleted function's site above.
+    //
+    // ⇒ They are named here rather than silently removed because a test that
+    // vanishes from a file looks like coverage that was never written. These
+    // two were correct, they passed, and their subject stopped existing —
+    // which is a different thing from a gap.
 
     /// Every refusal has a sentence, and none of them is empty.
     ///

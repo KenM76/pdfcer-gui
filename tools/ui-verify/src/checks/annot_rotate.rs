@@ -144,6 +144,28 @@ const ROTATED_EVENT: &str = "rotate-annotation-applied";
 const MOVE_EVENT: &str = "annot-drag";
 /// The region the selection outline publishes.
 const OUTLINE_REGION: &str = "canvas.selection-outline";
+/// The line the painter writes stating whether the outline it just drew was
+/// TURNED, and where its four corners are - `OPERATOR_REQUESTS.md` O147.
+///
+/// # Why a trace line and not a screenshot
+///
+/// Because the two builds this has to tell apart are *"drew the upright box"*
+/// and *"drew a quad that happens to coincide with the upright box"*, and on an
+/// unturned mark those are the same picture - so a pixel oracle is blind
+/// exactly where the regression would land. The line carries `turned=` **and**
+/// the corners, because a check reading only the flag would pass on a build
+/// that took the turned branch and then drew the upright box's corners.
+const ANGLE_EVENT: &str = "canvas-selection-angle";
+/// The line the Properties panel writes carrying the **Angle** field's value,
+/// its seed, and the turn Apply would commit - `OPERATOR_REQUESTS.md` O146.
+const ANNOT_GEOMETRY_EVENT: &str = "annot-geometry-draft";
+/// The right dock's **Properties** tab, which has to be clicked before the
+/// geometry section is laid out at all.
+///
+/// ★ A dock draws only its ACTIVE tab, and in Review the right dock opens on
+/// Comments. Reading the trace without bringing this forward reports "the panel
+/// published no angle" about a build whose panel is correct.
+const PROPERTIES_TAB_REGION: &str = "dock.tab.file.properties";
 /// ★★★ The region the **rotate handle** publishes, and only when it is drawn.
 const HANDLE_REGION: &str = "canvas.rotate-handle";
 /// The canvas viewport's own declared region.
@@ -563,5 +585,155 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         applied.get("from").unwrap_or("?"),
         applied.get("to").unwrap_or("?"),
     ));
+
+    // --- 8: IS THE OUTLINE NOW DRAWN AT THE MARK'S OWN ANGLE? ---------------
+    //
+    // The operator, 2026-09-07: *"the box outlined when an object is selected
+    // should be in the same angled orientation as the object."*
+    //
+    // ★★ Asserted here rather than in a check of its own, deliberately. Getting
+    // a turned annotation on screen costs a draw, a mode change, a select and a
+    // rotate drag — four real pointer gestures, on a machine this suite has to
+    // share — and this check has just performed all four. A separate check
+    // would spend the same ninety seconds to arrive at the same frame.
+    //
+    // ★ It re-reads the trace AFTER the rotation, so a build that computed the
+    // quad correctly and never re-read it on the following frame fails here.
+    let trace = session.trace()?;
+    let Some(angle_line) = trace.events(ANGLE_EVENT).last() else {
+        return Ok(Some(format!(
+            "★★ THE PAINTER SAID NOTHING ABOUT THE OUTLINE'S ORIENTATION: no `{ANGLE_EVENT}` \
+             line at all. That line is written unconditionally by `overlay::draw_selection`'s \
+             annotation branch, so its absence means the branch did not run — the selection was \
+             lost by the rotation, which is a different and worse defect than the one under \
+             test. Trace: {}.",
+            session.trace_path().display()
+        )));
+    };
+    if angle_line.get("turned") != Some("1") {
+        return Ok(Some(format!(
+            "★★★ THE SELECTION OUTLINE IS STILL UPRIGHT AROUND A TURNED MARK: `{}`.\n\
+             The mark was just turned a quarter turn — the engine confirmed it, two assertions \
+             ago — and the painter is still stroking `/Rect`, which §12.5.2 requires \
+             axis-aligned. The operator then sees a box visibly larger than the artwork with the \
+             artwork floating inside it at an angle the box does not share, and he reported that \
+             as damage.\n\
+             `turned=0` means `AnnotSelection::oriented` arrived `None`. Three things produce \
+             that and only one of them is a defect here:\n\
+             1. `canvas::annotquad::oriented` answered `None` — the appearance has no `/BBox`, \
+             or its `/Matrix` is not a rotation. Read the `{ROTATED_EVENT}` line's `matrix=` \
+             field first: if it is 0 the engine never composed one, and this is not a painter \
+             defect at all.\n\
+             2. `OrientedBox::is_upright` answered `true` — the decomposition read about 0°, \
+             which for a quarter turn means the angle was folded onto the wrong range.\n\
+             3. `selection::annot::selectable_on` did not populate the field, or this selection \
+             came from one of the several constructors that build `AnnotSelection` directly. \
+             Only `hit` carries the quad.\n\
+             Trace: {}.",
+            angle_line.raw,
+            session.trace_path().display()
+        )));
+    }
+    // ★★ …and the corners are published, so a later reader can see WHERE it
+    // drew. `turned=1` alone would pass for a build that took the turned branch
+    // and then handed it the upright box's corners — the "traces perfectly and
+    // does nothing" shape this canvas keeps producing.
+    if angle_line.get("corners").unwrap_or("").is_empty() {
+        return Ok(Some(format!(
+            "the painter reported `turned=1` and published no `corners=` field, so nothing can \
+             confirm where it drew. `overlay::draw_selection` emits both in one line; a build \
+             with one and not the other has had that line edited. Trace: {}.",
+            session.trace_path().display()
+        )));
+    }
+    report.note(format!(
+        "★★★ the outline is drawn at the mark's own angle: `{}`",
+        angle_line.raw
+    ));
+
+    // --- 9: AND THE ANGLE IS IN THE PROPERTIES PANEL ------------------------
+    //
+    // O146. **The Properties tab has to be brought forward first**, and that is
+    // not a nicety: a dock draws only its ACTIVE tab, so in Review — where this
+    // check runs, and where markup is authored — the right dock is showing
+    // Comments and the geometry section is not laid out at all. A check that
+    // read the trace without this click would report *"the panel published no
+    // angle"* about a build whose panel is perfect, which is a family of false
+    // failure this project has already produced three times in one afternoon.
+    let trace = session.trace()?;
+    match declared(&trace, ui_rect, PROPERTIES_TAB_REGION) {
+        Some(tab) => {
+            driver.click_at(session.frame()?.declared_at(tab, 0.5, 0.5))?;
+            session.settle(24);
+        }
+        None => {
+            report.note(format!(
+                "the right dock declared no `{PROPERTIES_TAB_REGION}`, so the Properties panel \
+                 could not be brought forward. Tabs declared: {}.",
+                list(&declared_names(&trace, ui_rect, "dock.tab."))
+            ));
+        }
+    }
+
+    // The panel may still legitimately be scrolled so that the geometry section
+    // is out of its viewport, so an absent line is a REPORT rather than a
+    // failure — but when the line IS there, the number it carries is asserted.
+    // A field showing an angle that disagrees with the mark is worse than no
+    // field.
+    let trace = session.trace()?;
+    match trace.events(ANNOT_GEOMETRY_EVENT).last() {
+        Some(line) => {
+            let angle = line.get("angle").unwrap_or("none");
+            if angle == "none" {
+                return Ok(Some(format!(
+                    "★★ THE PROPERTIES PANEL IS SHOWING THIS MARK WITH NO ANGLE FIELD: `{}`.\n\
+                     `angle=none` means `canvas::annotquad::oriented` gave the panel no angle, \
+                     which is correct ONLY for an appearance whose `/Matrix` is a shear or a \
+                     mirror. This is a rectangle pdfcer authored and then turned through \
+                     `rotate_annotation`, so its matrix is a rotation by construction — the \
+                     canvas agreed one line ago, with `turned=1`.\n\
+                     Two readers of one fact disagreeing means one of them is not calling \
+                     `oriented` at all. Trace: {}.",
+                    line.raw,
+                    session.trace_path().display()
+                )));
+            }
+            let read: f64 = angle.parse().unwrap_or(f64::NAN);
+            // The drag is a quarter turn clockwise on screen, which is -90° in
+            // PDF user space, normalised into [0, 360) as 270. The same
+            // generous window as step 6, and for the same reason: both ends of
+            // the gesture are rounded to whole pixels.
+            if !(260.0..=280.0).contains(&read) {
+                return Ok(Some(format!(
+                    "★★ THE PROPERTIES PANEL READS {read:.2}° FOR A MARK THAT WAS JUST TURNED A \
+                     QUARTER TURN CLOCKWISE, AND IT SHOULD READ ABOUT 270.\n\
+                     The panel and the canvas read the same appearance `/Matrix` through \
+                     `canvas::annotquad::oriented`, so a disagreement means the panel is showing \
+                     a STALE draft: `GeometryDraft::sync` re-seeds only when its \
+                     `(page, subject, epoch)` stamp changes, and a rotation that did not bump \
+                     `doc.edit_epoch` would leave the field on its old value while the outline \
+                     moved.\n\
+                     A value near 90 instead means the panel negates the screen-to-page crossing \
+                     where the canvas does not, or the other way round.\n\
+                     Line: `{}`. Trace: {}.",
+                    line.raw,
+                    session.trace_path().display()
+                )));
+            }
+            report.note(format!(
+                "★★ and the Properties panel agrees: angle={read:.2}°, turn={}",
+                line.get("turn").unwrap_or("?")
+            ));
+        }
+        None => {
+            report.note(
+                "the Properties panel's geometry section did not draw even after its tab was \
+                 brought forward, so the Angle field could not be read. Not a failure — the \
+                 section may be scrolled out of the panel's viewport — but it means O146 is \
+                 unverified by this run.",
+            );
+        }
+    }
+
     Ok(None)
 }

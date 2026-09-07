@@ -711,6 +711,7 @@ mod fixtures {
         detached.select_annot(crate::canvas::selection::AnnotSelection {
             target: square_target(),
             outline: egui::Rect::from_min_max(egui::pos2(120.0, 142.0), egui::pos2(320.0, 282.0)),
+            oriented: None,
         });
 
         assert!(
