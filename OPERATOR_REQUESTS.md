@@ -14174,7 +14174,7 @@ list of universal chords rather than this one line.
 
 ---
 
-## O137 — ◑ **HE WANTS THE THIN-LINES DISPLAY BACK, AND HE IS RIGHT THAT IT NEVER WORKED** — BUILT, AWAITING HIS VERDICT
+## O137 — ✅ **DONE 2026-09-07 — "the button never worked but I do want that display option!"** — and it now tells you when it has nothing to do
 
 **Ken, 2026-09-05:**
 
@@ -14182,142 +14182,39 @@ list of universal chords rather than this one line.
 > their thickness — thin lines or something like cad has. The button never
 > worked but I do want that display option!"*
 
-Both halves of that are correct, which is worth saying plainly.
+**View ▸ Display ▸ Line weights.** Turn it off and every line draws one pixel
+wide, however wide the file says — so lines that sit close together stop merging
+into one black bar as you zoom in. Filled shapes and hatching are untouched, and
+printing, exporting and print preview always use the real widths.
 
-### What was removed, and why
+### ★ The half that was finished today, and it is the half you would have noticed
 
-`view.thin_lines` was one of **seven `view.*` settings resolved on 2026-08-17 —
-two built, five deleted.** All seven were registered, drawn on the View tab, and
-**inert**. `FEATURES.md` carries the finding verbatim: *"**thin lines** and
-**antialiasing** have no `RenderOptions` field at all."* Unregistered rather than
-hidden, on R8.
+**When it changes nothing, it says so.** Zoom into a patch where every line is
+already fine and hairline mode has nothing to take away — the picture is
+identical either way, and the status bar now reads *"Line weights are off and
+nothing in view was thick enough to thin"* instead of just repeating that the
+mode is on.
 
-⇒ So the deletion was right *as a deletion* — a control that does nothing is the
-defect he is describing — and wrong as a *conclusion*, because it closed the
-question. **A capability nobody can reach is not the same as a capability nobody
-wants**, and the record kept only the first.
+Without that sentence the two situations are the same screenshot: **nothing here
+needed changing** and **the button is broken again**. Given the button really
+was broken before, that distinction is the whole point.
 
-### Re-checked today, not trusted
+⚠ It says *"in view"* deliberately. It is a measurement of what is on screen,
+not a claim about the drawing — scroll to a blank corner and it is true there
+too.
 
-The 2026-08-17 note is three weeks old and this project's standing rule is that a
-limitation sentence is a citation with an hours-long shelf life. Re-measured
-against `pdfcer-render` v0.38.0 (`b01964f`): `RenderOptions` carries `fonts`,
-`annotations`, `subpixel_culling`, `annotation_scope`, `cancel`, `layers`
-(`font/mod.rs:432-559`) and nothing about stroke width; `render-page --help`
-offers no such flag. The rasteriser handles hairlines
-(`display_list.rs:1210-1222`) but cannot be told to treat every stroke as one.
-**The note still held — for about six hours.** ⚠ Superseded the same day: the engine shipped `RenderOptions::stroke_display` in `Pass 254.0` (`8f9fb3e`). The paragraph is kept unedited above because it is the exhibit — this project's standing rule is that *a sentence about what the engine cannot do is a dated citation with a shelf life measured in HOURS*, and here is one that was re-derived from the source, was correct when written, and expired before the day did. The verdict below is what changed.
+### ★★ And the automated check that was supposed to be proving this had stopped
 
-### ★★★ Which convention — they are opposites and confusing them ships the wrong feature
+The program that drives the real window was reporting SKIP on this feature, and
+a skip is not a failure, so nothing had gone red. It was zooming into the middle
+of an A1 sheet — which on a CAD drawing is blank paper, because the linework is a
+border and a title block round the edges. It measured 136 ink pixels and gave up.
 
-| | | precedent |
-|---|---|---|
-| **Line weights OFF ← his ask** | every stroke drawn at **one device pixel**, whatever the file declares | AutoCAD `LWDISPLAY` off |
-| Enhance thin lines | sub-pixel strokes bumped **up** to one pixel so they do not vanish | Acrobat's preference of that name |
-
-**One makes thick things thin; the other makes thin things thick.** He said
-*"without their thickness"* and named CAD.
-
-### Why it earns its place on his documents
-
-On a dense A1 sheet a 0.7 mm stroke is ~2 pt — harmless at page fit, and **4–8 px
-of solid black at the 200–400 % where he actually reads a title block or traces
-a service run**, at which point adjacent geometry merges. Turning line weights
-off is how a draughtsman reads a busy drawing, and it is the only quick way to
-answer *"are these two lines coincident, or 0.3 mm apart?"*
-
-### Status — ✅ BUILT 2026-09-05, the same day it was asked for
-
-**Filed at the engine**, 2026-09-05:
-`request_a_line_weights_off_display_mode_for_dense_cad_drawings.md` — asking for
-a `StrokeDisplay` enum on `RenderOptions` (an enum rather than a `bool`, so
-"enhance thin lines" can be a third variant later without `hairline: bool`
-coming to mean *one of the two*).
-
-★★★ **The engine shipped it the same day** — `Pass 254.0`, `8f9fb3e`,
-already in this repo's lock at `b1033ab`. So the paragraph that used to stand
-here — *"no control will be registered until the field exists"* — has been
-discharged rather than reworded, and the control is back.
-
-### What he does, in his words
-
-**View ▸ Display ▸ Line weights.** It is on by default and drawn pressed; he
-presses it and it goes out. Every line on the sheet is then drawn **one pixel
-wide**, however wide the file says it is — so at the 200-400 % where he reads a
-title block or traces a service run, lines that were 4-8 px of solid black stop
-merging into one bar and he can see whether two of them are coincident or
-0.3 mm apart. Pressing it again puts the weights back.
-
-The status bar says, while it is off:
-
-> *Line weights are off — every line is drawn one pixel wide. Printing and
-> exporting still use the real widths.*
-
-Measured on `fixtures/a1-titleblock.pdf` at 400 %: **484,078 dark pixels become
-398,578**, a 17.7 % drop. The rest of the page's ink is text and fills, which
-this correctly does not touch.
-
-### ★★★ The constraint, and what makes it a guarantee rather than a promise
-
-> **The one thing worse than not having this feature is having it follow him
-> into a file he sends a client.**
-
-Print, print preview and **every** export — PDF, DXF, PNG, JPEG, SVG, EMF, form
-data, text — render the document's real widths. That is not held by a comment.
-`stroke_display` is assigned in **one function in the crate**,
-`render::worker::render_on_worker`, which rasterizes the interactive canvas and
-is called by nothing else; `app::settings`' funnel, which every export and print
-path builds its options from, never mentions the field, and
-`RenderOptions::default()` is `Actual`. A `syn` scan over every `.rs` in the
-crate fails the build if a second assignment appears — **and it caught a real
-one within the hour**, in the test file written to measure the mode.
-
-★ The concrete danger has a name: `app::actions::export` deliberately takes the
-*document's* annotation stance and layer overrides, arguing — correctly — that
-an export should be *"a picture of what you can see"*. Extending that by one
-field, in good faith, next year, would silently ship him a client deliverable
-with no line weights on it. The scan is what stops that; the paragraph would not
-have.
-
-### What is not done
-
-⬜ **The driven check `line_weights` is written and has never been run.**
-Another track held the machine's pointer; two driven runs at once corrupt each
-other. It climbs to 250 %, presses the item, and compares canvas pixels either
-side, so it is the only assertion that the *button* is reachable rather than
-that the *plumbing* is right.
-
-⬜ **No Settings entry, and that is a decision rather than an omission.** The
-2026-08-17 sweep moved the two surviving `view.*` settings into Settings ▸
-Drawing the page on the argument that *"a value set once and forgotten is not an
-activity"*. This is the other case: it is a reading aid he flips several times
-while reading one sheet, so it is an activity, which is what P2 says a ribbon
-tab picks. It is also per **document**, so two open drawings can disagree —
-which is what comparing a sheet against its neighbour needs. A *persisted*
-default would mean pdfcer opening every drawing showing something the file does
-not say, because of a switch set weeks earlier, which is one step removed from
-the outcome this row forbids. If he wants it to stick, it belongs in
-`app::prefs::opening::PageChrome` beside the other three view toggles, seeded by
-`Prefs::seed_view`, and that is the whole of the work.
-
-### ★★ The constraint the shell WOULD hold when it landed — decided before the field existed, and every clause of it held
-
-- **Canvas only.** Print, print preview and every export — PDF, PNG, JPEG, SVG,
-  EMF, DXF — use the document's real widths. **The one thing worse than not
-  having this is having it follow him into a file he sends a client.**
-- **Disclosed while it is on**, off-canvas, because the canvas then deliberately
-  does not show what will print. Not Rule 4's *"pdfcer marking its own
-  uncertainty"* case — this is the operator choosing a reading aid — but the
-  screen/paper divergence still owes a statement.
-- **Fills untouched.** A filled region is geometry, not a drafting weight; a
-  hatch built from thin fills must not vanish.
-
-★ `view.antialiasing` was cut in the same sweep for the same reason and is
-**not** being asked for. Named in the request only so that if `RenderOptions` is
-being opened anyway, the second dead control is visible on the same trip.
-
-
----
+It now finds the densest patch of ink and zooms into that: **77,050 pixels**.
+Then it failed a perfectly good build, because 1.4 % of the ink went where it
+expected more — and the answer to that was not to relax the test but to give it
+the counter the engine built for exactly this question. Ten strokes were thinned;
+the check reads that number now, and so does the sentence you see.
 
 ## O138 — ✅ **THE BAND WAS DRIVEN, AND THE THREE-ROW CHANGE HAD REACHED NOTHING ON SCREEN**
 
