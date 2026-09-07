@@ -334,7 +334,10 @@ pub fn spec(
     rect: Rect,
     text: &str,
     stamp: StampName,
-    icon: StickyIcon,
+    // ★ By reference since 2026-09-07: `StickyIcon::Other` owns its bytes, so
+    // the type is no longer `Copy` and a by-value parameter would move the
+    // caller's value out of a struct it is still using.
+    icon: &StickyIcon,
     colour: (f64, f64, f64),
 ) -> Option<TextAnnotSpec> {
     let text = painted_text(text);
@@ -536,7 +539,7 @@ pub fn spec(
         // sentence rather than in Acrobat.
         TextAnnotKind::Sticky => TextAnnotSpec::Sticky {
             rect,
-            icon,
+            icon: icon.clone(),
             contents: text.to_owned(),
             color: Color::Rgb(r, g, b),
             // Closed, and ★ the REASON changed on 2026-09-05 even though the
@@ -607,7 +610,7 @@ mod tests {
                 rect(),
                 "note",
                 DEFAULT_STAMP,
-                DEFAULT_STICKY_ICON,
+                &DEFAULT_STICKY_ICON,
                 colour
             ),
             Some(TextAnnotSpec::FreeText { .. })
@@ -618,7 +621,7 @@ mod tests {
                 rect(),
                 "note",
                 DEFAULT_STAMP,
-                DEFAULT_STICKY_ICON,
+                &DEFAULT_STICKY_ICON,
                 colour
             ),
             Some(TextAnnotSpec::Sticky { .. })
@@ -629,7 +632,7 @@ mod tests {
                 rect(),
                 "",
                 DEFAULT_STAMP,
-                DEFAULT_STICKY_ICON,
+                &DEFAULT_STICKY_ICON,
                 colour
             ),
             Some(TextAnnotSpec::Stamp { .. })
@@ -661,7 +664,7 @@ mod tests {
                         rect(),
                         blank,
                         DEFAULT_STAMP,
-                        DEFAULT_STICKY_ICON,
+                        &DEFAULT_STICKY_ICON,
                         (0.0, 0.0, 0.0)
                     )
                     .is_none(),
@@ -683,7 +686,7 @@ mod tests {
             rect(),
             "  hello  ",
             DEFAULT_STAMP,
-            DEFAULT_STICKY_ICON,
+            &DEFAULT_STICKY_ICON,
             (0.0, 0.0, 0.0),
         ) else {
             panic!("a text box with words must author");
@@ -719,7 +722,7 @@ mod tests {
             rect(),
             typed,
             DEFAULT_STAMP,
-            DEFAULT_STICKY_ICON,
+            &DEFAULT_STICKY_ICON,
             (0.0, 0.0, 0.0),
         ) else {
             panic!("a text box with words must author");
@@ -751,7 +754,7 @@ mod tests {
             rect(),
             "a",
             DEFAULT_STAMP,
-            DEFAULT_STICKY_ICON,
+            &DEFAULT_STICKY_ICON,
             (0.0, 0.0, 0.0),
         ) else {
             panic!("a text box must author");
@@ -763,7 +766,7 @@ mod tests {
             rect(),
             "a",
             DEFAULT_STAMP,
-            DEFAULT_STICKY_ICON,
+            &DEFAULT_STICKY_ICON,
             (0.0, 0.0, 0.0),
         ) else {
             panic!("a sticky must author");
@@ -854,7 +857,7 @@ mod tests {
                 rect(),
                 "",
                 *chosen,
-                DEFAULT_STICKY_ICON,
+                &DEFAULT_STICKY_ICON,
                 (0.0, 0.0, 0.0),
             ) else {
                 panic!("{chosen:?} must author");
@@ -879,7 +882,7 @@ mod tests {
                 rect(),
                 "",
                 DEFAULT_STAMP,
-                DEFAULT_STICKY_ICON,
+                &DEFAULT_STICKY_ICON,
                 (0.0, 0.0, 0.0)
             )
             .is_some(),
@@ -906,6 +909,19 @@ mod tests {
         for icon in STICKY_ICONS {
             // The exhaustive arm: every variant must be named, and every
             // variant named must be in the list.
+            //
+            // ★★★ **`Other` is named and answers `false`** — added 2026-09-07
+            // with `pdfcer-core` `Pass 253.5`. It is a real variant with a real
+            // meaning (an icon name §12.5.6.4 permits and pdfcer does not
+            // model, carried verbatim), and it must NOT be in `STICKY_ICONS`:
+            // that list is the *gallery the operator picks from*, and there is
+            // no such thing as picking "some other name" from a list. The
+            // properties panel offers the file's own `Other` as an entry
+            // separately, from the document rather than from this list.
+            //
+            // ⚠ A wildcard here instead would compile and would also silently
+            // swallow an eighth STANDARD icon, which is the exact failure this
+            // test exists to prevent. Naming the variant keeps the guard.
             let covered = match icon {
                 StickyIcon::Comment
                 | StickyIcon::Key
@@ -914,8 +930,12 @@ mod tests {
                 | StickyIcon::NewParagraph
                 | StickyIcon::Paragraph
                 | StickyIcon::Insert => true,
+                StickyIcon::Other(_) => false,
             };
-            assert!(covered);
+            assert!(
+                covered,
+                "{icon:?} is in STICKY_ICONS and is not one of the seven the gallery may offer"
+            );
         }
         assert_eq!(
             STICKY_ICONS.len(),
@@ -958,7 +978,7 @@ mod tests {
                 rect(),
                 "note",
                 DEFAULT_STAMP,
-                *chosen,
+                chosen,
                 (0.0, 0.0, 0.0),
             ) else {
                 panic!("{chosen:?} must author a sticky");
@@ -979,7 +999,7 @@ mod tests {
                 rect(),
                 "note",
                 DEFAULT_STAMP,
-                StickyIcon::Key,
+                &StickyIcon::Key,
                 (0.0, 0.0, 0.0)
             ),
             Some(TextAnnotSpec::FreeText { .. })
@@ -990,7 +1010,7 @@ mod tests {
                 rect(),
                 "",
                 DEFAULT_STAMP,
-                StickyIcon::Key,
+                &StickyIcon::Key,
                 (0.0, 0.0, 0.0)
             ),
             Some(TextAnnotSpec::Stamp { .. })

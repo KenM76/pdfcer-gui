@@ -386,6 +386,114 @@ pub(super) fn rotate(doc: &mut OpenDoc, id: ObjId, pivot: (f64, f64), degrees: f
     });
 }
 
+/// **The engine's rectangle rule as a stable single-word token**, for the trace.
+///
+/// # ★★ Why not `{:?}`
+///
+/// Because a `Debug` rendering is a formatting detail of somebody else's enum
+/// and a driven check that greps for `rect_derived=Artwork` would go quiet the
+/// day `RectDerivation` gains a field, gets renamed, or has its derive removed
+/// — quietly, and in the direction that reads as *the feature stopped
+/// happening*. This project has already shipped one check that reported the
+/// opposite of the truth while quoting the truth in its own message, from a
+/// `{:?}` on a tuple.
+///
+/// ★ The **match is exhaustive with no wildcard**, so a fourth rule is a
+/// compile error here rather than an unnamed token in a log. `RectDerivation`
+/// is `#[non_exhaustive]`, which is why the last arm exists at all and why it
+/// says `other` — an honest *"this build does not know that one"* rather than a
+/// guess.
+///
+/// The tokens match what the engine's own CLI prints (`rect_derived=`), so a
+/// trace here and a `pdfcer` command line can be compared without a lookup
+/// table.
+const fn rect_rule_token(rule: pdfcer_core::edit::RectDerivation) -> &'static str {
+    // ui-text-exempt: trace tokens, never displayed in the UI.
+    match rule {
+        pdfcer_core::edit::RectDerivation::Artwork => "artwork",
+        pdfcer_core::edit::RectDerivation::Geometry => "geometry",
+        pdfcer_core::edit::RectDerivation::PreviousRect => "previous-rect",
+        _ => "other",
+    }
+}
+
+/// **Set a markup annotation's angle absolutely.** `Pass 155.2`.
+///
+/// Reached from the Properties panel's typed Angle field, and from nothing
+/// else — the rotate grip is a drag and goes to [`rotate`], which is a delta.
+///
+/// # ★★★ Why this is a second function rather than an argument on [`rotate`]
+///
+/// Because they take different things and refuse for different reasons. A
+/// delta needs no starting angle and therefore cannot fail to read one; an
+/// absolute set **must** read the current angle and refuses by name when it
+/// cannot (`AnnotationRotationUnreadable`). Folding them would mean one
+/// function whose failure modes depend on a boolean, and a caller reading the
+/// refusal would have to know which mode it was in to know what the sentence
+/// meant.
+///
+/// # ★★ The disclosure is about the RECTANGLE RULE, not about the turn
+///
+/// `Pass 155.1` made `/Rect` a function of the artwork rather than of the
+/// previous rectangle, so a rotation composes — *N* turns totalling θ now draw
+/// the same size as one turn of θ. **With one exception the engine named and
+/// this shell must honour:** an annotation with **neither an appearance stream
+/// nor rotatable geometry** — a `/Square` or `/Circle` with no `/AP` — has
+/// nowhere an orientation could be recorded, because its artwork *is* its
+/// rectangle and §12.5.2 requires that upright. `RectDerivation::PreviousRect`
+/// is that case, it **still grows on every turn**, and the engine's reply is
+/// explicit that ignoring it *"re-introduces the operator's bug one level up,
+/// on exactly the annotations that cannot be fixed."*
+///
+/// ⇒ [`crate::text::rotating::rect_still_grows`] is the sentence, and it fires
+/// **only** on that rule. It is a far better disclosure than the one it
+/// replaced: the old `rect_grew` fired on every non-quarter turn of everything,
+/// which trained the operator to ignore it.
+pub(super) fn set_rotation(doc: &mut OpenDoc, id: ObjId, pivot: (f64, f64), degrees: f64) {
+    super::apply::vector_edit(doc, "set-annotation-rotation", 0, 1, |session| {
+        session
+            .set_annotation_rotation(id, pivot, degrees)
+            .inspect_err(|error| {
+                crate::app::status::decline::record_rotate(refusal_for(error));
+            })
+            .map(|outcome| {
+                crate::diag::trace(|| {
+                    // ui-text-exempt: diagnostic trace, never displayed.
+                    //
+                    // ★★ `asked=` and `deg=` are BOTH carried and they are
+                    // different numbers: the first is the absolute angle the
+                    // operator typed, the second is the delta the engine worked
+                    // out to get there. A build that passed the typed value
+                    // through as a delta would show them equal on the first
+                    // edit of an unturned mark — which is most of them — and
+                    // diverge only on the second, so a trace carrying one of
+                    // the two could not see it.
+                    //
+                    // ★ `rect_derived=` is `AnnotationRotate::rect_derived_from`
+                    // — which of the engine's three rules produced the new
+                    // rectangle. It is the field the whole of `Pass 155.1`
+                    // turns on and the one an operator report would need: two
+                    // of the three compose and one cannot, and nothing else on
+                    // this line distinguishes them.
+                    format!(
+                        "set-annotation-rotation-applied id={} asked={degrees:.2} deg={:.2} \
+                         px={:.2} py={:.2} rect_derived={} to={:.1}x{:.1}",
+                        id.num,
+                        outcome.degrees,
+                        pivot.0,
+                        pivot.1,
+                        rect_rule_token(outcome.rect_derived_from),
+                        outcome.to.urx - outcome.to.llx,
+                        outcome.to.ury - outcome.to.lly,
+                    )
+                });
+                crate::text::rotating::rect_still_grows(outcome.rect_derived_from)
+                    .into_iter()
+                    .collect()
+            })
+    });
+}
+
 /// **Turn a ce dimension about a pivot.** `Pass 159.0`.
 ///
 /// Reached from `canvas::rotating` on the release of a rotate-handle drag over
@@ -1129,12 +1237,40 @@ pub(super) fn set_text_annot_style(
         session.set_text_annot_style(id, style).map(|change| {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed.
+                //
+                // ★★★ `was_foreign=` is new with `pdfcer-core` `Pass 253.5`,
+                // and it is traced rather than DISCLOSED, deliberately.
+                //
+                // The engine's field reports that the annotation's previous
+                // appearance was one pdfcer would not have drawn — a
+                // designer's stream with a shadow or a gradient — and that
+                // re-baking has just replaced it with pdfcer's plainer
+                // rendering. That is exactly the class of thing Rule 4's
+                // surviving half says must reach the operator off-canvas.
+                //
+                // ⚠ **It cannot happen through this shell today**, and the
+                // reason is worth stating rather than discovering: the field is
+                // `false` for every subtype but `/FreeText`, and the only
+                // surface that raises this action —
+                // `panels::properties::markup::textannot` — **declines a
+                // `/FreeText` by name**. So a disclosure wired here would be a
+                // sentence no operator could ever see, which is worse than none:
+                // it reads as covered.
+                //
+                // ⇒ It goes on the trace, which is where a fact with no reader
+                // belongs, and it becomes the **tripwire** for the day a
+                // `/FreeText` does reach this verb: a driven run showing
+                // `was_foreign=1` means the panel's decline has been lifted and
+                // an operator-facing sentence is now owed. That is the same
+                // posture `appearance_matrix_updated` gets one module along.
                 format!(
-                    "set-text-annot-style-applied id={} subtype={} icon={} colour={} ap={:?}",
+                    "set-text-annot-style-applied id={} subtype={} icon={} colour={} \
+                     was_foreign={} ap={:?}",
                     id.num,
                     change.subtype,
                     change.icon_written,
                     change.color_written,
+                    u8::from(change.appearance_was_foreign),
                     change.appearance
                 )
             });
@@ -1198,6 +1334,7 @@ pub(super) fn apply_action(
         // ce dimension from the annotation verb by name. See
         // [`rotate_dimension`].
         A::Rotate { id, pivot, degrees } => rotate(doc, id, pivot, degrees),
+        A::SetRotation { id, pivot, degrees } => set_rotation(doc, id, pivot, degrees),
         A::RotateDimension {
             dimension,
             annot,

@@ -317,7 +317,7 @@ impl TextAnnotDialog {
                 rect: self.rect,
                 text: std::mem::take(&mut self.text),
                 stamp: self.stamp,
-                icon: self.icon,
+                icon: self.icon.clone(),
             });
             return false;
         }
@@ -492,7 +492,7 @@ impl TextAnnotDialog {
         ui.label(t::sticky_icon_heading());
         let top = ui.cursor().min;
         for icon in STICKY_ICONS {
-            ui.radio_value(&mut self.icon, *icon, t::sticky_icon_label(*icon));
+            ui.radio_value(&mut self.icon, icon.clone(), t::sticky_icon_label(icon));
         }
         crate::diag::ui_rect(REGION_ICON, egui::Rect::from_min_max(top, ui.cursor().min));
         ui.label(egui::RichText::new(t::sticky_icon_bound()).small().weak());

@@ -1,0 +1,20 @@
+ui-verify — profile `pdfcer-gui` (the application this project is building (crates/pdfcer-gui))
+  NOTE: this harness drives the REAL cursor and keyboard. It raises the target window, moves the pointer, and types into it. The pointer is put back where it was when the run ends. Pass --no-input to disable (checks that need input then report SKIPPED, never PASS).
+
+  isolation: each check drives its own copy of the binary, under a `.ui-verify-profiles` directory beside target/release/pdfcer-gui.exe. Nothing a check remembers reaches the next one.
+
+[PASS] a_foreign_icon_name_reaches_the_panel
+       detects: a sticky note whose icon name is one pdfcer does not model is shown in the properties panel as one of the seven it does — so the chooser asserts a value the file does not carry, and a change to the note's COLOUR ALONE rewrites its icon name in the operator's file, silently. Or the panel shows the name correctly and omits the sentence saying pdfcer draws its own symbol for it, which leaves an operator comparing this window with Acrobat's with no explanation for the difference
+       · --pdf was supplied and is deliberately ignored; this check pins its own fixture
+       · launched target/release\.ui-verify-profiles\a_foreign_icon_name_reaches_the_panel\pdfcer-gui.exe as pid 49424 on the pinned fixture
+       · ★ the Properties tab was brought forward
+       · ★ the note was selected: `pdfcer-diag annot-select page=0 id=ObjId { num: 7, generation: 0 } kind=Markup subtype=Text locked=false rect=[[104.0 168.0] - [124.0 188.0]]`
+       · ★★ the icon subsection drew: `pdfcer-diag textannot-rows face=Sticky icon=Sparkle foreign=1`
+       · ★★★ the chooser shows the file's own name: icon=Sparkle
+       · ★★ and it is disclosed: pdfcer draws its own symbol for it
+       artifact: target/ui-verify\foreign-icon.trace.txt
+
+------------------------------------------------------------------------
+  1 passed, 0 failed, 0 skipped
+
+RESULT: PASS — every check drove the application and every assertion held.

@@ -149,7 +149,7 @@ pub const fn stamp_label(stamp: StampName) -> &'static str {
 /// ⇒ `crate::canvas::textannot::STICKY_ICONS` carries the same guarantee from
 /// the other side, by list rather than by prose.
 #[must_use]
-pub const fn sticky_icon_label(icon: StickyIcon) -> &'static str {
+pub fn sticky_icon_label(icon: &StickyIcon) -> &'static str {
     match icon {
         StickyIcon::Comment => "Comment",
         StickyIcon::Key => "Key",
@@ -158,6 +158,25 @@ pub const fn sticky_icon_label(icon: StickyIcon) -> &'static str {
         StickyIcon::NewParagraph => "New paragraph",
         StickyIcon::Paragraph => "Paragraph",
         StickyIcon::Insert => "Insert",
+        // ★★★ **A name §12.5.6.4 permits and pdfcer does not model** —
+        // `StickyIcon::Other`, new in `pdfcer-core` `Pass 253.5`.
+        //
+        // This function cannot name it, and that is a property of its return
+        // type rather than an omission: a `&'static str` cannot carry bytes out
+        // of the operator's file. The surface that CAN —
+        // `text::panels::textannotstyle::markup_icon_foreign_named` — returns
+        // an owned `String` and prints the name in quotes.
+        //
+        // ⇒ Every caller that may be handed one must therefore match on
+        // `Other` **before** reaching here. The properties panel's chooser
+        // does. A caller that does not will show this word, which is why it
+        // says *what pdfcer knows about it* rather than pretending to a name.
+        //
+        // ★ `#[non_exhaustive]` is NOT what this arm is for. `StickyIcon` is a
+        // closed enum; this is a real variant with a real meaning, and a
+        // wildcard here would also silently swallow an eighth standard icon if
+        // §12.5.6.4 ever grew one.
+        StickyIcon::Other(_) => "Another icon",
     }
 }
 

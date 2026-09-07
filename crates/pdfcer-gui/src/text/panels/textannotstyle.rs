@@ -130,20 +130,77 @@ pub const fn markup_icon_foreign() -> &'static str {
     "Not one of these"
 }
 
-/// ★★★ **The warning under a foreign icon** — the disclosure that stops a
-/// colour change quietly discarding something.
+/// **The file's own icon name, shown as the entry it is** — for a `/Name`
+/// §12.5.6.4 permits and pdfcer does not model.
 ///
-/// `annot_author::text_spec_from_dict`'s `/Text` arm normalises an unmodelled
-/// `/Name` to `Note` on the way past (`annot_author.rs:963`), and
-/// `set_text_annot_style` re-bakes from that normalised spec. So changing the
-/// **colour alone** on a note carrying `/Sparkle` writes `/Name /Note` into the
-/// file, silently, and nothing on screen would ever say so.
+/// # ★★★ Why the name itself and not a category word
 ///
-/// ★ It is shown **before** the operator touches a control rather than as a
-/// hover or a report afterwards. An operator who has to hover to learn that a
-/// control discards something has already been given the chance not to know.
+/// This replaced *"Not one of these"* on 2026-09-07. That phrase was the
+/// honest answer while the name could not be carried: the engine's reader
+/// flattened an unmodelled `/Name` to `Note`, so the shell knew only that
+/// *something* had been lost and could not say what. `Pass 253.5` carries the
+/// bytes (`StickyIcon::Other`), so the panel can name it — and a chooser that
+/// says **"Sparkle"** tells the operator something a chooser saying **"Not one
+/// of these"** cannot: which of his notes it is, and that pdfcer is going to
+/// keep it.
+///
+/// ★ Quoted, because it is a value out of his file rather than a word this
+/// program chose, and the quotes are what make a name like *Note 2* read as a
+/// name rather than as an instruction.
+///
+/// ★★ `String::from_utf8_lossy` at the call site, not here: a `/Name` is a
+/// sequence of bytes (§7.3.5) and there is no encoding declared for it, so a
+/// producer may legally write one this program cannot decode. Replacement
+/// characters in the chooser are the correct outcome — the operator sees that
+/// something is there and unreadable, and the bytes still round-trip untouched.
+#[must_use]
+pub fn markup_icon_foreign_named(name: &str) -> String {
+    format!("\"{name}\"")
+}
+
+/// ★★★ **The note under a foreign icon** — and it says something different
+/// from what it said yesterday.
+///
+/// # It used to warn about destruction, and that warning is now FALSE
+///
+/// The superseded text, kept because the shape of the change is the useful
+/// part:
+///
+/// > *"This note uses an icon pdfcer does not know. Changing its icon OR its
+/// > colour here will replace that icon with one of the ones listed."*
+///
+/// That was exactly right against `pdfcer-core` v0.44.0.
+/// `annot_author::text_spec_from_dict`'s `/Text` arm normalised an unmodelled
+/// `/Name` to `Note` on the way past, and `set_text_annot_style` re-baked from
+/// that normalised spec — so changing the **colour alone** on a note carrying
+/// `/Sparkle` wrote `/Name /Note` into the file, silently.
+///
+/// This shell filed it
+/// (`request_set_text_annot_style_rewrites_a_foreign_icon_name.md`) and
+/// `Pass 253.5` fixed it: `StickyIcon::Other(Vec<u8>)` carries the bytes and
+/// `from_name_lossless` reads them, so the round trip is exact and a colour
+/// change touches nothing else.
+///
+/// ⇒ **A limitation sentence on this project has a shelf life measured in
+/// hours**, and this one had a shelf life of one day. Spell every claim about
+/// the engine as a dated assertion and re-read it before repeating it.
+///
+/// # What survives, and why it is still worth a sentence
+///
+/// The half that was never about loss. The engine's own note: *"`sticky_note`
+/// paints the same glyph for all seven variants — the icon chooses the `/Name`
+/// written, not the picture drawn."* So an operator comparing this window with
+/// the program that made the note is looking at two different symbols for one
+/// annotation, and is entitled to know that pdfcer chose the picture and the
+/// file chose the name.
+///
+/// ★ Shown **before** he touches a control rather than as a hover. Nothing is
+/// destroyed any more, so this is no longer a warning — but it is still an
+/// explanation, and an explanation that arrives after the conclusion has been
+/// drawn is not one.
 #[must_use]
 pub const fn markup_icon_foreign_note() -> &'static str {
-    "This note uses an icon pdfcer does not know. Changing its icon OR its colour here will \
-     replace that icon with one of the ones listed."
+    "This note uses an icon pdfcer does not draw. The name is kept exactly as it is in the file \
+     — including when you change the colour — but pdfcer draws its own sticky-note symbol for \
+     it, so it will not look the way it does in the program that made it."
 }

@@ -6,127 +6,135 @@
 //! > *"the box outlined when an object is selected should be in the same angled
 //! > orientation as the object."* — 2026-09-07, `OPERATOR_REQUESTS.md` **O147**
 //!
-//! He is right, and until this module existed the shell could not do it. The
-//! selection outline was drawn from `/Rect`, and §12.5.2 requires `/Rect`
-//! **upright**: an annotation turned 30° is therefore bounded by an axis-aligned
-//! rectangle visibly larger than the mark inside it, with the mark floating in
-//! the middle at an angle the box does not share. `pdfcer-core`'s own
-//! `rotate_annotation` doc comment predicted precisely this experience —
-//! *"an operator turning a stamp 30° watches a dashed box swell around artwork
-//! that did not change size"* — and this shell's answer had been an off-canvas
-//! **sentence** explaining it. That is Rule 4's surviving half done correctly
-//! and it was still the wrong answer, because the operator does not want the
-//! swelling explained. He wants the outline to fit.
+//! The selection outline used to be drawn from `/Rect`, and §12.5.2 requires
+//! `/Rect` **upright**: an annotation turned 30° was therefore bounded by an
+//! axis-aligned rectangle visibly larger than the mark inside it, with the mark
+//! floating in the middle at an angle the box did not share.
 //!
-//! ## What is computed here, in one line
+//! ## ★★★ THIS MODULE WAS A WORKAROUND FOR ONE DAY, AND IS NOW A THIN ADAPTER
 //!
-//! **ISO 32000-1 §12.5.5's appearance placement algorithm, run forwards on the
-//! four corners of the appearance stream's `/BBox`** — producing the same
-//! quadrilateral the *renderer* draws the artwork inside, in page space.
+//! It shipped on the morning of 2026-09-07 carrying **its own reader of the
+//! appearance `/Matrix`** and **its own implementation of ISO 32000-1
+//! §12.5.5's placement algorithm**, because `pdfcer_core::annot::Annotation`
+//! modelled no rotation and `pdfcer-render`'s placement was `pub(crate)`. That
+//! was filed the same morning
+//! (`request_an_annotations_rotation_angle_cannot_be_read.md`), including an
+//! addendum arguing that a public `appearance_placement` would be a better
+//! shape than the field we had asked for.
 //!
-//! ```text
-//!   (a)  quad   = /Matrix  x  the four corners of /BBox      <- may be at any angle
-//!   (b)  bounds = the upright box of `quad`
-//!   (c)  A      = the scale+translate that maps `bounds` onto /Rect
-//!        corners = A x quad                                  <- what is returned
-//! ```
+//! **`Pass 155.2` shipped that afternoon and gave us both**, and the engine's
+//! reply answered the addendum in as many words: *"you were right that it is
+//! the better shape … delete your matrix reader, your angle decomposition,
+//! your `/AS` handling and your `MIN_BOX_EXTENT` copy."* All four are deleted.
+//! What is left is the projection into canvas space, which is this shell's
+//! business and nobody else's.
 //!
-//! Step (c) is the one nobody expects and it is normative: §12.5.5 requires the
-//! transformed appearance box to **fit `/Rect` exactly**, so a `/Rect` that is
-//! larger than the artwork needs *stretches the artwork to fill it*. Running the
-//! algorithm rather than reasoning about it is what makes this outline correct
-//! on a file pdfcer did not author, on an annotation whose producer wrote a
-//! `/Matrix` for its own reasons, and — importantly today — on an annotation
-//! that has been damaged by the growth defect in **O145**, where it hugs the
-//! *grown* artwork instead of quietly disagreeing with the screen.
+//! ⇒ **The tripwire worked.** `the_engine_still_has_no_rotation_field` read the
+//! pinned engine's own source and went red the moment `Annotation` grew
+//! `appearance_matrix` — hours after it was written. It is kept, inverted, as
+//! `tests::the_engine_owns_the_placement_and_this_module_only_projects`.
 //!
-//! ## ★★★ THIS MODULE IS A WORKAROUND AND IT IS FILED AS ONE
+//! ## What the engine now answers, and what is still ours
 //!
-//! `pdfcer_core::annot::Annotation` models `rect`, `vertices`, `line`,
-//! `ink_list`, `color`, `icon`, `state`, `constant_alpha` and an `Appearance`
-//! enum that carries a `stream_id` **and nothing else**. There is no rotation
-//! and no matrix, so there is no supported route to the fact this module needs.
+//! | question | who answers |
+//! |---|---|
+//! | where do the artwork's four corners land, in page space? | `pdfcer_render::annot::appearance_placement` — §12.5.5's full algorithm, **the one the paint path runs** |
+//! | what angle is that, in degrees? | `Annotation::appearance_rotation_degrees` — `None` for a shear, a mirror or a non-uniform scale |
+//! | what are the raw six numbers? | `Annotation::appearance_matrix` |
+//! | where is that **on this canvas**, at this zoom, on a `/Rotate 90` sheet? | **here**, via `crate::canvas::mapping::oriented_canvas_quad` |
 //!
-//! `EditSession::value` and `EditSession::graph` are public, so the shell *can*
-//! walk `/AP` → `/N` → (`/AS`) → `/Matrix` itself, and that is what happens
-//! below. It is filed at the engine as
-//! `request_an_annotations_rotation_angle_cannot_be_read.md`, per decision 058:
-//! **a workaround the GUI did not report is a boundary defect that stays.**
+//! ★ The engine also publishes the free function
+//! `pdfcer_core::annot::rotation_degrees([f64; 6])`, which decomposes a matrix
+//! this shell does not have in its hand. **It is deliberately not called
+//! here**: the method reads `appearance_matrix` *and* applies Table 95's
+//! default for an appearance with no `/Matrix` key, so it answers `Some(0.0)`
+//! where the free function would need this module to decide what an absent
+//! matrix means — and deciding that here is precisely the private opinion about
+//! somebody else's format that this module was rewritten to stop having.
 //!
-//! ⚠ **This is a second reader of a structure `pdfcer-core` owns**, and it is
-//! the weaker one by construction — it does not know what `Appearance::
-//! StateUnresolved` knows, it re-implements §12.5.5 rather than sharing the
-//! renderer's implementation (`pdfcer-render`'s is `pub(crate)`), and every
-//! future clause the engine learns about appearance selection is a clause this
-//! file will get wrong. `AWAITED_ENGINE_FIELDS` and the test that reads it are
-//! the tripwire that fires the day the engine makes this module unnecessary, so
-//! it cannot outlive its cause in silence — the mechanism this project adopted
-//! after a shim survived two hours past its own obsolescence with nothing to
-//! notice.
+//! ★ **The corner order is the engine's and it is deliberate**: `[LL, LR, UR,
+//! UL] of the /BBox` — *appearance* space, before the transform. Past 90° the
+//! first element is no longer the leftmost point on the page. That is what lets
+//! a caller draw an outline that follows the object and read a bearing off one
+//! edge, and it is why `handles::GripFrame::Turned` documents its corners as
+//! the **artwork's** frame rather than the page's.
+//!
+//! ★★ The engine pins, with a test of its own, that **the bearing of the first
+//! placed edge equals `appearance_rotation_degrees()`** on the same annotation.
+//! This shell reads the angle from one and draws the outline from the other, so
+//! a divergence would put a grip where the artwork is not; that agreement is
+//! held by an assertion on their side rather than by intent on ours.
 //!
 //! ## What is deliberately NOT done here
 //!
 //! **Nothing is drawn.** This module answers a geometric question and returns
-//! numbers; the painter is `canvas::overlay`. That split is what lets the same
-//! answer feed the outline, the properties panel's angle read-out, and any
-//! driven check that wants to assert on an orientation without a screenshot.
+//! numbers; the painter is `crate::canvas::overlay`. That split is what lets
+//! one answer feed the outline, the grips, the properties panel's angle
+//! read-out and a driven check that wants to assert on an orientation without a
+//! screenshot.
 //!
 //! **No fallback quad is invented.** An annotation with no usable appearance
-//! stream returns `None` and the caller keeps drawing `/Rect`, which for such an
-//! annotation *is* the truth — a `/Square` with no `/AP` is a rectangle, and a
-//! shell that guessed an angle for it would be inventing one.
+//! returns `None` and the caller keeps drawing `/Rect`, which for such an
+//! annotation *is* where the mark is.
 
-use pdfcer_core::graph::ObjectGraph;
-use pdfcer_core::object::{Dict, ObjId, Object};
-
-/// **The names this module is waiting for the engine to publish.**
-///
-/// The day any of these appears as a field of `pdfcer_core::annot::Annotation`,
-/// this module's whole reason to exist has been removed, and
-/// `tests::the_engine_still_has_no_rotation_field` goes red naming it.
-///
-/// # ★★★ Why this is a grep of the ENGINE's source and not a `debug_assert`
-///
-/// The first draft of this tripwire was `const ENGINE_HAS_TAKEN_OVER: bool =
-/// false;` with a `debug_assert!(!ENGINE_HAS_TAKEN_OVER)` beside it, and that
-/// is **not a tripwire at all**: nothing can set it but a human who has already
-/// noticed, which is the one case a tripwire is not needed for. (Clippy flagged
-/// it as *"this assertion has a constant value"*, and was right for a better
-/// reason than it knew.)
-///
-/// A tripwire has to be keyed on **the other side's API**, not on this side's
-/// intention. The test reads the **pinned** engine checkout — the exact bytes
-/// this build compiles against, located from `Cargo.lock` so it cannot drift
-/// from the pin — and fails when one of these names appears in the read model.
-/// It costs one file read per `cargo test` run and it fires without anybody
-/// looking.
-#[cfg(test)]
-const AWAITED_ENGINE_FIELDS: [&str; 3] = ["rotation", "appearance_matrix", "matrix"];
+use pdfcer_core::annot::Annotation;
+use pdfcer_core::object::ObjId;
+use pdfcer_core::page_tree::Page;
+use pdfcer_core::view::DocumentView;
 
 /// An annotation's artwork as it is actually placed on the page.
 ///
 /// Page space, PDF convention (y up), the same space `/Rect` is in — mapping to
-/// canvas or screen space is the caller's job and is done through
-/// `viewer::pdf_space_to_canvas` so this shares the projection every other
-/// overlay uses.
+/// canvas or screen space is the caller's job, through
+/// [`crate::canvas::mapping::oriented_canvas_quad`], so this shares the
+/// projection every other overlay uses.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct OrientedBox {
-    /// The four corners, in the order the `/BBox` corners were taken:
-    /// lower-left, lower-right, upper-right, upper-left **of the `/BBox`**,
-    /// each pushed through the placement. After a rotation those names describe
-    /// the artwork's own frame, not the page's — corner 0 is the artwork's
-    /// bottom-left wherever on screen that has ended up, which is exactly what
-    /// a caller drawing a closed outline wants.
+    /// The four corners, in the engine's order: `[LL, LR, UR, UL]` **of the
+    /// appearance `/BBox`**, each pushed through §12.5.5's placement.
+    ///
+    /// Those names describe the **artwork's** frame, not the page's — after a
+    /// 100° turn corner 0 is at the top of the screen. That is the engine's
+    /// documented choice and it is the useful one: it lets a caller draw a
+    /// closed outline that follows the object and read a bearing off one edge.
     pub corners: [(f64, f64); 4],
     /// The rotation the appearance `/Matrix` expresses, in **degrees
-    /// anticlockwise**, normalised to `[0, 360)`.
+    /// anticlockwise**, normalised by **this module** into `[0, 360)`.
+    ///
+    /// ⚠⚠ **THE ENGINE DOES NOT NORMALISE, AND THIS COMMENT SAID IT DID FOR
+    /// TWENTY MINUTES.** `Annotation::appearance_rotation_degrees` returns the
+    /// `atan2` of the matrix directly, so a mark turned a quarter turn
+    /// clockwise reads **`-89.15`**, not `270.85`. The first version of this
+    /// adapter copied its old doc comment across unchanged — the local
+    /// implementation it replaced *did* apply `rem_euclid` — and shipped a
+    /// [`Self::is_upright`] whose range test `(0.1..=359.9)` therefore answered
+    /// **`true` for every clockwise rotation**, so the selection outline went
+    /// back to being axis-aligned on exactly the turn an operator makes most
+    /// often.
+    ///
+    /// It was caught by `tools/ui-verify`'s `rotating_a_markup_turns_it` on the
+    /// first driven run after the pin moved, with `turned=0` beside a trace
+    /// line saying the engine had turned the mark. **3,860 in-process tests
+    /// were green**, including four in this module — because every one of them
+    /// used a *positive* angle.
+    ///
+    /// ⇒ **A contract you write for somebody else's function is a claim to
+    /// measure, not to carry over.** The normalisation is done here, once, and
+    /// tested with a negative angle beside a positive one.
     ///
     /// `None` when the matrix is not a rotation with an optional uniform
     /// positive scale — a skew, a mirror, or an anisotropic scale is **not an
-    /// angle** and must not be reported as one. The corners are still correct in
-    /// that case, which is why this is a separate field rather than the whole
-    /// return value: an outline can be drawn round a sheared stamp; a number
-    /// cannot be put in a properties field for it.
+    /// angle** and the engine does not report one. The corners are still
+    /// correct in that case, which is why this is a separate field: an outline
+    /// can be drawn round a sheared stamp; a number cannot be put in a
+    /// properties field for it.
+    ///
+    /// ★ An annotation with an appearance but **no `/Matrix` key** answers
+    /// `Some(0.0)` — Table 95's default, and what the renderer paints with —
+    /// while `Annotation::appearance_matrix` answers `None`, because the file
+    /// really did say nothing. The engine draws that distinction deliberately,
+    /// so an ordinary unrotated mark shows `0°` in a properties field rather
+    /// than a blank.
     pub degrees: Option<f64>,
 }
 
@@ -153,203 +161,56 @@ impl OrientedBox {
     }
 }
 
-/// A 2-D affine matrix in PDF order, `[a b c d e f]` (§8.3.3).
+/// **Where `annot`'s artwork actually sits**, or `None` when the question has
+/// no honest answer for it.
 ///
-/// Maps `(x, y)` to `(a·x + c·y + e, b·x + d·y + f)`. Kept local and tiny
-/// rather than reaching for `pdfcer_core::vector::geometry::Matrix` because the
-/// only operations needed here are *apply to a point* and *read `a` and `b`*,
-/// and a local four-line type is one less public API this module depends on
-/// while it is a workaround waiting to be deleted.
-#[derive(Debug, Clone, Copy)]
-struct Mat([f64; 6]);
-
-impl Mat {
-    const IDENTITY: Self = Self([1.0, 0.0, 0.0, 1.0, 0.0, 0.0]);
-
-    fn apply(self, (x, y): (f64, f64)) -> (f64, f64) {
-        let [a, b, c, d, e, f] = self.0;
-        (a * x + c * y + e, b * x + d * y + f)
-    }
-
-    /// The rotation this matrix expresses, in degrees anticlockwise in
-    /// `[0, 360)`, or `None` when it is not a rotation-with-uniform-scale.
-    ///
-    /// # The test, and why each half of it is there
-    ///
-    /// A rotation by θ with uniform positive scale s is
-    /// `[s·cosθ, s·sinθ, −s·sinθ, s·cosθ, e, f]`. So:
-    ///
-    /// * `a ≈ d` **and** `b ≈ −c` — this is what excludes a shear, an
-    ///   anisotropic scale, and a mirror. A mirror in x is
-    ///   `[−s·cosθ, …, …, s·cosθ]`, which fails `a ≈ d`; a mirror in y fails it
-    ///   too. Both are legal `/Matrix` values that no angle describes.
-    /// * `s > 0` — a degenerate (collapsed) matrix has no orientation, and
-    ///   `atan2(0, 0)` is `0.0`, which would be a confidently wrong answer.
-    ///
-    /// The comparison is **relative to the scale**, not absolute: a stamp whose
-    /// `/Matrix` carries a scale of 300 would fail a fixed epsilon on rounding
-    /// alone, and one with a scale of 0.001 would pass it while being visibly
-    /// sheared.
-    fn rotation_degrees(self) -> Option<f64> {
-        let [a, b, c, d, _, _] = self.0;
-        let scale = a.hypot(b);
-        if !scale.is_finite() || scale <= 1e-9 {
-            return None;
-        }
-        let tolerance = scale * 1e-4;
-        if (a - d).abs() > tolerance || (b + c).abs() > tolerance {
-            return None;
-        }
-        let degrees = b.atan2(a).to_degrees();
-        Some(degrees.rem_euclid(360.0))
-    }
+/// A thin adapter over `pdfcer_render::annot::appearance_placement` and
+/// `Annotation::appearance_rotation_degrees` — see the module header for what
+/// this used to be and why it is not that any more.
+///
+/// `None` is a **correct** answer, not a failure, and the engine lists its
+/// causes: no `/Rect`, no reachable appearance stream, no readable `/BBox`, or
+/// a transformed box so thin that §12.5.5 step (b)'s fit matrix is singular. In
+/// every one of those the caller should keep using `/Rect`, which for an
+/// annotation with no appearance **is** where the mark is.
+#[must_use]
+pub fn oriented(view: &DocumentView<'_>, annot: &Annotation) -> Option<OrientedBox> {
+    Some(OrientedBox {
+        corners: pdfcer_render::annot::appearance_placement(view, annot)?,
+        // ★★★ `rem_euclid`, and read [`OrientedBox::degrees`] before removing
+        // it: the engine returns a signed `atan2` and this shell needs
+        // `[0, 360)`. Omitting it made every clockwise rotation report itself
+        // upright and cost a driven run to find.
+        degrees: annot
+            .appearance_rotation_degrees()
+            .map(|d| d.rem_euclid(360.0)),
+    })
 }
 
-/// The four numbers at `key`, resolved through the graph, or `None`.
+/// **[`oriented`] for one annotation named by id**, walking the page to find it.
 ///
-/// Rejects a short array outright rather than padding: a `/BBox` with three
-/// entries is malformed, and inventing a fourth would produce a plausible
-/// outline around artwork placed somewhere else entirely.
-fn numbers<G: ObjectGraph + ?Sized, const N: usize>(
-    graph: &G,
-    dict: &Dict,
-    key: &[u8],
-) -> Option<[f64; N]> {
-    let array = graph.resolve(dict.get(key)?).as_array()?;
-    if array.len() < N {
-        return None;
-    }
-    let mut out = [0.0_f64; N];
-    for (slot, item) in out.iter_mut().zip(array.iter()) {
-        *slot = graph.resolve(item).as_number()?;
-        if !slot.is_finite() {
-            return None;
-        }
-    }
-    Some(out)
-}
-
-/// The **normal** appearance stream's dictionary for this annotation, applying
-/// §12.5.5's `/AS` selection rule.
+/// The shape most callers here want: the selection and the properties panel
+/// both hold an `ObjId` and a page, not an `Annotation`.
 ///
-/// # The three shapes `/AP` `/N` can take, and what each means
-///
-/// | `/N` resolves to | meaning | handled |
-/// |---|---|---|
-/// | a **stream** | the ordinary case: one appearance | taken |
-/// | a **subdictionary** with an `/AS` naming one of its entries | an appearance *state* (a check box's `/Off` and `/Yes`) | the named entry is taken |
-/// | a **subdictionary** with no usable `/AS` | §12.5.5 NOTE 3 — *"reasonable behaviour such as displaying nothing"* | **`None`** |
-///
-/// ★ The last row matters and is the reason this is a function rather than two
-/// `?` operators. `pdfcer-core` models it as a distinct `Appearance::
-/// StateUnresolved` and **refuses to guess** a first/`On`/`Off` key, because
-/// real readers disagree about which to pick and guessing shows a state no
-/// other viewer shows. This shell must not guess either: an outline drawn from
-/// an appearance the renderer declined to paint would be a box around nothing.
-///
-/// **One exception, and it matches the engine's:** a subdictionary with exactly
-/// one entry and no `/AS` is not ambiguous — there is nothing to choose between
-/// — so it is taken. The engine's own wording scopes `StateUnresolved` to *"`/AS`
-/// is missing against a **multi-entry** subdictionary"*.
-fn normal_appearance<'a, G: ObjectGraph + ?Sized>(
-    graph: &'a G,
-    annot: &'a Dict,
-) -> Option<&'a Dict> {
-    let ap = graph.resolve(annot.get(b"AP")?).as_dict()?;
-    let n = graph.resolve(ap.get(b"N")?);
-    if matches!(n, Object::Stream(_)) {
-        return n.as_dict();
-    }
-    let states = n.as_dict()?;
-    let selected = match annot.get(b"AS").map(|o| graph.resolve(o)) {
-        Some(Object::Name(name)) => states.get(name.as_bytes())?,
-        // Exactly one entry and no /AS: nothing to choose between.
-        _ if states.len() == 1 => states.iter().next()?.1,
-        _ => return None,
-    };
-    let stream = graph.resolve(selected);
-    matches!(stream, Object::Stream(_))
-        .then(|| stream.as_dict())
-        .flatten()
-}
-
-/// **Where `annot_id`'s artwork actually sits**, or `None` when the question has
-/// no honest answer for this annotation.
-///
-/// `None` is returned — and it is a *correct* answer, not a failure — when:
-///
-/// * the object is not an annotation dictionary, or has no `/Rect`;
-/// * there is no usable normal appearance stream (no `/AP`, a dangling `/N`, or
-///   an unresolvable appearance state — see [`normal_appearance`]);
-/// * the appearance has no `/BBox`, or a `/BBox` that its own `/Matrix`
-///   collapses to a sliver, which makes §12.5.5's step-(c) fit matrix singular
-///   and there is no honest placement. `pdfcer-render` refuses the same case by
-///   the same test and counts it as `annotations_placement_degenerate`.
-///
-/// In every one of those cases the caller should keep using `/Rect`, which for
-/// an annotation with no appearance stream **is** where the mark is.
+/// ★ Through `annot::page_annotations` rather than a hand-rolled dictionary
+/// read, because `appearance_placement` takes the engine's own modelled
+/// `Annotation` — including its `Appearance` enum, which is where `/AS`
+/// selection and the *"named but not painted"* distinction live. A shell that
+/// built an `Annotation` by hand to pass in here would be re-implementing
+/// exactly the part the engine was asked to take over.
 ///
 /// # Cost
 ///
-/// Two dictionary reads and sixteen multiplications. It is called on selection
-/// and on paint, not per frame per annotation, and it allocates nothing.
+/// One `/Annots` walk, bounded by `pdfcer_core::annot::MAX_ANNOTS_PER_PAGE`,
+/// plus one appearance-stream resolve. Called on selection and on the frame
+/// after an edit — see [`crate::canvas::selection::SelectionState`]'s
+/// `resolve_annot` — never per frame per annotation.
 #[must_use]
-pub fn oriented<G: ObjectGraph + ?Sized>(graph: &G, annot_id: ObjId) -> Option<OrientedBox> {
-    let annot = graph.resolved(annot_id).as_dict()?;
-    let [rllx, rlly, rurx, rury] = numbers::<_, 4>(graph, annot, b"Rect")?;
-    // §7.9.5: a rectangle's corners may be given in either order, and the
-    // reader normalises. `page_tree::Rect::from_corners` does this for the
-    // engine's own reads; doing it here too is what keeps an annotation written
-    // upper-left-first from producing an inside-out outline.
-    let (rect_x0, rect_x1) = (rllx.min(rurx), rllx.max(rurx));
-    let (rect_y0, rect_y1) = (rlly.min(rury), rlly.max(rury));
-
-    let appearance = normal_appearance(graph, annot)?;
-    let [bllx, blly, burx, bury] = numbers::<_, 4>(graph, appearance, b"BBox")?;
-    let matrix = numbers::<_, 6>(graph, appearance, b"Matrix").map_or(Mat::IDENTITY, Mat);
-
-    // Step (a): the /BBox corners through the appearance's own /Matrix. The
-    // result is *"a quadrilateral with arbitrary orientation"* — §12.5.5's own
-    // words, and the whole reason this module can answer the operator's
-    // question at all.
-    let quad = [
-        matrix.apply((bllx, blly)),
-        matrix.apply((burx, blly)),
-        matrix.apply((burx, bury)),
-        matrix.apply((bllx, bury)),
-    ];
-    if quad.iter().any(|(x, y)| !x.is_finite() || !y.is_finite()) {
-        return None;
-    }
-
-    // Step (b): its upright bounding box.
-    let (mut lo_x, mut lo_y) = (f64::INFINITY, f64::INFINITY);
-    let (mut hi_x, mut hi_y) = (f64::NEG_INFINITY, f64::NEG_INFINITY);
-    for &(x, y) in &quad {
-        lo_x = lo_x.min(x);
-        lo_y = lo_y.min(y);
-        hi_x = hi_x.max(x);
-        hi_y = hi_y.max(y);
-    }
-    let (span_x, span_y) = (hi_x - lo_x, hi_y - lo_y);
-    // The same degeneracy floor `pdfcer-render::annot` applies, and for the
-    // same reason: below it the step-(c) division is by (near) zero and `A` is
-    // singular, so there is no placement to report — not a placement of zero.
-    if span_x <= 1e-6 || span_y <= 1e-6 {
-        return None;
-    }
-
-    // Step (c): the scale-and-translate that makes that box fit /Rect exactly.
-    let sx = (rect_x1 - rect_x0) / span_x;
-    let sy = (rect_y1 - rect_y0) / span_y;
-    let mut corners = [(0.0, 0.0); 4];
-    for (slot, &(x, y)) in corners.iter_mut().zip(quad.iter()) {
-        *slot = (rect_x0 + (x - lo_x) * sx, rect_y0 + (y - lo_y) * sy);
-    }
-
-    let degrees = matrix.rotation_degrees();
-
-    Some(OrientedBox { corners, degrees })
+pub fn oriented_by_id(view: &DocumentView<'_>, page: &Page, id: ObjId) -> Option<OrientedBox> {
+    let annot = pdfcer_core::annot::page_annotations(view, page.id)
+        .into_iter()
+        .find(|a| a.id == Some(id))?;
+    oriented(view, &annot)
 }
 
 #[cfg(test)]

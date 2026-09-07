@@ -88,7 +88,7 @@ pub(super) fn commit(
         kind,
         rect,
         stamp,
-        icon,
+        ref icon,
     } = *placed;
     // ★ The pen's ink, so a callout matches the comments beside it
     // and one Style group governs the whole markup family.

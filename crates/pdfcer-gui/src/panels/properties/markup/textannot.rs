@@ -114,29 +114,44 @@
 //! `multiline` the way `set_markup_note` already does, or take it as an
 //! argument.
 //!
-//! ## ⚠ One more thing the file can say that the reader normalises away
+//! ## ✅ THE READER NO LONGER NORMALISES A FOREIGN ICON NAME AWAY — 2026-09-07
 //!
-//! `text_spec_from_dict`'s `/Text` arm (`annot_author.rs:963`) reads `/Name`,
-//! runs it through `StickyIcon::from_name`, and `.unwrap_or(StickyIcon::Note)`.
-//! §12.5.6.4's seven names are *"a standard set, not a closed one"* — a
-//! producer's own icon name is conforming — so a note carrying `/Sparkle`
-//! reads back as `Note`, and a restyle of its **colour alone** rewrites its
-//! `/Name` to `/Note`. Silent, and not recoverable by looking.
+//! This section used to read:
 //!
-//! ⇒ [`Reading::foreign_icon`] catches that by reading the raw `/Name` off the
-//! dictionary itself and comparing, and [`rows`] discloses it **before** the
-//! operator touches anything. This is the shell's own read rather than
-//! `pdfcer_core::annot::Annotation::icon` (`annot.rs:449`), which reports the
-//! same raw bytes for the same reason — that field is on the reader's
-//! page-walk view and this section already has the dictionary in hand, so
-//! asking for it would be a second walk for a value one `.get(b"Name")` away.
-//! The engine's field is what a shell **without** the dictionary would use.
+//! > *"`text_spec_from_dict`'s `/Text` arm reads `/Name`, runs it through
+//! > `StickyIcon::from_name`, and `.unwrap_or(StickyIcon::Note)`. §12.5.6.4's
+//! > seven names are 'a standard set, not a closed one' — a producer's own icon
+//! > name is conforming — so a note carrying `/Sparkle` reads back as `Note`,
+//! > and a restyle of its **colour alone** rewrites its `/Name` to `/Note`.
+//! > Silent, and not recoverable by looking. [`Reading::foreign_icon`] catches
+//! > that by reading the raw `/Name` off the dictionary itself and comparing."*
+//!
+//! Every word of that was true against `pdfcer-core` v0.44.0. It was filed
+//! (`request_set_text_annot_style_rewrites_a_foreign_icon_name.md`) rather than
+//! worked around quietly, and **`Pass 253.5` answered it the same day**:
+//! `StickyIcon::Other(Vec<u8>)` carries the bytes and
+//! `StickyIcon::from_name_lossless` reads them, so the round trip is exact and
+//! a colour change touches nothing else.
+//!
+//! ⇒ **What changed here, in three lines.** The raw-dictionary read
+//! (`read_icon_name`) is **deleted** — its site carries the reason it existed.
+//! [`Reading::icon`] now carries `Other` like any other value, and the chooser
+//! shows the file's own name **in quotes as a selectable entry**, so an
+//! operator who opens the list can get back to what his file said.
+//! [`Reading::foreign_icon`] survives with a **narrower job**: it no longer
+//! warns about destruction, it explains that pdfcer paints its own glyph
+//! whatever the name says. The engine's note is the authority — *"`sticky_note`
+//! paints the same glyph for all seven variants; the icon chooses the `/Name`
+//! written, not the picture drawn."*
+//!
+//! ⚠ **The shelf life of the paragraph above was ONE DAY.** Do not quote this
+//! module as a source about the engine; it is a record of what was true on a
+//! date. Re-read the verb at the current pin before repeating any claim about
+//! what it will or will not preserve.
 
 use egui::Ui;
 use pdfcer_core::annot_author::{Color, StickyIcon, TextAnnotSpec};
 use pdfcer_core::edit::TextAnnotStyle;
-use pdfcer_core::graph::ObjectGraph;
-use pdfcer_core::object::Object;
 
 use crate::app::actions::Action;
 use crate::app::actions::annot::AnnotAction;
@@ -170,7 +185,12 @@ pub(super) const REGION: &str = "properties.markup.textannot"; // ui-text-exempt
 /// `/FreeText` perfectly well and would **unwrap its words** doing so.
 /// This module's header carries the measurement, the two engine
 /// doc comments it joins up, and what the engine's fix would be.
-#[derive(Debug, Clone, Copy)]
+///
+/// ⚠ **`Clone`, not `Copy`, since 2026-09-07** — [`Self::TextAnnot`] carries a
+/// [`Reading`], which carries a [`StickyIcon`], which gained an owning
+/// `Other(Vec<u8>)` variant. The `match` in `super::section` binds it by
+/// reference now; nothing else changed.
+#[derive(Debug, Clone)]
 pub(super) enum Reach {
     /// `EditSession::set_markup_style` — the geometric family and the four text
     /// markups. `annot_author::spec_from_dict` read a spec.
@@ -231,10 +251,11 @@ impl Face {
 /// What the selected text-bearing mark's dictionary currently says, in the
 /// terms this subsection can change.
 ///
-/// `Copy`, like [`super::Current`], and for the same reason: it is read fresh
-/// every frame off the session and passed by value into the row functions, so
-/// there is no borrow to thread through a section that also reads the session.
-#[derive(Debug, Clone, Copy)]
+/// ⚠ **`Clone`, not `Copy`, since 2026-09-07** — `StickyIcon` gained an
+/// `Other(Vec<u8>)` variant that owns its bytes, so the whole struct lost its
+/// implicit copies. Every borrow that used to be free is now explicit; the row
+/// functions take `&Reading`.
+#[derive(Debug, Clone)]
 pub(super) struct Reading {
     /// Which face, and therefore which properties mean anything.
     pub(super) face: Face,
@@ -246,24 +267,41 @@ pub(super) struct Reading {
     /// with which verb writes it back — two copies of that arithmetic would be
     /// two chances to disagree about a colour on the operator's sheet.
     pub(super) colour: super::Swatch,
-    /// `/Name`, for a `/Text`, as one of the seven pdfcer models.
+    /// `/Name`, for a `/Text` — **including a name pdfcer does not model**,
+    /// which arrives as [`StickyIcon::Other`].
     ///
-    /// `None` for a `/Stamp` (whose `/Name` is a stamp face, a different
-    /// vocabulary) and for a `/Text` whose `/Name` is one pdfcer does not
-    /// model — see [`Self::foreign_icon`].
+    /// ★★★ **`None` now means only "this face has no icon"** — a `/Stamp`,
+    /// whose `/Name` is a stamp face and a different vocabulary altogether.
+    /// Until 2026-09-07 it *also* meant *"the `/Name` is one pdfcer does not
+    /// model"*, because the engine's reader normalised such a name to `Note`
+    /// and this shell had to detect the loss by reading the raw dictionary
+    /// beside it. `Pass 253.5` made the reader lossless, so the name is now a
+    /// value like any other and the second meaning is gone.
     pub(super) icon: Option<StickyIcon>,
-    /// ★★★ **`true` when the file's `/Name` is a name pdfcer does not model.**
+    /// ★★ **`true` when the file's `/Name` is a name pdfcer does not model.**
     ///
     /// §12.5.6.4's seven are *"a standard set, not a closed one"*, so a
-    /// producer's own icon name is conforming. `text_spec_from_dict`
-    /// normalises one to `Note` on the way past, which means the chooser would
-    /// show *Note* for a note that says something else — and a restyle of the
-    /// **colour alone** would write that `Note` into the file.
+    /// producer's own icon name is conforming and this is a legitimate state,
+    /// not a defect.
     ///
-    /// ⇒ It is read off the dictionary rather than off the spec for exactly the
-    /// reason [`super::Current::endings_key_present`] is: this is the one fact
-    /// the engine's reader deliberately erases, and the disclosure is the whole
-    /// point of catching it.
+    /// # What it is still FOR, now that nothing is lost
+    ///
+    /// The name round-trips, so this no longer warns about destruction. What
+    /// it still says is that **pdfcer draws its own picture for it** — the
+    /// engine's own note: *"`sticky_note` paints the same glyph for all seven
+    /// variants; the icon chooses the `/Name` written, not the picture drawn"*
+    /// — so an operator comparing this window with Acrobat's is entitled to
+    /// know why the two differ.
+    ///
+    /// ⇒ **The old disclosure said something else and had become false.** It
+    /// read *"changing its icon OR its colour here will replace that icon with
+    /// one of the ones listed"*, which was exactly right against `v0.44.0`'s
+    /// normalising reader and is exactly wrong against `v0.44.1`'s. See
+    /// `text::panels::textannotstyle::markup_icon_foreign_note`.
+    ///
+    /// ★ Derived from the **spec** now, not from a second read of the
+    /// dictionary. `read_icon_name` is deleted, with the reason it existed kept
+    /// at its old site.
     pub(super) foreign_icon: bool,
 }
 
@@ -283,36 +321,25 @@ impl Reading {
     /// [`Reach`] separates (2) from the other two, because
     /// only (2) has a sentence of its own to show.
     ///
-    /// ★ It takes the spec the caller already read rather than reading one
-    /// itself, which is [`super::Current::from_spec`]'s rule: **one call to the
-    /// engine's reader per frame**, its verdict carried, so this panel and the
-    /// verb cannot come to disagree about the same annotation.
-    ///
-    /// ★★ And it takes the raw `/Name` **bytes** rather than a graph and a
-    /// dictionary, for the same reason `from_spec` takes a spec rather than an
-    /// `OpenDoc`: this is the part with the decisions in it, and a test that
-    /// wants to ask *"what does a `/Sparkle` do?"* should not have to build a
-    /// document to ask. [`read_icon_name`] is the one-line dictionary read that
-    /// feeds it, and it is the part a test cannot reach and does not need to.
-    pub(super) fn of(spec: &TextAnnotSpec, raw_icon: Option<&[u8]>) -> Option<Self> {
+    /// ★★ It takes the spec the caller already read, and **nothing else** since
+    /// 2026-09-07. It used to take the raw `/Name` bytes as a second argument,
+    /// because the engine's reader normalised an unmodelled name to `Note` and
+    /// the loss was invisible in the spec. `Pass 253.5` made that reader
+    /// lossless (`StickyIcon::from_name_lossless`), so the fact is in the value
+    /// and the second argument — and the dictionary read behind it — are gone.
+    pub(super) fn of(spec: &TextAnnotSpec) -> Option<Self> {
         match spec {
-            TextAnnotSpec::Sticky { color, icon, .. } => {
-                // ★ Foreign means **present and unmodelled**. An ABSENT
-                // `/Name` is not foreign: Table 172's own default is `Note`, so
-                // showing `Note` for a note that carries no `/Name` is
-                // reporting the standard rather than inventing anything, and a
-                // restyle that writes `/Note` writes what was already in
-                // effect. The distinction is the same one
-                // `Annotation::color` draws between an absent `/C` and an
-                // explicitly empty one.
-                let foreign_icon = raw_icon.is_some_and(|n| StickyIcon::from_name(n).is_none());
-                Some(Self {
-                    face: Face::Sticky,
-                    colour: super::swatch_of(Some(color)),
-                    icon: (!foreign_icon).then_some(*icon),
-                    foreign_icon,
-                })
-            }
+            TextAnnotSpec::Sticky { color, icon, .. } => Some(Self {
+                face: Face::Sticky,
+                colour: super::swatch_of(Some(color)),
+                // ★ An ABSENT `/Name` is not foreign, and the engine's reader
+                // already draws that line for us: Table 172's default is
+                // `Note`, so a note carrying no `/Name` arrives as `Note` and
+                // showing `Note` for it is reporting the standard rather than
+                // inventing anything.
+                foreign_icon: matches!(icon, StickyIcon::Other(_)),
+                icon: Some(icon.clone()),
+            }),
             TextAnnotSpec::Stamp { color, .. } => Some(Self {
                 face: Face::Stamp,
                 colour: super::swatch_of(Some(color)),
@@ -332,23 +359,25 @@ impl Reading {
     }
 }
 
-/// **The file's own `/Name`, before the engine's reader normalises it** — the
-/// one-line dictionary read that feeds [`Reading::of`]'s `raw_icon`.
-///
-/// ★ Separated from [`Reading::of`] so that everything with a decision in it is
-/// reachable from a unit test and everything needing a document is one
-/// `.get()`. `pdfcer_core::annot::Annotation::icon` (`annot.rs:449`) reports
-/// exactly these bytes, for exactly this reason — the module header records why
-/// this section reads the dictionary it already holds instead.
-pub(super) fn read_icon_name<G: ObjectGraph + ?Sized>(
-    graph: &G,
-    dict: &pdfcer_core::object::Dict,
-) -> Option<Vec<u8>> {
-    match dict.get(b"Name").map(|o| graph.resolve(o)) {
-        Some(Object::Name(n)) => Some(n.as_bytes().to_vec()),
-        _ => None,
-    }
-}
+// ★★★ `read_icon_name` WAS HERE, AND IT IS DELETED — 2026-09-07.
+//
+// It read the `/Name` bytes straight out of the annotation dictionary, beside
+// the spec, because `text_spec_from_dict` normalised a name outside the seven
+// to `Note` — so the spec could not tell *"the file says Note"* from *"the file
+// says Sparkle and the reader flattened it"*, and this panel would have shown
+// the wrong entry as selected and written it back on a colour change.
+//
+// It was filed rather than kept quiet
+// (`request_set_text_annot_style_rewrites_a_foreign_icon_name.md`), and
+// `Pass 253.5` answered it with `StickyIcon::Other(Vec<u8>)` and
+// `from_name_lossless`. The fact is now in the value the reader returns, so a
+// second reader of the same key would be a second chance to disagree with the
+// engine about an operator's file.
+//
+// ⇒ **Delete the workaround when the cause is removed.** Its own header said
+// this was a second reader of a structure `pdfcer-core` owns; leaving it in
+// place because it still compiles is how a shell accumulates a private,
+// diverging model of somebody else's format.
 
 /// **Draw the rows `set_text_annot_style` can commit.**
 ///
@@ -364,11 +393,39 @@ pub(super) fn read_icon_name<G: ObjectGraph + ?Sized>(
 /// one that sets the panel's vertical rhythm.
 pub(super) fn rows(
     ui: &mut Ui,
-    current: Reading,
+    current: &Reading,
     target: &crate::canvas::selection::annot::AnnotTarget,
     actions: &mut Vec<Action>,
 ) {
     crate::diag::ui_rect(REGION, ui.max_rect());
+    // ★★★ **What this subsection is showing, on the trace channel** — added
+    // 2026-09-07 with the lossless icon name.
+    //
+    // The published region says *the rows drew*; it cannot say **what they
+    // say**. That distinction is the whole reason this line exists: a build
+    // that flattened a producer's `/Sparkle` to `Note` and one that carried it
+    // draw the same rectangle, in the same place, with the same number of
+    // controls — and differ only in the words inside the combo, which no rect
+    // carries.
+    //
+    // ★ `icon=` is the NAME as the file spells it, lossily decoded, not a
+    // variant label. A check reading `icon=Note` cannot tell the flattened case
+    // from a note that genuinely says `Note`; reading `icon=Sparkle` on a
+    // fixture planted with `/Sparkle` can. `foreign=` is the panel's own
+    // verdict beside it, so a build that carried the name and forgot to
+    // disclose is a different line from one that did neither.
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        format!(
+            "textannot-rows face={:?} icon={} foreign={}",
+            current.face,
+            current.icon.as_ref().map_or_else(
+                || "none".to_owned(),
+                |i| String::from_utf8_lossy(i.name()).into_owned()
+            ),
+            u8::from(current.foreign_icon),
+        )
+    });
     colour_row(ui, current, target, actions);
     // ★ The narrowing disclosure sits directly under the swatch it qualifies,
     // which is `REVIEW_TRIAGE.md`'s rule and the parent's placement: a caveat
@@ -406,7 +463,7 @@ pub(super) fn rows(
 /// press.
 fn colour_row(
     ui: &mut Ui,
-    current: Reading,
+    current: &Reading,
     target: &crate::canvas::selection::annot::AnnotTarget,
     actions: &mut Vec<Action>,
 ) {
@@ -471,7 +528,7 @@ fn colour_row(
 /// swallowed-`width` defect `Pass 258.0` closed, one family along."*
 fn icon_row(
     ui: &mut Ui,
-    current: Reading,
+    current: &Reading,
     target: &crate::canvas::selection::annot::AnnotTarget,
     actions: &mut Vec<Action>,
 ) {
@@ -480,23 +537,51 @@ fn icon_row(
     }
     ui.horizontal(|ui| {
         ui.label(tt::sticky_icon_heading());
-        let mut chosen = current.icon;
+        let mut chosen = current.icon.clone();
         egui::ComboBox::from_id_salt("properties-textannot-icon") // ui-text-exempt: internal widget id, never displayed
-            .selected_text(match current.icon {
-                Some(icon) => tt::sticky_icon_label(icon),
-                // ★ The file's `/Name` is one pdfcer does not model, so there
-                // is no entry to show as selected. The word says that rather
-                // than the combo silently showing the first entry, which would
-                // be the panel asserting a value the file does not carry.
-                None => ts::markup_icon_foreign(),
+            .selected_text(match &current.icon {
+                // ★★★ **The file's own name, shown as the file spells it** —
+                // 2026-09-07. This arm used to be unreachable for an unmodelled
+                // name (`icon` was forced to `None` and the combo read *"Not
+                // one of these"*), because the engine's reader flattened such a
+                // name to `Note` and this shell could only detect the loss, not
+                // carry it. `Pass 253.5` carries it, so the honest thing is to
+                // print it.
+                Some(StickyIcon::Other(name)) => {
+                    ts::markup_icon_foreign_named(&String::from_utf8_lossy(name))
+                }
+                Some(icon) => tt::sticky_icon_label(icon).to_owned(),
+                // A face with no icon at all reaches this only through a build
+                // error — `takes_icon` returned above — so it says nothing
+                // rather than inventing an entry.
+                None => String::new(),
             })
             .show_ui(ui, |ui| {
+                // ★★ **The file's own name is the FIRST entry when it is not
+                // one of the seven**, and this is not decoration. A combo whose
+                // current value is absent from its own list is a one-way door:
+                // the operator opens it to look, picks something to see what it
+                // does, and cannot get back to what the file said. Offering it
+                // costs one row and it is the only row that can restore the
+                // document's own state.
+                if let Some(other @ StickyIcon::Other(name)) = &current.icon {
+                    ui.selectable_value(
+                        &mut chosen,
+                        Some(other.clone()),
+                        ts::markup_icon_foreign_named(&String::from_utf8_lossy(name)),
+                    );
+                    ui.separator();
+                }
                 for icon in crate::canvas::textannot::STICKY_ICONS {
-                    ui.selectable_value(&mut chosen, Some(*icon), tt::sticky_icon_label(*icon));
+                    ui.selectable_value(
+                        &mut chosen,
+                        Some(icon.clone()),
+                        tt::sticky_icon_label(icon),
+                    );
                 }
             });
         if let Some(icon) = chosen
-            && chosen != current.icon
+            && Some(&icon) != current.icon.as_ref()
         {
             actions.push(Action::Annot(AnnotAction::SetTextAnnotStyle {
                 id: target.id,
@@ -509,12 +594,26 @@ fn icon_row(
         }
     });
     // ★★★ The two sentences under the chooser, and they are about different
-    // things. The first is always true and says the icon changes the FILE and
-    // not pdfcer's own picture; the second appears only for a note whose
-    // `/Name` pdfcer does not model, and warns that ANY change here — the
-    // colour included — replaces it. Neither is a hover: an operator who has
-    // to hover to find out that a control will discard something has already
-    // been given the chance not to.
+    // things.
+    //
+    // The first is always true and says the icon changes the FILE and not
+    // pdfcer's own picture.
+    //
+    // ★★ **The second was REWRITTEN on 2026-09-07 because it had become
+    // false.** It used to warn that *"changing its icon OR its colour here will
+    // replace that icon with one of the ones listed"*, which was exactly right
+    // against the engine that normalised an unmodelled `/Name` to `Note` — a
+    // colour-only restyle really did rewrite the icon. `Pass 253.5` made the
+    // reader lossless, so a colour change now carries the name through
+    // untouched and the warning was describing a destruction that no longer
+    // happens.
+    //
+    // ⇒ A limitation sentence on this project has a shelf life measured in
+    // hours. What survives is the part that was never about loss: pdfcer draws
+    // its own glyph whatever the name says.
+    //
+    // Neither is a hover: an operator who has to hover to find out what a
+    // control does has already been given the chance not to.
     ui.label(egui::RichText::new(tt::sticky_icon_bound()).small().weak());
     if current.foreign_icon {
         ui.label(

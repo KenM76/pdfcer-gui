@@ -932,9 +932,9 @@ impl SelectionState {
     /// One `/Annots` walk of the current page, bounded by
     /// `pdfcer_core::annot::MAX_ANNOTS_PER_PAGE`, on the frames after an edit
     /// only. No decomposition, no content stream, no raster.
-    pub fn resolve_annot<G: pdfcer_core::graph::ObjectGraph + ?Sized>(
+    pub fn resolve_annot(
         &mut self,
-        graph: &G,
+        view: &pdfcer_core::view::DocumentView<'_>,
         page: Option<&pdfcer_core::page_tree::Page>,
         page_index: usize,
         epoch: u64,
@@ -955,7 +955,7 @@ impl SelectionState {
             // about it — the same rule `resolve` states at length for content.
             return;
         }
-        let Some(found) = pdfcer_core::annot::page_annotations(graph, page.id)
+        let Some(found) = pdfcer_core::annot::page_annotations(view, page.id)
             .into_iter()
             .find(|a| a.id == Some(selected.target.id))
         else {
@@ -976,7 +976,7 @@ impl SelectionState {
         // next click — `Grabbable`'s annotation arm reads `target.locked` and
         // would otherwise go on offering nine handles the file forbids.
         selected.target.locked = found.flags.locked();
-        selected.oriented = crate::canvas::annotquad::oriented(graph, selected.target.id)
+        selected.oriented = crate::canvas::annotquad::oriented(view, &found)
             .filter(|q| !q.is_upright())
             .and_then(|q| crate::canvas::mapping::oriented_canvas_quad(q.corners, page));
     }

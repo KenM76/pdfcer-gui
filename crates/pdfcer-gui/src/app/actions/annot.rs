@@ -205,6 +205,44 @@ pub enum AnnotAction {
         /// affordance rather than a limit of the verb.
         degrees: f64,
     },
+    /// ★★★ **Set an annotation's angle ABSOLUTELY** — `Pass 155.2`, and the
+    /// verb a typed properties field needs.
+    ///
+    /// [`Self::Rotate`] is a **delta** and is right for a drag: a hand on a
+    /// rotate grip expresses *turn it by this much*. A typed field expresses
+    /// *make it 45°*, and composing that as a delta requires the shell to
+    /// already trust its own idea of the current angle. The engine's doc
+    /// comment carries this shell's own argument for it verbatim: *"the first
+    /// time those disagree the object silently ends up somewhere else."*
+    ///
+    /// # ★★ It REFUSES rather than assuming zero
+    ///
+    /// `EditError::AnnotationRotationUnreadable`, when there is no appearance
+    /// stream or the `/Matrix` is not a rotation-plus-uniform-scale. Assuming
+    /// zero would turn *"type 45 on an object already at 30"* into 75, which is
+    /// a wrong edit that looks like a working one. This shell does not offer the
+    /// field in either of those states — the panel draws no Angle row when
+    /// `annotquad::oriented` reports no angle — so the refusal should be
+    /// unreachable from here, and it is worded anyway because *"should be
+    /// unreachable"* is not a guarantee.
+    ///
+    /// # ⚠ The outcome's `degrees` is the DELTA the engine worked out
+    ///
+    /// Not the absolute target that was asked for. The outcome describes the
+    /// edit, which is the same convention every other transform verb follows;
+    /// a caller that wants to confirm the destination re-reads the annotation.
+    SetRotation {
+        /// The annotation, by stable object id.
+        id: pdfcer_core::object::ObjId,
+        /// The point that stays still, in PDF page space — the **centre** of
+        /// the mark's own `/Rect`, which is what [`Self::Rotate`] uses for the
+        /// grip. The two routes must turn about the same point or typing `45`
+        /// and dragging to 45° would leave the mark in two different places,
+        /// and an operator who used both would find it walking across the page.
+        pivot: (f64, f64),
+        /// Degrees **anticlockwise** from the authored orientation, absolute.
+        degrees: f64,
+    },
     /// ★★★ **Turn a ce dimension about a pivot**, as one undoable command.
     /// `Pass 159.0`.
     ///

@@ -162,6 +162,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // the same step, the defect is in authoring or selection rather than in
         // either gesture.
         Box::new(annot_rotate::RotatingAMarkupTurnsIt),
+        Box::new(foreign_icon_name::AForeignIconNameReachesThePanel),
         Box::new(widget_move::DraggingAFormFieldMovesIt),
         // `OPERATOR_REQUESTS.md` O76, 2026-08-31. Beside the move check
         // because they are the same gesture family on the same operand and

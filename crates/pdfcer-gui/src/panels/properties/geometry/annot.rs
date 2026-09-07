@@ -169,8 +169,11 @@ pub(super) fn section(
     // and `oriented` is `None` for an annotation with no appearance at all —
     // both collapse to no field being drawn, which is R9's answer for a
     // capability that is genuinely absent rather than temporarily unavailable.
-    let angle =
-        crate::canvas::annotquad::oriented(&doc.session.graph(), target.id).and_then(|q| q.degrees);
+    let angle = doc
+        .pages
+        .get(page)
+        .and_then(|p| crate::canvas::annotquad::oriented_by_id(&doc.session.view(), p, target.id))
+        .and_then(|q| q.degrees);
     draft.sync(
         page,
         Subject::Annot(target.id),
@@ -347,25 +350,32 @@ pub(super) fn section(
         // composed. Turning last means the two extent verbs act on the
         // rectangle the operator was reading the numbers off.
         //
-        // ★★ The pivot is the `/Rect`'s CENTRE, which is the same point
+        // ★★ **ABSOLUTE since 2026-09-07 (afternoon), and that is the whole
+        // point of the field.** It raised `AnnotAction::Rotate` — a delta,
+        // computed here as `typed − seed` — for a few hours, because
+        // `rotate_annotation` was the only verb that existed. `Pass 155.2`
+        // shipped `set_annotation_rotation` the same day, in answer to this
+        // shell's request, and the argument is in the engine's doc comment
+        // verbatim: *"composing a typed value as a delta requires the shell to
+        // already trust its own idea of the current angle, and the first time
+        // those disagree the object silently ends up somewhere else."*
+        //
+        // ⇒ `GeometryDraft::angle_delta` survives as the *did the operator
+        // touch this field?* predicate — it still has to answer that, and its
+        // normalisation into (−180, 180] is still what stops a 350-over-10 from
+        // being read as a 340° turn — but the number that travels is
+        // `draft.angle`, absolute.
+        //
+        // ★ The pivot is the `/Rect`'s CENTRE, which is the same point
         // `Grip::Rotate.pivot` answers for the rotate handle. That is not a
         // coincidence to be maintained by hand: the two routes must turn a mark
-        // about the same point or typing `45` and dragging to 45° would leave
-        // it in two different places, and an operator who used both would find
+        // about the same point, or typing `45` and dragging to 45° would leave
+        // it in two different places and an operator who used both would find
         // the mark walking across the page.
-        //
-        // ⚠ **UNTIL O145 IS FIXED, EVERY TURN AFTER THE FIRST ENLARGES THE
-        // MARK.** That is the engine defect this shell reproduced in pixels on
-        // 2026-09-07 (`tests/annotation_rotation_grows.rs`), it applies
-        // identically to the rotate handle that has shipped for weeks, and it
-        // is filed as
-        // `request_rotate_annotation_grows_the_artwork_when_applied_twice.md`.
-        // This field is therefore exactly as safe as the grip beside it —
-        // neither better nor worse — and both become correct in the same engine
-        // Pass. It is written here so that a reader who finds this field
-        // growing a mark knows it is not this field's fault.
-        if let Some(degrees) = draft.angle_delta() {
-            actions.push(Action::Annot(AnnotAction::Rotate {
+        if draft.angle_delta().is_some()
+            && let Some(degrees) = draft.angle
+        {
+            actions.push(Action::Annot(AnnotAction::SetRotation {
                 id: target.id,
                 pivot: (bounds.x0 + bounds.w() / 2.0, bounds.y0 + bounds.h() / 2.0),
                 degrees,

@@ -336,8 +336,8 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
     // is correct today and wrong on the day the engine adds a subtype, and
     // wrong in the silent direction: withholding a control that had started
     // working.
-    match current.reach {
-        Reach::Markup => markup_rows(ui, current, &target, actions),
+    match &current.reach {
+        Reach::Markup => markup_rows(ui, &current, &target, actions),
         Reach::TextAnnot(reading) => textannot::rows(ui, reading, &target, actions),
         // ★★★ A `/FreeText`. `set_text_annot_style` would take it and this
         // shell will not send it — `textannot`'s header carries the
@@ -380,7 +380,7 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
 /// decision, which is the one thing this one has to remain.
 fn markup_rows(
     ui: &mut Ui,
-    current: Current,
+    current: &Current,
     target: &crate::canvas::selection::annot::AnnotTarget,
     actions: &mut Vec<Action>,
 ) {
@@ -448,7 +448,11 @@ fn markup_rows(
 /// error with `?`, so a mark it refuses cannot be given a colour either. The
 /// swatch was not merely uninformative — it could not commit. See
 /// [`Self::reach`] and the module header.
-#[derive(Debug, Clone, Copy)]
+/// ⚠ **`Clone`, not `Copy`, since 2026-09-07** — [`Self::reach`] carries a
+/// [`textannot::Reading`] on its `TextAnnot` arm, which carries a `StickyIcon`,
+/// which gained an owning `Other(Vec<u8>)` variant in `pdfcer-core`
+/// `Pass 253.5`. The frame reads one of these and hands it out by reference.
+#[derive(Debug, Clone)]
 struct Current {
     /// ★★★ **Which style verb reaches this mark, if either does.**
     ///
@@ -688,9 +692,7 @@ impl Current {
 
         Self::from_spec(
             markup.as_ref(),
-            text.as_ref().map(|spec| {
-                textannot::Reading::of(spec, textannot::read_icon_name(&graph, dict).as_deref())
-            }),
+            text.as_ref().map(textannot::Reading::of),
             support,
             alpha,
             dash,
@@ -854,7 +856,7 @@ impl Current {
     /// Purely the engine's answer: *no fill* is a legitimate current state and
     /// [`fill_row`] shows it as a default swatch with [`t::markup_fill_none`]
     /// beside it, so there is no value whose absence should withhold the row.
-    const fn offers_fill(self) -> bool {
+    const fn offers_fill(&self) -> bool {
         self.support.takes_interior
     }
 
@@ -866,7 +868,7 @@ impl Current {
     /// arm's width*, which `MarkupSpec` being `#[non_exhaustive]` makes
     /// reachable; a spinner with no value to show is what R9 and
     /// `app::markupband::placeholder` both forbid.
-    const fn offers_width(self) -> bool {
+    const fn offers_width(&self) -> bool {
         self.support.takes_border && self.width.is_some()
     }
 
@@ -884,12 +886,12 @@ impl Current {
     /// border?*, which is the same predicate `set_markup_style` guards
     /// `style.dash` with (`pdfcer-core` `edit.rs:26463-26476`). A row drawn here
     /// cannot produce that refusal.
-    const fn offers_dash(self) -> bool {
+    const fn offers_dash(&self) -> bool {
         self.support.takes_border
     }
 
     /// Whether the two ending choosers draw.
-    const fn offers_endings(self) -> bool {
+    const fn offers_endings(&self) -> bool {
         self.support.takes_endings && self.endings.is_some()
     }
 
@@ -897,7 +899,7 @@ impl Current {
     ///
     /// ★ Strictly narrower than [`Self::offers_endings`]: there has to be a
     /// chooser to sit under **and** a `/LE` in the file to take out.
-    const fn offers_endings_clear(self) -> bool {
+    const fn offers_endings_clear(&self) -> bool {
         self.offers_endings() && self.endings_key_present
     }
 }
@@ -912,7 +914,7 @@ impl Current {
 /// another viewer even when it is not visible here.
 fn colour_row(
     ui: &mut Ui,
-    current: Current,
+    current: &Current,
     target: &crate::canvas::selection::annot::AnnotTarget,
     actions: &mut Vec<Action>,
 ) {
@@ -987,7 +989,7 @@ fn colour_row(
 /// the truth. See [`t::markup_fill_none`].
 fn fill_row(
     ui: &mut Ui,
-    current: Current,
+    current: &Current,
     target: &crate::canvas::selection::annot::AnnotTarget,
     actions: &mut Vec<Action>,
 ) {
@@ -1091,7 +1093,7 @@ fn fill_row(
 /// the same answer [`width_row`] gives.
 fn dash_row(
     ui: &mut Ui,
-    current: Current,
+    current: &Current,
     target: &crate::canvas::selection::annot::AnnotTarget,
     actions: &mut Vec<Action>,
 ) {
@@ -1129,7 +1131,7 @@ fn dash_row(
 
 fn width_row(
     ui: &mut Ui,
-    current: Current,
+    current: &Current,
     target: &crate::canvas::selection::annot::AnnotTarget,
     actions: &mut Vec<Action>,
 ) {
@@ -1216,7 +1218,7 @@ fn width_row(
 /// decides whether the control exists.
 fn endings_row(
     ui: &mut Ui,
-    current: Current,
+    current: &Current,
     target: &crate::canvas::selection::annot::AnnotTarget,
     actions: &mut Vec<Action>,
 ) {
@@ -1354,7 +1356,7 @@ const ALL_ENDINGS: [LineEnding; 3] = [
 /// file-format detail they should never meet.
 fn opacity_row(
     ui: &mut Ui,
-    current: Current,
+    current: &Current,
     target: &crate::canvas::selection::annot::AnnotTarget,
     actions: &mut Vec<Action>,
 ) {

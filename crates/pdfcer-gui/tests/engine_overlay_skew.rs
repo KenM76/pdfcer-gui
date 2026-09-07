@@ -85,6 +85,10 @@
 //! the request.
 
 use pdfcer_core::edit::EditSession;
+// ★ Brought in 2026-09-07 for `a_foreign_icon_name_survives_a_colour_only_restyle`,
+// which resolves a `/Name` through the session's overlay graph rather than off
+// the base document — the same distinction this file's own header is about.
+use pdfcer_core::graph::ObjectGraph;
 
 /// A one-page document with a little content, built from a fixture that
 /// already ships with this repository.
@@ -330,4 +334,115 @@ fn fixture_four_pages() -> pdfcer_core::document::Document {
     let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../fixtures/four-pages.pdf");
     pdfcer_core::document::Document::load(std::path::Path::new(path))
         .expect("fixture four-pages.pdf must load")
+}
+
+/// ★★★ **A `/Name` pdfcer does not model survives a COLOUR-ONLY restyle** —
+/// the operator-visible half of `pdfcer-core` `Pass 253.5`, asserted end to end
+/// against a real file.
+///
+/// # Why this is an integration test and not a unit test
+///
+/// Because the defect it guards lived in the **join** between two engine
+/// functions and this shell's reading of them, and every part of it was
+/// individually correct:
+///
+/// | | before `Pass 253.5` | now |
+/// |---|---|---|
+/// | `text_spec_from_dict` reads `/Sparkle` | → `StickyIcon::Note` | → `StickyIcon::Other(b"Sparkle")` |
+/// | `set_text_annot_style` re-bakes from that spec | writes `/Name /Note` | writes `/Name /Sparkle` |
+/// | this shell's panel | showed *"Not one of these"*, wrote `Note` on any change | shows `"Sparkle"`, writes it back |
+///
+/// A unit test of any single row passes in both columns. What had to be
+/// measured is *the bytes on disk after a colour change*, which is what this
+/// does.
+///
+/// # The fixture is PLANTED, and that is the point
+///
+/// `fixtures/foreign-icon-name.pdf` is `comment-note.pdf` with its `/Comment`
+/// icon name rewritten to `/Sparkle` — the same length, so every byte offset in
+/// the file is preserved and nothing else about it changed. A fixture that
+/// merely *omitted* `/Name` would not defeat this: Table 172's default is
+/// `Note`, so the absent case and the flattened case produce the same value and
+/// a check over them is vacuous. The name has to be present, conforming, and
+/// outside the seven.
+#[test]
+fn a_foreign_icon_name_survives_a_colour_only_restyle() {
+    let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../fixtures/foreign-icon-name.pdf");
+    let doc = pdfcer_core::document::Document::load(&path).expect("the fixture loads");
+    let mut session = pdfcer_core::edit::EditSession::new(doc);
+
+    let pages = pdfcer_core::page_tree::pages_in(&session.graph()).expect("a page tree");
+
+    // ★★★ **The sticky is found by what its `/Name` READS AS, over every
+    // `/Text` on the page — not by taking the first one.**
+    //
+    // The first draft took `.find(|a| a.subtype == b"Text")` and failed with a
+    // confident, wrong message: the fixture carries **two** sticky notes and
+    // the first is an ordinary `/Note`, so the assertion was measuring the
+    // wrong annotation while its own text said the engine had flattened a name.
+    // A harness with a bad input produces defects that do not exist.
+    //
+    // ★ Requiring **exactly one** match is what keeps this from becoming
+    // vacuous. A build whose reader flattens finds zero and fails naming that;
+    // a fixture that grew a second foreign name would make the restyle
+    // assertion ambiguous and fails naming that instead.
+    let foreign: Vec<_> = pdfcer_core::annot::page_annotations(&session.graph(), pages[0].id)
+        .into_iter()
+        .filter(|a| a.subtype == b"Text")
+        .filter_map(|a| a.id)
+        .filter(|id| {
+            session
+                .value(*id)
+                .and_then(pdfcer_core::object::Object::as_dict)
+                .cloned()
+                .and_then(|d| {
+                    pdfcer_core::annot_author::text_spec_from_dict(&session.graph(), &d).ok()
+                })
+                .is_some_and(|spec| {
+                    matches!(
+                        spec,
+                        pdfcer_core::annot_author::TextAnnotSpec::Sticky {
+                            icon: pdfcer_core::annot_author::StickyIcon::Other(ref n),
+                            ..
+                        } if n == b"Sparkle"
+                    )
+                })
+        })
+        .collect();
+    assert_eq!(
+        foreign.len(),
+        1,
+        "expected exactly one sticky reading back as `StickyIcon::Other(\"Sparkle\")` and found \
+         {}. Zero means the reader flattened a conforming producer name — the v0.44.0 behaviour, \
+         and `request_set_text_annot_style_rewrites_a_foreign_icon_name.md` is not fixed at this \
+         pin. More than one means the fixture changed and the restyle below is ambiguous.",
+        foreign.len()
+    );
+    let sticky = foreign[0];
+
+    // ★★ The colour ALONE, with `icon: None`, which is exactly what this
+    // shell's `colour_row` raises. The old defect was invisible from here:
+    // the call succeeded, the colour changed, and the name changed too.
+    session
+        .set_text_annot_style(
+            sticky,
+            &pdfcer_core::edit::TextAnnotStyle {
+                icon: None,
+                color: Some(pdfcer_core::annot_author::Color::Rgb(0.0, 1.0, 0.0)),
+            },
+        )
+        .expect("a sticky note restyles");
+
+    let after = session
+        .value(sticky)
+        .and_then(pdfcer_core::object::Object::as_dict)
+        .expect("the annotation is still a dictionary");
+    let name = after
+        .get(b"Name")
+        .map(|o| session.graph().resolve(o).clone());
+    assert!(
+        matches!(&name, Some(pdfcer_core::object::Object::Name(n)) if n.as_bytes() == b"Sparkle"),
+        "a colour-only restyle rewrote the icon name to {name:?} — it must be left alone"
+    );
 }

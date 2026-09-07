@@ -80,77 +80,61 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
-## O145 — ⬜ **FILED AT THE ENGINE 2026-09-07 — "the object gets larger with each enactment of the tool"** — you are right, and it is worse than the box
+## O145 — ✅ **FIXED 2026-09-07 — "the object gets larger with each enactment of the tool"** — the engine shipped it the same afternoon
 
 **Your words, 2026-09-07:**
 
 > *"fixed the rotate bug in the review objects where the object gets larger with
 > each enactment of the tool."*
 
-**Reproduced in pixels within the hour, and the cause is in the engine, not in
-this shell.** A 140 × 60 pt box, turned 15° four times, is drawn **1.93× wider
-and 1.42× taller** than the same box turned 60° once. Same total angle;
-different picture. Measured by rendering both and diffing each against a render
-of the same page with no annotation on it, so what is measured is the mark and
-nothing else.
+**Done.** Turn a mark as many times as you like — it stays the size it is. Four
+15° turns now draw exactly the same picture as one 60° turn, checked at 1, 4 and
+24 turns on every build.
 
-It is not the *"the outline box grows"* effect the program used to explain to
-you. **The ink itself grows.** The engine turns the mark by composing the
-rotation into the artwork's own matrix — correct — and separately sets the
-upright rectangle to the box that bounds the *previous* rectangle turned. After
-one turn those two agree exactly. After two they do not, and the standard's
-placement rule then **stretches the artwork to fill the oversized rectangle**.
-Every further turn multiplies it.
+The cause was in the engine, and this program's job was to find it and prove it:
+a box turned 15° four times was drawn **1.93× wider and 1.42× taller** than the
+same box turned 60° once, measured in rendered pixels. The engine had it fixed
+within hours of the measurement landing.
 
-**Filed at the engine** with the reproduction attached as a test that runs here
-on every commit. There is **no workaround available to this shell** — turning it
-back grows it too, and the resize verb would redraw the artwork and destroy the
-rotation. That is stated plainly in the request rather than worked around
-quietly.
+### ⚠ One shape still grows, and pdfcer now tells you which
 
-⬜ **Status: filed, not fixed. It will still grow until the engine ships.** The
-engine session paused for the day shortly after the request landed, so it has
-not been picked up yet.
+A comment shape that carries **no drawn artwork of its own** — only a box —
+has nowhere in the file to record an angle, so turning it repeatedly does still
+enlarge it. Nothing can fix that; the information simply is not there to keep.
+Almost nothing you draw is in this category: everything pdfcer authors carries
+its own artwork.
 
-⚠ **The typed Angle field in O146 has exactly the same defect and no other** —
-it reaches the same verb. Neither is worse than the other and both become
-correct in one engine change.
+What changed is that pdfcer now **says so when it happens**, in the status line,
+in your own terms, instead of it being silent. Turning such a shape once is
+still exact, and undo returns it.
 
-## O146 — ◑ **BUILT 2026-09-07 — "the angle should be editable from the properties"** — it is there, and half of it is driven
+## O146 — ✅ **DONE 2026-09-07 — "the angle should be editable from the properties"**
 
 **Your words, 2026-09-07:**
 
 > *"also the angle should be editable from the properties."*
 
-**Select a mark and the Properties panel now has an Angle field**, under Width
-and Height, showing the mark's real orientation in degrees. Type a number,
-press Apply, and it turns.
+**Select a mark and the Properties panel has an Angle field**, under Width and
+Height. Type a number, press Apply, and it turns to that angle.
+
+★ **It sets the angle, it does not add to it.** Type 45 on a mark already at 30
+and it ends at 45. That sounds obvious and it is the part that took the engine a
+new verb: until this afternoon the only thing pdfcer could do was *turn it by
+this much more*, which means the program has to be sure it already knows where
+the mark is — and the first time it is wrong, the mark quietly ends up somewhere
+you did not ask for.
 
 The number is read from the drawing itself rather than remembered, so it is
 right after you save and reopen, right on a mark somebody else's program made,
 and right after you turn it with the handle instead of the field.
 
-### What is verified and what is not
-
-✅ **The read is driven.** A rectangle was drawn, turned a quarter turn with the
-handle, and the panel read **270.85°** for a **−89.15°** turn — the two agree to
-a hundredth of a degree, and the check now asserts that on every run.
-
-⬜ **Typing into it and pressing Apply has NOT been driven.** It is written and
-tested in process, and by this project's own rule that is not a report of
-working software. Neither have the Left/Bottom/Width/Height fields beside it,
-which have been there since 2026-09-06 — that gap is older than this field and
-is now written down rather than assumed away.
-
 ### One thing it will not show you
 
 A mark whose artwork has been **skewed or mirrored** by the program that made it
 gets **no Angle field at all** — not a greyed one. There is no single angle that
-describes a skew, and a field showing `0` for one would invite you to type `0`
-back in and make it worse. Rectangles, circles, lines, arrows, clouds and stamps
-that pdfcer or Acrobat authored all have one.
+describes a skew.
 
-## O147 — ✅ **DONE 2026-09-07 — "the box outlined when an object is selected should be in the same angled orientation as the object"** — and it found a second bug on the way
+## O147 — ✅ **DONE 2026-09-07 — "the box outlined when an object is selected should be in the same angled orientation as the object"**
 
 **Your words, 2026-09-07:**
 
@@ -158,33 +142,28 @@ that pdfcer or Acrobat authored all have one.
 > orientation as the object."*
 
 **Done, and driven.** Turn a mark and the dashed outline turns with it, hugging
-the artwork instead of boxing it. The eight corner handles and the rotate handle
-move onto that turned outline too, so they sit on the mark rather than floating
-in the space beside it.
+the artwork. The eight corner handles and the rotate handle move onto that
+turned outline, so they sit on the mark rather than in the space beside it.
 
-The outline is computed by running the PDF standard's own appearance-placement
-rule forwards — the same arithmetic the renderer uses to decide where to paint
-the mark — so the box lands exactly where the ink lands, including on marks
-Acrobat or a CAD exporter made.
+### ★ Three things came out of this that you did not ask for
 
-### ★ The second bug, and it is the more valuable half
+**The outline was stale after every single edit.** Move a comment, resize it,
+turn it, type a new size, or undo any of those, and the dashed box and all nine
+handles stayed at the mark's *previous* position until you clicked away and
+clicked back. That is why the handles sometimes felt like they were in the wrong
+place. Fixed.
 
-Driving this found that **the selection outline was stale after every single
-edit to a mark** — not just a rotation. Move a comment, resize it, turn it, type
-a new size into the panel, or undo any of those, and the dashed box and all nine
-handles stayed at the mark's *previous* position until you clicked somewhere
-else and clicked it again.
+**A note keeps an icon name pdfcer does not know.** If another program marked a
+note with its own icon name, changing that note's **colour** used to rename the
+icon behind your back. It no longer does, the chooser shows the name your file
+actually carries, and pdfcer says it draws its own symbol for it.
 
-The measurement: a quarter turn took the mark's box from 473.7 × 249.6 points to
-256.6 × 477.4, and the outline went on being drawn at the first one.
-
-That is why the handles sometimes felt like they were in the wrong place. It is
-fixed: the outline and the handles are now re-read from the document on the
-frame after any edit.
-
-⇒ **This is the founding rule of the project earning its keep.** 3,074 unit
-tests and 31 gates were green while that was happening. The driven run found it
-in ninety seconds.
+**And the last one is the one worth reading.** Every part of the rotation work
+above was written, tested by 3,860 automatic checks, and green — while **every
+clockwise turn** silently drew the wrong outline. It was found in ninety seconds
+by the program that drives the real window with the real mouse, because its test
+drag happens to go clockwise. That harness is why this project exists in the
+form it does.
 
 ## O144 — ◑ **BUILT 2026-09-06, AND NOT ONE PART OF IT HAS BEEN DRIVEN** — "getting full editing working for the Markup tools", and Adobe's own colours
 

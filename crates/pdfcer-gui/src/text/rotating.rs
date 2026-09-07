@@ -40,7 +40,7 @@
 //! | consequence | disclosed? | why |
 //! |---|---|---|
 //! | the shape turned | **no** | they can see it. Narrating a visible result is noise |
-//! | **`/Rect` grew** | **yes** — [`rect_grew`] | §12.5.2 requires `/Rect` upright, so the box bounding a rotated rectangle is larger at any angle that is not a quarter turn. **The selection outline is drawn from `/Rect`**, so the operator watches a box grow around artwork that did not — which reads as a bug, and is not one |
+//! | **the mark really did grow** | **yes, and ONLY for one rule** — [`rect_still_grows`] | ★★ Rewritten 2026-09-07 twice in one day. It used to read *"`/Rect` grew"* and fired on every non-quarter turn, because the outline was drawn from `/Rect` and visibly swelled. Then the outline started following the artwork (`canvas::annotquad`), and then `pdfcer-core` `Pass 155.1` stopped the growth itself. What is left is `RectDerivation::PreviousRect` — an annotation with neither an appearance nor rotatable geometry, which has **nowhere to record an orientation** and genuinely still compounds |
 //! | **a `Linear` dimension's axis lock relaxed** | **yes** — [`axis_lock_relaxed`] | the engine's own instruction: *"an operator whose dimension silently stopped being axis-locked will find out later and blame something else"* |
 //! | the measured value | **no** | it **cannot** change. A rotation preserves every distance, so the number is identical by construction. A sentence saying "the measurement is unchanged" would invite a reader to look for a change that cannot exist |
 //! | `/RD` left alone | **no** | at an angle that is not a quarter turn **no** axis-aligned inset expresses the rotated result, so leaving it is the only correct behaviour. A sentence about it would teach an operator to worry about something that is right — the same ruling [`crate::text::markup`]'s move disclosure already makes about `rect_differences_untouched` |
@@ -53,6 +53,8 @@
 //! a stamp, a dimension and a dashed box around it; they cannot see a `/Rect`,
 //! an `/IT /LineDimension` or an appearance stream. A refusal phrased in the
 //! file format's vocabulary is a refusal that reads as an internal error.
+
+use pdfcer_core::edit::RectDerivation;
 
 /// **Why a rotation did not happen**, in the shell's own reading of the cases.
 ///
@@ -224,6 +226,56 @@ impl RotateRefusal {
 // **a disclosure has a subject, and when the subject goes the disclosure is a
 // lie with a citation attached.** Deleting one is as much a part of the work
 // as writing one.
+
+/// **Disclosure: this mark has nowhere to record an orientation, so its box —
+/// and its ink — really does get bigger every time it is turned.**
+///
+/// # ★★★ This replaces `rect_grew`, and it is a much better sentence
+///
+/// The deleted one fired on **every** turn of **everything** that was not a
+/// quarter turn, and said the box had grown while the mark had not. It was
+/// correct while this shell drew its outline from `/Rect`; it stopped being
+/// correct the moment the outline started following the artwork, and it was
+/// deleted the same day.
+///
+/// Then `pdfcer-core` `Pass 155.1` fixed the growth itself — `/Rect` is derived
+/// from the artwork now, so *N* turns totalling θ draw the same size as one
+/// turn of θ — **except in one case that cannot be fixed by anybody**, and this
+/// sentence is for exactly that case.
+///
+/// # The case, and why no rule can do better
+///
+/// [`RectDerivation::PreviousRect`]: an annotation with **neither** an
+/// appearance stream **nor** rotatable geometry. A `/Square` or `/Circle` with
+/// no `/AP` is the example. Its artwork *is* its rectangle, §12.5.2 requires
+/// that rectangle upright, and so **there is nowhere in the annotation an
+/// orientation could be recorded**. Turning it can only bound the previous
+/// bound, which compounds. The engine says so in as many words and warns that a
+/// grip ignoring this *"re-introduces the operator's bug one level up, on
+/// exactly the annotations that cannot be fixed."*
+///
+/// # ★★ Why it discloses rather than refusing
+///
+/// Because the turn is real and the operator asked for it, and a mark that
+/// silently declines to rotate is worse than one that rotates and says what it
+/// cost. The two honest options the engine names are *refuse the grip and say
+/// why* or *bake an appearance first*; this shell takes neither yet and says
+/// so, which is a decision rather than an oversight. Baking an appearance is
+/// the better answer and is owed.
+///
+/// ★ `None` for the two rules that compose, which is the whole point of taking
+/// the enum rather than comparing rectangles: a sentence that fired on every
+/// rotation is a sentence nobody reads by the third time, and the previous one
+/// did exactly that.
+#[must_use]
+pub fn rect_still_grows(rule: RectDerivation) -> Option<String> {
+    matches!(rule, RectDerivation::PreviousRect).then(|| {
+        "This shape carries no drawn artwork of its own, only a box — so pdfcer has nowhere to \
+         record the angle, and turning it again will make it bigger each time. Turning it once \
+         is exact. Undo returns it to the size it was."
+            .to_owned()
+    })
+}
 
 /// **Disclosure: a dimension that was locked to horizontal or vertical is no
 /// longer locked.**

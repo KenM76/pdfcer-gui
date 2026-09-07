@@ -105,7 +105,6 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use egui::{Pos2, Rect};
 use pdfcer_core::annot::page_annotations;
-use pdfcer_core::graph::ObjectGraph;
 use pdfcer_core::object::ObjId;
 use pdfcer_core::page_tree::Page;
 
@@ -229,15 +228,15 @@ pub struct AnnotSelection {
 /// One `/Annots` walk and one dictionary read per entry, bounded by
 /// `pdfcer_core::annot::MAX_ANNOTS_PER_PAGE`. No decomposition, no content
 /// stream, no cache — see the module header's table.
-pub fn selectable_on<G: ObjectGraph + ?Sized>(
-    graph: &G,
+pub fn selectable_on(
+    view: &pdfcer_core::view::DocumentView<'_>,
     page: &Page,
     page_index: usize,
     ce_dimensions: &BTreeSet<ObjId>,
     shapes: &BTreeMap<ObjId, Vec<(Pos2, Pos2)>>,
 ) -> Vec<Candidate> {
     let mut out = Vec::new();
-    for annot in page_annotations(graph, page.id) {
+    for annot in page_annotations(view, page.id) {
         // ★★★ **`suppressed_on_screen`, not `hidden`** — corrected 2026-09-05.
         //
         // `hidden()` is `/F` bit 2 alone. `suppressed_on_screen()` is the
@@ -315,7 +314,7 @@ pub fn selectable_on<G: ObjectGraph + ?Sized>(
             // re-deciding what counts as upright. The unturned path is then
             // bit-for-bit the code it has always been, which is why this change
             // cannot regress the 99 % of annotations nobody has rotated.
-            oriented: crate::canvas::annotquad::oriented(graph, id)
+            oriented: crate::canvas::annotquad::oriented(view, &annot)
                 .filter(|q| !q.is_upright())
                 .and_then(|q| oriented_canvas_quad(q.corners, page)),
         });
@@ -821,7 +820,21 @@ mod tests {
             contents_unresolved: 0,
         };
 
-        let ids: Vec<u32> = selectable_on(&graph, &page, 0, &BTreeSet::new(), &BTreeMap::new())
+        // ★ A `DocumentView` over the loose graph rather than the graph itself,
+        // since 2026-09-07: `selectable_on` asks the engine to place each
+        // annotation's appearance (`annotquad::oriented` →
+        // `pdfcer_render::annot::appearance_placement`), and a placement needs
+        // the byte source a stream span points into as well as the object
+        // graph. These annotations carry no `/AP`, so the placement answers
+        // `None` for both and this test measures exactly what it always did —
+        // which is the point: an empty buffer is honest here, and a view built
+        // over the wrong bytes would resolve spans off the end of it.
+        let view = pdfcer_core::view::DocumentView::new(
+            &graph,
+            &[],
+            pdfcer_core::PdfVersion { major: 1, minor: 7 },
+        );
+        let ids: Vec<u32> = selectable_on(&view, &page, 0, &BTreeSet::new(), &BTreeMap::new())
             .into_iter()
             .map(|c| c.target.id.num)
             .collect();

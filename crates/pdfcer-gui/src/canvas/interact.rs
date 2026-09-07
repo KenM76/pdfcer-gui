@@ -1196,7 +1196,7 @@ pub(super) fn interact(
     // one. That is also why an undecodable page — `targets == None` — still
     // refreshes the annotation correctly.
     selection.resolve_annot(
-        &doc.session.graph(),
+        &doc.session.view(),
         doc.current_page(),
         page_index,
         doc.edit_epoch,

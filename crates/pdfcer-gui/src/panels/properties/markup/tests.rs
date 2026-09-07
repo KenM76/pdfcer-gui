@@ -573,10 +573,7 @@ fn text_current(reading: Option<Option<Reading>>, subtype: &[u8]) -> Current {
 /// `Square` row went red first.
 #[test]
 fn each_family_routes_to_its_own_verb() {
-    let note = text_current(
-        Some(Reading::of(&sticky(StickyIcon::Comment), Some(b"Comment"))),
-        b"Text",
-    );
+    let note = text_current(Some(Reading::of(&sticky(StickyIcon::Comment))), b"Text");
     let Reach::TextAnnot(reading) = note.reach else {
         panic!("a sticky note must reach the text-annotation verb");
     };
@@ -588,7 +585,7 @@ fn each_family_routes_to_its_own_verb() {
         "the swatch must show the note's own /C, not a default"
     );
 
-    let rubber = text_current(Some(Reading::of(&stamp(), None)), b"Stamp");
+    let rubber = text_current(Some(Reading::of(&stamp())), b"Stamp");
     let Reach::TextAnnot(reading) = rubber.reach else {
         panic!("a stamp must reach the text-annotation verb");
     };
@@ -663,7 +660,7 @@ fn a_text_box_is_withheld_and_an_unreadable_mark_is_not_the_same_case() {
         border: Some(Color::Rgb(1.0, 0.0, 0.0)),
         border_width: 1.0,
     };
-    let boxed = text_current(Some(Reading::of(&spec, None)), b"FreeText");
+    let boxed = text_current(Some(Reading::of(&spec)), b"FreeText");
     assert!(
         matches!(boxed.reach, Reach::TextBoxWithheld),
         "a text box must be withheld, not routed"
@@ -678,40 +675,56 @@ fn a_text_box_is_withheld_and_an_unreadable_mark_is_not_the_same_case() {
     );
 }
 
-/// ★★★ **A note whose `/Name` pdfcer does not model is reported as foreign,
-/// not silently shown as `Note`.**
+/// ★★★ **A note whose `/Name` pdfcer does not model is CARRIED, and reported
+/// as one pdfcer does not draw** — rewritten 2026-09-07 with the engine's fix.
 ///
 /// §12.5.6.4's seven names are *"a standard set, not a closed one"*, so
-/// `/Sparkle` is **conforming**. `text_spec_from_dict` normalises it to `Note`
-/// on the way past (`annot_author.rs:963`), and `set_text_annot_style` re-bakes
-/// from that — so a change to the **colour alone** would write `/Name /Note`
-/// into the file with nothing on screen saying so.
+/// `/Sparkle` is **conforming**. This test used to assert the shape of a
+/// workaround:
+///
+/// > *"`text_spec_from_dict` normalises it to `Note` on the way past, and
+/// > `set_text_annot_style` re-bakes from that — so a change to the colour
+/// > alone would write `/Name /Note` into the file with nothing on screen
+/// > saying so."*
+///
+/// That was true, this shell filed it
+/// (`request_set_text_annot_style_rewrites_a_foreign_icon_name.md`), and
+/// `pdfcer-core` `Pass 253.5` answered it with `StickyIcon::Other(Vec<u8>)`
+/// and `from_name_lossless`. **Nothing is lost now**, so the assertions turn
+/// round: the name is a value the panel can show, and `foreign_icon` reports
+/// *pdfcer draws its own picture for this* rather than *this is about to be
+/// destroyed*.
 ///
 /// ★★ Three cases, and the third is what makes the first mean something. A
 /// `/Sparkle` is foreign; a `/Key` is not; and an **absent** `/Name` is not
-/// either — Table 172's own default is `Note`, so showing `Note` for a note
-/// that carries no `/Name` reports the standard rather than inventing
-/// anything, and warning about it would teach an operator to worry about the
-/// commonest case there is.
+/// either — Table 172's own default is `Note`, so a note carrying no `/Name`
+/// arrives as `Note` and reporting it as such is reporting the standard rather
+/// than inventing anything. Warning about the commonest case there is would
+/// teach an operator to ignore the warning.
+///
+/// ★ The engine's reader does the absent-vs-foreign discrimination now, which
+/// is why this test builds its specs the way the reader would produce them
+/// rather than passing raw bytes alongside.
 #[test]
-fn an_unmodelled_icon_name_is_disclosed_and_a_modelled_one_is_not() {
+fn an_unmodelled_icon_name_is_carried_and_disclosed_and_a_modelled_one_is_not() {
     let foreign =
-        Reading::of(&sticky(StickyIcon::Note), Some(b"Sparkle")).expect("a sticky is served");
+        Reading::of(&sticky(StickyIcon::Other(b"Sparkle".to_vec()))).expect("a sticky is served");
     assert!(foreign.foreign_icon);
     assert_eq!(
-        foreign.icon, None,
-        "the chooser must show no selection rather than assert a value the \
-         file does not carry"
+        foreign.icon,
+        Some(StickyIcon::Other(b"Sparkle".to_vec())),
+        "the file's own name must survive into the panel, so the chooser can show it and a \
+         colour change can write it back"
     );
 
-    let known = Reading::of(&sticky(StickyIcon::Key), Some(b"Key")).expect("a sticky is served");
+    let known = Reading::of(&sticky(StickyIcon::Key)).expect("a sticky is served");
     assert!(!known.foreign_icon);
     assert_eq!(known.icon, Some(StickyIcon::Key));
 
-    let absent = Reading::of(&sticky(StickyIcon::Note), None).expect("a sticky is served");
+    let absent = Reading::of(&sticky(StickyIcon::Note)).expect("a sticky is served");
     assert!(
         !absent.foreign_icon,
-        "an absent /Name is Table 172's own default, not a producer's own name"
+        "an absent /Name reaches us as Table 172's own default, not as a producer's own name"
     );
     assert_eq!(absent.icon, Some(StickyIcon::Note));
 }

@@ -175,26 +175,53 @@ fn drawn_size(turns: usize, each: f64) -> (u32, u32) {
     (x1 - x0, y1 - y0)
 }
 
-/// ★★★ **THE REPRODUCTION.** Same total angle, two different pictures.
+/// ★★★ **THE REGRESSION NET. Same total angle, same picture — at 1, 4 and 24
+/// turns.**
 ///
-/// Expected numbers, measured 2026-09-07 against `pdfcer-core` v0.44.0 at
-/// `e1bdb6c`:
+/// Measured 2026-09-07 against `pdfcer-core` v0.45.0 at `98d0abb`:
 ///
 /// | | drawn size (device px @ scale 2) |
 /// |---|---|
-/// | authored, unrotated | 279 × 120 — i.e. the 140 × 60 pt artwork, correct |
-/// | one 60° turn | **243 × 302** — correct: 140·cos60 + 60·sin60 = 121.96 pt |
-/// | four 15° turns | **469 × 430** — 1.93× and 1.42× too big |
+/// | authored, unrotated | 279 × 120 — the 140 × 60 pt artwork, correct |
+/// | one 60° turn | **243 × 302** — 140·cos60 + 60·sin60 = 121.96 pt |
+/// | four 15° turns | **243 × 302** — identical, which is the fix |
+/// | twenty-four 2.5° turns | **243 × 302** — identical |
 ///
-/// The single-turn arm is asserted **exactly**, and it is what makes the
-/// defect arm meaningful: it proves the instrument reads the right number when
-/// the engine gets it right, so the four-turn arm is measuring the engine and
-/// not the harness.
+/// # Why 24 and not just 4
+///
+/// The engine's own suggestion, and it is a good one: **the defect compounded
+/// multiplicatively**, so a residual too small for a four-turn tolerance to see
+/// is unmissable by twenty-four. A 1 % per-turn error is 4 % at four turns —
+/// inside a two-pixel window on a 243-pixel shape — and 80 % at twenty-four.
+///
+/// # ★★ The unrotated control is not decoration
+///
+/// It is asserted **exactly**, and it is what makes the two equalities below it
+/// mean anything: a build that rotated **nothing at all** would satisfy every
+/// *"these two are equal"* assertion in this file perfectly. The engine makes
+/// the same point about its own A/B and pins a positive control for it.
+///
+/// ⇒ So this asserts three things and needs all three: the instrument reads the
+/// right number on an untouched mark, one turn moves it to the trigonometric
+/// answer, and repeating the turn does not change the answer.
+///
+/// # ★ A warning from the engine about the SHAPE, worth keeping
+///
+/// They sabotaged their artwork rule and their own A/B **stayed green**, because
+/// their test shape was a `/Polygon` — which also carries `/Vertices` and fell
+/// through to the geometry rule, which composes too. Their A/B was measuring
+/// *"some rule composes"* while its name claimed it measured the artwork one.
+///
+/// This file uses a `/Square`, which has no rotatable geometry keys, so it can
+/// only be exercising `RectDerivation::Artwork`. **If the shape is ever
+/// changed, pin the route** — the second test in this file is what pins the
+/// other end of that fork.
 #[test]
-fn four_fifteen_degree_turns_draw_a_bigger_shape_than_one_sixty_degree_turn() {
+fn the_same_total_rotation_draws_the_same_picture_however_many_turns_it_takes() {
     let unturned = drawn_size(0, 0.0);
     let once = drawn_size(1, 60.0);
     let four = drawn_size(4, 15.0);
+    let twenty_four = drawn_size(24, 2.5);
 
     // The control. 140 × 60 pt at 2 px/pt, to within one pixel of antialiasing
     // at each edge.
@@ -204,27 +231,96 @@ fn four_fifteen_degree_turns_draw_a_bigger_shape_than_one_sixty_degree_turn() {
          not measuring what it thinks it is, and nothing below this line means anything"
     );
 
-    // The single turn is exact, so the instrument is proven on a case the
-    // engine gets right.
+    // And one turn lands where trigonometry says, so "equal" below is equal to
+    // the RIGHT number rather than equal to each other and wrong.
     assert!(
         once.0.abs_diff(244) <= 3 && once.1.abs_diff(302) <= 3,
         "one 60 degree turn measured {once:?} and trigonometry says about 244 x 302"
     );
 
-    // ★★★ THE DEFECT. Delete this assertion and restore the equality below it
-    // the day the engine ships the fix.
+    // ★★★ THE PROPERTY. `pdfcer-core` `Pass 155.1` derives `/Rect` from the
+    // artwork rather than from the previous `/Rect`, so this composes.
+    for (label, measured) in [
+        ("four 15 degree turns", four),
+        ("24 2.5 degree turns", twenty_four),
+    ] {
+        assert_eq!(
+            measured, once,
+            "{label} drew {measured:?} and one 60 degree turn drew {once:?}.\n\
+             \n\
+             A rotation must compose: N turns totalling theta draw the same picture as one turn \n\
+             of theta. If these differ, `/Rect` has gone back to being derived from the PREVIOUS \n\
+             rectangle instead of from the artwork, and the placement rule then scales the \n\
+             artwork up to fill an oversized box — the operator's own 2026-09-07 report, \n\
+             \"the object gets larger with each enactment of the tool\".\n\
+             \n\
+             Read `rect_derived=` off a `set-annotation-rotation-applied` trace line, or run \n\
+             `pdfcer rotate-annotation` and read its second line. `artwork` and `geometry` both \n\
+             compose; `previous-rect` does not and cannot, and this fixture must never take \n\
+             that route — a `/Square` authored by `add_markup` has an appearance stream."
+        );
+    }
+}
+
+/// ★★ **The one case that still does not compose, asserted so it is a KNOWN
+/// limit rather than a surprise.**
+///
+/// `RectDerivation::PreviousRect`: an annotation with **neither** an appearance
+/// stream **nor** rotatable geometry. Its artwork *is* its rectangle, §12.5.2
+/// requires that rectangle upright, so there is **nowhere in the annotation an
+/// orientation could be recorded** and no rule can do better. The engine says
+/// so explicitly and warns that a shell ignoring it *"re-introduces the
+/// operator's bug one level up, on exactly the annotations that cannot be
+/// fixed."*
+///
+/// ⇒ This shell honours it by **disclosing**:
+/// `text::rotating::rect_still_grows` fires on this rule and only on this rule.
+/// The test that the sentence exists is in that module; this is the test that
+/// the *condition* is real, because a disclosure whose trigger never occurs is
+/// indistinguishable from one that is broken.
+///
+/// # The fixture
+///
+/// `fixtures/square-no-appearance.pdf` — a 479-byte hand-written PDF with one
+/// `/Square` annotation carrying a `/Rect`, a `/C` and nothing else. It has to
+/// be hand-written rather than authored: `add_markup` always writes an
+/// appearance stream (correctly — R43 means a mark with no `/AP` is named and
+/// not painted), so there is no route to this case through the engine's own
+/// authoring API. It is exactly the document a producer that leaves appearance
+/// generation to the reader would write.
+#[test]
+fn an_annotation_with_no_artwork_and_no_geometry_still_grows_and_says_which_rule() {
+    let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../fixtures/square-no-appearance.pdf");
+    let doc = pdfcer_core::document::Document::load(&path).expect("the fixture loads");
+    let mut session = EditSession::new(doc);
+    let pages = pdfcer_core::page_tree::pages_in(&session.graph()).expect("a page tree");
+    let id = pdfcer_core::annot::page_annotations(&session.graph(), pages[0].id)
+        .into_iter()
+        .find(|a| a.subtype == b"Square")
+        .and_then(|a| a.id)
+        .expect("the fixture carries one `/Square`");
+
+    let first = session
+        .rotate_annotation(id, PIVOT, 15.0)
+        .expect("a `/Square` with no appearance still rotates");
+    assert_eq!(
+        first.rect_derived_from,
+        pdfcer_core::edit::RectDerivation::PreviousRect,
+        "a `/Square` with no `/AP` and no geometry keys must fall through to the rule that \
+         cannot compose. If it did not, this test no longer exercises the case \
+         `text::rotating::rect_still_grows` discloses, and that sentence is now unreachable"
+    );
+
+    let second = session
+        .rotate_annotation(id, PIVOT, 15.0)
+        .expect("and again");
+    let (first_w, second_w) = (first.to.urx - first.to.llx, second.to.urx - second.to.llx);
     assert!(
-        four.0 > once.0 + 50 && four.1 > once.1 + 50,
-        "four 15 degree turns measured {four:?} and one 60 degree turn measured {once:?}.\n\
-         \n\
-         IF THESE ARE NOW EQUAL, THE ENGINE HAS FIXED IT. That is good news and this test's \n\
-         job has changed: replace this assertion with\n\
-         \n\
-             assert_eq!(four, once, \"the same total rotation must draw the same picture\");\n\
-         \n\
-         delete the `/Rect`-grows disclosure in `text::rotating::rect_grew` and the paragraph \n\
-         at `app::actions::annots::rotate` that explains it, close \n\
-         `request_rotate_annotation_grows_the_artwork_when_applied_twice.md`, and mark \n\
-         OPERATOR_REQUESTS.md O145 done."
+        second_w > first_w + 1.0,
+        "the rectangle did not grow on the second turn ({first_w:.1} then {second_w:.1}). \
+         Either the engine found a better rule for this case — in which case DELETE the \
+         disclosure in `text::rotating::rect_still_grows` and this test with it — or the \
+         fixture stopped reaching `PreviousRect`."
     );
 }

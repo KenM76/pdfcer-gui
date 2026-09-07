@@ -170,6 +170,11 @@ pub mod embed_bundled;
 pub mod embed_fonts;
 pub mod export_dxf;
 pub mod export_form_data;
+/// ★ **A sticky note whose icon name pdfcer does not model** — that the panel
+/// shows the file's own name rather than one of the seven, and says pdfcer
+/// draws its own symbol for it. Pins its own fixture; `--pdf` is ignored and
+/// the report says so.
+pub mod foreign_icon_name;
 /// ★★★ **The CAD "line weights off" display mode** — `OPERATOR_REQUESTS.md`
 /// O137, asked for by name. The pixel assertion is SIGNED (strictly LESS ink),
 /// because the convention he asked for and the one it is confused with are

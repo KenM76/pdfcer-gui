@@ -1,0 +1,23 @@
+ui-verify — profile `pdfcer-gui` (the application this project is building (crates/pdfcer-gui))
+  NOTE: this harness drives the REAL cursor and keyboard. It raises the target window, moves the pointer, and types into it. The pointer is put back where it was when the run ends. Pass --no-input to disable (checks that need input then report SKIPPED, never PASS).
+
+  isolation: each check drives its own copy of the binary, under a `.ui-verify-profiles` directory beside target/release/pdfcer-gui.exe. Nothing a check remembers reaches the next one.
+
+[PASS] rotating_a_markup_turns_it
+       detects: a placed markup can be moved and scaled and cannot be TURNED — it is offered eight grips and no ninth, so `rotate_annotation` is unreachable from the canvas. Or the handle is drawn and a press on it MOVES the shape, or rotates the page content behind it, which are working gestures aimed at the wrong verb and look entirely deliberate
+       · launched target/release\.ui-verify-profiles\rotating_a_markup_turns_it\pdfcer-gui.exe as pid 27420 with PDFCER_DIAG_INVOKE=mode.review,markup.rectangle
+       · ★ a rectangle was authored
+       · ★ the shape was selected: `pdfcer-diag annot-select page=0 id=ObjId { num: 65, generation: 0 } kind=Markup subtype=Square locked=false rect=[[835.4 843.9] - [1309.2 1093.5]]`
+       · ★★★ the ninth handle is painted: `canvas.rotate-handle` at (501.5,441.7)-(509.5,449.7)
+       · ★★★ the drag routed to the ANNOTATION verb: `pdfcer-diag rotate-annot-commit id=65 deg=-89.15 px=1072.29 py=715.12`
+       · ★★ and it turned the right way: -89.15° in page space for a clockwise drag on screen
+       · ★★★ the engine turned it: `pdfcer-diag rotate-annotation-applied id=65 deg=-89.15 px=1072.29 py=715.12 keys=0 matrix=1 from=473.7x249.6 to=256.6x477.4`
+       · the appearance matrix was composed: 1; /Rect went 473.7x249.6 → 256.6x477.4 (a quarter turn must not grow it, and this is reported rather than asserted — see the module header)
+       · ★★★ the outline is drawn at the mark's own angle: `pdfcer-diag canvas-selection-angle turned=1 corners=[(480, 444), (482, 537), (531, 536), (529, 443)]`
+       · ★★ and the Properties panel agrees: angle=270.85°, turn=none
+       artifact: target/ui-verify\annot-rotate.trace.txt
+
+------------------------------------------------------------------------
+  1 passed, 0 failed, 0 skipped
+
+RESULT: PASS — every check drove the application and every assertion held.

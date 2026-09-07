@@ -1,44 +1,42 @@
-//! # `canvas::annotquad` tests — the placement is asked of a REAL annotation,
-//! and the pathological matrices are asked of a synthetic one
+//! # `canvas::annotquad` tests — what is left to test once the engine owns the
+//! algorithm
 //!
-//! ## ★★★ What these can and cannot prove
+//! ## ★★★ THESE SHRANK ON PURPOSE, AND THE DELETION IS THE FINDING
 //!
-//! **They cannot prove the operator sees an angled outline.** Every test here
-//! calls [`super::oriented`] directly; whether the painter maps those corners
-//! through the right projection, whether the selection layer carries them, and
-//! whether a turned mark on screen ends up inside them are questions only
-//! `tools/ui-verify` can answer. R1 is not relaxed here.
+//! This file held **twelve** tests on the morning of 2026-09-07. Seven of them
+//! asserted the behaviour of a §12.5.5 placement implementation this module
+//! carried itself — a shear reports no angle, a mirror is not a half turn, a
+//! collapsed matrix has no placement, an unresolvable `/AS` is declined, a
+//! single-entry state is not ambiguous, a missing `/Matrix` is the identity,
+//! the angle comes back anticlockwise and normalised. Every one of them was a
+//! good test of code that **should not have existed**, and `Pass 155.2` took
+//! the code away that afternoon (`pdfcer_render::annot::appearance_placement`,
+//! `Annotation::appearance_rotation_degrees`).
 //!
-//! What they do prove is the part that is pure arithmetic and therefore the part
-//! a unit test genuinely is the right instrument for: **that this module
-//! computes §12.5.5 rather than something that resembles it.**
+//! **They were deleted with their subject, not ported.** Re-asserting the
+//! engine's own contract from here would be this shell keeping a private
+//! opinion about somebody else's normative algorithm — which is exactly the
+//! divergence the workaround was filed to end. The engine has its own tests for
+//! each of those cases (five in `pdfcer-render`'s `appearance_placement.rs`),
+//! and it pins something this shell could not: that the bearing of the first
+//! placed edge equals `appearance_rotation_degrees()` on the same annotation.
 //!
-//! ## ★★ The split, and why it is not laziness in either direction
+//! ⇒ **What is worth testing here is what this module still decides**, and that
+//! is now two things: the `is_upright` predicate the canvas branches on, and
+//! that a real turned annotation arrives through the adapter with sane corners
+//! and an angle at all. Plus the tripwire, inverted.
 //!
-//! | case | fixture | why |
-//! |---|---|---|
-//! | unrotated, 30°, 90°, 210° | a **real** `/Square` authored by `add_markup` and turned by `rotate_annotation` | these assert against the engine's *actual* matrix convention. A hand-built dictionary would let this file agree with itself while disagreeing with every file on disk — `annotnodes::tests` records that trap in the same words |
-//! | shear, no `/AP`, unresolvable `/AS` | a **synthetic** three-object graph | **no pdfcer verb authors any of them.** They arrive from other people's files, and there is no route to one through the engine's writing API — so the choice is a synthetic graph or no coverage of the cases this module is most likely to be wrong about |
+//! ## ★★ What these still cannot prove
 //!
-//! The synthetic half is a `BTreeMap` behind [`ObjectGraph`], which is the same
-//! trait the real session presents. The function under test cannot tell them
-//! apart, which is exactly what makes the arrangement honest.
-//!
-//! ## ★ The 30° case is the one that matters
-//!
-//! At 0° an oriented box and an upright box are the same rectangle, so a module
-//! that returned `/Rect` unchanged would pass that one. 30° is chosen because
-//! every corner moves, the `/Rect` is measurably larger than the artwork, and
-//! the expected result — *the edges are still 140 × 60* — follows from the fact
-//! that a rotation is an isometry, which can be written down without reference
-//! to the code under test.
+//! That the operator sees an angled outline. Every test here calls a function
+//! directly; whether the painter maps those corners through the right
+//! projection is `tools/ui-verify`'s `rotating_a_markup_turns_it`. R1 is not
+//! relaxed.
 
 #![cfg(test)]
 
 use super::*;
 use pdfcer_core::annot_author::{Color, MarkupSpec};
-use pdfcer_core::object::Name;
-use std::collections::BTreeMap;
 
 /// The authored rectangle: deliberately **not square**, so a bug that swapped
 /// width for height, or that returned an axis-aligned bounding box, is visible
@@ -51,13 +49,15 @@ const Y0: f64 = 400.0;
 /// The centre of that rectangle — the pivot every rotation here turns about.
 const PIVOT: (f64, f64) = (X0 + W / 2.0, Y0 + H / 2.0);
 
-/// A real document with one `/Square` markup authored on page 1, and its id.
+/// A real document with one `/Square` markup authored on page 1, turned by
+/// `degrees`, and its id.
 ///
-/// ★★ Through `add_markup`, not through a hand-built dictionary: the appearance
-/// stream, its `/BBox` and its `/Matrix` are then the ones the engine actually
-/// writes, so a change in the engine's convention turns these red — which is
-/// the notification this shell wants rather than a surprise on a real file.
-fn authored() -> (crate::app::state::OpenDoc, ObjId) {
+/// ★★ Through `add_markup` and `rotate_annotation`, never a hand-built
+/// dictionary: the appearance stream, its `/BBox` and its `/Matrix` are then
+/// the ones the engine actually writes, so a change in the engine's convention
+/// turns these red — which is the notification this shell wants rather than a
+/// surprise on a real file.
+fn turned(degrees: f64) -> (crate::app::state::OpenDoc, ObjId) {
     let mut doc = crate::app::state::open_fixture(crate::app::state::FOUR_PAGES);
     let session =
         std::sync::Arc::get_mut(&mut doc.session).expect("the fixture is this test's sole owner");
@@ -78,24 +78,17 @@ fn authored() -> (crate::app::state::OpenDoc, ObjId) {
             },
         )
         .expect("the markup is authored");
+    if degrees != 0.0 {
+        session
+            .rotate_annotation(id, PIVOT, degrees)
+            .expect("a `/Square` rotates");
+    }
     (doc, id)
 }
 
-/// Turn the authored square by `degrees` and return the session's answer.
-fn turned(degrees: f64) -> (crate::app::state::OpenDoc, ObjId) {
-    let (mut doc, id) = authored();
-    let session = std::sync::Arc::get_mut(&mut doc.session).expect("sole owner");
-    session
-        .rotate_annotation(id, PIVOT, degrees)
-        .expect("a `/Square` rotates");
-    (doc, id)
-}
-
-/// Longest and shortest edge of a quadrilateral.
-///
-/// This is what lets a test assert on **the artwork's own dimensions** rather
-/// than on its axis-aligned bound — the distinction the whole module exists to
-/// make, so measuring it directly is the point rather than a convenience.
+/// Longest and shortest edge of a quadrilateral — what lets a test assert on
+/// **the artwork's own dimensions** rather than on its axis-aligned bound,
+/// which is the distinction this whole module exists to make.
 fn edges(corners: [(f64, f64); 4]) -> (f64, f64) {
     let mut lengths: Vec<f64> = (0..4)
         .map(|i| {
@@ -108,133 +101,24 @@ fn edges(corners: [(f64, f64); 4]) -> (f64, f64) {
     (lengths[3], lengths[0])
 }
 
-/// The upright width of a quadrilateral — used only to prove that a fixture is
-/// exercising the case it claims to.
-fn upright_width(corners: [(f64, f64); 4]) -> f64 {
-    let xs = corners.map(|c| c.0);
-    xs.iter().fold(f64::NEG_INFINITY, |a, b| a.max(*b))
-        - xs.iter().fold(f64::INFINITY, |a, b| a.min(*b))
-}
-
-// ---------------------------------------------------------------------------
-// The synthetic graph, for matrices no pdfcer verb can author.
-// ---------------------------------------------------------------------------
-
-/// A minimal [`ObjectGraph`] over a map — three objects is all these cases need.
+/// ★★★ **A 30° turn arrives through the adapter with the ARTWORK's own
+/// dimensions**, not with its bounding box's.
 ///
-/// `trailer_entry` answers `None` for everything, which is correct: nothing in
-/// [`super::oriented`] reads the trailer, and a stub that invented a `/Root`
-/// would be inviting a future reader to believe this fixture is a document.
-struct Fake(BTreeMap<ObjId, Object>);
-
-impl ObjectGraph for Fake {
-    fn value(&self, id: ObjId) -> Option<&Object> {
-        self.0.get(&id)
-    }
-    fn trailer_entry(&self, _key: &[u8]) -> Option<&Object> {
-        None
-    }
-}
-
-fn id(n: u32) -> ObjId {
-    ObjId::new(n, 0)
-}
-
-fn reals(values: &[f64]) -> Object {
-    Object::Array(values.iter().map(|v| Object::Real(*v)).collect())
-}
-
-fn dict(entries: &[(&[u8], Object)]) -> Dict {
-    let mut d = Dict::new();
-    for (key, value) in entries {
-        d.insert(Name::from(*key), value.clone());
-    }
-    d
-}
-
-/// An annotation (object 1) whose `/AP` `/N` is a stream (object 2) carrying
-/// `matrix`, with an optional `/AP` at all.
+/// This is the operator's sentence reduced to arithmetic, and it is the one
+/// end-to-end assertion worth keeping here: `/Rect` after a 30° turn of a
+/// 140 × 60 mark is about 151 × 122, and the corners this module hands the
+/// painter must still measure 140 × 60.
 ///
-/// The `/BBox` is `[0 0 W H]` and the `/Rect` is the same box at the origin, so
-/// step (c) of the placement is the identity and any difference in the answer is
-/// attributable to the matrix alone. That is what makes the shear test's verdict
-/// unambiguous.
-fn synthetic(matrix: Option<&[f64]>, with_ap: bool) -> Fake {
-    let mut objects = BTreeMap::new();
-    let mut appearance = dict(&[(b"BBox", reals(&[0.0, 0.0, W, H]))]);
-    if let Some(m) = matrix {
-        appearance.insert(Name::from(b"Matrix".as_slice()), reals(m));
-    }
-    objects.insert(
-        id(2),
-        Object::Stream(pdfcer_core::object::Stream {
-            dict: appearance,
-            data_span: pdfcer_core::span::ByteSpan::new(0, 0),
-        }),
-    );
-    let mut annot = dict(&[
-        (b"Subtype", Object::Name(Name::from(b"Square".as_slice()))),
-        (b"Rect", reals(&[0.0, 0.0, W, H])),
-    ]);
-    if with_ap {
-        annot.insert(
-            Name::from(b"AP".as_slice()),
-            Object::Dict(dict(&[(b"N", Object::Reference(id(2)))])),
-        );
-    }
-    objects.insert(id(1), Object::Dict(annot));
-    Fake(objects)
-}
-
-// ---------------------------------------------------------------------------
-// The real-annotation cases.
-// ---------------------------------------------------------------------------
-
-/// ★★★ **An UNROTATED annotation's quad is its `/Rect`, corner for corner.**
-///
-/// The base case, and it is what makes every other assertion here meaningful: if
-/// this were wrong, a plausible-looking 30° result would be plausible for the
-/// wrong reason.
-///
-/// It also pins the corner **order**, which the painter depends on to draw a
-/// closed outline rather than a bow tie — corner 0 is the artwork's lower-left
-/// and the four run anticlockwise.
+/// ★ It is a test of the **adapter and the projection contract**, not of
+/// §12.5.5 — if the engine's placement were wrong this would fail, but the
+/// engine has five tests of its own saying it is not. What this catches is the
+/// shell passing the wrong `Annotation`, the wrong view, or dropping the
+/// corners on the way through.
 #[test]
-fn an_unrotated_square_is_bounded_by_its_own_rect() {
-    let (doc, annot) = authored();
-    let quad =
-        oriented(&doc.session.graph(), annot).expect("a `/Square` pdfcer authored has an `/AP`");
-
-    let want = [(X0, Y0), (X0 + W, Y0), (X0 + W, Y0 + H), (X0, Y0 + H)];
-    for (got, want) in quad.corners.iter().zip(want.iter()) {
-        assert!(
-            (got.0 - want.0).abs() < 0.5 && (got.1 - want.1).abs() < 0.5,
-            "corner {got:?} should have been {want:?} — the whole quad was {:?}",
-            quad.corners
-        );
-    }
-    assert_eq!(
-        quad.degrees.map(|d| d.round()),
-        Some(0.0),
-        "an unrotated appearance is 0 degrees — not `None`, and not 360"
-    );
-    assert!(quad.is_upright(), "and it reports itself upright");
-}
-
-/// ★★★ **A 30° turn produces a quad whose EDGES are still 140 × 60**, while its
-/// upright bound has grown past 151.
-///
-/// This is the operator's sentence reduced to arithmetic. A module returning
-/// `/Rect` would report a ~151 × 122 axis-aligned box; the artwork is 140 × 60
-/// at an angle, and that is what the outline must hug.
-///
-/// The tolerance is half a point — a quarter of the border width the fixture is
-/// drawn with. A wrong pivot, a transposed matrix, or a missing step (c) all
-/// fail it.
-#[test]
-fn a_thirty_degree_turn_keeps_the_artworks_own_dimensions() {
-    let (doc, annot) = turned(30.0);
-    let quad = oriented(&doc.session.graph(), annot).expect("the appearance survived the rotation");
+fn a_thirty_degree_turn_arrives_with_the_artworks_own_dimensions() {
+    let (doc, id) = turned(30.0);
+    let quad = oriented_by_id(&doc.session.view(), &doc.pages[0], id)
+        .expect("a `/Square` pdfcer authored has an appearance to place");
     let (long, short) = edges(quad.corners);
 
     assert!(
@@ -247,13 +131,22 @@ fn a_thirty_degree_turn_keeps_the_artworks_own_dimensions() {
         "the short edge is {short:.2} and the artwork is {H} tall — corners {:?}",
         quad.corners
     );
-    // ★ And the upright bound really did grow, so the assertions above are not
-    // passing because there was nothing to notice.
-    let bound = upright_width(quad.corners);
+
+    // ★★ And the upright bound really did grow, so the two assertions above are
+    // not passing because there was nothing to notice.
+    let xs = quad.corners.map(|c| c.0);
+    let bound = xs.iter().fold(f64::NEG_INFINITY, |a, b| a.max(*b))
+        - xs.iter().fold(f64::INFINITY, |a, b| a.min(*b));
     assert!(
         bound > W + 5.0,
         "the upright bound is {bound:.2}, barely wider than the artwork — this fixture is not \
          exercising the case the module exists for"
+    );
+
+    assert!(
+        (quad.degrees.expect("a rotation is an angle") - 30.0).abs() < 0.05,
+        "the adapter read back {:?} for a 30 degree turn",
+        quad.degrees
     );
     assert!(
         !quad.is_upright(),
@@ -261,295 +154,108 @@ fn a_thirty_degree_turn_keeps_the_artworks_own_dimensions() {
     );
 }
 
-/// ★★ **The angle comes back anticlockwise and normalised.**
+/// ★★ **An unturned annotation is upright and reports 0°, not `None`.**
 ///
-/// Three turns, each catching a different way of getting a rotation
-/// decomposition wrong:
+/// The base case, and it is what makes the branch above it meaningful: the
+/// canvas takes the cheap axis-aligned path on `is_upright`, so a build that
+/// answered `false` here would put every ordinary mark on the turned code path
+/// for no reason, and one that answered `None` for the angle would leave the
+/// properties panel's Angle field blank on the commonest annotation there is.
 ///
-/// | turn | what it catches |
-/// |---|---|
-/// | 30° | a sign flip — that would read 330 |
-/// | 90° | an `atan2` argument swap — that would read 0 |
-/// | 210° | folding onto `[-90, 90]` through `atan` instead of `atan2` — that would read 30 |
+/// ★ `Some(0.0)` rather than `None` is the **engine's** deliberate choice for
+/// an appearance with no `/Matrix` key — Table 95's default, and what the
+/// renderer paints with. `Annotation::appearance_matrix` answers `None` for the
+/// same annotation, because the file really did say nothing, and this shell
+/// wants the method's answer rather than the field's.
 #[test]
-fn the_angle_comes_back_anticlockwise_and_normalised() {
-    for turn in [30.0_f64, 90.0, 210.0] {
-        let (doc, annot) = turned(turn);
-        let quad = oriented(&doc.session.graph(), annot).expect("the appearance survived");
-        let got = quad.degrees.expect("a rotation is an angle");
-        assert!(
-            (got - turn).abs() < 0.05,
-            "asked for {turn} degrees and read back {got:.3}"
-        );
-    }
-}
-
-// ---------------------------------------------------------------------------
-// The synthetic cases.
-// ---------------------------------------------------------------------------
-
-/// ★★★ **A matrix that is not a rotation reports NO ANGLE — and still reports
-/// corners.**
-///
-/// Both halves are the point. A sheared appearance has a perfectly good
-/// quadrilateral and an outline can and should be drawn round it; but it has no
-/// angle, and a properties field showing one would be showing a number nothing
-/// in the file means.
-///
-/// `[1 0 0.6 1 0 0]` is a horizontal shear: `a == d` holds, `b == −c` does not.
-/// That is exactly the pair the test in `Mat::rotation_degrees` exists to
-/// separate, and a naive `atan2(b, a)` would confidently answer **0°**.
-#[test]
-fn a_sheared_appearance_has_corners_but_no_angle() {
-    let graph = synthetic(Some(&[1.0, 0.0, 0.6, 1.0, 0.0, 0.0]), true);
-    let quad = oriented(&graph, id(1)).expect("a sheared appearance still has a placement");
-    assert!(
-        quad.degrees.is_none(),
-        "a shear was reported as {:?} degrees",
-        quad.degrees
-    );
-    assert!(
-        quad.corners
-            .iter()
-            .all(|(x, y)| x.is_finite() && y.is_finite()),
-        "and the corners must still be usable: {:?}",
-        quad.corners
-    );
-}
-
-/// ★★ **A MIRROR is not an angle either**, and it is the case a looser test
-/// would let through.
-///
-/// `[-1 0 0 1 0 0]` reflects in x. `b == −c` holds (both are zero); `a == d`
-/// does not. A decomposition that checked only the `b`/`c` pair would report
-/// **180°**, which is wrong in a way no operator could diagnose: a mirrored
-/// stamp turned "back" by 180° would come out mirrored *and* upside down.
-#[test]
-fn a_mirrored_appearance_is_not_reported_as_a_half_turn() {
-    let graph = synthetic(Some(&[-1.0, 0.0, 0.0, 1.0, 0.0, 0.0]), true);
-    let quad = oriented(&graph, id(1)).expect("a mirrored appearance still has a placement");
-    assert!(
-        quad.degrees.is_none(),
-        "a mirror was reported as {:?} degrees",
-        quad.degrees
-    );
-}
-
-/// ★ **A missing `/Matrix` is the identity**, per §8.10.2's default — not a
-/// refusal. The overwhelming majority of appearance streams in the wild carry no
-/// `/Matrix` at all, so an implementation that treated its absence as
-/// unreadable would answer `None` for almost every annotation ever written.
-#[test]
-fn an_appearance_with_no_matrix_is_upright() {
-    let graph = synthetic(None, true);
-    let quad = oriented(&graph, id(1)).expect("no `/Matrix` is the identity, not a refusal");
+fn an_unturned_annotation_is_upright_and_reports_zero() {
+    let (doc, id) = turned(0.0);
+    let quad = oriented_by_id(&doc.session.view(), &doc.pages[0], id).expect("placed");
     assert_eq!(quad.degrees.map(|d| d.round()), Some(0.0));
     assert!(quad.is_upright());
 }
 
-/// ★★ **A collapsed matrix has no orientation**, and answering `0°` for it would
-/// be a confidently wrong number rather than an absent one.
+/// ★★★ **A QUARTER TURN IS NOT UPRIGHT**, which is the one part of
+/// [`OrientedBox::is_upright`] a reader is likely to think is a bug.
 ///
-/// `[0 0 0 0 0 0]` maps the whole `/BBox` to a point. `atan2(0.0, 0.0)` is
-/// `0.0` in Rust — a perfectly finite answer that means nothing — which is why
-/// the scale floor is tested before the angle is taken. The placement itself is
-/// also degenerate, so the whole answer is `None`.
+/// A 90°-turned annotation's `/Rect` bounds it exactly — the box is the
+/// original with its sides swapped — so an outline drawn from `/Rect` looks
+/// perfectly right. Its **corner order** has rotated, though, so a grip the
+/// operator grabs at the artwork's own top-left is at the page's bottom-left.
+/// Answering `true` here would put the grips back on the page's frame and
+/// reintroduce that mismatch on exactly the rotation an operator makes most
+/// often.
 #[test]
-fn a_collapsed_matrix_has_no_placement_at_all() {
-    let graph = synthetic(Some(&[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]), true);
+fn a_quarter_turn_is_not_upright_even_though_its_rect_fits() {
+    let (doc, id) = turned(90.0);
+    let quad = oriented_by_id(&doc.session.view(), &doc.pages[0], id).expect("placed");
     assert!(
-        oriented(&graph, id(1)).is_none(),
-        "a matrix that collapses the appearance to a point was given a placement"
+        !quad.is_upright(),
+        "a quarter turn reported itself upright at {:?} degrees — the outline would be right and \
+         the grips would be on the wrong corners",
+        quad.degrees
     );
 }
 
-/// ★★ **An annotation with no appearance stream answers `None`** — and that is
-/// the correct answer rather than a failure. The caller keeps `/Rect`, which for
-/// such an annotation *is* where the mark is.
+/// ★★ **An annotation the engine will not place answers `None`** — and that is
+/// a correct answer rather than a failure, because the caller then keeps
+/// `/Rect`, which for such an annotation is where the mark is.
 ///
-/// The only difference from [`an_appearance_with_no_matrix_is_upright`] is the
-/// presence of `/AP`, which is what makes this a test of the thing it names.
+/// The negative control for the whole module. Asked of an object id that names
+/// no annotation on this page, which is the cheapest way to reach the `None`
+/// arm without building a malformed document — and the engine's own tests cover
+/// the interesting `None` cases (no `/BBox`, a degenerate transform, an
+/// unresolvable `/AS`) that this shell used to duplicate.
 #[test]
-fn no_appearance_means_no_oriented_box_rather_than_a_guess() {
-    let graph = synthetic(None, false);
+fn an_annotation_that_is_not_there_has_no_placement() {
+    let (doc, _) = turned(0.0);
+    let absent = ObjId::new(9_999, 0);
     assert!(
-        oriented(&graph, id(1)).is_none(),
-        "an annotation with no `/AP` was given an orientation it does not have"
+        oriented_by_id(&doc.session.view(), &doc.pages[0], absent).is_none(),
+        "an id that names no annotation on this page was given a placement"
     );
-}
-
-/// ★★★ **An unresolvable appearance STATE answers `None`, matching the engine's
-/// refusal to guess.**
-///
-/// `/N` is a subdictionary with two entries and there is no `/AS`. §12.5.5
-/// NOTE 3 permits *"reasonable behaviour such as displaying nothing"*, and
-/// `pdfcer-core` models this as `Appearance::StateUnresolved` and **declines to
-/// pick a first/`On`/`Off` key**, because real readers disagree about which and
-/// guessing shows a state no other viewer shows.
-///
-/// ⇒ This shell must decline for the same reason plus one of its own: an outline
-/// drawn from an appearance the renderer refused to paint is **a box around
-/// nothing**, which is the "selection outline on blank paper" failure this
-/// project has already fixed once, in `selection::annot`'s `/NoView` guard.
-#[test]
-fn an_unresolvable_appearance_state_is_declined_rather_than_guessed() {
-    let mut graph = synthetic(None, true);
-    let states = Object::Dict(dict(&[
-        (b"Off", Object::Reference(id(2))),
-        (b"Yes", Object::Reference(id(2))),
-    ]));
-    let Some(Object::Dict(annot)) = graph.0.get_mut(&id(1)) else {
-        panic!("the synthetic annotation is a dictionary");
-    };
-    annot.insert(
-        Name::from(b"AP".as_slice()),
-        Object::Dict(dict(&[(b"N", states)])),
-    );
-
-    assert!(
-        oriented(&graph, id(1)).is_none(),
-        "an appearance state the renderer would not resolve was resolved here anyway"
-    );
-}
-
-/// ★ **A single-entry state subdictionary with no `/AS` IS taken**, because
-/// there is nothing to choose between — and this is the boundary of the rule
-/// above, scoped to match the engine's own wording (*"`/AS` is missing against a
-/// **multi-entry** subdictionary"*).
-///
-/// Without this test the previous one would be satisfied by a module that
-/// refused every subdictionary, which would silently drop the outline on every
-/// stamp whose producer wrapped its single appearance in a state dictionary.
-#[test]
-fn a_single_state_with_no_as_is_not_ambiguous() {
-    let mut graph = synthetic(None, true);
-    let Some(Object::Dict(annot)) = graph.0.get_mut(&id(1)) else {
-        panic!("the synthetic annotation is a dictionary");
-    };
-    annot.insert(
-        Name::from(b"AP".as_slice()),
-        Object::Dict(dict(&[(
-            b"N",
-            Object::Dict(dict(&[(b"Only", Object::Reference(id(2)))])),
-        )])),
-    );
-
-    assert!(
-        oriented(&graph, id(1)).is_some(),
-        "a single-entry appearance state with no `/AS` was refused as ambiguous"
-    );
-}
-
-/// ★★★ **A UNIFORM RESIZE COMMUTES WITH A ROTATION**, measured rather than
-/// assumed — and it is what makes the turned grip frame safe to ship.
-///
-/// The design question this answers: if the eight scale grips move onto the
-/// turned outline, does a drag on one still mean anything? A resize is applied
-/// to `/Rect`, which is axis-aligned; a rotation lives in the appearance
-/// `/Matrix`. There is no obvious reason those should compose cleanly, and if
-/// they did not, moving the grips would be dressing up a gesture that shears
-/// the mark.
-///
-/// They do. 140 × 60 at 30°, scaled 2× uniformly, comes back **280 × 120 at
-/// 30°** with all four corners still square — the angle preserved to fourteen
-/// decimal places and the shape still a rectangle.
-///
-/// ★★ **And the non-uniform case never reaches the question**, which is the
-/// other half of the answer. `resize_annotation` refuses a `/Square` outright
-/// with `ResizeAppearanceNotRebuildable { uniform: false }` — *"the scale is
-/// non-uniform, so the drawn stroke becomes anisotropic and no scalar `/BS /W`
-/// can describe it"* — so the mid-edge grips, the ones whose behaviour in a
-/// turned frame would be genuinely ambiguous, decline before geometry is
-/// reached. The engine's refusal is doing this shell's scoping for it.
-///
-/// ⚠ **What is still owed**, recorded here rather than left to be rediscovered:
-/// `canvas::resizing::factors` derives its scale factors from a screen delta
-/// against an **axis-aligned** box. In a turned frame those should be projected
-/// onto the frame's own axes. Today a corner drag on a turned mark therefore
-/// commits a factor computed on the page's axes — which is what it did before
-/// this change too, so nothing regressed, but it is not yet right.
-#[test]
-fn a_uniform_resize_preserves_a_rotation() {
-    let (mut doc, annot) = turned(30.0);
-    let before = oriented(&doc.session.graph(), annot).expect("placed");
-    let session = std::sync::Arc::get_mut(&mut doc.session).expect("sole owner");
-    session
-        .resize_annotation(
-            annot,
-            PIVOT,
-            2.0,
-            2.0,
-            // The stroke must scale too, or the engine declines the uniform
-            // case as well — see `canvas::scaling::Modifiers`, which is the
-            // operator-facing switch for exactly this.
-            &pdfcer_core::edit::ResizeOptions::new().with_scale_stroke_width(true),
-        )
-        .expect("a uniform resize of a turned `/Square` is accepted");
-
-    let after = oriented(&doc.session.graph(), annot).expect("the appearance survived");
-    let (long_before, short_before) = edges(before.corners);
-    let (long_after, short_after) = edges(after.corners);
-
-    assert!(
-        (long_after - long_before * 2.0).abs() < 0.5
-            && (short_after - short_before * 2.0).abs() < 0.5,
-        "a 2x uniform resize took {long_before:.1}x{short_before:.1} to          {long_after:.1}x{short_after:.1}"
-    );
-    assert!(
-        (after.degrees.expect("still an angle") - 30.0).abs() < 0.05,
-        "the resize moved the angle to {:?}",
-        after.degrees
-    );
-    // ★ Still a rectangle. A shear would leave the edge lengths plausible and
-    // the corners oblique, so the lengths alone are not enough to notice it.
-    for i in 0..4 {
-        let (px, py) = after.corners[(i + 3) % 4];
-        let (cx, cy) = after.corners[i];
-        let (nx, ny) = after.corners[(i + 1) % 4];
-        let (ux, uy) = (px - cx, py - cy);
-        let (vx, vy) = (nx - cx, ny - cy);
-        let cosine = (ux * vx + uy * vy) / (ux.hypot(uy) * vx.hypot(vy));
-        assert!(
-            cosine.abs() < 1e-6,
-            "corner {i} is oblique (cos = {cosine:.6}) — the resize sheared the mark"
-        );
-    }
 }
 
 // ---------------------------------------------------------------------------
-// The tripwire.
+// The tripwire, inverted.
 // ---------------------------------------------------------------------------
 
-/// ★★★ **THE TRIPWIRE. When this goes red, DELETE THIS MODULE.**
+/// ★★★ **THE TRIPWIRE FIRED, AND THIS IS WHAT IT BECAME.**
 ///
-/// It reads the **pinned** engine's `annot.rs` and fails the moment
-/// `pub struct Annotation` grows any of [`super::AWAITED_ENGINE_FIELDS`].
+/// It was written on the morning of 2026-09-07 as
+/// `the_engine_still_has_no_rotation_field`: it read `pub struct Annotation`
+/// out of the **pinned** engine checkout and failed the moment the engine grew
+/// a `rotation`, `appearance_matrix` or `matrix` field — which is exactly what
+/// happened, hours later, on the first `cargo update` after `Pass 155.2`
+/// shipped. It named the field, said what to delete, and pointed at the request
+/// to close.
 ///
-/// # Why it reads the cargo checkout and not `D:/Dev/pdfcer`
+/// **It is kept, inverted**, because the workaround it guarded is gone and the
+/// opposite hazard is now the live one: this module must go on being a thin
+/// adapter, and the way it stops being one is somebody re-deriving the angle or
+/// the placement here *"just this once"*.
 ///
-/// Because `D:/Dev/pdfcer` is the engine session's **working tree** and moves
-/// several times a day, often ahead of what this build compiles. A tripwire
-/// keyed on it would fire on work that is not in our binary, which is the same
-/// class of wrongness as not firing at all. The cargo checkout under
-/// `~/.cargo/git/checkouts/` is the exact bytes `rustc` read, and the directory
-/// is named for the revision — so locating it *through `Cargo.lock`* makes the
-/// instrument follow the pin automatically.
+/// # What it asserts, and why it is keyed on the engine rather than on us
 ///
-/// ⚠ **It FAILS rather than skips when it cannot find the source.** A hard-coded
-/// external path turning a rename into a green check over an empty scan is a
-/// mistake this project has already made once, and the recovery cost more than
-/// the false red would have. If the checkout is missing, the crate cannot have
-/// compiled, so a red here means the *locating* is broken and needs fixing —
-/// never ignoring.
+/// That `Annotation` **still has** `appearance_matrix`. A grep of this file for
+/// a local decomposition would be the obvious test and it is the weaker one: it
+/// asks whether *we* misbehaved, when the fact that matters is whether the
+/// **engine still owns the answer**. If a future engine withdrew the field, the
+/// honest response is a new request — not a quietly restored matrix reader —
+/// and this failing with that instruction is how that gets decided in the open.
 ///
-/// # What a match means
+/// ⚠ It **FAILS rather than skips** when it cannot find the source. The crate
+/// could not have compiled without that checkout, so a red here means the
+/// locating is broken and needs fixing — never ignoring. A hard-coded external
+/// path turning a rename into a green check over an empty scan is a mistake
+/// this project has already made once.
 ///
-/// The whole of `canvas::annotquad` becomes dead weight: take the angle from
-/// the read model, take the placement from whatever shipped with it, delete
-/// this file and its consumers' fallbacks, and close
-/// `request_an_annotations_rotation_angle_cannot_be_read.md`.
+/// ★ It reads the **cargo checkout**, located through `Cargo.lock`, not
+/// `D:/Dev/pdfcer` — that working tree moves several times a day, often ahead
+/// of what compiles here, so a tripwire on it fires on work that is not in the
+/// binary.
 #[test]
-fn the_engine_still_has_no_rotation_field() {
+fn the_engine_owns_the_placement_and_this_module_only_projects() {
     let lock = std::fs::read_to_string(
         std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../Cargo.lock"),
     )
@@ -616,23 +322,69 @@ fn the_engine_still_has_no_rotation_field() {
     let body = &annot[start..];
     let body = &body[..body.find("\n}").expect("the struct is closed")];
 
-    for field in super::AWAITED_ENGINE_FIELDS {
-        let needle = format!("pub {field}:");
+    assert!(
+        body.contains("pub appearance_matrix:"),
+        "★★★ `pdfcer_core::annot::Annotation` NO LONGER HAS `appearance_matrix`, at engine \
+         revision {rev}.\n\
+         \n\
+         `canvas::annotquad` is a thin adapter over that field and over \n\
+         `pdfcer_render::annot::appearance_placement`, both of which arrived in `Pass 155.2` \n\
+         after this shell filed for them. Before this build compiled, they existed.\n\
+         \n\
+         DO NOT restore this shell's own matrix reader. It carried one for a single day and \n\
+         the reasons it was wrong are in the module header: a second reader of a structure \n\
+         `pdfcer-core` owns, and a second implementation of a normative algorithm, both of \n\
+         which drift. File a request naming what was withdrawn and why this shell needs it, \n\
+         the way `request_an_annotations_rotation_angle_cannot_be_read.md` did."
+    );
+}
+
+/// ★★★ **A CLOCKWISE TURN IS NORMALISED, AND THIS IS THE TEST THAT WAS MISSING.**
+///
+/// The engine's `Annotation::appearance_rotation_degrees` returns a signed
+/// `atan2`, so a quarter turn clockwise reads **`-89.15`**. This module needs
+/// `[0, 360)` — the properties panel shows the number, and
+/// [`OrientedBox::is_upright`] range-tests it — so it normalises with
+/// `rem_euclid`.
+///
+/// # Why this test exists, in one sentence
+///
+/// Because the first version of this adapter did **not** normalise, and every
+/// other test in this file used a **positive** angle, so all of them passed
+/// while every clockwise rotation reported itself upright and the selection
+/// outline silently went back to being axis-aligned.
+///
+/// ⇒ **3,860 in-process tests were green.** The defect was found by
+/// `tools/ui-verify`'s `rotating_a_markup_turns_it`, whose drag happens to be
+/// clockwise — one driven run, ninety seconds, on a build the whole suite had
+/// signed off.
+///
+/// ★★ It asserts **both signs in one test**, deliberately. A test named *"a
+/// negative angle normalises"* sitting beside four positive ones would be as
+/// easy to leave un-run as the case it guards; asserting the pair means the
+/// property under test is *the round trip is sign-agnostic*, which is what was
+/// actually assumed.
+///
+/// ★ −89.15° rather than −90°: it is the angle the driven check's drag
+/// actually produces, and a round number would sit exactly on the boundary of
+/// the quarter-turn case that has its own test above.
+#[test]
+fn a_clockwise_turn_is_normalised_into_the_same_range_as_an_anticlockwise_one() {
+    for (turn, expected) in [(-89.15_f64, 270.85_f64), (89.15, 89.15)] {
+        let (doc, id) = turned(turn);
+        let quad = oriented_by_id(&doc.session.view(), &doc.pages[0], id).expect("placed");
+        let read = quad.degrees.expect("a rotation is an angle");
         assert!(
-            !body.contains(&needle),
-            "★★★ `pdfcer_core::annot::Annotation` now has a `{field}` field, at engine revision \
-             {rev}.\n\
-             \n\
-             THAT IS WHAT `crates/pdfcer-gui/src/canvas/annotquad.rs` HAS BEEN WAITING FOR. It is \n\
-             a declared workaround — a second reader of the appearance `/Matrix` and a second \n\
-             implementation of ISO 32000-1 §12.5.5 — and it should now be DELETED, not adapted.\n\
-             \n\
-               1. Take the angle from the read model in `panels::properties::geometry`.\n\
-               2. Take the placement from whatever shipped alongside it, in \n\
-                  `canvas::selection::annot`.\n\
-               3. Delete `canvas::annotquad` and this test.\n\
-               4. Close `request_an_annotations_rotation_angle_cannot_be_read.md` in \n\
-                  `D:/Dev/FeatureRequests/pdfce_FeatureRequests/`."
+            (read - expected).abs() < 0.05,
+            "a {turn} degree turn read back as {read:.2} and must be {expected:.2} — the engine \
+             returns a signed atan2 and this module normalises with rem_euclid"
+        );
+        assert!(
+            !quad.is_upright(),
+            "a {turn} degree turn reported itself UPRIGHT at {read:.2} degrees. That is the \
+             2026-09-07 defect exactly: the range test in `is_upright` is `(0.1..=359.9)`, so an \
+             un-normalised negative angle falls outside it and the canvas draws an axis-aligned \
+             box around a turned mark."
         );
     }
 }
