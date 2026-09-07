@@ -1,6 +1,194 @@
 # RESUME — read this, then say "continue"
 
 
+> ★★★ **LAST SESSION: 2026-09-07. HIS THREE ROTATE SENTENCES — TWO SHIPPED AND
+> DRIVEN, ONE FILED AT THE ENGINE WITH A PIXEL REPRODUCTION.** Read
+> `git log -1 --format=%B` in full before anything else; it is the authoritative
+> record and carries far more than this block.
+>
+> **State, every number re-measured 2026-09-07 in the session that wrote this
+> block:**
+>
+> | | | measured with |
+> |---|---|---|
+> | tests | **3,856 passing, 0 failing** | `cargo test --workspace`, summing every `test result: ok. N passed` through `awk` |
+> | gates | **31 of 31, 0 skipped** | `bash tools/gates/run-all.sh` |
+> | engine | `pdfcer-core` **v0.44.0 at `e1bdb6c`** | `grep -A3 'name = "pdfcer-core"' Cargo.lock` |
+> | shell | `b792cac`, on `origin/main` | `git log -1` |
+> | driven checks registered | **190** | `Box::new(` inside `roster.rs`'s `all()` — the bare file count is 191, and the extra one is not in `all()` |
+>
+> **Released 2026-09-07 14:41** from `b792cac`: OneDrive **`pdfcer-gui2` is the
+> new build**, so **`pdfcer-gui1` (2026-09-06 22:35) is the fallback**. GitHub
+> `v0.5.0-dev.20260907.1`, **verified from HIS side** —
+> `gh api repos/KenM76/pdfcer-gui/releases/latest` returns that tag,
+> `prerelease: false`, zip attached. Check `releases/latest`, never
+> `gh release list`: the list is the publisher's view and it is what hid a
+> three-day-old front page for five builds.
+>
+> ---
+>
+> ## ⚠⚠ THE ENGINE PIN CANNOT MOVE WITHOUT WORK, AND THAT IS THE NEXT JOB
+>
+> `cargo update -p pdfcer-core -p pdfcer-render -p pdfcer-print` takes us to
+> **v0.44.1 at `bb07cd0`** and **it does not compile here** — measured, then
+> reverted with `git checkout -- Cargo.lock` before packaging:
+>
+> ```
+> error[E0204]: the trait `Copy` cannot be implemented for this type   (StickyIcon)
+> error[E0004]: non-exhaustive patterns: `StickyIcon::Other(_)` not covered
+> ... 11 errors, all on the sticky-note surface
+> ```
+>
+> `StickyIcon` gained an **`Other(String)`** variant and lost `Copy` — that is
+> `Pass 253.5`, the engine's fix for
+> `request_set_text_annot_style_rewrites_a_foreign_icon_name.md`, which **this
+> shell filed**. Adopting it is a real piece of work with a UI question in it
+> (what does the icon chooser show for a name it does not know?) and it is
+> **the next job**. `reply_2026-09-07-both-set-text-annot-style-defects-FIXED.md`
+> is the reply; read it first.
+>
+> ⇒ **Testing before packaging is what caught it.** `package-portable.py` runs
+> `cargo update` unless you pass `--no-update`, so a green test run taken
+> beforehand describes a different engine from the one that would ship. That is
+> the second time this rule has paid.
+>
+> ---
+>
+> ## ★★★ THE FINDING OF THE DAY: **"IT IS CHEAP TO READ" AND "IT DOES NOT NEED
+> RE-READING" ARE DIFFERENT CLAIMS, AND THE FIRST WAS USED TO JUSTIFY THE
+> SECOND**
+>
+> `AnnotSelection::outline` — the box the selection outline and all nine handles
+> are drawn from — was **stale after every edit to an annotation**: move,
+> resize, rotate, a typed Apply in the properties panel, an undo of any of them.
+> It only came back to the mark when the operator clicked away and clicked back.
+> Measured from a driven trace: a quarter turn took `/Rect` from
+> `473.7 × 249.6` to `256.6 × 477.4` and the painter went on stroking the first.
+>
+> ★★ **The field's own doc comment had argued that no refresh was needed**, in a
+> section headed *"Why it needs no `resolved_for` twin"*:
+>
+> > *"[`outlines`] is cached against `(page, epoch)` because content bounds cost
+> > a `decompose_page`… An annotation's outline is its `/Rect`, four numbers in a
+> > dictionary, so it is re-read on the frame the selection is made and carried
+> > on the selection itself."*
+>
+> Every clause is true. The conclusion does not follow. `SelectionState::
+> resolve_annot` is the twin, keyed on `(page, epoch)` exactly as the content
+> half always was, and it is **cheap in precisely the way the old note claimed**
+> — one `/Annots` walk, no decomposition — which is why the fix is to run it
+> rather than to invalidate harder.
+>
+> ⇒ **Wherever a comment explains why something is NOT refreshed, check whether
+> the argument is about cost or about correctness.** This one was about cost and
+> was answering a correctness question.
+>
+> ★ It also re-reads `/F` bit 8 now, so a lock applied to a selected mark takes
+> the handles away on the next frame rather than the next click.
+>
+> ---
+>
+> ## ★★ A DISCLOSURE HAS A SUBJECT, AND WHEN THE SUBJECT GOES IT IS A LIE WITH A
+> CITATION ATTACHED
+>
+> `text::rotating::rect_grew` said *"the dashed box around this mark is now
+> larger… the mark itself is exactly the size it was."* Correct, well argued,
+> and cited to §12.5.2 — **while the outline was drawn from `/Rect`**. The
+> outline is now drawn at the mark's own angle, so no box swells and the
+> sentence described something that does not happen.
+>
+> **Deleted**, with the whole account kept at its site — including the warning
+> **not to restore it for O145**. A mark rotated twice really does get bigger,
+> and that is a *defect*, not a consequence to disclose; disclosing a defect as
+> though it were correct behaviour is how the old GUI accumulated its red flags.
+> Its two unit tests went with it, and are **named in a comment where they
+> stood**, because a test that vanishes looks like coverage nobody wrote.
+>
+> ---
+>
+> ## ★★ A TRIPWIRE KEYED ON YOUR OWN INTENTION IS NOT A TRIPWIRE
+>
+> `canvas::annotquad` is a **declared workaround** — this shell reads the
+> appearance `/Matrix` itself and re-implements ISO 32000-1 §12.5.5, because
+> `pdfcer_core::annot::Annotation` models no rotation and `pdfcer-render`'s
+> placement is `pub(crate)`. Its first tripwire was
+> `const ENGINE_HAS_TAKEN_OVER: bool = false` with a `debug_assert` beside it,
+> which is **not a tripwire**: nothing can set it but somebody who has already
+> noticed. Clippy flagged it as *"this assertion has a constant value"*, for a
+> worse reason than it knew.
+>
+> What replaced it reads **the other side's API**:
+> `tests::the_engine_still_has_no_rotation_field` locates the pinned engine
+> checkout **through `Cargo.lock`** (so it cannot drift from the pin, and it
+> reads the exact bytes `rustc` read — not `D:\Dev\pdfcer`, which moves several
+> times a day) and fails when `pub struct Annotation` grows a `rotation`,
+> `appearance_matrix` or `matrix` field. Falsified both ways.
+>
+> ⚠ It **fails rather than skips** when it cannot find the source. The crate
+> could not have compiled without that checkout, so a red there means the
+> locating is broken and needs fixing — never ignoring. A hard-coded external
+> path turning a rename into a green check over an empty scan is a mistake this
+> project has already made once.
+>
+> ---
+>
+> ## ⬜ OPEN AT THE ENGINE — re-grep before repeating this, it is dated
+>
+> Two filed **today**, both unanswered (the engine session paused for the day
+> shortly after they landed — `D:/Dev/pdfcer`'s HEAD is `bb07cd0`,
+> *"work paused"*):
+>
+> 1. `request_rotate_annotation_grows_the_artwork_when_applied_twice.md` —
+>    **the operator's own report**. A 140 × 60 pt `/Square` turned 15° four
+>    times is drawn **1.93× wider and 1.42× taller** than the same square turned
+>    60° once. `rotate_annotation` bounds the *previous* `/Rect` while composing
+>    only θ into the `/Matrix`; §12.5.5 step (c) then scales the artwork up to
+>    fill the oversized rectangle. **No workaround exists** and the request says
+>    so. `crates/pdfcer-gui/tests/annotation_rotation_grows.rs` asserts the
+>    defect and **goes red the day it is fixed**, carrying its own instructions.
+> 2. `request_an_annotations_rotation_angle_cannot_be_read.md` — the read model
+>    has no rotation. Asks for the field **or**, preferred, a public
+>    `pdfcer_render::appearance_placement` that would delete four copies of the
+>    engine's own logic from this shell.
+>
+> Plus the three that were open before today — `/IRT` replies, review status and
+> O137 are all **answered** (`reply_2026-09-06-all-six-review-and-import-requests-SHIPPED.md`);
+> what is still unwired from that reply is listed below.
+>
+> ---
+>
+> ## ⬜ THREE THINGS THE ENGINE SHIPPED AND THIS SHELL DOES NOT CALL
+>
+> Measured 2026-09-07 by an agent grepping both trees at the pin, not read off a
+> document:
+>
+> | symbol | in the engine at our pin | caller here |
+> |---|---|---|
+> | `Diagnostics::strokes_hairlined` | `pdfcer-render/src/interpret.rs` | **none** — zero hits in the whole shell |
+> | `place_text` | `pdfcer-core/src/text_edit/placetext.rs` | **none** |
+> | `blank_document` | same file | **none**; `app::blank::document()` still builds a page by hand |
+>
+> ⚠ **And four shell files still assert that the text-import route does not
+> exist** — `app/actions/exporttext.rs:36`, `dialogs/export_text.rs:12`,
+> `dialogs/mod.rs:99`, `text/commands/file.rs:63`, `text/export_text.rs:13` all
+> say *"there is no route from a text file back into a PDF"*. **That is false at
+> our pin.** A limitation sentence on this project has a shelf life measured in
+> hours; these are two days old.
+>
+> ---
+>
+> ## ⬜ WHAT IS BUILT AND UNDRIVEN
+>
+> * **Typing into the Angle field and pressing Apply.** The *read* is driven
+>   (`rotating_a_markup_turns_it` asserts 270.85° after a −89.15° drag); the
+>   write is not.
+> * **The Left/Bottom/Width/Height fields for an ANNOTATION**, which have been
+>   there since 2026-09-06 — there is no driven check anywhere that touches
+>   `properties.annotgeometry.*`. That gap is older than the Angle field.
+> * **Everything from 2026-09-06's markup session** that O144 lists, unchanged.
+>
+
+
 > ★★★ **LAST SESSION: 2026-09-06 (late morning). A PLACED MARKUP CAN NOW BE
 > FULLY EDITED — AND NOT ONE PRESS OF IT HAS BEEN DRIVEN.** His instruction:
 > *"getting full editing working for the Markup tools. Also make sure you've

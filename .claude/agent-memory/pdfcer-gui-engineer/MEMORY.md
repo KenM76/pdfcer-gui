@@ -65,3 +65,6 @@
 - [A suite that shares state measures the order it ran in](feedback_a_suite_that_shares_state_measures_the_order_it_ran_in.md) — isolation turns long-green checks red and each looks like a regression; run the OLD binary to tell them apart.
 - [A stage's trace records what the stage decided](feedback_a_stages_trace_records_what_the_stage_decided.md) — not what the frame settled on; a later stage overruled it forty lines down and the trace still read green.
 - [A compile error is an invitation to read the reply](feedback_a_compile_error_is_an_invitation_to_read_the_reply.md) — a new arg with a keep-old-behaviour default silently declines the feature; the compiler goes quiet and tests stay green.
+- ["Cheap to read" is not "no need to re-read"](feedback_cheap_to_read_is_not_no_need_to_reread.md) — a cache comment arguing cost was answering a staleness question; the outline was stale after every edit.
+- [A disclosure has a subject](feedback_a_disclosure_has_a_subject_delete_it_when_the_subject_goes.md) — when the fix removes what it explained, delete it; and never re-point it at a defect.
+- [A tripwire keyed on your own intention is not a tripwire](feedback_a_tripwire_keyed_on_your_own_intention_is_not_a_tripwire.md) — read the OTHER side's source, located through Cargo.lock so it follows the pin.
