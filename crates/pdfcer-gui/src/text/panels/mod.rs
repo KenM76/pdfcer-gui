@@ -153,6 +153,17 @@ pub mod formfield;
 pub mod objects;
 /// The Properties panel.
 pub mod properties;
+/// ★★ The Properties panel's **text-annotation style** section — a sticky
+/// note's icon and colour and a stamp's colour, which reach
+/// `EditSession::set_text_annot_style` rather than `set_markup_style`.
+///
+/// Its own module rather than more of [`properties`], on exactly
+/// [`textobject`]'s precedent and the same measurement: that file stood at
+/// **1,487 of its 1,500-line R2 ceiling** when `Pass 253.2` landed. The seam is
+/// the one the code takes one directory over — `properties::markup` draws what
+/// one verb reaches, `properties::markup::textannot` draws what the other does
+/// — so the copy follows the code rather than the file it started in.
+pub mod textannotstyle;
 /// ★★ The Properties panel's **clicked-text** colour section — O89's object
 /// route.
 ///

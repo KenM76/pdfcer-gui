@@ -200,6 +200,16 @@ pub mod redactimg;
 /// first that does not go through text. Its header carries why the search box
 /// could not reach a vector title block, a stamp or a logo.
 mod redactsel;
+/// ★★ **Record a comment's review status** — `/State` and `/StateModel`,
+/// §12.5.6.3. Its own file rather than a place in [`annots`], because that
+/// module is *"what happens to a thing that already exists"* and this one adds
+/// a separate annotation and changes nothing about the comment it names.
+///
+/// `pub` because [`Action::RecordReviewState`] carries
+/// [`reviewstate::RecordStatus`] as its payload — the pattern `annot`,
+/// `forms` and `vector` already use, and the one that keeps `action.rs` under
+/// R2's ceiling.
+pub mod reviewstate;
 /// The one arm that signs a document — `Action::SignDocument`'s body, split
 /// out under R2 on the seam `saving`, `redact` and `destination` already
 /// occupy. `#[cfg]` for `crate::sign`'s reason: without the capability there is

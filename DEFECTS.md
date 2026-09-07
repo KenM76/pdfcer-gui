@@ -1960,7 +1960,21 @@ is a check nobody will ever run.
 
 ---
 
-## D23 — A link arrives at the right place and the zoom that framed it lands a frame later, about the anchor it has already left — **DIAGNOSED TO THE FRAME 2026-09-06, NOT FIXED**
+## D23 — A link arrives at the right place and the zoom that framed it lands a frame later, about a page that is no longer on screen — **FIXED AND DRIVEN 2026-09-06**
+
+> ★★★ **FIXED 2026-09-06, verified by driving the binary.**
+> `a_link_goes_to_the_page_it_names` was RED and is now GREEN; the six-check
+> bookmark/zoom/fit family was green before and is green after, with identical
+> numbers. **The fix is one file** —
+> `crates/pdfcer-gui/src/canvas/destination.rs`, `arrive_step` — and it was
+> falsified by restoring that file byte-for-byte and watching the check go red
+> again. The whole account is in **THE FOURTH READING** at the end of this
+> entry.
+>
+> ⚠ **Three of the four readings below are wrong and they are kept on purpose.**
+> The sequence is the useful part: every one of them was articulate, every one
+> was reasoning backwards from where the view ended up, and the one that is
+> right is the one that read a trace line that contradicts *itself*.
 
 **A clickable table of contents is a page of dead text.** Click a link, the view
 goes to the right place for a moment, and comes back.
@@ -2134,3 +2148,166 @@ Whether `Fit` should take a "do not place" variant for the navigation path, or
 whether `GoToDestination` should simply come last and win. **Do not reorder by
 eye** — `viewer`'s fit code has a recorded feedback loop (R128) and the
 `canvas-pos` trace is the only oracle that has ever settled a question in it.
+
+---
+
+### ★★★★ THE FOURTH READING — the frame record is about **another sheet**, and one trace line says so on its own
+
+**Fixed 2026-09-06.** The third reading above is refuted too, and it is
+refuted by reading the code it names:
+
+> `zoom::remember_frame` is called in `canvas::present` at the point the
+> layout settles, and `canvas::interact` — which contains the `arrive` call —
+> is called **after** it, on the same frame. So `last_frame(ctx)` inside
+> `arrive` is **this** frame's record, not the previous one. "`last_frame` is
+> a lie during the frame that changed the view" is the right instinct pointed
+> at the wrong noun.
+
+★ And `place_centred` never reads `frame.offset` at all — it *synthesises*
+`offset_before` from the frac, the display and the viewport. So the third
+reading's whole table of stale offsets is about a field the framing path does
+not consult. The `584.3` it identifies as "a page 0 offset read one frame too
+early" is simply the fitted view's own offset before the click, on trace line
+211, where nothing has happened yet.
+
+#### What the trace actually says, and it contradicts itself in one line
+
+Driven 2026-09-06 against the released build, `fixtures/goto-actions.pdf`,
+third link (`/FitH`, target page 4). Three consecutive lines:
+
+```text
+destination-arrive page=3 framed=true pending=Point { page: 3, left: None, top: Some(540.0) }
+canvas-zoom to=rect requested=3.1200 applied=3.1200 clamped=false
+canvas rect=[[296.0 -1678.7] - [764.0 -1073.0]] zoom=0.7647 page=3 pages=4 off=[484.0 2436.8] sel=0 display=continuous visible=1 drawn=0
+```
+
+On that last line `page=` is `doc.view.page_index` and `rect=` is the **acting
+page's** rectangle (`canvas::trace::layout`). They disagree:
+
+| what the line says | what it means |
+|---|---|
+| `page=3` | the view has turned to page 3 |
+| `off=[484.0 2436.8]` | the scroll offset is at page 3's position |
+| `rect=[[296.0 −1678.7] …]` | the page being drawn starts **1,844 px above the viewport** |
+| `visible=1` | exactly **one** page was laid out this frame |
+
+1,844 px is not a coincidence: at zoom 0.7647 the strip's row pitch is
+`(792 + 12) × 0.7647 = 614.8`, so `3 × 614.8 = 1844.5` — and the position line
+beside it reads `canvas-pos at=-8.000,1844.312`. The rectangle being drawn is
+**page 0's**, seen from page 3's scroll position. The one page laid out was
+the wrong one.
+
+⇒ **The scroll offset moves on the frame the page turns. The strip's visible
+set does not.** `canvas::strip` chooses which pages to lay out from the offset
+the frame *inherited*, before `canvas::offset::decide` forces the new one. So
+for exactly one frame the canvas is scrolled to the destination and still
+drawing the page it left.
+
+#### Why that is fatal, in one hop
+
+`zoom::CanvasFrame` is written from that layout, so its `page`, `extent`,
+`display` and `map` are all about **page 0**. `frame_rect` plans against it;
+`place_centred` stamps `page: 0` into the anchor; `consume_anchor` solves it
+exactly; and `offset::decide` converts the answer through
+`strip_offset_for(anchor.page = 0, …)` — page 0's origin in the strip.
+
+★★ The arithmetic is not merely *similar* across the defect and the fix, it is
+**identical**. Both runs solve a page-local offset of `1316.6`. The defective
+run adds it to page 0's origin (`0`) and reports `off=1316.6 page=0`; the
+fixed run adds it to page 3's origin (`3 × (792 + 12) × 3.12 = 7525.4`) and
+reports `off=8842.0 page=3`. Nothing about the zoom, the anchor, the clamp or
+the fit was ever wrong. **The framing was handed a frame about the wrong
+sheet.**
+
+#### The fix — a bounded HOLD on the destination path, and NOT a change to `frame_rect`
+
+`canvas::destination::arrive_step`, a pure function with six unit tests beside
+it:
+
+| condition | step |
+|---|---|
+| the view is on another sheet | `Drop` — the pre-existing guard, unchanged |
+| the frame record is about the destination's page | `Frame` — the ordinary case, and the only one that existed before |
+| it is about another page, or there is no record yet | `Hold`, up to `MAX_WAIT_FRAMES` (4), then `Drop` |
+
+`arrive` now **reads** the parked destination instead of `take()`ing it, holds
+it for the frame the layout is behind, and calls `ctx.request_repaint()` so a
+reactive shell cannot leave it parked until the operator jogs the mouse.
+
+★ **This is D23's repair (a), and repair (b) is the one that would have hurt.**
+`frame_rect` is shared by the zoom marquee, `view.zoom_selection` and every
+bookmark; the only "fresher" geometry available inside the draw is geometry the
+draw is still deciding, and feeding a layout back into a fit-to-viewport zoom
+is **R128** exactly. The gate added here asks a question — *"is the frame
+record about my page?"* — that is true on the first frame for every other
+caller, because a marquee and a selection are by construction on the page being
+drawn. Nothing outside the destination path changed.
+
+★★ It is also the missing half of a symmetry the third reading spotted:
+`consume_anchor` already carried a one-frame grace (`AnchorStep::Hold`) for the
+**output** side of this problem. `ArriveStep` is the same shape for the
+**input** side, bounded for the same reason — a destination held for ever would
+be spent later on an unrelated layout change, as a view springing to a bookmark
+clicked a minute ago.
+
+#### Driven, before and after
+
+Same binary, same fixture, one run at a time.
+
+| | `a_link_goes_to_the_page_it_names` | final `canvas` line |
+|---|---|---|
+| **before** | **FAIL** — *"THE LINK WENT TO THE WRONG PAGE: 0 → 0, where 3 was named"* | `zoom=3.1200 page=0 off=[476.0 1316.6]` |
+| **after** | **PASS** — *"the view moved from page 0 to page 3"* | `zoom=3.1200 page=3 off=[476.0 8842.0]` |
+
+The fixed run's own trace shows the gate doing exactly one frame of work:
+
+```text
+destination-arrive page=3 step=Hold  frame_page=Some(0) waited=0 framed=false …
+canvas rect=[[296.0 -1678.7] - [764.0 -1073.0]] zoom=0.7647 page=3 … visible=1 drawn=0
+destination-arrive page=3 step=Frame frame_page=Some(3) waited=1 framed=true  …
+canvas rect=[[296.0 165.8] - [764.0 771.5]]     zoom=0.7647 page=3 … visible=1 drawn=1
+```
+
+One `Hold`. On the next frame the strip has laid page 3 out at the top of the
+viewport and the framing is planned against it.
+
+**The family that could have been broken silently**, driven before and after,
+all six PASS both times and with the same numbers — the bookmark check reports
+`0.382 → 0.766` in both runs:
+
+`a_bookmark_lands_on_the_detail_it_names`,
+`a_link_it_cannot_follow_says_so_instead_of_jumping`,
+`a_fit_command_puts_the_page_on_screen`,
+`zooming_does_not_throw_away_where_the_operator_panned`,
+`a_pan_keeps_the_fit_and_the_resize_keeps_the_position`,
+`zooming_back_out_keeps_the_view`.
+
+★ The bookmark fixture's detail bookmarks are all on the sheet already showing,
+so they take `ArriveStep::Frame` on their first frame — which is why that check
+passed against the defect and is exactly why it could not have found it.
+
+**Falsified**: `canvas/destination.rs` restored byte-for-byte from a copy,
+rebuilt, driven — `FAIL … THE LINK WENT TO THE WRONG PAGE: 0 → 0, where 3 was
+named` — then restored from the fixed copy and driven green again.
+
+#### ⚠ What was NOT fixed here, and is a separate question
+
+A `/FitH` destination raises `Fit(Width)` **and** a `Point`, and `arrive`
+frames a point as a 150 pt box (`geometry::DESTINATION_CONTEXT_PT`) — which on
+this fixture magnifies to 312 %, overriding the fit the same destination asked
+for. §12.3.2.2 says `/FitH` means *fit the width and put `top` at the top edge*,
+and Acrobat keeps the current magnification for an `/XYZ` with a null zoom.
+`canvas::destination`'s header argues for the framing deliberately (*"adding a
+second scroll-to-a-point solver would be two answers to one question"*), so
+this is a design question, not a bug found in passing — but it is the reason a
+correctly-arriving link still lands closer than the document asked for. It
+would move every `/XYZ` and `/FitH` bookmark, so it wants its own driven pass.
+
+#### ⚠ A note on the trace vocabulary, because it cost most of the diagnosis
+
+`destination-arrive page=3 framed=true` was **true and useless**: `page=` was
+the view's intent, not the geometry's, and the line read as a success on the
+frame that failed. It now carries `step=`, `frame_page=` and `waited=` — the
+three fields that make it possible to tell an arrival from a mis-aimed one
+without arithmetic on the `canvas` line beside it. ⇒ **A trace that reports an
+intent and calls it an outcome will be believed.**

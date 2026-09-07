@@ -47,11 +47,15 @@ use crate::canvas::textannot::TextAnnotKind;
 /// nine.
 ///
 /// ★ A struct rather than a longer parameter list, and not only to satisfy a
-/// lint: `page`, `kind`, `rect` and `stamp` are **one thing the operator did**,
-/// while `prefs` and the pen are settings that happen to be in scope. A
-/// signature that mixed all six in a row would let a caller transpose two of
-/// them silently, which on `(usize, …)` positions is the class of mistake that
-/// compiles.
+/// lint: `page`, `kind`, `rect`, `stamp` and `icon` are **one thing the
+/// operator did**, while `prefs` and the pen are settings that happen to be in
+/// scope. A signature that mixed all seven in a row would let a caller
+/// transpose two of them silently, which on `(usize, …)` positions is the class
+/// of mistake that compiles.
+///
+/// ⚠ The doc above said **four values** and **six arguments** until
+/// 2026-09-06; it now describes five and seven. Corrected rather than left,
+/// because the sentence's whole point is the count.
 pub(super) struct Placement {
     /// The page it goes on.
     pub page: usize,
@@ -61,6 +65,14 @@ pub(super) struct Placement {
     pub rect: pdfcer_core::page_tree::Rect,
     /// Which stamp face, for the stamp kind.
     pub stamp: pdfcer_core::annot_author::StampName,
+    /// ★ Which icon (`/Name`, §12.5.6.4 Table 172), for the sticky kind.
+    ///
+    /// The exact counterpart of `stamp` one field up, and it arrived by
+    /// following that field's route: dialog → `Action::CommitTextAnnot` → here
+    /// → `crate::canvas::textannot::spec`. Both are ignored by the two kinds
+    /// they do not belong to, and both are unconditional rather than
+    /// `Option`al because a chooser always has a selection.
+    pub icon: pdfcer_core::annot_author::StickyIcon,
 }
 
 pub(super) fn commit(
@@ -76,6 +88,7 @@ pub(super) fn commit(
         kind,
         rect,
         stamp,
+        icon,
     } = *placed;
     // ★ The pen's ink, so a callout matches the comments beside it
     // and one Style group governs the whole markup family.
@@ -179,7 +192,7 @@ pub(super) fn commit(
         // that broken. One control, one meaning, every kind.
         opacity,
     };
-    if let Some(spec) = crate::canvas::textannot::spec(kind, rect, text, stamp, ink) {
+    if let Some(spec) = crate::canvas::textannot::spec(kind, rect, text, stamp, icon, ink) {
         // ★★ The note's three keys, on the diagnostic channel and
         // NOT on the status line. An operator who typed a comment
         // does not need to be told their own name was written; a

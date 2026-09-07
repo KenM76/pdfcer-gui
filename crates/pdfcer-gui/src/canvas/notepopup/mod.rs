@@ -105,25 +105,58 @@
 //! disabled `TextEdit` would be the half-built surface the no-placeholders
 //! rule exists to forbid.
 //!
-//! ## ★★ What it CANNOT do, and both absences are engine gaps that are filed
+//! ## ★★★ What it CANNOT do — REWRITTEN 2026-09-06, because one of the two
+//! ## absences stopped being an engine gap
 //!
-//! Audited against `pdfcer-core` v0.38.0 on 2026-09-05, at `file:line`, not
-//! from a backlog row:
+//! This section was audited against `pdfcer-core` v0.38.0 on 2026-09-05 and
+//! read, in part:
 //!
-//! - **No Reply.** `/IRT` and `/RT` are read-only. The crate's only write-side
-//!   occurrences are *destructive*: the deletion cascade removes them
-//!   (`edit.rs:24969-24970`) and the clipboard strips them
-//!   (`edit.rs:10673`). There is no constructor, no `MarkupOptions` field and
-//!   no verb. ⇒ the thread is **read** here and cannot be **added to**. Filed
-//!   as `request_a_reply_can_be_read_and_never_written.md`.
-//! - **No Accepted / Rejected / Completed.** `/State` and `/StateModel`
-//!   (§12.5.6.4 Table 171) have **zero occurrences** in the crate — not read,
-//!   not written, not modelled, not named in a doc comment. Filed as
-//!   `request_review_status_is_not_modelled_at_all.md`.
+//! > **No Reply.** `/IRT` and `/RT` are read-only. … There is no constructor,
+//! > no `MarkupOptions` field and no verb. ⇒ the thread is **read** here and
+//! > cannot be **added to**. Filed as
+//! > `request_a_reply_can_be_read_and_never_written.md`.
 //!
-//! In both cases R9 governs and **nothing is drawn**: no greyed Reply, no
-//! empty status row. A control that no state of the program could enable is
-//! not an affordance, it is a promise.
+//! Every word of that was true when it was written and **`Pass 253.0` made it
+//! false the next day.** `EditSession::add_reply`
+//! (`pdfcer-core/src/edit.rs:26948`) writes `/IRT` and `/RT /R` and its own
+//! `/Popup`, and this shell authors replies from the **Comments panel**
+//! (`crate::panels::comments::editor`). Corrected in place and dated rather
+//! than deleted, because the correction is the record: **a limitation sentence
+//! is a dated citation with a shelf life measured in hours**, and this project
+//! has now paid for that lesson eight times.
+//!
+//! ### What is still absent here, and what kind of absence each is
+//!
+//! | absence | kind | consequence |
+//! |---|---|---|
+//! | **no Reply control ON THIS SURFACE** | a **scope** decision, not a capability one | the window already *shows* the thread ([`thread`]); composing in it is wiring nobody has asked for yet, and the Comments panel is where the affordance was built |
+//! | **no Accepted / Rejected / Completed** | an engine gap, still | `/State` and `/StateModel` (§12.5.6.4 Table 171) had **zero occurrences** in the crate at the 2026-09-05 audit. Filed as `request_review_status_is_not_modelled_at_all.md` |
+//!
+//! ★★ The distinction is worth keeping sharp, because the two expire on
+//! different events: an R9 absence is a statement about the **program** and
+//! ends when the engine moves, while a scope absence is a statement about
+//! **one surface** and ends when somebody decides that surface should compose.
+//! Conflating them is how a scope decision comes to be defended with a
+//! capability argument that is no longer true.
+//!
+//! For the surviving engine gap R9 governs and **nothing is drawn**: no empty
+//! status row. A control that no state of the program could enable is not an
+//! affordance, it is a promise.
+//!
+//! ## ★★★ What it CAN do that it could not on 2026-09-05: record `/Open`
+//!
+//! `EditSession::set_annotation_open` (`Pass 253.3`) writes the window state
+//! **into the document**, and [`open_default`] is the control for it. The
+//! read half moved at the same time: [`model::read_open`] took
+//! `pdfcer_core::annot::Annotation::open` and the raw-dictionary workaround
+//! this module shipped with was deleted rather than left beside it.
+//!
+//! ⚠ **Opening and closing a bubble on screen still writes nothing**, and that
+//! is a decision rather than a leftover. [`open_default`]'s doc comment carries
+//! the undo argument in full; the short form is that reading a marked-up
+//! drawing *is* opening and closing bubbles, and an undo log in which nineteen
+//! entries in twenty say *"looked at a comment"* cannot do the job an undo log
+//! is for.
 //!
 //! ## Where the pieces are
 //!
@@ -206,15 +239,26 @@ pub mod model;
 /// Which pop-ups are showing, and who decided.
 pub mod open;
 
+/// ★★★ **Everything in the window that CHANGES something** — the note
+/// editor's controls, *Delete comment*, and the `/Open` write-back. Split out
+/// under **R2** on 2026-09-06, when `set_annotation_open`'s control took this
+/// file to 1,639 lines.
+///
+/// Its header carries the seam: the rest of this module **reads** — a heading,
+/// a byline, the words, the thread, a tooltip, a placement — and that one is
+/// the only part that produces an `Action`.
+mod controls;
+
 use egui::{Pos2, Rect};
 use pdfcer_core::object::ObjId;
 
 use crate::app::actions::Action;
-use crate::app::actions::annot::AnnotAction;
 use crate::app::modes::Capabilities;
 use crate::app::state::OpenDoc;
 use crate::canvas::mapping::PageMapping;
 use crate::panels::comments::note::NoteDraft;
+
+use self::controls::controls;
 use crate::text::annotpopup as t;
 use crate::text::panels::comments as tp;
 
@@ -248,6 +292,15 @@ pub const REGION_BOX: &str = "notepopup.box"; // ui-text-exempt: trace region na
 pub const REGION_SAVE: &str = "notepopup.save"; // ui-text-exempt: trace region name, never displayed
 /// The region *Delete comment* publishes.
 pub const REGION_DELETE: &str = "notepopup.delete"; // ui-text-exempt: trace region name, never displayed
+/// The region the *Open by default* control publishes — the one control in
+/// this window whose effect is **in the file** and invisible on screen.
+///
+/// ★★ Which is exactly why it needs a region of its own rather than being
+/// counted among the others: nothing about the pop-up changes when it is
+/// pressed, so a driven check has no visual oracle for it at all and the rect
+/// plus the `set-annotation-open-applied` trace line are the whole of what a
+/// harness can see.
+pub const REGION_OPEN_DEFAULT: &str = "notepopup.open_default"; // ui-text-exempt: trace region name, never displayed
 
 /// The pop-up's width, in **screen points**.
 ///
@@ -748,14 +801,27 @@ fn body(
 
 /// The replies hanging off this comment, read from `/IRT`.
 ///
-/// # ★★ Read-only, and that is an engine limit rather than a choice
+/// # ★★★ Read-only HERE — and as of 2026-09-06 that is a scope decision
 ///
-/// `pdfcer_core::annot::Annotation` models `/IRT` and `/RT`, and
-/// `EditSession` has no verb that writes either — audited against v0.38.0. So
-/// a thread another product authored is legible here and this shell cannot add
-/// to it. R9 forbids a greyed Reply button for a capability no state of the
-/// program can reach, so **nothing is drawn** where one would go; the gap is
-/// filed as `request_a_reply_can_be_read_and_never_written.md`.
+/// This paragraph read *"read-only, and that is an engine limit rather than a
+/// choice … `EditSession` has no verb that writes either"*, filed as
+/// `request_a_reply_can_be_read_and_never_written.md`. **`Pass 253.0` closed
+/// it**: `EditSession::add_reply` writes `/IRT` and `/RT /R`, and this shell
+/// authors replies — from the **Comments panel**
+/// (`crate::panels::comments::editor::reply_control`), which is where a
+/// reviewer's work list already lives.
+///
+/// ⇒ So what is absent here is a *control*, not a *capability*, and the two
+/// expire on different events. Adding composition to this window is wiring: the
+/// thread is already gathered, already drawn, and the action bus already
+/// carries `AnnotAction::Reply`.
+///
+/// ★★ **Every reply in this list is transitive**, which is why it can afford
+/// to be flat. [`model::replies_to`] gathers anything whose `/IRT` chain
+/// reaches the root, so an answer to an answer appears here beside the answer
+/// rather than being lost — and the panel makes the same choice for the same
+/// reason. `crate::panels::comments::body`'s threading section carries the
+/// argument and the cost.
 ///
 /// # Cost
 ///
@@ -806,148 +872,6 @@ fn thread(ui: &mut egui::Ui, f: &Ctx<'_>, note: &NoteView) {
                 );
             }
         });
-    }
-}
-
-/// The controls under the note: edit, save, remove, delete — or the sentence
-/// that says why there are none.
-///
-/// # ★★★ Four states, and each is a fact about the document or the mode rather
-/// than about what this build can do
-///
-/// | state | what is drawn |
-/// |---|---|
-/// | **Read mode** | one sentence naming the mode that can edit. R9's *temporarily* unavailable case — see the module header |
-/// | **the file locks it** (§12.5.3 bit 8) | one sentence saying so. R83: the controls are omitted, not offered and refused |
-/// | **a ce dimension** | one sentence saying where its text comes from. Rule 15; a note typed over it is regenerated away |
-/// | anything else | *Add note* / *Edit note*, the editor when it is open, and *Delete comment* |
-///
-/// None of the three sentences is a greyed button, and none is temporary in a
-/// way the operator cannot see: the first names its own remedy, and the other
-/// two are properties of the file.
-fn controls(
-    ui: &mut egui::Ui,
-    f: &Ctx<'_>,
-    note: &NoteView,
-    draft: &mut NoteDraft,
-    existing: &str,
-    actions: &mut Vec<Action>,
-) {
-    if !f.caps.author_markup {
-        ui.label(egui::RichText::new(t::popup_read_only()).small().weak());
-        return;
-    }
-    if note.locked {
-        ui.label(egui::RichText::new(t::popup_locked()).small().weak());
-        return;
-    }
-    if f.is_ce_dimension {
-        // The caption is already under the body — a ce dimension's text is its
-        // measurement — so nothing more is said here. What is withheld is the
-        // whole control row, including Delete: `delete_annotation` would
-        // remove the `/Line` and leave the `/PieceInfo` sidecar describing a
-        // ce dimension that no longer exists. That is the Dimension groups
-        // panel's subject, not this window's.
-        return;
-    }
-
-    if draft.editing(note.id, f.doc.edit_epoch) {
-        ui.horizontal(|ui| {
-            let save = ui.button(t::popup_save());
-            crate::diag::ui_rect_visible(REGION_SAVE, save.rect, f.clip);
-            if save.clicked() {
-                // ★★★ `keep_author` comes from the SAME function the Comments
-                // panel uses, and that is not tidiness. `pdfcer-core` named
-                // this mistake when it shipped the verb: *"an implementation
-                // writing all three keys unconditionally would silently strip
-                // the author and date on every correction, leaving a review
-                // comment from nobody, dated never."* Two editors for one
-                // note, two spellings of the rule, and one of them eventually
-                // gets it wrong — so there is one spelling.
-                actions.push(Action::Annot(AnnotAction::SetNote {
-                    id: note.id,
-                    text: draft.text().to_owned(),
-                    keep_author: crate::panels::comments::keeps_author_name(note.author.as_deref()),
-                }));
-                draft.close();
-            }
-            if ui.button(t::popup_cancel()).clicked() {
-                draft.close();
-            }
-            // Only when there is something to remove. `clear_markup_note` on
-            // an annotation with no note is a call whose entire effect is an
-            // undo entry, and R9's rule about a control that cannot do
-            // anything applies to one that can only do nothing.
-            if !existing.is_empty()
-                && ui
-                    .button(t::popup_remove())
-                    .on_hover_text(t::popup_remove_tooltip())
-                    .clicked()
-            {
-                actions.push(Action::Annot(AnnotAction::ClearNote { id: note.id }));
-                draft.close();
-            }
-        });
-        return;
-    }
-
-    ui.horizontal(|ui| {
-        let label = if existing.is_empty() {
-            t::popup_add()
-        } else {
-            t::popup_edit()
-        };
-        let edit = ui.button(label);
-        crate::diag::ui_rect_visible(REGION_EDIT, edit.rect, f.clip);
-        if edit.clicked() {
-            draft.begin(note.id, f.doc.edit_epoch, existing);
-        }
-        delete(ui, f, note, actions);
-    });
-}
-
-/// *Delete comment*, and the guard that decides whether it is drawn at all.
-///
-/// # ★★★ The Comments panel's *"this build has no Delete"* was true and is not
-///
-/// That paragraph was written on 2026-08-14 and its stated reason —
-/// *"`crate::app::actions::Action` has no variant that could carry the
-/// intent"* — stopped being true when `AnnotAction::Delete` landed. It is
-/// corrected in place, dated, in that module's own header, along with the
-/// `/TrapNet` reasoning that depended on it. **A limitation sentence is a
-/// citation with an hours-long shelf life**, and this project has now paid for
-/// that lesson six times.
-///
-/// # R83: the control is omitted when the engine would refuse
-///
-/// `EditSession::annotation_deletion_refusal` answers *"would
-/// `delete_annotation` refuse right now?"* for the two document-wide reasons —
-/// encryption and a certification signature — and asking it is what lets this
-/// draw nothing instead of offering a button whose only outcome is a worded
-/// decline. The per-annotation refusals (a locked annotation, a ce dimension)
-/// are handled above by the same rule.
-///
-/// ⚠ It is **not a perfect oracle**, and `docs/core-api/03-capabilities.md`
-/// §3.4 says so: the real call can still refuse. That is why the funnel's
-/// worded decline stays the answer of record and this is only a filter on the
-/// affordance.
-fn delete(ui: &mut egui::Ui, f: &Ctx<'_>, note: &NoteView, actions: &mut Vec<Action>) {
-    if f.doc.session.annotation_deletion_refusal().is_some() {
-        return;
-    }
-    let button = ui
-        .button(t::popup_delete())
-        .on_hover_text(t::popup_delete_tooltip());
-    crate::diag::ui_rect_visible(REGION_DELETE, button.rect, f.clip);
-    if button.clicked() {
-        // The pop-up is closed first. An open window describing an annotation
-        // that no longer exists would draw for one more frame with an empty
-        // body, which reads as the delete having failed.
-        open::set(ui.ctx(), &f.doc.path, note.id, false);
-        actions.push(Action::Annot(AnnotAction::Delete {
-            page: f.page_index,
-            id: note.id,
-        }));
     }
 }
 

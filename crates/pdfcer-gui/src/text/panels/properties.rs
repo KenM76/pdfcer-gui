@@ -526,24 +526,35 @@ pub const fn markup_locked() -> &'static str {
 /// sentence has an hours-long shelf life on this project and a false one is
 /// worse than none.
 ///
-/// - **move** — `EditSession::move_annotation` refuses a ce dimension and a
-///   form widget by name, then works from `/Rect` and whatever geometry keys
-///   are present. A `/Text`, `/FreeText` or `/Stamp` has a `/Rect`.
-/// - **resize** — `EditSession::resize_annotation` refuses the same two, and
-///   otherwise **carries** a foreign appearance rather than rebuilding it; a
-///   uniform scale is exact. (A *non-uniform* scale of a foreign appearance is
-///   refused unless distortion is allowed. That refusal arrives from the engine
-///   with its own message and is not this sentence's subject.)
+/// # ⚠⚠⚠ AND IT BECAME PARTLY FALSE THAT AFTERNOON — the shelf life was hours
+///
+/// **What this returned until 2026-09-06 (afternoon)**, kept verbatim because
+/// it was reasonable when written and the correction is the useful part:
+///
+/// > *"pdfcer does not redraw this kind of mark, so its colour, line width and
+/// > opacity cannot be changed here. You can still move it, resize it, delete
+/// > it, and edit the note it carries."*
+///
+/// True of the only style verb that existed; `set_text_annot_style` shipped
+/// that afternoon and restyles two of the three subtypes it was shown for.
+/// [`crate::text::panels::textannotstyle`]'s header has the whole account.
+///
+/// - **move** — `move_annotation` refuses a ce dimension and a form widget by
+///   name, then works from `/Rect` and whatever geometry keys are present.
+/// - **resize** — `resize_annotation` refuses the same two and otherwise
+///   **carries** a foreign appearance rather than rebuilding it; a uniform
+///   scale is exact. (A non-uniform scale of a foreign appearance is refused
+///   unless distortion is allowed — that refusal arrives from the engine with
+///   its own message and is not this sentence's subject.)
 /// - **delete** — [`markup_locked`] already promises it, and
-///   `crate::panels::properties::annotdelete` speaks for an annotation of any
-///   kind: the verb is document-wide rather than per-subtype.
-/// - **the note** — `EditSession::set_markup_note` refuses a ce dimension and a
-///   widget, and nothing else. `/Contents` on a sticky note is the whole point
-///   of a sticky note.
+///   `crate::panels::properties::annotdelete` speaks for any annotation: the
+///   verb is document-wide rather than per-subtype.
+/// - **the note** — `set_markup_note` refuses a ce dimension and a widget, and
+///   nothing else.
 #[must_use]
 pub const fn markup_not_restylable() -> &'static str {
-    "pdfcer does not redraw this kind of mark, so its colour, line width and opacity cannot be \
-     changed here. You can still move it, resize it, delete it, and edit the note it carries."
+    "pdfcer cannot read this mark's shape back, so its appearance cannot be changed here. You \
+     can still move it, resize it, delete it, and edit the note it carries."
 }
 
 /// The fill control's label — `/IC`, the interior colour.

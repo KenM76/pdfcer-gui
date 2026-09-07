@@ -42,11 +42,13 @@
 //! way for an operator to tell which they wanted.
 
 use egui::Ui;
-use pdfcer_core::annot_author::StampName;
+use pdfcer_core::annot_author::{StampName, StickyIcon};
 use pdfcer_core::page_tree::Rect;
 
 use crate::app::actions::Action;
-use crate::canvas::textannot::{DEFAULT_STAMP, MAX_TEXT_CHARS, STAMPS, TextAnnotKind};
+use crate::canvas::textannot::{
+    DEFAULT_STAMP, DEFAULT_STICKY_ICON, MAX_TEXT_CHARS, STAMPS, STICKY_ICONS, TextAnnotKind,
+};
 use crate::text::textannot as t;
 
 /// The region the whole window publishes.
@@ -55,6 +57,14 @@ pub const REGION_BODY: &str = "dialog:text-annot"; // ui-text-exempt: trace regi
 pub const REGION_TEXT: &str = "text-annot.text"; // ui-text-exempt: trace region name, never displayed
 /// The region the Accept control publishes.
 pub const REGION_ACCEPT: &str = "text-annot.accept"; // ui-text-exempt: trace region name, never displayed
+/// The region the sticky note's icon chooser publishes, so a driven check can
+/// find it and press one of the seven.
+///
+/// ★ Its own region rather than sharing [`REGION_BODY`], for the reason every
+/// other region in this shell is separate: a check that asserts *"the icon
+/// chooser is on screen"* against the window's own rectangle would pass on a
+/// window with no chooser in it at all.
+pub const REGION_ICON: &str = "text-annot.icon"; // ui-text-exempt: trace region name, never displayed
 
 /// One open text-annotation dialog.
 pub struct TextAnnotDialog {
@@ -75,6 +85,9 @@ pub struct TextAnnotDialog {
     /// The stamp selected in the gallery. Meaningless for the other kinds and
     /// carried anyway — see `Action::CommitTextAnnot`'s field of the same name.
     stamp: StampName,
+    /// The icon selected in the sticky note's chooser. Meaningless for the
+    /// other kinds and carried anyway, exactly as [`Self::stamp`] is.
+    icon: StickyIcon,
     /// Set by Accept, consumed after the window's closure returns.
     accept_requested: bool,
     /// Set by Cancel, consumed by [`Self::show`].
@@ -122,6 +135,28 @@ const FOCUS_ATTEMPT_FRAMES: u8 = 8;
 /// of the two bodies and fits inside it.
 const WINDOW_PTS: egui::Vec2 = egui::vec2(420.0, 240.0);
 
+/// **How much taller the sticky note's window opens**, in points.
+///
+/// ★★ Because that one body is genuinely longer than the other two, and by a
+/// known amount: seven radio rows, a heading and the icon disclosure, added
+/// under the text field on 2026-09-06. 240 pt held a four-line field and two
+/// buttons comfortably; it does not hold those as well, and a dialog whose
+/// Accept button is below its own bottom edge is a window an operator cannot
+/// finish.
+///
+/// # ★ A constant added to [`WINDOW_PTS`], not a size measured from the body
+///
+/// `print/layout.rs`' rule and `Host::fit`'s: **a size measured from the
+/// content it sizes is R128**, and this project has met that three times. So
+/// the number is derived from what is being added — seven rows at roughly the
+/// row height plus a heading and a wrapped small line — and stated as a
+/// constant that can be read and argued with, rather than queried from a `Ui`
+/// that is being laid out inside the window this decides the height of.
+///
+/// ⚠ It is deliberately generous. Over-tall costs the operator nothing on a
+/// dialog they can resize and drag; under-tall costs them the Accept button.
+const STICKY_EXTRA_PTS: f32 = 190.0;
+
 /// The smallest the note window may be, by resize or by squeeze.
 ///
 /// The same floor handed to `Host` as its `min_size`, read from one constant so
@@ -150,13 +185,29 @@ const SCREEN_MARGIN_PTS: f32 = 40.0;
 /// an unreachable negative size is the kind of thing that becomes reachable
 /// when somebody adds a second monitor at 250 % scaling.
 #[must_use]
-fn window_size(screen: egui::Rect) -> egui::Vec2 {
+fn window_size(screen: egui::Rect, kind: TextAnnotKind) -> egui::Vec2 {
+    // ★ The height is per-KIND as of 2026-09-06, and the width is not. The
+    // three bodies are the same width by construction — a field, a gallery and
+    // a chooser all stretch to the window — and only the sticky's grew
+    // downwards. Making the width vary too would be a second number with no
+    // reason behind it.
+    let extra = match kind {
+        TextAnnotKind::Sticky => STICKY_EXTRA_PTS,
+        TextAnnotKind::TextBox | TextAnnotKind::Stamp => 0.0,
+    };
     egui::vec2(
         WINDOW_PTS
             .x
             .min(screen.width() - SCREEN_MARGIN_PTS)
             .max(MIN_WINDOW_PTS.x),
-        WINDOW_PTS.y,
+        // ★ Clamped to the application window, minus the same margin the width
+        // leaves, so a tall dialog on a short screen is squeezed rather than
+        // running off the bottom — and floored at `MIN_WINDOW_PTS.y` for the
+        // reason `window_size`'s width floor exists: an unreachable negative
+        // size becomes reachable the day somebody adds a monitor at 250 %.
+        (WINDOW_PTS.y + extra)
+            .min(screen.height() - SCREEN_MARGIN_PTS)
+            .max(MIN_WINDOW_PTS.y),
     )
 }
 
@@ -210,6 +261,7 @@ impl TextAnnotDialog {
             rect,
             text: String::new(),
             stamp: DEFAULT_STAMP,
+            icon: DEFAULT_STICKY_ICON,
             accept_requested: false,
             close_requested: false,
             focused_once: false,
@@ -220,7 +272,7 @@ impl TextAnnotDialog {
     /// Draw one frame. Returns `false` when it should close.
     pub fn show(&mut self, ctx: &egui::Context, actions: &mut Vec<Action>) -> bool {
         let screen = ctx.input(egui::InputState::content_rect);
-        let size = window_size(screen);
+        let size = window_size(screen, self.kind);
         // ★★★ ITS OWN OS WINDOW as of 2026-08-21, AND IT OPENS WHERE IT SAYS —
         // the second half restored 2026-09-04, review finding A16c.
         //
@@ -265,6 +317,7 @@ impl TextAnnotDialog {
                 rect: self.rect,
                 text: std::mem::take(&mut self.text),
                 stamp: self.stamp,
+                icon: self.icon,
             });
             return false;
         }
@@ -284,6 +337,24 @@ impl TextAnnotDialog {
         } else {
             self.field(ui);
         }
+        // ★★★ **The icon chooser — the sticky note's own gallery**, and it sits
+        // BELOW the text field rather than above it.
+        //
+        // The field is the question the window opened to ask (*"what is the
+        // note?"*), and it is the control that takes focus on the first frame.
+        // A chooser above it would put seven radio buttons between the title and
+        // the caret, so the operator's eye and the keyboard would start in
+        // different places — which is the same defect
+        // `TextAnnotDialog::field`'s retry exists to prevent, arrived at from
+        // the layout instead of from the focus race.
+        //
+        // ★ It is drawn for the sticky kind alone, and absent — not greyed —
+        // for the other two. R9, and the engine agrees in writing: an `icon` on
+        // anything but a `/Text` is `EditError::StylePropertyNotApplicable`,
+        // refused by name rather than swallowed, because a `/Stamp`'s face
+        // comes from its own `/Name` vocabulary and a `/FreeText` has no icon
+        // at all.
+        self.icons(ui);
 
         ui.add_space(10.0);
         ui.separator();
@@ -395,6 +466,38 @@ impl TextAnnotDialog {
         ui.label(egui::RichText::new(t::bound(self.kind)).small().weak());
     }
 
+    /// **The sticky note's icon chooser**, for the one kind that has a `/Name`
+    /// picture.
+    ///
+    /// ★ Radios over a combo box, matching [`Self::gallery`] one function down
+    /// and for its stated reason: seven entries is a set an operator reads at a
+    /// glance, and a combo would hide six of them behind a click for no saving.
+    /// Using the *same* control for the two choosers is deliberate — they are
+    /// the same act (*pick one of seven*) and a window that answered it two
+    /// ways would be teaching the operator a distinction that does not exist.
+    ///
+    /// ★★ The disclosure under it is not optional. `annot_author::sticky_note`
+    /// (`pdfcer-core` `annot_author.rs:3712`) passes the icon to `/Name` at
+    /// `:3759` and **nowhere else** — the marker artwork is the same dog-eared
+    /// page glyph for all seven, by a trade-dress decision the engine records
+    /// at `annot_author.rs:2794`. So an operator who picks *Key* sees no change
+    /// here and a key in another reader, and
+    /// [`crate::text::textannot::sticky_icon_bound`] is where they are told
+    /// that before it happens rather than after.
+    fn icons(&mut self, ui: &mut Ui) {
+        if self.kind != TextAnnotKind::Sticky {
+            return;
+        }
+        ui.add_space(8.0);
+        ui.label(t::sticky_icon_heading());
+        let top = ui.cursor().min;
+        for icon in STICKY_ICONS {
+            ui.radio_value(&mut self.icon, *icon, t::sticky_icon_label(*icon));
+        }
+        crate::diag::ui_rect(REGION_ICON, egui::Rect::from_min_max(top, ui.cursor().min));
+        ui.label(egui::RichText::new(t::sticky_icon_bound()).small().weak());
+    }
+
     /// The stamp gallery, for the one kind whose words come from `/Name`.
     fn gallery(&mut self, ui: &mut Ui) {
         // A vertical list of radios rather than a combo box: seven entries is
@@ -472,7 +575,7 @@ mod tests {
     #[test]
     fn the_note_window_does_not_open_in_the_corner() {
         let screen = screen();
-        let size = window_size(screen);
+        let size = window_size(screen, TextAnnotKind::TextBox);
         let at = opening_position(screen, size);
 
         assert!(
@@ -502,23 +605,108 @@ mod tests {
     /// close.
     #[test]
     fn the_note_window_is_squeezed_but_never_below_its_own_floor() {
-        let roomy = window_size(screen());
+        let roomy = window_size(screen(), TextAnnotKind::TextBox);
         assert_eq!(roomy, WINDOW_PTS, "a wide window gets the size asked for");
 
-        let narrow = window_size(egui::Rect::from_min_size(
-            egui::Pos2::ZERO,
-            egui::vec2(380.0, 800.0),
-        ));
+        let narrow = window_size(
+            egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(380.0, 800.0)),
+            TextAnnotKind::TextBox,
+        );
         assert!(narrow.x < WINDOW_PTS.x, "a narrow window squeezes it");
         assert!(narrow.x >= MIN_WINDOW_PTS.x);
 
-        let absurd = window_size(egui::Rect::from_min_size(
-            egui::Pos2::ZERO,
-            egui::vec2(10.0, 10.0),
-        ));
+        let absurd = window_size(
+            egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(10.0, 10.0)),
+            TextAnnotKind::TextBox,
+        );
         assert!(
             absurd.x >= MIN_WINDOW_PTS.x,
             "a window narrower than the margin must not produce a size of {absurd:?}"
+        );
+        assert!(
+            absurd.y >= MIN_WINDOW_PTS.y,
+            "the height floor is the width floor's twin and arrived with it: {absurd:?}"
+        );
+    }
+
+    /// ★★★ **The sticky note's window is taller than the other two, and the
+    /// other two did not move.**
+    ///
+    /// The icon chooser added seven radio rows, a heading and a disclosure under
+    /// the sticky's text field on 2026-09-06. Without the extra height the
+    /// Accept button sits below the window's own bottom edge — a dialog the
+    /// operator cannot finish, which is a worse failure than any it replaces.
+    ///
+    /// ★★ The second and third assertions are the **positive controls** for the
+    /// first, and they are what make it a test. Asserting only *"the sticky is
+    /// taller"* passes on a `window_size` that had gone taller for **every**
+    /// kind — the change would be invisible, the text box and the stamp would
+    /// both grow a strip of empty window, and nothing here would say so.
+    #[test]
+    fn only_the_sticky_notes_window_grew_for_its_chooser() {
+        let screen = screen();
+        let sticky = window_size(screen, TextAnnotKind::Sticky);
+        let boxed = window_size(screen, TextAnnotKind::TextBox);
+        let stamp = window_size(screen, TextAnnotKind::Stamp);
+
+        assert!(
+            sticky.y > boxed.y,
+            "the icon chooser needs room the text box does not: {sticky:?} vs {boxed:?}"
+        );
+        assert_eq!(
+            boxed.y, WINDOW_PTS.y,
+            "the text box has no chooser and must not have grown"
+        );
+        assert_eq!(
+            stamp.y, WINDOW_PTS.y,
+            "the stamp has no chooser and must not have grown"
+        );
+        assert_eq!(
+            sticky.x, boxed.x,
+            "only the height is per-kind; a second varying number would have no reason"
+        );
+    }
+
+    /// ★★★ **The icon the operator picked reaches the action — and the two
+    /// kinds that have no icon still carry the default rather than a
+    /// contradiction.**
+    ///
+    /// The whole placement half of `Pass 253.2` in one assertion: before this,
+    /// every sticky note pdfcer ever authored carried `/Note` because the field
+    /// did not exist.
+    ///
+    /// ★★ The `stamp` assertion beside it is the **positive control for the
+    /// route**, not decoration. `StampName` already travelled this exact path,
+    /// so asserting the two together is what says the icon was added *to* a
+    /// working carrier rather than replacing one — and if a later edit dropped
+    /// either field out of the `Action::CommitTextAnnot` literal, the surviving
+    /// assertion would still be about a live route.
+    #[test]
+    fn the_chosen_icon_reaches_the_commit_action() {
+        let mut d = TextAnnotDialog::open(3, TextAnnotKind::Sticky, rect());
+        assert_eq!(
+            d.icon, DEFAULT_STICKY_ICON,
+            "a fresh chooser opens on Acrobat's default, not the engine's"
+        );
+        d.icon = StickyIcon::Key;
+        d.stamp = StampName::Final;
+        d.text = "note".to_owned();
+        d.accept_requested = true;
+
+        let ctx = egui::Context::default();
+        let mut actions = Vec::new();
+        let _ = ctx.run_ui(on_screen(0), |ui| {
+            d.show(ui.ctx(), &mut actions);
+        });
+
+        let Some(Action::CommitTextAnnot { icon, stamp, .. }) = actions.first() else {
+            panic!("Accept must raise a commit, got {actions:?}");
+        };
+        assert_eq!(*icon, StickyIcon::Key, "the operator's icon did not travel");
+        assert_eq!(
+            *stamp,
+            StampName::Final,
+            "the field the icon was modelled on must still travel too"
         );
     }
 

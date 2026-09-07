@@ -702,6 +702,143 @@ pub fn comment_row_delete_tooltip() -> &'static str {
     "Remove this markup and its note from the page. This is not redaction: saving without rewriting the whole file leaves the previous revision in place."
 }
 
+// ===========================================================================
+// ANSWERING A COMMENT — `EditSession::add_reply`, `Pass 253.0`
+// ===========================================================================
+//
+// ★★★ These strings did not exist until 2026-09-06, and the sentence that
+// explains why is one this project has now written eight times: **there was no
+// verb.** `pdfcer-core` modelled `/IRT` and `/RT` from `Pass 38.5` and could
+// write neither, so this panel could display a conversation and not continue
+// one. R9 forbade a greyed Reply button for a capability no state of the
+// program could reach, so nothing was drawn and nothing was worded.
+//
+// ⇒ The lesson attached to that, and the reason this comment is here rather
+// than in a commit message: **an absence with a reason is still an absence
+// with a shelf life.** The reason expired the afternoon `Pass 253.0` landed,
+// and a catalog that had said "there is no Reply and there cannot be" would
+// have gone on saying it.
+
+/// The control that opens the reply editor on a row.
+///
+/// A verb, not *"Reply…"* with an ellipsis: the ellipsis convention in this
+/// shell means *this opens a dialog*, and this opens an editor **in the row**,
+/// three pixels below the button. The same reasoning
+/// [`comment_row_add_note`] follows.
+#[must_use]
+pub fn comment_row_reply() -> &'static str {
+    "Reply"
+}
+
+/// What Reply does, on hover — and the one fact about it an operator cannot
+/// see.
+///
+/// ★ It names **a new comment**, deliberately. The visible result of pressing
+/// Post reply is a new row in this list and a few words inside the parent's
+/// pop-up, which looks exactly like a note having been edited. It is not: it
+/// is a `/Text` annotation of its own, with its own object number, its own
+/// byline and its own date, and *"answers"* is the shortest true word for
+/// that.
+#[must_use]
+pub fn comment_row_reply_tooltip() -> &'static str {
+    "Write a new comment that answers this one. The comment you are answering is not changed."
+}
+
+/// The reply editor's commit.
+///
+/// *Post*, not *Save*, and the difference is not decoration: [`comment_row_note_save`]
+/// writes words onto an annotation that already exists, and this **creates
+/// one**. Two controls that read alike would leave the operator with no way to
+/// tell, at the moment of pressing, which of the two things is about to happen
+/// — and one of them cannot be told apart from the other afterwards either,
+/// because a corrected note and a new reply both just show new words on screen.
+#[must_use]
+pub fn comment_row_reply_save() -> &'static str {
+    "Post reply"
+}
+
+/// The hint under the reply editor.
+///
+/// Names the two keys that are not obvious in a multi-line box, exactly as
+/// [`comment_row_note_hint`] does, and names *this* editor's commit rather
+/// than that one's — an operator with two editors in one panel needs the hint
+/// to say which button it is talking about.
+#[must_use]
+pub fn comment_row_reply_hint() -> &'static str {
+    "Enter starts a new line. Press Post reply to write it, or Escape to abandon it."
+}
+
+/// **What the reply will be signed with**, disclosed before it is written.
+///
+/// # ★★ Why this is a different sentence from [`comment_row_note_signature`]
+///
+/// Because the *rule* is different, not because the wording drifted. Saving a
+/// note over an existing comment may leave somebody else's `/T` untouched —
+/// that is what `keep_author` decides, and that panel's disclosure has two
+/// forms because the outcome has two shapes. A reply is a **new annotation**
+/// and there is no prior byline anywhere in the question: it carries the
+/// operator's name or it carries none, always, and one sentence covers it.
+///
+/// ★ It names the *setting* rather than quoting the configured value, for
+/// [`comment_row_note_signature`]'s stated reason: a panel body is handed
+/// `&OpenDoc` and `&mut PanelsState` and no preferences at all, so quoting the
+/// name would mean threading prefs through every panel signature in the crate
+/// for one sentence. Naming the place answers the operator's real question —
+/// *where do I change what my comments say?*
+#[must_use]
+pub fn comment_row_reply_signature() -> &'static str {
+    "Your reply is signed with the name in Settings > Comments and dated now. Leave that name blank to reply anonymously."
+}
+
+/// ★★★ **Shown when the row being answered is itself a reply** — the
+/// threading-depth decision, said out loud where it is made.
+///
+/// §12.5.6.2 permits a reply to a reply and `add_reply` allows it (it refuses
+/// only a reply to *itself*, which is not a thread). This panel and the canvas
+/// pop-up both draw a thread **flat**, so an answer to an answer appears in
+/// the same list as everything else under the root rather than indented under
+/// the thing it answers.
+///
+/// ⇒ That is a real difference between what the file records and what the
+/// screen shows, and rule 4 makes saying so mandatory. The `/IRT` written is
+/// the row's own annotation — the file keeps the true depth — and this
+/// sentence is what stops an operator concluding from a flat list that pdfcer
+/// flattened their thread. `crate::panels::comments`' threading paragraph
+/// carries the full argument.
+#[must_use]
+pub fn comment_row_reply_to_a_reply() -> &'static str {
+    "You are answering a reply. Your answer joins the same conversation and is listed with it, rather than nested under it."
+}
+
+/// ★★★ **What the engine did that no surface in this program shows** — the
+/// disclosure after a reply lands.
+///
+/// # The fact being disclosed
+///
+/// `add_reply` gives the reply a `/Popup` of its own (§12.5.6.14), and
+/// `ReplyAdded::reply_has_popup` reports it because this shell asked to be
+/// told: *"a reply that quietly acquired a second window at a second location
+/// is something we would rather be told about than discover on a screenshot."*
+///
+/// pdfcer does **not** draw that window —
+/// `crate::canvas::notepopup::model::notes_on` excludes replies, so an answer
+/// is shown inside the thread of the comment it answers and never as a second
+/// bubble on top of it. Another reader may draw it, and an operator who has
+/// only ever seen this program has no way to know the window is in their file.
+///
+/// # ★ `None` when there is no window
+///
+/// The engine reports the fact rather than guaranteeing it, so the sentence is
+/// conditional on the engine's own answer rather than on this shell's
+/// expectation. A disclosure that fired unconditionally would be a claim about
+/// the file that pdfcer had not checked.
+#[must_use]
+pub fn reply_posted(has_popup: bool) -> Option<&'static str> {
+    has_popup.then_some(
+        "Your reply was added to the conversation. It also carries a pop-up window of its own, which pdfcer shows inside the comment you answered and other readers may show separately.",
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -717,8 +854,12 @@ mod tests {
     /// `crate::app::modes::defaults`' `SideSpec` is owned rather than
     /// `&'static`: these are ordinary functions, and an ordinary call cannot
     /// be promoted into a `const` initializer.
-    fn all_fixed() -> [&'static str; 11] {
+    fn all_fixed() -> [&'static str; 15] {
         [
+            comment_row_reply_tooltip(),
+            comment_row_reply_hint(),
+            comment_row_reply_signature(),
+            comment_row_reply_to_a_reply(),
             comments_none(),
             comments_all_without_notes(),
             comment_row_modified_tooltip(),
@@ -958,5 +1099,42 @@ mod tests {
         for text in ["Check this weld", "  leading space", "", "多行\ntext"] {
             assert_eq!(comment_row_body(text), text);
         }
+    }
+
+    /// ★★★ **A reply's own pop-up is disclosed, and only when it has one.**
+    ///
+    /// # The fact, and why nothing on screen can carry it
+    ///
+    /// `add_reply` authors a `/Popup` companion for the reply it creates, and
+    /// `ReplyAdded::reply_has_popup` reports it because this shell asked to be
+    /// told. pdfcer does **not** draw that window —
+    /// `canvas::notepopup::model::notes_on` excludes replies, so an answer
+    /// appears inside the thread of the comment it answers and never as a
+    /// second bubble on top of it — which means an operator who has only ever
+    /// seen this program has no way to learn the window is in their file.
+    /// Another reader will draw it.
+    ///
+    /// ★ The `false` case is asserted beside it because the sentence is a
+    /// **claim about the file**: firing it unconditionally would tell the
+    /// operator about a window pdfcer had not established was there, which is
+    /// rule 4 broken in the direction that is hardest to notice — a disclosure
+    /// that is wrong reads exactly like one that is right.
+    #[test]
+    fn a_replys_own_popup_is_disclosed_only_when_the_engine_reports_one() {
+        let told = reply_posted(true).expect("a reply with a pop-up owes a sentence");
+        assert!(
+            told.contains("pop-up"),
+            "the sentence must name the thing it is disclosing: {told}"
+        );
+        assert!(
+            told.contains("other readers") || told.contains("others"),
+            "the whole point is that another reader draws it: {told}"
+        );
+        assert_eq!(
+            reply_posted(false),
+            None,
+            "a reply with no pop-up has nothing to disclose, and a sentence \
+             about a window that is not there is an invention"
+        );
     }
 }

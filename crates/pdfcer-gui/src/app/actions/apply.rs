@@ -600,6 +600,7 @@ impl PdfcerApp {
             Action::Annot(action) => {
                 super::annots::apply_action(doc, action, self.prefs.author_name.trim());
             }
+            Action::RecordReviewState(r) => r.record(doc, self.prefs.author_name.trim()),
             // ★ A paste is an `add_markup` and nothing more, which is the
             // whole reason this feature was buildable at all: the spec that
             // came off the clipboard is the same shape the authoring path
@@ -760,6 +761,7 @@ impl PdfcerApp {
                 rect,
                 text,
                 stamp,
+                icon,
             } => super::textannot::commit(
                 doc,
                 &self.prefs,
@@ -768,6 +770,7 @@ impl PdfcerApp {
                     kind,
                     rect,
                     stamp,
+                    icon,
                 },
                 &text,
                 // ★ This kind's own pen, not the shape pen — read

@@ -47,13 +47,23 @@
 //! *"An unavailable capability renders nothing, not a disabled stub. Greying
 //! is reserved for temporarily unavailable, and must explain on hover."*
 //!
-//! 1. **There is no Reply control and no string for one.** `pdfcer-core`
-//!    v0.38.0 reads `/IRT` and `/RT` and has no verb of any kind that writes
-//!    either — audited 2026-09-05; the only write-side occurrences in the
-//!    crate are two *destructive* ones (the deletion cascade at
-//!    `edit.rs:24969` and the clipboard key-strip at `edit.rs:10673`). A
-//!    greyed Reply button would promise a state of the program that does not
-//!    exist. Filed as `request_a_reply_can_be_read_and_never_written.md`.
+//! 1. **There is no Reply control on THIS surface, and the reason changed on
+//!    2026-09-06.** It used to be *"`pdfcer-core` v0.38.0 reads `/IRT` and
+//!    `/RT` and has no verb of any kind that writes either"*, filed as
+//!    `request_a_reply_can_be_read_and_never_written.md`. **That is no longer
+//!    true**: `EditSession::add_reply` shipped as `Pass 253.0`
+//!    (`pdfcer-core/src/edit.rs:26948`) and this shell authors replies from
+//!    the **Comments panel**, whose catalog carries the wording
+//!    (`crate::text::panels::comments::comment_row_reply` and its four
+//!    neighbours).
+//!
+//!    ⇒ So the absence here is now a **scope** decision rather than a
+//!    capability one, and the distinction matters: an R9 absence is a
+//!    statement about the program and expires when the engine moves, while
+//!    this one is a statement about one surface and expires when somebody
+//!    decides the canvas window should compose as well as display. The pop-up
+//!    **shows** the thread already — [`popup_replies`] and its two neighbours
+//!    — so adding composition here is wiring, not a new capability.
 //! 2. **There is no Accepted/Rejected control and no string for one.**
 //!    `/State` and `/StateModel` (§12.5.6.4 Table 171) are **absent from the
 //!    engine entirely** — zero occurrences, read or write. Filed as
@@ -140,13 +150,30 @@ pub fn popup_close() -> &'static str {
 /// What the close control does — on hover, because the glyph alone is
 /// conventional enough not to need a caption on the row.
 ///
-/// ★ It says **screen**, and that is the honest half. Closing a pop-up is
-/// interface state and is not written back to the file: `pdfcer-core` v0.38.0
-/// has no verb that can change an existing annotation's `/Open`. Saying
-/// "close" alone would let an operator conclude they had changed the document.
+/// ★★★ It says **screen**, and as of 2026-09-06 that is a *choice* rather
+/// than a limit — which is why the sentence now names the control that does
+/// the other thing.
+///
+/// # What changed, and why the wording had to change with it
+///
+/// This entry used to justify itself with *"`pdfcer-core` v0.38.0 has no verb
+/// that can change an existing annotation's `/Open`."* `Pass 253.3` shipped
+/// `EditSession::set_annotation_open` and that reason expired. The behaviour
+/// did **not** change and must not: closing a bubble you were reading is a
+/// reading gesture, and wiring it to the document would give a reviewer one
+/// undo entry per comment they glanced at and a dirty file after a session in
+/// which they altered nothing. `crate::app::actions::annot::AnnotAction::SetOpen`
+/// carries the whole argument.
+///
+/// ⇒ ★★ But an unchanged behaviour with an expired reason needs a **new**
+/// sentence, because the old one now reads as a limitation that is not there.
+/// So this points at [`popup_open_default`], which is the explicit act that
+/// does write. Rule 4: the operator is told what this did *and* where the
+/// other thing lives, which is the difference between an honest boundary and
+/// a dead end.
 #[must_use]
 pub fn popup_close_tooltip() -> &'static str {
-    "Hide this note on screen. The file's own open-or-closed setting is unchanged."
+    "Hide this note on screen. The file's own open-or-closed setting is unchanged; use Open by default to record it."
 }
 
 /// The control that opens the editor inside the pop-up.
@@ -310,6 +337,90 @@ pub fn popup_note_hint() -> &'static str {
     "Press Escape to leave the note unchanged."
 }
 
+// ===========================================================================
+// THE FILE'S OWN `/Open` — `EditSession::set_annotation_open`, `Pass 253.3`
+// ===========================================================================
+//
+// ★★★ Two states with the same name, and the whole of this group exists to
+// keep them apart in the operator's head:
+//
+// | | who owns it | undo | survives closing the document |
+// |---|---|---|---|
+// | **is this bubble showing right now** | `canvas::notepopup::open` — interface state, keyed by document path | none | no |
+// | **does this comment open when the file is opened** | the document's `/Open` (§12.5.6.4 Table 172, §12.5.6.14 Table 183) | one entry per press | yes |
+//
+// The ✕ moves the first. [`popup_open_default`] moves the second. An operator
+// who could not tell them apart would either believe every click was editing
+// their file, or believe none of them could.
+
+/// The control that records this comment's window state **in the document**.
+///
+/// # ★ Why *Open by default* and not *Save open state*
+///
+/// Because the second names the mechanism and the first names the effect. The
+/// operator's question is *"will this comment be showing when somebody else
+/// opens the drawing?"*, and the label is the answer to it. It also reads
+/// correctly as a checkbox caption in both states, which *Save* — a verb — does
+/// not.
+///
+/// ★★ It is deliberately **not** worded as an instruction about the current
+/// bubble. Ticking it does not open or close anything on screen: the operator
+/// is already looking at the window, and moving it under them as a side effect
+/// of recording a preference would be the surface acting on a gesture nobody
+/// made.
+#[must_use]
+pub fn popup_open_default() -> &'static str {
+    "Open by default"
+}
+
+/// What ticking it does, on hover — and the one thing about it that costs
+/// something.
+///
+/// ★★ It names **the file** and it names **undo**, and both halves are
+/// required. The first because this is the only control in the pop-up whose
+/// effect is invisible on screen — nothing about the window changes when it is
+/// pressed. The second because it is the only control in the pop-up that
+/// *reads* like a view setting and is in fact a document edit, and an operator
+/// who pressed it expecting a preference would otherwise find an entry on their
+/// undo stack with no idea what put it there.
+#[must_use]
+pub fn popup_open_default_tooltip() -> &'static str {
+    "Write this into the file, so the comment opens the same way for the next reader. This is a document change and can be undone."
+}
+
+/// ★★★ **What the engine actually wrote**, for the case where it wrote
+/// nothing.
+///
+/// # The one outcome an operator cannot tell from a defect
+///
+/// `set_annotation_open` writes `/Open` on the annotation only when its subtype
+/// has one — Table 172 gives it to `/Text` and Table 183 to `/Popup`, and
+/// **nothing else in Table 169 carries the key** — and on the `/Popup`
+/// companion only when there is one. An annotation with neither is a legal,
+/// ordinary shape: the call succeeds, writes nothing, and pushes **no undo
+/// entry**.
+///
+/// The affordance is gated on `crate::canvas::notepopup::model::can_record_open_state`
+/// under R83, so this should be unreachable from the control. It is worded
+/// anyway, because *"the button did nothing and said nothing"* is
+/// indistinguishable from a broken build, and because the gate is this shell's
+/// reading of the subtype rules while this sentence is the **engine's own
+/// answer** — if the two ever disagree, the operator hears about it rather
+/// than the disagreement being swallowed.
+///
+/// # ★ `None` on success, and that is not silence
+///
+/// A write that landed needs no sentence: the tick is on screen, it is what
+/// the operator asked for, and a confirmation for every ordinary success is
+/// the noise that makes the exceptional message invisible. Same rule
+/// [`crate::text::panels::comments::reply_posted`] follows.
+#[must_use]
+pub fn open_state_written(annotation: bool, popup: bool) -> Option<&'static str> {
+    (!annotation && !popup).then_some(
+        "This markup has no pop-up window, so there was nothing to record. The document was not changed.",
+    )
+}
+
 /// How many characters of a note the tooltip shows before eliding.
 ///
 /// 160 — about two lines at the tooltip's natural width, which is enough to
@@ -371,6 +482,11 @@ mod tests {
             popup_read_only().to_owned(),
             popup_locked().to_owned(),
             popup_note_hint().to_owned(),
+            popup_open_default().to_owned(),
+            popup_open_default_tooltip().to_owned(),
+            open_state_written(false, false)
+                .expect("the no-op case has a sentence")
+                .to_owned(),
         ];
         for s in &strings {
             let lower = s.to_lowercase();
@@ -470,5 +586,42 @@ mod tests {
         let plain = popup_heading("Line");
         assert!(!plain.contains("dimension"), "{plain}");
         assert!(plain.contains("Line"), "{plain}");
+    }
+
+    /// ★★★ **The no-op sentence fires only when the engine wrote nothing.**
+    ///
+    /// # Both directions, and the silent direction is the one that matters
+    ///
+    /// `set_annotation_open` reaches up to two objects — the annotation's own
+    /// `/Open` when its subtype has one (§12.5.6.4 Table 172 gives it to
+    /// `/Text`; Table 169 gives it to nothing else), and the `/Popup`
+    /// companion's when there is one. **Any** write is a real edit with a real
+    /// undo entry, and confirming it would be noise: the tick is on screen and
+    /// it is what the operator asked for.
+    ///
+    /// ★ A build that spoke on every call would make the one sentence that
+    /// carries information — *"there was nowhere to record this"* —
+    /// indistinguishable from the two that carry none, which is the failure
+    /// this project calls a confirmation nobody reads.
+    #[test]
+    fn only_a_write_that_reached_nothing_says_so() {
+        // Neither object carried the key: the call succeeded, changed nothing
+        // and pushed no undo entry. The operator is owed the sentence, because
+        // a control that did nothing and said nothing is indistinguishable
+        // from a broken build.
+        let nothing = open_state_written(false, false).expect("the no-op case has a sentence");
+        assert!(
+            nothing.contains("not changed"),
+            "the no-op sentence must say the document was not changed: {nothing}"
+        );
+        assert!(
+            !nothing.to_lowercase().contains("error") && !nothing.to_lowercase().contains("fail"),
+            "a shape with no pop-up is an ordinary document, not a fault: {nothing}"
+        );
+
+        // The three shapes of success say nothing at all.
+        assert_eq!(open_state_written(true, true), None);
+        assert_eq!(open_state_written(true, false), None);
+        assert_eq!(open_state_written(false, true), None);
     }
 }

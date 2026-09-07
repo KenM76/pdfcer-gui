@@ -173,3 +173,14 @@ pub fn clipboard_formats() -> Option<Vec<(u32, String)>> {
 pub const fn caps_lock_is_on() -> bool {
     false
 }
+
+/// A zero-size desktop, which every caller reads as *"there are no bounds to
+/// check a coordinate against here"*.
+///
+/// See the Windows implementation for what this is for: a guard against a
+/// pointer coordinate that lies off the screen and would be silently clamped.
+/// Off Windows nothing drives a pointer at all, so there is nothing to guard.
+#[must_use]
+pub const fn desktop_bounds() -> (i32, i32, i32, i32) {
+    (0, 0, 0, 0)
+}

@@ -326,6 +326,17 @@ pub mod redact;
 /// were drawn, cursored and drag-consuming for the whole life of this shell and
 /// committed nothing, which is `DEFECTS.md` D4a's shape exactly.
 pub mod resizing;
+/// ★★★ Every word the **review-status** control says — `/State` and
+/// `/StateModel` (§12.5.6.3, Table 171), consumed by
+/// `crate::panels::comments::reviewstate` and by
+/// `crate::app::actions::reviewstate`.
+///
+/// Its own header carries the two facts that decide almost every string in it:
+/// a status is **appended, not set** (so nothing says *Set status*), and the
+/// engine reads both keys **verbatim without interpreting them** (so an
+/// unrecognised value is shown rather than normalised, on
+/// [`buttonaction`]'s `Unmodelled`-versus-`Foreign` seam).
+pub mod reviewstate;
 /// The ribbon's structural strings: tab labels and questions, group
 /// captions, mode labels. Consumed by `crate::shell::manifest`.
 pub mod ribbon;

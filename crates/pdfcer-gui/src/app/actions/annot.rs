@@ -1,6 +1,7 @@
 //! # `app::actions::annot` — the verbs whose subject is a whole annotation
 //!
-//! Move it, resize it, remove it, write the note on it. Split out of
+//! Move it, resize it, remove it, write the note on it, **answer it, and
+//! record whether its window opens**. Split out of
 //! [`super::action`] under **R2** on 2026-08-28, when `ResizeAnnotation` grew
 //! the operator's Tool-row scale switches and took that file past 1,500 lines
 //! for the fifth time. It grew the two note verbs the same evening, when
@@ -338,6 +339,123 @@ pub enum AnnotAction {
         /// The annotation, by stable object id.
         id: pdfcer_core::object::ObjId,
     },
+    /// ★★★ **Answer a comment** — a new `/Text` annotation carrying `/IRT`
+    /// and `/RT /R`, as one undoable command. `EditSession::add_reply`,
+    /// `pdfcer-core` `Pass 253.0` (§12.5.6.2, Table 170).
+    ///
+    /// Raised by the Comments panel's editor when its draft is aimed at a
+    /// reply rather than at the row's own `/Contents`, and by nothing else.
+    ///
+    /// # ★★ Why this is a separate variant and not [`Self::SetNote`] with a
+    /// flag
+    ///
+    /// Because it reaches a **different engine verb with a different
+    /// outcome**. `set_markup_note` edits a dictionary that already exists;
+    /// `add_reply` *creates an annotation*, places it, gives it a `/Popup` and
+    /// returns a `ReplyAdded` naming an object number that did not exist
+    /// before the call. Folding the two behind one variant with a `reply: bool`
+    /// would put the shell one boolean away from writing a reviewer's answer
+    /// over the top of the comment they were answering — which is the single
+    /// worst thing this surface can do — and would arrive as a silently
+    /// mishandled field rather than as a compile error.
+    ///
+    /// ★ **No page**, like every neighbour in this module: `add_reply` finds
+    /// the parent by stable object id and places the reply on *the parent's
+    /// own page*, resolved by its own page-tree walk
+    /// (`pdfcer-core/src/edit.rs:26981-27002`). A page carried from the panel
+    /// would be a second, weaker name for a sheet the engine has already
+    /// found, and one that goes stale if pages are reordered between the press
+    /// and the queue draining.
+    ///
+    /// ★★ **No `keep_author`**, unlike [`Self::SetNote`], and the asymmetry is
+    /// the whole point of the pair. `SetNote` may be editing *somebody else's*
+    /// comment, so it must be able to say *"write no `/T` at all"*. A reply is
+    /// a **new annotation this operator is authoring**, so its byline is
+    /// always theirs — there is no prior `/T` to preserve, and a flag that
+    /// could suppress it would only ever produce an unsigned reply nobody
+    /// asked for.
+    Reply {
+        /// The comment being answered, by stable object id — the reply's
+        /// `/IRT`.
+        ///
+        /// It may itself be a reply. §12.5.6.2 permits a reply to a reply and
+        /// `add_reply` refuses only a reply to *itself*, which is not a
+        /// thread; see `crate::panels::comments`' threading-depth paragraph
+        /// for what the panel does with the depth it thereby allows.
+        parent: pdfcer_core::object::ObjId,
+        /// The words, exactly as the operator typed them — **never blank**.
+        ///
+        /// # ★★★ The guard is THIS SHELL's, not the engine's, and the
+        /// difference was measured
+        ///
+        /// `add_reply`'s own doc comment lists *"[`EditError::MarkupNoteEmpty`]
+        /// and the note's own validation"* among its errors. **That variant
+        /// does not exist.** Measured 2026-09-06 against the pinned engine at
+        /// `d2ea5de`: `MarkupNoteEmpty` occurs exactly once in the whole crate
+        /// and the occurrence is that doc line; `MarkupNote::validate`
+        /// (`edit.rs:4731`) checks only the `/M` date's §7.9.4 shape and
+        /// returns `Ok(())` for an empty `/Contents`. So an empty reply is
+        /// **authored**, not refused.
+        ///
+        /// ⇒ Which makes the blank case the shell's to decide, and it is
+        /// decided against. A `/Text` sticky with no `/Contents` is an
+        /// ordinary and useful thing — it is what an operator has just placed
+        /// and is about to type into. A **reply** with none is an annotation
+        /// permanently added to somebody's thread that says nothing, and there
+        /// is no later gesture that gives it words from this panel. So the
+        /// control is not drawn until the box holds something —
+        /// `panels::comments::editor::reply_is_postable`, R83.
+        ///
+        /// ★ Recorded here rather than only in the guard because a future
+        /// reader who checks the engine's error list will find the variant
+        /// named there and conclude the shell-side guard is redundant. It is
+        /// not: it is the only thing standing between a stray press and a
+        /// wordless comment in the file.
+        text: String,
+    },
+    /// ★★★ **Open or close a comment's pop-up window IN THE FILE** — `/Open`
+    /// on the annotation and on its `/Popup` companion, as one undoable
+    /// command. `EditSession::set_annotation_open`, `pdfcer-core`
+    /// `Pass 253.3` (§12.5.6.4 Table 172, §12.5.6.14 Table 183).
+    ///
+    /// Raised by the canvas pop-up's *Open by default* control, and by nothing
+    /// else. **It is emphatically not raised by opening or closing a pop-up on
+    /// screen** — see below, because that distinction is the entire design.
+    ///
+    /// # ★★★ Why a reading gesture must not reach this variant
+    ///
+    /// Clicking a sticky note to read it, and pressing the window's ✕ when
+    /// done, are how an operator *reads a marked-up drawing*. They happen
+    /// dozens of times in a review. Every one of them is a
+    /// `CommandKind::SetAnnotationOpen` if it is wired to this — which means a
+    /// reviewer who opened six comments and closed them again has six undo
+    /// entries standing between `Ctrl+Z` and the last thing they actually
+    /// changed, and a document that reports itself modified after a session in
+    /// which they altered nothing.
+    ///
+    /// ⇒ So `crate::canvas::notepopup::open` keeps on owning what is *showing*
+    /// — per-document interface state, no undo, no dirty flag — and this
+    /// variant exists for the separate, deliberate act of saying **"and record
+    /// that in the file, for whoever opens it next."** One press, one undo
+    /// entry, and the entry is honest because the operator asked for it.
+    ///
+    /// `crate::canvas::markup::swatch`'s header makes the same argument from
+    /// the other side and reaches the opposite conclusion for its own case:
+    /// setting a pen colour *"has no undo, it raises no `Action`"* because it
+    /// touches no document. The rule both obey is that **the undo log records
+    /// changes to the document, and only what the operator meant as one.**
+    ///
+    /// ★ **No page**, for this module header's reason: `set_annotation_open`
+    /// finds its operand by stable object id.
+    SetOpen {
+        /// The annotation whose window state is being written — the note, not
+        /// its `/Popup`. The engine writes both halves of the pair itself and
+        /// reports which it reached; see `AnnotationOpenChange`.
+        id: pdfcer_core::object::ObjId,
+        /// The state to record. `true` is §12.5.6.4's *"shall initially be
+        /// displayed open"*.
+        open: bool,
+    },
     // =======================================================================
     // The NODES of a markup shape — the operator's report of 2026-09-05
     // =======================================================================
@@ -445,5 +563,58 @@ pub enum AnnotAction {
         /// `canvas::annotnodes::refusal_for`, so the engine's vocabulary stays
         /// out of the string catalog.
         why: crate::text::markup::NodeEditRefusal,
+    },
+    /// ★★★ **Restyle a text-BEARING annotation** — a sticky note's icon and
+    /// colour, a stamp's colour. `EditSession::set_text_annot_style`
+    /// (`pdfcer-core` `edit.rs:27124`), raised by
+    /// `crate::panels::properties::markup::textannot` and by nothing else.
+    ///
+    /// # ★★★ Why this is a SECOND style verb and not a field on
+    /// `Action::SetMarkupStyle`
+    ///
+    /// Because they are two verbs over two spec families, and the engine says
+    /// so in the type's own doc (`edit.rs:15969`): `MarkupStyle` reaches its
+    /// annotation through `annot_author::spec_from_dict`, *"whose arms are the
+    /// geometric family and the four text markups. **There is no `/Text`
+    /// arm**"* — and that function's own `UnsupportedSubtype` names `Text`
+    /// explicitly. `TextAnnotStyle` reaches it through
+    /// `annot_author::text_spec_from_dict` instead.
+    ///
+    /// ⇒ So the two are not a split anyone chose for tidiness, and merging
+    /// them into one action would put the routing decision in an apply arm
+    /// where a wrong turn is a runtime refusal. Keeping them apart makes the
+    /// panel's guard a `match` the compiler checks —
+    /// `panels::properties::markup::textannot::Reach` — which is the whole
+    /// mechanism by which a `/Stamp` cannot be sent to `set_markup_style`
+    /// again.
+    ///
+    /// # ★ Here rather than beside `Action::SetMarkupStyle`, and that is this
+    /// # enum's own rule
+    ///
+    /// This module's header: *"none of them takes a page to locate one"*.
+    /// `set_text_annot_style(annot_id, style)` takes an `ObjId` and nothing
+    /// else, which is the property that defines this family.
+    /// `Action::SetMarkupStyle` carries a page, and does so for the funnel's
+    /// undo label rather than to find the mark — an asymmetry documented
+    /// there and not copied here.
+    ///
+    /// # ⚠ Two constraints the caller cannot express, both by design
+    ///
+    /// * **`icon` is `/Text` only.** Any other subtype is refused by name with
+    ///   `EditError::StylePropertyNotApplicable` rather than silently ignored
+    ///   — a `/Stamp`'s face comes from its own `/Name` vocabulary and a
+    ///   `/FreeText` has no icon at all.
+    /// * **`color` cannot CLEAR**, unlike `MarkupStyle::stroke`.
+    ///   `TextAnnotSpec`'s three variants each carry a **required** `Color`, so
+    ///   *"no colour"* is not a state the authoring type can express, and a
+    ///   Clear would have to invent a fallback. The panel therefore draws no
+    ///   Clear button beside the swatch — absent, not greyed (R9).
+    SetTextAnnotStyle {
+        /// The annotation, by stable object id.
+        id: pdfcer_core::object::ObjId,
+        /// What to change. Every field `None` but the one control that moved,
+        /// which is `MarkupStyle`'s contract restated for this family — the
+        /// engine's own words are *"an override set, not a replacement"*.
+        style: pdfcer_core::edit::TextAnnotStyle,
     },
 }

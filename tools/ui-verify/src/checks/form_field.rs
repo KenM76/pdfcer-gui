@@ -132,12 +132,56 @@ const PROPERTIES_REGION: &str = "properties.form_field";
 /// route O39 already uses for placement) and it is the operator's call, not
 /// this check's.
 ///
-/// What this check does about it is drive at a window with room, which is
-/// `read_mode_chrome`'s precedent and its reasoning: a check's job is to
-/// exercise the feature, and a check that failed because the *window* was small
-/// would be reporting the wrong subject. The scroll loop below is kept anyway
-/// and still works — a taller window makes it need fewer notches, not none.
-const VIEWPORT: &str = "0,0,1400,1300";
+/// What this check does about it is drive at the biggest window the desktop
+/// will actually show, which is `read_mode_chrome`'s precedent and its
+/// reasoning: a check's job is to exercise the feature, and a check that failed
+/// because the *window* was small would be reporting the wrong subject. **The
+/// scroll loop below is what carries the step regardless** — a taller window
+/// makes it need fewer notches, not none, and on the display this is driven on
+/// it needs them all. The measurement below says why the room cannot be had.
+///
+/// # ★★★ IT ASKED FOR A WINDOW THAT DOES NOT FIT ON THE DESKTOP — 2026-09-06
+///
+/// This read `0,0,1400,1300` for a week and **that is why the check failed**,
+/// though nothing about the failure said so.
+///
+/// Two facts multiply. `PDFCER_DIAG_VIEWPORT`'s position is overruled:
+/// `launch::Session::place` moves **every** launched window to desktop
+/// `(780, 40)`, deliberately, to clear the top-left corner where the Windows
+/// on-screen keyboard docks. And `SAFE_ORIGIN_X`'s own doc does the arithmetic
+/// for the window it was written for — *"a 1100 px client still ends at 1880 on
+/// a 1920-wide desktop"*. This check asked for **1400**: 780 + 1400 = 2180, so
+/// **260 px of the window hung off the right edge of a 1920 px screen**, and
+/// the Properties panel is the thing that lives at that edge. Vertically:
+/// 40 + 1080 = 1120 against a 1080 px screen, so the bottom 40 px went too.
+///
+/// The consequence is invisible and total. `SetCursorPos` **clamps** an
+/// off-desktop coordinate, so the wheel aimed at the pane's centre (screen
+/// x 2011) landed at x 1919 — still over the panel, so it scrolled, and the
+/// step looked healthy — while the click aimed at the Required checkbox
+/// (screen y 1114) landed at y 1079, **six points above the box**, and the
+/// check reported that ticking Required reached nothing. An accusation against
+/// the application for a pixel the harness could not deliver.
+///
+/// ⇒ **A viewport is a request, and a placed window is an arithmetic
+/// obligation: `SAFE_ORIGIN + size` must fit the desktop.** 780 + 1120 = 1900
+/// and 40 + 1000 = 1040 both do, on the 1920 × 1080 this is driven on.
+/// `Driver::confirm_uncovered` now refuses such a click by name rather than
+/// clamping it, so the next check to overreach is told; this constant is what
+/// keeps this one inside the screen. 780 + 1100 + 16 px of border = 1896, and
+/// 40 + 980 + 39 px of title bar = 1059 — both inside 1920 × 1080 with room to
+/// spare, which is deliberate: a margin of one pixel is a margin that a theme
+/// change takes away.
+///
+/// # ★★ And the height it CAN get is still not enough, which is the real point
+///
+/// 1000 points of window is ~400 points of Properties slot once the tab bar,
+/// the Objects panel above it and the status bar have taken theirs — against
+/// ~1100 points of content for a selected field. **No window on this display
+/// puts these controls above the fold.** So the scroll loop in phase E is not a
+/// fallback for a small screen, it is the mechanism; this constant only decides
+/// how many notches it spends.
+const VIEWPORT: &str = "0,0,1100,980";
 
 /// **The Properties panel's own dock slot** — the scroll anchor.
 ///
@@ -175,7 +219,7 @@ const EDIT_APPLIED: &str = "edit-field";
 /// How many notches to spend looking for the editable properties below the
 /// Properties panel's fold. `restyle_text` spends the same number looking for
 /// Bold, in the same panel, for the same reason.
-const SCROLL_ATTEMPTS: usize = 6;
+const SCROLL_ATTEMPTS: usize = 12;
 // ★★★ `properties.widget_edit` is deliberately NOT a constant here, and the
 // reason is a finding rather than tidiness.
 //
@@ -597,32 +641,52 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // reporting "the controls are missing" about controls that are present and
     // one notch away.
     //
-    // ★ It scrolls **at the section it can already see**, not at a guessed
-    // point: `properties.form_field` is declared, so its centre is a coordinate
-    // inside the scroll area rather than over the canvas or another panel.
-    let mut required = None;
-    for attempt in 0..SCROLL_ATTEMPTS {
-        let trace = session.trace()?;
-        if let Some(rect) = driving::declared(&trace, ui_rect, REQUIRED_REGION) {
-            required = Some(rect);
-            if attempt > 0 {
-                report.note(format!(
-                    "the editable properties were below the panel's fold; {attempt} scroll \
-                     notch(es) brought them into view"
-                ));
-            }
-            break;
-        }
-        let Some(anchor) = driving::declared(&trace, ui_rect, PROPERTIES_REGION) else {
-            return Err(Error::new(format!(
-                "the form-field section stopped being visible while scrolling for its editable \
-                 properties, so there is nothing left to aim at. Trace: {}.",
-                session.trace_path().display()
-            )));
-        };
-        driver.scroll_at(session.frame()?.declared_center(anchor), -1)?;
-        session.settle(12);
-    }
+    // ★★★ IT SCROLLS AT THE DOCK PANE, NOT AT THE SECTION — and this loop
+    // aimed at the section until it was first driven to a verdict on
+    // 2026-09-06, which is the whole of why it failed.
+    //
+    // The note this replaces said the anchor was safe because
+    // `properties.form_field`'s rect *"is the panel's own `max_rect` and is
+    // therefore always inside the panel by construction"*. **Both halves were
+    // wrong, and the trace settles it in two lines:**
+    //
+    // ```text
+    // ui-rect name=dock.body.file.properties rect=[[1046.0 641.8] - [1400.0 1046.0]]
+    // ui-rect name=properties.form_field     rect=[[1046.0 642.0] - [1386.0 1750.0]]
+    // ```
+    //
+    // The section is published from `ui.min_rect()` — what it TOOK, not what it
+    // was allowed — and it took 1,108 points in a 404-point slot. Its centre is
+    // y≈1196, which is **150 points below the bottom of a window whose client
+    // area ends at 1046**. Every one of the six notches went outside the window
+    // and nothing moved; the panel's own rects are byte-identical before and
+    // after. The check then reported the controls missing.
+    //
+    // ⇒ `reaching::scroll_to`'s doc already carries this exact anchor in its
+    // table of three that failed, third row, with this exact reasoning —
+    // *"content rects are not scroll anchors"*. This loop was a hand-rolled
+    // fourth copy that predated the helper and kept the mistake the helper was
+    // extracted to fix. **Phase F below has been calling `scroll_to` with
+    // [`PANE_REGION`] all along**, so one file held both the wrong anchor and
+    // the right one, twenty lines apart.
+    //
+    // ★★ And the OTHER remedy in this check does not work either, which is why
+    // this one has to. [`VIEWPORT`] asks for a window big enough to hold the
+    // pane; no window this display can show is big enough — the section is
+    // ~1,100 points of content and the slot is ~400 whatever the window does.
+    // See that constant for the arithmetic, and for the second defect the same
+    // ask was causing: a 1,400-wide window placed at desktop x 780 hangs 260 px
+    // off a 1,920 px screen, and every pointer aimed into that strip is clamped
+    // somewhere else without a word.
+    let required = driving::scroll_to(
+        &session,
+        &driver,
+        ui_rect,
+        PANE_REGION,
+        REQUIRED_REGION,
+        SCROLL_ATTEMPTS,
+        report,
+    )?;
 
     let trace = session.trace()?;
     let Some(required) = required else {

@@ -30,7 +30,7 @@
 //! carries the measurement.
 
 use crate::canvas::textannot::TextAnnotKind;
-use pdfcer_core::annot_author::StampName;
+use pdfcer_core::annot_author::{StampName, StickyIcon};
 
 /// The window's title.
 #[must_use]
@@ -125,6 +125,82 @@ pub const fn stamp_label(stamp: StampName) -> &'static str {
         StampName::Expired => "Expired",
         _ => "",
     }
+}
+
+/// One sticky-note icon's name, as an operator reads it.
+///
+/// ★ Title case with a space, not the `/Name` spelling. The PDF carries
+/// `/NewParagraph`; the operator is choosing a picture, not a name object, and
+/// a chooser listing the run-together form would be showing them the file
+/// format. The same rule [`stamp_label`] follows, and the same rule
+/// `text::commands` states for every label in this shell.
+///
+/// # ★★ No catch-all, unlike [`stamp_label`], and the difference is the enum
+///
+/// `StampName` is `#[non_exhaustive]`, so that function needs a `_ =>` arm and
+/// returns the empty string for a stamp it has no prose for. `StickyIcon` is
+/// **not** `#[non_exhaustive]` (`pdfcer-core` `annot_author.rs:2812`), so this
+/// `match` is exhaustive and an eighth icon is a **compile error here** rather
+/// than a blank line in a chooser. That is the stronger arrangement and it is
+/// available only because the engine's enum is closed — worth saying out loud,
+/// because the two functions sit next to each other and look like they should
+/// be shaped the same.
+///
+/// ⇒ `crate::canvas::textannot::STICKY_ICONS` carries the same guarantee from
+/// the other side, by list rather than by prose.
+#[must_use]
+pub const fn sticky_icon_label(icon: StickyIcon) -> &'static str {
+    match icon {
+        StickyIcon::Comment => "Comment",
+        StickyIcon::Key => "Key",
+        StickyIcon::Note => "Note",
+        StickyIcon::Help => "Help",
+        StickyIcon::NewParagraph => "New paragraph",
+        StickyIcon::Paragraph => "Paragraph",
+        StickyIcon::Insert => "Insert",
+    }
+}
+
+/// The label over the sticky note's icon chooser.
+///
+/// ★ *"Icon"* rather than *"Name"*. `/Name` is the format's word for the key
+/// and it is also the word for four other things in a PDF; the operator is
+/// picking a picture. `text::commands`' standing rule: a label is the
+/// operator's vocabulary and an id is the format's.
+#[must_use]
+pub const fn sticky_icon_heading() -> &'static str {
+    "Icon"
+}
+
+/// ★★★ **What the icon actually changes** — said under every chooser that
+/// offers one, on both surfaces.
+///
+/// # Why this sentence has to exist
+///
+/// `annot_author::sticky_note` (`pdfcer-core` `annot_author.rs:3712`) takes the
+/// icon and uses it in exactly one place: `/Name`, at `:3759`. The appearance
+/// it bakes is **the same dog-eared page glyph for all seven**, and that is a
+/// decision the engine documents rather than an omission — `annot_author.rs`'s
+/// own header at `:2794` records it as trade-dress avoidance: *"pdfcer authors
+/// its OWN plain marker … never a reproduction of Acrobat's icon set"*.
+///
+/// ⇒ So an operator who picks *Key* sees no change in pdfcer and a key in
+/// Acrobat. Without this sentence they meet that difference in the other
+/// program, on a file they have already sent somebody. **It is not an R8b
+/// breach** — applied content still renders exactly as saved content will, in
+/// *this* reader, which is what R8b is about — and it is exactly the sort of
+/// gap between the file and the picture this shell states rather than lets
+/// somebody discover.
+///
+/// ★ It says *"other PDF readers"* and does not name Acrobat. Naming a
+/// competitor's product in operator copy is a claim about that product's
+/// behaviour, and this one is true of every reader that ships Table 172
+/// artwork rather than of one.
+#[must_use]
+pub const fn sticky_icon_bound() -> &'static str {
+    "The icon is recorded in the file and other PDF readers draw it. pdfcer \
+     draws its own note marker for all of them, so this will not change how \
+     the note looks here."
 }
 
 /// What the gallery does not offer, said once under it.

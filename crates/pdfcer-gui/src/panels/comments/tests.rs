@@ -146,6 +146,7 @@ fn row_by(author: Option<&str>) -> CommentRow {
         suppressed: false,
         appearance_unresolved: false,
         relation: None,
+        in_reply_to: None,
     }
 }
 
@@ -369,4 +370,211 @@ fn a_ce_dimension_row_says_ce_dimension_and_still_says_line() {
     // …and an ordinary `/Line` markup is not relabelled.
     let plain = t::comment_row_heading("Line", 3);
     assert!(!plain.contains("dimension"), "{plain}");
+}
+
+// ===========================================================================
+// ANSWERING A COMMENT — `EditSession::add_reply`, `Pass 253.0`
+// ===========================================================================
+
+/// ★★★ **A blank reply is not offered, and a written one is.**
+///
+/// # Why this guard exists at all, which is not obvious
+///
+/// `add_reply`'s own doc comment lists `EditError::MarkupNoteEmpty` among its
+/// errors, so the natural conclusion is that the engine refuses a blank reply
+/// and this shell need not. **Measured 2026-09-06 against the pinned engine at
+/// `d2ea5de`: that variant does not exist.** The identifier occurs exactly once
+/// in the crate and the occurrence is that doc line; `MarkupNote::validate`
+/// (`edit.rs:4731`) checks only the `/M` date's §7.9.4 shape. An empty reply is
+/// therefore **authored**, not refused.
+///
+/// ⇒ So the decision is this shell's, and it is deliberately the opposite of
+/// the one the note editor makes: `AnnotAction::SetNote` permits an empty note
+/// by name, because an empty sticky is what an operator has just placed and is
+/// about to type into. An empty **reply** is a new annotation added permanently
+/// to somebody's thread that says nothing and that this panel offers no later
+/// way to give words to.
+///
+/// ★ Both directions, and the whitespace case explicitly: a guard that only
+/// stopped `""` would stop only the operator who pressed Post with the cursor
+/// at position zero, and `"   "` renders in every surface exactly as an empty
+/// reply does.
+#[test]
+fn a_reply_is_postable_only_when_it_says_something() {
+    assert!(reply_is_postable("Done - rev C issued 5 Sep"));
+    // The positive case has to include one with surrounding space, or an
+    // implementation that trimmed the text it POSTS as well would pass while
+    // silently editing the operator's words.
+    assert!(reply_is_postable("  agreed  "));
+
+    assert!(!reply_is_postable(""));
+    assert!(!reply_is_postable("   "));
+    assert!(!reply_is_postable("\n\t "));
+}
+
+/// ★★★ **A reply row's *Go to* opens the ROOT's window, not its own.**
+///
+/// # The defect this stops, which arrived with the Reply control
+///
+/// `add_reply` places a reply at **its parent's own `/Rect`**, so
+/// `canvas::notepopup::model::notes_on` excludes replies from the notes it
+/// draws windows for — otherwise the newest answer to a comment sits exactly on
+/// top of it and takes every click meant for the comment itself. With that
+/// exclusion in place, a *Go to* that asked for a reply's own window would ask
+/// for a window that is never drawn: the operator presses the button, the page
+/// changes, and nothing opens.
+///
+/// ★★ The identity case is the control and it is not a formality — it is the
+/// overwhelmingly common one, and a `thread_root` that walked to the first row
+/// in the list, or returned the last id it saw, would pass a reply-only test
+/// and break every ordinary comment in the document.
+#[test]
+fn a_reply_resolves_to_the_comment_at_the_head_of_its_thread() {
+    use pdfcer_core::object::ObjId;
+    let id = |num: u32| ObjId { num, generation: 0 };
+    let reply_to = |num: u32, parent: Option<u32>| CommentRow {
+        id: Some(id(num)),
+        in_reply_to: parent.map(id),
+        ..row_by(None)
+    };
+
+    // 7 ← 8 ← 9: a comment, an answer, and an answer to the answer.
+    let rows = vec![
+        reply_to(7, None),
+        reply_to(8, Some(7)),
+        reply_to(9, Some(8)),
+    ];
+    assert_eq!(model::thread_root(&rows, id(9)), id(7));
+    assert_eq!(model::thread_root(&rows, id(8)), id(7));
+    // The control: an ordinary comment resolves to itself.
+    assert_eq!(model::thread_root(&rows, id(7)), id(7));
+}
+
+/// ★★★ **A cyclic `/IRT` terminates.**
+///
+/// §7.3.10 makes a dangling reference not an error and says nothing at all
+/// about a circular one, and `pdfcer-core` models `/IRT` *"unresolved … a
+/// dangling `/IRT` is modelled, not repaired"* (`annot.rs:431`). So a file that
+/// says `a` replies to `b` and `b` replies to `a` is a file this panel must
+/// survive — and an unbounded upward walk over one hangs **the frame that is
+/// trying to draw**, which is the worst available outcome on a display surface.
+///
+/// ★ The dangling case is asserted beside it, because it terminates for a
+/// different reason — the parent is not in the list at all — and a build that
+/// handled the cycle by bounding the loop while panicking on a missing parent
+/// would pass the first half of this test.
+#[test]
+fn a_malformed_thread_resolves_to_something_real_rather_than_hanging() {
+    use pdfcer_core::object::ObjId;
+    let id = |num: u32| ObjId { num, generation: 0 };
+    let reply_to = |num: u32, parent: Option<u32>| CommentRow {
+        id: Some(id(num)),
+        in_reply_to: parent.map(id),
+        ..row_by(None)
+    };
+
+    // A two-annotation cycle. Whichever end it stops at, it must stop, and it
+    // must name one of the two rows that actually exist.
+    let cycle = vec![reply_to(7, Some(8)), reply_to(8, Some(7))];
+    let root = model::thread_root(&cycle, id(7));
+    assert!(
+        root == id(7) || root == id(8),
+        "a cycle resolved to {root:?}, which is not a row in the document"
+    );
+
+    // A reply to itself — refused by `add_reply`, legal to write by hand.
+    let selfish = vec![reply_to(7, Some(7))];
+    assert_eq!(model::thread_root(&selfish, id(7)), id(7));
+
+    // A `/IRT` pointing at something this list does not contain — a `/Widget`,
+    // a `/Popup`, or an object that is not there. The nearest real place is the
+    // honest answer for a destination resolver.
+    let dangling = vec![reply_to(7, Some(99))];
+    assert_eq!(model::thread_root(&dangling, id(7)), id(7));
+}
+
+/// ★★★ **A READING STANCE OFFERS NO REPLY EDITOR EITHER — including when one
+/// is already open.**
+///
+/// # Why this needs its own test beside the count above
+///
+/// `a_reading_stance_offers_no_control_that_writes_to_the_document` drives the
+/// panel with **no draft open**, so it proves that the *Reply* button is
+/// withheld and says nothing whatever about the editor that button opens. The
+/// reply editor is reached down a different path — `note_controls` returns on
+/// the stance check *before* it asks whether a draft is open — and a build that
+/// moved that check one line later would draw a live Post control in Read, with
+/// the count assertion above still green.
+///
+/// ⇒ **That is not a hypothetical**: the stance check being in the wrong place
+/// relative to a branch is the exact shape of the 2026-09-05 defect this
+/// panel's whole instrument exists for, where Delete and the note editor were
+/// both drawn, live and effective, in Read.
+///
+/// # The positive control
+///
+/// Review with the same seeded draft, asserted to draw *something*. Without it,
+/// the Read assertion passes on a build where the draft is dropped before
+/// anything is drawn, on a fixture with no comments, or on a panel that crashed
+/// early — none of which is the property being claimed.
+#[test]
+fn a_reading_stance_draws_no_reply_editor_even_with_a_reply_draft_open() {
+    use crate::app::modes::Capabilities;
+
+    fn writing_controls_with_a_reply_open(caps: Capabilities) -> u32 {
+        let ctx = egui::Context::default();
+        crate::canvas::tool::store_capabilities(&ctx, caps);
+        let doc = crate::app::state::open_fixture("annot/thread.pdf");
+        let listing = model::collect(
+            &doc.session.view(),
+            &doc.pages,
+            &model::ce_dimension_annots(&doc.session),
+        );
+        let target = listing.rows.iter().find_map(|row| row.id).expect(
+            "the fixture must carry an addressable annotation, or this test \
+             seeds nothing and proves nothing",
+        );
+
+        let mut state = crate::panels::PanelsState::default();
+        // Seeded at the document's CURRENT epoch, or `NoteDraft::sync` would
+        // drop it on the first frame and the test would assert about a panel
+        // with no editor open — passing for the wrong reason.
+        state
+            .comments_mut()
+            .draft
+            .begin_reply(target, doc.edit_epoch);
+        state.comments_mut().draft.text_mut().push_str("an answer");
+
+        let mut actions = Vec::new();
+        let mut drawn = 0;
+        let input = egui::RawInput {
+            screen_rect: Some(egui::Rect::from_min_size(
+                egui::Pos2::ZERO,
+                egui::vec2(360.0, 900.0),
+            )),
+            ..Default::default()
+        };
+        for _ in 0..2 {
+            let _ = ctx.run_ui(input.clone(), |ui| {
+                body(ui, &doc, &mut state, &mut actions);
+                drawn = state.comments_mut().writing_controls_drawn;
+            });
+        }
+        drawn
+    }
+
+    let review = writing_controls_with_a_reply_open(Capabilities::FULL);
+    assert!(
+        review > 0,
+        "the positive control drew nothing, so the Read assertion below would \
+         pass on an empty panel and prove nothing"
+    );
+
+    let read = writing_controls_with_a_reply_open(Capabilities::NONE);
+    assert_eq!(
+        read, 0,
+        "a reading stance drew {read} writing control(s) with a reply draft \
+         open — Read may read a conversation and may not join one, and the \
+         stance check must come before the draft branch rather than after it"
+    );
 }

@@ -48,19 +48,28 @@
 //! §12.5.6.14 Table 183 gives the same key the same meaning on the `/Popup`.
 //! A note authored open must therefore **open on load**, with no click.
 //!
-//! ⚠ **`pdfcer_core::annot::Annotation` does not model `/Open`.** Confirmed by
-//! audit on 2026-09-05: `b"Open"` appears exactly twice in the whole crate,
-//! both write sites in `annot_author.rs` (`:3212`, `:3224`), and the read
-//! model's parser (`annot.rs:905-1000`) never looks at the key. So this module
-//! reads the raw dictionary through [`ObjectGraph::value`], which is public
-//! and is the same graph `page_annotations` walks.
+//! ★★★ **The workaround that was here is GONE — 2026-09-06.** This paragraph
+//! read: *"`pdfcer_core::annot::Annotation` does not model `/Open`. Confirmed
+//! by audit on 2026-09-05: `b"Open"` appears exactly twice in the whole crate,
+//! both write sites in `annot_author.rs`. So this module reads the raw
+//! dictionary through `ObjectGraph::value`."* It was reported as a workaround
+//! under pdfcer decision 058 — *anything the GUI has to work around is a place
+//! the crate boundary was drawn wrong* — and filed as
+//! `request_popup_open_state_cannot_be_read.md`.
 //!
-//! ⇒ **That is a workaround and it is reported as one** (pdfcer decision 058:
-//! *anything the GUI has to work around is a place the crate boundary was
-//! drawn wrong*). Filed as `request_popup_open_state_cannot_be_read.md`. It is
-//! a **read** of a documented key rather than an inference, so it is honest —
-//! but it means this shell now parses a piece of annotation structure the
-//! engine's read model owns, which is exactly the seam that drifts.
+//! `Pass 253.3` shipped [`pdfcer_core::annot::Annotation::open`], and
+//! [`read_open`] is now two field reads. ⇒ **The shell's copy was deleted the
+//! day the engine's existed**, which is the whole point of having reported it:
+//! the request's own words were *"the day `Annotation` grows the field, two
+//! places will answer the same question and one of them will be ours"*, and
+//! the only way that never happens is to remove ours immediately rather than
+//! leaving it beside the real one as a fallback nobody re-reads.
+//!
+//! ⚠ The `/Popup` companion's `/Open` is read from the **same walk** rather
+//! than by a second lookup: [`notes_on`] already gathers every `/Popup` on the
+//! page to find its rectangle, and `page_annotations` returns each one with its
+//! own `open`. Table 170 gives geometric markup no `/Open` of its own, so for a
+//! `/Square` the companion is the entire answer.
 //!
 //! ## ★ Where a pop-up is drawn, in priority order
 //!
@@ -107,7 +116,7 @@ use std::collections::BTreeSet;
 use egui::{Pos2, Rect};
 use pdfcer_core::annot::{Annotation, ReplyType, page_annotations};
 use pdfcer_core::graph::ObjectGraph;
-use pdfcer_core::object::{ObjId, Object};
+use pdfcer_core::object::ObjId;
 use pdfcer_core::page_tree::Page;
 
 use crate::canvas::mapping::annot_canvas_rect;
@@ -169,9 +178,23 @@ pub struct NoteView {
     pub locked: bool,
     /// The annotation this one replies to (`/IRT`), when it is a reply.
     ///
-    /// Read only — `pdfcer-core` v0.38.0 has no verb that authors an `/IRT`;
-    /// see [`super`]'s header and
-    /// `request_a_reply_can_be_read_and_never_written.md`.
+    /// ★★★ **Also the exclusion key**, as of 2026-09-06: [`notes_on`] drops
+    /// any annotation with an `/IRT` rather than drawing a window for it. A
+    /// reply is placed at its parent's own `/Rect` by
+    /// `EditSession::add_reply`, so a bubble of its own would sit on top of the
+    /// comment it answers and take every click meant for it — see that
+    /// function's exclusion comment. [`super::thread`] is where a reply is
+    /// shown instead, which is where §12.5.6.2 puts it.
+    ///
+    /// This field therefore survives on a [`NoteView`] only as a **guard**: it
+    /// is `None` for every note this module returns, and a test asserts so. It
+    /// is kept rather than dropped because dropping it would make that
+    /// assertion inexpressible, and because `Reply` carries the same fact for
+    /// the rows in a thread.
+    ///
+    /// ⚠ This used to say *"read only — `pdfcer-core` v0.38.0 has no verb that
+    /// authors an `/IRT`"*. `Pass 253.0` closed that; the Comments panel
+    /// authors replies through `crate::app::actions::annot::AnnotAction::Reply`.
     pub in_reply_to: Option<ObjId>,
 }
 
@@ -237,7 +260,7 @@ pub struct PopupBox {
 /// rule page content and annotation selection both already follow.
 #[must_use]
 pub fn notes_on<G: ObjectGraph + ?Sized>(graph: &G, page: &Page) -> Vec<NoteView> {
-    let mut popups: Vec<(ObjId, Option<Rect>)> = Vec::new();
+    let mut popups: Vec<(ObjId, Option<Rect>, Option<bool>)> = Vec::new();
     let mut parents: Vec<Annotation> = Vec::new();
 
     // One walk, two collections. The pop-ups have to be gathered in the same
@@ -246,14 +269,56 @@ pub fn notes_on<G: ObjectGraph + ?Sized>(graph: &G, page: &Page) -> Vec<NoteView
     // modelled by `pdfcer-core` (`annot.rs:81-87`: *"the authoritative
     // direction is the parent's `/Popup`"*), so the pairing is ours to make
     // and it is made from the parent's side.
+    //
+    // ★★ The pop-up's own `/Open` is gathered here too, as of 2026-09-06, and
+    // that is what let [`read_open`] stop parsing dictionaries: Table 170 gives
+    // geometric markup **no `/Open` of its own**, so a `/Square`'s window state
+    // exists only on the companion — and `page_annotations` returns the
+    // companion, with `Annotation::open` on it, in this same walk.
     for annot in page_annotations(graph, page.id) {
         if annot.is_popup {
             if let Some(id) = annot.id {
-                popups.push((id, annot.rect.and_then(|r| canvas_rect(r, page))));
+                popups.push((
+                    id,
+                    annot.rect.and_then(|r| canvas_rect(r, page)),
+                    annot.open,
+                ));
             }
             continue;
         }
         if annot.is_widget() || annot.flags.suppressed_on_screen() {
+            continue;
+        }
+        // ★★★ **A REPLY IS NOT AN INDEPENDENT NOTE** — excluded 2026-09-06,
+        // the day this shell could first author one.
+        //
+        // `EditSession::add_reply` places a reply at **its parent's own
+        // `/Rect`** — deliberately, and the engine says why: *"a reader draws a
+        // reply inside its parent's window rather than at its own
+        // coordinates"*. So a reply is a second annotation sitting exactly on
+        // top of the comment it answers, and it is appended to `/Annots`, which
+        // makes it the LAST match — and [`under`] takes the last match so the
+        // topmost note wins a click.
+        //
+        // ⇒ Without this line, answering a comment makes that comment
+        // **unreachable on the canvas**: the click that used to open it opens
+        // the newest answer to it instead, showing the answer's words and not
+        // the question's. The operator's own comment disappears behind their
+        // reply to it, permanently, with nothing on screen saying so.
+        //
+        // ★★ And the reply is not hidden by this — it is shown where §12.5.6.2
+        // says it belongs. [`super::thread`] lists the whole transitive thread
+        // inside the root's window, so excluding replies here **removes a
+        // duplicate**, not a route: before this line a reply's words appeared
+        // twice, once in its parent's thread and once in a bubble of its own.
+        //
+        // ⚠ The cost, named rather than left to be found: the reply's own
+        // `/Popup` — which `add_reply` authors and `ReplyAdded::reply_has_popup`
+        // reports — is a window nothing in pdfcer draws. Another reader will
+        // draw it. That is disclosed at the moment of authoring rather than
+        // silently absorbed; see
+        // `crate::text::panels::comments::reply_posted`.
+        if annot.in_reply_to.is_some() {
             continue;
         }
         let subtype = annot.subtype_label();
@@ -271,15 +336,15 @@ pub fn notes_on<G: ObjectGraph + ?Sized>(graph: &G, page: &Page) -> Vec<NoteView
         .filter_map(|annot| {
             let id = annot.id?;
             let anchor = canvas_rect(annot.rect?, page)?;
+            let companion = annot
+                .popup
+                .and_then(|pid| popups.iter().find(|(candidate, _, _)| *candidate == pid));
             let popup = annot.popup.map(|pid| PopupBox {
                 id: pid,
-                rect: popups
-                    .iter()
-                    .find(|(candidate, _)| *candidate == pid)
-                    .and_then(|(_, rect)| *rect),
+                rect: companion.and_then(|(_, rect, _)| *rect),
             });
             Some(NoteView {
-                authored_open: read_open(graph, id, annot.popup),
+                authored_open: read_open(annot.open, companion.and_then(|(_, _, open)| *open)),
                 id,
                 subtype: annot.subtype_label(),
                 contents: annot.contents.clone(),
@@ -296,54 +361,52 @@ pub fn notes_on<G: ObjectGraph + ?Sized>(graph: &G, page: &Page) -> Vec<NoteView
 
 /// **Does the file say this note starts open?**
 ///
-/// # ★★★ Why this reads a raw dictionary, when nothing else in this crate does
+/// # ★★★ It used to parse a raw dictionary. It does not any more — 2026-09-06
 ///
-/// Because `pdfcer_core::annot::Annotation` has no `/Open` field and the
-/// parser never reads the key — audited 2026-09-05 against v0.38.0, where
-/// `b"Open"` occurs exactly twice in the crate and both are write sites in
-/// `annot_author.rs`. The alternative to reading it here is **defaulting it**,
-/// and the assignment that commissioned this module forbids that in as many
-/// words: *"A note authored open should open. Read it; do not default it."*
+/// This function's whole body was a `graph.value(id)` dictionary lookup for
+/// `b"Open"`, reported as a workaround under pdfcer decision 058 (*anything the
+/// GUI has to work around is a place the crate boundary was drawn wrong*) and
+/// filed as `request_popup_open_state_cannot_be_read.md`. Its own docs said
+/// *"the day the engine models `/Open` this function becomes two field reads."*
 ///
-/// It is a **read of a documented key through the crate's own public graph**,
-/// not an inference and not a re-parse of anything structural: one dictionary
-/// lookup for one boolean, at exactly the two places the standard puts it.
-/// Rule 4 is satisfied — nothing is guessed and nothing is written.
+/// `Pass 253.3` shipped [`pdfcer_core::annot::Annotation::open`] and this is
+/// that day: two field reads, the workaround deleted rather than left beside
+/// the real thing. The prediction that mattered was in the request itself —
+/// *"the day `Annotation` grows the field, two places will answer the same
+/// question and one of them will be ours"* — and the way to make sure that
+/// never happened was to remove the shell's copy the moment the engine's
+/// existed.
 ///
-/// Filed as `request_popup_open_state_cannot_be_read.md`, and the day the
-/// engine models `/Open` this function becomes two field reads.
+/// # `Option<bool>` in, `bool` out, and the asymmetry is the point
+///
+/// The engine reports **facts**: `None` means the key was absent, which
+/// §12.5.6.4 Table 172 distinguishes from an explicit `false` even though its
+/// stated *default* is `false`. `Annotation::open`'s own docs argue the
+/// distinction is load-bearing for exactly this case — a reader that could not
+/// tell *"said closed"* from *"said nothing"* would silently shut every note
+/// another producer authored open.
+///
+/// This function is where the default is finally applied, because a **window
+/// is either drawn or it is not** and something has to decide. So the
+/// three-state fact becomes a two-state answer here, once, in a named place,
+/// rather than at the drawing site where it would be an `unwrap_or(false)`
+/// nobody reads.
 ///
 /// # The order: the note first, then its pop-up
 ///
 /// Both carry the key and the standard gives both the same meaning — Table 172
-/// for a `/Text` annotation, Table 183 for the `/Popup`. `pdfcer-core`'s
-/// author writes the **same** value to both (`annot_author.rs:3212` and
-/// `:3224`), so on a file pdfcer wrote the order cannot matter. It matters on
-/// a file somebody else wrote, and the note wins because it is the annotation
-/// the operator interacts with and the one whose `/Open` a `/Square` or an
-/// `/Ink` — which have no `/Open` of their own in Table 170 — cannot supply.
+/// for a `/Text` annotation, Table 183 for the `/Popup`. `pdfcer-core`'s author
+/// writes the **same** value to both (`annot_author.rs:3212` and `:3224`), so
+/// on a file pdfcer wrote the order cannot matter. It matters on a file
+/// somebody else wrote, and the note wins because it is the annotation the
+/// operator interacts with — and because Table 170 gives a `/Square` or an
+/// `/Ink` no `/Open` of its own, so for those the note half is `None` and the
+/// companion is the whole answer.
 ///
-/// Absent on both is `false`: Table 172's default value is `false`, stated.
-fn read_open<G: ObjectGraph + ?Sized>(graph: &G, note: ObjId, popup: Option<ObjId>) -> bool {
-    open_flag(graph, note)
-        .or_else(|| popup.and_then(|id| open_flag(graph, id)))
-        .unwrap_or(false)
-}
-
-/// `/Open` on one object, or `None` when the key is absent or is not a boolean.
-///
-/// `None` rather than `false` for a non-boolean, so [`read_open`] can fall
-/// through to the pop-up rather than concluding "closed" from a malformed
-/// parent. A file that writes `/Open 1` is malformed; a file that writes it on
-/// the pop-up alone is ordinary.
-fn open_flag<G: ObjectGraph + ?Sized>(graph: &G, id: ObjId) -> Option<bool> {
-    let Object::Dict(dict) = graph.value(id)? else {
-        return None;
-    };
-    match graph.resolve(dict.get(b"Open")?) {
-        Object::Boolean(open) => Some(*open),
-        _ => None,
-    }
+/// Absent on both is `false`: Table 172's default value, stated.
+#[must_use]
+fn read_open(annotation: Option<bool>, popup: Option<bool>) -> bool {
+    annotation.or(popup).unwrap_or(false)
 }
 
 /// An annotation `/Rect` in canvas space, or `None` when it is unusable.
@@ -424,6 +487,45 @@ pub fn has_something_to_read(note: &NoteView) -> bool {
     note.contents
         .as_deref()
         .is_some_and(|c| !c.trim().is_empty())
+}
+
+/// ★★★ **Is there anywhere in this document to record a window state?** — the
+/// R83 gate on the *Open by default* control.
+///
+/// `EditSession::set_annotation_open` writes `/Open` on **up to two objects**
+/// and nowhere else:
+///
+/// | object | when the key is written | authority |
+/// |---|---|---|
+/// | the annotation itself | its `/Subtype` is `/Text` (or `/Popup`, which this shell never addresses directly) | §12.5.6.4 Table 172. Table 169 gives no other annotation the key, and the engine refuses to invent it: *"writing it onto a `/Square` would add a key the standard does not define there, which is noise a later reader could mistake for meaning"* |
+/// | the `/Popup` companion | there is one | §12.5.6.14 Table 183 |
+///
+/// With neither, the call **succeeds and does nothing** — no keys, no undo
+/// entry — and the engine is explicit that this is a report rather than a
+/// refusal, so that a caller acting over a mixed selection need not filter by
+/// subtype. That is the right contract for the engine and the wrong affordance
+/// for a shell: R83 says a control that cannot be honoured is not drawn, and a
+/// tick box whose entire effect is a sentence explaining that it had none is
+/// exactly the control that rule exists to remove.
+///
+/// # ★★ It does NOT manufacture the companion, and that is the engine's line
+///
+/// `set_annotation_open` *"does not create a `/Popup`. An annotation without
+/// one has no window to open, and manufacturing the companion — with a `/Rect`
+/// the caller did not choose — is authoring, not a state change."* This shell
+/// agrees and does not work around it: a `/Square` an operator commented on
+/// with no `/Popup` in the file is a shape whose window state is not
+/// expressible, and the honest response is to offer nothing rather than to
+/// author a rectangle nobody asked for at coordinates nobody chose.
+///
+/// ⚠ The `/Popup` half is a fact about the **file**, read through
+/// `Annotation::popup`. It is not a fact about whether pdfcer is drawing a
+/// bubble right now — this shell draws one beside the note when the file gives
+/// no rectangle, which is a placement fallback and emphatically not a `/Popup`
+/// the document contains.
+#[must_use]
+pub fn can_record_open_state(note: &NoteView) -> bool {
+    note.subtype == "Text" || note.popup.is_some()
 }
 
 #[must_use]
@@ -558,36 +660,9 @@ const MAX_THREAD_DEPTH: usize = 8;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use pdfcer_core::object::{Dict, Name};
-
-    /// A graph of loose objects — enough for the two dictionary questions this
-    /// module asks and nothing more.
-    ///
-    /// Hand-built rather than loaded from a fixture because the subject of
-    /// these tests is **one key**, and a fixture would make the assertion
-    /// depend on a file, a page tree and an `/Annots` walk — three things that
-    /// can fail for reasons the assertion is not about.
-    struct Objects(Vec<(ObjId, Object)>);
-
-    impl ObjectGraph for Objects {
-        fn value(&self, id: ObjId) -> Option<&Object> {
-            self.0.iter().find(|(o, _)| *o == id).map(|(_, v)| v)
-        }
-        fn trailer_entry(&self, _key: &[u8]) -> Option<&Object> {
-            None
-        }
-    }
 
     fn id(num: u32) -> ObjId {
         ObjId::new(num, 0)
-    }
-
-    fn with_open(num: u32, open: Option<bool>) -> (ObjId, Object) {
-        let mut dict = Dict::new();
-        if let Some(open) = open {
-            dict.insert(Name::from(b"Open"), Object::Boolean(open));
-        }
-        (id(num), Object::Dict(dict))
     }
 
     /// ★★★ **A note the file says is open reads as open.**
@@ -596,10 +671,17 @@ mod tests {
     /// assignment names: *"A note authored open should open. Read it; do not
     /// default it."* An implementation that returned `false` unconditionally
     /// would pass every other test in this module.
+    ///
+    /// ★ These five tests were rewritten on 2026-09-06 when [`read_open`]
+    /// stopped parsing raw dictionaries and started taking
+    /// `pdfcer_core::annot::Annotation::open`. What they assert is unchanged,
+    /// and deliberately so: the *rule* about which of the two objects wins did
+    /// not move, only who read the key. A rewrite that also changed the
+    /// assertions would have left nobody able to say whether the engine's
+    /// answer matched the shell's old one.
     #[test]
     fn a_note_authored_open_reads_as_open() {
-        let graph = Objects(vec![with_open(7, Some(true))]);
-        assert!(read_open(&graph, id(7), None));
+        assert!(read_open(Some(true), None));
     }
 
     /// The other half, and it is what makes the first one mean something: a
@@ -609,16 +691,19 @@ mod tests {
     /// wearing the other value.
     #[test]
     fn a_note_authored_closed_stays_closed() {
-        let graph = Objects(vec![with_open(7, Some(false))]);
-        assert!(!read_open(&graph, id(7), None));
+        assert!(!read_open(Some(false), None));
     }
 
     /// **Absent means closed**, which is Table 172's stated default value —
     /// not an assumption this module is making.
+    ///
+    /// ★★ And *absent on both* is the case that has to be spelled out, because
+    /// the engine deliberately reports absence as `None` rather than folding it
+    /// to `false`: somewhere the default has to be applied, and this asserts
+    /// that the somewhere is here.
     #[test]
     fn a_note_with_no_open_key_is_closed() {
-        let graph = Objects(vec![with_open(7, None)]);
-        assert!(!read_open(&graph, id(7), None));
+        assert!(!read_open(None, None));
     }
 
     /// ★★ **The pop-up's own `/Open` is consulted when the note has none.**
@@ -628,32 +713,28 @@ mod tests {
     /// 170** — the key belongs to `/Text` — so their open state lives only on
     /// the `/Popup`. Reading the parent alone would report every shape's note
     /// as closed however the producer saved it.
+    ///
+    /// Both directions, because a fall-through that always answered `true`
+    /// would pass a one-sided check and open every shape's window in the
+    /// document.
     #[test]
     fn a_shapes_open_state_comes_from_its_popup() {
-        let graph = Objects(vec![with_open(7, None), with_open(8, Some(true))]);
-        assert!(read_open(&graph, id(7), Some(id(8))));
+        assert!(read_open(None, Some(true)));
+        assert!(!read_open(None, Some(false)));
     }
 
     /// The note wins when both carry the key. Stated as a test rather than
-    /// left to the `or_else`, because the precedence is a decision with a
-    /// reason (see [`read_open`]) and a reordering would be silent.
+    /// left to the `or`, because the precedence is a decision with a reason
+    /// (see [`read_open`]) and a reordering would be silent.
+    ///
+    /// ★ Asserted in the direction where the two DISAGREE and the note says
+    /// *closed*: a build with the operands swapped passes any test where they
+    /// agree, and passes the `Some(true), Some(false)` case as well by
+    /// accident.
     #[test]
     fn the_note_outranks_its_popup() {
-        let graph = Objects(vec![with_open(7, Some(false)), with_open(8, Some(true))]);
-        assert!(!read_open(&graph, id(7), Some(id(8))));
-    }
-
-    /// A `/Open` that is not a boolean falls **through** to the pop-up rather
-    /// than being read as `false`.
-    ///
-    /// `/Open 1` is a malformed file, and concluding "closed" from it would
-    /// throw away a perfectly good answer sitting on the companion.
-    #[test]
-    fn a_malformed_open_falls_through() {
-        let mut dict = Dict::new();
-        dict.insert(Name::from(b"Open"), Object::Integer(1));
-        let graph = Objects(vec![(id(7), Object::Dict(dict)), with_open(8, Some(true))]);
-        assert!(read_open(&graph, id(7), Some(id(8))));
+        assert!(!read_open(Some(false), Some(true)));
+        assert!(read_open(Some(true), Some(false)));
     }
 
     fn note_at(num: u32, rect: Rect) -> NoteView {
@@ -752,12 +833,37 @@ mod tests {
         let view = session.view();
         let notes = notes_on(&view, &pages[0]);
 
-        // Three notes, not four: the `/Popup` is the window, not a comment.
+        // ★★★ **TWO notes**, not four and not three — and the two exclusions
+        // are different rules that this one number is the control for.
+        //
+        // The `/Popup` is the window rather than a comment: §12.5.6.14 is a
+        // `shall`, and it has never been listed.
+        //
+        // The **reply** stopped being listed on 2026-09-06, and that is the
+        // half worth the sentence. `add_reply` places a reply at its parent's
+        // own `/Rect`, appended to `/Annots`, and [`under`] takes the last
+        // match — so a listed reply is a bubble sitting exactly on top of the
+        // comment it answers, taking every click meant for it. The reply's
+        // words are not lost: [`replies_to`] gathers them into the parent's
+        // thread, which the two assertions at the bottom of this test check on
+        // this same document.
         assert_eq!(
             notes.len(),
-            3,
-            "expected the open note, the reply and the closed note; got {:?}",
+            2,
+            "expected the open note and the closed note; a reply must not be \
+             drawn as an independent note, or answering a comment makes that \
+             comment unclickable on the canvas. Got {:?}",
             notes.iter().map(|n| &n.subtype).collect::<Vec<_>>()
+        );
+        // ★★ …and the positive control for that exclusion, without which
+        // `len() == 2` would also pass on a build that had dropped the reply
+        // from the file, from the walk, or from the fixture. The reply must
+        // still be **in the document** and still reachable as part of the
+        // thread — which is asserted below, on `open.id`, against the same
+        // annotation this loop declines to list.
+        assert!(
+            notes.iter().all(|n| n.in_reply_to.is_none()),
+            "a listed note carries an /IRT, so the reply exclusion did not fire"
         );
 
         let open = notes
@@ -902,5 +1008,62 @@ mod tests {
             "a byline is a fact for the Comments panel, not a message worth a \
              window over the drawing"
         );
+    }
+
+    /// ★★★ **Only an annotation with somewhere to write it is offered the
+    /// *Open by default* control** — R83, and the two halves are different
+    /// rules.
+    ///
+    /// # What the engine will and will not write
+    ///
+    /// `set_annotation_open` writes `/Open` on the annotation itself **only for
+    /// `/Text`** — §12.5.6.4 Table 172 gives it there and Table 169 gives it to
+    /// no other subtype, and the engine refuses to invent it: *"writing it onto
+    /// a `/Square` would add a key the standard does not define there, which is
+    /// noise a later reader could mistake for meaning."* It writes the `/Popup`
+    /// companion's when there is one, and it **will not manufacture a
+    /// companion**, because choosing a `/Rect` the caller did not pick is
+    /// authoring rather than a state change.
+    ///
+    /// With neither, the call succeeds, writes nothing and pushes no undo
+    /// entry. That is the right contract for an engine acting over a mixed
+    /// selection and the wrong affordance for a window: a tick box whose whole
+    /// effect is a sentence explaining that it had none.
+    ///
+    /// # ★★ All four combinations, because two of them are the interesting ones
+    ///
+    /// A build that asked only *"is it a `/Text`?"* withholds the control from
+    /// every shape an operator commented on and gave a pop-up — which is what
+    /// `pdfcer-core`'s own sticky-note author writes, and what Acrobat writes
+    /// for a highlight. A build that asked only *"does it have a `/Popup`?"*
+    /// withholds it from a `/Text` whose companion another producer left out,
+    /// where the annotation's own `/Open` is the entire answer.
+    #[test]
+    fn only_a_note_with_somewhere_to_record_it_may_record_it() {
+        let note = |subtype: &str, popup: bool| NoteView {
+            id: ObjId::new(1, 0),
+            subtype: subtype.to_owned(),
+            contents: Some("words".to_owned()),
+            author: None,
+            modified: None,
+            anchor: Rect::from_min_size(Pos2::ZERO, egui::vec2(10.0, 10.0)),
+            popup: popup.then(|| PopupBox {
+                id: ObjId::new(2, 0),
+                rect: None,
+            }),
+            authored_open: false,
+            locked: false,
+            in_reply_to: None,
+        };
+
+        // A `/Text` carries `/Open` itself, companion or not.
+        assert!(can_record_open_state(&note("Text", true)));
+        assert!(can_record_open_state(&note("Text", false)));
+        // A shape's window state lives only on the companion.
+        assert!(can_record_open_state(&note("Square", true)));
+        // …and with no companion there is nowhere to put it. This is the row
+        // that makes the control R83-correct rather than merely cautious.
+        assert!(!can_record_open_state(&note("Square", false)));
+        assert!(!can_record_open_state(&note("Ink", false)));
     }
 }

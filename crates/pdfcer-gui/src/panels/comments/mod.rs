@@ -83,15 +83,27 @@
 //!
 //! [`Action::GoToPage`], from a row's **Go to** control, exactly as
 //! `crate::panels::bookmarks` does; and [`Action::Annot`] carrying
-//! [`AnnotAction::SetNote`], [`AnnotAction::ClearNote`] and — since
-//! 2026-09-05 — [`AnnotAction::Delete`]. The body is handed `&OpenDoc` — a
+//! [`AnnotAction::SetNote`], [`AnnotAction::ClearNote`], [`AnnotAction::Delete`]
+//! (2026-09-05) and — since 2026-09-06 — [`AnnotAction::Reply`], which is the
+//! **write half of a surface that had been listening since the day it was
+//! built**: this panel's trace has printed `replies=` from the first frame it
+//! ever drew, and until `EditSession::add_reply` (`Pass 253.0`) there was no
+//! verb that could add to what it was counting. The body is handed `&OpenDoc` — a
 //! **shared** reference, so this is a compile-time fact and not a convention —
 //! it reads, and it pushes. It never touches the document.
 //!
 //! ⚠ **One thing this panel does write directly, and it is not the document.**
 //! A row's **Go to** also opens that comment's canvas pop-up, through
 //! `crate::canvas::notepopup::open::set`, which is `egui::Memory` — interface
-//! state, per document, never saved. It is here rather than behind an `Action`
+//! state, per document, never saved.
+//!
+//! ★ Since 2026-09-06 it opens the **thread root's** window rather than the
+//! row's own, resolved by [`model::thread_root`]: the canvas draws no window
+//! for a reply, because `add_reply` places one at its parent's own `/Rect` and
+//! a bubble there would cover the comment it answers. See
+//! `canvas::notepopup::model::notes_on`'s exclusion table.
+//!
+//! It is here rather than behind an `Action`
 //! because an `Action` is drained *after* the frame and the pop-up must be
 //! open on the frame the page arrives, and because the actions-not-mutations
 //! rule is about the **document**: the thing it protects is the undo stack and
@@ -237,9 +249,30 @@ pub mod filter;
 /// without a `Ui`.
 pub mod model;
 
-/// The note being typed, and the `(annotation, edit epoch)` stamp that keeps
-/// it honest.
+/// ★★★ **A comment's review status** — `/State` and `/StateModel` (§12.5.6.3),
+/// read into a per-reviewer history, shown on the row, filtered beside the
+/// sort, and recorded through
+/// `pdfcer_core::edit::EditSession::add_review_state`. Added 2026-09-06.
+///
+/// Its header carries the two facts everything in it follows from: a status is
+/// **appended, not set** — the file holds a log rather than a field — and the
+/// engine reads both keys **verbatim without interpreting them**, so the
+/// vocabulary is this shell's to present and an unrecognised value is shown
+/// rather than normalised.
+pub mod reviewstate;
+
+/// The note being typed, and the `(annotation, edit epoch, destination)` stamp
+/// that keeps it honest.
 pub mod note;
+
+/// ★★★ **Everything on a row that WRITES** — *Add note*, *Reply*, and the one
+/// text box both of them open. Split out under **R2** on 2026-09-06, when the
+/// reply affordance took this file to 1,757 lines.
+///
+/// Its header carries the seam: this module is **the list**, that one is the
+/// only part of the panel that holds the operator's unfinished words and the
+/// only part whose output is a verb.
+mod editor;
 
 use pdfcer_core::object::ObjId;
 
@@ -249,6 +282,10 @@ use crate::app::state::OpenDoc;
 use crate::panels::PanelsState;
 use crate::text::panels::comments as t;
 
+pub(crate) use self::editor::keeps_author_name;
+use self::editor::note_controls;
+#[cfg(test)]
+use self::editor::{keeps_author, reply_is_postable};
 use self::model::{CommentRow, Listing, Note, Relation};
 use self::note::NoteDraft;
 
@@ -316,6 +353,19 @@ pub const REGION_REMOVE: &str = "comments.note_remove"; // ui-text-exempt: trace
 pub const REGION_DELETE: &str = "comments.delete"; // ui-text-exempt: trace region name, never displayed
 /// The region the filter strip's *Show all* publishes, when a filter is set.
 pub const REGION_FILTER_CLEAR: &str = "comments.filter_clear"; // ui-text-exempt: trace region name, never displayed
+/// The region the FIRST row's *Reply* publishes — one name, one row, for
+/// [`REGION_EDIT`]'s stated reason.
+pub const REGION_REPLY: &str = "comments.reply"; // ui-text-exempt: trace region name, never displayed
+/// The region the open reply editor's *Post reply* publishes. Unique by
+/// construction — one draft, one editor, one commit.
+///
+/// ★ A **separate** name from [`REGION_SAVE`], deliberately. The two controls
+/// occupy the same place on the row and reach different engine verbs, so one
+/// shared name would leave a driven check unable to tell *"the note editor is
+/// open"* from *"the reply editor is open"* — which is precisely the pair a
+/// harness must distinguish, because one of them writes over the comment the
+/// other one answers.
+pub const REGION_POST: &str = "comments.reply_post"; // ui-text-exempt: trace region name, never displayed
 
 /// Draw the Comments panel.
 ///
@@ -336,6 +386,59 @@ pub const REGION_FILTER_CLEAR: &str = "comments.filter_clear"; // ui-text-exempt
 /// the one [`crate::panels::ObjectTreeUi::focus`]' docs refuse to blur, and it
 /// is what stops this panel growing a second, weaker selection that the canvas
 /// would then have to be kept in step with.
+///
+/// # ★★★ THREADING DEPTH: the file nests, the panel does not — decided
+/// 2026-09-06
+///
+/// `EditSession::add_reply` permits a reply to a reply (its scope note 2:
+/// *"no cycle checking beyond the obvious … a reply-to-a-reply is wanted"*),
+/// so the moment this panel could author one the question became real: **does
+/// a reply to a reply draw indented under it, or flat?**
+///
+/// ## What was decided
+///
+/// | | |
+/// |---|---|
+/// | **in the file** | the true parent, always. `AnnotAction::Reply` carries the **row's own** `/IRT` and never rewrites it to the thread root |
+/// | **in this panel** | flat. Every annotation is one row in document order, and a reply is marked by its caption ([`t::comment_row_is_reply`]) rather than by an indent |
+/// | **in the canvas pop-up** | flat, one level under the root — `canvas::notepopup::model::replies_to` gathers the whole transitive thread and lists it |
+/// | **when the two differ** | the operator is told, on the row, at the moment they are about to answer an answer — [`t::comment_row_reply_to_a_reply`] |
+///
+/// ## Why flat, and what the alternative would have cost
+///
+/// Three reasons, in the order they decided it:
+///
+/// 1. **The read half was already flat and already shipped.** `replies_to`'s
+///    own docs settled this before any of it could be written:
+///    *"every reader in the class draws a comment thread as a flat
+///    chronological list under its root rather than as a nested tree, and a
+///    tree drawn in a 260 pt window would be four indents of two words each."*
+///    Nesting the panel while the pop-up stayed flat would give one document
+///    two shapes in one program, which is worse than either shape.
+/// 2. **This panel is a work list, not a conversation.** Its rows are headed by
+///    subtype and page because a reviewer scanning forty of them is looking for
+///    *the cloud on sheet three*, and its filter strip narrows by author and
+///    subtype. An indent tree fights both: a filtered tree either hides parents
+///    whose children matched or shows rows the filter excluded, and there is no
+///    third option.
+/// 3. **An indent has to be computed from something that can be malformed.**
+///    §7.3.10 makes a dangling `/IRT` not an error and says nothing about a
+///    circular one, and `pdfcer-core` models both rather than repairing them.
+///    A depth column therefore needs a cycle bound, a rule for a parent that is
+///    not in the list, and a rule for a parent that was filtered out — three
+///    decisions in service of a visual that the surface it would appear on does
+///    not want.
+///
+/// ★★ **The cost is named rather than hidden**: a reader of this list cannot
+/// tell, from the list alone, which comment a given reply answers. That is
+/// what [`t::comment_row_is_reply`] admits by saying *"a reply to another
+/// annotation on this document"* rather than naming one, and it is why *Go to*
+/// resolves through [`model::thread_root`] — the canvas window is where the
+/// conversation is legible, and this panel's job is to get the operator there.
+///
+/// ⇒ If this argument grows past a paragraph — if, say, an operator asks to see
+/// who answered whom without opening each comment — it belongs in
+/// `MODES_AND_PANELS.md` as a surface-level decision rather than here.
 pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: &mut Vec<Action>) {
     // ★ FIRST, before anything is drawn: drop the operator's half-typed note if
     // the document has moved under it. `NoteDraft`'s header carries the whole
@@ -355,6 +458,13 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     // Read the SESSION, not the file on disk — see the module header.
     let view = doc.session.view();
     let listing = model::collect(&view, &doc.pages, &ce_dimensions);
+    // ★ ONCE per frame, for `ce_dimensions`' reason exactly: a review status
+    // lives on OTHER annotations (§12.5.6.3), so answering "what is this
+    // comment's status" needs the whole document. Asked per row it would make
+    // the panel quadratic in the annotation count. Read from the same session
+    // view for the same reason the listing is — a status recorded thirty
+    // seconds ago and not yet saved must be on the row.
+    let statuses = reviewstate::read(&view, &doc.pages);
 
     // Read BEFORE the strip is drawn, so the trace can state whether a filter
     // is narrowing the list — see [`trace`] for why that field exists and for
@@ -416,6 +526,12 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     // in one press.
     let total = listing.rows.len();
     filter_strip(ui, &listing.rows, &mut state.comments_mut().filter);
+    // ★ The status chooser, drawn as its own strip rather than inside
+    // `filter_strip`, because its values come from the DOCUMENT's statuses
+    // rather than from the rows — see `reviewstate::status_strip`. It writes
+    // into the same `Filter`, so *Show all* lifts it and `is_narrowing` counts
+    // it; that is the whole reason the state lives there and not beside it.
+    reviewstate::status_strip(ui, &statuses, &mut state.comments_mut().filter.status);
     // Cloned out before the rows are borrowed, so the strip's `&mut` on the
     // panel state has ended by the time the list is drawn. A `Filter` is three
     // small fields; the alternative is threading a borrow through the whole
@@ -427,7 +543,16 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     // would read as a control that does not work. The trace's copy is the
     // pre-strip one deliberately — see [`trace`].
     let narrowing = state.comments_mut().filter.clone();
-    let rows = filter::apply(listing.rows.clone(), &narrowing);
+    // ★★ TWO passes, because there are two questions. `filter::apply` answers
+    // everything knowable from a row; `reviewstate::narrow` answers the one
+    // thing that is not on the row at all — a status is on OTHER annotations
+    // (§12.5.6.3). `Filter::status`' own doc carries why the state is in one
+    // place and the predicate in two.
+    let rows = reviewstate::narrow(
+        filter::apply(listing.rows.clone(), &narrowing),
+        &statuses,
+        narrowing.status.as_ref(),
+    );
     if narrowing.is_narrowing() {
         // ★ ABOVE the list, with every other disclosure and for their reason:
         // an operator who scrolls a short list and stops has already drawn
@@ -455,6 +580,24 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     // [`REGION_EDIT`]: one name, one row, and the first row is the only
     // deterministic choice.
     let mut published = false;
+    // ★ The status a row asked to RECORD, and whether the Record-status region
+    // has been published this frame. Two more scalars for `RowSink`'s reason:
+    // two rows cannot be pressed in one frame, and a `Vec` would invite a
+    // future reader to queue two edits that would each bump the epoch under the
+    // other. Kept beside `verb` rather than inside `RowSink` so this feature
+    // adds nothing to that struct — see `reviewstate::RowStatusCtx`.
+    let mut status_verb: Option<(ObjId, pdfcer_core::edit::ReviewState)> = None;
+    let mut status_published = false;
+    // Whether the operator asked *which comments has nobody reviewed* — the one
+    // condition under which an unreviewed row says so on its face. Read from
+    // the filter that is already in hand rather than re-cloned.
+    let unreviewed = matches!(
+        narrowing.status,
+        Some(reviewstate::StatusChoice::Unrecorded)
+    );
+    // The same, for the *Reply* control. See `RowSink::reply_published` for
+    // why it is a second flag rather than a second use of the first.
+    let mut reply_published = false;
     // Tallied through `RowSink` and published to the panel's own state after
     // the draw — see `CommentsUi::writing_controls_drawn`.
     let mut writing_controls_drawn: u32 = 0;
@@ -558,6 +701,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
                                 go: &mut go,
                                 verb: &mut verb,
                                 published: &mut published,
+                                reply_published: &mut reply_published,
                                 deletable,
                                 deletable_stance: authoring,
                                 writing_controls_drawn: &mut writing_controls_drawn,
@@ -565,6 +709,28 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
                             draft,
                             epoch,
                             is_selected,
+                        );
+                        // ★ The review status, drawn INSIDE the same `push_id`
+                        // so its chooser gets the row's own egui id — two rows
+                        // of the same subtype on the same page would otherwise
+                        // share one, which shows up as the wrong menu opening.
+                        //
+                        // Below the comment rather than above it: a status is a
+                        // disclosure ABOUT the comment, and the panel's rule
+                        // that disclosures come first is about caveats that
+                        // change what you conclude from a LIST, not about ones
+                        // that qualify a single row.
+                        reviewstate::row_status(
+                            ui,
+                            comment,
+                            &statuses,
+                            reviewstate::RowStatusCtx {
+                                authoring,
+                                unreviewed_asked: unreviewed,
+                                published: &mut status_published,
+                                controls_drawn: &mut writing_controls_drawn,
+                                verb: &mut status_verb,
+                            },
                         );
                     })
                     .response;
@@ -604,9 +770,35 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
         // why this is written directly rather than carried as an `Action`: an
         // `Action` drains after the frame, and the pop-up has to be open on
         // the frame the page arrives.
+        //
+        // ★★★ **Resolved to the thread ROOT first**, added 2026-09-06 with the
+        // Reply control. `crate::canvas::notepopup` draws a window for a
+        // comment and lists that comment's replies inside it; it draws none for
+        // a reply, because `add_reply` places a reply on its **parent's own
+        // `/Rect`** and a bubble for it would sit on top of — and make
+        // unclickable — the comment it answers. So a Go to on a reply row that
+        // asked for the reply's own window would open nothing at all, and the
+        // operator would press a button that visibly did half its job.
+        //
+        // `model::thread_root` walks `/IRT` upward, bounded against the cyclic
+        // file §7.3.10 permits. On an ordinary comment it is the identity and
+        // costs one lookup.
         if let Some(id) = id {
-            crate::canvas::notepopup::open::set(ui.ctx(), &doc.path, id, true);
+            let root = model::thread_root(&listing.rows, id);
+            crate::canvas::notepopup::open::set(ui.ctx(), &doc.path, root, true);
         }
+    }
+    // ★★ Raised as its own `Action` rather than through `AnnotAction`, and the
+    // seam is the one this feature keeps drawing: `AnnotAction`'s verbs all
+    // change **the annotation named**, and this one changes nothing about it —
+    // `add_review_state` *"returns a new `ObjId` rather than mutating the
+    // target, and … nothing about the target changes"*. The draft is
+    // deliberately left alone for the same reason: recording a status is not an
+    // edit to the note the operator may be halfway through typing.
+    if let Some((id, state)) = status_verb {
+        actions.push(Action::RecordReviewState(
+            crate::app::actions::reviewstate::RecordStatus { id, state },
+        ));
     }
     if let Some(verb) = verb {
         // ★ The draft closes here rather than in the row that raised the verb,
@@ -657,6 +849,16 @@ struct RowSink<'a> {
     /// row, and the first row that offers the control is the only deterministic
     /// choice. See that constant.
     published: &'a mut bool,
+    /// Whether [`REGION_REPLY`] has been published this frame — its own flag
+    /// rather than a second use of [`Self::published`], because the two
+    /// controls are drawn under different conditions.
+    ///
+    /// ★ A row whose note editor is **open** draws no *Add note* and therefore
+    /// publishes no [`REGION_EDIT`]; sharing one flag would let that row's
+    /// state decide which row a harness finds *Reply* on. Two names, two
+    /// flags, each naming the first row that actually drew the control it
+    /// names.
+    reply_published: &'a mut bool,
     /// ★★ **Whether `delete_annotation` would be refused right now**, asked
     /// ONCE per frame in [`body`] and carried.
     ///
@@ -948,6 +1150,10 @@ fn filter_strip(ui: &mut egui::Ui, all: &[CommentRow], state: &mut filter::Filte
                 state.author = None;
                 state.subtype = None;
                 state.with_note_only = false;
+                // ★ …and the status, which is why `Filter` holds it. A
+                // narrowing the operator can set and cannot lift from the one
+                // control labelled *Show all* is the trap version of a filter.
+                state.status = None;
             }
         }
     });
@@ -993,288 +1199,6 @@ fn sort_label(sort: filter::Sort) -> &'static str {
         filter::Sort::Author => t::comment_sort_author(),
         filter::Sort::Subtype => t::comment_sort_subtype(),
     }
-}
-
-/// **The note editor for one row, and the control that opens it.**
-///
-/// Three shapes, decided by what the annotation is rather than by what this
-/// build can do:
-///
-/// | the row | what is drawn |
-/// |---|---|
-/// | a **ce dimension** | a caption saying where its text actually comes from |
-/// | an annotation with **no object id** | a caption saying why pdfcer cannot address it |
-/// | anything else | *Add note* / *Edit note*, and the editor when it is open |
-///
-/// # ★★★ R9: neither caption is a greyed button
-///
-/// *"An unavailable capability renders nothing, not a disabled stub. Greying is
-/// reserved for temporarily unavailable."* Neither of these is temporary: a ce
-/// dimension's `/Contents` is regenerated from its measurement by
-/// `author_dimension`, so a note written over it would be silently thrown away,
-/// and a direct-dictionary annotation is a **malformed file** (§12.5.2 Table 164
-/// requires the dictionary to be an indirect object) with nothing to name. A
-/// greyed *Edit note* would promise that some state of the program would let
-/// the operator press it, and none would.
-///
-/// # ★★ Why a `/Link` is offered the editor
-///
-/// `/Contents` is dual-purpose (§12.5.2): note text on a subtype that displays
-/// text, an accessibility description on one that does not — and
-/// [`t::comment_row_description_caption`] already says which this row is.
-/// `set_markup_note` accepts both, so withholding the editor would be
-/// withholding a capability the engine has, on a guess about the operator's
-/// intent. The caption is the honest half; the button is the useful half.
-///
-/// ★ It is worth knowing what this costs: on a `/Link` with no `/Contents` at
-/// all the control still says *Add note*, because `Note::Absent` carries no
-/// subtype interpretation to distinguish "nobody wrote a comment" from "nobody
-/// wrote a description". Named here rather than left to be found.
-fn note_controls(
-    ui: &mut egui::Ui,
-    comment: &CommentRow,
-    draft: &mut NoteDraft,
-    epoch: u64,
-    sink: &mut RowSink<'_>,
-) {
-    // ★★★ **Nothing to type into in a reading stance.** Same finding, same
-    // frame and same argument as the Delete control — see `RowSink::deletable`
-    // at its assignment. `Add note` and `Edit note` both **write** to the
-    // document, so a mode that does not author markup is offered neither.
-    //
-    // ⚠ Deliberately BEFORE the ce-dimension branch below, and the order is
-    // load-bearing: that branch draws an explanatory sentence about why a ce
-    // dimension's note is not editable *here*, which in Read would answer a
-    // question the operator cannot have asked, about a control that is not on
-    // screen. R9's rule is that an unavailable capability renders **nothing** —
-    // and a sentence is something.
-    if !sink.deletable_stance {
-        return;
-    }
-    if comment.is_ce_dimension {
-        ui.label(
-            egui::RichText::new(t::comment_row_note_not_editable_ce_dimension())
-                .small()
-                .weak(),
-        );
-        return;
-    }
-    let Some(id) = comment.id else {
-        ui.label(
-            egui::RichText::new(t::comment_row_note_no_handle())
-                .small()
-                .weak(),
-        );
-        return;
-    };
-
-    if draft.editing(id, epoch) {
-        editor(ui, comment, id, draft, sink.verb);
-        return;
-    }
-
-    // The existing words, which seed the editor. `Note::Description` seeds it
-    // too — the operator is editing that string whichever of §12.5.2's two
-    // meanings it carries, and an editor that opened empty over a description
-    // would invite them to destroy it by typing.
-    let existing = match &comment.note {
-        Note::Text(text) | Note::Description(text) => text.as_str(),
-        Note::Absent => "",
-    };
-    let label = if existing.is_empty() {
-        t::comment_row_add_note()
-    } else {
-        t::comment_row_edit_note()
-    };
-    let button = ui.button(label);
-    // `ui_rect_visible`, not `ui_rect`: these rows live in a `ScrollArea`, and a
-    // control scrolled out of view still reports a rect. A harness clicking a
-    // coordinate that is behind the scroll edge clicks whatever IS there, which
-    // fails as something else entirely.
-    *sink.writing_controls_drawn += 1;
-    if !*sink.published {
-        crate::diag::ui_rect_visible(REGION_EDIT, button.rect, ui.clip_rect());
-        *sink.published = true;
-    }
-    if button.clicked() {
-        draft.begin(id, epoch, existing);
-    }
-}
-
-/// ★★★ **Whether this annotation already carries a byline that is not ours to
-/// move** — the one decision in this panel with a consequence in the file.
-///
-/// `true` means the `SetNote` action sends **no `/T` at all**, and
-/// `pdfcer-core` leaves an omitted key untouched. `false` means the operator's
-/// name from Settings > Comments is written, or nothing is if that name is
-/// blank, which is a supported choice meaning *comment anonymously*.
-///
-/// # Why this is a function rather than three words at its call site
-///
-/// Because it is the mistake the engine warned about **by name** when it
-/// shipped the verb, and it is invisible from every other angle:
-///
-/// > An implementation writing all three keys unconditionally would silently
-/// > strip the author and date on every correction, leaving a review comment
-/// > from nobody, dated never, looking exactly like a note somebody else had
-/// > mangled.
-///
-/// A `Ui` cannot be driven in a unit test in this crate, so an expression
-/// buried in [`editor`] would be reachable only by `tools/ui-verify` — and a
-/// driven check can assert that *a* note was written far more easily than it
-/// can assert that a `/T` was **not**. Pulled out, the rule has a name, a
-/// suite, and one caller that also feeds the sentence the operator reads.
-///
-/// # ★ Whitespace counts as absent
-///
-/// A `/T` of `"  "` is a byline nobody wrote — the commonest way for one to
-/// exist is a producer writing an empty string — and preserving it would leave
-/// a comment credited to a space. Trimmed, so *"has an author"* means the same
-/// thing here as it does in the row's own byline, which is drawn by
-/// [`t::comment_row_byline`] under the same rule.
-fn keeps_author(comment: &CommentRow) -> bool {
-    keeps_author_name(comment.author.as_deref())
-}
-
-/// [`keeps_author`] over the name alone — **the one spelling of the rule**.
-///
-/// # ★★★ Why this is separate, added 2026-09-05
-///
-/// Because there are now **two** editors for one note: this panel's, and the
-/// canvas pop-up's (`crate::canvas::notepopup`), which is the route that works
-/// in Read mode and the answer to the operator's report of that date.
-///
-/// Two editors writing the same key is exactly the shape in which the mistake
-/// `pdfcer-core` named by name gets made in one of them and not the other:
-///
-/// > An implementation writing all three keys unconditionally would silently
-/// > strip the author and date on every correction, leaving a review comment
-/// > from nobody, dated never, looking exactly like a note somebody else had
-/// > mangled.
-///
-/// The pop-up has no [`CommentRow`] — it works from
-/// `crate::canvas::notepopup::model::NoteView` — so the rule had to be
-/// expressible over the name by itself or it would have been re-derived at the
-/// second call site. Re-derived is how two surfaces come to disagree, and this
-/// one's disagreement would be invisible until somebody read a saved file.
-///
-/// [`tests::a_note_with_an_author_keeps_it`] and its two siblings are the
-/// suite, and they exercise this through [`keeps_author`].
-#[must_use]
-pub(crate) fn keeps_author_name(author: Option<&str>) -> bool {
-    author.is_some_and(|author| !author.trim().is_empty())
-}
-
-/// The open editor: the box, the hint, the signature disclosure and the three
-/// controls.
-///
-/// # ★★ The signature line is a rule-4 disclosure, not a caption
-///
-/// What `/T` will say is **invisible on the page** — a sticky's byline lives in
-/// a pop-up window this shell does not draw, and a shape's lives nowhere at all
-/// — so an operator has no way to discover what name their comments carry, or
-/// that they carry none, or that editing somebody else's comment will leave
-/// their name on it. Two sentences, one per case, and the case is decided by
-/// the row rather than by a preference this panel cannot see.
-///
-/// # ★ Escape closes it, and it does so through egui rather than by reading the
-/// keyboard
-///
-/// `TextEdit` surrenders focus on Escape, so `lost_focus()` plus the key is the
-/// idiomatic test and — importantly for this codebase — it asks nothing about
-/// whether "the operator is typing". A panel that read the raw key would be a
-/// second claimant on a key the canvas caret and the tool arming both want, and
-/// `tools/gates/check-typing-guard.sh` exists because that class of second
-/// claimant has already cost this project the Delete key and the space bar.
-fn editor(
-    ui: &mut egui::Ui,
-    comment: &CommentRow,
-    id: ObjId,
-    draft: &mut NoteDraft,
-    verb: &mut Option<AnnotAction>,
-) {
-    let response = ui.add(
-        egui::TextEdit::multiline(draft.text_mut())
-            .desired_rows(3)
-            .desired_width(f32::INFINITY),
-    );
-    crate::diag::ui_rect_visible(REGION_BOX, response.rect, ui.clip_rect());
-    if response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Escape)) {
-        draft.close();
-        return;
-    }
-
-    // ★★★ **A `/FreeText` row's before-the-write warning was DELETED here on
-    // 2026-09-06, hours after it was added, and the deletion is the record.**
-    //
-    // It said, in un-`.weak()` type above the keyboard hint, that the words
-    // printed in a text box could not be changed once it was placed and that
-    // saving would leave the page reading what it did before. That was true and
-    // measured when it was written: `EditSession::set_markup_note` committed
-    // the annotation dictionary and not the `/AP` stream that paints the words.
-    //
-    // `pdfcer-core` `95a936e` closed it the same afternoon — `set_markup_note`
-    // now re-bakes the appearance itself, in the same command and the same undo
-    // entry — so the sentence became false while still reading as caution,
-    // which is the kind of lie nobody notices. Deleted rather than reworded.
-    //
-    // ★★ And it could not be reworded to cover what survives. The one case
-    // still owed a sentence is a text box whose appearance **another program**
-    // drew, which pdfcer preserves rather than replaces — and that is decided
-    // by baking the words and comparing bytes, *inside* `set_markup_note`.
-    // Nothing drawn before the call can know it, so the surviving disclosure is
-    // necessarily an after-the-fact one, on the status line, gated on
-    // `MarkupNoteChange::appearance_rebaked`
-    // (`crate::app::actions::annots::set_note`). The whole table is at
-    // `crate::text::textannot`'s edit-time banner.
-    //
-    // R8b is unchanged and still met: the report is off-canvas, and the box
-    // renders exactly as it will save.
-
-    ui.label(
-        egui::RichText::new(t::comment_row_note_hint())
-            .small()
-            .weak(),
-    );
-
-    // Whose name ends up on it. The disclosure and the action's flag come from
-    // ONE function on purpose: a sentence that could disagree with the edit it
-    // describes is worse than no sentence.
-    let keep_author = keeps_author(comment);
-    let signature = match comment.author.as_deref() {
-        Some(author) if keep_author => t::comment_row_note_signature_kept(author.trim()),
-        _ => t::comment_row_note_signature().to_owned(),
-    };
-    ui.label(egui::RichText::new(signature).small().weak());
-
-    let had_note = !matches!(comment.note, Note::Absent);
-    ui.horizontal(|ui| {
-        let save = ui.button(t::comment_row_note_save());
-        crate::diag::ui_rect_visible(REGION_SAVE, save.rect, ui.clip_rect());
-        if save.clicked() {
-            *verb = Some(AnnotAction::SetNote {
-                id,
-                text: draft.text().to_owned(),
-                keep_author,
-            });
-        }
-        if ui.button(t::comment_row_note_cancel()).clicked() {
-            draft.close();
-        }
-        // Only when there is something to remove. `clear_markup_note` on an
-        // annotation with no note is a call whose entire effect is an undo
-        // entry, and R9's rule about a control that cannot do anything applies
-        // to a control that can only do nothing.
-        if had_note {
-            let remove = ui
-                .button(t::comment_row_note_remove())
-                .on_hover_text(t::comment_row_note_remove_tooltip());
-            crate::diag::ui_rect_visible(REGION_REMOVE, remove.rect, ui.clip_rect());
-            if remove.clicked() {
-                *verb = Some(AnnotAction::ClearNote { id });
-            }
-        }
-    });
 }
 
 /// One `comments-panel` line per frame, carrying what the panel computed.

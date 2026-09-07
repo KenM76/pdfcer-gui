@@ -70,9 +70,25 @@
 //! eleventh subtype, and it goes stale **silently**, in the direction that
 //! withholds a control that would have worked. [`Current::read`] already called
 //! `spec_from_dict`; all that was missing was carrying its verdict forward.
-//! [`Current::restylable`] is that verdict, so this section and the verb are
+//! [`Current::reach`] is that verdict, so this section and the verbs are
 //! answering the same question through the same function, and an engine that
 //! grows a subtype grows this panel with it and no shell change.
+//!
+//! ### ★★★ …AND HALF OF THAT WENT OUT OF DATE THE SAME DAY — `Pass 253.2`
+//!
+//! The paragraph above is kept because its history is exact, and **its present
+//! tense is not**. `pdfcer-core` shipped `set_text_annot_style` on the
+//! afternoon of 2026-09-06: a `/Text`'s icon and colour and a `/Stamp`'s colour
+//! ARE changeable, through a **second verb with a second reader and a second
+//! style struct**. Two of the three subtypes named above are no longer refused
+//! here; they are routed. [`textannot`] is that route and its header carries
+//! the whole account, including why the third — `/FreeText` — is still refused
+//! and now for a **different reason**.
+//!
+//! ⇒ Nothing here goes through `set_markup_style` on their behalf. The two are
+//! separated by [`Reach`], an enum whose arms the compiler makes exhaustive,
+//! because a routing decision that can be got wrong silently is precisely what
+//! produced the defect above.
 //!
 //! ### ★ The refusal SAYS something
 //!
@@ -81,7 +97,9 @@
 //! something *is* selected, and a heading over an empty space reads as a bug.
 //! [`t::markup_not_restylable`] names what is still possible — move, resize,
 //! delete, edit the note — and its doc comment records the engine verb each of
-//! those four claims was checked against.
+//! those four claims was checked against, **and the correction it took on
+//! 2026-09-06** when two of the subtypes it was written for stopped being
+//! unstyleable.
 //!
 //! ## ★★★ What WAS deliberately absent, and the two arguments that were wrong
 //!
@@ -173,7 +191,7 @@
 //! (`edit.rs:7353`) is raised at `edit.rs:26460`–`26483`, **before** anything is
 //! regenerated. So the predicate above shapes this panel and the refusal
 //! catches a shell that drifted anyway — belt and braces, and the reason
-//! [`Current::restylable`]'s neighbours are not enough on their own. It reaches
+//! [`Current::reach`]'s neighbours are not enough on their own. It reaches
 //! the operator through the channel every engine refusal uses,
 //! `app::actions::funnel::vector_edit`'s `Err` arm (`funnel.rs:276`): the
 //! decline sentence on screen, the engine's own words into `PDFCER_DIAG`.
@@ -189,6 +207,11 @@ use crate::app::actions::Action;
 use crate::app::state::OpenDoc;
 use crate::canvas::selection::annot::AnnotKind;
 use crate::text::panels::properties as t;
+
+// ★ `Reach` lives in the SUBMODULE and is used here. See its own doc for why:
+// it is the seam between two verbs rather than a property of either, and R2
+// gave it the file with the room. The parent still owns the routing `match`.
+use textannot::Reach;
 
 /// The region this section publishes.
 pub const REGION: &str = "properties.markup"; // ui-text-exempt: trace region name, never displayed
@@ -286,28 +309,83 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
     // symptom would be controls drawn for a selection that no verb could name.
     let current = Current::read(doc, target.id);
 
-    // ★★★ **The style verb cannot reach every mark this section can be shown
-    // for**, and until 2026-09-06 the rows below were drawn anyway. See the
-    // module header: `AnnotKind::Markup` covers a sticky note, a text box and a
-    // stamp; `spec_from_dict` refuses all three; `set_markup_style` calls it
-    // first. Live controls, every press refused.
+    // ★★★ **WHICH VERB REACHES THIS MARK — one `match`, and the compiler
+    // checks it.**
     //
-    // ★ The predicate is `spec_from_dict` succeeding — the SAME call the verb
-    // makes — rather than a subtype list written here. A list would be correct
-    // today and wrong on the day the engine adds a subtype, and wrong in the
-    // silent direction: withholding a control that had started working.
-    if !current.restylable {
-        ui.label(
-            egui::RichText::new(t::markup_not_restylable())
+    // Until 2026-09-06 this read `if !current.restylable { … }` and there was
+    // only one verb to be reachable by. There are now two, over two spec
+    // families, and the arms below are the whole routing decision:
+    //
+    // | arm | verb | reader |
+    // |---|---|---|
+    // | `Markup` | `set_markup_style` | `annot_author::spec_from_dict` |
+    // | `TextAnnot` | `set_text_annot_style` | `annot_author::text_spec_from_dict` |
+    // | `TextBoxWithheld` | — | this shell declines; see [`Reach`] |
+    // | `Neither` | — | both readers refused |
+    //
+    // ★★ A `match` rather than two `if`s, and that is a correctness
+    // requirement rather than a style preference: a third verb, or a fourth
+    // face, arrives here as a non-exhaustive-match error instead of as a mark
+    // that quietly falls through to the refusal sentence. The previous shape of
+    // this code shipped *"live controls, every press refused"* for three
+    // subtypes; a routing decision that can be got wrong silently is the shape
+    // that produced it.
+    //
+    // ★ Both predicates are the engine's own readers succeeding — the SAME
+    // calls the two verbs make — rather than subtype lists written here. A list
+    // is correct today and wrong on the day the engine adds a subtype, and
+    // wrong in the silent direction: withholding a control that had started
+    // working.
+    match current.reach {
+        Reach::Markup => markup_rows(ui, current, &target, actions),
+        Reach::TextAnnot(reading) => textannot::rows(ui, reading, &target, actions),
+        // ★★★ A `/FreeText`. `set_text_annot_style` would take it and this
+        // shell will not send it — `textannot`'s header carries the
+        // measurement, and the short form is that the engine's reader always
+        // reports `multiline: false` and this verb, unlike `set_markup_note`,
+        // does not measure the true value before re-baking. Every text box this
+        // shell places is `multiline: true`, so a colour change would unwrap
+        // the operator's callout with nothing on screen to say so.
+        //
+        // ⇒ A sentence of its own rather than the generic one, because the
+        // claim is different: the capability is not missing, it is declined.
+        Reach::TextBoxWithheld => {
+            ui.label(
+                egui::RichText::new(
+                    crate::text::panels::textannotstyle::markup_text_box_not_restylable(),
+                )
                 .small()
                 .weak(),
-        );
-        ui.separator();
-        return true;
+            );
+        }
+        Reach::Neither => {
+            ui.label(
+                egui::RichText::new(t::markup_not_restylable())
+                    .small()
+                    .weak(),
+            );
+        }
     }
+    ui.separator();
+    true
+}
 
-    colour_row(ui, current, &target, actions);
-    fill_row(ui, current, &target, actions);
+/// **The rows `set_markup_style` can commit** — every control this section drew
+/// before 2026-09-06, unchanged, and now behind one arm of [`section`]'s
+/// `match`.
+///
+/// ★ Extracted rather than left inline purely so the routing `match` above
+/// reads as four one-line arms. A `match` whose first arm is forty lines and
+/// whose others are three is a `match` a reader stops seeing as a routing
+/// decision, which is the one thing this one has to remain.
+fn markup_rows(
+    ui: &mut Ui,
+    current: Current,
+    target: &crate::canvas::selection::annot::AnnotTarget,
+    actions: &mut Vec<Action>,
+) {
+    colour_row(ui, current, target, actions);
+    fill_row(ui, current, target, actions);
     // ★ The narrowing disclosure sits under BOTH swatches and above the rest,
     // because it qualifies them and `REVIEW_TRIAGE.md`'s rule is that a caveat
     // below the thing it qualifies arrives after the operator has drawn their
@@ -320,18 +398,16 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
                 .weak(),
         );
     }
-    width_row(ui, current, &target, actions);
+    width_row(ui, current, target, actions);
     // ★ Directly under the width, because the two are one subject — *what the
     // line looks like* — and the Format tab's band puts them adjacent for the
     // same reason. A panel is read top to bottom, and an operator setting a
     // mark's linework should not have to read past the arrowheads to finish.
-    dash_row(ui, current, &target, actions);
-    endings_row(ui, current, &target, actions);
-    opacity_row(ui, current, &target, actions);
+    dash_row(ui, current, target, actions);
+    endings_row(ui, current, target, actions);
+    opacity_row(ui, current, target, actions);
 
     ui.label(egui::RichText::new(t::markup_note()).small().weak());
-    ui.separator();
-    true
 }
 
 /// What the selected mark's dictionary currently says, in the terms this
@@ -339,7 +415,7 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
 ///
 /// It described three terms until 2026-09-06 (colour, width, opacity) and now
 /// describes five, having gained the fill and the two line endings; the sixth
-/// field, [`Self::restylable`], is not a term at all but the answer to whether
+/// field, [`Self::reach`], is not a term at all but the answer to WHICH VERB
 /// the other five are reachable.
 ///
 /// # ★★ Why it is read through `spec_from_dict` and not from `annot::Annotation`
@@ -371,22 +447,37 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
 /// `set_markup_style` opens by calling this same function and propagating its
 /// error with `?`, so a mark it refuses cannot be given a colour either. The
 /// swatch was not merely uninformative — it could not commit. See
-/// [`Self::restylable`] and the module header.
+/// [`Self::reach`] and the module header.
 #[derive(Debug, Clone, Copy)]
 struct Current {
-    /// ★★★ **Whether `spec_from_dict` could read a spec out of this annotation
-    /// at all** — and therefore whether `set_markup_style` will do anything but
-    /// refuse.
+    /// ★★★ **Which style verb reaches this mark, if either does.**
     ///
-    /// `false` is not "this mark has no colour". It is *"the style verb does not
-    /// reach this `/Subtype`"*, which is a different fact with a different
-    /// consequence: no rows at all, plus a sentence. See the module header.
+    /// ⚠ **This field replaced a `restylable: bool` on 2026-09-06 (afternoon)**,
+    /// whose doc comment read:
+    ///
+    /// > **Whether `spec_from_dict` could read a spec out of this annotation at
+    /// > all** — and therefore whether `set_markup_style` will do anything but
+    /// > refuse. `false` is not "this mark has no colour". It is *"the style
+    /// > verb does not reach this `/Subtype`"*, which is a different fact with
+    /// > a different consequence: no rows at all, plus a sentence.
+    ///
+    /// Every word of that was true and it stopped being **enough** the morning
+    /// `pdfcer-core` shipped a second style verb. *"The style verb"* is now two
+    /// verbs, and a `bool` can only answer *"is it the one I know about?"* —
+    /// which for a sticky note is `false`, and `false` there had exactly one
+    /// consequence: the refusal sentence, on a mark whose icon and colour had
+    /// just become changeable. **A `false` that used to mean "nothing is
+    /// possible" came to mean "nothing THIS verb can do", and nothing in the
+    /// type said which.**
+    ///
+    /// [`Reach`] says which, in a type whose arms the compiler makes
+    /// exhaustive.
     ///
     /// It is a field rather than a recomputation because the answer is already
-    /// in hand — the read below has to call `spec_from_dict` regardless — and
-    /// two calls to one function is how the panel and the verb come to disagree
-    /// about the same annotation.
-    restylable: bool,
+    /// in hand — the read below has to call the engine's readers regardless —
+    /// and two calls to one function is how the panel and the verb come to
+    /// disagree about the same annotation.
+    reach: Reach,
     /// ★★★ **Which of these properties this `/Subtype` can take at all — the
     /// ENGINE's answer, not this module's.**
     ///
@@ -411,10 +502,9 @@ struct Current {
     /// `for_subtype(b"Polygon")` says so rather than because this module
     /// remembered that a revision cloud is a `/Polygon` in the file.
     ///
-    /// ★ It is not the same question as [`Self::restylable`] and neither
-    /// subsumes the other: `restylable` asks *can `set_markup_style` read this
-    /// mark at all* (`spec_from_dict` succeeding), this asks *which of its
-    /// properties mean anything*. A `/Highlight` answers **yes** to the first
+    /// ★ It is not the same question as [`Self::reach`] and neither
+    /// subsumes the other: `reach` asks *which verb can read this mark at all*,
+    /// this asks *which of that verb's properties mean anything*. A `/Highlight` answers **yes** to the first
     /// and **no** to `takes_border` — which is exactly the mark the engine now
     /// refuses a width for.
     support: MarkupStyleSupport,
@@ -503,7 +593,7 @@ struct Swatch {
 impl Default for Current {
     fn default() -> Self {
         Self {
-            restylable: false,
+            reach: Reach::Neither,
             support: MarkupStyleSupport::for_subtype(b""),
             colour: Swatch::default(),
             interior: Swatch::default(),
@@ -522,7 +612,7 @@ impl Default for Current {
 impl Current {
     /// Read it out of the session, this frame.
     fn read(doc: &OpenDoc, id: pdfcer_core::object::ObjId) -> Self {
-        use pdfcer_core::annot_author::spec_from_dict;
+        use pdfcer_core::annot_author::{spec_from_dict, text_spec_from_dict};
         use pdfcer_core::object::Object;
 
         let graph = doc.session.graph();
@@ -576,12 +666,31 @@ impl Current {
 
         // ★ Read BEFORE `spec_from_dict` and carried across its refusal is not
         // needed here — a mark the spec reader refuses gets no rows at all
-        // (`Self::restylable`) — but it is read off the dictionary for the same
+        // (`Self::reach`) — but it is read off the dictionary for the same
         // reason `/CA` is: the spec has no dash in it to read.
         let dash = crate::canvas::markup::linestyle::read(&graph, dict);
 
+        // ★★★ **Both readers, in order, and the second only when the first
+        // refuses.** `spec_from_dict`'s arms and `text_spec_from_dict`'s are
+        // disjoint — no `/Subtype` is read by both — so the order is a saving
+        // rather than a precedence rule, and the `?`-shaped fallback below
+        // reads as one because of it.
+        //
+        // ★ The second call is what makes [`Reach::TextAnnot`] reachable, and
+        // it is the same call `set_text_annot_style` opens with. The panel and
+        // the verb ask the same function about the same dictionary, which is
+        // the property this section has had since 2026-09-06 and now has twice.
+        let markup = spec_from_dict(&graph, dict).ok();
+        let text = markup
+            .is_none()
+            .then(|| text_spec_from_dict(&graph, dict).ok())
+            .flatten();
+
         Self::from_spec(
-            spec_from_dict(&graph, dict).ok().as_ref(),
+            markup.as_ref(),
+            text.as_ref().map(|spec| {
+                textannot::Reading::of(spec, textannot::read_icon_name(&graph, dict).as_deref())
+            }),
             support,
             alpha,
             dash,
@@ -607,6 +716,7 @@ impl Current {
     /// reason: `set_markup_style` would refuse the same call.
     fn from_spec(
         spec: Option<&MarkupSpec>,
+        text: Option<Option<textannot::Reading>>,
         support: MarkupStyleSupport,
         alpha: Option<f64>,
         dash: crate::canvas::markup::linestyle::DashReading,
@@ -616,10 +726,25 @@ impl Current {
             // ★ Note what is NOT carried across: `alpha`. `/CA` reads fine off
             // any annotation dictionary, so it would be easy to keep — and it
             // would be a value shown under a heading whose every control is
-            // about to be withheld. The opacity row cannot commit on a mark
+            // about to be withheld. Neither style verb writes `/CA` for a mark
             // `set_markup_style` refuses, so the value it would display is
             // decoration.
-            return Self::default();
+            return Self {
+                // ★★ The three-way answer the second reader gives, and the
+                // nesting is load-bearing rather than awkward: the OUTER
+                // `Option` is *"did `text_spec_from_dict` produce a spec?"* and
+                // the INNER is *"does this shell serve that face?"*. Collapsing
+                // them to one `Option` would merge a `/FreeText` — which the
+                // engine reads perfectly and this shell declines — with a
+                // `/Link`, which neither reader touches, and the two owe the
+                // operator different sentences.
+                reach: match text {
+                    Some(Some(reading)) => Reach::TextAnnot(reading),
+                    Some(None) => Reach::TextBoxWithheld,
+                    None => Reach::Neither,
+                },
+                ..Self::default()
+            };
         };
         let (colour, width) = match spec {
             MarkupSpec::Square {
@@ -687,7 +812,7 @@ impl Current {
             _ => Swatch::default(),
         };
         Self {
-            restylable: true,
+            reach: Reach::Markup,
             support,
             colour,
             interior,
@@ -1343,6 +1468,8 @@ fn swatch_of(color: Option<&Color>) -> Swatch {
     // square. The old wildcard was what let CMYK sit unhandled and unnoticed
     // for the life of this module.
 }
+
+mod textannot;
 
 #[cfg(test)]
 mod tests;

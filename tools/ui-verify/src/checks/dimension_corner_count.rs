@@ -2,16 +2,39 @@
 //! or delete nodes of a markup shape once it is drawn"*, for the one shape
 //! where the engine can do it.
 //!
-//! ## ⬜ THIS CHECK HAS NOT BEEN RUN
+//! ## ✅ DRIVEN 2026-09-06 — and its first run was a failure of the CHECK
 //!
-//! **Written 2026-09-05 and NOT DRIVEN by the session that wrote it.** Another
-//! track owned the pointer for the whole of that session — it was driving the
-//! canvas-input work — and two driven runs on one machine corrupt each other:
-//! `Driver::raise_and_confirm` brings *its* window to the front, and a check
-//! that loses the foreground mid-gesture reports the application as broken.
-//! So this is a check that has been written, compiled and registered, and has
-//! never seen a running binary. **Its passing is unproven and its failure
-//! messages are untested prose.** Run it before quoting it.
+//! Written 2026-09-05 without ever being run (another track held the pointer
+//! all that session, and two driven runs on one machine corrupt each other:
+//! `Driver::raise_and_confirm` brings *its* window to the front). It was first
+//! driven the following day and **failed at step 3**, on the previous release
+//! and on the working tree identically:
+//!
+//! > *the selected shape published no `canvas.dimension-vertex.1`, so there is
+//! > no corner to aim at … Regions seen: none.*
+//!
+//! **The application was blameless.** The step went straight from the click
+//! that CLOSES the perimeter to the click that was meant to SELECT it, with
+//! the Perimeter tool still armed — so the second click was taken as the first
+//! vertex of a new shape. The trace says it in two lines, `add-dimension
+//! page=0 n=1` followed by `measure-perimeter-vertex n=1`, and no painter was
+//! ever asked for a handle. Putting the pen down first (step 3 below) makes
+//! the whole check pass: `4 → 5 → 4` corners, both engine verbs reached.
+//!
+//! ★★★ **The lesson is about the negative assertion, not about the tool.**
+//! *"Regions seen: none"* was a true statement that could not distinguish
+//! *"the handles are not drawn"* from *"nothing was ever selected"* — an
+//! absence is only evidence when the thing that would produce the presence is
+//! known to have been attempted. The message at that step now says which
+//! trace line separates the two.
+//!
+//! ★★ **And its preconditions were the half that did not get copied.** Both
+//! siblings this step was modelled on — `measure_perimeter` and
+//! `markup_node_edit` — put the pen down before selecting, and
+//! `markup_node_edit`'s comment names *this check's* first run as the reason
+//! it does. The warning was in the tree before the failure happened; the check
+//! that needed it was not reading it. **A step copied from a passing sibling
+//! must copy its preconditions, not only its clicks.**
 //!
 //! ## What it is for
 //!
@@ -174,10 +197,14 @@ impl Check for ACornerCanBeAddedAndTakenAway {
     fn run(&self, ctx: &CheckContext) -> CheckReport {
         let mut report = CheckReport::new(self.name(), self.defect());
         // ★ Stated in the report as well as in this file's header, because a
-        // sweep summary is what gets read and a module header is not.
+        // sweep summary is what gets read and a module header is not. It said
+        // "NOT DRIVEN BY ITS AUTHOR" until 2026-09-06; what replaced it is
+        // narrower on purpose — one path through this check has now been seen
+        // to fail and to pass, and the refusal path still has not.
         report.note(
-            "⬜ NOT DRIVEN BY ITS AUTHOR — written 2026-09-05 while another track held the \
-             pointer. Its failure messages have never been seen.",
+            "driven 2026-09-06: its first run failed at step 3 with the pen still down, and \
+             that was the check's fault, not the application's. The REFUSAL path — a triangle \
+             that cannot lose a corner — is still asserted only without a window.",
         );
         match drive(ctx, &mut report) {
             Ok(Some(failure)) => report.fail(failure),
@@ -360,6 +387,47 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 3: select it, so its corner handles are published ----------------
     //
+    // ★★★ PUT THE PEN DOWN FIRST — and the first driven run of this check,
+    // 2026-09-06, is why this paragraph exists.
+    //
+    // This step went straight from the closing click to the selecting click,
+    // and it failed with *"the selected shape published no
+    // `canvas.dimension-vertex.1` … Regions seen: none"* — a message that reads
+    // as a painter that draws no handles. It was nothing of the sort. **With
+    // the Perimeter tool still armed a click on the page is another VERTEX**,
+    // and the trace says so in one line: `add-dimension page=0 n=1` at the
+    // close, then `measure-perimeter-vertex n=1` from the click that was meant
+    // to select. The check had started tracing a SECOND perimeter and then
+    // asked why the first one was not selected.
+    //
+    // ⇒ **The failure is a whole gesture wide.** `gesture::press_kind` ranks a
+    // press against the armed tool before it ever reaches selection, so no
+    // amount of aiming would have helped: the shape was never a candidate.
+    //
+    // Both siblings already knew. `measure_perimeter` calls
+    // `arm_select_from_ribbon` here and says *"with a measure tool armed a
+    // click on the page is a PICK, not a selection"*; `markup_node_edit`
+    // presses `V` and its comment names **this check's first run** as the
+    // reason it does. That note was written before this check had ever been
+    // driven, so what it predicted and what happened are the same event — and
+    // the prediction was in the tree while the check that needed it was not
+    // reading it. **A step copied from a passing sibling must copy its
+    // preconditions, not only its clicks.**
+    //
+    // ★★ The POINTER first, the chord as the fallback — `arm_select_from_ribbon`
+    // carries the measurements (`V` observed arriving zero times in six runs
+    // with a dock panel raised, and failing *silently*). This check raises no
+    // panel, so the chord stays a legitimate second route rather than a flake
+    // waiting to happen; what matters is that the pen goes down by SOME route
+    // before the page is clicked again.
+    if !crate::checks::driving::arm_select_from_ribbon(&session, &driver, ui_rect, report)? {
+        report.note(
+            "the ribbon route to the select tool was unavailable, so the pen was put down with \
+             the `V` chord instead",
+        );
+        driver.press(vk::V)?;
+        session.settle(12);
+    }
     // ★ The click goes to the MIDPOINT OF AN EDGE, not to the middle of the
     // square. `dimdrag::annot_shapes` hit-tests the drawn INK rather than the
     // `/Rect`, deliberately — a perimeter traced round a building whose box was
@@ -377,12 +445,17 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         return Ok(Some(format!(
             "the selected shape published no `{VERTEX_REGION}.1`, so there is no corner to aim \
              at. Either the click did not select it or the handles are not drawn. Regions seen: \
-             {}.",
+             {}. ★ Read the trace before believing the painter is at fault: if a \
+             `{VERTEX_EVENT}` line follows the `{COMMIT_EVENT}` one, the click was taken as a \
+             new perimeter vertex and the pen was still down — the select tool did not arm, \
+             which is a step-3 problem and not a canvas one. That is exactly how this check \
+             failed on its first driven run. Trace: {}.",
             list(&crate::checks::driving::declared_names(
                 &trace,
                 ui_rect,
                 VERTEX_REGION
-            ))
+            )),
+            session.trace_path().display()
         )));
     };
 

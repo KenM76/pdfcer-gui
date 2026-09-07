@@ -44,6 +44,13 @@ use super::*;
 // layout leaks.
 use pdfcer_core::page_tree::Rect;
 
+// ★ The second verb's vocabulary. `Reach`, `Face` and `Reading` live in
+// `super::textannot` under R2 — see `Reach`'s own doc for the seam — and are
+// imported by name so an assertion reads as `Reach::TextAnnot` and not as a
+// path three modules long.
+use super::textannot::{Face, Reach, Reading};
+use pdfcer_core::annot_author::StickyIcon;
+
 /// A `MarkupSpec::Square`, with whatever interior the caller wants.
 fn square(interior: Option<Color>) -> MarkupSpec {
     MarkupSpec::Square {
@@ -67,6 +74,10 @@ fn square(interior: Option<Color>) -> MarkupSpec {
 fn current(spec: &MarkupSpec, subtype: &[u8]) -> Current {
     Current::from_spec(
         Some(spec),
+        // ★ `None` — `Current::read` only calls the second reader when the
+        // first refuses, so a fixture that supplied both would describe a state
+        // the production path cannot be in.
+        None,
         MarkupStyleSupport::for_subtype(subtype),
         None,
         crate::canvas::markup::linestyle::DashReading::Solid,
@@ -146,8 +157,10 @@ fn a_cmyk_colour_is_shown_as_a_conversion_and_is_flagged_as_one() {
 /// screens: nothing plus a sentence, versus three live controls that cannot
 /// commit.
 ///
-/// Falsified by setting `restylable: true` in the `None` arm of
-/// `from_spec`, which turned this red immediately.
+/// Falsified by returning `Reach::Markup` from the `None` arm of `from_spec`,
+/// which turned this red immediately. (It read `restylable: true` there until
+/// the `bool` became [`Reach`] on 2026-09-06 — same falsification, one type
+/// along.)
 #[test]
 fn a_subtype_the_style_verb_refuses_offers_no_controls() {
     // ★ `/FreeText` is the honest subtype for this case: it is one of the
@@ -155,12 +168,16 @@ fn a_subtype_the_style_verb_refuses_offers_no_controls() {
     // everything for it, so both halves of the verdict come from the engine.
     let refused = Current::from_spec(
         None,
+        // ★ Also `None` from the second reader, which is what makes this a
+        // `Reach::Neither` rather than a `/FreeText`'s own `TextBoxWithheld`.
+        // The `/FreeText` case has its own test below.
+        None,
         MarkupStyleSupport::for_subtype(b"FreeText"),
         Some(0.5),
         crate::canvas::markup::linestyle::DashReading::Solid,
         false,
     );
-    assert!(!refused.restylable);
+    assert!(matches!(refused.reach, Reach::Neither));
     assert_eq!(refused.colour.rgb, None);
     assert_eq!(refused.width, None);
     assert!(!refused.offers_fill());
@@ -180,12 +197,13 @@ fn a_subtype_the_style_verb_refuses_offers_no_controls() {
 fn a_subtype_the_style_verb_reads_offers_its_controls() {
     let ok = Current::from_spec(
         Some(&square(None)),
+        None,
         MarkupStyleSupport::for_subtype(b"Square"),
         Some(0.5),
         crate::canvas::markup::linestyle::DashReading::Solid,
         false,
     );
-    assert!(ok.restylable);
+    assert!(matches!(ok.reach, Reach::Markup));
     assert_eq!(ok.colour.rgb, Some([255, 0, 0]));
     assert_eq!(ok.width, Some(2.0));
     assert_eq!(ok.alpha, Some(0.5));
@@ -349,7 +367,7 @@ fn the_engines_answer_is_what_hides_a_row_not_the_spec_arm() {
     /// Every value a row could want, on a mark no real subtype could be.
     fn over_supplied(subtype: &[u8]) -> Current {
         Current {
-            restylable: true,
+            reach: Reach::Markup,
             support: MarkupStyleSupport::for_subtype(subtype),
             colour: Swatch {
                 rgb: Some([0, 0, 0]),
@@ -428,6 +446,7 @@ fn the_removal_is_offered_only_when_the_file_carries_a_line_ending_entry() {
 
     let no_key = Current::from_spec(
         Some(&plain),
+        None,
         support,
         None,
         crate::canvas::markup::linestyle::DashReading::Solid,
@@ -445,6 +464,7 @@ fn the_removal_is_offered_only_when_the_file_carries_a_line_ending_entry() {
 
     let with_key = Current::from_spec(
         Some(&plain),
+        None,
         support,
         None,
         crate::canvas::markup::linestyle::DashReading::Solid,
@@ -466,6 +486,7 @@ fn the_removal_is_offered_only_when_the_file_carries_a_line_ending_entry() {
             )],
             color: Color::Rgb(1.0, 1.0, 0.0),
         }),
+        None,
         MarkupStyleSupport::for_subtype(b"Highlight"),
         None,
         crate::canvas::markup::linestyle::DashReading::Solid,
@@ -483,9 +504,214 @@ fn the_removal_is_offered_only_when_the_file_carries_a_line_ending_entry() {
 fn a_mark_that_could_not_be_read_offers_nothing() {
     let nothing = Current::default();
     assert_eq!(nothing.support, MarkupStyleSupport::for_subtype(b""));
-    assert!(!nothing.restylable);
+    assert!(matches!(nothing.reach, Reach::Neither));
     assert!(!nothing.offers_fill());
     assert!(!nothing.offers_width());
     assert!(!nothing.offers_endings());
     assert!(!nothing.offers_endings_clear());
+}
+
+// ===========================================================================
+// ★★★ THE SECOND STYLE VERB — `Pass 253.2`, 2026-09-06
+//
+// Everything above asserts what `set_markup_style` reaches. These assert the
+// routing between the two verbs and what the second one is shown for. They are
+// reachable from a unit test for the same reason `from_spec` is:
+// `Reading::of` takes a spec and the raw `/Name` bytes, so a question about a
+// `/Sparkle` costs no document.
+// ===========================================================================
+
+/// A `TextAnnotSpec::Sticky` carrying `icon` and a violet `/C`.
+fn sticky(icon: StickyIcon) -> pdfcer_core::annot_author::TextAnnotSpec {
+    pdfcer_core::annot_author::TextAnnotSpec::Sticky {
+        rect: Rect::from_corners(0.0, 0.0, 20.0, 20.0),
+        icon,
+        contents: "note".to_owned(),
+        // #9643FC, Acrobat's own sticky-note violet — `ACROBAT_DEFAULTS.md`.
+        color: Color::Rgb(0.588_242, 0.262_741, 0.988_235),
+        open: false,
+    }
+}
+
+/// A `TextAnnotSpec::Stamp`.
+fn stamp() -> pdfcer_core::annot_author::TextAnnotSpec {
+    pdfcer_core::annot_author::TextAnnotSpec::Stamp {
+        rect: Rect::from_corners(0.0, 0.0, 100.0, 40.0),
+        name: pdfcer_core::annot_author::StampName::Approved,
+        label: None,
+        color: Color::Rgb(0.0, 0.0, 0.0),
+    }
+}
+
+/// A `Current` for one text-bearing reading, with everything else absent.
+fn text_current(reading: Option<Option<Reading>>, subtype: &[u8]) -> Current {
+    Current::from_spec(
+        None,
+        reading,
+        MarkupStyleSupport::for_subtype(subtype),
+        None,
+        crate::canvas::markup::linestyle::DashReading::Solid,
+        false,
+    )
+}
+
+/// ★★★ **A sticky note and a stamp route to the SECOND verb; a shape still
+/// routes to the first.**
+///
+/// The whole of the fix in one assertion. Until 2026-09-06 a `/Text` reached
+/// this field's ancestor as `restylable: false` and got a sentence saying its
+/// colour could not be changed here — on the afternoon it could.
+///
+/// ★★ The `Square` row is the **positive control** and it is not decoration.
+/// Asserting only that a `/Text` reaches `TextAnnot` would pass on a
+/// `from_spec` that had come to answer `TextAnnot` for everything, which would
+/// send every rectangle in the document to a verb that refuses it — the exact
+/// mirror of the defect this replaced. Both directions, per the engine's
+/// methodology note.
+///
+/// Falsified by swapping the two arms of `from_spec`'s `reach` match; the
+/// `Square` row went red first.
+#[test]
+fn each_family_routes_to_its_own_verb() {
+    let note = text_current(
+        Some(Reading::of(&sticky(StickyIcon::Comment), Some(b"Comment"))),
+        b"Text",
+    );
+    let Reach::TextAnnot(reading) = note.reach else {
+        panic!("a sticky note must reach the text-annotation verb");
+    };
+    assert_eq!(reading.face, Face::Sticky);
+    assert_eq!(reading.icon, Some(StickyIcon::Comment));
+    assert_eq!(
+        reading.colour.rgb,
+        Some([150, 67, 252]),
+        "the swatch must show the note's own /C, not a default"
+    );
+
+    let rubber = text_current(Some(Reading::of(&stamp(), None)), b"Stamp");
+    let Reach::TextAnnot(reading) = rubber.reach else {
+        panic!("a stamp must reach the text-annotation verb");
+    };
+    assert_eq!(reading.face, Face::Stamp);
+
+    // The positive control for the OTHER verb.
+    let shape = Current::from_spec(
+        Some(&square(None)),
+        None,
+        MarkupStyleSupport::for_subtype(b"Square"),
+        None,
+        crate::canvas::markup::linestyle::DashReading::Solid,
+        false,
+    );
+    assert!(
+        matches!(shape.reach, Reach::Markup),
+        "a rectangle must still reach `set_markup_style`"
+    );
+}
+
+/// ★★★ **Only a sticky note is offered an icon.**
+///
+/// `set_text_annot_style` refuses an icon on anything but a `/Text` **by name**
+/// — `EditError::StylePropertyNotApplicable`, raised before anything is
+/// written — so a chooser on a stamp would be live and would be refused. R9
+/// says absent, and this is the predicate that makes it absent.
+///
+/// ★★ The `Sticky` half is the positive control the negative half needs. *"No
+/// icon chooser for a stamp"* passes on a `takes_icon` hard-coded to `false`,
+/// which would withhold the chooser from the one mark the whole request was
+/// about.
+#[test]
+fn the_icon_chooser_belongs_to_a_sticky_note_alone() {
+    assert!(
+        Face::Sticky.takes_icon(),
+        "the icon row is the request's whole subject; withholding it is the \
+         failure this test exists to catch"
+    );
+    assert!(
+        !Face::Stamp.takes_icon(),
+        "a stamp's /Name is Table 181's vocabulary, and the engine refuses a \
+         StickyIcon on one by name"
+    );
+}
+
+/// ★★★ **A text box is withheld, and it is NOT the same answer as an
+/// unreadable mark.**
+///
+/// `set_text_annot_style` reaches a `/FreeText` and this shell declines to send
+/// it one: `text_spec_from_dict` always reports `multiline: false`, the verb
+/// re-bakes without measuring, and every text box this shell places is
+/// `multiline: true` — so a colour change would re-lay a wrapped callout as one
+/// line. `super::textannot`'s header carries the full account.
+///
+/// ★★ The two arms must stay **distinguishable**, which is what the last
+/// assertion is for: they show different sentences, because one says a
+/// capability is missing and the other says this shell declines one that
+/// exists. Collapsing them would put a false premise under a true-looking
+/// conclusion.
+#[test]
+fn a_text_box_is_withheld_and_an_unreadable_mark_is_not_the_same_case() {
+    let spec = pdfcer_core::annot_author::TextAnnotSpec::FreeText {
+        rect: Rect::from_corners(0.0, 0.0, 100.0, 40.0),
+        text: "a callout that wraps".to_owned(),
+        font: pdfcer_core::fontdata::Std14::Helvetica,
+        font_size: 11.0,
+        color: pdfcer_core::vartext::TextColor::Rgb(0.0, 0.0, 0.0),
+        quadding: pdfcer_core::vartext::Quadding::Left,
+        // ★ The value the reader ALWAYS reports, which is the whole hazard:
+        // this is what the verb would re-bake from, whatever the file draws.
+        multiline: false,
+        border: Some(Color::Rgb(1.0, 0.0, 0.0)),
+        border_width: 1.0,
+    };
+    let boxed = text_current(Some(Reading::of(&spec, None)), b"FreeText");
+    assert!(
+        matches!(boxed.reach, Reach::TextBoxWithheld),
+        "a text box must be withheld, not routed"
+    );
+
+    // A `/Link`: neither reader produces a spec, so neither verb reaches it.
+    let unreadable = text_current(None, b"Link");
+    assert!(matches!(unreadable.reach, Reach::Neither));
+    assert!(
+        !matches!(boxed.reach, Reach::Neither),
+        "the two owe the operator different sentences and must not collapse"
+    );
+}
+
+/// ★★★ **A note whose `/Name` pdfcer does not model is reported as foreign,
+/// not silently shown as `Note`.**
+///
+/// §12.5.6.4's seven names are *"a standard set, not a closed one"*, so
+/// `/Sparkle` is **conforming**. `text_spec_from_dict` normalises it to `Note`
+/// on the way past (`annot_author.rs:963`), and `set_text_annot_style` re-bakes
+/// from that — so a change to the **colour alone** would write `/Name /Note`
+/// into the file with nothing on screen saying so.
+///
+/// ★★ Three cases, and the third is what makes the first mean something. A
+/// `/Sparkle` is foreign; a `/Key` is not; and an **absent** `/Name` is not
+/// either — Table 172's own default is `Note`, so showing `Note` for a note
+/// that carries no `/Name` reports the standard rather than inventing
+/// anything, and warning about it would teach an operator to worry about the
+/// commonest case there is.
+#[test]
+fn an_unmodelled_icon_name_is_disclosed_and_a_modelled_one_is_not() {
+    let foreign =
+        Reading::of(&sticky(StickyIcon::Note), Some(b"Sparkle")).expect("a sticky is served");
+    assert!(foreign.foreign_icon);
+    assert_eq!(
+        foreign.icon, None,
+        "the chooser must show no selection rather than assert a value the \
+         file does not carry"
+    );
+
+    let known = Reading::of(&sticky(StickyIcon::Key), Some(b"Key")).expect("a sticky is served");
+    assert!(!known.foreign_icon);
+    assert_eq!(known.icon, Some(StickyIcon::Key));
+
+    let absent = Reading::of(&sticky(StickyIcon::Note), None).expect("a sticky is served");
+    assert!(
+        !absent.foreign_icon,
+        "an absent /Name is Table 172's own default, not a producer's own name"
+    );
+    assert_eq!(absent.icon, Some(StickyIcon::Note));
 }

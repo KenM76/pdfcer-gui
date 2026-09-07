@@ -159,6 +159,76 @@ pub const STAMPS: &[StampName] = &[
     StampName::Expired,
 ];
 
+/// The sticky-note icons offered, in the order the dialog lists them.
+///
+/// # ★★★ The ENGINE's set, enumerated from the engine's own enum
+///
+/// `pdfcer_core::annot_author::StickyIcon` (`annot_author.rs:2813`) models
+/// seven variants — `Comment`, `Key`, `Note`, `Help`, `NewParagraph`,
+/// `Paragraph`, `Insert` — and that is exactly §12.5.6.4 Table 172's standard
+/// set, which is exactly the seven Acrobat's note tool offers. So unlike
+/// [`STAMPS`], which is a **subset** this shell chose out of fourteen for a
+/// drafting workflow, this list is the whole enum and there is no editorial
+/// decision in it.
+///
+/// ★ It is nonetheless written out here rather than taken from an `ALL`
+/// constant, because the engine publishes none — the same position
+/// `annot_author::LineEnding` is in, and
+/// `panels::properties::markup::ALL_ENDINGS` is the precedent. What stops it
+/// drifting is [`tests::the_icon_list_covers_every_variant_the_engine_has`],
+/// which `match`es an **exhaustive** set of variants with no wildcard: an icon
+/// the engine gains fails to compile here rather than quietly going missing
+/// from the chooser. `StickyIcon` is not `#[non_exhaustive]`, which is what
+/// makes that check possible at all.
+///
+/// # The order
+///
+/// [`DEFAULT_STICKY_ICON`] first, then Table 172's own order for the rest. A
+/// list whose first entry is the one already selected is a list an operator
+/// reads downwards from the answer they have, rather than hunting for it.
+pub const STICKY_ICONS: &[StickyIcon] = &[
+    StickyIcon::Comment,
+    StickyIcon::Key,
+    StickyIcon::Note,
+    StickyIcon::Help,
+    StickyIcon::NewParagraph,
+    StickyIcon::Paragraph,
+    StickyIcon::Insert,
+];
+
+/// The icon a fresh sticky note carries.
+///
+/// # ★★★ `Comment`, not the engine's `Note` default — and it is MEASURED
+///
+/// `ACROBAT_DEFAULTS.md`'s non-colour table reads *"default sticky-note icon —
+/// **`Comment`** — `cAnnot` `tnoteIcon`"*, taken from Acrobat's own registry
+/// hive on this machine. The operator's instruction of 2026-09-06 was to *"make
+/// sure you've used the same default colours and style look for these things as
+/// Adobe"*, and the icon is the same class of answer as the violet `/C` that
+/// instruction already moved.
+///
+/// The difference from `StickyIcon::default()` is deliberate and is the same
+/// difference [`DEFAULT_STAMP`] carries: `Note` is the right default for a
+/// **format** that must name something in Table 172, and `Comment` is what the
+/// program on the operator's desk actually places.
+///
+/// # ⚠ The provenance, stated because `ACROBAT_DEFAULTS.md` requires it
+///
+/// That file's load-bearing caveat is that `cAnnots` is a **live preference
+/// hive**, and its sibling test — *is this value repeated across keys nobody
+/// would set together?* — is what separates a factory value from an operator's
+/// override. **`tnoteIcon` fails that test, and it cannot pass it**: it is a
+/// singleton, there is no second key in the tree carrying a sticky-note icon
+/// name, and it lives in `cAnnot`, the very key whose `tauthor=Ken` proves
+/// Acrobat has written to the hive.
+///
+/// ⇒ So this is adopted on the *other* argument the same file records, the one
+/// that overturned the highlighter: *"the operator asked to match the program on
+/// his desk, and the program on his desk"* opens its note tool on Comment. A
+/// factory default he has never seen is not what "the same as Adobe" means. The
+/// cost of being wrong is one constant and this paragraph.
+pub const DEFAULT_STICKY_ICON: StickyIcon = StickyIcon::Comment;
+
 /// The stamp a fresh gallery offers.
 ///
 /// `Approved` rather than the engine's `Draft` default, and the difference is
@@ -264,6 +334,7 @@ pub fn spec(
     rect: Rect,
     text: &str,
     stamp: StampName,
+    icon: StickyIcon,
     colour: (f64, f64, f64),
 ) -> Option<TextAnnotSpec> {
     let text = painted_text(text);
@@ -419,9 +490,53 @@ pub fn spec(
         // `request_a_sticky_notes_icon_and_colour_cannot_be_changed.md`,
         // re-measured against v0.42.0 on 2026-09-06 and **still unanswered**
         // (no `/C` read in `annot.rs`, no icon read, no set verb).
+        //
+        // ---------------------------------------------------------------
+        // ★★★ **BUILT, 2026-09-06 (afternoon). Both halves.** Everything
+        // above is kept verbatim, because the two corrections it already
+        // carries are the useful part of it and a third erasure would leave
+        // a reader with a conclusion and no working.
+        //
+        // What changed, in the order the paragraphs above predicted it:
+        //
+        // * **The authoring half is this line.** The five-item plan two
+        //   paragraphs up was followed exactly and in full —
+        //   [`STICKY_ICONS`] and [`DEFAULT_STICKY_ICON`] above,
+        //   `text::textannot::sticky_icon_label`, one field on
+        //   `Action::CommitTextAnnot`, one on
+        //   `app::actions::textannot::Placement`, and the radio group in
+        //   `dialogs::textannot`. Route 1, for route 1's stated reason:
+        //   `StampName` already travels this path, and an icon is the same
+        //   shape of operand as a stamp name.
+        // * **The editing half was answered by the engine the same day.**
+        //   `EditSession::set_text_annot_style` (`edit.rs:27124`) with
+        //   `edit::TextAnnotStyle` (`edit.rs:15969`), `Annotation::icon`
+        //   (`annot.rs:449`), `Annotation::color`, and `StickyIcon::name` /
+        //   `from_name` made public. The consumer is
+        //   `panels::properties::markup::textannot`, not this module — this
+        //   one places, that one restyles, and the request's own closing
+        //   line drew that seam before either existed.
+        //
+        // ⚠ **The default moved and the engine's did not.** `StickyIcon`'s
+        // own `Default` is still `Note`; this shell now authors `Comment`,
+        // which is Acrobat's, measured. [`DEFAULT_STICKY_ICON`] carries the
+        // provenance and the caveat that goes with it.
+        //
+        // ★ **What the operator sees does not change with the icon**, and
+        // that is disclosed rather than left to be discovered:
+        // `annot_author::sticky_note` (`annot_author.rs:3712`) passes `icon`
+        // to `/Name` at `:3759` and **nowhere else** — the marker artwork is
+        // pdfcer's own dog-eared page glyph for all seven, deliberately, to
+        // stay clear of Acrobat's trade dress (`annot_author.rs:2794`). So
+        // the choice is real in the file and invisible on pdfcer's own page,
+        // and `text::textannot::sticky_icon_bound` says so under the
+        // chooser. Not an R8b breach — applied content still renders exactly
+        // as saved content will, in *this* reader — but it is precisely the
+        // kind of gap between file and picture an operator should meet in a
+        // sentence rather than in Acrobat.
         TextAnnotKind::Sticky => TextAnnotSpec::Sticky {
             rect,
-            icon: StickyIcon::default(),
+            icon,
             contents: text.to_owned(),
             color: Color::Rgb(r, g, b),
             // Closed, and ★ the REASON changed on 2026-09-05 even though the
@@ -492,16 +607,31 @@ mod tests {
                 rect(),
                 "note",
                 DEFAULT_STAMP,
+                DEFAULT_STICKY_ICON,
                 colour
             ),
             Some(TextAnnotSpec::FreeText { .. })
         ));
         assert!(matches!(
-            spec(TextAnnotKind::Sticky, rect(), "note", DEFAULT_STAMP, colour),
+            spec(
+                TextAnnotKind::Sticky,
+                rect(),
+                "note",
+                DEFAULT_STAMP,
+                DEFAULT_STICKY_ICON,
+                colour
+            ),
             Some(TextAnnotSpec::Sticky { .. })
         ));
         assert!(matches!(
-            spec(TextAnnotKind::Stamp, rect(), "", DEFAULT_STAMP, colour),
+            spec(
+                TextAnnotKind::Stamp,
+                rect(),
+                "",
+                DEFAULT_STAMP,
+                DEFAULT_STICKY_ICON,
+                colour
+            ),
             Some(TextAnnotSpec::Stamp { .. })
         ));
     }
@@ -526,7 +656,15 @@ mod tests {
             // the exception is tested rather than merely skipped.
             for kind in TextAnnotKind::ALL.iter().filter(|k| !k.uses_gallery()) {
                 assert!(
-                    spec(*kind, rect(), blank, DEFAULT_STAMP, (0.0, 0.0, 0.0)).is_none(),
+                    spec(
+                        *kind,
+                        rect(),
+                        blank,
+                        DEFAULT_STAMP,
+                        DEFAULT_STICKY_ICON,
+                        (0.0, 0.0, 0.0)
+                    )
+                    .is_none(),
                     "{kind:?} authored an annotation for {blank:?}"
                 );
             }
@@ -545,6 +683,7 @@ mod tests {
             rect(),
             "  hello  ",
             DEFAULT_STAMP,
+            DEFAULT_STICKY_ICON,
             (0.0, 0.0, 0.0),
         ) else {
             panic!("a text box with words must author");
@@ -580,6 +719,7 @@ mod tests {
             rect(),
             typed,
             DEFAULT_STAMP,
+            DEFAULT_STICKY_ICON,
             (0.0, 0.0, 0.0),
         ) else {
             panic!("a text box with words must author");
@@ -611,6 +751,7 @@ mod tests {
             rect(),
             "a",
             DEFAULT_STAMP,
+            DEFAULT_STICKY_ICON,
             (0.0, 0.0, 0.0),
         ) else {
             panic!("a text box must author");
@@ -622,6 +763,7 @@ mod tests {
             rect(),
             "a",
             DEFAULT_STAMP,
+            DEFAULT_STICKY_ICON,
             (0.0, 0.0, 0.0),
         ) else {
             panic!("a sticky must author");
@@ -707,9 +849,14 @@ mod tests {
     #[test]
     fn a_stamp_authors_the_chosen_name_and_no_competing_label() {
         for chosen in STAMPS {
-            let Some(TextAnnotSpec::Stamp { name, label, .. }) =
-                spec(TextAnnotKind::Stamp, rect(), "", *chosen, (0.0, 0.0, 0.0))
-            else {
+            let Some(TextAnnotSpec::Stamp { name, label, .. }) = spec(
+                TextAnnotKind::Stamp,
+                rect(),
+                "",
+                *chosen,
+                DEFAULT_STICKY_ICON,
+                (0.0, 0.0, 0.0),
+            ) else {
                 panic!("{chosen:?} must author");
             };
             assert_eq!(name, *chosen, "the stamp authored a different name");
@@ -732,10 +879,121 @@ mod tests {
                 rect(),
                 "",
                 DEFAULT_STAMP,
+                DEFAULT_STICKY_ICON,
                 (0.0, 0.0, 0.0)
             )
             .is_some(),
             "the gallery supplies no typed text, so requiring some refuses every stamp"
         );
+    }
+
+    /// ★★★ **[`STICKY_ICONS`] covers every variant `StickyIcon` has.**
+    ///
+    /// The same guard `panels::properties::markup::ALL_ENDINGS` carries, and
+    /// for the same reason: the engine publishes no `ALL` for this enum, so the
+    /// list above is written by hand and would otherwise go quietly short the
+    /// day the engine gains an eighth icon — quietly, and in the direction that
+    /// **withholds** a choice that had started working.
+    ///
+    /// ★ The `match` is exhaustive **with no wildcard**, which is the whole
+    /// mechanism: a new variant is a compile error here, not a failing
+    /// assertion, so it is caught by `cargo build` before any test runs.
+    /// `StickyIcon` is not `#[non_exhaustive]`, which is what makes that
+    /// possible — `StampName` is, which is why [`STAMPS`] gets no equivalent
+    /// and is documented as an editorial subset instead.
+    #[test]
+    fn the_icon_list_covers_every_variant_the_engine_has() {
+        for icon in STICKY_ICONS {
+            // The exhaustive arm: every variant must be named, and every
+            // variant named must be in the list.
+            let covered = match icon {
+                StickyIcon::Comment
+                | StickyIcon::Key
+                | StickyIcon::Note
+                | StickyIcon::Help
+                | StickyIcon::NewParagraph
+                | StickyIcon::Paragraph
+                | StickyIcon::Insert => true,
+            };
+            assert!(covered);
+        }
+        assert_eq!(
+            STICKY_ICONS.len(),
+            7,
+            "§12.5.6.4 Table 172 defines seven icons and StickyIcon models all \
+             seven; a shorter list is a choice this shell has no grounds to make"
+        );
+        assert!(
+            STICKY_ICONS.contains(&DEFAULT_STICKY_ICON),
+            "a default outside its own list opens the dialog on a value no \
+             control can select"
+        );
+        for (i, a) in STICKY_ICONS.iter().enumerate() {
+            for b in STICKY_ICONS.iter().skip(i + 1) {
+                assert_ne!(a, b, "an icon appears twice, so one entry is unreachable");
+            }
+        }
+    }
+
+    /// ★★★ **A sticky note authors the icon the operator chose — and no other
+    /// kind is given one.**
+    ///
+    /// The positive half is the whole feature: before 2026-09-06 this argument
+    /// did not exist and every note pdfcer ever placed carried `/Note`.
+    ///
+    /// ★★ The negative half is asserted **beside** it rather than alone, which
+    /// is the methodology note of 2026-09-06: *"a negative assertion is vacuous
+    /// when the thing that would produce the positive is absent."* Asserting
+    /// only that a text box carries no icon would pass on a [`spec`] that had
+    /// stopped threading the argument at all — it would pass on the code this
+    /// change replaced. The sticky arm proves the operand arrives; the other two
+    /// arms prove it stops where §12.5.6.4 stops, which is also where
+    /// `set_text_annot_style` refuses it by name
+    /// (`EditError::StylePropertyNotApplicable`).
+    #[test]
+    fn only_a_sticky_note_is_given_an_icon_and_it_is_the_chosen_one() {
+        for chosen in STICKY_ICONS {
+            let Some(TextAnnotSpec::Sticky { icon, .. }) = spec(
+                TextAnnotKind::Sticky,
+                rect(),
+                "note",
+                DEFAULT_STAMP,
+                *chosen,
+                (0.0, 0.0, 0.0),
+            ) else {
+                panic!("{chosen:?} must author a sticky");
+            };
+            assert_eq!(
+                icon, *chosen,
+                "the note authored an icon the operator did not pick"
+            );
+        }
+        // The control: the same argument, sent to the two kinds that have no
+        // `/Name` to put it in. `TextAnnotSpec`'s FreeText and Stamp arms carry
+        // no icon field at all, so this is checked by the compiler as much as
+        // by the assertion — the point is that the call SITE is identical and
+        // only the arm differs.
+        assert!(matches!(
+            spec(
+                TextAnnotKind::TextBox,
+                rect(),
+                "note",
+                DEFAULT_STAMP,
+                StickyIcon::Key,
+                (0.0, 0.0, 0.0)
+            ),
+            Some(TextAnnotSpec::FreeText { .. })
+        ));
+        assert!(matches!(
+            spec(
+                TextAnnotKind::Stamp,
+                rect(),
+                "",
+                DEFAULT_STAMP,
+                StickyIcon::Key,
+                (0.0, 0.0, 0.0)
+            ),
+            Some(TextAnnotSpec::Stamp { .. })
+        ));
     }
 }

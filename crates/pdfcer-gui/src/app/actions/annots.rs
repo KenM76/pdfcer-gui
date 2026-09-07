@@ -718,6 +718,174 @@ pub(super) fn clear_note(doc: &mut OpenDoc, id: ObjId) {
     });
 }
 
+/// ★★★ **Answer a comment** — `EditSession::add_reply`, `pdfcer-core`
+/// `Pass 253.0`, §12.5.6.2 Table 170.
+///
+/// Reached from the Comments panel's editor when its draft is aimed at a reply,
+/// and from nothing else. This shell filed *"we can read a comment thread and
+/// cannot add to it"* on 2026-09-05 and carried it as an open gap until the
+/// verb landed; this is the write half of a surface that had been listening the
+/// whole time.
+///
+/// # ★★★ `/M` is OURS, and a reply without one is a note from nowhen
+///
+/// `pdfcer-core` reads no clock, by policy — determinism, and rule 4's refusal
+/// to let a library invent a claim about when something happened
+/// (`crate::app::clock`'s header carries the whole argument). So the stamp is
+/// supplied here, from the crate's **one** wall-clock reader, exactly as
+/// [`set_note`] supplies it. A reply that reached the file with no `/M` would
+/// render in every reviewer UI in the class as a comment with a blank date
+/// beside a parent that has one — which reads as a corrupted thread rather than
+/// as a missing key.
+///
+/// ★ [`crate::app::clock::pdf_date_utc`] returns `None` before the Unix epoch,
+/// and in that case no `/M` is sent rather than a plausible one being invented.
+/// Absent is honest; wrong is not.
+///
+/// # ★★ The author is the operator's, always, with no `keep_author` question
+///
+/// `author` here is the same `Prefs::author_name` [`apply_action`] hands
+/// [`set_note`], filtered by the same rule at the same seam — one source, so
+/// the two surfaces cannot come to sign comments differently. What is *absent*
+/// is `SetNote`'s `keep_author`, and the asymmetry is load-bearing: that verb
+/// may be correcting somebody else's comment and must be able to leave their
+/// `/T` alone, whereas a reply is a **new annotation this operator is
+/// authoring** and has no prior byline to preserve. See
+/// `AnnotAction::Reply`'s own docs.
+///
+/// A blank preference means *comment anonymously*, which is a supported choice
+/// and not a missing value — so no `/T` is written, and no name is invented.
+///
+/// # ★★★ The disclosure: the reply's OWN `/Popup`, which nothing here draws
+///
+/// `add_reply` authors a `/Popup` companion for the reply (§12.5.6.14), and
+/// `ReplyAdded::reply_has_popup` reports it because this shell asked to be
+/// told:
+///
+/// > *"a reply that quietly acquired a second window at a second location is
+/// > something we would rather be told about than discover on a screenshot."*
+///
+/// That question has a shell-side answer and it is deliberate:
+/// `canvas::notepopup::model::notes_on` **excludes replies** from the notes it
+/// draws windows for, so pdfcer shows a reply inside its parent's thread and
+/// never as a second bubble on top of the comment it answers. See that
+/// function's exclusion table for why the alternative is worse than untidy —
+/// the reply is placed at the parent's own `/Rect`, so a shell that drew it as
+/// an independent note would make the parent unclickable the moment anybody
+/// answered it.
+///
+/// ⇒ The window still **exists in the file**, and another reader will draw it.
+/// That is a fact about the document that no surface in this program can show,
+/// which is precisely the test for what belongs in a disclosure —
+/// [`crate::text::panels::comments::reply_posted`].
+pub(super) fn add_reply(doc: &mut OpenDoc, parent: ObjId, text: &str, author: Option<&str>) {
+    // Builders, not a struct literal: `MarkupNote` is `#[non_exhaustive]`, and
+    // the same shape `set_note` uses two screens up.
+    let mut note = pdfcer_core::edit::MarkupNote::new(text);
+    if let Some(author) = author.map(str::trim).filter(|a| !a.is_empty()) {
+        note = note.by(author);
+    }
+    if let Some(stamp) = crate::app::clock::pdf_date_utc() {
+        note = note.at(stamp);
+    }
+    super::apply::vector_edit(doc, "add-reply", 0, 1, |session| {
+        session.add_reply(parent, &note).map(|added| {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed.
+                //
+                // ★ `-applied`, per the convention `set_note` records: the
+                // funnel writes its own bare-named line for the same edit and
+                // `.last()` would read that one instead.
+                //
+                // `reply_id` and `page` are the two facts nothing on screen
+                // can report. The reply is drawn inside its parent's thread,
+                // at the parent's own coordinates, so a screenshot cannot tell
+                // a reply that landed on page 3 from one that landed on page 1
+                // — and `add_reply` chooses the page itself, by walking to the
+                // parent, which is exactly the kind of engine-side decision a
+                // trace exists to make visible.
+                format!(
+                    "add-reply-applied parent={} reply={} page={} chars={} \
+                     parent_had_popup={} reply_has_popup={}",
+                    added.parent_id.num,
+                    added.reply_id.num,
+                    added.page_index,
+                    text.chars().count(),
+                    added.parent_had_popup,
+                    added.reply_has_popup
+                )
+            });
+            crate::text::panels::comments::reply_posted(added.reply_has_popup)
+                .map(str::to_owned)
+                .into_iter()
+                .collect()
+        })
+    });
+}
+
+/// ★★★ **Record a comment's pop-up state IN THE FILE** —
+/// `EditSession::set_annotation_open`, `pdfcer-core` `Pass 253.3`.
+///
+/// Reached from the canvas pop-up's *Open by default* control and from nothing
+/// else. **Not** from opening or closing a bubble on screen: that stays with
+/// `crate::canvas::notepopup::open`, which owns per-document interface state
+/// and raises no action at all. `AnnotAction::SetOpen`'s docs carry the whole
+/// argument for the split, and the short form is that a reviewer reading six
+/// comments must not end the session with six undo entries and a dirty file.
+///
+/// # ★★ Both objects, and why one call rather than two
+///
+/// Table 170 gives geometric markup **no `/Open` of its own**, so a `/Square`'s
+/// window state lives only on its `/Popup`; a `/Text` has one on itself and
+/// `pdfcer-core`'s own author writes both. The engine therefore treats the
+/// state as a property of the **pair** and writes whichever halves exist, in
+/// one command and one undo entry. A shell that issued two calls would put a
+/// `Ctrl+Z` between them and could leave the two disagreeing on exactly the
+/// subtype the operator uses most.
+///
+/// # ★ The no-op case is disclosed rather than hidden
+///
+/// When the annotation takes no `/Open` of its own **and** has no `/Popup`,
+/// `set_annotation_open` succeeds, writes nothing and pushes **no undo entry**
+/// — reported as a no-op rather than refused, so that a caller acting over a
+/// mixed selection need not filter by subtype. The affordance is gated on
+/// [`crate::canvas::notepopup::model::can_record_open_state`] under R83 so this should
+/// not be reachable from the control; it is disclosed anyway, because *"the
+/// button did nothing and said nothing"* is the one outcome an operator cannot
+/// tell from a bug.
+pub(super) fn set_open(doc: &mut OpenDoc, id: ObjId, open: bool) {
+    super::apply::vector_edit(doc, "set-annotation-open", 0, 1, |session| {
+        session.set_annotation_open(id, open).map(|change| {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed.
+                //
+                // ★ `was` is the field worth tracing beside the request: it is
+                // the engine's answer to *"did the file already say this?"*,
+                // and `None` distinguishes an absent key from an explicit
+                // `false`. Nothing on screen can show that difference, and it
+                // is the difference between honouring another producer's
+                // intent and defaulting over it.
+                format!(
+                    "set-annotation-open-applied id={} subtype={} open={open} was={:?} \
+                     annot_written={} popup_written={}",
+                    id.num,
+                    change.subtype,
+                    change.was,
+                    change.annotation_written,
+                    change.popup_written
+                )
+            });
+            crate::text::annotpopup::open_state_written(
+                change.annotation_written,
+                change.popup_written,
+            )
+            .map(str::to_owned)
+            .into_iter()
+            .collect()
+        })
+    });
+}
+
 // ===========================================================================
 // The NODES of a markup shape — `Pass 255.0`, the operator's report of
 // 2026-09-05
@@ -894,6 +1062,84 @@ pub(super) fn remove_node(doc: &mut OpenDoc, id: ObjId, index: usize) {
     );
 }
 
+/// ★★★ **Restyle a text-BEARING annotation** — a sticky note's icon and
+/// colour, a stamp's colour. `EditSession::set_text_annot_style`
+/// (`pdfcer-core` `edit.rs:27124`).
+///
+/// # ★★★ Why this is a second function beside the markup restyle, not a branch
+/// # inside it
+///
+/// Because it is a second **verb over a second spec family**, and the engine's
+/// own doc on `edit::TextAnnotStyle` (`edit.rs:15969`) is the argument:
+///
+/// > `MarkupStyle` reaches its annotation through
+/// > `annot_author::spec_from_dict`, whose arms are the geometric family and
+/// > the four text markups. **There is no `/Text` arm** … So the two verbs are
+/// > not a split anyone chose for tidiness — they read through different
+/// > functions because the two families are modelled by different spec types.
+///
+/// ⇒ A single body with an `if subtype == "Text"` inside it would put the
+/// routing decision where nothing checks it. It is a `match` instead, on
+/// `crate::panels::properties::markup::textannot::Reach`, decided in the panel
+/// by asking each of the two engine readers in turn — and this function is only
+/// ever reached down one arm of it.
+///
+/// # ★★ The page is `0`, and that is not a defect
+///
+/// `set_text_annot_style` takes an `ObjId` and nothing else — the property that
+/// puts this variant in `AnnotAction` at all — so there is no page to pass.
+/// [`clear_note`] and the node verbs pass `0` for the identical reason, and the
+/// funnel uses the argument for its undo label and its raster invalidation
+/// rather than to find anything. `EditScope::Document` (the plain
+/// [`super::apply::vector_edit`], not the `_on_page` twin) is right for the
+/// same reason it is right for a note: the annotation may not be on the page
+/// the view is showing, and a `/Popup` companion may not be on its own.
+///
+/// # ★ What the trace carries, and why it is not the values
+///
+/// `icon_written` and `color_written` — the engine's own two booleans off
+/// [`pdfcer_core::edit::TextAnnotStyleChange`] — plus how the appearance was
+/// written. **Not the icon name**, and that is deliberate: the icon is
+/// invisible in pdfcer's own picture by construction
+/// (`annot_author::sticky_note` draws one marker for all seven), so what a
+/// driven check needs is *did `/Name` change at all*, which no screenshot can
+/// answer. A name in the trace would only restate what the panel already
+/// displays.
+///
+/// # ★ The undo entry it pushes
+///
+/// `pdfcer_core::edit::CommandKind::SetTextAnnotStyle` — the engine's own
+/// label for this command, pushed by the verb itself rather than by the funnel,
+/// so an undo of a restyle is one entry and names the act rather than the
+/// appearance rewrite underneath it.
+///
+/// ★ No disclosure list. Unlike `set_markup_style`, this verb reports no
+/// `dropped` catalogue — it re-bakes from a spec the same reader hands the
+/// authoring path, so there is nothing it can silently lose that this shell
+/// could name.
+pub(super) fn set_text_annot_style(
+    doc: &mut OpenDoc,
+    id: ObjId,
+    style: &pdfcer_core::edit::TextAnnotStyle,
+) {
+    super::apply::vector_edit(doc, "set-text-annot-style", 0, 1, |session| {
+        session.set_text_annot_style(id, style).map(|change| {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed.
+                format!(
+                    "set-text-annot-style-applied id={} subtype={} icon={} colour={} ap={:?}",
+                    id.num,
+                    change.subtype,
+                    change.icon_written,
+                    change.color_written,
+                    change.appearance
+                )
+            });
+            Vec::new()
+        })
+    });
+}
+
 // ===========================================================================
 // The router — moved here from `apply` on 2026-09-05 under R2
 // ===========================================================================
@@ -969,6 +1215,25 @@ pub(super) fn apply_action(
             set_note(doc, id, &text, author);
         }
         A::ClearNote { id } => clear_note(doc, id),
+        // ★★★ A reply, and note what this arm does NOT do: it asks no
+        // `keep_author` question. The author preference is filtered by the
+        // same rule two lines up and handed straight in, because a reply is a
+        // new annotation with no prior `/T` to preserve. Folding it into the
+        // `SetNote` arm above would put a reviewer's answer one boolean away
+        // from overwriting the comment it answers — see `AnnotAction::Reply`.
+        A::Reply { parent, text } => {
+            add_reply(
+                doc,
+                parent,
+                &text,
+                Some(author_name).filter(|a| !a.is_empty()),
+            );
+        }
+        // ★★ The **document's** `/Open`, which is a different subject from
+        // whether a bubble is showing on screen — `canvas::notepopup::open`
+        // owns that and raises nothing. Reached only from an explicit control;
+        // the variant's docs carry the undo argument.
+        A::SetOpen { id, open } => set_open(doc, id, open),
         // ★★★ The three node verbs — `Pass 255.0`, and the operator's *"I also
         // can't edit or delete nodes of a markup shape once it is drawn."*
         //
@@ -994,5 +1259,12 @@ pub(super) fn apply_action(
         A::DeclineNodeEdit { why } => {
             crate::app::status::decline::record_markup_node_refused(why);
         }
+        // ★★★ The SECOND style verb, and the one arm here that answers a
+        // different engine function from its neighbours. `set_markup_style`
+        // reads through `spec_from_dict`, which has no `/Text` arm;
+        // `set_text_annot_style` reads through `text_spec_from_dict`. Routing
+        // between them is a `match` in the panel that raises this, not a
+        // subtype string compared here.
+        A::SetTextAnnotStyle { id, style } => set_text_annot_style(doc, id, &style),
     }
 }

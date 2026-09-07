@@ -307,6 +307,10 @@ pub enum Action {
     /// locate one — and `Delete`'s page, which looks like a counter-example, is
     /// for the trace and the disclosure only.
     Annot(super::annot::AnnotAction),
+    /// ★★★ **Record a review status on a comment** — `/State` and
+    /// `/StateModel`, §12.5.6.3. The payload, and the whole argument for why it
+    /// is not a [`Self::Annot`], are in [`super::reviewstate::RecordStatus`].
+    RecordReviewState(super::reviewstate::RecordStatus),
     New,
     /// **Make a new document at a chosen sheet size.**
     ///
@@ -1365,6 +1369,21 @@ pub enum Action {
         /// gallery always has a selection — there is no "no stamp chosen"
         /// state for the dialog to be in.
         stamp: pdfcer_core::annot_author::StampName,
+        /// ★★★ **The sticky note's icon (`/Name`, §12.5.6.4 Table 172)**,
+        /// picked in the dialog. Ignored by the other two kinds, and carried
+        /// unconditionally for `stamp`'s reason exactly — a chooser always has
+        /// a selection.
+        ///
+        /// ★ It is here rather than on the pen or on the tool identity because
+        /// **`stamp` already travels this exact path**: an icon is the same
+        /// shape of operand as a stamp name, and both answer *"what did the
+        /// operator pick in the dialog?"*. `crate::canvas::textannot::spec`
+        /// carries the full account, including the two routes rejected.
+        ///
+        /// ⚠ Not `StickyIcon::default()`'s `Note` — the dialog opens on
+        /// `crate::canvas::textannot::DEFAULT_STICKY_ICON`, which is `Comment`,
+        /// Acrobat's own, with the provenance and its caveat on that constant.
+        icon: pdfcer_core::annot_author::StickyIcon,
     },
     /// ★★★ **Everything whose subject is a REDACTION** — mark by search, mark
     /// a whole page, mark what is selected, take one mark off, and arm or

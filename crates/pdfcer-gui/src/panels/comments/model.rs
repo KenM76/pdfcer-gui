@@ -157,6 +157,30 @@ pub struct CommentRow {
     pub appearance_unresolved: bool,
     /// How this annotation relates to another one, if it does.
     pub relation: Option<Relation>,
+    /// ★★★ **The annotation this one answers** — `/IRT` (Table 170), as an
+    /// object id rather than as a classification.
+    ///
+    /// [`Self::relation`] answers *what kind of relationship is this*;
+    /// this answers *to what*. Two fields for one key, because the panel needs
+    /// both and neither can be derived from the other: `relation` decides the
+    /// caption on the row, and this decides **where a Go to press has to land**
+    /// — see [`thread_root`].
+    ///
+    /// # Why it is here from 2026-09-06 and was not before
+    ///
+    /// Because until `crate::canvas::notepopup::model::notes_on` stopped
+    /// drawing replies as independent notes, *Go to* on a reply row could open
+    /// the reply's own bubble and there was nothing to resolve. That bubble was
+    /// drawn **at the parent's own coordinates** — `add_reply` places a reply
+    /// on its parent's `/Rect` — so the moment this shell could author replies,
+    /// the topmost note under a comment icon became the newest answer to it and
+    /// the comment itself became unreachable on the canvas. Excluding replies
+    /// fixed that and made this field necessary in the same stroke.
+    ///
+    /// `None` for an ordinary comment, and also for a reply whose `/IRT` is a
+    /// direct dictionary — `pdfcer-core` models a dangling `/IRT` rather than
+    /// repairing it (`annot.rs:431`), and so does this.
+    pub in_reply_to: Option<ObjId>,
 }
 
 /// What an annotation's `/Contents` actually is.
@@ -361,8 +385,93 @@ fn row(page_index: usize, annot: &Annotation, ce_dimensions: &BTreeSet<ObjId>) -
         // rather than being swept into it by a catch-all on the wrong side.
         appearance_unresolved: matches!(annot.appearance, Appearance::StateUnresolved),
         relation,
+        in_reply_to: annot.in_reply_to,
     }
 }
+
+/// ★★★ **Which comment's window shows this row** — walk `/IRT` up to the
+/// annotation at the head of the thread.
+///
+/// Returns `id` itself for an ordinary comment, which is the overwhelmingly
+/// common case and costs one lookup.
+///
+/// # What it is for
+///
+/// `crate::canvas::notepopup` draws a window for a **comment**, and shows that
+/// comment's replies inside it. It draws none for a reply — see
+/// `notepopup::model::notes_on`'s exclusion table, and the reason is that a
+/// reply sits on its parent's own `/Rect`, so a bubble for it would cover the
+/// thing it answers. So *Go to* on a reply row has to ask for the **root's**
+/// window, or it asks for a window that will never be drawn and the operator
+/// presses a button that does nothing.
+///
+/// ⇒ The alternative — leaving replies drawable so Go to had something to open
+/// — is the worse trade by a distance, because it costs the *parent's* window
+/// on every comment anybody ever answers.
+///
+/// # ★★ Bounded, because a `/IRT` cycle is legal syntax
+///
+/// §7.3.10 makes a dangling reference not an error and says nothing at all
+/// about a circular one, and `pdfcer-core` surfaces `/IRT` *"unresolved, same
+/// as `popup`: a dangling `/IRT` is modelled, not repaired"* (`annot.rs:431`).
+/// A file that says `a` replies to `b` and `b` replies to `a` is therefore a
+/// file this panel must survive, and an unbounded walk over one would hang the
+/// frame that is trying to draw. [`MAX_THREAD_DEPTH`] is the same bound
+/// `notepopup::model::replies_to` uses and for the same reason; when it runs
+/// out, the deepest annotation reached is returned, which is a real row in the
+/// document and therefore a Go to that lands somewhere rather than nowhere.
+///
+/// ★ A row whose parent is not in `rows` — a `/IRT` pointing at a `/Widget`,
+/// at a `/Popup`, or at nothing — also stops the walk and returns what it has.
+/// Same reason: this resolves a **destination**, and the honest failure of a
+/// destination resolver is the nearest real place, never a panic and never an
+/// `Option` the caller would have to invent a fallback for.
+#[must_use]
+pub fn thread_root(rows: &[CommentRow], id: ObjId) -> ObjId {
+    let mut current = id;
+    for _ in 0..MAX_THREAD_DEPTH {
+        let Some(parent) = rows
+            .iter()
+            .find(|row| row.id == Some(current))
+            .and_then(|row| row.in_reply_to)
+        else {
+            break;
+        };
+        // ★★★ **The parent must be a row in this list before the walk moves
+        // to it**, and putting that check here rather than at the end is the
+        // difference between returning a real destination and returning an
+        // object number.
+        //
+        // A `/IRT` may name a `/Widget`, a `/Popup`, an annotation on a page
+        // this listing excluded, or nothing at all — §7.3.10 makes a dangling
+        // reference legal and `pdfcer-core` models it rather than repairing
+        // it. Advancing first and discovering the absence on the next
+        // iteration would hand the caller that dangling id, and the caller
+        // opens a pop-up with it: `notepopup::open::set` would record an
+        // override for an object that is not on the page, and the operator
+        // would press Go to and watch nothing happen.
+        if !rows.iter().any(|row| row.id == Some(parent)) {
+            break;
+        }
+        // A row that replies to itself is not a thread — `add_reply` refuses
+        // to author one (`edit.rs`'s scope note 2) and a file that carries one
+        // would otherwise spin here until the depth bound saved it. Stopping
+        // on the first step is cheaper and says why.
+        if parent == current {
+            break;
+        }
+        current = parent;
+    }
+    current
+}
+
+/// How many `/IRT` links [`thread_root`] follows before giving up.
+///
+/// Eight, matching `crate::canvas::notepopup::model::MAX_THREAD_DEPTH` — the
+/// two walk the same graph in opposite directions and a shell whose upward
+/// bound differed from its downward one could resolve a Go to onto a root
+/// whose own window would not list the row that was clicked.
+const MAX_THREAD_DEPTH: usize = 8;
 
 #[cfg(test)]
 mod tests {
@@ -753,6 +862,7 @@ mod tests {
             suppressed: false,
             appearance_unresolved: false,
             relation: None,
+            in_reply_to: None,
         });
         assert!(l.every_row_lacks_note_text());
         assert_eq!(l.with_note_text(), 0);

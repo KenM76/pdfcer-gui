@@ -1,0 +1,160 @@
+TRACK R — the two driven failures that were both the CHECK, 2026-09-06 evening
+==============================================================================
+
+Subject: `form_field` and `a_corner_can_be_added_and_taken_away`, the two
+failures of the day's sweep that were not Track Q's link check. Both were
+confirmed to fail identically on the previous release, so neither was a
+regression — and the reason is that **neither was ever about the application.**
+
+VERDICT: both checks were wrong. NO application defect found. Nothing under
+crates/ was touched.
+
+------------------------------------------------------------------------------
+1. a_corner_can_be_added_and_taken_away — THE PEN WAS NEVER PUT DOWN
+------------------------------------------------------------------------------
+
+Its message: "the selected shape published no `canvas.dimension-vertex.1` …
+Regions seen: none."
+
+The trace settles it in two lines, and both the sweep's trace and a fresh run
+on the previous release carry them:
+
+    pdfcer-diag add-dimension page=0 n=1 epoch=1 disclosures=none      <- the ring closed
+    ...
+    pdfcer-diag measure-perimeter-vertex n=1 length_pt=-0.00           <- the "selecting" click
+
+With the Perimeter tool still armed, the click meant to SELECT the finished
+shape was taken as the first vertex of a NEW one. `gesture::press_kind` ranks a
+press against the armed tool before selection is ever consulted, so nothing was
+selected, no handles were asked for, and "Regions seen: none" was a true
+sentence about a shape the check had never selected.
+
+Both siblings already put the pen down: `measure_perimeter` calls
+`driving::arm_select_from_ribbon`, and `markup_node_edit` presses `V` — its
+comment naming *this check's* first run as the reason. The warning was in the
+tree before the failure happened.
+
+FIX: `arm_select_from_ribbon` (pointer route) with the `V` chord as fallback,
+before the selecting click; the step-3 failure message now names the trace line
+that separates "the handles are not drawn" from "nothing was selected".
+
+FALSIFICATION: the pen-down block removed → FAIL, with the original message
+verbatim plus the new diagnostic sentence. Restored from a byte copy.
+
+------------------------------------------------------------------------------
+2. form_field — TWO INDEPENDENT HARNESS FAULTS, ONE ON TOP OF THE OTHER
+------------------------------------------------------------------------------
+
+(a) THE SCROLL ANCHOR WAS CONTENT, NOT THE PANE.
+
+Phase E hand-rolled a scroll loop anchored on `properties.form_field`, whose
+comment claimed the rect "is the panel's own max_rect and is therefore always
+inside the panel by construction". The trace refutes both halves:
+
+    ui-rect name=dock.body.file.properties rect=[[1046.0 641.8] - [1400.0 1046.0]]
+    ui-rect name=properties.form_field     rect=[[1046.0 642.0] - [1386.0 1750.0]]
+
+The section is published from `ui.min_rect()` — what it TOOK — and it took
+1,108 points in a 404-point slot. Its centre is y≈1196, 150 points below the
+bottom of the window. All six wheel notches went outside the window; the
+panel's rects are byte-identical before and after.
+
+`reaching::scroll_to` already carries that exact anchor as the third row of its
+table of three that failed, with the same reasoning ("content rects are not
+scroll anchors"). Phase F of the SAME FILE has been calling `scroll_to` with
+`PANE_REGION` all along. The hand-rolled loop predated the helper and kept the
+mistake the helper was extracted to fix.
+
+FIX: `driving::scroll_to(..., PANE_REGION, REQUIRED_REGION, ...)`.
+SCROLL_ATTEMPTS 6 -> 12 (the widget-geometry step needs 6 exactly, i.e. it was
+sitting on the old limit).
+
+(b) THE WINDOW WAS PARTLY OFF THE DESKTOP, AND EVERY POINTER AIMED INTO THAT
+    STRIP WAS SILENTLY CLAMPED.
+
+`VIEWPORT` asked for 1400x1300. `launch::Session::place` moves EVERY window to
+desktop (780, 40) — a constant whose own doc reasons about "a 1100 px client"
+ending at 1880 on a 1920-wide desktop. 780 + 1400 = 2180: 260 px of window,
+including most of the Properties panel, hung off the right of a 1920x1080
+screen. The height ask was clamped by the WM to 1080 and then pushed 40 px off
+the bottom.
+
+`SetCursorPos` CLAMPS. So the wheel aimed at screen x 2011 landed at 1919 —
+still over the panel, so it scrolled and the step looked healthy — while the
+click aimed at the Required checkbox at screen y 1114 landed at 1079, six
+points above it. The check then reported "REQUIRED WAS TICKED AND NOTHING
+REACHED THE DOCUMENT": an accusation against the application for a pixel the
+harness could never deliver.
+
+FIX: VIEWPORT -> "0,0,1100,980" (780+1100+16 = 1896; 40+980+39 = 1059) and a
+new guard, `Driver::confirm_on_the_desktop`, called from `click_at`'s
+`confirm_uncovered` and from `move_to` (which every wheel, hover and drag goes
+through). New `sys::desktop_bounds()` reads the virtual screen.
+
+  ★ The first version of the guard used `WindowFromPoint == None` and NEVER
+    FIRED: it hit-tests window rectangles, not monitors, so it cheerfully
+    returns the target window for a point 150 px past the edge of the screen.
+    Measured on the falsification run. Only the desktop rectangle knows where
+    the screen stops.
+
+FALSIFICATIONS (each run separately, restored from byte copies):
+  * anchor reverted to `PROPERTIES_REGION`, fitting window kept
+      -> FAIL: "no `properties.field_edit.required` region … after 12 scroll
+         notches", i.e. the original message.
+  * VIEWPORT reverted to 1400x1300, correct anchor kept
+      -> SKIP: "the point (2011, 915) is OFF THE DESKTOP, which is 1920x1080 px
+         at (0, 0) … the application's window is 1400x1080 px at desktop
+         (788, 71)". The week-long silent clamp is now a refusal that names the
+         arithmetic.
+
+------------------------------------------------------------------------------
+RUNS
+------------------------------------------------------------------------------
+
+Old binary = C:\Users\Ken\OneDrive\pdfcer-gui1\pdfcer-gui.exe (built 17:11,
+shell f2bfa9c, engine 05696b5), copied to a scratch directory and driven there,
+never in place. Fixture fixtures/a1-titleblock.pdf at --doc-point 0,300,500
+(0-based) for every run below.
+
+  check                                  binary        before      after
+  -------------------------------------  ------------  ----------  -----
+  form_field                             old release   FAIL        PASS
+  form_field                             working tree  FAIL(sweep) PASS
+  a_corner_can_be_added_and_taken_away    old release   FAIL        PASS
+  a_corner_can_be_added_and_taken_away    working tree  FAIL(sweep) PASS
+
+  A check that passes on the PREVIOUS RELEASE after a harness-only change is
+  the whole proof that the fault was the harness: not one byte of the program
+  it accuses moved.
+
+The corner check's own numbers on both binaries: 4 -> 5 -> 4 corners,
+`dimension-vertex-insert corners=5`, `dimension-vertex-remove corners=4`, and
+the engine's own `insert-dimension-vertex` / `remove-dimension-vertex` lines
+with the re-measured perimeter in the disclosure.
+
+REGRESSION SAMPLE for the `input.rs` guard (old release, --allow-stale):
+  a_markup_shapes_nodes_can_be_edited          PASS
+  three_clicks_round_a_hole_measure_the_hole   PASS
+  the_inspector_is_one_master_detail_column    PASS
+
+GATES: cargo fmt clean; cargo clippy --workspace --all-targets -D warnings
+clean; tools/gates/run-all.sh 29 passed / 2 failed. The two failures are
+`check-engine-backlog` and `check-engine-api-drift`, both firing because the
+engine pin moved to d2ea5de while the engine's HEAD is e1bdb6c and 65 new
+public items (`text_edit::placetext::*`) have no ENGINE_BACKLOG.md row. Neither
+gate reads anything Track R touched.
+
+------------------------------------------------------------------------------
+THE TWO SENTENCES WORTH KEEPING
+------------------------------------------------------------------------------
+
+★ A step copied from a passing sibling must copy its PRECONDITIONS, not only
+  its clicks. Both of this session's checks failed at a step whose sibling
+  already did the missing thing, and one of those siblings had written down
+  why.
+
+★ A harness primitive that silently does something other than what it was
+  asked will eventually be believed. `SetCursorPos` clamping is the third
+  instance of that shape in this harness's notes, after the `V` chord that
+  arrived zero times in six runs and the ungated region that made a good scroll
+  anchor look like one.

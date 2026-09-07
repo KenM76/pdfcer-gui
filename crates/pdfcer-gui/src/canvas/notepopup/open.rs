@@ -39,20 +39,40 @@
 //!    seeded from the document cannot represent that without a second set of
 //!    "explicitly closed", which is this map wearing a worse shape.
 //!
-//! ## ★★ Rule 4: nothing here reaches the document
+//! ## ★★★ Rule 4: nothing here reaches the document — and since 2026-09-06
+//! ## that is a DECISION rather than a limit
 //!
 //! An override is **interface state and only interface state**. It is never
 //! written back, never saved, and never included in any comparison of what the
-//! document says. `pdfcer-core` v0.38.0 has no verb that could write `/Open`
-//! on an existing annotation anyway — audited 2026-09-05, `b"Open"` appears
-//! exactly twice in the crate and both are authoring sites — and that gap is
-//! filed as `request_a_notes_open_state_cannot_be_changed.md`.
+//! document says.
 //!
-//! ⇒ Which means the honest sentence today is: **closing a pop-up is a thing
-//! you do to your screen, not to the file.** The operator is not told that on
-//! every click, because it is the behaviour of every reader they have used;
-//! the day the engine can persist it, this module gains a verb and nothing
-//! else changes.
+//! This paragraph used to justify that with *"`pdfcer-core` v0.38.0 has no verb
+//! that could write `/Open` on an existing annotation anyway"*, filed as
+//! `request_a_notes_open_state_cannot_be_changed.md`. **`Pass 253.3` shipped
+//! `EditSession::set_annotation_open`** and that reason expired. The behaviour
+//! here did not change, and must not — see below — so what changed is the
+//! argument, which now has to stand on its own.
+//!
+//! ### The argument, standing on its own
+//!
+//! Reading a marked-up drawing **is** opening and closing bubbles, dozens of
+//! times in a review, and none of it is an edit an operator would recognise as
+//! one. Wire this store to the engine verb and a reviewer who glanced at six
+//! comments ends the session with six `CommandKind::SetAnnotationOpen` entries
+//! between `Ctrl+Z` and the last thing they actually changed, and a document
+//! that reports itself modified after a sitting in which they altered nothing.
+//!
+//! ⇒ So the honest sentence is still: **closing a pop-up is a thing you do to
+//! your screen, not to the file** — and there is now a second sentence beside
+//! it, which is that *recording it in the file is a separate, explicit act*
+//! with its own control. `crate::canvas::notepopup::open_default` is that
+//! control and carries the full undo argument, including the two alternatives
+//! (coalescing, and accepting the entries as honest) and why each was rejected.
+//!
+//! ★★ The two interact in exactly one place and it is deliberate: writing the
+//! document also **pins the override to what is currently on screen**, so
+//! recording *"closed by default"* does not make the window the operator is
+//! reading vanish under their hand.
 //!
 //! ## Where it lives, and why not on `OpenDoc`
 //!

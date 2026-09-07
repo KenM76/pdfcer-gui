@@ -22,7 +22,7 @@
 //! | filter by **reviewer** | ✅ [`Filter::author`] | `/T` is modelled and read |
 //! | filter by **type** | ✅ [`Filter::subtype`] | `/Subtype` is modelled and read |
 //! | filter to **comments with text** | ✅ [`Filter::with_note_only`] | ★ this shell's own, and it earns its place: pdfcer's own markup authoring cannot write `/Contents` on a geometric shape, so a drawing pdfcer marked up is a column of "no note" rows with the reviewer's actual remarks scattered through it |
-//! | filter by **status** (Accepted / Rejected / …) | ❌ | `/State` and `/StateModel` have **zero occurrences** in `pdfcer-core` v0.38.0 — not read, not written, not modelled. R9: nothing is drawn. Filed as `request_review_status_is_not_modelled_at_all.md` |
+//! | filter by **status** (Accepted / Rejected / …) | ✅ [`Filter::status`] | ★★★ **arrived 2026-09-06.** It was ❌ here for one day, on the grounds that *"`/State` and `/StateModel` have zero occurrences in `pdfcer-core` v0.38.0 — not read, not written, not modelled"*, filed as `request_review_status_is_not_modelled_at_all.md`. `Pass 253.1` closed it. The predicate is **not** in [`Filter::keeps`] and could not be — a status lives on *other* annotations (§12.5.6.3) — so it is answered by [`super::reviewstate::narrow`]; that field's doc carries the whole split |
 //! | filter by **checkmark** | ❌ | a per-viewer flag Acrobat keeps outside the PDF. Not a document property, so not this panel's |
 //! | sort by **page** | ✅ [`Sort::Document`], the default | |
 //! | sort by **type** | ✅ [`Sort::Subtype`] | |
@@ -30,8 +30,17 @@
 //! | sort by **date** | ❌ | ★★ **`/M` is not reliably a date.** §12.5.2 gives its type as *"date **or** text string"* and requires a reader to accept any format, so `pdfcer-core` stores it raw and its own docs say *"do not assume it parses"*. A sort would have to either parse it — rejecting legal values — or sort the strings, which orders `D:2026…` before `17 January` and calls it chronology. `crate::text::panels::comments::comment_row_byline` makes the same ruling for display and this is it holding for ordering |
 //! | sort by **colour** | ❌ | `/C` is **not in the engine's read model** at all — `annot.rs`'s parser reads `/CA` and never `/C`. Filed as `request_an_annotations_colour_cannot_be_read.md` |
 //!
-//! ⇒ Three of the four absences are **engine gaps with requests filed**, and
-//! the fourth is a deliberate exclusion. None of them is drawn greyed: R9.
+//! ⇒ Of the four absences this table opened with, **one has since closed** —
+//! status, on the day after it was written — and it closed because the request
+//! was filed rather than worked around. Two remain as engine gaps with requests
+//! filed, and the fourth is a deliberate exclusion. None of them is drawn
+//! greyed: R9.
+//!
+//! ★ That is worth leaving in place rather than tidying into a table of four
+//! ticks: the row's history is the evidence for how this shell is supposed to
+//! meet a capability it does not have — say what is missing, name the request,
+//! draw nothing — and a table that had been rewritten to look as though status
+//! was always there would have thrown that away.
 //!
 //! ## ★★★ The disclosure that makes filtering safe
 //!
@@ -106,6 +115,44 @@ pub struct Filter {
     /// description is still somebody's words. The row already says which
     /// meaning it is; the filter's job is *"is there anything to read here"*.
     pub with_note_only: bool,
+    /// ★★★ **Show only comments at this review status** — `/State`, added
+    /// 2026-09-06 when `pdfcer-core` `Pass 253.1` closed the engine gap this
+    /// module's header recorded as absent.
+    ///
+    /// # ★★ It lives here but is NOT evaluated by [`Self::keeps`], and that is
+    /// deliberate rather than an oversight
+    ///
+    /// **A review status is not on the row, because it is not on the
+    /// annotation.** §12.5.6.3 is explicit — *"the state is not specified in
+    /// the annotation itself but in a separate text annotation that refers to
+    /// the original annotation by means of its `IRT` entry"* — so answering
+    /// *"is this comment accepted?"* needs the **whole document**, not this
+    /// row. [`Self::keeps`] takes one [`CommentRow`] and could only answer it
+    /// by guessing.
+    ///
+    /// So the predicate lives where the reading does:
+    /// [`super::reviewstate::Statuses::keeps`], applied by
+    /// [`super::reviewstate::narrow`] after [`apply`] has run. Two functions,
+    /// because there are genuinely two questions — one about a row, one about a
+    /// document.
+    ///
+    /// # Why the STATE is here anyway, when the predicate is not
+    ///
+    /// Because two properties of this panel hang off this struct and both would
+    /// silently break if the field lived elsewhere:
+    ///
+    /// - [`Self::is_narrowing`] is what draws
+    ///   `crate::text::panels::comments::comments_filtered`. A status filter
+    ///   that did not count would hide rows with **no disclosure that anything
+    ///   was hidden**, which is the one thing this panel's founding rule
+    ///   forbids.
+    /// - *Show all* clears this struct. A narrowing the operator could set and
+    ///   not lift is the trap version of a filter.
+    ///
+    /// ⇒ One place for *what the operator asked for*; two places for *how it is
+    /// answered*. The alternative — a second filter state beside this one —
+    /// would have made both of those an ongoing act of memory.
+    pub status: Option<super::reviewstate::StatusChoice>,
     /// How the surviving rows are ordered.
     pub sort: Sort,
 }
@@ -117,9 +164,16 @@ impl Filter {
     /// that [`Self::sort`] is **not** part of it: reordering a list omits
     /// nothing, and a "you have sorted this" notice would be noise attached to
     /// a change the operator can see.
+    /// ★ [`Self::status`] counts, even though [`Self::keeps`] cannot evaluate
+    /// it — see that field. This predicate answers *"is the operator being
+    /// shown less than the document holds"*, and where the answer is computed
+    /// has no bearing on it.
     #[must_use]
     pub fn is_narrowing(&self) -> bool {
-        self.author.is_some() || self.subtype.is_some() || self.with_note_only
+        self.author.is_some()
+            || self.subtype.is_some()
+            || self.with_note_only
+            || self.status.is_some()
     }
 
     /// Does one row survive?
@@ -127,6 +181,10 @@ impl Filter {
     /// Split out from [`apply`] so the rule can be asserted against a single
     /// row without building a list — and so the three clauses are visible
     /// together rather than spread through an iterator chain.
+    ///
+    /// ⚠ **It does not evaluate [`Self::status`]**, and cannot — a review
+    /// status is on other annotations, not on this row. See that field;
+    /// [`super::reviewstate::narrow`] is the second half of the pipeline.
     #[must_use]
     pub fn keeps(&self, row: &CommentRow) -> bool {
         if let Some(author) = &self.author
@@ -236,6 +294,7 @@ mod tests {
             suppressed: false,
             appearance_unresolved: false,
             relation: None,
+            in_reply_to: None,
         }
     }
 

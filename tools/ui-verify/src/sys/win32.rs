@@ -47,7 +47,8 @@ use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
 };
 use windows_sys::Win32::UI::WindowsAndMessaging::{
     BringWindowToTop, EnumWindows, GA_ROOT, GetAncestor, GetClassNameW, GetClientRect,
-    GetCursorPos, GetForegroundWindow, GetWindowTextW, GetWindowThreadProcessId, IsWindowVisible,
+    GetCursorPos, GetForegroundWindow, GetSystemMetrics, GetWindowTextW, GetWindowThreadProcessId,
+    IsWindowVisible, SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN, SM_XVIRTUALSCREEN, SM_YVIRTUALSCREEN,
     SW_MAXIMIZE, SW_SHOW, SWP_NOMOVE, SWP_NOSIZE, SWP_NOZORDER, SetCursorPos, SetForegroundWindow,
     SetWindowPos, ShowWindow, WindowFromPoint,
 };
@@ -520,6 +521,51 @@ pub fn window_at(x: i32, y: i32) -> Option<WindowHandle> {
         }
         let root = GetAncestor(hwnd, GA_ROOT);
         WindowHandle::from_raw(if root.is_null() { hwnd } else { root })
+    }
+}
+
+/// **The whole desktop, as `(x, y, width, height)` in physical pixels.**
+///
+/// The *virtual* screen — every monitor as one rectangle — because that is the
+/// space `SetCursorPos` accepts and the space a multi-monitor operator's
+/// windows live in. On a single 1920 × 1080 display it is `(0, 0, 1920, 1080)`;
+/// with a second monitor to the left it starts at a negative `x`, which is why
+/// the origin is returned rather than assumed to be zero.
+///
+/// # ★★★ Why a harness needs this at all
+///
+/// Because **`SetCursorPos` clamps.** Asked for a coordinate beyond the
+/// desktop it moves the pointer to the nearest edge and reports success, so a
+/// click aimed off the screen is still delivered — somewhere else, to whatever
+/// control is at the clamped position. Nothing in the API says the ask was not
+/// honoured, and nothing in the trace can, because from the application's side
+/// a click arrived exactly where the pointer was.
+///
+/// Not hypothetical: on 2026-09-06 `checks::form_field` asked for a 1400 px
+/// window, [`crate::launch`]'s `SAFE_ORIGIN_X` placed it at desktop x = 780 on
+/// a 1920 px screen, and the click aimed at a checkbox in the right-hand panel
+/// landed six points above it. The check spent a week reporting that the
+/// application had failed to record an edit. See `Driver::confirm_uncovered`,
+/// which is the guard this feeds.
+///
+/// # ★★ `WindowFromPoint` cannot answer this question, and that was the first
+/// attempt
+///
+/// It hit-tests **window rectangles, not monitors**, so it returns the target
+/// window quite happily for a point 150 px past the edge of the screen. A guard
+/// written on *"no window owns this pixel"* therefore never fires for the case
+/// it was written for — measured, on the falsification run for this very fix.
+/// The desktop rectangle is the only thing that knows where the screen stops.
+#[must_use]
+pub fn desktop_bounds() -> (i32, i32, i32, i32) {
+    // SAFETY: `GetSystemMetrics` takes a plain index and returns a plain int.
+    unsafe {
+        (
+            GetSystemMetrics(SM_XVIRTUALSCREEN),
+            GetSystemMetrics(SM_YVIRTUALSCREEN),
+            GetSystemMetrics(SM_CXVIRTUALSCREEN),
+            GetSystemMetrics(SM_CYVIRTUALSCREEN),
+        )
     }
 }
 

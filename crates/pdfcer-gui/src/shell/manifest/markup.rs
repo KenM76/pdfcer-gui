@@ -11,6 +11,16 @@
 //! it will want the name. `Markup` is also the term this project's
 //! audience uses; Bluebeam and every drafting office call it that.
 //!
+//! ★★ **The FIRST of those three landed on 2026-09-06 — resolving comments.**
+//! `pdfcer-core` `Pass 253.1` shipped `/State` and `/StateModel` (§12.5.6.3),
+//! and `crate::panels::comments::reviewstate` now reads a comment's review
+//! status, filters the work list by it, and records one through
+//! `EditSession::add_review_state`. **The tab keeps its name.** `RIBBON_IA.md`
+//! is a settled spec and one arrival of three does not move it — comparing
+//! revisions and tracking changes are still absent, and a tab renamed on a
+//! third of the promise would be making the claim this paragraph exists to
+//! avoid.
+//!
 //! Note that the *mode* called Review is a different thing and the
 //! collision is deliberate rather than accidental: Review mode is the
 //! stance in which a reviewer works, and this tab is one of the five it

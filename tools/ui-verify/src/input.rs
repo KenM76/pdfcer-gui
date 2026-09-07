@@ -510,9 +510,17 @@ impl Driver {
         Ok(())
     }
 
-    /// Move the pointer without clicking — for hover assertions, and for
-    /// getting the pointer off a widget before a screenshot.
+    /// Move the pointer without clicking — for hover assertions, for getting
+    /// the pointer off a widget before a screenshot, and for putting it inside
+    /// the pane a wheel event is meant for.
+    ///
+    /// ★★★ Guarded by [`Self::confirm_on_the_desktop`], which is the ONE place
+    /// the silent clamp can be caught for every gesture at once: this is the
+    /// call every wheel, hover and drag makes, and `SetCursorPos` rewrites an
+    /// off-screen coordinate rather than refusing it. `click_at` has the same
+    /// guard on its own path because it does not come through here.
     pub fn move_to(&self, p: ScreenPoint) -> Result<()> {
+        self.confirm_on_the_desktop(p)?;
         sys::set_cursor_position(p.x(), p.y())?;
         std::thread::sleep(MOVE_SETTLE);
         Ok(())
@@ -809,6 +817,79 @@ impl Driver {
         best.map(|(w, _)| w)
     }
 
+    /// **Refuse to aim at a coordinate that is not on the screen.**
+    ///
+    /// # ★★★ The third silent-clamp finding, 2026-09-06
+    ///
+    /// `SetCursorPos` does not fail for a point beyond the desktop. It moves
+    /// the pointer to the nearest edge, returns success, and the click is
+    /// delivered **somewhere else** — to whatever control happens to sit at the
+    /// clamped position. From the application's side nothing is wrong: a click
+    /// arrived where the pointer was. From the check's side nothing is wrong
+    /// either: the primitive returned `Ok`. The only trace of the lie is a
+    /// verdict about a control the pointer never touched.
+    ///
+    /// The recorded case is `checks::form_field`. It asked for a 1400 px-wide
+    /// window; [`crate::launch`]'s `SAFE_ORIGIN_X` places **every** launched
+    /// window at desktop x = 780 — a constant whose own doc does the arithmetic
+    /// for *"a 1100 px client"* ending at 1880 on a 1920-wide desktop — so
+    /// 780 + 1400 = 2180 put 260 px of window, including most of the Properties
+    /// panel, past the right edge of the screen. The wheel aimed at the pane's
+    /// centre was clamped back onto the panel and scrolled it, which made the
+    /// step look healthy; the click aimed at a checkbox was clamped 6 points
+    /// above it, and the check reported for a week that ticking Required
+    /// *"reached nothing"* — an accusation against the application for a pixel
+    /// the harness could never deliver.
+    ///
+    /// ⇒ **A harness primitive that silently does something other than what it
+    /// was asked will eventually be believed.** The same sentence
+    /// `driving::arm_select_from_ribbon` earned for the `V` chord, and the same
+    /// remedy: refuse, and say the arithmetic out loud.
+    ///
+    /// # ★★ Why this is not folded into the cover guard's own test
+    ///
+    /// The first attempt was, and **it never fired.** `WindowFromPoint`
+    /// hit-tests window rectangles rather than monitors, so it returns the
+    /// target window quite happily for a point 150 px off the side of the
+    /// screen — the guard's `None` arm is for a point over the *desktop*, not
+    /// for a point over nothing. Measured on the falsification run for this
+    /// fix. Only [`sys::desktop_bounds`] knows where the screen stops.
+    ///
+    /// # ★ It does not care whether the point is on the window
+    ///
+    /// A check aiming deliberately off-window — `off_page_marquee` is the
+    /// standing example — is entitled to a point no window owns, and gets it,
+    /// as long as it is on the desktop. What no check is entitled to is a
+    /// coordinate the operating system will quietly rewrite.
+    ///
+    /// A zero-size desktop (the non-Windows stub) disables the guard, which is
+    /// correct: nothing drives a pointer there.
+    fn confirm_on_the_desktop(&self, p: ScreenPoint) -> Result<()> {
+        let (dx, dy, dw, dh) = sys::desktop_bounds();
+        if dw <= 0 || dh <= 0 {
+            return Ok(());
+        }
+        if p.x() >= dx && p.y() >= dy && p.x() < dx + dw && p.y() < dy + dh {
+            return Ok(());
+        }
+        let where_window = self.target_client_rect().map_or_else(
+            || "the window's placement could not be read".to_owned(),
+            |((x, y), (w, h))| {
+                format!("the application's window is {w}x{h} px at desktop ({x}, {y})")
+            },
+        );
+        Err(Error::new(format!(
+            "the point ({}, {}) is OFF THE DESKTOP, which is {dw}x{dh} px at ({dx}, {dy}). \
+             `SetCursorPos` would clamp it to the nearest edge and the click would land on a \
+             different control, silently — so it is refused instead. {where_window}. The usual \
+             cause is a check asking for a viewport bigger than the space \
+             `launch::SAFE_ORIGIN_X` leaves for it: origin + size must fit the screen, or part \
+             of the window is at coordinates that do not exist.",
+            p.x(),
+            p.y()
+        )))
+    }
+
     /// The target window's client rectangle as `((x, y), (w, h))` in desktop
     /// pixels, or `None` if it cannot be read.
     ///
@@ -993,10 +1074,15 @@ impl Driver {
     /// So: ask who owns the point, and if it is not the target, say so and
     /// stop. An error becomes a SKIP, which is *"this did not run"*, rather
     /// than a FAIL, which is an accusation.
+    ///
+    /// ★ It asks [`Self::confirm_on_the_desktop`] first, because a coordinate
+    /// that is not on the screen at all cannot meaningfully be *covered* — and
+    /// because the two failures have completely different remedies.
     fn confirm_uncovered(&self, p: ScreenPoint) -> Result<()> {
         let Some(target) = self.target else {
             return Ok(());
         };
+        self.confirm_on_the_desktop(p)?;
         let Some(owner) = sys::window_at(p.x(), p.y()) else {
             return Ok(());
         };
