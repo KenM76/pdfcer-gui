@@ -109,6 +109,11 @@
 //! declare its regions and the old binary cannot count its objects — and in
 //! both cases the check says in its own output which one it used.
 
+/// ★ **Typing an angle into the Properties panel and pressing Apply** — the
+/// write half of `OPERATOR_REQUESTS.md` O146, whose read half
+/// `annot_rotate` already asserts. It turns the mark BEFORE it types, because
+/// from 0° an absolute setter and a delta setter are the same edit.
+pub mod annot_angle_typed;
 /// ★★★ **The ninth handle on an ANNOTATION** — draw a shape, grab the rotate
 /// handle, and it turns.
 ///

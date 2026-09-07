@@ -128,6 +128,13 @@ The number is read from the drawing itself rather than remembered, so it is
 right after you save and reopen, right on a mark somebody else's program made,
 and right after you turn it with the handle instead of the field.
 
+✅ **Both halves are now driven end to end.** A check draws a rectangle, turns it
+a quarter turn with the handle, opens Properties, drags the Angle field from
+270.85° to 301°, scrolls to Apply and presses it — and asserts that what reached
+the engine was **301**, the destination, and not **30.15**, the change. That
+distinction is invisible on an unturned mark, which is why the check turns it
+first.
+
 ### One thing it will not show you
 
 A mark whose artwork has been **skewed or mirrored** by the program that made it

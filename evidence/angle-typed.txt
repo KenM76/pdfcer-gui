@@ -1,0 +1,23 @@
+ui-verify — profile `pdfcer-gui` (the application this project is building (crates/pdfcer-gui))
+  NOTE: this harness drives the REAL cursor and keyboard. It raises the target window, moves the pointer, and types into it. The pointer is put back where it was when the run ends. Pass --no-input to disable (checks that need input then report SKIPPED, never PASS).
+
+  isolation: each check drives its own copy of the binary, under a `.ui-verify-profiles` directory beside target/release/pdfcer-gui.exe. Nothing a check remembers reaches the next one.
+
+[PASS] the_typed_angle_turns_a_mark
+       detects: the Properties panel's Angle field accepts a number and commits nothing, or commits it as a RELATIVE turn — so typing 30 on a mark already at 270 leaves it at 300 instead of 30. That is a working control aimed at the wrong verb: it is correct on the first edit of an unturned mark, which is most of them, and wrong on the second, on a mark somebody else turned, and after an undo
+       · launched target/release\.ui-verify-profiles\the_typed_angle_turns_a_mark\pdfcer-gui.exe as pid 31856 with PDFCER_DIAG_INVOKE=mode.review,markup.rectangle
+       · ★ a rectangle was authored
+       · ★ the shape was selected
+       · ★★ the mark was turned a quarter turn first, so 'set' and 'turn by' differ by 270°
+       · ★★ the Angle field is on screen, seeded at 270.85°
+       · ★ the field scrubbed from 270.85° to 301.00°
+       · Apply was below the panel's fold; 1 scroll notch(es) brought it into view. Not a defect — the panel is a scroll area and the Angle field made its content one row taller
+       · ★★★ Apply reached the ABSOLUTE verb: `pdfcer-diag set-annotation-rotation-applied id=65 asked=301.00 deg=390.15 px=1072.29 py=715.12 rect_derived=artwork to=458.0x534.6`
+       · ★★★ and it asked for the DESTINATION, not the change: asked=301.00° (the field moved 30.15° from 270.85°, so a delta build would have said 30.15)
+       · the engine worked out a delta of 390.15° and derived the new rectangle from `artwork`; extent 458.0x534.6
+       artifact: target/ui-verify\annot-angle-typed.trace.txt
+
+------------------------------------------------------------------------
+  1 passed, 0 failed, 0 skipped
+
+RESULT: PASS — every check drove the application and every assertion held.

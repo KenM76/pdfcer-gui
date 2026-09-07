@@ -65,6 +65,40 @@
 //! a divergence would put a grip where the artwork is not; that agreement is
 //! held by an assertion on their side rather than by intent on ours.
 //!
+//! ## ⚠⚠ PDFCER HAS **TWO** ROTATION CONVENTIONS, AND THIS IS THE BOUNDARY
+//!
+//! Confirmed by the engine on 2026-09-07 (`note_2026-09-07-both-rotation-readers-now-point-at-each-other.md`,
+//! engine `a4939fa`, doc-only) after this shell reported the signed-`atan2`
+//! defect below:
+//!
+//! | reader | range | why |
+//! |---|---|---|
+//! | `annot::rotation_degrees`, `Annotation::appearance_rotation_degrees` | **`(−180, 180]`** — SIGNED | it decomposes a matrix through `atan2` |
+//! | `forms::WidgetRotation::was` / `::now` | **`[0, 360)`** — unsigned | `/MK /R` is a *stored declaration*, a multiple of 90, which pdfcer normalises |
+//!
+//! ★★★ **Each was documented correctly at its own definition and neither
+//! mentioned the other**, which is the whole defect surface — and the engine
+//! makes the point that this shell fell into it *from the other direction*,
+//! having already learned the normalising convention from the widget path and
+//! carried it forward. Both now cross-reference by name.
+//!
+//! ⇒ **This module is where the convention changes**, and the `rem_euclid` in
+//! [`oriented`] is the one expression that changes it. The engine considered
+//! normalising at source and declined, for a reason worth knowing before
+//! anybody asks again: a 1° clockwise nudge would read **`359`**, which is the
+//! wrong number to put in a properties field; and `set_annotation_rotation`
+//! computes `wanted − current`, where signed is the arithmetic-correct form, so
+//! a normalised reader feeding an unnormalised setter would be a second place
+//! for the two to disagree. They also declined to add a second accessor, on
+//! their `R243`: two functions answering *"what angle is this"* means the one
+//! called less is the one that drifts, silently, because both are individually
+//! correct.
+//!
+//! ★ `panels::properties::widgetedit::rotation_row` is the other side of this
+//! boundary and already `rem_euclid`s for the same reason. Audited 2026-09-07:
+//! it is correct, and `canvas::rotating`'s unit tests already exercise negative
+//! angles (`-170`, `-190`). This module was the only one-sided reader.
+//!
 //! ## What is deliberately NOT done here
 //!
 //! **Nothing is drawn.** This module answers a geometric question and returns
