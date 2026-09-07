@@ -1,6 +1,142 @@
 # RESUME — read this, then say "continue"
 
 
+> ★★★ **LAST SESSION: 2026-09-07 (afternoon). ALL FOUR OPEN REQUESTS CAME BACK
+> AND ARE CONSUMED, DRIVEN AND ARCHIVED — AND CONSUMING THEM SHIPPED A DEFECT
+> 3,852 TESTS COULD NOT SEE.** Read `git log -2 --format=%B` in full first; the
+> two commit messages are the authoritative record.
+>
+> **State, every number re-measured 2026-09-07 in the session that wrote this
+> block:**
+>
+> | | | measured with |
+> |---|---|---|
+> | tests | **3,852 passing, 0 failing** | `cargo test --workspace`, summing every `test result: ok. N passed` through `awk` |
+> | gates | **31 of 31, 0 skipped** | `bash tools/gates/run-all.sh` |
+> | engine | `pdfcer-core` **v0.45.0 at `654b150`** | `grep -A3 'name = "pdfcer-core"' Cargo.lock` |
+> | shell | `279d00b`, on `origin/main` | `git log -1` |
+> | driven checks registered | **191** | `Box::new(` inside `roster.rs`'s `all()` |
+> | request channel | **`open/` holds 200 files; nothing this shell filed is unanswered** | `ls -t D:/Dev/FeatureRequests/pdfce_FeatureRequests/open \| head` |
+>
+> **Released 2026-09-07 16:57** from `279d00b`: OneDrive **`pdfcer-gui1` is the
+> new build**, so **`pdfcer-gui2` (14:49) is the fallback**. GitHub
+> `v0.5.0-dev.20260907.2`, **verified from HIS side** —
+> `gh api repos/KenM76/pdfcer-gui/releases/latest` returns that tag,
+> `prerelease: false`, zip attached. Check `releases/latest`, never
+> `gh release list`.
+>
+> ⚠ The engine is **2 commits ahead** of the pin as of packaging; `cargo update`
+> and test before believing that is still true.
+>
+> ---
+>
+> ## ★★★ THE FINDING OF THE DAY: **A CONTRACT YOU WRITE FOR SOMEBODY ELSE'S
+> FUNCTION IS A CLAIM TO MEASURE, NOT TO CARRY OVER**
+>
+> `canvas::annotquad` began the day as a declared workaround with its own
+> `/Matrix` reader; `Pass 155.2` made `pdfcer_render::annot::appearance_placement`
+> public and it became a thin adapter. The rewrite kept the old
+> `OrientedBox::degrees` doc comment, which said *"normalised to `[0, 360)`"* —
+> true of the deleted local implementation, which applied `rem_euclid`, and
+> **false of the engine's `appearance_rotation_degrees`, which returns a signed
+> `atan2`.**
+>
+> `is_upright` range-tests `(0.1..=359.9)`. So **every clockwise rotation
+> reported itself upright**, `-89.15` fell outside the range, and the selection
+> outline went straight back to being axis-aligned on the turn an operator makes
+> most often.
+>
+> **Every one of the module's tests used a positive angle. All 31 gates were
+> green.** It was found on the first driven run after the pin moved, by
+> `rotating_a_markup_turns_it`, whose drag happens to be clockwise: `turned=0`
+> on the same trace as a line saying the engine had turned the mark.
+>
+> ⇒ Two rules, and the second is the sharper one:
+> **(a)** when a function is replaced by somebody else's, its doc comment
+> describes the *old* one until it has been re-measured against the new one;
+> **(b)** **a test suite that only ever exercises one sign of a value is not
+> testing the value.**
+> `a_clockwise_turn_is_normalised_into_the_same_range_as_an_anticlockwise_one`
+> asserts both signs in one test, on purpose.
+>
+> ---
+>
+> ## ★★ THE TRIPWIRE FIRED FOUR HOURS AFTER IT WAS WRITTEN, AND THAT IS THE
+> PATTERN TO COPY
+>
+> `annotquad`'s tripwire read the **pinned** engine's own `annot.rs` — located
+> through `Cargo.lock`, so it follows the pin and cannot read `D:/Dev/pdfcer`'s
+> working tree, which moves several times a day and is often ahead of what
+> compiles here. On the first `cargo update` after `Pass 155.2` it failed with
+> *"`Annotation` now has a `appearance_matrix` field"*, named what to delete, and
+> pointed at the request to close.
+>
+> ★ **The version it replaced could not have fired**: `const
+> ENGINE_HAS_TAKEN_OVER: bool = false` with a `debug_assert`. Nothing but a human
+> who had already noticed could set it. Clippy flagged it, for a worse reason
+> than it knew. It is kept **inverted** as
+> `the_engine_owns_the_placement_and_this_module_only_projects`, because the live
+> hazard is now the opposite one — somebody re-deriving the placement here *"just
+> this once"*.
+>
+> ---
+>
+> ## ★★ TWO GATES CAUGHT WHAT NOBODY HAD BEEN TOLD
+>
+> **`check-engine-backlog` is how the rotation reply was noticed at all.** It
+> reads the ENGINE's own `docs/FEATURES.md`, found a `[x] core / [ ] gui` row for
+> *"Read an annotation's rotation, set it absolutely"*, and refused to pass.
+> Nothing else in this session knew the reply existed.
+>
+> **`check-engine-api-drift` then named the two new public items this repository
+> mentioned nowhere** — `AnnotationRotate::rect_derived_from` and
+> `annot::rotation_degrees`. Note how it accounts for a name: **leaf AND owner
+> must both appear in the workspace's sources or a root-level register**, so
+> using `outcome.rect_derived_from` is not enough on its own; `AnnotationRotate`
+> has to be named somewhere too.
+>
+> ---
+>
+> ## ⚠ THE ONE ROTATION CASE THAT STILL GROWS, AND IT IS NOT A DEFECT
+>
+> `RectDerivation::PreviousRect` — an annotation with **neither** an appearance
+> stream **nor** rotatable geometry. Its artwork *is* its rectangle, §12.5.2
+> requires that upright, so there is nowhere in the annotation an orientation
+> could be recorded. **No rule can do better**, and the engine warned that a grip
+> ignoring it *"re-introduces the operator's bug one level up, on exactly the
+> annotations that cannot be fixed."*
+>
+> `text::rotating::rect_still_grows` fires on that rule **and only** that rule.
+> `fixtures/square-no-appearance.pdf` is 479 hand-written bytes that reach it —
+> hand-written because `add_markup` correctly never writes an annotation without
+> artwork, so there is no route to the case through the engine's authoring API.
+>
+> ⬜ **Still owed**: baking an appearance for such a mark, which is the fix
+> rather than the disclosure. The engine names it as one of the two honest
+> options; this shell takes neither yet and says so.
+>
+> ---
+>
+> ## ⬜ WHAT IS BUILT AND UNDRIVEN
+>
+> * **Typing into the Angle field and pressing Apply.** The *read* is driven
+>   (`rotating_a_markup_turns_it` asserts `angle=270.85` after a `-89.15` drag);
+>   the write goes through `AnnotAction::SetRotation` →
+>   `set_annotation_rotation` and no check presses Apply.
+> * **The Left/Bottom/Width/Height fields for an ANNOTATION** — no driven check
+>   anywhere touches `properties.annotgeometry.*`. Older than the Angle field.
+> * **Everything from 2026-09-06's markup session** that O144 lists, unchanged.
+>
+> ## ⬜ THREE ENGINE CAPABILITIES WITH NO CALLER HERE
+>
+> Unchanged from this morning and still true: `Diagnostics::strokes_hairlined`,
+> `place_text`, `blank_document`. ⚠ **And five shell files still assert that the
+> text-import route does not exist**, which is false at our pin —
+> `app/actions/exporttext.rs:36`, `dialogs/export_text.rs:12`,
+> `dialogs/mod.rs:99`, `text/commands/file.rs:63`, `text/export_text.rs:13`.
+>
+
+
 > ★★★ **LAST SESSION: 2026-09-07. HIS THREE ROTATE SENTENCES — TWO SHIPPED AND
 > DRIVEN, ONE FILED AT THE ENGINE WITH A PIXEL REPRODUCTION.** Read
 > `git log -1 --format=%B` in full before anything else; it is the authoritative

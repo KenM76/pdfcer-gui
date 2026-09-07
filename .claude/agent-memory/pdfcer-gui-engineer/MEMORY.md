@@ -68,3 +68,4 @@
 - ["Cheap to read" is not "no need to re-read"](feedback_cheap_to_read_is_not_no_need_to_reread.md) — a cache comment arguing cost was answering a staleness question; the outline was stale after every edit.
 - [A disclosure has a subject](feedback_a_disclosure_has_a_subject_delete_it_when_the_subject_goes.md) — when the fix removes what it explained, delete it; and never re-point it at a defect.
 - [A tripwire keyed on your own intention is not a tripwire](feedback_a_tripwire_keyed_on_your_own_intention_is_not_a_tripwire.md) — read the OTHER side's source, located through Cargo.lock so it follows the pin.
+- [A contract you write for someone else's function is a claim to measure](feedback_a_contract_you_write_for_someone_elses_function_is_a_claim_to_measure.md) — a ported doc comment described the deleted code; and a suite that only tries one SIGN is not testing the value.
