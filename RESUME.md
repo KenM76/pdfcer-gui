@@ -47,10 +47,31 @@
 > Both came from counting the cheap condition and inferring the expensive one.
 >
 > **The cause, found by performing 31 real edits and reading 31 real answers:
-> his drawing's subset fonts accept 46 of 95 printable ASCII characters and NO
-> LOWERCASE AT ALL.** `J` and `Z` are refused too — the sheet has no word
-> containing either. ⇒ The pattern is in *what he types*, not where he clicks,
-> which is exactly why retrying elsewhere looked like a fix.
+> his drawing's fonts are SUBSET-EMBEDDED, so each carries only the characters
+> that font already draws.**
+>
+> ⚠ **And the first number for that was wrong too — a fourth sampling error in
+> the same report.** *"46 of 95, no lowercase"* was one cell, `"BRACE"`, on one
+> sheet. Re-measured per font per sheet through `edit_text`:
+>
+> | sheet | fonts | accepted, of 95 |
+> |---|---|---|
+> | 1 | 4 | 52, 40, 28, **6** |
+> | 2 | 5 | 59, 57, 35, 21, **6** |
+> | 3 (BOM) | 2 | 46, 31 |
+> | 4 | 2 | 45, … |
+>
+> ★★★ **The floor is six** — the title-block logo font accepts `O P R S T` and
+> a space, because `TOP ROPS` is the only string ever set in it. ⇒ There is no
+> single alphabet for a drawing; there is one per font per sheet, which is why
+> the same edit succeeds on one sheet and fails on the next.
+>
+> ★ The engine measured the same file independently and got *"four of six at
+> 72/95"* — a different scope, and possibly a different question (font-program
+> coverage vs what the edit path accepts). Filed as
+> `note_our_two_font_coverage_numbers_disagree_and_the_difference_is_the_finding.md`.
+> **A coverage percentage "for a document" is a category error — the unit is
+> the font.**
 >
 > ★★ **And the third attempt was wrong on its first run**, in the way that
 > mattered: the probe appended a `Z`, so 30 of 31 cells refused

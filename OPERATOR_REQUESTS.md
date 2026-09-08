@@ -245,7 +245,7 @@ it is an hour's work.
 
 ---
 
-## O150 — ★★★ **CAUSE FOUND 2026-09-08, after TWO wrong diagnoses — your drawing's fonts only carry 46 of the 95 keys on your keyboard, and every lowercase letter is refused** — "I can't edit some of the text… the BOM only sometimes works"
+## O150 — ★★★ **CAUSE FOUND 2026-09-08, after two wrong diagnoses and one number that was a sample of a single cell — each font on each sheet carries only what it already draws, and that is between SIX and 59 of the 95 keys on your keyboard** — "I can't edit some of the text… the BOM only sometimes works"
 
 **Your words, 2026-09-08:**
 
@@ -259,36 +259,58 @@ the machine. Copied to scratch; your original was not opened or written.
 
 ### ★★★ THE ANSWER, and it is not either of the two things I told you earlier today
 
-**Your drawing's fonts are subsetted — they contain only the letters the
-drawing already uses, and nothing else.** Measured on the BOM sheet, by asking
-the engine to accept each character in turn:
+**Your drawing's fonts are subsetted — each one contains only the characters
+that font already draws somewhere in the drawing, and nothing else.**
 
-| | |
-|---|---|
-| printable characters you can type | **46** |
-| printable characters that are refused | **49** |
-| **every lowercase letter, a–z** | **refused** |
-| also refused | `J` `Z` `!` `$` `%` `&` `*` `+` `,` `<` `=` `>` `?` `@` `[` `\` `]` `^` `` ` `` `{` `|` `}` `~` |
-| accepted | `A`–`I`, `K`–`Y`, `0`–`9`, space `"` `#` `'` `(` `)` `-` `.` `/` `:` `;` `_` |
+⚠ **The number I gave you first was a sample of ONE CELL, and I have since
+measured properly.** It is not one alphabet. It is a different alphabet for
+**every font on every sheet**, and they are far narrower than I said:
 
-⇒ ***"It only sometimes works"* is that list.** `12` → `13` works, because the
-sheet has a `3`. `BRACE` → `BRACES` works. **`BRACE` → `Brace` does not**, and
-neither does anything else with a small letter in it. There is no pattern in
-*where* you clicked — the pattern is in *what you typed*, which is why trying
-the same edit in a different place appeared to fix it.
+| sheet | fonts on it | characters you can type, of 95 |
+|---|---|---|
+| 1 | 4 | **52, 40, 28, 6** |
+| 2 | 5 | **59, 57, 35, 21, 6** |
+| 3 (the BOM) | 2 | **46, 31** |
+| 4 | 2 | **45, …** |
+
+★★★ **Six.** The font your title-block logo is set in accepts **six** of the
+ninety-five keys on your keyboard — `O`, `P`, `R`, `S`, `T` and a space —
+because `TOP ROPS` is the only thing anybody ever set in it.
+
+⇒ ***"It only sometimes works"* is that table.** `12` → `13` works on a sheet
+whose font already has a `3`. `BRACE` → `BRACES` works. **`BRACE` → `Brace`
+does not**, on most sheets. And the *same* edit can succeed on one drawing
+number and fail on the next, because the two sheets are set in different
+subsets. There is no pattern in **where** you clicked; the pattern is in what
+you typed and which font you typed it into.
+
+★ The rule underneath it, which is the useful thing to carry: **a subset draws
+exactly what the document already contains.** So the edits that fail are the
+ones introducing a character that is *new to that font* — which is why it feels
+random rather than like a rule.
 
 ★ It is also, almost certainly, the whole of the *"#2 USE SPACERS…"* half. I
 had that narrowed to "something in the click path"; the click path is fine, and
 I was measuring with characters your drawing happens to contain.
+
+### ★ And pdfcer already has the remedy — it just is not where you meet the problem
+
+`pdfcer-core` will **add a normal font to the sheet** and switch the text to it
+— no embedding question, no licensing question — and the Properties panel
+already lists exactly which faces would work for the character you typed. That
+route works today.
+
+⇒ So this is not *"your drawing cannot be edited"*. It is *"pdfcer knows the
+answer and is not putting it in front of you at the moment you need it"*.
 
 ### ⬜ What is wrong with this, and it is ours
 
 1. **It tells you too late.** The check happens when you press Enter, so you
    type a whole word and *then* lose it. It should say something at the first
    key it cannot take.
-2. **The alphabet is invisible until you break it.** Nothing tells you that
-   this sheet's font has no lowercase — and it is not a strange thing to have,
-   it is what every CAD exporter produces for an all-caps drawing.
+2. **The alphabet is invisible until you break it**, and it is *per font*, so
+   there is nothing you could learn once and carry. It is not a strange thing
+   to have — it is what every CAD exporter produces.
 3. pdfcer *does* already offer you another typeface when a character is
    refused. Whether that offer is reaching you at the moment it matters is a
    thing I have to watch on screen, not measure.

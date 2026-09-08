@@ -658,3 +658,151 @@ fn which_characters_can_he_type_into_his_bom_sheet() {
         ok.chars().count()
     );
 }
+
+/// ★★★ **The alphabet PER FONT — because the probe above measured one cell and
+/// its number went into three documents as though it described the drawing.**
+///
+/// # The correction, and where it came from
+///
+/// `which_characters_can_he_type_into_his_bom_sheet` aims at the run whose text
+/// is `"BRACE"`, measures 46 of 95 printable ASCII accepted, and that is a true
+/// statement **about that cell's font**. It was written up as *"his drawing's
+/// fonts accept 46 of 95, with every lowercase letter absent"* — a claim about
+/// the document, from a sample of one.
+///
+/// `pdfcer-core` measured the same file per font and got a different shape:
+///
+/// > four of the six fonts 72/95, missing exactly `h j l q z Z`; two of them
+/// > 38/95 and 24/95, missing all lowercase.
+///
+/// ⇒ **And their framing is better than either number**: a subset can draw
+/// exactly what the document already contains, so the edits that fail are the
+/// ones introducing a **novel** character. That describes *"it only sometimes
+/// works"* more precisely than any coverage fraction does — it is not that
+/// lowercase is banned, it is that `h`, `j`, `l`, `q`, `z` and `Z` never appear
+/// on those sheets.
+///
+/// # Why this exists rather than adopting their number
+///
+/// Because the number in this repository's documents is the one this
+/// repository has to be able to re-run. A measurement borrowed from another
+/// project's commit message is a citation, not a measurement, and this session
+/// has already corrected three claims that were exactly that.
+///
+/// ★ One cell per distinct `font_resource`, so the sample covers the page's
+/// fonts rather than its geometry.
+#[test]
+#[ignore = "reads a file outside the repository, ~95 document loads per font; run by hand"]
+fn what_can_he_type_into_each_of_the_sheets_fonts() {
+    // ★★★ EVERY SHEET IN THE SAMPLE, not one, and that is the correction
+    // this probe exists for. `pdfcer-core` measured the same file per font
+    // and got four fonts at 72/95 where this repository's documents said
+    // 46/95 — and both are right, about different SHEETS. A title/BOM sheet
+    // is set entirely in capitals, so its fonts carry no lowercase at all; a
+    // sheet with prose notes carries nearly all of it. Sampling one sheet and
+    // writing the number up as a fact about the drawing is the same shape of
+    // error as sampling one cell.
+    for page in 0..4 {
+        measure_page(page);
+    }
+}
+
+fn measure_page(page: usize) {
+    use pdfcer_core::text_edit::{
+        BlockRecognitionOptions, EditOptions, EditRequest, EditableTextModel, RefusalClass as _,
+    };
+
+    // One representative run per font resource, chosen as the LONGEST run in
+    // that font: a long run proves more of the subset is reachable and gives
+    // the replacement a wider choice of its own characters to reuse.
+    let mut per_font: Vec<(String, usize, String)> = Vec::new();
+    {
+        let Some(session) = session() else { return };
+        let view = session.view();
+        let pages = pdfcer_core::page_tree::pages_in(&view).expect("a page tree");
+        let text = pdfcer_core::text_extract::extract_page_view(
+            &view,
+            &pages[page],
+            page,
+            &pdfcer_core::text_extract::ExtractOptions::default().with_provenance(true),
+        )
+        .expect("the sheet extracts");
+        for (i, run) in text.runs.iter().enumerate() {
+            if run.text.trim().is_empty() {
+                continue;
+            }
+            // ★ The font lives on the GLYPH's provenance, not on the run:
+            // a run is closed on geometry, so it can in principle carry
+            // glyphs from more than one resource. The first glyph's is the
+            // one the pin will address.
+            let font = run
+                .glyphs
+                .first()
+                .and_then(|g| g.provenance.as_ref())
+                .and_then(|p| p.font_resource.as_ref())
+                .map_or_else(
+                    || "none".to_owned(),
+                    |f| String::from_utf8_lossy(f).into_owned(),
+                );
+            match per_font.iter_mut().find(|(f, _, _)| *f == font) {
+                Some(slot) if slot.2.len() < run.text.len() => {
+                    *slot = (font, i, run.text.clone());
+                }
+                Some(_) => {}
+                None => per_font.push((font, i, run.text.clone())),
+            }
+        }
+    }
+    println!(
+        "page {} carries {} distinct fonts",
+        page + 1,
+        per_font.len()
+    );
+
+    for (font, _, sample) in &per_font {
+        let mut ok = String::new();
+        let mut refused = String::new();
+        for c in (0x20u8..0x7f).map(char::from) {
+            let Some(mut session) = session() else { return };
+            let (span, target, run_text) = {
+                let view = session.view();
+                let pages = pdfcer_core::page_tree::pages_in(&view).expect("a page tree");
+                let text = pdfcer_core::text_extract::extract_page_view(
+                    &view,
+                    &pages[page],
+                    page,
+                    &pdfcer_core::text_extract::ExtractOptions::default().with_provenance(true),
+                )
+                .expect("the sheet extracts");
+                let Some((i, run)) = text
+                    .runs
+                    .iter()
+                    .enumerate()
+                    .find(|(_, r)| r.text == *sample)
+                else {
+                    break;
+                };
+                let model =
+                    EditableTextModel::recognize(&text, &BlockRecognitionOptions::default());
+                let Some(pin) = pdfcer_gui::canvas::textedit::pin::of_run(&model, i) else {
+                    break;
+                };
+                (pin.span, pin.target, run.text.clone())
+            };
+
+            let mut request =
+                EditRequest::whole_operator(page, span, &format!("{}{c}", run_text.trim()));
+            request.target = target;
+            match session.edit_text(&request, &EditOptions::default()) {
+                Ok(_) => ok.push(c),
+                Err(e) if format!("{:?}", e.refusal_kind()).contains("UnsupportedFont") => {
+                    refused.push(c);
+                }
+                Err(_) => {}
+            }
+        }
+        println!("\n--- font {font} (sample {:?}) ---", sample.trim());
+        println!("  accepted {:>2}/95", ok.chars().count());
+        println!("  refused        : {refused}");
+    }
+}
