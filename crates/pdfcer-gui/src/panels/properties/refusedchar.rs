@@ -772,20 +772,53 @@ mod tests {
             "the offer named the character and had no face to offer, so the route ends in a \
              sentence: `sync_faces` asked `preview_font_resources` and got nothing"
         );
-        let addable = ui
+        let addable: Vec<&str> = ui
             .faces
             .iter()
             .filter(|face| {
                 face.origin == crate::panels::properties::face::FaceOrigin::PdfcerWouldAdd
             })
-            .count();
+            .map(|face| face.label.as_str())
+            .collect();
         assert!(
-            addable >= 14,
-            "the offer holds {addable} face(s) pdfcer would ADD, and this page carries none of \
+            addable.len() >= 12,
+            "the offer holds {} face(s) pdfcer would ADD, and this page carries none of \
              the standard fourteen — so a list built from the page's own resources is a list \
              whose every row already refused this character. Rows: {:?}",
+            addable.len(),
             ui.faces
         );
+
+        // ★★★ **12, NOT 14, SINCE 2026-09-08 — and the two that left are the
+        // point of the change rather than a casualty of it.**
+        //
+        // This bound was `>= 14` and it was the right assertion while the
+        // chooser could not coverage-test a face the page does not carry: the
+        // fourteen were offered whole, and a refusal was a sentence afterwards.
+        // `panels::properties::face::choices` now reads the engine's
+        // `standard_14` survey, so a face whose own encoding cannot hold the
+        // character never reaches the list.
+        //
+        // ⇒ `Symbol` and `ZapfDingbats` carry built-in font-specific encodings
+        // that map codes to symbol glyphs; **neither can hold a `q`**. Offering
+        // them here was offering the operator a fix that would refuse — on the
+        // one surface whose entire job is *"this character will not go in; here
+        // is a face that will"*. That is the O141 surface, and a wrong row on it
+        // is worse than a short list.
+        //
+        // ⚠ Asserted by NAME, not by an exact count. `assert_eq!(len, 12)`
+        // would catch the same regression today and would break for the wrong
+        // reason the day the standard 14 gains a member — and it would not say
+        // which face came back.
+        for cannot_hold_a_q in ["Symbol", "ZapfDingbats"] {
+            assert!(
+                !addable.contains(&cannot_hold_a_q),
+                "{cannot_hold_a_q} cannot encode {:?} under its built-in font-specific encoding, \
+                 so `set_font` would refuse it — offering it on the very panel that exists to \
+                 name a face that WORKS is the defect this surface is about. Offered: {addable:?}",
+                shown.character
+            );
+        }
     }
 
     /// ★★★ **Taking the offer swaps the face AND re-applies the operator's own

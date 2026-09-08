@@ -61,38 +61,58 @@
 //! ⇒ **The shell change is the chooser and nothing else.** Nothing in this
 //! module allocates an object, writes a dictionary, or knows the shape of one.
 //!
-//! ## ★★ Why the standard-14 rows are NOT coverage-tested before being offered
+//! ## ★★★ The standard-14 rows ARE coverage-tested now — 2026-09-08
 //!
 //! Every [`FaceOrigin::OnThisPage`] row has been through `set_font`'s own
 //! acceptance test for **this run's characters** — that is what
 //! `preview_font_resources` is, and it is why a refused page font is absent from
-//! the list rather than greyed. The obvious symmetry would be to do the same for
-//! the fourteen.
+//! the list rather than greyed. **The other half now matches it.**
 //!
-//! It cannot be done honestly from here. The engine offers no query that
-//! coverage-tests a face the page does **not** carry, so the shell's only route
-//! would be to re-derive the encoding rule — which face uses `WinAnsiEncoding`,
-//! which two use a built-in `FontSpecific` one, and which characters that leaves
-//! unmapped. `FontPreflight`'s own invariant forbids exactly that (`R221`: every
-//! field derived by calling `accept_font_target`, nothing restating its
-//! conditions), and a second copy of the rule in `pdfcer-gui` would drift from the
-//! commit path the first time the rule changed.
+//! [`choices`] reads `FontPreflight::standard_14`: one `Std14Entry` per face,
+//! each carrying the engine's own spelling, a `presence` that says `OnPage` or
+//! `WouldBeAdded` as a **fact**, and an `acceptance` run through `set_font`'s
+//! gate with the embedded-subset floor included. Three local re-derivations
+//! were deleted with it — the `Std14::ALL` walk, the `carried` filter built by
+//! shortening `preflight.entries`, and the untested offer.
 //!
-//! ⇒ So these rows are **offered, and a refusal is a sentence**. That is the
-//! standing ruling on this exact surface, taken from the Bold button two rows
-//! down: *"Do not grey out a bold button. Offer it, and surface the disclosure
-//! when synthesis fires."* `TextStyleRefusal::FaceLacksCharacters` is already the
-//! sentence, and it says what happened and that nothing was changed. This is
-//! recorded as an engine ask rather than worked around: a
-//! `preview_font_resources` that also surveyed the fourteen would let this list
-//! be as exact as its first half already is.
+//! ⚠ **Consequence, stated because it is a behaviour change:** a standard-14
+//! face that cannot hold this run's characters is now **absent** rather than
+//! offered-and-then-refused. That is the first half's behaviour, applied to the
+//! second.
 //!
-//! ★ The one thing that IS filtered, and it is not a guess: a standard-14 name
-//! the page's resource dictionary **already carries** is never offered as
-//! addable, because `plan_font` resolves an existing resource first and only
-//! authors a face when the lookup misses. Offering `Helvetica` as *"pdfcer can
-//! add"* on a page whose own `Helvetica` was refused would be an entry that
-//! cannot work, described wrongly. [`choices`] excludes it from both halves.
+//! ### What this paragraph said until the engine answered it, kept because the
+//! ### reasoning is why the engine answered it
+//!
+//! > *"It cannot be done honestly from here. The engine offers no query that
+//! > coverage-tests a face the page does **not** carry, so the shell's only
+//! > route would be to re-derive the encoding rule — which face uses
+//! > `WinAnsiEncoding`, which two use a built-in `FontSpecific` one, and which
+//! > characters that leaves unmapped. `FontPreflight`'s own invariant forbids
+//! > exactly that (`R221`), and a second copy of the rule in `pdfcer-gui` would
+//! > drift from the commit path the first time the rule changed.*
+//! >
+//! > *⇒ So these rows are **offered, and a refusal is a sentence** … This is
+//! > recorded as an engine ask rather than worked around: a
+//! > `preview_font_resources` that also surveyed the fourteen would let this
+//! > list be as exact as its first half already is."*
+//!
+//! ★★ **That last sentence is the request, and `Pass 142.2` is the answer.**
+//! The refusal to copy `R221`'s rule into this crate is why the fix arrived as
+//! an engine capability rather than as drift — worth keeping, because the
+//! tempting shortcut was one afternoon's work and would have been wrong on the
+//! first day the encoding rule changed.
+//!
+//! ⚠ It sat unconsumed for **two days** after it shipped, with this header
+//! still asserting the absence. Found by the 2026-09-07 reply triage, not by
+//! any gate. See `RESUME.md`.
+//!
+//! ★ The old `carried` filter is subsumed, and more exactly. It compared
+//! *shortened* names against the page's entries; `Std14Presence::OnPage` is the
+//! engine answering the same question from the resource dictionary it actually
+//! resolved. A face already on the page reaches the list through the
+//! `accepted()` half if it works, and through neither if it does not — so
+//! `Helvetica` is never offered as *"pdfcer can add"* on a page whose own
+//! `Helvetica` was refused.
 //!
 //! ## Rule 4
 //!
@@ -229,7 +249,7 @@ pub(crate) struct FaceChoice {
 pub(crate) fn choices(
     preflight: Option<&pdfcer_core::text_edit::FontPreflight>,
 ) -> Vec<FaceChoice> {
-    use pdfcer_core::fontdata::{Std14, std14_base_font_name};
+    use pdfcer_core::text_edit::Std14Presence;
 
     let Some(preflight) = preflight else {
         return Vec::new();
@@ -245,23 +265,61 @@ pub(crate) fn choices(
         })
         .collect();
 
-    // Every standard-14 spelling the page's resource dictionary already carries,
-    // whether or not this run can be encoded into it. See the doc comment: this
-    // is `entries`, deliberately, and not `accepted()`.
-    let carried: Vec<&str> = preflight
-        .entries
-        .iter()
-        .map(|entry| super::text::shorten(&entry.base_font))
-        .collect();
-
+    // ★★★ THE FOURTEEN COME FROM THE ENGINE'S SURVEY NOW — 2026-09-08.
+    //
+    // Until today this walked `Std14::ALL` locally, filtered it against a
+    // `carried` list this function built by shortening `preflight.entries`, and
+    // offered every survivor **untested**. Three separate re-derivations of
+    // things the engine already knew, and the module header said so in as many
+    // words — *"a `preview_font_resources` that also surveyed the fourteen
+    // would let this list be as exact as its first half already is"*.
+    //
+    // `Pass 142.2` built exactly that. `FontPreflight::standard_14` is one
+    // `Std14Entry` per face, each carrying:
+    //
+    //   * `base_font`   — the engine's spelling, not this shell's
+    //   * `presence`    — `OnPage { resource }` or `WouldBeAdded`, as a FACT
+    //                     rather than something inferred from the resource list
+    //   * `acceptance`  — run through `set_font`'s own gate, embedded-subset
+    //                     floor included
+    //
+    // ⇒ So all three re-derivations are deleted, and the rows are now as exact
+    // as the `accepted()` half above them.
+    //
+    // ★★ `is_accepted()` rather than a `match`. `FontAcceptance` is
+    // `#[non_exhaustive]` and the engine added that accessor precisely so a
+    // shell need not pattern-match it — *"a yes/no that does not require
+    // pattern-matching a `#[non_exhaustive]` enum"*. Matching here would give
+    // this shell a wildcard arm that silently swallows a future refusal kind,
+    // which is the trap that bit three times on 2026-09-07.
+    //
+    // ⚠ A REFUSED face is now ABSENT rather than offered, which is a real
+    // behaviour change and the right one: it makes this half behave exactly
+    // like the first half, where *"a refused page font is absent from the list
+    // rather than greyed"*. The header's old ruling — offer them, and let the
+    // refusal be a sentence — was correct **while the coverage could not be
+    // known here**. It can now, and R9 is unambiguous once it can: a control
+    // that cannot work should not be drawn.
+    //
+    // ★ The `presence` filter also subsumes the old `carried` check, and more
+    // exactly. `carried` compared *shortened* names against the page's entries;
+    // `OnPage` is the engine answering the same question from the resource
+    // dictionary it actually resolved. A face already on the page is offered by
+    // the `accepted()` half above if it works, and by neither if it does not.
     rows.extend(
-        Std14::ALL
+        preflight
+            .standard_14
             .iter()
-            .map(|face| std14_base_font_name(*face))
-            .filter(|name| !carried.contains(name))
-            .map(|name| FaceChoice {
-                selector: name.to_owned(),
-                label: name.to_owned(),
+            .filter(|entry| {
+                matches!(entry.presence, Std14Presence::WouldBeAdded)
+                    && entry.acceptance.is_accepted()
+            })
+            .map(|entry| FaceChoice {
+                selector: entry.base_font.clone(),
+                label: super::text::shorten(&entry.base_font).to_owned(),
+                // ★ Never ambiguous. `base_font_ambiguous` means two page
+                // resources answer to one `/BaseFont`, and a face that is not
+                // on the page has no resource to be ambiguous with.
                 ambiguous: false,
                 origin: FaceOrigin::PdfcerWouldAdd,
             }),
@@ -409,56 +467,189 @@ pub(crate) fn popup_body(
 mod tests {
     use super::*;
 
-    /// ★★★ **Every one of the fourteen is offered on a page that carries none
-    /// of them.**
+    /// A real [`FontPreflight`] for `fixtures/paragraph.pdf`, whose page
+    /// carries exactly one standard-14 face (`Helvetica`) and no other font.
     ///
-    /// The whole of the new capability, asserted at the list level: before this
-    /// change the chooser could only ever offer what `accepted()` returned, so a
-    /// page built from `ArialMT` alone offered exactly one face and pdfcer's
-    /// ability to author `Times-Roman` was unreachable from any surface.
+    /// ★★★ **THE TESTS BELOW USED TO BUILD NO PREFLIGHT AT ALL, AND THAT IS THE
+    /// FINDING WORTH KEEPING.**
     ///
-    /// It is written against a hand-built [`FaceChoice`] list rather than a real
-    /// `FontPreflight` because that type is `#[non_exhaustive]` and cannot be
-    /// constructed outside `pdfcer-core`. What that costs is coverage of
-    /// [`choices`]' input half; what it buys is a test that keeps compiling when
-    /// the engine adds a field. The input half is covered by
-    /// `a_standard_face_the_page_carries_is_not_offered_twice` below, which
-    /// exercises the same filter through its own predicate.
+    /// Both of them re-implemented [`choices`]' algorithm *inside their own
+    /// bodies* — walking `Std14::ALL`, filtering against a hand-written
+    /// `carried` list — and asserted on their own reimplementation. **Neither
+    /// ever called `choices`.** So on 2026-09-08, when `choices` was rewritten
+    /// to read the engine's `standard_14` survey and three local re-derivations
+    /// were deleted, **both tests passed unchanged** — and were then testing
+    /// code that no longer exists.
+    ///
+    /// The reason given at the time was honest and real: `FontPreflight` is
+    /// `#[non_exhaustive]` and cannot be built with a struct literal outside
+    /// `pdfcer-core`. ⇒ **The answer to "I cannot construct it" is to obtain a
+    /// real one, not to simulate the function under test.** `EditSession`
+    /// hands one over for the asking, and a fixture costs a millisecond.
+    ///
+    /// ⚠ It also means the input half — the half the old comment admitted was
+    /// uncovered — is the half that mattered, because that is where the change
+    /// landed.
+    fn preflight_for_paragraph() -> pdfcer_core::text_edit::FontPreflight {
+        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../fixtures/paragraph.pdf");
+        let doc = pdfcer_core::document::Document::load(std::path::Path::new(path))
+            .expect("fixtures/paragraph.pdf must load");
+        let session = pdfcer_core::edit::EditSession::new(doc);
+        session
+            .preview_font_resources(0, "its box.", None)
+            .expect("the fixture's page 1 carries the words `its box.` in one run")
+    }
+
+    /// ★★★ **Every standard-14 face the page does not carry is offered, and the
+    /// list is the ENGINE'S survey rather than a local walk of `Std14::ALL`.**
+    ///
+    /// `fixtures/paragraph.pdf` carries `Helvetica` and nothing else, and its
+    /// text is plain ASCII that every text face can encode — so the expected
+    /// answer is the whole fourteen: one through `accepted()` as a page face,
+    /// thirteen as addable.
+    ///
+    /// ★ Asserted as `>= 13` addable rather than `== 13` on purpose. The
+    /// standard 14 contains `Symbol` and `ZapfDingbats`, whose acceptance for
+    /// ASCII text is the engine's ruling and not this shell's to pin — if the
+    /// engine decides a font-specific encoding cannot hold `its box.`, that is
+    /// a correct answer and must not fail this shell's test. What IS pinned is
+    /// that the twelve text faces all arrive.
     #[test]
-    fn the_fourteen_are_offered_when_the_page_carries_none_of_them() {
-        use pdfcer_core::fontdata::{Std14, std14_base_font_name};
-        let carried = ["ArialMT"];
-        let offered: Vec<&str> = Std14::ALL
+    fn the_faces_the_page_lacks_are_offered_and_come_from_the_engines_survey() {
+        let preflight = preflight_for_paragraph();
+        let rows = choices(Some(&preflight));
+
+        let addable: Vec<&str> = rows
             .iter()
-            .map(|f| std14_base_font_name(*f))
-            .filter(|n| !carried.contains(n))
+            .filter(|r| r.origin == FaceOrigin::PdfcerWouldAdd)
+            .map(|r| r.label.as_str())
             .collect();
-        assert_eq!(offered.len(), 14, "{offered:?}");
+
+        // The twelve text faces of the standard 14, which every one of this
+        // fixture's ASCII characters fits.
+        for want in [
+            "Times-Roman",
+            "Times-Bold",
+            "Times-Italic",
+            "Times-BoldItalic",
+            "Helvetica-Bold",
+            "Helvetica-Oblique",
+            "Helvetica-BoldOblique",
+            "Courier",
+            "Courier-Bold",
+            "Courier-Oblique",
+            "Courier-BoldOblique",
+        ] {
+            assert!(
+                addable.contains(&want),
+                "{want} is a standard-14 face this page does not carry and whose encoding holds \
+                 plain ASCII, so it must be offered as addable. Got {addable:?}"
+            );
+        }
+        // ★★★ AND THE TWO THE ENGINE REFUSES ARE ABSENT. This is the
+        // assertion that makes the coverage test falsifiable, and it took a
+        // measurement to find: a first draft asserted `addable.len() >= 11`,
+        // which is satisfied whether or not `choices` filters on acceptance at
+        // all. Dropping `is_accepted()` from the filter left it **green**.
+        //
+        // Measured on this fixture: `Symbol` and `ZapfDingbats` are surveyed,
+        // are `WouldBeAdded`, and are **refused** — their built-in
+        // font-specific encodings cannot hold the ASCII of `its box.`. So they
+        // are precisely the two rows whose absence proves the filter runs.
+        //
+        // ⚠ Named rather than counted. `assert_eq!(addable.len(), 11)` would
+        // also catch it today and would break for the wrong reason the day the
+        // standard 14 gains a fifteenth member or the engine's ruling on
+        // `Symbol` changes — and it would not say WHICH face went missing.
+        for refused in ["Symbol", "ZapfDingbats"] {
+            assert!(
+                !addable.contains(&refused),
+                "{refused}'s own encoding cannot hold this run's characters, so `set_font` would \
+                 REFUSE it — offering it is a control that cannot work. The engine reports this \
+                 in `Std14Entry::acceptance`; if it is in this list, `choices` has stopped \
+                 reading it. Got {addable:?}"
+            );
+        }
+
+        // The whole list, stated once so a reader sees the shape: one page face
+        // plus eleven addable, out of a survey of fourteen.
+        assert_eq!(
+            addable.len(),
+            11,
+            "eleven of the fourteen are addable-and-accepted for plain ASCII on a page carrying \
+             only Helvetica (Helvetica itself is a page face; Symbol and ZapfDingbats are \
+             refused). If this number moved, read the survey before changing it: {addable:?}"
+        );
     }
 
     /// ★★ **A standard face the page already carries is offered ONCE, as a page
     /// face — never a second time as an addable one.**
     ///
-    /// The duplicate would be the visible defect. The invisible one is worse and
-    /// is the reason the filter reads `entries` rather than `accepted()`: a page
-    /// `Helvetica` that this run's characters cannot encode into is absent from
-    /// `accepted()`, so a filter built on that list would offer *"pdfcer can add
-    /// Helvetica"* — and `plan_font` would resolve the selector to the page's own
-    /// refused resource and decline. An entry that cannot work, described
-    /// wrongly.
+    /// The duplicate would be the visible defect. The invisible one is worse:
+    /// a page `Helvetica` that this run's characters cannot encode into is
+    /// absent from `accepted()`, so a filter built on that list would offer
+    /// *"pdfcer can add Helvetica"* — and `plan_font` would resolve the
+    /// selector to the page's own refused resource and decline. An entry that
+    /// cannot work, described wrongly.
+    ///
+    /// ⇒ `Std14Presence::OnPage` is the engine answering that from the resource
+    /// dictionary it actually resolved, which is why [`choices`] no longer
+    /// compares shortened name strings to decide it.
     #[test]
-    fn a_standard_face_the_page_carries_is_not_offered_twice() {
-        use pdfcer_core::fontdata::{Std14, std14_base_font_name};
-        // As `choices` computes it: every entry's base font, subset tag stripped.
-        let carried: Vec<&str> = vec![super::super::text::shorten("ABCDEF+Helvetica")];
-        assert_eq!(carried, ["Helvetica"]);
-        let addable: Vec<&str> = Std14::ALL
+    fn the_pages_own_standard_face_is_offered_once_and_not_as_addable() {
+        let preflight = preflight_for_paragraph();
+        let rows = choices(Some(&preflight));
+
+        let helvetica: Vec<&FaceChoice> = rows.iter().filter(|r| r.label == "Helvetica").collect();
+        assert_eq!(
+            helvetica.len(),
+            1,
+            "the page's own Helvetica must appear exactly once: {rows:?}"
+        );
+        assert_eq!(
+            helvetica[0].origin,
+            FaceOrigin::OnThisPage,
+            "it is a face the page CARRIES, so offering it as one pdfcer would add would be an \
+             entry that resolves to the existing resource: {:?}",
+            helvetica[0]
+        );
+    }
+
+    /// ★ **The engine's survey is what is read** — not a local `Std14::ALL`
+    /// walk that happens to agree with it today.
+    ///
+    /// A rewrite that quietly reverted to walking the constant would satisfy
+    /// both tests above, because on this fixture the two answers coincide. This
+    /// one does not: it empties the survey's contribution by asserting the
+    /// offered labels are a SUBSET of what the engine reported, which a local
+    /// walk cannot guarantee.
+    #[test]
+    fn no_offered_face_is_absent_from_the_engines_own_survey() {
+        let preflight = preflight_for_paragraph();
+        let rows = choices(Some(&preflight));
+
+        let surveyed: Vec<&str> = preflight
+            .standard_14
             .iter()
-            .map(|f| std14_base_font_name(*f))
-            .filter(|n| !carried.contains(n))
+            .map(|e| super::super::text::shorten(&e.base_font))
             .collect();
-        assert!(!addable.contains(&"Helvetica"), "{addable:?}");
-        assert_eq!(addable.len(), 13);
+        assert!(
+            !surveyed.is_empty(),
+            "the engine reported no standard-14 survey at all, so this test proves nothing — \
+             `FontPreflight::standard_14` is what `Pass 142.2` added and what `choices` reads"
+        );
+
+        for row in rows
+            .iter()
+            .filter(|r| r.origin == FaceOrigin::PdfcerWouldAdd)
+        {
+            assert!(
+                surveyed.contains(&row.label.as_str()),
+                "{:?} is offered as addable but is not in the engine's survey — this shell is \
+                 inventing faces again. Surveyed: {surveyed:?}",
+                row.label
+            );
+        }
     }
 
     /// ★ **An absent pre-flight offers nothing at all**, not the fourteen on
