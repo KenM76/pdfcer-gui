@@ -112,6 +112,9 @@ pub const REQUIRED_REGION: &str = "properties.field_edit.required";
 /// The Max length field's own region.
 // ui-text-exempt: trace region name, never displayed
 pub const MAX_LEN_REGION: &str = "properties.field_edit.max_len";
+/// The Default value box's own region, for `ui-verify`.
+// ui-text-exempt: trace region name, never displayed
+pub const DEFAULT_VALUE_REGION: &str = "properties.field_edit.default_value";
 
 /// Draw the editable properties of the selected field.
 ///
@@ -200,6 +203,13 @@ pub fn section(
         );
         max_len_row(ui, field, fqn, state, actions);
         comb_row(ui, field, fqn, state, actions);
+        // ★ Text fields only, and the gate is the same one the `/Ff` rows
+        // above carry: `/DV` is a **text string** on a `/Tx` and a **name** on
+        // a `/Btn` (`/Yes`, `/Off`). `FieldEdit::with_default_value` takes a
+        // `String`, so drawing this box for a checkbox would offer the operator
+        // a control that writes the wrong PDF type — not nothing, something
+        // else, which is the failure mode that gate exists for.
+        default_value_row(ui, fqn, state, actions);
     }
 
     // -- Radio buttons ------------------------------------------------------
@@ -480,7 +490,78 @@ fn tooltip_row(ui: &mut Ui, fqn: &str, state: &mut PanelsState, actions: &mut Ve
     }
 }
 
-/// What the two typed controls hold, and the field they were read for.
+/// `/DV`, the value a Reset button restores.
+///
+/// # ★★★ Why this is worth a control at all
+///
+/// This shell already ships Reset — `FormEdit::Reset`, and `set_button_action`
+/// can author a `/ResetForm` button — and until `Pass 264`-era `FieldEdit`
+/// gained a writer, **pdfcer could not set a default value on any field it
+/// authored**. §12.7.5.3 resets a field to its `/DV`, and a field with no `/DV`
+/// resets to *nothing*.
+///
+/// ⇒ So on a form pdfcer made from scratch, Reset emptied every field. That is
+/// **spec-correct behaviour** and it is not a defect in Reset — it is a missing
+/// authoring control, which is what this is. The engine's own note put it
+/// exactly: *"a reset without a writer could only ever restore some OTHER
+/// application's defaults."*
+///
+/// ★ Same draft-and-commit shape as [`tooltip_row`], for that function's stated
+/// reason: a `TextEdit` bound straight through would author one `edit_field`
+/// per keystroke, each separately undoable.
+///
+/// ★★ **Empty clears `/DV` rather than writing an empty string**, and the two
+/// are genuinely different: an empty `/DV` is a default *of nothing*, which
+/// Reset restores by blanking the field; no `/DV` is *no default*. Both blank
+/// the field on Reset today, so the distinction is invisible now — but it is
+/// the difference between a form that states its defaults and one that does
+/// not, and `clearing_default_value` exists precisely so a caller can say
+/// which. Writing `""` where the operator meant "remove" would leave the
+/// document asserting something it was never told.
+fn default_value_row(ui: &mut Ui, fqn: &str, state: &mut PanelsState, actions: &mut Vec<Action>) {
+    ui.label(t::label_default_value());
+    let draft = state.field_props_mut();
+    let response = ui.add(
+        egui::TextEdit::singleline(&mut draft.default_value)
+            .desired_width(f32::INFINITY)
+            .hint_text(t::label_default_value_hint()),
+    );
+    // ★★★ `ui_rect_visible`, NOT `ui_rect` — the rule is stated at [`REGION`]
+    // twenty lines up and I broke it on the first draft: **`ui_rect_visible`
+    // for a control a check will CLICK or SAMPLE; `ui_rect` for a section a
+    // check scrolls TO.**
+    //
+    // The first version published unconditionally, and a driven run showed
+    // exactly the failure the rule prevents: `properties.field_edit.default_value`
+    // appeared in the declared list while the pane had not scrolled to it, so a
+    // check asserting the box exists would have passed against a build where it
+    // was drawn off-screen and unreachable. Its sibling `required` — publishing
+    // correctly — was absent from the same list, which is what made the
+    // discrepancy visible.
+    crate::diag::ui_rect_visible(DEFAULT_VALUE_REGION, response.rect, ui.clip_rect());
+    let response = response.on_hover_text(t::label_default_value_hover());
+
+    let typed = draft.default_value.trim().to_owned();
+    let stored = draft.default_value_stored.trim().to_owned();
+    if response.lost_focus() && typed != stored {
+        let edit = if typed.is_empty() {
+            FieldEdit::new().clearing_default_value()
+        } else {
+            FieldEdit::new().with_default_value(typed)
+        };
+        actions.push(
+            FieldAction::EditProperties {
+                field: fqn.to_owned(),
+                edit,
+                // ui-text-exempt: a control name carried for a refusal message.
+                touched: "default value",
+            }
+            .into(),
+        );
+    }
+}
+
+/// What the typed controls hold, and the field they were read for.
 ///
 /// # ★ Why only two properties have a draft
 ///
@@ -505,6 +586,14 @@ pub struct FieldPropsDraft {
     /// read would work; keeping the read is what makes the comparison
     /// obviously against *the value this draft was seeded from*.
     tooltip_stored: String,
+    /// `/DV`, the value a Reset button restores, being typed.
+    default_value: String,
+    /// `/DV` as the document holds it, for the same reason
+    /// [`Self::tooltip_stored`] exists: the commit happens on `lost_focus`, a
+    /// frame in which the draft has been typed into and the document has not
+    /// changed, so the comparison must be against *what this draft was seeded
+    /// from*.
+    default_value_stored: String,
 }
 
 impl FieldPropsDraft {
@@ -540,7 +629,14 @@ impl FieldPropsDraft {
     ///
     /// [`Self::read`] is the one place the two are pulled off a real field, so
     /// there is still exactly one statement of *where a tooltip lives*.
-    fn sync(&mut self, max_len: Option<i64>, tooltip: String, fqn: &str, epoch: u64) {
+    fn sync(
+        &mut self,
+        max_len: Option<i64>,
+        tooltip: String,
+        default_value: String,
+        fqn: &str,
+        epoch: u64,
+    ) {
         let stamp = (fqn.to_owned(), epoch);
         if self.stamp.as_ref() == Some(&stamp) {
             return;
@@ -549,6 +645,8 @@ impl FieldPropsDraft {
         self.max_len = max_len.unwrap_or(0);
         self.tooltip_stored = tooltip;
         self.tooltip.clone_from(&self.tooltip_stored);
+        self.default_value_stored = default_value;
+        self.default_value.clone_from(&self.default_value_stored);
     }
 
     /// Pull the two typed values off a real field, and sync.
@@ -564,7 +662,16 @@ impl FieldPropsDraft {
             .as_deref()
             .map(|raw| String::from_utf8_lossy(raw).into_owned())
             .unwrap_or_default();
-        self.sync(field.max_len, tooltip, fqn, epoch);
+        // ★ `display_text()` rather than a match on `FieldValue`. The enum is
+        // `#[non_exhaustive]` and the engine owns the decoding rule (§7.9.2);
+        // re-deriving it here would be a second statement of what a field's
+        // value READS AS, which is exactly the drift `R221` forbids elsewhere.
+        //
+        // ⚠ For a text field the answer is a `FieldValue::Text`, which is the
+        // only shape [`default_value_row`] offers to edit — see the type gate
+        // at its call site.
+        let default_value = field.default_value.display_text();
+        self.sync(field.max_len, tooltip, default_value, fqn, epoch);
     }
 }
 
@@ -583,19 +690,35 @@ mod tests {
     fn a_draft_is_reseeded_when_the_selection_moves() {
         let mut draft = FieldPropsDraft::default();
 
-        draft.sync(Some(8), "first".to_owned(), "A", 0);
+        draft.sync(Some(8), "first".to_owned(), "100".to_owned(), "A", 0);
         assert_eq!(draft.tooltip, "first");
         assert_eq!(draft.max_len, 8);
+        assert_eq!(draft.default_value, "100");
 
-        // The operator types without committing…
+        // The operator types in BOTH boxes without committing…
         draft.tooltip = "half typed".to_owned();
+        draft.default_value = "999".to_owned();
         // …and clicks a different field.
-        draft.sync(None, "second".to_owned(), "B", 0);
+        draft.sync(None, "second".to_owned(), "0".to_owned(), "B", 0);
         assert_eq!(
             draft.tooltip, "second",
             "the half-typed tooltip must not survive onto another field"
         );
         assert_eq!(draft.max_len, 0, "absent /MaxLen reads as zero");
+        // ★★★ The new box is covered by the same rule, and it is the one where
+        // leaking would be worst: a half-typed DEFAULT VALUE carried onto
+        // another field and committed writes a `/DV` the operator never typed
+        // for a field they were not looking at — and unlike a tooltip, nothing
+        // on screen shows a `/DV` until somebody presses Reset.
+        assert_eq!(
+            draft.default_value, "0",
+            "the half-typed default value must not survive onto another field"
+        );
+        assert_eq!(
+            draft.default_value_stored, "0",
+            "…and the stored copy must move with it, or the next commit compares against the \
+             PREVIOUS field's value and decides nothing changed"
+        );
     }
 
     /// ★★ **An edit to the same field re-reads it**, which is the term that
@@ -608,14 +731,14 @@ mod tests {
     #[test]
     fn an_edit_to_the_same_field_reseeds_the_draft() {
         let mut draft = FieldPropsDraft::default();
-        draft.sync(Some(8), String::new(), "A", 0);
+        draft.sync(Some(8), String::new(), String::new(), "A", 0);
         assert_eq!(draft.max_len, 8);
 
         // Same name, same epoch — the pane has not been told anything changed.
-        draft.sync(Some(12), String::new(), "A", 0);
+        draft.sync(Some(12), String::new(), String::new(), "A", 0);
         assert_eq!(draft.max_len, 8, "no epoch change, no re-read");
 
-        draft.sync(Some(12), String::new(), "A", 1);
+        draft.sync(Some(12), String::new(), String::new(), "A", 1);
         assert_eq!(
             draft.max_len, 12,
             "the epoch moved, so the value is re-read"

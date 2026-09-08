@@ -208,6 +208,20 @@ const EDITABLE_REGION: &str = "properties.field_edit";
 /// The Required checkbox — the single control an operator reaches for first,
 /// and the one O39's row named by name.
 const REQUIRED_REGION: &str = "properties.field_edit.required";
+/// The Default value box's own region — `/DV`, the value a Reset button puts
+/// back.
+///
+/// ★★ Asserted here rather than in a check of its own because the expensive
+/// part is already paid: this check authors a text field, selects it, and
+/// scrolls the properties pane to its editable section. Adding a second launch
+/// to look at one more control in the same section would cost thirty seconds
+/// per run to assert something this one is already looking at.
+///
+/// ⚠ **Text fields only.** `/DV` is a text string on a `/Tx` and a NAME on a
+/// `/Btn`, so `panels::properties::fieldedit` gates the row on the field type —
+/// and this check authors a text field, which is why the assertion is
+/// unconditional here and would not be in a check that authored a checkbox.
+const DEFAULT_VALUE_REGION: &str = "properties.field_edit.default_value";
 /// The `edit-field` label `vector_edit` writes when the change reached the
 /// engine.
 ///
@@ -707,6 +721,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     };
+
     // ★★ This block used to FAIL when `EDITABLE_REGION` was absent while a
     // control inside it was present, on the reasoning that it *"should be
     // impossible — the section publishes its own rect after its controls."*
@@ -927,5 +942,71 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         "★★★ the box moved, through `edit_widget`: {}",
         line.unwrap_or_default()
     ));
+
+    // ★★★ THE DEFAULT VALUE BOX IS ASSERTED LAST, AND THE ORDER IS THE
+    // FINDING — 2026-09-08.
+    //
+    // It was originally placed beside the Required assertion, where it read
+    // naturally: both are controls in one section, checked as the section is
+    // reached. **It broke the next phase.**
+    //
+    // Reaching this box takes five more scroll notches than reaching
+    // Required — max-length and comb sit between them — and the phase after
+    // Required CLICKS the Required checkbox. Scrolling to prove one control
+    // exists moved another control the check was about to press off-screen,
+    // and the run reported *"REQUIRED WAS TICKED AND NOTHING REACHED THE
+    // DOCUMENT"* — a confident, detailed, entirely wrong defect report about
+    // the application.
+    //
+    // ⇒ **A read-only assertion that SCROLLS is not read-only.** Anything
+    // that moves the pane belongs after every phase that depends on where
+    // the pane is, and this project has the same lesson recorded for dock
+    // widths in `D:/dev/rag/egui/`.
+    // ★★★ THE DEFAULT VALUE BOX — `/DV`, wired 2026-09-08.
+    //
+    // Asserted from the same trace the Required row came from, because the two
+    // are drawn by the same call: if `fieldedit::section` ran far enough to
+    // publish Required it ran far enough to publish this, **unless the row was
+    // never added or its type gate is wrong**. Those are the two failures worth
+    // catching and they are exactly what this distinguishes.
+    //
+    // ⇒ Why it matters to the operator: this shell ships Reset and can author a
+    // `/ResetForm` button, and until `/DV` could be written, Reset emptied
+    // every field on any form pdfcer made — §12.7.5.3 behaving correctly with
+    // nothing to restore. Without this box that is still true.
+    // ★★ Scrolled to, not merely looked for. The box sits BELOW Required in
+    // the same section — max-length and comb come between them — so on any
+    // realistic pane height it is off-screen when Required is not, and
+    // `ui_rect_visible` correctly withholds it. A check that read the trace
+    // without scrolling would report a control missing that is one notch away,
+    // which is the failure `scroll_to` was extracted to end.
+    let seen = driving::scroll_to(
+        &session,
+        &driver,
+        ui_rect,
+        PANE_REGION,
+        DEFAULT_VALUE_REGION,
+        SCROLL_ATTEMPTS,
+        report,
+    )?;
+    let trace = session.trace()?;
+    if seen.is_none() {
+        return Ok(Some(format!(
+            "★★ THE FIELD IS A TEXT FIELD AND HAS NO DEFAULT VALUE BOX: `{REQUIRED_REGION}` \
+             drew and `{DEFAULT_VALUE_REGION}` did not.\n\
+             Both come from one `fieldedit::section` call, so reaching Required and not this \
+             means either the row was removed or its `FieldType::Text` gate stopped matching. \
+             ⚠ The consequence is not a missing control: it is that a Reset button on any form \
+             pdfcer authored clears every field, because no `/DV` was ever written for it to \
+             restore. Regions declared: {}. Trace: {}.",
+            list(&declared_names(&trace, ui_rect, "properties.field_edit")),
+            session.trace_path().display()
+        )));
+    }
+    report.note(format!(
+        "★★ the text field offers a Default value — `{DEFAULT_VALUE_REGION}` — so a Reset \
+         button on a pdfcer-authored form has something to put back"
+    ));
+
     Ok(None)
 }

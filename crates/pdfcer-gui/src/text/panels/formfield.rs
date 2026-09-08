@@ -510,6 +510,47 @@ pub const fn label_tooltip_hint() -> &'static str {
     "What this field is for"
 }
 
+/// `/DV` — the value a Reset button puts back.
+///
+/// ★ *"Default value"* is the term Acrobat's field properties uses and the one
+/// the standard uses (§12.7.3.1, *default value*), so there is nothing to
+/// invent here. The label says what it is; the hover says what it is **for**,
+/// because the connection between this box and the Reset button is the part
+/// an operator has no way to guess.
+#[must_use]
+pub const fn label_default_value() -> &'static str {
+    "Default value"
+}
+
+/// See [`label_default_value`].
+///
+/// ★★ It says **empty** rather than *blank* or *none*, because the box being
+/// empty is exactly the state it describes and the operator is looking at it.
+#[must_use]
+pub const fn label_default_value_hint() -> &'static str {
+    "Empty — Reset will clear this field"
+}
+
+/// See [`label_default_value`].
+///
+/// ★★★ The hover carries the fact the label cannot: **this is what Reset
+/// restores**, and a field with no default is emptied by it.
+///
+/// That is §12.7.5.3's behaviour and it is correct — the reason it is worth
+/// saying is that pdfcer could not *write* a default value until 2026-09-08, so
+/// every form pdfcer authored had a Reset button that blanked everything. An
+/// operator who met that would reasonably conclude Reset was broken. It was
+/// not; there was nothing to restore.
+///
+/// ⚠ It does **not** promise the field is currently filled in with this value.
+/// `/V` and `/DV` are separate: a field can show one thing and reset to
+/// another, which is the whole point of having both.
+#[must_use]
+pub const fn label_default_value_hover() -> &'static str {
+    "What a Reset button puts back in this field. Leave it empty and Reset clears the field \
+     instead. This is separate from what the field says now."
+}
+
 // ===========================================================================
 // The BOX — `EditSession::edit_widget`, consumed 2026-08-27
 // ===========================================================================
