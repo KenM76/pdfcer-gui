@@ -1,29 +1,33 @@
 # RESUME — read this, then say "continue"
 
 
-> ★★★ **LAST SESSION: 2026-09-07 (late). FIVE DOCUMENTS AND THREE
-> OPERATOR-FACING STRINGS WERE ASSERTING ABSENCES THE ENGINE HAD ALREADY
-> CLOSED.** Read `git log -4 --format=%B` in full first; the four commit
-> messages are the authoritative record.
+> ★★★ **LAST SESSION: 2026-09-07 evening into 2026-09-08. FIVE DOCUMENTS AND
+> THREE OPERATOR-FACING STRINGS WERE ASSERTING ABSENCES THE ENGINE HAD ALREADY
+> CLOSED.** Read `git log -7 --format=%B` in full first; the commit messages are
+> the authoritative record.
 >
-> **State, every number re-measured 2026-09-07 in the session that wrote this
-> block:**
+> **State, every number re-measured 2026-09-08 in the session that wrote this block:**
 >
 > | | | measured with |
 > |---|---|---|
-> | tests | **3,869 passing, 0 failing** | `cargo test --workspace`, summing every `test result: ok. N passed` through `awk` |
+> | tests | **3,873 passing, 0 failing** | `cargo test --workspace`, summing every `test result: ok. N passed` through `awk` |
 > | gates | **31 of 31, 0 skipped** | `bash tools/gates/run-all.sh` |
-> | engine | `pdfcer-core` **v0.45.0 at `fad0d2d`** | `grep -A3 'name = "pdfcer-core"' Cargo.lock` |
-> | shell | `f3e285e`, on `origin/main` | `git log -1` |
-> | driven checks registered | **194** | `Box::new(` inside `roster.rs`'s `all()` — note the file holds **195**; one is outside `all()` |
+> | engine | `pdfcer-core` **v0.46.0 at `0591f1a`** | `grep -A3 'name = "pdfcer-core"' Cargo.lock` |
+> | shell | `2efcf3a`, on `origin/main` | `git log -1` |
+> | driven checks registered | **195** | `Box::new(` inside `roster.rs`'s `all()` — the file holds **196**; one is outside `all()` |
 > | request channel | **`open/` holds 190 files, 41 of them `reply_*`** | `ls D:/Dev/FeatureRequests/pdfce_FeatureRequests/open \| wc -l` |
 >
-> **Released 2026-09-07 23:14** from `f3e285e`: OneDrive **`pdfcer-gui1` is the
-> new build**, so **`pdfcer-gui2` (20:18) is the fallback**. GitHub
-> `v0.5.0-dev.20260907.4`, **verified from HIS side** —
+> **Released 2026-09-08 01:45** from `2efcf3a`: OneDrive **`pdfcer-gui2` is the
+> new build**, so **`pdfcer-gui1` (23:13) is the fallback**. GitHub
+> `v0.5.0-dev.20260908.1`, **verified from HIS side** —
 > `gh api repos/KenM76/pdfcer-gui/releases/latest` returns that tag,
-> `prerelease: false`, zip attached, 22,925,156 bytes. Check `releases/latest`,
+> `prerelease: false`, zip attached, 22,933,474 bytes. Check `releases/latest`,
 > never `gh release list`.
+>
+> ⚠ **The engine rolled to v0.46.0 during the night** and its tip moved four
+> times while this session ran — twice *mid-package*, once breaking the build
+> (`Widget::border_color`). `cargo update` and a full build BEFORE invoking
+> `package-portable.py`, which bumps the engine itself and will fail the run.
 >
 > ---
 >
