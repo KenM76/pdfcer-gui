@@ -10,18 +10,18 @@
 >
 > | | | measured with |
 > |---|---|---|
-> | tests | **3,873 passing, 0 failing** | `cargo test --workspace`, summing every `test result: ok. N passed` through `awk` |
+> | tests | **3,875 passing, 0 failing** | `cargo test --workspace`, summing every `test result: ok. N passed` through `awk` |
 > | gates | **31 of 31, 0 skipped** | `bash tools/gates/run-all.sh` |
 > | engine | `pdfcer-core` **v0.46.0 at `0591f1a`** | `grep -A3 'name = "pdfcer-core"' Cargo.lock` |
-> | shell | `2efcf3a`, on `origin/main` | `git log -1` |
+> | shell | `63aaad9`, on `origin/main` | `git log -1` |
 > | driven checks registered | **195** | `Box::new(` inside `roster.rs`'s `all()` — the file holds **196**; one is outside `all()` |
 > | request channel | **`open/` holds 190 files, 41 of them `reply_*`** | `ls D:/Dev/FeatureRequests/pdfce_FeatureRequests/open \| wc -l` |
 >
-> **Released 2026-09-08 01:45** from `2efcf3a`: OneDrive **`pdfcer-gui2` is the
-> new build**, so **`pdfcer-gui1` (23:13) is the fallback**. GitHub
-> `v0.5.0-dev.20260908.1`, **verified from HIS side** —
+> **Released 2026-09-08 03:03** from `63aaad9`: OneDrive **`pdfcer-gui1` is the
+> new build**, so **`pdfcer-gui2` (01:35) is the fallback**. GitHub
+> `v0.5.0-dev.20260908.2`, **verified from HIS side** —
 > `gh api repos/KenM76/pdfcer-gui/releases/latest` returns that tag,
-> `prerelease: false`, zip attached, 22,933,474 bytes. Check `releases/latest`,
+> `prerelease: false`, zip attached, 22,931,206 bytes. Check `releases/latest`,
 > never `gh release list`.
 >
 > ⚠ **The engine rolled to v0.46.0 during the night** and its tip moved four
@@ -99,14 +99,15 @@
 >
 > All verified by grep, all with `file:line` in the commit messages:
 >
-> * **`FillOutcome::applied_autosize_bound` / `AutoFitBound`** — zero hits here.
->   Its **`Floor`** case means *the text will overflow*, and is invisible in this
->   shell while `OPERATOR_REQUESTS.md` O86 tells him, under a ✅, that pdfcer says
->   which way it decided. **Highest-value of the remainder.**
-> * **`preview_font_resources_for` / `Std14Entry` / `standard_14`** — zero hits;
->   `pin.rs:424` still calls the old three-arg verb. `panels/properties/face.rs`
->   states as fact that *"the engine offers no query that coverage-tests a face
->   the page does not carry"*, which is exactly what shipped.
+> * ~~**`FillOutcome::applied_autosize_bound` / `AutoFitBound`**~~ ✅ **CONSUMED
+>   2026-09-08, driven.** The `Floor` case now says the text will overflow and
+>   names the remedy; the `Width` case got its own sentence because it points
+>   at a different edit. O86 corrected.
+> * ~~**`preview_font_resources_for` / `Std14Entry` / `standard_14`**~~ ✅
+>   **CONSUMED 2026-09-08, driven.** Both halves: the chooser reads the engine's
+>   survey, and the refused-character offer passes the refused character as the
+>   candidate. `refused_char_untested` deleted; a dead-end sentence added for
+>   the state the filter exposed (an EXACT list can be empty).
 > * **Widget `/MK /BG` + `/BC`** — `MkColor` still unconsumed; the two source
 >   comments are corrected but the **shaded field still turns grey while it is
 >   being edited**. `ENGINE_BACKLOG.md` carries the row.
