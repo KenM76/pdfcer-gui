@@ -203,7 +203,7 @@ it is an hour's work.
 
 ---
 
-## O150 — ◑ **MEASURED 2026-09-08, one half explained and one half narrowed** — "I can't edit some of the text… the BOM only sometimes works"
+## O150 — ★★★ **CAUSE FOUND 2026-09-08, after TWO wrong diagnoses — your drawing's fonts only carry 46 of the 95 keys on your keyboard, and every lowercase letter is refused** — "I can't edit some of the text… the BOM only sometimes works"
 
 **Your words, 2026-09-08:**
 
@@ -214,6 +214,65 @@ it is an hour's work.
 
 Measured against **your own file**, headlessly — no screen taken, you were using
 the machine. Copied to scratch; your original was not opened or written.
+
+### ★★★ THE ANSWER, and it is not either of the two things I told you earlier today
+
+**Your drawing's fonts are subsetted — they contain only the letters the
+drawing already uses, and nothing else.** Measured on the BOM sheet, by asking
+the engine to accept each character in turn:
+
+| | |
+|---|---|
+| printable characters you can type | **46** |
+| printable characters that are refused | **49** |
+| **every lowercase letter, a–z** | **refused** |
+| also refused | `J` `Z` `!` `$` `%` `&` `*` `+` `,` `<` `=` `>` `?` `@` `[` `\` `]` `^` `` ` `` `{` `|` `}` `~` |
+| accepted | `A`–`I`, `K`–`Y`, `0`–`9`, space `"` `#` `'` `(` `)` `-` `.` `/` `:` `;` `_` |
+
+⇒ ***"It only sometimes works"* is that list.** `12` → `13` works, because the
+sheet has a `3`. `BRACE` → `BRACES` works. **`BRACE` → `Brace` does not**, and
+neither does anything else with a small letter in it. There is no pattern in
+*where* you clicked — the pattern is in *what you typed*, which is why trying
+the same edit in a different place appeared to fix it.
+
+★ It is also, almost certainly, the whole of the *"#2 USE SPACERS…"* half. I
+had that narrowed to "something in the click path"; the click path is fine, and
+I was measuring with characters your drawing happens to contain.
+
+### ⬜ What is wrong with this, and it is ours
+
+1. **It tells you too late.** The check happens when you press Enter, so you
+   type a whole word and *then* lose it. It should say something at the first
+   key it cannot take.
+2. **The alphabet is invisible until you break it.** Nothing tells you that
+   this sheet's font has no lowercase — and it is not a strange thing to have,
+   it is what every CAD exporter produces for an all-caps drawing.
+3. pdfcer *does* already offer you another typeface when a character is
+   refused. Whether that offer is reaching you at the moment it matters is a
+   thing I have to watch on screen, not measure.
+
+That is the next piece of work on this, and it is now a design question with a
+number behind it rather than a hunt.
+
+### ⚠ Two wrong diagnoses before this one, kept on the record
+
+Both are below, unedited, because how they were wrong is the useful part.
+
+1. *"the planner throws the pin away"* — it does not; it keeps it deliberately,
+   so a wrong cell is never edited.
+2. *"a repeated cell hits the ambiguity refusal"* — measured, and **that
+   refusal's population on your file is zero**. It needs a cell that both
+   repeats *and* is drawn in several pieces; your sheets have 57–133 of the
+   first and 4–11 of the second, and **they never overlap**.
+
+★★★ Both came from counting one condition and *reasoning* about the other. The
+third came from performing 31 real edits and reading 31 real answers — and even
+that got it wrong on the first run, because the probe appended a `Z` and every
+cell refused. **The artefact was the finding.** A test harness with a bad input
+produces defects that do not exist, and this one produced the truth by accident
+on the way.
+
+---
 
 ### ★★★ These are two different faults, not one
 
@@ -236,9 +295,37 @@ refused.
 ⇒ **"After trying multiple times in multiple places it started working"** is not
 random. You landed on a cell whose text happens to be unique on that sheet.
 
-★ That is a real defect and the fix is ours: **the piece you clicked is already
-known**, so pdfcer should not be falling back to matching by text at all. It is
-throwing away the one fact that removes the ambiguity.
+### ⚠ CORRECTED the same afternoon — I had this backwards
+
+The paragraph that stood here said *"the fix is ours — pdfcer is throwing away
+the one fact that removes the ambiguity"*. **It is not throwing it away.** I
+read the planner and then the engine, in that order, and the second reading
+reversed the first.
+
+What actually happens: pdfcer **keeps** the note of which cell you clicked,
+deliberately, *knowing the request will be refused* — because the alternative
+is dropping it, and then the engine edits whichever matching cell it reaches
+first. On a bill of materials that is a silent edit to the wrong row of a
+drawing you are about to issue. ⇒ **The refusal is the safe answer, and it is
+already worded**: pdfcer tells you the text appears N times on that sheet.
+
+★ The real limitation is one line in the engine, and I have now read it rather
+than inferred it. Its text-matcher can search across several pieces **or** it
+can be told which piece you clicked — *never both*. Your BOM cells need both:
+they are built from several pieces, and their text repeats.
+
+⇒ Filed as
+`request_a_spanning_find_cannot_be_anchored_at_a_pinned_operator_so_a_repeated_bom_cell_is_uneditable.md`.
+It is a small ask — start the existing cross-piece search at the piece you
+clicked instead of at the top of the page — and it makes the refusal
+unreachable from a click.
+
+⬜ **What is still mine to check, and needs the screen:** whether that sentence
+is actually reaching you. You described it as *"only sometimes works"* with no
+mention of a message, and if pdfcer had said *"this appears 108 times on this
+page"* you would have quoted it back at me. Either it is not being shown on
+this route, or it is being shown somewhere you do not look. Both are my defect,
+and neither can be measured without driving the window.
 
 ---
 

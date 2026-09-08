@@ -293,3 +293,368 @@ fn what_count_decides_whether_the_pin_comes_off() {
     println!("count  : {}", whole.matches(needle).count());
     println!("⇒ the pin is dropped ONLY when this is exactly 1");
 }
+
+/// ★★★ **Which of his BOM cells actually hit the ambiguity refusal, and is the
+/// remedy that refusal names performable on them?**
+///
+/// `EditRefusal::AmbiguousOnThePage` fires on the intersection of two
+/// conditions, not on either alone:
+///
+/// 1. the clicked run spans **more than one show operator** (otherwise the pin
+///    is exact, `find` is cleared, and the whole-operator route works), **and**
+/// 2. its text occurs **more than once** on the page.
+///
+/// Everything measured so far has counted condition 2 in isolation — 122 runs
+/// with repeated text on that sheet — which is the number that made the report
+/// legible but is **not** the number of cells he cannot edit. Most of those may
+/// be single-operator and edit perfectly.
+///
+/// ⇒ So this counts the intersection. That is the population of the defect.
+///
+/// ## ⚠ And the second question is the one that could be a defect of ours
+///
+/// `text::editrefusal::ambiguous_on_the_page` tells him:
+///
+/// > *"Click in the line again and include more of it in your change — a longer
+/// > stretch appears only once."*
+///
+/// That remedy is real for a **line of prose**: a repeated phrase inside a
+/// longer sentence has a unique superstring. It is **not obviously real for a
+/// BOM cell**, where the run IS the whole cell and there is nothing longer to
+/// include. A refusal naming a remedy the operator cannot perform is worse than
+/// one naming none, and this project's own rule is that a sentence naming a
+/// remedy is a claim about the build.
+///
+/// So this also asks, for each affected run, whether the LINE it sits on
+/// carries anything beyond the run itself — which is what "include more of it"
+/// would have to mean.
+#[test]
+#[ignore = "reads a file outside the repository; run by hand"]
+fn how_many_runs_actually_hit_the_ambiguity_refusal_and_is_the_remedy_real() {
+    let Some(session) = session() else { return };
+    use pdfcer_core::text_edit::{BlockRecognitionOptions, EditableTextModel, TextPosition};
+
+    let view = session.view();
+    let pages = pdfcer_core::page_tree::pages_in(&view).expect("a page tree");
+
+    for (page_index, page) in pages.iter().enumerate().take(4) {
+        let Ok(text) = pdfcer_core::text_extract::extract_page_view(
+            &view,
+            page,
+            page_index,
+            &pdfcer_core::text_extract::ExtractOptions::default().with_provenance(true),
+        ) else {
+            continue;
+        };
+        if text.runs.len() < 50 {
+            continue;
+        }
+        let whole: String = text.runs.iter().map(|r| r.text.as_str()).collect();
+        let model = EditableTextModel::recognize(&text, &BlockRecognitionOptions::default());
+
+        let mut repeated = 0usize;
+        let mut split = 0usize;
+        let mut refused = 0usize;
+        let mut refused_with_no_longer_stretch = 0usize;
+        let mut samples: Vec<String> = Vec::new();
+
+        for (i, run) in text.runs.iter().enumerate() {
+            let t = run.text.trim();
+            if t.is_empty() {
+                continue;
+            }
+            let n = whole.matches(run.text.as_str()).count();
+            let one_operator = pdfcer_gui::canvas::textedit::pin::spans_one_operator(&model, i);
+            if n > 1 {
+                repeated += 1;
+            }
+            if !one_operator {
+                split += 1;
+            }
+            if n > 1 && !one_operator {
+                refused += 1;
+                // ★ Is there anything else on this run's LINE? If the line is
+                // the run and nothing else, "include more of it" names an
+                // action he cannot take.
+                let alone = model
+                    .line_range_at(TextPosition::new(i, 0))
+                    .is_none_or(|(from, to)| from.run == to.run);
+                if alone {
+                    refused_with_no_longer_stretch += 1;
+                    if samples.len() < 12 {
+                        samples.push(format!("{:?} x{n}", run.text));
+                    }
+                }
+            }
+        }
+
+        println!(
+            "\n=== page {} ({} runs) ===",
+            page_index + 1,
+            text.runs.len()
+        );
+        println!("  text repeats on the page      : {repeated}");
+        println!("  spans >1 show operator        : {split}");
+        println!("  ★ BOTH — the refused population: {refused}");
+        println!(
+            "  ⚠ …of those, alone on their line (remedy IMPOSSIBLE): {refused_with_no_longer_stretch}"
+        );
+        for sample in &samples {
+            println!("      {sample}");
+        }
+    }
+}
+
+/// ★★★ **Ask the engine about EVERY cell on his BOM sheet, one fresh session
+/// per cell, and print the ones it refuses.**
+///
+/// # Why this replaces two wrong diagnoses rather than adding a third
+///
+/// The BOM half of his report has now been explained twice and both
+/// explanations were wrong:
+///
+/// 1. *"the planner throws the pin away"* — it does not; it keeps it
+///    deliberately.
+/// 2. *"a repeated cell hits `AmbiguousOnThePage`"* — measured, and the
+///    population of that refusal on his file is **zero**. It needs a run that
+///    both repeats AND spans several show operators; his sheets carry 57–133
+///    repeating runs and 4–11 multi-operator runs, and **they do not
+///    intersect**.
+///
+/// ⇒ Both were derived from counting one condition and reasoning about the
+/// other. This one counts the outcome instead: it performs the edit and reads
+/// the answer. That is slower — one `Document::load` per cell — and it is the
+/// only measurement that cannot be wrong about what the engine does.
+///
+/// ⚠ A fresh session per cell is not an optimisation to remove. `edit_text`
+/// mutates, so a shared session would measure the Nth edit **on a document
+/// already edited N-1 times**, and `PageEditedThisSession` is a real refusal
+/// this file would then attribute to the cell.
+#[test]
+#[ignore = "reads a file outside the repository, one document load per cell; run by hand"]
+fn which_cells_on_his_bom_sheet_does_the_engine_actually_refuse() {
+    use pdfcer_core::text_edit::{
+        BlockRecognitionOptions, EditOptions, EditRequest, EditableTextModel, RefusalClass as _,
+    };
+
+    let Some(first) = session() else { return };
+    // The BOM is the busiest sheet.
+    let (page, count) = {
+        let session = &first;
+        let pages = session.pages().expect("a page tree");
+        let mut best = (0usize, 0usize);
+        for (i, _) in pages.iter().enumerate() {
+            let n = page_text(session, i).map_or(0, |t| t.runs.len());
+            if n > best.1 {
+                best = (i, n);
+            }
+        }
+        best
+    };
+    println!("busiest sheet is page {} with {count} runs", page + 1);
+    drop(first);
+
+    // Every run's text and pin, measured once from a read-only session.
+    let plans: Vec<(usize, String, bool)> = {
+        let session = session().expect("a session");
+        let view = session.view();
+        let pages = pdfcer_core::page_tree::pages_in(&view).expect("a page tree");
+        let text = pdfcer_core::text_extract::extract_page_view(
+            &view,
+            &pages[page],
+            page,
+            &pdfcer_core::text_extract::ExtractOptions::default().with_provenance(true),
+        )
+        .expect("the sheet extracts");
+        let model = EditableTextModel::recognize(&text, &BlockRecognitionOptions::default());
+        text.runs
+            .iter()
+            .enumerate()
+            .filter(|(_, r)| !r.text.trim().is_empty())
+            .map(|(i, r)| {
+                (
+                    i,
+                    r.text.clone(),
+                    pdfcer_gui::canvas::textedit::pin::spans_one_operator(&model, i),
+                )
+            })
+            .collect()
+    };
+
+    // ★ Sampled, and the sample is STATED. Every 7th run keeps the run under a
+    // minute while covering the whole sheet rather than its first screenful —
+    // a prefix would measure the title block and call it a bill of materials.
+    let sample: Vec<_> = plans.iter().step_by(7).collect();
+    println!(
+        "asking the engine about {} of {} cells",
+        sample.len(),
+        plans.len()
+    );
+
+    let mut refused: Vec<(usize, String, String)> = Vec::new();
+    let mut accepted = 0usize;
+    let mut no_pin = 0usize;
+
+    for (i, run_text, one_operator) in sample {
+        let Some(mut session) = session() else { return };
+        let (span, target) = {
+            let view = session.view();
+            let pages = pdfcer_core::page_tree::pages_in(&view).expect("a page tree");
+            let text = pdfcer_core::text_extract::extract_page_view(
+                &view,
+                &pages[page],
+                page,
+                &pdfcer_core::text_extract::ExtractOptions::default().with_provenance(true),
+            )
+            .expect("the sheet extracts");
+            let model = EditableTextModel::recognize(&text, &BlockRecognitionOptions::default());
+            match pdfcer_gui::canvas::textedit::pin::of_run(&model, *i) {
+                Some(p) => (p.span, p.target),
+                None => {
+                    no_pin += 1;
+                    continue;
+                }
+            }
+        };
+
+        // ★★★ THE REPLACEMENT REUSES THE RUN'S OWN CHARACTERS, and the first
+        // draft of this probe did not.
+        //
+        // It appended a `Z`, and **30 of 31 cells came back
+        // `UnsupportedFont`** — a result that looked like a spectacular
+        // finding and was an artefact of the harness. His drawing's fonts are
+        // SUBSET-EMBEDDED: they carry the glyphs the drawing uses and no
+        // others, so asking for a `Z` on a sheet with no `Z` refuses
+        // correctly, on every cell, for a reason that has nothing to do with
+        // the cell.
+        //
+        // ⇒ Doubling the run's LAST character asks for a glyph the run itself
+        // proves is present, so a refusal is about the location rather than
+        // about the alphabet — which is the question.
+        let replacement = match run_text.chars().last() {
+            Some(c) => format!("{run_text}{c}"),
+            None => continue,
+        };
+        let mut request = if *one_operator {
+            EditRequest::whole_operator(page, span, &replacement)
+        } else {
+            let mut r = EditRequest::find_replace(page, run_text, &replacement);
+            r.pinned_span = Some(span);
+            r
+        };
+        request.target = target;
+
+        match session.edit_text(&request, &EditOptions::default()) {
+            Ok(_) => accepted += 1,
+            Err(e) => refused.push((*i, run_text.clone(), format!("{:?}", e.refusal_kind()))),
+        }
+    }
+
+    println!("\naccepted : {accepted}");
+    println!("no pin   : {no_pin}");
+    println!("REFUSED  : {}", refused.len());
+    for (i, t, kind) in refused.iter().take(30) {
+        println!("  run {i:4}  {kind:<16} {t:?}");
+    }
+}
+
+/// ★★★ **What can he actually TYPE into this drawing?**
+///
+/// # Where this question came from — a harness artefact worth more than the
+/// measurement it broke
+///
+/// The probe above appended a `Z` in its first draft and **30 of 31 cells came
+/// back `UnsupportedFont`.** That looked like a finding and was an artefact:
+/// his drawing's fonts are subset-embedded, so a `Z` on a sheet with no `Z` is
+/// refused correctly, on every cell, for a reason that has nothing to do with
+/// the cell.
+///
+/// ⇒ But *the artefact is a report about his working day*. Editing a bill of
+/// materials means typing part numbers and quantities, and the alphabet he is
+/// allowed is not the keyboard's — it is **whatever the drawing already
+/// contains**. A capital `Z` is not a strange thing to want; `SPACER` →
+/// `SPAZER` is silly, but `12` → `13` on a sheet whose quantities happen never
+/// to include a `3` is exactly the same refusal.
+///
+/// ★ *"It only sometimes works"* is what a per-character alphabet feels like
+/// from the operator's chair, and it is a better fit for his words than either
+/// of the two explanations that preceded it — both of which turned out to be
+/// about populations that are empty on this file.
+///
+/// # What this measures
+///
+/// For one cell on the BOM sheet, every printable ASCII character in turn:
+/// append it, ask the engine, record accept or refuse. That is the alphabet.
+#[test]
+#[ignore = "reads a file outside the repository, one document load per character; run by hand"]
+fn which_characters_can_he_type_into_his_bom_sheet() {
+    use pdfcer_core::text_edit::{
+        BlockRecognitionOptions, EditOptions, EditRequest, EditableTextModel, RefusalClass as _,
+    };
+
+    // A word cell rather than a number cell: it exercises letters, and it is
+    // the kind of thing he would retype.
+    const AIM: &str = "BRACE";
+    let page = 2; // 0-based; the busiest sheet, measured by the probe above.
+
+    let mut ok = String::new();
+    let mut refused = String::new();
+    let mut other: Vec<(char, String)> = Vec::new();
+
+    for c in (0x20u8..0x7f).map(char::from) {
+        let Some(mut session) = session() else { return };
+        let (index, span, target, run_text) = {
+            let view = session.view();
+            let pages = pdfcer_core::page_tree::pages_in(&view).expect("a page tree");
+            let text = pdfcer_core::text_extract::extract_page_view(
+                &view,
+                &pages[page],
+                page,
+                &pdfcer_core::text_extract::ExtractOptions::default().with_provenance(true),
+            )
+            .expect("the sheet extracts");
+            let Some((i, run)) = text
+                .runs
+                .iter()
+                .enumerate()
+                .find(|(_, r)| r.text.trim() == AIM)
+            else {
+                println!("{AIM:?} is not on page {}", page + 1);
+                return;
+            };
+            let model = EditableTextModel::recognize(&text, &BlockRecognitionOptions::default());
+            let Some(pin) = pdfcer_gui::canvas::textedit::pin::of_run(&model, i) else {
+                println!("no pin for {AIM:?}");
+                return;
+            };
+            (i, pin.span, pin.target, run.text.clone())
+        };
+        let _ = index;
+
+        let mut request =
+            EditRequest::whole_operator(page, span, &format!("{}{c}", run_text.trim()));
+        request.target = target;
+        match session.edit_text(&request, &EditOptions::default()) {
+            Ok(_) => ok.push(c),
+            Err(e) => {
+                let kind = format!("{:?}", e.refusal_kind());
+                if kind.contains("UnsupportedFont") {
+                    refused.push(c);
+                } else {
+                    other.push((c, kind));
+                }
+            }
+        }
+    }
+
+    println!("\n=== the alphabet of {AIM:?} on page {} ===", page + 1);
+    println!("ACCEPTED ({:3}): {ok}", ok.chars().count());
+    println!("REFUSED  ({:3}): {refused}", refused.chars().count());
+    for (c, kind) in &other {
+        println!("  {c:?} -> {kind}");
+    }
+    println!(
+        "\n=> he may type {} of the 95 printable ASCII characters into this cell",
+        ok.chars().count()
+    );
+}
