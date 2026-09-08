@@ -80,6 +80,44 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
+## O148 — ✅ **DONE 2026-09-07 — "we should have export/import for that"** — the import half, three days late and driven
+
+**Your words, 2026-09-04:**
+
+> *"also the engine can export PDFs as text. we should have export/import for
+> that."*
+
+Export shipped that day. **Import could not**, and the reason is worth one
+sentence: pdfcer had no way to *make* a page — only to copy one from somewhere
+else. That was filed at the engine, answered on 2026-09-06, and wired today.
+
+**File ▸ Export ▸ Import text as pages…** Pick a `.txt`, choose the sheet size,
+margin, font and size, say where the new pages go, press Import. Opens on A4,
+one-inch margin, 11 pt Helvetica.
+
+It **makes new pages** and does not touch any page you already have.
+
+### What it tells you afterwards — and only when it happened
+
+How many pages arrived and where. Paragraphs that ran past the bottom of a page.
+Tabs that became spaces, with the note that importing again in Courier keeps
+space-aligned columns straight. Page breaks already in your file. Words too wide
+for the column. Non-printing characters removed.
+
+A clean import says **one** thing. It does not list six lines of zeros.
+
+### The one thing it refuses
+
+A character the chosen font cannot write — an accented name, an odd symbol —
+**stops the import and is named**, rather than being dropped silently. Every
+other program on your machine would have quietly substituted a font.
+
+### ⚠ What it does not do yet
+
+Replace the text on an existing page. The engine offers only the make-new-pages
+shape and declined to build page-level replacement; if you want that, say so and
+it goes on the list rather than being guessed at.
+
 ## O145 — ✅ **FIXED 2026-09-07 — "the object gets larger with each enactment of the tool"** — the engine shipped it the same afternoon
 
 **Your words, 2026-09-07:**
