@@ -68,10 +68,11 @@ mod tab_order;
 
 pub use authoring::{
     field_appearance_stale, field_siblings_untouched, field_sort_claim_unmet, field_widget_moved,
-    field_widgets_affected, form_field_added, form_field_deleted, form_field_merged,
-    form_field_no_options, form_field_no_tooltip, form_field_renamed, form_field_tagged_document,
-    form_noun_check_box, form_noun_choice, form_noun_push_button, form_noun_radio, form_noun_text,
-    form_widget_deleted, form_widget_deleted_last,
+    field_widgets_affected, form_field_actions_orphaned, form_field_actions_retargeted,
+    form_field_added, form_field_deleted, form_field_merged, form_field_no_options,
+    form_field_no_tooltip, form_field_renamed, form_field_tagged_document, form_noun_check_box,
+    form_noun_choice, form_noun_push_button, form_noun_radio, form_noun_text, form_widget_deleted,
+    form_widget_deleted_last,
 };
 
 pub use groups::*;

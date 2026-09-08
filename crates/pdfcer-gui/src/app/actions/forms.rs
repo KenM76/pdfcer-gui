@@ -1179,10 +1179,29 @@ pub(super) fn rename(doc: &mut OpenDoc, from: &str, to: &str) {
     doc.selected_field = None;
     super::apply::vector_edit(doc, "rename-field", 0, 1, |session| {
         session.rename_field(from, &to).map(|outcome| {
-            vec![crate::text::forms::form_field_renamed(
+            let mut lines = vec![crate::text::forms::form_field_renamed(
                 &outcome.to,
                 outcome.descendants_renamed,
-            )]
+            )];
+            // ★★★ Rule 4: pdfcer rewrote buttons the operator did not touch.
+            //
+            // `/ResetForm` and `/SubmitForm` name their targets as fully
+            // qualified NAME STRINGS, so a rename that did nothing else would
+            // leave them pointing at nothing. `rename_field` repairs them —
+            // correctly, invisibly, and not as anything the operator pressed.
+            // No view in this shell shows an action's target list, so without
+            // this sentence the repair is unobservable.
+            //
+            // ★ Conditional, like every disclosure on this surface: a rename
+            // that touched no action says one thing. A receipt that recites
+            // "0 buttons updated" after every rename is a form, and by the
+            // third one nobody reads the line that matters.
+            if outcome.action_targets_retargeted > 0 {
+                lines.push(crate::text::forms::form_field_actions_retargeted(
+                    outcome.action_targets_retargeted,
+                ));
+            }
+            lines
         })
     });
 }

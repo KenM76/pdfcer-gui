@@ -63,9 +63,28 @@ pub(in crate::app::actions) fn field(doc: &mut OpenDoc, field: &str) {
     let before = doc.edit_epoch;
     crate::app::actions::apply::vector_edit(doc, "delete-field", 0, 1, |session| {
         session.delete_field(field).map(|outcome| {
-            vec![crate::text::forms::form_field_deleted(
+            let mut lines = vec![crate::text::forms::form_field_deleted(
                 outcome.widgets_removed,
-            )]
+            )];
+            // ★★★ Rule 4, and the sharper half of it: pdfcer knows it just
+            // broke buttons elsewhere and CANNOT repair them.
+            //
+            // A rename can repoint an action, because the field still exists
+            // under a known name. A deletion cannot — there is no name left to
+            // point at — so the engine counts the references and repairs
+            // nothing. Its own words: *"each one is a button that will do less
+            // than it says when pressed."*
+            //
+            // ⚠ Nothing in the saved file records that pdfcer knew. Without
+            // this sentence the operator discovers it when a Reset button
+            // quietly stops resetting one field, which is not a thing anybody
+            // notices until it matters.
+            if outcome.action_targets_orphaned > 0 {
+                lines.push(crate::text::forms::form_field_actions_orphaned(
+                    outcome.action_targets_orphaned,
+                ));
+            }
+            lines
         })
     });
     clear_selection_if_edited(doc, before);

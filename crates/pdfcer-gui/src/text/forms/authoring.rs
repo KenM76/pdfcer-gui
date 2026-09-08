@@ -157,6 +157,76 @@ pub fn form_field_renamed(to: &str, descendants: usize) -> String {
     }
 }
 
+/// Rule-4 disclosure: **pdfcer rewrote other people's buttons** so they keep
+/// pointing at the field the operator just renamed.
+///
+/// # ★★★ Why a rename owes a sentence at all
+///
+/// Renaming a field looks like a local act. It is not: `/ResetForm` and
+/// `/SubmitForm` name their targets in `/Fields`, and `/Hide` names its in
+/// `/T`, all as fully-qualified **name strings**. A rename that did nothing
+/// else would leave every button naming the old name pointing at nothing — so
+/// `rename_field` rewrites them.
+///
+/// **That repair is correct, invisible, and not what the operator pressed.**
+/// Buttons elsewhere in the document now hold different bytes because of a
+/// rename, and no view in this shell shows an action's target list. It is the
+/// canonical rule-4 case: an inference the operator cannot see.
+///
+/// ⚠ **The number is ACTIONS, not buttons, and the sentence must not imply
+/// otherwise.** The engine says so at the field: one button naming a field
+/// three times counts three, and one field named by three buttons also counts
+/// three — *"pdfcer does not distinguish them"*. So this says *"places"*,
+/// which is true under both readings, rather than *"buttons"*, which is true
+/// under only one.
+///
+/// ★ **JavaScript is not repaired and is not counted.** `R55` requires every
+/// script carrier to round-trip byte-identical, so a form whose logic lives in
+/// a script is not fixed by this — and a sentence claiming the rename was
+/// handled everywhere would be false on exactly the documents most likely to
+/// carry scripts. The clause is one short sentence because the operator cannot
+/// act on the detail; what they can act on is knowing to check.
+#[must_use]
+pub fn form_field_actions_retargeted(count: usize) -> String {
+    format!(
+        "pdfcer also updated {count} place(s) where a button referred to this field by its old \
+         name, so those buttons still work. Any JavaScript in the document was not changed."
+    )
+}
+
+/// Rule-4 disclosure: **buttons elsewhere now name a field that is gone**, and
+/// pdfcer did not repair them.
+///
+/// # ★★★ The asymmetry with a rename is the whole point
+///
+/// A rename can repair an action, because the field still exists under a new
+/// name and that name is known. A **deletion** cannot: there is no name left to
+/// point at. So the engine counts the broken references and repairs nothing,
+/// and its own comment is blunt about what that leaves — *"each one is a button
+/// that will do less than it says when pressed."*
+///
+/// ⚠⚠ **This is the more serious of the two, and it is the one the operator
+/// meets later, on somebody else's screen.** A form whose Reset button quietly
+/// stopped resetting one field is not a form anybody notices until it matters,
+/// and nothing in the saved file records that pdfcer knew.
+///
+/// ⇒ So the sentence names a **consequence**, not a count of internals: the
+/// buttons will do less than they say. A bare number would read as bookkeeping
+/// about pdfcer rather than as a fact about the operator's document.
+///
+/// ★ It does **not** offer to fix them, because pdfcer cannot — repairing would
+/// mean deciding what a Reset button that named a deleted field should now
+/// reset, and that is the operator's judgement rather than a default. Naming
+/// the problem and stopping is the honest end of this.
+#[must_use]
+pub fn form_field_actions_orphaned(count: usize) -> String {
+    format!(
+        "⚠ {count} button reference(s) elsewhere in this document still name this field, and \
+         pdfcer cannot repair them — those buttons will now do less than they say when pressed. \
+         Any JavaScript naming it was not counted."
+    )
+}
+
 /// **The field was deleted**, and how many boxes went with it.
 ///
 /// ★ The count is the part that cannot be seen. A field drawn in three places
@@ -431,5 +501,110 @@ mod tests {
             assert!(!line.trim().is_empty());
             assert!(line.len() < 240, "too long for a status line: {line}");
         }
+    }
+
+    // ===========================================================================
+    // The two action-target disclosures — a rename repairs other people's buttons,
+    // a delete breaks them, and until 2026-09-08 neither said so
+    // ===========================================================================
+
+    /// ⚠⚠ **THESE THREE ARE STRING TESTS AND THE CHAIN IS NOT DRIVEN — stated
+    /// rather than implied.**
+    ///
+    /// They pin the wording, which is where both sentences could go wrong in a
+    /// way a reader would not notice. They do **not** prove the sentences reach
+    /// the operator: the wiring is six conditional lines in
+    /// `app::actions::forms` and `::forms::delete`, and a build that dropped
+    /// either `if` passes every assertion below.
+    ///
+    /// ★ The blocker is a fixture, and it is named so the next session does not
+    /// re-derive it: the counters are about action targets written as
+    /// **fully-qualified name strings** (`/ResetForm` and `/SubmitForm`'s
+    /// `/Fields`, `/Hide`'s `/T`). `fixtures/submit-button.pdf` — the only
+    /// fixture in this repository carrying a form action at all — names its
+    /// target by **object reference** (`/Fields [4 0 R]`), which the traversal
+    /// is structurally blind to. A fixture with a name-string target is what
+    /// this needs, and it is a hand-authored one.
+    ///
+    /// ⇒ Recorded as a gap rather than left to look covered. A string test
+    /// beside an unwired sentence is exactly the shape this project spent
+    /// 2026-09-07 correcting.
+    /// ★★★ **A rename says pdfcer rewrote buttons the operator did not touch, and
+    /// a delete says it could not.**
+    ///
+    /// Both counts shipped with the verbs and **neither was read for three days**.
+    /// `FieldRename::action_targets_retargeted` and
+    /// `FieldDeletion::action_targets_orphaned` land on `rename_field` and
+    /// `delete_field` — verbs this shell already called — so the capability was
+    /// present, reachable, and silent. The engine flagged both as rule-4
+    /// obligations in the reply that shipped them.
+    #[test]
+    fn a_rename_and_a_delete_say_different_things_about_other_peoples_buttons() {
+        let repaired = form_field_actions_retargeted(3);
+        let broken = form_field_actions_orphaned(3);
+
+        // ★★ The load-bearing distinction, and it is not cosmetic. A rename REPAIRS
+        // the actions; a delete cannot. A build that worded them alike would tell
+        // the operator his form still works when it does not.
+        assert!(
+            repaired.contains("still work"),
+            "a rename repoints the actions, so the sentence must say the buttons survive: {repaired}"
+        );
+        assert!(
+            broken.contains("do less than they say"),
+            "a delete leaves them naming nothing, and the operator's document is now degraded — the \
+             sentence must name that consequence rather than count internals: {broken}"
+        );
+        assert!(
+            !repaired.contains("do less than"),
+            "the rename case must not borrow the delete case's alarm: {repaired}"
+        );
+        assert!(
+            !broken.contains("still work"),
+            "the delete case must not borrow the rename case's reassurance: {broken}"
+        );
+    }
+
+    /// ★★ **Both name JavaScript as un-handled**, because `R55` forbids rewriting
+    /// a script carrier and the count is therefore a floor on any scripted form.
+    ///
+    /// ⚠ A sentence claiming the rename was handled everywhere would be false on
+    /// exactly the documents most likely to carry scripts — a form with logic in
+    /// it. The operator cannot act on the detail; what they can act on is knowing
+    /// to look.
+    #[test]
+    fn both_sentences_admit_that_javascript_was_not_handled() {
+        for line in [
+            form_field_actions_retargeted(1),
+            form_field_actions_orphaned(1),
+        ] {
+            assert!(
+                line.contains("JavaScript"),
+                "R55 means pdfcer never rewrites a script, so a sentence about repairing references \
+                 that does not say so overstates what happened: {line}"
+            );
+        }
+    }
+
+    /// ★ **The rename count is ACTIONS, not buttons**, and the wording must not
+    /// promise the distinction pdfcer does not draw.
+    ///
+    /// The engine states it at the field: one button naming a field three times
+    /// counts three, and one field named by three buttons also counts three —
+    /// *"pdfcer does not distinguish them"*. So the sentence says **places**, which
+    /// is true under either reading, and never **buttons**, which is true under
+    /// only one.
+    #[test]
+    fn the_retarget_count_is_worded_as_places_not_buttons() {
+        let line = form_field_actions_retargeted(3);
+        assert!(
+            line.contains("place(s)"),
+            "the count is of ACTION REFERENCES; wording it as a button count claims a distinction \
+             the engine explicitly does not draw: {line}"
+        );
+        assert!(
+            !line.contains("3 button"),
+            "…and specifically must not read as a count of buttons: {line}"
+        );
     }
 }
