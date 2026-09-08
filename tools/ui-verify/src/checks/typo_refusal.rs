@@ -143,18 +143,32 @@
 //! own editable lines are made of, so the control is his contrast rather than a
 //! stand-in for it.
 //!
-//! ## ⚠ A defect this check found while looking for somewhere to put that
-//! control
+//! ## ✅ A defect this check found while looking for somewhere to put that
+//! control — FILED, FIXED, AND CLOSED
 //!
-//! `pdfcer-core`'s `EditableTextModel::hit_test` ends with *"fall back to the
-//! nearest line by baseline distance"* and applies **no distance bound**. So on
-//! a page carrying any text at all, every point resolves to a run:
-//! `canvas::textedit::Refusal::NoRun` is unreachable, and with it
-//! `place::click`'s *"a click that names no run starts a new one"* — the
-//! 2026-08-19 answer to the operator's *"How do I make new text when I click on
-//! the canvas and expect to edit there?"* Driven here: clicks 215 pt to the
-//! right of a run's box and 99 pt below it both resolved that same run. Filed
-//! rather than worked around.
+//! **Superseded 2026-09-07.** The finding below was correct when it was written
+//! on 2026-09-05, it was filed rather than worked around, and `pdfcer-core`
+//! `8670523` answered it the same evening: `hit_test` now picks a line only if
+//! the point falls inside that line's box **inflated by one line-height on every
+//! side**, and returns `None` otherwise. `Refusal::NoRun` is reachable, and
+//! `a_click_on_blank_paper_starts_new_text` drives the arm it unblocked.
+//!
+//! ⚠ **The design decision this finding produced is NOT superseded and must not
+//! be undone.** The negative control still arms **Add text** at the subject's
+//! own coordinate rather than hunting for bare paper, and the reason given below
+//! — *same point, same page, same process, same instrument* — never depended on
+//! the defect. It was the better control before the fix and it is the better
+//! control after it. What expired is the justification's tense, not the choice.
+//!
+//! > `pdfcer-core`'s `EditableTextModel::hit_test` ends with *"fall back to the
+//! > nearest line by baseline distance"* and applies **no distance bound**. So on
+//! > a page carrying any text at all, every point resolves to a run:
+//! > `canvas::textedit::Refusal::NoRun` is unreachable, and with it
+//! > `place::click`'s *"a click that names no run starts a new one"* — the
+//! > 2026-08-19 answer to the operator's *"How do I make new text when I click on
+//! > the canvas and expect to edit there?"* Driven here: clicks 215 pt to the
+//! > right of a run's box and 99 pt below it both resolved that same run. Filed
+//! > rather than worked around.
 
 use crate::checks::driving::{INVOKE_EVENT, SHELL_DIAG_ENV, declared, declared_names, list};
 use crate::checks::text_selection::aim;
@@ -609,14 +623,23 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // 3. Vertical offsets of ±55 and ±110 pt. All four resolved runs, one of
     //    them `run=12` again from 99 pt below its box.
     //
-    // ★★★ The cause of (2) and (3) is in `pdfcer-core`'s
-    // `EditableTextModel::hit_test` and it is worth knowing far beyond this
-    // check: its last clause is *"fall back to the nearest line by baseline
-    // distance"* with **no distance bound at all**. So on a page carrying any
-    // text, every point resolves to a run, `Refusal::NoRun` is unreachable, and
-    // `textedit::click`'s *"a click that names no run starts a new one"* — the
-    // 2026-08-19 answer to the operator's *"How do I make new text when I click
-    // on the canvas?"* — cannot fire. Filed; see the module header.
+    // ★★★ The cause of (2) and (3) WAS in `pdfcer-core`'s
+    // `EditableTextModel::hit_test`, and it is worth knowing far beyond this
+    // check — including that it is now **fixed**, so the numbers above are a
+    // record of 2026-09-05 and not a description of the current crate.
+    //
+    // > its last clause is *"fall back to the nearest line by baseline
+    // > distance"* with **no distance bound at all**. So on a page carrying any
+    // > text, every point resolves to a run, `Refusal::NoRun` is unreachable, and
+    // > `textedit::click`'s *"a click that names no run starts a new one"* — the
+    // > 2026-08-19 answer to the operator's *"How do I make new text when I click
+    // > on the canvas?"* — cannot fire. Filed; see the module header.
+    //
+    // ⇒ Filed, and answered by `8670523` the same evening: a line is picked only
+    // within one line-height of its own box, and `None` otherwise. Re-running
+    // this search today would find bare paper. **It is deliberately not
+    // re-run**, because the control below does not want bare paper — see the
+    // next paragraph, whose argument never rested on the defect.
     //
     // ⇒ `TextEditKind::Add` never asks the hit test: `place::click`'s `Add` arm
     // builds an `Anchor::Origin` from the click point directly. So the control
@@ -815,7 +838,13 @@ fn scroll_to_page(
     )))
 }
 
-// (The blank-paper search that used to live here is gone. See the negative
-// control's own comment: `hit_test` has no distance bound, so on a page that
-// carries any text at all there is no point that resolves to no run, and the
-// control arms **Add text** instead — which never asks the hit test.)
+// (The blank-paper search that used to live here is gone, and it stays gone.
+// It was removed on 2026-09-05 because `hit_test` then had no distance bound,
+// so on a page carrying any text there was no point that resolved to no run.
+// `pdfcer-core` `8670523` fixed that the same evening — a search would succeed
+// today — but the control still arms **Add text** at the subject's own
+// coordinate, which never asks the hit test and was always the better baseline:
+// same point, same page, same process, same instrument. ⚠ Do not reinstate the
+// search on the grounds that it would now work; that is not why it left.
+// Blank paper as a gesture is asserted by
+// `tool_row::AClickOnBlankPaperStartsNewText`, which is where it belongs.)

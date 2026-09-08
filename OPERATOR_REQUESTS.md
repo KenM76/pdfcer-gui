@@ -634,7 +634,57 @@ what it costs to consume, and what gets deleted when it is.
 
 ---
 
-## O142 — ⬜ **A CLICK ON EMPTY PAPER CANNOT START NEW TEXT, AND IT IS YOUR OWN 2026-08-19 REQUEST QUIETLY NOT WORKING**
+## O142 — ✅ **FIXED, AND IT HAD BEEN FIXED FOR TWO DAYS WITHOUT ANYONE NOTICING** — a click on empty paper starts new text
+
+**Click on blank paper with the text tool armed and you get a new run, where
+you clicked.** Driven today on your own `SW41177` sheet: one press of `T`, one
+click in the corner, and the caret anchors at **(18.5, 18.8)** for a click asked
+at (20, 20) — that gap is one screen pixel, not a mistake.
+
+That closes your 2026-08-19 sentence:
+
+> *"How do I make new text when I click on the canvas and expect to edit there?
+> Same problem as the previous."*
+
+One text tool. Click **in** text to edit it, click on **paper** to start some.
+
+### ⚠ The part worth your time is not the fix — it is the two days
+
+The engine bounded its *where did I click* query on **2026-09-05 at 19:13**, and
+this program picked that engine up **the same evening, three hours later**. So
+the feature has worked in every build you have had since 2026-09-06.
+
+**Nothing measured it, so this list went on telling you it was broken.** Two
+days of a row saying BROKEN about something that worked.
+
+The reason nothing measured it is the interesting part, and it was a defect in
+the test harness rather than in the program. A driven check *did* click blank
+paper on every run. When nothing happened it printed:
+
+> *"the point named an existing run, which is a fact about this fixture rather
+> than about the feature"*
+
+**It had not checked that.** It could not fail, and its excuse was a guess
+written in the voice of a measurement — so a completely dead feature and a
+badly-aimed click produced exactly the same green line. It is the same shape as
+the thin-lines check that had been quietly skipping, found yesterday.
+
+That is fixed properly rather than patched: the gesture is now its own named
+check with three outcomes, each of which had to be **driven into deliberately
+before the check was believed** — the real one passes, aiming at known text
+skips *quoting the run number it hit*, and arming the wrong tool makes it go
+red. A check that has never been made to fail is not evidence, and this one now
+has been, three ways.
+
+### What you can still not do
+
+Nothing new here — `Add text` remains the other door, and both now land in the
+same place.
+
+---
+
+### What this row said before, kept because the reasoning was sound and only the
+### conclusion expired
 
 **Not something you reported.** It was found on 2026-09-05 while looking for
 blank paper on your file, recorded in this project's own feature register, and
@@ -671,6 +721,10 @@ worked around here: from outside, a cursor that lands 3 points past the end of a
 line (correct, and you use it) and one that lands 215 points away are the same
 answer, so any distance limit invented here would be a second opinion about the
 engine's own geometry and would drift from it.
+
+⇒ **Every word of that was true when it was written, and the last paragraph is
+why the fix is the engine's and arrived in six hours.** What expired is the
+tense.
 
 ---
 
@@ -1508,22 +1562,30 @@ reports.
 
 
 
-## O128 — ◑ **HALF SHIPPED 2026-09-04, AND THE OTHER HALF DOES NOT EXIST** — export and import as text
+## O128 — ✅ **BOTH HALVES SHIPPED AND BOTH HALVES DRIVEN — 2026-09-07** — export and import as text
 
 **Ken, 2026-09-04, verbatim:**
 
 > *"also the engine can export PDFs as text. we should have export/import for
 > that."*
 
-**Status: export SHIPPED, import BLOCKED on the engine. NOT VERIFIED by driving
-— the check is written and was not run.**
+**Export shipped 2026-09-04 and is now proven.** Driven on your own `SW41177`
+sheet, all 36 pages: **37,451 characters written, no page empty**, and the file
+on disk reconciles to the character count exactly — 37,486 bytes on disk =
+37,451 reported + 35 page separators. That is not a check watching a button
+light up; it is the file being read back and counted.
 
-### The export half — shipped
+**Import shipped 2026-09-07** and has its own row at **O148**, including the
+reason it took three days: pdfcer could not *make* a page, only copy one, and
+that had to be built in the engine first.
+
+⇒ **The round trip you asked for exists.** Text out of a drawing, text back in
+as pages.
+
+### The export half, in detail
 
 **File ▸ Export ▸ Export text…**, beside Export DXF, Export image and Export
-form data. `crates/pdfcer-gui/src/dialogs/export_text.rs`,
-`app::actions::export::text`, `app::actions::exporttext`,
-`crate::text::export_text`.
+form data.
 
 * **Which pages** — every page (the default), this page only, or a typed range.
   The range box is the print dialog's own parser, so `5,1-2` and `1-4` mean here
@@ -1547,33 +1609,52 @@ form data. `crates/pdfcer-gui/src/dialogs/export_text.rs`,
   could not be read at all, fonts that publish no way to turn their glyphs back
   into characters, and how many characters fell through as `U+FFFD`.
 
-### The import half — the engine has no route, and this is filed
+---
 
-**`pdfcer-core` cannot turn a text file back into PDF page content**, in any of
-the three senses *"import text"* could mean: there is no document builder, no
-page-level text replace, and `add_ocr_layer` takes positioned words from the
-recogniser rather than a file. The nearest verb, `add_text`, places one run on
-**one** page and *emits* overflow past the sheet rather than paginating — so a
-two-page text file would produce one page with the second page painted off the
-edge, invisible and present. That is a data-loss trap wearing the shape of a
-feature, so it was not built.
+### ⚠ Superseded — what this row said until 2026-09-07, kept rather than deleted
 
-**Nothing was drawn for it.** No greyed control, no control that declines when
-pressed, no tooltip implying a round trip.
+**The absence described below is what the engine request was argued from, and a
+corrected claim whose history has been erased cannot be audited.** Both
+paragraphs were true when written.
 
-Filed at
-`D:\Dev\FeatureRequests\pdfce_FeatureRequests\open\request_there_is_no_route_from_a_text_file_back_into_a_pdf.md`,
-asking for either a paginating text placer or a page-level text replace. The
-durable record of the finding is `app::actions::exporttext`'s module header.
+> **Status: export SHIPPED, import BLOCKED on the engine. NOT VERIFIED by
+> driving — the check is written and was not run.**
 
-### Verification
+> ### The import half — the engine has no route, and this is filed
+>
+> **`pdfcer-core` cannot turn a text file back into PDF page content**, in any of
+> the three senses *"import text"* could mean: there is no document builder, no
+> page-level text replace, and `add_ocr_layer` takes positioned words from the
+> recogniser rather than a file. The nearest verb, `add_text`, places one run on
+> **one** page and *emits* overflow past the sheet rather than paginating — so a
+> two-page text file would produce one page with the second page painted off the
+> edge, invisible and present. That is a data-loss trap wearing the shape of a
+> feature, so it was not built.
+>
+> **Nothing was drawn for it.** No greyed control, no control that declines when
+> pressed, no tooltip implying a round trip.
+>
+> Filed at
+> `request_there_is_no_route_from_a_text_file_back_into_a_pdf.md`, asking for
+> either a paginating text placer or a page-level text replace.
 
-**NOT VERIFIED**, in those words. `tools/ui-verify/src/checks/export_text.rs`
-(`export_text_writes_the_documents_words`) is written and registered and **was
-not run** — another session owned the desktop, and two harnesses driving one
-focus produce a verdict that is noise. What is proven: 20 unit tests over the
-range, the filename derivation, the page joining, the encoding and every
-disclosure sentence, each one falsified by a planted mutation.
+⇒ **The engine built the first of the two** — `blank_document` plus `place_text`,
+`Pass 252.0`, 2026-09-06 — and declined page-level replacement. So the refusal to
+build a data-loss trap was the right call and the request that followed from it
+is what produced the feature. See O148.
+
+> ### Verification
+>
+> **NOT VERIFIED**, in those words. `tools/ui-verify/src/checks/export_text.rs`
+> (`export_text_writes_the_documents_words`) is written and registered and **was
+> not run** — another session owned the desktop, and two harnesses driving one
+> focus produce a verdict that is noise.
+
+⇒ **Run 2026-09-07, three days later, and it passes.** ⚠ Worth naming: *"written
+and registered and not run"* is an honest label, and it still sat unread for
+three days. A check nobody runs and a check that cannot fail are the same amount
+of evidence — see O142, where the second kind cost two days on a feature that
+already worked.
 
 ## O127 — ◑ **PARTLY DONE 2026-09-04** — added text duplicates on move, Enter cannot make a new line, and Reflow does nothing
 

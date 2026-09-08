@@ -241,29 +241,28 @@ fn drive_text(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<Str
     };
     report.note(format!("★ one press of T and one click: `{}`", caret.raw));
 
-    // ★★ And the same tool, on EMPTY paper, starts new text rather than
-    // refusing. That is the operator's second sentence — *"How do I make new
-    // text when I click on the canvas and expect to edit there? Same problem"* —
-    // and it is a different code path: `resolve_run` returns `NoRun` and
-    // `textedit::click` turns it into an origin.
+    // ★★★ The blank-paper half of this gesture is now a check of its own —
+    // [`AClickOnBlankPaperStartsNewText`], 2026-09-07 — and it is worth saying
+    // here why it left, because the six lines that used to sit at this spot are
+    // the reason `O142` went unnoticed for two days.
     //
-    // Aimed at the page's top-left margin, which on a CAD sheet is inside the
-    // border and outside every run. If the fixture has content there the check
-    // reports what happened rather than failing: it is a fact about the fixture.
-    let corner = mapping.doc_to_window(DocPoint::new(target.page, 20.0, 20.0))?;
-    let frame = session.frame()?;
-    driver.click_at(frame.to_screen(corner))?;
-    session.settle(24);
-
-    let trace = session.trace()?;
-    if trace.last(BECAME_ADD_EVENT).is_some() {
-        report.note("★★ the same tool clicked on blank paper and started NEW text");
-    } else {
-        report.note(
-            "the second click did not fall through to a new run — the point named an existing \
-             run, which is a fact about this fixture rather than about the feature",
-        );
-    }
+    // They clicked the page's bottom-left margin and then read
+    // `trace.last(BECAME_ADD_EVENT)`. Present → a congratulatory note. Absent →
+    // a note reading *"the point named an existing run, which is a fact about
+    // this fixture rather than about the feature"* — **asserted from nothing.**
+    // Neither branch could fail, and the excuse branch was a guess about the
+    // fixture offered in the voice of a measurement.
+    //
+    // ⇒ So while the feature genuinely was dead — the engine's `hit_test` had
+    // no distance bound, and answered *"the nearest run"* for a click a hundred
+    // thousand points off the sheet — this check went green on every run and
+    // printed the excuse. It is the `line_weights` shape exactly: an outcome
+    // that cannot go red is not evidence, and a check that explains an absence
+    // without measuring it is worse than one that says nothing.
+    //
+    // ★ Nothing about the second gesture is asserted from this function any
+    // more, deliberately. Two places asserting one behaviour is how the weaker
+    // one comes to be the only one that ever runs.
     Ok(None)
 }
 
@@ -557,4 +556,270 @@ fn drive_show_points(ctx: &CheckContext, report: &mut CheckReport) -> Result<Opt
          what the toggle is for"
     ));
     Ok(None)
+}
+
+// ===========================================================================
+// T on blank paper — click nothing, start something
+// ===========================================================================
+
+/// `a_click_on_blank_paper_starts_new_text` — the operator's **second**
+/// 2026-08-19 sentence, driven, and the first check in this file that can fail
+/// for the right reason.
+///
+/// > *"How do I make new text when I click on the canvas and expect to edit
+/// > there? Same problem as the previous."* — 2026-08-19
+///
+/// One text tool, two outcomes: click **in** text and the caret lands in that
+/// run; click on **blank paper** and a fresh run starts where the pointer is.
+/// [`TheTextToolTypesOnOneClick`] asserts the first. This asserts the second,
+/// which is a different code path — `place::resolve_run` returns
+/// `Refusal::NoRun` and `place::click`'s fall-through arm converts it into an
+/// `Anchor::Origin` at the click point.
+///
+/// # ★★★ Why this is a separate check, and it is a story about instruments
+///
+/// It used to be six lines at the end of `drive_text`, and those six lines let
+/// `O142` sit undetected for **two days**. They read
+/// `trace.last("text-edit-became-add")` and, when it was absent, printed *"the
+/// point named an existing run, which is a fact about this fixture rather than
+/// about the feature"*. Nothing measured that. **The absent branch could not
+/// fail and the excuse was invented**, so a completely dead feature and a
+/// badly-aimed click produced the same green line.
+///
+/// And the feature *was* dead. `EditableTextModel::hit_test` had no distance
+/// bound: asked about a point with nothing near it, it returned the nearest
+/// line of text at **any** distance — measured at the time as a click 100,000
+/// points to the right of a 612-point page still landing in a run, and *"nothing
+/// here"* answered zero times across two documents and thirty probes. The
+/// fall-through arm was therefore unreachable, and this check's ancestor
+/// reported success-or-shrug the whole time.
+///
+/// ⇒ `pdfcer-core` `8670523` (2026-09-05 19:13) bounded it to one line-height,
+/// and this shell pinned an engine containing it at `eafe88f` **the same
+/// evening, three hours later**. Nothing re-measured, so the operator row went
+/// on saying BROKEN for two days after it was fixed. That is the cost being
+/// paid for here.
+///
+/// # The three outcomes, all evidenced, none guessed
+///
+/// Every one is read from lines emitted **after** an anchor taken immediately
+/// before the blank click, via [`crate::trace::Trace::last_after`] — never
+/// `last()` over the whole capture, which would return the *first* click's
+/// caret and report it as this click's answer. That fossil is the exact failure
+/// `last_after`'s own doc comment was written to prevent.
+///
+/// | what the trace says after the blank click | verdict |
+/// |---|---|
+/// | `text-edit-caret … origin=X,Y` | **PASS** — a fresh run started |
+/// | `text-edit-caret … run=N` | **SKIP** — the aim landed in real text |
+/// | nothing at all | **FAIL** — the click reached no caret code at all |
+///
+/// ★★ The SKIP arm is the old excuse **with its evidence attached**: it can
+/// only be reached by a trace line that names the run it hit, so it is a
+/// measurement of the aim rather than a story about it. That is the whole
+/// difference, and it is why the arm is allowed to exist at all.
+///
+/// ★★★ And `origin=` is checked against **where the pointer actually went**,
+/// not merely observed to exist. `place.rs`'s own trace comment sets this
+/// standard — *"a trace line must carry the number a wrong build would get
+/// wrong"* — and an origin anchor that ignored the click and used, say, the
+/// page corner or the previous caret would satisfy a bare presence test while
+/// putting the operator's text somewhere he did not point. The tolerance is
+/// [`ORIGIN_TOLERANCE_PT`].
+///
+/// # ★★ All three arms were FALSIFIED before this check was believed
+///
+/// A green check is not evidence that a check works; it is evidence that one
+/// arm of it was reachable. On 2026-09-07 each arm was driven into
+/// deliberately, against the same fixture and the same binary:
+///
+/// | planted | outcome | proves |
+/// |---|---|---|
+/// | nothing — the real thing | **PASS**, `origin=18.5,18.8` for a click asked at (20, 20) | the feature, and that the tolerance is doing rounding and not hiding a mistake |
+/// | `BLANK_AIM_PT` moved onto known text at (1140, 62) | **SKIP**, quoting `run=426` | the excuse arm now carries the evidence the old one invented |
+/// | `VK_A` pressed instead of `VK_T`, so no caret code runs at all | **FAIL** | the check can go red, which is the whole point of splitting it out |
+///
+/// ⚠ One arm is *not* independently reachable and that is deliberate: a
+/// `BLANK_AIM_PT` outside the page box is refused by `CanvasMapping` before any
+/// click is sent (*"document point (-260, -260) is outside the 1584x1224 pt page
+/// box"*), so the harness's own geometry guard fires first. That is correct —
+/// it means the FAIL arm can only be reached by the application failing — but
+/// it does mean the off-page road to it is closed, and the `VK_A` plant above is
+/// what proves the arm at all.
+pub struct AClickOnBlankPaperStartsNewText;
+
+/// How far the reported `origin=` may sit from the point the driver clicked,
+/// in PDF points, before this check calls it a different place.
+///
+/// ★ Generous on purpose, and the generosity has a source: the driver clicks a
+/// **whole screen pixel**, and at the fit zoom this shell opens at, one screen
+/// pixel is a little under two PDF points on a D-size sheet. Rounding the
+/// window point to an integer, converting back through the renderer's inverse
+/// transform, and comparing in page space therefore cannot be exact.
+///
+/// ⚠ It is a bound on *rounding*, not a bound on *correctness*. Six points is
+/// far below any wrong answer this check is built to catch — a page corner, the
+/// previous caret's run, the page centre — every one of which is hundreds of
+/// points away. If a future build lands inside six points and is still wrong,
+/// widening this is the wrong repair; read the anchor out of the trace instead.
+const ORIGIN_TOLERANCE_PT: f64 = 6.0;
+
+/// Where the blank click aims, in PDF user space (origin bottom-left).
+///
+/// ⚠ **This is a guess about the fixture and it is labelled as one** — which is
+/// exactly what the code this replaces failed to do. On a CAD sheet the very
+/// corner of the media box is outside the drawn border, so it is usually blank;
+/// but "usually" is not an assertion, which is why a run landing here SKIPs
+/// with the run number rather than failing, and why the check reports the point
+/// it used in every outcome.
+const BLANK_AIM_PT: (f64, f64) = (20.0, 20.0);
+
+impl Check for AClickOnBlankPaperStartsNewText {
+    fn name(&self) -> &'static str {
+        "a_click_on_blank_paper_starts_new_text"
+    }
+
+    fn defect(&self) -> &'static str {
+        "clicking empty paper with the text tool armed puts the caret in whatever text happened \
+         to be nearest — at any distance, anywhere on the sheet — instead of starting a new run \
+         where the pointer is, so the operator's one-tool gesture silently becomes an edit of \
+         something he did not click"
+    }
+
+    fn run(&self, ctx: &CheckContext) -> CheckReport {
+        let mut report = CheckReport::new(self.name(), self.defect());
+        match drive_blank_paper(ctx, &mut report) {
+            Ok(Some(failure)) => report.fail(failure),
+            Ok(None) => report.pass(),
+            Err(why) => report.from_error(&why),
+        }
+    }
+}
+
+fn drive_blank_paper(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
+    let (session, driver, mapping, target) = open_in_edit(ctx, report, "tool_blank_paper")?;
+
+    // One bare letter, exactly as the sibling check presses it and for the same
+    // reason: the count of gestures is part of what is being asserted.
+    driver.press(VK_T)?;
+    session.settle(16);
+
+    let (aim_x, aim_y) = BLANK_AIM_PT;
+    let corner = mapping.doc_to_window(DocPoint::new(target.page, aim_x, aim_y))?;
+    let frame = session.frame()?;
+
+    // ★★★ The anchor is taken HERE — after the tool is armed, immediately
+    // before the gesture whose effect is being read. Anchoring any earlier
+    // would let a line emitted during launch, mode entry or arming satisfy a
+    // question about the click.
+    let mark = session.trace()?.mark();
+
+    driver.click_at(frame.to_screen(corner))?;
+    session.settle(24);
+
+    let trace = session.trace()?;
+    let Some(caret) = trace.last_after(CARET_EVENT, mark) else {
+        return Ok(Some(format!(
+            "★★★ A CLICK ON BLANK PAPER PRODUCED NO CARET LINE AT ALL.\n\
+             The text tool was armed and the pointer was put at page {} ({aim_x}, {aim_y}) in \
+             PDF user space, and `{CARET_EVENT}` was not emitted after that gesture. This is \
+             NOT the old defect — the old defect emitted a caret naming the wrong run. It \
+             means the click did not reach `canvas::textedit::place::click` at all.\n\
+             Look at, in order: (1) whether the point converted — a `--doc-point` page that \
+             does not exist makes `doc_to_window` succeed and aim at nothing; (2) whether the \
+             bare `T` is still arming the caret rather than the sweep; (3) whether a panel or \
+             a floating window is over that corner of the canvas and took the press, which is \
+             the `Area::constrain_to` failure recorded in the egui RAG. Trace: {}.",
+            target.page,
+            session.trace_path().display()
+        )));
+    };
+
+    // ── The aim landed in real text. Honest, evidenced, and not this check's
+    //    subject — so SKIP, carrying the run number that proves it.
+    if let Some(run) = caret.get("run") {
+        return Err(Error::new(format!(
+            "the blank click landed IN TEXT: `{}`. The point used was page {} ({aim_x}, \
+             {aim_y}) in PDF user space, and run {run} is drawn there, so this fixture has \
+             content where this check expects paper. That is a fact about the fixture and the \
+             aim, not about the feature — SKIPPED rather than failed or passed. Re-run against \
+             a document with a blank margin, or move `BLANK_AIM_PT`. Trace: {}.",
+            caret.raw,
+            target.page,
+            session.trace_path().display()
+        )));
+    }
+
+    // ── The feature. `origin=` is the fall-through arm's own anchor shape.
+    let Some(origin) = caret.get("origin") else {
+        return Ok(Some(format!(
+            "★★ THE CARET LINE NAMES NEITHER A RUN NOR AN ORIGIN: `{}`.\n\
+             `place::click` writes `run=`, `origin=` or `box=`, so a `box=` here means the \
+             click was routed to the dragged-rectangle entrance rather than the point \
+             entrance. Trace: {}.",
+            caret.raw,
+            session.trace_path().display()
+        )));
+    };
+    let Some((got_x, got_y)) = parse_origin(origin) else {
+        return Ok(Some(format!(
+            "the caret line's `origin=` is unreadable: `{origin}` in `{}`. It is written as \
+             `origin={{x:.1}},{{y:.1}}` by `place::click`; if that format changed, this check \
+             changed with it. Trace: {}.",
+            caret.raw,
+            session.trace_path().display()
+        )));
+    };
+
+    // ★★ Presence was never the assertion. WHERE is.
+    let (dx, dy) = ((got_x - aim_x).abs(), (got_y - aim_y).abs());
+    if dx > ORIGIN_TOLERANCE_PT || dy > ORIGIN_TOLERANCE_PT {
+        return Ok(Some(format!(
+            "★★★ A NEW RUN STARTED, BUT NOT WHERE THE POINTER WAS.\n\
+             Clicked page {} at ({aim_x}, {aim_y}) in PDF user space; the caret anchored at \
+             ({got_x}, {got_y}) — off by ({dx:.1}, {dy:.1}) points against a tolerance of \
+             {ORIGIN_TOLERANCE_PT}.\n\
+             The fall-through arm IS firing, so this is not `hit_test`'s distance bound. It is \
+             the conversion: `place::click`'s `NoRun` arm calls \
+             `viewer::canvas_to_pdf_space` a SECOND time, independently of `resolve_run`'s \
+             call, and a page whose `/Rotate` or CropBox origin is handled differently by the \
+             two would land the text somewhere the operator did not point. Trace: {}.",
+            target.page,
+            session.trace_path().display()
+        )));
+    }
+
+    report.note(format!(
+        "★★★ one press of T and ONE click on blank paper started a new run: `{}`",
+        caret.raw
+    ));
+    report.note(format!(
+        "★★ and it started WHERE THE POINTER WAS — asked for ({aim_x}, {aim_y}), anchored at \
+         ({got_x}, {got_y}), within {ORIGIN_TOLERANCE_PT} pt"
+    ));
+    if let Some(became) = trace.last_after(BECAME_ADD_EVENT, mark) {
+        report.note(format!("★ by the documented route: `{}`", became.raw));
+    } else {
+        // ⚠ Not a failure. The outcome is what is being asserted; this line is
+        // `place.rs` explaining ITSELF, and a build that reached an origin
+        // anchor by some other correct road has still done what the operator
+        // asked. But it is worth saying out loud, because it means the two
+        // stopped agreeing.
+        report.note(
+            "⚠ an origin anchor was reached WITHOUT `text-edit-became-add` — the outcome is \
+             right and the route is not the documented one; read `place::click`",
+        );
+    }
+    Ok(None)
+}
+
+/// Split `origin=X,Y` from a caret trace line into a pair of PDF-space numbers.
+///
+/// Returns `None` rather than a default on anything unparseable, because the
+/// caller must be able to tell *"the origin is in the wrong place"* from *"the
+/// trace format moved and this check is now reading noise"*. A default would
+/// merge them, and the second dressed as the first is a false defect report.
+fn parse_origin(value: &str) -> Option<(f64, f64)> {
+    let (x, y) = value.split_once(',')?;
+    Some((x.trim().parse().ok()?, y.trim().parse().ok()?))
 }

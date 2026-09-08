@@ -570,6 +570,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(deeper_rung_delete::DeletingAPointLeavesTheRestOfTheLineAlone),
         Box::new(deeper_rung_delete::DeletingALabelLeavesTheOtherLabelsAlone),
         Box::new(tool_row::TheTextToolTypesOnOneClick),
+        Box::new(tool_row::AClickOnBlankPaperStartsNewText),
         Box::new(tool_row::ThePointsToolShowsPointsOnOneClick),
         Box::new(tool_row::ShowPointsDrawsAnObjectsPointsWithoutDescending),
         Box::new(dropped_file::ADroppedImageReachesThePlacementWindow),
