@@ -80,6 +80,48 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
+## O153 — ✅ **BUILT 2026-09-08, NOT YET DRIVEN** — a follow-on from O150: two identical lines on one page can now be told apart
+
+Not something you asked for — it came out of measuring O150 — but it is a real
+capability you did not have this morning and may as well know about.
+
+### What could not be done
+
+If a line of text on a drawing was **drawn in separate pieces** (which is how
+your CAD exporter writes almost everything) **and the same words appeared
+somewhere else on that sheet**, pdfcer refused to edit it. It told you the
+words appeared N times and it could not tell which one you meant.
+
+That refusal was honest and it was the safest thing available: the alternative
+was pdfcer editing whichever copy it found first, on a drawing you might have
+already signed and issued.
+
+### What changed
+
+I asked the engine for a way to say *"this one, the one he clicked"*. **It
+shipped within the hour**, and pdfcer now edits the piece of text your cursor
+is actually in, however many copies of those words are on the sheet.
+
+★ The engine also corrected something I had wrong and had been relying on: the
+old fallback of *"just search the page"* was not merely a risk of hitting the
+wrong copy — on some sheets it could make the copy you clicked **unreachable**.
+That is gone with it.
+
+★★ **A knock-on you will notice on a different day:** when your cursor goes
+stale — you clicked, then undid something, then typed — pdfcer used to say
+*"this line is drawn in separate pieces"*, which is not true and reads as *this
+kind of text cannot be edited*. It now says the page has moved on and to click
+again, which is what actually happened.
+
+### ⬜ NOT VERIFIED
+
+Tested against the real engine on a drawing built for it — the test page holds
+two identical pieces of text and asserts the **first** one changed and the
+second did not — but not driven through the window, because you were at the
+machine.
+
+---
+
 ## O152 — ✅ **ANSWERED AND INSTRUMENTED 2026-09-08** — "does our project check for the latest version of egui to compile with?"
 
 **Your words, 2026-09-08:** *"does our project check for the latest version of
