@@ -80,6 +80,54 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
+## O149 — ✅ **FIXED 2026-09-08 — "the redaction feature regressed back to just giving me the 'don't apply yet' button"**
+
+**Your words, 2026-09-08:**
+
+> *"also the redaction feature regressed back to just giving me the 'don't apply
+> yet' button."*
+
+**There is a new choice in the Apply redactions window: "This document, now — the
+page changes immediately."** Press it and the marked content is gone from the
+page in front of you. No file is written; saving stays your decision.
+
+### ⚠ You were right about what you saw, and nothing had broken
+
+On **2026-09-04** you asked pdfcer to stop forcing a new file — *"why can't it
+just wait on saving until I choose to save"* — so applying-into-the-open-document
+became the default. On **2026-09-05** that got cheaper: your undo history now
+survives it. The price of that change is written into the code in as many words:
+**the page does not change.**
+
+So you pressed the only button the default offered and watched nothing happen.
+Which is your 2026-09-04 complaint in different clothes — *"what is the purpose
+of a redaction tool that refuses every time to do any work?"*
+
+⇒ **The deferred option stays.** It is safer, it is cheaper, and it is what you
+asked for. What was missing was the other half beside it.
+
+★ **On the build you have right now, the deferred option does work** — the
+removal happens when you save. It just shows you nothing first.
+
+### The price, said at the control rather than after
+
+Undo is cleared when you use the new option, because the content is genuinely
+gone. Your own ruling on that is on the record from 2026-09-04 — *"finalizing the
+document and can't be undone is ok for now"* — so it is a cost you have already
+accepted, and it is now printed on the control instead of being discovered.
+
+### How it was proved
+
+The automated check that drives this window was given a new assertion. Run
+against **the build you were using**, it fails with your complaint word for word.
+Against the new build it passes.
+
+⚠ **One honest gap.** That check then stops short of pressing all the way
+through: the extra row made the window 124 pixels taller and the test's click
+coordinates no longer land on the acknowledgement box. That is a fault in the
+test, not in the program, and it is written down rather than left looking
+covered.
+
 ## O148 — ✅ **DONE 2026-09-07 — "we should have export/import for that"** — the import half, three days late and driven
 
 **Your words, 2026-09-04:**
