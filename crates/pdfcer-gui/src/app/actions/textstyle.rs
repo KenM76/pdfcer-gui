@@ -647,20 +647,62 @@ fn refusal_of(error: &FormatError) -> t::TextStyleRefusal {
 ///
 /// # ★★ `Unsupported` is the one judgement call, and here is the reasoning
 ///
-/// The engine raises it with three different sentences inside a `String`, and
-/// this deliberately does **not** match on that string — a sentence is not an
-/// API, and a shell that branched on somebody else's prose would break on a
-/// typo fix. Of the three:
+/// The engine raises it with **ten different sentences inside one `String`**,
+/// and this deliberately does **not** match on that string — a sentence is not
+/// an API, and a shell that branched on somebody else's prose would break on a
+/// typo fix.
 ///
-/// | the engine's case | reachable here? |
+/// ## ★★★ CORRECTED 2026-09-07: this arm asserted a cause that cannot happen
+///
+/// It read `E::Unsupported(_) => ReflowRefusal::PageSetChanged`, which put this
+/// in front of the operator:
+///
+/// > *"Reflowing a paragraph needs the pages as they were when you opened the
+/// > file, and pages have been added, removed or reordered since. Save this
+/// > file and open it again, then reflow."*
+///
+/// **Both of the engine cases that mapping was written for are gone.**
+/// `Pass 257.0` (2026-09-06) removed *"the page's content was already edited
+/// this session"* **and** *"the page set was changed this session"* when every
+/// planner moved to `&DocumentView`. Grepped in the pinned engine at
+/// `527b1523`: neither string exists. So the shell was naming a cause the
+/// engine can no longer produce, and sending the operator to look for a page
+/// reordering he did not perform.
+///
+/// ⇒ The table this comment used to carry — three engine cases, two reachable —
+/// was a true reading of the engine on 2026-09-05 and describes nothing now.
+/// What `Unsupported` actually carries at the pin, read from
+/// `text_edit/reflow_apply.rs` and `edit.rs:10409`:
+///
+/// | the engine's sentence | is "save and reopen" the remedy? |
 /// |---|---|
-/// | *"the page's content was already edited this session"* | **yes, since 2026-09-05.** [`reflow`]'s over-broad forecast used to decline first; it is gone, because `Pass 251.0` refuses the case the forecast was really guarding — a page carrying a **non-empty appended content stream** — by name. [`ReflowRefusal::PageAlreadyEdited`] is now raised from the engine's answer rather than ahead of it |
-/// | *"the page set was changed this session"* | **yes**, and it is the one this arm is for |
-/// | *"the page has no `/Contents` to reflow"* | **no** — the operand is a caret in existing text, and a page with no content has no text to put a caret in |
+/// | *"text was added to this page this session … save and reopen before reflowing"* | **yes** — `Pass 251.0`'s data-loss guard |
+/// | *"the page has no `/Contents` to reflow"* | no |
+/// | *"the block carries no font resource"* | no |
+/// | *"the block's font resource is unresolvable"* | no |
+/// | *"the block has no locatable show operators"* | no |
+/// | *"the block's show operators were not found in the content stream"* | no |
+/// | *"a block glyph was shown with no font selected (malformed)"* | no |
+/// | *"the block's CTM has a degenerate (zero) scale"* | no |
+/// | *"rotated text refused by name"* | no |
+/// | *"the document is encrypted; reflow of encrypted files is out of scope"* | no |
 ///
-/// ⇒ So `PageSetChanged` is the honest mapping rather than a guess, and the two
-/// unreachable cases would still land on *"save this file and open it again"*,
-/// which is the right advice for both of them anyway.
+/// ## ⚠ This is a crate-boundary defect, and it is filed rather than worked around
+///
+/// **One in ten has a remedy and the shell cannot tell which one it got.**
+/// There is no discriminant: `Unsupported(String)` is a bag, and the only thing
+/// separating a recoverable *"save and reopen"* from an unrecoverable *"this
+/// paragraph is rotated"* is prose this shell has correctly refused to parse
+/// since the arm was written.
+///
+/// So [`ReflowRefusal::EngineDeclined`] says the one thing true of all ten and
+/// **promises no remedy**, which is worse for the operator in the one case and
+/// honest in all of them — where the old arm was wrong in all ten and
+/// confidently so. Filed at the engine as
+/// `request_reflow_unsupported_is_ten_causes_in_one_string.md`, asking for the
+/// discriminant; when it lands, the `Pass 251.0` case gets its remedy back and
+/// [`ReflowRefusal::PageAlreadyEdited`] — whose sentence is already written and
+/// already tested — becomes reachable again.
 ///
 /// ★ `#[non_exhaustive]` on the engine's enum makes the wildcard mandatory
 /// rather than lazy. It answers [`ReflowRefusal::Other`] — *"pdfcer could not,
@@ -671,7 +713,12 @@ fn reflow_refusal(error: &pdfcer_core::text_edit::ReflowApplyError) -> ReflowRef
     use pdfcer_core::text_edit::ReflowApplyError as E;
     match error {
         E::Encrypted => ReflowRefusal::Encrypted,
-        E::Unsupported(_) => ReflowRefusal::PageSetChanged,
+        // ⚠ NOT `PageSetChanged`, and not `CannotTrace` either. `CannotTrace`
+        // is a specific claim — *"pdfcer cannot tell which parts of the page
+        // drew these lines"* — that is true of five of the ten and false of the
+        // other five, including the commonest one. Merging them would repeat
+        // this arm's own mistake at a smaller scale.
+        E::Unsupported(_) => ReflowRefusal::EngineDeclined,
         // ★ Three engine variants, one operator fact: pdfcer could not follow
         // the paragraph's lines back to the operators that drew them. Splitting
         // them would offer the operator a distinction between "no provenance"

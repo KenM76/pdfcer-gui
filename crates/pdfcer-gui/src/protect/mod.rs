@@ -505,6 +505,32 @@ pub enum EngineRefusal {
     Rng,
     /// An underlying writer error, already formatted.
     Write(String),
+    /// A deferred redaction is armed, so changing the protection would write
+    /// the un-redacted content.
+    ///
+    /// **Added 2026-09-07.** `EncryptError::RedactionPending` shipped on
+    /// 2026-09-05 in answer to this shell's own request, and until today it was
+    /// unmatched — it fell into the `#[non_exhaustive]` catch-all below, which
+    /// forwards the engine's `Display`. That put this in front of the operator:
+    ///
+    /// > *"a deferred redaction is pending; encrypting/re-keying/removing
+    /// > encryption now would write the un-redacted content -- apply it via
+    /// > save_applying_redaction first, or cancel_pending_redaction"*
+    ///
+    /// ⚠ **Two internal Rust function names, in a draughtsman's dialog**, on a
+    /// path reachable in one session: arm a redaction, open File ▸ Security ▸
+    /// Encrypt…. [`crate::text::protect::engine_refusal`]'s own doc comment
+    /// warned about exactly this — *"a `to_string()` of the engine's own
+    /// message would put an implementer's sentence in front of a draughtsman"*
+    /// — and the catch-all was the hole it did not cover.
+    ///
+    /// ★ The Sign surface got this right on the day it shipped
+    /// (`crate::text::sign::refusal_redaction_pending`). This one did not,
+    /// because Sign matched the variant and Protect never added an arm. Two
+    /// surfaces, one engine refusal, and only one of them was updated — which
+    /// is why the wording here deliberately mirrors Sign's *"apply it, or call
+    /// it off, and then …"* shape rather than inventing a second voice.
+    RedactionPending,
 }
 
 impl From<&EncryptError> for EngineRefusal {
@@ -518,6 +544,7 @@ impl From<&EncryptError> for EngineRefusal {
             EncryptError::SignedDocument => Self::Signed,
             EncryptError::Rng(_) => Self::Rng,
             EncryptError::Write(inner) => Self::Write(inner.to_string()),
+            EncryptError::RedactionPending => Self::RedactionPending,
             // ★ `EncryptError` is `#[non_exhaustive]`, so this arm is required
             // by the compiler and is not dead. It carries the engine's own
             // message rather than inventing one, because a variant this build

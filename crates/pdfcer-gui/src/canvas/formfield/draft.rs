@@ -119,12 +119,27 @@ pub struct Draft {
     pub caption: String,
     /// **Push button** — what pressing it does.
     ///
-    /// The placement dialog is the only surface for this, and the reason is a
-    /// gap rather than a design: `pdfcer-core` can WRITE a button's action and
-    /// cannot READ one back, so a control over an *existing* button could not
-    /// say what it currently is. A button being placed has no action yet, which
-    /// makes this the one place the question has a known answer. See
-    /// `canvas::formfield::action`'s header and the tripwire test in it.
+    /// The placement dialog is *a* surface for this — no longer the only one,
+    /// and the correction is dated because the sentence that used to sit here
+    /// was wrong for six days without anything noticing.
+    ///
+    /// > *"The placement dialog is the only surface for this, and the reason is
+    /// > a gap rather than a design: `pdfcer-core` can WRITE a button's action
+    /// > and cannot READ one back, so a control over an existing button could
+    /// > not say what it currently is."*
+    ///
+    /// ⇒ **Superseded 2026-09-07.** `Pass 212.0` shipped
+    /// `EditSession::button_action` on 2026-09-01 — the tripwire test in
+    /// `canvas::formfield::action` fired on exactly that day and was retired
+    /// with its headstone — and `panels::forms::button::row` has read an
+    /// existing button's action ever since. The gap is closed, was closed the
+    /// same day it opened, **and this comment went on asserting it in the
+    /// present tense**, which is the class of defect the 2026-09-07 reply
+    /// triage was run to find.
+    ///
+    /// ★ What is still true, and is the reason this field exists at all: a
+    /// button *being placed* has no action yet, so this is the one place the
+    /// question is asked before there is anything to read.
     pub action: super::action::ButtonDoes,
 }
 

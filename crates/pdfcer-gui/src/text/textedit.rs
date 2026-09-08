@@ -310,6 +310,25 @@ pub enum ReflowRefusal {
     /// The engine's page-set guard: a page was added, removed or reordered, and
     /// reflow's planner is indexed against the base document's pages.
     PageSetChanged,
+    /// The engine declined and gave no cause this shell may act on.
+    ///
+    /// ★★★ **Added 2026-09-07, replacing a mapping that named a cause the
+    /// engine can no longer produce.** `ReflowApplyError::Unsupported(String)`
+    /// carries **ten** distinct refusals in one variant — everything from
+    /// *"text was added to this page this session … save and reopen"* (which
+    /// has a remedy) to *"the block's CTM has a degenerate (zero) scale"*
+    /// (which does not) — with no discriminant to tell them apart, and this
+    /// shell will not parse another crate's prose to guess.
+    ///
+    /// So the sentence says the one thing true of every case and **offers no
+    /// remedy**. That is deliberately worse than the old wording in exactly one
+    /// of the ten cases and better in the other nine, where the old wording
+    /// sent the operator hunting for a page reordering that never happened.
+    ///
+    /// ⇒ Filed at the engine; when a discriminant lands, the one recoverable
+    /// case gets [`Self::PageAlreadyEdited`] back — whose sentence is already
+    /// written and already tested — and this variant narrows to what is left.
+    EngineDeclined,
     /// The document is encrypted, which reflow refuses outright.
     Encrypted,
     /// The engine could not trace the paragraph's lines back to the operators
@@ -343,10 +362,27 @@ impl ReflowRefusal {
             // deliberately not the same sentence: the operator did something
             // different to get here, and a sentence that named the wrong cause
             // would send them looking for an edit they did not make.
+            // ⚠ UNREACHABLE at engine `527b1523` and kept deliberately. Both
+            // engine cases it was written for — *"the page's content was
+            // already edited this session"* and *"the page set was changed this
+            // session"* — were removed by `Pass 257.0` on 2026-09-06, and until
+            // 2026-09-07 `reflow_refusal` mapped every `Unsupported` here, so
+            // this sentence was shown for ten causes and correct for none of
+            // them. It is kept rather than deleted because the guard it
+            // describes is real PDF behaviour that a future engine may reinstate
+            // by name, and because the sentence is already tested.
             Self::PageSetChanged => {
                 "Reflowing a paragraph needs the pages as they were when you opened the file, and \
                  pages have been added, removed or reordered since. Save this file and open it \
                  again, then reflow."
+            }
+            // ★★ The honest general refusal. See `ReflowRefusal::EngineDeclined`
+            // for why it names no cause and offers no remedy: the engine packs
+            // ten causes into one `Unsupported(String)` with no discriminant,
+            // and one invented cause shown ten times is what this replaced.
+            Self::EngineDeclined => {
+                "pdfcer will not re-wrap this paragraph. Something about how this page was drawn \
+                 stops it doing so safely, and your document has not been changed."
             }
             Self::Encrypted => {
                 "This document is encrypted, so pdfcer cannot re-write its text. Remove the \

@@ -310,18 +310,45 @@ pub fn form_field_certification_disabled_tooltip() -> &'static str {
 /// Listed rather than hidden (R83): an operator scrolling past a signature
 /// field should see that pdfcer knows it is there.
 ///
-/// ★★ **CORRECTED 2026-09-05, and it is a worked example of why a conjoined
-/// refusal is dangerous.** It read *"pdfcer does not create or verify
-/// signatures yet."* Half of that stayed true — pdfcer still cannot **sign**
-/// — and half became false the day `signature::verify_all_with_trust` was
-/// wired (`crate::panels::signatures`, engine v0.38.0 at `b01964f`). Because
-/// the two claims shared one sentence, the true half kept the false half
-/// looking true, and this row went on denying a capability the Signatures
-/// panel demonstrates two clicks away. The clauses are separated now, and
-/// only the one that is still true is a refusal.
+/// ★★★ **CORRECTED TWICE, AND THE SECOND CORRECTION IS THE INTERESTING ONE.**
+///
+/// **2026-09-05.** It read *"pdfcer does not create or verify signatures
+/// yet."* Half stayed true — pdfcer could not yet **sign** — and half became
+/// false the day `signature::verify_all_with_trust` was wired
+/// (`crate::panels::signatures`, engine v0.38.0 at `b01964f`). Because the two
+/// claims shared one sentence, the true half kept the false half looking true.
+/// The clauses were separated, *"and only the one that is still true is a
+/// refusal."*
+///
+/// **2026-09-07.** ⇒ **The surviving half went false two days later, and this
+/// row went on saying it for three days.** `Pass 10.7`–`10.9` shipped signing;
+/// `crate::sign` calls `EditSession::sign` at `sign/mod.rs:1177`; `file.sign`
+/// has been a registered command since 2026-09-06. So a panel row was telling
+/// the operator *"pdfcer cannot sign a document"* while the ribbon two clicks
+/// away offered to do exactly that.
+///
+/// ★★★ **The lesson is NOT "split conjoined claims".** That was done, in this
+/// very doc comment, and it did not save this row — the corrected sentence
+/// went stale by the same mechanism eight days later. The lesson is that **a
+/// hard-coded sentence must not make a capability claim at all.**
+///
+/// R8: registering a command is the only way this GUI may learn that a
+/// capability exists. A `&'static str` cannot consult the registry, so any
+/// capability claim baked into one is a fact with no owner — nothing recomputes
+/// it, no gate can read it, and it cannot go stale loudly. Signing is
+/// additionally behind the `signing` Cargo feature, so even a claim that was
+/// true today would be false in a build that strips it, which is precisely the
+/// removability R8 exists to protect.
+///
+/// ⇒ So this sentence now says only what a signature field **is** — a thing
+/// that is signed rather than typed into, which is a property of the PDF field
+/// type and true in every build — and points at the Signatures panel, which is
+/// never stripped (`signing` gates the private-key side only; reading and
+/// verifying are always compiled in). What pdfcer can *do* is disclosed the way
+/// R8 requires: by `file.sign` being present in the ribbon, or absent from it.
 #[must_use]
 pub fn form_field_signature_note() -> &'static str {
-    "Signature field — pdfcer cannot sign a document. The Signatures panel reports on the \
+    "Signature field — it is signed rather than typed into. The Signatures panel reports on the \
      signatures a document already carries."
 }
 

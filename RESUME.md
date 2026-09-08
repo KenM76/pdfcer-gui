@@ -933,7 +933,7 @@
 > insertion already walks to the root correctly. Invisible on every flat
 > fixture, present in every real CAD export. The save now **refuses** rather
 > than writing a file it knows is damaged. ⚠ **Until the engine ships, deleting
-> pages from one of his SolidWorks sets and saving WILL be refused.**
+> pages from one of his SolidWorks sets and saving WILL be refused.** [SUPERSEDED 2026-09-07 - the engine shipped e4cefcd on 2026-09-05, this shell pinned it on 2026-09-06, and the sentence above stayed here for two days. Deleting pages WORKS; the damaged-page-tree guard remains and is correct. The shell test that would have said so had turned into a silent SKIP. See O134.]
 >
 > ★★ **The mockup had been rendering NOTHING for a day** — one JS syntax error,
 > an apostrophe in *"I didn't refuse that."* inside a single-quoted string. Its
@@ -1414,13 +1414,25 @@ has a verb this shell neither calls nor has written a sentence about in
 `bash tools/gates/run-all.sh` before believing any statement in this file about
 what the engine cannot do.
 
-### The one gap left on this subject
+### The one gap left on this subject — CLOSED, and it was closed on the day it
+### was filed
 
-`pdfcer-core` can WRITE a button's action and cannot READ one — `forms::Widget`
-models no `/A`. So the Forms panel has no row for a button **already in the
-document**; only the placement dialog. Filed as
-`request_a_buttons_action_can_be_written_and_not_read.md`, with a tripwire test
-in `canvas::formfield::action` that names its own deletion.
+> `pdfcer-core` can WRITE a button's action and cannot READ one —
+> `forms::Widget` models no `/A`. So the Forms panel has no row for a button
+> **already in the document**; only the placement dialog. Filed as
+> `request_a_buttons_action_can_be_written_and_not_read.md`, with a tripwire
+> test in `canvas::formfield::action` that names its own deletion.
+
+⇒ **Superseded 2026-09-07.** `Pass 212.0` shipped `EditSession::button_action`
+with a fourth state (`Unmodelled`) on **2026-09-01**; the tripwire fired that
+day and was retired with its headstone; `panels::forms::button::row` has read
+an existing button's action ever since, at `button.rs:90`.
+
+⚠ **The paragraph above stood for six days after it stopped being true**, in
+this file, under a heading calling it *the one gap left* — while the code that
+closed it was already merged. Two other copies of the same claim
+(`FEATURES.md`, and a present-tense doc comment in `canvas::formfield::draft`)
+were corrected in the same sweep. See the 2026-09-07 reply triage.
 
 ★★ And `note_widgets_rotate_now_and_three_verbs_you_could_not_reach.md` was
 audited on 2026-08-30 against the shell. Most of it is already built. The

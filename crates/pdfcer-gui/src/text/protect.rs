@@ -455,6 +455,36 @@ pub const fn no_file_refusal() -> &'static str {
     "This document has never been saved, so there is no file for pdfcer to re-open with the owner password. Save it first, then protect it."
 }
 
+/// The refusal when a deferred redaction is armed and the operator asks to
+/// change the document's protection.
+///
+/// ★★ **Deliberately the same shape as
+/// [`crate::text::sign::refusal_redaction_pending`], because it is the same
+/// engine refusal reaching a second surface.** One step, not a wall: the
+/// operator armed the removal, and Edit ▸ Redact holds both the button that
+/// finishes it and the button that calls it off. Two surfaces describing one
+/// refusal in two different voices is how an operator comes to believe they are
+/// two different problems.
+///
+/// ⚠ **This did not exist until 2026-09-07 and the gap was three days old.**
+/// `EncryptError::RedactionPending` shipped 2026-09-05; the Protect surface had
+/// no arm for it, so the engine's own `Display` reached the dialog carrying
+/// `save_applying_redaction` and `cancel_pending_redaction` — internal Rust
+/// names — as the operator's instructions. See
+/// [`crate::protect::EngineRefusal::RedactionPending`].
+///
+/// ★ It names **encrypting** rather than the three operations the engine's
+/// message lists, because the reason is identical for all three and the
+/// operator only ever pressed one of them. Naming the other two would describe
+/// a decision they did not make.
+#[must_use]
+pub const fn redaction_pending_refusal() -> &'static str {
+    "A redaction is armed on this document and has not been applied yet. Changing the protection \
+     now would write the version that still contains what you marked for removal, so pdfcer \
+     refuses it. Apply the redaction, or call it off, on the Redact group of the Edit tab, and \
+     then set the protection."
+}
+
 /// The engine refused the operation after the operator pressed.
 ///
 /// ★ One function with a match rather than six strings at six call sites,
@@ -481,6 +511,7 @@ pub fn engine_refusal(refusal: &crate::protect::EngineRefusal) -> String {
         R::Rng => {
             "pdfcer could not reach this machine's random-number generator, so it could not make a key. Nothing was written. It will never substitute a weaker key to get past this.".to_owned()
         }
+        R::RedactionPending => redaction_pending_refusal().to_owned(),
         R::Write(detail) => format!("pdfcer could not write the protected document: {detail}"),
     }
 }

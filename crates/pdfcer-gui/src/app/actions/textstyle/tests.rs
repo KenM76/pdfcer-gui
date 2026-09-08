@@ -314,3 +314,122 @@ fn bold_takes_the_covering_real_face_on_a_page_that_has_one() {
          worked"
     );
 }
+
+// ===========================================================================
+// `reflow_refusal` — the mapping that had no test, and shipped ten wrong
+// sentences because of it
+// ===========================================================================
+
+/// ★★★ **THE DEFECT THIS FILE HAD NO TEST FOR, until 2026-09-07.**
+///
+/// `reflow_refusal` mapped **every** `ReflowApplyError::Unsupported` to
+/// `ReflowRefusal::PageSetChanged`, which told the operator *"pages have been
+/// added, removed or reordered since. Save this file and open it again."*
+///
+/// That was a correct reading of the engine on 2026-09-05, when `Unsupported`
+/// carried three sentences and two of them were about the session's page set.
+/// `Pass 257.0` removed both on 2026-09-06. From then until this test was
+/// written, `Unsupported` carried **ten** sentences, **none** of them about the
+/// page set, and the shell asserted that cause for all ten.
+///
+/// ⚠ **3,865 tests were green throughout.** Nothing here touched
+/// `reflow_refusal` at all — it was a `fn` with no caller in `#[cfg(test)]` —
+/// so the arm was free to describe an engine that no longer existed.
+#[test]
+fn an_engine_decline_with_no_discriminant_names_no_cause_and_promises_no_remedy() {
+    use crate::text::textedit::ReflowRefusal;
+    use pdfcer_core::text_edit::ReflowApplyError as E;
+
+    // The ten real sentences at engine `527b1523`, read from
+    // `text_edit/reflow_apply.rs` and `edit.rs:10409`. They are listed in full
+    // rather than sampled, because the point of this test is that the shell
+    // must give the SAME honest answer to every one of them — a test that tried
+    // one string would pass against a build that special-cased that string.
+    let every_unsupported = [
+        "text was added to this page this session (in a new content stream); reflow re-emits the \
+         page's first content stream only and committing would drop the added run, so save and \
+         reopen before reflowing this page",
+        "the page has no /Contents to reflow",
+        "the block carries no font resource",
+        "the block's font resource is unresolvable",
+        "the block has no locatable show operators",
+        "the block's show operators were not found in the content stream; refusing",
+        "a block glyph was shown with no font selected (malformed); refusing",
+        "the block's CTM has a degenerate (zero) scale; refusing",
+        "rotated text refused by name",
+        "the document is encrypted; reflow of encrypted files is out of scope",
+    ];
+
+    for sentence in every_unsupported {
+        let got = super::reflow_refusal(&E::Unsupported(sentence.to_owned()));
+        assert_eq!(
+            got,
+            ReflowRefusal::EngineDeclined,
+            "`Unsupported` carries no discriminant, so every one of its sentences must reach the \
+             same shell refusal. This one did not: {sentence:?}.\n\
+             If a discriminant has landed at the engine, this test is the place to split the \
+             mapping — do NOT match on the string."
+        );
+    }
+
+    // ★★ And the sentence must not name a cause. This is the actual assertion:
+    // the old wording was not wrong because it was `PageSetChanged`, it was
+    // wrong because it CLAIMED SOMETHING about the operator's document that the
+    // shell had no way to know.
+    let line = ReflowRefusal::EngineDeclined.line();
+    for invented in [
+        "added, removed or reordered",
+        "Save this file and open it again",
+        "save and reopen",
+        "encrypted",
+        "rotated",
+    ] {
+        assert!(
+            !line.contains(invented),
+            "`EngineDeclined` names a cause it cannot know: {invented:?} appears in {line:?}. \
+             One in ten `Unsupported` sentences has that cause; naming it means being wrong nine \
+             times out of ten, confidently, which is what this variant exists to stop."
+        );
+    }
+    // It must still say the thing that matters most after any refusal.
+    assert!(
+        line.contains("has not been changed"),
+        "every refusal sentence must tell the operator nothing was written: {line:?}"
+    );
+}
+
+/// The two variants that still carry a named cause must only be reachable from
+/// an engine variant that actually names it.
+///
+/// ★ `Encrypted` is the control here and it is the reason this test is worth
+/// writing: it proves the mapping CAN carry a specific cause, so the general
+/// answer above is a considered choice rather than the only thing that works.
+#[test]
+fn a_named_cause_comes_from_a_named_engine_variant() {
+    use crate::text::textedit::ReflowRefusal;
+    use pdfcer_core::text_edit::ReflowApplyError as E;
+
+    assert_eq!(
+        super::reflow_refusal(&E::Encrypted),
+        ReflowRefusal::Encrypted,
+        "`E::Encrypted` is a distinct engine variant, so the shell may and must name that cause"
+    );
+    assert_eq!(
+        super::reflow_refusal(&E::NoProvenance),
+        ReflowRefusal::CannotTrace,
+        "`NoProvenance` names its own cause and keeps its own sentence"
+    );
+
+    // ⚠ `PageSetChanged` is currently constructed NOWHERE. It is kept because
+    // the guard it describes is real PDF behaviour a future engine may
+    // reinstate by name. If this assertion ever fails, that has happened — and
+    // the right response is to delete this line, not the variant.
+    assert!(
+        !matches!(
+            super::reflow_refusal(&E::Unsupported(String::new())),
+            ReflowRefusal::PageSetChanged
+        ),
+        "`PageSetChanged` is being reached from an undiscriminated `Unsupported` again, which is \
+         the exact defect corrected on 2026-09-07"
+    );
+}

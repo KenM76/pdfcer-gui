@@ -274,23 +274,24 @@ split, merge, and rotate (**[** and **]**).
 ★ A document will not let you remove its last page — there is no such thing as
 a PDF with no pages.
 
-### ⚠ Deleting pages from a drawing set may refuse to save, and that is on purpose
+### Deleting pages from a drawing set
 
-**If you delete pages and the save is refused, nothing has gone wrong with your
-document and nothing has been lost.** Your edits are still open in front of you.
+**This works.** Delete pages from a multi-sheet SolidWorks set, save, and the
+file is correct — no blank pages at the end, no refusal.
 
-The reason: on a document whose pages are stored in groups — which is how
-SolidWorks and most CAD exporters write a multi-sheet set — removing pages
-currently updates the group they were in but not the total the file declares at
-the top. The file then says it has more pages than it really has, and **Acrobat
-shows the difference as blank pages at the end**.
+For a period in early September 2026 it did not, and this manual said so. The
+fault was in pdfcer's engine: on a document whose pages are stored in groups —
+which is how SolidWorks and most CAD exporters write a multi-sheet set —
+removing pages updated the group they were in but not the total the file
+declares at the top, so the file claimed more pages than it had and **Acrobat
+showed the difference as blank pages at the end**. It was reported and fixed on
+2026-09-05.
 
-pdfcer will not write a file it knows is damaged. It tells you the two numbers,
-and **Ctrl+Z** puts the pages back and lets the document save normally.
-
-★ This is a fault in pdfcer's engine, it has been reported, and the fix is
-expected shortly. Until then: a single-sheet document is unaffected, and so is
-inserting, extracting, reordering or merging — **only removal**.
+**The safety net that caught it is still there, and it is not going away.**
+pdfcer checks the page tree against itself before writing and will not write a
+file it knows is damaged — it tells you the two numbers instead, and **Ctrl+Z**
+puts the pages back. That guard was built for this defect and outlived it,
+because the next thing to corrupt a page count will not announce itself either.
 
 ---
 

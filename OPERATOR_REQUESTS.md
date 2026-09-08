@@ -1012,7 +1012,29 @@ manifest's binding. A driven check,
 pointer and no keystroke, so it can be run at any time. Its own header says so
 in its first section.
 
-## O134 — ◑ **GUARDED 2026-09-05, AWAITING THE ENGINE FIX AND YOUR VERDICT** — deleting pages gave you a file with blank pages at the end
+## O134 — ✅ **FIXED AND IN YOUR BUILD — deleting pages from a drawing set works** (guard kept)
+
+**Delete pages from a SolidWorks set, save, done.** No refusal, no blank pages
+at the end. The engine fault was fixed on 2026-09-05 (`Pass 251.1`, `e4cefcd`)
+and has been in every build you have had since 2026-09-06.
+
+⚠ **This row told you the opposite for two days**, and so did `MANUAL.md`,
+`RESUME.md` and two other documents. The fix landed; nothing re-read the lock.
+The shell's own test has been printing *"close the engine request and delete
+this test's engine half"* into a silent SKIP that whole time. Corrected
+2026-09-07 by a triage of every unanswered engine reply.
+
+**The guard stays and is not going away.** pdfcer still checks a page tree
+against itself before writing and still refuses a file it knows is damaged —
+including one that **arrived** damaged from some other program. It was built for
+this defect and outlived it, because the next thing to corrupt a page count will
+not announce itself either.
+
+---
+
+### What this row said while the fix sat unread
+
+> ## O134 — ◑ **GUARDED 2026-09-05, AWAITING THE ENGINE FIX AND YOUR VERDICT** — deleting pages gave you a file with blank pages at the end
 
 > ### ★★★ ENGINE FIXED IT — `Pass 251.1`, commit `e4cefcd`, 2026-09-05
 >
@@ -1104,15 +1126,24 @@ with the full measurement and our fixture offered to them.
 is written and registered and **has not been run** — another track owned the
 screen. In those words rather than implied, per rule 3 of this file.
 
-⚠ **What this means for you today, stated plainly because you will hit it.**
-Until the engine ships the fix, **deleting pages from one of your SolidWorks
-drawing sets and then saving will be refused.** That is the correct behaviour —
-the alternative is the file you already found — and it is also an inconvenience.
-It only happens on documents whose page list is built in groups, which is what
-SolidWorks and most drawing exporters produce; a simple flat document is
-unaffected and never was. The engine session answers within the hour; the moment
-it does, deleting pages works and saves normally, and this guard goes quiet
-forever without anything else changing.
+✅ **What this meant for you at the time — and no longer does.** Kept because
+the paragraph is what the engine request was argued from, and superseded on
+2026-09-07:
+
+> ⚠ **What this means for you today, stated plainly because you will hit it.**
+> Until the engine ships the fix, **deleting pages from one of your SolidWorks
+> drawing sets and then saving will be refused.** That is the correct behaviour —
+> the alternative is the file you already found — and it is also an inconvenience.
+> It only happens on documents whose page list is built in groups, which is what
+> SolidWorks and most drawing exporters produce; a simple flat document is
+> unaffected and never was. The engine session answers within the hour; the moment
+> it does, deleting pages works and saves normally, and this guard goes quiet
+> forever without anything else changing.
+
+⇒ **The engine did answer within the hour, and the guard did go quiet — that is
+precisely what went wrong.** It went quiet by turning into a silent SKIP that
+nobody read, so *"deleting pages works and saves normally"* became true on
+2026-09-06 and this row kept saying the opposite until 2026-09-07.
 
 ★ And one thing pdfcer will now also refuse, which is new and is deliberate: a
 document that **arrived** with this fault, written by some other program. You
