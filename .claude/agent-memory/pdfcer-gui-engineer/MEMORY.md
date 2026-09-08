@@ -75,3 +75,4 @@
 - [A new test that does not raise the count did not run](feedback_a_new_test_that_does_not_raise_the_count_did_not_run.md) — three #[test] fns nested inside a fn compiled, reported nothing, ran zero times.
 - [Never kill pdfcer-gui by name — he uses it all day](feedback_never_kill_pdfcer_gui_by_name_he_uses_it_all_day.md) — it is his daily PDF reader; kill by PID and check the PATH, never `/IM`.
 - [Count a condition and you will reason about the other one](feedback_count_a_condition_and_you_will_reason_about_the_other_one.md) — two wrong diagnoses in a day from counting one half of an AND; measure the outcome, and check the harness input first.
+- [An `||` between two required conditions asserts neither](feedback_an_or_between_two_required_conditions_asserts_neither.md) — it looks like tolerance of a rewording; only a per-clause falsification finds it.
