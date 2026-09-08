@@ -188,8 +188,8 @@ pub fn pinned_tail_disclosure(reason: Reason) -> String {
 /// into a stream that has moved, which corrupts the page silently.
 #[must_use]
 pub const fn reflow_after_edit() -> &'static str {
-    "Reflowing a paragraph needs the document as it was when you opened it, so it cannot run \
-     after other changes. Save this file and open it again, then reflow."
+    "You added text to this page in this session, and re-wrapping a paragraph now would \
+     drop it, so pdfcer refuses. Save this file and open it again, then reflow."
 }
 
 /// A reflow that ran and produced the same number of lines.

@@ -645,86 +645,83 @@ fn refusal_of(error: &FormatError) -> t::TextStyleRefusal {
 /// stop. Wording each engine variant separately would put ten operator-facing
 /// decisions in an error type that was written for a library.
 ///
-/// # ★★ `Unsupported` is the one judgement call, and here is the reasoning
+/// # ★★★ Switched onto `ReflowDecline` the same day, 2026-09-07
 ///
-/// The engine raises it with **ten different sentences inside one `String`**,
-/// and this deliberately does **not** match on that string — a sentence is not
-/// an API, and a shell that branched on somebody else's prose would break on a
-/// typo fix.
+/// This function has been wrong twice in two days and the second correction is
+/// the one worth reading, because **it removes the shape that caused both.**
 ///
-/// ## ★★★ CORRECTED 2026-09-07: this arm asserted a cause that cannot happen
+/// **Correction 1 (earlier today).** It read
+/// `E::Unsupported(_) => ReflowRefusal::PageSetChanged`, which told the
+/// operator *"pages have been added, removed or reordered since. Save this file
+/// and open it again."* `Pass 257.0` had deleted both page-set refusals the day
+/// before, so that named a cause the engine could no longer produce — for all
+/// **ten** sentences `Unsupported(String)` then carried, exactly one of which
+/// (`Pass 251.0`'s data-loss guard) actually had *save and reopen* as its
+/// remedy. It was replaced with [`ReflowRefusal::EngineDeclined`], which names
+/// no cause and promises no remedy, and the discriminant was **filed**.
 ///
-/// It read `E::Unsupported(_) => ReflowRefusal::PageSetChanged`, which put this
-/// in front of the operator:
+/// **Correction 2 (hours later).** The engine shipped it — `ReflowDecline`,
+/// `ReflowApplyError::decline()`, `is_recoverable()`, and a named
+/// `PageEditedThisSession` carved out of `Unsupported` with its sentence
+/// byte-identical.
 ///
-/// > *"Reflowing a paragraph needs the pages as they were when you opened the
-/// > file, and pages have been added, removed or reordered since. Save this
-/// > file and open it again, then reflow."*
+/// ⚠⚠⚠ **And the reply flagged a trap in this very function, which is why it
+/// is worth quoting:**
 ///
-/// **Both of the engine cases that mapping was written for are gone.**
-/// `Pass 257.0` (2026-09-06) removed *"the page's content was already edited
-/// this session"* **and** *"the page set was changed this session"* when every
-/// planner moved to `&DocumentView`. Grepped in the pinned engine at
-/// `527b1523`: neither string exists. So the shell was naming a cause the
-/// engine can no longer produce, and sending the operator to look for a page
-/// reordering he did not perform.
+/// > *"any `match` of yours ending in `_` just gained a variant it will not
+/// > distinguish, and the one it will not distinguish is the one you care
+/// > about."*
 ///
-/// ⇒ The table this comment used to carry — three engine cases, two reachable —
-/// was a true reading of the engine on 2026-09-05 and describes nothing now.
-/// What `Unsupported` actually carries at the pin, read from
-/// `text_edit/reflow_apply.rs` and `edit.rs:10409`:
+/// Exactly right. `ReflowApplyError` is `#[non_exhaustive]`, so adding
+/// `PageEditedThisSession` produced **no compile error here** — the new variant
+/// would have fallen into `_ => ReflowRefusal::Other` and the one recoverable
+/// refusal in the whole set would have lost its remedy for the second time in
+/// one day, silently. A capability arriving is not a capability landing, and a
+/// wildcard is how the difference stays invisible.
 ///
-/// | the engine's sentence | is "save and reopen" the remedy? |
-/// |---|---|
-/// | *"text was added to this page this session … save and reopen before reflowing"* | **yes** — `Pass 251.0`'s data-loss guard |
-/// | *"the page has no `/Contents` to reflow"* | no |
-/// | *"the block carries no font resource"* | no |
-/// | *"the block's font resource is unresolvable"* | no |
-/// | *"the block has no locatable show operators"* | no |
-/// | *"the block's show operators were not found in the content stream"* | no |
-/// | *"a block glyph was shown with no font selected (malformed)"* | no |
-/// | *"the block's CTM has a degenerate (zero) scale"* | no |
-/// | *"rotated text refused by name"* | no |
-/// | *"the document is encrypted; reflow of encrypted files is out of scope"* | no |
+/// ## So the wildcard is gone, and that is the actual repair
 ///
-/// ## ⚠ This is a crate-boundary defect, and it is filed rather than worked around
+/// Everything except [`ReflowApplyError::Encrypted`] now routes through
+/// [`ReflowApplyError::decline`]. [`ReflowDecline`] is deliberately **not**
+/// `#[non_exhaustive]` — the engine made the same written promise it made for
+/// `RefusalKind` — so the `match` below is **compiler-proved complete**. A
+/// future engine refusal joins an existing arm and keeps its correct sentence;
+/// a future *decline* is a build failure here, which is the one place it should
+/// be. This shell can no longer silently mis-word a refusal it has not met.
 ///
-/// **One in ten has a remedy and the shell cannot tell which one it got.**
-/// There is no discriminant: `Unsupported(String)` is a bag, and the only thing
-/// separating a recoverable *"save and reopen"* from an unrecoverable *"this
-/// paragraph is rotated"* is prose this shell has correctly refused to parse
-/// since the arm was written.
+/// ★ `Encrypted` is matched by variant, above the discriminant and on purpose.
+/// `ReflowDecline::StructureForbids` covers *"encryption, **or** a save that the
+/// edit gates refused"*, and those need different sentences — one says *remove
+/// the protection*, the other cannot say anything so specific. Naming the
+/// narrower cause where the engine gives a narrower variant is the whole
+/// lesson of correction 1, applied in the other direction.
 ///
-/// So [`ReflowRefusal::EngineDeclined`] says the one thing true of all ten and
-/// **promises no remedy**, which is worse for the operator in the one case and
-/// honest in all of them — where the old arm was wrong in all ten and
-/// confidently so. Filed at the engine as
-/// `request_reflow_unsupported_is_ten_causes_in_one_string.md`, asking for the
-/// discriminant; when it lands, the `Pass 251.0` case gets its remedy back and
-/// [`ReflowRefusal::PageAlreadyEdited`] — whose sentence is already written and
-/// already tested — becomes reachable again.
+/// | decline | shell refusal | why |
+/// |---|---|---|
+/// | [`ReflowDecline::RetryAfterSaveAndReopen`] | [`ReflowRefusal::PageAlreadyEdited`] | the one refusal the operator can act on |
+/// | [`ReflowDecline::NotFound`] | [`ReflowRefusal::CannotTrace`] | *"glyphs cannot be traced back to their show operators"* is that sentence, verbatim |
+/// | [`ReflowDecline::NotReflowable`] | [`ReflowRefusal::EngineDeclined`] | permanent for this document; the operator did nothing wrong and can do nothing |
+/// | [`ReflowDecline::StructureForbids`] | [`ReflowRefusal::Other`] | reachable here only as a gate refusal, which this shell cannot describe more precisely than *"pdfcer could not, and nothing was changed"* |
 ///
-/// ★ `#[non_exhaustive]` on the engine's enum makes the wildcard mandatory
-/// rather than lazy. It answers [`ReflowRefusal::Other`] — *"pdfcer could not,
-/// and your document has not been changed"* — which is true of every variant
-/// this shell has not met, and says the one thing that matters most after a
-/// refusal: nothing was written.
+/// ★★ Note what this shell still refuses to do: read
+/// [`std::fmt::Display`]. The sentences are unchanged and are still
+/// implementer-voiced. The engine's own doc says *"Match this, never `Display`
+/// output"*, and that was this shell's position before the type existed.
 fn reflow_refusal(error: &pdfcer_core::text_edit::ReflowApplyError) -> ReflowRefusal {
     use pdfcer_core::text_edit::ReflowApplyError as E;
+    use pdfcer_core::text_edit::ReflowDecline as D;
     match error {
+        // Named by variant because the engine names it by variant, and because
+        // its remedy — remove the protection — is narrower than its decline.
         E::Encrypted => ReflowRefusal::Encrypted,
-        // ⚠ NOT `PageSetChanged`, and not `CannotTrace` either. `CannotTrace`
-        // is a specific claim — *"pdfcer cannot tell which parts of the page
-        // drew these lines"* — that is true of five of the ten and false of the
-        // other five, including the commonest one. Merging them would repeat
-        // this arm's own mistake at a smaller scale.
-        E::Unsupported(_) => ReflowRefusal::EngineDeclined,
-        // ★ Three engine variants, one operator fact: pdfcer could not follow
-        // the paragraph's lines back to the operators that drew them. Splitting
-        // them would offer the operator a distinction between "no provenance"
-        // and "extraction failed" that they cannot act on differently.
-        E::NoProvenance | E::Extract(_) | E::Content(_) => ReflowRefusal::CannotTrace,
-        _ => ReflowRefusal::Other,
+        // ★★★ NO WILDCARD. See the header: the wildcard that used to be here
+        // would have swallowed `PageEditedThisSession` on the day it shipped.
+        other => match other.decline() {
+            D::RetryAfterSaveAndReopen => ReflowRefusal::PageAlreadyEdited,
+            D::NotFound => ReflowRefusal::CannotTrace,
+            D::NotReflowable => ReflowRefusal::EngineDeclined,
+            D::StructureForbids => ReflowRefusal::Other,
+        },
     }
 }
 

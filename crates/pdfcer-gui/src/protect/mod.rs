@@ -484,9 +484,44 @@ pub enum Refusal {
 /// ★ A private mirror rather than the engine's own type, for one reason:
 /// `EncryptError` is `#[non_exhaustive]`, is not `Clone`, and carries an
 /// `io`-shaped `WriteError` that cannot sit in a dialog's state across frames.
-/// The mirror is `Clone`, is exhaustively matched by
-/// [`crate::text::protect::engine_refusal`], and turns a new engine variant into
-/// a **compile error here** rather than a silent fall-through to a catch-all.
+/// The mirror is `Clone` and is **exhaustively** matched by
+/// [`crate::text::protect::engine_refusal`], so every variant *this* enum has
+/// owns a sentence or the build fails.
+///
+/// ## ⚠⚠ CORRECTED 2026-09-07 — the half of that claim that was never true
+///
+/// This comment used to end *"and turns a new engine variant into a **compile
+/// error here** rather than a silent fall-through to a catch-all."*
+///
+/// **That was false the day it was written, and it cannot be made true.**
+/// `EncryptError` is `#[non_exhaustive]`, so [`From`] below is *required* to
+/// carry a wildcard; the compiler can never object to a variant it has never
+/// seen, and the stated mechanism has never been able to fire once. The
+/// exhaustiveness is real on the near side of the mirror and imaginary on the
+/// far side, and the sentence claimed the far side.
+///
+/// ⇒ It was caught by `check-engine-api-drift`, not by a reader:
+/// `EncryptError::RedactionPending` shipped 2026-09-05 **in answer to this
+/// shell's own request**, fell into the wildcard for three days, and delivered
+/// the engine's implementer-voiced message — naming `save_applying_redaction`
+/// and `cancel_pending_redaction` — into a draughtsman's dialog. The gate held
+/// it as a written exemption ending *"DELETE THIS LINE the day the arm is
+/// added"*; the arm is added, the line is deleted, and this paragraph is what
+/// the exemption was standing in for.
+///
+/// ★★★ **The same shape bit twice in one evening, in unrelated code.** Hours
+/// earlier, `app::actions::textstyle::reflow_refusal`'s wildcard was about to
+/// swallow `ReflowApplyError::PageEditedThisSession` — the engine's reply
+/// warned about it by name — and the repair there was the same: route through
+/// a discriminant the engine declares **exhaustive on purpose**, so the
+/// `match` is compiler-proved and a new refusal joins an existing arm instead
+/// of vanishing.
+///
+/// ⚠ **No such discriminant exists for `EncryptError`.** So the wildcard below
+/// stays, and this comment now says what it actually guarantees rather than
+/// what would be reassuring: a new engine variant arrives here **silently**,
+/// carrying the engine's own words, and the only thing that will notice is
+/// `check-engine-api-drift`. That gate is the mechanism. This type is not.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum EngineRefusal {
     /// A password was offered to a document that already has one.

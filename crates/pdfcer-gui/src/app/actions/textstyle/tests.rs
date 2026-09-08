@@ -346,9 +346,10 @@ fn an_engine_decline_with_no_discriminant_names_no_cause_and_promises_no_remedy(
     // must give the SAME honest answer to every one of them — a test that tried
     // one string would pass against a build that special-cased that string.
     let every_unsupported = [
-        "text was added to this page this session (in a new content stream); reflow re-emits the \
-         page's first content stream only and committing would drop the added run, so save and \
-         reopen before reflowing this page",
+        // NB the Pass 251.0 sentence is NOT in this list any more. It became
+        // `ReflowApplyError::PageEditedThisSession` on 2026-09-07, hours after
+        // this test was written, and is asserted by
+        // `the_one_recoverable_refusal_keeps_its_remedy` below.
         "the page has no /Contents to reflow",
         "the block carries no font resource",
         "the block's font resource is unresolvable",
@@ -431,5 +432,107 @@ fn a_named_cause_comes_from_a_named_engine_variant() {
         ),
         "`PageSetChanged` is being reached from an undiscriminated `Unsupported` again, which is \
          the exact defect corrected on 2026-09-07"
+    );
+}
+
+/// ★★★ **THE TRAP THE ENGINE WARNED ABOUT, MADE INTO AN ASSERTION.**
+///
+/// `pdfcer-core` shipped `ReflowApplyError::PageEditedThisSession` on
+/// 2026-09-07, hours after `EngineDeclined` was added above, and the reply that
+/// announced it flagged a hazard in this shell's own code by name:
+///
+/// > *"any `match` of yours ending in `_` just gained a variant it will not
+/// > distinguish, and the one it will not distinguish is the one you care
+/// > about."*
+///
+/// Exactly right. `ReflowApplyError` is `#[non_exhaustive]`, so the new variant
+/// produced **no compile error** — it would have fallen into
+/// `_ => ReflowRefusal::Other` and the only recoverable refusal in the whole
+/// set would have lost its remedy for the **second time in one day**, silently.
+///
+/// ⇒ The wildcard is gone; everything but `Encrypted` routes through
+/// `ReflowApplyError::decline()`, and `ReflowDecline` is deliberately not
+/// `#[non_exhaustive]`, so that match is compiler-proved complete. This test is
+/// the belt to that braces: it asserts the *outcome* the operator gets, which a
+/// future refactor could break without touching the enum.
+#[test]
+fn the_one_recoverable_refusal_keeps_its_remedy() {
+    use crate::text::textedit::ReflowRefusal;
+    use pdfcer_core::text_edit::ReflowApplyError as E;
+
+    let got = super::reflow_refusal(&E::PageEditedThisSession);
+    assert_eq!(
+        got,
+        ReflowRefusal::PageAlreadyEdited,
+        "`PageEditedThisSession` is the ONE reflow refusal an operator can act on. If this \
+         reads `Other` or `EngineDeclined`, a wildcard has come back and the remedy is \
+         unreachable — which is the defect corrected twice on 2026-09-07."
+    );
+
+    // ★★ And the remedy must actually be IN the sentence. Reaching the right
+    // variant while its wording lost the instruction would satisfy the
+    // assertion above and help nobody.
+    let line = got.line();
+    assert!(
+        line.contains("Save this file and open it again"),
+        "the recoverable refusal must tell the operator the one thing that clears it: {line:?}"
+    );
+    assert!(
+        line.contains("added text to this page"),
+        "it must name the cause, which pdfcer now genuinely knows — the engine's own variant \
+         says so. A vague sentence here is the pre-2026-09-07 behaviour: {line:?}"
+    );
+}
+
+/// Every engine decline reaches a shell refusal that suits it, and none of them
+/// collapses into the general one.
+///
+/// ★ This is the test that would have caught the original defect on the day
+/// `Pass 257.0` landed. It walks **every** `ReflowDecline` — the type is not
+/// `#[non_exhaustive]`, so this list cannot silently fall behind — and asserts
+/// the four are not all the same answer, which is the whole reason the
+/// discriminant was asked for.
+#[test]
+fn each_engine_decline_reaches_a_refusal_that_suits_it() {
+    use crate::text::textedit::ReflowRefusal;
+    use pdfcer_core::text_edit::ReflowApplyError as E;
+    use pdfcer_core::text_edit::ReflowDecline as D;
+
+    // One real error per decline, constructed rather than described.
+    let cases = [
+        (E::PageEditedThisSession, D::RetryAfterSaveAndReopen),
+        (E::PageIndex(99), D::NotFound),
+        (
+            E::Unsupported("rotated text refused by name".to_owned()),
+            D::NotReflowable,
+        ),
+    ];
+
+    let mut seen = Vec::new();
+    for (error, want_decline) in cases {
+        assert_eq!(
+            error.decline(),
+            want_decline,
+            "the engine's own discriminant moved; re-read `ReflowDecline` before touching \
+             `reflow_refusal`"
+        );
+        seen.push(super::reflow_refusal(&error));
+    }
+
+    // ★★★ The point: three declines, three DIFFERENT operator outcomes. Before
+    // 2026-09-07 every one of these produced the same sentence, and that
+    // sentence named a cause the engine could not produce.
+    for (i, a) in seen.iter().enumerate() {
+        for b in seen.iter().skip(i + 1) {
+            assert_ne!(
+                a, b,
+                "two distinct engine declines produced the same shell refusal. That is the \
+                 collapse `ReflowDecline` was requested to end: {seen:?}"
+            );
+        }
+    }
+    assert!(
+        seen.contains(&ReflowRefusal::PageAlreadyEdited),
+        "the recoverable case must survive the walk: {seen:?}"
     );
 }
