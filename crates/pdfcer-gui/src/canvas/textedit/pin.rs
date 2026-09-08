@@ -399,11 +399,27 @@ pub fn operators(doc: &OpenDoc, page: usize, run: usize) -> Vec<Operator> {
 /// build, which is the cheap direction to catch it in. The signature is now the
 /// honest one: this function's job is the **preview**, and the extraction is the
 /// caller's.
+/// ★★★ `candidate` — **the text the operator is ABOUT TO WRITE**, not the text
+/// that is there. Added 2026-09-08 with `Pass 142.2`.
+///
+/// `None` coverage-tests the run's own characters, which is the right question
+/// for a Properties panel describing a run as it stands. `Some(text)` tests the
+/// characters in `text` instead, which is the right question — the **only**
+/// right question — for a surface offering a way past a character the current
+/// face refused.
+///
+/// ⚠ **It is a required argument rather than an `Option` with a default, and
+/// that is deliberate.** Adding a parameter that keeps the old behaviour when
+/// omitted would have let both existing call sites silently decline the new
+/// capability: the compiler goes quiet, the tests stay green, and the surface
+/// that needed it most goes on asking the wrong question. Two call sites, two
+/// forced decisions, one compile error each.
 #[must_use]
 pub fn font_preflight(
     doc: &OpenDoc,
     page: usize,
     read: &Inspected,
+    candidate: Option<&str>,
 ) -> Option<pdfcer_core::text_edit::FontPreflight> {
     // ★★★ An EMPTY find, since `Pass 147.0`. The pre-flight resolves the
     // pinned operator's own characters through `effective_find` — the same
@@ -421,9 +437,19 @@ pub fn font_preflight(
     // added in the same Pass after a test showed `s.text.contains("")` is true
     // of every string — so a caller who forgets to pin gets an error rather
     // than the first operator on the page.
-    doc.session
-        .preview_font_resources(page, "", Some(read.pin.span))
-        .ok()
+    match candidate {
+        // ★ The engine's own two entry points, chosen here rather than by
+        // passing `None` through one of them — so a reader of this function
+        // sees which question was asked.
+        None => doc
+            .session
+            .preview_font_resources(page, "", Some(read.pin.span))
+            .ok(),
+        Some(text) => doc
+            .session
+            .preview_font_resources_for(page, "", Some(read.pin.span), text)
+            .ok(),
+    }
 }
 
 /// The pin **and** the current style for `run` on `page`, in one extraction.

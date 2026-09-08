@@ -266,34 +266,48 @@ pub fn refused_char_offer(character: char) -> String {
     format!("Pick a font that has the “{character}” and pdfcer will put your change in with it:")
 }
 
-/// ★★★ **The honest limit on the offer**, filed rather than hidden.
+/// **No face pdfcer can author will take this character either** — the honest
+/// dead end, named rather than drawn as an empty list.
 ///
-/// `preview_font_resources` coverage-tests **the characters already in the
-/// run**, not the one about to be typed. So a row in this list can be a face
-/// that then refuses the operator's character, and the refusal is a sentence
-/// rather than a greyed-out row.
+/// # ★★★ This function REPLACED a caveat, and the replacement is the feature
 ///
-/// # Why the list is not silently filtered to look confident
+/// What stood here until 2026-09-08 was `refused_char_untested`, and it read:
 ///
-/// The standing ruling on this exact surface, taken from the Bold button: *"Do
-/// not grey out a bold button. Offer it, and surface the disclosure."* Filtering
-/// would need this crate to re-derive which face uses `WinAnsiEncoding`, which
-/// two use a built-in symbolic one, and what that leaves unmapped —
-/// `FontPreflight`'s own invariant (`R221`) forbids exactly that, and a second
-/// copy of the rule in `pdfcer-gui` drifts from the commit path the first time
-/// the rule changes. Filed at the engine as
-/// `request_font_preflight_tests_the_text_that_is_there_not_the_text_about_to_be_typed.md`;
-/// nothing is blocked on the reply.
+/// > *"pdfcer has not checked these against your “{character}” — if the one you
+/// > pick cannot write it either, pdfcer will say so and change nothing."*
 ///
-/// ★ The sentence promises what happens on the bad case — *pdfcer will say so
-/// and change nothing* — because a caveat that names a risk without naming its
-/// consequence reads as a reason not to press the control.
+/// That was honest and it was **the right sentence while it was true**. The
+/// offer was coverage-tested against *the characters already in the run*, not
+/// the one the operator was trying to type, so any row in it might refuse.
+/// Filing it rather than filtering was deliberate: filtering would have meant
+/// re-deriving `R221`'s encoding rule inside this crate, which drifts from the
+/// commit path the first time the rule changes.
+///
+/// ⇒ **`Pass 142.2` removed the caveat's subject.**
+/// `preview_font_resources_for` coverage-tests a candidate string, the refused
+/// character is now that candidate, and every row in the list is a face that
+/// **will** take it. A caveat warning about a row that can no longer appear
+/// would be a sentence teaching the operator to distrust a list that is now
+/// exact — so it is deleted rather than reworded.
+///
+/// # What it exposed, and why this sentence exists at all
+///
+/// Filtering to *faces that work* means the list can now be **empty** — and it
+/// is, for any character outside `WinAnsiEncoding`, because none of the
+/// standard 14 can encode one. Before the filter that state was impossible;
+/// after it, drawing the old heading (*"Pick a font that has the 中"*) above an
+/// empty combo would be an instruction the operator cannot follow.
+///
+/// ★ So the dead end is **named**, and it names the two things the operator can
+/// still do — neither of which is pdfcer's to perform, which is why they are
+/// offered as information rather than as buttons that would refuse.
 #[must_use]
-pub fn refused_char_untested(character: char) -> String {
+pub fn refused_char_no_face(character: char) -> String {
     format!(
-        "pdfcer checked these fonts against the words already here, not against the \
-         “{character}”. If the one you pick cannot type it either, pdfcer will say so and change \
-         nothing."
+        "None of the fonts pdfcer can add to this page can write “{character}” either — they \
+         cover the Western European alphabets only. Your document has not been changed. A font \
+         that has this character must already be in the file, or come from a program that can \
+         embed one."
     )
 }
 
@@ -505,7 +519,7 @@ mod tests {
         for line in [
             refused_char_named('€', "Arimo-Bold"),
             refused_char_offer('€'),
-            refused_char_untested('€'),
+            refused_char_no_face('€'),
             refused_char_swapped('€', "Helvetica-Bold"),
         ] {
             assert!(
@@ -628,19 +642,44 @@ mod tests {
         );
     }
 
-    /// ★★ **The caveat names the limit AND what happens when it bites.**
+    /// ★★★ **The dead end says the document survived it, and says what the
+    /// operator can still do.**
     ///
-    /// `preview_font_resources` tests the text that is there, not the text about
-    /// to be typed, so a row can still refuse. Saying so without saying that the
-    /// document survives it would make the caveat read as a reason not to press
-    /// the control — which is how an honest disclosure turns into a deterrent.
+    /// # What this test replaced, and why the assertion changed shape
+    ///
+    /// It was `the_caveat_says_what_happens_when_the_face_refuses_too`, over
+    /// `refused_char_untested` — the sentence warning that a row in the offer
+    /// might refuse the character it was being offered for. That warning was
+    /// true while the offer was coverage-tested against the run's **existing**
+    /// text; `Pass 142.2` made the refused character itself the candidate, so
+    /// no row in the list can refuse any more and the caveat's subject is gone.
+    ///
+    /// ⇒ What the filter exposed instead is an **empty** offer, for any
+    /// character no standard-14 face can encode. This is the sentence drawn
+    /// there, and the old test's real assertion carries over unchanged: **say
+    /// that nothing was changed.** A dead end that does not say so reads as a
+    /// failure the operator has to go and check.
+    ///
+    /// ★ Plus the half the old sentence could not have: a dead end owes the
+    /// operator the *next* thing to try, even when that thing is not pdfcer's
+    /// to do.
     #[test]
-    fn the_caveat_says_what_happens_when_the_face_refuses_too() {
-        let line = refused_char_untested('€');
-        assert!(line.contains("not against"), "{line}");
+    fn the_dead_end_says_the_document_is_unchanged_and_what_is_still_possible() {
+        let line = refused_char_no_face('€');
         assert!(
-            line.contains("change nothing"),
-            "the consequence is the half that keeps this from reading as a warning: {line}"
+            line.contains("has not been changed"),
+            "a dead end that does not say the document survived it reads as a failure the \
+             operator must go and verify: {line}"
+        );
+        assert!(
+            line.contains("already be in the file") || line.contains("embed"),
+            "it must name what is still possible, or it is only a complaint: {line}"
+        );
+        // ⚠ It must NOT keep the old caveat's hedge. The list is exact now, and
+        // a sentence implying otherwise teaches the operator to distrust it.
+        assert!(
+            !line.contains("has not checked"),
+            "the untested caveat's wording must not survive its subject: {line}"
         );
     }
 }

@@ -78,7 +78,7 @@
 //! re-deriving the encoding rule, and a second copy would drift from the commit
 //! path — and the standing ruling on this surface is the Bold button's: *offer
 //! it, and surface the disclosure*. That is
-//! [`crate::text::panels::face::refused_char_untested`], drawn beside the
+//! [`crate::text::panels::face::refused_char_no_face`], drawn instead of the
 //! chooser.
 //!
 //! ## The state machine, and why it is three states rather than one
@@ -465,9 +465,35 @@ pub(super) fn section(
     // character, so the fourteen are the answer in every case that reaches this
     // line — and a disclosure that appeared only sometimes would be one the
     // operator learns to skip.
+    // ★★★ THE OFFER CAN NOW BE EMPTY, AND AN EMPTY OFFER IS A SENTENCE — not a
+    // heading above a combo with nothing in it. 2026-09-08.
+    //
+    // Since the list is coverage-tested against the refused character itself,
+    // every row in it is a face that WILL take the character — and for a
+    // character outside `WinAnsiEncoding` there are none, because no standard-14
+    // face can encode one. That state was unreachable while the list was built
+    // untested; it is reachable now, and drawing *"Pick a font that has the
+    // 中"* above an empty control would be an instruction the operator cannot
+    // follow.
+    //
+    // ⇒ R9, in its ordinary form: an unavailable capability renders nothing.
+    // What still renders is the REPORT — the refusal was already announced two
+    // lines up, and stopping without saying why would leave that hanging.
+    if !state
+        .faces
+        .iter()
+        .any(|f| f.origin == crate::panels::properties::face::FaceOrigin::PdfcerWouldAdd)
+    {
+        let dead = ui
+            .label(egui::RichText::new(t::refused_char_no_face(refused.character)).small())
+            .rect;
+        crate::diag::ui_rect_visible(DISCLOSURE_REGION, dead, ui.clip_rect());
+        ui.separator();
+        return true;
+    }
+
     let note = ui.label(egui::RichText::new(t::face_addable_disclosure()).small());
     crate::diag::ui_rect_visible(DISCLOSURE_REGION, note.rect, ui.clip_rect());
-    ui.label(egui::RichText::new(t::refused_char_untested(refused.character)).small());
 
     ui.label(t::refused_char_offer(refused.character));
     let mut chosen = None;
@@ -527,7 +553,27 @@ fn sync_faces(doc: &OpenDoc, state: &mut RefusedCharUi, refused: &RefusedCharact
     }
     state.faces_stamp = Some(stamp);
     state.faces = crate::canvas::textedit::pin::inspect(doc, refused.page, refused.run)
-        .and_then(|read| crate::canvas::textedit::pin::font_preflight(doc, refused.page, &read))
+        .and_then(|read| {
+            // ★★★ THE REFUSED CHARACTER IS THE CANDIDATE — 2026-09-08.
+            //
+            // This surface exists to answer one question: *"this character will
+            // not go in; which face WILL take it?"* Coverage-testing the run's
+            // EXISTING characters answers a different one, and answers it
+            // confidently — every face that can hold the words already there,
+            // including the ones that cannot hold the character the operator is
+            // trying to type.
+            //
+            // ⇒ So the offer used to carry a caveat admitting the rows were
+            // untested for the character they were being offered for. `Pass
+            // 142.2` took that caveat's subject away; the caveat is deleted
+            // with it, and this argument is why.
+            crate::canvas::textedit::pin::font_preflight(
+                doc,
+                refused.page,
+                &read,
+                Some(&refused.character.to_string()),
+            )
+        })
         .as_ref()
         .map_or_else(Vec::new, |preflight| super::face::choices(Some(preflight)));
 }
@@ -819,6 +865,83 @@ mod tests {
                 shown.character
             );
         }
+    }
+
+    /// ★★★ **THE OFFER IS TESTED AGAINST THE CHARACTER THAT WAS REFUSED, NOT
+    /// AGAINST THE WORDS ALREADY IN THE RUN.**
+    ///
+    /// This is the assertion that proves the `candidate` argument reaches the
+    /// engine, and it needs a character that **discriminates**. `'q'` does not:
+    /// every standard-14 text face holds it, so the sibling test above passes
+    /// whether the offer was coverage-tested for `'q'` or for the run's own
+    /// ASCII. A test that cannot tell the two apart is not a test of the change.
+    ///
+    /// `'中'` discriminates. No standard-14 face can encode it under
+    /// `WinAnsiEncoding` or under `Symbol`/`ZapfDingbats`' built-in encodings,
+    /// while the run's own characters are plain ASCII that all twelve text faces
+    /// hold. So:
+    ///
+    /// | what the pre-flight is asked | addable rows |
+    /// |---|---|
+    /// | the run's own text (`None`) | twelve |
+    /// | the refused character (`Some("中")`) | **none** |
+    ///
+    /// ⇒ An empty offer is the CORRECT answer here, and it is worth stating why
+    /// that is not a regression: pdfcer genuinely cannot type `'中'` with any
+    /// face it can author, and a list of twelve faces that would each refuse is
+    /// a control that cannot work — the exact thing R9 forbids and the exact
+    /// thing this surface used to carry a written caveat about.
+    ///
+    /// ★ The caveat is deleted, not reworded. Its subject is gone.
+    #[test]
+    fn the_offer_is_coverage_tested_for_the_refused_character_not_the_runs_own_text() {
+        drain();
+        let doc = crate::app::state::open_local_fixture("subset-font-floor.pdf");
+        let mut state = crate::panels::PanelsState::default();
+        let mut actions = Vec::new();
+
+        // Same run, same fixture, same route as the sibling test — only the
+        // character differs, which is what makes the comparison meaningful.
+        record(0, 0, '中', FIXTURE_FONT.to_owned(), None);
+
+        let ctx = egui::Context::default();
+        let input = egui::RawInput {
+            screen_rect: Some(egui::Rect::from_min_size(
+                egui::Pos2::ZERO,
+                egui::vec2(360.0, 900.0),
+            )),
+            ..Default::default()
+        };
+        for _ in 0..2 {
+            let _ = ctx.run_ui(input.clone(), |ui| {
+                crate::panels::properties::body(ui, &doc, &mut state, &mut actions);
+            });
+        }
+
+        let ui = state.refused_char_mut();
+        let shown = ui
+            .shown
+            .clone()
+            .expect("the panel must adopt the refusal exactly as it does for 'q'");
+        assert_eq!(shown.character, '中');
+
+        let addable: Vec<&str> = ui
+            .faces
+            .iter()
+            .filter(|face| {
+                face.origin == crate::panels::properties::face::FaceOrigin::PdfcerWouldAdd
+            })
+            .map(|face| face.label.as_str())
+            .collect();
+
+        assert!(
+            addable.is_empty(),
+            "no face pdfcer can author encodes {:?}, so every one of these rows would refuse if \
+             the operator pressed it. A non-empty list here means `sync_faces` is still asking \
+             the pre-flight about the RUN'S OWN characters — the `candidate` argument is not \
+             reaching `preview_font_resources_for`. Offered: {addable:?}",
+            shown.character
+        );
     }
 
     /// ★★★ **Taking the offer swaps the face AND re-applies the operator's own

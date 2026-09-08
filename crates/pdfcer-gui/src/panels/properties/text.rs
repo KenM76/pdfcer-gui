@@ -426,7 +426,10 @@ impl TextStyleDraft {
         // run those faces are not a capability that is temporarily unavailable,
         // they are not applicable.
         self.faces = super::face::choices(
-            crate::canvas::textedit::pin::font_preflight(doc, page, &read).as_ref(),
+            // `None` — the run's OWN characters. This panel describes the run
+            // as it stands, and there is no text about to be written; asking
+            // about a candidate here would be asking about nothing.
+            crate::canvas::textedit::pin::font_preflight(doc, page, &read, None).as_ref(),
         );
         // ★★★ **What the two weight buttons would do**, asked here for the
         // reason everything else in this function is asked here: it costs a
