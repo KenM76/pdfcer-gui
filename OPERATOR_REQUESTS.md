@@ -616,11 +616,37 @@ not against the one you are about to type — so a row can be a face that then
 refuses your `€`, and you get a sentence rather than a greyed-out row. That is
 said on screen, beside the list, rather than hidden.
 
-**The engine shipped the fix for it today** (`preview_font_resources_for`, with a
-candidate string), in direct answer to this project's request of the same
-morning. It is not in the build you are running: this shell is pinned to engine
-v0.40.0 and the capability landed after it. `ENGINE_BACKLOG.md` carries the row,
-what it costs to consume, and what gets deleted when it is.
+✅ **DONE 2026-09-08, and the caveat above is gone with it.**
+
+**Every face in that list now works.** pdfcer tests them against **the character
+you could not type**, rather than against the words already in the line — so a
+font that would refuse when you picked it no longer appears at all. On your own
+test file the list went from fourteen fonts to twelve, and the two that left
+(`Symbol` and `ZapfDingbats`) are picture alphabets that could never have typed
+a letter.
+
+**And when nothing will work, it says so** instead of offering you a list:
+
+> *"None of the fonts pdfcer can add to this page can write “中” either — they
+> cover the Western European alphabets only. Your document has not been changed.
+> A font that has this character must already be in the file, or come from a
+> program that can embed one."*
+
+That state could not happen before, because the list was never filtered. It can
+now, and a heading saying *"pick a font that has this character"* above an empty
+box would be an instruction you cannot follow.
+
+⚠ **Superseded — what this row said until 2026-09-08:**
+
+> **The engine shipped the fix for it today** (`preview_font_resources_for`, with
+> a candidate string), in direct answer to this project's request of the same
+> morning. It is not in the build you are running: this shell is pinned to engine
+> v0.40.0 and the capability landed after it. `ENGINE_BACKLOG.md` carries the
+> row, what it costs to consume, and what gets deleted when it is.
+
+⇒ The pin moved on 2026-09-06 and that sentence stopped being true then. It sat
+for two days, and was found by reading every outstanding message from the engine
+rather than by anything automatic.
 
 ### While measuring this, two engine defects turned up and are filed
 
