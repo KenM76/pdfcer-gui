@@ -508,27 +508,31 @@ mod tests {
     // a delete breaks them, and until 2026-09-08 neither said so
     // ===========================================================================
 
-    /// ⚠⚠ **THESE THREE ARE STRING TESTS AND THE CHAIN IS NOT DRIVEN — stated
-    /// rather than implied.**
+    /// ⚠ **THESE THREE ARE STRING TESTS. What they cover, and what covers the
+    /// rest — stated rather than implied.**
     ///
-    /// They pin the wording, which is where both sentences could go wrong in a
-    /// way a reader would not notice. They do **not** prove the sentences reach
-    /// the operator: the wiring is six conditional lines in
-    /// `app::actions::forms` and `::forms::delete`, and a build that dropped
-    /// either `if` passes every assertion below.
+    /// They pin the *wording*, which is where both sentences could go wrong in
+    /// a way no reader would notice: that the two do not borrow each other\'s
+    /// alarm or reassurance, that both admit JavaScript was not handled, and
+    /// that the rename count is worded as *places* rather than *buttons*.
     ///
-    /// ★ The blocker is a fixture, and it is named so the next session does not
-    /// re-derive it: the counters are about action targets written as
-    /// **fully-qualified name strings** (`/ResetForm` and `/SubmitForm`'s
-    /// `/Fields`, `/Hide`'s `/T`). `fixtures/submit-button.pdf` — the only
-    /// fixture in this repository carrying a form action at all — names its
-    /// target by **object reference** (`/Fields [4 0 R]`), which the traversal
-    /// is structurally blind to. A fixture with a name-string target is what
-    /// this needs, and it is a hand-authored one.
+    /// They do **not** prove the sentences are ever produced. That is
+    /// `crates/pdfcer-gui/tests/action_targets_are_disclosed.rs`, added the
+    /// same day: it drives `rename_field` and `delete_field` against
+    /// `fixtures/action-names-field.pdf` — hand-authored for this, because the
+    /// counters see only targets written as **fully-qualified name strings**
+    /// and `submit-button.pdf` names its target by object reference, which the
+    /// traversal is structurally (and correctly) blind to — and asserts the
+    /// counts are non-zero, the sentences follow from them, and a rename of a
+    /// field **nothing names** reports zero.
     ///
-    /// ⇒ Recorded as a gap rather than left to look covered. A string test
-    /// beside an unwired sentence is exactly the shape this project spent
-    /// 2026-09-07 correcting.
+    /// ⇒ What is still uncovered is the **frame**: that the status bar draws
+    /// the line. `tools/ui-verify` is where that belongs.
+    ///
+    /// ★ This paragraph was corrected once already. It read *"the chain is not
+    /// driven"* for as long as it took to build the fixture, which is the right
+    /// thing for a limit to say while it is true and the wrong thing to leave
+    /// standing afterwards.
     /// ★★★ **A rename says pdfcer rewrote buttons the operator did not touch, and
     /// a delete says it could not.**
     ///
