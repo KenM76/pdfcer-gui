@@ -721,14 +721,20 @@ pub(super) fn set_note(doc: &mut OpenDoc, id: ObjId, text: &str, author: Option<
                 // a re-baked text box from a sticky note, which are the two
                 // outcomes that look identical from outside.
                 format!(
+                    // ★ `rich_dropped` is a COUNT of the keys the engine
+                    // removed, not the keys themselves: the operator-facing
+                    // sentence does not name them (they mean nothing to a
+                    // reviewer) and a driven check only needs to know whether
+                    // the disclosure should have fired.
                     "set-markup-note-applied id={} chars={} keys={} replaced={} \
-                     subtype={} rebaked={}",
+                     subtype={} rebaked={} rich_dropped={}",
                     id.num,
                     text.chars().count(),
                     change.keys_written.join("+"),
                     change.replaced.is_some(),
                     change.subtype,
-                    change.appearance_rebaked
+                    change.appearance_rebaked,
+                    change.rich_text_dropped.len()
                 )
             });
             // ★★★ The text box's disclosure goes FIRST, and the order is the
@@ -753,6 +759,20 @@ pub(super) fn set_note(doc: &mut OpenDoc, id: ObjId, text: &str, author: Option<
             // record of the morning this shell spent disclosing a defect the
             // engine closed by the afternoon are all at
             // `crate::text::textannot`'s edit-time banner.
+            //
+            // ★★★ …and the rich-text drop goes LAST of the three, because it
+            // is the only one that is *good news*: the operator's document was
+            // inconsistent before this edit and is consistent after it. The
+            // first two are things they need in order to act — what the page
+            // did not do, and what words they can retype. This one is a
+            // statement that a problem they never knew about has been closed,
+            // and it must not displace either of them from the truncated slot.
+            //
+            // ⚠ It is disclosed rather than swallowed because **pdfcer removed
+            // a key the operator did not ask it to remove**, which is rule 4
+            // in its narrowest form: nothing on the page changes, nothing in
+            // the panel changes, and the only other way to find out is a diff
+            // of the file.
             crate::text::textannot::note_edit_disclosure(&change.subtype, change.appearance_rebaked)
                 .map(str::to_owned)
                 .into_iter()
@@ -762,6 +782,9 @@ pub(super) fn set_note(doc: &mut OpenDoc, id: ObjId, text: &str, author: Option<
                         .as_deref()
                         .and_then(crate::text::markup::note_replaced),
                 )
+                .chain(crate::text::markup::rich_text_dropped(
+                    &change.rich_text_dropped,
+                ))
                 .collect()
         })
     });
@@ -794,13 +817,14 @@ pub(super) fn clear_note(doc: &mut OpenDoc, id: ObjId) {
                 // ui-text-exempt: diagnostic trace, never displayed.
                 format!(
                     "clear-markup-note-applied id={} keys={} had_note={} had_author={} \
-                     subtype={} rebaked={}",
+                     subtype={} rebaked={} rich_dropped={}",
                     id.num,
                     change.keys_written.join("+"),
                     change.replaced.is_some(),
                     change.replaced_author.is_some(),
                     change.subtype,
-                    change.appearance_rebaked
+                    change.appearance_rebaked,
+                    change.rich_text_dropped.len()
                 )
             });
             // First, for the same reason as `set_note` — and the surprise is
@@ -812,6 +836,18 @@ pub(super) fn clear_note(doc: &mut OpenDoc, id: ObjId) {
             // ★ On one it DID draw, `clear_markup_note` empties the painted
             // box in the same command — so `appearance_rebaked` is `true`,
             // nothing is left unsaid, and this stays quiet.
+            //
+            // ★★ **And the rich-text drop applies here too**, which is easy to
+            // miss because *removing* a note sounds like it could not leave a
+            // stale copy behind. It could: `/RC` is a second copy of the same
+            // comment, so clearing `/Contents` without it would leave the
+            // pop-up — and, on a `/FreeText`, the page — still showing words
+            // the operator has just deleted.
+            //
+            // ⇒ Wired in both arms rather than only in the one the defect was
+            // reported against. A disclosure attached to one of two paths
+            // through the same engine report is how a surface comes to be
+            // right on Tuesday and wrong on Wednesday.
             crate::text::textannot::note_clear_disclosure(
                 &change.subtype,
                 change.appearance_rebaked,
@@ -824,6 +860,9 @@ pub(super) fn clear_note(doc: &mut OpenDoc, id: ObjId) {
                     .as_deref()
                     .and_then(crate::text::markup::note_removed),
             )
+            .chain(crate::text::markup::rich_text_dropped(
+                &change.rich_text_dropped,
+            ))
             .collect()
         })
     });

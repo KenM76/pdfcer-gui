@@ -487,6 +487,65 @@ pub fn appearance_distorted() -> String {
         .to_owned()
 }
 
+/// ★★★ **A SECOND COPY OF THE COMMENT WAS REMOVED** — the disclosure for
+/// `MarkupNoteChange::rich_text_dropped` (`pdfcer-core`, 2026-09-08).
+///
+/// # What actually happened, because the operator cannot possibly guess it
+///
+/// PDF stores a comment **twice**. `/Contents` is the plain string; `/RC` is a
+/// *rich-text version of the same comment* (§12.7.3.4), and §12.5.6.2 pairs
+/// them in as many words — *"Contents (or RC and DS)"*. pdfcer writes
+/// `/Contents` and cannot author rich text, so editing a note used to leave
+/// the two **disagreeing**: the plain copy held the new words and the rich
+/// copy still held the old ones.
+///
+/// ⚠ **That is not lost content — it is WRONG content, stated confidently**,
+/// and which copy an operator sees depends on their reader. On any markup,
+/// Table 170 makes `/RC` the text *"displayed in the pop-up window"*; on a
+/// `/FreeText`, Table 174 makes it *"used to generate the appearance"*, so
+/// **the page itself** could have shown the old words.
+///
+/// The engine now removes the stale copy rather than regenerating it —
+/// synthesising rich text from a plain string would invent formatting nobody
+/// chose, and §12.7.3.4 gives no meaning to an empty rich value.
+///
+/// # Why this needs a sentence at all
+///
+/// Rule 4, in its narrowest and clearest form: **pdfcer dropped a key the
+/// operator did not ask it to drop.** Nothing on the page changes, nothing in
+/// the panel changes, and the only way to find out would be a diff of the
+/// file. That is the exact shape of edit this project's disclosure rule
+/// exists for.
+///
+/// ⇒ And it is the *good* news, not a warning, which is why the wording leads
+/// with the fix rather than with the removal. Before this the operator's
+/// document was inconsistent and said nothing; now it is consistent and says
+/// so. A sentence that opened *"pdfcer removed something"* would read as a
+/// loss.
+///
+/// ★ It names the **formatting**, not the keys. `/RC` and `/DS` mean nothing
+/// to a drawing-office reviewer, and the only consequence they can act on is
+/// that a comment they had styled somewhere else is now plain.
+///
+/// ★★ `None` on the ordinary case, which is nearly every comment: pdfcer's own
+/// annotations never carry `/RC`, so this fires only on a note that arrived
+/// from Acrobat or another rich-text editor. A disclosure that fired on every
+/// edit is one nobody reads by the third time — the same rule
+/// [`note_replaced`] follows.
+#[must_use]
+pub fn rich_text_dropped(keys: &[String]) -> Option<String> {
+    if keys.is_empty() {
+        return None;
+    }
+    Some(
+        "This comment also had a formatted copy of its old words, which some readers show \
+         instead of the plain one. pdfcer cannot write formatted text, so it removed the old \
+         copy rather than leave your document saying two different things. The comment now \
+         reads the same everywhere; any styling it had is gone."
+            .to_owned(),
+    )
+}
+
 /// **Disclosure: the words this note used to carry, on the case where a save
 /// overwrote them.**
 ///
@@ -998,6 +1057,92 @@ pub const fn measure_stale() -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// ★★★ **The rich-text disclosure fires when a copy was dropped, and stays
+    /// silent when none was.**
+    ///
+    /// Both directions, because either alone is satisfiable by a broken build:
+    /// a function returning `Some` unconditionally passes the first, and one
+    /// returning `None` unconditionally passes the second. This project has
+    /// shipped the second shape — a disclosure wired to a field nobody set —
+    /// and the only symptom was silence.
+    ///
+    /// ★ The silent case is the *common* one and that is why it is asserted at
+    /// all: pdfcer's own annotations never carry `/RC`, so every comment this
+    /// operator writes and then edits takes the empty path. A sentence that
+    /// fired on all of them would be read once and skipped thereafter,
+    /// including on the one edit where it mattered.
+    #[test]
+    fn a_dropped_rich_copy_is_disclosed_and_an_absent_one_is_not() {
+        assert_eq!(
+            rich_text_dropped(&[]),
+            None,
+            "★ nothing was dropped, so nothing may be said. pdfcer's own comments carry no \
+             rich copy, so this is the path nearly every edit takes"
+        );
+
+        let one = rich_text_dropped(&["RC".to_owned()]).expect("a dropped key must be disclosed");
+        let two = rich_text_dropped(&["RC".to_owned(), "DS".to_owned()])
+            .expect("two dropped keys must be disclosed");
+        assert_eq!(
+            one, two,
+            "★★ the sentence must not vary with WHICH keys went. `/RC` alone happens on a \
+             /Square and `/RC` + `/DS` on a /FreeText, and the operator-visible consequence \
+             is identical — a comment that had styling is now plain. Two wordings for one \
+             consequence is two things to keep true"
+        );
+    }
+
+    /// ★★ **It says what was lost, and it does not say `/RC`.**
+    ///
+    /// The wording rule this catalog follows everywhere: name the thing in the
+    /// operator's vocabulary. A drawing-office reviewer has no idea what `/RC`
+    /// or `/DS` are, and the only fact they can act on is that a comment they
+    /// had styled elsewhere is now plain text.
+    ///
+    /// ★ It must also **not open with an apology or a loss**, because the net
+    /// effect of this change is that their document stopped contradicting
+    /// itself. Before it, `/Contents` held the new words while `/RC` held the
+    /// old ones and some readers showed the old ones — on a `/FreeText`, on the
+    /// page itself.
+    #[test]
+    fn the_rich_text_sentence_is_in_his_words_not_the_specs() {
+        let said = rich_text_dropped(&["RC".to_owned(), "DS".to_owned()]).expect("a sentence");
+        for jargon in ["/RC", "/DS", "RC", "DS", "rich text", "annotation", "key"] {
+            assert!(
+                !said.contains(jargon),
+                "★ {jargon:?} is spec vocabulary and means nothing to a reviewer. Got: {said}"
+            );
+        }
+        assert!(
+            said.contains("formatted"),
+            "★★ it must name what was actually lost — the formatting — or the operator cannot \
+             tell whether their WORDS survived. Got: {said}"
+        );
+        // ★★★ THE REASON AND THE OUTCOME ARE TWO CLAIMS, ASSERTED SEPARATELY.
+        //
+        // This was one `||` of the two until a falsification run caught it:
+        // deleting *"two different things"* from the sentence left the test
+        // green on *"same everywhere"* alone. They are not two spellings of
+        // one fact — the first says **why pdfcer acted**, the second says
+        // **what the document is like now** — and a sentence carrying only the
+        // second reads as pdfcer discarding something of theirs on a whim.
+        //
+        // ⇒ **An `||` between two conditions that are both required is an
+        // assertion that neither is.** Written down because the `||` looked
+        // like tolerance of a rewording and was actually a hole, and because
+        // it was found by planting a defect rather than by reading the code.
+        assert!(
+            said.contains("two different things"),
+            "★★★ it must say WHY — that the document was contradicting itself. Without the \
+             reason this reads as pdfcer discarding something of theirs on a whim. Got: {said}"
+        );
+        assert!(
+            said.contains("same everywhere"),
+            "★★ …and what the document is like NOW, which is the part that says the problem \
+             is closed rather than merely reported. Got: {said}"
+        );
+    }
 
     /// ★ Every tooltip says the setting applies to the NEXT mark.
     ///
