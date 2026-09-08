@@ -133,15 +133,26 @@ pub enum BoxKind {
         /// ## ★ What is still NOT honoured, and why it is a boundary rather
         /// than a choice
         ///
-        /// The widget's **background colour** (`/MK` `/BG`, Table 189) is the
-        /// other half of the same review finding, and it is not reachable:
-        /// `pdfcer_core::forms::Widget` models `/MK` `/CA` and deliberately
-        /// nothing else — `D:\Dev\pdfcer\crates\pdfcer-core\src\forms.rs:429`
-        /// states the reason (R43: pdfcer paints the baked `/AP` and never
-        /// synthesises appearance from `/MK`). So the editor draws in the
-        /// theme's own text-edit colours because that is the only colour it
-        /// can name, not because the question was settled. Reported, not
-        /// guessed at.
+        /// The widget's **background colour** (`/MK` `/BG`, Table 189) was
+        /// recorded here as unreachable, and ⚠ **it is reachable now —
+        /// corrected 2026-09-07.**
+        ///
+        /// > *"it is not reachable: `pdfcer_core::forms::Widget` models `/MK`
+        /// > `/CA` and deliberately nothing else … So the editor draws in the
+        /// > theme's own text-edit colours because that is the only colour it
+        /// > can name, not because the question was settled. Reported, not
+        /// > guessed at."*
+        ///
+        /// It was reported, and the engine answered: `Widget::background`
+        /// (2026-09-04) and `Widget::border_color` (2026-09-07, `fad0d2d`,
+        /// which also fixed a read/write key mismatch between the two — so the
+        /// first cut was wrong on that side as well).
+        ///
+        /// ⚠ **The editor still draws theme colours, and that is now a gap
+        /// rather than a boundary.** A shaded field turns grey while it is
+        /// edited and back on commit. `ENGINE_BACKLOG.md` carries the row;
+        /// this comment exists so nobody reads the old sentence as a settled
+        /// architectural decision and closes the row on it.
         align: Quadding,
     },
     /// A `/Btn` check box. A click toggles between `on_state` and `Off`.
@@ -762,6 +773,11 @@ mod tests {
             // means "this file states no /MK /BG", which is exactly true of one
             // built in a test.
             background: None,
+            // The widget states no /MK /BC. Arrived with the engine commit
+            // fad0d2d (2026-09-07), which added /BC beside /BG and fixed a
+            // read/write key mismatch between them. See ENGINE_BACKLOG.md:
+            // neither colour is consumed by this shell yet.
+            border_color: None,
             border: None,
             visibility: None,
             annot_flags: pdfcer_core::annot::AnnotFlags(0),

@@ -1118,6 +1118,11 @@ mod tests {
                 // means "this file states no /MK /BG", which is exactly true of one
                 // built in a test.
                 background: None,
+                // The widget states no /MK /BC. Arrived with the engine commit
+                // fad0d2d (2026-09-07), which added /BC beside /BG and fixed a
+                // read/write key mismatch between them. See ENGINE_BACKLOG.md:
+                // neither colour is consumed by this shell yet.
+                border_color: None,
                 border: None,
                 visibility: None,
                 annot_flags: pdfcer_core::annot::AnnotFlags(0),

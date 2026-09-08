@@ -126,11 +126,24 @@
 //! [`boxes::editor_align`], and the operator's text no longer jumps from the
 //! left of a centred field to its middle at the moment they tab away.
 //!
-//! The **background colour** half of the same finding is a boundary rather
-//! than a decision, and it is written down as one on [`BoxKind::Text::align`]:
-//! `/MK` `/BG` is not in `pdfcer_core::forms::Widget` at all
-//! (`D:\Dev\pdfcer\crates\pdfcer-core\src\forms.rs:429` says why), so this
-//! shell cannot ask the question, let alone answer it. Stated, not guessed at.
+//! The **background colour** half of the same finding was recorded here as a
+//! boundary, and ⚠ **that boundary is gone — corrected 2026-09-07.**
+//!
+//! > *"`/MK` `/BG` is not in `pdfcer_core::forms::Widget` at all
+//! > (`forms.rs:429` says why), so this shell cannot ask the question, let
+//! > alone answer it. Stated, not guessed at."*
+//!
+//! `Widget::background` shipped 2026-09-04 and `Widget::border_color` on
+//! 2026-09-07, and the line this cited now reads *"carries `/BC`, `/BG` (now
+//! modelled)"*. **The question can be asked. It is not yet answered** — see
+//! `ENGINE_BACKLOG.md`, where the consequence is written in the operator's
+//! terms: the in-canvas editor paints the theme's colours over a shaded
+//! field, so a tinted form box turns grey while it is being edited.
+//!
+//! ★ Kept rather than deleted because the sentence was **correct when
+//! written and correctly filed** — it is what the engine request was argued
+//! from. What expired is the tense, and a claim whose history is erased
+//! cannot be audited.
 //!
 //! ### What this surface cannot promise, stated rather than discovered
 //!
