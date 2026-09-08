@@ -514,6 +514,28 @@ pub enum WriteRefusal {
     /// The bytes were proven and the file system refused them: the folder is
     /// gone, the path is read-only, the volume is full.
     FileSystem(std::io::Error),
+    /// The redaction succeeded and its result will not re-parse.
+    ///
+    /// ★★★ Reachable only from [`PreparedRedaction::into_verified_document`],
+    /// and it is **not** an I/O failure wearing a different name: nothing was
+    /// written. The removal happened, the proof passed, and the bytes the
+    /// engine produced cannot be read back as a document.
+    ///
+    /// ⚠ It has its own variant rather than borrowing [`Self::FileSystem`]
+    /// because the operator's next step differs completely. A file-system
+    /// failure says *try again, or somewhere else*. This says **the open
+    /// document is unchanged and this cannot be applied in place** — the
+    /// removal must go to a new file instead, where the bytes are written
+    /// rather than re-read.
+    ///
+    /// ★ It should be unreachable. `write_to` has produced these same bytes for
+    /// every redaction this program has ever written, and a PDF pdfcer just
+    /// serialised failing to re-parse would be an engine defect worth a request
+    /// rather than a shrug — which is why the reason is carried verbatim.
+    RedactedDocumentUnreadable {
+        /// The parser's own words.
+        reason: String,
+    },
 }
 
 impl std::fmt::Display for WriteRefusal {
@@ -535,6 +557,10 @@ impl std::fmt::Display for WriteRefusal {
                 survivors.len()
             ),
             Self::FileSystem(e) => write!(f, "the file could not be written: {e}"),
+            Self::RedactedDocumentUnreadable { reason } => write!(
+                f,
+                "the redaction succeeded and its result will not re-parse: {reason}"
+            ),
         }
     }
 }
@@ -606,6 +632,75 @@ impl PreparedRedaction {
     #[must_use]
     pub fn byte_len(&self) -> usize {
         self.bytes.len()
+    }
+
+    /// **Read the redacted document back as a parsed [`Document`], for loading into
+    /// the open session — and prove it one last time first.**
+    ///
+    /// The **second** path by which these bytes leave this module, added
+    /// 2026-09-08, and it is deliberately shaped like [`Self::write_to`] rather
+    /// than like a getter — `&self`, two gates, same order.
+    ///
+    /// # ★★★ Why this is not `pub fn bytes()`
+    ///
+    /// [`Self::bytes`]' own doc forbids exactly that: *"adding a `pub fn
+    /// bytes()` here would restore exactly the surface `pdfcer`'s
+    /// `redact-apply` uses to write an unverified file."* The first draft of
+    /// this feature cloned the buffer into an action and would have done
+    /// precisely that — the bytes would have travelled the action queue
+    /// unproven and been loaded by a caller with no obligation to check them.
+    ///
+    /// ⇒ So this returns a **parsed `Document`**, never the buffer, and runs
+    /// the same two gates in the same order as `write_to` and for the reasons
+    /// §2.2 and §2.3 give: the acknowledgement first because it is the cheap
+    /// question and an ordinary state, then the re-proof, because *"pdfcer and
+    /// pdfcer disagree about whether the text is gone"* is a defect and not a
+    /// state.
+    ///
+    /// # ★★ Why re-proving matters MORE here than for a file
+    ///
+    /// A failed write leaves a file that can be deleted. This replaces the
+    /// operator's open document, and the session it replaces is the last thing
+    /// holding the un-redacted content in memory. Handing back a document whose
+    /// text survived would put un-redacted content on screen under the belief
+    /// that it had been removed — which is the one outcome this whole module
+    /// exists to make impossible.
+    ///
+    /// ★ No atomicity question arises: nothing is written. The document on disk
+    /// is untouched until the operator saves, which is what
+    /// `crate::text::redact::destination_open_document_now_tooltip` promises.
+    ///
+    /// # Errors
+    ///
+    /// [`WriteRefusal::ResidualsNotAcknowledged`] when residuals were reported
+    /// and the operator has not ticked the box;
+    /// [`WriteRefusal::VerificationFailed`] when the independent proof finds
+    /// removed text still present; and [`WriteRefusal::Io`] — reused rather
+    /// than a new variant — when the redacted bytes will not re-parse, which is
+    /// the same class of *"the removal happened and the result is unusable"*
+    /// and needs the same operator sentence.
+    pub fn to_verified_document(
+        &self,
+        acknowledgement: ResidualAcknowledgement,
+    ) -> Result<Document, WriteRefusal> {
+        let residuals = self.verification.residuals.len();
+        if residuals > 0 && acknowledgement == ResidualAcknowledgement::Withheld {
+            return Err(WriteRefusal::ResidualsNotAcknowledged { residuals });
+        }
+        if let Some(survivors) =
+            proof::survivors_in_content_streams(&self.bytes, &self.report.redacted_text)
+        {
+            return Err(WriteRefusal::VerificationFailed { survivors });
+        }
+        // ★ `clone()` and it stays INSIDE this module. The parser takes an
+        // owned buffer; `&self` is what makes this mirror `write_to`, which
+        // also does not consume the preparation — an operator whose parse fails
+        // still has a dialog with a working *Save to a new file* row.
+        Document::from_bytes(self.bytes.clone()).map_err(|err| {
+            WriteRefusal::RedactedDocumentUnreadable {
+                reason: err.to_string(),
+            }
+        })
     }
 
     /// **Write the redacted document to `target`, and prove it one last time
@@ -1257,3 +1352,47 @@ pub fn prove_saved_bytes(bytes: &[u8], claims: &[String]) -> Result<(), Vec<Stri
 /// 2026-09-04 — see [`tests`]'s header for the seam.
 #[cfg(test)]
 mod tests;
+
+// ===========================================================================
+// The apply-now hand-off
+// ===========================================================================
+
+thread_local! {
+    /// The document an *apply now* has just produced, waiting for the action
+    /// funnel to install it.
+    ///
+    /// # ★★★ Why a slot rather than a payload on the action
+    ///
+    /// `RedactAction` derives `Clone` and `PartialEq`, and
+    /// [`PreparedRedaction`] is deliberately neither — cloning a redacted
+    /// document is precisely the thing this module makes hard. Deriving them
+    /// for it to fit an enum would have been the tail wagging the dog, and
+    /// `Document` is no more clonable.
+    ///
+    /// ⇒ So the action carries **consent and counts**, which are small and
+    /// copyable, and the document travels here. That split is not a workaround:
+    /// it is the same one `crate::app::actions::disclosure` makes for the same
+    /// reason, and that module's own note says why a thread-local is sound
+    /// rather than smuggled — this is not document state, it is a value in
+    /// flight between one frame and the action drained after it.
+    ///
+    /// ★ Single-slot and take-on-read. Two applies cannot be in flight: the
+    /// dialog closes on the press, and a second press would need it reopened.
+    /// A queue would model a concurrency this surface does not have.
+    static APPLIED: std::cell::RefCell<Option<Document>> = const { std::cell::RefCell::new(None) };
+}
+
+/// Park a verified redacted document for the action funnel.
+pub(crate) fn park_applied_document(doc: Document) {
+    APPLIED.with(|slot| slot.replace(Some(doc)));
+}
+
+/// Take it, exactly once.
+///
+/// ★ `take`, not `borrow`. If the action ran twice the second would find
+/// nothing and do nothing, which is the right failure: re-installing the same
+/// document over a session the operator has since edited would silently discard
+/// that work.
+pub(crate) fn take_applied_document() -> Option<Document> {
+    APPLIED.with(|slot| slot.borrow_mut().take())
+}

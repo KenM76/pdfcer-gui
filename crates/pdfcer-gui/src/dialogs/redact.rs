@@ -217,6 +217,9 @@ use crate::redact::{
 };
 use crate::text::redact as t;
 
+mod destination;
+use destination::{DEFAULT_DESTINATION, Destination};
+
 // ---------------------------------------------------------------------------
 // Named regions
 //
@@ -256,6 +259,9 @@ const REGION_OVERWRITE_ACK: &str = "redact-apply-overwrite-ack"; // ui-text-exem
 /// one created in this session that has no file to replace, so its ABSENCE
 /// from a trace is evidence about the build rather than about the document.
 const REGION_DESTINATION_INTO_DOCUMENT: &str = "redact-apply-destination-into-document"; // ui-text-exempt: trace region name, never displayed
+/// The *this document, now* radio, for `ui-verify`.
+// ui-text-exempt: trace region name, never displayed
+const REGION_DESTINATION_INTO_DOCUMENT_NOW: &str = "redact-apply-destination-into-document-now";
 
 /// The *a new file* destination choice, also declared unconditionally.
 ///
@@ -363,129 +369,6 @@ enum Phase {
     },
     /// A destination was named and no file appeared.
     WriteFailed(WriteRefusal),
-}
-
-/// **Where the redacted document goes.**
-///
-/// ★★★ Added 2026-09-04, on the operator's explicit instruction, and it
-/// reverses a ruling this file used to state as settled. His words:
-///
-/// > *"why does it have to save to a new file right away? Why can't it just
-/// > wait on saving until I choose to save over the existing file or save as a
-/// > new file?"*
-///
-/// # What this file used to say, and why it was wrong
-///
-/// [`RedactDialog::commit`] read, verbatim: *"There is no 'save over the
-/// original' branch to find, because there is none to write, and on this
-/// operation that is the difference between a copy and the destruction of the
-/// only remaining source of the content being removed."*
-///
-/// The premise is true and the conclusion did not follow. Overwriting the
-/// source **is** the destruction of the only remaining copy — but the person
-/// entitled to decide that is the person who marked the content for
-/// destruction in the first place, and forcing a copy does not protect him from
-/// the decision, it only makes him perform it in two steps with a stray file
-/// left over. Every other edit in this shell trusts him with Save and Save As
-/// on exactly this reasoning; the redaction had quietly taken the decision away
-/// on his behalf.
-///
-/// ★ What the old ruling was *actually* protecting is kept, and kept in the
-/// form it belongs in: [`Self::NewFile`] is still the **default**, and
-/// `crate::dialogs::redact::suggested_path` still never suggests the source. A
-/// safe default is a mechanism; a warning is something to click past. The
-/// change is that the safe default is now a default rather than the only
-/// option.
-///
-/// # ★★★ CORRECTED the same evening — the deferred half SHIPPED, and this
-/// section used to say it could not
-///
-/// What stood here, verbatim, written at about midday:
-///
-/// > *"⚠ What this deliberately does NOT do, and why. He asked for the write to
-/// > be deferred — applied into the session, saved later by Save or Save As
-/// > like any other edit. **The engine cannot express that**, and this dialog
-/// > does not fake it. [`pdfcer_core::redact::apply_redactions`] takes a
-/// > `&Document` and returns `Vec<u8>`; `EditSession`'s only constructor is
-/// > `new(Document)` and it has no `replace_document`, no `rebase` and no
-/// > `reload`."*
-///
-/// Every clause of that was true when it was written and was filed as an engine
-/// request the same morning. **The engine answered it that afternoon**:
-/// `EditSession::apply_redactions` (`Pass 250.1`, `225db51`) applies the
-/// removal into the session and leaves the write to the ordinary save verbs. So
-/// the paragraph is not softened, it is **replaced** — [`Self::OpenDocument`]
-/// is the destination it said was impossible, and it is now the default.
-///
-/// ★ What the old paragraph got right and is worth keeping: the manoeuvre it
-/// refused — *"building a second `EditSession` and swapping it under the open
-/// document"* — is still refused, and the engine did not ship that either. Its
-/// verb collapses the session in place, keeps the document identity, and clears
-/// the undo log **by name** rather than by accident, which is the difference
-/// between a disclosed consequence and a silent data loss. The refusal was
-/// right; only its conclusion about what could exist was wrong.
-///
-/// The request is at `D:\Dev\FeatureRequests\pdfce_FeatureRequests\
-/// open\request_apply_redactions_into_the_session.md` and the reply beside it.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Destination {
-    /// ★★★ **The open document, with nothing written — the default since
-    /// 2026-09-04 (evening), and the thing he actually asked for.**
-    ///
-    /// `crate::redact::stage_into_session`: the removal is armed, and
-    /// `file.save` / `file.save_as` / `file.save_copy` carry it out, exactly as
-    /// they carry every other edit to a file.
-    ///
-    /// It is the **default** because it is the only one of the three that
-    /// writes nothing. The old default ([`Self::NewFile`]) was safe because it
-    /// never overwrote; this is safer still, because it never writes.
-    ///
-    /// ★★★ **Its price was inverted on 2026-09-05, and the old price is worth
-    /// recording because it is what the operator agreed to.** Under
-    /// `Pass 250.1` this destination **finalized**: the removal happened at the
-    /// click and the whole undo log went with it, disclosed above the confirm
-    /// control as a step count, on his ruling *"finalizing the document and
-    /// can't be undone is ok **for now**"*. `Pass 250.2` charges nothing —
-    /// base, overlay and the entire undo/redo stack survive — and what is
-    /// disclosed in the same place is the surprise that replaced the price:
-    /// [`crate::text::redact::removal_happens_at_save`], because **the page
-    /// does not change**.
-    OpenDocument,
-    /// A new file, chosen in the save picker.
-    NewFile,
-    /// The document that is open, replaced in place.
-    ///
-    /// Offered only when the source is a real file on disk — a document
-    /// created in this session has no original to replace, and a control
-    /// meaning "replace nothing" is worse than an absent one.
-    ReplaceOriginal,
-}
-
-/// ★★★ **The destination a freshly-opened dialog starts on.**
-///
-/// A named constant rather than a literal inside [`RedactDialog::open`], so the
-/// property that actually matters — *the default writes nothing* — can be
-/// asserted without constructing a document, and so that changing it is a
-/// visible edit rather than one word in a struct literal.
-///
-/// It moved on 2026-09-04 from [`Destination::NewFile`] to
-/// [`Destination::OpenDocument`]. Both are safe defaults and for different
-/// reasons: the old one never *overwrote*, the new one never *writes*.
-const DEFAULT_DESTINATION: Destination = Destination::OpenDocument;
-
-impl Destination {
-    /// Whether this destination writes a file **now**, rather than leaving the
-    /// write to a later Save.
-    ///
-    /// A method rather than three `== ` comparisons scattered through
-    /// [`RedactDialog`], because five separate places ask the same question —
-    /// which permanence sentence, which button label, which acknowledgements
-    /// are owed, whether the picker opens, and whether an `Action` is pushed —
-    /// and a fourth destination added later must be answered once rather than
-    /// found five times.
-    const fn writes_now(self) -> bool {
-        matches!(self, Self::NewFile | Self::ReplaceOriginal)
-    }
 }
 
 /// The Apply-redactions dialog.
@@ -868,6 +751,9 @@ impl RedactDialog {
         // would be a false claim in the one place a false claim is worst.
         let permanence = match destination {
             Destination::OpenDocument => t::permanence_statement_deferred(),
+            // ★ Content goes, no file moves — a combination neither neighbour
+            // describes. See `permanence_statement_now`.
+            Destination::OpenDocumentNow => t::permanence_statement_now(),
             Destination::NewFile => t::permanence_statement(false),
             Destination::ReplaceOriginal => t::permanence_statement(true),
         };
@@ -1011,6 +897,13 @@ impl RedactDialog {
         );
         crate::diag::ui_rect(REGION_DESTINATION_INTO_DOCUMENT, into.rect);
         into.on_hover_text(t::destination_open_document_tooltip());
+        let now = ui.radio_value(
+            &mut choice,
+            Destination::OpenDocumentNow,
+            t::destination_open_document_now(),
+        );
+        crate::diag::ui_rect(REGION_DESTINATION_INTO_DOCUMENT_NOW, now.rect);
+        now.on_hover_text(t::destination_open_document_now_tooltip());
         let new_file = ui.radio_value(&mut choice, Destination::NewFile, t::destination_new_file());
         crate::diag::ui_rect(REGION_DESTINATION_NEW_FILE, new_file.rect);
         new_file.on_hover_text(t::destination_new_file_tooltip());
@@ -1090,7 +983,22 @@ impl RedactDialog {
             ui.add_space(4.0);
         }
         let ack = ui.checkbox(&mut self.acknowledged, t::confirm_checkbox());
-        crate::diag::ui_rect(REGION_ACK, ack.rect);
+        // ★★★ `ui_rect_visible`, changed 2026-09-08 when a fourth destination
+        // made this dialog 124 px taller and pushed this checkbox below the
+        // scroll fold at the harness'''s window size.
+        //
+        // Published unconditionally it was a **fossil**: the region appeared in
+        // the trace while the control was scrolled out of view, so a driven
+        // check clicked a phantom, the acknowledgement never took, and the
+        // confirm stayed disabled — reported as *"the acknowledgement was
+        // clicked and the confirm control is still not offered"*, which sent
+        // the reader looking at the gates rather than at the scroll position.
+        //
+        // ⇒ The rule this file already states elsewhere: `ui_rect_visible` for
+        // a control a check will CLICK; `ui_rect` for a section it scrolls TO.
+        // An absence now means *not reachable*, which is the truth and is
+        // actionable.
+        crate::diag::ui_rect_visible(REGION_ACK, ack.rect, ui.clip_rect());
         ui.add_space(8.0);
 
         // ★ The label IS the consequence, and the consequence now depends on
@@ -1100,6 +1008,7 @@ impl RedactDialog {
             // No ellipsis and no file name: nothing is written, so there is no
             // further question and no file to name.
             Destination::OpenDocument => t::confirm_button_into_document().to_owned(),
+            Destination::OpenDocumentNow => t::confirm_button_into_document_now().to_owned(),
             Destination::NewFile => t::confirm_button().to_owned(),
             Destination::ReplaceOriginal => t::confirm_button_replace(&file_name_of(&self.source)),
         };
@@ -1210,7 +1119,7 @@ impl RedactDialog {
         // edit. Two accounts of one event is worse than one: the action runs
         // after this frame, so a sentence written here would be a prediction
         // — and on the one path where the action failed, a false one.
-        if !self.destination.writes_now() {
+        if self.destination.stages() {
             actions.push(crate::app::actions::Action::Redact(
                 crate::app::actions::RedactAction::Pending(crate::redact::Staging::Stage),
             ));
@@ -1230,6 +1139,79 @@ impl RedactDialog {
             self.close_requested = true;
             return;
         }
+        // ★★★ **APPLY NOW — the operator's 2026-09-08 report.**
+        //
+        // It leaves through the action funnel for the same reason the staging
+        // branch above does, and more strongly: this one replaces the open
+        // session outright, so it needs the render worker cancelled, the
+        // textures dropped and the page set resynced — every one of which is
+        // `vector_edit`'s job and none of which a dialog's draw may do.
+        //
+        // ★ The prepared BYTES are carried rather than re-derived. They are the
+        // same bytes `NewFile` would write and they have already been through
+        // `proof::prove` — re-preparing on the far side would be a second
+        // removal, verified separately, and the two could disagree.
+        //
+        // ⚠ Handled here rather than in the destination match below, which
+        // chooses a FILE PATH. This destination writes no file; falling into
+        // that match would have made it ask for one.
+        if self.destination == Destination::OpenDocumentNow {
+            let acknowledgement = if self.residuals_acknowledged {
+                ResidualAcknowledgement::Given
+            } else {
+                ResidualAcknowledgement::Withheld
+            };
+            let marks = prepared.report.marks_applied;
+            let pages = prepared.report.pages_redacted;
+            let size = prepared.byte_len();
+            // ★★ The prepared redaction is MOVED out of the phase and carried
+            // whole. Not its bytes: `PreparedRedaction::bytes` is private
+            // "deliberately and load-bearingly", and the first draft of this
+            // branch cloned it — which would have put the buffer on the action
+            // queue unproven, restoring exactly the surface §2.1 forbids.
+            //
+            // `into_verified_document` is the second sanctioned exit, shaped
+            // like `write_to`: same two gates, same order, and it hands back a
+            // parsed `Document` rather than a buffer anyone could write.
+            match prepared.to_verified_document(acknowledgement) {
+                Ok(document) => crate::redact::park_applied_document(document),
+                Err(refusal) => {
+                    // ★ The same two refusals `write_to` raises, on the same
+                    // gates in the same order — so an unacknowledged residual
+                    // behaves identically whether the operator chose a file or
+                    // the open document.
+                    //
+                    // ★★ `Phase::WriteFailed` although nothing was written, and
+                    // the name is the only thing about it that does not fit:
+                    // the phase means *the removal did not land and here is
+                    // why*, which is exactly this. A parallel phase would be a
+                    // second state with one meaning.
+                    crate::diag::trace(|| {
+                        // ui-text-exempt: diagnostic trace, never displayed.
+                        format!("redact-apply-now-failed detail={refusal}")
+                    });
+                    self.phase = Phase::WriteFailed(refusal);
+                    return;
+                }
+            }
+            actions.push(crate::app::actions::Action::Redact(
+                crate::app::actions::RedactAction::ApplyNow {
+                    marks: marks as usize,
+                    pages,
+                },
+            ));
+            crate::diag::trace(move || {
+                // ui-text-exempt: diagnostic trace, never displayed.
+                //
+                // ★ `bytes=` is a LENGTH. `PreparedRedaction`'s hand-written
+                // `Debug` exists so that `{:?}` cannot emit a redacted document
+                // into a log, and a trace line that formatted the buffer would
+                // defeat it from the other side.
+                format!("redact-apply-now marks={marks} pages={pages} bytes={size}")
+            });
+            self.close_requested = true;
+            return;
+        }
         let acknowledgement = if self.residuals_acknowledged {
             ResidualAcknowledgement::Given
         } else {
@@ -1242,7 +1224,10 @@ impl RedactDialog {
             // Answered above and returned; spelled rather than left to a `_`
             // arm so that a future fourth destination is a compile error here
             // rather than a file written to the wrong place.
-            Destination::OpenDocument => return,
+            // Both answered above and returned; spelled rather than left to a
+            // `_` arm so that a FIFTH destination is a compile error here
+            // rather than a file written to the wrong place.
+            Destination::OpenDocument | Destination::OpenDocumentNow => return,
             // No picker: the consent for this path was taken in words, at the
             // radio and the third checkbox, before the click. See the table
             // above for why a pre-filled picker would be worse rather than

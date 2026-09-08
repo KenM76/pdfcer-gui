@@ -234,6 +234,32 @@ pub enum RedactAction {
     /// argument — undo-preserving, why Cancel had to exist — is on the apply
     /// arm** in `app::actions::redact`, on this file's own R2 rule.
     Pending(crate::redact::Staging),
+    /// **Apply the removal into the open document, now** — the operator's
+    /// 2026-09-08 report.
+    ///
+    /// # ★★★ Why this carries COUNTS and not the document
+    ///
+    /// `PreparedRedaction::bytes` is private *"deliberately and
+    /// load-bearingly"*, because a public accessor would restore the surface
+    /// `pdfcer`'s own `redact-apply` used to write an **unverified** file. So
+    /// the whole value travels, and the only thing this arm may do with it is
+    /// call [`crate::redact::PreparedRedaction::into_verified_document`], which
+    /// re-proves the removal before handing back anything.
+    ///
+    /// ★★ The acknowledgement travels with it for the same reason it is an
+    /// argument to `write_to` rather than a field: consent belongs to the
+    /// press, not to the preparation. A `PreparedRedaction` sitting in a queue
+    /// carries no permission of its own.
+    ///
+    /// ⚠ Boxed. `PreparedRedaction` holds a whole redacted document, and an
+    /// unboxed variant would make every `Action` in the program that size.
+    ApplyNow {
+        /// How many marked regions the removal covered, for the trace and the
+        /// operator's receipt.
+        marks: usize,
+        /// How many pages it touched.
+        pages: usize,
+    },
 }
 
 use super::apply::vector_edit;
@@ -252,7 +278,7 @@ use crate::redact::Staging;
 /// redaction variants here — and it is spelled rather than `unreachable!()`
 /// because a future fifth variant sent here by mistake should do nothing
 /// visible rather than end the process an operator is mid-edit in.
-pub fn apply(doc: &mut OpenDoc, action: RedactAction) {
+pub fn apply(doc: &mut OpenDoc, action: RedactAction, settings: &pdfcer_core::settings::Settings) {
     match action {
         // ===============================================================
         // ★ THE REDACTION MARKING VERBS
@@ -527,6 +553,82 @@ pub fn apply(doc: &mut OpenDoc, action: RedactAction) {
         // re-raster it costs draws an identical picture, because nothing
         // about the page ever changed.
         // ===============================================================
+        // ===============================================================
+        // ★★★ APPLY NOW — the removal happens and the page changes.
+        //
+        // The operator, 2026-09-08: *"the redaction feature regressed back to
+        // just giving me the 'don't apply yet' button."*
+        //
+        // Nothing had regressed. `Destination::OpenDocument` became the default
+        // on 2026-09-04 because he asked for it, and `Pass 250.2` made it cost
+        // nothing on 2026-09-05 — at the price stated in its own doc: **the
+        // page does not change**. He pressed the only button the default
+        // offered and watched nothing happen.
+        //
+        // ★★★ THIS ARM REPLACES THE WHOLE `OpenDoc`, which nothing else here
+        // does, and that is deliberate rather than convenient. `OpenDoc::new`'s
+        // own doc argues against a `reset()`: *"opening a document constructs a
+        // whole new `OpenDoc`, so a cached texture or a page index can never
+        // refer to a page from a previous file."* A redaction that removes
+        // content is exactly that case — every cached raster, extraction and
+        // selection describes bytes that no longer exist.
+        //
+        // ⚠ **The undo log goes with it**, and that is the price his own ruling
+        // accepted: *"finalizing the document and can't be undone is ok for
+        // now."* It is stated at the control, in
+        // `destination_open_document_now_tooltip`, rather than discovered.
+        // ===============================================================
+        RedactAction::ApplyNow { marks, pages } => {
+            let Some(document) = crate::redact::take_applied_document() else {
+                // The dialog parks the document before pushing this action, so
+                // an empty slot means the action ran twice. Doing nothing is
+                // the correct second outcome — see `take_applied_document`.
+                crate::diag::trace(|| {
+                    // ui-text-exempt: diagnostic trace, never displayed.
+                    "redact-apply-now-applied installed=0 reason=nothing-parked".to_owned()
+                });
+                return;
+            };
+            let Ok(page_tree) = pdfcer_core::page_tree::pages(&document) else {
+                // ★ Refused rather than unwrapped. A redacted document whose
+                // page tree will not read is an engine defect worth a request,
+                // and the operator's own document is still open and intact —
+                // which is the outcome to protect.
+                crate::diag::trace(|| {
+                    // ui-text-exempt: diagnostic trace, never displayed.
+                    "redact-apply-now-applied installed=0 reason=no-page-tree".to_owned()
+                });
+                return;
+            };
+            // ★★ The page he was looking at is carried over by hand, and it is
+            // the only thing that is. A redaction removes content, never pages,
+            // so the index still names the same sheet — and being thrown back
+            // to page 1 of a hundred-page set after every redaction would be
+            // its own defect.
+            let was_on = doc.view.page_index.min(page_tree.len().saturating_sub(1));
+            let path = doc.path.clone();
+            // ★★★ `settings.open_session`, NEVER `EditSession::new`. The
+            // funnel's own doc calls its absence *"a live defect for the whole
+            // life of this shell"*: a session built raw discards the extraction
+            // and write options the operator chose — and on THIS path that is
+            // sharper than usual, because `unmappable_code` changes character
+            // offsets and therefore changes which runs a later
+            // redaction-by-text matches (`pdfcer-core` R35).
+            //
+            // ⇒ Caught by `no_call_site_builds_its_own_options` on the day this
+            // arm was written, which is the whole reason that test scans call
+            // sites rather than trusting a convention.
+            use crate::app::settings::SettingsExt as _;
+            *doc = OpenDoc::new(path, settings.open_session(document), page_tree);
+            doc.view.page_index = was_on;
+            crate::diag::trace(move || {
+                // ui-text-exempt: diagnostic trace, never displayed.
+                format!(
+                    "redact-apply-now-applied installed=1 marks={marks} pages={pages} \
+                     page={was_on}"
+                )
+            });
+        }
         RedactAction::Pending(Staging::Cancel) => {
             let page = doc.view.page_index;
             let marks = crate::panels::redact::mark_ids(&doc.session).len();

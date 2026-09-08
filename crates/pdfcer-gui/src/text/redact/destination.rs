@@ -90,6 +90,66 @@ pub fn destination_open_document() -> &'static str {
     "This document — the removal happens when you Save"
 }
 
+/// The *apply into the open document, now* destination.
+///
+/// ★★★ Its wording carries the whole difference from its neighbour, because the
+/// two destinations differ in **when**, not in **where**. *"Now"* is the
+/// operative word and it does the work of a whole sentence: the row above puts
+/// the removal off until a save, and this one performs it at the click.
+///
+/// ⚠ It says *"the page changes"* rather than *"applies the redaction"*, because
+/// what the operator reported losing was the **visible** result — he pressed the
+/// deferred button and *"nothing happened"*. A label describing the mechanism
+/// would have been true of both rows and would not have told them apart.
+#[must_use]
+pub const fn destination_open_document_now() -> &'static str {
+    "This document, now — the page changes immediately"
+}
+
+/// See [`destination_open_document_now`].
+///
+/// ★★ It names the price **at the control**, not after the press. His own ruling
+/// is on the record — *"finalizing the document and can't be undone is ok for
+/// now"* — so this is a cost he has already accepted, and a cost accepted in
+/// advance is still one that belongs where the choice is made.
+///
+/// ★ *"No file is written"* is the clause that separates this from *Replace the
+/// original*: two rows both remove content immediately, and only one of them
+/// touches the disk.
+#[must_use]
+pub const fn destination_open_document_now_tooltip() -> &'static str {
+    "Removes the marked content from the open document straight away, so you can see the result. \
+     No file is written — saving is still up to you. Undo is cleared, because the content is \
+     genuinely gone."
+}
+
+/// The permanence statement for [`destination_open_document_now`].
+///
+/// ★★★ Its own arm rather than reusing either neighbour, and the match it
+/// belongs to says why in its own comment: *"a fourth destination that fell
+/// through to the wrong arm here would be a false claim in the one place a
+/// false claim is worst."*
+///
+/// Neither existing sentence is true of this destination. The deferred one says
+/// nothing is removed yet — false. The file ones say a file is written — also
+/// false. **Content goes, no file moves**, and that combination existed nowhere
+/// until 2026-09-08.
+#[must_use]
+pub const fn permanence_statement_now() -> &'static str {
+    "The marked content will be removed from the open document as soon as you press this. It \
+     cannot be undone. No file is written — the document on disk is unchanged until you save."
+}
+
+/// The confirm button for [`destination_open_document_now`].
+///
+/// ★ No ellipsis: nothing further is asked. An ellipsis on this button would
+/// promise a picker that is not coming, which is the convention its `NewFile`
+/// sibling relies on.
+#[must_use]
+pub const fn confirm_button_into_document_now() -> &'static str {
+    "Remove it now"
+}
+
 /// ★★ Why the deferred destination is safe, and the one thing about it that
 /// surprises people.
 ///

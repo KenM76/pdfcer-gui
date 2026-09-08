@@ -1103,9 +1103,20 @@ impl PdfcerApp {
             // "nothing in this file removes anything", and the correction is in
             // that file rather than in a fourth location a reader would have to
             // find.
-                | RedactAction::Pending(_)),
+                | RedactAction::Pending(_)
+            // ★★★ …and, since 2026-09-08, the one that APPLIES the removal into
+            // the open document — the operator's report that the dialog offered
+            // only a "don't apply yet" button. Same module for the same stated
+            // reason: it is the other half of arming.
+                | RedactAction::ApplyNow { .. }),
             ) => {
-                super::redact::apply(doc, redaction);
+                // ★ Settings travel with it since 2026-09-08: `ApplyNow`
+                // builds a NEW `EditSession`, and
+                // `app::settings::tests::no_call_site_builds_its_own_options`
+                // exists because a session built with `EditSession::new`
+                // silently discards every setting the operator chose. That test
+                // caught this arm on the day it was written.
+                super::redact::apply(doc, redaction, &self.settings);
             }
             // ★ Its own module, not a fourth arm in `redact`: it is the only
             // marking route whose geometry comes from the CANVAS.

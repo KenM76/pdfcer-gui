@@ -828,11 +828,13 @@ pub fn confirm_checkbox() -> &'static str {
 mod destination;
 pub use destination::{
     cancel_button_staged, cancel_button_staged_tooltip, confirm_button_into_document,
-    confirm_button_replace, destination_heading, destination_new_file,
-    destination_new_file_tooltip, destination_open_document, destination_open_document_tooltip,
-    destination_replace, destination_replace_tooltip, overwrite_acknowledgement_checkbox,
-    permanence_statement_deferred, removal_happens_at_save, saved_applying_redaction, staged_body,
-    staged_heading, staged_into_document, staging_cancelled,
+    confirm_button_into_document_now, confirm_button_replace, destination_heading,
+    destination_new_file, destination_new_file_tooltip, destination_open_document,
+    destination_open_document_now, destination_open_document_now_tooltip,
+    destination_open_document_tooltip, destination_replace, destination_replace_tooltip,
+    overwrite_acknowledgement_checkbox, permanence_statement_deferred, permanence_statement_now,
+    removal_happens_at_save, saved_applying_redaction, staged_body, staged_heading,
+    staged_into_document, staging_cancelled,
 };
 
 /// ★ **The confirm control. The label IS the consequence** — never "OK", never
@@ -1146,6 +1148,16 @@ pub fn write_failed(reason: &crate::redact::WriteRefusal) -> String {
         ),
         W::FileSystem(_) => {
             "The redacted file could not be written. Check that the folder still exists and that you can write to it, then try again — nothing has been lost, and the marks are still in the document.".to_owned()
+        }
+        // ★★ Reachable only from *This document, now*. It names the ONE thing
+        // that still works, because the operator has just been told a removal
+        // both succeeded and cannot be used — and a sentence that stops there
+        // reads as data loss when nothing has been lost at all.
+        //
+        // ★ It says the open document is untouched, first. That is the question
+        // an operator asks about their own screen before they ask about a file.
+        W::RedactedDocumentUnreadable { .. } => {
+            "The content was removed, but pdfcer could not read the result back to show it to you. Your open document has not been changed and nothing has been lost. Choose “A new file” instead — the same removal is written straight to disk on that route, without being read back.".to_owned()
         }
     }
 }

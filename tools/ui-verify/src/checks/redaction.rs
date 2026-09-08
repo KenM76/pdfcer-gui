@@ -203,6 +203,25 @@ const DESTINATION_REPLACE_REGION: &str = "redact-apply-destination-replace";
 /// SKIP — there is no innocent reading of it.
 const DESTINATION_INTO_DOCUMENT_REGION: &str = "redact-apply-destination-into-document";
 
+/// The dialog's *this document, **now*** destination choice — added 2026-09-08
+/// on the operator's report.
+///
+/// # ★★★ Why its absence is a FAILURE and not a SKIP
+///
+/// He reported the feature as *"regressed back to just giving me the 'don't
+/// apply yet' button"*. Nothing had regressed in code: the deferred destination
+/// became the default on 2026-09-04 because he asked for it, and `Pass 250.2`
+/// made it cost nothing on 2026-09-05 — at the price its own doc states, that
+/// **the page does not change**. He pressed the only button offered and watched
+/// nothing happen.
+///
+/// ⇒ This row is the other half. Its absence is exactly the state he reported,
+/// so there is no innocent reading of it — unconditional, like its *this
+/// document* sibling above, and for the same reason: every document can be
+/// redacted into, including one created in this session with no file to
+/// replace.
+const DESTINATION_INTO_DOCUMENT_NOW_REGION: &str = "redact-apply-destination-into-document-now";
+
 /// The dialog's *a new file* destination choice.
 ///
 /// Also unconditional. Phase E2 **clicks** it, because the default no longer
@@ -924,6 +943,21 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                  every document — there is no file-system condition on it. So this is a build \
                  that does not draw the control the operator asked for by name on 2026-09-04: \
                  apply into the open document, and let Save decide where it lands."
+            )));
+        }
+        // ★★★ AND THE APPLY-NOW ROW BESIDE IT — the operator's 2026-09-08
+        // report. See the constant: its absence IS the state he described.
+        if declared(&trace, ui_rect, DESTINATION_INTO_DOCUMENT_NOW_REGION).is_none() {
+            return Ok(Some(format!(
+                "★★★ THERE IS NO WAY TO APPLY THE REDACTION AND SEE IT. \
+                 `{DESTINATION_INTO_DOCUMENT_NOW_REGION}` was not declared, so the only \
+                 destination that touches the open document is the DEFERRED one — the \
+                 operator confirms, the page does not change, and the removal waits for a \
+                 save.\n\
+                 That is exactly what he reported on 2026-09-08: the redaction feature had \
+                 regressed back to giving him only a do-not-apply-yet button. The deferred \
+                 row is correct and is not the problem; this row is the other half. Both \
+                 are declared unconditionally, so an absence here has no innocent reading."
             )));
         }
         let undo_note = declared(&trace, ui_rect, STAGING_NOTE_REGION);
