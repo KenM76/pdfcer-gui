@@ -108,9 +108,13 @@
 >   survey, and the refused-character offer passes the refused character as the
 >   candidate. `refused_char_untested` deleted; a dead-end sentence added for
 >   the state the filter exposed (an EXACT list can be empty).
-> * **Widget `/MK /BG` + `/BC`** — `MkColor` still unconsumed; the two source
->   comments are corrected but the **shaded field still turns grey while it is
->   being edited**. `ENGINE_BACKLOG.md` carries the row.
+> * **Widget `/MK /BG` + `/BC`** — `MkColor` still unconsumed. ⚠ **But NOT for
+>   the reason this list first gave.** *"The shaded field turns grey while it is
+>   being edited"* is a **deliberate design position** argued in `canvas::forms`
+>   §3 (*"the editor is deliberately not a facsimile"*), not a defect — and
+>   repainting it would re-open D2. The honest consumer is the **Properties
+>   panel**, showing the colours as readable properties. Row corrected
+>   2026-09-08; see `ENGINE_BACKLOG.md` for the whole argument.
 > * **`set_annotation_flags`** (new, `fad0d2d`) — verdict written, order fixed:
 >   **honour `LockedContents` on the way IN before offering the writer that
 >   clears it.**
