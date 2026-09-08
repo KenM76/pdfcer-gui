@@ -531,12 +531,36 @@ impl EditRefusal {
             // find by eye — and there is no verb here that deletes a text run
             // in the first place. Offering it would be a workaround that does
             // not exist.
+            // ★★★ RE-DERIVED 2026-09-08, and the old sentence named a cause
+            // that is now the case which WORKS.
+            //
+            // It read: *"The program that made this file wrote the line one
+            // letter at a time … there is no piece here that holds the word you
+            // are correcting … this limit is on the list to fix."*
+            //
+            // That was exactly right until `Pass 256.0` (2026-09-06), which
+            // taught `edit_text` to match a `find` **across consecutive show
+            // operators** — so a line written one letter at a time is precisely
+            // what pdfcer now edits, and the sentence was describing the fixed
+            // case to an operator meeting the unfixed one.
+            //
+            // ⇒ What is left is narrower and is not "letter at a time": the
+            // pieces are separated by something the matcher will not join
+            // across — a font change, a vertical step, an `ET`, a different
+            // marked-content id. So the sentence says *something between them*
+            // rather than naming a shape the operator can check, because the
+            // thing between them is invisible in the drawing.
+            //
+            // ⚠ **"On the list to fix" is gone**, deliberately. It was a
+            // promise, it was kept, and repeating it after the fix would
+            // promise a second one nobody has made.
             Self::SplitAcrossPieces => {
-                "pdfcer cannot change these words. The program that made this file wrote the line \
-                 one letter at a time, and pdfcer rewrites a whole piece of text at once — so \
-                 there is no piece here that holds the word you are correcting. Text you added \
-                 with pdfcer is written a line at a time, which is why those lines do edit. Your \
-                 document is unchanged; this limit is on the list to fix."
+                "pdfcer cannot change these words. This line is drawn in separate pieces, and \
+                 something between them — a change of font, or a shift in position — stops \
+                 pdfcer joining them into the one piece it would have to rewrite. It can usually \
+                 join them, so most lines like this edit normally, and text you added with \
+                 pdfcer is always written in one piece, which is why those lines do edit. Your \
+                 document is unchanged."
             }
             Self::UnsupportedFont => {
                 "pdfcer cannot write new letters into this text. Its font records what each shape \
@@ -1026,10 +1050,27 @@ mod tests {
     fn the_split_run_sentence_says_the_document_is_unchanged() {
         let s = EditRefusal::SplitAcrossPieces.line();
         assert!(s.contains("unchanged"), "{s:?}");
+        // ★★★ RE-POINTED 2026-09-08. This asserted the phrase *"one letter at
+        // a time"*, which was the right cause until `Pass 256.0` taught
+        // `edit_text` to match across consecutive show operators — after which
+        // a line written that way is the case that WORKS, and pinning it kept
+        // the sentence describing the fix to the operator meeting the residue.
+        //
+        // ⇒ The test's own stated intent is what survives: **the cause has to
+        // be in his terms.** So it now asserts that positively, and asserts the
+        // absence of the jargon it was written to keep out — which is what the
+        // phrase was standing in for, and is a claim that cannot go stale when
+        // the engine improves again.
         assert!(
-            s.contains("one letter at a time"),
-            "the cause has to be in his terms, not in show operators: {s:?}"
+            s.contains("separate pieces"),
+            "the cause has to be in his terms: {s:?}"
         );
+        for jargon in ["operator", "show ", "Tf", "content stream"] {
+            assert!(
+                !s.contains(jargon),
+                "{jargon:?} is pdfcer's vocabulary, not his: {s:?}"
+            );
+        }
     }
 
     /// **`Unstated` is the old sentence, unchanged.** Where the engine says

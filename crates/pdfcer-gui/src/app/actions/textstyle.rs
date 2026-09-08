@@ -80,11 +80,27 @@
 //! face is available", and the real face it names cannot show the text. **Bold
 //! is unreachable there through either route.**
 //!
+//! ⚠ **SUPERSEDED — the paragraph above describes 2026-08-27 and was fixed on
+//! 2026-08-28.** It is kept because it is what the engine request was argued
+//! from, and because the diagnosis in it is the one the engine adopted.
+//!
 //! Filed as `request_gate_synthesis_names_a_face_that_cannot_cover_the_run.md`,
 //! confirmed and reproduced by the engine the same day, and queued ahead of
-//! their print-conformance work by their operator's instruction. The fix is
-//! the one this project's diagnosis asked for: `gate_synthesis` will treat a
-//! real face as available only if `set_font` would accept it *for this run*.
+//! their print-conformance work by their operator's instruction. The fix is the
+//! one this project's diagnosis asked for: `gate_synthesis` treats a real face
+//! as available only if `set_font` would accept it **for this run**.
+//!
+//! ⇒ **Shipped as `Pass 144.0` (`cfa2c44`) and consumed by this file the same
+//! day** — see the `RealFaceAvailable` arm below, whose own comment carries the
+//! `selector`-not-`real_font` finding that came with it. So *"Bold is
+//! unreachable there through either route"* has been false since 2026-08-28,
+//! and the sentence before it was written in the future tense about work that
+//! had already landed.
+//!
+//! ★ Found by the 2026-09-07 reply triage rather than by any gate: the file
+//! that consumed the fix went on describing the defect 350 lines above the arm
+//! that fixed it. **A module header is the part of a file least likely to be
+//! re-read by whoever changes its body.**
 //!
 //! ★ **Nothing here works around it**, and the twenty-line shell-side search
 //! for a different bold resource was considered and refused. It would work,
