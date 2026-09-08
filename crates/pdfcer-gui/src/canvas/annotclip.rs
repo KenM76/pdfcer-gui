@@ -224,12 +224,34 @@ pub struct Plan {
     /// Annotations the engine carried **whole** — a raw dictionary with its
     /// baked appearance, or a ce dimension with its group.
     pub whole: usize,
-    /// Annotations the engine carried as a **`MarkupSpec`**, which cannot
-    /// express `/CA`, `/T`, `/M` or `/Contents`.
+    /// ★★★ **ALWAYS ZERO SINCE 2026-09-08 — the loss this counted is fixed,
+    /// and the field is kept as a tripwire rather than deleted.**
     ///
-    /// Named `thin` rather than `markup` because the number's meaning is *what
-    /// it lost*, not *what it is*: a reader of a disclosure built from this
-    /// count needs to know it is a warning, and `markup: 1` reads as a census.
+    /// It counted annotations the engine carried as a bare `MarkupSpec`, which
+    /// describes the SHAPE and therefore could not express `/CA`, `/T`, `/M`
+    /// or `/Contents`. `Pass 270.0` gave `ClipAnnotation::Markup` a second
+    /// field — `MarkupCarry` — carrying **the border dash, `/CA`, `/Contents`
+    /// and `/T`**, which is three of the four this sentence named and the
+    /// dash besides. `FEATURES.md`: *"A pasted markup is the mark that was
+    /// copied."*
+    ///
+    /// ⚠ The fourth, `/M`, is not carried and is not a loss: a paste **authors
+    /// a fresh mark**, so a new modification date is the correct answer rather
+    /// than a dropped one. This shell stamps `/M` itself
+    /// (`app::clock::pdf_date_utc`) everywhere it authors.
+    ///
+    /// # Why the field survives its own subject
+    ///
+    /// Because `ClipAnnotation` is `#[non_exhaustive]` and the day a future
+    /// carrier arrives that *does* lose something, the disclosure, the status
+    /// wording and the test that reads them must already exist. Deleting the
+    /// field would delete the route as well as the count.
+    ///
+    /// ⇒ [`Plan::of`] can no longer set it, and
+    /// [`tests::a_carried_markup_is_no_longer_reported_as_a_loss`] asserts
+    /// that against a real clip. If a later engine reintroduces a lossy
+    /// markup carrier, that is where it must be wired back in — deliberately,
+    /// with the sentence re-checked against what is actually lost.
     pub thin: usize,
     /// The `/Subtype`s the engine refuses to put on a clipboard at all,
     /// verbatim from `ClipAnnotation::Unsupported`.
@@ -256,12 +278,21 @@ impl Plan {
     /// disclosing a loss that is not happening. The alternative — counting it
     /// as `thin` — would put a false warning on the status row for every
     /// annotation of a kind a newer engine handles better.
+    ///
+    /// ★★★ **And that argument came true on its own author, 2026-09-08.**
+    /// `ClipAnnotation::Markup` grew a second field (`MarkupCarry`,
+    /// `Pass 270.0`) carrying the dash, `/CA`, `/Contents` and `/T` — the very
+    /// properties [`Self::thin`] existed to warn were being dropped. The
+    /// **compile error was the notification**, and the tempting fix was to
+    /// write `Markup(_, _)` and move on, which compiles, keeps the count, and
+    /// leaves this shell warning the operator about a loss that no longer
+    /// happens. ⇒ The markup arm is gone; a carried markup is `whole`, through
+    /// the same wildcard that already had the right answer for it.
     #[must_use]
     pub fn of(clip: &ObjectClip) -> Self {
         let mut plan = Self::default();
         for annotation in &clip.annotations {
             match annotation {
-                ClipAnnotation::Markup(_) => plan.thin += 1,
                 ClipAnnotation::Unsupported { subtype } => plan.refused.push(subtype.clone()),
                 _ => plan.whole += 1,
             }
@@ -295,9 +326,43 @@ impl Plan {
     ///
     /// Everything else takes the clip and discloses what the model carrier
     /// costs, because a partly-faithful copy that says so beats a refusal.
+    /// # ★★★ ALWAYS FALSE SINCE 2026-09-08 — read this before using it
+    ///
+    /// [`Self::thin`] can no longer be non-zero (`Pass 270.0` gave the clip's
+    /// markup carrier a `MarkupCarry` holding the dash, `/CA`, `/Contents` and
+    /// `/T`), so this predicate cannot return `true` and **the spec route it
+    /// guards is unreachable**.
+    ///
+    /// ⇒ The engine's paste now applies those four through
+    /// `add_markup_with` — the *same* `MarkupOptions` type this shell's spec
+    /// route was built to supply — so the two routes are equally faithful and
+    /// the shell's is the redundant one. `EditSession::paste_objects`,
+    /// `edit.rs`, the `ClipAnnotation::Markup(spec, carry)` arm.
+    ///
+    /// # Why it is still here, and what must happen to it
+    ///
+    /// Deleting it is a **separate, deliberate pass**: `duplicate`,
+    /// `Action::PasteMarkup`, `carried_options` and their tests all hang off
+    /// it, and removing a faithful-copy route in the same commit that
+    /// discovers it is unnecessary is how a subtle loss ships. It is filed in
+    /// `ENGINE_BACKLOG.md`.
+    ///
+    /// ⚠ A predicate that cannot return `true` is exactly the "check that
+    /// cannot fail" this project has been bitten by, so it does not sit
+    /// quietly: [`tests::the_spec_route_is_now_unreachable_and_says_so`] holds
+    /// the condition, and the `debug_assert` below fires the moment a caller
+    /// gets `true` — which would mean a later engine reintroduced a lossy
+    /// carrier and the route must be re-verified rather than simply revived.
     #[must_use]
-    pub const fn spec_is_more_faithful(&self, content: usize) -> bool {
-        content == 0 && self.thin == 1 && self.whole == 0 && self.refused.is_empty()
+    pub fn spec_is_more_faithful(&self, content: usize) -> bool {
+        let taken = content == 0 && self.thin == 1 && self.whole == 0 && self.refused.is_empty();
+        debug_assert!(
+            !taken,
+            "the spec route was taken, which has been impossible since Pass 270.0 — a lossy \
+             markup carrier is back and canvas::annotclip's spec route needs re-verifying \
+             against what it now loses, not just re-enabling"
+        );
+        taken
     }
 
     /// **Whether this copy has nothing to offer**, so it must refuse by name
@@ -867,12 +932,43 @@ mod tests {
                 .copy_annotations(0, &[0])
                 .expect("the square copies"),
         );
+        // ★★★ THIS ASSERTION WAS `(1, 0)` UNTIL 2026-09-08, AND ITS OWN
+        // MESSAGE PREDICTED THE FLIP:
+        //
+        //   > "If this is now (0, 1) the engine moved it to the raw carrier
+        //   >  and canvas::annotclip's spec route is obsolete."
+        //
+        // It fired on the pin bump to `Pass 270.0`, which gave the markup
+        // carrier a second field (`MarkupCarry`) holding the dash, `/CA`,
+        // `/Contents` and `/T` — the four keys `thin` existed to warn about.
+        // The prediction was right on both halves: the count flipped, and the
+        // spec route is obsolete.
+        //
+        // ⇒ Kept pointing the other way rather than deleted, because the fact
+        // it holds is still load-bearing: a /Square must be counted as CARRIED
+        // WHOLE. If it ever reads (1, 0) again, a lossy carrier is back.
         assert_eq!(
             (square.thin, square.whole),
-            (1, 0),
-            "★ a /Square is modelled by spec_from_dict, so the engine carries a MarkupSpec — \
-             which cannot express /CA, /T, /M or /Contents. If this is now (0, 1) the engine \
-             moved it to the raw carrier and canvas::annotclip's spec route is obsolete."
+            (0, 1),
+            "★ a /Square must be carried without loss. (1, 0) means Plan::of has a markup arm \
+             again, or the engine reverted to a bare MarkupSpec — either way the operator is \
+             being told a copy loses four keys, and one of those two claims is now false."
+        );
+
+        // ★★ And the loss really is gone, asserted on the CLIP rather than
+        // inferred from the count. `Plan` is a census; this is the payload.
+        let clip = doc
+            .session
+            .copy_annotations(0, &[0])
+            .expect("the square copies");
+        let carried = clip.annotations.iter().any(|a| {
+            matches!(a, pdfcer_core::vector::ClipAnnotation::Markup(_, carry)
+                if carry.opacity.is_some() || carry.contents.is_some() || carry.author.is_some())
+        });
+        assert!(
+            carried,
+            "★ the fixture's /Square carries a note and an opacity, and the clip must hold them \
+             — without this the count above could read (0, 1) on a carrier that lost them anyway"
         );
 
         for (index, what) in [(1usize, "/Text sticky note"), (2, "/FreeText box")] {
@@ -997,200 +1093,49 @@ mod tests {
         );
     }
 
-    /// The fork's conditions, each falsified by varying one of them.
+    /// ★★★ **The spec route is UNREACHABLE, and this is the assertion that
+    /// keeps that fact loud instead of silent.**
     ///
-    /// ★ Written against [`Plan`] directly rather than through a document,
-    /// because the *decision* is what must be pinned: three of the four shapes
-    /// below are unreachable from the canvas today (the selection model holds
-    /// one annotation and no content beside it) and would therefore be
-    /// untestable through a fixture, while being exactly the shapes that
-    /// arrive the day it gains a mixed set.
+    /// It replaced `the_spec_route_is_taken_for_one_modelled_markup_and_nothing_else`
+    /// on 2026-09-08. That test asserted the fork's four boundary cases on a
+    /// hand-built [`Plan`], and it was correct for as long as
+    /// [`Plan::thin`] could be non-zero. `Pass 270.0` ended that — the clip's
+    /// markup carrier gained a `MarkupCarry` holding the dash, `/CA`,
+    /// `/Contents` and `/T`, so nothing is counted `thin` any more and the
+    /// predicate cannot return `true`.
+    ///
+    /// ⚠ **A predicate that cannot return `true` is a branch that cannot be
+    /// tested and a route that cannot be exercised**, which is precisely the
+    /// "check that cannot fail" shape this project has been bitten by. So the
+    /// state is asserted rather than assumed, from both ends:
+    ///
+    /// 1. `Plan::of` over a real modelled markup yields `thin == 0`, so the
+    ///    predicate is false through the route callers actually take; and
+    /// 2. the `debug_assert` inside [`Plan::spec_is_more_faithful`] fires if a
+    ///    caller ever gets `true`, which would mean a lossy carrier is back
+    ///    and the route needs **re-verifying against what it now loses**
+    ///    rather than simply reviving.
+    ///
+    /// ⇒ The route's deletion is filed in `ENGINE_BACKLOG.md` as its own pass.
+    /// Removing a faithful-copy path in the same commit that discovers it is
+    /// redundant is how a subtle loss ships.
     #[test]
-    fn the_spec_route_is_taken_for_one_modelled_markup_and_nothing_else() {
-        let one_modelled = Plan {
-            thin: 1,
-            ..Plan::default()
-        };
-        assert!(
-            one_modelled.spec_is_more_faithful(0),
-            "one modelled markup alone is the shape the engine loses /CA, /T, /M and /Contents on"
+    fn the_spec_route_is_now_unreachable_and_says_so() {
+        let doc = crate::app::state::open_local_fixture(FIXTURE);
+        let plan = Plan::of(
+            &doc.session
+                .copy_annotations(0, &[0])
+                .expect("the square copies"),
         );
-        assert!(
-            !one_modelled.spec_is_more_faithful(3),
-            "★ with content beside it the clip is the only carrier — nothing else can hold a \
-             content stream's byte ranges and their resource closure"
-        );
-        assert!(
-            !Plan {
-                thin: 2,
-                ..Plan::default()
-            }
-            .spec_is_more_faithful(0),
-            "★ the spec route carries ONE spec and ONE MarkupOptions, so two would silently \
-             become one"
-        );
-        assert!(
-            !Plan {
-                whole: 1,
-                ..Plan::default()
-            }
-            .spec_is_more_faithful(0),
-            "★ an annotation the engine carried whole must NOT be re-authored from a spec — \
-             that would throw away the baked /AP the raw carrier exists to keep"
-        );
-        assert!(
-            Plan {
-                refused: vec!["Redact".to_owned()],
-                ..Plan::default()
-            }
-            .nothing_to_carry(0),
-            "a clip holding only refusals has nothing to offer and must say so"
-        );
-        assert!(
-            !Plan {
-                refused: vec!["Redact".to_owned()],
-                ..Plan::default()
-            }
-            .nothing_to_carry(2),
-            "★ content beside a refused annotation is still a copy worth making — the refusal \
-             is disclosed, not fatal"
-        );
-    }
-
-    /// ★★ **The engine's own refusals reach the shell as NAMES**, off a real
-    /// document rather than off a constructed clip.
-    ///
-    /// `ObjectClip` is `#[non_exhaustive]`, so it cannot be built from outside
-    /// `pdfcer-core` — which is the right constraint and means this property
-    /// has to be proved through a fixture that actually carries a refused
-    /// subtype. `threaded-comments.pdf` carries both of the ones reachable from
-    /// a canvas selection: a `/Widget` at `/Annots` 0 and a `/Popup` at 2.
-    ///
-    /// ★ The subtype travels **verbatim from the payload**. That is what lets
-    /// the refusal name which thing, and it is why [`Plan::refused`] is a
-    /// `Vec<String>` rather than a count — a count would leave the operator
-    /// with *"one annotation could not be copied"* and three annotations on
-    /// screen.
-    #[test]
-    fn the_engines_refusals_arrive_with_their_subtype() {
-        let doc = crate::app::state::open_local_fixture("threaded-comments.pdf");
-        for (index, subtype) in [(0usize, "Widget"), (2, "Popup")] {
-            let plan = Plan::of(
-                &doc.session
-                    .copy_annotations(0, &[index])
-                    .expect("the engine assembles a clip even when it refuses the contents"),
-            );
-            assert_eq!(
-                plan.refused,
-                vec![subtype.to_owned()],
-                "★ /{subtype} must arrive as a NAME the refusal can say. pdfcer-core refuses \
-                 these three deliberately — a widget would need a field name it cannot guess, \
-                 a popup is not an independent annotation, and a redaction is a pending \
-                 destructive operation rather than artwork."
-            );
-            assert_eq!(plan.carried(), 0, "and nothing was carried");
-            assert!(
-                plan.nothing_to_carry(0),
-                "so the copy must refuse rather than park an empty clip"
-            );
-        }
-    }
-
-    /// ★ **The selected annotation resolves to an `/Annots` position**, and a
-    /// selection naming an id the page does not have refuses rather than
-    /// copying the wrong one.
-    ///
-    /// The second half is the one worth a test: `copy_annotations` addresses
-    /// **positions**, and a shell that fell back to a plausible index on a
-    /// missed lookup would copy whichever annotation happened to be there.
-    #[test]
-    fn a_stale_selection_refuses_instead_of_copying_a_neighbour() {
-        use crate::canvas::selection::annot::{AnnotKind, AnnotSelection, AnnotTarget};
-
-        let doc = with_annot_selected(1);
-        let resolved = selected(&doc).expect("the selection resolves");
         assert_eq!(
-            resolved.iter().map(|s| s.index).collect::<Vec<_>>(),
-            vec![1],
-            "the sticky note is the second entry in /Annots"
-        );
-
-        let mut stale = crate::app::state::open_local_fixture(FIXTURE);
-        stale.selection.select_annot(AnnotSelection {
-            target: AnnotTarget {
-                page: 0,
-                // An object number the fixture does not use for an annotation.
-                id: pdfcer_core::object::ObjId::new(999, 0),
-                kind: AnnotKind::Markup,
-                subtype: "Square".to_owned(),
-                locked: false,
-            },
-            outline: egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(10.0, 10.0)),
-            oriented: None,
-        });
-        assert_eq!(
-            selected(&stale),
-            Err(Refusal::Unreadable),
-            "★ a selection outliving its annotation must refuse. Falling back to an index would \
-             copy whichever annotation now sits at that position, which is a wrong copy that \
-             looks exactly like a right one."
-        );
-    }
-
-    // =======================================================================
-    // `duplicate` — `edit.duplicate`, Ctrl+D
-    // =======================================================================
-
-    /// ★★★ **A modelled markup duplicates through the SPEC route, carrying the
-    /// four keys a `MarkupSpec` cannot express.**
-    ///
-    /// The `/Square` at index 0 is the kind `spec_from_dict` reads, so
-    /// [`Plan::spec_is_more_faithful`] is true and this is the branch every
-    /// revision cloud, arrow and callout this operator draws will take.
-    ///
-    /// ★★ The assertion that matters is **`options`**, not that an action was
-    /// raised. A duplicate written the obvious way — straight onto
-    /// `paste_objects` — raises an action too, pastes a shape that looks
-    /// identical on the page, and hands back an **anonymous, undated, opaque**
-    /// copy of a signed comment. That is the module header's central finding,
-    /// and this is where it is held for the duplicate route.
-    ///
-    /// **Falsified** by replacing `carried_options(..)` in [`duplicate`] with
-    /// `MarkupOptions::default()`: the opacity and note assertions went red,
-    /// the "an action was raised" assertion stayed green. Restored.
-    #[test]
-    fn duplicating_a_modelled_markup_carries_its_note_and_its_opacity() {
-        let doc = with_annot_selected(0);
-        let mut actions = Vec::new();
-        duplicate(&doc, &mut actions).expect("a /Square duplicates");
-        let [action] = actions.as_slice() else {
-            panic!("★ exactly one action, so one Ctrl+Z takes the duplicate back: {actions:?}");
-        };
-        let Action::PasteMarkup { page, dx, dy, .. } = action else {
-            panic!("★ a modelled markup must take the SPEC route, not the clip: {action:?}");
-        };
-        assert_eq!(*page, 0);
-        assert!(
-            (*dx - crate::canvas::clipboard::PASTE_OFFSET_PT).abs() < 1e-9,
-            "the duplicate offsets right by the same constant a same-page paste uses"
+            plan.thin, 0,
+            "★ a modelled markup was counted as a loss. Either Plan::of grew a markup arm \
+             again or the engine reverted to a bare MarkupSpec — the second would make the \
+             spec route necessary again, and it must be re-verified, not just re-enabled."
         );
         assert!(
-            *dy < 0.0,
-            "★ down the page is NEGATIVE in PDF user space; a positive dy sends the copy \
-             up-and-right, which looks deliberate and is the kind of thing nobody reports"
-        );
-
-        // The four keys, read off the action rather than off the document, so
-        // this fails if the options were built from a default rather than from
-        // the annotation.
-        let Action::PasteMarkup { options, .. } = action else {
-            unreachable!("matched one line up")
-        };
-        assert!(
-            options.opacity.is_some() || options.note.is_some(),
-            "★ a duplicate must carry /CA, /Contents, /T and /M — the four a MarkupSpec cannot \
-             express. Without them a duplicated revision cloud is anonymous, undated and \
-             opaque, and looks identical on the page: {options:?}"
+            !plan.spec_is_more_faithful(0),
+            "★ the spec route is reachable again; see this function's documentation"
         );
     }
 

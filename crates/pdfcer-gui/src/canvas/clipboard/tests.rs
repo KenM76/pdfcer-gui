@@ -217,23 +217,41 @@ fn a_sticky_note_reaches_the_clipboard() {
     );
 }
 
-/// ★★★ **A SQUARE STILL KEEPS ITS AUTHOR, DATE, NOTE AND OPACITY** — the
-/// regression the lossless route would have shipped.
+/// ★★★ **A SQUARE STILL KEEPS ITS AUTHOR, NOTE AND OPACITY** — the property
+/// held, while the route under it changed.
 ///
-/// `pdfcer-core` models a `/Square`, so `copy_selection` carries it as a
-/// `MarkupSpec` and `paste_clip_annotations` plants it with `add_markup` —
-/// **not** `add_markup_with` — which drops `/CA`, `/T`, `/M` and `/Contents`.
-/// A build that routed every annotation through the clip because the clip is
-/// "the lossless one" would compile, pass a *"the paste happened"* test, and
-/// hand the operator an anonymous, undated, opaque copy of a signed comment.
+/// # ⚠ What this test used to assert, and why that stopped being true
 ///
-/// So the assertion is on the **carrier**: a modelled markup must come back as
-/// `Clipped::Markup`, carrying `MarkupOptions` with all four facts in it.
+/// It asserted the **carrier**: that a `/Square` came back as
+/// `Clipped::Markup`, because `paste_clip_annotations` planted a clipped
+/// markup with `add_markup` — **not** `add_markup_with` — and therefore
+/// dropped `/CA`, `/T`, `/M` and `/Contents`. Routing everything through the
+/// clip because "the clip is the lossless one" would have compiled, passed a
+/// *"the paste happened"* test, and handed the operator an anonymous, undated,
+/// opaque copy of a signed comment.
+///
+/// `Pass 270.0` ended that on 2026-09-08. `ClipAnnotation::Markup` gained a
+/// `MarkupCarry` beside the spec — the dash, `/CA`, `/Contents`, `/T` — and
+/// the engine's paste now builds `MarkupOptions` from it and calls
+/// `add_markup_with`. **The clip route carries what the spec route carries.**
+///
+/// ⇒ So the assertion moved to the **payload**, and accepts either carrier.
+/// That is the better test and it should have been written this way from the
+/// start: the operator cannot see which route ran, and a route assertion goes
+/// red on an improvement.
 ///
 /// ★ `/CA 0.4` rather than `/CA 1` in the fixture is deliberate and is the
 /// difference between this test working and being vacuous — an opacity of 1
 /// is what an absent `/CA` renders as, so a build that dropped the key would
 /// look identical on screen and identical to a sloppier assertion.
+///
+/// ⚠ **`/M` is no longer asserted, and that is a real narrowing rather than a
+/// tidy-up.** `MarkupCarry` does not carry it, and it should not: a paste
+/// **authors a fresh mark**, so a new modification date is the correct answer
+/// rather than a dropped one — this shell stamps `/M` itself wherever it
+/// authors (`app::clock::pdf_date_utc`). The spec route did carry the
+/// original's `/M`, which on reflection was the *wrong* behaviour: it dated a
+/// mark created today with the date of the one it was copied from.
 #[test]
 fn a_modelled_markup_keeps_what_a_spec_cannot_say() {
     let ctx = egui::Context::default();
@@ -241,38 +259,63 @@ fn a_modelled_markup_keeps_what_a_spec_cannot_say() {
 
     let clipped = copy(&ctx, &doc).expect("a square copies");
 
-    let Clipped::Markup { options, spec, .. } = &clipped else {
-        panic!(
-            "★ a /Square is modelled by pdfcer, so the engine's clip carrier for it is a \
-             MarkupSpec planted with add_markup — which drops /CA, /T, /M and /Contents. \
-             Taking that route is a REGRESSION, not the lossless upgrade it looks like. \
-             Got {clipped:?}"
-        );
+    // The four facts, read off whichever carrier was used.
+    let (opacity, contents, author) = match &clipped {
+        // The spec route, if a future engine ever makes it reachable again.
+        Clipped::Markup { options, spec, .. } => {
+            assert!(
+                matches!(**spec, pdfcer_core::annot_author::MarkupSpec::Square { .. }),
+                "the geometry travels as a square"
+            );
+            let note = options.note.as_ref();
+            (
+                options.opacity,
+                note.map(|n| n.text.clone()),
+                note.and_then(|n| n.author.clone()),
+            )
+        }
+        // The route taken since Pass 270.0.
+        Clipped::Selection { bytes, .. } => {
+            let clip =
+                pdfcer_core::vector::ObjectClip::from_bytes(bytes).expect("the clip round-trips");
+            let carry = clip
+                .annotations
+                .iter()
+                .find_map(|a| match a {
+                    pdfcer_core::vector::ClipAnnotation::Markup(spec, carry) => {
+                        assert!(
+                            matches!(**spec, pdfcer_core::annot_author::MarkupSpec::Square { .. }),
+                            "the geometry travels as a square"
+                        );
+                        Some(carry)
+                    }
+                    _ => None,
+                })
+                .expect(
+                    "★ a /Square must be on the clip AS A MODELLED MARKUP. If it is now an \
+                     opaque carrier, the four facts below are no longer inspectable and this \
+                     test has stopped being able to fail.",
+                );
+            (carry.opacity, carry.contents.clone(), carry.author.clone())
+        }
+        other => panic!("★ a /Square must copy as something inspectable: {other:?}"),
     };
-    assert!(
-        matches!(**spec, pdfcer_core::annot_author::MarkupSpec::Square { .. }),
-        "the geometry travels as a square"
-    );
+
     assert_eq!(
-        options.opacity,
+        opacity,
         Some(0.4),
         "★ /CA must survive: an opaque copy of a translucent mark looks correct against \
          white paper and wrong against the artwork underneath, which is a loss nobody reports"
     );
-    let note = options
-        .note
-        .as_ref()
-        .expect("★ /Contents must survive — a comment with no words is not a copy of a comment");
-    assert_eq!(note.text, "Check this dimension.");
     assert_eq!(
-        note.author.as_deref(),
-        Some("A. Reviewer"),
-        "★ /T must survive — a comment from nobody"
+        contents.as_deref(),
+        Some("Check this dimension."),
+        "★ /Contents must survive — a comment with no words is not a copy of a comment"
     );
     assert_eq!(
-        note.modified.as_deref(),
-        Some("D:20260905090000Z"),
-        "★ /M must survive — a comment dated never"
+        author.as_deref(),
+        Some("A. Reviewer"),
+        "★ /T must survive — a comment from nobody"
     );
 }
 
