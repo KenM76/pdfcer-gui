@@ -235,7 +235,7 @@ the moment you drag rather than after.
 
 ---
 
-## O154 — ⬜ **CAUSE FOUND 2026-09-08, ENGINE ASKED** — "the Text box Markup tool — pressing enter shows one line with a `?` for each new line"
+## O154 — ✅ **FIXED 2026-09-08 — the engine shipped it fifteen minutes after I asked** — "the Text box Markup tool — pressing enter shows one line with a `?` for each new line"
 
 **Your words, 2026-09-08**, and this one has a precise cause.
 
@@ -259,11 +259,27 @@ different route through the program. Only the **Markup tab's** text box is
 affected. My first two probes measured the wrong one and reported "works
 fine", which is why the request says so.
 
-### ⚠ What I am NOT doing meanwhile
+### ✅ Fixed, and the engine found half of it that I had got wrong
 
-Not stripping the newline before sending it (that silently loses what you
-typed), and not splitting it into two separate boxes (that turns one undo into
-two, and one box into two boxes). It gets fixed properly.
+They shipped it in **fifteen minutes**. And their test caught something my
+report asserted and had not checked: I wrote that the *single-line* version of
+the box was fine and should be left alone. It was not — it never received a
+real newline either, so it produced a `?` too. **A fix aimed only where I
+pointed would have left half the defect in place.**
+
+⇒ Their words: *"the test failed on all four newline cases, not the three
+predicted."*
+
+### What I checked on this side
+
+Driven, with a real Enter key through the real dialog: the keystroke reaches
+the box, survives to the commit, and the annotation is authored. That is the
+shell's whole share of the route.
+
+★ The harness check that covers this used to type two keys with a note saying
+*"WHAT is typed does not matter"* — which was true of what it asserted, and is
+exactly why it stayed green while this was broken. **It types a newline now**,
+because that is the one character the route mishandled.
 
 ---
 

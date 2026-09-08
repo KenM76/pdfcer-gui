@@ -272,11 +272,35 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     driver
         .click_at(frame_of(&session, &trace, ui_rect, "text-annot.text")?.declared_center(field))?;
     session.settle(8);
-    // Two keys that already exist in `sys::vk`. WHAT is typed does not matter
-    // — the Accept control is gated on the field being non-empty and nothing
-    // else — so this deliberately does not add letter constants the rest of
-    // the harness has no use for.
-    for key in [vk::F, vk::DIGIT_2] {
+    // ★★★ **THE MIDDLE KEY IS ENTER — 2026-09-08, `OPERATOR_REQUESTS.md` O154.**
+    //
+    // > *"when I use the 'Text box' Markup tool, making new lines by pressing
+    // > enter just has the items show up as one line with a `?` for each new
+    // > line instead."*
+    //
+    // This block used to type two keys with a note saying *"WHAT is typed does
+    // not matter — the Accept control is gated on the field being non-empty and
+    // nothing else"*. That was true of what the check asserted, and it is
+    // exactly why the check was green while the feature was broken: **the
+    // dialog accepted anything, so the check typed the cheapest thing.**
+    //
+    // ⇒ A newline is now the one character that HAS to be typed here, because
+    // it is the one the whole route mishandled: `vartext::encode_winansi` mapped
+    // U+000A to `?` before `wrap_lines` could split paragraphs on it, so the
+    // multiline branch was unreachable for any text an operator typed Enter
+    // into. Fixed in `pdfcer-core` `b924c01` — *"two correct functions, composed
+    // in the wrong order"* — and the fix is a claim about a code path that only
+    // a real keystroke reaches.
+    //
+    // ⚠ **What this arm does NOT assert is the picture**, and that is stated
+    // rather than left implicit. The `?` was a *rendered* artefact: it is in the
+    // baked `/AP`, not in `/Contents`, so the trace's `chars=` count is
+    // identical on a broken and a fixed build. What this proves is that Enter
+    // reaches the dialog's field and survives to the commit — the shell's whole
+    // share of the route. The engine's half is asserted by the engine's own
+    // tests, which its commit records as having failed on all four newline
+    // cases before the fix.
+    for key in [vk::F, vk::ENTER, vk::DIGIT_2] {
         driver.press(key)?;
         session.settle(6);
     }
