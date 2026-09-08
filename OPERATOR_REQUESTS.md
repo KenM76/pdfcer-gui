@@ -5774,6 +5774,29 @@ ribbon button — that alone may settle it without any driving.
 > *"shrunk to fit the field's WIDTH"*, or — the honest third case — *"held at
 > pdfcer's legibility floor; the box is too small for this text, which will
 > overflow"*.
+
+⚠ **That paragraph was true of the engine and NOT of this program, for three
+days — corrected 2026-09-08.** The engine reported which constraint decided the
+size all along; pdfcer read the size, dropped the reason, and told you only
+*"pdfcer chose 4.0 pt. Another program filling this field may choose
+differently."* — a sentence about other programs, when the fact was that your
+text does not fit the box.
+
+**It says it now.** Fill a field too small for what you typed and you get, on
+the status bar:
+
+> *"⚠ "FullName" is too small for this text. pdfcer held the size at 4.0 pt so
+> it stays readable, which means the text will overflow the box — make the field
+> taller, or shorten what is in it."*
+
+And the width case gets its own sentence, because it points at a **different
+fix**: a field shrunk to fit its width does not get bigger text by being made
+taller, and that is the first thing anyone tries.
+
+★ Driven on a real field through the real window — click, type, commit — and the
+check asserts the sentence reaches the **status bar in Read mode**, which is the
+one place it has to work, because Read does not show the Forms panel at all.
+
 >
 > ### ★★ It lands about 16% larger than Acrobat, deliberately
 >
