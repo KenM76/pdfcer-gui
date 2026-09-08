@@ -1469,8 +1469,7 @@ fn srgb_to_colour(rgb: [u8; 3]) -> Color {
 /// the defect it exists for: two `DragValue`s here were re-seeded from the
 /// document every frame, so a drag could never accumulate and neither control
 /// could be dragged at all. Its header carries the whole finding.
-mod draft;
-use draft::{drafted, keep_draft};
+use crate::app::spinnerdraft::{drafted, keep_draft};
 
 #[cfg(test)]
 mod tests;

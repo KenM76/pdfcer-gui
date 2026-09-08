@@ -1,7 +1,22 @@
-//! # `app::markupband::draft` — keeping a spinner's value alive between frames
+//! # `app::spinnerdraft` — keeping a spinner's value alive between frames
 //!
 //! Two functions, one defect, and the defect is the reason this file has a
 //! header longer than its code.
+//!
+//! ★★ **Moved out of `app::markupband` on 2026-09-08 and widened to
+//! `pub(crate)`, on the third caller.** It was `pub(super)` beside the two
+//! controls it was written for; the page-previews time limit
+//! (`panels::pages::previews`) is the third `DragValue` in this crate whose
+//! backing value is read from a getter, and the egui RAG entry this came
+//! from is explicit about what that means:
+//!
+//! > *Sibling controls are guilty by construction … grep for the shape, not
+//! > for the symptom — every `DragValue`/`Slider` whose value is a local
+//! > initialised from a getter on the same frame is a candidate.*
+//!
+//! ⇒ A helper that is only reachable from the module that first hit the
+//! defect guarantees the next module hits it again. The move is the fix; the
+//! visibility is the point.
 /// **Hold a spinner's value across frames while it is being dragged.**
 ///
 /// # ★★★ The defect this exists to stop, found by DRIVING and by nothing else
@@ -55,7 +70,7 @@
 /// changed**. A draft that outlived a no-op drag would shadow the document
 /// silently, and the symptom — a control showing a value the file does not
 /// have — is worse than the defect it came from.
-pub(super) fn drafted<T>(ui: &egui::Ui, id: egui::Id, from_document: T) -> T
+pub(crate) fn drafted<T>(ui: &egui::Ui, id: egui::Id, from_document: T) -> T
 where
     T: Copy + Send + Sync + 'static,
 {
@@ -68,7 +83,7 @@ where
 /// allowed on. Keeping that decision here means `width` and `opacity` cannot
 /// drift apart about what "the operator has finished" means — they did not
 /// share this once, and they shared the bug instead.
-pub(super) fn keep_draft<T>(
+pub(crate) fn keep_draft<T>(
     ui: &egui::Ui,
     id: egui::Id,
     response: &egui::Response,

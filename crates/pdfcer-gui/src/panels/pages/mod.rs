@@ -132,6 +132,7 @@
 /// a drop rather than a message.
 pub mod import;
 pub mod ops;
+pub mod previews;
 pub mod select;
 pub mod thumbnails;
 
@@ -283,28 +284,14 @@ pub fn body(
     // where rule 4 puts off-canvas disclosure anyway. Nothing was lost by the
     // move except the defect.
 
-    // The previews control. Read from the cache and written straight back, so
-    // "is the box ticked" and "will anything be drawn" are one expression
-    // rather than two that can disagree — see `ThumbnailCache::previews_on`.
-    let mut previews_on = pages.cache.previews_on();
-    if ui
-        .checkbox(&mut previews_on, t::previews_label())
-        .on_hover_text(t::previews_tooltip())
-        .changed()
-    {
-        pages.cache.force_on(previews_on);
-    }
-    // The disclosure sits ABOVE the grid, not below it — the same rule the
-    // Bookmarks, Signatures and Fonts panels state: an operator who looks at
-    // a grid of undrawn tiles and stops has already drawn a conclusion by the
-    // time a footnote would reach them.
-    if let Some(slow) = pages.cache.slow() {
-        ui.label(
-            egui::RichText::new(t::previews_paused_note(slow.page_index, slow.millis))
-                .small()
-                .weak(),
-        );
-    }
+    // The previews row and its disclosure, in `previews.rs`.
+    //
+    // ★ Lifted out on 2026-09-08 rather than left inline, and the reason is
+    // R2 rather than length alone: it is a **self-contained subject** — one
+    // instruction from the operator, one number, one sentence explaining a
+    // skipped tile — and everything it touches lives on `ThumbnailCache`.
+    // Nothing above or below it in this function reads what it writes.
+    previews::row(ui, pages);
     ui.separator();
 
     let mut go: Option<usize> = None;
@@ -492,12 +479,13 @@ pub fn body(
     crate::diag::trace_changed(PANEL_SLOT, || {
         format!(
             "pages-panel pages={page_count} current={} selected={} visible={} \
-             drawn={} previews={}",
+             drawn={} previews={} budget_ms={}",
             current + 1,
             pages.selection.len(),
             visible.len(),
             pages.cache.ready_count(),
             u8::from(pages.cache.previews_on()),
+            pages.cache.budget().as_millis(),
         )
     });
 

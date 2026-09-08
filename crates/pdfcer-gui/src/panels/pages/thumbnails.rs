@@ -51,7 +51,8 @@
 //! | **What is cached?** | the uploaded texture, keyed by the page's [`RenderKey`], up to [`MAX_CACHED_THUMBNAILS`] of them |
 //! | **What is evicted?** | the cached page **furthest from the middle of what is on screen** |
 //! | **What does an undrawn tile show?** | *words* — see [`TileState`] and [`crate::text::pages`] |
-//! | **When does it stop?** | the first time a page costs more than [`SLOW_PAGE`]; a hard ceiling of [`RENDER_CEILING`] abandons any single render |
+//! | **When does a page get skipped?** | when it exceeds the operator's own per-page time limit — [`ThumbnailCache::budget`], default [`PAGE_BUDGET_DEFAULT`]. That page alone is abandoned; the grid carries on with the next one |
+//! | **When does the feature switch itself off?** | **never** — see "the skipping rule" below |
 //!
 //! ## What that policy does on real documents — measured, by driving the
 //! binary
@@ -62,14 +63,15 @@
 //! | Document | What happened |
 //! |---|---|
 //! | `SW41177.pdf` — 36 SolidWorks sheets | 12 tiles visible, 12 drawn, one per frame in 61 · 222 · 48 · 52 · 33 · 31 · 31 · 31 · 32 · 32 · 33 · 33 ms. Then `drawn=12` and **nothing further scheduled** — the other 24 pages were never touched. |
-//! | `ncored-benchmark-cad-drawing.pdf` — 1 sheet | page 1 drew in **921 ms**, tripped [`SLOW_PAGE`], and the panel reported `previews=0` on the same frame. |
+//! | `ncored-benchmark-cad-drawing.pdf` — 1 sheet | page 1 drew in **921 ms**, tripped the then-400 ms `SLOW_PAGE`, and the panel reported `previews=0` on the same frame. |
 //!
-//! The stop was also driven on a *multi-page* document, by lowering
-//! [`SLOW_PAGE`] to 100 ms in a throwaway build: page 2's 222 ms tripped it,
-//! the remaining ten visible tiles stayed undrawn saying **"Preview off"**,
-//! and the panel grew by 23 pt to fit the note naming the page and its cost.
-//! That is the branch that decides whether this feature is honest, so it was
-//! made to happen rather than reasoned about.
+//! ⚠ **The second row's outcome no longer happens, and the measurement is
+//! kept because the number is still true.** 921 ms is what that page
+//! costs; what changed on 2026-09-08 is what pdfcer does about it —
+//! nothing, because 921 ms is inside the default budget. The row is left
+//! standing rather than deleted so the next person to raise
+//! [`PAGE_BUDGET_DEFAULT`]'s justification has the evidence in front of
+//! them; see "the skipping rule" below for why the global stop went.
 //!
 //! ## ★ Why this renders on the UI thread, when a cancellable off-thread
 //! worker already exists
@@ -105,8 +107,9 @@
 //! Rendering inline instead means the `session.view()` borrow lives and dies
 //! inside one function call on the UI thread. **No `Arc` clone ever escapes
 //! the frame**, so the mutation choke point is untouched and the hazard
-//! cannot arise. The price is a frame hitch, which is what [`SLOW_PAGE`] and
-//! [`RENDER_CEILING`] exist to bound.
+//! cannot arise. The price is a frame hitch, which is what
+//! [`ThumbnailCache::budget`] exists to bound — and, since 2026-09-08, what
+//! the operator rather than this module gets to put a number on.
 //!
 //! **What would close this properly** is one of:
 //!
@@ -130,22 +133,57 @@
 //! repaints, the scroll responds, and the operator can turn previews off,
 //! *between* every page.
 //!
-//! ## The stopping rule, and why it is automatic and reversible
+//! ## ★★★ The skipping rule — per page, and the checkbox NEVER moves itself
 //!
-//! A page that costs more than [`SLOW_PAGE`] sets [`ThumbnailCache::slow`],
-//! and no further page is drawn until the operator says otherwise. Three
-//! properties, each deliberate:
+//! **This replaced an automatic global stop on 2026-09-08, at the operator's
+//! instruction** (`OPERATOR_REQUESTS.md` O151):
 //!
-//! - **Automatic**, because the operator cannot know in advance which of
-//!   their documents is the expensive kind. pdfcer can, after one page, and
-//!   spending one page to find out is the cheapest honest experiment
-//!   available.
-//! - **Stated**, not silent — [`crate::text::pages::previews_paused_note`]
-//!   names the page and its measured cost. A feature that turns itself off
-//!   without saying so is indistinguishable from one that is broken.
-//! - **Reversible**, by a control the operator can hold down for as long as
-//!   they like ([`ThumbnailCache::force_on`]). Their machine, their choice —
-//!   what pdfcer owes them is the number, not the decision.
+//! > *"the drawing page previews checkbox should never automatically turn
+//! > off. You can add a box next to the checkbox to enter a timeout value."*
+//!
+//! What was there before: a page costing more than a hard-coded 400 ms set
+//! `ThumbnailCache::slow`, **the checkbox went from ticked to unticked**, and
+//! no further page was drawn until the operator ticked it again. The
+//! reasoning was sound as far as it went — the operator cannot know in
+//! advance which of their documents is the expensive kind, pdfcer can after
+//! one page, and it said so rather than going quiet.
+//!
+//! ⇒ **What that reasoning missed is that it wrote its conclusion into the
+//! operator's own control.** A checkbox is a record of an instruction. When
+//! pdfcer clears it, the operator's next glance at the panel reads *"I must
+//! have turned that off"*, and there is no state left that distinguishes
+//! *they chose this* from *pdfcer chose this for them*. The old
+//! `forced: Option<bool>` existed entirely to paper over that collision, and
+//! its own doc comment admitted the shape of the problem — three states for a
+//! two-state control.
+//!
+//! The rule now:
+//!
+//! - **The tick is the operator's, exclusively.** Nothing in this module
+//!   writes it. [`ThumbnailCache::previews_on`] is a plain field read.
+//! - **The cost is bounded per page, not per document.** Each render is armed
+//!   with a [`RenderCancel`] at [`ThumbnailCache::budget`]; a page that
+//!   exceeds it is abandoned, shows [`TileState::Abandoned`], and **the grid
+//!   moves on to the next page**. One expensive sheet in a set of thirty-six
+//!   no longer costs the other thirty-five their pictures — which is strictly
+//!   better than the old rule even before the operator touches anything.
+//! - **The budget is the operator's number**, typed into the box beside the
+//!   checkbox, clamped to [`MIN_PAGE_BUDGET`]..=[`MAX_PAGE_BUDGET`]. Their
+//!   machine, their choice — what pdfcer owes them is the measurement, and
+//!   [`crate::text::pages::previews_budget_tooltip`] carries it.
+//! - **Raising the budget retries what the old one skipped**
+//!   ([`ThumbnailCache::set_budget`] drops every [`Unavailable::Abandoned`]
+//!   entry). A dial that could only ever remove pictures would be a trap: the
+//!   operator would raise it, see no change, and conclude it did nothing.
+//! - **Stated, not silent** — [`crate::text::pages::previews_skipped_note`]
+//!   names the page, what it was given, and the box that changes it.
+//!
+//! ⚠ The price, stated plainly because it is the operator's to pay now: on a
+//! document like the benchmark drawing, twelve visible tiles at ~0.92 s each
+//! is ~11 s of UI-thread work, spread one page per frame with the window
+//! repainting between each. It is a slow grid, not a frozen one, and it was
+//! **precisely the thing the old rule bought by unticking the box**. The box
+//! is how the operator buys it back.
 
 use std::collections::HashMap;
 use std::sync::mpsc::{RecvTimeoutError, channel};
@@ -177,11 +215,16 @@ use crate::render::worker::{RenderKey, RenderedPixels};
 /// smaller stops being recognisable, which is the one job a thumbnail has.
 pub const THUMBNAIL_WIDTH_PTS: f32 = 140.0;
 
-/// A page that takes longer than this to draw stops the grid.
+/// **The default per-page time limit** — what [`ThumbnailCache::budget`]
+/// holds until the operator types a different number.
 ///
-/// Chosen against measurements rather than by feel, and the measurements are
-/// this panel's own — [`tests::thumbnail_cost_on_the_benchmark_documents`]
-/// re-runs them. **Release build, 280 px-wide thumbnails, one core:**
+/// Two seconds, and the number is the old `RENDER_CEILING`'s, unchanged,
+/// because its justification survived the 2026-09-08 rewrite intact even
+/// though the rule around it did not.
+///
+/// The measurements it was chosen against are this panel's own —
+/// [`tests::thumbnail_cost_on_the_benchmark_documents`] re-runs them.
+/// **Release build, 280 px-wide thumbnails, one core:**
 ///
 /// | Document | Page | Thumbnail |
 /// |---|---|---:|
@@ -191,40 +234,52 @@ pub const THUMBNAIL_WIDTH_PTS: f32 = 140.0;
 /// | `fixtures/a1-titleblock.pdf` | 1 | 9 ms |
 /// | `pageops/four-pages.pdf` | 1–4 | < 1 ms |
 ///
-/// The two populations do not overlap, and 400 ms is the empty band between
-/// them: a real drawing-office sheet set draws all twelve visible tiles
-/// without ever tripping it (measured live: 12 tiles, ~0.6 s in total), and
-/// the benchmark drawing trips it on its first page.
+/// ⇒ **Two seconds is deliberately well clear of the worst real page.** A
+/// default that abandoned a render which would have finished converts a slow
+/// picture into no picture, and that is a worse answer than the wait — so on
+/// every document measured here, the default budget draws **everything**.
+/// What it bounds is the page worse than anything measured: `BENCHMARK.md`
+/// records ~10 s at 1× and ~58 s at 2× for a full-size CAD raster, nothing in
+/// the format bounds a thumbnail's cost, and a page with ten times the
+/// operator count would otherwise freeze the application for the better part
+/// of a minute.
 ///
-/// It is a *frame hitch* budget, not a total-work budget. 400 ms is well
-/// past the ~100 ms at which an interaction stops feeling immediate, which
-/// is exactly why crossing it once is enough to stop and ask.
-pub const SLOW_PAGE: Duration = Duration::from_millis(400);
-
-/// No single thumbnail render may hold the UI thread longer than this.
+/// ★ The 400 ms that used to live beside this — `SLOW_PAGE` — was a
+/// *different kind of number*: the point at which pdfcer stopped and asked.
+/// It is gone with the rule it served, and the empty measured band it sat in
+/// (72 ms … 238 ms of real work, then 918 ms) is preserved above for whoever
+/// next argues about the default.
 ///
-/// The backstop for a page worse than anything measured. `BENCHMARK.md`
-/// records ~10 s at 1× and ~58 s at 2× for a full-size CAD raster; the
-/// worst *thumbnail* measured here is 918 ms, but nothing in the format
-/// bounds it, and a page with ten times the operator count would freeze the
-/// application for the better part of a minute.
-///
-/// Two seconds is therefore deliberately **well clear of the worst real
-/// page** — it must never abandon a render that would have finished — while
-/// still being an interruption an operator can wait out. A ceiling that
-/// tripped on the benchmark drawing would have converted a slow picture into
-/// no picture, which is a worse answer than the wait.
-///
-/// So every render is armed with a [`RenderCancel`] and a one-shot watchdog
-/// thread that trips at this deadline. `pdfcer-render` polls the token
-/// **between content-stream operators**, and its own docs put the worst-case
-/// latency at one operation — ~360 µs for the most expensive kind measured —
-/// so the ceiling is real rather than nominal.
+/// The mechanism, which is real rather than nominal: every render is armed
+/// with a [`RenderCancel`] and a one-shot watchdog thread that trips at the
+/// budget. `pdfcer-render` polls the token **between content-stream
+/// operators**, and its own docs put the worst-case latency at one operation
+/// — ~360 µs for the most expensive kind measured.
 ///
 /// A render that trips it is [`Unavailable::Abandoned`], which is *not* a
 /// failure: nothing is wrong with the page, and the tile says so in those
 /// terms.
-pub const RENDER_CEILING: Duration = Duration::from_secs(2);
+pub const PAGE_BUDGET_DEFAULT: Duration = Duration::from_secs(2);
+
+/// The smallest budget the operator may set.
+///
+/// A tenth of a second. Below this the dial stops being a time limit and
+/// becomes an off switch wearing a number: `SW41177.pdf`'s *cheapest* sheets
+/// cost 58–72 ms, so 50 ms would abandon an ordinary drawing-office sheet
+/// set wholesale while the checkbox still read "on" — which is the exact
+/// confusion between *pdfcer decided* and *the operator decided* that this
+/// whole rewrite exists to remove. An operator who wants no previews has a
+/// checkbox for it, one control to the left.
+pub const MIN_PAGE_BUDGET: Duration = Duration::from_millis(100);
+
+/// The largest budget the operator may set.
+///
+/// A minute. Not a performance judgement — it is the point past which a
+/// *single* frame hitch stops being distinguishable from a hang, and an
+/// application that appears hung is one the operator kills. Anyone who
+/// genuinely wants an unbounded render has the canvas, which is where a
+/// full-size raster of that page belongs anyway.
+pub const MAX_PAGE_BUDGET: Duration = Duration::from_secs(60);
 
 /// How many uploaded thumbnails are kept at once.
 ///
@@ -250,7 +305,7 @@ pub const MAX_CACHED_THUMBNAILS: usize = 64;
 /// same error sixty times a second.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Unavailable {
-    /// The render was still going when [`RENDER_CEILING`] elapsed.
+    /// The render was still going when [`ThumbnailCache::budget`] elapsed.
     ///
     /// Not a defect in the page. Kept as its own variant so the tile can say
     /// *"not finished"* rather than *"would not draw"*, which would blame a
@@ -280,18 +335,29 @@ pub enum TileState {
     /// waiting for something that will never arrive is being misled by a
     /// word.
     PreviewsOff,
-    /// The render hit [`RENDER_CEILING`].
+    /// The render hit [`ThumbnailCache::budget`] and was abandoned.
+    ///
+    /// ★ Not a failure and not a stop. The next page is drawn normally;
+    /// only this one has no picture, and raising the budget brings it
+    /// back ([`ThumbnailCache::set_budget`]).
     Abandoned,
     /// The renderer refused the page.
     Failed,
 }
 
-/// The page that stopped the grid, and what it cost.
+/// **The most recent page the budget skipped**, and how long it was given.
+///
+/// ⚠ Renamed in meaning on 2026-09-08 without changing shape, so read the
+/// field docs rather than the type name: `millis` used to be *how long the
+/// page took* (a completed render, measured after the fact) and is now *how
+/// long it was allowed* before being abandoned. The page's true cost is
+/// unknown by construction — pdfcer stopped it precisely so as not to find
+/// out.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct SlowPage {
+pub struct SkippedPage {
     /// Which page (0-based).
     pub page_index: usize,
-    /// How long it took, in milliseconds.
+    /// The budget it exceeded, in milliseconds.
     pub millis: u128,
 }
 
@@ -305,7 +371,6 @@ pub struct SlowPage {
 /// those two there is no identity comparison anywhere, which is the same
 /// posture `PanelsState`'s own header argues for and the same reason the old
 /// `DocKey` was deleted rather than repaired.
-#[derive(Default)]
 pub struct ThumbnailCache {
     /// The uploaded pictures, by 0-based page index.
     ready: HashMap<usize, PageTexture>,
@@ -354,24 +419,39 @@ pub struct ThumbnailCache {
     /// rendered later in the same frame is a picture of the revision this
     /// snapshot names.
     synced: crate::app::state::pageepoch::PageEpochs,
-    /// The page that tripped [`SLOW_PAGE`], if one has.
-    slow: Option<SlowPage>,
-    /// The operator's own instruction about previews, if they have given
-    /// one.
+    /// The most recent page the budget abandoned, if any.
     ///
-    /// **Three states, not two**, and the third is what makes the control
-    /// honest. `None` is *"pdfcer is deciding"* — on until a page proves
-    /// expensive. `Some(true)` and `Some(false)` are the operator's
-    /// instruction, and they **override the automatic rule in both
-    /// directions**: a control that turned itself back on after the operator
-    /// turned it off, or off again after they turned it on, would be arguing
-    /// with them.
+    /// **A disclosure, not a decision.** Nothing reads this to decide whether
+    /// to draw; it exists so the panel can say which page has no picture and
+    /// why, per rule 4's *report separately*. Cleared by
+    /// [`Self::set_budget`], because a verdict measured against a limit the
+    /// operator has since changed is a stale claim.
+    skipped: Option<SkippedPage>,
+    /// ★★★ **Whether the operator wants previews. Nothing but the operator
+    /// writes this.**
     ///
-    /// Collapsing this to a `bool` was the first attempt and it cannot
-    /// express "off by hand" without also claiming a slow page as the reason
-    /// — which would print [`crate::text::pages::previews_paused_note`]
-    /// naming a page that was never slow.
-    forced: Option<bool>,
+    /// A plain `bool`, and the plainness is the feature. It was
+    /// `Option<bool>` until 2026-09-08 — three states for a two-state control
+    /// — for one reason: pdfcer also wrote it, so the type had to record
+    /// *who last decided*. With the automatic rule gone there is one party,
+    /// so there are two states, and "is the box ticked" is the whole of the
+    /// question.
+    ///
+    /// ⚠ If a future change makes this module write this field, the
+    /// three-state problem comes straight back and so does the defect the
+    /// operator reported. Skip the page, not the feature.
+    on: bool,
+    /// **The operator's per-page time limit**, from the box beside the
+    /// checkbox.
+    ///
+    /// Held here rather than in `Settings` deliberately, and that is a
+    /// limitation worth stating rather than hiding: it is application-scoped
+    /// but **not persisted**, so it returns to [`PAGE_BUDGET_DEFAULT`] on the
+    /// next launch, exactly as the checkbox does. Persisting it means a
+    /// `Settings` field, which is engine territory (`pdfcer-core`), and this
+    /// project does not write to the engine — see `PROJECT_PLAN.md`. Filed
+    /// rather than smuggled.
+    budget: Duration,
     /// The page indices in [`Self::ready`], newest last.
     ///
     /// Kept beside the map only so eviction has a deterministic tie-break;
@@ -379,6 +459,28 @@ pub struct ThumbnailCache {
     /// [`evict_victim`]), and two equally distant pages resolve to the older
     /// one.
     order: Vec<usize>,
+}
+
+impl Default for ThumbnailCache {
+    /// **Previews on, at the default budget** — hand-written because the
+    /// derive cannot express either.
+    ///
+    /// `#[derive(Default)]` would give `on: false` and `budget: 0 s`, which
+    /// is a build that draws nothing and blames a time limit for it. Both are
+    /// the kind of default that is only ever discovered by an operator.
+    fn default() -> Self {
+        Self {
+            ready: HashMap::new(),
+            unavailable: HashMap::new(),
+            key: None,
+            built_at: HashMap::new(),
+            synced: crate::app::state::pageepoch::PageEpochs::default(),
+            skipped: None,
+            on: true,
+            budget: PAGE_BUDGET_DEFAULT,
+            order: Vec::new(),
+        }
+    }
 }
 
 impl std::fmt::Debug for ThumbnailCache {
@@ -389,8 +491,9 @@ impl std::fmt::Debug for ThumbnailCache {
         f.debug_struct("ThumbnailCache")
             .field("ready", &self.ready.len())
             .field("unavailable", &self.unavailable.len())
-            .field("slow", &self.slow)
-            .field("forced", &self.forced)
+            .field("skipped", &self.skipped)
+            .field("on", &self.on)
+            .field("budget", &self.budget)
             .finish()
     }
 }
@@ -402,13 +505,15 @@ impl ThumbnailCache {
     /// Called once per frame before any tile is drawn, so no two tiles can
     /// disagree about which revision they are pictures of.
     ///
-    /// **The slow-page verdict and the operator's override survive**, and
-    /// that is the one thing here worth arguing. An edit does not make an
-    /// expensive document cheap, so re-learning the same 0.8 s lesson after
-    /// every object move would cost a second of frozen UI per edit to reach
-    /// the answer already on screen. The override survives for the stronger
-    /// reason: it is the operator's instruction, and an instruction that
-    /// evaporates on the next edit was not honoured.
+    /// **The operator's tick, their budget, and the skip note all survive.**
+    /// The first two for the same reason: they are instructions, and an
+    /// instruction that evaporates on the next edit was not honoured. The
+    /// note survives because an edit to sheet 12 does not make sheet 4 cheap,
+    /// and re-deriving that would cost a whole abandoned render to reach a
+    /// sentence already on screen.
+    ///
+    /// ⚠ The pictures themselves do NOT survive their own page's edit — that
+    /// is this function's entire job, and the two rules are independent.
     pub fn sync(
         &mut self,
         epochs: &crate::app::state::pageepoch::PageEpochs,
@@ -457,34 +562,82 @@ impl ThumbnailCache {
 
     /// Whether a page would be drawn if one were asked for.
     ///
-    /// The operator's instruction wins when they have given one; otherwise
-    /// the automatic rule applies. One expression, so "is the control ticked"
-    /// and "will anything be drawn" cannot come apart.
+    /// One field read, so "is the control ticked" and "will anything be
+    /// drawn" cannot come apart — the panel seeds its checkbox from this and
+    /// writes the answer straight back through [`Self::force_on`].
     #[must_use]
     pub fn previews_on(&self) -> bool {
-        self.forced.unwrap_or(self.slow.is_none())
+        self.on
     }
 
-    /// The page that stopped the grid **and is still the reason it is
-    /// stopped**.
+    /// The most recent page the budget abandoned, for the panel's note.
     ///
-    /// `None` once the operator has taken the decision themselves, in either
-    /// direction. Their choice is then the reason, and printing pdfcer's
-    /// explanation beside it would credit the wrong party — the note this
-    /// feeds ([`crate::text::pages::previews_paused_note`]) reads as
-    /// *"pdfcer stopped"*, which stops being true the moment they touch the
-    /// control.
+    /// `None` while previews are off, because the sentence it feeds
+    /// ([`crate::text::pages::previews_skipped_note`]) names a page that has
+    /// no picture *for a specific reason*, and with previews off no page has
+    /// one for a much simpler reason the operator already knows. Two
+    /// explanations for the same blank tile is one too many.
     #[must_use]
-    pub fn slow(&self) -> Option<SlowPage> {
-        if self.forced.is_some() {
+    pub fn skipped(&self) -> Option<SkippedPage> {
+        if !self.on {
             return None;
         }
-        self.slow
+        self.skipped
     }
 
     /// Record the operator's own instruction about previews.
+    ///
+    /// The only writer of [`Self::on`], and it is called from exactly one
+    /// place — the checkbox.
     pub fn force_on(&mut self, on: bool) {
-        self.forced = Some(on);
+        self.on = on;
+    }
+
+    /// The operator's per-page time limit.
+    #[must_use]
+    pub fn budget(&self) -> Duration {
+        self.budget
+    }
+
+    /// **Set the per-page time limit, and give the skipped pages another go.**
+    ///
+    /// Three things happen, and the second and third are the ones that matter:
+    ///
+    /// 1. The value is clamped to [`MIN_PAGE_BUDGET`]..=[`MAX_PAGE_BUDGET`].
+    ///    The control clamps too, but a control narrower than what the value
+    ///    may legally hold silently rewrites it, so the clamp lives on the
+    ///    value as well.
+    /// 2. **Every [`Unavailable::Abandoned`] entry is dropped**, so the pages
+    ///    the *old* budget gave up on are queued again. Without this, raising
+    ///    the limit would visibly do nothing — the operator's whole reason for
+    ///    raising it is the tile that says "Not finished", and a dial that
+    ///    can only ever remove pictures is a trap. `Unavailable::Failed` is
+    ///    deliberately left alone: a page the renderer *refused* will be
+    ///    refused again, and retrying it every keystroke would cost a render
+    ///    per digit typed.
+    /// 3. The skip note is cleared, because it quotes a limit that is no
+    ///    longer in force.
+    ///
+    /// ★ Idempotent by design — the panel calls this from a `DragValue` that
+    /// reports a change on every pixel of a drag, so an unchanged value must
+    /// cost nothing.
+    pub fn set_budget(&mut self, budget: Duration) {
+        let budget = budget.clamp(MIN_PAGE_BUDGET, MAX_PAGE_BUDGET);
+        if budget == self.budget {
+            return;
+        }
+        self.budget = budget;
+        let retry: Vec<usize> = self
+            .unavailable
+            .iter()
+            .filter(|(_, u)| matches!(u, Unavailable::Abandoned))
+            .map(|(p, _)| *p)
+            .collect();
+        for page in retry {
+            self.unavailable.remove(&page);
+            self.built_at.remove(&page);
+        }
+        self.skipped = None;
     }
 
     /// What tile `page_index` should draw.
@@ -544,11 +697,13 @@ impl ThumbnailCache {
     ///
     /// Four steps, in this order:
     ///
-    /// 1. **Arm the watchdog.** A one-shot thread that cancels the render at
-    ///    the ceiling and exits the moment the render returns, so no thread
-    ///    outlives the call. `recv_timeout` distinguishes *the deadline
-    ///    passed* from *the sender was dropped*, which is what makes the
-    ///    disarm free rather than a second message.
+    /// 1. **Arm the watchdog** at [`Self::budget`] — the operator's number,
+    ///    read at the start of each render so a change takes effect on the
+    ///    next page rather than on the next document. A one-shot thread that
+    ///    cancels the render at the deadline and exits the moment the render
+    ///    returns, so no thread outlives the call. `recv_timeout`
+    ///    distinguishes *the deadline passed* from *the sender was dropped*,
+    ///    which is what makes the disarm free rather than a second message.
     /// 2. **Render**, through `session.view()` — never `session.document()`.
     ///    The view composes the edit overlay, so a thumbnail shows the file
     ///    as *edited*. The old shell shipped the other read for a while and
@@ -557,7 +712,8 @@ impl ThumbnailCache {
     ///    of the same page, disagreeing, is worse than the original defect:
     ///    it invites the operator to trust the wrong one."*
     /// 3. **Record the outcome** — a texture, or a reason there is none.
-    /// 4. **Apply the stopping rule**, from the measured elapsed time.
+    ///    A render the watchdog cancelled is [`Unavailable::Abandoned`] and
+    ///    is also noted in [`Self::skipped`] for the panel's sentence.
     ///
     /// Returns how long the render took, for the caller's trace.
     pub fn render(
@@ -614,16 +770,17 @@ impl ThumbnailCache {
         // does. The canvas is.
 
         let cancel = RenderCancel::new();
+        // ★ Copied out before the thread is spawned: `self` is borrowed
+        // mutably for the whole of this function, so the closure cannot read
+        // the field, and a `Duration` is `Copy`.
+        let budget = self.budget;
         // 1. The watchdog. `tx` stays here; dropping it at the end of this
         //    function disconnects the channel, which wakes the thread with
         //    `Disconnected` and exits it without cancelling.
         let (tx, rx) = channel::<()>();
         let watchdog = cancel.clone();
         let guard = std::thread::spawn(move || {
-            if matches!(
-                rx.recv_timeout(RENDER_CEILING),
-                Err(RecvTimeoutError::Timeout)
-            ) {
+            if matches!(rx.recv_timeout(budget), Err(RecvTimeoutError::Timeout)) {
                 watchdog.cancel();
             }
         });
@@ -686,6 +843,18 @@ impl ThumbnailCache {
                 self.unavailable.insert(page_index, Unavailable::Abandoned);
                 self.built_at
                     .insert(page_index, self.synced.get(page_index));
+                // ★ The disclosure, and the ONLY thing this arm does beyond
+                // recording the tile's state. It does not touch `self.on`.
+                // That is the whole of O151: a page the budget could not
+                // afford is a fact about that page, and the operator's
+                // instruction about the feature is none of its business.
+                //
+                // `budget`, not `elapsed`, because the page's real cost is
+                // unknown — pdfcer stopped it precisely so as not to spend it.
+                self.skipped = Some(SkippedPage {
+                    page_index,
+                    millis: budget.as_millis(),
+                });
             }
             Err(error) => {
                 self.unavailable
@@ -695,15 +864,6 @@ impl ThumbnailCache {
             }
         }
 
-        // 4. The stopping rule. Applied on the measurement rather than on the
-        //    outcome, so an abandoned render — which by definition took the
-        //    whole ceiling — stops the grid exactly as a merely slow one does.
-        if elapsed >= SLOW_PAGE && self.slow.is_none() {
-            self.slow = Some(SlowPage {
-                page_index,
-                millis: elapsed.as_millis(),
-            });
-        }
         elapsed
     }
 
@@ -820,360 +980,4 @@ pub fn evict_victim(order: &[usize], viewport_centre: usize, incoming: usize) ->
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    /// A cache with `ready` pages recorded, for the scheduling tests.
-    ///
-    /// Textures need an `egui::Context` and a live renderer; the *policy*
-    /// does not, and the policy is what these tests are about. So the state
-    /// is set through `unavailable`, which produces the same "not pending"
-    /// answer from [`ThumbnailCache::state`] by a route a headless test can
-    /// take.
-    fn settled(pages: &[usize]) -> ThumbnailCache {
-        let mut cache = ThumbnailCache::default();
-        for p in pages {
-            cache
-                .unavailable
-                .insert(*p, Unavailable::Failed(String::new()));
-        }
-        cache
-    }
-
-    /// **★ The current page is drawn first when it is on screen.**
-    ///
-    /// It carries the highlight ring, so it is the tile the operator is using
-    /// to answer "where am I" — and a ring around a tile reading "not drawn
-    /// yet" answers that with the page number they already had.
-    #[test]
-    fn the_current_page_is_drawn_before_its_neighbours() {
-        let cache = ThumbnailCache::default();
-        let visible = [4, 5, 6, 7, 8];
-        assert_eq!(cache.next_to_render(&visible, 6), Some(6));
-        // …and when the current page is NOT on screen, reading order wins.
-        assert_eq!(cache.next_to_render(&visible, 40), Some(4));
-    }
-
-    /// Nothing off-screen is ever drawn.
-    ///
-    /// The property that makes a 900-page document affordable at all: the
-    /// grid's cost is bounded by what fits on screen, not by the document.
-    #[test]
-    fn only_visible_pages_are_candidates() {
-        let cache = ThumbnailCache::default();
-        assert_eq!(cache.next_to_render(&[100, 101], 0), Some(100));
-        assert_eq!(
-            cache.next_to_render(&[], 0),
-            None,
-            "an empty viewport must schedule nothing at all"
-        );
-    }
-
-    /// A settled viewport schedules nothing — the steady state, and the
-    /// reason this is cheap to call sixty times a second.
-    #[test]
-    fn a_fully_drawn_viewport_asks_for_nothing() {
-        let cache = settled(&[4, 5, 6]);
-        assert_eq!(cache.next_to_render(&[4, 5, 6], 5), None);
-    }
-
-    /// **★ A stopped grid schedules nothing, however much is visible.**
-    ///
-    /// The whole of the stopping rule's effect. If this returned a page, the
-    /// operator's stop would be advice rather than an instruction.
-    #[test]
-    fn a_stopped_grid_draws_nothing() {
-        let mut cache = ThumbnailCache {
-            slow: Some(SlowPage {
-                page_index: 2,
-                millis: 812,
-            }),
-            ..ThumbnailCache::default()
-        };
-        assert!(!cache.previews_on());
-        assert_eq!(cache.next_to_render(&[0, 1, 2, 3], 1), None);
-        assert_eq!(cache.state(0), TileState::PreviewsOff);
-
-        // …and the operator's override resumes it, on the same viewport.
-        cache.force_on(true);
-        assert!(cache.previews_on());
-        assert_eq!(cache.next_to_render(&[0, 1, 2, 3], 1), Some(1));
-        assert_eq!(cache.state(0), TileState::NotDrawnYet);
-    }
-
-    /// **★ Turning previews off by hand stops the grid without claiming a
-    /// page was slow.**
-    ///
-    /// The case a `bool` could not express. If the hand-off state borrowed
-    /// the automatic one, the panel would print "page N took 0.8 s" about a
-    /// page that rendered in four milliseconds — pdfcer inventing evidence for
-    /// a decision the operator made.
-    #[test]
-    fn turning_previews_off_by_hand_is_not_reported_as_a_slow_page() {
-        let mut cache = ThumbnailCache::default();
-        cache.force_on(false);
-        assert!(!cache.previews_on());
-        assert_eq!(cache.slow(), None);
-        assert_eq!(cache.state(3), TileState::PreviewsOff);
-
-        // …and it also holds when a page GENUINELY was slow first: once the
-        // operator has taken the decision, it is theirs.
-        let mut cache = ThumbnailCache {
-            slow: Some(SlowPage {
-                page_index: 2,
-                millis: 812,
-            }),
-            ..ThumbnailCache::default()
-        };
-        assert_eq!(cache.slow().map(|s| s.page_index), Some(2));
-        cache.force_on(false);
-        assert_eq!(cache.slow(), None);
-    }
-
-    /// **★ Every not-ready state has its own tile word.**
-    ///
-    /// The no-placeholders rule for pictures. Four distinct states must map
-    /// to four distinct sentences, or the tile is guessing on the operator's
-    /// behalf. Asserted against the catalog itself, so a future edit that
-    /// makes two of them read alike fails here.
-    #[test]
-    fn the_four_undrawn_states_say_four_different_things() {
-        use crate::text::pages as t;
-        let words = [
-            t::thumbnail_not_drawn_yet(),
-            t::thumbnail_previews_off(),
-            t::thumbnail_abandoned(),
-            t::thumbnail_failed(),
-        ];
-        for (i, a) in words.iter().enumerate() {
-            assert!(!a.trim().is_empty(), "an undrawn tile must say something");
-            for b in &words[i + 1..] {
-                assert_ne!(a, b, "two different states read identically");
-            }
-        }
-    }
-
-    /// A failure and an abandonment are different tiles, and neither is
-    /// retried.
-    #[test]
-    fn a_recorded_outcome_is_not_scheduled_again() {
-        let mut cache = ThumbnailCache::default();
-        cache
-            .unavailable
-            .insert(3, Unavailable::Failed("bad stream".to_owned()));
-        cache.unavailable.insert(4, Unavailable::Abandoned);
-        assert_eq!(cache.state(3), TileState::Failed);
-        assert_eq!(cache.state(4), TileState::Abandoned);
-        assert_eq!(
-            cache.next_to_render(&[3, 4], 3),
-            None,
-            "a deterministic failure retried every frame pegs a core"
-        );
-    }
-
-    /// **★ Eviction keeps the neighbourhood the operator is in.**
-    ///
-    /// The property LRU gets wrong: scrolling down and back must not
-    /// re-render the whole way home.
-    #[test]
-    fn the_furthest_page_from_the_viewport_is_evicted() {
-        // Oldest first. The operator is looking at page 50.
-        let order = [1, 48, 49, 51, 52, 200];
-        assert_eq!(evict_victim(&order, 50, 53), Some(200));
-        // Move the viewport to the front of the document and the far end of
-        // the cache changes with it — which is the whole difference from LRU.
-        assert_eq!(evict_victim(&order, 1, 2), Some(200));
-        assert_eq!(evict_victim(&order, 200, 199), Some(1));
-    }
-
-    /// Ties break toward the older entry rather than at random.
-    #[test]
-    fn an_equidistant_pair_evicts_the_older_one() {
-        // 40 and 60 are both 10 away from 50; 40 was cached first.
-        assert_eq!(evict_victim(&[40, 60], 50, 55), Some(40));
-        assert_eq!(evict_victim(&[60, 40], 50, 55), Some(60));
-    }
-
-    /// The page about to be inserted is never the victim, and an empty cache
-    /// has no victim at all.
-    #[test]
-    fn eviction_never_chooses_the_incoming_page_or_an_empty_cache() {
-        assert_eq!(evict_victim(&[], 0, 0), None);
-        assert_eq!(
-            evict_victim(&[900], 0, 900),
-            None,
-            "evicting the page being inserted is a cache that is always full \
-             and always empty"
-        );
-    }
-
-    /// **★ A page change must not drop a single picture.**
-    ///
-    /// The invalidation key is the edit epoch, not the page index. Keying on
-    /// the page would re-rasterize the visible grid on every Page Down — a
-    /// second of frozen UI per keystroke, to redraw pictures that were
-    /// already right.
-    #[test]
-    fn navigating_keeps_the_cache_and_editing_drops_it() {
-        use crate::app::state::pageepoch::PageEpochs;
-
-        let mut epochs = PageEpochs::default();
-        epochs.resize(8);
-        let mut cache = ThumbnailCache::default();
-        cache.sync(&epochs, 2.0);
-        cache.unavailable.insert(7, Unavailable::Abandoned);
-        cache.built_at.insert(7, epochs.get(7));
-
-        cache.sync(&epochs, 2.0);
-        assert_eq!(cache.state(7), TileState::Abandoned, "nothing changed");
-
-        epochs.bump_all();
-        cache.sync(&epochs, 2.0);
-        assert_eq!(
-            cache.state(7),
-            TileState::NotDrawnYet,
-            "an edit changes what the pages look like"
-        );
-
-        // A density change invalidates for a different reason: every texture
-        // is now the wrong resolution.
-        cache.unavailable.insert(7, Unavailable::Abandoned);
-        cache.built_at.insert(7, epochs.get(7));
-        cache.sync(&epochs, 1.5);
-        assert_eq!(cache.state(7), TileState::NotDrawnYet);
-    }
-
-    /// ★★★ **The O74 assertion, and the one that would have caught the
-    /// original defect**: an edit on one page leaves every other page's
-    /// picture alone.
-    ///
-    /// `OPERATOR_REQUESTS.md` O74 — *"all of the page previews get re-rendered
-    /// instead of just the one that is being changed"*. The old `sync` keyed
-    /// the whole cache on a document-wide epoch and cleared it wholesale, so
-    /// this test could not have been written against it: there was no per-page
-    /// input to vary.
-    #[test]
-    fn an_edit_on_one_page_leaves_the_other_pages_pictures_alone() {
-        use crate::app::state::pageepoch::PageEpochs;
-
-        let mut epochs = PageEpochs::default();
-        epochs.resize(4);
-        let mut cache = ThumbnailCache::default();
-        cache.sync(&epochs, 2.0);
-        for page in 0..4 {
-            cache.unavailable.insert(page, Unavailable::Abandoned);
-            cache.built_at.insert(page, epochs.get(page));
-        }
-
-        epochs.bump(2);
-        cache.sync(&epochs, 2.0);
-
-        assert_eq!(cache.state(2), TileState::NotDrawnYet, "the edited page");
-        for page in [0, 1, 3] {
-            assert_eq!(
-                cache.state(page),
-                TileState::Abandoned,
-                "page {page} was not edited and must keep its entry"
-            );
-        }
-    }
-
-    /// ★★ …and the safety half, which matters more: a **document-wide** bump
-    /// still drops everything.
-    ///
-    /// Without this, the test above passes on a build that never invalidates
-    /// anything — which would show the operator pictures of content he had
-    /// already changed. That is rule 4's "sneaky" and it outranks the slowness
-    /// the per-page key exists to fix, so both directions are asserted.
-    #[test]
-    fn a_document_wide_edit_still_drops_every_picture() {
-        use crate::app::state::pageepoch::PageEpochs;
-
-        let mut epochs = PageEpochs::default();
-        epochs.resize(4);
-        let mut cache = ThumbnailCache::default();
-        cache.sync(&epochs, 2.0);
-        for page in 0..4 {
-            cache.unavailable.insert(page, Unavailable::Abandoned);
-            cache.built_at.insert(page, epochs.get(page));
-        }
-
-        epochs.bump_all();
-        cache.sync(&epochs, 2.0);
-
-        for page in 0..4 {
-            assert_eq!(
-                cache.state(page),
-                TileState::NotDrawnYet,
-                "page {page} must be dropped by a document-wide edit"
-            );
-        }
-    }
-
-    /// An entry nothing dated is dropped rather than kept.
-    ///
-    /// Unreachable today — every insertion stamps `built_at` — and asserted
-    /// because the polarity is the whole safety argument. "Keep what you
-    /// cannot date" shows the operator stale content; "drop what you cannot
-    /// date" costs one render.
-    #[test]
-    fn an_undated_entry_is_dropped() {
-        use crate::app::state::pageepoch::PageEpochs;
-
-        let mut epochs = PageEpochs::default();
-        epochs.resize(2);
-        let mut cache = ThumbnailCache::default();
-        cache.sync(&epochs, 2.0);
-        cache.unavailable.insert(1, Unavailable::Abandoned);
-        // …and deliberately no `built_at` entry.
-        cache.sync(&epochs, 2.0);
-        assert_eq!(cache.state(1), TileState::NotDrawnYet);
-    }
-
-    /// The slow-page verdict and the operator's override survive an edit.
-    ///
-    /// An edit does not make an expensive document cheap, and re-learning the
-    /// same 0.8 s lesson per edit would cost a second of frozen UI to reach
-    /// an answer already on screen.
-    #[test]
-    fn the_stopping_verdict_survives_an_edit() {
-        use crate::app::state::pageepoch::PageEpochs;
-
-        let mut epochs = PageEpochs::default();
-        epochs.resize(2);
-        let mut cache = ThumbnailCache::default();
-        cache.sync(&epochs, 2.0);
-        cache.slow = Some(SlowPage {
-            page_index: 1,
-            millis: 800,
-        });
-        assert_eq!(cache.slow().map(|s| s.page_index), Some(1));
-        cache.force_on(true);
-        epochs.bump_all();
-        cache.sync(&epochs, 2.0);
-        assert!(
-            cache.previews_on(),
-            "the operator's instruction did not survive an edit"
-        );
-        assert_eq!(cache.next_to_render(&[0, 1], 0), Some(0));
-    }
-
-    /// The scale is a page-relative number, and a degenerate page cannot
-    /// produce an infinite one.
-    ///
-    /// An infinite scale reaches `pdfcer-render`'s pixmap guard and comes back
-    /// as a refusal, so the tile would read "would not draw" for a page whose
-    /// only fault is a malformed `/CropBox` — blaming the render for a
-    /// division this function is responsible for.
-    #[test]
-    fn a_thumbnail_scale_is_always_finite() {
-        use crate::panels::objects::test_support::engine_fixture;
-        let path = engine_fixture("pageops/four-pages.pdf");
-        let doc = pdfcer_core::document::Document::load(&path).expect("the fixture loads");
-        let pages = pdfcer_core::page_tree::pages(&doc).expect("a page tree");
-        for page in &pages {
-            let scale = raster_scale_for(page, 2.0);
-            assert!(scale.is_finite() && scale > 0.0, "scale was {scale}");
-        }
-    }
-}
+mod tests;

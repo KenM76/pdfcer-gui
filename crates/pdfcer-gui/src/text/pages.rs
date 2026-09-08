@@ -53,8 +53,8 @@
 //! - **Sentence case, no trailing period on labels; full sentences with
 //!   punctuation for prose.**
 //! - **Name the thing and what the operator can do about it.**
-//!   [`previews_paused_note`] is the worked example: it names the page, the
-//!   measured cost, and the control that resumes.
+//!   [`previews_skipped_note`] is the worked example: it names the page, the
+//!   limit it exceeded, and the box that changes that limit.
 //! - **Never state a capability the build does not have.**
 
 /// The document's page count, as the panel's first line.
@@ -246,21 +246,74 @@ pub fn previews_tooltip() -> &'static str {
      when it meets one."
 }
 
-/// Why previews stopped, and what resumes them.
+/// ★ **The suffix on the time-limit box** — the unit, and nothing else.
 ///
-/// Named parts: the page that was slow, what it cost, and the control. A
-/// message that said only "previews paused" would leave the operator hunting
-/// for a cause pdfcer already knows.
-///
-/// The cost is printed in **seconds to one decimal** rather than in
-/// milliseconds, because the number's job here is to justify a decision, and
-/// "0.8 s" justifies it in a way "812 ms" does not.
+/// Seconds rather than milliseconds because the operator is choosing how long
+/// they are prepared to wait for one picture, and nobody has ever had an
+/// opinion about that in milliseconds. The leading space is the gap between
+/// the number and its unit; `egui` concatenates the two without one.
 #[must_use]
-pub fn previews_paused_note(page_index: usize, millis: u128) -> String {
+pub fn previews_budget_suffix() -> &'static str {
+    " s"
+}
+
+/// The prefix on the time-limit box, which is what makes an unlabelled number
+/// box readable.
+///
+/// A bare `2.0 s` beside a checkbox is a number with no verb — the operator
+/// has to hover to learn whether it is a limit, a delay, or an interval.
+/// `≤ 2.0 s` reads as a bound at a glance, in three characters, which is what
+/// a 260 pt panel can afford. The tooltip carries the sentence.
+#[must_use]
+pub fn previews_budget_prefix() -> &'static str {
+    "≤ "
+}
+
+/// ★★★ **What the time-limit box does, with the measurement that makes the
+/// number choosable.**
+///
+/// The operator cannot pick a per-page time limit without knowing what a page
+/// costs, and pdfcer is the only party that has measured it. Quoting the two
+/// ends of the measured range — an ordinary drawing-office sheet against the
+/// densest CAD page in the benchmark set — turns "type a number" into a
+/// choice between two outcomes the operator recognises.
+///
+/// ⚠ Both numbers are measured, not estimated: `thumbnails.rs`'s
+/// `PAGE_BUDGET_DEFAULT` carries the table they come from.
+///
+/// It also states the consequence of the limit being hit, because that is the
+/// part an operator would otherwise have to infer from a tile going blank:
+/// **that page alone** is skipped. The rule this replaced skipped the rest of
+/// the document too.
+#[must_use]
+pub fn previews_budget_tooltip() -> &'static str {
+    "How long pdfcer may spend drawing one page. An ordinary drawing sheet \
+     takes well under a tenth of a second; the densest CAD page measured takes \
+     nearly one second. A page that runs over is skipped on its own — the rest \
+     of the document still draws — and raising this draws it again."
+}
+
+/// Which page was skipped, what it was given, and how to give it more.
+///
+/// Named parts: the page, the limit, and the control that changes the limit.
+/// A message that said only "a page was skipped" would leave the operator
+/// hunting for a cause pdfcer already knows.
+///
+/// ⚠ **It states the limit, not the cost**, and the difference is not
+/// pedantry. pdfcer abandoned the render, so it does not know what the page
+/// would have cost; printing a number as though it did would be inventing
+/// evidence. *"more than 2.0 s"* is the whole of what was measured.
+///
+/// Printed in **seconds to one decimal** because the number's job is to be
+/// compared against the box beside the checkbox, which is also in seconds. A
+/// disclosure quoting a different unit from the control it points at makes
+/// the operator do arithmetic before they can act on it.
+#[must_use]
+pub fn previews_skipped_note(page_index: usize, millis: u128) -> String {
     let seconds = millis as f32 / 1000.0;
     format!(
-        "Page previews stopped: page {} took {seconds:.1} s to draw. \
-         Turn “{}” back on to carry on drawing them.",
+        "Page {} needed more than {seconds:.1} s to draw and was skipped. \
+         Raise the time beside “{}” to draw it.",
         page_index + 1,
         previews_label()
     )
