@@ -1,5 +1,111 @@
 # RESUME — read this, then say "continue"
 
+> ★★★ **LAST SESSION: 2026-09-08, midday to afternoon. THE OPERATOR'S TEXT-EDIT
+> REPORT WAS DIAGNOSED WRONG TWICE BEFORE IT WAS MEASURED, AND THE THIRD
+> ATTEMPT WAS WRONG ON ITS FIRST RUN TOO.** Read `git log -6 --format=%B` in
+> full first; the commit messages are the authoritative record.
+>
+> **State, every number re-measured 2026-09-08 in the session that wrote this block:**
+>
+> | | | measured with |
+> |---|---|---|
+> | tests | **3,888 passing, 0 failing** | `cargo test --workspace`, summing every `test result` through `awk` |
+> | gates | **32 of 32, 0 skipped** | `bash tools/gates/run-all.sh` |
+> | engine | `pdfcer-core` **at `b208dc6`** | `grep -A3 'name = "pdfcer-core"' Cargo.lock` |
+> | shell | `3ce70a5`, on `origin/main` | `git log -1` |
+> | driven checks registered | **195** | `Box::new(` inside `checks/roster.rs`'s `all()` — the file holds **196**; one is outside `all()` |
+> | request channel | **`open/` holds 192 files, 42 of them `reply_*`** | `ls D:/Dev/FeatureRequests/pdfce_FeatureRequests/open \| wc -l` |
+> | ui toolkit | egui/eframe **0.35.0**, one minor behind (0.36.x) | `bash tools/gates/check-ui-toolkit-drift.sh` |
+>
+> **Released 2026-09-08 13:05** from `3ce70a5`: OneDrive **`pdfcer-gui2` is the
+> new build**, so **`pdfcer-gui1` (08:34) is the fallback**. GitHub
+> `v0.5.0-dev.20260908.5`, **verified from HIS side** —
+> `gh api repos/KenM76/pdfcer-gui/releases/latest` returns that tag,
+> `prerelease: false`, zip attached, 23,352,138 bytes. Check `releases/latest`,
+> never `gh release list`.
+>
+> ⚠ **He was at the machine all session**, so nothing was driven. The
+> smoke-launch route (`PDFCER_DIAG_VIEWPORT="-4200,-4200,1400,900"`, kill by
+> PID) was used instead and is what verified the new previews row. **Never
+> `taskkill /IM pdfcer-gui.exe`** — it is his daily PDF reader.
+>
+> ---
+>
+> ## ★★★ THE FINDING OF THE DAY: **COUNT ONE HALF OF AN `AND` AND YOU WILL
+> REASON ABOUT THE OTHER — THREE TIMES, ON THE SAME REPORT**
+>
+> He reported *"the BOM only sometimes works"*. It was explained twice and both
+> were wrong in the same shape:
+>
+> 1. *"the planner throws the operator pin away"* — it keeps it, deliberately,
+>    so a wrong BOM cell is never edited.
+> 2. *"a repeated cell hits `AmbiguousOnThePage`"* — **that refusal's
+>    population on his file is ZERO.** It needs a run that both repeats *and*
+>    spans several show operators; his sheets carry 57–133 of the first and
+>    4–11 of the second, and they never intersect.
+>
+> Both came from counting the cheap condition and inferring the expensive one.
+>
+> **The cause, found by performing 31 real edits and reading 31 real answers:
+> his drawing's subset fonts accept 46 of 95 printable ASCII characters and NO
+> LOWERCASE AT ALL.** `J` and `Z` are refused too — the sheet has no word
+> containing either. ⇒ The pattern is in *what he types*, not where he clicks,
+> which is exactly why retrying elsewhere looked like a fix.
+>
+> ★★ **And the third attempt was wrong on its first run**, in the way that
+> mattered: the probe appended a `Z`, so 30 of 31 cells refused
+> `UnsupportedFont`. That looked like a finding about the cells and was a
+> statement about the letter `Z`. **The harness artefact WAS the answer** —
+> but only because "why did *every* cell fail?" got asked instead of written up.
+>
+> ⇒ Rules, now in agent memory as
+> `feedback_count_a_condition_and_you_will_reason_about_the_other_one`:
+> measure the intersection; prefer performing to predicting; a fresh session
+> per trial (a shared one measures the Nth edit on an (N−1)-times-edited
+> document); **build test inputs from the subject's own alphabet**.
+>
+> ★ Everything the wrong diagnoses reached was amended, not just the next
+> report: the engine request filed an hour earlier now leads with a retraction
+> box and a LOW priority, and was renamed to stop claiming a BOM in its own
+> filename.
+>
+> ---
+>
+> ## WHAT TO DO NEXT, in his likely order
+>
+> 1. **O150's remaining half needs the screen.** The alphabet is knowable
+>    before the first keystroke, and the refusal currently arrives at *commit*
+>    — so he types a whole word and loses it. Two questions only a driven run
+>    answers: does the existing `FontLacksTheCharacter` sentence reach him at
+>    all, and should the caret refuse the keystroke or accept it and disclose?
+>    `panels/properties/refusedchar.rs` and `canvas/textedit/facewall.rs`
+>    already hold the face-swap remedy.
+> 2. **O151's drag is unverified.** The previews time-limit box smoke-launches
+>    and both controls publish rects on one row, but a `DragValue` drag needs a
+>    real pointer. `D:/dev/rag/egui/a_dragvalue_reseeded_...md` is the failure
+>    mode; the fix is in place, unproven.
+> 3. **Delete the annotation spec route (~600 lines).** `Pass 270.0` made
+>    `Plan::spec_is_more_faithful` unable to return `true`. Filed in
+>    `ENGINE_BACKLOG.md`; a `debug_assert` and
+>    `the_spec_route_is_now_unreachable_and_says_so` hold it meanwhile.
+> 4. **egui 0.36 when the machine is free.** Measured: **11 errors, 6 files, 2
+>    causes**, everything else untouched. `UI_TOOLKIT_PINS.md` carries the
+>    decision and the four verification steps. ⚠ Ten of the eleven are
+>    `RawInput::modifiers` — the keyboard path this project has already shipped
+>    two guard defects on. **Not a same-day bump.**
+>
+> ## WHAT NOT TO DO
+>
+> - **Do not `taskkill /IM pdfcer-gui.exe`.** Kill by PID, verified by path.
+> - **Do not re-diagnose O150 from a count.** The probes are committed
+>   (`tests/ken_sw41177_probe.rs`, `#[ignore]`d, six of them) so the
+>   measurements re-run in one command rather than being re-derived.
+> - **Do not `git checkout` to undo an experiment.** The egui 0.36 measurement
+>   was taken by copying `Cargo.toml`/`Cargo.lock` aside and restoring from the
+>   copies.
+> - **Do not bump egui because it compiles.** See item 4.
+
+
 
 > ★★★ **LAST SESSION: 2026-09-07 evening into 2026-09-08. FIVE DOCUMENTS AND
 > THREE OPERATOR-FACING STRINGS WERE ASSERTING ABSENCES THE ENGINE HAD ALREADY
