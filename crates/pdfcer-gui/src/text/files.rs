@@ -64,6 +64,21 @@ pub fn filter_image() -> &'static str {
     "Images (PNG, JPEG, BMP, TIFF)"
 }
 
+/// The picker filter for a plain text file.
+///
+/// ★ *"Text files"* rather than *"Text (TXT)"*, which departs from
+/// [`filter_image`] and [`filter_form_data`] and does so deliberately. Those two
+/// name their extensions because the formats are several and the operator is
+/// matching a suffix he can see. Here the filter's job is the opposite: the
+/// picker offers `.txt` **and** an everything filter precisely because a text
+/// export from another system is very often `.log`, `.csv`, `.dat` or has no
+/// extension at all — so a label reading *"Text (TXT)"* would tell him his file
+/// does not qualify, which is exactly wrong.
+#[must_use]
+pub fn filter_text() -> &'static str {
+    "Text files"
+}
+
 /// The picker filter for a form-data file.
 ///
 /// ★ It names the three extensions rather than calling them "form data",

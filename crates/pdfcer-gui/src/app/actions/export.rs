@@ -945,10 +945,15 @@ fn emf_bytes(
 /// > for that."*
 ///
 /// Half of that sentence shipped. `super::exporttext`'s header carries the full
-/// finding on the other half — **`pdfcer-core` has no route from a text file
-/// back into a PDF**, in any of the three senses "import text" could mean, and a
-/// request has been filed rather than a round trip faked. Nothing here mentions
-/// one.
+/// finding on the other half.
+///
+/// ✅ **THE OTHER HALF SHIPPED TOO — 2026-09-07.** This paragraph read
+/// ~~*"`pdfcer-core` has no route from a text file back into a PDF, in any of
+/// the three senses 'import text' could mean, and a request has been filed
+/// rather than a round trip faked. Nothing here mentions one."*~~ The request
+/// was answered: `EditSession::place_text` and `blank_document` (`Pass 252.0`)
+/// are wired as `file.import_text`, and `crate::app::actions::importtext` is
+/// the other end of the round trip.
 ///
 /// # ★★ It writes the CLIPBOARD's own string
 ///

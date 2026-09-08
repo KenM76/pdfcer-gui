@@ -317,9 +317,15 @@ fn registration_succeeds_and_registers_every_command() {
     // `manifest::registers`' planned register carrying an argued "engine gap"
     // note, and `MarkupStyle::dash` shipped that afternoon. That register's own
     // entry records the six-hour life of the note.
+    // ★★★ 156 → 157 on 2026-09-07: `file.import_text`. The other half of the
+    // operator's *"we should have export/import for that"*, which had been half
+    // a feature since 2026-09-04 for a reason that was recorded rather than
+    // shrugged at — `pdfcer-core` could not create a page, only copy one. It
+    // could when `blank_document` shipped, and the control was registered the
+    // day after.
     assert_eq!(
         registry().len(),
-        156 + usize::from(cfg!(feature = "signing"))
+        157 + usize::from(cfg!(feature = "signing"))
     );
 }
 
@@ -647,9 +653,25 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // subject both verbs act on; they are told apart by their labels, which is
     // what the convention is for. Nothing was drawn, so
     // `icons/assets/PROVENANCE.md` is untouched.
+    // ★★ 139 → 140 on 2026-09-07: `file.import_text` names `insert-pages` — a
+    // REUSE under this header's shared-key convention, and the third one. The
+    // glyph is pages arriving from a file, and this command makes pages out of a
+    // file and inserts them; `pages.insert_pages` takes them from another PDF
+    // instead, and those are two controls about one thing, which is precisely
+    // the bar `icons::catalog::tests` sets for a reuse.
+    //
+    // ⚠ The obvious pick — `import-form-data`, both named *import*, both
+    // reading a file — was REFUSED, and the refusal is the useful part: those
+    // two sit **adjacent in the same band**, so identical art there is not a
+    // shared cue but two neighbours the operator cannot tell apart at the moment
+    // he is choosing between them. `insert-pages` is on a different tab and is
+    // never drawn beside it. The argument is at the command.
+    //
+    // Nothing was drawn, so `icons/assets/PROVENANCE.md` is untouched — which is
+    // the reason a reuse was reached for at all.
     assert_eq!(
         named,
-        139 + usize::from(cfg!(feature = "signing")),
+        140 + usize::from(cfg!(feature = "signing")),
         "commands naming an icon"
     );
     // ★ 12 → 17 on 2026-08-27: the Format ▸ Font group's five commands

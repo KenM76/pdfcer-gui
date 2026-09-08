@@ -164,6 +164,14 @@ pub const DIAG_ATTACHMENT_SAVE_PATH: &str = "PDFCER_DIAG_ATTACHMENT_SAVE_PATH"; 
 /// the two indistinguishable.
 pub const DIAG_FORM_DATA_PATH: &str = "PDFCER_DIAG_FORM_DATA_PATH"; // ui-text-exempt: an environment variable name, never displayed
 
+/// The text file `file.import_text` reads, for a driven check.
+///
+/// ★ Its own variable rather than sharing one, for `DIAG_FORM_DATA_PATH`'s
+/// stated reason: a check that set one variable and got a different picker's
+/// answer would be a seam that reports the wrong subject, and the two pickers
+/// can be reached in one run.
+pub const DIAG_TEXT_IMPORT_PATH: &str = "PDFCER_DIAG_TEXT_IMPORT_PATH"; // ui-text-exempt: an environment variable name, never displayed
+
 /// The harness seam for [`pick_font_folder`].
 ///
 /// ★ Its own variable, for `DIAG_FORM_DATA_PATH`'s reason: a driven check that
@@ -490,6 +498,41 @@ pub fn pick_form_data_source() -> Picked {
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         format!("form-data-picked source=native answer={answer:?}")
+    });
+    answer
+}
+
+/// **Ask which text file to import as pages** — `file.import_text`,
+/// `pdfcer-core` `Pass 252.0`.
+///
+/// ★★ It carries the **same `DIAG_*` env override** every picker in this module
+/// does, and that is not boilerplate: a native file dialog is an OS window a
+/// driven check cannot type into, so without this seam `tools/ui-verify` could
+/// press the ribbon item and get no further. `form-data`, `image`, `document`
+/// and `attachment` all have one for the same reason.
+///
+/// ★ `.txt` first, then everything — the two filters `pick_form_data_source`
+/// offers and in that order. A text export from another system is very often
+/// `.log`, `.csv` or no extension at all, and a picker that hid those would
+/// send the operator to *All files* every time; a picker that opened on *All
+/// files* would make the common case one click longer.
+pub fn pick_text_source() -> Picked {
+    if let Some(answer) = from_env(std::env::var_os(DIAG_TEXT_IMPORT_PATH)) {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed.
+            format!("text-import-picked source=env answer={answer:?}")
+        });
+        return answer;
+    }
+    let answer = rfd::FileDialog::new()
+        .set_title(crate::text::import_text::window_title())
+        .add_filter(crate::text::files::filter_text(), &["txt"])
+        .add_filter(crate::text::files::filter_all(), &["*"])
+        .pick_file()
+        .map_or(Picked::Cancelled, Picked::Path);
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        format!("text-import-picked source=native answer={answer:?}")
     });
     answer
 }

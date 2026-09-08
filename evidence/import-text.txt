@@ -1,0 +1,20 @@
+ui-verify — profile `pdfcer-gui` (the application this project is building (crates/pdfcer-gui))
+  NOTE: this harness drives the REAL cursor and keyboard. It raises the target window, moves the pointer, and types into it. The pointer is put back where it was when the run ends. Pass --no-input to disable (checks that need input then report SKIPPED, never PASS).
+
+  isolation: each check drives its own copy of the binary, under a `.ui-verify-profiles` directory beside target/release/pdfcer-gui.exe. Nothing a check remembers reaches the next one.
+
+[PASS] a_text_file_becomes_pages
+       detects: File ▸ Import text as pages opens a window, the operator chooses a sheet and presses Import, and nothing arrives in the document — the button reaches no verb, or the apply arm never reads the file, or the engine refuses and the refusal is swallowed. All three look identical from a chair: a window that closes and a document that did not change
+       · launched target/release\.ui-verify-profiles\a_text_file_becomes_pages\pdfcer-gui.exe as pid 22048 with file.import_text and the picker answered from PDFCER_DIAG_TEXT_IMPORT_PATH
+       · ★ the picker took the file from the environment seam
+       · ★ the window opened
+       · ★★ the window raised the action: `pdfcer-diag import-text-requested sheet=a4 margin=72 face=Helvetica size=11.0 at=AfterCurrent`
+       · ★★★ the engine made 1 page(s): `pdfcer-diag import-text-applied pages=1 coalesced=1 undo=1 split=0 tabs=0 breaks=0 overlong=0 overflow=0`
+       · ★★ and it is one Ctrl+Z, which is what the receipt promises
+       artifact: target/ui-verify\import-text.register.txt
+       artifact: target/ui-verify\import-text.trace.txt
+
+------------------------------------------------------------------------
+  1 passed, 0 failed, 0 skipped
+
+RESULT: PASS — every check drove the application and every assertion held.

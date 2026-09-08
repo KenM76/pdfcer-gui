@@ -162,6 +162,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // the same step, the defect is in authoring or selection rather than in
         // either gesture.
         Box::new(annot_rotate::RotatingAMarkupTurnsIt),
+        Box::new(import_text::ATextFileBecomesPages),
         Box::new(annot_angle_typed::TheTypedAngleTurnsAMark),
         Box::new(foreign_icon_name::AForeignIconNameReachesThePanel),
         Box::new(widget_move::DraggingAFormFieldMovesIt),

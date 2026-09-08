@@ -59,10 +59,24 @@ pub const fn file_export_image() -> CommandText {
 /// extraction, and be told no. The sentence is short and it is the one an
 /// operator with a plotted sheet needs before pressing.
 ///
-/// ⇒ **The tooltip deliberately says nothing about importing text**, because
-/// nothing imports text: `pdfcer-core` offers no route from a text file back
-/// into a PDF. See `crate::app::actions::exporttext`'s header. A tooltip that
-/// mentioned a round trip would be the promise R9 forbids.
+/// ⇒ **The tooltip deliberately says nothing about importing text.**
+///
+/// ⚠⚠ **THAT PARAGRAPH WAS TRUE FOR TWO DAYS AND IS NOW FALSE.** It read:
+///
+/// > *"…because nothing imports text: `pdfcer-core` offers no route from a text
+/// > file back into a PDF. See `crate::app::actions::exporttext`'s header. A
+/// > tooltip that mentioned a round trip would be the promise R9 forbids."*
+///
+/// `EditSession::place_text` and `blank_document` shipped as `Pass 252.0` on
+/// 2026-09-06, in answer to this shell's own request, and
+/// [`file_import_text`] is registered directly beside this command. The
+/// round trip exists, so mentioning it is a statement rather than a promise.
+///
+/// ★ The tooltip below still does not mention it, and that is now a *wording*
+/// decision rather than an honesty one: a tooltip's job is its own control, and
+/// the pair is expressed by the two commands sitting next to each other in the
+/// band — which is how `file.export_form_data` and `file.import_form_data`
+/// already say it.
 pub const fn file_export_text() -> CommandText {
     CommandText::new(
         "Export text…",
@@ -70,6 +84,47 @@ pub const fn file_export_text() -> CommandText {
          encoded as UTF-8. Only the words travel: layout, fonts and position do \
          not, so a table arrives as lines. A scanned page carries no words to \
          export; use Recognise text on it first.",
+    )
+}
+
+/// **Import text** — the return journey, `pdfcer-core` `Pass 252.0`.
+///
+/// # ★★★ The half of the operator's ask that was missing for two days
+///
+/// > *"also the engine can export PDFs as text. we should have export/import
+/// > for that."* — 2026-09-04
+///
+/// Export shipped that day; import could not, because the crate had **no way to
+/// create a page** — only to copy one. `blank_document` is the primitive that
+/// changed that and `place_text` is the paginating placer built on it, both
+/// filed for by this shell and shipped on 2026-09-06.
+///
+/// # ★★ Why the label says *pages* and not *text*
+///
+/// Because that is the consequence the operator is choosing. This does not put
+/// words onto an existing sheet — it **makes new sheets** and adds them to the
+/// document, and a label reading *"Import text…"* invites the reading that a
+/// selected page is about to be overwritten. The engine offers only the
+/// paginating shape; it declined to build page-level replacement, and this
+/// label is where that decision meets the operator.
+///
+/// # ★ What the tooltip must say before the press, and what it cannot
+///
+/// It says the two things a chooser cannot: **new pages are created** and **the
+/// text is set in one standard font**, neither of which is visible in a file
+/// picker. Everything countable — how many pages it became, paragraphs split
+/// across a page break, characters the font could not write — is a fact about
+/// *this* file and arrives afterwards, off-canvas, from the report.
+///
+/// That is `file_export_text`'s own two-part shape, mirrored: standing losses
+/// in the window, counted ones in the receipt.
+pub const fn file_import_text() -> CommandText {
+    CommandText::new(
+        "Import text as pages…",
+        "Turn a plain text file into new pages and add them to this document. \
+         The words are set in one standard font at one size — this makes pages \
+         you can read and search, not a copy of the original layout. You choose \
+         the sheet size, the margins and where the new pages go.",
     )
 }
 

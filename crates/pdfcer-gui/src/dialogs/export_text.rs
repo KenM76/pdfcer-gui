@@ -6,19 +6,31 @@
 //! > *"also the engine can export PDFs as text. we should have export/import
 //! > for that."*
 //!
-//! ## ★★★ There is no import, and this window says nothing about one
+//! ## ✅ THE IMPORT EXISTS NOW — 2026-09-07, and this section is the record
 //!
-//! The ask names two halves and only one of them exists. `pdfcer-core` offers
-//! no route from a text file back into a PDF — not a document builder, not a
-//! "replace this page's text" verb, and not a way to hand `add_ocr_layer` a
-//! file instead of a recogniser's positioned words.
-//! [`crate::app::actions::exporttext`]'s header carries the three readings of
-//! *"import text"* and why none of them is buildable, and a request naming what
-//! a shell would need has been filed on the engine channel.
+//! It read:
 //!
-//! ⇒ **No control was drawn that declines when pressed**, and nothing in this
-//! window implies a round trip. R9: a placeholder is worse than an absence,
-//! because an absence is honest and a placeholder is a promise.
+//! > *"There is no import, and this window says nothing about one. The ask
+//! > names two halves and only one of them exists. `pdfcer-core` offers no
+//! > route from a text file back into a PDF — not a document builder, not a
+//! > 'replace this page's text' verb, and not a way to hand `add_ocr_layer` a
+//! > file instead of a recogniser's positioned words. … **No control was drawn
+//! > that declines when pressed**, and nothing in this window implies a round
+//! > trip. R9: a placeholder is worse than an absence, because an absence is
+//! > honest and a placeholder is a promise."*
+//!
+//! Every word of that was true for two days, and **the absence was filed rather
+//! than shrugged at**. `pdfcer-core` `Pass 252.0` shipped `place_text` and the
+//! `blank_document` primitive underneath it on 2026-09-06 — *"nothing in the
+//! crate could create a page before, only copy one"*, which is why the gap was
+//! two days wide and not one afternoon.
+//!
+//! ⇒ [`crate::dialogs::import_text`] is the window R9 forbade drawing until
+//! there was something behind it. **This window still says nothing about the
+//! round trip**, and that is now a wording decision rather than an honesty one:
+//! a window's job is its own act, and the pair is expressed by the two commands
+//! sitting next to each other on File ▸ Export — which is how
+//! `export_form_data` and `import_form_data` already say it.
 //!
 //! ## ★★ The default writes the CLIPBOARD's own bytes
 //!

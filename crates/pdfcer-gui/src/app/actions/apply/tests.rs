@@ -281,10 +281,12 @@ fn selecting_from_the_objects_panel_produces_an_ordinary_canvas_selection() {
     };
 
     app.apply_actions(
-        vec![Action::SelectObject {
-            page: 0,
-            object: Some(TargetId::Object(1)),
-        }],
+        vec![Action::Selection(
+            crate::app::actions::selecting::SelectionAction::SelectObject {
+                page: 0,
+                object: Some(TargetId::Object(1)),
+            },
+        )],
         1.0,
     );
 
@@ -302,10 +304,12 @@ fn selecting_from_the_objects_panel_produces_an_ordinary_canvas_selection() {
     // selected item does in every list in every application. The panel decides
     // WHICH of the two it is asking for; the action does what it is told.
     app.apply_actions(
-        vec![Action::SelectObject {
-            page: 0,
-            object: None,
-        }],
+        vec![Action::Selection(
+            crate::app::actions::selecting::SelectionAction::SelectObject {
+                page: 0,
+                object: None,
+            },
+        )],
         1.0,
     );
     let Status::Open(doc) = &app.status else {

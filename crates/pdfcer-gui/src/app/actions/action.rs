@@ -37,42 +37,12 @@ use crate::viewer::FitMode;
 /// as to labels.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Action {
-    /// ★★★ **Select exactly this object** — raised by the Objects panel when a
-    /// row is clicked.
-    ///
-    /// # Why a panel raises an action instead of writing the selection
-    ///
-    /// Because a panel body is handed `&OpenDoc`, not `&mut`, and that is
-    /// deliberate: a surface that could mutate the document while it is being
-    /// drawn is a surface that can change what a later widget in the same frame
-    /// is describing. Every other panel that changes something raises an action
-    /// for the same reason, and this is not the place to make an exception.
-    ///
-    /// # What it replaced
-    ///
-    /// `PanelsState::focus` — a second notion of *"the thing I am working on"*,
-    /// written only by the Objects panel and read only by the Properties panel,
-    /// which the canvas neither wrote nor read. The audit of 2026-08-26 found
-    /// three such notions in parallel (the armed tool, the panel focus, the
-    /// canvas selection) with no bridge between them, and named it the cause of
-    /// the operator's *"when I have an object selected like text the Tool tab
-    /// doesn't switch to giving me the editable stuff for that object."*
-    ///
-    /// Now there is one, written from both ends.
-    SelectObject {
-        /// The page the object is on, in the session's page space.
-        page: usize,
-        /// Which object, as a paint-order target — or `None` to select
-        /// nothing.
-        ///
-        /// ★ `None` rather than a second variant, because a row click is one
-        /// act with one outcome: *this row is now the selection*. Clicking the
-        /// already-selected row makes that selection empty, which is what
-        /// clicking a selected item does in every list in every application,
-        /// and splitting it into Select and Clear would make the caller decide
-        /// which act it was performing when it only ever performs one.
-        object: Option<crate::canvas::target::TargetId>,
-    },
+    /// ★★★ **What is selected** — the two verbs that set it, carved into a
+    /// family on 2026-09-07 under R2. [`super::selecting::SelectionAction`]
+    /// carries both, and its header records the seam: these are the only two
+    /// actions in this enum that change nothing in the document, so grouping
+    /// them is a statement rather than a size cut.
+    Selection(super::selecting::SelectionAction),
     /// **Open this document, replacing whatever is open.**
     ///
     /// Raised by `file.open` once the picker has answered, by `file.recent`
@@ -307,6 +277,13 @@ pub enum Action {
     /// locate one — and `Delete`'s page, which looks like a counter-example, is
     /// for the trace and the disclosure only.
     Annot(super::annot::AnnotAction),
+    /// ★★★ **The File tab's edit verbs** — `file.import_text` today, and the
+    /// fifth family in this enum after `Annot`, `Vector`, `Field` and the write
+    /// group. [`crate::app::actions::importtext::FileAction`]'s own header
+    /// records why it was carved out on the day it was added rather than later:
+    /// its first draft put one feature's argument in this file, in `apply` and
+    /// in `dispatch`, and pushed all three past R2's ceiling in one commit.
+    File(super::importtext::FileAction),
     /// ★★★ **Record a review status on a comment** — `/State` and
     /// `/StateModel`, §12.5.6.3. The payload, and the whole argument for why it
     /// is not a [`Self::Annot`], are in [`super::reviewstate::RecordStatus`].
@@ -1460,7 +1437,6 @@ pub enum Action {
     /// already defines. Two actions would have been two spellings of one
     /// concept, and the module that owns the subject owns the vocabulary.
     GoToDestination(crate::canvas::destination::PendingDestination),
-    SelectAllOnPage,
     Undo,
     /// **Re-apply the most recently undone change.**
     ///

@@ -215,6 +215,16 @@ pub mod fonts;
 pub mod formfield;
 pub mod forms;
 pub mod images;
+/// ★ **The words of the Import-text window** — the return journey's chooser.
+/// Its header carries the one way it departs from `export_text`'s shape:
+/// exporting names LOSSES and importing names INVENTIONS, so this window is a
+/// chooser rather than a warning.
+pub mod import_text;
+/// ★ **What the import says AFTERWARDS** — the receipt and the refusals. Its
+/// header records why the engine's own `PlaceTextReport::disclosures` are not
+/// printed: they are correct, useful to a developer, and written in the
+/// implementer's voice.
+pub mod importtext;
 /// Every word the Recognise-text surface says — the dialog that runs OCR and
 /// discloses what it inferred, and the offer the Find bar makes on a page with
 /// no text on it. Consumed by `crate::dialogs::ocr` and `crate::find::bar`.

@@ -475,6 +475,45 @@ pub(super) fn band() -> Vec<Command> {
         command("file.export_text", t::file_export_text(), 125)
             .with_icon("export")
             .enabled_when("doc.pages"),
+        // ★★★ **The return journey**, registered 2026-09-07 — `Pass 252.0`.
+        //
+        // Directly after its twin, which is the rule this band already follows
+        // for `export_form_data` / `import_form_data` and states there: *"the
+        // pair is a round trip and an operator meets the half they will do
+        // first. It is also the order of increasing consequence: exporting
+        // reads, importing writes."* Both clauses apply here unchanged.
+        //
+        // ★★ **`insert-pages`' art, and NOT `import-form-data`'s** — the
+        // choice is argued at length in `icons::catalog::tests::SHARED_PAIRS`,
+        // and the short form is that the obvious pick is the wrong one. This
+        // command and `pages.insert_pages` are two controls about one thing —
+        // both insert pages into this document from a file — and they sit on
+        // different tabs, so they are never drawn together. `import_form_data`
+        // is adjacent to this one in the same band, and two neighbours with
+        // identical pictures is not a shared cue; it is two controls the
+        // operator cannot tell apart at the moment he is choosing between them.
+        //
+        // ★★ `doc.pages` rather than `doc.open`, and this one is NOT inherited
+        // reasoning — it is the engine's refusal, honoured before the press.
+        // `place_text` returns `PlaceTextError::NoPageToInsertBeside` on a
+        // document with no page, because an import is an INSERT and there is
+        // nothing to insert beside. A legal `/Count 0` document is exactly that
+        // case, so the condition that greys this control and the condition the
+        // engine refuses on are the same condition.
+        // ★★ **Token 129, and 126 was taken.** The first draft used 126 — the next
+        // number after `file.export_text`'s 125, which is where a reader looks —
+        // and `file.encrypt` has held it since O119. `every_handler_token_is_unique`
+        // caught it on the first test run, which is the second time that test has
+        // caught exactly this in this file: the note at `file.encrypt` records the
+        // first, when a concurrent track took 125 in the same working tree.
+        //
+        // ⇒ **Adjacency in the band is not adjacency in the token space**, and
+        // this block's numbers stopped being contiguous the day Security was
+        // added between Export and Print. 129 is the next free number, checked
+        // against the whole catalog rather than against this file.
+        command("file.import_text", t::file_import_text(), 129)
+            .with_icon("insert-pages")
+            .enabled_when("doc.pages"),
         command("file.export_form_data", t::file_export_form_data(), 121)
             .with_icon("export")
             .enabled_when("doc.open"),

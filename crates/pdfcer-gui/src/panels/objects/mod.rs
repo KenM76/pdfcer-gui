@@ -660,10 +660,12 @@ pub fn body(
             .first()
             .copied()
             .is_some_and(|selected| selected == index);
-        actions.push(Action::SelectObject {
-            page: page_index,
-            object: (!already).then_some(crate::canvas::target::TargetId::Object(index as u64)),
-        });
+        actions.push(Action::Selection(
+            crate::app::actions::selecting::SelectionAction::SelectObject {
+                page: page_index,
+                object: (!already).then_some(crate::canvas::target::TargetId::Object(index as u64)),
+            },
+        ));
     }
     tokens
 }

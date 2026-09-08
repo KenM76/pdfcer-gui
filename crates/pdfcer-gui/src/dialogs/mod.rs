@@ -95,8 +95,11 @@ pub mod export_dxf;
 /// ★★★ The Export-image window — a picture of the page in a format that can
 /// actually hold what is on it. `OPERATOR_REQUESTS.md` O120.
 pub mod export_image;
-/// ★★★ The Export-text window. Its header carries the half of the operator's
-/// ask that does not exist: **no route from a text file back into a PDF**.
+/// ★★★ The Export-text window. Its header used to carry *"the half of the
+/// operator's ask that does not exist: no route from a text file back into a
+/// PDF"* — corrected 2026-09-07, when it started existing. It now carries the
+/// record of that absence instead, which is the more useful thing: it is what
+/// the engine request was argued from.
 pub mod export_text;
 pub mod formfield;
 /// ★★ **A dialog is an OS window** — the operator's report of 2026-08-20, and
@@ -105,6 +108,11 @@ pub mod formfield;
 /// window actually buys, how it degrades on the web target, and the two rows
 /// (G3 ownership, G5 focus trapping) that eframe 0.35 cannot express.
 pub mod host;
+/// ★ **A text file becomes pages** — the return journey, wired 2026-09-07 on
+/// `pdfcer-core` `Pass 252.0`. Its header records why it could not exist before
+/// then (the crate could not create a page, only copy one) and why it is a
+/// CHOOSER where its export sibling is a warning.
+pub mod import_text;
 pub mod insert_image;
 pub mod insert_pages;
 pub mod new_document;
@@ -433,6 +441,19 @@ pub struct DialogsState {
     /// that is no longer open is configuring nothing.
     insert_pages: Option<insert_pages::InsertPagesDialog>,
 
+    /// The Import-text window, when one is open.
+    ///
+    /// **Document-scoped**, for [`Self::insert_pages`]' reason exactly: it
+    /// makes pages *in the open document*, so a dialog configuring an import
+    /// into a file that is no longer open is configuring nothing.
+    ///
+    /// ★ It holds a **path**, not the file's bytes — unlike the Insert-image
+    /// window beneath it, which holds what it imported. The window never reads
+    /// the file (its header says why at length), so there is nothing to
+    /// discard when the document closes and no reason for closing to feel
+    /// lossy.
+    import_text: Option<import_text::ImportTextDialog>,
+
     /// The Insert-image window, when one is open.
     ///
     /// **Document-scoped**: it places a picture on a page of the open file, and
@@ -729,6 +750,9 @@ impl DialogsState {
         #[cfg(feature = "signing")]
         if self.sign.as_mut().map(|d| d.show(ctx, doc, actions)) == Some(false) {
             self.sign = None;
+        }
+        if self.import_text.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
+            self.import_text = None;
         }
         if self.insert_pages.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.insert_pages = None;

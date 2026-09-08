@@ -44,7 +44,6 @@
 //! one that widened a private thing's visibility for no gain.
 
 use super::RedactAction;
-use pdfcer_core::vector::MarqueeMode;
 
 use super::forms::FieldAction;
 
@@ -345,26 +344,7 @@ impl PdfcerApp {
                 // whoever moved the signing arm. Never rendered.
                 unreachable!("handled before the document guard")
             }
-            // ★★ A row click in the Objects panel, arriving as an action for
-            // the reason `Action::SelectObject`'s own docs give: a panel body
-            // holds `&OpenDoc`, not `&mut`, so a panel that changes something
-            // asks rather than writes.
-            //
-            // Here rather than before the document guard, because it needs the
-            // document and has no reason to run without one — the pre-guard
-            // match is for the actions that *make* a document open.
-            //
-            // ★ No `vector_edit`, no epoch bump, no cache invalidation: **a
-            // selection is not an edit.** It names parts of a document and
-            // changes nothing a save would write. `canvas`'s header makes that
-            // argument for the canvas selection; this is the same argument
-            // arriving from the other end of the same selection.
-            Action::SelectObject { page, object } => match object {
-                Some(object) => doc.selection.select_only(page, object, "objects-panel"),
-                None => {
-                    doc.selection.clear();
-                }
-            },
+            Action::Selection(action) => super::selecting::apply_action(doc, action),
             // ★ A canvas gesture that refused, asking for its sentence. It
             // changes nothing about the document — see the variant's docs for
             // why it is an action at all, and why it carries no payload.
@@ -600,6 +580,7 @@ impl PdfcerApp {
             Action::Annot(action) => {
                 super::annots::apply_action(doc, action, self.prefs.author_name.trim());
             }
+            Action::File(action) => super::importtext::apply_action(doc, action),
             Action::RecordReviewState(r) => r.record(doc, self.prefs.author_name.trim()),
             // ★ A paste is an `add_markup` and nothing more, which is the
             // whole reason this feature was buildable at all: the spec that
@@ -1303,44 +1284,6 @@ impl PdfcerApp {
                             }]
                         })
                 });
-            }
-            Action::SelectAllOnPage => {
-                let page = doc.view.page_index;
-                // ★★★ A LARGE FINITE RECT, not `Rect::EVERYTHING`.
-                //
-                // The first version used `EVERYTHING` and selected **nothing**,
-                // measured on the operator's own drawing: `select-all page=0
-                // n=0`. The provider maps the query rectfrom canvas space into
-                // PDF space before asking the engine, and an infinite rect put
-                // through an affine transform yields NaN — after which every
-                // containment test is false and the answer is silently empty.
-                //
-                // ⇒ Infinity is not a safe "everything" when a coordinate
-                // system change stands between the caller and the comparison.
-                // A million points is about 350 metres of paper; no page
-                // approaches it, and every arithmetic step stays finite.
-                const EVERYWHERE: f32 = 1.0e6;
-                let all = egui::Rect::from_min_max(
-                    egui::pos2(-EVERYWHERE, -EVERYWHERE),
-                    egui::pos2(EVERYWHERE, EVERYWHERE),
-                );
-                let hits = doc
-                    .page_objects()
-                    // ★ `Enclosed` stated rather than implicit, as of 2026-09-02
-                    // when the mode became a parameter (O88): under
-                    // `Rect::EVERYTHING` the two modes agree, and a reader must
-                    // not have to work that out before believing Select All is
-                    // unaffected by a change to what a rubber band means.
-                    .map(|p| p.hit_test_rect(page, all, MarqueeMode::Enclosed))
-                    .unwrap_or_default();
-                crate::diag::trace(|| {
-                    // ui-text-exempt: diagnostic trace, never displayed in the UI
-                    format!("select-all page={page} n={}", hits.len())
-                });
-                // `false` — a Select All REPLACES. Extending would make a
-                // second press a no-op and a first press after a click keep the
-                // click, neither of which is what the command says.
-                doc.selection.marquee(page, &hits, false);
             }
             Action::Undo => super::history::history_step(doc, super::history::Direction::Undo),
             Action::Redo => super::history::history_step(doc, super::history::Direction::Redo),

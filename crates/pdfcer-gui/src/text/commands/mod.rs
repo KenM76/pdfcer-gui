@@ -100,7 +100,7 @@ impl CommandText {
 /// seam [`annotate`] and [`view`] already are. Re-exported so callers keep
 /// spelling it `text::commands::file_save_as`.
 mod file;
-pub use file::{file_export_image, file_export_text, file_save_as};
+pub use file::{file_export_image, file_export_text, file_import_text, file_save_as};
 mod view;
 
 pub use view::*;

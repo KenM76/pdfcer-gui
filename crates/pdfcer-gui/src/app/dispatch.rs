@@ -108,6 +108,12 @@ use super::PdfcerApp;
 /// lines of R2's ceiling left when they were wired.
 pub(crate) mod arrange;
 pub(crate) mod batch;
+/// The File > Security band's commands — O119 plus signing; see its header.
+/// ★ **The File > Export band** — three exports and the three imports beside
+/// them. Split out under R2 on 2026-09-07 when `file.import_text` took this
+/// file past the ceiling; its header carries the seam, and the warning that had
+/// been read and not acted on.
+pub(crate) mod exchange;
 pub(crate) mod fonts;
 mod forms;
 /// **The three commands whose subject is a POINT on a markup shape** — end the
@@ -122,7 +128,6 @@ pub(crate) mod markupnodes;
 /// park-and-drain shape that answers it.
 pub(crate) mod panels;
 pub(crate) mod routes;
-/// The File > Security band's commands — O119 plus signing; see its header.
 pub(crate) mod security;
 pub(crate) mod settings;
 /// **The three commands whose subject is a text caret** — the two that arm it
@@ -424,7 +429,9 @@ impl PdfcerApp {
             // All on a document with no page objects selects nothing and says
             // so through the trace, which is the honest outcome rather than a
             // refusal.
-            "edit.select_all" => actions.push(Action::SelectAllOnPage),
+            "edit.select_all" => actions.push(Action::Selection(
+                crate::app::actions::selecting::SelectionAction::SelectAllOnPage,
+            )),
             "edit.undo" => actions.push(Action::Undo),
             "edit.redo" => actions.push(Action::Redo),
             // ★ Print, and the one command in this match that raises no
@@ -749,35 +756,12 @@ impl PdfcerApp {
             // exporting a drawing is exactly what a reading stance is for.
             // File > Security: Encrypt…, Permissions…, Sign…. See that module.
             id if security::claims(id) => self.dispatch_security(id),
-            "file.export_dxf" => self.dialogs.open_export_dxf(&self.status),
-            // ★★★ **Export image — `OPERATOR_REQUESTS.md` O120, wired
-            // 2026-09-04.** The operator asked the ENGINE side for it on
-            // 2026-09-03; the engine shipped all of it the same day and sent a
-            // note marked *"informational, no reply needed"*, which nothing
-            // here was required to read. There was no row on this side until a
-            // session happened to read the request channel looking for
-            // something else.
-            //
-            // ★ Gated through the registry on `doc.pages` rather than on a
-            // capability, exactly as its DXF neighbour is and for that arm's
-            // reason: an export reads the document and writes elsewhere, so
-            // there is no mode in which it should be refused. Read mode
-            // exporting a drawing is what a reading stance is FOR.
-            "file.export_image" => self.dialogs.open_export_image(&self.status),
-            // ★★★ **Export text — wired 2026-09-04**, on the operator's ask:
-            // *"also the engine can export PDFs as text. we should have
-            // export/import for that."* A dialog rather than a bare picker,
-            // unlike `file.export_form_data` below, because four decisions have
-            // to be made before the bytes exist and none is recoverable from a
-            // save picker.
-            //
-            // ★★ **There is no `file.import_text` beside it**, and that is a
-            // recorded finding rather than an omission — see
-            // `crate::app::actions::exporttext`'s header for the three things
-            // "import text" could mean and why the engine offers none of them.
-            // R9: an absence is honest; a control that declines when pressed is
-            // a promise the program cannot keep.
-            "file.export_text" => self.dialogs.open_export_text(&self.status),
+            // File > Export: the three exports and the three imports beside
+            // them. Split out under R2 on 2026-09-07; `dispatch::exchange`'s
+            // header carries the seam and the warning that was read and not
+            // acted on until the gate went red.
+            id if exchange::claims(id) => self.dispatch_exchange(id, actions),
+            id if routes::handles(id) => routes::dispatch(id, actions),
             // ★★★ **`file.export_form_data` — registered, drawn on File ▸
             // Export, and inert for the whole life of the project.**
             //
@@ -815,27 +799,6 @@ impl PdfcerApp {
             // weak-blocker shape `reach::register` retired an entry for three
             // days earlier, in the same const, ten lines below this one.
             id if batch::handles(id) => batch::dispatch(self, id, actions),
-            id if routes::handles(id) => routes::dispatch(id, actions),
-            "file.export_form_data" => actions.push(Action::Write(
-                crate::app::actions::write::WriteAction::FormData,
-            )),
-            // ★ The picker runs HERE, before the action, where the export's runs
-            // inside the apply phase. Both are right for their case: an export
-            // computes the bytes before it can honestly ask where they go, and
-            // an import has nothing to compute until it knows which file.
-            //
-            // `dispatch_command` is not a layout pass — it runs between frames,
-            // from the drained token queue — so a modal here blocks nothing
-            // egui is part-way through.
-            "file.import_form_data" => {
-                if let crate::app::files::Picked::Path(path) =
-                    crate::app::files::pick_form_data_source()
-                {
-                    actions.push(Action::Field(
-                        crate::app::actions::forms::FieldAction::Import { path },
-                    ));
-                }
-            }
             // ★ **The keyboard reference.** Its scaffold entry did not merely
             // say blocked — it carried the design, from `SALVAGE.md`: *"Fix
             // `shortcuts_reference()` — it omits six live bindings

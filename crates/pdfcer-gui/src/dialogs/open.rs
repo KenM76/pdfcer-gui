@@ -56,8 +56,8 @@
 
 use super::{
     DialogsState, about, compact, diagnostics, embed, export_dxf, export_image, export_text,
-    formfield, insert_image, insert_pages, new_document, ocr, page_size, print, protect, redact,
-    scale, shortcuts, textannot, unembed,
+    formfield, import_text, insert_image, insert_pages, new_document, ocr, page_size, print,
+    protect, redact, scale, shortcuts, textannot, unembed,
 };
 use crate::app::state::Status;
 
@@ -390,6 +390,32 @@ impl DialogsState {
             count,
             current_page,
         ));
+    }
+
+    /// **The dispatch target for `file.import_text`.**
+    ///
+    /// ★★ Unlike [`Self::open_insert_pages`], this does **not** read the file
+    /// to say something about it before the window opens, and the difference is
+    /// worth stating because the two windows look alike.
+    ///
+    /// Insert-pages reads its source because *"how many pages does it have?"*
+    /// is a question the window must answer and cannot ask the operator — a
+    /// dialog offering *"pages 1-N"* with no N is a control with nothing in it.
+    /// Nothing this window asks depends on the file's contents: the sheet, the
+    /// margin, the face, the size and the position are all decisions about the
+    /// *output*, and every fact about the *input* — how many pages it became,
+    /// what was split, what could not be written — is knowable only by running
+    /// the import, which `place_text` does after planning and refusing with
+    /// nothing created.
+    ///
+    /// ⇒ So the file is read exactly once, in the apply arm.
+    /// `dialogs::import_text`'s header carries the same argument from the
+    /// window's side.
+    pub fn open_import_text(&mut self, path: std::path::PathBuf, current_page: usize) {
+        if self.import_text.is_some() {
+            return;
+        }
+        self.import_text = Some(import_text::ImportTextDialog::open(path, current_page));
     }
 
     pub fn open_new_document(&mut self) {

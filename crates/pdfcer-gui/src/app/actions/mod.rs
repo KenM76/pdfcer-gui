@@ -366,6 +366,16 @@ pub mod imageexport;
 /// the reason none of the three is buildable today. Read it before adding an
 /// import control.
 pub mod exporttext;
+/// ★ **A text file becomes pages** — `Action::ImportText`'s body, wired
+/// 2026-09-07 on `pdfcer-core` `Pass 252.0`. Mostly a disclosure: its header
+/// lists the six judgements `PlaceTextReport` carries about the operator's own
+/// file, and why the engine's ready-made sentences are not the ones printed.
+pub mod importtext;
+/// ★ **The two actions that change what is SELECTED and nothing else.** Carved
+/// out under R2 on 2026-09-07; its header records why that is a real boundary
+/// rather than a size cut — every other `Action` variant asks the document to
+/// change, and these two touch only shell state.
+pub mod selecting;
 
 #[cfg(test)]
 mod tests;

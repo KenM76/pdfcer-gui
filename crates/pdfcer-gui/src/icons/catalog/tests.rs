@@ -190,6 +190,17 @@ fn keys_are_lowercase_kebab_case() {
 /// form data have nothing in common but a direction — a pages-named key on
 /// a form command is the near-miss reuse this catalog's refusal table
 /// exists to prevent.
+// ★★ `file.import_text` (2026-09-07) needed no entry here, and finding that
+// out is worth a line. It names the EXISTING `insert-pages` key rather than a
+// new key pointing at the same asset — so there is no second key and nothing to
+// bless. `every_declared_share_is_still_a_share` said so immediately, with
+// `"import-text" is not an icon key`, which is the test doing exactly its job:
+// an entry blessing a share that does not exist is the same defect as one
+// blessing a share that has stopped existing.
+//
+// The argument for pointing it at that art — and for refusing
+// `import-form-data`'s, which is the obvious pick and the wrong one — is at the
+// command in `shell::commands::catalog::file`, where the decision was made.
 /// Every pair of icons permitted to share one asset, with the argument for
 /// each in [`only_the_documented_assets_are_shared`]'s doc comment.
 const SHARED_PAIRS: &[&[&str]] = &[

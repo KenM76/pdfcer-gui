@@ -98,6 +98,26 @@ pub(crate) fn guard_claiming(id: &str) -> Option<&'static str> {
     if crate::app::dispatch::security::claims(id) {
         return Some("claims");
     }
+    // ★★★ **The File ▸ Export band, split out on 2026-09-07** — the same shape
+    // `security::claims` above and for the same reason, and the entry is here
+    // rather than beside `DISPATCH_PAGES_SRC` because of a mistake worth
+    // recording.
+    //
+    // The first attempt registered `exchange` as a second SOURCE FILE, the way
+    // `pages` and `measure` are, and every test in this module failed with
+    // *"no `match` was found in a method named `dispatch_command`"*. Those two
+    // export a free `pub(super) fn dispatch`; `security` and this one are
+    // **methods on `PdfcerApp`** reached through a `claims` guard, and the
+    // checker resolves those by CALLING the guard rather than by parsing the
+    // file.
+    //
+    // ⇒ Two split shapes exist in `app::dispatch` and they are registered here
+    // in two different places. That is not a defect — the shapes differ because
+    // the arms differ, some needing `&mut self` and some not — but it is a
+    // thing a reader has to know, and now does.
+    if crate::app::dispatch::exchange::claims(id) {
+        return Some("claims");
+    }
     // ★ The three markup-POINT commands, claimed by the same shape as the two
     // above and for the same reason: `app::dispatch::markupnodes` was split out
     // under R2 on 2026-09-06 (`dispatch.rs` stood at exactly 1,500 lines before

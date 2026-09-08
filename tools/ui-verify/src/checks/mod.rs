@@ -180,6 +180,10 @@ pub mod export_form_data;
 /// draws its own symbol for it. Pins its own fixture; `--pdf` is ignored and
 /// the report says so.
 pub mod foreign_icon_name;
+/// ★ **A text file becomes pages** — File ▸ Import, driven end to end. Its
+/// header names the five links and the four with no test anywhere else, and
+/// records why a dialog needs `frame_of` rather than `session.frame()`.
+pub mod import_text;
 /// ★★★ **The CAD "line weights off" display mode** — `OPERATOR_REQUESTS.md`
 /// O137, asked for by name. The pixel assertion is SIGNED (strictly LESS ink),
 /// because the convention he asked for and the one it is confused with are

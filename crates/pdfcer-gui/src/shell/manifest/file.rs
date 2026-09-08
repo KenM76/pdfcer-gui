@@ -273,6 +273,10 @@ pub(super) fn tab() -> Tab {
                     // file write between two clipboard writes and leave the band
                     // with no order at all.
                     command("file.export_text"),
+                    // ★ Its twin, 2026-09-07, adjacent for the reason stated
+                    // four lines down about the form-data pair — the same rule,
+                    // applied to the pair it was written for.
+                    command("file.import_text"),
                     command("file.export_form_data"),
                     // ★ Import directly after export, in that order, because
                     // the pair is a round trip and an operator meets the half
