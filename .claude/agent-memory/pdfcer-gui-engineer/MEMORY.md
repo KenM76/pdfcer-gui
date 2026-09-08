@@ -72,3 +72,4 @@
 - [An unevidenced excuse is worse than silence](feedback_an_unevidenced_excuse_is_worse_than_silence.md) — a check explaining an absence it never measured reads as an answered question; nobody investigates.
 - [Triage the reply channel — the engine fixes faster than we notice](feedback_triage_the_reply_channel_the_engine_fixes_faster_than_we_notice.md) — 41 replies, one hand triage: 5 docs and 3 operator strings asserting closed absences. No gate can find this.
 - [An apparent omission may be an argued decision](feedback_an_apparent_omission_may_be_an_argued_decision.md) — open the module that owns it; correcting a file's stale claims does not make its remaining claims stale.
+- [A new test that does not raise the count did not run](feedback_a_new_test_that_does_not_raise_the_count_did_not_run.md) — three #[test] fns nested inside a fn compiled, reported nothing, ran zero times.
