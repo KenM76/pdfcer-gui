@@ -83,7 +83,53 @@ fn fill_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
     // because two lines is two rows, which is the R128 loop.
     let mut line = String::new();
     if let Some(size) = d.applied_autosize {
-        line.push_str(&t_forms::forms_fill_autosize_note(&d.field, size));
+        // ★★★ WHICH constraint chose the size, not just the size — 2026-09-07.
+        //
+        // Until today this arm called `forms_fill_autosize_note` for every
+        // outcome, so the operator got *"pdfcer chose 6.0 pt"* in the one case
+        // where 6.0 pt **does not fit** and the text is going to overflow the
+        // box. `AutoFitBound::Floor` is the engine naming exactly that — its
+        // comment at the branch reads *"the one case where the returned size
+        // does NOT fit the constraint that produced it"* — and this shell was
+        // throwing the distinction away while `OPERATOR_REQUESTS.md` O86 told
+        // the operator, under a ✅, that pdfcer reports it.
+        //
+        // ⚠ `None` means NO bound was decided, which is a real state and not a
+        // missing one: a multiline field keeps the engine's older whole-box
+        // route, and the engine declines to name a bound there because that
+        // *"would report a constraint that was never evaluated"*. It takes the
+        // general sentence, which is true of it.
+        //
+        // ★ A missing bound is not a `Height`. That is the same mistake as
+        // reading a missing texture as zero thinned strokes (`O137`), and it is
+        // written here because this arm is where somebody would make it.
+        use pdfcer_core::vartext::AutoFitBound as Bound;
+        line.push_str(&match d.applied_autosize_bound {
+            Some(Bound::Floor) => t_forms::forms_fill_autosize_overflow_note(&d.field, size),
+            Some(Bound::Width) => t_forms::forms_fill_autosize_width_note(&d.field, size),
+            // `Height` is the ordinary case and keeps the ordinary sentence.
+            //
+            // ⚠ **`AutoFitBound` IS `#[non_exhaustive]`** — checked, after a
+            // first draft of `bound_token` asserted the opposite because its
+            // grep read the `#[derive]` line and the attribute is on the line
+            // after it. So `Some(_)` is genuinely reachable, not a formality.
+            //
+            // ★ A bound this build has never met joins `Height` and `None` and
+            // gets the sentence that is true of **every** auto-size — *"pdfcer
+            // chose N pt; another program may choose differently"* — rather
+            // than a claim about a constraint it cannot name. That is the
+            // conservative direction: the general sentence under-informs, and
+            // the two specific ones would be assertions about the operator's
+            // document made from a value this build cannot read.
+            //
+            // ⇒ The thing that will notice a new variant is
+            // `check-engine-api-drift`, not the compiler. Said plainly here
+            // because a comment claiming otherwise is what this evening kept
+            // finding.
+            Some(Bound::Height) | None | Some(_) => {
+                t_forms::forms_fill_autosize_note(&d.field, size)
+            }
+        });
     }
     if d.unencodable_chars > 0 {
         if !line.is_empty() {

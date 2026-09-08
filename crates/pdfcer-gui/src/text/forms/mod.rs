@@ -1072,6 +1072,58 @@ pub fn forms_fill_autosize_note(field: &str, size: f64) -> String {
     )
 }
 
+/// Rule-4 disclosure: **the chosen size does not fit, and the text will spill
+/// out of the box.**
+///
+/// # ★★★ Why this is a separate sentence and not a suffix
+///
+/// `AutoFitBound::Floor` is the one outcome where pdfcer's answer is not an
+/// answer. The engine says so at the branch that returns it — *"the one case
+/// where the returned size does NOT fit the constraint that produced it"* —
+/// and stops shrinking at a legibility floor rather than rendering something
+/// unreadable.
+///
+/// ⚠⚠ **A point size cannot carry that.** *"pdfcer chose 6.0 pt"* reads as a
+/// decision whether it fitted or not, and [`forms_fill_autosize_note`] said
+/// exactly that and nothing else until 2026-09-07 — while
+/// `OPERATOR_REQUESTS.md` O86 told the operator, under a ✅, that *"pdfcer now
+/// tells you which way it decided … the box is too small for this text, which
+/// will overflow"*. True of the engine and the CLI. **False of this shell for
+/// three days.**
+///
+/// ★ It names the **remedy**, because there is one and it is the operator's:
+/// make the box bigger, or put less in it. A disclosure with an available
+/// remedy that withholds it is a complaint.
+#[must_use]
+pub fn forms_fill_autosize_overflow_note(field: &str, size: f64) -> String {
+    format!(
+        "⚠ “{field}” is too small for this text. pdfcer held the size at {size:.1} pt so it stays \
+         readable, which means the text will overflow the box — make the field taller, or shorten \
+         what is in it."
+    )
+}
+
+/// Rule-4 disclosure: pdfcer chose the size, and **the field's width is what
+/// decided it** rather than its height.
+///
+/// ★★ Worth its own sentence rather than folding into
+/// [`forms_fill_autosize_note`], because the two point at **different edits**.
+/// A height-bound field gets bigger text by being made taller; a width-bound
+/// one does not — it was already going to be taller and got shrunk sideways,
+/// so making it taller changes nothing and the operator would try that first.
+///
+/// ⚠ It still carries the *"another program may choose differently"* clause,
+/// because that is true of every auto-sized field regardless of which bound
+/// won, and it is the half that matters when the sheet is opened in Acrobat.
+#[must_use]
+pub fn forms_fill_autosize_width_note(field: &str, size: f64) -> String {
+    format!(
+        "⚠ “{field}” asks for an automatic text size. pdfcer chose {size:.1} pt to fit the \
+         field's WIDTH — making the field taller will not change it. Another program filling \
+         this field may choose differently."
+    )
+}
+
 /// Rule-4 disclosure: **characters were replaced**, and the operator's own
 /// text is not what the page now says.
 ///

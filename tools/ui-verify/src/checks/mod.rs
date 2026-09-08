@@ -699,6 +699,11 @@ pub mod scale_switch;
 pub mod shape_preview;
 pub mod std14_face;
 
+/// ★★ **The operator's own two gestures** — press T and type, press A and see
+/// the points. Both features existed before 2026-08-19; reaching them took four
+/// steps and three gestures respectively, neither discoverable and neither
+/// resembling any other program. These assert the COUNT: one key, one click.
+pub mod autosize_overflow;
 /// **Text that does not run along the page's x axis** — the operator's
 /// 2026-08-26 report about a vertical stamp in a title block, driven end to
 /// end: it must select as one line, band as one box, turn the I-beam, and reach
@@ -733,10 +738,6 @@ pub mod settings_headings;
 /// Proves the constraint by the DIFFERENCE between two drags in one process,
 /// because a single locked drag reporting equal factors proves nothing.
 pub mod shift_constrains;
-/// ★★ **The operator's own two gestures** — press T and type, press A and see
-/// the points. Both features existed before 2026-08-19; reaching them took four
-/// steps and three gestures respectively, neither discoverable and neither
-/// resembling any other program. These assert the COUNT: one key, one click.
 pub mod tool_row;
 pub mod wheel_flips_pages;
 pub mod zoom_gallery;

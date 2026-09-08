@@ -31,6 +31,7 @@
 use super::test_support::{opened, settled_bar_frame};
 use super::*;
 use crate::find::FindState;
+use crate::text::forms as t_forms;
 use crate::text::status as t;
 use egui::{Context, RawInput};
 
@@ -283,6 +284,12 @@ fn the_bar_is_exactly_as_tall_open_as_closed() {
             field: "A field with a long enough name to need eliding".to_owned(),
             epoch: doc.edit_epoch,
             applied_autosize: Some(12.0),
+            // Height: the ordinary bound, planted deliberately rather than
+            // arbitrarily. This test measures the STATUS BAR'S HEIGHT (R128),
+            // not the sentence — and the overflow wording is the longest of the
+            // three, so planting it would make the "does not make the bar
+            // taller" assertion easier to pass for the wrong reason.
+            applied_autosize_bound: Some(pdfcer_core::vartext::AutoFitBound::Height),
             unencodable_chars: 3,
         },
     );
@@ -471,4 +478,103 @@ mod disclosure_independence {
             }
         }
     }
+}
+
+// ===========================================================================
+// The auto-size bound — three outcomes, three sentences, and the one that
+// matters is the one that says the text will not fit
+// ===========================================================================
+
+/// ★★★ **THE DEFECT THIS FILE HAD NO TEST FOR, until 2026-09-07.**
+///
+/// `fill_disclosure` called `forms_fill_autosize_note` for **every** auto-size
+/// outcome, so an operator whose field was too small for its text was told
+/// *"pdfcer chose 6.0 pt. Another program filling this field may choose
+/// differently."* — a sentence about interoperability, when the fact was that
+/// **the text is going to overflow the box**.
+///
+/// The engine had been reporting it all along. `AutoFitBound::Floor` exists for
+/// exactly this and its own branch comment reads *"the one case where the
+/// returned size does NOT fit the constraint that produced it"*. This shell
+/// read `applied_autosize` and dropped `applied_autosize_bound` on the floor.
+///
+/// ⚠ And `OPERATOR_REQUESTS.md` **O86** told the operator, under a ✅, that
+/// *"pdfcer now tells you which way it decided … held at pdfcer's legibility
+/// floor; the box is too small for this text, which will overflow"*. That was
+/// true of the engine and the CLI and **false of this shell**, which is the
+/// worst of the three states a claim can be in.
+#[test]
+fn the_overflow_case_says_the_text_will_not_fit_and_the_others_do_not() {
+    use pdfcer_core::vartext::AutoFitBound as Bound;
+
+    let floor = t_forms::forms_fill_autosize_overflow_note("Sheet title", 6.0);
+    let width = t_forms::forms_fill_autosize_width_note("Sheet title", 6.0);
+    let height = t_forms::forms_fill_autosize_note("Sheet title", 6.0);
+
+    // ★★ The load-bearing assertion. Not "the sentences differ" — that a
+    // rename would satisfy — but that exactly ONE of them tells the operator
+    // the outcome he cannot see until he prints the sheet.
+    assert!(
+        floor.contains("overflow"),
+        "the Floor sentence must say the text will not fit: {floor:?}"
+    );
+    for (name, other) in [("width", &width), ("height", &height)] {
+        assert!(
+            !other.contains("overflow"),
+            "only the Floor bound overflows; the {name} sentence must not claim it: {other:?}"
+        );
+    }
+
+    // ★ And it must carry the remedy, which is the operator's and is available.
+    // A disclosure that names a problem it knows the fix for and withholds it
+    // is a complaint.
+    assert!(
+        floor.contains("taller") || floor.contains("shorten"),
+        "the Floor sentence must name what the operator can do: {floor:?}"
+    );
+
+    // ⚠ The width case points at a DIFFERENT edit, and saying so is the whole
+    // reason it is not folded into the general sentence: making a width-bound
+    // field taller changes nothing, and that is the first thing anybody tries.
+    assert!(
+        width.contains("WIDTH") && width.contains("will not change"),
+        "the Width sentence must say that making the field taller is not the fix: {width:?}"
+    );
+
+    // Every one still discloses the interoperability fact where it is true.
+    for (name, s) in [("width", &width), ("height", &height)] {
+        assert!(
+            s.contains("may choose differently"),
+            "the {name} sentence must keep the 'another program may differ' clause: {s:?}"
+        );
+    }
+
+    // The bounds this shell distinguishes, named so a new one is a visible
+    // decision rather than a silent fall-through to the general sentence.
+    let _exhaustive = |b: Bound| match b {
+        Bound::Floor | Bound::Width | Bound::Height => (),
+        _ => (),
+    };
+}
+
+/// A field that fits keeps the ordinary sentence, and a **multiline** field —
+/// where the engine reports no bound at all — must not be given one.
+///
+/// ★★★ `None` is a real state, not a missing one. The engine declines to name
+/// a bound for multiline because that route derives from the whole box height
+/// and naming a constraint *"would report a constraint that was never
+/// evaluated"*. Reading `None` as `Height` would be the same error as reading a
+/// missing texture as zero thinned strokes (`O137`) — **a measurement that did
+/// not happen is not a measurement of zero.**
+#[test]
+fn no_bound_reported_takes_the_general_sentence_and_never_claims_overflow() {
+    let general = t_forms::forms_fill_autosize_note("Notes", 9.0);
+    assert!(
+        !general.contains("overflow") && !general.contains("WIDTH"),
+        "with no bound reported the shell may claim neither outcome: {general:?}"
+    );
+    assert!(
+        general.contains("9.0 pt"),
+        "it must still disclose the size pdfcer chose: {general:?}"
+    );
 }

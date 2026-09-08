@@ -694,6 +694,33 @@ impl Driver {
                 '0'..='9' => {
                     self.press(ch as u16)?;
                 }
+                // ★★ SPACE — added 2026-09-07, and it is worth a note because
+                // its absence had been shaping test data rather than being
+                // reported.
+                //
+                // `a_field_too_small_for_its_text_says_so` needs to type a long
+                // realistic value into a form field — a person's name, an
+                // address — and refused here on the first space. The tempting
+                // fix was to write the fixture value without spaces; that would
+                // have been a check quietly testing a string no operator would
+                // ever type, because of a limitation in the instrument.
+                //
+                // ★ `VK_SPACE` is `0x20`, the same as the ASCII code, and it is
+                // the one printable key that is **immune to both Shift and
+                // CapsLock** — so it needs none of the latch compensation the
+                // letter arms above carry, and cannot acquire the defect that
+                // made those arms necessary.
+                //
+                // ⚠ Still deliberately NOT a general "printable ASCII" arm.
+                // Punctuation is where the layout dependence lives: `-`, `.`
+                // and `/` are `VK_OEM_*` codes whose meaning is keyboard-layout
+                // specific, so a check typing them would pass here and type
+                // something else on a machine with a different layout. Those
+                // stay refused, loudly, which is this function's whole
+                // contract.
+                ' ' => {
+                    self.press(0x20)?;
+                }
                 other => {
                     return Err(crate::error::Error::new(format!(
                         "`type_ascii` has no key for {other:?}. It refuses rather than skipping, \

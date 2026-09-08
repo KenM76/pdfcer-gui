@@ -184,6 +184,25 @@ pub struct FillDisclosure {
     /// `Some(size)` when the field's `/DA` asked for auto-size and pdfcer
     /// picked this one.
     pub applied_autosize: Option<f64>,
+    /// **Which constraint chose that size**, and the reason this field exists
+    /// separately from the size itself.
+    ///
+    /// `AutoFitBound::Height` and `::Width` both mean *it fits*. `::Floor` does
+    /// not — the engine's own comment at the branch that returns it reads
+    /// *"the one case where the returned size does NOT fit the constraint that
+    /// produced it"*, so the text is going to overflow the box.
+    ///
+    /// ⚠⚠ **A size alone cannot say that**, which is the whole point. `9.6 pt`
+    /// looks like an answer whether it fitted or not, and the operator finds
+    /// out it did not by looking at the printed sheet. That is exactly the
+    /// class rule 4's surviving half is about: an inference the operator
+    /// cannot see still owes an off-canvas report.
+    ///
+    /// ★ `None` on a **multiline** field, and that is the engine being careful
+    /// rather than incomplete: multiline keeps the older whole-box route, so
+    /// naming a bound there *"would report a constraint that was never
+    /// evaluated"*. Treat `None` as *no bound was decided*, never as `Height`.
+    pub applied_autosize_bound: Option<pdfcer_core::vartext::AutoFitBound>,
     /// How many characters had no `WinAnsi` code and were replaced with `?`.
     pub unencodable_chars: usize,
 }
@@ -497,13 +516,35 @@ pub fn apply(doc: &mut OpenDoc, edit: &FormEdit) {
             // sentence by moving the epoch past it, with nothing anywhere that
             // has to remember to clear it. A disclosure stamped with the *old*
             // epoch would be invisible from the moment it was written.
+            // ★ Read before the move. `disclosed` is consumed by the call
+            // below, and both values are `Copy`, so this costs nothing and
+            // keeps the trace's numbers the SAME ones the operator's sentence
+            // is built from — rather than a second derivation that could drift.
+            let disclosed_size = disclosed.as_ref().and_then(|d| d.applied_autosize);
+            let disclosed_bound = disclosed.as_ref().and_then(|d| d.applied_autosize_bound);
             record_fill_disclosure(disclosed.map(|d| FillDisclosure {
                 epoch: doc.edit_epoch,
                 ..d
             }));
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
-                format!("{label} commands={commands} epoch={}", doc.edit_epoch)
+                //
+                // ★★★ `autosize=` and `bound=` added 2026-09-07, and the reason
+                // is `place.rs`'s standing rule: **a trace line must carry the
+                // number a wrong build would get wrong.**
+                //
+                // The bound is the whole subject. A build that reported the
+                // size and dropped the bound — which is what this shell did
+                // until today — produces an identical `commands=1 epoch=N`
+                // line while telling the operator *"pdfcer chose 4.0 pt"* about
+                // a field the text is going to overflow. Without this, no
+                // driven check has an oracle for the one outcome that matters.
+                let bound = disclosed_bound.map_or("none", bound_token);
+                let size = disclosed_size.map_or_else(|| "none".to_owned(), |s| format!("{s:.1}"));
+                format!(
+                    "{label} commands={commands} epoch={} autosize={size} bound={bound}",
+                    doc.edit_epoch
+                )
             });
         }
         // Traced and the document left alone. Every refusal these verbs can
@@ -621,6 +662,63 @@ impl Applied {
     }
 }
 
+/// The stable trace token for an [`pdfcer_core::vartext::AutoFitBound`].
+///
+/// # ★★★ Why this exists rather than `{:?}`
+///
+/// **Never `Debug`-format a field a machine reads.** `Debug` is a derived,
+/// unstable rendering owned by another crate: a rename upstream, a
+/// `#[derive]` change, or a variant gaining a payload all change the string
+/// with no compile error here, and a driven check keyed on it goes quiet —
+/// or, worse, reports the opposite of the truth while quoting the truth in
+/// its own failure message. This project has that exact defect on the record.
+///
+/// ⇒ Spelling the tokens here makes the trace vocabulary **this shell's**, and
+/// makes changing it a deliberate edit next to the checks that read it.
+///
+/// # ⚠⚠⚠ And a worked example of the trap, committed by this very function
+///
+/// The first draft of this doc comment read:
+///
+/// > *"The `match` is exhaustive and must stay that way. `AutoFitBound` is
+/// > **not** `#[non_exhaustive]`, so a new variant upstream is a compile error
+/// > here … Do not add a wildcard to silence a future build; the error is the
+/// > feature."*
+///
+/// **Wrong.** `AutoFitBound` **is** `#[non_exhaustive]` — the attribute sits on
+/// the line *after* the `#[derive]`, and the check that produced the claim
+/// grepped the derive line. The compiler rejected it immediately (`E0004`), so
+/// it cost two minutes.
+///
+/// ★★★ It is left here because of *when* it happened: **within the hour of
+/// writing a RAG lesson titled "`#[non_exhaustive]` removes the compile-time
+/// guarantee, and comments keep claiming it anyway"**, after that same class
+/// had bitten twice the same evening in unrelated modules. Knowing the rule is
+/// not the same as checking the attribute, and *"I grepped for it"* is not
+/// checking when the grep can miss by one line.
+///
+/// ⇒ **Grep for the type name and read the lines above it, not for `derive`.**
+///
+/// ## So the wildcard below is mandatory, and it returns a real token
+///
+/// `"other"` rather than a panic or an empty string: a bound this build has
+/// never met is a fact worth seeing in a trace, and a check reading `bound=`
+/// can tell *"a new upstream variant arrived"* from *"no bound was decided"*
+/// (`bound=none`) from any of the three known ones. The operator-facing side
+/// makes the matching choice — an unknown bound takes the general sentence,
+/// which is true of every auto-size, rather than a claim about a constraint
+/// this build cannot name.
+const fn bound_token(bound: pdfcer_core::vartext::AutoFitBound) -> &'static str {
+    use pdfcer_core::vartext::AutoFitBound as B;
+    match bound {
+        B::Height => "height",
+        B::Width => "width",
+        B::Floor => "floor",
+        // Mandatory: the enum is `#[non_exhaustive]`. See above.
+        _ => "other",
+    }
+}
+
 /// Build a [`FillDisclosure`] from a fill's outcome.
 ///
 /// `epoch` is filled in by [`apply`], which is the only place that knows the
@@ -630,6 +728,7 @@ fn disclosure_of(field: &str, out: &FillOutcome) -> FillDisclosure {
         field: field.to_owned(),
         epoch: 0,
         applied_autosize: out.applied_autosize,
+        applied_autosize_bound: out.applied_autosize_bound,
         unencodable_chars: out.unencodable_chars,
     }
 }
@@ -1016,6 +1115,7 @@ mod tests {
             field: "Name".to_owned(),
             epoch: 7,
             applied_autosize: Some(12.0),
+            applied_autosize_bound: Some(pdfcer_core::vartext::AutoFitBound::Height),
             unencodable_chars: 0,
         }));
         assert!(last_fill_disclosure(7).is_some());
@@ -1030,6 +1130,7 @@ mod tests {
             field: "Name".to_owned(),
             epoch: 7,
             applied_autosize: None,
+            applied_autosize_bound: None,
             unencodable_chars: 0,
         }));
         assert!(
