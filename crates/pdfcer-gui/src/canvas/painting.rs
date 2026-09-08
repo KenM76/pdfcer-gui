@@ -346,8 +346,19 @@ pub(super) fn draw(
     // carried on the value, because it is a pure function of the selection and
     // carrying it would be a second copy that could go stale between the frame
     // that computed it and the frame that paints.
+    // ★★★ `ghost_box`, NOT `grip_box` — O154, 2026-09-08.
+    //
+    // `grip_box` reads `SelectionState::outlines`, which holds page-content
+    // entries only, so it answered `None` whenever a markup annotation was
+    // selected and this `if let` never ran. The ghost was unreachable for the
+    // exact selections the operator was dragging.
+    //
+    // ⇒ `ghost_box` asks the annotation first and falls back to `grip_box`,
+    // which is the same precedence `overlay::draw_move_ghost` already used —
+    // and the move ghost is why he could see the difference: dragging a stamp
+    // previewed, dragging its corner did not.
     if let Some((grip, factors)) = resize_ghost
-        && let Some(bounds) = overlay::grip_box(map, selection)
+        && let Some(bounds) = overlay::ghost_box(map, selection)
     {
         overlay::draw_resize_ghost(
             &painter,

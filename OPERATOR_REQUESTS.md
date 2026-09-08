@@ -122,6 +122,138 @@ machine.
 
 ---
 
+## O158 — ⬜ **FILED, ENGINE ASKED 2026-09-08** — "the draw a line that follows the pointer tool — I can't edit the nodes that make it"
+
+**Your words, 2026-09-08.**
+
+The freehand tool draws an **ink stroke**, and that is the one markup kind
+whose points pdfcer can *read* and cannot *change*. Polygon, polyline, line and
+cloud all let you drag a node; freehand does not.
+
+★ That is why you see **no handles at all** on it rather than handles that do
+nothing — the rule here is that a control which cannot work is not drawn.
+Correct, and no help to you.
+
+⇒ Asked the engine, as
+`request_an_ink_stroke_has_readable_vertices_and_no_way_to_edit_them.md`. I put
+three reasons it may be harder than it looks in the request — a freehand stroke
+is a list *of* strokes, it can be hundreds of points, and its drawn curve is
+smoothed rather than straight between points — and offered a smaller slice
+(move one whole stroke) in case per-point is not worth it.
+
+⚠ If the answer is *"no, deliberately"*, that is a fine answer and I will
+change what pdfcer tells you: right now it says a freehand stroke has no
+editable nodes without being able to say whether that is forever.
+
+---
+
+## O157 — ✅ **FIXED 2026-09-08, NOT YET DRIVEN** — "the Markup Items don't have a live preview — the bounding box stays the same size when I drag the handles"
+
+**Your words, 2026-09-08**, and this is the one that was a plain defect.
+
+### What was wrong
+
+Dragging a **corner** of a markup showed no preview at all. Dragging the
+**middle** of the same markup did. The resize was reaching the document; what
+was missing was the picture of where it was going.
+
+★★★ **The cause is exactly the thing you guessed at.** There are two sibling
+functions — one draws the preview for a *move*, one for a *resize* — and they
+were split apart for a good reason. **Only one of them was ever taught that a
+markup annotation is a thing you can select.** The resize one looked in the
+list of selected *page objects*, which is empty when what you have selected is
+a comment, so it drew nothing and had nothing to draw it around.
+
+⇒ Fixed, with a test that plants the original defect and goes red.
+
+---
+
+## O156 — ★★★ **YOUR ARCHITECTURE QUESTION, ANSWERED HONESTLY** — "I would think some of the function that handles the handle box and resizing would use the same function across almost all objects. Seems you have to program specifically for each one?"
+
+**You are right, and where it is true it is a defect rather than a cost.**
+
+### What IS shared, and it is most of it
+
+One `Grip` type, one hit test, one set of eight squares, **one function that
+decides which handles a thing offers** — and the painter and the hit test both
+ask that same function, deliberately, because the day two copies of that answer
+disagree you get a handle you can see and cannot grab. There is a written note
+in the code about the morning that happened.
+
+The resize *arithmetic* is one expression. The commit is one call.
+
+### Where it is NOT shared, and why that is the honest answer
+
+**A page object and an annotation are genuinely different things underneath**,
+and pdfcer does not get to choose that — a drawn line lives in the page's
+content, a comment is a separate object with its own rectangle and its own
+picture. So there are two lists, and a few functions have to look in both.
+
+⚠ **That is a reason for a fork, not an excuse for one.** O157 above is a
+function that looked in one list, should have looked in both, and shipped —
+while its own sibling three lines away did it correctly. That is not the cost
+of two kinds of object; that is one of a pair being left behind.
+
+⇒ So: **the sharing is real, the gap you found is real, and it is the second
+kind.** I have added the missing arm and a test that fails without it. Where I
+find more of these I will treat them the same way rather than as the price of
+doing business.
+
+---
+
+## O155 — ◑ **MEASURED, PART FIXED 2026-09-08** — "when will being able to drag on the canvas resize the Text Box and Stamp"
+
+**Your words, 2026-09-08.**
+
+Text boxes and stamps **are** wired for corner-dragging — they get all eight
+handles and the turn handle. Two things were making it look otherwise:
+
+1. **No preview** (O157 above). You dragged, nothing moved on screen, and the
+   only way to know it worked was to let go. Fixed.
+2. ⬜ **Some of them genuinely refuse**, and this half is still open. pdfcer
+   will not stretch a picture it did not draw itself — a stamp that came from
+   Acrobat, for instance — unless you tell it that a squashed border is
+   acceptable, because there is no such thing as a border that is thicker
+   left-to-right than top-to-bottom in PDF.
+
+⇒ Next step is mine: find out which of *your* stamps and text boxes fall into
+(2), and either widen what pdfcer will re-draw or make the refusal say so at
+the moment you drag rather than after.
+
+---
+
+## O154 — ⬜ **CAUSE FOUND 2026-09-08, ENGINE ASKED** — "the Text box Markup tool — pressing enter shows one line with a `?` for each new line"
+
+**Your words, 2026-09-08**, and this one has a precise cause.
+
+### What is happening
+
+pdfcer converts your text into the character set the box's font uses **before**
+it splits it into lines. A newline has no character in that set, so it becomes
+a `?` — and then the line-splitter, which is looking for newlines, finds none
+and puts everything on one line.
+
+⇒ **Two pieces of code, each correct on its own, in the wrong order.** The
+splitter handles newlines perfectly; it just never sees one.
+
+### Asked the engine
+
+`request_encode_winansi_turns_a_newline_into_a_question_mark_before_wrap_lines_can_split_on_it.md`,
+with the fix we think it wants and the two traps in testing it.
+
+★ Worth knowing: the **Edit tab's** text box handles this perfectly — it is a
+different route through the program. Only the **Markup tab's** text box is
+affected. My first two probes measured the wrong one and reported "works
+fine", which is why the request says so.
+
+### ⚠ What I am NOT doing meanwhile
+
+Not stripping the newline before sending it (that silently loses what you
+typed), and not splitting it into two separate boxes (that turns one undo into
+two, and one box into two boxes). It gets fixed properly.
+
+---
+
 ## O152 — ✅ **ANSWERED AND INSTRUMENTED 2026-09-08** — "does our project check for the latest version of egui to compile with?"
 
 **Your words, 2026-09-08:** *"does our project check for the latest version of

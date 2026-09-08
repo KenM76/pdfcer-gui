@@ -170,6 +170,53 @@ pub fn grip_box(mapping: &PageMapping, selection: &SelectionState) -> Option<Rec
     ))
 }
 
+/// ★★★ **The box a GHOST is measured against** — annotation first, then page
+/// content, in the same order [`draw_move_ghost`] has always used.
+///
+/// # Why this exists rather than [`grip_box`] doing it
+///
+/// `grip_box` answers *"where are the grips for a **content** selection"*, and
+/// its two callers both want exactly that: `pressing::grabbable` reaches it
+/// only after the annotation, ce-dimension and widget arms have already
+/// returned, and the published `canvas-grip-box` rect is the content one a
+/// driven check aims at. Widening it would change what those two mean.
+///
+/// This answers a different question — *"what rectangle is the operator
+/// dragging?"* — and for a markup annotation that is its `/Rect`, which lives
+/// on [`crate::canvas::selection::AnnotSelection`] and not in
+/// `SelectionState::outlines`.
+///
+/// # ★★ The defect it closes, `OPERATOR_REQUESTS.md` O154
+///
+/// > *"the Markup Items don't have a live preview — the bounding box stays the
+/// > same size when I drag the handles."*
+///
+/// It was exactly that: [`draw_resize_ghost`] iterated `selection.outlines()`,
+/// which is **empty** when only an annotation is selected, so the loop drew
+/// nothing — and one level up, the `grip_box` guard beside it answered `None`
+/// for the same reason, so the ghost was not even reached.
+///
+/// ⇒ **`draw_move_ghost` already had the annotation arm and its sibling did
+/// not.** Two functions split apart for a good reason (a move is one
+/// displacement, a resize is a map) and only one of them was taught the second
+/// kind of selection. The operator's own reading of it is the right one: this
+/// is not a per-kind cost that a canvas has to pay, it is one of the two
+/// siblings having been left behind.
+#[must_use]
+pub fn ghost_box(mapping: &PageMapping, selection: &SelectionState) -> Option<Rect> {
+    if let Some(annot) = selection.annot() {
+        return Some(visible_outline_rect(
+            mapping.rect_to_screen(annot.outline),
+            MIN_OUTLINE_EXTENT_PX,
+        ));
+    }
+    grip_box(mapping, selection)
+}
+
+/// Trace region for one rectangle of the resize preview, published per
+/// outline so a driven check can assert the ghost tracks the drag.
+const RESIZE_GHOST_REGION: &str = "canvas-resize-ghost"; // ui-text-exempt: trace region name, never displayed
+
 /// The move ghost's alpha, out of 255.
 ///
 /// High enough to read as a *second* outline over dense linework — the whole
@@ -713,8 +760,29 @@ pub fn draw_resize_ghost(
     (sx, sy): (f32, f32),
 ) {
     let stroke = Stroke::new(1.5, ghost(ink(painter)));
-    for (_, page_rect) in selection.outlines() {
-        let screen = mapping.rect_to_screen(*page_rect);
+    // ★★★ **The annotation arm, added 2026-09-08 for O154** — and it is the
+    // arm [`draw_move_ghost`] has had all along.
+    //
+    // `selection.outlines()` holds **page-content** entries. A markup
+    // annotation's box lives on `AnnotSelection` instead, so the loop below
+    // iterated nothing and a stamp being resized previewed no change at all.
+    // The operator reported it as *"the bounding box stays the same size when
+    // I drag the handles"*, and reasonably read it as the resize not working.
+    //
+    // ⚠ Written as a slice built once rather than as an early `return` with a
+    // duplicated body: the scaling arithmetic below is the part that must not
+    // exist twice, because it is the half that has to agree with what
+    // `canvas::resizing` commits. Two copies of `anchor + (p - anchor) * s` is
+    // how a preview and a commit come to disagree about where a corner went.
+    let annot_box = selection
+        .annot()
+        .map(|a| visible_outline_rect(mapping.rect_to_screen(a.outline), MIN_OUTLINE_EXTENT_PX));
+    let content: Vec<Rect> = selection
+        .outlines()
+        .iter()
+        .map(|(_, page_rect)| mapping.rect_to_screen(*page_rect))
+        .collect();
+    for screen in annot_box.into_iter().chain(content) {
         // `anchor + (p - anchor) * s`, per corner — the same map the commit
         // applies to every node, one level up, so what the operator sees is the
         // outline of what they will get.
@@ -728,6 +796,12 @@ pub fn draw_resize_ghost(
                 anchor.y + (screen.max.y - anchor.y) * sy,
             ),
         );
+        // ★ Published so a driven check can measure the preview rather than
+        // photograph it. Without this the only oracle for "did the ghost
+        // change size" is a screenshot diff, and a ghost is a 1.5 px stroke at
+        // low alpha over arbitrary linework — which is the least reliable
+        // pixel assertion this project owns.
+        crate::diag::ui_rect(RESIZE_GHOST_REGION, scaled);
         painter.rect_stroke(
             visible_outline_rect(scaled, MIN_OUTLINE_EXTENT_PX),
             CornerRadius::ZERO,
@@ -1132,232 +1206,4 @@ fn ghost(base: Color32) -> Color32 {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use egui::{Pos2, pos2};
-
-    /// ★ A zero-height rule gets a visible band rather than nothing.
-    #[test]
-    fn a_degenerate_outline_is_grown_until_it_can_be_seen() {
-        // The measured case: `100 200 m 300 200 l S`, projected to screen.
-        let rule = Rect::from_min_max(pos2(100.0, 200.0), pos2(300.0, 200.0));
-        let out = visible_outline_rect(rule, MIN_OUTLINE_EXTENT_PX);
-        assert!(out.height() >= MIN_OUTLINE_EXTENT_PX);
-        assert!(
-            (out.width() - 200.0).abs() < f32::EPSILON,
-            "the axis that was already visible must not be touched"
-        );
-        assert!(
-            (out.center().y - 200.0).abs() < f32::EPSILON,
-            "the band must straddle the rule, not sit to one side of it"
-        );
-    }
-
-    /// A comfortable rect is returned unchanged — the growth is a repair, not
-    /// a permanent inflation that would misreport every object's extent.
-    #[test]
-    fn a_healthy_outline_is_left_alone() {
-        let r = Rect::from_min_max(pos2(0.0, 0.0), pos2(100.0, 80.0));
-        assert_eq!(visible_outline_rect(r, MIN_OUTLINE_EXTENT_PX), r);
-    }
-
-    /// An inside-out rect normalises before it is grown, so a projection that
-    /// swapped the corners still paints.
-    #[test]
-    fn an_inside_out_rect_normalises_before_growing() {
-        let backwards = Rect::from_min_max(pos2(300.0, 240.0), pos2(100.0, 200.0));
-        let out = visible_outline_rect(backwards, MIN_OUTLINE_EXTENT_PX);
-        assert!(out.width() > 0.0 && out.height() > 0.0);
-        assert!(out.contains(pos2(200.0, 220.0)));
-    }
-
-    /// A non-finite rect is left exactly as it arrived: there is no
-    /// meaningful centre to grow about, and repairing it here would hide a
-    /// bug that belongs upstream.
-    #[test]
-    fn a_non_finite_rect_is_returned_unchanged() {
-        let nan = Rect::from_min_max(pos2(f32::NAN, 0.0), pos2(10.0, 10.0));
-        let out = visible_outline_rect(nan, MIN_OUTLINE_EXTENT_PX);
-        assert!(out.min.x.is_nan());
-        // And a nonsense minimum is refused rather than shrinking the rect.
-        let r = Rect::from_min_max(Pos2::ZERO, pos2(10.0, 10.0));
-        assert_eq!(visible_outline_rect(r, -1.0), r);
-        assert_eq!(visible_outline_rect(r, f32::NAN), r);
-    }
-
-    /// The wash keeps its hue and drops its alpha, so the content under a
-    /// rubber-band stays readable.
-    ///
-    /// Asserted through `to_srgba_unmultiplied` rather than through `.r()`,
-    /// and **approximately**. Both halves of that are the point:
-    ///
-    /// - [`Color32`] stores **premultiplied** components, so a translucent
-    ///   blue reads back as `(11, 23, 38)` from the plain accessors and looks
-    ///   as though the hue was lost. It was not, and "fixing" that by dropping
-    ///   the alpha would be the wrong repair.
-    /// - Premultiplying at alpha 48 and dividing back out is lossy — 60
-    ///   returns as 58 — so exact equality would be asserting the precision of
-    ///   egui's colour storage rather than the property this function has.
-    #[test]
-    fn the_marquee_wash_is_translucent_and_keeps_the_themes_hue() {
-        // NOT A THEME COLOUR: a test fixture standing in for whatever the
-        // theme supplies; the assertion is that the hue survives, so the
-        // exact input has to be a known literal.
-        let base = Color32::from_rgb(60, 120, 200);
-        let [r, g, b, a] = wash(base).to_srgba_unmultiplied();
-        for (got, want) in [(r, 60u8), (g, 120), (b, 200)] {
-            assert!(
-                got.abs_diff(want) <= 4,
-                "the wash drifted off the theme's hue: {got} vs {want}"
-            );
-        }
-        assert!(a < 64, "a rubber-band must not hide what it encloses");
-    }
-
-    /// The ghost keeps the theme's hue and is translucent — visibly a *copy*
-    /// of the outline rather than a second, competing selection.
-    ///
-    /// Asserted through `to_srgba_unmultiplied` for the reason [`ghost`]'s own
-    /// docs give, and approximately because premultiplying and dividing back
-    /// out is lossy.
-    #[test]
-    fn the_move_ghost_is_translucent_and_keeps_the_themes_hue() {
-        // NOT A THEME COLOUR: test fixture, as above.
-        let base = Color32::from_rgb(60, 120, 200);
-        let [r, g, b, a] = ghost(base).to_srgba_unmultiplied();
-        for (got, want) in [(r, 60u8), (g, 120), (b, 200)] {
-            assert!(
-                got.abs_diff(want) <= 4,
-                "the ghost drifted: {got} vs {want}"
-            );
-        }
-        assert_eq!(a, GHOST_ALPHA);
-        assert!(
-            a > 64,
-            "the ghost must be readable over dense linework, unlike the marquee wash"
-        );
-    }
-
-    /// ★ **The current find hit is distinguished by emphasis, not by hue.**
-    ///
-    /// Both halves are asserted because both are the design:
-    ///
-    /// - the two alphas differ by enough to read at a glance, so a page of
-    ///   hits shows *which one* the readout is counting;
-    /// - the hue is the theme's, unchanged, in both — a find highlight that
-    ///   borrowed `warn_fg_color` would say *warning* about something that is
-    ///   not a warning, and would break the first time somebody restyled the
-    ///   warning colour for warnings. `tools/gates/check-theme-colors.sh`
-    ///   enforces the general rule; this asserts the specific consequence.
-    ///
-    /// The second signal — the stroke on the current hit — is structural
-    /// rather than a colour and is asserted by reading [`draw_find_hits`],
-    /// which strokes if and only if `current`.
-    #[test]
-    fn the_current_find_hit_differs_by_emphasis_and_keeps_the_themes_hue() {
-        // NOT A THEME COLOUR: a test fixture standing in for whatever the
-        // theme supplies; the assertion is that the hue survives, so the exact
-        // input has to be a known literal.
-        let base = Color32::from_rgb(60, 120, 200);
-        let ordinary = at_alpha(base, HIT_ALPHA);
-        let current = at_alpha(base, CURRENT_ALPHA);
-
-        for colour in [ordinary, current] {
-            let [r, g, b, _] = colour.to_srgba_unmultiplied();
-            for (got, want) in [(r, 60u8), (g, 120), (b, 200)] {
-                assert!(
-                    got.abs_diff(want) <= 6,
-                    "a find highlight drifted off the theme's hue: {got} vs {want}"
-                );
-            }
-        }
-
-        // ★ The three relations between the two alphas are checked at
-        // COMPILE time rather than here.
-        //
-        // They are properties of two constants, so a run-time assertion would
-        // only re-discover what the compiler can refuse outright — the same
-        // argument `crate::app::status`'s `HEIGHT_PTS > ROW_HEIGHT_PTS`
-        // makes. They live inside this test rather than beside the constants
-        // so the whole colour argument is readable in one place.
-        const _: () = assert!(
-            CURRENT_ALPHA > HIT_ALPHA * 2,
-            // ui-text-exempt: compile-error text, never displayed in the UI
-            "the current hit must be obviously different from its neighbours; alpha is one \
-             of the two signals and it must not be a subtle one"
-        );
-        const _: () = assert!(
-            HIT_ALPHA < 96,
-            // ui-text-exempt: compile-error text, never displayed in the UI
-            "a highlight that hides the text it is highlighting defeats its own purpose"
-        );
-        // ★ The bound that came from a screenshot rather than from reasoning.
-        // At 168 the current hit was a solid block over its own word; see
-        // `CURRENT_ALPHA`'s docs. 112 is the ceiling that keeps ordinary black
-        // text legible through the theme's selection blue in both presets.
-        const _: () = assert!(
-            CURRENT_ALPHA <= 112,
-            // ui-text-exempt: compile-error text, never displayed in the UI
-            "the operator's next act after finding a hit is to READ it; a wash this \
-             opaque covers the word it is marking"
-        );
-    }
-
-    /// ★ **The text-selection wash is readable through** — the bound the
-    /// current-hit defect established, applied to the surface that needs it
-    /// most.
-    ///
-    /// A find highlight marks one of several candidate answers; a text
-    /// selection marks *the characters that are about to be copied*, and the
-    /// operator's only way to check them is to read them. So the ceiling is
-    /// asserted at compile time against the same value
-    /// [`CURRENT_ALPHA`]'s own screenshot-derived bound uses, and the hue is
-    /// asserted to be the theme's — a selection wash that borrowed a named
-    /// palette entry would break the first time somebody restyled it for its
-    /// real purpose. `tools/gates/check-theme-colors.sh` enforces the general
-    /// rule; this asserts the specific consequence.
-    #[test]
-    fn the_text_selection_wash_is_readable_through_and_keeps_the_themes_hue() {
-        // NOT A THEME COLOUR: a test fixture standing in for whatever the theme
-        // supplies; the assertion is that the hue survives, so the exact input
-        // has to be a known literal.
-        let base = Color32::from_rgb(60, 120, 200);
-        let [r, g, b, a] = at_alpha(base, TEXT_SELECTION_ALPHA).to_srgba_unmultiplied();
-        for (got, want) in [(r, 60u8), (g, 120), (b, 200)] {
-            assert!(
-                got.abs_diff(want) <= 6,
-                "the selection wash drifted off the theme's hue: {got} vs {want}"
-            );
-        }
-        assert_eq!(a, TEXT_SELECTION_ALPHA);
-
-        const _: () = assert!(
-            TEXT_SELECTION_ALPHA <= CURRENT_ALPHA,
-            // ui-text-exempt: compile-error text, never displayed in the UI
-            "a text selection is what the operator is about to COPY, and the only way to \
-             check it is to read it — it must never be more opaque than the find hit whose \
-             opacity was already measured down from a solid block"
-        );
-        const _: () = assert!(
-            TEXT_SELECTION_ALPHA > 0,
-            // ui-text-exempt: compile-error text, never displayed in the UI
-            "a selection nobody can see is a selection nobody can aim"
-        );
-    }
-
-    /// A translucent source colour does not get darkened twice — the failure
-    /// the accessor choice in [`ghost`] guards against.
-    #[test]
-    fn a_translucent_theme_colour_keeps_its_hue_through_the_ghost() {
-        // NOT A THEME COLOUR: test fixture — a deliberately translucent
-        // source, which is the input this test exists to exercise.
-        let translucent = Color32::from_rgba_unmultiplied(60, 120, 200, 90);
-        let [r, g, b, _] = ghost(translucent).to_srgba_unmultiplied();
-        for (got, want) in [(r, 60u8), (g, 120), (b, 200)] {
-            assert!(
-                got.abs_diff(want) <= 6,
-                "premultiplied components were re-premultiplied: {got} vs {want}"
-            );
-        }
-    }
-}
+mod tests;
