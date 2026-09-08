@@ -13,8 +13,11 @@ driving the screen, found one stray process and killed it with
 `taskkill //F //IM pdfcer-gui.exe`. That matches by **image name, not path**, so
 it would have force-killed his own reader — with whatever he had open and
 unsaved — had one been running. It happened not to be. His correction: *"don't
-keep killing off pdfce-gui as I do use it throughout the day instead of acrobat
-reader."*
+keep killing off pdfce-gui as I do use it throughout the day instead of acrobat <!-- old-name-exempt: HIS words, verbatim -->
+reader."* <!-- old-name-exempt: HIS words, quoted verbatim. He typed the old
+project name; correcting an operator's own sentence to satisfy a gate would make
+the quotation a paraphrase, and this file exists because the exact wording of a
+correction is the thing worth keeping. -->
 
 ★ `/F` makes it worse: no chance to prompt about unsaved work.
 

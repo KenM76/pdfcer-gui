@@ -80,6 +80,69 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
+## O150 — ◑ **MEASURED 2026-09-08, one half explained and one half narrowed** — "I can't edit some of the text… the BOM only sometimes works"
+
+**Your words, 2026-09-08:**
+
+> *"In `SW41177.pdf` I can't edit some of the text, for example `#2 USE SPACERS
+> 8 9 10 11 IF REQUIRED.` The BOM I can, but it only sometimes works — in fact I
+> thought it had also stopped working, but after trying multiple times in
+> multiple places it started working."*
+
+Measured against **your own file**, headlessly — no screen taken, you were using
+the machine. Copied to scratch; your original was not opened or written.
+
+### ★★★ These are two different faults, not one
+
+That is the same shape as your September 5th report, where the editable and
+uneditable text differed in two ways at once and we blamed the wrong one.
+
+---
+
+### The BOM — **explained, and it is not flakiness**
+
+**Page 3 of your drawing has 122 pieces of text whose content is repeated. The
+value `1` appears 108 times. `7` appears 49 times. `2` appears 43 times.**
+
+When you click a cell, pdfcer notes *which* piece you clicked. But on a line
+built from many small pieces — which is how your CAD exporter writes them — it
+can only use that note if the cell's text appears exactly **once** on the page.
+A `1` that appears 108 times is not identifiable that way, so the edit is
+refused.
+
+⇒ **"After trying multiple times in multiple places it started working"** is not
+random. You landed on a cell whose text happens to be unique on that sheet.
+
+★ That is a real defect and the fix is ours: **the piece you clicked is already
+known**, so pdfcer should not be falling back to matching by text at all. It is
+throwing away the one fact that removes the ambiguity.
+
+---
+
+### "#2 USE SPACERS…" — **narrowed sharply, not yet solved**
+
+Measured on that exact line:
+
+| question | answer |
+|---|---|
+| is it split across pieces? | **no** — one run |
+| does its text repeat on the page? | **no** — once |
+| will the engine make the edit? | **yes**, accepted |
+| will the engine accept the exact request pdfcer sends? | **yes**, accepted |
+
+⇒ **Every layer I can reach without the screen accepts it.** So whatever stops
+you is in pdfcer's own click handling, between the pointer and the request — and
+finishing that needs me to drive the window, which I am not doing while you are
+on the machine.
+
+★ One thing that came out of it and is worth knowing: your page carries **eight
+separate content streams**, and the engine collapses seven into the first to
+make an edit coherent. That is normal and disclosed, but it is the first
+candidate I will test.
+
+**The probe is committed** (`tests/ken_sw41177_probe.rs`, run by hand) so the
+measurements above can be re-run in one command rather than re-derived.
+
 ## O149 — ✅ **FIXED 2026-09-08 — "the redaction feature regressed back to just giving me the 'don't apply yet' button"**
 
 **Your words, 2026-09-08:**
