@@ -107,8 +107,6 @@ use pdfcer_core::document::Document;
 use pdfcer_core::edit::EditSession;
 use pdfcer_core::text_edit::{EditOptions, EditRequest};
 
-use crate::text::textedit::EditRefusal;
-
 /// The per-glyph run both fixtures draw, and the correction made to it.
 ///
 /// Three characters rather than his thirty-six, because the property under test
@@ -134,6 +132,29 @@ fn session(fixture: &str) -> EditSession {
         path.display()
     );
     EditSession::new(Document::load(&path).expect("the fixture loads"))
+}
+
+/// The page's runs **in order**, as the session now sees them.
+///
+/// ★ Separate from [`page_text`] and not a convenience: with two identical
+/// strings on one page, *which* one changed is expressible only as a position
+/// in this list. A concatenated string can say the fix is present; it cannot
+/// say the clicked run is the one that has it, and that is the whole question
+/// `span_from_pin` exists to answer.
+fn page_runs(session: &EditSession) -> Vec<String> {
+    let view = session.view();
+    let pages = pdfcer_core::page_tree::pages_in(&view).expect("a page tree");
+    pdfcer_core::text_extract::extract_page_view(
+        &view,
+        &pages[0],
+        0,
+        &pdfcer_core::text_extract::ExtractOptions::default(),
+    )
+    .expect("the page's text extracts")
+    .runs
+    .iter()
+    .map(|r| r.text.clone())
+    .collect()
 }
 
 /// The page's text as the session now sees it — the overlay, not the file.
@@ -190,20 +211,37 @@ fn a_typo_in_a_run_written_one_glyph_at_a_time_can_be_corrected() {
     let doc = crate::app::state::open_local_fixture(UNIQUE);
     let planned = super::plan(&doc, 0, 0, RUN, FIXED);
 
-    assert_eq!(
-        planned.occurrences,
-        Some(1),
-        "the run occurs once on this page, and that count is what licenses dropping the pin"
+    // ★★★ **THE PIN NOW STAYS ON, AND THIS ASSERTION USED TO SAY THE
+    // OPPOSITE.** Until 2026-09-08 it read `pinned_span.is_none()` with the
+    // comment *"THE WHOLE FIX … the pin must come OFF"*, licensed by
+    // `occurrences == Some(1)`.
+    //
+    // `Pass 272.0`'s `EditRequest::spanning_from` retired both. The span
+    // search starts at the pinned operator instead of at the first operator
+    // on the page, so the pin no longer has to be traded away to reach a
+    // split run.
+    //
+    // ⚠ And the engine's reply said the old fallback was never as safe as it
+    // read: `find_anchor` tries a **single-operator** match across the whole
+    // page before the spanning search runs, so a single-operator twin
+    // anywhere on the sheet beats a spanning occurrence above it. Dropping
+    // the pin could make the clicked run *unreachable*, not merely ambiguous.
+    assert!(
+        planned.request.pinned_span.is_some(),
+        "★★★ THE PIN MUST STAY ON. It is what makes the edit address THIS run, and \
+         `span_from_pin` is what lets it span anyway. A build that dropped it again would \
+         pass every other assertion here on this fixture — which holds one occurrence — \
+         and reach the wrong text on a page with two"
     );
     assert!(
-        planned.request.pinned_span.is_none(),
-        "★★★ THE WHOLE FIX. `Pass 256.0`: a pinned request never spans, so a `find` sent \
-         beside a pin is confined to one operator — which on a per-glyph run holds one \
-         character. The pin must come OFF for the cross-operator matcher to run"
+        planned.request.span_from_pin,
+        "★★★ …and the flag that makes the pin survivable. Without it the request is `find` \
+         + plain pin, which `Pass 256.0` confines to ONE operator — one character, on a \
+         per-glyph run — and the engine refuses it. That is the exact defect he reported"
     );
     assert_eq!(
         planned.request.find, RUN,
-        "and the `find` must survive: with the pin gone it is the only thing locating the run"
+        "and the `find` must survive: it says WHAT, while the pin says WHICH ONE"
     );
 
     let mut session = session(UNIQUE);
@@ -277,69 +315,100 @@ fn left_edge(session: &EditSession) -> f64 {
         .fold(f64::INFINITY, f64::min)
 }
 
-/// ★★★ **THE GUARD. Two identical runs on one page, and the shell refuses
-/// rather than choosing.**
+/// ★★★ **THE GUARD, INVERTED 2026-09-08: two identical runs on one page, and
+/// the shell now edits THE ONE THAT WAS CLICKED.**
 ///
-/// This is the test that stops the fix above from becoming a defect. It asserts
-/// three separate things, and each has its own way of going missing:
+/// # What this test asserted until today, and why it was right then
 ///
-/// 1. the count **saw** both occurrences;
-/// 2. the pin was **kept**, which is what makes the request unmatchable on
-///    purpose;
-/// 3. the resulting refusal classifies as [`EditRefusal::AmbiguousOnThePage`]
-///    and not as [`EditRefusal::SplitAcrossPieces`] — both are true of this page
-///    and only the first is what stopped it.
+/// It asserted a **refusal**. Three things, each with its own way of going
+/// missing: that the count saw both occurrences, that the pin was kept — which
+/// made the request unmatchable *on purpose* — and that the refusal classified
+/// as `AmbiguousOnThePage` rather than as [`EditRefusal::SplitAcrossPieces`],
+/// both being true of this page and only the first being what stopped it.
+///
+/// That was the best available answer while `EditRequest` carried no way to
+/// say *which* occurrence. The shell had exactly two options — address this
+/// run **or** span across operators — and it chose to refuse rather than to
+/// guess on a signed drawing.
+///
+/// # What changed
+///
+/// `Pass 272.0` gave it a third:
+/// [`EditRequest::spanning_from`](pdfcer_core::text_edit::EditRequest::spanning_from)
+/// starts the span search **at the pinned operator**. `find` says what, the
+/// pin says which one, and every guard the span search already had is
+/// unchanged. Shipped the same day this shell filed for it.
+///
+/// ⇒ So the page that could not be edited is now edited **correctly**, and
+/// this test proves it by the only means that discriminates: it checks that
+/// the *first* occurrence changed and the *second* did not. A build that
+/// scanned from operator 0 would also produce a page containing the fix and
+/// would pass any assertion phrased as "the corrected text is present".
+///
+/// ★ That trap is not hypothetical — the engine's own reply records its third
+/// sabotage passing twice, once because the fixture lacked a third
+/// occurrence and once because the assertion asked *"does this operator appear
+/// somewhere"* rather than naming the line.
 #[test]
-fn a_typo_that_appears_twice_on_the_page_is_refused_rather_than_guessed() {
+fn a_typo_that_appears_twice_on_the_page_edits_the_one_that_was_clicked() {
     let doc = crate::app::state::open_local_fixture(TWICE);
     let planned = super::plan(&doc, 0, 0, RUN, FIXED);
 
-    assert_eq!(
-        planned.occurrences,
-        Some(2),
-        "★★★ the count is the guard. If this reads Some(1) the shell is about to drop the \
-         pin on a page holding two candidates and let the engine pick one"
-    );
     assert!(
-        planned.request.pinned_span.is_some(),
-        "★★★ THE PIN MUST STAY ON. It is the only disambiguator `EditRequest` carries — \
-         there is no occurrence index — so keeping it is how this shell declines to guess. \
-         The request is unmatchable ON PURPOSE"
+        planned.request.pinned_span.is_some() && planned.request.span_from_pin,
+        "★★★ the pin AND the flag. The pin alone is confined to one operator (`Pass 256.0`) \
+         and refuses; the flag alone has nothing to anchor to. Together they are the whole \
+         mechanism, and either missing is a silent return to guessing or to refusing"
     );
 
     let mut session = session(TWICE);
-    let error = session
-        .edit_text(&planned.request, &planned.options)
-        .expect_err("a pinned request cannot span, so this must be refused");
+    let before = page_runs(&session);
+    assert!(
+        before.iter().filter(|r| r.trim() == RUN).count() >= 2,
+        "★ the control: this fixture must really hold TWO identical runs, or this test is \
+         measuring the unique case and asserts nothing about disambiguation. Regenerate \
+         with `python tools/gen-per-glyph-fixtures.py`. Got: {before:?}"
+    );
 
-    // ★★ The classification, which is what the operator actually reads. Both
-    // facts are true of this page — the run IS split and the text DOES appear
-    // twice — and reporting the split would be this shell explaining its own
-    // refusal with somebody else's reason.
-    // ★ `RefusalClass` is the extension trait that puts `refusal_kind` on
-    // `EditError`; imported here rather than at the module head because this is
-    // the only test that classifies, and the import is part of what the
-    // assertion below is about.
-    use pdfcer_core::text_edit::RefusalClass;
-    let why = EditRefusal::of(
-        error.refusal_kind(),
-        planned.one_operator,
-        None,
-        planned.occurrences,
+    let report = session
+        .edit_text(&planned.request, &planned.options)
+        .expect("★★★ the edit that was refused until Pass 272.0 must now land");
+    assert!(
+        report.operators_spanned > 1,
+        "★★ it must land BY SPANNING. `operators_spanned` was {}; a fixture that stopped \
+         being per-glyph would satisfy everything else here while testing nothing",
+        report.operators_spanned
+    );
+
+    // ★★★ THE ASSERTION THAT DISCRIMINATES. Not "the page contains ABCD" —
+    // a build that scanned from operator 0 satisfies that too, on this exact
+    // page, while having edited the wrong run.
+    let after = page_runs(&session);
+    assert_eq!(
+        after.iter().filter(|r| r.trim() == FIXED).count(),
+        1,
+        "★★★ exactly ONE occurrence may have changed. Two means the verb rewrote both; \
+         zero means it landed somewhere this test cannot see. Got: {after:?}"
     );
     assert_eq!(
-        why.name(),
-        "AmbiguousOnThePage",
-        "★★★ the sentence must name the thing that ACTUALLY stopped it. \
-         `SplitAcrossPieces` is also true here and would tell him pdfcer cannot edit this \
-         kind of text — which is now false, and would send him away from a document pdfcer \
-         can in fact correct once he selects more of the line"
+        after.iter().filter(|r| r.trim() == RUN).count(),
+        before.iter().filter(|r| r.trim() == RUN).count() - 1,
+        "★★ …and exactly one untouched occurrence must remain, which is what says the OTHER \
+         one is still there rather than having been consumed by a spanning match that ran \
+         too far. Got: {after:?}"
     );
+
+    // ★ And it must be the FIRST — the run `plan` was given (index 0). Order
+    // is the only thing that names which of two identical strings was edited;
+    // asserting on their number cannot. This is the engine's own lesson about
+    // its third sabotage, applied here.
+    let first_fixed = after.iter().position(|r| r.trim() == FIXED);
+    let first_run = after.iter().position(|r| r.trim() == RUN);
     assert!(
-        why.line().contains('2'),
-        "and the count reaches him: \"appears twice\" is a page he can look at, and the \
-         sentence interpolates the number for exactly that reason. Got: {}",
-        why.line()
+        matches!((first_fixed, first_run), (Some(f), Some(r)) if f < r),
+        "★★★ the CLICKED run — run 0, the first on the page — must be the one that changed. \
+         If the corrected text appears after the untouched one, the engine scanned from the \
+         top of the page and the pin did nothing. Got: {after:?}"
     );
 }
 

@@ -167,39 +167,34 @@ pub enum EditRefusal {
     /// required: a split run whose refusal is a font refusal gets the font
     /// sentence, because that is what actually stopped it.
     SplitAcrossPieces,
-    /// ★★★ **The words being corrected appear more than once on the page, and
-    /// pdfcer cannot tell which one the operator meant** — `OPERATOR_REQUESTS.md`
-    /// **O142**, and the refusal that exists so that a *wrong* edit cannot.
+    /// ★★★ **RETIRED 2026-09-08 — the ambiguity it reported cannot arise
+    /// from a click any more, so the variant is gone rather than left
+    /// unreachable.**
     ///
-    /// # Why this state exists at all
+    /// It said *"the same words appear N times on this page and pdfcer cannot
+    /// tell which one you mean"*, and it was the right answer for as long as
+    /// `EditRequest` had no way to say **which**. The shell had two options —
+    /// address this occurrence, or span across show operators — and it could
+    /// not have both, so it refused rather than guess on a signed drawing.
     ///
-    /// A run the producer wrote one glyph per show operator can only be reached
-    /// by `find` — `Pass 256.0`'s cross-operator matcher — and *"a pinned
-    /// request never spans"*, so reaching it means sending the request **without
-    /// the provenance pin**. The pin is the only thing `EditRequest` carries
-    /// that can choose between two identical strings on one page: there is no
-    /// occurrence index on the request, and `pinned_span` is the whole of its
-    /// disambiguation.
+    /// `Pass 272.0`'s
+    /// [`EditRequest::spanning_from`](pdfcer_core::text_edit::EditRequest::spanning_from)
+    /// gave it both. `find` says what, the pin says which one. A caret is
+    /// never ambiguous now, because a caret always has a pin.
     ///
-    /// ⇒ So on a page where the text occurs twice the shell has a choice between
-    /// **refusing** and **guessing**, and it refuses.
-    /// [`crate::canvas::textedit::plan`] keeps the pin in that case, which makes
-    /// the request unmatchable on purpose, and this variant is what turns the
-    /// resulting `NotFound` into the true sentence instead of the one about the
-    /// producer's glyph-per-operator writing — which is also true, and is not
-    /// what stopped it.
+    /// ⚠ **Deleted rather than kept as a tripwire, deliberately**, and the
+    /// two are not interchangeable here. A retired *predicate* can sit behind
+    /// a `debug_assert` (see `canvas::annotclip::Plan::spec_is_more_faithful`)
+    /// because nobody reads it. A retired **sentence** is a promise this build
+    /// cannot keep: `line()`'s completeness sweep would keep asserting its
+    /// wording, and the next reader would take a fully-argued paragraph about
+    /// signed quotations as a live constraint. R9's rule for a capability
+    /// applies to a sentence too — an unreachable one renders nothing.
     ///
-    /// ★★ **This is the variant that must never be softened into an edit.** The
-    /// document this shell was reported against is a signed quotation. Editing
-    /// the wrong occurrence of a word on one of those is not a bug the operator
-    /// reports — it is a bug he finds later, in a document he has already sent.
-    /// The count that produces it deliberately over-counts rather than under-,
-    /// and [`crate::canvas::textedit::page_occurrences`] carries that argument.
-    ///
-    /// ★ The payload is the count, because *"twice"* and *"nine times"* send the
-    /// operator to different remedies: the first is a page he can look at, the
-    /// second is a page where he wants Find rather than a caret.
-    AmbiguousOnThePage(usize),
+    /// ⇒ If a future engine withdraws `span_from_pin`, this comes back **with
+    /// the correction the engine sent alongside it**, not as it was:
+    /// dropping the pin was never merely *risking the wrong occurrence*. See
+    /// `canvas::textedit::Plan::occurrences`, which keeps the whole argument.
     /// ★★★ **The character IS in this font — twice — and pdfcer will not pick
     /// which glyph he meant.** `Pass 256.1`, consumed 2026-09-06.
     ///
@@ -393,12 +388,20 @@ impl EditRefusal {
     /// ⇒ That is the same rule the arms below already follow, applied one level
     /// deeper: *the thing that actually stopped it wins, and the things that are
     /// merely also true stand aside.*
+    /// # `stale_pin`
+    ///
+    /// Whether the refusal was `EditError::PinnedSpanNotFound` — *the pin
+    /// names no operator* — as distinct from `NoMatch`, *the pin is fine and
+    /// the text does not begin there*. Both arrive as
+    /// `RefusalKind::NotFound`, so only the caller, which holds the
+    /// `EditError`, can tell them apart. See the `NotFound` arm below for what
+    /// each one means to the operator and why conflating them misdirects him.
     #[must_use]
     pub const fn of(
         kind: pdfcer_core::text_edit::RefusalKind,
         one_operator: bool,
         character: Option<RefusedCharacter>,
-        occurrences: Option<usize>,
+        stale_pin: bool,
     ) -> Self {
         use pdfcer_core::text_edit::RefusalKind as K;
         // ★ Matched as a PAIR rather than with an `if let` guard, so the arms
@@ -419,14 +422,36 @@ impl EditRefusal {
             }
             (K::UnsupportedFont, None) => Self::UnsupportedFont,
             (K::StructureFrozen, _) => Self::DocumentProtected,
-            // ★★★ O142. Ahead of the split arm on purpose — see the
-            // `occurrences` section above. `Some(n)` with `n != 1` is the shell
-            // having KEPT the pin so that this refusal would happen; anything
-            // else falls through to the arms that were here before.
-            (K::NotFound, _) => match occurrences {
-                Some(n) if n != 1 => Self::AmbiguousOnThePage(n),
-                _ if !one_operator => Self::SplitAcrossPieces,
-                _ => Self::TextMovedAway,
+            // ★★★ **THE TWO LOCATIONAL REFUSALS, KEPT APART — 2026-09-08,
+            // on the engine's own instruction.**
+            //
+            // `EditError::NoMatch` and `EditError::PinnedSpanNotFound` both
+            // arrive as `RefusalKind::NotFound`, and they mean opposite
+            // things. The engine's reply:
+            //
+            //   > `PinnedSpanNotFound` — the pin names no operator. **The pin
+            //   > is wrong.** `NoMatch` — the pin is fine; the text does not
+            //   > *begin* there. Keeping those apart is what your report
+            //   > needed and did not have; conflating them is what sent it to
+            //   > the wrong guard.
+            //
+            // ⇒ A pin that names nothing is a **stale caret**: the page moved
+            // under it — an undo, an edit from another surface, a reflow — and
+            // `TextMovedAway` says exactly that, with the remedy (click again).
+            // Reporting `SplitAcrossPieces` there would tell him this kind of
+            // text cannot be edited, which is false and sends him away from a
+            // document pdfcer can correct.
+            //
+            // ★ `stale_pin` is computed by the caller, which is the only place
+            // holding the `EditError`. This function takes the *fact*, not the
+            // error, for the same reason it takes `RefusedCharacter` rather
+            // than reading `Refusal::trigger` itself: it is the catalog, and a
+            // catalog that matched on engine types would need a second copy of
+            // their taxonomy.
+            (K::NotFound, _) => match (stale_pin, one_operator) {
+                (true, _) => Self::TextMovedAway,
+                (false, false) => Self::SplitAcrossPieces,
+                (false, true) => Self::TextMovedAway,
             },
             (K::Other, _) => Self::Unstated,
         }
@@ -460,7 +485,6 @@ impl EditRefusal {
     pub const fn name(self) -> &'static str {
         match self {
             Self::SplitAcrossPieces => "SplitAcrossPieces",
-            Self::AmbiguousOnThePage(_) => "AmbiguousOnThePage",
             Self::UnsupportedFont => "UnsupportedFont",
             Self::FontLacksTheCharacter(_) => "FontLacksTheCharacter",
             Self::FontHasTwoGlyphsFor(_) => "FontHasTwoGlyphsFor",
@@ -591,14 +615,6 @@ impl EditRefusal {
             Self::FontLacksTheCharacter(c) => {
                 return std::borrow::Cow::Owned(font_lacks_the_character(c));
             }
-            // ★★★ O142. The second sentence in this catalog built from a runtime
-            // value, and it leaves through a `return` for the same reason the
-            // first one does. The count is the whole point: *"more than once"*
-            // leaves the operator hunting, *"3 times"* tells him what to look
-            // for.
-            Self::AmbiguousOnThePage(n) => {
-                return std::borrow::Cow::Owned(ambiguous_on_the_page(n));
-            }
             // ★★ Pass 256.1's own words for the remedy: "this letter has two
             // glyphs in this font; pick another font for it".
             Self::FontHasTwoGlyphsFor(c) => {
@@ -705,44 +721,26 @@ pub fn font_has_two_glyphs_for(character: char) -> String {
     )
 }
 
-/// ★★★ **"the same words appear 3 times on this page"** — the status bar's `⊗`
-/// sentence for `OPERATOR_REQUESTS.md` **O142**, with the count in it.
-///
-/// # What it must convey, and the order is deliberate
-///
-/// 1. **pdfcer will not guess.** The first clause carries the claim, because
-///    `app::status::disclosure::disclosure_line` truncates the slot and hangs
-///    the rest on hover — most operators read only the first clause.
-/// 2. **His document is untouched.** This refusal happens on a page he may have
-///    already signed and sent, and *"could not"* without *"nothing changed"*
-///    reads as *"something half-happened"*.
-/// 3. **What to do instead.** Which is where the sentence has to be careful.
-///
-/// # ★★ Why it does NOT tell him to use Find and Replace
-///
-/// That was the obvious remedy and it was checked before being written, on this
-/// project's standing rule that a sentence naming a remedy is a claim about the
-/// build. Find and Replace would rewrite **every** occurrence, which is the
-/// opposite of what he is asking for — he wants one of them corrected. Sending
-/// him there would trade a refusal for a wrong edit he performed himself.
-///
-/// So it names the thing that actually narrows the ambiguity: editing a **longer
-/// stretch** of the line, which is unique where the short one is not. That works
-/// today, needs no new capability, and is the same gesture he already made.
-///
-/// ★ It says *"the same words"* rather than quoting them. The words in question
-/// can be a whole line — thirty-six characters on the page he reported — and the
-/// bar's slot is 45 % of its width; a sentence that began by quoting them would
-/// truncate before it reached the part that tells him anything.
-#[must_use]
-pub fn ambiguous_on_the_page(count: usize) -> String {
-    format!(
-        "pdfcer will not change these words, because the same words appear {count} times on this \
-         page and it cannot tell which one you mean. Nothing in your document has changed. Click \
-         in the line again and include more of it in your change — a longer stretch appears only \
-         once, and pdfcer can then correct exactly the one you are looking at."
-    )
-}
+// ★★★ `ambiguous_on_the_page` LIVED HERE and was deleted on 2026-09-08.
+//
+// Forty lines arguing a sentence that no longer has an occasion: *"pdfcer will
+// not change these words, because the same words appear N times on this page
+// and it cannot tell which one you mean."* Two of its decisions are worth
+// keeping in view even though the sentence is gone, because both are about how
+// to word a refusal rather than about this one:
+//
+//   * **It did not send him to Find and Replace.** That was the obvious remedy
+//     and it was checked before being written: Find and Replace rewrites EVERY
+//     occurrence, which is the opposite of what he asked for. A sentence
+//     naming a remedy is a claim about the build.
+//   * **It said "the same words" rather than quoting them.** The words can be
+//     a whole line — thirty-six characters on the page he reported — and the
+//     status bar's slot is 45 % of its width, so a sentence that opened by
+//     quoting them would truncate before reaching the part that helps.
+//
+// `EditRequest::spanning_from` (Pass 272.0) made the ambiguity unreachable
+// from a caret: the pin says which occurrence, the find says which text, and
+// the shell no longer has to trade one for the other.
 
 #[cfg(test)]
 mod tests {
@@ -756,12 +754,15 @@ mod tests {
     /// reason: `EditRefusal::line`'s `match` is exhaustive, so a new variant is
     /// a **compile error** in the catalog before it can be a gap in this list.
     /// The list is a convenience over a closed set, not the closure itself.
-    const EVERY: [EditRefusal; 8] = [
+    /// ⚠ Seven since 2026-09-08, and the one that went was
+    /// `AmbiguousOnThePage(3)` — deleted with its subject when
+    /// `EditRequest::spanning_from` made a caret's ambiguity unreachable. The
+    /// `3` in it was itself a lesson worth keeping: it was `3` rather than `2`
+    /// on purpose, because the sentence interpolated the count and `2` is the
+    /// one value a build could hard-code and still satisfy a sweep that only
+    /// checked a number was present.
+    const EVERY: [EditRefusal; 7] = [
         EditRefusal::SplitAcrossPieces,
-        // ★ O142. `3` rather than `2` on purpose: the sentence interpolates the
-        // count, and `2` is the one value a build could hard-code and still
-        // satisfy a sweep that only checked the number was present.
-        EditRefusal::AmbiguousOnThePage(3),
         EditRefusal::UnsupportedFont,
         // ★ The character is arbitrary here on purpose: this list exists to
         // sweep the sentences, and `'q'` is the operator's own example.
@@ -843,63 +844,66 @@ mod tests {
         // stray condition added to either goes red.
         for one in [true, false] {
             for named in [Some(RefusedCharacter::NotInTheFont('q')), None] {
-                // ★ Swept over `occurrences` as well since O142: three
-                // shell-side facts now reach this function and these two
-                // buckets must ignore all of them. A condition on the newest one
-                // is the easiest to add by accident, because it is the only one
-                // whose absence carries a meaning (`None` = the pin was exact).
-                for seen in [None, Some(1), Some(2)] {
+                // ★ Swept over `stale_pin` as well: three shell-side facts
+                // reach this function and these two buckets must ignore all of
+                // them. `stale_pin` replaced `occurrences` on 2026-09-08 and
+                // inherits its place in this sweep — a condition on the newest
+                // input is the easiest to add by accident.
+                for stale in [false, true] {
                     assert_eq!(
-                        EditRefusal::of(K::StructureFrozen, one, named, seen),
+                        EditRefusal::of(K::StructureFrozen, one, named, stale),
                         EditRefusal::DocumentProtected
                     );
                     assert_eq!(
-                        EditRefusal::of(K::Other, one, named, seen),
+                        EditRefusal::of(K::Other, one, named, stale),
                         EditRefusal::Unstated
                     );
                 }
             }
         }
-        // ★ And the two that do not. `one_operator == false` means the run is
-        // written in several pieces, which is the operator's own document.
+        // ★★★ **THE FOUR `NotFound` OUTCOMES, and the split is on `stale_pin`
+        // — 2026-09-08, on the engine's own instruction.**
+        //
+        // `EditError::NoMatch` and `EditError::PinnedSpanNotFound` both arrive
+        // as `RefusalKind::NotFound` and mean opposite things:
+        //
+        //   > `PinnedSpanNotFound` — the pin names no operator. **The pin is
+        //   > wrong.** `NoMatch` — the pin is fine; the text does not *begin*
+        //   > there.
+        //
+        // ⚠ This replaced an `occurrences`-based split whose four assertions
+        // were about ambiguity outranking the split. That precedence question
+        // is gone: `EditRequest::spanning_from` disambiguates by the pin, so a
+        // caret is never ambiguous, and `AmbiguousOnThePage` went with it.
         assert_eq!(
-            EditRefusal::of(K::NotFound, false, None, None),
+            EditRefusal::of(K::NotFound, false, None, false),
             EditRefusal::SplitAcrossPieces,
-            "a split run's NotFound is the split, not a page that moved"
+            "a split run whose text does not begin at the pin is the split, not a page \
+             that moved"
         );
         assert_eq!(
-            EditRefusal::of(K::NotFound, true, None, None),
+            EditRefusal::of(K::NotFound, true, None, false),
             EditRefusal::TextMovedAway,
             "a single-operator run's NotFound has no split to blame, and claiming one \
              would be a structure this shell did not observe"
         );
-        // ★★★ O142, AND THE PRECEDENCE IS THE ASSERTION. On the page that raises
-        // this, both facts are true at once: the run is split across pieces AND
-        // the text occurs twice. Only the second is what stopped the edit —
-        // `canvas::textedit::plan` kept the pin deliberately, to make the
-        // request unmatchable rather than let the engine choose an occurrence —
-        // so a build reporting the split would be explaining its own refusal
-        // with somebody else's reason.
+        // ★★★ AND THE PRECEDENCE IS THE ASSERTION. A stale pin on a split run
+        // makes BOTH facts true — the run is written in pieces AND the pin
+        // names nothing — and only the second stopped it. Reporting the split
+        // would tell him this kind of text cannot be edited, which is false and
+        // sends him away from a document pdfcer can correct; the truth is that
+        // his caret is pointing at a page that has moved on, and the remedy is
+        // to click again.
         assert_eq!(
-            EditRefusal::of(K::NotFound, false, None, Some(2)),
-            EditRefusal::AmbiguousOnThePage(2),
-            "★ ambiguity OUTRANKS the split, and this is the ordering assertion"
-        );
-        // ★★ And `Some(1)` must NOT take that arm. One occurrence is the case
-        // where the pin was dropped and the edit was expected to land, so a
-        // `NotFound` there is the honest split refusal. A build that keyed on
-        // "`occurrences` is `Some`" rather than on the count would tell every
-        // operator of every per-glyph run on every page that his words appear
-        // once and pdfcer cannot tell which one he means.
-        assert_eq!(
-            EditRefusal::of(K::NotFound, false, None, Some(1)),
-            EditRefusal::SplitAcrossPieces,
-            "★ a UNIQUE run that still refused is the split, not an ambiguity"
+            EditRefusal::of(K::NotFound, false, None, true),
+            EditRefusal::TextMovedAway,
+            "★ a stale pin OUTRANKS the split, and this is the ordering assertion"
         );
         assert_eq!(
-            EditRefusal::of(K::NotFound, true, None, Some(2)),
-            EditRefusal::AmbiguousOnThePage(2),
-            "and ambiguity does not depend on the split: it is a fact about the PAGE"
+            EditRefusal::of(K::NotFound, true, None, true),
+            EditRefusal::TextMovedAway,
+            "and a stale pin on a single-operator run says the same thing — it is a fact \
+             about the CARET, not about how the run is written"
         );
     }
 
@@ -937,7 +941,12 @@ mod tests {
                     K::UnsupportedFont,
                     one,
                     Some(RefusedCharacter::NotInTheFont('q')),
-                    Some(2)
+                    // ★ `true` — a STALE pin, deliberately the value most
+                    // likely to leak: the font bucket must ignore it entirely,
+                    // and a build that let it through would tell an operator
+                    // whose font cannot spell his character that his caret had
+                    // gone stale.
+                    true
                 ),
                 EditRefusal::FontLacksTheCharacter('q'),
                 "a refusal naming one character is a repertoire fact, and changing the face \
@@ -954,14 +963,14 @@ mod tests {
                     K::UnsupportedFont,
                     one,
                     Some(RefusedCharacter::TwoGlyphsFor('q')),
-                    Some(2)
+                    true
                 ),
                 EditRefusal::FontHasTwoGlyphsFor('q'),
                 "an AMBIGUOUS inverse is not a missing character: the font draws it two ways \
                  and pdfcer declines to pick a glyph"
             );
             assert_eq!(
-                EditRefusal::of(K::UnsupportedFont, one, None, Some(2)),
+                EditRefusal::of(K::UnsupportedFont, one, None, true),
                 EditRefusal::UnsupportedFont,
                 "a refusal naming NO character is about the font's whole code-to-glyph \
                  relation, and no other face makes this run re-encodable"

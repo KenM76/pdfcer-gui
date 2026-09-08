@@ -882,10 +882,6 @@ impl PdfcerApp {
                 // out of the plan before the closure takes `plan` by reference,
                 // because the classification below runs inside it.
                 let one_operator = plan.one_operator;
-                // ★★★ O142 — copied out for the same reason `one_operator` is,
-                // and it is the fact that decides between two refusals both of
-                // which are true. See `canvas::textedit::Plan::occurrences`.
-                let occurrences = plan.occurrences;
                 vector_edit(doc, "edit-text", page, 1, |session| {
                     session
                         .edit_text(&plan.request, &plan.options)
@@ -907,11 +903,7 @@ impl PdfcerApp {
                         // survives and the generic one stands aside.
                         .inspect_err(|error| {
                             crate::app::status::decline::record_edit_text_refusal(
-                                page,
-                                run,
-                                one_operator,
-                                occurrences,
-                                error,
+                                page, run, one_operator, error,
                             );
                         })
                         .map(|report| {

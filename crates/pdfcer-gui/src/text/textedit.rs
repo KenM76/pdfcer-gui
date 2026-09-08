@@ -40,8 +40,7 @@ use pdfcer_core::text_edit::BlockAlignment;
 // refusals are a text-edit subject — and rewriting them all would have turned a
 // mechanical obligation into a diff nobody could review.
 pub use super::editrefusal::{
-    EditRefusal, RefusedCharacter, ambiguous_on_the_page, font_has_two_glyphs_for,
-    font_lacks_the_character,
+    EditRefusal, RefusedCharacter, font_has_two_glyphs_for, font_lacks_the_character,
 };
 
 /// The sentence for a refusal to place a caret.

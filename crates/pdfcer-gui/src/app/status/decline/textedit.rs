@@ -213,12 +213,25 @@ pub(crate) fn record_edit_text_refusal(
     page: usize,
     run: usize,
     one_operator: bool,
-    occurrences: Option<usize>,
     error: &pdfcer_core::text_edit::EditError,
 ) {
     use pdfcer_core::text_edit::RefusalClass;
 
     let kind = error.refusal_kind();
+    // ★★★ **The distinction the engine asked us to keep, 2026-09-08.**
+    //
+    // `NoMatch` and `PinnedSpanNotFound` both arrive as
+    // `RefusalKind::NotFound` and mean opposite things — *the text does not
+    // begin at your pin* versus *your pin names no operator at all*. This is
+    // the only place holding the `EditError`, so it is the only place that can
+    // tell them apart, and `EditRefusal::of` takes the answer as a fact.
+    //
+    // ⚠ Matched on the variant rather than on its `Display`: a message match
+    // is prose, and prose is the engine's to reword.
+    let stale_pin = matches!(
+        error,
+        pdfcer_core::text_edit::EditError::PinnedSpanNotFound { .. }
+    );
     let missing = missing_character(error);
     // ★★ The character itself, not a predicate over it — `EditRefusal::of`
     // took a `bool` until 2026-09-05, which meant the classification knew that
@@ -234,7 +247,7 @@ pub(crate) fn record_edit_text_refusal(
         kind,
         one_operator,
         refused_char_kind(error),
-        occurrences,
+        stale_pin,
     );
     crate::diag::trace(|| {
         // ★★★ **FLAT FIELDS, NOT `{:?}` ON A TUPLE — corrected 2026-09-05, by
@@ -278,15 +291,20 @@ pub(crate) fn record_edit_text_refusal(
             Some((c, font)) => (format!("'{c}'"), font.clone()),
             None => ("none".to_owned(), "none".to_owned()),
         };
-        // ★ A bare number, or `none` — never a debug-formatted `Option`, for
-        // the three reasons numbered above. Same field name and same spelling
-        // as `edit-text-pin`'s, so a check reading both lines compares like
-        // with like rather than parsing two dialects of one datum.
-        let occurrences = occurrences.map_or_else(|| "none".to_owned(), |n| n.to_string());
+        // ★★ `stale_pin` replaced `occurrences=` here on 2026-09-08, and it is
+        // the field a check now needs: it is the one fact that separates the
+        // two refusals `RefusalKind::NotFound` collapses together, so a build
+        // that read the category right and chose the wrong sentence is visible
+        // in the trace rather than only on screen.
+        //
+        // A bare `0`/`1`, never `{:?}` on the `bool` — the same rule that
+        // banned a debug-formatted `Option` from this line in the first place.
+
         format!(
             "edit-text-classified page={page} run={run} kind={kind:?} \
-             one_operator={one_operator} occurrences={occurrences} character={character} \
-             character_font={character_font} said={said}"
+             one_operator={one_operator} stale_pin={} character={character} \
+             character_font={character_font} said={said}",
+            u8::from(stale_pin)
         )
     });
     record_edit_text(why);
