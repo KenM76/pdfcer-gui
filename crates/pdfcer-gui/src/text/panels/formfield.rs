@@ -551,6 +551,39 @@ pub const fn label_default_value_hover() -> &'static str {
      instead. This is separate from what the field says now."
 }
 
+/// `/Q` — which end of the box the field's text sits against.
+///
+/// ★ *"Alignment"* is what Acrobat's field properties calls it and what every
+/// word processor calls it. The standard's own term is *quadding*, which is a
+/// typesetter's word and appears nowhere an operator would look.
+#[must_use]
+pub const fn label_alignment() -> &'static str {
+    "Alignment"
+}
+
+/// The three justifications, named for the operator.
+///
+/// # ★★ Why these words and not the enum's
+///
+/// `Quadding::Center` is spelled the American way because the standard is; this
+/// shell writes British English everywhere else an operator reads. Naming the
+/// variant would leak a spelling decision made by ISO into a form-properties
+/// pane, so the operator-facing word is chosen here and the enum keeps its own.
+///
+/// ★ *"Left"* rather than *"Left (default)"*. Table 222 does fix `0` as the
+/// default, but a chooser that annotates one option is making a claim about the
+/// document — and a field whose `/Q` is explicitly `0` and one with no `/Q` at
+/// all are both *left*, which is the only thing this control can honestly say.
+#[must_use]
+pub const fn quadding_name(q: pdfcer_core::vartext::Quadding) -> &'static str {
+    use pdfcer_core::vartext::Quadding as Q;
+    match q {
+        Q::Left => "Left",
+        Q::Center => "Centred",
+        Q::Right => "Right",
+    }
+}
+
 // ===========================================================================
 // The BOX — `EditSession::edit_widget`, consumed 2026-08-27
 // ===========================================================================

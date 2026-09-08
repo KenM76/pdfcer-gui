@@ -92,6 +92,7 @@
 use egui::Ui;
 use pdfcer_core::edit::FieldEdit;
 use pdfcer_core::forms::{Field, FieldFlags, FieldType};
+use pdfcer_core::vartext::Quadding;
 
 use crate::app::actions::Action;
 use crate::app::actions::forms::FieldAction;
@@ -115,6 +116,9 @@ pub const MAX_LEN_REGION: &str = "properties.field_edit.max_len";
 /// The Default value box's own region, for `ui-verify`.
 // ui-text-exempt: trace region name, never displayed
 pub const DEFAULT_VALUE_REGION: &str = "properties.field_edit.default_value";
+/// The Alignment chooser's own region, for `ui-verify`.
+// ui-text-exempt: trace region name, never displayed
+pub const ALIGNMENT_REGION: &str = "properties.field_edit.alignment";
 
 /// Draw the editable properties of the selected field.
 ///
@@ -210,6 +214,13 @@ pub fn section(
         // a control that writes the wrong PDF type — not nothing, something
         // else, which is the failure mode that gate exists for.
         default_value_row(ui, fqn, state, actions);
+        // ★ Same `FieldType::Text` gate as its neighbours. `/Q` is variable-text
+        // justification (§12.7.3.3) and applies to `/Tx` and `/Ch`; this pane
+        // offers it on text fields, where the operator can see the effect in
+        // the in-canvas editor immediately — `boxes::editor_align` has honoured
+        // `/Q` since 2026-09-04, so this control's result is visible without
+        // saving.
+        alignment_row(ui, field, fqn, actions);
     }
 
     // -- Radio buttons ------------------------------------------------------
@@ -561,6 +572,67 @@ fn default_value_row(ui: &mut Ui, fqn: &str, state: &mut PanelsState, actions: &
     }
 }
 
+/// `/Q` — which end of the box the field's text sits against.
+///
+/// # ★★★ Three named choices, not a number, and the refusal is unreachable
+///
+/// `FieldEdit::with_quadding` takes an `i64` and the engine **refuses** anything
+/// outside `0..=2` by name (`EditError::QuaddingInvalid`) rather than clamping —
+/// which is the right shape for an API and would be the wrong shape for a
+/// control. A spinner over `i64` would offer a press that fails.
+///
+/// ⇒ So this offers exactly the three `Quadding` has, and passes `code()`. The
+/// refusal cannot fire from here **by construction**, which is a better answer
+/// than wording it: R9's *"an unavailable capability renders nothing"* applied
+/// to a failure mode rather than to a feature. If a future caller can produce
+/// an out-of-range `/Q`, that caller owes the sentence — this one cannot.
+///
+/// ★★ **No draft, and that is deliberate.** [`FieldPropsDraft`]'s own doc gives
+/// the rule: a draft exists only for controls that take *typing*, because every
+/// other control reads the document each frame and a refused press therefore
+/// leaves the control where it was. A three-way chooser is a press, not typing.
+///
+/// ★ The list is `ALL_QUADDINGS` rather than three literals, for
+/// `markup::ending_chooser`'s stated reason — and
+/// [`the_alignment_list_covers_every_variant_the_engine_has`] is what stops it
+/// drifting, by matching an exhaustive set with no wildcard so a fourth
+/// justification fails to compile here rather than going quietly unoffered.
+fn alignment_row(ui: &mut Ui, field: &Field, fqn: &str, actions: &mut Vec<Action>) {
+    let current = field.quadding;
+    let mut chosen = current;
+    let response = ui
+        .horizontal(|ui| {
+            ui.label(t::label_alignment());
+            egui::ComboBox::from_id_salt("properties-field-alignment")
+                .selected_text(t::quadding_name(current))
+                .show_ui(ui, |ui| {
+                    for q in ALL_QUADDINGS {
+                        ui.selectable_value(&mut chosen, q, t::quadding_name(q));
+                    }
+                });
+        })
+        .response;
+    crate::diag::ui_rect_visible(ALIGNMENT_REGION, response.rect, ui.clip_rect());
+
+    if chosen != current {
+        actions.push(
+            FieldAction::EditProperties {
+                field: fqn.to_owned(),
+                edit: FieldEdit::new().with_quadding(chosen.code()),
+                // ui-text-exempt: a control name carried for a refusal message.
+                touched: "alignment",
+            }
+            .into(),
+        );
+    }
+}
+
+/// Every justification `/Q` can state, in the order the chooser offers them.
+///
+/// ★ Left first because Table 222 fixes it as `/Q`'s default, so the list reads
+/// in the order a document's own values do rather than in an invented one.
+const ALL_QUADDINGS: [Quadding; 3] = [Quadding::Left, Quadding::Center, Quadding::Right];
+
 /// What the typed controls hold, and the field they were read for.
 ///
 /// # ★ Why only two properties have a draft
@@ -678,6 +750,71 @@ impl FieldPropsDraft {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// ★★★ **Every justification the engine has is offered**, and a fourth one
+    /// fails to compile here rather than going quietly unoffered.
+    ///
+    /// # Why a `match` and not `assert_eq!(ALL_QUADDINGS.len(), 3)`
+    ///
+    /// A length check passes when a variant is *replaced*, and passes when the
+    /// list holds the same variant three times. What this needs to know is that
+    /// the list **covers the enum**, which only the compiler can answer — so the
+    /// match below is exhaustive with **no wildcard**, and each arm asserts the
+    /// list contains that variant.
+    ///
+    /// ⚠ This is the shape `markup::ending_chooser`'s list already uses for the
+    /// same reason, and it is the direct answer to a defect this project has on
+    /// record: **a hand-written list inside a completeness test is the gap** —
+    /// a new variant is invisible to the check built to find it, and the count
+    /// still adds up.
+    ///
+    /// ★ `Quadding` is deliberately not `#[non_exhaustive]`, which is what makes
+    /// this possible at all. If the engine ever marks it so, this test stops
+    /// compiling and that is the correct outcome: the guarantee would be gone
+    /// and pretending otherwise is what the 2026-09-07 sweep spent a night
+    /// correcting.
+    #[test]
+    fn the_alignment_list_covers_every_variant_the_engine_has() {
+        for q in ALL_QUADDINGS {
+            match q {
+                Quadding::Left | Quadding::Center | Quadding::Right => {}
+            }
+        }
+        for want in [Quadding::Left, Quadding::Center, Quadding::Right] {
+            assert!(
+                ALL_QUADDINGS.contains(&want),
+                "{want:?} is a justification the engine can write and the chooser does not offer, \
+                 so a field already using it would be shown a list that cannot restore it"
+            );
+        }
+    }
+
+    /// ★★ **The three choices map onto the three `/Q` codes the engine accepts**,
+    /// which is what makes `EditError::QuaddingInvalid` unreachable from this
+    /// pane rather than merely unhandled.
+    ///
+    /// The engine refuses anything outside `0..=2` by name instead of clamping.
+    /// That is right for an API and wrong for a control, so this pane offers the
+    /// enum rather than a number — and this test is the statement that the
+    /// mapping is total and in range.
+    #[test]
+    fn every_offered_alignment_is_a_code_the_engine_accepts() {
+        for q in ALL_QUADDINGS {
+            let code = q.code();
+            assert!(
+                (0..=2).contains(&code),
+                "{q:?} maps to /Q {code}, which `with_quadding` refuses — the chooser would be \
+                 offering a press that always fails"
+            );
+        }
+        let codes: Vec<i64> = ALL_QUADDINGS.iter().map(|q| q.code()).collect();
+        assert_eq!(
+            codes,
+            vec![0, 1, 2],
+            "the three offered choices must be the three distinct codes; a repeat here means two \
+             rows of the chooser write the same value"
+        );
+    }
 
     /// ★★ **A draft seeded from one field does not survive onto another.**
     ///

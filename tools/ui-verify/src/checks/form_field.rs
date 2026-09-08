@@ -222,6 +222,14 @@ const REQUIRED_REGION: &str = "properties.field_edit.required";
 /// and this check authors a text field, which is why the assertion is
 /// unconditional here and would not be in a check that authored a checkbox.
 const DEFAULT_VALUE_REGION: &str = "properties.field_edit.default_value";
+/// The Alignment chooser's own region — `/Q`, which end of the box the text
+/// sits against.
+///
+/// ★ Asserted in the SAME late block as [`DEFAULT_VALUE_REGION`] and for the
+/// same reason: reaching it scrolls the pane, and anything that moves the pane
+/// belongs after every phase that clicks at a computed point. That ordering was
+/// learned the expensive way — see the block's own comment.
+const ALIGNMENT_REGION: &str = "properties.field_edit.alignment";
 /// The `edit-field` label `vector_edit` writes when the change reached the
 /// engine.
 ///
@@ -1006,6 +1014,41 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     report.note(format!(
         "★★ the text field offers a Default value — `{DEFAULT_VALUE_REGION}` — so a Reset \
          button on a pdfcer-authored form has something to put back"
+    ));
+
+    // ★★ The Alignment chooser, in the same late block and for the same reason.
+    //
+    // ⇒ It is asserted SECOND because it is drawn second: scrolling for the
+    // default value has already brought the pane most of the way, so this
+    // usually costs no notches at all. Reversing the two would work and would
+    // scroll further than necessary.
+    let seen = driving::scroll_to(
+        &session,
+        &driver,
+        ui_rect,
+        PANE_REGION,
+        ALIGNMENT_REGION,
+        SCROLL_ATTEMPTS,
+        report,
+    )?;
+    let trace = session.trace()?;
+    if seen.is_none() {
+        return Ok(Some(format!(
+            "★★ THE FIELD OFFERS NO ALIGNMENT CHOOSER: `{DEFAULT_VALUE_REGION}` drew and \
+             `{ALIGNMENT_REGION}` did not.\n\
+             Both are drawn by one `fieldedit::section` call on a text field, so reaching one \
+             and not the other means the row was removed or its `FieldType::Text` gate stopped \
+             matching. ⚠ `/Q` is the one appearance property the in-canvas editor already \
+             HONOURS (`boxes::editor_align`, 2026-09-04) — so without this chooser pdfcer can \
+             show a centred field correctly and offer no way to make one. Regions declared: \
+             {}. Trace: {}.",
+            list(&declared_names(&trace, ui_rect, "properties.field_edit")),
+            session.trace_path().display()
+        )));
+    }
+    report.note(format!(
+        "★★ and an Alignment chooser — `{ALIGNMENT_REGION}` — so the justification the editor \
+         already honours can be set rather than only read"
     ));
 
     Ok(None)
