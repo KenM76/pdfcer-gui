@@ -153,6 +153,33 @@ pub struct Grabbable {
     pub outline: bool,
 }
 
+/// **Which handles a markup annotation of this `/Subtype` offers.**
+///
+/// Lifted out of [`grabbable`] on 2026-09-08 so it can be asserted without an
+/// `OpenDoc` — and lifting it is the seam this file's own header argues for:
+/// *one value, one decision, two consumers*. The painter and the hit test both
+/// receive whatever this returns.
+///
+/// ★ `""` for a selection that is not an annotation answers the full set,
+/// which is correct by construction: the only caller reaches this line inside
+/// the markup arm, so the empty string is unreachable rather than a default
+/// standing in for a real subtype.
+pub fn markup_grips(subtype: &str) -> handles::GripSet {
+    if subtype == STICKY_SUBTYPE {
+        handles::GripSet::move_only()
+    } else {
+        handles::GripSet::all()
+    }
+}
+
+/// The `/Subtype` of a sticky note, whose marker is a fixed size.
+///
+/// ★ Compared against the engine's own string rather than mapped through an
+/// enum here: `AnnotSelection::subtype` carries `/Subtype` verbatim, and a
+/// local enum would be a second vocabulary that has to be kept in step with a
+/// standard that keeps adding to it.
+const STICKY_SUBTYPE: &str = "Text"; // ui-text-exempt: a PDF /Subtype name, never displayed
+
 /// What the pointer may grab, given what is selected.
 ///
 /// ★★ The chain is ordered by **narrowness** and every link answers `None`
@@ -225,11 +252,33 @@ pub fn grabbable(
         // (§12.5.3 bit 8) and for a ce dimension, so neither reaches this arm —
         // a locked markup is offered no handles at all rather than nine that
         // the file forbids.
+        // ★★★ **…EXCEPT A STICKY NOTE, which is a fixed-size marker** —
+        // 2026-09-08, `OPERATOR_REQUESTS.md` O155.
+        //
+        // `/Text`'s `/Rect` says WHERE it is, not HOW BIG: the engine authors
+        // it `NoZoom/NoRotate` and its own doc says *"only its lower-left
+        // corner matters in practice"*. So a corner drag is a gesture with no
+        // meaning, `resize_annotation` refuses it, and it is right to.
+        //
+        // ⇒ Eight squares round it was this project's own named failure —
+        // *visible control, silently inert* — and it shipped: he grabbed a
+        // corner, dragged, and got a decline whose stated reason was **false**
+        // ("pdfcer did not draw it", about a marker pdfcer had drawn).
+        //
+        // ⚠ The subtype is read from the ENGINE's own `/Subtype`, carried on
+        // the selection, rather than from a list of kinds maintained here. A
+        // second copy of "which subtypes are fixed-size" is how the painter and
+        // the hit test come to disagree — `GripSet`'s header records the
+        // morning that happened.
+        let subtype = selection.annot().map_or("", |a| a.target.subtype.as_str());
         return Grabbable {
             bounds: Some(bounds),
-            offer: handles::GripSet::all(),
+            offer: markup_grips(subtype),
             // A markup annotation's box IS its `/Rect`.
             content: false,
+            // ★ The outline is drawn either way. A selected sticky with no
+            // outline and no grips is indistinguishable from nothing being
+            // selected, which is a worse answer than the inert handles.
             outline: true,
         };
     }
@@ -753,5 +802,68 @@ mod o69_outline_tests {
             !dimension.content && dimension.outline,
             "…and it is not `content` either: the two disagree here"
         );
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// ★★★ **A STICKY NOTE IS OFFERED NO RESIZE GRIPS, AND EVERY OTHER MARKUP
+    /// STILL IS** — `OPERATOR_REQUESTS.md` O155, 2026-09-08.
+    ///
+    /// `/Text`'s `/Rect` says **where** the marker is, not **how big**: the
+    /// engine authors it `NoZoom/NoRotate` and its own doc says *"only its
+    /// lower-left corner matters in practice"*. So `resize_annotation` refuses
+    /// a corner drag, correctly — and this shell drew eight squares round it
+    /// anyway, which is the *visible control, silently inert* failure it is
+    /// built to avoid. He met it as a decline whose stated reason was **false**
+    /// ("pdfcer did not draw it", about a marker pdfcer had drawn).
+    ///
+    /// ⚠ **Three assertions, and the third is the one that keeps this honest.**
+    /// A build that answered `move_only` for *everything* satisfies the first
+    /// two and silently removes the resize from rectangles, clouds and arrows —
+    /// the kinds that do resize, and did before this change.
+    #[test]
+    fn a_sticky_note_gets_no_resize_grips_and_every_other_markup_still_does() {
+        let sticky = markup_grips("Text");
+        assert!(
+            !sticky.resize,
+            "★★★ a sticky note must be offered NO resize grips — its marker is a fixed size, so \
+             a corner drag is a gesture with no meaning and the engine refuses it"
+        );
+        assert!(
+            !sticky.rotate,
+            "★★ …and no rotate handle either. `NoRotate` is in the same sentence as `NoZoom` in \
+             the engine's own doc; `rotate_only` is the natural wrong guess here"
+        );
+
+        for other in [
+            "Square", "Circle", "Polygon", "PolyLine", "Line", "Ink", "FreeText",
+        ] {
+            assert!(
+                markup_grips(other).resize,
+                "★★★ /{other} must keep its eight. A build that answered `move_only` for every \
+                 subtype satisfies the two assertions above and silently removes the resize \
+                 from every shape he draws"
+            );
+        }
+    }
+
+    /// ★ The subtype is matched EXACTLY, not by prefix or case.
+    ///
+    /// `/Text` is a sticky note; `/FreeText` is a text box and resizes. A
+    /// `contains` or a case-insensitive compare would catch the second with the
+    /// first — and `/FreeText` had *just* been made resizable by the engine
+    /// when this was written, so the regression would have landed on the same
+    /// day the capability did.
+    #[test]
+    fn freetext_is_not_caught_by_the_sticky_rule() {
+        assert!(markup_grips("FreeText").resize);
+        assert!(
+            markup_grips("text").resize,
+            "the match is case-sensitive, as /Subtype is"
+        );
+        assert!(!markup_grips("Text").resize);
     }
 }

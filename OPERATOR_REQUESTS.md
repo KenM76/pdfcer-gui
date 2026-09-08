@@ -214,7 +214,7 @@ doing business.
 
 ---
 
-## O155 — ◑ **MEASURED 2026-09-08 — the preview half is fixed, and the other half turned out to be an engine defect** — "when will being able to drag on the canvas resize the Text Box and Stamp"
+## O155 — ✅ **FIXED 2026-09-08 — text boxes resize now, and stickies correctly never will** — "when will being able to drag on the canvas resize the Text Box and Stamp"
 
 **Your words, 2026-09-08.**
 
@@ -236,23 +236,51 @@ handles and the turn handle. Two things were making it look otherwise:
    it"* — **about a text box pdfcer had drawn seconds earlier, in the same
    session.**
 
-   ⇒ So it is not about stamps that came from Acrobat. pdfcer does not
-   recognise its own text boxes. Sent to the engine as
-   `request_resize_annotation_says_pdfcer_did_not_draw_a_freetext_pdfcer_drew_seconds_earlier.md`.
+   ⇒ So it is not about stamps that came from Acrobat. pdfcer did not
+   recognise its own text boxes.
+
+### ✅ **The text box resizes now** — the engine fixed it within the hour
+
+They found it: pdfcer has **two families of drawing verb**, and the check for
+*"is this my own artwork?"* only knew one of them. A text box is drawn by the
+other, so it failed its own authorship test.
+
+| | before | now |
+|---|---|---|
+| **Text box** | ❌ refused | ✅ **resizes, redrawn cleanly** |
+| Rectangle, ellipse, cloud, arrow… | ✅ | ✅ |
+| Sticky note | ❌ | ❌ — **and that one is correct**, see below |
+
+### ★★ The sticky note is different, and I have fixed our side of it
+
+A sticky note is a **fixed-size marker**. Its rectangle says *where* it is, not
+*how big* — it deliberately does not grow when you zoom. So dragging its corner
+is a gesture with no meaning, and refusing it is right.
+
+⇒ What was wrong is that **pdfcer offered you the handles anyway.** You could
+grab a corner of a sticky, drag it, and get a refusal. That is a control that
+cannot work, which this project forbids.
+
+**A sticky now has no corner handles at all.** It keeps its outline so you can
+see it is selected, and you can still drag it around, which is the only thing
+its rectangle is for.
+
+★ The thing that made me notice: the refusal's *wording* was false — it claimed
+pdfcer had not drawn the sticky. Had it said "a sticky's marker is a fixed
+size", I would have read it as a design fact and taken the handles off months
+ago. Sent that back to the engine as a note.
 
 ★ The control is why this is worth telling you. Without a shape in the test I
 would have written *"text boxes cannot be resized"* — precise, confident, and
 about the wrong thing.
 
-### ⬜ And it forces a decision I cannot make yet
+### ✅ The decision it was blocking is made
 
-Right now pdfcer draws **all nine handles** on a text box, so you can grab a
-corner, drag, and get a refusal. That is honest and it is still a control that
-cannot work, which this project forbids.
+The engine's answer settled it both ways: **text boxes keep their handles**
+(they work now), and **stickies lose theirs** (they never could).
 
-Which way I fix it depends on the engine's answer: if text boxes are about to
-become resizable, the handles are right and the refusal is the bug. If they are
-not, the handles should not be there at all until they are.
+⬜ Still not driven — the corner-drag on a text box is verified against the
+engine, not yet through the window.
 
 ---
 

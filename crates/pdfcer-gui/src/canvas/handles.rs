@@ -939,6 +939,41 @@ impl GripSet {
     /// per unit — which already ships and lives on the Measure surface. This
     /// canvas deliberately offers no handle for it: a scale that is a property
     /// of a *measurement group* has no grip on one member of that group.
+    /// ★★★ **Neither — a mark that can be MOVED and nothing else.**
+    ///
+    /// Added 2026-09-08 for the sticky note, `OPERATOR_REQUESTS.md` O155.
+    ///
+    /// # The one kind on this canvas whose box does not describe it
+    ///
+    /// `/Text` — a sticky note — is drawn as a **fixed-size marker**. The
+    /// engine says so where it authors one: *"the marker is fixed-size —
+    /// NoZoom/NoRotate — so only its lower-left corner matters in practice"*.
+    /// Its `/Rect` therefore says **where** it is and not **how big** it is,
+    /// and dragging a corner of that rectangle is a gesture with no meaning:
+    /// `resize_annotation` refuses it, and would be wrong not to.
+    ///
+    /// ⇒ So it is offered no grips. **The outline is still drawn** — it has to
+    /// be, or a selected sticky is indistinguishable from an unselected one —
+    /// and the body still drags, because moving one is exactly what its `/Rect`
+    /// is for.
+    ///
+    /// ★ This is R9 in the form this project keeps meeting it: *an unavailable
+    /// capability renders nothing.* Eight squares round a marker that cannot
+    /// take a resize is the "visible control, silently inert" failure, and
+    /// until today it was shipped — the operator grabbed a corner, dragged, and
+    /// got a decline whose stated reason was **false** ("pdfcer did not draw
+    /// it", about a marker pdfcer had drawn).
+    ///
+    /// ⚠ **Not `rotate_only`**, which would be the natural guess from the ce
+    /// dimension's row: `NoRotate` is in the same sentence as `NoZoom`. A
+    /// sticky does not turn either.
+    pub const fn move_only() -> Self {
+        Self {
+            resize: false,
+            rotate: false,
+        }
+    }
+
     pub const fn rotate_only() -> Self {
         Self {
             resize: false,
