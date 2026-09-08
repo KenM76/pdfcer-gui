@@ -80,6 +80,129 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
+## O152 — ✅ **ANSWERED AND INSTRUMENTED 2026-09-08** — "does our project check for the latest version of egui to compile with?"
+
+**Your words, 2026-09-08:** *"does our project check for the latest version of
+egui to compile with?"*
+
+### The answer was no, and the reason is worth a minute
+
+`Cargo.toml` asks for `egui = "0.35"`. In Cargo that means **`>=0.35.0` and
+`<0.36.0`** — a wall, not a floor. So `cargo update` resolves the newest 0.35
+and reports everything current, **truthfully, about a question nobody meant to
+ask.** It cannot ever mention 0.36, and nothing else was looking.
+
+★ pdfcer's own crates are watched, because they live in a folder on this
+machine and move hourly. egui needed watching for the *opposite* reason: it
+only ever changes when somebody edits a line, and nobody was checking whether
+anybody should.
+
+### Where we are: **one minor release behind**, deliberately, and now recorded
+
+| | pinned | published |
+|---|---|---|
+| egui / eframe | **0.35.0** | 0.36.2 |
+
+I measured the upgrade rather than guessing at it — bumped it in a scratch
+copy, compiled, put it back. **11 compile errors, 6 files, two causes.** The
+dock, the ribbon, the panels, the canvas and the graphics layer all compiled
+untouched. That is a small change.
+
+⚠ **But it is not a safe one, and the count is misleading.** Ten of the eleven
+are the same thing: egui 0.36 removes the place a frame's Ctrl/Shift/Alt state
+was read from, so every keyboard shortcut has to read it from the keystroke
+instead. That is the exact code path that produced *"I can't delete an object"*
+— one of the two defects this whole rebuild was started over — and you use this
+program every day as your PDF reader. Shipping an unverified keyboard change to
+your working machine is the one thing that must not happen.
+
+⇒ **So: staying on 0.35 until I can drive the window and test every shortcut.**
+Well under a day of editing, rather more than that of checking, which is the
+right ratio for this and not a complaint about it.
+
+### What is now instrumented so this cannot happen again
+
+- `UI_TOOLKIT_PINS.md` — the register: what we are on, what is published, and
+  **why we are staying**. Being behind is fine; being behind without knowing
+  is not.
+- `tools/gates/check-ui-toolkit-drift.sh` — gate 32. It never asks anyone to
+  upgrade. It fails when a newer release exists that the register does not
+  mention, or when a pinned version and the documents disagree. Falsified three
+  ways before being trusted.
+
+★ It immediately found a second thing nobody knew: `egui_tiles` is pinned in
+the manifest and **no part of the program uses it** — the dock was hand-built
+instead, for a documented reason. So it was never even downloaded, and
+`MODES_AND_PANELS.md` had been sourcing its design verdicts to a library this
+program does not contain. Corrected.
+
+---
+
+## O151 — ✅ **BUILT 2026-09-08, NOT YET DRIVEN** — "the drawing page previews checkbox should never automatically turn off"
+
+**Your words, 2026-09-08:**
+
+> *"also the drawing page previews checkbox should never automatically turn
+> off. You can add a box next to the checkbox to enter a timeout value when the
+> user unchecks the draw page previews."*
+
+### ★★★ What it was doing, and why it was wrong
+
+A page that took longer than 400 ms to draw made pdfcer **untick your
+checkbox** and stop drawing every other page in the document. The number was
+hard-coded and invisible.
+
+The reasoning behind it was not stupid — you cannot know in advance which of
+your drawings is the expensive kind, pdfcer can after one page, and it did say
+so. **What it missed is that a checkbox is a record of an instruction.** Once
+pdfcer clears it, your next glance at the panel reads *"I must have turned that
+off"*, and there is nothing left that tells the two apart.
+
+### What it does now
+
+| | before | now |
+|---|---|---|
+| one expensive sheet out of 36 | **the other 35 lose their pictures** | that sheet alone has none |
+| the tick | pdfcer clears it | **only you touch it, ever** |
+| the limit | hidden 400 ms | a box beside the checkbox, `≤ 2.0 s`, 0.1–60 |
+| raising the limit | — | **re-draws the pages it skipped** |
+
+★ The default is 2.0 s rather than 0.4, and that is deliberate: it is well
+clear of the slowest page ever measured here (0.92 s, your benchmark drawing),
+because giving up on a page that *would* have finished turns a slow picture
+into no picture. On every document I have measured, the default draws
+everything.
+
+⚠ **The price, stated plainly because it is yours to pay now:** on a very dense
+drawing, twelve visible tiles at ~0.9 s each is around eleven seconds of work —
+one page per frame, with the window repainting between each. A slow grid, not a
+frozen one. That is exactly what the old rule was buying by unticking your box,
+and the number in that field is how you buy it back.
+
+### ⬜ NOT VERIFIED — what is outstanding
+
+Built, unit-tested and gated, **but not driven**, because you were at the
+machine all day and driving the window means taking the pointer. Specifically
+unproven until then:
+
+1. That the box can be **dragged** as well as typed into. I found and fixed two
+   defects in my own first draft here — it could not have been dragged at all,
+   and it would have committed once per pixel — but the fix is the kind only a
+   real pointer can confirm.
+2. That the row lays out correctly at narrow dock widths (it wraps by design).
+3. That a genuinely skipped page shows "Not finished" and its neighbours still
+   draw, on a real document rather than a constructed cache.
+
+### ⚠ One thing I did not build, and you may have meant it
+
+Your sentence could also be read as *"when I untick it, let me set how long it
+stays off before coming back"* — a snooze. I did not build that, because
+pdfcer re-ticking your box on a timer is the same act as pdfcer unticking it,
+which is what you were complaining about. If that is what you meant, say so and
+it is an hour's work.
+
+---
+
 ## O150 — ◑ **MEASURED 2026-09-08, one half explained and one half narrowed** — "I can't edit some of the text… the BOM only sometimes works"
 
 **Your words, 2026-09-08:**

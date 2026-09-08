@@ -357,6 +357,16 @@ run "check-engine-backlog" bash "$HERE/check-engine-backlog.sh"
 # which is the defect the "off by one, then by two" paragraph at the top of
 # this file records.
 run "check-engine-api-drift" bash "$HERE/check-engine-api-drift.sh"
+# ★★★ `check-ui-toolkit-drift`, added 2026-09-08, and it is the sibling of
+# the line above. `check-engine-api-drift` watches `pdfcer-core`, a PATH
+# dependency that moves hourly and cannot move unnoticed. This one watches
+# `egui`, a VERSIONED dependency that can ONLY move unnoticed — a caret
+# requirement of `"0.35"` resolves `<0.36.0`, so `cargo update` reports
+# everything current while a whole minor release goes by. The operator
+# asked "does our project check for the latest version of egui to compile
+# with?" and the honest answer was no. It is a report, not a policy: being
+# behind is fine, being behind without knowing is what fails here.
+run "check-ui-toolkit-drift" bash "$HERE/check-ui-toolkit-drift.sh"
 
 # `check-third-party-licences` regenerates THIRD_PARTY_LICENSES.md and fails if
 # the committed one differs. It is the SECOND gate written on 2026-09-01 for the

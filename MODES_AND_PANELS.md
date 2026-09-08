@@ -328,10 +328,27 @@ adding `egui_tiles` later costs the dock's internals and nothing
 operator-visible — which is the property that makes keeping this
 reversible rather than a lock-in.
 
-### Capability verdicts — egui 0.35 / egui_tiles 0.16
+### Capability verdicts — egui 0.35
 
 Assessed against the vendored crate sources and the empirical findings
 in `D:\dev\rag\egui\`.
+
+> ⚠ **This heading read "egui 0.35 / egui_tiles 0.16" until 2026-09-08, and
+> half of that platform is not in the binary.** `egui_tiles` is pinned in
+> `[workspace.dependencies]` and **no crate depends on it**, so Cargo never
+> resolves it and it is absent from `Cargo.lock`. The dock is hand-built
+> instead — the decision, and the reason it had to be taken (arena handles
+> that cannot be persisted), are in `egui-shell/src/dock/mod.rs` and
+> `dock/float.rs`.
+>
+> ⇒ So the verdicts below that turn on *what `egui_tiles` can do* are
+> assessments of a library this shell does not link. They led to the right
+> answer — build the dock by hand — by a route their own citation does not
+> describe, which is why the heading is corrected rather than the table
+> rewritten. Read a verdict citing `egui_tiles` as **"what adopting it would
+> cost"**, not as a report on the shipped build. The register and the standing
+> decision are in `UI_TOOLKIT_PINS.md`; `tools/gates/check-ui-toolkit-drift.sh`
+> now fails the build if this heading and `Cargo.lock` disagree again.
 
 | | Capability | Verdict | Cost |
 |---|---|---|---|
