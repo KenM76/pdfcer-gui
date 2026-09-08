@@ -147,7 +147,7 @@ editable nodes without being able to say whether that is forever.
 
 ---
 
-## O157 — ✅ **FIXED 2026-09-08, NOT YET DRIVEN** — "the Markup Items don't have a live preview — the bounding box stays the same size when I drag the handles"
+## O157 — ✅ **FIXED AND DRIVEN 2026-09-08** — "the Markup Items don't have a live preview — the bounding box stays the same size when I drag the handles"
 
 **Your words, 2026-09-08**, and this is the one that was a plain defect.
 
@@ -164,7 +164,20 @@ markup annotation is a thing you can select.** The resize one looked in the
 list of selected *page objects*, which is empty when what you have selected is
 a comment, so it drew nothing and had nothing to draw it around.
 
-⇒ Fixed, with a test that plants the original defect and goes red.
+⇒ Fixed, and **verified by driving the real program** now that you are off the
+machine: a new check draws a rectangle, selects it, drags its corner with the
+real mouse, and reads what got painted. **Eight preview boxes, growing from 103
+to 173 points wide** — it tracks your hand now.
+
+★★ And the check was proved able to fail: I rebuilt the binary *with the defect
+put back*, ran the same check against it, and it reported
+
+> *"NO RESIZE PREVIEW WAS DRAWN … the resize reached the engine and not one
+> preview box was published, so the operator held a corner and watched nothing
+> happen."*
+
+⇒ Which is your report, in the program's own words. A check that has never been
+seen to fail is not evidence of anything.
 
 ---
 

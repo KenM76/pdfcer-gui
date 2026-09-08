@@ -138,6 +138,11 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // the two typing checks because a run that fails here should fail
         // before paying for a keystroke that may never arrive.
         Box::new(markup_move::DraggingAMarkupMovesIt),
+        // ★★★ Its sibling, and the pairing is the point: `markup_move` proves
+        // the MOVE ghost reaches the frame and this proves the RESIZE one does.
+        // They were one arm apart in `canvas::overlay` and only the first was
+        // ever driven, which is how O154 shipped.
+        Box::new(markup_resize_preview::DraggingACommentsCornerShowsWhereItIsGoing),
         // ★ Immediately after the move, because the two share their first two
         // steps — arm the rectangle tool through `PDFCER_DIAG_INVOKE`, draw a
         // shape with one drag — and a reader who sees both fail at that step

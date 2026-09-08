@@ -280,6 +280,7 @@ pub mod markup_move;
 /// its header says why a legibility oracle cannot answer *"what colour is this"*.
 pub mod markup_palette;
 pub mod markup_rectangle;
+pub mod markup_resize_preview;
 /// ★ The three Phase 6 markup kinds that are **not drag-shaped** — Freehand,
 /// Polyline and Polygon — and the one control in this application whose
 /// availability is decided by a gesture in progress rather than by the document.
