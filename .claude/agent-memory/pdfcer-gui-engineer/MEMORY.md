@@ -71,3 +71,4 @@
 - [A contract you write for someone else's function is a claim to measure](feedback_a_contract_you_write_for_someone_elses_function_is_a_claim_to_measure.md) — a ported doc comment described the deleted code; and a suite that only tries one SIGN is not testing the value.
 - [An unevidenced excuse is worse than silence](feedback_an_unevidenced_excuse_is_worse_than_silence.md) — a check explaining an absence it never measured reads as an answered question; nobody investigates.
 - [Triage the reply channel — the engine fixes faster than we notice](feedback_triage_the_reply_channel_the_engine_fixes_faster_than_we_notice.md) — 41 replies, one hand triage: 5 docs and 3 operator strings asserting closed absences. No gate can find this.
+- [An apparent omission may be an argued decision](feedback_an_apparent_omission_may_be_an_argued_decision.md) — open the module that owns it; correcting a file's stale claims does not make its remaining claims stale.

@@ -118,9 +118,13 @@
 > * **`set_annotation_flags`** (new, `fad0d2d`) — verdict written, order fixed:
 >   **honour `LockedContents` on the way IN before offering the writer that
 >   clears it.**
-> * **`FieldRename::action_targets_retargeted` / `FieldDeletion::action_targets_orphaned`**
->   — zero hits, on verbs already called. A rename silently repoints other
->   people's buttons; a delete silently orphans them.
+> * ~~**`FieldRename::action_targets_retargeted` / `FieldDeletion::action_targets_orphaned`**~~
+>   ✅ **CONSUMED 2026-09-08.** Both worded and conditional; the rename says the
+>   buttons still work, the delete says they will *"do less than they say"*, and
+>   both admit JavaScript was not handled. ⚠ **Chain NOT driven** — the blocker
+>   is a fixture whose action names its target as a NAME STRING;
+>   `submit-button.pdf` uses an object reference, which the traversal is blind
+>   to. Named at the test site.
 > * **`FontPreflight::real_bold` / `real_italic`**, and stale prose at
 >   `textstyle.rs:75-87` (*"Bold is unreachable there through either route"*),
 >   `editrefusal.rs:534` (*"this limit is on the list to fix"* — it shipped),
