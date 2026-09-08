@@ -69,3 +69,5 @@
 - [A disclosure has a subject](feedback_a_disclosure_has_a_subject_delete_it_when_the_subject_goes.md) — when the fix removes what it explained, delete it; and never re-point it at a defect.
 - [A tripwire keyed on your own intention is not a tripwire](feedback_a_tripwire_keyed_on_your_own_intention_is_not_a_tripwire.md) — read the OTHER side's source, located through Cargo.lock so it follows the pin.
 - [A contract you write for someone else's function is a claim to measure](feedback_a_contract_you_write_for_someone_elses_function_is_a_claim_to_measure.md) — a ported doc comment described the deleted code; and a suite that only tries one SIGN is not testing the value.
+- [An unevidenced excuse is worse than silence](feedback_an_unevidenced_excuse_is_worse_than_silence.md) — a check explaining an absence it never measured reads as an answered question; nobody investigates.
+- [Triage the reply channel — the engine fixes faster than we notice](feedback_triage_the_reply_channel_the_engine_fixes_faster_than_we_notice.md) — 41 replies, one hand triage: 5 docs and 3 operator strings asserting closed absences. No gate can find this.

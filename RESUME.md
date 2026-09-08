@@ -1,34 +1,127 @@
 # RESUME — read this, then say "continue"
 
 
-> ★★★ **LAST SESSION: 2026-09-07 (afternoon). ALL FOUR OPEN REQUESTS CAME BACK
-> AND ARE CONSUMED, DRIVEN AND ARCHIVED — AND CONSUMING THEM SHIPPED A DEFECT
-> 3,852 TESTS COULD NOT SEE.** Read `git log -2 --format=%B` in full first; the
-> two commit messages are the authoritative record.
+> ★★★ **LAST SESSION: 2026-09-07 (late). FIVE DOCUMENTS AND THREE
+> OPERATOR-FACING STRINGS WERE ASSERTING ABSENCES THE ENGINE HAD ALREADY
+> CLOSED.** Read `git log -4 --format=%B` in full first; the four commit
+> messages are the authoritative record.
 >
 > **State, every number re-measured 2026-09-07 in the session that wrote this
 > block:**
 >
 > | | | measured with |
 > |---|---|---|
-> | tests | **3,852 passing, 0 failing** | `cargo test --workspace`, summing every `test result: ok. N passed` through `awk` |
+> | tests | **3,869 passing, 0 failing** | `cargo test --workspace`, summing every `test result: ok. N passed` through `awk` |
 > | gates | **31 of 31, 0 skipped** | `bash tools/gates/run-all.sh` |
-> | engine | `pdfcer-core` **v0.45.0 at `654b150`** | `grep -A3 'name = "pdfcer-core"' Cargo.lock` |
-> | shell | `279d00b`, on `origin/main` | `git log -1` |
-> | driven checks registered | **191** | `Box::new(` inside `roster.rs`'s `all()` |
-> | request channel | **`open/` holds 200 files; nothing this shell filed is unanswered** | `ls -t D:/Dev/FeatureRequests/pdfce_FeatureRequests/open \| head` |
+> | engine | `pdfcer-core` **v0.45.0 at `fad0d2d`** | `grep -A3 'name = "pdfcer-core"' Cargo.lock` |
+> | shell | `f3e285e`, on `origin/main` | `git log -1` |
+> | driven checks registered | **194** | `Box::new(` inside `roster.rs`'s `all()` — note the file holds **195**; one is outside `all()` |
+> | request channel | **`open/` holds 190 files, 41 of them `reply_*`** | `ls D:/Dev/FeatureRequests/pdfce_FeatureRequests/open \| wc -l` |
 >
-> **Released 2026-09-07 16:57** from `279d00b`: OneDrive **`pdfcer-gui1` is the
-> new build**, so **`pdfcer-gui2` (14:49) is the fallback**. GitHub
-> `v0.5.0-dev.20260907.2`, **verified from HIS side** —
+> **Released 2026-09-07 23:14** from `f3e285e`: OneDrive **`pdfcer-gui1` is the
+> new build**, so **`pdfcer-gui2` (20:18) is the fallback**. GitHub
+> `v0.5.0-dev.20260907.4`, **verified from HIS side** —
 > `gh api repos/KenM76/pdfcer-gui/releases/latest` returns that tag,
-> `prerelease: false`, zip attached. Check `releases/latest`, never
-> `gh release list`.
->
-> ⚠ The engine is **2 commits ahead** of the pin as of packaging; `cargo update`
-> and test before believing that is still true.
+> `prerelease: false`, zip attached, 22,925,156 bytes. Check `releases/latest`,
+> never `gh release list`.
 >
 > ---
+>
+> ## ★★★ THE FINDING OF THE DAY: **AN EXCUSE IN THE VOICE OF A MEASUREMENT IS
+> WORSE THAN SILENCE, BECAUSE SILENCE GETS INVESTIGATED**
+>
+> O142 (*"a click on empty paper cannot start new text"*) was found to have been
+> **fixed for two days**. `8670523` bounded `hit_test` on 2026-09-05 19:13; this
+> shell pinned an engine carrying it at `eafe88f` **three hours later**. The
+> engine's reply even said *"your dead arm at `place.rs:129` should start firing
+> with no shell edit."*
+>
+> What hid it: six lines at the tail of `the_text_tool_types_on_one_click`
+> clicked blank paper every run and, on absence, printed *"the point named an
+> existing run, which is a fact about this fixture rather than about the
+> feature"* — **having measured nothing.** Neither branch could fail.
+>
+> ⇒ That triggered a hand triage of **all 41 `reply_*` files** in `open/`, by
+> three agents. **It was not one stale row. It was a class**, and it reached the
+> operator four ways — see the commit messages. `MANUAL.md` telling him page
+> deletion would refuse to save was the worst of them.
+>
+> ## ⚠⚠⚠ THREE INSTRUMENTS IN TWO DAYS HAD STOPPED MEASURING AND STAYED GREEN
+>
+> Read this as one pattern, not three incidents:
+>
+> 1. `line_weights` — SKIPping for weeks; aimed at blank paper.
+> 2. `the_text_tool_types_on_one_click`'s blank-paper half — an unevidenced
+>    excuse on the failing branch.
+> 3. `save::tests`' page-tree guard — printing *"close the engine request and
+>    delete this test's engine half"* into a **silent SKIP** since the pin moved.
+>
+> **A SKIP is not red.** Nothing goes amber. Diff the SKIP set between runs.
+>
+> ## ⚠⚠ `#[non_exhaustive]` MEANS YOU HAVE NO COMPILE-TIME GUARANTEE, AND TWO
+> ## COMMENTS CLAIMED ONE
+>
+> Bit twice in one evening, in unrelated code:
+>
+> * `reflow_refusal`'s `_` arm was about to swallow
+>   `ReflowApplyError::PageEditedThisSession` — **the engine's reply warned
+>   about it by name**, hours after shipping it. No compile error would have
+>   fired. Fixed by routing through `ReflowDecline`, which the engine declares
+>   **not** `#[non_exhaustive]` on purpose, so the match is compiler-proved.
+> * `EngineRefusal`'s doc claimed it *"turns a new engine variant into a compile
+>   error here"*. False the day it was written and unfixable —
+>   `EncryptError::RedactionPending` fell through for three days and put
+>   `save_applying_redaction` in a draughtsman's dialog.
+>
+> ⇒ Where the engine offers an exhaustive discriminant, switch on it. Where it
+> does not, **say so plainly and let `check-engine-api-drift` be the alarm.**
+>
+> ## ★★ NO GATE CAN CATCH THIS CLASS ON THE CHANNEL AS IT STANDS
+>
+> `check-stale-blockers` detects *"we wired it and forgot the row"* and
+> structurally cannot detect *"the engine fixed it and we never noticed"*. And
+> none can be built: `open/` holds 41 replies whose names share **no key** with
+> the 57 `done_*CONSUMED*` markers, while its README still declares *"open/ …
+> EMPTY = NOTHING IS OWED"*.
+>
+> ⇒ The engine session has said, unprompted, that it has the identical problem,
+> an owed unbuilt tool (`R242`'s `check-requests-scoped.py`), and that **a
+> shared key between the two naming conventions is the obvious fix and neither
+> side can adopt it unilaterally**. ★ It explicitly invited the note. **Send it.**
+>
+> ---
+>
+> ## ⬜ WHAT THE TRIAGE FOUND AND THIS SESSION DID NOT FIX
+>
+> All verified by grep, all with `file:line` in the commit messages:
+>
+> * **`FillOutcome::applied_autosize_bound` / `AutoFitBound`** — zero hits here.
+>   Its **`Floor`** case means *the text will overflow*, and is invisible in this
+>   shell while `OPERATOR_REQUESTS.md` O86 tells him, under a ✅, that pdfcer says
+>   which way it decided. **Highest-value of the remainder.**
+> * **`preview_font_resources_for` / `Std14Entry` / `standard_14`** — zero hits;
+>   `pin.rs:424` still calls the old three-arg verb. `panels/properties/face.rs`
+>   states as fact that *"the engine offers no query that coverage-tests a face
+>   the page does not carry"*, which is exactly what shipped.
+> * **Widget `/MK /BG` + `/BC`** — `MkColor` still unconsumed; the two source
+>   comments are corrected but the **shaded field still turns grey while it is
+>   being edited**. `ENGINE_BACKLOG.md` carries the row.
+> * **`set_annotation_flags`** (new, `fad0d2d`) — verdict written, order fixed:
+>   **honour `LockedContents` on the way IN before offering the writer that
+>   clears it.**
+> * **`FieldRename::action_targets_retargeted` / `FieldDeletion::action_targets_orphaned`**
+>   — zero hits, on verbs already called. A rename silently repoints other
+>   people's buttons; a delete silently orphans them.
+> * **`FontPreflight::real_bold` / `real_italic`**, and stale prose at
+>   `textstyle.rs:75-87` (*"Bold is unreachable there through either route"*),
+>   `editrefusal.rs:534` (*"this limit is on the list to fix"* — it shipped),
+>   `FEATURES.md:1070`, `OPERATOR_REQUESTS.md:619-631`, and three
+>   `ENGINE_BACKLOG.md` rows asserting a pin that has moved.
+>
+> ---
+>
+> ## The 2026-09-07 AFTERNOON block, kept below — its numbers are superseded by the table above
+>
 >
 > ## ★★★ THE FINDING OF THE DAY: **A CONTRACT YOU WRITE FOR SOMEBODY ELSE'S
 > FUNCTION IS A CLAIM TO MEASURE, NOT TO CARRY OVER**
