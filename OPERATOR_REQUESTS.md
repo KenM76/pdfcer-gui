@@ -214,7 +214,7 @@ doing business.
 
 ---
 
-## O155 — ◑ **MEASURED, PART FIXED 2026-09-08** — "when will being able to drag on the canvas resize the Text Box and Stamp"
+## O155 — ◑ **MEASURED 2026-09-08 — the preview half is fixed, and the other half turned out to be an engine defect** — "when will being able to drag on the canvas resize the Text Box and Stamp"
 
 **Your words, 2026-09-08.**
 
@@ -223,15 +223,36 @@ handles and the turn handle. Two things were making it look otherwise:
 
 1. **No preview** (O157 above). You dragged, nothing moved on screen, and the
    only way to know it worked was to let go. Fixed.
-2. ⬜ **Some of them genuinely refuse**, and this half is still open. pdfcer
-   will not stretch a picture it did not draw itself — a stamp that came from
-   Acrobat, for instance — unless you tell it that a squashed border is
-   acceptable, because there is no such thing as a border that is thicker
-   left-to-right than top-to-bottom in PDF.
+2. ★★★ **They refuse — ALL of them — and the reason is not what I told you.**
+   Measured, with a control:
 
-⇒ Next step is mine: find out which of *your* stamps and text boxes fall into
-(2), and either widen what pdfcer will re-draw or make the refusal say so at
-the moment you drag rather than after.
+   | drawn by pdfcer as | resizes? |
+   |---|---|
+   | a rectangle, ellipse, cloud, arrow… | ✅ yes, redrawn cleanly at the new size |
+   | **a Text box** | ❌ refused |
+   | **a Sticky note** | ❌ refused |
+
+   And the refusal says *"pdfcer did not draw it, so pdfcer will not redraw
+   it"* — **about a text box pdfcer had drawn seconds earlier, in the same
+   session.**
+
+   ⇒ So it is not about stamps that came from Acrobat. pdfcer does not
+   recognise its own text boxes. Sent to the engine as
+   `request_resize_annotation_says_pdfcer_did_not_draw_a_freetext_pdfcer_drew_seconds_earlier.md`.
+
+★ The control is why this is worth telling you. Without a shape in the test I
+would have written *"text boxes cannot be resized"* — precise, confident, and
+about the wrong thing.
+
+### ⬜ And it forces a decision I cannot make yet
+
+Right now pdfcer draws **all nine handles** on a text box, so you can grab a
+corner, drag, and get a refusal. That is honest and it is still a control that
+cannot work, which this project forbids.
+
+Which way I fix it depends on the engine's answer: if text boxes are about to
+become resizable, the handles are right and the refusal is the bug. If they are
+not, the handles should not be there at all until they are.
 
 ---
 
