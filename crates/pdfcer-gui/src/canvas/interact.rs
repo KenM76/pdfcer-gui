@@ -967,6 +967,25 @@ pub(super) fn interact(
         // 2026-08-28 for the reason every other arm here states: this is
         // wiring, and the rules are unit-tested without a window.
         GestureOutcome::Resize { grip, delta, phase } => {
+            // ★ The next link after `canvas-press`, added 2026-09-08 while
+            // chasing the `resize_scales_a_shape` red. `canvas-press` proved
+            // the press MEANS Resize; this proves whether the gesture machine
+            // ever turns that meaning into an outcome, which is the step
+            // between "understood correctly" and "acted on".
+            crate::diag::trace_changed(RESIZE_ARM_SLOT, || {
+                // ui-text-exempt: diagnostic trace, never displayed.
+                format!(
+                    // ui-text-exempt: diagnostic trace, never displayed.
+                    "canvas-resize-arm grip={} dx={:.1} dy={:.1} phase={}",
+                    grip.name(),
+                    delta.x,
+                    delta.y,
+                    match phase {
+                        crate::canvas::gesture::Phase::InFlight => "InFlight",
+                        crate::canvas::gesture::Phase::Complete => "Complete",
+                    }
+                )
+            });
             pv.resize_ghost = crate::canvas::resizing::drag(
                 crate::canvas::resizing::Frame {
                     // ★ Read live from `egui::Memory`, at the frame the commit
@@ -1442,3 +1461,6 @@ pub(super) fn interact(
     store_gesture(&ctx, gestures);
     (count, tokens)
 }
+
+/// Trace slot for the resize arm's entry — see its call site.
+const RESIZE_ARM_SLOT: &str = "canvas-resize-arm"; // ui-text-exempt: trace slot name, never displayed

@@ -737,6 +737,53 @@ pub fn look(
         caps,
     );
 
+    // ★★★ **WHAT THIS PRESS WAS UNDERSTOOD TO BE** — 2026-09-08, the
+    // instrument `HANDOFF_20260908_RESIZE.md` asks for.
+    //
+    // Until this line **every press on this canvas was unobservable.** The
+    // open `resize_scales_a_shape` red presents as *"the grip drag committed
+    // nothing and declined nothing"*, and nothing anywhere said what the press
+    // became instead — so four separate explanations were reached by reading
+    // source, and all four were wrong.
+    //
+    // ⇒ The inputs AND the outcome on one line, because the fault can be in
+    // either and only the pair distinguishes them:
+    //
+    //   * `grip=none`            — the hit test missed: `handles::grip_at_in`,
+    //                              or the box it was handed.
+    //   * `grip=SE drag=Handle`  — a rung above Resize claimed it. The content
+    //                              arm matches `(None, Some(grip))`, so
+    //                              `handle` OUTRANKS `grip`, and on a
+    //                              rectangle the corner node lies exactly
+    //                              where the corner grip is.
+    //   * `drag=Resize`          — read correctly; the fault is downstream in
+    //                              `canvas::resizing` or the apply arm.
+    //
+    // ★ `trace_changed`, not `trace`: this runs on every frame the pointer is
+    // over the canvas, and an unconditional line would bury the interesting
+    // transition under thousands of identical ones.
+    //
+    // ★★ Names, never `{:?}` — see `DragKind::name`.
+    crate::diag::trace_changed(PRESS_SLOT, || {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        format!(
+            "canvas-press grip={} handle={} markup_grip={} widget_grip={} \
+             markup_body={} markup_node={} dimension={} annot_rotate={} zoom={} \
+             drag={} click={}",
+            grip.map_or("none", handles::Grip::name),
+            u8::from(handle.is_some()),
+            u8::from(markup_grip),
+            u8::from(widget_grip),
+            u8::from(markup_body),
+            u8::from(markup_node.is_some()),
+            u8::from(dimension.is_some()),
+            u8::from(annot_rotate.is_some()),
+            u8::from(zoom::region_zoom_armed(ctx)),
+            meaning.drag.map_or("none", gesture::DragKind::name),
+            u8::from(meaning.click),
+        )
+    });
+
     Press {
         grip,
         handle,
@@ -744,6 +791,13 @@ pub fn look(
         meaning,
     }
 }
+
+/// Trace slot for the once-per-change press summary.
+///
+/// ★ Its own slot rather than sharing one: `trace_changed` keys on the slot, so
+/// two unrelated lines sharing one would suppress each other, and the
+/// suppression looks exactly like the event never happening.
+const PRESS_SLOT: &str = "canvas-press"; // ui-text-exempt: trace slot name, never displayed
 
 #[cfg(test)]
 mod o69_outline_tests {

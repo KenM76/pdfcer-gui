@@ -3,6 +3,60 @@
 **Written 2026-09-08, end of session. Shell `7361d79`, engine `00ddbb1`.**
 **The PC is free — drive.**
 
+> ## ★★★ UPDATE, SAME EVENING — THE INSTRUMENT WAS BUILT AND IT ANSWERED ON ITS FIRST RUN
+>
+> §4 asked for a trace of the assembled `Press`. It exists now
+> (`canvas-press`, `canvas/pressing.rs`), plus a second at the resize arm
+> (`canvas-resize-arm`, `canvas/interact.rs`). Re-running the failing check
+> produced this, and it **narrows the fault to one link**:
+>
+> ```text
+> canvas-press grip=none handle=0 … drag=TextSelect click=1
+> canvas-press grip=none handle=0 … drag=Marquee    click=1
+> canvas-press grip=Move handle=0 … drag=Move       click=1
+> canvas-press grip=SE   handle=0 … drag=Resize     click=1     ← the press is RIGHT
+>
+> canvas-resize-arm …                                            ← ZERO. never fires.
+> ```
+>
+> ### What that eliminates
+>
+> | | |
+> |---|---|
+> | the grip hit test | ✅ **works** — `grip=SE` |
+> | the `handle`-outranks-`grip` precedence (§4's hypothesis) | ✅ **not the cause** — `handle=0` |
+> | `press_kind`'s rung order | ✅ **works** — `drag=Resize` |
+> | `canvas::resizing::drag` | **never called** — no ghost, no `resize-*` line of any kind |
+>
+> ⇒ **§4's hypothesis is dead too. That is five.** The press is understood
+> perfectly and the fault is entirely downstream of it.
+>
+> ### Where it now is, exactly
+>
+> Between `press_kind` returning `DragKind::Resize(SE)` and
+> `canvas/interact.rs`'s `GestureOutcome::Resize` arm — i.e. inside
+> **`canvas::gesture`'s drag state machine** (`gesture/mod.rs`, and
+> `gesture/outcome.rs:425` where `DragKind::Resize` becomes
+> `GestureOutcome::Resize`).
+>
+> ★ And the drag became **nothing at all**, not something else: the trace holds
+> no move, no transform and no marquee outcome for that gesture. So the
+> question is not *"which other kind claimed it"* — it is *"why did the machine
+> produce no outcome"*.
+>
+> ⚠ `gesture/mod.rs`'s own contract is the first thing to read:
+> *"`press_kind` is consulted **only** on the frame a drag starts"*, and
+> *"a press starts a drag and returns `Idle`. Nothing else."* **The four
+> `canvas-press` lines are HOVER states** — the slot fires on change, so what
+> is recorded is the sequence of meanings as the pointer travelled, not
+> necessarily the meaning sampled on the press frame.
+>
+> ⇒ **The next instrument is one line**: trace what `GestureState` latched when
+> the drag started. If it latched `Move` or `Marquee` from a frame before the
+> pointer reached the corner, that is a stale-sample defect and it explains
+> everything. **Measure it; do not conclude it.** Five stories have died here.
+
+
 > **Read this whole file before touching anything.** Its value is not the
 > hypothesis at the bottom; it is the four things that are already *disproved*,
 > each of which was confident, specific and reached by reading code instead of

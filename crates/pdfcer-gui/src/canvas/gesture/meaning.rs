@@ -333,6 +333,41 @@ pub enum DragKind {
     Place(crate::canvas::placing::PlaceKind),
 }
 
+impl DragKind {
+    /// **The variant's stable name, for the trace** — deliberately not `{:?}`.
+    ///
+    /// `Debug` on `Resize(SouthEast)` renders with brackets, and this value
+    /// goes into a `key=value` line a driven check parses. A `Debug` spelling
+    /// in a parsed field is banned in this tree, and not as a style rule: it
+    /// has produced **two** false failure reports here, one of which reported
+    /// the opposite of the truth while quoting the truth in its own message.
+    ///
+    /// ★ The **kind** and not the payload. *"Which grip"* is already in the
+    /// `grip=` field beside it, and two spellings of one fact can disagree.
+    ///
+    /// ⚠ Exhaustive with no wildcard, on purpose. A new drag kind is then a
+    /// compile error here rather than a press that traces as something it is
+    /// not — which is the failure this function exists to end.
+    #[must_use]
+    pub const fn name(self) -> &'static str {
+        match self {
+            Self::Marquee(_) => "Marquee",
+            Self::Move => "Move",
+            Self::TextBox => "TextBox",
+            Self::Resize(_) => "Resize",
+            Self::Rotate => "Rotate",
+            Self::Handle { .. } => "Handle",
+            Self::DimensionVertex { .. } => "DimensionVertex",
+            Self::MarkupVertex { .. } => "MarkupVertex",
+            Self::TextSelect => "TextSelect",
+            Self::Markup(_) => "Markup",
+            Self::TextAnnot(_) => "TextAnnot",
+            Self::Form(_) => "Form",
+            Self::Place(_) => "Place",
+        }
+    }
+}
+
 /// What a press means, given the tool, what it landed on and what is armed —
 /// **the whole precedence, in one pure function.**
 ///
