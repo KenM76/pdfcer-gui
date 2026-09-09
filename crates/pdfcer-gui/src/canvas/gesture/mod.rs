@@ -248,6 +248,41 @@ impl GestureState {
     /// state machine that silently dropped a gesture it had already started
     /// would be wrong regardless of whether anything could reach it.
     pub fn update(&mut self, frame: PointerFrame, press: PressMeaning) -> GestureOutcome {
+        // ★★★ **WHAT THE MACHINE SAW, AND WHAT IT HOLDS** — 2026-09-08, the
+        // second instrument `HANDOFF_20260908_RESIZE.md` asks for.
+        //
+        // `canvas-press` (in `canvas::pressing`) proved a grip press is
+        // understood as `Resize`; `canvas-resize-arm` (in `canvas::interact`)
+        // proved the arm that acts on a `Resize` outcome never runs. This line
+        // is the link between them: the raw frame signals egui delivered, the
+        // meaning the press carried on THAT frame, and the kind the machine is
+        // holding. Every explanation for the gap is distinguishable here —
+        //
+        //   * `started=0` on every frame — egui never called it a drag on THIS
+        //     response; some other widget took the press.
+        //   * `started=1 drag=none`       — the meaning went stale or forbidden
+        //     between the hover and the press frame.
+        //   * `started=1 drag=Resize … held=none` afterwards — the latch itself.
+        //
+        // `trace_changed`, because this runs every frame the canvas is hovered;
+        // the flags flip on exactly the frames that matter and nowhere else.
+        crate::diag::trace_changed(GESTURE_SLOT, || {
+            // ui-text-exempt: diagnostic trace, never displayed.
+            format!(
+                // ui-text-exempt: diagnostic trace, never displayed.
+                "canvas-gesture started={} dragging={} stopped={} clicked={} pos={} origin={} drag={} click={} held={}",
+                u8::from(frame.drag_started),
+                u8::from(frame.dragging),
+                u8::from(frame.drag_stopped),
+                u8::from(frame.clicked),
+                u8::from(frame.pos.is_some()),
+                u8::from(frame.press_origin.is_some()),
+                press.drag.map_or("none", DragKind::name),
+                u8::from(press.click),
+                self.drag.map_or("none", |d| d.kind.name()),
+            )
+        });
+
         if frame.cancel && self.drag.take().is_some() {
             return GestureOutcome::Cancelled;
         }
@@ -323,6 +358,13 @@ impl GestureState {
         self.drag.map(|d| d.kind)
     }
 }
+
+/// Trace slot for the once-per-change gesture-machine summary.
+///
+/// Its own slot: `trace_changed` keys on the slot, so sharing `canvas-press`'s
+/// would make each line suppress the other's, and a suppressed line looks
+/// exactly like the frame never happening.
+const GESTURE_SLOT: &str = "canvas-gesture"; // ui-text-exempt: trace slot name, never displayed
 
 #[cfg(test)]
 mod tests {

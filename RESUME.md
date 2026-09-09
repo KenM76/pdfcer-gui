@@ -1,5 +1,77 @@
 # RESUME — read this, then say "continue"
 
+> ★★★ **LAST SESSION: 2026-09-08, late evening. THE RESIZE RED IS FIXED, AND
+> THE CAUSE WAS A CONTROL NOBODY COULD SEE.** Read `git log -3 --format=%B`
+> and the RESOLVED box at the top of `HANDOFF_20260908_RESIZE.md` first.
+>
+> **State, every number re-measured 2026-09-08 in the session that wrote this block:**
+>
+> | | | measured with |
+> |---|---|---|
+> | tests | **3,894 passing, 0 failing, 47 ignored** | `cargo test --workspace`, summing every `test result` through `awk` |
+> | gates | **32 of 32, 0 skipped** | `bash tools/gates/run-all.sh` |
+> | engine | `pdfcer-core` **0.49.0 at `00ddbb1`** — the engine tree's HEAD, so the pin is current | `grep -A3 'name = "pdfcer-core"' Cargo.lock`; `git -C D:/Dev/pdfcer log -1` |
+> | driven checks registered | **196** | `Box::new(` inside `checks/roster.rs`'s `all()` — the file holds **197** |
+> | request channel | **198 files open, 43 of them `reply_*`** — nothing new since the handoff | `ls …/open \| wc -l` |
+> | smoke-launch | ✅ off-screen, `a1-titleblock.pdf`, page drawn, no panic, killed by PID+path | `PDFCER_DIAG_VIEWPORT="-4200,-4200,1400,900"` |
+>
+> ⚠ **Ken came to the PC mid-session** (`/loop` note: headless only). The
+> 29-check regression sweep was killed at 14 of 29 by PID; its verdicts were
+> never written (the harness prints them at the end). What IS driven and green
+> on this build: `resize_scales_a_shape` (the subject), and from the first sweep
+> `delete_key_after_canvas_click`, `dragging_a_markup_moves_it`,
+> `rotating_a_markup_turns_it`. **The other 25 geometry/gesture checks are
+> unverified against the new scroll bars** — run them the moment the PC is free:
+> the command is in `HANDOFF_20260908_RESIZE.md` §2 with `--check` repeated.
+>
+> ## ★★★ THE FINDING: THE PRESS NEVER REACHED THE CANVAS
+>
+> egui's default **floating** scrollbar allocates no width, draws nothing until
+> hovered, and `interact`s the outer **10 pt** of the scroll area *after* the
+> content with `CLICK | DRAG`; a press anywhere on it centres the handle on the
+> pointer — a scroll jump. At fit zoom the page edge sits 6 pt inside the
+> viewport edge, so the sheet border's SE grip was drawn on an invisible control
+> that took the press first. One new trace line (`canvas-gesture`,
+> `gesture/mod.rs`) said it in one run: `started=0 … origin=1`.
+>
+> ⇒ **Explanation 2 in the handoff was RIGHT and was "disproved" by a number
+> compared against the window instead of the viewport** (outline 428 px; the
+> canvas viewport was 444 px wide). Memory:
+> `feedback_a_disproof_is_a_measurement_too_and_the_dead_hypothesis_was_the_truth`.
+>
+> **Fix:** solid, always-visible bars beside the page (`present.rs::scroll_style`).
+> **It exposed a second defect on its first run:** `fit::placement` measured the
+> centre against the inner viewport and placed against the outer, creeping the
+> page **7.4 px/frame** — half the 14 pt bar — because its exact-compare resize
+> gate is held open by a **0.1–0.5 pt central-panel width jitter**. Every canvas
+> viewport is now derived from one `inner_avail` measurement. Both in
+> `D:/dev/rag/egui/` (`a_floating_scrollbar_is_an_invisible_control…`,
+> `a_measure_and_place_pair_against_two_viewport_sizes…`).
+>
+> ## WHAT TO DO NEXT, in his likely order
+>
+> 1. **Publish.** Six operator-facing fixes are unshipped (O150–O158's five plus
+>    this). `python tools/package-portable.py --note "…"` — GitHub AND OneDrive,
+>    from a clean tree; verify `releases/latest` from HIS side.
+> 2. **Drive the 25 unverified checks** when the PC is free (above).
+> 3. **The central-panel width jitter** — measured, source unknown. It flickers
+>    the fit zoom in its last digit and runs `fit::placement` every frame.
+>    Instrument the dock's right edge; do not theorise.
+> 4. **Delete the annotation spec route** (~600 lines, `ENGINE_BACKLOG.md`
+>    row 299; symbols: `Plan::spec_is_more_faithful`, `carried_options`,
+>    `copy_as_spec`, `Action::PasteMarkup`'s apply arm). Headless, unit-tested.
+> 5. **`canvas.selection-outline` is published twice per frame** with two rects
+>    — re-decide the shared name (handoff §3.4).
+>
+> ## WHAT NOT TO DO
+>
+> - **Do not `taskkill /IM pdfcer-gui.exe`.** Kill by PID, verified by path.
+> - **Do not weaken `resize_scales_a_shape`'s aim.** A page-sized selection is
+>   now the regression test for the scrollbar defect; its warning says so.
+> - **Do not run a driven sweep while he is at the PC.** Smoke-launch off-screen.
+> - **Do not disprove a hypothesis with a number whose reference you did not
+>   write down.**
+
 > ★★★ **START HERE: READ `HANDOFF_20260908_RESIZE.md` FIRST.** It is the
 > troubleshooting brief for the one open problem — `resize_scales_a_shape` is
 > red, it blocked a release, and **four explanations for it are already

@@ -50,7 +50,7 @@
 // ever stops being that, the glob is the thing that will look wrong.
 use super::*;
 
-use egui::{Pos2, Rect, Sense, scroll_area::ScrollSource, vec2};
+use egui::{Pos2, Rect, Sense, Vec2, scroll_area::ScrollSource, vec2};
 use egui_shell::HandlerToken;
 
 use crate::app::actions::Action;
@@ -216,9 +216,27 @@ fn show_in(
     // dragged to nothing would otherwise produce a zero or negative
     // viewport, and `fit_scale` would fall back to actual size on a window
     // the operator is still resizing — a visible jump at the end of a drag.
+    //
+    // ★★★ **MEASURED INSIDE THE SCROLL BARS** — 2026-09-08. The canvas's bars
+    // are solid and take real width (see [`scroll_style`]), so the room the
+    // page actually has is the outer size **minus** `allocated_width()` on
+    // each axis. Every viewport this function reads is derived from this one
+    // number — the fit here, `vp` below, and the `viewport_size` the scroll
+    // area reports back — so the three cannot disagree. They disagreed for one
+    // build: the fit was sized against the outer, the frame was recorded
+    // against the inner, the centre rule placed against the outer, and the
+    // page crept **7 px per frame** — half the bar's 14 pt — until it left the
+    // screen. Measured on the driven `resize_scales_a_shape` run, not reasoned.
+    //
+    // The style is set HERE, before anything measures, because
+    // `allocated_width()` reads it; setting it beside the `ScrollArea` builder
+    // forty lines down would leave this measurement reading egui's floating
+    // default (allocation 0) and the mismatch would be back.
+    ui.style_mut().spacing.scroll = scroll_style();
+    let inner_avail = ui.available_size() - Vec2::splat(ui.spacing().scroll.allocated_width());
     let viewport = (
-        (ui.available_width() - CANVAS_MARGIN).max(1.0),
-        (ui.available_height() - CANVAS_MARGIN).max(1.0),
+        (inner_avail.x - CANVAS_MARGIN).max(1.0),
+        (inner_avail.y - CANVAS_MARGIN).max(1.0),
     );
 
     // Resolve a fit mode against THIS frame's viewport. Under
@@ -327,9 +345,24 @@ fn show_in(
         scroll_source.mouse_wheel = false;
     }
 
+    // ★★★ **THE SCROLL BARS ARE SOLID AND BESIDE THE PAGE, NEVER OVER IT** —
+    // 2026-09-08, the cause of the `resize_scales_a_shape` red after five
+    // wrong explanations. See [`scroll_style`] for the measurement. The style
+    // itself is applied at the top of this function, where the viewport is
+    // measured, because the measurement depends on it.
     let mut scroll_area = egui::ScrollArea::both()
         .id_salt("page-canvas") // ui-text-exempt: internal widget id, never displayed
-        .scroll_source(scroll_source);
+        .scroll_source(scroll_source)
+        // ★ Always, not when needed. The content is the strip plus O23's
+        // pasteboard — a whole viewport each side — so it exceeds the viewport
+        // on every frame below the deep tier and the bars would show anyway.
+        // Saying so outright makes the space they take a CONSTANT of the
+        // layout rather than a value that appears one frame after the content
+        // does, which is the shape of R128 (`D:/dev/rag/egui/`, fit-zoom
+        // feedback): a viewport that changes size because of what was drawn
+        // in it is a fit zoom that recomputes, which moves the page under a
+        // click the operator has already aimed.
+        .scroll_bar_visibility(egui::scroll_area::ScrollBarVisibility::AlwaysVisible);
 
     // Which tool the primary button is in this frame — the select tool, or the
     // hand (chosen, or borrowed for as long as the space bar is down). Read
@@ -370,7 +403,11 @@ fn show_in(
     // solves expect, and `geometry::strip_offset` converts their answer back.
     // The conversion is exact, and under `Single` it is the identity. See
     // `geometry`'s header for the whole argument.
-    let vp = ui.available_size();
+    // ★ The INNER size — `inner_avail`, measured above with the bars taken
+    // off. `ui.available_size()` here is the outer, and every margin term in
+    // `geometry` and every centre in `fit::placement` is derived against this
+    // number, so it must be the room the content will actually get.
+    let vp = inner_avail;
     // The page the pending zoom anchor was armed against, and that page's
     // drawn size — which is what `zoom::consume_anchor` must compare its
     // recorded size against, for the same reason.
@@ -497,6 +534,9 @@ fn show_in(
         // BEFORE the scroll area is built — never `avail`, which is measured
         // inside it and therefore depends on whether scrollbars are showing,
         // which the pasteboard is what causes. That feedback is R128.
+        // (Since 2026-09-08 the bars are always visible and `vp` is measured
+        // with their allocation already taken off, so the two agree — but the
+        // rule stands: `vp` is the one measurement, `avail` is egui's echo.)
         // ★★ TIER 3 takes the content down to the viewport. There is then
         // nothing for egui to scroll and nothing for it to round: the
         // position is the anchor's, and the strip is placed from it below.
@@ -1251,4 +1291,68 @@ fn show_in(
             viewport: scroll_output.inner_rect,
         }),
     )
+}
+
+/// The canvas's scroll-bar style: **solid, visible, and outside the page**.
+///
+/// # ★★★ The defect this closes, measured on the real binary
+///
+/// egui's default `ScrollStyle` is [`egui::style::ScrollStyle::floating`]:
+/// the bars allocate no space, are drawn **over** the content, and are fully
+/// transparent until hovered (`dormant_handle_opacity: 0.0`). Their press
+/// target is nonetheless real on every frame the bar is shown — egui 0.35's
+/// `scroll_area.rs:1316` interacts with `outer_rect.with_min_x(max_cross -
+/// bar_width)`, the rightmost **10 logical points** of the viewport, with
+/// `Sense::CLICK | Sense::DRAG` — and a press anywhere on it centres the handle
+/// on the pointer (`scroll_area.rs:1405`), i.e. **jumps the scroll**.
+///
+/// At a fit zoom the page's right edge sits a few points inside the viewport's
+/// right edge — measured: page `max.x = 726.0` against viewport `max.x = 732.0`
+/// — which is **inside that invisible band**. So the south-east grip of any
+/// object that reaches the page's edge (the sheet border, a full-bleed image,
+/// a title block) was drawn on top of a control the operator could not see and
+/// that took the press first. The trace read, on the press frame:
+///
+/// ```text
+/// canvas-press   grip=SE … drag=Resize            ← the press was understood
+/// canvas-gesture started=0 dragging=0 … origin=1  ← and never delivered
+/// canvas rect=… off=[442.3 1045.9]                ← the view jumped 453 pt
+/// canvas-unavailable reason=nothing-visible       ← and the page left the screen
+/// ```
+///
+/// No resize event, no decline, and the drag became a scroll — which is what
+/// `resize_scales_a_shape` had been reporting as *"committed nothing and
+/// declined nothing"*, and what five successive explanations reached by
+/// reading source all failed to find. **A control drawn under an invisible
+/// control is unreachable in silence** — the same finding as the pop-up that
+/// slid back over its own anchor (`feedback_a_window_over_the_thing_it_describes…`).
+///
+/// # Why solid rather than a reserved margin under floating bars
+///
+/// A margin would fix the *fit* case and leave every other zoom able to put
+/// the page edge under the band after a pan. Solid bars take their own strip
+/// **outside** `inner_rect` (`bar_inner_margin + bar_width` = 14 pt, see
+/// [`egui::style::ScrollStyle::allocated_width`]), so the page can never be
+/// under them at any zoom — and the geometry already expects this: O78 gave
+/// [`crate::canvas::zoom::CanvasFrame`] separate `viewport` (inner) and `outer`
+/// sizes precisely so a bar taking real width would not land the fit centre
+/// half a bar off. This is also the convention of the product class: Acrobat,
+/// Word and every Windows document viewer draw their bars beside the page,
+/// never over it, and never transparent.
+///
+/// # The two halves the dock already learned
+///
+/// Mirrors `egui-shell`'s panel-body style, and for the two reasons its RAG
+/// entry records (`D:/dev/rag/egui/scrollstyle_solid_draws_the_handle_in_bg_fill…`):
+/// `solid()` alone draws the handle in `widgets.inactive.bg_fill`, which on a
+/// light theme is near-white on near-white, so `foreground_color` makes it
+/// inherit the theme's text contrast — no raw colour, so the theme gate stays
+/// green — and `bar_width: 10.0` matches the dock so the two look like one
+/// application.
+#[must_use]
+fn scroll_style() -> egui::style::ScrollStyle {
+    let mut scroll = egui::style::ScrollStyle::solid();
+    scroll.foreground_color = true;
+    scroll.bar_width = 10.0;
+    scroll
 }

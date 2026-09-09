@@ -299,8 +299,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                 {
                     " ⚠ THAT IS ESSENTIALLY THE WHOLE PAGE — the click almost certainly \
                      selected the sheet's own border rather than a shape on it, so the grip \
-                     is at the page corner and this drag aimed off the canvas. Re-run with a \
-                     --doc-point over a SMALL shape before reading the accusation below."
+                     is at the page's own edge. Until 2026-09-08 that edge sat under egui's \
+                     FLOATING scroll bar — invisible, and first in line for the press — so \
+                     the drag scrolled the view instead (`canvas::present::scroll_style`). \
+                     A page-sized selection is now the regression test for that, so do NOT \
+                     re-aim: read `canvas-gesture` in the trace. `started=0` with `origin=1` \
+                     means something other than the canvas took the press."
                 } else {
                     ""
                 },

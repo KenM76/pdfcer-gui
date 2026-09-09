@@ -1,5 +1,54 @@
 # HANDOFF — `resize_scales_a_shape` is red, and four explanations for it were wrong
 
+> ## ★★★ RESOLVED, 2026-09-08 late evening — the press never reached the canvas
+>
+> **The cause was egui's default FLOATING scrollbar.** It allocates no width,
+> draws nothing until hovered, and `interact`s the rightmost/bottom **10 pt**
+> of the scroll area with `CLICK | DRAG` *after* the content
+> (`egui-0.35.0/src/containers/scroll_area.rs:1316–1334`); a press anywhere on
+> that band centres the handle on the pointer (`:1405`) — a scroll jump. At
+> fit zoom the page's right edge sits 6 pt inside the viewport edge, so the
+> sheet border's SE grip was drawn on top of an invisible control that took
+> the press first. The trace that named it (one new line, `canvas-gesture`,
+> in `gesture/mod.rs`):
+>
+> ```text
+> canvas-press   grip=SE … drag=Resize            ← understood
+> canvas-gesture started=0 dragging=0 … origin=1  ← never delivered to the canvas's Response
+> canvas rect=… off=[442.3 1045.9]                ← scroll jumped 453 pt on the press frame
+> canvas-unavailable reason=nothing-visible       ← page left the screen
+> ```
+>
+> **⚠ Explanation 2 below was RIGHT in substance and was killed by a wrong
+> comparison.** *"428 × 302 px is nowhere near the canvas"* compared the
+> outline to the window; the canvas viewport was **444 × 592** and the outline
+> filled its width. A disproof is a measurement too — record what it compared
+> against (`feedback_a_disproof_is_a_measurement_too…` in agent memory).
+>
+> **Fix** (`canvas/present.rs::scroll_style`): solid bars, `foreground_color`,
+> 10 pt, `ScrollBarVisibility::AlwaysVisible` — beside the page, never over it,
+> the Acrobat/Word convention. **That exposed a second defect on its first
+> run:** with a bar of real width, `fit::placement` measured the centre against
+> `inner_rect` and placed it against the pre-area outer, and the page crept
+> **7.4 px per frame** (half the 14 pt allocation) because the exact-compare
+> resize gate was held open by a 0.1–0.5 pt central-panel width jitter. Fixed
+> by measuring ONE viewport before the area — `inner_avail = available −
+> allocated_width()`, style set first — and deriving the fit viewport, `vp`,
+> and the frame record from it. `CanvasFrame::outer == viewport` now by
+> construction; its doc carries the history.
+>
+> Both findings are in `D:/dev/rag/egui/` (`a_floating_scrollbar_is_an_invisible_control…`,
+> `a_measure_and_place_pair_against_two_viewport_sizes…`). The check's own
+> whole-page warning now describes the real mechanism and tells the reader
+> NOT to re-aim — a page-sized selection is the regression test.
+>
+> **Still open, measured, not chased:** the central-panel width oscillates
+> 0.1–0.5 pt frame to frame (`central-panel rect max.x` 732.0/732.3/732.4) with
+> `dock.right` unchanged, which flickers the fit zoom in its last digit
+> (0.1737↔0.1739) and runs `fit::placement` every frame. Harmless now that the
+> pair is consistent (±0.3 px shimmer), but it is a loop and its source is
+> unknown. Instrument, don't theorise.
+
 **Written 2026-09-08, end of session. Shell `7361d79`, engine `00ddbb1`.**
 **The PC is free — drive.**
 

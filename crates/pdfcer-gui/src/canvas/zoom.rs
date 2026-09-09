@@ -183,6 +183,25 @@ pub struct CanvasFrame {
     /// ⇒ Two fields, one question each: `viewport` is *how much room the
     /// content had*, this is *how much room the canvas had*. The centre rule
     /// uses this one at both ends.
+    ///
+    /// # ★★★ 2026-09-08 — the two are now EQUAL by construction, and why
+    ///
+    /// The canvas's scroll bars became solid (`canvas::present::scroll_style`),
+    /// and a solid bar takes real width — the situation the paragraph above
+    /// was written for and, with egui's floating default allocating **zero**,
+    /// had never actually met. On the first build where it did, the frame was
+    /// recorded against the inner size, the centre was measured against this
+    /// outer one, and the page **crept 7 px per frame** — half the 14 pt bar
+    /// allocation — until it left the screen. Measured on a driven run.
+    ///
+    /// The repair was not to choose between the two but to make the question
+    /// go away: `canvas::present` now measures ONE viewport, `inner_avail =
+    /// available − allocated_width()`, before the scroll area is built, and
+    /// derives the fit viewport, `vp`, and therefore this field from it — so
+    /// `outer == viewport` on every frame, and every margin term in
+    /// `geometry` is derived against the room the content actually got.
+    /// The field is kept, with its history, so the next reader who finds two
+    /// names for one number knows it was once two numbers and why it is not.
     pub outer: (f32, f32),
 }
 

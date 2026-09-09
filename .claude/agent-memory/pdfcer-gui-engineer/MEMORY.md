@@ -78,3 +78,4 @@
 - [An `||` between two required conditions asserts neither](feedback_an_or_between_two_required_conditions_asserts_neither.md) — it looks like tolerance of a rewording; only a per-clause falsification finds it.
 - [A check whose input is chosen for convenience tests the assertion](feedback_a_check_whose_input_is_chosen_for_convenience_tests_the_assertion.md) — "what is typed does not matter" is a finding, not a justification; prefer the awkward character.
 - [A wrong refusal sentence hides a defect in whoever believes it](feedback_a_wrong_refusal_sentence_hides_a_defect_in_whoever_believes_it.md) — a refusal about the KIND should change what the surface offers; one about the FILE should not.
+- [A disproof is a measurement too](feedback_a_disproof_is_a_measurement_too_and_the_dead_hypothesis_was_the_truth.md) - five hypotheses died; the second was the truth, killed by a number compared against the WINDOW not the viewport. Trace what the framework DELIVERED first.
