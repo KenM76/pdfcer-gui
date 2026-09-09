@@ -1147,7 +1147,19 @@ impl PdfcerApp {
             font_change: None,
             markup_change: None,
             panels: crate::panels::PanelsState::default(),
-            find: crate::find::FindState::default(),
+            // ★ Seeded from the preference file, once, here — not synced
+            // every frame the way `smart_select` is. The difference is where
+            // the live value lives: `smart_select`'s lives in `egui::Memory`
+            // because the canvas reads it from places that hold a context and
+            // nothing else, so it has to be pushed in each frame. This one
+            // lives on `FindState`, which the app owns outright, so the file
+            // is only ever consulted at construction and `Action::SetFindZoom`
+            // writes back the other way. O163, 2026-09-09.
+            find: {
+                let mut find = crate::find::FindState::default();
+                find.set_zoom_on_jump(prefs.find_zoom_on_jump);
+                find
+            },
             dialogs: crate::dialogs::DialogsState::default(),
             settings,
             settings_store,

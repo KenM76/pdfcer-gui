@@ -80,6 +80,57 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
+## O163 — ✅ **BUILT 2026-09-09, NOT YET DRIVEN** — "add a checkbox option to our search bar called zoom - when I unchecked just jump to the page and highlight the found item as before but don't change the zoom"
+
+**Your words, 2026-09-09.**
+
+### What was actually happening, because it was not the search
+
+Nothing in the search code has ever set a zoom. What changed it was **Fit
+page**. Fit page re-computes the scale on every frame from the size of the
+sheet you are looking at, so the moment a search lands you on a differently
+sized sheet, the zoom jumps by the ratio of the two. A drawing set with a
+letter-size cover in front of A1 sheets is exactly that document — measured on
+this repository's own four-page test file, page 1 is 2384×1684 pt and page 4 is
+306×396, a 7.8× swing.
+
+So the fix is not to set a number. It is to **stop following the fit** at the
+moment of the jump, which leaves the zoom exactly where you had it.
+
+### What you have now
+
+A checkbox named **Zoom** in the find bar's **Options** menu, under a separator
+below Wildcards. **On by default** — that is the behaviour every build before
+today had, so nothing changes unless you switch it off.
+
+With it **off**: Next/Previous and a fresh search still change the page and
+still highlight the hit; the zoom stays where you left it.
+
+Two things worth knowing, both deliberate:
+
+- **The zoom readout stops saying *Fit page* and shows a percentage.** That is
+  disclosure, not a side effect: holding the zoom while still claiming to be in
+  Fit page would be pdfcer lying about its own state in the one place you can
+  check it. The checkbox's tooltip says so.
+- **Stepping between two hits on the same sheet does not touch the fit at all**,
+  because there is nothing to hold — the same sheet fits to the same scale.
+
+The setting is remembered between sessions (`find_zoom_on_jump` in the
+preferences file, which carries its own comment explaining it).
+
+### ✅ Covered by tests — ⬜ NOT DRIVEN
+
+Ten unit tests in `find::reveal` and two in `find::bar`, and each guard was
+**falsified** — the guard was removed and the specific test confirmed to go
+red. That found a real gap on the way: the third guard was originally
+unobservable, so it could have been deleted with the whole suite still green.
+It now reports what it did and the test reads the report.
+
+Not driven through the window: you were at the machine, and a driven check
+takes the desktop. The `ui-verify` check that asserts the zoom readout is
+identical either side of a find jump on a mixed-size set is the outstanding
+work.
+
 ## O153 — ✅ **BUILT 2026-09-08, NOT YET DRIVEN** — a follow-on from O150: two identical lines on one page can now be told apart
 
 Not something you asked for — it came out of measuring O150 — but it is a real

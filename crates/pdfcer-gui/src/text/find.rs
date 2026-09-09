@@ -272,7 +272,7 @@ pub fn options() -> &'static str {
 /// out whether it is worth opening.
 #[must_use]
 pub fn options_tooltip() -> &'static str {
-    "Case sensitivity, whole-word matching and wildcards. They are in a menu so this bar stays narrow enough to sit over the page without hiding it."
+    "Case sensitivity, whole-word matching, wildcards, and whether going to a hit may change the zoom. They are in a menu so this bar stays narrow enough to sit over the page without hiding it."
 }
 
 /// The case-sensitivity control's label.
@@ -332,6 +332,48 @@ pub fn wildcards_tooltip() -> &'static str {
      matches any digit and `?` matches any single character, so `A#` finds `A1` and `A7`. \
      Note that redaction always matches literally: a pattern search can highlight hits that \
      redaction would decline to mark."
+}
+
+/// The zoom control's label.
+///
+/// ★ **The operator named this control.** His words, 2026-09-09: *"add a
+/// checkbox option to our search bar called zoom — when I uncheck it just jump
+/// to the page and highlight the found item as before but don't change the
+/// zoom."* A request that carries a name is a request for that name, so the
+/// label is the word he used and the tooltip carries the explanation.
+///
+/// Phrased as the thing the operator switches **on**, like its three siblings
+/// — see [`match_case`]. On is what this build has always done; off is the new
+/// answer he asked for.
+#[must_use]
+pub fn find_zoom() -> &'static str {
+    "Zoom"
+}
+
+/// Hover text for the zoom control.
+///
+/// ★ **It names the mechanism, because the mechanism is not guessable.**
+///
+/// Nothing in Find has ever set a zoom. What changes the zoom on a jump is
+/// **Fit page** / **Fit width** still being switched on: a fit is a standing
+/// instruction to re-scale to whatever page is showing, so landing on a sheet
+/// of a different size re-scales, and on a drawing set whose sheets are not
+/// all the same size that is a large jump. An operator reading at a size they
+/// chose experiences that as Find having zoomed them out.
+///
+/// So the tooltip says the two consequences of switching it off rather than
+/// describing an implementation: the reading size is kept, and the view stops
+/// following the fit. The second half is disclosure — turning this off *does*
+/// change a setting the operator can see in the zoom readout, and a control
+/// that quietly dropped Fit width without saying so would be the shell being
+/// sneaky about its own state.
+#[must_use]
+pub fn find_zoom_tooltip() -> &'static str {
+    "On by default. Going to a hit lands on whatever page it is on, and if Fit page or Fit \
+     width is switched on the view re-scales to that page — so on a set whose sheets are \
+     different sizes, the zoom changes. Switch this off and going to a hit keeps the size you \
+     are reading at: the page still changes and the hit is still highlighted, but the view \
+     stops following the fit and the zoom readout shows the percentage instead."
 }
 
 /// The caption in front of the whole-word rule chooser.

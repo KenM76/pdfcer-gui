@@ -465,7 +465,7 @@ pub enum Readout {
 ///
 /// Lives on [`crate::app::PdfcerApp`]; see this module's header for why the
 /// query outlives a document and the hits do not.
-#[derive(Debug, Default, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct FindState {
     /// Whether the bar is on screen.
     open: bool,
@@ -486,6 +486,52 @@ pub struct FindState {
     /// every frame would make it impossible to click anything else while the
     /// bar is open, which is the classic way a find bar becomes a trap.
     focus_wanted: bool,
+    /// ★ **Whether going to a hit is allowed to change the zoom** — the
+    /// operator's *Zoom* control, `OPERATOR_REQUESTS.md` **O163**, 2026-09-09.
+    ///
+    /// Deliberately **not** a field of [`FindOptions`], and the separation is
+    /// the point: [`bar`]'s options menu re-runs the search whenever a
+    /// [`FindOptions`] field changes, because every one of them changes *what
+    /// matches*. This one changes nothing about the answer — only what the
+    /// view does with it — so re-running would be a whole-document text
+    /// extraction charged for a navigation preference. It is also why
+    /// [`Results`]' currency test does not read it: results computed before
+    /// the operator toggled this are still exactly correct.
+    ///
+    /// ★ **`true` is the shipped default**, and that is the *old* behaviour
+    /// rather than a new preference: nothing in this module has ever set a
+    /// zoom, so `true` means *"do not intervene"* and `false` means
+    /// *"intervene, to hold the zoom still"*. See [`reveal::reveal_current`]
+    /// for what the intervention is and why a **fit** is the thing being held
+    /// off.
+    ///
+    /// The **persisted** half lives in [`crate::app::prefs::Prefs`]
+    /// (`find_zoom_on_jump`) and is mirrored into here once, at startup — the
+    /// same two-homes design `view.smart_select` documents, minus the
+    /// `egui::Memory` hop, because this value is only ever read from a place
+    /// that already holds the [`FindState`].
+    zoom_on_jump: bool,
+}
+
+/// ★ Hand-written rather than derived, for exactly one field.
+///
+/// `#[derive(Default)]` would give [`FindState::zoom_on_jump`] `false`, which
+/// is the **opposite** of what ships — and it would do it silently, in a way
+/// no test that did not name the field could see. That is the same hazard
+/// [`FindOptions::default`] is hand-written for, one struct up, and it is why
+/// the derive was removed here rather than the field being stored inverted.
+impl Default for FindState {
+    fn default() -> Self {
+        Self {
+            open: false,
+            query: String::new(),
+            options: FindOptions::default(),
+            results: None,
+            focus_wanted: false,
+            // ★ The behaviour every build before 2026-09-09 had.
+            zoom_on_jump: true,
+        }
+    }
 }
 
 impl FindState {
@@ -570,6 +616,29 @@ impl FindState {
     /// same rule that a changed query does. One currency test, three inputs.
     pub fn set_options(&mut self, options: FindOptions) {
         self.options = options;
+    }
+
+    /// Whether going to a hit may change the zoom. See
+    /// [`Self::zoom_on_jump`](FindState#structfield.zoom_on_jump).
+    #[must_use]
+    pub fn zoom_on_jump(&self) -> bool {
+        self.zoom_on_jump
+    }
+
+    /// Set the *Zoom* control.
+    ///
+    /// ★ **Does not touch the results, and must not.** The three
+    /// [`FindOptions`] controls make the standing hit list wrong, which is why
+    /// changing one re-runs the search; this one does not change which glyphs
+    /// matched. Clearing the results here would throw away a correct answer
+    /// and make the operator search again to get the same list back.
+    ///
+    /// Two callers: `PdfcerApp::new`, mirroring the persisted preference in at
+    /// startup, and the `Action::SetFindZoom` arm, carrying the operator's
+    /// click. Both go through here rather than writing the field so there is
+    /// one place to read when the value is wrong.
+    pub fn set_zoom_on_jump(&mut self, on: bool) {
+        self.zoom_on_jump = on;
     }
 
     /// Forget everything that describes a *document*, keeping everything that

@@ -54,6 +54,7 @@ use egui::{Rect, Vec2};
 use crate::app::state::OpenDoc;
 use crate::canvas::geometry;
 use crate::find::FindState;
+use crate::viewer::FitMode;
 
 /// How many frames a pending [`Reveal`] waits for its page to arrive before
 /// it is abandoned.
@@ -105,6 +106,10 @@ pub(super) fn reveal_current(state: &FindState, doc: &mut OpenDoc) {
     };
     let page = hit.page;
     let centre = hit.canvas.map(|r| r.center());
+    // The return value is deliberately discarded here. It exists so the tests
+    // can see the third guard, which changes nothing a test could otherwise
+    // assert on — see the function's own note.
+    let _held = hold_the_zoom_if_asked(state, doc, page);
     doc.view.go_to_page(page, doc.pages.len());
 
     // A hit whose page would not project has no centre to scroll to. The page
@@ -141,6 +146,105 @@ pub(super) fn reveal_current(state: &FindState, doc: &mut OpenDoc) {
             frac.0, frac.1
         )
     });
+}
+
+/// ★★★ **Hold the zoom still across a find jump, when the operator has asked
+/// for that** — the *Zoom* control, `OPERATOR_REQUESTS.md` **O163**.
+///
+/// # What actually changes the zoom, because it is not this module
+///
+/// Nothing in `find` has ever called `set_zoom`, and this function does not
+/// either. The zoom changes on a jump because **a fit mode is still switched
+/// on**: [`crate::viewer::ViewState::apply_fit`] runs on *every* frame from
+/// `canvas::present`, recomputing the zoom from the extent of whatever page is
+/// showing. Land on a sheet of a different size and it re-scales, by exactly
+/// the ratio of the two sheets.
+///
+/// That is not a hypothetical. This repository's own `fixtures/four-pages.pdf`
+/// carries three page sizes — **measured 2026-09-09**: page 1 is 2384×1684 pt,
+/// pages 2 and 3 are 612×792, page 4 is 306×396. Under the shipped default of
+/// [`FitMode::Page`] a jump from page 1 to page 2 moves the zoom by 3.9×, and
+/// from page 1 to page 4 by 7.8×. A drawing set with a letter-size cover sheet
+/// in front of A1 sheets is the same document. The operator's report was of a
+/// search that "changed the zoom"; the cause is a fit doing precisely what a
+/// fit is for, on a page he did not choose to go to.
+///
+/// ★ The **engine's** `pageops/four-pages.pdf`, which most of the tests in
+/// this module open through `open_fixture`, is four *identical* 612×792 pages
+/// and cannot show the effect at all. The tests for this function therefore
+/// open the local file through `open_local_fixture` instead — a distinction
+/// that is easy to lose because the two fixtures share a name.
+///
+/// # So the intervention is to stop following the fit, not to set a number
+///
+/// `set_fit(FitMode::None)` leaves [`crate::viewer::ViewState::zoom`] exactly
+/// as it is and stops `apply_fit` from touching it again. The operator keeps
+/// the size they were reading at, on the new page.
+///
+/// ★ **This deliberately changes a visible setting**, and that is disclosure
+/// rather than a side effect: the status bar's zoom readout stops saying *Fit
+/// page* and starts showing the percentage. A build that held the zoom while
+/// still *claiming* to be in Fit page would be lying about its own state in
+/// the one place the operator can check it. The control's tooltip says this
+/// will happen, in [`crate::text::find::find_zoom_tooltip`].
+///
+/// # Three guards, and each one is a case where doing nothing is correct
+///
+/// - **The control is on** — the default, and the behaviour every build before
+///   2026-09-09 had. Nothing happens, so an operator who never opens the
+///   options menu is unaffected.
+/// - **The page is not changing.** Stepping between two hits on the same sheet
+///   cannot re-fit, because `apply_fit` would compute the identical scale from
+///   the identical extent. Dropping the fit anyway would take the operator out
+///   of Fit width for pressing *Next* — a setting silently changed for
+///   nothing.
+/// - **No fit is active.** The zoom is already pinned; there is nothing to
+///   hold off, and assigning `FitMode::None` over `FitMode::None` would still
+///   emit a `find-zoom-held` trace line saying an intervention happened — a
+///   harness reading that line would believe it.
+///
+/// Called from [`reveal_current`] **before** `go_to_page`, because the second
+/// guard is a question about the page the operator is leaving.
+///
+/// # ★ Why it returns a `bool` nobody in the shipped path reads
+///
+/// Because the third guard is otherwise **unobservable to a test**, and an
+/// unobservable guard is one that can be deleted with every check still green.
+/// Deleting it changes exactly one thing: a trace line on stderr that a unit
+/// test cannot capture. Under that guard's own conditions the acting branch
+/// would assign `FitMode::None` over `FitMode::None` and leave `zoom` alone, so
+/// *every* piece of document state a test could assert on is identical either
+/// way. That was measured, not assumed: with the guard removed, all ten tests
+/// in this module still passed.
+///
+/// So the function reports what it did, the tests read the report, and
+/// [`reveal_current`] discards it. That is the cheapest way to make a real
+/// guard falsifiable without a stderr capture harness.
+fn hold_the_zoom_if_asked(state: &FindState, doc: &mut OpenDoc, target: usize) -> bool {
+    if state.zoom_on_jump() || target == doc.view.page_index || doc.view.fit == FitMode::None {
+        return false;
+    }
+    let held = doc.view.zoom;
+    // ★ A stable token, not `{:?}`. A `Debug` rendering is a spelling the
+    // compiler is free to change when a variant is renamed, and this line is
+    // read by a machine — see `HANDOFF.md` on the driven check that reported
+    // the opposite of the truth while quoting the truth, from a `{:?}` tuple.
+    let dropped = match doc.view.fit {
+        // ui-text-exempt: diagnostic trace field values, never displayed
+        FitMode::None => "none",
+        FitMode::Page => "page",
+        FitMode::Width => "width",
+        FitMode::Height => "height",
+    };
+    doc.view.set_fit(FitMode::None);
+    crate::diag::trace(|| {
+        format!(
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            "find-zoom-held zoom={held:.4} was-fit={dropped} from={} to={target}",
+            doc.view.page_index
+        )
+    });
+    true
 }
 
 /// ★ **The scroll offset that puts a pending reveal in the middle of the
@@ -353,6 +457,172 @@ mod tests {
             doc.find_reveal.is_none(),
             "a reveal that cannot be spent must be dropped, not held"
         );
+    }
+
+    // =======================================================================
+    // Holding the zoom across a jump — O163
+    // =======================================================================
+
+    /// The viewport every test in this section fits into. Any size would do;
+    /// it is fixed so the two arms of a comparison see the same one.
+    const VIEWPORT: (f32, f32) = (900.0, 700.0);
+
+    /// Land on `page` **the way the canvas does**: change the page, then apply
+    /// whatever fit is still switched on against *that page's* extent.
+    ///
+    /// ★ This reproduces the part of the frame the defect lives in rather than
+    /// asserting around it. Checking only that `fit` became `FitMode::None`
+    /// would prove this module agrees with itself; running the fit afterwards
+    /// proves the number the operator reads actually held still, which is what
+    /// he asked for.
+    fn land_on(doc: &mut OpenDoc, page: usize) {
+        doc.view.go_to_page(page, doc.pages.len());
+        let extent = doc
+            .pages
+            .get(page)
+            .map_or((0.0, 0.0), crate::viewer::page_extent_pts);
+        doc.view
+            .apply_fit(extent, VIEWPORT, crate::viewer::MAX_ZOOM);
+    }
+
+    /// The local four-page fixture, already settled on page 1 under `fit`,
+    /// with a find state whose *Zoom* control is at `zoom_on_jump`.
+    ///
+    /// `open_local_fixture`, **not** `open_fixture` — see the ★ on
+    /// [`hold_the_zoom_if_asked`] for why the engine fixture of the same name
+    /// cannot show this effect.
+    fn settled(fit: FitMode, zoom_on_jump: bool) -> (FindState, OpenDoc) {
+        let mut doc = crate::app::state::open_local_fixture("four-pages.pdf");
+        doc.view.set_fit(fit);
+        land_on(&mut doc, 0);
+        let mut state = FindState::default();
+        state.set_zoom_on_jump(zoom_on_jump);
+        (state, doc)
+    }
+
+    /// ★★ **The control OFF holds the zoom across a jump between differently
+    /// sized sheets** — the whole of O163, asserted as the operator sees it.
+    ///
+    /// Page 1 of the fixture is 2384×1684 pt and page 4 is 306×396, so under
+    /// Fit page the zoom would otherwise move by 7.8×. The assertion is
+    /// **exact equality**, not a tolerance: nothing is supposed to touch the
+    /// number at all, so any drift at all is a second code path that should
+    /// not exist.
+    #[test]
+    fn the_control_off_holds_the_zoom_across_a_jump() {
+        let (state, mut doc) = settled(FitMode::Page, false);
+        let before = doc.view.zoom;
+        assert!(hold_the_zoom_if_asked(&state, &mut doc, 3), "it must act");
+        land_on(&mut doc, 3);
+        assert_eq!(
+            doc.view.zoom, before,
+            "the operator asked for the zoom to be left alone"
+        );
+        assert_eq!(doc.view.page_index, 3, "the page still changed");
+        assert_eq!(
+            doc.view.fit,
+            FitMode::None,
+            "holding the zoom means the view stopped following the fit, and the readout must say so"
+        );
+    }
+
+    /// ★★ **The control ON is the behaviour every build before 2026-09-09
+    /// had** — its shipped default, and the arm that proves the test above is
+    /// measuring something.
+    ///
+    /// Without this, `the_control_off_holds_the_zoom_across_a_jump` would pass
+    /// on a build where the fixture happened not to re-fit at all.
+    #[test]
+    fn the_control_on_lets_the_fit_re_scale_as_it_always_did() {
+        let (state, mut doc) = settled(FitMode::Page, true);
+        let before = doc.view.zoom;
+        assert!(
+            !hold_the_zoom_if_asked(&state, &mut doc, 3),
+            "the first guard must decline"
+        );
+        land_on(&mut doc, 3);
+        assert!(
+            doc.view.zoom > before * 2.0,
+            "page 1 is 2384 pt wide and page 4 is 306 pt, so Fit page must re-scale: {before} -> {}",
+            doc.view.zoom
+        );
+        assert_eq!(
+            doc.view.fit,
+            FitMode::Page,
+            "nothing was held, so nothing may change the fit"
+        );
+    }
+
+    /// ★ **Stepping between two hits on the same sheet does not drop the
+    /// fit** — the second guard.
+    ///
+    /// `apply_fit` would compute the identical scale from the identical
+    /// extent, so there is nothing to hold off, and dropping the fit anyway
+    /// would take the operator out of Fit page for pressing *Next*: a setting
+    /// silently changed for no benefit at all.
+    #[test]
+    fn a_step_within_one_page_leaves_the_fit_alone() {
+        let (state, mut doc) = settled(FitMode::Page, false);
+        let before = doc.view.zoom;
+        assert!(
+            !hold_the_zoom_if_asked(&state, &mut doc, 0),
+            "the second guard must decline"
+        );
+        assert_eq!(doc.view.fit, FitMode::Page, "the page is not changing");
+        assert_eq!(doc.view.zoom, before);
+    }
+
+    /// ★ **With no fit active there is nothing to hold, and nothing is
+    /// touched** — the third guard.
+    ///
+    /// Asserted rather than assumed because the acting branch would otherwise
+    /// assign `FitMode::None` over `FitMode::None` and emit a `find-zoom-held`
+    /// trace line claiming an intervention that did not happen — which a
+    /// harness reading that line would believe.
+    #[test]
+    fn no_fit_active_means_no_intervention() {
+        let (state, mut doc) = settled(FitMode::None, false);
+        let before = doc.view.zoom;
+        // ★★ The whole of this test. Every other assertion below is true
+        // whether the guard is present or not — measured — so without this
+        // line the guard could be deleted with the suite still green.
+        assert!(
+            !hold_the_zoom_if_asked(&state, &mut doc, 3),
+            "with no fit active there is nothing to hold, and a build that reported an \
+             intervention would put a `find-zoom-held` line on the trace that never happened"
+        );
+        land_on(&mut doc, 3);
+        assert_eq!(doc.view.fit, FitMode::None);
+        assert_eq!(
+            doc.view.zoom, before,
+            "a pinned zoom is already pinned, on any page"
+        );
+    }
+
+    /// ★ **Fit width is held too, not only Fit page.**
+    ///
+    /// The guard tests `fit == FitMode::None`, so every other mode is meant to
+    /// be covered by the one branch. This is the check that it was not written
+    /// as `== FitMode::Page`, which would pass every test above.
+    #[test]
+    fn fit_width_is_held_as_well_as_fit_page() {
+        let (state, mut doc) = settled(FitMode::Width, false);
+        let before = doc.view.zoom;
+        assert!(hold_the_zoom_if_asked(&state, &mut doc, 3), "it must act");
+        land_on(&mut doc, 3);
+        assert_eq!(doc.view.zoom, before);
+        assert_eq!(doc.view.fit, FitMode::None);
+    }
+
+    /// ★ **The shipped default is ON**, so an operator who never opens the
+    /// options menu sees exactly what every build before 2026-09-09 did.
+    ///
+    /// [`FindState`] carries a hand-written `Default` for precisely this;
+    /// `#[derive(Default)]` would give `false` and quietly change the
+    /// behaviour of everyone who has no preference file yet.
+    #[test]
+    fn the_shipped_default_leaves_the_zoom_free() {
+        assert!(FindState::default().zoom_on_jump());
     }
 
     /// The solve centres the hit: a hit at the middle of a page bigger than

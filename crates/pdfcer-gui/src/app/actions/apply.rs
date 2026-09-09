@@ -248,6 +248,27 @@ impl PdfcerApp {
                 }
                 return;
             }
+            // ★ Matched HERE — above the `Status::Open` guard below — because
+            // this is a **preference**, not a document action. The Find bar is
+            // reachable with nothing open, and a setting that silently failed
+            // to stick in that state would be the worst kind of defect: it
+            // would work most of the time.
+            //
+            // The live value is already in `self.find`; the bar wrote it in the
+            // frame that raised this. This arm exists for the file.
+            Action::SetFindZoom(on) => {
+                self.prefs.find_zoom_on_jump = on;
+                // Immediately, and the failure is swallowed, exactly as
+                // `view.smart_select` argues: one discrete operator decision is
+                // one write, and losing a preference across a restart does not
+                // justify a modal in front of somebody who is searching.
+                let _ = self.prefs.save();
+                crate::diag::trace(|| {
+                    // ui-text-exempt: diagnostic trace, never displayed in the UI
+                    format!("find-zoom-persisted on={on}")
+                });
+                return;
+            }
             _ => {}
         }
 
@@ -317,7 +338,7 @@ impl PdfcerApp {
             // open. Spelled out rather than folded into a catch-all so that a
             // new variant added to the enum still fails to compile here.
             // ui-text-exempt: a panic message, read from a stack trace by
-            // whoever moved one of these two arms. Never rendered.
+            // whoever moved one of these arms. Never rendered.
             Action::Open(_)
             | Action::OpenWithPassword { .. }
             | Action::New
@@ -330,9 +351,10 @@ impl PdfcerApp {
             | Action::Save
             | Action::SaveCopy
             | Action::SaveAs
-            | Action::Find(_) => {
+            | Action::Find(_)
+            | Action::SetFindZoom(_) => {
                 // ui-text-exempt: a panic message, read from a stack trace by
-                // whoever moved one of these six arms. Never rendered.
+                // whoever moved one of these arms. Never rendered.
                 unreachable!("handled before the document guard")
             }
             // ★ Listed separately rather than folded into the run above, only
