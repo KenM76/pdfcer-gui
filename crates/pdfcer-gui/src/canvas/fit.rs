@@ -98,9 +98,16 @@ use crate::canvas::geometry;
 ///
 /// # ★★★ Why a floor exists, measured on 2026-09-08
 ///
-/// The central panel's width oscillates by 0.1–0.5 pt between consecutive
-/// frames with nothing on screen changing (source not yet run down — see
-/// `RESUME.md`). An exact comparison therefore reported a resize on **every
+/// The central panel's width oscillated by 0.1-0.5 pt between consecutive
+/// frames with nothing on screen changing. Run down on 2026-09-09: a solid
+/// scroll bar fading in inside a dock body overshoots its pane by a
+/// rounding residue, and `egui::Panel` answered by sliding the whole side
+/// inward by that residue (`egui_shell::dock::overflow_probe`). The dock
+/// now keeps a body's union out of its frame, so that source is gone; the
+/// floor stays because it is the right contract regardless of source - a
+/// sub-pixel change of viewport is not a resize an operator made - and a
+/// future source would otherwise reach the view again. An exact
+/// comparison reported a resize on **every
 /// frame**, which was harmless only for as long as the measure and place
 /// halves of the centre rule agreed exactly about the viewport's width. The
 /// frame they disagreed — the canvas's scroll bars took real width and one

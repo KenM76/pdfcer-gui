@@ -117,7 +117,17 @@
 //!   and that `default_width`, `min_width`/`max_width` and
 //!   `resizable(false)` all fail to: *"Only `exact_size` closes it."*
 //! - Nothing a panel body draws can change that number. A body that
-//!   overflows is clipped, not accommodated.
+//!   overflows is clipped, not accommodated — **and the dock enforces
+//!   that itself, because `exact_size` alone does not.** Measured
+//!   2026-09-09: `Panel::show` takes its rect back from the frame's
+//!   content union and, when that union is wider than `exact_size`,
+//!   keeps the width by sliding the panel inward by the excess. The
+//!   width stays exact; the position does not, and the central panel
+//!   beside it shrinks by the same amount. So `draw_stack` draws each
+//!   body in a child ui whose union is never merged into the side
+//!   (`ui.new_child`, not `scope_builder`) and allocates the
+//!   compartment's own rect in its place. `overflow_probe` is the
+//!   tripwire that names any widget which still gets past that.
 //! - The number changes only when the operator drags a splitter — an
 //!   explicit, discrete gesture, which is exactly the *"explicit
 //!   trigger"* the other half of the RAG entry's advice names.
@@ -165,11 +175,17 @@ pub mod float;
 pub mod floatwin;
 pub mod frame_report;
 pub mod model;
+/// **The wobble probe** — which widget ran past the window's edge.
+mod overflow_probe;
 pub mod plan;
 /// The permanent vertical strip down a side's outer edge — the left rail.
 pub mod rail;
 pub mod report;
+#[cfg(test)]
+mod scroll_fade_repro;
 pub mod splitter;
+/// **One stack's frame** — its tab bar, then its active panel's body.
+mod stack;
 pub mod tab_menu;
 pub mod tabs;
 
@@ -204,7 +220,7 @@ mod width_tests;
 #[allow(clippy::duplicate_mod)]
 mod testfont;
 
-use egui::{Align, Layout, Rect, UiBuilder, Vec2};
+use egui::{Rect, Vec2};
 
 use apply::apply;
 #[cfg(test)]
@@ -787,14 +803,10 @@ impl<'a> Dock<'a> {
                     format!("{}.body_min", report::side(side))
                 });
             });
-        // ★ The rect egui ALLOCATED for this side — the frame's response rect,
-        // which `Panel` hands to `allocate_right_panel`, so the central panel
-        // is measured against it. Published beside `max_rect` above because
-        // the two differ by 0.3–0.4 pt on isolated frames (2026-09-08, source
-        // still open — `RESUME.md`), with every child rect here unchanged.
-        ctx.reporter.report(ui, shown.response.rect, || {
-            format!("{}.frame", report::side(side))
-        });
+        // ★ The rect egui ALLOCATED for this side, and — on a frame where it
+        // crosses the window's edge — the widgets that pushed it there. See
+        // [`overflow_probe`] for the mechanism and the retirement plan.
+        overflow_probe::publish(ui, ctx, side, shown.response.rect);
     }
 
     /// Lay out the side splitter and the columns within a side's rect.
@@ -964,88 +976,6 @@ impl<'a> Dock<'a> {
                 y += plan::SPLITTER_THICKNESS;
             }
         }
-    }
-
-    /// Draw one stack: its tab bar, then its **active** panel's body.
-    #[allow(clippy::too_many_arguments)]
-    fn draw_stack(
-        &mut self,
-        ui: &mut egui::Ui,
-        ctx: &mut Ctx<'_>,
-        side: DockSide,
-        column: usize,
-        index: usize,
-        stack: &Stack,
-        rect: Rect,
-        report: &mut DockFrameReport,
-        body: &mut impl FnMut(&PanelId, &mut egui::Ui),
-    ) {
-        // ★★★ The tab strip is suppressed when the rail is the switch — the
-        // operator's fourth ask of 2026-09-05. See [`Self::with_rail_reach`]
-        // for the three conditions and for the reachability argument, which is
-        // the load-bearing half.
-        let suppressed = self.tabs_suppressed(ctx, side, stack);
-        let bar_height = if suppressed {
-            0.0
-        } else {
-            plan::TAB_BAR_HEIGHT.min(rect.height())
-        };
-        let bar_rect = Rect::from_min_size(rect.min, Vec2::new(rect.width(), bar_height));
-        let body_rect =
-            Rect::from_min_max(egui::pos2(rect.left(), rect.top() + bar_height), rect.max);
-
-        if suppressed {
-            report.tab_strips_suppressed += 1;
-        } else {
-            let outcome = tabs::tab_bar(ui, ctx, side, column, index, stack, bar_rect);
-            report.panels_overflowed += outcome.hidden;
-            if outcome.overflow_drawn {
-                report.overflow_menus += 1;
-            }
-        }
-
-        // ★ ONE body, the active tab's. Failure mode #3's design rule —
-        // *size a container to its active child* — is honoured by there
-        // being nothing else to size it to: an inactive tab's body is
-        // never constructed, so it can neither impose a width nor consume
-        // a frame's work.
-        //
-        // The RAG entry
-        // `only_the_active_tab_is_emitted_so_scripted_harnesses_cannot_reach_other_tabs.md`
-        // names the consequence honestly, and it is a consequence worth
-        // paying for: a harness CANNOT observe a backgrounded panel, and
-        // must select its tab first. The alternative — emit everything
-        // and hide it — *"converts a keyboard-navigation improvement into
-        // a keyboard-navigation regression with no visual symptom at
-        // all"*, because every hidden control re-enters the focus chain.
-        // The harness verb is [`DockState::activate`], and
-        // [`DockFrameReport::panels_drawn`] is what tells a harness which
-        // panels it can currently see.
-        let Some(panel) = stack.active_panel().cloned() else {
-            return;
-        };
-        if body_rect.height() <= 0.0 || body_rect.width() <= 0.0 {
-            return;
-        }
-
-        ui.scope_builder(
-            UiBuilder::new()
-                .id_salt(ctx.id("body", side, column, index))
-                .max_rect(body_rect)
-                .layout(Layout::top_down(Align::Min)),
-            |ui| {
-                // Clip to the compartment. A body that draws more than
-                // fits is truncated, never accommodated — accommodating
-                // it is what makes a panel content-driven, and a
-                // content-driven panel next to a fit-to-viewport zoom is
-                // the R128 feedback loop.
-                ui.set_clip_rect(body_rect.intersect(ui.clip_rect()));
-                body(&panel, ui);
-            },
-        );
-
-        ctx.reporter.report(ui, body_rect, || report::body(&panel));
-        report.panels_drawn.push(panel);
     }
 }
 

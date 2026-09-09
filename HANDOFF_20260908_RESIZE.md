@@ -297,6 +297,15 @@ both worth doing **before** the instrument work if you want a fast answer:
 
 ## 6. What else is outstanding
 
+> ★ **2026-09-09 — the central-panel width jitter is CLOSED.** It was egui's
+> own solid scroll bar fading in inside the Comments body, overshooting its pane
+> by a rounding residue, and `Panel::show` sliding the whole side inward by the
+> excess. Found by `egui-shell/src/dock/overflow_probe.rs`, reproduced with
+> pure egui in `dock/scroll_fade_repro.rs`, fixed in `dock/stack.rs`
+> (`new_child`, not `scope_builder`). RAG:
+> `D:/dev/rag/egui/a_solid_scrollbar_fading_in_overshoots_its_pane_…`. The
+> `RESIZE_FLOOR_PT` floor in `fit.rs` stays, re-documented.
+
 ### Waiting on the engine
 
 | filed | subject |
