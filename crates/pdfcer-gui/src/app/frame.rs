@@ -879,6 +879,12 @@ impl eframe::App for PdfcerApp {
 
         // Step 2 — compose. Nothing here mutates a document; surfaces push
         // onto `actions`.
+        // ★ 2026-09-08: `ui.ctx().content_rect()` and `pixels_per_point()`
+        // were traced here for one build while running down the central
+        // panel's 0.1–0.5 pt width wobble. Both were CONSTANT (1400 × 900,
+        // ppp 1.0) on wobble frames, so the wobble is neither the window nor
+        // pixel rounding; it is inside egui's `Panel::show` for the right
+        // dock — see `egui-shell`'s `dock.<side>.frame` region.
         egui::CentralPanel::default().show(ui, |ui| {
             // Declare the panel's own rect before drawing into it. This is
             // the outermost named region the application owns, and it is the

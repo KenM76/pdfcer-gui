@@ -733,7 +733,10 @@ impl<'a> Dock<'a> {
             DockSide::Right => egui::Panel::right(egui::Id::new(("egui-shell-dock", side.key()))),
         };
 
-        panel
+        // ★ 2026-09-08: the parent's `available_rect_before_wrap` was published
+        // here for one build and measured CONSTANT on frames where `.frame`
+        // below moved 0.3–0.4 pt; the wobble is inside egui's `Panel::show`.
+        let shown = panel
             // ★ `exact_size`, and only `exact_size`. See the module
             // header's R128 section: this is the one API that makes the
             // dock's outer width content-independent, and therefore the
@@ -779,6 +782,14 @@ impl<'a> Dock<'a> {
                 // and it is dock chrome, not a panel's content.
                 collapse::draw_collapse(ctx, ui, side, area);
             });
+        // ★ The rect egui ALLOCATED for this side — the frame's response rect,
+        // which `Panel` hands to `allocate_right_panel`, so the central panel
+        // is measured against it. Published beside `max_rect` above because
+        // the two differ by 0.3–0.4 pt on isolated frames (2026-09-08, source
+        // still open — `RESUME.md`), with every child rect here unchanged.
+        ctx.reporter.report(ui, shown.response.rect, || {
+            format!("{}.frame", report::side(side))
+        });
     }
 
     /// Lay out the side splitter and the columns within a side's rect.

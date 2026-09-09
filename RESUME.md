@@ -65,8 +65,19 @@
 >    re-recorded under it) since 22:55, three unit tests, two of which went
 >    red on their first draft. The fit ZOOM still flickers in its 4th decimal
 >    from the same jitter (`ViewState::apply_fit` runs every frame); harmless,
->    unfloored. Finding the source is still worth a session: instrument the
->    dock's right edge off-screen; do not theorise.
+>    unfloored. **Narrowed at 23:40, off-screen, three instruments:** the window
+>    and `pixels_per_point` (1.0) are constant; the right dock's parent
+>    `available_rect` is constant (`max.x` 1400.0); every child rect the shell
+>    publishes is constant; and yet egui's ALLOCATED rect for the right dock —
+>    now published as `dock.right.frame` — is translated **+0.3–0.4 pt** on
+>    isolated frames (`[[1080.3 …] - [1400.3 …]]`, a 1/32-grid multiple, width
+>    exactly 320, past the window edge). ⇒ It is inside egui's `Panel::show`:
+>    the rect it takes back from the frame's response (`panel.rs`, the
+>    `inner_response.response.rect` line), i.e. the union of something drawn in
+>    the panel that the shell does not name. **Next instrument:** publish the
+>    body ui's `min_rect()` at the END of the side's show closure and bisect
+>    from there (the animated `show_bars_factor` of a body's `ScrollArea` is a
+>    candidate — animated, fractional — but MEASURE it). Do not theorise.
 > 3. ~~Delete the annotation spec route~~ **DONE 2026-09-08, 22:40** — 804
 >    lines gone across 13 files (`Plan::spec_is_more_faithful`,
 >    `carried_options`, `translated`, `copy_as_spec`, `Clipped::Markup`,
