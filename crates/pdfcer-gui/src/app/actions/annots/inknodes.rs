@@ -18,7 +18,7 @@
 //! index: *"a sentence about `/Ink` appearing in code that has nothing to do
 //! with it."* A `match` on the edit's family inside `reshape` would have put
 //! the ink forecast's fields (`stroke`, `stroke_points_before`,
-//! `appearance_was_pdfces`) into a trace line about polygons, and the polygon
+//! `appearance_was_pdfces`) into a trace line about polygons, and the polygon (old-name-exempt: the engine's own field name)
 //! forecast's (`measure_not_recomputed`) into one about ink.
 //!
 //! ⇒ So the boundary is the same one `canvas::annotnodes::Plan` draws on the
@@ -66,7 +66,7 @@
 //! (`reply_2026-09-09-ink-nodes-are-editable-SHIPPED-…`), is the source for
 //! every fact this module states about the verb: that it re-bakes the
 //! appearance, that pdfcer bakes an `/InkList` as a polyline, that `/Rect` is
-//! derived rather than preserved, and that `appearance_was_pdfces == false`
+//! derived rather than preserved, and that `appearance_was_pdfces == false` (old-name-exempt: the engine's own field name)
 //! is *"the one disclosure you should not drop"*.
 
 use pdfcer_core::object::ObjId;
@@ -123,7 +123,7 @@ pub(super) fn apply(doc: &mut OpenDoc, action: AnnotAction) {
 ///
 /// | condition | sentence | why a canvas cannot say it |
 /// |---|---|---|
-/// | `forecast.appearance_was_pdfces == false` | [`crate::text::markup::ink_redrawn_straight`] | the stroke was another producer's artwork; re-baking replaced a smoothed curve with pdfcer's straight segments — the geometry moved as asked and the *look* changed more than the drag explains |
+/// | `forecast.appearance_was_pdfces == false` | [`crate::text::markup::ink_redrawn_straight`] | the stroke was another producer's artwork; re-baking replaced a smoothed curve with pdfcer's straight segments — the geometry moved as asked and the *look* changed more than the drag explains | (old-name-exempt: the engine's own field name)
 /// | `dropped` is non-empty | `markup_dropped`, as for a polygon | the re-baked appearance *looks* right; what went is what pdfcer could not reproduce |
 ///
 /// The first is the disclosure the engine's reply said not to drop, and said
@@ -153,7 +153,7 @@ pub(super) fn apply(doc: &mut OpenDoc, action: AnnotAction) {
 ///
 /// `ink-reshape-applied id=… edit=… stroke=… points=before→after
 /// stroke_points=before→after strokes=before→after rect=before→after
-/// was_pdfces=… ap=… dropped=… m=…`, and the first token is deliberately
+/// was_pdfces=… ap=… dropped=… m=…`, and the first token is deliberately (old-name-exempt: the engine's own field name)
 /// **not** one of the three funnel labels (`move-ink-point`,
 /// `insert-ink-point`, `remove-ink-point`) — `tools/gates/check-trace-names.py`
 /// carries the three days that rule cost. `stroke=` and the per-stroke counts
@@ -178,7 +178,7 @@ fn reshape_ink(doc: &mut OpenDoc, id: ObjId, edit: &pdfcer_core::edit::InkEdit, 
                     format!(
                         "ink-reshape-applied id={} edit={} stroke={} points={}->{} \
                          stroke_points={}->{} strokes={}->{} rect={before}->{:?} \
-                         was_pdfces={} ap={:?} dropped={} m={}",
+                         was_pdfces={} ap={:?} dropped={} m={}", // old-name-exempt: the engine's own field name
                         f.annot_id.num,
                         // ★ `as_str`, the engine's own stable token — `move-point`,
                         // `insert-point`, `remove-point` — so this line and
@@ -192,7 +192,7 @@ fn reshape_ink(doc: &mut OpenDoc, id: ObjId, edit: &pdfcer_core::edit::InkEdit, 
                         f.strokes_before,
                         f.strokes_after,
                         f.rect_after,
-                        u8::from(f.appearance_was_pdfces),
+                        u8::from(f.appearance_was_pdfces), // old-name-exempt: the engine's own field name
                         outcome.appearance,
                         outcome.dropped.len(),
                         outcome.mod_date_written
@@ -203,7 +203,10 @@ fn reshape_ink(doc: &mut OpenDoc, id: ObjId, edit: &pdfcer_core::edit::InkEdit, 
                 // the appearance on disk was another producer's and has just
                 // been replaced by pdfcer's polyline rendering. Said here, on
                 // the release, rather than drawn anywhere on the canvas.
-                if !f.appearance_was_pdfces {
+                // old-name-exempt: the engine's own field name, `appearance_was_pdfces`
+                let foreign_stroke = !f.appearance_was_pdfces; // old-name-exempt: engine field
+                if foreign_stroke {
+                    // old-name-exempt: the engine's own field name
                     notes.push(crate::text::markup::ink_redrawn_straight().to_owned());
                 }
                 // Same catalog as a polygon's reshape, because it is the same

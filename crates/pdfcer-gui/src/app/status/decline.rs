@@ -469,15 +469,6 @@ pub(crate) enum Declined {
         /// fixed-size.
         by_flag: bool,
     },
-    /// **A resize of a pdfcer-authored `/Stamp` was refused as "foreign"** —
-    /// the engine's appearance test knows two authoring families and the stamp
-    /// builder is a third (request filed 2026-09-09), so
-    /// `ResizeAppearanceNotRebuildable`'s sentence would say *"pdfcer did not
-    /// draw this shape"* about a stamp pdfcer drew. A not-yet, not a never:
-    /// grips stay, the sentence names move / delete-and-replace. Delete with
-    /// the request; `annots::resize` is the only producer. Full argument:
-    /// `text::status::resize::resize_stamp_not_yet`.
-    ResizeStampNotYet,
     /// **`edit.form_flatten` was invoked and the document's certification
     /// forbids it.**
     ///
@@ -1016,8 +1007,7 @@ impl Declined {
             Self::SaveFailed
             | Self::SettingsNotSaved
             | Self::ResizeNotRebuildable { .. }
-            | Self::ResizeFixedSizeMarker { .. }
-            | Self::ResizeStampNotYet => true,
+            | Self::ResizeFixedSizeMarker { .. } => true,
             // ★ `true`, with the others whose state cannot change between two
             // frames. A document's certification is a property of the file: it
             // does not lapse while the operator looks at the status bar, and
@@ -1180,7 +1170,6 @@ impl Declined {
             Self::WidgetHasNoName => t::adopt_declined_no_name(),
             Self::ResizeNotRebuildable { uniform } => t::resize_not_rebuildable(uniform),
             Self::ResizeFixedSizeMarker { by_flag } => t::resize_fixed_size_marker(by_flag),
-            Self::ResizeStampNotYet => t::resize_stamp_not_yet(),
             Self::FlattenCertified => t::flatten_declined_certified(),
             Self::FieldDeleteRefused => t::field_delete_declined_structural(),
             // ★ Stays in `crate::text::status` rather than reaching across the

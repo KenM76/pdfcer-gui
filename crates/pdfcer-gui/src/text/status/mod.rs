@@ -98,7 +98,7 @@ pub use refused::edit_declined_by_engine;
 /// **Resize refusals** — the un-rebuildable appearance and the fixed-size
 /// marker, split out 2026-09-09 when the second pushed this file past R2.
 mod resize;
-pub use resize::{resize_fixed_size_marker, resize_not_rebuildable, resize_stamp_not_yet};
+pub use resize::{resize_fixed_size_marker, resize_not_rebuildable};
 
 /// ★ Re-exported rather than moved-and-repathed.
 ///

@@ -1264,3 +1264,99 @@ fn the_residual_count_matches_the_disclosed_list_except_for_promotion() {
          one longer."
     );
 }
+
+/// **Probe, not a test** — 2026-09-09, the operator: *"Redaction refused —
+/// pdfcer applied the removal, then searched the finished file and found 35
+/// piece(s) of the supposedly-removed text still in it … I tried again and it
+/// worked for some things, but then selecting more it got stuck with the same
+/// message."* Reads a copy of his own 25-page Ghostscript-produced drawing
+/// under `target/scratch/ken/`, marks the first long-enough run on page 0,
+/// runs the real pipeline, and — for every survivor the proof reports — says
+/// WHICH PAGES of the output still carry that text as ordinary extracted text.
+/// If the survivors live on pages the mark never touched, the proof is
+/// refusing a correct redaction because the same words are printed elsewhere
+/// in the drawing set.
+#[test]
+#[ignore = "reads a file outside the repository; run by hand"]
+fn where_do_the_survivors_live_on_his_drawing() {
+    let path = format!(
+        "{}/../../target/scratch/ken/SW41177-obselete.pdf",
+        env!("CARGO_MANIFEST_DIR")
+    );
+    let p = std::path::Path::new(&path);
+    if !p.exists() {
+        println!("SKIP: {path} is not present");
+        return;
+    }
+    let doc = pdfcer_core::document::Document::load(p).expect("his file loads");
+    let mut session = pdfcer_core::edit::EditSession::new(doc);
+    let (b, run_text): (Rect, String) = {
+        let view = session.view();
+        let pages = page_tree::pages_in(&view).expect("page tree");
+        println!("pages: {}  rotate(page0)={}", pages.len(), pages[0].rotate);
+        let text = text_extract::extract_page_view(&view, &pages[0], 0, &ExtractOptions::default())
+            .expect("page 0 extracts");
+        let Some(run) = text
+            .runs
+            .iter()
+            .find(|r| r.text.trim().chars().count() >= 6 && r.bbox.is_some())
+        else {
+            println!("no run of 6+ chars on page 0");
+            return;
+        };
+        (run.bbox.expect("filtered above"), run.text.clone())
+    };
+    println!("marking run {run_text:?} bbox={b:?}");
+    let spec = RedactSpec {
+        quads: vec![Quad::from_rect(b)],
+        fill: None,
+        overlay_text: None,
+        quadding: Quadding::Left,
+    };
+    session.add_redaction(0, &spec).expect("mark");
+    match prepare_redaction_apply(&session) {
+        Ok(prepared) => {
+            println!(
+                "PREPARED: marks={} pages_redacted={} glyphs={} checked={} short={} residuals={} clean={}",
+                prepared.report.marks_applied,
+                prepared.report.pages_redacted,
+                prepared.report.glyphs_removed,
+                prepared.verification.strings_checked,
+                prepared.verification.strings_too_short_for_raw_check,
+                prepared.verification.residuals.len(),
+                prepared.verification.is_clean()
+            );
+            for r in &prepared.verification.residuals {
+                println!("  residual {:?} at {:?}", r.text, r.site);
+            }
+            println!("redacted_text: {:?}", prepared.report.redacted_text);
+        }
+        Err(RedactApplyRefusal::VerificationFailed { survivors }) => {
+            println!("★★★ VERIFICATION FAILED — {} survivor(s)", survivors.len());
+            // Where do they live? Look in the ORIGINAL document's extracted
+            // text, page by page. (Not by re-running the removal: the engine's
+            // `apply_redactions` is called from `redact/mod.rs` and nowhere
+            // else, and `sealed.rs` enforces that — a probe is not exempt.)
+            let view = session.view();
+            let pages = page_tree::pages_in(&view).expect("page tree");
+            for s in &survivors {
+                let mut on: Vec<usize> = Vec::new();
+                for (i, pg) in pages.iter().enumerate() {
+                    if let Ok(t) =
+                        text_extract::extract_page_view(&view, pg, i, &ExtractOptions::default())
+                    {
+                        let whole: String = t.runs.iter().map(|r| r.text.as_str()).collect();
+                        if whole.contains(s.as_str()) {
+                            on.push(i);
+                        }
+                    }
+                }
+                println!("  survivor {s:?} is ordinary text on pages {on:?}");
+            }
+        }
+        Err(other) => println!(
+            "REFUSED otherwise: {}",
+            crate::text::redact::refusal_message(&other)
+        ),
+    }
+}

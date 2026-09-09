@@ -214,15 +214,214 @@ pub(super) fn commit(
                 text.chars().count()
             )
         });
+        // ★★★ A ROTATED PAGE — 2026-09-09. The operator, on his 25-sheet
+        // Ghostscript drawing whose every page carries `/Rotate 90`: *"when I
+        // try to put a stamp on the drawing … the text comes out vertical, and
+        // there is no control to set the angle or horizontal."*
+        //
+        // `/Rotate` is a DISPLAY rotation (Table 30): the page's content is
+        // authored in unrotated user space and the reader turns the whole
+        // sheet clockwise by that amount when it draws it. An annotation
+        // appearance authored upright in user space is therefore turned with
+        // it — a stamp reads sideways on every sheet of a landscape drawing
+        // that was exported portrait. Acrobat pre-rotates its own stamps and
+        // text boxes by the page's rotation for exactly this reason.
+        //
+        // The engine's authoring verbs do not consult `/Rotate` (they author
+        // in user space, correctly); its rotation verb composes a rotation
+        // into the appearance `/Matrix` (`set_annotation_rotation`, absolute,
+        // degrees counter-clockwise in user space, about a pivot). So the two
+        // are composed here, in ONE undo step: author, then turn the new mark
+        // by +`rotate` about its own centre, which the display's clockwise
+        // turn then cancels. A sticky is excluded — §12.5.6.4 makes it
+        // `NoRotate`, so a reader draws its icon upright whatever the page
+        // does, and rotating its appearance would be the one way to make it
+        // come out sideways.
+        //
+        // ★ The pivot is the rect's centre, so the mark stays where the
+        // operator dragged it; the engine derives the new upright `/Rect`.
+        let rotate = doc.pages.get(page).map(|p| p.rotate).unwrap_or(0);
+        let upright_turn = (rotate != 0 && kind != crate::canvas::textannot::TextAnnotKind::Sticky)
+            .then_some(f64::from(rotate));
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed
+            format!("text-annot-page-rotate page={page} rotate={rotate} turn={upright_turn:?}")
+        });
         vector_edit(doc, "add-text-annot", page, 1, |session| {
-            session
-                .add_text_annotation_with(page, &spec, &options)
-                .map(|_| Vec::new())
+            let id = session.add_text_annotation_with(page, &spec, &options)?;
+            if let Some(deg) = upright_turn {
+                let pivot = ((rect.llx + rect.urx) / 2.0, (rect.lly + rect.ury) / 2.0);
+                let turned = session.set_annotation_rotation(id, pivot, deg)?;
+                crate::diag::trace(|| {
+                    // ui-text-exempt: diagnostic trace, never displayed
+                    format!(
+                        "text-annot-uprighted id={} deg={deg} applied={}",
+                        id.num, turned.degrees
+                    )
+                });
+            }
+            Ok::<Vec<String>, pdfcer_core::edit::EditError>(Vec::new())
         });
     } else {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
             format!("text-annot-declined kind={kind:?} reason=no-text")
         });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    //! The two stamp reports of 2026-09-09, each as a test that was RED on the
+    //! code it corrects: *"the text comes out vertical"* on a `/Rotate 90`
+    //! page, and *"still can't adjust the size of a stamp on the canvas, or by
+    //! entering a different size in the properties box"*. Both routes end in
+    //! [`super::super::annots::resize`] / [`super::commit`], so both are unit
+    //! tests over those functions with a real document — no window, no
+    //! pointer; the driven check is owed separately.
+
+    use super::*;
+    use crate::app::state::open_local_fixture;
+    use crate::canvas::selection::{AnnotKind, AnnotSelection, AnnotTarget};
+    use crate::canvas::textannot::TextAnnotKind;
+    use pdfcer_core::annot::page_annotations;
+    use pdfcer_core::annot_author::StampName;
+    use pdfcer_core::page_tree::Rect;
+
+    /// Place an `Approved` stamp at `rect` on page 0 and return its id and the
+    /// `/Rect` the engine wrote.
+    fn place_stamp(
+        doc: &mut crate::app::state::OpenDoc,
+        rect: Rect,
+    ) -> (pdfcer_core::object::ObjId, Rect) {
+        let placed = Placement {
+            page: 0,
+            kind: TextAnnotKind::Stamp,
+            rect,
+            stamp: StampName::Approved,
+            icon: crate::canvas::textannot::DEFAULT_STICKY_ICON,
+        };
+        commit(
+            doc,
+            &Prefs::default(),
+            &placed,
+            "APPROVED",
+            (0.8, 0.1, 0.1),
+            None,
+        );
+        let page = doc.pages[0].clone();
+        let found = page_annotations(&doc.session.graph(), page.id)
+            .into_iter()
+            .find(|a| a.subtype.as_slice() == b"Stamp")
+            .expect("the stamp was authored");
+        (
+            found.id.expect("an indirect annotation"),
+            found.rect.expect("a /Rect"),
+        )
+    }
+
+    fn select(doc: &mut crate::app::state::OpenDoc, id: pdfcer_core::object::ObjId) {
+        doc.selection.select_annot(AnnotSelection {
+            target: AnnotTarget {
+                page: 0,
+                id,
+                kind: AnnotKind::Markup,
+                subtype: "Stamp".to_owned(),
+                locked: false,
+            },
+            outline: egui::Rect::NOTHING,
+            oriented: None,
+        });
+    }
+
+    /// ★★★ **A stamp on a `/Rotate 90` page is authored turned by 90°, so the
+    /// reader's clockwise display turn brings it upright.** RED before the
+    /// fix: the appearance had no rotation and read sideways on every sheet
+    /// of the operator's drawing set.
+    #[test]
+    fn a_stamp_on_a_rotated_page_is_authored_upright() {
+        let mut doc = open_local_fixture("rotated-90.pdf");
+        assert_eq!(
+            doc.pages[0].rotate, 90,
+            "the fixture is the operator's page shape"
+        );
+        let (id, _) = place_stamp(
+            &mut doc,
+            Rect {
+                llx: 100.0,
+                lly: 100.0,
+                urx: 300.0,
+                ury: 160.0,
+            },
+        );
+        let view = doc.session.view();
+        let oriented = crate::canvas::annotquad::oriented_by_id(&view, &doc.pages[0], id)
+            .expect("the stamp has an appearance");
+        let degrees = oriented
+            .degrees
+            .expect("the appearance matrix is a rotation");
+        assert!(
+            (degrees - 90.0).abs() < 0.5 || (degrees - 450.0).abs() < 0.5,
+            "the stamp should be pre-turned by the page's rotation, got {degrees}"
+        );
+        assert!(doc.session.can_undo(), "author + turn is one undo step");
+    }
+
+    /// ★★★ **A stamp resizes — proportionally and not — with the default
+    /// modifiers, from the same `resize` the canvas grips and the Properties
+    /// width/height fields both raise.** RED before the fix: the engine
+    /// refused the carried appearance as "foreign" because neither Tool-panel
+    /// switch was set, and the sentence said pdfcer had not drawn it.
+    #[test]
+    fn a_stamp_resizes_with_the_default_modifiers() {
+        let mut doc = open_local_fixture("four-pages.pdf");
+        let (id, before) = place_stamp(
+            &mut doc,
+            Rect {
+                llx: 100.0,
+                lly: 100.0,
+                urx: 300.0,
+                ury: 160.0,
+            },
+        );
+        select(&mut doc, id);
+        // Proportional, from the lower-left anchor.
+        super::super::annots::resize(
+            &mut doc,
+            id,
+            (before.llx, before.lly),
+            (1.5, 1.5),
+            true,
+            crate::canvas::scaling::Modifiers::default(),
+        );
+        let after = page_annotations(&doc.session.graph(), doc.pages[0].id)
+            .into_iter()
+            .find(|a| a.id == Some(id))
+            .and_then(|a| a.rect)
+            .expect("still there");
+        assert!(
+            ((after.urx - after.llx) - 1.5 * (before.urx - before.llx)).abs() < 0.5,
+            "a proportional resize of a stamp must land: {before:?} -> {after:?}"
+        );
+        // Non-proportional — the case that needs `allow_appearance_distortion`,
+        // and for a picture of text that IS the resize the operator asked for.
+        super::super::annots::resize(
+            &mut doc,
+            id,
+            (after.llx, after.lly),
+            (2.0, 1.0),
+            false,
+            crate::canvas::scaling::Modifiers::default(),
+        );
+        let stretched = page_annotations(&doc.session.graph(), doc.pages[0].id)
+            .into_iter()
+            .find(|a| a.id == Some(id))
+            .and_then(|a| a.rect)
+            .expect("still there");
+        assert!(
+            ((stretched.urx - stretched.llx) - 2.0 * (after.urx - after.llx)).abs() < 0.5
+                && ((stretched.ury - stretched.lly) - (after.ury - after.lly)).abs() < 0.5,
+            "a non-proportional resize of a stamp must land too: {after:?} -> {stretched:?}"
+        );
     }
 }

@@ -122,6 +122,41 @@ machine.
 
 ---
 
+## O160 — ★★★ **THREE MORE, MID-MORNING 2026-09-09, EACH MEASURED ON YOUR OWN FILES AND FIXED** — "I still get this error … found 35 piece(s) of the supposedly-removed text still in it … I STILL can't adjust the size of a stamp on the canvas, or by entering a different size in the properties box … the text comes out vertical, and there is no control to set the angle"
+
+**Your words, 2026-09-09.** And your follow-up, which was exactly right: *"if
+it is rejecting based on a search of finding other items with the same text
+elsewhere then that is a bug and not a feature."*
+
+### 1. The redaction refusal — a bug, as you said, and it was mine
+Your `SW41177-obselete.pdf` was written by Ghostscript, which draws text **one
+letter at a time**. So when the removal reported what it took out of `3.5 TYP`,
+it reported seven single characters — `3`, `.`, `5`, space, `T`, `Y`, `P` —
+and my after-the-fact check then searched the whole finished file for each and
+found a `3` on every page. Of course it did. The removal had worked; the
+check was refusing on the alphabet, and the more you selected the more letters
+it "found". ⇒ **Fixed:** the check no longer treats pieces under four
+characters as leaks — they are counted and the window tells you how many it
+could not verify (and says why, for files that draw letter by letter). **On
+your file, the same mark now prepares cleanly.** Asked the engine to report
+words rather than letters so the check can see again on such files.
+
+### 2. Stamp size — works now, from the canvas grips and the Properties box
+The engine will scale artwork it did not author through a placement matrix,
+but only if told that scaling the picture is what you want — the two switches
+in the Tool panel. A stamp *is* a picture, so pdfcer now sets both for a stamp
+automatically. Proportional and non-proportional, both routes; two unit tests
+over a real document. Not driven.
+
+### 3. Vertical stamp text on that drawing — every page of it is stored rotated
+All 24 pages carry `/Rotate 90` (a landscape sheet stored portrait). Stamps and
+text boxes were authored upright in the stored orientation and then turned
+with the page on screen. ⇒ **Fixed:** a stamp or text box placed on a rotated
+page is turned by the page's rotation as it is placed, in the same undo step,
+so it reads upright on screen — and because it now HAS an angle, the
+Properties panel's Angle field appears for it, and the round rotate grip has
+always been there. Unit test on a rotated fixture. Not driven.
+
 ## O159 — ★★★ **FOUR REPORTS IN ONE SENTENCE, 2026-09-09, EACH MEASURED ON YOUR OWN FILES** — "there's still no way to edit the size of a placed stamp, and some text in sw41177 still isn't editable, and we're back to the apply redactions box that just tells me we can't do it and I can't edit or delete nodes on the freehand markup draw shape"
 
 **Your words, 2026-09-09, mid-morning.** You were at the machine, so nothing was

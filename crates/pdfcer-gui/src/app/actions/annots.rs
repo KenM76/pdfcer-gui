@@ -34,6 +34,12 @@ use pdfcer_core::object::ObjId;
 
 use crate::app::state::OpenDoc;
 
+mod inknodes;
+/// **The polygon/polyline node verbs** - `move_node`, `insert_node`, `remove_node`
+/// over `reshape_annotation`. Split out 2026-09-09 under R2.
+mod vertexnodes;
+use vertexnodes::{insert_node, move_node, remove_node};
+
 /// **Remove one annotation from the document.**
 ///
 /// Reached from `format.delete` and from the canvas's Delete key, both only
@@ -186,13 +192,32 @@ pub(super) fn resize(
     // promoted from this shell's own CAD argument: *is the property a length in
     // the space being transformed?* An inset is; a line weight is a drafting
     // convention. `canvas::scaling` carries the whole account.
-    let opts = modifiers.to_options();
-    // ★ Whether the target is a `/Stamp`, read BEFORE the call because the
-    // refusal below cannot say: `ResizeAppearanceNotRebuildable` is the same
-    // variant for a foreign stamp (true sentence) and for a stamp pdfcer drew
-    // (false one — the engine's appearance test does not know the stamp
-    // builder, request filed 2026-09-09). The selection knows the subtype; the
-    // error does not. Read through the same `page_annotations` lookup
+    // ★★★ A STAMP IS ARTWORK, AND SCALING ARTWORK IS THE RESIZE — 2026-09-09.
+    //
+    // The operator, twice in one morning: *"there's still no way to edit the
+    // size of a placed stamp … on the canvas, or by entering a different size
+    // in the properties box."* The engine's `resize_annotation` re-bakes the
+    // appearances it knows how to author (shapes; `/FreeText`) and, for any
+    // other `/AP`, either CARRIES it through §12.5.5's placement matrix or
+    // refuses: it carries exactly when the caller's options say the matrix
+    // agrees with the ask — `scale_stroke_width` for a uniform scale, or
+    // `allow_appearance_distortion` for anything — and refuses otherwise with
+    // *"pdfcer did not draw it"*, which for a pdfcer-drawn stamp is false.
+    //
+    // Those two switches are about BORDERS: a rectangle whose 1 pt outline
+    // should stay 1 pt when the box grows. A stamp has no such border — it is
+    // a picture of text in a frame, and what the operator means by "make it
+    // bigger" is precisely that the picture scales, letters and frame
+    // together, as every other program scales a stamp. So for a stamp both
+    // switches are set here, unconditionally: the matrix path is then the
+    // correct resize, not a distortion knowingly accepted, and it reaches the
+    // same `resize_annotation` from the canvas grips and from the Properties
+    // width/height fields alike. (The Tool-panel switches keep their meaning
+    // for every other kind.) A request for a true re-bake stands
+    // (`request_resize_annotation_refuses_a_pdfcer_authored_stamp_as_foreign.md`),
+    // but the carry is vector and exact, so nothing visible waits on it.
+    //
+    // The subtype is read through the same `page_annotations` lookup
     // `canvas::annotnodes::geometry` uses, so the two agree about which
     // annotation is meant.
     let is_stamp = doc.selection.annot().is_some_and(|a| {
@@ -202,6 +227,18 @@ pub(super) fn resize(
                     .into_iter()
                     .any(|found| found.id == Some(id) && found.subtype.as_slice() == b"Stamp")
             })
+    });
+    let opts = if is_stamp {
+        modifiers
+            .to_options()
+            .with_scale_stroke_width(true)
+            .with_allow_appearance_distortion(true)
+    } else {
+        modifiers.to_options()
+    };
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed
+        format!("resize-annotation-options id={} stamp={is_stamp}", id.num)
     });
     super::apply::vector_edit(doc, "resize-annotation", 0, 1, |session| {
         session
@@ -238,11 +275,7 @@ pub(super) fn resize(
                     ..
                 } = error
                 {
-                    if is_stamp {
-                        crate::app::status::decline::record_resize_stamp_not_yet();
-                    } else {
-                        crate::app::status::decline::record_resize_not_rebuildable(*was_uniform);
-                    }
+                    crate::app::status::decline::record_resize_not_rebuildable(*was_uniform);
                 }
                 // ★ And its sibling since `Pass 277.0` (2026-09-09): a `/Text`
                 // sticky or a `NoZoom` annotation has no size to scale. Worded
@@ -1108,143 +1141,6 @@ pub(super) fn set_open(doc: &mut OpenDoc, id: ObjId, open: bool) {
 
 /// **Apply one node edit to a markup annotation**, as one undoable command.
 ///
-/// The one body behind [`move_node`], [`insert_node`] and [`remove_node`].
-///
-/// # ★★ What it discloses, and why both sentences are needed
-///
-/// | condition | sentence | why a canvas cannot say it |
-/// |---|---|---|
-/// | `measure_not_recomputed` | [`crate::text::markup::measure_stale`] | the number is baked into an appearance the shape still draws |
-/// | `dropped` is non-empty | [`crate::text::dropped::only_the_first`]-style listing, through `markup::dropped_properties` | the re-baked appearance *looks* right; what went is what pdfcer could not reproduce |
-///
-/// The first is the one the engine went out of its way to give us. Acrobat
-/// recomputes a `/Measure` number on a reshape and — a sourced user complaint —
-/// silently clobbers a manual override doing it. pdfcer does neither, so the
-/// geometry moves and the text does not, and **only a sentence can say so**.
-///
-/// # ★ The refusal is not caught here
-///
-/// `canvas::annotnodes` asks `reshape_annotation_preview` on **every frame** of
-/// the drag, so a release that reaches this function is one the engine already
-/// said yes to. A refusal arriving here would mean the document changed between
-/// the last preview frame and the release — which cannot happen inside one
-/// frame's `Vec<Action>` — and `vector_edit`'s own worded floor covers it.
-fn reshape(doc: &mut OpenDoc, id: ObjId, edit: pdfcer_core::edit::VertexEdit, label: &str) {
-    let modified = crate::app::clock::pdf_date_utc();
-    super::apply::vector_edit(doc, label, 0, 1, |session| {
-        session
-            .reshape_annotation(id, edit, modified.as_deref())
-            .map(|outcome| {
-                crate::diag::trace(|| {
-                    // ui-text-exempt: diagnostic trace, never displayed.
-                    //
-                    // ★ `nodes=` carries BEFORE→AFTER rather than a single
-                    // count, because that pair is what a wrong build gets
-                    // wrong invisibly: an insert that landed on the wrong
-                    // segment and a correct one both report one more node,
-                    // and only the before-and-after together with the index
-                    // in the shell's own line say which happened.
-                    // ★★ `rect=` carries the annotation's `/Rect` BEFORE and
-                    // AFTER, and it is the one number in this line a driven
-                    // check can compare against pixels. A reshape rewrites
-                    // three things — the geometry array, the `/Rect` and the
-                    // baked `/AP` — and the engine's own note is that a shell
-                    // which wrote only some of them looks correct in every
-                    // renderer and is wrong in the next tool that rebuilds the
-                    // appearance. The `/Rect` is the half that MOVES the
-                    // painted result, so a run where the nodes changed and this
-                    // pair did not is the shape of that defect, visible in one
-                    // line.
-                    //
-                    // `rect_before` is an `Option` because a malformed
-                    // annotation may carry no `/Rect` at all; the engine
-                    // surfaces that rather than repairing it, and so does this.
-                    let before = outcome
-                        .rect_before
-                        .map_or_else(|| "none".to_owned(), |r| format!("{r:?}"));
-                    format!(
-                        "{label}-applied id={} subtype={} edit={} nodes={}->{} \
-                         rect={before}->{:?} dropped={} measure_stale={} m={}",
-                        id.num,
-                        outcome.subtype,
-                        // ★ `as_str` and not `{:?}`: the engine spells these
-                        // "move" / "insert" / "remove" itself, and a trace that
-                        // read `Moved` while `pdfcer annotation-vertex` printed
-                        // `move` would be two vocabularies for one fact.
-                        outcome.edit.as_str(),
-                        outcome.vertices_before,
-                        outcome.vertices_after,
-                        outcome.rect_after,
-                        outcome.dropped.len(),
-                        outcome.measure_not_recomputed,
-                        outcome.mod_date_written
-                    )
-                });
-                let mut notes = Vec::new();
-                if outcome.measure_not_recomputed {
-                    notes.push(crate::text::markup::measure_stale().to_owned());
-                }
-                // ★ Carried into the disclosure list rather than discarded, on
-                // `SetMarkupStyle`'s stated rule: a reshape RE-BAKES the
-                // appearance, and re-baking loses anything the original
-                // expressed outside the model pdfcer draws — a border effect it
-                // does not author, a producer's own decoration. The dictionary
-                // key survives and the picture does not, so the canvas cannot
-                // show what went. Same catalog as the restyle's, because it is
-                // the same loss from the same bake.
-                notes.extend(
-                    outcome
-                        .dropped
-                        .iter()
-                        .map(|d| crate::text::panels::properties::markup_dropped(*d).to_owned()),
-                );
-                notes
-            })
-    });
-}
-
-/// **Move one node of a markup shape.** `EditSession::move_annotation_vertex`,
-/// reached through [`reshape`] so the `/M` stamp and the disclosures are one
-/// rule rather than three copies of one.
-pub(super) fn move_node(doc: &mut OpenDoc, id: ObjId, index: usize, dx: f64, dy: f64) {
-    reshape(
-        doc,
-        id,
-        pdfcer_core::edit::VertexEdit::Move { index, dx, dy },
-        "move-annotation-vertex",
-    );
-}
-
-/// **Add a node immediately after `after`**, at `at`.
-/// `EditSession::insert_annotation_vertex`.
-pub(super) fn insert_node(
-    doc: &mut OpenDoc,
-    id: ObjId,
-    after: usize,
-    at: pdfcer_core::vector::Point,
-) {
-    reshape(
-        doc,
-        id,
-        pdfcer_core::edit::VertexEdit::Insert { after, at },
-        "insert-annotation-vertex",
-    );
-}
-
-/// **Take a node away.** `EditSession::remove_annotation_vertex`.
-pub(super) fn remove_node(doc: &mut OpenDoc, id: ObjId, index: usize) {
-    reshape(
-        doc,
-        id,
-        pdfcer_core::edit::VertexEdit::Remove { index },
-        "remove-annotation-vertex",
-    );
-}
-
-/// ★★★ **The three point verbs of a freehand mark** (`Pass 278.0`) → `EditSession::reshape_ink`.
-/// A sibling of [`reshape`]'s three, not three more arms inside it; its header says why.
-mod inknodes;
-
 /// ★★★ **Restyle a text-BEARING annotation** — a sticky note's icon and
 /// colour, a stamp's colour. `EditSession::set_text_annot_style`
 /// (`pdfcer-core` `edit.rs:27124`).

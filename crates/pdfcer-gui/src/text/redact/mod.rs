@@ -501,7 +501,7 @@ pub fn verified_line(strings_checked: usize) -> String {
 #[must_use]
 pub fn verification_limit_line(too_short: usize) -> String {
     format!(
-        "{too_short} removed piece(s) were too short (under 4 characters) for a whole-file byte search to say anything useful, so those were checked against the decoded page content only."
+        "{too_short} removed piece(s) were too short (under 4 characters) for any search to say anything useful — a single letter or digit is on every page of every document — so pdfcer could not verify those. Some producers draw text one letter at a time; on such a file every removed piece is one character and this proof cannot see it at all. The removal itself is still reported above."
     )
 }
 

@@ -37,8 +37,9 @@
 //! | anywhere else in the output — in a decoded **opaque** stream (a font program, image samples, an ICC profile, an object-stream container, an attachment) or in the **raw bytes** | **DISCLOSE** as a residual requiring the operator's explicit acknowledgement, naming *where* it was found | pdfcer cannot tell a genuine un-recognised carrier from an unrelated coincidence. Refusing would be a trap the operator cannot act on; claiming removal would be a lie. Naming it, and naming the place, is the only honest option. |
 //! | nowhere | **verified** | This is what licenses [`crate::text::redact`]'s wording contract to use the word "verified" at all. |
 //!
-//! Strings shorter than [`MIN_VERIFIABLE_LEN`] are excluded from the
-//! **disclosure** half and **counted separately** (see
+//! Strings shorter than [`MIN_VERIFIABLE_LEN`] are excluded from BOTH halves
+//! (the refusal half since 2026-09-09 — see [`leaked_in_content_streams`] for
+//! the per-glyph producer that forced it) and **counted separately** (see
 //! [`AbsenceVerification::strings_too_short_for_raw_check`]) rather than
 //! silently skipped: a two-character redaction would match somewhere in any
 //! real file, so a byte grep for it over raw bytes or over a compressed blob
@@ -141,6 +142,10 @@ use pdfcer_core::object::{ObjId, Object};
 /// [`AbsenceVerification::strings_too_short_for_raw_check`], and
 /// [`crate::text::redact::verification_limit_line`], which is the sentence that
 /// puts the number in front of the operator.
+///
+/// ★ Since 2026-09-09 the floor governs BOTH halves of the proof — the refusal
+/// as well as the disclosure. See [`leaked_in_content_streams`] for the
+/// per-glyph producer that made a refusal-half floor necessary.
 pub const MIN_VERIFIABLE_LEN: usize = 4;
 
 /// **Where a disclosed residual was found**, so the sentence about it can name
@@ -339,12 +344,40 @@ pub(super) fn survivors_in_content_streams(
 /// The refusal half of the absence proof, isolated so the refusal branch in
 /// [`super::prepare_redaction_apply`] reads as one question.
 ///
-/// Returns `Some(survivors)` when any redacted string is still present in a
-/// **content-bearing** decoded stream — bytes a renderer draws and an extractor
-/// reads — and `None` when the output is clean by that measure. Strings of
-/// **any** length are checked here (unlike the disclosure half): inside a
-/// content stream even a two-character survival is the redacted glyphs still
-/// being drawn.
+/// Returns `Some(survivors)` when any redacted string of at least
+/// [`MIN_VERIFIABLE_LEN`] characters is still present in a **content-bearing**
+/// decoded stream — bytes a renderer draws and an extractor reads — and `None`
+/// when the output is clean by that measure.
+///
+/// # ★★★ The floor applies HERE too, since 2026-09-09 — and it did not before
+///
+/// Until this date strings of any length were checked on this half, on the
+/// argument that *"inside a content stream even a two-character survival is
+/// the redacted glyphs still being drawn."* That argument assumes the needle
+/// is a WORD. It is not always: **Ghostscript 8.15 draws every glyph with its
+/// own show operator**, so on the operator's 24-page drawing the surgery's
+/// `redacted_text` for the run `3.5 TYP` was seven single characters —
+/// `["3", ".", "5", " ", "T", "Y", "P"]` — and this half found `"3"` on all
+/// 24 pages (as it should: every drawing has a 3 on it) and refused the
+/// redaction as leaking. Selecting more text raised the count; he saw *"found
+/// 35 piece(s) of the supposedly-removed text still in it"* and stopped
+/// trusting the tool. The removal had succeeded.
+///
+/// A needle under the floor carries no information in ANY real file, in a
+/// content stream as much as in the raw bytes — the previous argument was
+/// wrong about the stream and right about the word. So short needles are
+/// not refused on; they are **counted and disclosed** as unverifiable by
+/// [`verify_absence`] (`strings_too_short_for_raw_check`), and the operator
+/// reads that on the window. On a per-glyph producer that means the proof is
+/// blind, and the window says so rather than pretending to verify.
+///
+/// What is NOT relaxed: a needle of four or more characters surviving in drawn
+/// content is still a hard refusal, and the test
+/// `a_short_string_is_counted_as_unverifiable_and_the_long_one_still_refuses`
+/// holds both halves of that line. The engine has been asked to report words
+/// rather than glyph-strings
+/// (`request_redacted_text_carries_single_characters_on_a_per_glyph_producer_so_the_absence_proof_is_blind.md`),
+/// which is what would let the proof see again on this producer.
 ///
 /// ★ 2026-09-04: the filter on [`StreamRole::Content`] is the whole of this
 /// work's change to the refusal. Before it, this function saw every stream in
@@ -359,7 +392,9 @@ fn leaked_in_content_streams(
     }
     let survivors: Vec<String> = redacted
         .iter()
-        .filter(|needle| !needle.is_empty() && in_content(decoded, needle))
+        .filter(|needle| {
+            needle.chars().count() >= MIN_VERIFIABLE_LEN && in_content(decoded, needle)
+        })
         .cloned()
         .collect();
     if survivors.is_empty() {
@@ -387,13 +422,15 @@ fn in_content(decoded: &[DecodedStream], needle: &str) -> bool {
 ///
 /// # The order of the four questions, which is the whole of the logic
 ///
-/// 1. **Is it in a content-bearing stream?** Then it is not a residual at all —
+/// 1. **Is it shorter than [`MIN_VERIFIABLE_LEN`]?** Then count it as
+///    unverifiable and stop — no half of the proof can say anything about it
+///    (see [`leaked_in_content_streams`] for the 2026-09-09 reversal that moved
+///    this question ahead of the content check). `strings_checked` excludes
+///    it, so *"verified N pieces"* on the window counts only what was.
+/// 2. **Is it in a content-bearing stream?** Then it is not a residual at all —
 ///    it is a survivor, [`leaked_in_content_streams`] will refuse the write, and
 ///    listing it here as well would put one finding on screen twice under two
 ///    different verdicts.
-/// 2. **Is it shorter than [`MIN_VERIFIABLE_LEN`]?** Then count it as
-///    unverifiable and stop. It has already had the check that can say something
-///    about it, at step 1.
 /// 3. **Is it in an opaque decoded stream?** Disclose it, naming that stream's
 ///    kind. Checked before the raw bytes because the answer is more specific:
 ///    an uncompressed font program would satisfy both, and *"inside an embedded
@@ -405,15 +442,21 @@ fn verify_absence(
     decoded: &[DecodedStream],
 ) -> AbsenceVerification {
     let mut out = AbsenceVerification {
-        strings_checked: redacted.iter().filter(|s| !s.is_empty()).count(),
+        strings_checked: redacted
+            .iter()
+            .filter(|s| s.chars().count() >= MIN_VERIFIABLE_LEN)
+            .count(),
         ..AbsenceVerification::default()
     };
     for needle in redacted {
-        if needle.is_empty() || in_content(decoded, needle) {
+        if needle.is_empty() {
             continue;
         }
         if needle.chars().count() < MIN_VERIFIABLE_LEN {
             out.strings_too_short_for_raw_check += 1;
+            continue;
+        }
+        if in_content(decoded, needle) {
             continue;
         }
         let opaque_site = decoded
@@ -712,35 +755,62 @@ mod tests {
         assert!(!proof.verification.is_clean());
     }
 
-    /// ★ **A short string is counted, not silently skipped — and it is still
-    /// checked against decoded streams.**
+    /// ★★★ **A short string is counted, not silently skipped — and it is no
+    /// longer refused on, even inside drawn content.**
     ///
-    /// Both halves of [`MIN_VERIFIABLE_LEN`]'s argument, because dropping
-    /// either produces a proof that lies in a different direction: skip the
-    /// count and the operator is told the file was fully searched when it was
-    /// not; skip the decoded check and a two-character redaction that is still
-    /// being *drawn* passes as clean.
+    /// Until 2026-09-09 the second half of this test asserted the opposite:
+    /// a two-character needle surviving in a content stream was a refusal,
+    /// *"because inside a stream even two characters are glyphs that are
+    /// still being drawn."* Measured on the operator's Ghostscript 8.15
+    /// drawing, that rule refused a correct redaction on every page — the
+    /// producer draws one glyph per show operator, so `redacted_text` was
+    /// `["3", ".", "5", " ", "T", "Y", "P"]` and `"3"` is on every sheet.
+    /// A needle under the floor carries no information anywhere. Both halves
+    /// of the floor's argument now point the same way: count it, disclose it,
+    /// refuse on nothing shorter than the floor.
     #[test]
-    fn a_short_string_is_counted_as_unverifiable_and_still_checked_where_it_matters() {
-        // Too short for the raw half, and absent — counted, no residual.
+    fn a_short_string_is_counted_as_unverifiable_and_the_long_one_still_refuses() {
+        // Too short, and absent — counted, no residual, no refusal.
         let clean = pdf_drawing("nothing here");
         let proof = prove(&clean, &["ab".to_owned()]);
         assert_eq!(proof.verification.strings_too_short_for_raw_check, 1);
+        assert_eq!(
+            proof.verification.strings_checked, 0,
+            "a needle the proof cannot check is not counted as checked"
+        );
         assert!(proof.verification.residuals.is_empty());
         assert_eq!(proof.survivors, None);
-
-        // Too short for the raw half, and PRESENT in a content stream — still
-        // a refusal, because inside a stream even two characters are glyphs
-        // that are still being drawn.
+        // Too short, and PRESENT in a content stream — counted, NOT refused.
         let leaking = pdf_drawing("ab is drawn");
         let proof = prove(&leaking, &["ab".to_owned()]);
         assert_eq!(
-            proof.survivors,
-            Some(vec!["ab".to_owned()]),
-            "the length floor governs the RAW-byte grep only; a short string \
-             surviving in a decoded stream is the redacted glyphs still on the \
-             page"
+            proof.survivors, None,
+            "a needle under the floor is the alphabet, not a leak — refusing on \
+             it refused every drawing a per-glyph producer ever wrote"
         );
+        assert_eq!(proof.verification.strings_too_short_for_raw_check, 1);
+        // The control that keeps the line where it belongs: a needle AT the
+        // floor, drawn, is still the hard refusal.
+        let proof = prove(&pdf_drawing("abcd is drawn"), &["abcd".to_owned()]);
+        assert_eq!(proof.survivors, Some(vec!["abcd".to_owned()]));
+        assert_eq!(proof.verification.strings_checked, 1);
+    }
+
+    /// ★★★ **The operator's file, in miniature.** A per-glyph producer's
+    /// `redacted_text` — every character of `3.5 TYP` as its own string — over
+    /// a page that still draws those characters elsewhere (every drawing does)
+    /// is clean by the refusal half, and the disclosure half says exactly how
+    /// many pieces it could not speak to. Before 2026-09-09 this proof refused
+    /// with five survivors; the removal had succeeded.
+    #[test]
+    fn a_per_glyph_producers_single_character_needles_do_not_refuse() {
+        let page = pdf_drawing("DRAWING 3 OF 5, TYP. NOTES");
+        let needles: Vec<String> = "3.5 TYP".chars().map(|c| c.to_string()).collect();
+        let proof = prove(&page, &needles);
+        assert_eq!(proof.survivors, None, "single characters are not survivors");
+        assert_eq!(proof.verification.strings_too_short_for_raw_check, 7);
+        assert_eq!(proof.verification.strings_checked, 0);
+        assert!(proof.verification.is_clean());
     }
 
     /// An empty needle and an empty list are both no-ops rather than matches.
