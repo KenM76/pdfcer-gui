@@ -37,3 +37,13 @@ updated, the work feels finished, and nothing red appears.
 - Also refresh `FEATURES.md` against the build before packaging — see
   [[refresh-features-md-before-every-release]] — and smoke-launch the exe
   off-screen first, see [[smoke-launch-before-every-release-it-is-ninety-seconds]].
+
+## ★ PUSH BEFORE `gh release create` — 2026-09-09
+
+`--target main` is resolved on the SERVER at creation time. With three
+unpushed commits, the tag landed on the previous session's last commit while
+the zip was built from the newest; `releases/latest` looked perfect
+(`prerelease: false`, asset attached) and pointed at the wrong source. Order:
+commit → `git push` → `gh release create`. If it has already happened:
+`git tag -f <tag> <built commit>` and `git push -f origin refs/tags/<tag>`,
+then read the tag's sha back from the API.
