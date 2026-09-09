@@ -64,9 +64,14 @@
 >    `text_annot` family (Enter key now reaches a fixed engine) and
 >    `comment_note` / `foreign_icon_name` (sticky click). Needs the desktop.
 >    Command: `HANDOFF_20260908_RESIZE.md` §2 with `--check` repeated.
-> 2. **Release** once (1) is green — `pdfcer-gui2` is the next OneDrive slot
->    (`pdfcer-gui1` is 2026-09-08 22:07). Refresh `FEATURES.md`, smoke-launch,
->    package from a clean tree, GitHub release without `--prerelease`.
+> 2. ~~Release~~ **RELEASED 2026-09-09 06:25** from `842f269` (FEATURES at
+>    `4d9faaf`): OneDrive **`pdfcer-gui2` is the new build**, so
+>    **`pdfcer-gui1` (2026-09-08 22:06) is the fallback**. GitHub
+>    `v0.5.0-dev.20260909.1`, verified from HIS side — `releases/latest`
+>    returns it, `prerelease: false`, one zip, 22,948,019 bytes. Published
+>    undriven, as the standing rule says; the notes say so. ⚠ The engine was
+>    already 1 commit past `fccd6cd` at packaging time — `cargo update` first
+>    next build.
 > 3. `canvas.selection-outline` published twice per frame — unchanged,
 >    handoff §3.4.
 > 4. `dock.<side>.body_min` is now always equal to `.frame` — it can go
