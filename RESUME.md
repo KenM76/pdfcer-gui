@@ -1,8 +1,33 @@
 # RESUME — read this, then say "continue"
 
-> ★★★ **LAST SESSION: 2026-09-09, early morning, after the reboot. THE
-> CENTRAL-PANEL WOBBLE IS FOUND, REPRODUCED IN PURE EGUI, AND CLOSED AT THE
-> DOCK.** Read `git log -1 --format=%B` first; it is the whole story.
+> ★★★ **LAST SESSION: 2026-09-09, 04:30–08:45. READ `HANDOFF_20260909.md`
+> FIRST** — it is the long form of everything below. Two releases today;
+> **`pdfcer-gui1` (08:27) is the newest, `pdfcer-gui2` (06:21) the fallback**;
+> GitHub `v0.5.0-dev.20260909.2` at `f7b512c`, verified from his side.
+>
+> **He came to the PC mid-sweep with four reports** (`OPERATOR_REQUESTS.md`
+> **O159**): stamp resize, SW41177 text, the redaction box, freehand nodes.
+> All four measured on HIS files headlessly; three were engine deliveries of
+> the last twelve hours that this shell had not yet consumed or pinned, the
+> fourth (stamp) is a real engine gap, filed. **Read the request channel
+> before diagnosing any report — the engine answers within the hour now.**
+> Freehand node editing is WIRED (subagent) and NOT driven. The sweep reached
+> 64 of 196 (63 pass, 1 FAIL `double_clicking_a_text_box_edits_the_text`,
+> uninvestigated). Tests **3,909 / 0 / 49**, gates **32/32**, pin **`5b8ec61`**
+> (engine is 4 commits past it — `Pass 280.0` `run_repertoire` is the one we
+> asked for; `cargo update` first).
+>
+> ⚠ **RAM:** run the suite `CARGO_BUILD_JOBS=2`; the harness killed the shell
+> twice for low memory and left linkers as orphans. ⚠ **Sweeps:** launch
+> detached (`Start-Process cmd /c bash target/scratch/sweep-full.sh`), never in
+> the tool's 10-minute window; confirm `ui-verify: 1`. ⚠ **Releases:** `git
+> push` BEFORE `gh release create` — `--target main` resolves server-side.
+>
+> ---
+>
+> ★★ **EARLIER THE SAME SESSION: THE CENTRAL-PANEL WOBBLE IS FOUND, REPRODUCED
+> IN PURE EGUI, AND CLOSED AT THE DOCK.** `git log --format=%B 5ea6246` is the
+> whole story.
 >
 > **State, every number re-measured 2026-09-09 in the session that wrote this block:**
 >
