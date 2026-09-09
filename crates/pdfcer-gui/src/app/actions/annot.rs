@@ -574,6 +574,89 @@ pub enum AnnotAction {
         /// Which node to remove.
         index: usize,
     },
+    // =======================================================================
+    // The POINTS of a freehand mark — O158, `pdfcer-core` `Pass 278.0`
+    // =======================================================================
+    //
+    // > *"the draw a line that follows the pointer tool — I can't edit the
+    // > nodes that make it"*
+    //
+    // ★★★ **Three more variants and not three more arms on the three above**,
+    // for the same reason the three above are not one: an `/Ink` reaches a
+    // **different engine planner** (`reshape_ink`, not `reshape_annotation`)
+    // with a **two-part address** — `/InkList` is a list of strokes, so a point
+    // is `(stroke, point)` and a single `index` field would be a lie about
+    // which list it indexes. The engine made the same call from its side and
+    // said why: widening `VertexEdit` with an optional stroke *"would have made
+    // every existing `/Polygon` caller's index mean 'the stroke index is
+    // `None`' — a sentence about `/Ink` appearing in code that has nothing to
+    // do with it."*
+    //
+    // ★ The shell's own flat anchor index is NOT carried here. The conversion
+    // from it to `(stroke, point)` happens once, in
+    // `canvas::annotnodes::ink::StrokeTable`, on the frame the gesture is
+    // planned, and the action carries the engine's address so the apply arm
+    // has nothing to convert and nothing to get off by one.
+    //
+    // ★ All three take **no page**, for [`Self::Move`]'s reason: the engine
+    // finds its operand by stable object id.
+    /// **Move one point of one stroke of a freehand mark** by a page-space
+    /// delta, as one undoable command. `EditSession::move_ink_point`, reached
+    /// through `reshape_ink` so `/M` can be stamped.
+    ///
+    /// Raised by `crate::canvas::annotnodes` on the release of a node drag on
+    /// an `/Ink`, and by nothing else.
+    ///
+    /// ★ A **delta**, not a destination — [`Self::MoveNode`]'s argument, and
+    /// the engine's `InkEdit::MovePoint` takes `(dx, dy)` for the same reason.
+    MoveInkPoint {
+        /// The annotation, by stable object id.
+        id: pdfcer_core::object::ObjId,
+        /// Which stroke of the `/InkList`, in file order.
+        stroke: usize,
+        /// Which point within that stroke.
+        point: usize,
+        /// Horizontal displacement, PDF points.
+        dx: f64,
+        /// Vertical displacement, PDF points. **Positive is up** (§8.3.2.3).
+        dy: f64,
+    },
+    /// **Add a point to one stroke immediately after `after`**, at `at`.
+    /// `EditSession::insert_ink_point`.
+    ///
+    /// ★★ `after == last point of the stroke` **extends that stroke** — the
+    /// engine's *"keep drawing where I stopped"* gesture — and never crosses
+    /// into the next stroke. The canvas's flat segment list holds no segment
+    /// between two strokes, so a right-click cannot even name one; a drag on a
+    /// stroke's last anchor with the insert chord is the one route here, and
+    /// it means *lengthen this stroke*.
+    ///
+    /// `at` is already snapped, as for [`Self::InsertNode`].
+    InsertInkPoint {
+        /// The annotation, by stable object id.
+        id: pdfcer_core::object::ObjId,
+        /// Which stroke.
+        stroke: usize,
+        /// The point the new one goes after, within that stroke.
+        after: usize,
+        /// Where it goes, in page space (PDF user space, y-up).
+        at: pdfcer_core::vector::Point,
+    },
+    /// **Take one point out of one stroke.** `EditSession::remove_ink_point`.
+    ///
+    /// The engine refuses below a floor of **two points per stroke** — one
+    /// point is not a path — and this shell asks it before the gesture
+    /// previews anything, so a release that reaches this variant is one the
+    /// preflight already allowed. Removing a whole stroke is a different verb
+    /// (`InkEdit::RemoveStroke`) this shell does not raise yet.
+    RemoveInkPoint {
+        /// The annotation, by stable object id.
+        id: pdfcer_core::object::ObjId,
+        /// Which stroke.
+        stroke: usize,
+        /// Which point within it.
+        point: usize,
+    },
     /// **A node edit did not happen, and the operator is owed the sentence.**
     ///
     /// ★★★ Raised on the release frame of a gesture whose preflight refused,

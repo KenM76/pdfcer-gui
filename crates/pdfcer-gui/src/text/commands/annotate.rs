@@ -200,17 +200,21 @@ pub const fn markup_finish() -> CommandText {
 
 /// `markup.add_node`
 ///
-/// ★ The tooltip names the three shapes it works on rather than the one it
+/// ★ The tooltip names the four shapes it works on rather than the one it
 /// does not, because a `/Line`'s row is **absent** and not greyed — nobody
 /// reads a tooltip for a row they cannot see. What it does have to explain is
 /// where the new corner lands, since the answer is *on the outline*, not under
 /// the pointer: the click is allowed to be several points off the line.
+///
+/// ★ *"a freehand mark"* joined the list on 2026-09-09 with `pdfcer-core`
+/// `Pass 278.0`. A tooltip that listed three shapes while the row appeared on
+/// a fourth would be the surface disagreeing with itself.
 #[must_use]
 pub const fn markup_add_node() -> CommandText {
     CommandText::new(
         "Add a point here",
         "Split the edge you right-clicked and put a new corner on it, at the place you \
-         pointed. Works on a polyline, a polygon and a revision cloud.",
+         pointed. Works on a polyline, a polygon, a revision cloud and a freehand mark.",
     )
 }
 
@@ -221,12 +225,18 @@ pub const fn markup_add_node() -> CommandText {
 /// asks that a greyed control always explain itself on hover, and the
 /// explanation has to say what would make it live again — *draw another
 /// corner* — or greying is just a locked door.
+///
+/// ★ The freehand floor is **per stroke** (`Pass 278.0`): a mark of three
+/// strokes can lose points from a long stroke while a two-point stroke beside
+/// it greys this row. The tooltip says *each stroke* so the operator is not
+/// left counting the whole mark.
 #[must_use]
 pub const fn markup_remove_node() -> CommandText {
     CommandText::new(
         "Remove this point",
         "Take away the corner you right-clicked. Greyed once the shape is down to its last \
-         corners: a closed shape keeps three and an open one keeps two.",
+         corners: a closed shape keeps three, an open one keeps two, and each stroke of a \
+         freehand mark keeps two.",
     )
 }
 

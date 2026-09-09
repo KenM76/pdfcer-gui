@@ -123,7 +123,12 @@ PATTERN='pdfce(?!r)|PDFCE(?!R)|Pdfce(?!r)'
 # Lines that are allowed to carry a surviving occurrence. Anchored on the
 # substrings above rather than on filenames, so moving a file cannot silently
 # widen the exemption.
-ALLOWED='Dev\\pdfce\\crates\\pdfce-gui|pdfce_FeatureRequests|^Cargo\.lock:|old-name-exempt:'
+# ★ `engine-api-snapshot.txt` is the API-drift gate's GENERATED record of the
+# ENGINE's public names (`--update` rewrites it), exempt for `Cargo.lock`'s
+# reason: it records what another crate calls things. 2026-09-09: the engine
+# shipped a field literally named `appearance_was_pdfces`; a per-line marker
+# would be destroyed by the next `--update`. (old-name-exempt: names the field)
+ALLOWED='Dev\\pdfce\\crates\\pdfce-gui|pdfce_FeatureRequests|^Cargo\.lock:|^tools/gates/engine-api-snapshot\.txt:|old-name-exempt:'
 
 # ★★★ THE SCAN'S OWN EXIT STATUS IS CHECKED, and that is the whole lesson of
 # this gate's first run.

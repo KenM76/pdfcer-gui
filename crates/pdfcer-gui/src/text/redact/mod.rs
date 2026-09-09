@@ -1054,6 +1054,21 @@ pub fn refusal_message(refusal: &crate::redact::RedactApplyRefusal) -> String {
     use crate::redact::RedactApplyRefusal as R;
     match refusal {
         R::NothingToApply => "Nothing to apply — this document has no redaction marks.".to_owned(),
+        // ★★ 2026-09-09 — the hybrid-reference case gets its own first
+        // sentence. Measured on the operator's own `SW41177 MATERIAL
+        // REQUIREMENTS.pdf` (Excel for Microsoft 365 writes hybrid files,
+        // §7.5.8.4): the writer refuses a full rewrite of such a file by name,
+        // so this window opened on the generic sentence below and he read it as
+        // *"we can't do it"* — his report that morning, word for word. The
+        // generic sentence is TRUE and names the wrong subject: the limit is
+        // pdfcer's writer, not his document's redactability, and the writer's
+        // own remedy ("use incremental save") is the one thing a redaction is
+        // forbidden to do. Asked of the engine as
+        // `request_a_hybrid_reference_file_cannot_be_redacted_because_its_full_rewrite_is_refused.md`;
+        // delete this arm when it ships.
+        R::FullRewriteUnavailable { reason } if reason.contains("hybrid-reference") => format!(
+            "Redaction refused — this file was saved in PDF's hybrid-reference form (some Microsoft Office exports are), and pdfcer cannot yet rewrite a hybrid file from scratch, which a redaction needs: an incremental save would leave the un-redacted content in the file's previous revision, where anyone could recover it. Nothing was written. This is a pdfcer limit, asked of the engine on 2026-09-09, not a property of your marks. Until then: print the sheet to a new PDF from another program and redact that copy. The writer's reason: {reason}"
+        ),
         R::FullRewriteUnavailable { reason } => format!(
             "Redaction refused — this document cannot be rewritten in full, and nothing was written. Applying a redaction requires rewriting the entire file as one revision: an incremental save would leave the un-redacted content sitting in the file's previous revision, where anyone could recover it, so pdfcer will not fall back to one. The writer's reason: {reason}"
         ),

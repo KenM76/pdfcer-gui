@@ -33,25 +33,55 @@
 //! `EditSession::reshape_annotation(annot_id, VertexEdit, modified)`, its
 //! preflight `reshape_annotation_preview`, and three one-line wrappers —
 //! `move_annotation_vertex`, `insert_annotation_vertex`,
-//! `remove_annotation_vertex`. The matrix is the engine's and is **not**
-//! restated as a condition here; it is asked, per frame, through the preflight:
+//! `remove_annotation_vertex`. `Pass 278.0` (`c8a6697`, 2026-09-09) shipped
+//! the **second family** for the one shape the first refuses by name:
+//! `EditSession::reshape_ink(annot_id, &InkEdit, modified)`, its preflight
+//! `reshape_ink_preview`, and the wrappers `move_ink_point`,
+//! `insert_ink_point`, `remove_ink_point`. The matrix is the engine's and is
+//! **not** restated as a condition here; it is asked, per frame, through
+//! whichever preflight the shape's family owns:
 //!
-//! | `/Subtype` | move | insert | remove | floor |
-//! |---|---|---|---|---|
-//! | `/Polygon` (plain or cloudy `/BE`) | yes | yes | yes | 3 |
-//! | `/PolyLine` | yes | yes | yes | 2 |
-//! | `/Line` (incl. arrows) | yes (index 0/1) | refused | refused | — |
-//! | `/Ink` | refused | refused | refused | — |
-//! | `/Square`, `/Circle`, text markup | refused | refused | refused | — |
+//! | `/Subtype` | family | move | insert | remove | floor |
+//! |---|---|---|---|---|---|
+//! | `/Polygon` (plain or cloudy `/BE`) | `VertexEdit` | yes | yes | yes | 3 |
+//! | `/PolyLine` | `VertexEdit` | yes | yes | yes | 2 |
+//! | `/Line` (incl. arrows) | `VertexEdit` | yes (index 0/1) | refused | refused | — |
+//! | `/Ink` | `InkEdit`, addressed `(stroke, point)` | yes | yes (after a stroke's last point **extends** it) | yes | 2 **per stroke** |
+//! | `/Square`, `/Circle`, text markup | — | refused | refused | refused | — |
 //!
-//! ★★ **This shell knows the first column and nothing else in that table.**
-//! [`geometry`] decides which shapes have *anchors to draw* — that is a
-//! painting question and it has to be answered locally — and every question
-//! about whether an edit is **allowed** goes to the engine. The distinction
-//! matters because the two lists are not the same one: `/Ink` has readable
-//! geometry (`Annotation::ink_list`) and no editable geometry, so a shell that
-//! derived "draggable" from "readable" would put handles on every ink stroke
-//! and refuse every drag from them.
+//! ★★ **This shell knows the first two columns and nothing else in that
+//! table.** [`geometry`] decides which shapes have *anchors to draw* and which
+//! verb family addresses them — both are routing questions that have to be
+//! answered locally — and every question about whether an edit is **allowed**
+//! goes to the engine. The distinction still matters, and `/Ink` is still the
+//! row that proves it, from the other side now: until `Pass 278.0` it had
+//! readable geometry (`Annotation::ink_list`) and no editable geometry, and
+//! this module refused to draw anchors from a readable-but-uneditable field.
+//! The day the verbs shipped, the row flipped **here**, in one `match` arm,
+//! and the honesty of the anchors is still the same rule: an anchor is drawn
+//! only where a verb can act on it.
+//!
+//! ## ★★ `/Ink` — one anchor list, two index spaces, no bridging segment
+//!
+//! `/InkList` is a list **of** strokes, so the engine addresses an ink point as
+//! `(stroke, point)` while everything on this canvas — the painter's trace
+//! regions, the press classifier, the gesture machine — carries one flat
+//! `usize`. [`ink::StrokeTable`] is the side table that converts between them,
+//! and its header carries the two rules that fall out: the preview draws **no
+//! segment between strokes** (a bridge the file does not hold), and *insert
+//! after a stroke's last point* **extends that stroke** rather than crossing
+//! into the next — the engine's own rule on `InkEdit::InsertPoint`. Every
+//! point of every stroke is an anchor today; decimation is a known follow-up,
+//! argued in that header, not an oversight.
+//!
+//! The engine's reply also settled the one objection that would have made this
+//! a different feature: pdfcer draws an `/InkList` as a **polyline** (`m` then
+//! `l`), so a point drag moves exactly the two segments beside it and the
+//! polyline preview this module already draws is *exact* for ink. What it
+//! cannot draw is the consequence for a stroke **another producer** drew and
+//! smoothed: re-baking straightens it. `InkForecast::appearance_was_pdfces` (old-name-exempt: the engine's own field name, quoted verbatim)
+//! reports that and `app::actions::annots` discloses it off-canvas, through
+//! the same list `measure_stale` travels on — never as a mark on the canvas.
 //!
 //! ## ★★★ The preflight is asked EVERY FRAME, including for a plain move
 //!
@@ -82,11 +112,12 @@
 //!
 //! ## Rule 9 — what an unavailable capability draws
 //!
-//! **Nothing.** A `/Square`, a `/Circle`, an `/Ink` stroke and a text markup
-//! get no anchors, no greyed anchors and no ghost anchors: [`geometry`] answers
-//! `None` and the painter's loop is empty. There is no *temporarily*
-//! unavailable case here to grey — the refusal is a property of the shape's
-//! kind and will not change while the operator looks at it.
+//! **Nothing.** A `/Square`, a `/Circle`, a text markup — and an `/Ink` whose
+//! `/InkList` the engine could not read — get no anchors, no greyed anchors and
+//! no ghost anchors: [`geometry`] answers `None` and the painter's loop is
+//! empty. There is no *temporarily* unavailable case here to grey — the refusal
+//! is a property of the shape's kind and will not change while the operator
+//! looks at it.
 //!
 //! ★★ What they get instead is a **sentence**, and it is delivered by
 //! [`explain_unreshapable`] at the moment the operator asks: with the Points
@@ -109,8 +140,8 @@
 //!
 //! ## Rule 15
 //!
-//! Everything here is about a **markup shape** — a `/Polygon`, `/PolyLine` or
-//! `/Line` the operator drew as a comment. A **ce dimension** is also a `/Line`
+//! Everything here is about a **markup shape** — a `/Polygon`, `/PolyLine`,
+//! `/Line` or `/Ink` the operator drew as a comment. A **ce dimension** is also a `/Line`
 //! and is claimed by [`crate::canvas::dimdrag`] before this module is reached;
 //! the engine refuses it from these verbs by name
 //! (`EditError::AnnotationIsCeDimension`) as the backstop. **pdf dimensions** —
@@ -134,8 +165,9 @@
 //!   machine owns Escape and drops the drag before this module is reached.
 //!   Nothing is written until `Phase::Complete`.
 //! - **D4 one-undo-entry** — `reshape_annotation` is one `CommandKind`, two
-//!   objects (the dictionary and its `/N` stream). One gesture pushes exactly
-//!   one action, so one gesture is one `Ctrl+Z`.
+//!   objects (the dictionary and its `/N` stream), and `reshape_ink` is one
+//!   `CommandKind::ReshapeInk` the same way. One gesture pushes exactly one
+//!   action, so one gesture is one `Ctrl+Z`.
 //! - **D5 modifiers-constrain** — Shift locks the node to one axis, applied by
 //!   [`crate::canvas::vertexroute`] through
 //!   [`crate::canvas::constrain::reposition`], which filters the displacement
@@ -154,10 +186,13 @@
 //!   snapped to is the worst of the three outcomes.
 //! - **D9 disclosure** — a reshape can drop properties the regenerated
 //!   appearance does not reproduce, and can leave a `/Measure` dictionary
-//!   stating a distance that is no longer true. Both are disclosed off-canvas
-//!   by `app::actions::annots`; see [`crate::text::markup::measure_stale`].
+//!   stating a distance that is no longer true; an ink reshape can replace
+//!   another producer's smoothed stroke with pdfcer's straight segments. All
+//!   three are disclosed off-canvas by `app::actions::annots`; see
+//!   [`crate::text::markup::measure_stale`] and
+//!   [`crate::text::markup::ink_redrawn_straight`].
 
-use pdfcer_core::edit::{EditError, VertexEdit};
+use pdfcer_core::edit::{EditError, EditSession, InkEdit, VertexEdit};
 use pdfcer_core::object::ObjId;
 use pdfcer_core::vector::Point;
 use pdfcer_core::vector::snap::SnapCandidate;
@@ -185,8 +220,11 @@ use crate::canvas::selection::{AnnotKind, SelectionState};
 /// working build as broken and vice versa.
 pub const NODE_REGION: &str = "canvas.markup-node"; // ui-text-exempt: trace region name
 
-/// `markup-node-move id=… index=… nodes=… x=… y=… snap=…` — the shell's own report that
-/// a node **move** gesture was understood.
+/// `markup-node-move id=… index=… address=… family=… nodes=… x=… y=… snap=…` —
+/// the shell's own report that a node **move** gesture was understood.
+///
+/// `address=` is `stroke/point` for an `/Ink` and `none` otherwise;
+/// `family=` is `vertex` or `ink`, naming which engine planner was asked.
 ///
 /// ★★★ **`markup-node-`, NOT `markup-vertex-`, and the rename is a caught
 /// defect rather than a preference.** `canvas::markup::vertex` has written
@@ -205,14 +243,15 @@ pub const NODE_REGION: &str = "canvas.markup-node"; // ui-text-exempt: trace reg
 /// `tools/gates/check-trace-names.py` for the three times that cost a day.
 pub const TRACE_MOVE: &str = "markup-node-move"; // ui-text-exempt: diagnostic trace name
 
-/// `markup-node-insert id=… index=… nodes=… x=… y=…`
+/// `markup-node-insert id=… index=… address=… family=… nodes=… x=… y=… snap=…`
 pub const TRACE_INSERT: &str = "markup-node-insert"; // ui-text-exempt: diagnostic trace name
 
-/// `markup-node-remove id=… index=… nodes=… x=… y=…`
+/// `markup-node-remove id=… index=… address=… family=… nodes=… x=… y=… snap=…`
 pub const TRACE_REMOVE: &str = "markup-node-remove"; // ui-text-exempt: diagnostic trace name
 
-/// `markup-node-declined id=… index=… intent=… reason=…` — the preflight said
-/// no on the frame the operator let go.
+/// `markup-node-declined id=… index=… address=… family=… intent=… reason=…` —
+/// the preflight said no on the frame the operator let go. `reason=` is the
+/// engine's own sentence, verbatim.
 pub const TRACE_DECLINED: &str = "markup-node-declined"; // ui-text-exempt: diagnostic trace name
 
 /// `markup-nodes-unavailable id=… subtype=… reason=…` — the sentence
@@ -230,28 +269,64 @@ pub const TRACE_UNAVAILABLE: &str = "markup-nodes-unavailable"; // ui-text-exemp
 /// missing something they can plainly see.
 const NODE_GRAB_SLACK_PT: f32 = 3.0;
 
-/// **The geometry of the selected markup shape**, if it is one with nodes.
+/// **The nodes of one selected markup shape**, and how the engine addresses
+/// them.
 ///
-/// Returns the annotation's id, its node list in **page space** (PDF user
-/// space, y-up), and whether the shape closes.
+/// Returned by [`geometry`], read by the painter, the hit test, the preview and
+/// the right-click menu — one value, so the anchor the operator sees, the anchor
+/// the press finds and the address the engine is asked about are derived from
+/// the same list in the same frame.
+///
+/// # ★ `strokes` is the one field that knows which verb family this is
+///
+/// `None` is a `/Polygon`, `/PolyLine` or `/Line`: the engine addresses a node
+/// by one index into `/Vertices` (or `/L`), through `VertexEdit`. `Some` is an
+/// `/Ink`: the engine addresses a point as `(stroke, point)`, through `InkEdit`,
+/// and the table converts this list's flat index to that pair. [`Plan`] is the
+/// only place that branches on it, and everything else in this module treats
+/// the two alike — which is what makes a freehand mark's drag look and behave
+/// exactly like a polyline's, the property the operator asked for.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Geometry {
+    /// The annotation, by stable object id.
+    pub id: ObjId,
+    /// Every node, in **page space** (PDF user space, y-up), in the order the
+    /// file holds them. For an `/Ink` this is every point of every stroke,
+    /// stroke after stroke.
+    pub points: Vec<Point>,
+    /// Whether the shape closes back to its first node — a `/Polygon` does,
+    /// nothing else does. Always `false` when `strokes` is `Some`: an ink
+    /// stroke is open by definition (`InkEdit::InsertPoint`'s doc).
+    pub closed: bool,
+    /// The stroke boundaries of an `/Ink`, or `None` for a single-list shape.
+    pub strokes: Option<ink::StrokeTable>,
+}
+
+/// **The geometry of the selected markup shape**, if it is one with nodes.
 ///
 /// # Which shapes answer, and why the list is short
 ///
-/// | `/Subtype` | source | closed |
-/// |---|---|---|
-/// | `Polygon` | `/Vertices` | yes |
-/// | `PolyLine` | `/Vertices` | no |
-/// | `Line` | `/L`, two points | no |
+/// | `/Subtype` | source | closed | addressed by |
+/// |---|---|---|---|
+/// | `Polygon` | `/Vertices` | yes | one index, `VertexEdit` |
+/// | `PolyLine` | `/Vertices` | no | one index, `VertexEdit` |
+/// | `Line` | `/L`, two points | no | index 0 or 1, `VertexEdit` |
+/// | `Ink` | `/InkList`, flattened | no | `(stroke, point)`, `InkEdit` — see [`ink`] |
 ///
-/// Everything else answers `None`, and the two exclusions are the interesting
-/// ones:
+/// Everything else answers `None`, and the exclusions are the interesting ones:
 ///
-/// * **`/Ink`.** `Annotation::ink_list` is readable and every vertex edit on it
-///   is refused by name. Drawing anchors from a readable-but-uneditable field
-///   would be the *"visible control, silently inert"* failure this project's
-///   `DEFECTS.md` is made of. R9: an unavailable capability renders nothing.
 /// * **`/Square` and `/Circle`.** Defined by `/Rect`, not by vertices — they
 ///   already have eight resize grips, which is the verb for them.
+/// * **Text markup.** `/QuadPoints` follow the words they cover and have no
+///   corners of their own; the engine refuses them by name.
+/// * **An `/Ink` with no readable `/InkList`.** `Annotation::ink_list` is
+///   `None` for a malformed or absent array, and an anchor list with nothing
+///   in it is the honest answer — the engine would refuse every address.
+///
+/// ★ `/Ink` was on the refused list until `pdfcer-core` `Pass 278.0`
+/// (`c8a6697`), and the argument for refusing it then is the argument for
+/// drawing it now: an anchor is drawn only where a verb can act on it. The
+/// verbs exist, so the anchors do. [`ink`]'s header carries what changed.
 ///
 /// # ★★ A cloudy `/Polygon`'s anchors are on its VERTICES, not on its outline
 ///
@@ -277,17 +352,24 @@ const NODE_GRAB_SLACK_PT: f32 = 3.0;
 /// consults exactly the same one, and its own note records that treating either
 /// as the other is a spec-contradicting bug in one direction or the other.
 #[must_use]
-pub fn geometry(doc: &OpenDoc, selection: &SelectionState) -> Option<(ObjId, Vec<Point>, bool)> {
+pub fn geometry(doc: &OpenDoc, selection: &SelectionState) -> Option<Geometry> {
     let annot = selection.annot()?;
     if annot.target.kind != AnnotKind::Markup || annot.target.locked {
         return None;
     }
+    let id = annot.target.id;
     let page = doc.pages.get(annot.target.page)?;
     let found = pdfcer_core::annot::page_annotations(&doc.session.graph(), page.id)
         .into_iter()
-        .find(|a| a.id == Some(annot.target.id))?;
+        .find(|a| a.id == Some(id))?;
     let to_points = |pairs: &[(f64, f64)]| -> Vec<Point> {
         pairs.iter().map(|&(x, y)| Point::new(x, y)).collect()
+    };
+    let single = |points: Vec<Point>, closed: bool| Geometry {
+        id,
+        points,
+        closed,
+        strokes: None,
     };
     // ★ Matched on the `/Subtype` bytes the read model carries rather than on
     // "does it have a `/Vertices` key". The keys are read subtype-agnostically
@@ -296,19 +378,32 @@ pub fn geometry(doc: &OpenDoc, selection: &SelectionState) -> Option<(ObjId, Vec
     // The subtype is what the engine's own matrix is keyed on, so it is what
     // this is keyed on.
     match found.subtype.as_slice() {
-        b"Polygon" => Some((annot.target.id, to_points(found.vertices.as_ref()?), true)),
-        b"PolyLine" => Some((annot.target.id, to_points(found.vertices.as_ref()?), false)),
+        b"Polygon" => Some(single(to_points(found.vertices.as_ref()?), true)),
+        b"PolyLine" => Some(single(to_points(found.vertices.as_ref()?), false)),
         // A `/Line`'s two ends are `/L`, not `/Vertices`, and the engine
         // addresses them as index 0 and index 1 of the same `VertexEdit::Move`.
         // So the shell's list is `[start, end]` and the indices line up by
         // construction rather than by a mapping that could be got backwards.
         b"Line" => {
             let [start, end] = found.line?;
-            Some((
-                annot.target.id,
+            Some(single(
                 vec![Point::new(start.0, start.1), Point::new(end.0, end.1)],
                 false,
             ))
+        }
+        // ★★ `/Ink` — `Pass 278.0`. Every point of every stroke, flattened in
+        // file order, with the table that remembers where each stroke begins.
+        // `ink_list` is `None` for an `/InkList` the engine could not read as
+        // an array, and that is the R9 answer: no anchors, and the sentence
+        // `explain_unreshapable` raises names the mark's kind.
+        b"Ink" => {
+            let (points, strokes) = ink::StrokeTable::flatten(found.ink_list.as_ref()?);
+            Some(Geometry {
+                id,
+                points,
+                closed: false,
+                strokes: Some(strokes),
+            })
         }
         _ => None,
     }
@@ -321,7 +416,7 @@ pub fn geometry(doc: &OpenDoc, selection: &SelectionState) -> Option<(ObjId, Vec
 /// hit test be one call with no branch of their own.
 #[must_use]
 pub fn nodes(doc: &OpenDoc, selection: &SelectionState) -> Vec<egui::Pos2> {
-    let Some((_, points, _)) = geometry(doc, selection) else {
+    let Some(shape) = geometry(doc, selection) else {
         return Vec::new();
     };
     let Some(annot) = selection.annot() else {
@@ -330,7 +425,8 @@ pub fn nodes(doc: &OpenDoc, selection: &SelectionState) -> Vec<egui::Pos2> {
     let Some(page) = doc.pages.get(annot.target.page) else {
         return Vec::new();
     };
-    points
+    shape
+        .points
         .iter()
         .filter_map(|p| {
             #[allow(clippy::cast_possible_truncation)]
@@ -394,56 +490,215 @@ pub fn preview_of(points: &[Point], closed: bool) -> Vec<(Point, Point)> {
     out
 }
 
-/// The node list this edit would produce, applied to `points`.
-///
-/// ★ Returned rather than drawn, so the preview and the action are built from
-/// **one** `Vec`. A second derivation of *"what would this look like"* is the
-/// defect `measure::Resolved` exists to prevent, and it has shipped on this
-/// canvas twice.
-///
-/// `None` for an index the list does not hold, which the preflight would also
-/// refuse — asked here as well because this function is where the slice is
-/// indexed and a panic mid-drag would take the window with it.
-#[must_use]
-fn edited(
-    points: &[Point],
-    intent: VertexIntent,
-    index: usize,
-    target: Point,
-) -> Option<Vec<Point>> {
-    let mut out = points.to_vec();
-    match intent {
-        VertexIntent::Move => *out.get_mut(index)? = target,
-        // ★ `index + 1`, matching the engine: `insert_annotation_vertex(after,
-        // at)` puts the new node at `after + 1`, and there is deliberately no
-        // "insert before the first" spelling — the engine refuses `after >=
-        // count` and says to rotate the polygon's start instead, which is what
-        // every other tool does as well.
-        VertexIntent::Insert => {
-            if index >= out.len() {
-                return None;
-            }
-            out.insert(index + 1, target);
+impl Geometry {
+    /// **The index pairs a preview joins** — the one statement of which nodes
+    /// are connected, read by the preview painter and by the right-click
+    /// segment pick so the edge a menu offers *"Add a point here"* on is always
+    /// an edge the preview draws.
+    ///
+    /// A single-list shape joins consecutive nodes and, when closed with three
+    /// or more, the last back to the first — [`preview_of`]'s rule, restated
+    /// here as indices so the menu can name the segment's first node. An
+    /// `/Ink` joins consecutive points **within** each stroke only; the
+    /// boundary between two strokes is not a segment, because the file does
+    /// not hold one and the release would not commit one.
+    #[must_use]
+    pub fn segment_pairs(&self) -> Vec<(usize, usize)> {
+        if let Some(table) = &self.strokes {
+            return table.segment_pairs();
         }
-        VertexIntent::Remove => {
-            if index >= out.len() {
-                return None;
-            }
-            out.remove(index);
+        let n = self.points.len();
+        let mut out: Vec<(usize, usize)> = (1..n).map(|i| (i - 1, i)).collect();
+        if self.closed && n >= 3 {
+            out.push((n - 1, 0));
         }
+        out
     }
-    Some(out)
+
+    /// The page-space segments this shape would be drawn as — the preview.
+    ///
+    /// One derivation with [`Self::segment_pairs`], so a pair the menu offers
+    /// is a segment the painter draws; and for a single-list shape identical
+    /// to [`preview_of`], which the tests assert rather than assume.
+    #[must_use]
+    pub fn segments(&self) -> Vec<(Point, Point)> {
+        self.segment_pairs()
+            .into_iter()
+            .filter_map(|(a, b)| Some((*self.points.get(a)?, *self.points.get(b)?)))
+            .collect()
+    }
+
+    /// The shape this edit would produce.
+    ///
+    /// ★ Returned rather than drawn, so the preview and the action are built
+    /// from **one** value. A second derivation of *"what would this look like"*
+    /// is the defect `measure::Resolved` exists to prevent, and it has shipped
+    /// on this canvas twice.
+    ///
+    /// `None` for an index the list does not hold, which the preflight would
+    /// also refuse — asked here as well because this function is where the
+    /// slice is indexed and a panic mid-drag would take the window with it.
+    ///
+    /// ★★ For an `/Ink` the stroke table moves with the points:
+    /// [`ink::StrokeTable::after_edit`] grows or shrinks the **grabbed**
+    /// stroke, so an insert after a stroke's last point extends that stroke —
+    /// the engine's rule — and the preview's boundaries stay true to the list
+    /// it is drawn from.
+    #[must_use]
+    fn edited(&self, intent: VertexIntent, index: usize, target: Point) -> Option<Self> {
+        let mut out = self.points.clone();
+        match intent {
+            VertexIntent::Move => *out.get_mut(index)? = target,
+            // ★ `index + 1`, matching the engine: `insert_annotation_vertex(after,
+            // at)` puts the new node at `after + 1`, and there is deliberately no
+            // "insert before the first" spelling — the engine refuses `after >=
+            // count` and says to rotate the polygon's start instead, which is what
+            // every other tool does as well. `InkEdit::InsertPoint` spells it the
+            // same way, per stroke.
+            VertexIntent::Insert => {
+                if index >= out.len() {
+                    return None;
+                }
+                out.insert(index + 1, target);
+            }
+            VertexIntent::Remove => {
+                if index >= out.len() {
+                    return None;
+                }
+                out.remove(index);
+            }
+        }
+        let strokes = match &self.strokes {
+            Some(table) => Some(table.after_edit(intent, index)?),
+            None => None,
+        };
+        Some(Self {
+            id: self.id,
+            points: out,
+            closed: self.closed,
+            strokes,
+        })
+    }
 }
 
-/// The [`VertexEdit`] this frame's intent asks the engine for.
+/// **The edit one frame asks the engine for**, in whichever of the two verb
+/// families the shape belongs to.
 ///
-/// ★ Built once and handed to **both** the preflight and the action, so the
-/// question asked and the question answered are literally the same value. A
-/// shell that preflighted `Remove { index }` and then committed
+/// ★ Built once by [`planned`] and handed to **both** the preflight and the
+/// action, so the question asked and the question answered are literally the
+/// same value. A shell that preflighted `Remove { index }` and then committed
 /// `Remove { index: index + 1 }` would pass every unit test either half has.
+///
+/// ★★ Two variants and not a trait object, for `AnnotAction`'s own reason: the
+/// two families reach **two different engine planners** with two different
+/// refusal vocabularies, and the one thing that must never happen on this
+/// canvas is a gesture aimed at the wrong verb. An `/Ink` handed to
+/// `reshape_annotation` is refused by name (`GeometryNotReshapable`); a
+/// `/Polygon` handed to `reshape_ink` is refused by name (`InkVerbOnNonInk`).
+/// Both refusals are worded in [`refusal_for`] as the backstop, and neither
+/// is reachable while this enum is built from [`Geometry::strokes`].
+#[derive(Debug, Clone, PartialEq)]
+pub enum Plan {
+    /// A `/Polygon`, `/PolyLine` or `/Line` — one index.
+    Vertex(VertexEdit),
+    /// An `/Ink` — `(stroke, point)`, converted from the flat anchor index by
+    /// [`ink::StrokeTable`].
+    Ink(InkEdit),
+}
+
+impl Plan {
+    /// **Ask the engine whether this edit is allowed**, without doing it.
+    ///
+    /// Each family's preview shares one body with its mutating verb —
+    /// `reshape_plan` for vertices, `ink_plan` for ink — so neither can
+    /// disagree with what the release would do. The forecast itself is not
+    /// returned: the drag needs a yes or a worded no, and the disclosure the
+    /// ink forecast carries (`appearance_was_pdfces`) is read at apply time by (old-name-exempt: the engine's own field name, quoted verbatim)
+    /// `app::actions::annots`, where the sentence can reach the status line.
+    pub fn preview(&self, session: &EditSession, id: ObjId) -> Result<(), EditError> {
+        match self {
+            Self::Vertex(edit) => session.reshape_annotation_preview(id, *edit).map(|_| ()),
+            Self::Ink(edit) => session.reshape_ink_preview(id, edit).map(|_| ()),
+        }
+    }
+
+    /// **The action a release raises** for this plan — one of the six node
+    /// variants of [`AnnotAction`], each of which reaches exactly one engine
+    /// verb.
+    #[must_use]
+    pub fn action(self, id: ObjId) -> AnnotAction {
+        match self {
+            Self::Vertex(VertexEdit::Move { index, dx, dy }) => {
+                AnnotAction::MoveNode { id, index, dx, dy }
+            }
+            Self::Vertex(VertexEdit::Insert { after, at }) => {
+                AnnotAction::InsertNode { id, after, at }
+            }
+            Self::Vertex(VertexEdit::Remove { index }) => AnnotAction::RemoveNode { id, index },
+            Self::Ink(InkEdit::MovePoint {
+                stroke,
+                point,
+                dx,
+                dy,
+            }) => AnnotAction::MoveInkPoint {
+                id,
+                stroke,
+                point,
+                dx,
+                dy,
+            },
+            Self::Ink(InkEdit::InsertPoint { stroke, after, at }) => AnnotAction::InsertInkPoint {
+                id,
+                stroke,
+                after,
+                at,
+            },
+            Self::Ink(InkEdit::RemovePoint { stroke, point }) => {
+                AnnotAction::RemoveInkPoint { id, stroke, point }
+            }
+            // ★ `InkEdit` is `#[non_exhaustive]` and carries three whole-stroke
+            // variants this shell does not build — `ReplaceStroke`,
+            // `MoveStroke`, `RemoveStroke`. [`planned`] is the only
+            // constructor of a `Plan::Ink` and it builds only the three point
+            // variants above, so this arm is unreachable by construction;
+            // mapped to the general decline rather than a panic, for the same
+            // reason every other "cannot happen" in a drag is: a wrong sentence
+            // on release is recoverable and a crash mid-gesture is not.
+            Self::Ink(_) => AnnotAction::DeclineNodeEdit {
+                why: crate::text::markup::NodeEditRefusal::Refused,
+            },
+        }
+    }
+
+    /// A short word for the trace. Never displayed.
+    fn word(&self) -> &'static str {
+        match self {
+            // ui-text-exempt: diagnostic trace fragments, never displayed in the UI.
+            Self::Vertex(_) => "vertex",
+            Self::Ink(_) => "ink",
+        }
+    }
+}
+
+/// **Build the [`Plan`] for this frame's intent**, addressed the way the
+/// shape's family addresses a node.
+///
+/// `None` only for an `/Ink` anchor index the stroke table cannot place — a
+/// press the painter could not have drawn an anchor for. A single-list shape
+/// always answers, and leaves an out-of-range index to the engine's own
+/// `AnnotationVertexIndexOutOfRange`, exactly as before ink existed.
 #[must_use]
-fn planned(intent: VertexIntent, index: usize, from: Point, target: Point) -> VertexEdit {
-    match intent {
+fn planned(
+    shape: &Geometry,
+    intent: VertexIntent,
+    index: usize,
+    from: Point,
+    target: Point,
+) -> Option<Plan> {
+    if let Some(table) = &shape.strokes {
+        return table.plan(intent, index, from, target).map(Plan::Ink);
+    }
+    Some(Plan::Vertex(match intent {
         VertexIntent::Move => VertexEdit::Move {
             index,
             dx: target.x - from.x,
@@ -454,10 +709,10 @@ fn planned(intent: VertexIntent, index: usize, from: Point, target: Point) -> Ve
             at: target,
         },
         VertexIntent::Remove => VertexEdit::Remove { index },
-    }
+    }))
 }
 
-/// Which of the shell's five sentences an engine refusal is.
+/// Which of the shell's sentences an engine refusal is.
 ///
 /// ★ The mapping lives **here** rather than in `crate::text::markup`, for
 /// `dimdrag::refusal_for`'s reason and this project's standing division: the
@@ -476,6 +731,15 @@ fn planned(intent: VertexIntent, index: usize, from: Point, target: Point) -> Ve
 /// is the fact the operator can check against the shape in front of them. The
 /// engine's sentence goes to the **trace**, where the developer is.
 ///
+/// # ★★ The five ink refusals of `Pass 278.0`, each answered
+///
+/// | engine says | sentence | why that one |
+/// |---|---|---|
+/// | `InkStrokeWouldBreachPointFloor` | `StrokeWouldLeaveTooFew` | the floor is **per stroke** (two), so *"the shape has as few corners as it can have"* would be false of a mark whose other strokes have plenty; the next act is *add a point to this stroke* |
+/// | `InkPointIndexOutOfRange`, `InkStrokeIndexOutOfRange` | `PointNotFound` | the anchors and the file have gone out of step; the next act is to reselect, which rebuilds both from one walk |
+/// | `InkWouldBeEmpty` | `WouldLeaveNothing` | only a whole-stroke verb can raise it and this shell calls none — worded anyway, because an unreachable refusal that becomes reachable silently is how a grip comes to do nothing |
+/// | `InkVerbOnNonInk` | `Refused` | a routing defect in this shell (a non-ink shape reached the ink planner); no sentence about nodes helps the operator, and the engine's own sentence names it in the trace |
+///
 /// The `_` arm is not laziness. The remaining refusals —
 /// `AnnotationNotFound`, `AnnotationIsCeDimension`, `AnnotationLocked`,
 /// `AnnotationVertexIndexOutOfRange`, `DocumentEncrypted`, the certification
@@ -488,11 +752,25 @@ fn refusal_for(error: &EditError) -> crate::text::markup::NodeEditRefusal {
     use crate::text::markup::NodeEditRefusal as R;
     match error {
         EditError::ReshapeWouldBreachVertexFloor { .. } => R::WouldLeaveTooFew,
+        EditError::InkStrokeWouldBreachPointFloor { .. } => R::StrokeWouldLeaveTooFew,
         EditError::GeometryNotReshapable { subtype, .. } => R::ShapeHasNoNodes {
             subtype: shape_word(subtype),
         },
         EditError::AnnotationVertexNotPlaceable { .. } => R::Unplaceable,
         EditError::AnnotationLocked { .. } => R::Locked,
+        // ★ The two ink index spaces, one sentence: whichever list the engine
+        // could not find the address in, the shell's anchors were drawn from a
+        // `/InkList` the engine no longer holds in that shape, and the remedy
+        // — reselect, so both are rebuilt from one walk — is the same.
+        EditError::InkPointIndexOutOfRange { .. } | EditError::InkStrokeIndexOutOfRange { .. } => {
+            R::PointNotFound
+        }
+        EditError::InkWouldBeEmpty { .. } => R::WouldLeaveNothing,
+        // ★ A non-ink shape reached the ink planner. Unreachable while
+        // [`planned`] chooses the family from [`Geometry::strokes`]; named so
+        // the day it is reached the trace line carries the engine's own
+        // sentence — which names the subtype — beside the shell's general one.
+        EditError::InkVerbOnNonInk { .. } => R::Refused,
         // ★ Named rather than left to the `_` arm below, and it earns the line:
         // this is the refusal that fires when the anchors and the geometry have
         // gone out of step — the painter drew a handle at index `n` and the
@@ -613,10 +891,10 @@ fn inner(frame: NodeFrame<'_>, actions: &mut Vec<Action>) -> Option<NodeDrag> {
         map,
         alt_held,
     } = frame;
-    let (id, points, closed) = geometry(doc, selection)?;
+    let shape = geometry(doc, selection)?;
     let annot = selection.annot()?;
     let page = doc.pages.get(annot.target.page)?;
-    let old = *points.get(index)?;
+    let old = *shape.points.get(index)?;
 
     // ★★★ `from` and `at` are ALREADY CANVAS SPACE — the gesture machine says
     // so on the variant, and converting them a second time is the operator's
@@ -656,9 +934,7 @@ fn inner(frame: NodeFrame<'_>, actions: &mut Vec<Action>) -> Option<NodeDrag> {
     let intent = crate::canvas::dimdrag::intent(ctx);
     Some(resolved(Resolve {
         session: &doc.session,
-        id,
-        points: &points,
-        closed,
+        shape: &shape,
         intent,
         index,
         old,
@@ -681,13 +957,10 @@ fn inner(frame: NodeFrame<'_>, actions: &mut Vec<Action>) -> Option<NodeDrag> {
 /// exactly like a test that passed for the right reason.
 struct Resolve<'a> {
     /// The read side of the document, for the preflight.
-    session: &'a pdfcer_core::edit::EditSession,
-    /// The annotation being reshaped.
-    id: ObjId,
-    /// Its nodes as they stand, page space.
-    points: &'a [Point],
-    /// Whether the shape closes — a `/Polygon` does, the other two do not.
-    closed: bool,
+    session: &'a EditSession,
+    /// The shape as it stands — its id, its nodes in page space, whether it
+    /// closes, and (for an `/Ink`) where its strokes begin.
+    shape: &'a Geometry,
     /// Move, add or remove.
     intent: VertexIntent,
     /// The node the drag grabbed.
@@ -712,9 +985,7 @@ struct Resolve<'a> {
 fn resolved(edit: Resolve<'_>) -> NodeDrag {
     let Resolve {
         session,
-        id,
-        points,
-        closed,
+        shape,
         intent,
         index,
         old,
@@ -723,18 +994,52 @@ fn resolved(edit: Resolve<'_>) -> NodeDrag {
         snap,
         actions,
     } = edit;
-    let plan = planned(intent, index, old, target);
+    let id = shape.id;
+    // ★ `address=` in the trace lines below: the engine's own `(stroke, point)`
+    // for an `/Ink`, so a driven check can tell *the right verb on the wrong
+    // stroke* from a working gesture; `none` for a single-list shape, whose
+    // address IS the index.
+    let address = shape
+        .strokes
+        .as_ref()
+        .and_then(|t| t.address(index))
+        .map_or_else(
+            || "none".to_owned(),
+            |(stroke, point)| format!("{stroke}/{point}"),
+        );
+    let Some(plan) = planned(shape, intent, index, old, target) else {
+        // Only an `/Ink` anchor index the stroke table cannot place — a press
+        // the painter could not have drawn an anchor for. The engine cannot be
+        // asked about an address this shell cannot produce, so the refusal is
+        // worded here, by the same rule as every other: a sentence, not a
+        // silence, and only on the frame the operator let go.
+        if phase == Phase::Complete {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed in the UI.
+                format!(
+                    "{TRACE_DECLINED} id={} index={index} address={address} intent={intent:?} \
+                     reason=anchor-index-outside-ink-list",
+                    id.num
+                )
+            });
+            actions.push(Action::Annot(AnnotAction::DeclineNodeEdit {
+                why: crate::text::markup::NodeEditRefusal::PointNotFound,
+            }));
+        }
+        return NodeDrag::default();
+    };
 
     // --- the preflight ----------------------------------------------------
     //
     // `reshape_annotation_preview` shares one body with `reshape_annotation`
-    // (`reshape_plan`), so it cannot disagree with what the release would do.
-    // It costs one annotation walk per frame of a drag that lasts a second or
+    // (`reshape_plan`), and `reshape_ink_preview` with `reshape_ink`
+    // (`ink_plan`), so neither can disagree with what the release would do. It
+    // costs one annotation walk per frame of a drag that lasts a second or
     // two, which is deliberate: the alternative is a second copy of the
-    // engine's subtype matrix and its two floors in this shell, and that is the
+    // engine's subtype matrix and its floors in this shell, and that is the
     // *"two things that must agree and eventually will not"* the engine's own
     // doc comment argues against by name.
-    if let Err(why) = session.reshape_annotation_preview(id, plan) {
+    if let Err(why) = plan.preview(session, id) {
         if phase == Phase::Complete {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed in the UI.
@@ -744,8 +1049,10 @@ fn resolved(edit: Resolve<'_>) -> NodeDrag {
                 // the one place a refusal this shell mapped to its general
                 // sentence can still be diagnosed precisely.
                 format!(
-                    "{TRACE_DECLINED} id={} index={index} intent={intent:?} reason={why}",
-                    id.num
+                    "{TRACE_DECLINED} id={} index={index} address={address} family={} \
+                     intent={intent:?} reason={why}",
+                    id.num,
+                    plan.word(),
                 )
             });
             // ★ Handed INWARD as an action rather than recorded here: the
@@ -759,12 +1066,12 @@ fn resolved(edit: Resolve<'_>) -> NodeDrag {
         // The shape exactly as it stands. See [`drag`]'s header: a preview that
         // showed the edit would be promising a release that refuses.
         return NodeDrag {
-            segments: Some(preview_of(points, closed)),
+            segments: Some(shape.segments()),
             snap: None,
         };
     }
 
-    let Some(shape) = edited(points, intent, index, target) else {
+    let Some(after) = shape.edited(intent, index, target) else {
         // Unreachable behind the preflight, which refuses every index the list
         // does not hold. Returning empty rather than asserting: a frame with no
         // preview is recoverable, and a panic here would take the window with
@@ -783,33 +1090,25 @@ fn resolved(edit: Resolve<'_>) -> NodeDrag {
             // remove that took the neighbour, and a working gesture all move
             // the shape; only the index and the count together say which.
             format!(
-                "{} id={} index={index} nodes={} x={:.2} y={:.2} snap={}",
+                "{} id={} index={index} address={address} family={} nodes={} x={:.2} y={:.2} \
+                 snap={}",
                 match intent {
                     VertexIntent::Move => TRACE_MOVE,
                     VertexIntent::Insert => TRACE_INSERT,
                     VertexIntent::Remove => TRACE_REMOVE,
                 },
                 id.num,
-                shape.len(),
+                plan.word(),
+                after.points.len(),
                 target.x,
                 target.y,
                 snap.map_or_else(|| "none".to_owned(), |c| format!("{:?}", c.kind))
             )
         });
-        actions.push(Action::Annot(match intent {
-            VertexIntent::Move => AnnotAction::MoveNode {
-                id,
-                index,
-                dx: target.x - old.x,
-                dy: target.y - old.y,
-            },
-            VertexIntent::Insert => AnnotAction::InsertNode {
-                id,
-                after: index,
-                at: target,
-            },
-            VertexIntent::Remove => AnnotAction::RemoveNode { id, index },
-        }));
+        // ★ The action is built from the SAME plan the preflight was asked
+        // about — `Plan::action` is a pure relabelling — so the question asked
+        // and the edit committed cannot differ by an index, a stroke or a sign.
+        actions.push(Action::Annot(plan.action(id)));
         // Nothing is previewed on the frame that commits: the annotation is
         // about to be regenerated and drawn for real, and a preview laid over
         // it would be a second copy of the same shape, one frame stale.
@@ -817,7 +1116,7 @@ fn resolved(edit: Resolve<'_>) -> NodeDrag {
     }
 
     NodeDrag {
-        segments: Some(preview_of(&shape, closed)),
+        segments: Some(after.segments()),
         // A removal has no destination, so there is nothing for a snap marker
         // to describe and drawing one would point at a node that is about to
         // stop existing.
@@ -909,6 +1208,10 @@ pub fn explain_unreshapable(
 /// why a menu row needs no armed tool where the chord does, and for where the
 /// *which node did they mean* operand is parked for the life of the popup.
 pub mod menu;
+
+/// ★★ **The stroke table of an `/Ink`** — flat anchor index ↔ `(stroke, point)`,
+/// the within-stroke segment list, and why every point is an anchor for now.
+pub mod ink;
 
 #[cfg(test)]
 mod tests;

@@ -438,12 +438,15 @@ pub(super) fn draw(
     // report a working build as broken.
     //
     // ★★ `annotnodes::nodes` is empty for a shape with no editable geometry —
-    // a rectangle, an ellipse, a freehand mark — which is R9 exactly: **an
+    // a rectangle, an ellipse, a text mark — which is R9 exactly: **an
     // unavailable capability renders nothing.** Not a greyed anchor, because
     // greying is for a capability that is *temporarily* away and this one never
     // arrives. The sentence that says so is
     // `annotnodes::explain_unreshapable`'s, raised when the operator arms the
-    // tool that looks for nodes.
+    // tool that looks for nodes. (A freehand mark was on that list until
+    // `pdfcer-core` `Pass 278.0`, 2026-09-09; it now draws one anchor per
+    // point of every stroke — `annotnodes::ink`'s header carries the density
+    // argument.)
     // ★ Each source is enumerated SEPARATELY and only then chained. Enumerating
     // the chain would number a markup shape's first node `dimension_count`
     // rather than 0 — invisible today, because the two lists are mutually

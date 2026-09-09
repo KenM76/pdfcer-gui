@@ -39,10 +39,11 @@
 //! ## ★★ The engine is ASKED, never restated
 //!
 //! [`super`]'s header carries the matrix — which subtype accepts a move, an
-//! insert, a remove, and what its vertex floor is. **This module does not read
-//! that table.** It builds the exact [`VertexEdit`] the row would commit and
-//! hands it to `EditSession::reshape_annotation_preview`, which shares one body
-//! (`reshape_plan`) with the mutating verb and therefore cannot disagree with
+//! insert, a remove, and what its floor is. **This module does not read that
+//! table.** It builds the exact [`super::Plan`] the row would commit — a
+//! `VertexEdit` for a `/Polygon`, `/PolyLine` or `/Line`, an `InkEdit` for an
+//! `/Ink` (`Pass 278.0`) — and hands it to that family's preview verb, which
+//! shares one body with the mutating verb and therefore cannot disagree with
 //! what pressing the row would do.
 //!
 //! What the answer is used for is the R9 decision, and the **error variant is
@@ -52,6 +53,7 @@
 //! |---|---|---|
 //! | `Ok` | drawn, live | it would work |
 //! | `Err(ReshapeWouldBreachVertexFloor)` | drawn, **greyed**, tooltip explains | *temporarily* unavailable — draw another corner and it comes back |
+//! | `Err(InkStrokeWouldBreachPointFloor)` | drawn, **greyed**, tooltip explains | the same floor, **per stroke** of a freehand mark — add a point to that stroke and it comes back |
 //! | any other `Err` | **absent** | a property of the shape's kind, which will not change while the operator looks at it |
 //!
 //! That is R9 exactly — *"an unavailable capability renders nothing; greying is
@@ -59,7 +61,10 @@
 //! and it is derived rather than declared. A `/Line` gets no *Add a point here*
 //! because the engine says `GeometryNotReshapable`, not because this file holds
 //! a list of subtypes; the day the engine teaches `/Line` to grow a third
-//! point, the row appears with nothing here edited.
+//! point, the row appears with nothing here edited. ★ And that is precisely
+//! what happened to `/Ink` on 2026-09-09: the engine grew the verbs, [`super`]
+//! grew one `match` arm, and the two rows appeared on a freehand mark with this
+//! file's *decision* unchanged — only its *addressing* grew a second family.
 //!
 //! ## ★★★ The operand problem, and where it is parked
 //!
@@ -109,13 +114,13 @@
 //! does the row raise* — and every one of them is about the cursor rather than
 //! about the document.
 
-use pdfcer_core::edit::{EditError, VertexEdit};
+use pdfcer_core::edit::EditError;
 use pdfcer_core::object::ObjId;
 use pdfcer_core::vector::Point;
 
 use crate::app::actions::Action;
-use crate::app::actions::annot::AnnotAction;
 use crate::app::state::OpenDoc;
+use crate::canvas::dimdrag::VertexIntent;
 use crate::canvas::mapping::PageMapping;
 use crate::canvas::selection::SelectionState;
 
@@ -168,12 +173,16 @@ const SEGMENT_SLACK_PT: f32 = 6.0;
 pub enum NodePick {
     /// On or near an existing node, by index.
     Node(usize),
-    /// On or near a segment. `after` is the index of the segment's **first**
-    /// node, which is exactly the engine's `VertexEdit::Insert { after }`
+    /// On or near a segment. `after` is the **flat** index of the segment's
+    /// first node, which is exactly the engine's `VertexEdit::Insert { after }`
     /// spelling — `after == len - 1` is the closing segment of a closed shape
     /// and appends, which is what the engine's own doc comment says it means.
+    /// For an `/Ink` it is converted to `(stroke, after)` by
+    /// [`super::ink::StrokeTable`] when the plan is built, and because the
+    /// segment list never spans two strokes the new point always lands in the
+    /// stroke the operator pointed at.
     Segment {
-        /// The segment's first node.
+        /// The segment's first node, flat index.
         after: usize,
         /// Where on it the pointer was, in **page** space (PDF user space,
         /// y-up), projected onto the segment.
@@ -297,11 +306,11 @@ pub fn pick_at(
     if let Some(index) = super::node_at(doc, map, selection, screen) {
         return NodePick::Node(index);
     }
-    let Some((_, points, closed)) = super::geometry(doc, selection) else {
+    let Some(shape) = super::geometry(doc, selection) else {
         return NodePick::Elsewhere;
     };
     let canvas = super::nodes(doc, selection);
-    if canvas.len() != points.len() {
+    if canvas.len() != shape.points.len() {
         // The painter's list and the geometry have gone out of step, which can
         // only happen if a node failed to convert to canvas space. Refusing is
         // right: an index into one list used against the other is the *"the
@@ -309,32 +318,28 @@ pub fn pick_at(
         // catch, and it is cheaper to offer no row than to offer a wrong one.
         return NodePick::Elsewhere;
     }
-    // The segments, in the same order and with the same closing rule the
-    // preview uses — `preview_of` adds the closing segment for a closed shape
-    // and this must agree with it, or the row offered on a polygon's last edge
-    // would be about a segment nothing draws.
-    let mut best: Option<(f32, usize, f32)> = None;
-    let last = canvas.len().saturating_sub(1);
-    for after in 0..canvas.len() {
-        let next = if after == last {
-            if !closed || canvas.len() < 3 {
-                break;
-            }
-            0
-        } else {
-            after + 1
+    // ★ The segments come from `Geometry::segment_pairs` — the SAME list the
+    // preview is drawn from — rather than from a loop of this module's own.
+    // That is what makes two facts true by construction rather than by
+    // agreement: a polygon's closing edge is offered exactly when the preview
+    // draws it, and a freehand mark's two strokes have NO segment between them
+    // to right-click on, so *"Add a point here"* can never bridge two strokes.
+    let mut best: Option<(f32, (usize, usize), f32)> = None;
+    for (first, second) in shape.segment_pairs() {
+        let (Some(a), Some(b)) = (canvas.get(first), canvas.get(second)) else {
+            continue;
         };
-        let (a, b) = (map.to_screen(canvas[after]), map.to_screen(canvas[next]));
-        let (distance, t) = distance_to_segment(screen, a, b);
+        let (distance, t) = distance_to_segment(screen, map.to_screen(*a), map.to_screen(*b));
         if distance <= SEGMENT_SLACK_PT && best.is_none_or(|(best_d, _, _)| distance < best_d) {
-            best = Some((distance, after, t));
+            best = Some((distance, (first, second), t));
         }
     }
-    let Some((_, after, t)) = best else {
+    let Some((_, (after, next), t)) = best else {
         return NodePick::Elsewhere;
     };
-    let next = if after == last { 0 } else { after + 1 };
-    let (a, b) = (points[after], points[next]);
+    let (Some(a), Some(b)) = (shape.points.get(after), shape.points.get(next)) else {
+        return NodePick::Elsewhere;
+    };
     NodePick::Segment {
         after,
         at: Point::new(
@@ -367,8 +372,8 @@ fn distance_to_segment(p: egui::Pos2, a: egui::Pos2, b: egui::Pos2) -> (f32, f32
 
 /// **What the engine would allow for this pick** — the two rows' states.
 ///
-/// Asked of `reshape_annotation_preview`, per frame, with the exact
-/// [`VertexEdit`] the row would commit. See the module header for why the
+/// Asked of the shape's family's preview verb, per frame, with the exact
+/// [`super::Plan`] the row would commit. See the module header for why the
 /// *error variant* is what separates a greyed row from an absent one.
 ///
 /// ★ The cost is one annotation walk per row per frame, and only while the
@@ -379,31 +384,48 @@ fn distance_to_segment(p: egui::Pos2, a: egui::Pos2, b: egui::Pos2) -> (f32, f32
 /// the UI find out by pressing."*
 #[must_use]
 pub fn rows(doc: &OpenDoc, selection: &SelectionState, pick: NodePick) -> Rows {
-    let Some((id, _, _)) = super::geometry(doc, selection) else {
+    let Some(shape) = super::geometry(doc, selection) else {
         return Rows::default();
     };
     let session = &doc.session;
-    let state = |edit: VertexEdit| match session.reshape_annotation_preview(id, edit) {
-        Ok(_) => RowState::Live,
-        // The ONE temporary refusal: a closed shape at three corners, an open
-        // one at two. Draw another corner and the row comes back, which is what
-        // makes greying-with-a-reason correct here and wrong everywhere else in
-        // this module.
-        Err(EditError::ReshapeWouldBreachVertexFloor { .. }) => RowState::Greyed,
-        // `GeometryNotReshapable` for a `/Line`, an `/Ink`, a `/Square`, a
-        // `/Circle` or a text markup; `AnnotationLocked` for a shape the FILE
-        // forbids changing; `AnnotationIsCeDimension` for the shape
-        // `canvas::dimdrag` owns. None of them stops being true while the
-        // operator looks at the menu, so none of them is greyed.
-        Err(_) => RowState::Absent,
+    // ★ `from` is only read by a MOVE plan's delta and neither row moves, so
+    // the node's own position is passed — a zero displacement, never consulted.
+    let state = |intent: VertexIntent, index: usize, at: Point| {
+        let from = shape.points.get(index).copied().unwrap_or(at);
+        let Some(plan) = super::planned(&shape, intent, index, from, at) else {
+            // An `/Ink` anchor index the stroke table cannot place. The engine
+            // cannot be asked; the row is absent, as for any other refusal
+            // that is not the floor.
+            return RowState::Absent;
+        };
+        match plan.preview(session, shape.id) {
+            Ok(()) => RowState::Live,
+            // The temporary refusals, one per family: a closed shape at three
+            // corners, an open one at two, a freehand stroke at two. Draw or
+            // add another point and the row comes back, which is what makes
+            // greying-with-a-reason correct here and wrong everywhere else in
+            // this module.
+            Err(
+                EditError::ReshapeWouldBreachVertexFloor { .. }
+                | EditError::InkStrokeWouldBreachPointFloor { .. },
+            ) => RowState::Greyed,
+            // `GeometryNotReshapable` for a `/Line`, a `/Square`, a `/Circle`
+            // or a text markup; `AnnotationLocked` for a shape the FILE forbids
+            // changing; `AnnotationIsCeDimension` for the shape
+            // `canvas::dimdrag` owns; the ink index refusals for anchors that
+            // have gone out of step with the file. None of them stops being
+            // true while the operator looks at the menu, so none of them is
+            // greyed.
+            Err(_) => RowState::Absent,
+        }
     };
     match pick {
         NodePick::Node(index) => Rows {
             insert: RowState::Absent,
-            remove: state(VertexEdit::Remove { index }),
+            remove: state(VertexIntent::Remove, index, Point::new(0.0, 0.0)),
         },
         NodePick::Segment { after, at } => Rows {
-            insert: state(VertexEdit::Insert { after, at }),
+            insert: state(VertexIntent::Insert, after, at),
             remove: RowState::Absent,
         },
         // ★ Both absent, and this is the common case rather than an edge one: a
@@ -474,17 +496,31 @@ pub fn action_for(
     selection: &SelectionState,
     insert: bool,
 ) -> Option<Action> {
-    let (id, _, _) = super::geometry(doc, selection)?;
+    let shape = super::geometry(doc, selection)?;
+    let id = shape.id;
     let pick = parked(ctx);
     let states = rows(doc, selection, pick);
-    let action = match (insert, pick) {
+    // ★ Built through the SAME `planned` the row's state was asked with, so the
+    // action a press raises is the edit the engine said yes to — for an `/Ink`
+    // that includes the flat-index → `(stroke, point)` conversion, which a
+    // second spelling here could get off by a stroke.
+    let plan = match (insert, pick) {
         (true, NodePick::Segment { after, at }) if states.insert.enabled() => {
-            AnnotAction::InsertNode { id, after, at }
+            super::planned(&shape, VertexIntent::Insert, after, at, at)
         }
         (false, NodePick::Node(index)) if states.remove.enabled() => {
-            AnnotAction::RemoveNode { id, index }
+            let at = shape
+                .points
+                .get(index)
+                .copied()
+                .unwrap_or(Point::new(0.0, 0.0));
+            super::planned(&shape, VertexIntent::Remove, index, at, at)
         }
-        _ => {
+        _ => None,
+    };
+    let action = match plan {
+        Some(plan) => plan.action(id),
+        None => {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed in the UI.
                 format!(

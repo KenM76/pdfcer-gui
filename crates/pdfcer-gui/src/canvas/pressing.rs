@@ -651,8 +651,11 @@ pub fn look(
     // precedence the ce-dimension corner takes over its body twenty lines up.
     //
     // Cheap to ask — it answers `None` immediately unless a markup annotation
-    // with editable geometry is selected, and the only shapes with editable
-    // geometry are `/Polygon`, `/PolyLine` and `/Line`.
+    // with editable geometry is selected, and the shapes with editable
+    // geometry are `/Polygon`, `/PolyLine`, `/Line` and (since `pdfcer-core`
+    // `Pass 278.0`) `/Ink`, whose anchors are one per point of every stroke.
+    // The hit test itself is one distance per anchor in screen space, so a
+    // dense freehand mark costs a few hundred subtractions per press.
     let markup_node = origin.and_then(|p| annotnodes::node_at(doc, map, selection, p));
 
     // Whether the press landed inside a selected MARKUP annotation's own box.

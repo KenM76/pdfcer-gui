@@ -122,28 +122,97 @@ machine.
 
 ---
 
-## O158 — ⬜ **FILED, ENGINE ASKED 2026-09-08** — "the draw a line that follows the pointer tool — I can't edit the nodes that make it"
+## O159 — ★★★ **FOUR REPORTS IN ONE SENTENCE, 2026-09-09, EACH MEASURED ON YOUR OWN FILES** — "there's still no way to edit the size of a placed stamp, and some text in sw41177 still isn't editable, and we're back to the apply redactions box that just tells me we can't do it and I can't edit or delete nodes on the freehand markup draw shape"
+
+**Your words, 2026-09-09, mid-morning.** You were at the machine, so nothing was
+driven; every answer below was measured headlessly against the three SW41177
+sheets copied to scratch, with the engine at the revision this build pins.
+
+★ **First: which build.** `pdfcer-gui1` is last night's (22:06); **`pdfcer-gui2`
+is this morning's** (06:21). The Enter-key fix and the sticky fix are in `gui2`
+only. Everything below lands in the *next* build after this row.
+
+### 1. Stamp size — an engine gap, the sentence was false, both addressed
+The engine's resize knows two families of its own artwork (shapes; text boxes
+since yesterday). A stamp is a third, so it is refused as *"pdfcer did not draw
+it"* — about a stamp pdfcer drew. ⇒ Asked of the engine today
+(`request_resize_annotation_refuses_a_pdfcer_authored_stamp_as_foreign.md`); the
+text-box twin of this took them an hour. **Meanwhile the sentence is honest:**
+*"pdfcer can't resize a stamp's picture yet. Drag the stamp to move it, or
+delete it and place it again at the size you want."* The grips stay because this
+is a not-yet, not a never.
+
+### 2. SW41177 text — the remedy the program offered you was a no-op, fixed in the engine this morning
+Your fonts are subsets (O150): lowercase letters do not exist in them. When you
+type one, pdfcer refuses and the Properties panel offers a face that would work
+and a one-click retry. ★ **Until this morning the first face it offered —
+Helvetica — resolved back onto the SAME subset and reported success while
+changing nothing**, so the retry refused again and it looked like the text was
+simply not editable. The engine found and fixed that (`Pass 279.0`) after we
+flagged it. **Measured on your `SW41177.pdf`, line `#2 USE SPACERS…`, with the
+new engine:** refused → Helvetica named first → switched → **second attempt
+accepted.** In the next build, pick the offered face and retry; it works. NOT
+driven through the real window yet.
+
+### 3. Apply redactions — ONE of your three sheets is a hybrid PDF, and that is the box you saw
+`SW41177 MATERIAL REQUIREMENTS.pdf` was exported by **Excel for Microsoft 365**,
+which writes a *hybrid-reference* PDF. pdfcer's writer cannot yet rewrite a
+hybrid file from scratch — and a redaction must be a full rewrite, or the
+un-redacted content survives in the previous revision. The other two sheets
+(SolidWorks) rewrite fine and redact fine. ⇒ Asked of the engine today
+(`request_a_hybrid_reference_file_cannot_be_redacted…`). **Meanwhile the box
+says what the file is and whose limit it is**, and names the workaround: print
+that sheet to a fresh PDF from another program and redact the copy.
+
+### 4. Freehand nodes — the engine shipped it this morning; wired today
+O158 was asked of the engine yesterday; they shipped it overnight (`Pass
+278.0`): point-by-point and whole-stroke editing. **Wired this session** — drag
+a node, right-click to add or remove one, same as a polyline. A freehand stroke
+can carry hundreds of points, so the anchors are dense for now. NOT driven.
+
+### On "get rid of the code that doesn't work"
+Agreed, and it is this project's R9: a control that cannot work is not drawn.
+The stamp grips are the one place this row keeps a control that refuses — with
+a true sentence — because the capability is days away, not never. If you would
+rather the grips go until then, say so and they go.
+
+## O158 — 🔶 **WIRED 2026-09-09, NOT YET DRIVEN** — "the draw a line that follows the pointer tool — I can't edit the nodes that make it"
 
 **Your words, 2026-09-08.**
 
-The freehand tool draws an **ink stroke**, and that is the one markup kind
-whose points pdfcer can *read* and cannot *change*. Polygon, polyline, line and
-cloud all let you drag a node; freehand does not.
+The freehand tool draws an **ink stroke**, and until this morning that was the
+one markup kind whose points pdfcer could *read* and could not *change*.
+Polygon, polyline, line and cloud all let you drag a node; freehand did not.
 
-★ That is why you see **no handles at all** on it rather than handles that do
-nothing — the rule here is that a control which cannot work is not drawn.
-Correct, and no help to you.
+### What changed, and where it came from
 
-⇒ Asked the engine, as
-`request_an_ink_stroke_has_readable_vertices_and_no_way_to_edit_them.md`. I put
-three reasons it may be harder than it looks in the request — a freehand stroke
-is a list *of* strokes, it can be hundreds of points, and its drawn curve is
-smoothed rather than straight between points — and offered a smaller slice
-(move one whole stroke) in case per-point is not worth it.
+The engine answered overnight (`Pass 278.0`) and the answer was **"it was a
+decision, and it was wrong"** — the old refusal had been argued from Acrobat,
+which has never offered per-point ink editing, and the engine's own ruling is
+that parity with Acrobat is the floor, not the ceiling. It built the verbs, and
+while it was at it, knocked down one of the three reasons I had said this might
+be hard: pdfcer draws a freehand stroke as **straight segments between its
+points**, not as a smoothed curve, so dragging one point moves exactly the two
+segments beside it — the same live preview a polyline gets is exact here too.
 
-⚠ If the answer is *"no, deliberately"*, that is a fine answer and I will
-change what pdfcer tells you: right now it says a freehand stroke has no
-editable nodes without being able to say whether that is forever.
+⇒ **A freehand mark now shows a small square on every point of every stroke.**
+Drag one and the stroke follows; with the Points tool armed, `Ctrl`-drag adds a
+point after the one you grabbed and `Ctrl+Shift`-drag removes it; right-click
+on a stroke gives *Add a point here* and *Remove this point*, exactly as on a
+polyline. Each stroke keeps at least two points — *Remove this point* greys on
+a two-point stroke and the tooltip says so.
+
+★ One sentence you may see once per mark: if a freehand stroke was drawn by
+**another program** with a smoothed curve, the first point you move redraws the
+whole mark in pdfcer's straight-segment style, and the status line tells you
+so. Undo puts the original drawing back.
+
+⚠ **Two honest caveats.** A long freehand stroke can have a great many points
+and every one of them gets a square; that is deliberate for now (each square is
+a real point that really drags) and thinning them is the next step, written
+down in the code. And this was **built and tested against the real engine but
+not driven through the window**, because you were at the machine — the driven
+check is owed before this row turns green.
 
 ---
 

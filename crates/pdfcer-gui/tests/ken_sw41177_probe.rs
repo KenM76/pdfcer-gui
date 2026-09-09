@@ -806,3 +806,139 @@ fn measure_page(page: usize) {
         println!("  refused        : {refused}");
     }
 }
+
+// ---------------------------------------------------------------------------
+// 2026-09-09 — two more probes, for two of the operator's four reports that
+// morning: *"we're back to the apply redactions box that just tells me we
+// can't do it"* and *"some text in sw41177 still isn't editable"*. Both are
+// measured against HIS files (three of them, staged under
+// `target/scratch/ken/`), headlessly, with the engine at the revision
+// `Cargo.lock` pins — which is the only way to know whether a fix the engine
+// shipped hours ago reaches his drawing or not.
+// ---------------------------------------------------------------------------
+
+const HIS_FILES: [&str; 3] = [
+    "target/scratch/ken/SW41177.pdf",
+    "target/scratch/ken/SW41177 INSTALLATION.pdf",
+    "target/scratch/ken/SW41177 MATERIAL REQUIREMENTS.pdf",
+];
+
+fn his(path: &str) -> Option<EditSession> {
+    let full = format!("{}/../../{path}", env!("CARGO_MANIFEST_DIR"));
+    let p = std::path::Path::new(&full);
+    if !p.exists() {
+        println!("SKIP: {full} is not present");
+        return None;
+    }
+    Some(EditSession::new(Document::load(p).expect("his file loads")))
+}
+
+/// **The redaction gate, on his files.** `Apply redactions` opens by calling
+/// `prepare_redaction_apply`, whose FIRST step is `to_full_bytes` — a full
+/// rewrite of the session. If that refuses, the window shows
+/// `FullRewriteUnavailable`: *"this document cannot be rewritten in full"* —
+/// which is the sentence an operator reads as *"we can't do it"*. This probe
+/// asks that exact question of each of his three drawings, with no marks
+/// placed, so the answer is about the FILE and nothing else.
+#[test]
+#[ignore = "reads files outside the repository; run by hand"]
+fn can_his_drawings_be_rewritten_in_full_for_a_redaction() {
+    for path in HIS_FILES {
+        let Some(session) = his(path) else { continue };
+        match session.to_full_bytes(&pdfcer_core::writer::SaveOptions::identity()) {
+            Ok((bytes, report)) => println!(
+                "{path}: FULL REWRITE OK — {} bytes, report {report:?}",
+                bytes.len()
+            ),
+            Err(e) => println!("{path}: FULL REWRITE REFUSED — {e}"),
+        }
+    }
+}
+
+/// **The font-coverage remedy, end to end, on his file.** The engine's
+/// refusal now names the standard-14 faces that would accept the character
+/// (`Pass 274.0`), and as of `Pass 279.0` (`5b8ec61`) it names only faces
+/// `set_font` would actually author fresh rather than resolve back onto the
+/// refusing subset. This probe: attempts the edit he described, prints the
+/// refusal verbatim, takes the FIRST standard-14 face named in it, sets the
+/// run to that face through the same `FormatRequest` the Format tab sends,
+/// and retries the edit. PASS is the second attempt being accepted.
+#[test]
+#[ignore = "reads files outside the repository; run by hand"]
+fn does_the_face_the_refusal_names_actually_unblock_his_edit() {
+    let Some(mut session) = his(HIS_FILES[0]) else {
+        return;
+    };
+    let text = page_text(&session, 0).expect("page 0 extracts");
+    let Some((index, run)) = text
+        .runs
+        .iter()
+        .enumerate()
+        .find(|(_, r)| r.text.contains("USE SPACERS"))
+    else {
+        println!("his line is not on page 0");
+        return;
+    };
+    println!("run {index}: {:?}", run.text);
+    // A lowercase word: his subsets are capitals-only on this sheet, so this
+    // is the edit that refuses.
+    let req = pdfcer_core::text_edit::EditRequest::find_replace(0, "SPACERS", "spacers");
+    let opts = pdfcer_core::text_edit::EditOptions::default();
+    let first = session.edit_text(&req, &opts);
+    let message = match &first {
+        Ok(_) => {
+            println!("ACCEPTED on the first attempt — nothing to remedy");
+            return;
+        }
+        Err(e) => {
+            println!("REFUSED — {e}");
+            e.to_string()
+        }
+    };
+    const STD14: [&str; 12] = [
+        "Helvetica-BoldOblique",
+        "Helvetica-Oblique",
+        "Helvetica-Bold",
+        "Helvetica",
+        "Times-BoldItalic",
+        "Times-Italic",
+        "Times-Bold",
+        "Times-Roman",
+        "Courier-BoldOblique",
+        "Courier-Oblique",
+        "Courier-Bold",
+        "Courier",
+    ];
+    let mut named: Vec<(usize, &str)> = STD14
+        .iter()
+        .filter_map(|f| message.find(f).map(|at| (at, *f)))
+        .collect();
+    named.sort();
+    // Longest-name-first above, so "Helvetica-Bold" is not reported as
+    // "Helvetica" at the same offset; the sort then puts them in message order.
+    named.dedup_by_key(|(at, _)| *at);
+    println!(
+        "faces named by the refusal, in order: {:?}",
+        named.iter().map(|(_, f)| *f).collect::<Vec<_>>()
+    );
+    let Some((_, face)) = named.first() else {
+        println!("★★★ the refusal named NO face — the remedy is absent from the sentence");
+        return;
+    };
+    let fmt = pdfcer_core::text_edit::FormatRequest::new(0, "SPACERS")
+        .font(pdfcer_core::text_edit::FontSelector::new(face));
+    match session.format_text(&fmt, &pdfcer_core::text_edit::FormatOptions::default()) {
+        Ok(report) => println!("set_font({face}) ACCEPTED — {report:?}"),
+        Err(e) => {
+            println!("set_font({face}) REFUSED — {e}");
+            return;
+        }
+    }
+    match session.edit_text(&req, &opts) {
+        Ok(report) => println!(
+            "★ SECOND ATTEMPT ACCEPTED — the named face unblocked the edit (operators_spanned={})",
+            report.operators_spanned
+        ),
+        Err(e) => println!("★★★ SECOND ATTEMPT STILL REFUSED — {e}"),
+    }
+}

@@ -849,11 +849,12 @@ pub fn deletion_would_take(
 // > *"I also can't edit or delete nodes of a markup shape once it is drawn."*
 //
 // `canvas::annotnodes` draws an anchor on every node of a selected `/Polygon`,
-// `/PolyLine` or `/Line` and drags them. These are the sentences for the cases
-// where it cannot, and every one of them exists for the reason this project was
-// founded on: **a refusal must be a sentence, never a silence.** A drag that is
-// released and does nothing is the exact defect the operator reported, and a
-// shape that shows no anchors at all is the same defect one step earlier.
+// `/PolyLine`, `/Line` or — since `pdfcer-core` `Pass 278.0`, 2026-09-09 —
+// `/Ink`, and drags them. These are the sentences for the cases where it
+// cannot, and every one of them exists for the reason this project was founded
+// on: **a refusal must be a sentence, never a silence.** A drag that is released
+// and does nothing is the exact defect the operator reported, and a shape that
+// shows no anchors at all is the same defect one step earlier.
 
 /// **The operator's word for a shape**, which is not always the PDF name.
 ///
@@ -919,6 +920,36 @@ pub enum NodeEditRefusal {
     /// (`/Polygon` keeps three, `/PolyLine` keeps two) and it refuses by name
     /// rather than silently clamping or turning the shape into something else.
     WouldLeaveTooFew,
+    /// `EditError::InkStrokeWouldBreachPointFloor` — one **stroke** of a
+    /// freehand mark is at its floor of two points (`Pass 278.0`).
+    ///
+    /// Its own sentence rather than [`Self::WouldLeaveTooFew`]'s, because that
+    /// one says *"the shape has as few corners as it can have"* and that is
+    /// false of a freehand mark whose other strokes have dozens. The floor is
+    /// per stroke — §12.5.6.13 describes each inner array as *"points along
+    /// the path"*, and one point is not a path — so the next act is to add a
+    /// point **to that stroke**, and the sentence says so.
+    StrokeWouldLeaveTooFew,
+    /// `EditError::InkPointIndexOutOfRange` or
+    /// `EditError::InkStrokeIndexOutOfRange` — the anchor the operator grabbed
+    /// names a point the freehand mark no longer holds (`Pass 278.0`).
+    ///
+    /// The anchors are drawn from the same annotation walk the engine is
+    /// asked about, in the same frame, so this is unreachable while both read
+    /// live — and it is the first symptom the day anything caches one of them.
+    /// The remedy is the same for both index spaces: select the mark again,
+    /// which rebuilds the anchors from the file as it is now. Worded as that
+    /// act rather than as a diagnosis.
+    PointNotFound,
+    /// `EditError::InkWouldBeEmpty` — the edit would leave a freehand mark
+    /// with nothing drawable (`Pass 278.0`).
+    ///
+    /// Only a whole-stroke removal or replacement can raise it, and this shell
+    /// calls neither verb yet (`canvas::annotnodes::ink`'s header says why).
+    /// Worded anyway: an unreachable refusal that becomes reachable silently is
+    /// how a grip comes to do nothing. The next act the engine names is
+    /// `delete_annotation` — deleting the whole mark — and so does this.
+    WouldLeaveNothing,
     /// `EditError::GeometryNotReshapable` — this kind of mark has no nodes to
     /// edit, and the sentence says which kind it is.
     ///
@@ -975,6 +1006,18 @@ impl NodeEditRefusal {
                 "That shape has as few corners as it can have. Add one before \
                  taking one away, or delete the whole mark."
             }
+            Self::StrokeWouldLeaveTooFew => {
+                "That stroke is down to its last two points. Add a point to it \
+                 before taking one away, or delete the whole mark."
+            }
+            Self::PointNotFound => {
+                "That point is no longer where the mark has one. Click the mark \
+                 again to redraw its points, then try once more."
+            }
+            Self::WouldLeaveNothing => {
+                "Taking that away would leave nothing of the mark to draw. Delete \
+                 the whole mark instead."
+            }
             Self::ShapeHasNoNodes { subtype } => subtype.no_nodes_line(),
             Self::Unplaceable => {
                 "That corner cannot go there — the position is off the page's \
@@ -998,18 +1041,26 @@ impl ShapeWord {
     /// sentence that only said "no" would leave them looking for a control that
     /// does not exist.
     ///
-    /// ★ The freehand sentence deliberately does **not** apologise or promise.
-    /// pdfcer refuses per-point ink editing on purpose — the engine's words:
-    /// *"an `/InkList` stroke is a recorded pen trace, and Acrobat has never
-    /// offered per-point ink editing at any version"* — so wording it as a
-    /// missing feature would be this surface predicting work nobody has agreed
-    /// to.
+    /// ★★★ **The freehand sentence changed meaning on 2026-09-09, and the old
+    /// one is recorded here so it is never written back.** Until `pdfcer-core`
+    /// `Pass 278.0` it read *"A freehand mark has no corners to edit — it is a
+    /// recorded pen stroke"*, on the engine's then-ruling that per-point ink
+    /// editing was refused on purpose. That ruling was overturned (*"parity
+    /// with Acrobat is this project's floor, not its ceiling"*) and a freehand
+    /// mark's points now drag, add and remove exactly like a polyline's. The
+    /// only way this arm is still reached is an `/Ink` whose `/InkList` the
+    /// engine could not read as an array — `Annotation::ink_list` is `None`,
+    /// `canvas::annotnodes::geometry` draws no anchors, and the sentence has to
+    /// describe **that** mark rather than freehand marks in general. A sentence
+    /// that said "has no corners to edit" after they became editable is the
+    /// stale-negative defect this project has shipped before.
     #[must_use]
     pub const fn no_nodes_line(self) -> &'static str {
         match self {
             Self::Ink => {
-                "A freehand mark has no corners to edit — it is a recorded pen \
-                 stroke. You can move, resize or delete the whole mark."
+                "This freehand mark carries no points pdfcer can read, so there \
+                 is nothing here to drag. You can still move, resize or delete \
+                 the whole mark."
             }
             Self::Rectangle => {
                 "A rectangle has no corners to drag one at a time. Use its \
@@ -1052,6 +1103,41 @@ pub const fn measure_stale() -> &'static str {
     "This mark carries a measurement written by another program. Its shape has \
      changed and that number has not — pdfcer will not overwrite it, because \
      it may have been set by hand."
+}
+
+/// **A freehand mark another program drew has been redrawn with straight
+/// segments** — disclosed after the first point edit on it, never guessed at.
+///
+/// `InkForecast::appearance_was_pdfces` (`pdfcer-core` `Pass 278.0`) is `false` (old-name-exempt: the engine's own field name, quoted verbatim)
+/// when the `/Ink`'s appearance stream on disk is not one pdfcer would have
+/// drawn from its `/InkList` — another producer's artwork, typically a smoothed
+/// curve through the recorded points. Moving a point forces a re-bake (the old
+/// picture would paint the stroke where it no longer is), and pdfcer bakes an
+/// `/InkList` as a **polyline**: straight segments between the points. The
+/// engine's own account of why this is a sentence and not a silent fix:
+///
+/// > On a stroke pdfcer did not draw, re-baking replaces that producer's
+/// > artwork with pdfcer's polyline rendering, which **visibly straightens a
+/// > smoothed curve** … It is answered by `reshape_ink_preview`, deliberately,
+/// > so you can say it *before* the first drag instead of explaining it
+/// > afterwards.
+///
+/// ⇒ The geometry moved as asked; the *look* of the stroke changed more than
+/// the drag alone explains. Saying so is R8b rule 4's honest half. It fires
+/// once per mark in practice: after the first re-bake the appearance is
+/// pdfcer's own and the flag is `true` for every later edit.
+///
+/// ★ Said at **apply** time, on the same disclosure list as
+/// [`measure_stale`], rather than before the first drag as the engine
+/// suggests. The before-the-drag moment is `canvas::annotnodes::
+/// explain_unreshapable`'s shape — once per (shape, tool) — and is a known
+/// follow-up; a sentence on release is the minimum that is not a silence.
+#[must_use]
+pub const fn ink_redrawn_straight() -> &'static str {
+    "This freehand mark was drawn by another program. Moving one of its points \
+     redraws the whole mark in pdfcer's style — straight segments between its \
+     points — so a smoothed stroke will look sharper than before. Undo puts the \
+     original drawing back."
 }
 
 #[cfg(test)]

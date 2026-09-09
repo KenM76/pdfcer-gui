@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: fccd6cd04ccbf40b04436b807f9b3b6065af4630
+# baseline: 5b8ec6105511e30f5ac8b868f04e0ea94c6f87ce
 # crates: pdfcer-core pdfcer-render pdfcer-print
-# items: 7312
+# items: 7363
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-render field pdfcer_render::font::RenderPolicy::stroke_display -- RenderPolicy is the interpreter's INTERNAL derived bundle, not a shell-facing type: every one of its fields' own doc comments reads "See RenderOptions::<the same name>", and the engine builds a RenderPolicy from the RenderOptions a caller hands it. This shell sets RenderOptions::stroke_display (View > Display > Line weights, O137) and constructs no RenderPolicy anywhere in the workspace. Exempted PER FIELD rather than wildcarded for the whole type, deliberately: every future RenderPolicy field mirrors a RenderOptions field this shell probably DOES want, so each one should cost one line and one look.
@@ -278,6 +278,8 @@ pdfcer-core enum pdfcer_core::edit::FieldFont
 pdfcer-core enum pdfcer_core::edit::GroupDeletion
 pdfcer-core enum pdfcer_core::edit::ImageFit
 pdfcer-core enum pdfcer_core::edit::InfoField
+pdfcer-core enum pdfcer_core::edit::InkEdit
+pdfcer-core enum pdfcer_core::edit::InkEditKind
 pdfcer-core enum pdfcer_core::edit::MediaBoxEntry
 pdfcer-core enum pdfcer_core::edit::NamedAction
 pdfcer-core enum pdfcer_core::edit::OutlinePlacement
@@ -971,6 +973,22 @@ pdfcer-core field pdfcer_core::edit::ImportOutcome::applied
 pdfcer-core field pdfcer_core::edit::ImportOutcome::skipped
 pdfcer-core field pdfcer_core::edit::InfoText::exact
 pdfcer-core field pdfcer_core::edit::InfoText::text
+pdfcer-core field pdfcer_core::edit::InkForecast::annot_id
+pdfcer-core field pdfcer_core::edit::InkForecast::appearance_was_pdfces
+pdfcer-core field pdfcer_core::edit::InkForecast::edit
+pdfcer-core field pdfcer_core::edit::InkForecast::points_after
+pdfcer-core field pdfcer_core::edit::InkForecast::points_before
+pdfcer-core field pdfcer_core::edit::InkForecast::rect_after
+pdfcer-core field pdfcer_core::edit::InkForecast::rect_before
+pdfcer-core field pdfcer_core::edit::InkForecast::stroke
+pdfcer-core field pdfcer_core::edit::InkForecast::stroke_points_after
+pdfcer-core field pdfcer_core::edit::InkForecast::stroke_points_before
+pdfcer-core field pdfcer_core::edit::InkForecast::strokes_after
+pdfcer-core field pdfcer_core::edit::InkForecast::strokes_before
+pdfcer-core field pdfcer_core::edit::InkReshape::appearance
+pdfcer-core field pdfcer_core::edit::InkReshape::dropped
+pdfcer-core field pdfcer_core::edit::InkReshape::forecast
+pdfcer-core field pdfcer_core::edit::InkReshape::mod_date_written
 pdfcer-core field pdfcer_core::edit::InsertOutcome::orphaned_widgets
 pdfcer-core field pdfcer_core::edit::InsertOutcome::orphaned_widgets_unrecoverable
 pdfcer-core field pdfcer_core::edit::InsertOutcome::page_labels_stale
@@ -2781,6 +2799,7 @@ pdfcer-core fn pdfcer_core::structure::walk
 pdfcer-core fn pdfcer_core::text_edit::addtext::add_text
 pdfcer-core fn pdfcer_core::text_edit::addtext::preview_wrap
 pdfcer-core fn pdfcer_core::text_edit::edit::edit_text
+pdfcer-core fn pdfcer_core::text_edit::encoding::faces_clause
 pdfcer-core fn pdfcer_core::text_edit::encoding::std14_faces_covering
 pdfcer-core fn pdfcer_core::text_edit::format::set_format
 pdfcer-core fn pdfcer_core::text_edit::forms::form_objects_on_page
@@ -3175,6 +3194,7 @@ pdfcer-core method pdfcer_core::edit::EditSession::info_bytes
 pdfcer-core method pdfcer_core::edit::EditSession::info_text
 pdfcer-core method pdfcer_core::edit::EditSession::insert_annotation_vertex
 pdfcer-core method pdfcer_core::edit::EditSession::insert_dimension_vertex
+pdfcer-core method pdfcer_core::edit::EditSession::insert_ink_point
 pdfcer-core method pdfcer_core::edit::EditSession::insert_pages
 pdfcer-core method pdfcer_core::edit::EditSession::into_document
 pdfcer-core method pdfcer_core::edit::EditSession::is_modified
@@ -3190,6 +3210,8 @@ pdfcer-core method pdfcer_core::edit::EditSession::move_dimension
 pdfcer-core method pdfcer_core::edit::EditSession::move_dimension_vertex
 pdfcer-core method pdfcer_core::edit::EditSession::move_handle
 pdfcer-core method pdfcer_core::edit::EditSession::move_handle_in_form
+pdfcer-core method pdfcer_core::edit::EditSession::move_ink_point
+pdfcer-core method pdfcer_core::edit::EditSession::move_ink_stroke
 pdfcer-core method pdfcer_core::edit::EditSession::move_node
 pdfcer-core method pdfcer_core::edit::EditSession::move_node_in_form
 pdfcer-core method pdfcer_core::edit::EditSession::move_nodes
@@ -3225,15 +3247,20 @@ pdfcer-core method pdfcer_core::edit::EditSession::regenerate_appearances
 pdfcer-core method pdfcer_core::edit::EditSession::remove_annotation_vertex
 pdfcer-core method pdfcer_core::edit::EditSession::remove_dimension_vertex
 pdfcer-core method pdfcer_core::edit::EditSession::remove_encryption
+pdfcer-core method pdfcer_core::edit::EditSession::remove_ink_point
+pdfcer-core method pdfcer_core::edit::EditSession::remove_ink_stroke
 pdfcer-core method pdfcer_core::edit::EditSession::rename_dimension_group
 pdfcer-core method pdfcer_core::edit::EditSession::rename_field
 pdfcer-core method pdfcer_core::edit::EditSession::rename_refusal
 pdfcer-core method pdfcer_core::edit::EditSession::reorder_annotations
 pdfcer-core method pdfcer_core::edit::EditSession::reorder_pages
+pdfcer-core method pdfcer_core::edit::EditSession::replace_ink_stroke
 pdfcer-core method pdfcer_core::edit::EditSession::reset_form
 pdfcer-core method pdfcer_core::edit::EditSession::reset_preview
 pdfcer-core method pdfcer_core::edit::EditSession::reshape_annotation
 pdfcer-core method pdfcer_core::edit::EditSession::reshape_annotation_preview
+pdfcer-core method pdfcer_core::edit::EditSession::reshape_ink
+pdfcer-core method pdfcer_core::edit::EditSession::reshape_ink_preview
 pdfcer-core method pdfcer_core::edit::EditSession::resize_annotation
 pdfcer-core method pdfcer_core::edit::EditSession::rotate_annotation
 pdfcer-core method pdfcer_core::edit::EditSession::rotate_dimension
@@ -3324,6 +3351,10 @@ pdfcer-core method pdfcer_core::edit::FieldEdit::with_tooltip
 pdfcer-core method pdfcer_core::edit::ImageAuthorDisclosures::any
 pdfcer-core method pdfcer_core::edit::InfoField::all
 pdfcer-core method pdfcer_core::edit::InfoField::key
+pdfcer-core method pdfcer_core::edit::InkEdit::kind
+pdfcer-core method pdfcer_core::edit::InkEdit::stroke
+pdfcer-core method pdfcer_core::edit::InkEditKind::as_str
+pdfcer-core method pdfcer_core::edit::InkEditKind::changes_stroke_count
 pdfcer-core method pdfcer_core::edit::MarkupNote::at
 pdfcer-core method pdfcer_core::edit::MarkupNote::by
 pdfcer-core method pdfcer_core::edit::MarkupNote::new
@@ -4205,6 +4236,8 @@ pdfcer-core struct pdfcer_core::edit::ImageAuthorDisclosures
 pdfcer-core struct pdfcer_core::edit::ImageAuthorOutcome
 pdfcer-core struct pdfcer_core::edit::ImportOutcome
 pdfcer-core struct pdfcer_core::edit::InfoText
+pdfcer-core struct pdfcer_core::edit::InkForecast
+pdfcer-core struct pdfcer_core::edit::InkReshape
 pdfcer-core struct pdfcer_core::edit::InsertOutcome
 pdfcer-core struct pdfcer_core::edit::MarkupNote
 pdfcer-core struct pdfcer_core::edit::MarkupNoteChange
@@ -4813,6 +4846,7 @@ pdfcer-core variant pdfcer_core::edit::CommandKind::ReorderAnnotations
 pdfcer-core variant pdfcer_core::edit::CommandKind::ReorderPages
 pdfcer-core variant pdfcer_core::edit::CommandKind::ResetForm
 pdfcer-core variant pdfcer_core::edit::CommandKind::ReshapeAnnotation
+pdfcer-core variant pdfcer_core::edit::CommandKind::ReshapeInk
 pdfcer-core variant pdfcer_core::edit::CommandKind::ResizeAnnotation
 pdfcer-core variant pdfcer_core::edit::CommandKind::RotateAnnotation
 pdfcer-core variant pdfcer_core::edit::CommandKind::RotateDimension
@@ -4920,6 +4954,11 @@ pdfcer-core variant pdfcer_core::edit::EditError::FormNotOnPage
 pdfcer-core variant pdfcer_core::edit::EditError::FreeTextNoteConflictsWithText
 pdfcer-core variant pdfcer_core::edit::EditError::GeometryNotReshapable
 pdfcer-core variant pdfcer_core::edit::EditError::ImageRectDegenerate
+pdfcer-core variant pdfcer_core::edit::EditError::InkPointIndexOutOfRange
+pdfcer-core variant pdfcer_core::edit::EditError::InkStrokeIndexOutOfRange
+pdfcer-core variant pdfcer_core::edit::EditError::InkStrokeWouldBreachPointFloor
+pdfcer-core variant pdfcer_core::edit::EditError::InkVerbOnNonInk
+pdfcer-core variant pdfcer_core::edit::EditError::InkWouldBeEmpty
 pdfcer-core variant pdfcer_core::edit::EditError::InvalidTolerance
 pdfcer-core variant pdfcer_core::edit::EditError::MarkupDateMalformed
 pdfcer-core variant pdfcer_core::edit::EditError::MarkupOpacityOutOfRange
@@ -4994,6 +5033,18 @@ pdfcer-core variant pdfcer_core::edit::InfoField::Author
 pdfcer-core variant pdfcer_core::edit::InfoField::Keywords
 pdfcer-core variant pdfcer_core::edit::InfoField::Subject
 pdfcer-core variant pdfcer_core::edit::InfoField::Title
+pdfcer-core variant pdfcer_core::edit::InkEdit::InsertPoint
+pdfcer-core variant pdfcer_core::edit::InkEdit::MovePoint
+pdfcer-core variant pdfcer_core::edit::InkEdit::MoveStroke
+pdfcer-core variant pdfcer_core::edit::InkEdit::RemovePoint
+pdfcer-core variant pdfcer_core::edit::InkEdit::RemoveStroke
+pdfcer-core variant pdfcer_core::edit::InkEdit::ReplaceStroke
+pdfcer-core variant pdfcer_core::edit::InkEditKind::PointInserted
+pdfcer-core variant pdfcer_core::edit::InkEditKind::PointMoved
+pdfcer-core variant pdfcer_core::edit::InkEditKind::PointRemoved
+pdfcer-core variant pdfcer_core::edit::InkEditKind::StrokeMoved
+pdfcer-core variant pdfcer_core::edit::InkEditKind::StrokeRemoved
+pdfcer-core variant pdfcer_core::edit::InkEditKind::StrokeReplaced
 pdfcer-core variant pdfcer_core::edit::MediaBoxEntry::BaseSpellingKept
 pdfcer-core variant pdfcer_core::edit::MediaBoxEntry::ExplicitWritten
 pdfcer-core variant pdfcer_core::edit::MediaBoxEntry::InheritedSoOwnEntryRemoved

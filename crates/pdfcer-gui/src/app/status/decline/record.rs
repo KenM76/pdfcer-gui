@@ -244,6 +244,14 @@ pub(crate) fn record_resize_fixed_size_marker(by_flag: bool) {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::ResizeFixedSizeMarker { by_flag }));
 }
 
+/// Record that a resize of a pdfcer-authored stamp was refused — the engine's
+/// appearance test does not know the stamp builder yet (request filed
+/// 2026-09-09). Chosen over [`record_resize_not_rebuildable`] by the CALLER,
+/// which knows the selection's subtype; this module does not.
+pub(crate) fn record_resize_stamp_not_yet() {
+    LAST.with_borrow_mut(|slot| *slot = Some(Declined::ResizeStampNotYet));
+}
+
 /// Record that a **rotation** did not happen, and why.
 ///
 /// ★★★ The whole point of the function, stated for whoever adds the next

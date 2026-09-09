@@ -570,9 +570,10 @@ pub(super) fn interact(
     let mut hold_after_drop: Option<crate::canvas::shapes::ShapePreview> = None;
     // ★★★ **R9's other half: a shape with no nodes says so.** `Pass 255.0`.
     //
-    // A rectangle, an ellipse and a freehand mark draw no node anchors, which
-    // is what R9 requires of an unavailable capability — and is also exactly
-    // what a build that forgot to draw them renders. The operator cannot tell
+    // A rectangle, an ellipse and a text mark draw no node anchors (a freehand
+    // mark did too, until `pdfcer-core` `Pass 278.0` gave it point verbs),
+    // which is what R9 requires of an unavailable capability — and is also
+    // exactly what a build that forgot to draw them renders. The operator cannot tell
     // those apart by looking, so the absence is stated in words at the moment
     // they ask for it: the frame after they arm the Points tool. It fires once
     // per (shape, tool) change and not per frame; `annotnodes` owns that guard

@@ -77,6 +77,24 @@ pub const fn resize_not_rebuildable(uniform: bool) -> &'static str {
 /// what one is; "drawn at one fixed size" is the fact in their terms. For the
 /// flag case the name is kept, because a foreign producer set it and the
 /// operator may be looking at the file elsewhere.
+/// **A pdfcer-authored stamp could not be resized — yet.**
+///
+/// The engine refuses it as foreign artwork (its appearance test knows two
+/// authoring families and the stamp builder is a third); the generic sentence
+/// for that refusal claims *"pdfcer did not draw this shape"*, which is false
+/// here and would teach the operator a wrong model of his own file — the
+/// mistake the sticky's refusal made for the life of that feature. So this
+/// sentence says what is true: not yet, and here are the two things that work.
+/// It names no switch because none helps: *Scale line weight* and *Allow the
+/// artwork to distort* are about borders, and a stamp's refusal is about
+/// authorship. Request filed 2026-09-09
+/// (`request_resize_annotation_refuses_a_pdfcer_authored_stamp_as_foreign.md`);
+/// delete with `Declined::ResizeStampNotYet` when it ships.
+#[must_use]
+pub const fn resize_stamp_not_yet() -> &'static str {
+    "pdfcer can't resize a stamp's picture yet. Drag the stamp to move it, or delete it and place it again at the size you want."
+}
+
 #[must_use]
 pub const fn resize_fixed_size_marker(by_flag: bool) -> &'static str {
     if by_flag {

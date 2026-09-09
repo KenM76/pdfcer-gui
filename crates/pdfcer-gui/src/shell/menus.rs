@@ -656,9 +656,11 @@ pub fn built_in() -> Menus {
         // Separators between the three groups because they are three KINDS of
         // verb, which is what a rule is punctuation for. The menu engine
         // collapses a leading, trailing or doubled rule (`plan::collapse`), so
-        // on a shape with no node rows — an `/Ink` stroke, a `/Square` — the two
-        // rules around them become one and the menu reads as though the group
-        // was never written.
+        // on a shape with no node rows — a `/Square`, a `/Circle`, a text mark
+        // — the two rules around them become one and the menu reads as though
+        // the group was never written. (An `/Ink` stroke was on that list
+        // until `pdfcer-core` `Pass 278.0`, 2026-09-09; its points now take
+        // both rows, per stroke.)
         //
         // ## ★★★ The two node rows: `shown_when` AND greying, on one row
         //

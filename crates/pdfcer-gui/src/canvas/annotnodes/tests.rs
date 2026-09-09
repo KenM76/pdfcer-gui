@@ -38,10 +38,24 @@
 //! | `/Polygon` square | 4 | 3 | succeeds, leaving a triangle |
 //! | `/PolyLine`, three points | 3 | 2 | succeeds, leaving a straight line |
 //! | `/Line` | 2 | — | **refuses by name** — a Line is two ends by definition |
+//! | `/Ink`, strokes of 3 and 2 points | 5 anchors | 2 **per stroke** | succeeds on the first stroke, **refuses** on the second — the same mark, two answers |
 //!
 //! The triangle and the three-point polyline are the same three points and give
 //! **opposite** answers, which is what proves the refusal measures the shape's
-//! own floor rather than blanket-refusing three-node shapes.
+//! own floor rather than blanket-refusing three-node shapes. The two-stroke ink
+//! (`Pass 278.0`) proves the same thing one level down: the floor is the
+//! **stroke's**, not the mark's, and a flat anchor index that was converted to
+//! the wrong stroke would get the opposite answer from the engine.
+//!
+//! ## ★★ The ink tests sit at the stroke boundary, on purpose
+//!
+//! Every ink assertion below is made at **index 2 or 3** of a five-anchor mark
+//! whose first stroke holds three points — the last point of stroke 0 and the
+//! first point of stroke 1. That is the one place a flat-list implementation
+//! goes wrong in a way that looks right: an off-by-one in the stroke table
+//! addresses the neighbouring stroke, a naive preview draws a segment across
+//! the gap, and a naive insert-after puts the new point into stroke 1. A test
+//! on the middle of a long stroke would pass all three defects.
 
 // ★★ The INNER attribute, not just the `mod tests;` declaration in the parent.
 // `check-ui-strings.sh`'s exclusion 2b recognises a whole test file **from the
@@ -51,6 +65,7 @@
 
 use super::*;
 use crate::canvas::selection::{AnnotSelection, AnnotTarget};
+use crate::text::markup::NodeEditRefusal as R;
 use pdfcer_core::annot_author::{Color, LineEnding, MarkupSpec};
 
 /// A real document with one markup annotation authored into it, and a selection
@@ -112,6 +127,32 @@ fn triangle() -> Vec<(f64, f64)> {
     vec![(100.0, 100.0), (300.0, 100.0), (200.0, 260.0)]
 }
 
+/// Two pen strokes: three points, then two. Five anchors; the boundary falls
+/// between flat index 2 and flat index 3.
+fn two_strokes() -> Vec<Vec<(f64, f64)>> {
+    vec![
+        vec![(100.0, 100.0), (120.0, 140.0), (160.0, 150.0)],
+        vec![(300.0, 300.0), (340.0, 320.0)],
+    ]
+}
+
+fn ink(strokes: Vec<Vec<(f64, f64)>>) -> MarkupSpec {
+    MarkupSpec::Ink {
+        strokes,
+        color: Color::Rgb(1.0, 0.0, 0.0),
+        width: 1.0,
+    }
+}
+
+/// A two-stroke `/Ink` authored into a real document, with its geometry as
+/// [`super::geometry`] reports it.
+fn authored_ink() -> (crate::app::state::OpenDoc, Geometry) {
+    let (doc, id) = authored(&ink(two_strokes()));
+    let shape = geometry(&doc, &select(&doc, id, false)).expect("an ink mark has nodes now");
+    assert_eq!(shape.id, id);
+    (doc, shape)
+}
+
 fn square() -> Vec<(f64, f64)> {
     vec![
         (100.0, 100.0),
@@ -121,7 +162,8 @@ fn square() -> Vec<(f64, f64)> {
     ]
 }
 
-/// Drive one frame of a node edit and report what it drew and what it raised.
+/// Drive one frame of a node edit on a single-list shape and report what it
+/// drew and what it raised.
 fn run(
     doc: &crate::app::state::OpenDoc,
     id: ObjId,
@@ -131,15 +173,31 @@ fn run(
     index: usize,
     phase: Phase,
 ) -> (Option<Vec<(Point, Point)>>, Vec<Action>) {
+    let shape = Geometry {
+        id,
+        points: points.to_vec(),
+        closed,
+        strokes: None,
+    };
+    run_shape(doc, &shape, intent, index, phase)
+}
+
+/// Drive one frame of a node edit on any shape — the seam the ink tests use,
+/// because an ink [`Geometry`] carries a stroke table a point list cannot.
+fn run_shape(
+    doc: &crate::app::state::OpenDoc,
+    shape: &Geometry,
+    intent: VertexIntent,
+    index: usize,
+    phase: Phase,
+) -> (Option<Vec<(Point, Point)>>, Vec<Action>) {
     let mut actions = Vec::new();
     let drag = resolved(Resolve {
         session: &doc.session,
-        id,
-        points,
-        closed,
+        shape,
         intent,
         index,
-        old: points[index],
+        old: shape.points[index],
         target: Point::new(150.0, 150.0),
         phase,
         snap: None,
@@ -166,16 +224,29 @@ fn points_of(pairs: &[(f64, f64)]) -> Vec<Point> {
 #[test]
 fn the_three_shapes_with_nodes_report_their_geometry() {
     let (doc, id) = authored(&polygon(triangle()));
-    let (_, points, closed) =
-        geometry(&doc, &select(&doc, id, false)).expect("a polygon has nodes");
+    let Geometry {
+        points,
+        closed,
+        strokes,
+        ..
+    } = geometry(&doc, &select(&doc, id, false)).expect("a polygon has nodes");
     assert_eq!(points.len(), 3);
     assert!(closed, "a /Polygon closes back to its first vertex");
+    assert!(
+        strokes.is_none(),
+        "a /Polygon is one list, addressed by one index"
+    );
 
     let (doc, id) = authored(&polyline(triangle()));
-    let (_, points, closed) =
-        geometry(&doc, &select(&doc, id, false)).expect("a polyline has nodes");
+    let Geometry {
+        points,
+        closed,
+        strokes,
+        ..
+    } = geometry(&doc, &select(&doc, id, false)).expect("a polyline has nodes");
     assert_eq!(points.len(), 3);
     assert!(!closed, "a /PolyLine is an open path");
+    assert!(strokes.is_none());
 
     let (doc, id) = authored(&MarkupSpec::Line {
         start: (10.0, 20.0),
@@ -184,7 +255,7 @@ fn the_three_shapes_with_nodes_report_their_geometry() {
         width: 1.0,
         endings: (LineEnding::None, LineEnding::None),
     });
-    let (_, points, closed) =
+    let Geometry { points, closed, .. } =
         geometry(&doc, &select(&doc, id, false)).expect("a line has two ends");
     assert!(!closed);
     assert_eq!(
@@ -202,12 +273,12 @@ fn the_three_shapes_with_nodes_report_their_geometry() {
 /// ★★★ **R9: a shape with no editable nodes draws NOTHING** — not a greyed
 /// anchor, not a ghost anchor.
 ///
-/// The `/Ink` row is the one that matters, and it is the one a plausible
-/// implementation gets wrong. `Annotation::ink_list` is **readable**, so a
-/// shell that derived *"draggable"* from *"readable"* would put an anchor on
-/// every point of every pen stroke and then refuse every drag from them — the
-/// "visible control, silently inert" failure, at the density of a freehand
-/// scribble.
+/// ★ `/Ink` was the third row of this list until `pdfcer-core` `Pass 278.0`
+/// (2026-09-09), and the paragraph that kept it there is still true of the
+/// rule if not of the shape: `Annotation::ink_list` was **readable** while
+/// every edit on it was refused, so a shell that derived *"draggable"* from
+/// *"readable"* would have drawn anchors that refused every drag. The verbs
+/// exist now, so the anchors do; the ink assertions live in section 5 below.
 #[test]
 fn a_shape_with_no_editable_nodes_shows_no_anchors() {
     let rect = pdfcer_core::page_tree::Rect {
@@ -229,11 +300,6 @@ fn a_shape_with_no_editable_nodes_shows_no_anchors() {
             border: Some(Color::Rgb(1.0, 0.0, 0.0)),
             interior: None,
             border_width: 1.0,
-        },
-        MarkupSpec::Ink {
-            strokes: vec![vec![(10.0, 10.0), (20.0, 30.0), (40.0, 25.0)]],
-            color: Color::Rgb(1.0, 0.0, 0.0),
-            width: 1.0,
         },
     ] {
         let (doc, id) = authored(&spec);
@@ -295,6 +361,51 @@ fn a_closed_shape_previews_its_closing_segment() {
     let pts = points_of(&square());
     assert_eq!(preview_of(&pts, true).len(), 4);
     assert_eq!(preview_of(&pts, false).len(), 3);
+}
+
+/// ★★ **A single-list shape's `Geometry::segments` is `preview_of`, exactly.**
+///
+/// `Geometry::segments` replaced the direct `preview_of` call when `/Ink`
+/// needed a segment list that respects stroke boundaries, and this is the
+/// assertion that the polygon and polyline paths came through that change
+/// **byte-identical**: same pairs, same order, same closing rule. A closed
+/// square and an open one, because the closing segment is the only place the
+/// two derivations could have disagreed.
+///
+/// ★ Falsified: dropping the `closed && n >= 3` push in `segment_pairs` makes
+/// the closed comparison fail on length.
+#[test]
+fn a_single_list_shapes_segments_are_preview_of_unchanged() {
+    let pts = points_of(&square());
+    for closed in [true, false] {
+        let shape = Geometry {
+            id: ObjId::new(1, 0),
+            points: pts.clone(),
+            closed,
+            strokes: None,
+        };
+        let via_geometry = shape.segments();
+        let via_preview = preview_of(&pts, closed);
+        assert_eq!(via_geometry.len(), via_preview.len(), "closed={closed}");
+        for (g, p) in via_geometry.iter().zip(&via_preview) {
+            assert!(
+                (g.0.x - p.0.x).abs() < 1e-12
+                    && (g.0.y - p.0.y).abs() < 1e-12
+                    && (g.1.x - p.1.x).abs() < 1e-12
+                    && (g.1.y - p.1.y).abs() < 1e-12,
+                "closed={closed}: {g:?} vs {p:?}"
+            );
+        }
+    }
+    // And the index pairs name the closing edge as (last, 0), which is what
+    // `menu::pick_at` offers *Add a point here* on.
+    let closed = Geometry {
+        id: ObjId::new(1, 0),
+        points: pts,
+        closed: true,
+        strokes: None,
+    };
+    assert_eq!(closed.segment_pairs(), vec![(0, 1), (1, 2), (2, 3), (3, 0)]);
 }
 
 /// ★★ **A node moves to where the pointer resolved, and its neighbours do
@@ -608,9 +719,12 @@ fn a_line_moves_its_ends_and_refuses_to_gain_one_by_name() {
 /// merging the two enums.
 #[test]
 fn no_node_refusal_calls_a_markup_shape_a_measurement() {
-    use crate::text::markup::{NodeEditRefusal as R, ShapeWord as W};
+    use crate::text::markup::ShapeWord as W;
     let all = [
         R::WouldLeaveTooFew,
+        R::StrokeWouldLeaveTooFew,
+        R::PointNotFound,
+        R::WouldLeaveNothing,
         R::Unplaceable,
         R::Locked,
         R::Refused,
@@ -721,4 +835,374 @@ fn the_points_tool_arms_wherever_a_markup_shape_can_be_authored() {
              tool will arm and retire on consecutive frames."
         );
     }
+}
+
+// ===========================================================================
+// 5. `/Ink` — `pdfcer-core` `Pass 278.0`, the operator's O158
+// ===========================================================================
+//
+// > *"the draw a line that follows the pointer tool — I can't edit the nodes
+// > that make it"*
+//
+// Every test here drives a REAL two-stroke `/Ink` through the real
+// `reshape_ink_preview`, for the reason the header states: a faked annotation
+// would get `AnnotationNotFound` for every case while looking exactly like a
+// test that passed for the right reason.
+
+/// ★★★ **A two-stroke freehand mark yields one anchor per point of every
+/// stroke, and its preview draws NO segment between the strokes.**
+///
+/// Five points, three segments: `(0,1)`, `(1,2)` in the first stroke and
+/// `(3,4)` in the second. A naive flat preview would draw four — the fourth
+/// being a bridge from `(160,150)` to `(300,300)` that the file does not hold
+/// and the release would not commit, which is exactly what the honesty
+/// contract in the module header forbids.
+///
+/// ★ Falsified: replacing `segment_pairs` with the single-list rule makes the
+/// count assertion read 4 and the bridge assertion find the segment.
+#[test]
+fn an_ink_with_two_strokes_yields_every_point_and_draws_no_bridge() {
+    let (_, shape) = authored_ink();
+    assert_eq!(shape.points.len(), 5, "three points plus two");
+    assert!(!shape.closed, "an ink stroke is open by definition");
+    let table = shape
+        .strokes
+        .as_ref()
+        .expect("an ink carries its stroke table");
+    assert_eq!(table.strokes(), 2);
+    assert_eq!(table.total(), 5);
+
+    let segments = shape.segments();
+    assert_eq!(segments.len(), 3, "{segments:?}");
+    let bridges = segments
+        .iter()
+        .any(|(a, b)| (a.x - 160.0).abs() < 1e-9 && (b.x - 300.0).abs() < 1e-9);
+    assert!(
+        !bridges,
+        "the preview joined the end of one stroke to the start of the next: {segments:?}"
+    );
+    assert_eq!(shape.segment_pairs(), vec![(0, 1), (1, 2), (3, 4)]);
+}
+
+/// ★★★ **Flat anchor index ↔ `(stroke, point)` round-trips, INCLUDING the
+/// first point of the second stroke.**
+///
+/// Index 3 is the one that matters: it is `(1, 0)`, and an off-by-one in
+/// either direction makes it `(0, 3)` — a point stroke 0 does not have, which
+/// the engine would refuse — or `(1, 1)`, the wrong point, which the engine
+/// would accept and move. The second is the dangerous one: it looks like a
+/// working gesture on the wrong node.
+///
+/// ★ Falsified: changing `flat < start + len` to `<=` in `address` reports
+/// index 3 as `(0, 3)`.
+#[test]
+fn an_ink_anchor_index_round_trips_through_stroke_and_point() {
+    let (_, table) = ink::StrokeTable::flatten(&two_strokes());
+    for (flat, stroke, point) in [(0, 0, 0), (1, 0, 1), (2, 0, 2), (3, 1, 0), (4, 1, 1)] {
+        assert_eq!(table.address(flat), Some((stroke, point)), "flat {flat}");
+        assert_eq!(table.flat(stroke, point), Some(flat), "({stroke}, {point})");
+    }
+    // Past the end in either space answers None, never a neighbour.
+    assert_eq!(table.address(5), None);
+    assert_eq!(
+        table.flat(0, 3),
+        None,
+        "stroke 0 has three points, not four"
+    );
+    assert_eq!(table.flat(2, 0), None, "there is no third stroke");
+}
+
+/// ★★★ **Insert after a stroke's LAST point extends that stroke and never
+/// crosses into the next** — the engine's rule on `InkEdit::InsertPoint`.
+///
+/// Index 2 is stroke 0's last point. After the insert the mark has six
+/// points, stroke 0 has four, stroke 1 still has two, and the preview's
+/// segments are `(0,1) (1,2) (2,3) (4,5)`: the new point at flat index 3
+/// joins the old last point of stroke 0 and does **not** join stroke 1's
+/// first point, now at flat index 4. The release raises
+/// `InsertInkPoint { stroke: 0, after: 2 }`.
+///
+/// ★ Falsified: a stroke table that did not grow stroke 0 (`after_edit`
+/// returning `self.clone()`) shifts the boundary and the preview draws a
+/// segment from the new point into stroke 1.
+#[test]
+fn inserting_after_a_strokes_last_point_extends_that_stroke() {
+    let (doc, shape) = authored_ink();
+    let (segments, actions) = run_shape(&doc, &shape, VertexIntent::Insert, 2, Phase::InFlight);
+    let segments = segments.expect("a frame in flight draws something");
+    assert!(actions.is_empty());
+    assert_eq!(segments.len(), 4, "{segments:?}");
+    // The third segment runs the old last point of stroke 0 → the new point.
+    let (a, b) = segments[2];
+    assert!(
+        (a.x - 160.0).abs() < 1e-9 && (a.y - 150.0).abs() < 1e-9,
+        "{a:?}"
+    );
+    assert!(
+        (b.x - 150.0).abs() < 1e-9 && (b.y - 150.0).abs() < 1e-9,
+        "{b:?}"
+    );
+    // And NO segment leaves the new point for stroke 1.
+    assert!(
+        !segments
+            .iter()
+            .any(|(a, b)| (a.x - 150.0).abs() < 1e-9 && (b.x - 300.0).abs() < 1e-9),
+        "the inserted point was joined to the next stroke: {segments:?}"
+    );
+
+    let after = shape
+        .edited(VertexIntent::Insert, 2, Point::new(150.0, 150.0))
+        .expect("index 2 exists");
+    let table = after.strokes.expect("still an ink");
+    assert_eq!(
+        table.address(3),
+        Some((0, 3)),
+        "the new point belongs to stroke 0"
+    );
+    assert_eq!(table.address(4), Some((1, 0)), "stroke 1 begins one later");
+
+    let (segments, actions) = run_shape(&doc, &shape, VertexIntent::Insert, 2, Phase::Complete);
+    assert!(segments.is_none());
+    assert!(
+        actions.iter().any(|a| matches!(
+            a,
+            Action::Annot(AnnotAction::InsertInkPoint {
+                stroke: 0,
+                after: 2,
+                ..
+            })
+        )),
+        "{actions:?}"
+    );
+}
+
+/// ★★ **A move on the first point of the second stroke raises the ENGINE'S
+/// address, not the flat index**, with the delta measured from that point.
+///
+/// Flat index 3 is `(300, 300)`; dragged to `(150, 150)` it is
+/// `dx = -150, dy = -150`. A build that sent `index: 3` to a vertex verb would
+/// be refused by name; a build that converted it to `(0, 3)` would be refused
+/// as out of range; a build that converted it to `(1, 1)` would move the wrong
+/// point and pass every test that only counted anchors.
+#[test]
+fn moving_an_ink_point_raises_the_engines_address_not_the_flat_index() {
+    let (doc, shape) = authored_ink();
+    let (segments, _) = run_shape(&doc, &shape, VertexIntent::Move, 3, Phase::InFlight);
+    let segments = segments.expect("a frame in flight draws something");
+    assert_eq!(segments.len(), 3, "a move changes no count");
+    // Stroke 1's one segment now starts at the target.
+    let (a, b) = segments[2];
+    assert!(
+        (a.x - 150.0).abs() < 1e-9 && (a.y - 150.0).abs() < 1e-9,
+        "{a:?}"
+    );
+    assert!(
+        (b.x - 340.0).abs() < 1e-9,
+        "the neighbour did not move: {b:?}"
+    );
+
+    let (_, actions) = run_shape(&doc, &shape, VertexIntent::Move, 3, Phase::Complete);
+    let Some(Action::Annot(AnnotAction::MoveInkPoint {
+        stroke,
+        point,
+        dx,
+        dy,
+        ..
+    })) = actions.first()
+    else {
+        panic!("no ink move was raised: {actions:?}");
+    };
+    assert_eq!((*stroke, *point), (1, 0));
+    assert!((dx + 150.0).abs() < 1e-9, "dx was {dx}");
+    assert!((dy + 150.0).abs() < 1e-9, "dy was {dy}");
+    assert!(
+        !actions
+            .iter()
+            .any(|a| matches!(a, Action::Annot(AnnotAction::MoveNode { .. }))),
+        "an ink point reached the vertex verb: {actions:?}"
+    );
+}
+
+/// ★★★ **The floor is the STROKE'S: the same mark accepts a removal from its
+/// three-point stroke and refuses one from its two-point stroke — and SAYS
+/// SO, per stroke.**
+///
+/// Both halves asserted, as for the triangle: a build that merely dropped the
+/// gesture would pass the first and fail the second, and the second is the
+/// operator's actual complaint. The sentence is `StrokeWouldLeaveTooFew`, not
+/// `WouldLeaveTooFew`, because *"the shape has as few corners as it can have"*
+/// is false of a mark whose other stroke has three.
+#[test]
+fn a_two_point_stroke_refuses_to_lose_a_point_and_names_the_stroke() {
+    let (doc, shape) = authored_ink();
+
+    // Stroke 0 has three: removing its middle point is allowed.
+    let (segments, _) = run_shape(&doc, &shape, VertexIntent::Remove, 1, Phase::InFlight);
+    assert_eq!(
+        segments.expect("drawn").len(),
+        2,
+        "stroke 0 becomes one segment, stroke 1 keeps its one"
+    );
+    let (_, actions) = run_shape(&doc, &shape, VertexIntent::Remove, 1, Phase::Complete);
+    assert!(
+        actions.iter().any(|a| matches!(
+            a,
+            Action::Annot(AnnotAction::RemoveInkPoint {
+                stroke: 0,
+                point: 1,
+                ..
+            })
+        )),
+        "{actions:?}"
+    );
+
+    // Stroke 1 has two: removing either is refused, and the preview does not
+    // lie about it.
+    let (segments, actions) = run_shape(&doc, &shape, VertexIntent::Remove, 3, Phase::InFlight);
+    assert_eq!(
+        segments.expect("drawn").len(),
+        3,
+        "the preview showed a point vanishing that the release would refuse"
+    );
+    assert!(actions.is_empty());
+    let (segments, actions) = run_shape(&doc, &shape, VertexIntent::Remove, 3, Phase::Complete);
+    assert!(segments.is_none());
+    assert!(
+        !actions
+            .iter()
+            .any(|a| matches!(a, Action::Annot(AnnotAction::RemoveInkPoint { .. }))),
+        "a removal below the stroke floor reached the engine: {actions:?}"
+    );
+    assert!(
+        actions.iter().any(|a| matches!(
+            a,
+            Action::Annot(AnnotAction::DeclineNodeEdit {
+                why: R::StrokeWouldLeaveTooFew
+            })
+        )),
+        "the refusal was silent, or named the whole shape: {actions:?}"
+    );
+}
+
+/// ★★ **Every one of the engine's five ink refusals maps to a sentence**, and
+/// the two that have a specific next act get it.
+///
+/// Built from the variants directly rather than provoked through the engine,
+/// because three of them cannot be provoked from an anchor this shell drew —
+/// which is the whole point: a refusal that becomes reachable silently must
+/// already have words waiting.
+#[test]
+fn every_ink_refusal_is_a_sentence() {
+    let id = ObjId::new(7, 0);
+    let cases = [
+        (
+            EditError::InkStrokeWouldBreachPointFloor {
+                id,
+                stroke: 1,
+                count: 2,
+            },
+            R::StrokeWouldLeaveTooFew,
+        ),
+        (
+            EditError::InkPointIndexOutOfRange {
+                id,
+                stroke: 0,
+                index: 9,
+                count: 3,
+            },
+            R::PointNotFound,
+        ),
+        (
+            EditError::InkStrokeIndexOutOfRange {
+                id,
+                index: 4,
+                count: 2,
+            },
+            R::PointNotFound,
+        ),
+        (
+            EditError::InkWouldBeEmpty { id, strokes: 0 },
+            R::WouldLeaveNothing,
+        ),
+        (
+            EditError::InkVerbOnNonInk {
+                id,
+                subtype: "Polygon".to_owned(),
+            },
+            R::Refused,
+        ),
+    ];
+    for (error, expected) in cases {
+        let why = refusal_for(&error);
+        assert_eq!(why, expected, "{error}");
+        assert!(!why.line().is_empty(), "{why:?} has no sentence");
+        // ★ The voice: name the next act, never say "cannot". `Refused` is
+        // the one general sentence and is exempt — it predates this rule and
+        // its wording is owned by the polygon path.
+        if why != R::Refused {
+            assert!(
+                !why.line().to_lowercase().contains("cannot"),
+                "{why:?} says cannot: {}",
+                why.line()
+            );
+        }
+    }
+}
+
+/// ★ **The right-click rows on a freehand mark**: *Remove this point* is live
+/// on a three-point stroke, **greyed** on a two-point one — the R9 temporary
+/// case, per stroke — and *Add a point here* is live on a within-stroke
+/// segment.
+///
+/// Asked through `menu::rows` with a parked-style pick, which is the same
+/// function `canvas::menus` draws the rows from.
+#[test]
+fn the_menu_rows_follow_the_strokes_floor() {
+    let (doc, id) = authored(&ink(two_strokes()));
+    let selection = select(&doc, id, false);
+    let live = menu::rows(&doc, &selection, menu::NodePick::Node(1));
+    assert_eq!(live.remove, menu::RowState::Live, "{live:?}");
+    assert_eq!(live.insert, menu::RowState::Absent);
+    let greyed = menu::rows(&doc, &selection, menu::NodePick::Node(3));
+    assert_eq!(greyed.remove, menu::RowState::Greyed, "{greyed:?}");
+    let segment = menu::rows(
+        &doc,
+        &selection,
+        menu::NodePick::Segment {
+            after: 3,
+            at: Point::new(320.0, 310.0),
+        },
+    );
+    assert_eq!(segment.insert, menu::RowState::Live, "{segment:?}");
+    assert_eq!(segment.remove, menu::RowState::Absent);
+}
+
+/// ★ **A malformed ink — no readable `/InkList` — draws no anchors and is the
+/// one case the freehand "no nodes" sentence still describes.**
+///
+/// Exercised on the table rather than on a file, because pdfcer's own verbs
+/// cannot author an `/Ink` without strokes: an empty stroke list flattens to
+/// no anchors and no segments, which is what `geometry` hands the painter.
+#[test]
+fn an_ink_with_nothing_readable_has_no_anchors_and_no_segments() {
+    let (points, table) = ink::StrokeTable::flatten(&[]);
+    assert!(points.is_empty());
+    assert_eq!(table.total(), 0);
+    assert!(table.segment_pairs().is_empty());
+    assert_eq!(table.address(0), None);
+    // A one-point stroke is kept — its index alignment matters — and yields
+    // one anchor and no segment.
+    let (points, table) =
+        ink::StrokeTable::flatten(&[vec![(1.0, 1.0)], vec![(2.0, 2.0), (3.0, 3.0)]]);
+    assert_eq!(points.len(), 3);
+    assert_eq!(table.segment_pairs(), vec![(1, 2)]);
+    assert_eq!(table.address(1), Some((1, 0)));
+    let word = crate::text::markup::ShapeWord::Ink
+        .no_nodes_line()
+        .to_lowercase();
+    assert!(
+        !word.contains("has no corners to edit"),
+        "the freehand sentence still says its points are uneditable: {word}"
+    );
+    assert!(word.contains("freehand"), "{word}");
 }

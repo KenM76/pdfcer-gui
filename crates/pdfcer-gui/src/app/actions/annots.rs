@@ -187,6 +187,22 @@ pub(super) fn resize(
     // the space being transformed?* An inset is; a line weight is a drafting
     // convention. `canvas::scaling` carries the whole account.
     let opts = modifiers.to_options();
+    // ★ Whether the target is a `/Stamp`, read BEFORE the call because the
+    // refusal below cannot say: `ResizeAppearanceNotRebuildable` is the same
+    // variant for a foreign stamp (true sentence) and for a stamp pdfcer drew
+    // (false one — the engine's appearance test does not know the stamp
+    // builder, request filed 2026-09-09). The selection knows the subtype; the
+    // error does not. Read through the same `page_annotations` lookup
+    // `canvas::annotnodes::geometry` uses, so the two agree about which
+    // annotation is meant.
+    let is_stamp = doc.selection.annot().is_some_and(|a| {
+        a.target.id == id
+            && doc.pages.get(a.target.page).is_some_and(|page| {
+                pdfcer_core::annot::page_annotations(&doc.session.graph(), page.id)
+                    .into_iter()
+                    .any(|found| found.id == Some(id) && found.subtype.as_slice() == b"Stamp")
+            })
+    });
     super::apply::vector_edit(doc, "resize-annotation", 0, 1, |session| {
         session
             .resize_annotation(id, anchor, sx, sy, &opts)
@@ -222,7 +238,11 @@ pub(super) fn resize(
                     ..
                 } = error
                 {
-                    crate::app::status::decline::record_resize_not_rebuildable(*was_uniform);
+                    if is_stamp {
+                        crate::app::status::decline::record_resize_stamp_not_yet();
+                    } else {
+                        crate::app::status::decline::record_resize_not_rebuildable(*was_uniform);
+                    }
                 }
                 // ★ And its sibling since `Pass 277.0` (2026-09-09): a `/Text`
                 // sticky or a `NoZoom` annotation has no size to scale. Worded
@@ -1221,6 +1241,10 @@ pub(super) fn remove_node(doc: &mut OpenDoc, id: ObjId, index: usize) {
     );
 }
 
+/// ★★★ **The three point verbs of a freehand mark** (`Pass 278.0`) → `EditSession::reshape_ink`.
+/// A sibling of [`reshape`]'s three, not three more arms inside it; its header says why.
+mod inknodes;
+
 /// ★★★ **Restyle a text-BEARING annotation** — a sticky note's icon and
 /// colour, a stamp's colour. `EditSession::set_text_annot_style`
 /// (`pdfcer-core` `edit.rs:27124`).
@@ -1432,6 +1456,12 @@ pub(super) fn apply_action(
         A::MoveNode { id, index, dx, dy } => move_node(doc, id, index, dx, dy),
         A::InsertNode { id, after, at } => insert_node(doc, id, after, at),
         A::RemoveNode { id, index } => remove_node(doc, id, index),
+        // ★★★ The three ink point verbs — `Pass 278.0`, O158 — carry a `(stroke,
+        // point)` address and reach a different planner; [`inknodes::apply`]
+        // destructures them. One arm here so this file stays under R2.
+        A::MoveInkPoint { .. } | A::InsertInkPoint { .. } | A::RemoveInkPoint { .. } => {
+            inknodes::apply(doc, action);
+        }
         // ★★ **The only report a refused node edit produces.** The gesture
         // preflights through `reshape_annotation_preview`, so no verb is
         // reached, no funnel is entered and no `EditRefused` is recorded — if
