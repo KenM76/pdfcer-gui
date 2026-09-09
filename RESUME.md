@@ -62,9 +62,13 @@
 > 2. **The central-panel width jitter** — measured, source unknown. It flickers
 >    the fit zoom in its last digit and runs `fit::placement` every frame.
 >    Instrument the dock's right edge; do not theorise.
-> 3. **Delete the annotation spec route** (~600 lines, `ENGINE_BACKLOG.md`
->    row 299; symbols: `Plan::spec_is_more_faithful`, `carried_options`,
->    `copy_as_spec`, `Action::PasteMarkup`'s apply arm). Headless, unit-tested.
+> 3. ~~Delete the annotation spec route~~ **DONE 2026-09-08, 22:40** — 804
+>    lines gone across 13 files (`Plan::spec_is_more_faithful`,
+>    `carried_options`, `translated`, `copy_as_spec`, `Clipped::Markup`,
+>    `Action::PasteMarkup`); `Plan::thin` and its disclosure kept by their own
+>    argument. Tests **3,893** (one fewer: the tripwire test went with its
+>    predicate), gates 32/32, clippy clean. Headless-only change; nothing
+>    operator-visible, so NOT republished.
 > 4. **`canvas.selection-outline` is published twice per frame** with two rects
 >    — re-decide the shared name (handoff §3.4).
 >

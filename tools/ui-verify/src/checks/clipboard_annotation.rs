@@ -55,7 +55,8 @@
 //! and for a stronger reason than either: this check's subject is *"a
 //! `/Text` annotation, which pdfcer does not model, copies whole"*, and on a
 //! document whose only annotations are squares and clouds **the defect cannot
-//! occur** — every one of those takes the spec route, which worked before this
+//! occur** — every one of those took the shell's spec route (deleted 2026-09-08
+//! once the engine's own carrier matched it), which worked before this
 //! change and works after it. An arbitrary drawing would make this check unable
 //! to fail, which is this suite's own stated worst outcome.
 //!
@@ -337,7 +338,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         return Ok(Some(format!(
             "★ the copy took the SPEC route (`{}`), which means `spec_from_dict` read the sticky \
              note — so either the engine learned to model /Text and \
-             `canvas::annotclip::carried_options` has not been taught its keys, or the click \
+             the engine's `MarkupCarry` has not been taught its keys, or the click \
              landed on the /Square at /Annots 0 instead. The first is a silent data loss; the \
              second is an aim problem. `canvas::annotclip`'s \
              `the_engine_models_a_square_and_carries_a_sticky_note_whole` distinguishes them \

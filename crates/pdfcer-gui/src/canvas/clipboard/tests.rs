@@ -174,9 +174,9 @@ fn with_annot_selected(index: usize) -> crate::app::state::OpenDoc {
 /// clip — which is the plausible failure here, because `copy_selection`
 /// returns `Ok` with an empty `annotations` vector if the index list never
 /// reached it. So the count on the clip is asserted, and so is the fact that
-/// it is a `Selection` rather than a `Markup`: a build that quietly fell back
-/// to the spec route would satisfy every other assertion and would have
-/// dropped the baked `/AP`.
+/// it is a `Selection`: a build that quietly re-authored it from a spec (the
+/// route deleted on 2026-09-08) would satisfy every other assertion and would
+/// have dropped the baked `/AP`.
 #[test]
 fn a_sticky_note_reaches_the_clipboard() {
     let ctx = egui::Context::default();
@@ -261,20 +261,6 @@ fn a_modelled_markup_keeps_what_a_spec_cannot_say() {
 
     // The four facts, read off whichever carrier was used.
     let (opacity, contents, author) = match &clipped {
-        // The spec route, if a future engine ever makes it reachable again.
-        Clipped::Markup { options, spec, .. } => {
-            assert!(
-                matches!(**spec, pdfcer_core::annot_author::MarkupSpec::Square { .. }),
-                "the geometry travels as a square"
-            );
-            let note = options.note.as_ref();
-            (
-                options.opacity,
-                note.map(|n| n.text.clone()),
-                note.and_then(|n| n.author.clone()),
-            )
-        }
-        // The route taken since Pass 270.0.
         Clipped::Selection { bytes, .. } => {
             let clip =
                 pdfcer_core::vector::ObjectClip::from_bytes(bytes).expect("the clip round-trips");

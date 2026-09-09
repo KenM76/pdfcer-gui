@@ -84,8 +84,8 @@ use super::{
 /// # Cost
 ///
 /// One `/Annots` walk per frame, bounded by
-/// `pdfcer_core::annot::MAX_ANNOTS_PER_PAGE`. The same price
-/// [`crate::canvas::annotclip::carried_options`] pays for the same reason —
+/// `pdfcer_core::annot::MAX_ANNOTS_PER_PAGE`. The same price the clipboard's
+/// deleted `carried_options` paid for the same reason —
 /// there is no public verb that models one annotation dictionary — and the same
 /// order as the content arm's `doc.page_objects()`, which is also per frame.
 pub(super) fn bounds_of(doc: &OpenDoc, page: usize, id: ObjId) -> Option<Bounds> {

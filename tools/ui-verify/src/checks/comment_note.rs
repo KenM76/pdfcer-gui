@@ -555,7 +555,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              That is the clipboard round-tripping through `MarkupSpec`, which cannot express \
              `/Contents`, `/T` or `/M`. ★ It is invisible on the page: the words live in a pop-up \
              this shell does not draw, so the copy looks correct and is not. \
-             `canvas::clipboard::carried_options` is what should have carried them.",
+             the engine's `MarkupCarry` (Pass 270.0) is what should have carried them.",
             pasted.raw
         )));
     }

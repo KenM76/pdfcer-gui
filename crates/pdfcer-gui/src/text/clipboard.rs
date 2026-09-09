@@ -276,8 +276,8 @@ fn cannot_carry(subtypes: &[String]) -> String {
 ///
 /// # ★ Why it is not reachable today, said rather than implied
 ///
-/// A lone modelled markup takes the spec-plus-options route, which carries all
-/// four keys, so `thin` is zero for every clip this shell parks; and the three
+/// The engine's markup carrier holds all four keys itself since `Pass 270.0`
+/// (`MarkupCarry`), so `thin` is zero for every clip this shell parks; and the three
 /// refused subtypes are either routed elsewhere or refuse the whole copy, so
 /// `left_behind` is empty. Both become live the day the selection model can
 /// hold more than one annotation. The sentence is written now because the

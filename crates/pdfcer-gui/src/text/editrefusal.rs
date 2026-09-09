@@ -184,7 +184,8 @@ pub enum EditRefusal {
     ///
     /// ⚠ **Deleted rather than kept as a tripwire, deliberately**, and the
     /// two are not interchangeable here. A retired *predicate* can sit behind
-    /// a `debug_assert` (see `canvas::annotclip::Plan::spec_is_more_faithful`)
+    /// a `debug_assert` (as `canvas::annotclip::Plan::spec_is_more_faithful`
+    /// did for the day between its obsolescence and its deletion)
     /// because nobody reads it. A retired **sentence** is a promise this build
     /// cannot keep: `line()`'s completeness sweep would keep asserting its
     /// wording, and the next reader would take a fully-argued paragraph about

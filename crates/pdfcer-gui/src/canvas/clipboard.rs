@@ -104,7 +104,6 @@
 //! operator made it more recently, and every program in the class resolves the
 //! collision the same way. This module's copy runs only when no text is swept.
 
-use pdfcer_core::annot_author::MarkupSpec;
 use pdfcer_core::object::ObjId;
 
 /// **Whether a text gesture owns `Ctrl+C` / `Ctrl+X` this frame**, so the object
@@ -177,101 +176,6 @@ pub const PASTE_OFFSET_PT: f64 = 10.0;
 /// spec would make that a rewrite of every caller.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Clipped {
-    /// A markup annotation, ready for `add_markup`.
-    ///
-    /// Carries the page it came from, so a paste onto a *different* page can
-    /// land in place while a paste onto the same one offsets. See the module
-    /// header for why those two answers differ.
-    Markup {
-        /// The spec, verbatim from `spec_from_dict`.
-        spec: Box<MarkupSpec>,
-        /// The 0-based page it was copied from.
-        page: usize,
-        /// ★★★ **The point that is placed under the cursor on a paste** —
-        /// the clip's centre, in **PDF user space**.
-        ///
-        /// `OPERATOR_REQUESTS.md` O73: *"when I paste it should paste where
-        /// the mouse cursor is sitting."*
-        ///
-        /// # Why it is captured at COPY time and not derived at paste time
-        ///
-        /// Because at paste time the source may be gone. The clip outlives the
-        /// selection it came from, outlives an undo of the cut that produced
-        /// it, and — for a cut — outlives the objects themselves. Deriving the
-        /// centre from the document on paste would work in the common case and
-        /// fail in exactly the case `Ctrl+X` `Ctrl+V` exists for.
-        ///
-        /// # Why a CENTRE
-        ///
-        /// The operator pointing at a spot means *"put it here"*, not *"begin
-        /// its bounding box here"*. That is Inkscape's rule and Illustrator's;
-        /// top-left is the Word/Explorer convention and belongs to a text
-        /// caret rather than to a drawing canvas. Acrobat drops a pasted
-        /// comment centred on the click too.
-        ///
-        /// ★ It is also what preserves relative geometry inside a
-        /// multi-object paste **by construction**: one anchor for the whole
-        /// clip means one delta, applied to everything, so the arrangement
-        /// cannot drift no matter how many items are in it.
-        ///
-        /// `None` when the geometry could not be read — the paste then falls
-        /// back to the offset rule rather than guessing, because a clip that
-        /// pasted at `(0, 0)` would land in the bottom-left corner of the
-        /// sheet and read as data loss.
-        anchor: Option<(f64, f64)>,
-        /// ★★★ **Everything the spec cannot say** — `/CA`, `/Contents`, `/T`
-        /// and `/M`.
-        ///
-        /// # Why this field exists, and why it did not on 2026-08-27
-        ///
-        /// A copy used to be a round trip through `MarkupSpec`: read the
-        /// annotation into a spec, author a new one from it. That is lossless
-        /// only for what a spec can express, and on 2026-08-28 this shell
-        /// gained the ability to author two things it cannot — a **note** with
-        /// an author and a date, and an **opacity**.
-        ///
-        /// Without this field, copying a signed, dated, 40 %-opaque cloud and
-        /// pasting it produced an anonymous, undated, opaque one — **which
-        /// looks right on the page**, because the words live in a pop-up this
-        /// shell does not draw and the opacity difference is only visible
-        /// against the artwork underneath. A loss nobody would report.
-        ///
-        /// ⇒ The general form, worth stating because it will recur: **a copy
-        /// implemented as a re-author is only as faithful as the authoring
-        /// type**, and it silently loses ground every time the authoring side
-        /// gains a key.
-        ///
-        /// # ★★★ THE QUESTION IN THIS PARAGRAPH IS ANSWERED — 2026-09-05
-        ///
-        /// It said: *"`pdfcer-core`'s `copy_annotations` is the route that does
-        /// not have that property … and moving to it is filed as a question
-        /// rather than assumed, because it is not yet known whether a `/Popup`,
-        /// an `/IRT` reply chain or an `/RC` rich-text body survive that path
-        /// either."*
-        ///
-        /// It was read, not asked. The answers, from engine source at
-        /// `b01964f`:
-        ///
-        /// * **`/RC` survives** — the raw carrier copies every key of the
-        ///   dictionary (`edit.rs:10694`).
-        /// * **`/Popup` and `/IRT` do NOT, deliberately** — both are on
-        ///   `CLIP_STRIPPED_ANNOT_KEYS` (`edit.rs:10672`) because each names a
-        ///   *relationship* in the source document: a popup reference without
-        ///   its object is a dangling pointer, and a reply whose parent did not
-        ///   travel is a thread with no root.
-        /// * **and the route does not have the property the sentence credited
-        ///   it with.** For a markup pdfcer *models* it carries a
-        ///   `MarkupSpec` and plants it with `add_markup`, so it drops these
-        ///   four keys exactly as a re-author does.
-        ///
-        /// ⇒ **So this variant did not become a legacy path.** It is now the
-        /// route taken for precisely the annotations the engine models, chosen
-        /// by reading the engine's own carrier off the clip — see
-        /// [`crate::canvas::annotclip::Plan::spec_is_more_faithful`]. Deleting
-        /// it would make every copied revision cloud anonymous, undated and
-        /// opaque.
-        options: Box<pdfcer_core::edit::MarkupOptions>,
-    },
     /// ★★★ **A copied selection** — page content, annotations, or both, as one
     /// `ObjectClip`.
     ///
@@ -366,12 +270,12 @@ pub enum Clipped {
         /// How many annotations on the clip travel as a `MarkupSpec` and will
         /// therefore arrive **without** `/CA`, `/T`, `/M` or `/Contents`.
         ///
-        /// Zero for every clip this shell parks today: a lone modelled markup
-        /// takes the spec-plus-options route instead, which carries all four.
-        /// It becomes non-zero only when a modelled markup rides along beside
-        /// content or another annotation, and it exists so that case discloses
-        /// rather than silently thins the copy. See
-        /// [`crate::canvas::annotclip::Plan::thin`].
+        /// Zero for every clip this shell parks today: since `Pass 270.0` the
+        /// engine's markup carrier holds `/CA`, `/Contents` and `/T` itself
+        /// (`MarkupCarry`), and the spec-plus-options route that used to
+        /// stand in for it was deleted on 2026-09-08. The field exists so
+        /// that a future lossy carrier discloses rather than silently thins
+        /// the copy. See [`crate::canvas::annotclip::Plan::thin`].
         thin: usize,
         /// ★★★ **The point that is placed under the cursor on a paste** —
         /// the clip's centre, in **PDF user space**.
@@ -658,12 +562,14 @@ pub fn store(ctx: &egui::Context, clipped: Clipped) {
 /// # ★★★ AND THEN IT ASKS THE ENGINE WHAT IT DID
 ///
 /// The clip comes back carrying, per annotation, the **carrier** the engine
-/// chose. For a markup pdfcer models that carrier is a `MarkupSpec`, which
-/// cannot express `/CA`, `/T`, `/M` or `/Contents` — so for the one shape where
-/// this shell's older spec-plus-options route is strictly more faithful (a
-/// single modelled markup, alone), the clip is thrown away and that route is
-/// taken instead. [`crate::canvas::annotclip::Plan`] holds the whole argument
-/// and the falsifying tests.
+/// chose, and [`crate::canvas::annotclip::Plan::of`] reads it so a refusal is
+/// disclosed by name and a lossy carrier — none exists today — would be
+/// disclosed as `thin`. Until 2026-09-08 this was also a fork: a lone modelled
+/// markup was thrown away and re-copied through the shell's own
+/// spec-plus-options route, because the engine's `MarkupSpec` carrier dropped
+/// `/CA`, `/T` and `/Contents`. `Pass 270.0` gave that carrier a `MarkupCarry`
+/// and the route was deleted; [`crate::canvas::annotclip`]'s header holds the
+/// history and the falsifying tests.
 ///
 /// ⇒ **The fork is read off the payload, never off a subtype list here.** A
 /// list would be a fourth copy of a taxonomy `pdfcer-core` owns, and would be
@@ -712,28 +618,6 @@ pub fn copy(ctx: &egui::Context, doc: &OpenDoc) -> Result<Clipped, Refusal> {
             )
         });
         return Err(Refusal::CannotCarry(plan.refused));
-    }
-
-    if plan.spec_is_more_faithful(objects.len()) {
-        // ★★★ THE ENGINE MODELLED IT, SO THE OLDER ROUTE IS THE FAITHFUL ONE.
-        //
-        // Not a fallback and not a legacy path: it is the branch taken for
-        // every revision cloud, arrow, ink stroke and callout this operator
-        // draws, because those are exactly the kinds `spec_from_dict` reads.
-        // Taking the clip here instead would compile, pass a "the paste
-        // happened" test, and hand him an anonymous, undated, opaque copy of a
-        // signed comment.
-        let selected = annots
-            .first()
-            // ui-text-exempt: a panic message for a developer. The condition is
-            // `Plan::spec_is_more_faithful`, which is `thin == 1` with nothing
-            // else on the clip, and `thin` counts annotations the shell asked
-            // for by index — so an empty `annots` here would mean the engine
-            // classified a markup that was never requested. Unreachable, and
-            // named rather than silenced with a `?` that would degrade the copy
-            // to a lossy one on a state that cannot happen.
-            .expect("spec_is_more_faithful requires exactly one annotation");
-        return copy_as_spec(ctx, doc, selected);
     }
 
     // ★★ The clip's OWN bbox, unioned by the engine over both content items and
@@ -837,8 +721,7 @@ pub fn copy(ctx: &egui::Context, doc: &OpenDoc) -> Result<Clipped, Refusal> {
         // `objects=` or in `bytes=`.
         let bytes = match &clipped {
             Clipped::Selection { bytes, .. } => bytes.len(),
-            Clipped::Markup { .. }
-            | Clipped::FormField(_)
+            Clipped::FormField(_)
             | Clipped::Pages { .. }
             | Clipped::Outline { .. }
             | Clipped::Attachment(_) => 0,
@@ -850,75 +733,6 @@ pub fn copy(ctx: &egui::Context, doc: &OpenDoc) -> Result<Clipped, Refusal> {
             plan.carried(),
             plan.thin,
             plan.refused.len(),
-        )
-    });
-    Ok(clipped)
-}
-
-/// **Copy one modelled markup through its `MarkupSpec` and the four keys a
-/// spec cannot carry.**
-///
-/// The older of the two annotation routes and, for the annotations
-/// `pdfcer-core` models, still the faithful one — see
-/// [`crate::canvas::annotclip::carried_options`] for the four keys and
-/// [`crate::canvas::annotclip::Plan::spec_is_more_faithful`] for when this is
-/// reached.
-///
-/// # Errors
-///
-/// [`Refusal::Unreadable`] when the dictionary is gone from under the
-/// selection between [`crate::canvas::annotclip::selected`] resolving it and
-/// this reading it — a window of one function call, and closed by name rather
-/// than by an `expect`.
-fn copy_as_spec(
-    ctx: &egui::Context,
-    doc: &OpenDoc,
-    selected: &crate::canvas::annotclip::Selected,
-) -> Result<Clipped, Refusal> {
-    use pdfcer_core::annot_author::spec_from_dict;
-    use pdfcer_core::object::Object;
-
-    let graph = doc.session.graph();
-    let Some(Object::Dict(dict)) = doc.session.value(selected.id) else {
-        return Err(Refusal::Unreadable);
-    };
-    let spec = spec_from_dict(&graph, dict).map_err(|_| Refusal::Unreadable)?;
-    // ★★ The keys the spec cannot carry, read from the SAME dictionary the spec
-    // came from — one read, so the two halves of the copy cannot describe
-    // different annotations.
-    let options = Box::new(crate::canvas::annotclip::carried_options(
-        doc,
-        selected.page,
-        selected.id,
-    ));
-    // ★ The `/Rect` centre, from the SAME dictionary the spec came from — one
-    // read, so the anchor and the geometry cannot describe different
-    // annotations. `OPERATOR_REQUESTS.md` O73; see `Clipped::Markup::anchor`.
-    let anchor = crate::canvas::annotclip::rect_centre_of(dict);
-    let clipped = Clipped::Markup {
-        spec: Box::new(spec),
-        page: selected.page,
-        anchor,
-        options,
-    };
-    store(ctx, clipped.clone());
-    // ★★ The OS marker goes on here too, and its absence was a real defect
-    // once: `egui-winit` raises `Event::Paste` only when the OS clipboard holds
-    // non-empty text, so a copy route that skipped this leaves `Ctrl+V` working
-    // or not depending on what the operator last copied in another program.
-    // `RESUME.md` records the form-field copy shipping with exactly that gap,
-    // one function away from the comment explaining it.
-    ctx.copy_text(crate::text::clipboard::os_marker(0, 1));
-    crate::diag::trace(|| {
-        // ui-text-exempt: diagnostic trace, never displayed.
-        //
-        // ★ `carrier=spec` is the word that makes the fork observable. Without
-        // it a build that took the engine's model carrier — losing the author,
-        // the date, the note and the opacity — traces identically to one that
-        // took this route, and the difference is invisible on the page.
-        format!(
-            "clipboard-copy kind=markup carrier=spec page={} annots=1",
-            selected.page
         )
     });
     Ok(clipped)
@@ -1034,14 +848,6 @@ pub fn cut(
     // The delete is raised through the funnel like every other edit, rather
     // than performed here: this module changes no document.
     match (&clipped, doc.selection.annot()) {
-        (Clipped::Markup { .. }, Some(selected)) => {
-            actions.push(Action::Annot(
-                crate::app::actions::annot::AnnotAction::Delete {
-                    page: selected.target.page,
-                    id: selected.target.id,
-                },
-            ));
-        }
         // ★★★ **BOTH HALVES OF A SELECTION CLIP**, as of 2026-09-05, and they
         // are two actions rather than one because they address two different
         // things: page content by paint-order index into a content stream, an
@@ -1085,7 +891,6 @@ pub fn cut(
                 ));
             }
         }
-        (Clipped::Markup { .. }, None) => {}
         // ★ A form field's cut is `canvas::fieldclip::cut`, which raises
         // `FieldAction::DeleteWidget` -- a widget is addressed by its FIELD's
         // name and an index within it, not by the `ObjId` this arm's siblings
@@ -1140,7 +945,6 @@ pub fn cut(
         format!(
             "clipboard-cut kind={}",
             match &clipped {
-                Clipped::Markup { .. } => "markup",
                 Clipped::Selection { .. } => "selection",
                 Clipped::FormField(_) => "form-field",
                 Clipped::Pages { .. } => "pages",
@@ -1163,13 +967,7 @@ pub fn paste(
     target: Option<egui::Pos2>,
     actions: &mut Vec<Action>,
 ) -> Result<(), Refusal> {
-    let (spec, from, anchor, options) = match read(ctx) {
-        Some(Clipped::Markup {
-            spec,
-            page: from,
-            anchor,
-            options,
-        }) => (spec, from, anchor, options),
+    match read(ctx) {
         // ★ A clip takes its own path: it is bytes and the verb is
         // `paste_objects`, which takes a page-space MATRIX rather than a
         // displacement — so the offset below cannot be shared even though the
@@ -1190,18 +988,16 @@ pub fn paste(
             annotations,
             anchor,
             ..
-        }) => {
-            return paste_clip(
-                page,
-                &bytes,
-                from,
-                count,
-                annotations,
-                anchor,
-                target,
-                actions,
-            );
-        }
+        }) => paste_clip(
+            page,
+            &bytes,
+            from,
+            count,
+            annotations,
+            anchor,
+            target,
+            actions,
+        ),
         // ★★ Same fork as the cut above, and the same tripwire. A field paste
         // needs `&OpenDoc` -- to find a free name, and to know what the source
         // field could not carry -- which this function does not take and must
@@ -1216,7 +1012,7 @@ pub fn paste(
                 // ui-text-exempt: a debug_assert message for a developer; never rendered.
                 "a bookmark paste must route to panels::bookmarks::clip"
             );
-            return Err(Refusal::NothingCopied);
+            Err(Refusal::NothingCopied)
         }
         Some(Clipped::Pages { .. }) => {
             debug_assert!(
@@ -1224,7 +1020,7 @@ pub fn paste(
                 // ui-text-exempt: a debug_assert message for a developer; never rendered.
                 "a page paste must route to app::dispatch::pageclip"
             );
-            return Err(Refusal::NothingCopied);
+            Err(Refusal::NothingCopied)
         }
         Some(Clipped::FormField(_)) => {
             debug_assert!(
@@ -1232,7 +1028,7 @@ pub fn paste(
                 // ui-text-exempt: a debug_assert message for a developer; never rendered.
                 "a form field paste must route to canvas::fieldclip::paste; app::dispatch::clipboard owns that fork"
             );
-            return Err(Refusal::NothingCopied);
+            Err(Refusal::NothingCopied)
         }
         Some(Clipped::Attachment(_)) => {
             debug_assert!(
@@ -1240,72 +1036,10 @@ pub fn paste(
                 // ui-text-exempt: a debug_assert message for a developer; never rendered.
                 "an attachment paste must route to panels::attachments::clip; an embedded file does not live on a page and this function pastes onto one"
             );
-            return Err(Refusal::NothingCopied);
+            Err(Refusal::NothingCopied)
         }
-        None => return Err(Refusal::NothingCopied),
-    };
-    // ★★★ **The pointer wins where there is one** — `OPERATOR_REQUESTS.md`
-    // O73: *"When I cut or copy an object, when I paste it should paste where
-    // the mouse cursor is sitting."*
-    //
-    // `target` is already resolved to PDF user space by the caller, and is
-    // `None` when the canvas has never drawn. The two older rules below survive
-    // as the fallback and are unchanged; what has changed is that they are no
-    // longer the ONLY answer.
-    //
-    // ★ Where the pointer is not over the canvas — over a dock, over the
-    // ribbon, off the window — the caller has already substituted the
-    // viewport's centre through `zoom::anchor_point`. That is one rule, in one
-    // place, shared with the zoom anchor, rather than a second convention for
-    // an operator to learn.
-    let (dx, dy) = match (target, anchor) {
-        // The mark is placed so that ITS OWN CENTRE lands under the cursor.
-        //
-        // Centre rather than top-left, and it is Inkscape's rule and
-        // Illustrator's: the operator is pointing at where the thing should
-        // BE, not at where its bounding box should begin. Top-left is the
-        // Word/Explorer convention and belongs to a text caret, not to a
-        // drawing canvas. Acrobat likewise drops a pasted comment centred on
-        // the click.
-        (Some(t), Some((cx, cy))) => (f64::from(t.x) - cx, f64::from(t.y) - cy),
-        // See the module header: same page offsets so the copy is visible, a
-        // different page lands in place so a mark copied to sheet 12 is where
-        // it was on sheet 1.
-        _ => {
-            let offset = if from == page { PASTE_OFFSET_PT } else { 0.0 };
-            (offset, -offset)
-        }
-    };
-    crate::diag::trace(|| {
-        // ui-text-exempt: diagnostic trace, never displayed.
-        format!(
-            "clipboard-paste page={page} from={from} at={} dx={dx:.1} dy={dy:.1}",
-            if target.is_some() { "cursor" } else { "offset" }
-        )
-    });
-    actions.push(Action::PasteMarkup {
-        page,
-        // ★ The note and the opacity, forwarded unchanged. The paste is a
-        // *reproduction* of what was copied, so nothing here is re-derived from
-        // the operator's current pen — a paste that picked up today's opacity
-        // would be a different mark wearing the copied one's geometry.
-        options,
-        // Translated HERE, where the offset is decided, rather than in `apply`
-        // — the funnel's own rule: an action carries a complete statement of
-        // what the operator asked for, and geometry computed in the apply arm
-        // cannot be tested without a document.
-        spec: Box::new(crate::canvas::annotclip::translated(*spec, dx, dy)),
-        dx,
-        // ★ Down the page is **negative** in PDF user space because y increases
-        // upward. The fallback arm above encodes that as `-offset`; the cursor
-        // arm gets it for free, because both the target and the anchor are in
-        // the same space and the subtraction cannot have a sign convention of
-        // its own. Getting this backwards produces a paste that goes
-        // up-and-right, which looks deliberate and is the kind of thing nobody
-        // reports as a bug — they just think that is how it works.
-        dy,
-    });
-    Ok(())
+        None => Err(Refusal::NothingCopied),
+    }
 }
 
 /// Paste a clip onto `page`, raising the action that authors it — **page

@@ -239,7 +239,7 @@ pub mod sign;
 /// ceiling itself, so the next family of variants to grow is the one that
 /// will have to become a sub-enum beside `PageAction` and `DimensionAction`.
 /// Measured on 2026-08-20, the candidate is **markup**: `CommitMarkup` (116
-/// lines), `PasteMarkup` (69), `CommitTextMarkup` (57), `BeginTextAnnot` (40),
+/// lines), `PasteMarkup` (69 — deleted 2026-09-08), `CommitTextMarkup` (57), `BeginTextAnnot` (40),
 /// `SetMarkupStyle` (39), `CommitTextAnnot` (29) and `DeleteAnnotation` — some
 /// 370 lines, whose call sites are concentrated in `canvas::markup` and
 /// `app::actions::annots`. Written down here so the next person does not have

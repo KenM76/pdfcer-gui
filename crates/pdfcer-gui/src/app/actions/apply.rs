@@ -582,45 +582,6 @@ impl PdfcerApp {
             }
             Action::File(action) => super::importtext::apply_action(doc, action),
             Action::RecordReviewState(r) => r.record(doc, self.prefs.author_name.trim()),
-            // ★ A paste is an `add_markup` and nothing more, which is the
-            // whole reason this feature was buildable at all: the spec that
-            // came off the clipboard is the same shape the authoring path
-            // already hands the engine, so there is one call site's worth of
-            // new code and no second notion of what a markup is.
-            //
-            // The displacement is already IN the spec — `clipboard::paste`
-            // translates it before raising this — so `dx`/`dy` here are carried
-            // for the trace and the disclosure only. They are not applied
-            // twice, and the field docs say so.
-            Action::PasteMarkup {
-                page,
-                spec,
-                dx,
-                dy,
-                options,
-            } => {
-                crate::diag::trace(|| {
-                    // ui-text-exempt: diagnostic trace, never displayed.
-                    //
-                    // ★ `note` and `ca` are traced because they are the two
-                    // things a lossy paste gets wrong while LOOKING correct: a
-                    // comment with no words lives in a pop-up this shell does
-                    // not draw, and an opacity difference is only visible
-                    // against the artwork underneath. A screenshot cannot tell
-                    // a faithful paste from a lossy one; this line can.
-                    format!(
-                        "paste-markup-requested page={page} dx={dx:.1} dy={dy:.1} \
-                         note={} ca={:?}",
-                        options.note.is_some(),
-                        options.opacity
-                    )
-                });
-                vector_edit(doc, "paste-markup", page, 1, |session| {
-                    session
-                        .add_markup_with(page, &spec, &options)
-                        .map(|_| Vec::new())
-                });
-            }
             Action::CommitMarkup {
                 page,
                 kind,

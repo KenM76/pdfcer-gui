@@ -32,7 +32,7 @@
 //! away, because smoothing it would mean adding a page to two verbs that must
 //! not use one.
 //!
-//! ## ★ `CommitMarkup` and `PasteMarkup` are deliberately NOT here
+//! ## ★ `CommitMarkup` (and, until 2026-09-08, `PasteMarkup`) is deliberately NOT here
 //!
 //! They **author** an annotation, which needs a page, a spec and a pen. These
 //! three act on one that exists. Authoring and editing are different subjects
