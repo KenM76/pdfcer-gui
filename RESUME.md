@@ -1,7 +1,12 @@
 # RESUME — read this, then say "continue"
 
-> ★★★ **START HERE: `resize_scales_a_shape` IS RED AND UNEXPLAINED, AND IT
-> BLOCKED A RELEASE ON 2026-09-08.** Everything else in this file is history.
+> ★★★ **START HERE: READ `HANDOFF_20260908_RESIZE.md` FIRST.** It is the
+> troubleshooting brief for the one open problem — `resize_scales_a_shape` is
+> red, it blocked a release, and **four explanations for it are already
+> disproved**. Re-deriving any of them costs an hour; the handoff lists them so
+> you do not.
+>
+> The rest of this block is the summary. Everything below it is history.
 >
 > **It is NOT a regression from that day's work** — it fails identically on a
 > binary built from `50eebe6`, before any of it. It is older than that and
