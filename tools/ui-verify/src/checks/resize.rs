@@ -261,12 +261,49 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                  Trace: {}.",
                 session.trace_path().display()
             ),
+            // ★★★ **WHAT IT AIMED AT, BEFORE WHAT IT FOUND — 2026-09-08.**
+            //
+            // A run against `a1-titleblock.pdf` at `0,300,500` failed here and
+            // cost most of an hour, because the message below describes a
+            // **regression in the application** and the actual cause was the
+            // **aim**: that click selects the sheet's own border rectangle —
+            // the properties panel reported `2383.94 x 1683.78`, exactly A1 —
+            // so the south-east grip sits on the corner of the rendered page
+            // and a drag aimed deliberately BEYOND it lands off the canvas.
+            //
+            // ⇒ None of that is visible in *"committed nothing and declined
+            // nothing"*, and the sentence after it is a confident, specific
+            // accusation naming `canvas::interact`. **A check that cannot say
+            // what it aimed at cannot be believed about what it found.**
+            //
+            // ★ The verdict is unchanged — a page-sized selection is still a
+            // legitimate thing to fail on, and weakening the assertion would
+            // be the wrong repair. What changes is whether the reader spends
+            // the next hour in the right file.
             None => format!(
-                "★ THE GRIP DRAG COMMITTED NOTHING AND DECLINED NOTHING. That is the state \
+                "aimed at a selection {:.0} x {:.0} screen px.{}\n\
+                 ★ THE GRIP DRAG COMMITTED NOTHING AND DECLINED NOTHING. That is the state \
                  this whole feature is a fix for: until 2026-08-19 every resize drag was \
                  consumed and thrown away, so a build that has reverted to it is silent on \
                  both channels — which is exactly what an operator reports as 'resize does not \
                  work'. Look at `canvas::interact`'s `GestureOutcome::Resize` arm. Trace: {}.",
+                w,
+                h,
+                // ★ Compared against the CANVAS region rather than the window:
+                // the sheet is fitted into the canvas, so "the selection is
+                // nearly the canvas" is what "the selection is the whole page"
+                // looks like from here. A window-relative test would also count
+                // the dock and the ribbon and never fire.
+                if driving::declared(&trace, ui_rect, "canvas-viewport")
+                    .is_some_and(|v| w >= v.width() * 0.9 && h >= v.height() * 0.9)
+                {
+                    " ⚠ THAT IS ESSENTIALLY THE WHOLE PAGE — the click almost certainly \
+                     selected the sheet's own border rather than a shape on it, so the grip \
+                     is at the page corner and this drag aimed off the canvas. Re-run with a \
+                     --doc-point over a SMALL shape before reading the accusation below."
+                } else {
+                    ""
+                },
                 session.trace_path().display()
             ),
         }));

@@ -178,8 +178,15 @@ pub fn grip_box(mapping: &PageMapping, selection: &SelectionState) -> Option<Rec
 /// `grip_box` answers *"where are the grips for a **content** selection"*, and
 /// its two callers both want exactly that: `pressing::grabbable` reaches it
 /// only after the annotation, ce-dimension and widget arms have already
-/// returned, and the published `canvas-grip-box` rect is the content one a
-/// driven check aims at. Widening it would change what those two mean.
+/// returned, and the rect published for a driven check to aim at is the
+/// content one. Widening it would change what those two mean.
+///
+/// ⚠ **This paragraph said "the published `canvas-grip-box` rect" until
+/// 2026-09-08, and there is no such region.** The grip box goes out under
+/// [`SELECTION_OUTLINE_REGION`], deliberately, per the note at that call site.
+/// The name was invented while the sentence was being written and would have
+/// sent the next reader hunting a trace line that has never existed — found
+/// the same hour, by a driven run that went looking for it.
 ///
 /// This answers a different question — *"what rectangle is the operator
 /// dragging?"* — and for a markup annotation that is its `/Rect`, which lives

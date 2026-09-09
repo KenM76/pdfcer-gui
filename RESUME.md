@@ -1,5 +1,73 @@
 # RESUME — read this, then say "continue"
 
+> ★★★ **START HERE: `resize_scales_a_shape` IS RED AND UNEXPLAINED, AND IT
+> BLOCKED A RELEASE ON 2026-09-08.** Everything else in this file is history.
+>
+> **It is NOT a regression from that day's work** — it fails identically on a
+> binary built from `50eebe6`, before any of it. It is older than that and
+> nobody knows how much older; no previous session recorded running it.
+>
+> ## What is measured, and it is not much
+>
+> Driven, `a1-titleblock.pdf`, `--doc-point 0,300,500`:
+>
+> | | |
+> |---|---|
+> | the click selects | ✅ an object — `properties-panel` reports `2383.94 x 1683.78`, **exactly A1**, so it is the sheet's own border rectangle |
+> | mode | `edit` |
+> | selection outline on screen | **428 × 302 px** |
+> | the corner drag | commits **nothing** and declines **nothing** — no `resize-commit`, no `resize-declined`, no resize event of any kind in the trace |
+> | what DOES move | `canvas.selection-outline` drifts ~1 px across the drag, which reads as the gesture being taken as a **MOVE** |
+>
+> ## ⚠ TWO EXPLANATIONS WERE TRIED AND BOTH WERE WRONG
+>
+> 1. *"my `ghost_box` change broke it"* — no; it fails on the pre-change build.
+> 2. *"the selection is the whole page, so the grip is at the page corner and
+>    the drag aims off the canvas"* — **plausible, specific, and false.**
+>    428 × 302 px is nowhere near the canvas, so the grip is reachable and the
+>    drag stays on it. The check now prints its own aim and fires a
+>    whole-page warning; the warning did **not** fire.
+>
+> ⇒ **Do not arrive at a third story from reading. That is what the whole of
+> 2026-09-08 was, four times over.** The next step is to make the application
+> say what it did with the press — there is no `canvas-grip` or
+> `gesture-outcome` trace line for a press that lands on a grip, and its
+> absence is why this is a mystery rather than a diagnosis.
+>
+> ## What was already fixed while investigating it
+>
+> - The check now reports **what it aimed at before what it found**. Its old
+>   message named `canvas::interact` as the culprit with total confidence and
+>   nothing else; a check that cannot say what it aimed at cannot be believed
+>   about what it found.
+> - `overlay::ghost_box`'s doc cited a region called `canvas-grip-box`. **There
+>   is no such region** — the grip box is published under
+>   `canvas.selection-outline`. Invented while writing the sentence, found the
+>   same hour by a driven run that went looking for it.
+>
+> ## ★ And one real finding that is NOT the cause but is worth fixing
+>
+> `canvas.selection-outline` is published **twice per frame with two different
+> rectangles** — once per selected entry in the loop, and once for the grip
+> box at `overlay.rs`'s `if let Some(box_) = grip_box(…)`. They differ by a
+> fraction of a pixel for a single selection and by a lot for a multi-select.
+> A consumer asking for "the" selection outline gets whichever won the race.
+>
+> ⇒ The call site argues for the shared name deliberately (*"the name is the
+> SELECTION's rather than the grips'"*), and that argument was made when only
+> one of the two existed. It needs re-deciding, not just renaming.
+>
+> ---
+>
+> ## What NOT to do
+>
+> - **Do not release while this is red** without deciding deliberately that it
+>   is harness-only. It is a Phase-1 capability — dragging a shape's corner on
+>   the page — and "pre-existing" is not "fine".
+> - **Do not weaken the check.** A page-sized selection is a legitimate thing
+>   to fail on; the repair is a better aim or a better trace, not a lower bar.
+
+
 > ★★★ **LAST SESSION: 2026-09-08, midday to afternoon. THE OPERATOR'S TEXT-EDIT
 > REPORT WAS DIAGNOSED WRONG TWICE BEFORE IT WAS MEASURED, AND THE THIRD
 > ATTEMPT WAS WRONG ON ITS FIRST RUN TOO.** Read `git log -6 --format=%B` in
