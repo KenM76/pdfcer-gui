@@ -781,6 +781,11 @@ impl<'a> Dock<'a> {
                 // layout would take height from a panel body on every frame —
                 // and it is dock chrome, not a panel's content.
                 collapse::draw_collapse(ctx, ui, side, area);
+                // The union of everything drawn in the body — what egui's frame
+                // takes back as the panel's rect (2026-09-09 wobble hunt).
+                ctx.reporter.report(ui, ui.min_rect(), || {
+                    format!("{}.body_min", report::side(side))
+                });
             });
         // ★ The rect egui ALLOCATED for this side — the frame's response rect,
         // which `Panel` hands to `allocate_right_panel`, so the central panel

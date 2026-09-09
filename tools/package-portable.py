@@ -46,6 +46,14 @@ Those are commits, and the commit is the record. A build in `OneDrive\` is a
 thing the operator *runs*, and mirroring one costs his machine real resources
 that are not returned until OneDrive restarts.
 
+★ 2026-09-09 amendment, measured: with the machine at **398,880** handles and
+two consecutive launches dying with this exact error, the holder was
+**OUTLOOK at 202,737 handles** — more than half — with OneDrive at 19,481.
+The mirror step's contribution is real and this rule stands; but the process
+that carries the machine to the ceiling is Outlook, and a launch failure with
+this message should be answered by reading `Get-Process | Sort Handles`
+before blaming a publish.
+
 ★ Stopping does not undo what has leaked. The count stays where it is; only a
 OneDrive restart clears it. So the rule is about not making it worse, and the
 already-accumulated total is the operator's to clear.

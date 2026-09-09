@@ -15,6 +15,20 @@
 > | request channel | **198 files open, 43 of them `reply_*`** — nothing new since the handoff | `ls …/open \| wc -l` |
 > | smoke-launch | ✅ off-screen, `a1-titleblock.pdf`, page drawn, no panic, killed by PID+path | `PDFCER_DIAG_VIEWPORT="-4200,-4200,1400,900"` |
 >
+> ⚠ **THE MACHINE IS AT THE WINDOW-CREATION HANDLE CEILING — 2026-09-09 00:15.**
+> Two consecutive off-screen launches of the fresh build died in
+> `accesskit_windows` with `HRESULT(0x80070008) "Not enough memory resources"`
+> — the handle-exhaustion failure `tools/package-portable.py`'s header
+> describes. Measured: **398,880 handles system-wide**, against the 404,179 at
+> which that header saw one launch in three fail. ★ **The holder is OUTLOOK at
+> 202,737 handles** — half the machine — not OneDrive (19,481). The packager's
+> attribution to the OneDrive mirror is at most half the story; the leak that
+> puts him at the ceiling is Outlook's, and only restarting Outlook releases
+> it. **His own `pdfcer-gui` launches will fail the same way until then.**
+> The `dock.<side>.body_min` instrument is built and committed and has not
+> yet had a launch that survived; run the smoke launch first thing once
+> handles are down.
+>
 > ⚠ **Ken came to the PC mid-session** (`/loop` note: headless only). The
 > 29-check regression sweep was killed at 14 of 29 by PID; its verdicts were
 > never written (the harness prints them at the end). What IS driven and green
