@@ -93,6 +93,33 @@ use egui::{Rect, Vec2, vec2};
 use crate::app::state::OpenDoc;
 use crate::canvas::geometry;
 
+/// How far the viewport must move, on either axis, before it counts as a
+/// **resize** that re-places the view.
+///
+/// # ★★★ Why a floor exists, measured on 2026-09-08
+///
+/// The central panel's width oscillates by 0.1–0.5 pt between consecutive
+/// frames with nothing on screen changing (source not yet run down — see
+/// `RESUME.md`). An exact comparison therefore reported a resize on **every
+/// frame**, which was harmless only for as long as the measure and place
+/// halves of the centre rule agreed exactly about the viewport's width. The
+/// frame they disagreed — the canvas's scroll bars took real width and one
+/// half was still reading the outer size — the page moved 7.4 px per frame
+/// until it left the screen.
+///
+/// # Why half a point, and why the comparison is STRICTLY greater
+///
+/// The worst jitter measured is exactly 0.5 pt (`444.0` → `444.5` in the
+/// driven trace), so `>=` would have let that one frame through — the first
+/// test below was written with that value in its series and went red on `>=`
+/// before the operator ever could. Smaller than any resize an operator can
+/// make: a dock splitter moves in whole
+/// points, a window edge in whole physical pixels, and a panel collapse by
+/// its whole width. Nothing an operator does lands in the gap. It is a
+/// **floor**, not a tolerance on the placement arithmetic — once the gate
+/// opens the placement is exact.
+const RESIZE_FLOOR_PT: f32 = 0.5;
+
 /// **Spend a pending fit request and return where the view should go**, as a
 /// page-local offset, or `None` on the overwhelming majority of frames where
 /// no fit is pending.
@@ -183,10 +210,28 @@ pub(super) fn placement(
     // ★ The operator's sentence says it exactly: *"if the canvas window is
     // **resized** the pdf should resize to match"*. Resized, not redrawn.
     //
-    // ★ Compared exactly rather than with a tolerance. A viewport that has not
-    // changed produces bit-identical floats — it is the same measurement of the
-    // same layout — and a tolerance would only decide how much of a resize is
-    // allowed to be ignored, which is a question nobody has.
+    // ★ Compared exactly rather than with a tolerance — UNTIL 2026-09-08. The
+    // paragraph that stood here said a viewport that has not changed produces
+    // bit-identical floats, and that a tolerance "would only decide how much
+    // of a resize is allowed to be ignored, which is a question nobody has".
+    //
+    // ★★★ Somebody has, and it was measured rather than argued: the central
+    // panel's width oscillates by **0.1–0.5 pt from frame to frame** with no
+    // dock, ribbon or window change (`central-panel rect max.x` 732.0 / 732.3
+    // / 732.4 … in a driven trace; 1072.0 / 1072.2 in an off-screen smoke
+    // launch). Its source is not yet run down. Its effect was that this gate
+    // stood OPEN on every frame — so the frame after the canvas's scroll bars
+    // became solid, when the measure and place halves of this rule briefly
+    // disagreed about the viewport's width, the page walked off the screen at
+    // 7.4 px per frame. See `RESIZE_FLOOR_PT`. That is R128's rule from the
+    // other side: a guard against repetition is not a guard against creep, and
+    // an exact comparison against a jittering input is no guard at all.
+    //
+    // ⇒ The reference is only re-recorded when it moves by at least the floor,
+    // so a jitter smaller than the floor compares against a FIXED value and
+    // can never accumulate into a resize; a real resize — a dock drag, a
+    // window edge, a panel collapsing — is tens to hundreds of points and
+    // clears the floor on its first frame.
     //
     // ★★★ **The comparison is now made on EVERY frame, whatever the fit** —
     // O78. It used to read
@@ -200,15 +245,24 @@ pub(super) fn placement(
     // offset while the viewport grows by Δ slides the page across the screen
     // by the **whole** of Δ. Widening a dock threw the operator's position
     // away, and that is the report.
-    let changed = doc.view_viewport != Some((vp.x, vp.y));
-    // Recorded on EVERY frame, whatever this function goes on to decide.
+    let changed = doc.view_viewport.is_none_or(|(x, y)| {
+        (x - vp.x).abs() > RESIZE_FLOOR_PT || (y - vp.y).abs() > RESIZE_FLOOR_PT
+    });
+    // Recorded on EVERY frame that clears the floor, whatever this function
+    // goes on to decide.
     //
     // ★ Including the frames it declines — no previous frame, a different
     // document, a degenerate viewport. A frame that declined without recording
     // would leave the NEXT frame reading as a resize and moving the view for
     // nothing, which is the one way this can produce a jump the operator did
     // not cause.
-    doc.view_viewport = Some((vp.x, vp.y));
+    //
+    // ★ And NOT on a frame under the floor: re-recording a jittered value
+    // would let a 0.3 pt wobble walk the reference one step per frame, which
+    // is exactly the creep the floor exists to stop.
+    if changed {
+        doc.view_viewport = Some((vp.x, vp.y));
+    }
 
     // ---- 1. a pressed fit outranks everything --------------------------
     //
@@ -265,4 +319,124 @@ pub(super) fn placement(
         (vp.x, vp.y),
     );
     Some(vec2(x, y))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::canvas::mapping::PageMapping;
+    use crate::canvas::zoom::CanvasFrame;
+    use egui::{Pos2, Rect, vec2};
+
+    const FIXTURE: &str = "annots-with-everything.pdf";
+
+    /// A settled single-page frame: the page drawn at `zoom`, centred in a
+    /// `viewport`-sized area. The world every placement test needs and none
+    /// of them cares about beyond "there was a previous frame on this page".
+    fn frame(zoom: f32, viewport: (f32, f32)) -> CanvasFrame {
+        let extent = (612.0_f32, 792.0_f32);
+        let display = (extent.0 * zoom, extent.1 * zoom);
+        let image_rect = Rect::from_min_size(Pos2::new(40.0, 20.0), vec2(display.0, display.1));
+        CanvasFrame {
+            map: PageMapping::new(image_rect, extent, zoom),
+            extent,
+            display,
+            viewport,
+            outer: viewport,
+            viewport_rect: Rect::from_min_size(Pos2::new(0.0, 0.0), vec2(viewport.0, viewport.1)),
+            offset: (0.0, 0.0),
+            page: 0,
+        }
+    }
+
+    fn place(doc: &mut OpenDoc, vp: (f32, f32), before: Option<CanvasFrame>) -> Option<Vec2> {
+        place_at(doc, 0.5, vp, before)
+    }
+
+    fn place_at(
+        doc: &mut OpenDoc,
+        zoom: f32,
+        vp: (f32, f32),
+        before: Option<CanvasFrame>,
+    ) -> Option<Vec2> {
+        let display = vec2(612.0 * zoom, 792.0 * zoom);
+        placement(
+            doc,
+            Rect::from_min_size(Pos2::ZERO, display),
+            (display.x, display.y),
+            display,
+            vec2(vp.0, vp.1),
+            before,
+            0,
+        )
+    }
+
+    /// ★★★ **The jitter that fed R128.** A viewport that wobbles by less than
+    /// the floor from frame to frame is not a resize, and must not re-place
+    /// the view on every frame — that is the gate that stood open while the
+    /// page crept 7.4 px per frame on 2026-09-08.
+    ///
+    /// The wobble is the measured one: ±0.2–0.4 pt around a fixed width.
+    #[test]
+    fn a_sub_pixel_wobble_is_not_a_resize() {
+        let mut doc = crate::app::state::open_local_fixture(FIXTURE);
+        let before = frame(0.5, (444.0, 592.0));
+        // First frame: no reference yet, so it records and declines to place
+        // against a `before` — this is the seed arm's frame.
+        assert_eq!(place(&mut doc, (444.0, 592.0), None), None);
+        assert_eq!(doc.view_viewport, Some((444.0, 592.0)));
+
+        for wobble in [444.4, 444.0, 444.1, 444.5, 444.0, 443.7] {
+            assert_eq!(
+                place(&mut doc, (wobble, 592.0), Some(before)),
+                None,
+                "★ a viewport {wobble} against a reference of 444.0 is a wobble, not a resize"
+            );
+            assert_eq!(
+                doc.view_viewport,
+                Some((444.0, 592.0)),
+                "★ the reference must NOT follow the wobble — re-recording it is how a 0.3 pt \
+                 jitter walks the view one step per frame"
+            );
+        }
+    }
+
+    /// A real resize — the smallest a dock splitter can make — clears the
+    /// floor on its first frame, re-places, and moves the reference.
+    #[test]
+    fn a_one_point_resize_still_re_places() {
+        let mut doc = crate::app::state::open_local_fixture(FIXTURE);
+        let before = frame(0.5, (444.0, 592.0));
+        assert_eq!(place(&mut doc, (444.0, 592.0), None), None);
+
+        let placed = place(&mut doc, (445.0, 592.0), Some(before));
+        assert!(
+            placed.is_some(),
+            "★ a whole-point resize must re-place the view"
+        );
+        assert_eq!(doc.view_viewport, Some((445.0, 592.0)));
+    }
+
+    /// The floor is a floor on the GATE, not a tolerance on the arithmetic:
+    /// two placements for viewports that differ by exactly the floor differ
+    /// by exactly half of it, as the centre rule says they must.
+    #[test]
+    fn once_the_gate_opens_the_placement_is_exact() {
+        // ★ Zoom 1.0, so the page (612 × 792) is LARGER than the viewport on
+        // both axes. A page smaller than the viewport is centred by its
+        // margin and its page-local offset is 0 whatever the viewport does —
+        // the first draft of this test used zoom 0.5 and compared 0 with 0.
+        let mut doc = crate::app::state::open_local_fixture(FIXTURE);
+        let before = frame(1.0, (444.0, 592.0));
+        assert_eq!(place_at(&mut doc, 1.0, (444.0, 592.0), None), None);
+        let a = place_at(&mut doc, 1.0, (446.0, 592.0), Some(before)).expect("placed");
+        doc.view_viewport = Some((444.0, 592.0));
+        let b = place_at(&mut doc, 1.0, (448.0, 592.0), Some(before)).expect("placed");
+        assert!(
+            ((a.x - b.x).abs() - 1.0).abs() < 1e-4,
+            "★ half the viewport delta (2 pt) on the x offset: got {} vs {}",
+            a.x,
+            b.x
+        );
+    }
 }

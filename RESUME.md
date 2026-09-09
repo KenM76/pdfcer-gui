@@ -8,7 +8,7 @@
 >
 > | | | measured with |
 > |---|---|---|
-> | tests | **3,894 passing, 0 failing, 47 ignored** | `cargo test --workspace`, summing every `test result` through `awk` |
+> | tests | **3,896 passing, 0 failing, 47 ignored** (re-measured 22:55 after the spec-route deletion and the fit floor) | `cargo test --workspace`, summing every `test result` through `awk` |
 > | gates | **32 of 32, 0 skipped** | `bash tools/gates/run-all.sh` |
 > | engine | `pdfcer-core` **0.49.0 at `00ddbb1`** — the engine tree's HEAD, so the pin is current | `grep -A3 'name = "pdfcer-core"' Cargo.lock`; `git -C D:/Dev/pdfcer log -1` |
 > | driven checks registered | **196** | `Box::new(` inside `checks/roster.rs`'s `all()` — the file holds **197** |
@@ -59,9 +59,14 @@
 > `--prerelease`. Recorded here because no earlier session wrote the recipe down.
 >
 > 1. **Drive the 25 unverified checks** when the PC is free (above).
-> 2. **The central-panel width jitter** — measured, source unknown. It flickers
->    the fit zoom in its last digit and runs `fit::placement` every frame.
->    Instrument the dock's right edge; do not theorise.
+> 2. **The central-panel width jitter** — measured, source STILL unknown, but
+>    it no longer reaches the view: `fit::placement`'s resize gate has a
+>    **0.5 pt floor** (`RESIZE_FLOOR_PT`, strictly greater, reference not
+>    re-recorded under it) since 22:55, three unit tests, two of which went
+>    red on their first draft. The fit ZOOM still flickers in its 4th decimal
+>    from the same jitter (`ViewState::apply_fit` runs every frame); harmless,
+>    unfloored. Finding the source is still worth a session: instrument the
+>    dock's right edge off-screen; do not theorise.
 > 3. ~~Delete the annotation spec route~~ **DONE 2026-09-08, 22:40** — 804
 >    lines gone across 13 files (`Plan::spec_is_more_faithful`,
 >    `carried_options`, `translated`, `copy_as_spec`, `Clipped::Markup`,
