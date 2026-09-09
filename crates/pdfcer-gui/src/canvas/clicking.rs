@@ -716,12 +716,22 @@ pub fn click(
         // click-placed kind added later takes this path without an
         // edit and a kind that stops being click-placed leaves it.
         //
-        // The rect is a small square around the point. A `/Text`
+        // The rect is a small square hung from the point. A `/Text`
         // marker is fixed-size and `NoZoom` — the format discards the
         // rect's extent — so the size here is not a promise about what
-        // is drawn; what matters is the LOWER-LEFT corner, which is
-        // where the marker lands. `STICKY_PT` is documented at its
-        // definition for exactly that reason.
+        // is drawn; what matters is the **UPPER-LEFT** corner, which is
+        // where a conforming reader puts the marker (ISO 32000-1
+        // 12.5.3: *"the annotation's position shall be determined by the
+        // coordinates of the upper-left corner of its annotation
+        // rectangle"*). ★ Until 2026-09-09 this square grew UPWARD from
+        // the click, on the strength of the engine's own `Sticky` doc
+        // comment naming the lower-left — a sentence the engine has since
+        // struck through and corrected. The click is now the corner a
+        // reader anchors to, so the marker lands where the operator
+        // pointed in Acrobat as well as in pdfcer's own raster (which
+        // defers the `NoZoom` placement and fills the rect — both readers
+        // now agree on the top-left). `STICKY_PT` is documented at its
+        // definition.
         if !kind.is_dragged()
             && let Some(page) = doc.current_page()
             && let Some((at, _)) = super::markup::band::endpoints(point, point, page)
@@ -731,9 +741,9 @@ pub fn click(
                 kind,
                 rect: pdfcer_core::page_tree::Rect {
                     llx: at.0,
-                    lly: at.1,
+                    lly: at.1 - crate::canvas::textannot::STICKY_PT,
                     urx: at.0 + crate::canvas::textannot::STICKY_PT,
-                    ury: at.1 + crate::canvas::textannot::STICKY_PT,
+                    ury: at.1,
                 },
             });
         }

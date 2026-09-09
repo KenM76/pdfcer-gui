@@ -947,9 +947,11 @@ impl GripSet {
     ///
     /// # The one kind on this canvas whose box does not describe it
     ///
-    /// `/Text` — a sticky note — is drawn as a **fixed-size marker**. The
-    /// engine says so where it authors one: *"the marker is fixed-size —
-    /// NoZoom/NoRotate — so only its lower-left corner matters in practice"*.
+    /// `/Text` — a sticky note — is drawn as a **fixed-size marker**
+    /// (ISO 32000-1 12.5.6.4: it behaves as if `NoZoom`/`NoRotate` were set),
+    /// anchored at its rect's **upper-left** corner (12.5.3). ⚠ The engine's
+    /// `Sticky` doc used to say *lower-left*; it was struck through and
+    /// corrected on 2026-09-09, and `canvas::clicking` moved with it.
     /// Its `/Rect` therefore says **where** it is and not **how big** it is,
     /// and dragging a corner of that rectangle is a gesture with no meaning:
     /// `resize_annotation` refuses it, and would be wrong not to.

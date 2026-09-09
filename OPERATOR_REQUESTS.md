@@ -216,6 +216,15 @@ doing business.
 
 ## O155 — ✅ **FIXED 2026-09-08 — text boxes resize now, and stickies correctly never will** — "when will being able to drag on the canvas resize the Text Box and Stamp"
 
+> ★ **2026-09-09 addendum — the sticky now lands where you click.** The engine
+> replied overnight that its own note about stickies named the **wrong corner**:
+> a reader anchors a sticky's icon at the **top-left** of its box, not the
+> bottom-left, so a box that grew *upward* from your click put the icon 20 pt
+> above where you pointed in Acrobat. The box now hangs *down* from the click.
+> And a resize attempted from the Properties panel's width/height fields on a
+> sticky gets a sentence now — *"drawn at one fixed size … drag the note to move
+> it"* — rather than a silent nothing.
+
 **Your words, 2026-09-08.**
 
 Text boxes and stamps **are** wired for corner-dragging — they get all eight
@@ -285,6 +294,11 @@ engine, not yet through the window.
 ---
 
 ## O154 — ✅ **FIXED 2026-09-08 — the engine shipped it fifteen minutes after I asked** — "the Text box Markup tool — pressing enter shows one line with a `?` for each new line"
+
+> ★ **2026-09-09 — in the build.** The engine's fix is pinned as of this
+> morning (`fccd6cd`); the previous release (`pdfcer-gui1`, 2026-09-08 22:07)
+> did NOT carry it. It is in the next release. The driven Enter-key check has
+> not yet run against a build with the fix — it needs the desktop.
 
 **Your words, 2026-09-08**, and this one has a precise cause.
 

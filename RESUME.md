@@ -1,5 +1,87 @@
 # RESUME — read this, then say "continue"
 
+> ★★★ **LAST SESSION: 2026-09-09, early morning, after the reboot. THE
+> CENTRAL-PANEL WOBBLE IS FOUND, REPRODUCED IN PURE EGUI, AND CLOSED AT THE
+> DOCK.** Read `git log -1 --format=%B` first; it is the whole story.
+>
+> **State, every number re-measured 2026-09-09 in the session that wrote this block:**
+>
+> | | | measured with |
+> |---|---|---|
+> | tests | **3,900 passing, 0 failing, 47 ignored** | `cargo test --workspace`, summing every `test result` through `awk` |
+> | gates | **32 of 32, 0 skipped** | `bash tools/gates/run-all.sh` |
+> | engine | `pdfcer-core` **0.49.0 at `fccd6cd`** — bumped this session to the engine tree's HEAD (`Pass 277.0`) | `grep -A3 'name = "pdfcer-core"' Cargo.lock`; `git -C D:/Dev/pdfcer log -1` |
+> | driven checks registered | **196** — unchanged | `Box::new(` inside `checks/roster.rs`'s `all()` |
+> | request channel | **201 files open, 45 `reply_*`** — two replies overnight (both answers to ours, both consumed), one request filed by us | `ls …/open \| wc -l` |
+> | smoke-launch | ✅ off-screen, `a1-titleblock.pdf` from the REPO ROOT, FINAL build (engine `fccd6cd`): page drawn, no panic, `dock.right.frame` constant through the fade that used to wobble, no `overflow.*` line, no Read-mode Delete controls, killed by PID+path | `PDFCER_DIAG_VIEWPORT="-4200,-4200,1400,900"` |
+> | the launch-killer | **gone with the reboot** (uptime 1.9 h at session start) — five launches, zero `SetPropW` deaths | |
+> | ⚠ RAM | `cargo test --workspace` at default jobs got the shell **killed for low memory** twice (8 linkers × ~1.3 GB on 16 GB) and left orphans; run it `CARGO_BUILD_JOBS=2`, and one cargo job at a time | memory `project_disk_is_tight…` |
+>
+> ## ★★★ THE FINDING: A SCROLL BAR FADING IN
+>
+> `dock/overflow_probe.rs` — every widget egui registered this pass whose
+> rect crosses the window edge, by id, on a frame where the side's frame
+> does — named it on its first read: a 10-pt strip on the Comments pane's
+> right edge, decaying `1400.4 → 1400.1 → 1400.0`. Three parts, each from
+> source: (1) `Panel::show` clamps a too-wide frame by moving the INNER
+> edge, so `exact_size` fixes width, not position; (2) `scope_builder`
+> merges a body's union into the frame — `set_clip_rect` truncates paint,
+> not layout; (3) a SOLID scroll bar mid-fade has fractional bar use, the
+> content rect is rounded up to pixels, and the sum overshoots the pane by
+> the residue. `dock/scroll_fade_repro.rs` shows it with nothing but egui:
+> `+0.25`, `+0.47`, then 0. Fix in `dock/stack.rs`: bodies draw in
+> `new_child`, the compartment's own rect is allocated in their place.
+> Guard falsified against the unfixed code (`[1080.4 .. 1400.4]`), green
+> after. RAG: `D:/dev/rag/egui/a_solid_scrollbar_fading_in_overshoots_…`.
+>
+> ## ★★ THE ENGINE ANSWERED OVERNIGHT, AND ONE ANSWER MOVED A STICKY
+>
+> Two replies: Enter-in-a-text-box is fixed in the engine (`Pass 275.0`, in
+> the pin now, NOT in `pdfcer-gui1`); and the sticky's refusal is a named
+> variant (`ResizeFixedSizeMarker`, worded on our side) — **with a
+> correction we acted on: a sticky's icon anchors at its rect's UPPER-LEFT,
+> and our click built the rect upward, putting the icon 20 pt above the
+> click in Acrobat.** `canvas::clicking` now hangs the square down from the
+> click; four citations of the wrong corner corrected. Three backlog rows
+> written (`/RC` drop: consumed; newline: consumed by the pin, driven check
+> owed; font-coverage remedy: `wanted` — our `refusal_of` drops the face
+> list). One request filed, corrected first by a grep that found
+> `preview_font_resources_for` already shipping half of what I was about
+> to ask for.
+>
+> ⚠ **Two harness inputs bit this session, both mine:** (a) launching from
+> `target/scratch/drive/` with a RELATIVE fixture path opened no document —
+> no `status` line in the trace is the tell; launch from the repo root.
+> (b) `$!` after `(cmd & echo $!)` is the subshell's pid, not the exe's —
+> two instances leaked. Find the exe by `Get-Process pdfcer-gui`, verify the
+> path, kill by PID.
+>
+> ## WHAT TO DO NEXT, in his likely order
+>
+> 1. **Drive the 29 unverified geometry/gesture checks** — still the top
+>    item; they have not run since the solid scroll bars landed (2026-09-08)
+>    and now the dock fix AND the engine pin are under them too. Add the
+>    `text_annot` family (Enter key now reaches a fixed engine) and
+>    `comment_note` / `foreign_icon_name` (sticky click). Needs the desktop.
+>    Command: `HANDOFF_20260908_RESIZE.md` §2 with `--check` repeated.
+> 2. **Release** once (1) is green — `pdfcer-gui2` is the next OneDrive slot
+>    (`pdfcer-gui1` is 2026-09-08 22:07). Refresh `FEATURES.md`, smoke-launch,
+>    package from a clean tree, GitHub release without `--prerelease`.
+> 3. `canvas.selection-outline` published twice per frame — unchanged,
+>    handoff §3.4.
+> 4. `dock.<side>.body_min` is now always equal to `.frame` — it can go
+>    (three lines in `draw_side`); left in for one release as a second
+>    witness.
+>
+> ## WHAT NOT TO DO
+>
+> - **Do not `taskkill /IM pdfcer-gui.exe`.** Kill by PID, verified by path.
+> - **Do not remove `RESIZE_FLOOR_PT`** because its source is gone — its doc
+>   says why it stays.
+> - **Do not run a driven sweep while he is at the PC.** Smoke-launch off-screen.
+> - **Do not delete `overflow_probe`** — it is the tripwire for the guard.
+
+
 > ★★★ **LAST SESSION: 2026-09-08, late evening. THE RESIZE RED IS FIXED, AND
 > THE CAUSE WAS A CONTROL NOBODY COULD SEE.** Read `git log -3 --format=%B`
 > and the RESOLVED box at the top of `HANDOFF_20260908_RESIZE.md` first.

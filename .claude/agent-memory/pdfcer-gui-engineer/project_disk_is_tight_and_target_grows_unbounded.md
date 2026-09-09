@@ -1,6 +1,6 @@
 ---
 name: disk-is-tight-and-target-grows-unbounded
-description: D: runs near-full and this project's target/ reaches 50GB+ of stale build cache within a week; clear it periodically without being asked
+description: Disk AND RAM are tight on the build machine; clear debug/doc target routinely, run the test suite with a job limit, and after a low-memory kill wait for the orphaned linkers before relaunching
 metadata:
   type: project
 ---
@@ -71,3 +71,17 @@ Related: [[always-publish-the-latest-build-to-onedrive]] — the packaging
 step needs a valid `target/release`, another reason not to clear it.
 Related: [[the-engine-session-runs-in-parallel-and-answers-within-the-hour]] —
 its `target/` is not yours to clear and its growth is not yours to report.
+
+## ★ RAM is tight too — 2026-09-09
+
+`cargo test --workspace` links its test binaries in parallel and each `link.exe`
+sits at ~1 GB; six of them on the 16 GB machine left 2.2 GB free and the harness
+**killed the background command for low memory** — while leaving cargo, rustc
+and the linkers running as orphans whose output went nowhere. A killed shell is
+not a killed build.
+
+**How to apply:** run the suite as `CARGO_BUILD_JOBS=4 cargo test --workspace`
+(or `-j 4`), and never chain gates → tests → release build in one background
+command: each is a separate memory peak and one kill voids all three. Before
+relaunching after a kill, `tasklist | grep -iE 'cargo|rustc|link'` and wait —
+the orphans are finishing the work you need cached.

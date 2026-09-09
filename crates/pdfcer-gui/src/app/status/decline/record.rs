@@ -232,6 +232,18 @@ pub(crate) fn record_resize_not_rebuildable(uniform: bool) {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::ResizeNotRebuildable { uniform }));
 }
 
+/// Record that a resize was refused because the annotation is a fixed-size
+/// marker — a `/Text` sticky note (`by_flag == false`) or a `NoZoom`
+/// annotation (`by_flag == true`).
+///
+/// Called from the same place as [`record_resize_not_rebuildable`], for the
+/// same reason: what the annotation IS is only knowable from the error the
+/// verb returns. The `bool` rather than the engine's `why` string keeps this
+/// module free of the engine's prose, as every other constructor here does.
+pub(crate) fn record_resize_fixed_size_marker(by_flag: bool) {
+    LAST.with_borrow_mut(|slot| *slot = Some(Declined::ResizeFixedSizeMarker { by_flag }));
+}
+
 /// Record that a **rotation** did not happen, and why.
 ///
 /// ★★★ The whole point of the function, stated for whoever adds the next

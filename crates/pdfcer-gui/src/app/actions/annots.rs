@@ -224,6 +224,15 @@ pub(super) fn resize(
                 {
                     crate::app::status::decline::record_resize_not_rebuildable(*was_uniform);
                 }
+                // ★ And its sibling since `Pass 277.0` (2026-09-09): a `/Text`
+                // sticky or a `NoZoom` annotation has no size to scale. Worded
+                // because the Properties panel's geometry fields can raise this
+                // resize even though the sticky's canvas grips are move-only.
+                // `subtype == "Text"` is the engine's own test for which of its
+                // two `why` sentences it chose (`edit.rs`, `resize_annotation`).
+                if let pdfcer_core::edit::EditError::ResizeFixedSizeMarker { subtype, .. } = error {
+                    crate::app::status::decline::record_resize_fixed_size_marker(subtype != "Text");
+                }
             })
             .map(|outcome| {
                 crate::diag::trace(|| {

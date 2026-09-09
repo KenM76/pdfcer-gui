@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: b208dc6b4b23cb78ae0fd130b9340e7061c67caf
+# baseline: fccd6cd04ccbf40b04436b807f9b3b6065af4630
 # crates: pdfcer-core pdfcer-render pdfcer-print
-# items: 7307
+# items: 7312
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-render field pdfcer_render::font::RenderPolicy::stroke_display -- RenderPolicy is the interpreter's INTERNAL derived bundle, not a shell-facing type: every one of its fields' own doc comments reads "See RenderOptions::<the same name>", and the engine builds a RenderPolicy from the RenderOptions a caller hands it. This shell sets RenderOptions::stroke_display (View > Display > Line weights, O137) and constructs no RenderPolicy anywhere in the workspace. Exempted PER FIELD rather than wildcarded for the whole type, deliberately: every future RenderPolicy field mirrors a RenderOptions field this shell probably DOES want, so each one should cost one line and one look.
@@ -985,6 +985,7 @@ pdfcer-core field pdfcer_core::edit::MarkupNoteChange::appearance_rebaked
 pdfcer-core field pdfcer_core::edit::MarkupNoteChange::keys_written
 pdfcer-core field pdfcer_core::edit::MarkupNoteChange::replaced
 pdfcer-core field pdfcer_core::edit::MarkupNoteChange::replaced_author
+pdfcer-core field pdfcer_core::edit::MarkupNoteChange::rich_text_dropped
 pdfcer-core field pdfcer_core::edit::MarkupNoteChange::subtype
 pdfcer-core field pdfcer_core::edit::MarkupOptions::dash
 pdfcer-core field pdfcer_core::edit::MarkupOptions::note
@@ -2005,6 +2006,7 @@ pdfcer-core field pdfcer_core::text_edit::edit::EditRequest::find
 pdfcer-core field pdfcer_core::text_edit::edit::EditRequest::page_index
 pdfcer-core field pdfcer_core::text_edit::edit::EditRequest::pinned_span
 pdfcer-core field pdfcer_core::text_edit::edit::EditRequest::replace
+pdfcer-core field pdfcer_core::text_edit::edit::EditRequest::span_from_pin
 pdfcer-core field pdfcer_core::text_edit::edit::EditRequest::target
 pdfcer-core field pdfcer_core::text_edit::encoding::CompositeEncodeResult::cids
 pdfcer-core field pdfcer_core::text_edit::encoding::EncodeResult::codes
@@ -2779,6 +2781,7 @@ pdfcer-core fn pdfcer_core::structure::walk
 pdfcer-core fn pdfcer_core::text_edit::addtext::add_text
 pdfcer-core fn pdfcer_core::text_edit::addtext::preview_wrap
 pdfcer-core fn pdfcer_core::text_edit::edit::edit_text
+pdfcer-core fn pdfcer_core::text_edit::encoding::std14_faces_covering
 pdfcer-core fn pdfcer_core::text_edit::format::set_format
 pdfcer-core fn pdfcer_core::text_edit::forms::form_objects_on_page
 pdfcer-core fn pdfcer_core::text_edit::forms::invocation_map
@@ -3763,6 +3766,7 @@ pdfcer-core method pdfcer_core::text_edit::addtext::NewTextFace::std14
 pdfcer-core method pdfcer_core::text_edit::edit::EditOptions::with_disposition
 pdfcer-core method pdfcer_core::text_edit::edit::EditRequest::find_replace
 pdfcer-core method pdfcer_core::text_edit::edit::EditRequest::pinned
+pdfcer-core method pdfcer_core::text_edit::edit::EditRequest::spanning_from
 pdfcer-core method pdfcer_core::text_edit::edit::EditRequest::whole_operator
 pdfcer-core method pdfcer_core::text_edit::edit::EditRequest::with_target
 pdfcer-core method pdfcer_core::text_edit::encoding::CompositeEncodeResult::to_bytes
@@ -4949,6 +4953,7 @@ pdfcer-core variant pdfcer_core::edit::EditError::RadioGroupUsesPositionalOpt
 pdfcer-core variant pdfcer_core::edit::EditError::ReshapeWouldBreachVertexFloor
 pdfcer-core variant pdfcer_core::edit::EditError::ResizeAppearanceNotRebuildable
 pdfcer-core variant pdfcer_core::edit::EditError::ResizeFactorInvalid
+pdfcer-core variant pdfcer_core::edit::EditError::ResizeFixedSizeMarker
 pdfcer-core variant pdfcer_core::edit::EditError::RotationNotMultipleOf90
 pdfcer-core variant pdfcer_core::edit::EditError::SelectionTooLargeForOneUndo
 pdfcer-core variant pdfcer_core::edit::EditError::SeparationSplit

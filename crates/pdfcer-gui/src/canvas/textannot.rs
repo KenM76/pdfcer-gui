@@ -244,8 +244,10 @@ pub const DEFAULT_STAMP: StampName = StampName::Approved;
 ///
 /// A `/Text` annotation's marker is drawn at a **fixed size** and carries
 /// `NoZoom`/`NoRotate`, so the reader paints the same icon however big the
-/// rect is. `TextAnnotSpec::Sticky`'s own documentation says as much: *"the
-/// marker is fixed-size … so only its lower-left corner matters in practice."*
+/// rect is, anchored at the rect's **upper-left** corner (ISO 32000-1 12.5.3).
+/// ⚠ `TextAnnotSpec::Sticky`'s documentation used to say *lower-left*; the
+/// engine struck that through on 2026-09-09 and `canvas::clicking` hangs the
+/// square DOWN from the click accordingly.
 ///
 /// So this number decides nothing about the picture. What it must be is
 /// **non-degenerate** — a zero-area rect is refused by the engine's geometry

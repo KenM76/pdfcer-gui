@@ -255,10 +255,13 @@ pub fn grabbable(
         // ★★★ **…EXCEPT A STICKY NOTE, which is a fixed-size marker** —
         // 2026-09-08, `OPERATOR_REQUESTS.md` O155.
         //
-        // `/Text`'s `/Rect` says WHERE it is, not HOW BIG: the engine authors
-        // it `NoZoom/NoRotate` and its own doc says *"only its lower-left
-        // corner matters in practice"*. So a corner drag is a gesture with no
-        // meaning, `resize_annotation` refuses it, and it is right to.
+        // `/Text`'s `/Rect` says WHERE it is, not HOW BIG: 12.5.6.4 makes it
+        // behave as `NoZoom/NoRotate`, and 12.5.3 anchors it at the rect's
+        // UPPER-LEFT corner (the engine's doc said lower-left until
+        // 2026-09-09; corrected, and `canvas::clicking` with it). So a corner
+        // drag is a gesture with no meaning, `resize_annotation` refuses it —
+        // by name since `Pass 277.0`, `ResizeFixedSizeMarker` — and it is
+        // right to.
         //
         // ⇒ Eight squares round it was this project's own named failure —
         // *visible control, silently inert* — and it shipped: he grabbed a

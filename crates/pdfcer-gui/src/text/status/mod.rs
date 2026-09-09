@@ -95,6 +95,10 @@ pub use formdelete::field_delete_declined_structural;
 /// switch on. Its file carries the argument for every word it does not say,
 /// including why it does not point the operator at Render diagnostics.
 pub use refused::edit_declined_by_engine;
+/// **Resize refusals** — the un-rebuildable appearance and the fixed-size
+/// marker, split out 2026-09-09 when the second pushed this file past R2.
+mod resize;
+pub use resize::{resize_fixed_size_marker, resize_not_rebuildable};
 
 /// ★ Re-exported rather than moved-and-repathed.
 ///
@@ -1028,41 +1032,6 @@ pub fn adopted(name: &str, typed: bool, acroform_created: bool) -> String {
 pub const fn flatten_declined_certified() -> &'static str {
     "This document is certified, and flattening its fields would break the signature. Filling \
      is still allowed; turning the values into page content is not."
-}
-
-/// **A resize was refused because the artwork cannot be rebuilt.**
-///
-/// `OPERATOR_REQUESTS.md` O51. Two sentences, chosen by whether the drag was
-/// proportional, and the split is the whole value of the message: **only one of
-/// the two switches helps in each case**, and naming the wrong one would send
-/// the operator to a control that changes nothing.
-///
-/// | drag | what fixes it |
-/// |---|---|
-/// | proportional | *Scale line weight* — the resize then comes out **exact** |
-/// | not proportional | nothing fixes it; only *Allow the artwork to distort* proceeds |
-///
-/// ★★★ **It does not say "cannot".** The operator resized a shape and got
-/// nothing; what they need is the next click, not a diagnosis. Both sentences
-/// name a switch by the words on it, and the non-uniform one is honest that the
-/// result will be imperfect rather than dressing the option up.
-///
-/// ★★ Neither sentence mentions appearance streams, placement matrices or
-/// §12.5.5. The *reason* is real and is written down in `canvas::scaling`; what
-/// belongs in a status bar is what to do. A sentence that explained the matrix
-/// would be correct, unactionable, and too long to read where it appears.
-///
-/// ★ *"pdfcer did not draw this shape"* is in the uniform sentence because it is
-/// the part an operator can verify and act on — shapes pdfcer drew resize
-/// perfectly, so the message quietly tells them the difference between the two
-/// kinds of object on their page.
-#[must_use]
-pub const fn resize_not_rebuildable(uniform: bool) -> &'static str {
-    if uniform {
-        "pdfcer did not draw this shape, so its border will thicken as the shape grows. Turn on Scale line weight in the Tool panel and the resize comes out exactly right."
-    } else {
-        "pdfcer did not draw this shape, and stretching it more in one direction than the other would leave its border uneven — no PDF can describe that. Resize it proportionally, or turn on Allow the artwork to distort in the Tool panel to go ahead anyway."
-    }
 }
 
 /// Shown when the renderer reports `cmyk_buffer_refused` — the page's raster

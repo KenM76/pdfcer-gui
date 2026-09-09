@@ -445,6 +445,30 @@ pub(crate) enum Declined {
         /// sentence names.
         uniform: bool,
     },
+    /// **A resize was refused because the annotation is a fixed-size marker.**
+    ///
+    /// `EditError::ResizeFixedSizeMarker` (`Pass 277.0`, 2026-09-09): a `/Text`
+    /// sticky note, or any annotation whose `/F` sets `NoZoom`, is drawn by a
+    /// conforming reader at one size whatever its `/Rect` says, anchored at
+    /// the rect's upper-left corner (ISO 32000-1 12.5.3, 12.5.6.4). There is
+    /// nothing for a factor to scale, and the engine offers **no override**
+    /// because a reader would ignore the result rather than distort it.
+    ///
+    /// ★ Reachable from this shell, which is why it is worded: the sticky's
+    /// canvas grips are move-only, but the Properties panel's geometry
+    /// fields raise the same `AnnotAction::Resize` the grips do.
+    ///
+    /// ★★ Two sentences, not one, and the split is the engine's: for a
+    /// `/Text` the rule is the subtype's own and nothing the operator does
+    /// changes it; for anything else it is the `NoZoom` flag. This shell has
+    /// no flag editor yet, so neither sentence names a switch — but the
+    /// distinction is kept here so the day one exists the second sentence
+    /// can name it without re-deriving which case it is in.
+    ResizeFixedSizeMarker {
+        /// `true` when the `NoZoom` flag, not the `/Text` subtype, makes it
+        /// fixed-size.
+        by_flag: bool,
+    },
     /// **`edit.form_flatten` was invoked and the document's certification
     /// forbids it.**
     ///
@@ -980,7 +1004,10 @@ impl Declined {
             // while the operator reads the status bar. What retires it is their
             // next act — including, in the good case, ticking the switch the
             // sentence just named.
-            Self::SaveFailed | Self::SettingsNotSaved | Self::ResizeNotRebuildable { .. } => true,
+            Self::SaveFailed
+            | Self::SettingsNotSaved
+            | Self::ResizeNotRebuildable { .. }
+            | Self::ResizeFixedSizeMarker { .. } => true,
             // ★ `true`, with the others whose state cannot change between two
             // frames. A document's certification is a property of the file: it
             // does not lapse while the operator looks at the status bar, and
@@ -1142,6 +1169,7 @@ impl Declined {
             Self::FieldNameTaken => t::adopt_declined_name_taken(),
             Self::WidgetHasNoName => t::adopt_declined_no_name(),
             Self::ResizeNotRebuildable { uniform } => t::resize_not_rebuildable(uniform),
+            Self::ResizeFixedSizeMarker { by_flag } => t::resize_fixed_size_marker(by_flag),
             Self::FlattenCertified => t::flatten_declined_certified(),
             Self::FieldDeleteRefused => t::field_delete_declined_structural(),
             // ★ Stays in `crate::text::status` rather than reaching across the
