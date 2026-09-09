@@ -1,9 +1,13 @@
 # RESUME — read this, then say "continue"
 
 > ★★★ **LAST SESSION: 2026-09-09, 04:30–10:30. READ `HANDOFF_20260909.md`
-> FIRST** — it is the long form of everything below. THREE releases today;
-> **`pdfcer-gui2` (10:20) is the newest, `pdfcer-gui1` (08:27) the fallback**;
-> GitHub `v0.5.0-dev.20260909.3` at `3ebeeec`, verified from his side. He runs
+> FIRST** — it is the long form of everything below. FOUR releases today;
+> **`pdfcer-gui1` (10:57) is the newest, `pdfcer-gui2` (10:20) the fallback**;
+> GitHub `v0.5.0-dev.20260909.4` at `4bb449e`, verified from his side. ★ 10:45
+> rulings: a redaction whose words appear ELSEWHERE is his call (disclosed +
+> acknowledged, not refused — `ResidualSite::DrawnContent`); a mark is
+> unselectable for him at the keyboard but selectable+deletable headlessly
+> (O161, drive it); stamp re-bake re-asked of the engine (O162). He runs
 > `OneDrive\pdfcer\pdfcer-gui.exe` (was the 08:27 build) — check its date
 > before reading any report as "not fixed".
 >
