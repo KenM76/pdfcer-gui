@@ -1,9 +1,18 @@
 # RESUME — read this, then say "continue"
 
-> ★★★ **LAST SESSION: 2026-09-09, 04:30–08:45. READ `HANDOFF_20260909.md`
-> FIRST** — it is the long form of everything below. Two releases today;
-> **`pdfcer-gui1` (08:27) is the newest, `pdfcer-gui2` (06:21) the fallback**;
-> GitHub `v0.5.0-dev.20260909.2` at `f7b512c`, verified from his side.
+> ★★★ **LAST SESSION: 2026-09-09, 04:30–10:30. READ `HANDOFF_20260909.md`
+> FIRST** — it is the long form of everything below. THREE releases today;
+> **`pdfcer-gui2` (10:20) is the newest, `pdfcer-gui1` (08:27) the fallback**;
+> GitHub `v0.5.0-dev.20260909.3` at `3ebeeec`, verified from his side. He runs
+> `OneDrive\pdfcer\pdfcer-gui.exe` (was the 08:27 build) — check its date
+> before reading any report as "not fixed".
+>
+> **09:40, second report (O160), all three fixed and unit-tested, not driven:**
+> the redaction proof refused on SINGLE CHARACTERS (Ghostscript draws one glyph
+> per show operator) — floor now on both halves; **stamps resize** (matrix carry
+> forced for `/Stamp`); **stamps/text boxes upright on `/Rotate` pages**
+> (`set_annotation_rotation` composed at authoring). Tests **3,912 / 0 / 50**,
+> gates 32/32. Engine is **8 commits past the pin** — `cargo update` first.
 >
 > **He came to the PC mid-sweep with four reports** (`OPERATOR_REQUESTS.md`
 > **O159**): stamp resize, SW41177 text, the redaction box, freehand nodes.
