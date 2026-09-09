@@ -68,6 +68,12 @@ use vertexnodes::{insert_node, move_node, remove_node};
 /// [`crate::text::markup::deleted_collateral`] observes it in the wording it
 /// chooses — never "removed".
 pub(super) fn delete(doc: &mut OpenDoc, page: usize, id: ObjId) {
+    // ★ A `/Redact` mark reaches this too (click the mark, press Delete —
+    // `OPERATOR_REQUESTS.md` O161, 2026-09-09) and the engine's
+    // `delete_annotation` routes it to `delete_redaction_mark` itself
+    // (`AnnotationDeletionRoute::RedactionMark`), so the panel's Remove and
+    // the canvas's Delete share one verb without this function naming it. The
+    // test below is the guard that keeps that route reachable from here.
     super::apply::vector_edit(doc, "delete-annotation", page, 1, |session| {
         session.delete_annotation(id).map(|report| {
             crate::text::markup::deleted_collateral(
@@ -1380,5 +1386,75 @@ pub(super) fn apply_action(
         // between them is a `match` in the panel that raises this, not a
         // subtype string compared here.
         A::SetTextAnnotStyle { id, style } => set_text_annot_style(doc, id, &style),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    //! `OPERATOR_REQUESTS.md` O161 (2026-09-09): a redaction mark selected on
+    //! the canvas and deleted leaves through `delete_redaction_mark`, the
+    //! same verb the Redact panel's Remove uses.
+
+    use super::*;
+    use crate::app::state::open_local_fixture;
+    use pdfcer_core::annot::page_annotations;
+    use pdfcer_core::annot_author::{Quad, RedactSpec};
+    use pdfcer_core::page_tree::Rect;
+    use pdfcer_core::vartext::Quadding;
+
+    fn marks_on_page_0(doc: &OpenDoc) -> Vec<ObjId> {
+        page_annotations(&doc.session.graph(), doc.pages[0].id)
+            .into_iter()
+            .filter(|a| a.subtype.as_slice() == b"Redact")
+            .filter_map(|a| a.id)
+            .collect()
+    }
+
+    /// RED before the fix: the general `delete_annotation` refused a
+    /// `/Redact` by name and the mark stayed, with no sentence.
+    #[test]
+    fn deleting_a_selected_redaction_mark_unmarks_it() {
+        let mut doc = open_local_fixture("four-pages.pdf");
+        let spec = RedactSpec {
+            quads: vec![Quad::from_rect(Rect {
+                llx: 100.0,
+                lly: 100.0,
+                urx: 200.0,
+                ury: 120.0,
+            })],
+            fill: None,
+            overlay_text: None,
+            quadding: Quadding::Left,
+        };
+        super::super::apply::vector_edit(&mut doc, "mark", 0, 1, |session| {
+            session.add_redaction(0, &spec).map(|_| Vec::new())
+        });
+        let marks = marks_on_page_0(&doc);
+        assert_eq!(marks.len(), 1);
+        // And the mark is something the canvas will SELECT — the whole route
+        // is click-the-mark, press Delete, and the first half is the one a
+        // verb-level test cannot see.
+        {
+            let view = doc.session.view();
+            let candidates = crate::canvas::selection::annot::selectable_on(
+                &view,
+                &doc.pages[0],
+                0,
+                &std::collections::BTreeSet::new(),
+                &std::collections::BTreeMap::new(),
+            );
+            assert!(
+                candidates
+                    .iter()
+                    .any(|c| c.target.id == marks[0] && c.target.subtype == "Redact"),
+                "a redaction mark must be a selection candidate on the canvas: {candidates:?}"
+            );
+        }
+        delete(&mut doc, 0, marks[0]);
+        assert!(
+            marks_on_page_0(&doc).is_empty(),
+            "Delete on a selected mark must take the mark off"
+        );
+        assert!(doc.session.can_undo(), "and it is one undo step");
     }
 }

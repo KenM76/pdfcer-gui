@@ -433,14 +433,15 @@ pub enum RedactApplyRefusal {
     /// The apply completed in memory, but the absence proof found redacted text
     /// **still present in a decoded stream** of the output. Nothing is written.
     ///
-    /// This is the module's own last line of defence and it should be
-    /// unreachable: reaching it means core's removal and core's report
-    /// disagree. It is a refusal rather than a disclosure because a decoded
-    /// stream is content a reader will render or extract — there is no reading
-    /// of that survival under which the file is safe to hand over.
+    /// ★ Since 2026-09-09 this is raised for a survivor the operator was
+    /// **never shown**: every drawn-content hit the preparation proof finds is
+    /// disclosed at `ResidualSite::DrawnContent` and acknowledged through the
+    /// residual gate (his ruling: *"I should be able to override and redact
+    /// what it can"*), so only a hit that appears between the proof and the
+    /// write — the bytes changed — reaches this. That is the module's original
+    /// "removal and report disagree" line, and it should be unreachable.
     VerificationFailed {
-        /// The strings that survived, for the message. Not the whole redacted
-        /// set — only what actually leaked.
+        /// The strings that survived AND were not in the acknowledged list.
         survivors: Vec<String>,
     },
     /// ★★★ **A redaction is already STAGED on this session** (`Pass 250.2`).
@@ -687,10 +688,23 @@ impl PreparedRedaction {
         if residuals > 0 && acknowledgement == ResidualAcknowledgement::Withheld {
             return Err(WriteRefusal::ResidualsNotAcknowledged { residuals });
         }
+        // ★ Only a survivor the operator was NOT shown refuses (2026-09-09):
+        // every drawn-content hit `prove` found at preparation is in
+        // `verification.residuals` at `DrawnContent`, and the gate above has
+        // already required its acknowledgement. Anything else here means the
+        // bytes changed between the proof and the write.
         if let Some(survivors) =
             proof::survivors_in_content_streams(&self.bytes, &self.report.redacted_text)
         {
-            return Err(WriteRefusal::VerificationFailed { survivors });
+            let undisclosed: Vec<String> = survivors
+                .into_iter()
+                .filter(|s| !self.verification.disclosed_in_drawn_content(s))
+                .collect();
+            if !undisclosed.is_empty() {
+                return Err(WriteRefusal::VerificationFailed {
+                    survivors: undisclosed,
+                });
+            }
         }
         // ★ `clone()` and it stays INSIDE this module. The parser takes an
         // owned buffer; `&self` is what makes this mirror `write_to`, which
@@ -776,10 +790,23 @@ impl PreparedRedaction {
             return Err(WriteRefusal::ResidualsNotAcknowledged { residuals });
         }
         // ★ §2.2 — the proof between the buffer and the syscall.
+        // ★ Only a survivor the operator was NOT shown refuses (2026-09-09):
+        // every drawn-content hit `prove` found at preparation is in
+        // `verification.residuals` at `DrawnContent`, and the gate above has
+        // already required its acknowledgement. Anything else here means the
+        // bytes changed between the proof and the write.
         if let Some(survivors) =
             proof::survivors_in_content_streams(&self.bytes, &self.report.redacted_text)
         {
-            return Err(WriteRefusal::VerificationFailed { survivors });
+            let undisclosed: Vec<String> = survivors
+                .into_iter()
+                .filter(|s| !self.verification.disclosed_in_drawn_content(s))
+                .collect();
+            if !undisclosed.is_empty() {
+                return Err(WriteRefusal::VerificationFailed {
+                    survivors: undisclosed,
+                });
+            }
         }
         // ★ Temp-then-rename. See the "Why the write IS atomic" section: the
         // destination may now be the source document, and a torn write there
@@ -915,10 +942,21 @@ pub fn prepare_redaction_apply(
             },
         })?;
 
+    // ★★★ 2026-09-09 — a survivor in drawn content no longer refuses HERE.
+    // `prove` lists it as a `ResidualSite::DrawnContent` residual, the window
+    // shows it with the sentence that says *outside the area you marked*, and
+    // the acknowledgement gate decides. The operator: *"I should be able to
+    // override and redact what it can."* The refusal survives at the write
+    // (`to_verified_document` / `write_to`) for a survivor he was never shown.
     let proven = proof::prove(&bytes, &report.redacted_text);
-    if let Some(survivors) = proven.survivors {
-        return Err(RedactApplyRefusal::VerificationFailed { survivors });
-    }
+    crate::diag::trace(|| {
+        format!(
+            "redact-prove drawn_content_hits={} residuals={} short={}",
+            proven.survivors.as_ref().map_or(0, Vec::len),
+            proven.verification.residuals.len(),
+            proven.verification.strings_too_short_for_raw_check,
+        )
+    });
 
     Ok(PreparedRedaction {
         bytes,
@@ -1199,9 +1237,15 @@ pub fn save_applying_pending(
         .map_err(map_refusal)?;
     // ★ §2.2's proof, moved to the only place the deferred route can still make
     // it: between the buffer and the caller's syscall.
-    if let Err(survivors) = prove_saved_bytes(&bytes, &report.redacted_text) {
-        return Err(RedactApplyRefusal::VerificationFailed { survivors });
-    }
+    // ★ 2026-09-09 — survivors in drawn content at save time are the same
+    // drawn-content hits the arming window disclosed and the operator
+    // acknowledged before the removal could be staged (the staging route goes
+    // through `ready_to_confirm`'s residual gate like the immediate one), so
+    // they are traced, not refused. His ruling is quoted on
+    // `ResidualSite::DrawnContent`. `prove_saved_bytes`'s `Err` is that list.
+    let drawn_content_hits = prove_saved_bytes(&bytes, &report.redacted_text)
+        .err()
+        .unwrap_or_default();
     crate::diag::trace(|| {
         format!(
             // ui-text-exempt: diagnostic trace, never displayed.
@@ -1213,13 +1257,15 @@ pub fn save_applying_pending(
             // field is `claims=` beside it. A proof that checked NOTHING reads
             // as `claims=0`, and a reader of a trace can tell the two apart.
             "redact-save-applied marks={} pages={} glyphs={} streams={} claims={} bytes={} \
-             verified=true",
+             verified={} drawn_content_hits={}",
             report.marks_applied,
             report.pages_redacted,
             report.glyphs_removed,
             report.content_streams_rewritten,
             report.redacted_text.len(),
             bytes.len(),
+            drawn_content_hits.is_empty(),
+            drawn_content_hits.len(),
         )
     });
     Ok((bytes, report))

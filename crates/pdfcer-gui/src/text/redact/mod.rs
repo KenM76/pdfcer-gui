@@ -554,7 +554,7 @@ pub fn mark_covers_image(images: usize) -> String {
 /// honest.
 #[must_use]
 pub fn residual_heading() -> &'static str {
-    "⚠  pdfcer could NOT remove the following — read this before continuing:"
+    "⚠  Read before continuing — pdfcer could not remove, or could not rule out, the following:"
 }
 
 /// One residual line for a carrier the engine detected and could not scrub.
@@ -596,7 +596,21 @@ pub fn residual_carrier_line(carrier: &str) -> String {
 #[must_use]
 pub fn raw_residual_line(text: &str, site: crate::redact::ResidualSite) -> String {
     use crate::redact::ResidualSite as S;
+    // ★★★ The drawn-content hit has its OWN sentence, because the shared one
+    // below opens with "no longer appears in anything this document draws" —
+    // the one thing that is false here. The operator's words, 2026-09-09:
+    // *"the way the error is worded it sounds like it found matching text
+    // somewhere else in the document — which it very well could since I
+    // didn't select it or want it redacted."* So this sentence says where,
+    // says it is probably his unselected text, and tells him what ticking the
+    // box means under each reading.
+    if site == S::DrawnContent {
+        return format!(
+            "⚠  The removed text “{text}” also appears in this document's drawn content OUTSIDE the area you marked — most likely another occurrence of the same words that you did not select. pdfcer cannot tell that apart from removed text left behind. If it is text you did not mean to remove, this is not a leak and you can continue; if you meant to remove every occurrence, cancel and mark those too."
+        );
+    }
     let place = match site {
+        S::DrawnContent => unreachable!("answered above"),
         S::FontProgram => {
             "inside an embedded font program — the part of a font file that holds its own name, its copyright and the English descriptions of its lettering features"
         }
@@ -1083,8 +1097,13 @@ pub fn refusal_message(refusal: &crate::redact::RedactApplyRefusal) -> String {
         // last clause is deliberately the strongest instruction in this
         // catalog: if the removal and the proof disagree, no file derived from
         // this document can be trusted, including ones written earlier.
+        // ★ 2026-09-09: reachable only for a survivor that was NOT in the
+        // acknowledged list — the bytes changed between proving and writing.
+        // The previous sentence ("found N pieces of the supposedly-removed text
+        // still in it") read, correctly, as "it found my words elsewhere", and
+        // that case is now a disclosure with its own sentence, not this.
         R::VerificationFailed { survivors } => format!(
-            "Redaction refused — pdfcer applied the removal, then searched the finished file and found {} piece(s) of the supposedly-removed text still in it. Nothing was written. Do not use any file produced from this document until this is investigated.",
+            "Redaction refused — between checking the result and writing it, pdfcer found {} piece(s) of removed text in drawn content that were not in the list you acknowledged. Nothing was written. Close this window and run Apply redactions again so the list is rebuilt.",
             survivors.len()
         ),
         // ★ Not a failure, and the sentence must not read as one. This is the

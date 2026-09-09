@@ -33,7 +33,7 @@
 //!
 //! | Where the string still occurs | Verdict | Why |
 //! |---|---|---|
-//! | in a decoded **content-bearing** stream of the output — page content, a form XObject, a tiling pattern, a Type 3 glyph procedure | **REFUSE** — write nothing | These are the streams a renderer draws and a text extractor reads. A survival here means core's removal and core's report disagree; there is no reading of it under which the file is safe to hand over, and no acknowledgement checkbox makes it acceptable. |
+//! | in a decoded **content-bearing** stream of the output — page content, a form XObject, a tiling pattern, a Type 3 glyph procedure | **DISCLOSE as [`ResidualSite::DrawnContent`], acknowledgement-gated** (was REFUSE until 2026-09-09 — the operator overruled it: the hit is usually another occurrence he never selected; REFUSE survives only for a write-time survivor he was never shown) — write nothing | These are the streams a renderer draws and a text extractor reads. A survival here means core's removal and core's report disagree; there is no reading of it under which the file is safe to hand over, and no acknowledgement checkbox makes it acceptable. |
 //! | anywhere else in the output — in a decoded **opaque** stream (a font program, image samples, an ICC profile, an object-stream container, an attachment) or in the **raw bytes** | **DISCLOSE** as a residual requiring the operator's explicit acknowledgement, naming *where* it was found | pdfcer cannot tell a genuine un-recognised carrier from an unrelated coincidence. Refusing would be a trap the operator cannot act on; claiming removal would be a lie. Naming it, and naming the place, is the only honest option. |
 //! | nowhere | **verified** | This is what licenses [`crate::text::redact`]'s wording contract to use the word "verified" at all. |
 //!
@@ -168,6 +168,31 @@ pub const MIN_VERIFIABLE_LEN: usize = 4;
 /// vocabularies on one screen do not diverge.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ResidualSite {
+    /// **In drawn content — a page's content stream, a form XObject, a
+    /// pattern or a Type 3 glyph procedure — somewhere in the document.**
+    ///
+    /// ★★★ The operator's ruling, 2026-09-09: *"Redaction should still let me
+    /// apply a redaction even if it finds some pieces left. I should be able
+    /// to override and redact what it can. The way the error is worded it
+    /// sounds like it found matching text somewhere else in the document —
+    /// which it very well could since I didn't select it or want it
+    /// redacted."* He is right on both counts. The proof greps the WHOLE
+    /// output for each removed string; the mark covered one region of one
+    /// page; so a hit here is, far more often than not, another occurrence of
+    /// the same word that was never selected — a title-block label, a note
+    /// repeated on every sheet. pdfcer cannot tell that apart from the
+    /// removed glyphs still being drawn, and until this date it resolved the
+    /// doubt by refusing to write anything, which made a multi-page drawing
+    /// set unredactable whenever a marked word appeared anywhere else in it.
+    ///
+    /// Now it is a **disclosure behind the acknowledgement gate**, like every
+    /// other residual: the window lists each such string with this site's
+    /// sentence — which says *outside the area you marked* in as many words —
+    /// and the operator ticks the box to proceed. The hard refusal survives
+    /// for exactly one case: a survivor found at write time that was NOT in
+    /// the list he acknowledged (the document changed between the two), which
+    /// is the module's original "removal and report disagree" line.
+    DrawnContent,
     /// An embedded font program — `/FontFile`, `/FontFile2` or `/FontFile3`.
     ///
     /// ★ By far the most common site, and the one that made this whole
@@ -293,6 +318,15 @@ impl AbsenceVerification {
     #[must_use]
     pub const fn is_clean(&self) -> bool {
         self.residuals.is_empty()
+    }
+
+    /// Whether `text` was disclosed to the operator as a drawn-content hit
+    /// at preparation — the write-time check's question (2026-09-09).
+    #[must_use]
+    pub fn disclosed_in_drawn_content(&self, text: &str) -> bool {
+        self.residuals
+            .iter()
+            .any(|r| r.site == ResidualSite::DrawnContent && r.text == text)
     }
 }
 
@@ -427,10 +461,13 @@ fn in_content(decoded: &[DecodedStream], needle: &str) -> bool {
 ///    (see [`leaked_in_content_streams`] for the 2026-09-09 reversal that moved
 ///    this question ahead of the content check). `strings_checked` excludes
 ///    it, so *"verified N pieces"* on the window counts only what was.
-/// 2. **Is it in a content-bearing stream?** Then it is not a residual at all —
-///    it is a survivor, [`leaked_in_content_streams`] will refuse the write, and
-///    listing it here as well would put one finding on screen twice under two
-///    different verdicts.
+/// 2. **Is it in a content-bearing stream?** Then it is a residual at
+///    [`ResidualSite::DrawnContent`] — disclosed, acknowledgement-gated, with
+///    the sentence that says *outside the area you marked*. (Until 2026-09-09
+///    this was the refusal and was deliberately NOT listed here; the operator
+///    overruled the refusal, see the site's own docs. [`leaked_in_content_streams`]
+///    still computes the same set, for the write-time check that nothing
+///    UNDISCLOSED survived.)
 /// 3. **Is it in an opaque decoded stream?** Disclose it, naming that stream's
 ///    kind. Checked before the raw bytes because the answer is more specific:
 ///    an uncompressed font program would satisfy both, and *"inside an embedded
@@ -456,7 +493,13 @@ fn verify_absence(
             out.strings_too_short_for_raw_check += 1;
             continue;
         }
+        // ★ 2026-09-09 — a content hit is DISCLOSED here (and refused only if
+        // undisclosed at write time). See `ResidualSite::DrawnContent`.
         if in_content(decoded, needle) {
+            out.residuals.push(Residual {
+                text: needle.clone(),
+                site: ResidualSite::DrawnContent,
+            });
             continue;
         }
         let opaque_site = decoded
@@ -970,28 +1013,30 @@ mod tests {
         }
     }
 
-    /// ★★ **A survivor in drawn content is a refusal AND is not also a
-    /// residual.**
+    /// ★★★ **A survivor in drawn content IS listed as a residual — at its own
+    /// site — so the window can show it and the operator can decide.**
     ///
-    /// The two verdicts are mutually exclusive by construction, and the
-    /// exclusion is load-bearing in both directions. Listed twice, one finding
-    /// would appear on screen under two different verdicts — *"pdfcer refuses
-    /// this"* and *"tick to proceed anyway"* — which is the one thing a report
-    /// about a redaction must never say at once.
+    /// Until 2026-09-09 this test asserted the opposite (one finding, one
+    /// verdict: the refusal). The operator overruled the refusal — *"I should
+    /// be able to override and redact what it can"* — because a whole-file grep
+    /// finds the same word on pages he never marked. So the content hit is now
+    /// a [`ResidualSite::DrawnContent`] residual behind the acknowledgement
+    /// gate, AND still reported as a survivor for the write-time check that
+    /// nothing undisclosed slipped in between preparing and writing.
     #[test]
-    fn a_survivor_in_drawn_content_is_not_also_listed_as_a_residual() {
-        let bytes = pdf_drawing("KEEPTHISSECRET is drawn");
-        let proof = prove(&bytes, &["KEEPTHISSECRET".to_owned()]);
+    fn a_survivor_in_drawn_content_is_listed_as_a_residual_at_its_own_site() {
+        let bytes = pdf_drawing("the SECRET is drawn here");
+        let proof = prove(&bytes, &["SECRET".to_owned()]);
+        assert_eq!(proof.survivors, Some(vec!["SECRET".to_owned()]));
         assert_eq!(
-            proof.survivors,
-            Some(vec!["KEEPTHISSECRET".to_owned()]),
-            "the instrument must still see a string in plain sight"
+            proof.verification.residuals,
+            vec![Residual {
+                text: "SECRET".to_owned(),
+                site: ResidualSite::DrawnContent,
+            }],
+            "the operator is owed the string and the place, behind the gate"
         );
-        assert!(
-            proof.verification.residuals.is_empty(),
-            "★ a refusal and a disclosure are different verdicts about \
-             different evidence; one finding may not wear both"
-        );
+        assert!(!proof.verification.is_clean());
     }
 
     /// ★ **A tiling pattern and a Type 3 glyph procedure are drawn content.**

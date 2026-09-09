@@ -122,6 +122,37 @@ machine.
 
 ---
 
+## O162 — ⬜ **FILED 2026-09-09, ENGINE ASKED (re-escalated)** — "if I drew the stamp too small for the text to fit, resizing just stretches the entire object as is — I should be able to double-click again and drag and edit just the box size without affecting the text. Box size properties should also be available to edit in the position and size separate from the text size."
+
+**Your words, 2026-09-09**, on the build that first let stamps resize at all.
+
+What you have now is the engine scaling the stamp's *picture* — letters and
+frame together — because that is the only resize it offers for a stamp. What
+you are asking for is a **re-bake**: the box changes, the text stays the size
+you set, and the words re-flow or re-centre inside the new box — the way a
+text box already behaves since yesterday. That is the engine's stamp builder
+redrawing at a new rectangle, which it does not do yet; asked this morning as
+a nice-to-have, **re-asked now as wanted, with your words**
+(`request_resize_annotation_refuses_a_pdfcer_authored_stamp_as_foreign.md`).
+When it ships: the Properties panel gets width/height for the BOX (re-bake)
+alongside the existing text size, and a second drag mode (double-click, then
+drag) resizes the box without scaling the text. Until then: resize scales
+the whole stamp; to get a bigger box with the same text size, delete and
+place again larger.
+
+## O161 — ◑ **FILED 2026-09-09, MEASURED HEADLESSLY, NEEDS YOUR VERDICT** — "I should also be able to unselect things of redaction that i selected for redaction"
+
+**Your words, 2026-09-09.** Two routes exist and both were measured without a
+screen: (1) the Redact panel lists every mark with a **Remove** on its row;
+(2) on the canvas a mark **is** a selectable object and **Delete** on it takes
+the mark off through the engine's own unmark verb (one undo step, tooltip
+*"remove a redaction mark"*). A unit test now holds both halves of route 2.
+⚠ What headless cannot see is why it did not work for you at the keyboard.
+The likely suspect: with the redaction tool still armed, a click on the page
+starts a new mark instead of selecting one — switch to the select tool (or
+press Escape) first, then click the mark and press Delete. If that is not it,
+say what you clicked and in which mode, and it gets driven.
+
 ## O160 — ★★★ **THREE MORE, MID-MORNING 2026-09-09, EACH MEASURED ON YOUR OWN FILES AND FIXED** — "I still get this error … found 35 piece(s) of the supposedly-removed text still in it … I STILL can't adjust the size of a stamp on the canvas, or by entering a different size in the properties box … the text comes out vertical, and there is no control to set the angle"
 
 **Your words, 2026-09-09.** And your follow-up, which was exactly right: *"if
