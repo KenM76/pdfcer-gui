@@ -46,6 +46,17 @@ Those are commits, and the commit is the record. A build in `OneDrive\` is a
 thing the operator *runs*, and mirroring one costs his machine real resources
 that are not returned until OneDrive restarts.
 
+★ 2026-09-09, 01:30 — SECOND amendment, and it retracts the first: it is NOT
+the handle count at all. Launches kept dying identically at **157,522**
+handles with Outlook closed, and a twelve-hour-old RELEASE build died 2 of 4
+the same way. USER/GDI objects (~2 k), both atom tables, commit (40 GB free)
+and free RAM were measured and are not it either. What is measured is an
+intermittent session-level failure of `SetPropW` that worsened monotonically
+with the number of force-killed instances that night (~60), and only a logoff
+resets it. The handle rule above stays as a leak observation; do not read it
+as the cause of this panic. `D:/dev/rag/egui/an_intermittent_setpropw_…` has
+the table.
+
 ★ 2026-09-09 amendment, measured: with the machine at **398,880** handles and
 two consecutive launches dying with this exact error, the holder was
 **OUTLOOK at 202,737 handles** — more than half — with OneDrive at 19,481.

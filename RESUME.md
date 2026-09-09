@@ -15,19 +15,31 @@
 > | request channel | **198 files open, 43 of them `reply_*`** — nothing new since the handoff | `ls …/open \| wc -l` |
 > | smoke-launch | ✅ off-screen, `a1-titleblock.pdf`, page drawn, no panic, killed by PID+path | `PDFCER_DIAG_VIEWPORT="-4200,-4200,1400,900"` |
 >
-> ⚠ **THE MACHINE IS AT THE WINDOW-CREATION HANDLE CEILING — 2026-09-09 00:15.**
-> Two consecutive off-screen launches of the fresh build died in
-> `accesskit_windows` with `HRESULT(0x80070008) "Not enough memory resources"`
-> — the handle-exhaustion failure `tools/package-portable.py`'s header
-> describes. Measured: **398,880 handles system-wide**, against the 404,179 at
-> which that header saw one launch in three fail. ★ **The holder is OUTLOOK at
-> 202,737 handles** — half the machine — not OneDrive (19,481). The packager's
-> attribution to the OneDrive mirror is at most half the story; the leak that
-> puts him at the ceiling is Outlook's, and only restarting Outlook releases
-> it. **His own `pdfcer-gui` launches will fail the same way until then.**
-> The `dock.<side>.body_min` instrument is built and committed and has not
-> yet had a launch that survived; run the smoke launch first thing once
-> handles are down.
+> ⚠ **THE WINDOWS SESSION KILLS MOST LAUNCHES — 2026-09-09 01:30 — AND IT IS
+> NOT HANDLES, NOT OUTLOOK.** `accesskit_windows` `SetPropW` dies with
+> `HRESULT(0x80070008)` before a window exists: 1-in-3 in the evening, 4-of-5
+> at 01:00, **10 of 11 checks × 3 attempts** at 01:30. Measured and ruled OUT:
+> kernel handles (157 k, Outlook closed), USER/GDI objects (~2 k), both atom
+> tables, commit (40 GB free), free RAM (3.8 GB either way). **Settled by a
+> control: the 13:05 release build fails 2 of 4 the same way** — the subject
+> is the 208-hour session, and the one monotone correlate is the ~60
+> force-killed instances the harness produced tonight. **A logoff/reboot is the
+> remedy; nothing else measured moves it.** The harness now retries exactly
+> this stderr signature (3 attempts, each printed); on this session it still
+> reports SKIP, honestly. ⇒ **First thing after the reboot: run the 32-check
+> sweep** (`HANDOFF_20260908_RESIZE.md` §2, `--check` repeated) — the new
+> scrollbars have ONE driven pass beyond the subject check
+> (`a_fit_command_puts_the_page_on_screen`, green) plus the three from the
+> evening. `D:/dev/rag/egui/an_intermittent_setpropw_…` has the table.
+>
+> ★ **The wobble hunt DID read its instrument on the one launch that survived:**
+> `dock.right.body_min` ran to **1400.4** — 0.4 pt past the window's edge,
+> left edge unchanged — on the wobble frame, so a widget inside the right
+> dock overflows its pane by a 1/32-grid amount on isolated frames and egui's
+> `Panel` re-derives its 320-wide rect from that right edge. The overflow
+> bisect (publish every egui widget rect crossing the side's outer edge, by
+> id) is drafted in this session's scratchpad as `overflow_probe.py` and NOT
+> yet applied; apply it after the reboot, build, smoke-launch, read.
 >
 > ⚠ **Ken came to the PC mid-session** (`/loop` note: headless only). The
 > 29-check regression sweep was killed at 14 of 29 by PID; its verdicts were

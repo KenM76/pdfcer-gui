@@ -136,6 +136,22 @@ pub struct Session {
     exit_expected: Cell<bool>,
 }
 
+/// Whether a pre-window exit was the accessibility subclass failing to
+/// install — the intermittent session-level `SetPropW` failure
+/// [`Session::launch`] documents — as opposed to anything the application did.
+///
+/// Decided from the stderr the launch wrote, not from the exit code alone:
+/// every panic exits 101, and a panic in the application's own startup must
+/// stay reported.
+fn died_installing_accessibility(err: &Error, stderr_path: &Path) -> bool {
+    if !err.to_string().contains("before showing a window") {
+        return false;
+    }
+    std::fs::read_to_string(stderr_path)
+        .map(|s| s.contains("0x80070008") && s.contains("accesskit_windows"))
+        .unwrap_or(false)
+}
+
 impl Session {
     /// Launch, and wait for a window.
     ///
@@ -144,7 +160,55 @@ impl Session {
     /// Every error here is a **precondition** failure — the harness could not
     /// begin — so callers report SKIPPED, not FAIL. Each message names the
     /// specific thing that was missing.
+    /// Launch, retrying a launch the MACHINE killed before a window existed.
+    ///
+    /// # ★★★ The failure this retries, measured 2026-09-09 (01:00–01:30)
+    ///
+    /// `accesskit_windows` installs its window subclass with `SetPropW`, and on
+    /// this operator's 208-hour session that call fails **intermittently** with
+    /// `HRESULT(0x80070008) "Not enough memory resources are available"` —
+    /// 4 of 5 launches of tonight's build, and **2 of 4 of a twelve-hour-old
+    /// release build**, at identical free RAM (3.8 GB), 157 k kernel handles,
+    /// under 2 k USER/GDI objects, a 448-entry kernel atom table, a USER atom
+    /// table that still registers fresh names, and 40 GB of free commit. Two
+    /// earlier attributions — the OneDrive mirror's handle leak, then
+    /// Outlook's — were each measured and each wrong; what is measured is that
+    /// a binary that shipped and worked fails the same way, so the subject is
+    /// the session, and the only remedy known is a logoff.
+    ///
+    /// # Why retry here rather than report SKIP
+    ///
+    /// A sweep on such a session reported **11 of 14 checks SKIPPED** with
+    /// *"exited with exit code 101 before showing a window"* — a run that
+    /// verified nothing while looking like it ran. The panic happens before
+    /// the application has drawn a frame, so nothing the check is about has
+    /// been measured or spoiled; relaunching is the same experiment. It is
+    /// retried only when the stderr carries that exact HRESULT — any other
+    /// pre-window exit is the application's and is still reported as it was.
+    ///
+    /// Every retry is printed, so a run that needed three launches per check
+    /// is visibly a run on a sick machine rather than a clean pass.
     pub fn launch(spec: &LaunchSpec, trace_prefix: &str) -> Result<Self> {
+        const ATTEMPTS: u32 = 3;
+        for attempt in 1..=ATTEMPTS {
+            match Self::launch_once(spec, trace_prefix) {
+                Err(e)
+                    if attempt < ATTEMPTS
+                        && died_installing_accessibility(&e, &spec.stderr_path) =>
+                {
+                    eprintln!(
+                        "  ⚠ launch attempt {attempt} of {ATTEMPTS} died in accesskit's SetPropW \
+                         (HRESULT 0x80070008) before a window existed — the SESSION's fault, \
+                         not the application's; relaunching"
+                    );
+                }
+                other => return other,
+            }
+        }
+        unreachable!("the last attempt returns whatever it got")
+    }
+
+    fn launch_once(spec: &LaunchSpec, trace_prefix: &str) -> Result<Self> {
         if !spec.exe.is_file() {
             return Err(Error::new(format!(
                 "no binary at {}. Build it first (cargo build --release), or point the \
