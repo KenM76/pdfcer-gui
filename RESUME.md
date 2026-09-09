@@ -50,17 +50,22 @@
 >
 > ## WHAT TO DO NEXT, in his likely order
 >
-> 1. **Publish.** Six operator-facing fixes are unshipped (O150–O158's five plus
->    this). `python tools/package-portable.py --note "…"` — GitHub AND OneDrive,
->    from a clean tree; verify `releases/latest` from HIS side.
-> 2. **Drive the 25 unverified checks** when the PC is free (above).
-> 3. **The central-panel width jitter** — measured, source unknown. It flickers
+> **Released 2026-09-08 22:07** from `b3f8738`: OneDrive **`pdfcer-gui1` is the
+> new build**, so **`pdfcer-gui2` (13:06) is the fallback**. GitHub
+> `v0.5.0-dev.20260908.6`, **verified from HIS side** —
+> `gh api repos/KenM76/pdfcer-gui/releases/latest` returns that tag,
+> `prerelease: false`, zip attached, 22,959,794 bytes. ★ The packager writes a
+> FOLDER; the zip is `Compress-Archive` of it, then `gh release create` with no
+> `--prerelease`. Recorded here because no earlier session wrote the recipe down.
+>
+> 1. **Drive the 25 unverified checks** when the PC is free (above).
+> 2. **The central-panel width jitter** — measured, source unknown. It flickers
 >    the fit zoom in its last digit and runs `fit::placement` every frame.
 >    Instrument the dock's right edge; do not theorise.
-> 4. **Delete the annotation spec route** (~600 lines, `ENGINE_BACKLOG.md`
+> 3. **Delete the annotation spec route** (~600 lines, `ENGINE_BACKLOG.md`
 >    row 299; symbols: `Plan::spec_is_more_faithful`, `carried_options`,
 >    `copy_as_spec`, `Action::PasteMarkup`'s apply arm). Headless, unit-tested.
-> 5. **`canvas.selection-outline` is published twice per frame** with two rects
+> 4. **`canvas.selection-outline` is published twice per frame** with two rects
 >    — re-decide the shared name (handoff §3.4).
 >
 > ## WHAT NOT TO DO
