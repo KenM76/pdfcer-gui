@@ -733,6 +733,18 @@ impl PdfcerApp {
             // `vector_edit` funnel every other authoring verb uses. The engine
             // verb differs (`add_text_annotation` rather than `add_markup`)
             // because the spec type does; nothing else about the protocol does.
+            //
+            // ★★★ **…and it forks.** `custom` is `Some` only when the operator
+            // picked one of his OWN stamps, and it wins over `stamp`. The two
+            // routes share a gesture and a dialog and nothing else — see
+            // `super::customstamp`'s header §*The fork*, which carries why
+            // `kind` is not consulted and why `..` is right on this arm.
+            Action::CommitTextAnnot {
+                page,
+                rect,
+                custom: Some(custom),
+                ..
+            } => super::customstamp::place(doc, &custom, page, rect),
             Action::CommitTextAnnot {
                 page,
                 kind,
@@ -741,6 +753,7 @@ impl PdfcerApp {
                 stamp,
                 stamp_size,
                 icon,
+                custom: None,
             } => super::textannot::commit(
                 doc,
                 &self.prefs,

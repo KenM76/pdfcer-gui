@@ -50,6 +50,8 @@ use crate::canvas::textannot::{
     DEFAULT_STAMP, DEFAULT_STAMP_SIZE, DEFAULT_STICKY_ICON, MAX_TEXT_CHARS, STAMP_SIZES, STAMPS,
     STICKY_ICONS, StampSize, TextAnnotKind,
 };
+use crate::stamps::library::{CustomStamp, Library};
+use crate::text::stamps as st;
 use crate::text::textannot as t;
 
 /// The region the whole window publishes.
@@ -84,6 +86,18 @@ pub const REGION_ICON: &str = "text-annot.icon"; // ui-text-exempt: trace region
 /// control in them at all.
 pub const REGION_STAMP_SIZE: &str = "text-annot.stamp-size"; // ui-text-exempt: trace region name, never displayed
 
+/// The region the **operator's own** stamps publish, one enclosing box for the
+/// whole custom half of the gallery.
+///
+/// ★ Separate from [`REGION_BODY`] and from [`REGION_STAMP_SIZE`] for the
+/// reason the latter's comment states and this case makes sharper still: this
+/// half of the gallery is **conditionally present**. It renders nothing at all
+/// on a machine with no stamps folder (R9), so a driven check keyed on the
+/// body region cannot tell *"his stamps are offered"* from *"this build draws
+/// a stamp window"* — the two are the same observation there and different
+/// observations here.
+pub const REGION_CUSTOM_STAMPS: &str = "text-annot.custom-stamps"; // ui-text-exempt: trace region name, never displayed
+
 /// One open text-annotation dialog.
 pub struct TextAnnotDialog {
     /// The page the annotation will land on, captured when the gesture
@@ -110,6 +124,39 @@ pub struct TextAnnotDialog {
     /// The icon selected in the sticky note's chooser. Meaningless for the
     /// other kinds and carried anyway, exactly as [`Self::stamp`] is.
     icon: StickyIcon,
+    /// ★★★ **The operator's own stamps, as they were on disk when this window
+    /// opened** (`OPERATOR_REQUESTS.md` O172).
+    ///
+    /// # Why it is scanned per open, and not once per session
+    ///
+    /// Because Acrobat rewrites that folder. It adds a collection the first
+    /// time somebody makes a stamp, replaces one when they edit it, and does
+    /// both while pdfcer is running. A list cached at startup would show him a
+    /// stamp he deleted an hour ago and hide the one he made two minutes ago,
+    /// and the failure would look like pdfcer being broken rather than stale.
+    ///
+    /// The cost is one `Document::load` per collection file, on the frame the
+    /// window opens — on this machine, one file of 78 KB. If that ever becomes
+    /// a stall it is a *measurement* that says so, not this comment.
+    ///
+    /// ⚠ Empty for the sticky note and the text box: [`Self::open`] scans only
+    /// for the stamp kind, because the other two kinds cannot reach a gallery
+    /// and paying for a filesystem walk to fill a field nothing reads is the
+    /// kind of cost that never shows up in a profile attributed to its cause.
+    library: Library,
+    /// **Which of his own stamps is selected**, or `None` for a standard one.
+    ///
+    /// ★ This field, rather than a `StampName`-shaped enum with a `Custom`
+    /// arm, and the reason is the type: `StampName` is the engine's spelling
+    /// of §12.5.6.12's **closed vocabulary**, and a custom stamp is by
+    /// definition not in it. Widening that enum here would be this shell
+    /// asserting something about the standard that is not true.
+    ///
+    /// ⇒ So the gallery's selection is *"`custom` is `Some`, or else
+    /// [`Self::stamp`]"*, and the two radio groups keep that invariant by
+    /// clearing the other on click. The invariant is asserted in this module's
+    /// tests, because it is held by two call sites rather than by a type.
+    custom: Option<CustomStamp>,
     /// Set by Accept, consumed after the window's closure returns.
     accept_requested: bool,
     /// Set by Cancel, consumed by [`Self::show`].
@@ -200,6 +247,102 @@ const STICKY_EXTRA_PTS: f32 = 190.0;
 /// three times as R128.
 const STAMP_EXTRA_PTS: f32 = 70.0;
 
+/// **How much taller the stamp's window opens for each CATEGORY of the
+/// operator's own stamps**, in points.
+///
+/// A category costs a 6 pt space and one `.small()` heading. 26 pt is that,
+/// rounded up.
+const CUSTOM_CATEGORY_PTS: f32 = 26.0;
+
+/// **…and for each of his stamps**, in points.
+///
+/// Measured, not guessed: the driven run of 2026-09-10 published three custom
+/// radios at content y 298, 326 and 354, so the pitch of a radio row in this
+/// window is exactly 28 pt.
+///
+/// ⚠ That is a measurement of a ROW's pitch, taken once, from a trace — not a
+/// size queried from the `Ui` this function helps to size. The distinction is
+/// R128's: a constant a reader can argue with, versus a feedback loop.
+const CUSTOM_STAMP_ROW_PTS: f32 = 28.0;
+
+/// **…and for the dynamic-stamp disclosure**, when the collection holds one.
+///
+/// The sentence appears the moment he selects a dynamic stamp. Counted up
+/// front rather than when it appears, because a window that grows on a click
+/// moves the control that was clicked, which is a worse behaviour than being
+/// 22 pt taller than it strictly needs.
+const CUSTOM_DYNAMIC_NOTE_PTS: f32 = 22.0;
+
+/// **The most the operator's own stamps may add to the window**, in points.
+///
+/// Roughly eleven rows. Past that the body scrolls, which is what a scroll
+/// area is for.
+///
+/// ★ A cap is needed even though [`window_size`] already clamps to the
+/// application window. Without one a collection of forty stamps opens a dialog
+/// the full height of the window it belongs to, standing over the drawing he
+/// is annotating — the exact thing this module's header argues against for the
+/// dialog's POSITION. Scrolling for the fortieth stamp is a smaller cost than
+/// losing sight of the sheet for all forty.
+const CUSTOM_EXTRA_MAX_PTS: f32 = 320.0;
+
+/// **How much taller the stamp window opens because the operator has stamps of
+/// his own.**
+///
+/// # ★★★ Why this exists, and it is a defect report — 2026-09-10
+///
+/// `Pass O172` added the custom half to the stamp gallery and did not change
+/// the window's height. The first driven run of
+/// `custom_stamp_reaches_the_page` captured the result: a dialog showing the
+/// seven standard stamps and the Add/Cancel row, with **none** of the
+/// operator's three stamps on the screen. They were laid out below the
+/// scrolled body's fold, published as rectangles in the scrolled content, and
+/// invisible.
+///
+/// It was not a clipping bug and it was not a layout bug. [`window_size`] adds
+/// a per-kind constant to [`WINDOW_PTS`] and the stamp's constant was written
+/// for a body that did not yet have this section in it. **A guessed size is a
+/// claim about the content, and the content changed under the claim.**
+///
+/// # ★★ Why counting the library is NOT the R128 feedback loop
+///
+/// The rule this module states three times — *a size measured from the content
+/// it sizes is R128* — is about querying a `Ui` that is being laid out inside
+/// the window whose size is being decided. This function queries no `Ui`. It
+/// reads two integers off a [`Library`] that was scanned off the disk when the
+/// dialog opened, before any layout ran, and multiplies them by constants
+/// stated above. The result is the same kind of number as
+/// [`STICKY_EXTRA_PTS`] — derived from what is being added, and arguable by a
+/// reader — except that "what is being added" is data rather than a fixed list
+/// of seven radios.
+///
+/// ⇒ There is no loop, because nothing about the laid-out window can change
+/// the count of files in his stamps folder.
+#[must_use]
+fn custom_extra_pts(library: &Library) -> f32 {
+    if library.is_empty() {
+        return 0.0;
+    }
+    let categories = library.categories.len();
+    let stamps: usize = library.categories.iter().map(|c| c.stamps.len()).sum();
+    // ★ `saturating` arithmetic is not available on f32 and is not needed: the
+    // counts come from a directory scan and the cap below bounds the result
+    // whatever they are.
+    #[allow(clippy::cast_precision_loss)]
+    let wanted = categories as f32 * CUSTOM_CATEGORY_PTS
+        + stamps as f32 * CUSTOM_STAMP_ROW_PTS
+        + if library
+            .categories
+            .iter()
+            .any(|c| c.stamps.iter().any(|s| s.dynamic))
+        {
+            CUSTOM_DYNAMIC_NOTE_PTS
+        } else {
+            0.0
+        };
+    wanted.min(CUSTOM_EXTRA_MAX_PTS)
+}
+
 /// The smallest the note window may be, by resize or by squeeze.
 ///
 /// The same floor handed to `Host` as its `min_size`, read from one constant so
@@ -228,7 +371,7 @@ const SCREEN_MARGIN_PTS: f32 = 40.0;
 /// an unreachable negative size is the kind of thing that becomes reachable
 /// when somebody adds a second monitor at 250 % scaling.
 #[must_use]
-fn window_size(screen: egui::Rect, kind: TextAnnotKind) -> egui::Vec2 {
+fn window_size(screen: egui::Rect, kind: TextAnnotKind, custom_extra: f32) -> egui::Vec2 {
     // ★ The height is per-KIND as of 2026-09-06, and the width is not. The
     // three bodies are the same width by construction — a field, a gallery and
     // a chooser all stretch to the window — and two of the three grew
@@ -241,7 +384,12 @@ fn window_size(screen: egui::Rect, kind: TextAnnotKind) -> egui::Vec2 {
     // silently unsized dialog.
     let extra = match kind {
         TextAnnotKind::Sticky => STICKY_EXTRA_PTS,
-        TextAnnotKind::Stamp => STAMP_EXTRA_PTS,
+        // ★ `custom_extra` is added to the stamp's arm and nowhere else. The
+        // caller computes it from the library, and the other two kinds have no
+        // gallery to put one in — see [`custom_extra_pts`] for why counting the
+        // operator's stamps is not the feedback loop this file forbids three
+        // times.
+        TextAnnotKind::Stamp => STAMP_EXTRA_PTS + custom_extra,
         TextAnnotKind::TextBox => 0.0,
     };
     egui::vec2(
@@ -318,6 +466,28 @@ impl TextAnnotDialog {
             // `#[derive]` attribute three files away.
             stamp_size: DEFAULT_STAMP_SIZE,
             icon: DEFAULT_STICKY_ICON,
+            // Scanned here, guarded on the kind — see the field's own note for
+            // why it is per-open rather than per-session, and why the other
+            // two kinds do not pay for it.
+            library: if matches!(kind, TextAnnotKind::Stamp) {
+                let found = crate::stamps::library::scan();
+                crate::diag::trace(|| {
+                    // ui-text-exempt: diagnostic trace, never displayed in the UI
+                    format!(
+                        "custom-stamp-library categories={} stamps={} unreadable={} \
+                         unplaceable={} folder={}",
+                        found.categories.len(),
+                        found.len(),
+                        found.unreadable,
+                        found.unplaceable,
+                        found.folder.is_some()
+                    )
+                });
+                found
+            } else {
+                Library::default()
+            },
+            custom: None,
             accept_requested: false,
             close_requested: false,
             focused_once: false,
@@ -328,7 +498,7 @@ impl TextAnnotDialog {
     /// Draw one frame. Returns `false` when it should close.
     pub fn show(&mut self, ctx: &egui::Context, actions: &mut Vec<Action>) -> bool {
         let screen = ctx.input(egui::InputState::content_rect);
-        let size = window_size(screen, self.kind);
+        let size = window_size(screen, self.kind, custom_extra_pts(&self.library));
         // ★★★ ITS OWN OS WINDOW as of 2026-08-21, AND IT OPENS WHERE IT SAYS —
         // the second half restored 2026-09-04, review finding A16c.
         //
@@ -390,6 +560,7 @@ impl TextAnnotDialog {
                 stamp: self.stamp,
                 stamp_size: self.stamp_size,
                 icon: self.icon.clone(),
+                custom: self.custom.clone(),
             });
             return false;
         }
@@ -715,16 +886,64 @@ impl TextAnnotDialog {
         ui.label(egui::RichText::new(t::stamp_size_bound()).small().weak());
     }
 
-    /// The stamp gallery, for the one kind whose words come from `/Name`.
+    /// **Select a standard stamp**, and clear whatever custom one was live.
+    ///
+    /// # ★★★ Why this is a method and not two lines at the call site
+    ///
+    /// Because the gallery's selection spans **two fields**, and the invariant
+    /// *"exactly one of them is the selection"* is the only thing that stops a
+    /// click on `Approved` from placing the operator's signature. `radio_value`
+    /// cannot express it — it writes one variable and knows nothing about the
+    /// other — so the two writes have to travel together, and a pair of writes
+    /// that must travel together is a function.
+    ///
+    /// ⇒ The payoff is that the invariant becomes **testable without a
+    /// window**. Held at two inline call sites it could only be checked by
+    /// laying out a frame and synthesising a click, which is a driven check's
+    /// job and not a unit test's; held here it is two calls and an assertion.
+    fn select_standard(&mut self, stamp: StampName) {
+        self.stamp = stamp;
+        self.custom = None;
+    }
+
+    /// **Select one of the operator's own stamps.**
+    ///
+    /// ★ [`Self::stamp`] is deliberately left alone rather than reset. It is
+    /// not read on this route — `app::actions::apply` forks on `custom` before
+    /// it looks at anything else — so clearing it would buy nothing, and it
+    /// means a click back onto a standard stamp restores the one he had
+    /// chosen before rather than snapping to `Approved`.
+    fn select_custom(&mut self, stamp: CustomStamp) {
+        self.custom = Some(stamp);
+    }
+
+    /// The stamp gallery: the seven standard stamps, then the operator's own.
+    ///
+    /// # ★★ Why `ui.radio(..).clicked()` and not `ui.radio_value(..)`
+    ///
+    /// Because the selection spans **two** fields. `radio_value` writes one
+    /// variable and knows nothing about the other, so a click on `Approved`
+    /// would set [`Self::stamp`] and leave [`Self::custom`] holding his
+    /// signature — and the commit path reads `custom` first, so the operator
+    /// would have picked `Approved` and got his signature. Silent, and
+    /// reproducible on the first click of a second choice.
+    ///
+    /// ⇒ Each arm therefore writes both halves. The invariant *"exactly one of
+    /// the two is the selection"* is held here, at two call sites, and asserted
+    /// in this module's tests because two call sites is not a type.
     fn gallery(&mut self, ui: &mut Ui) {
         // A vertical list of radios rather than a combo box: seven entries is
         // a set an operator reads at a glance, and a combo would hide six of
         // them behind a click for no saving — this window has the room.
         for stamp in STAMPS {
-            ui.radio_value(&mut self.stamp, *stamp, t::stamp_label(*stamp));
+            let selected = self.custom.is_none() && self.stamp == *stamp;
+            if ui.radio(selected, t::stamp_label(*stamp)).clicked() {
+                self.select_standard(*stamp);
+            }
         }
         ui.add_space(4.0);
         ui.label(egui::RichText::new(t::stamp_bound()).small().weak());
+        let _ = self.custom_stamps(ui);
         // ★ The size chooser is drawn by the gallery rather than by
         // `Self::body`, which is where `Self::icons` is called from. The
         // difference is that `icons` guards on the kind itself and returns
@@ -732,428 +951,146 @@ impl TextAnnotDialog {
         // branch, so a second guard would be a condition that can never be
         // false — and a condition that cannot be false is a line a reader has
         // to prove harmless.
-        self.sizes(ui);
+        //
+        // ★★ It IS guarded on the custom selection, and that guard is R9 rather
+        // than tidiness. The size chooser sets the point size of the **label
+        // text the engine draws** for a standard stamp; a custom stamp has no
+        // label — its words are pixels in somebody's artwork — so the control
+        // governs nothing. R9: an unavailable capability renders **nothing**.
+        // A greyed size box beside his signature would be a control whose
+        // absence of effect he would have to discover.
+        if self.custom.is_none() {
+            self.sizes(ui);
+        }
+    }
+
+    /// **The operator's own stamps**, grouped by the category their collection
+    /// declares — which is the same heading Acrobat's stamp menu shows.
+    ///
+    /// Renders **nothing at all** when he has none: no heading, no empty
+    /// group, no *"you can add your own"* invitation. R9. A machine with no
+    /// Acrobat, or with an Acrobat nobody has ever made a stamp in, gets the
+    /// seven standard entries and no evidence that a second half exists.
+    ///
+    /// # Returns
+    ///
+    /// **Whether anything was drawn.** Not used by the caller, and that is the
+    /// point: it exists so R9 can be asserted by a unit test rather than only
+    /// by a driven check. [`crate::diag::ui_rect`] is write-only and silent
+    /// unless the diagnostic channel is on, so *"the region was not emitted"*
+    /// is not a question a test in this crate can ask — and *"the operator
+    /// sees no custom half"* is exactly the claim R9 makes. A returned `bool`
+    /// is the smallest thing that makes the claim checkable in-process.
+    ///
+    /// ⚠ It is a claim about this function only. That the *gallery* calls it,
+    /// and that a real folder produces a real list, are separate claims and
+    /// the driven check owes both.
+    fn custom_stamps(&mut self, ui: &mut Ui) -> bool {
+        if self.library.is_empty() {
+            return false;
+        }
+        let top = ui.cursor().min;
+        let mut index = 0usize;
+        // ★★ The click is recorded here and applied after the loop, because
+        // the loop holds `&self.library` and `Self::select_custom` needs
+        // `&mut self`. The alternative — indexing `self.library.categories[i]`
+        // so each borrow ends at the statement — reads worse and clones the
+        // label on every frame rather than on the frame he clicks.
+        //
+        // ⇒ The visible consequence is that the radio he just pressed draws
+        // unselected for the remainder of *this* frame. That is not a defect
+        // to work around: a click is an input event, egui repaints on input,
+        // and the next frame is drawn before anything reaches the screen.
+        let mut picked: Option<CustomStamp> = None;
+        for category in &self.library.categories {
+            ui.add_space(6.0);
+            let heading = if category.name.is_empty() {
+                st::gallery_category_unnamed().to_owned()
+            } else {
+                st::gallery_category(&category.name)
+            };
+            // ⚠ Not `RichText::strong()` — D11, and the gate that enforces it.
+            // There is no colour `.strong()` can resolve to that is correct on
+            // both an accent fill and a panel.
+            ui.label(egui::RichText::new(heading).small());
+            for stamp in &category.stamps {
+                let selected = self
+                    .custom
+                    .as_ref()
+                    .is_some_and(|c| c.file == stamp.file && c.page_index == stamp.page_index);
+                let response = ui.radio(selected, &stamp.label);
+                // ★ Keyed on the stamp's ORDINAL, not on its label. The label
+                // is the operator's own words — his signature is called `Ken`
+                // — and a driven check keyed on it would be a check that only
+                // runs on this machine. `library::scan` sorts the file list
+                // and the categories, so the ordinal is stable between runs
+                // for an unchanged folder, which is what a check needs.
+                // ★★★ `ui_rect_visible`, not `ui_rect` — 2026-09-10, and the
+                // reason is a driven failure rather than a preference.
+                //
+                // The first driven run of `custom_stamp_reaches_the_page`
+                // found these three rows published at content y 298, 326 and
+                // 354 inside a window whose body ended at 270. They were
+                // rectangles in the SCROLLED CONTENT, not positions on the
+                // screen, and the harness clicked the first of them — into
+                // the dialog's own drop shadow, twenty-odd points below its
+                // bottom edge. Every number involved was correct and the
+                // operator could not see a single one of his stamps.
+                //
+                // `ui_rect_visible` stays silent when the rect falls outside
+                // its clip rect, which collapses *"was the row published?"*
+                // and *"was the row on the screen?"* into one question — the
+                // same property `REGION_ACCEPT` was given for O171, for the
+                // same reason and one day earlier.
+                crate::diag::ui_rect_visible(
+                    // ui-text-exempt: diagnostic region name, never displayed.
+                    &format!("{REGION_CUSTOM_STAMPS}.{index}"),
+                    response.rect,
+                    ui.clip_rect(),
+                );
+                index += 1;
+                if response.clicked() {
+                    picked = Some(stamp.clone());
+                    crate::diag::trace(|| {
+                        // ui-text-exempt: diagnostic trace, never displayed in the UI
+                        format!(
+                            "custom-stamp-chosen name={} page={} dynamic={}",
+                            stamp.label, stamp.page_index, stamp.dynamic
+                        )
+                    });
+                }
+            }
+        }
+        // Applied before the note below, so the disclosure for a dynamic stamp
+        // appears on the same frame the operator chooses one.
+        if let Some(stamp) = picked {
+            self.select_custom(stamp);
+        }
+        // ★★ The pre-commit disclosure for a dynamic stamp — R8b rule 4's
+        // *affordance* half. It appears only once one is chosen, sits in the
+        // window rather than on the canvas, blocks nothing, and does not tell
+        // him to stop. Its whole job is that the choice is still reversible
+        // while he is reading it.
+        if self.custom.as_ref().is_some_and(|c| c.dynamic) {
+            ui.add_space(4.0);
+            ui.label(
+                egui::RichText::new(st::gallery_dynamic_note())
+                    .small()
+                    .weak(),
+            );
+        }
+        // The enclosing region, taken from the cursor's travel: everything
+        // this function drew, headings included. A check asking *"are his
+        // stamps offered"* reads this one; a check pressing a particular stamp
+        // reads the ordinal-keyed ones above.
+        crate::diag::ui_rect(
+            REGION_CUSTOM_STAMPS,
+            egui::Rect::from_min_max(top, ui.cursor().max),
+        );
+        true
     }
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn rect() -> Rect {
-        Rect {
-            llx: 0.0,
-            lly: 0.0,
-            urx: 100.0,
-            ury: 40.0,
-        }
-    }
-
-    /// **A `RawInput` describing a real screen at a deterministic time.**
-    ///
-    /// Two fields of `RawInput::default()` are wrong for driving this dialog,
-    /// and each cost a debugging round when it was left alone.
-    ///
-    /// **`screen_rect` is `None`.** This dialog sizes itself from
-    /// `content_rect` — `420.min(width - 40)` — so a default input hands
-    /// `egui::Window` a degenerate size and the field inside it a width nothing
-    /// can be focused in. A test that lays out differently from the application
-    /// is measuring a different program.
-    ///
-    /// **`time` is `None`, and egui then fills it from the wall clock.** That
-    /// makes frame timing depend on how loaded the machine is, so a test that
-    /// drives several frames is reproducible when run alone and intermittent
-    /// when run beside a thousand others — which is precisely the flake that
-    /// gets re-run until it is green and then believed. Time is supplied here,
-    /// one 60 Hz tick per frame, so the sequence is the same every time.
-    fn on_screen(frame: u32) -> egui::RawInput {
-        egui::RawInput {
-            screen_rect: Some(egui::Rect::from_min_size(
-                egui::Pos2::ZERO,
-                egui::vec2(1280.0, 800.0),
-            )),
-            time: Some(f64::from(frame) / 60.0),
-            predicted_dt: 1.0 / 60.0,
-            ..Default::default()
-        }
-    }
-
-    /// The application window this dialog's geometry is computed against.
-    fn screen() -> egui::Rect {
-        egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1280.0, 800.0))
-    }
-
-    /// ★★★ **The note window does not open in the corner** — review finding
-    /// A16c.
-    ///
-    /// The whole of the defect in one assertion. `dialogs/textannot.rs`
-    /// computed this position and then wrote `let _ = pos;`, so the dialog was
-    /// placed by `Host`'s corner inset instead — on every open, dozens of times
-    /// in a markup session, because a dialog dismissed that often almost never
-    /// has a remembered position to restore.
-    ///
-    /// The position is asserted as a **relationship** rather than as two
-    /// numbers: centred across the window and between a fifth and half of the
-    /// way down it. Pinning the exact pixels would fail the next time the
-    /// window's size changed for an unrelated reason, which is how a test stops
-    /// being read and starts being edited.
-    #[test]
-    fn the_note_window_does_not_open_in_the_corner() {
-        let screen = screen();
-        let size = window_size(screen, TextAnnotKind::TextBox);
-        let at = opening_position(screen, size);
-
-        assert!(
-            at.x > 0.0 && at.y > 0.0,
-            "the note dialog opened at {at:?} — the top-left corner of the window is \
-             precisely what A16c reported"
-        );
-        let centre_gap = (at.x + size.x / 2.0) - screen.center().x;
-        assert!(
-            centre_gap.abs() < 1.0,
-            "the window must be centred across the application window; its centre is \
-             {centre_gap} pt off"
-        );
-        let down = at.y / screen.height();
-        assert!(
-            (0.2..0.5).contains(&down),
-            "a third of the way down, not half and not the top: got {down}"
-        );
-    }
-
-    /// **The window is squeezed to fit a narrow application window, and never
-    /// below the size it refuses to be dragged to.**
-    ///
-    /// The floor is the half that was missing: the expression used to be
-    /// `420.min(width - 40)` with no `max`, which is **negative** for an
-    /// application window under 40 pt wide. Unreachable today and free to
-    /// close.
-    #[test]
-    fn the_note_window_is_squeezed_but_never_below_its_own_floor() {
-        let roomy = window_size(screen(), TextAnnotKind::TextBox);
-        assert_eq!(roomy, WINDOW_PTS, "a wide window gets the size asked for");
-
-        let narrow = window_size(
-            egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(380.0, 800.0)),
-            TextAnnotKind::TextBox,
-        );
-        assert!(narrow.x < WINDOW_PTS.x, "a narrow window squeezes it");
-        assert!(narrow.x >= MIN_WINDOW_PTS.x);
-
-        let absurd = window_size(
-            egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(10.0, 10.0)),
-            TextAnnotKind::TextBox,
-        );
-        assert!(
-            absurd.x >= MIN_WINDOW_PTS.x,
-            "a window narrower than the margin must not produce a size of {absurd:?}"
-        );
-        assert!(
-            absurd.y >= MIN_WINDOW_PTS.y,
-            "the height floor is the width floor's twin and arrived with it: {absurd:?}"
-        );
-    }
-
-    /// ★★★ **Each kind's window is as tall as its own body needs, and the one
-    /// kind with nothing added did not move.**
-    ///
-    /// Two chooser have been added under two of the three bodies: the sticky's
-    /// icon radios on 2026-09-06, and the stamp's label-size combo on
-    /// 2026-09-10 (engine `Pass 287.0`). Without the extra height the Accept
-    /// button sits below the window's own bottom edge — a dialog the operator
-    /// cannot finish, which is a worse failure than any it replaces.
-    ///
-    /// ★★ **The text-box assertion is the positive control** and it is what
-    /// makes this a test at all. Asserting only *"the sticky and the stamp are
-    /// taller"* passes on a `window_size` that had gone taller for **every**
-    /// kind — the change would be invisible, the text box would grow a strip of
-    /// empty window, and nothing here would say so.
-    ///
-    /// ⚠ **This test was renamed on 2026-09-10, and the old name is the
-    /// lesson.** It was `only_the_sticky_notes_window_grew_for_its_chooser`,
-    /// and it asserted `stamp.y == WINDOW_PTS.y` with the message *"the stamp
-    /// has no chooser and must not have grown"*. That sentence was true when it
-    /// was written and became false the moment the stamp got one. A test whose
-    /// **name and message state a property the program no longer has** is worse
-    /// than no test: it reads as a measurement, and the next person to grep for
-    /// *"which kinds have choosers?"* finds an answer rather than a question.
-    #[test]
-    fn each_kinds_window_is_as_tall_as_its_body_needs() {
-        let screen = screen();
-        let sticky = window_size(screen, TextAnnotKind::Sticky);
-        let boxed = window_size(screen, TextAnnotKind::TextBox);
-        let stamp = window_size(screen, TextAnnotKind::Stamp);
-
-        assert!(
-            sticky.y > boxed.y,
-            "the icon chooser needs room the text box does not: {sticky:?} vs {boxed:?}"
-        );
-        assert!(
-            stamp.y > boxed.y,
-            "the size chooser needs room the text box does not: {stamp:?} vs {boxed:?}"
-        );
-        // ★ The ordering, not merely the inequality. Seven radio rows and a
-        // disclosure is a taller addition than a heading, one combo row and a
-        // disclosure, and if that ever inverts it is because somebody changed
-        // one of the two constants without reading the other's argument.
-        assert!(
-            sticky.y > stamp.y,
-            "seven radio rows must ask more room than one combo: {sticky:?} vs {stamp:?}"
-        );
-        assert_eq!(
-            boxed.y, WINDOW_PTS.y,
-            "the text box has nothing added and must not have grown"
-        );
-        assert_eq!(
-            sticky.x, boxed.x,
-            "only the height is per-kind; a second varying number would have no reason"
-        );
-        assert_eq!(stamp.x, boxed.x, "the width is per-kind for nobody");
-    }
-
-    /// ★★★ **The icon the operator picked reaches the action — and the two
-    /// kinds that have no icon still carry the default rather than a
-    /// contradiction.**
-    ///
-    /// The whole placement half of `Pass 253.2` in one assertion: before this,
-    /// every sticky note pdfcer ever authored carried `/Note` because the field
-    /// did not exist.
-    ///
-    /// ★★ The `stamp` assertion beside it is the **positive control for the
-    /// route**, not decoration. `StampName` already travelled this exact path,
-    /// so asserting the two together is what says the icon was added *to* a
-    /// working carrier rather than replacing one — and if a later edit dropped
-    /// either field out of the `Action::CommitTextAnnot` literal, the surviving
-    /// assertion would still be about a live route.
-    #[test]
-    fn the_chosen_icon_reaches_the_commit_action() {
-        let mut d = TextAnnotDialog::open(3, TextAnnotKind::Sticky, rect());
-        assert_eq!(
-            d.icon, DEFAULT_STICKY_ICON,
-            "a fresh chooser opens on Acrobat's default, not the engine's"
-        );
-        d.icon = StickyIcon::Key;
-        d.stamp = StampName::Final;
-        d.stamp_size = StampSize::Points(24);
-        d.text = "note".to_owned();
-        d.accept_requested = true;
-
-        let ctx = egui::Context::default();
-        let mut actions = Vec::new();
-        let _ = ctx.run_ui(on_screen(0), |ui| {
-            d.show(ui.ctx(), &mut actions);
-        });
-
-        let Some(Action::CommitTextAnnot {
-            icon,
-            stamp,
-            stamp_size,
-            ..
-        }) = actions.first()
-        else {
-            panic!("Accept must raise a commit, got {actions:?}");
-        };
-        assert_eq!(*icon, StickyIcon::Key, "the operator's icon did not travel");
-        assert_eq!(
-            *stamp,
-            StampName::Final,
-            "the field the icon was modelled on must still travel too"
-        );
-        // ☑ The third operand, added 2026-09-10 with the size chooser, and it
-        // is asserted at a NON-default value for the reason the two above are:
-        // a field left at its default travels identically whether it is carried
-        // or silently reconstructed at the far end.
-        assert_eq!(
-            *stamp_size,
-            StampSize::Points(24),
-            "the operator's label size did not travel"
-        );
-    }
-
-    /// A fresh dialog carries no words and every chooser's stated default.
-    ///
-    /// ★★ **The size assertion is the load-bearing one**, and it is not merely
-    /// completeness. `StampSize`'s own header argues that a fresh gallery must
-    /// offer the size DERIVED from the drawn box — the behaviour of every build
-    /// before engine `Pass 287.0` — rather than the engine's flat 12 pt,
-    /// because adopting the engine default would have shrunk every stamp on the
-    /// operator's drawings as a side effect of a fix he asked for. That
-    /// argument is only enforced if something asserts the value.
-    #[test]
-    fn a_fresh_dialog_is_empty_and_defaulted() {
-        let d = TextAnnotDialog::open(0, TextAnnotKind::TextBox, rect());
-        assert!(d.text.is_empty(), "no words are invented for the operator");
-        assert_eq!(d.stamp, DEFAULT_STAMP);
-        assert_eq!(d.icon, DEFAULT_STICKY_ICON);
-        assert_eq!(
-            d.stamp_size,
-            StampSize::FitTheBox,
-            "a fresh gallery must offer the size the drawn box implies, \
-             not the engine's flat 12 pt"
-        );
-        assert!(!d.accept_requested);
-    }
-
-    /// ★ The page and the rect are captured, not re-read.
-    ///
-    /// The property that stops a page change under an open window redirecting
-    /// the annotation. Asserted on the stored values because there is nothing
-    /// else to assert it on — the whole point is that nothing re-reads them.
-    #[test]
-    fn the_page_and_rect_are_captured_at_open() {
-        let d = TextAnnotDialog::open(7, TextAnnotKind::Sticky, rect());
-        assert_eq!(d.page, 7);
-        assert!((d.rect.urx - 100.0).abs() < f64::EPSILON);
-    }
-
-    /// ★ Accept is live for a stamp with no typed text, and dead for the
-    /// others.
-    ///
-    /// The readiness rule, which is the gallery exception stated once more at
-    /// the control that depends on it. A stamp whose Accept required typing
-    /// could never be authored; a callout whose Accept did not would author an
-    /// empty box.
-    #[test]
-    fn readiness_follows_the_gallery_rule() {
-        let ready = |d: &TextAnnotDialog| d.kind.uses_gallery() || !d.text.trim().is_empty();
-
-        let stamp = TextAnnotDialog::open(0, TextAnnotKind::Stamp, rect());
-        assert!(ready(&stamp), "a stamp needs no typed words");
-
-        let mut box_ = TextAnnotDialog::open(0, TextAnnotKind::TextBox, rect());
-        assert!(!ready(&box_), "an empty callout must not be authorable");
-        box_.text = "   ".to_owned();
-        assert!(!ready(&box_), "whitespace is not words");
-        box_.text = "note".to_owned();
-        assert!(ready(&box_));
-    }
-
-    /// **The oracle for *"it doesn't type anything in the box when I type"*.**
-    ///
-    /// Every test above asserts on the struct's fields, which is exactly the
-    /// blind spot `DEFECTS.md` D1 was: they all pass on a build whose window
-    /// accepts no keystrokes, because none of them ever draws one. This drives
-    /// a real `egui::Context` through two frames — one to build the field and
-    /// take its one-shot focus, one carrying a real `Event::Text` — and asserts
-    /// the words arrived.
-    #[test]
-    fn typing_into_the_open_window_reaches_the_draft() {
-        let ctx = egui::Context::default();
-        let mut d = TextAnnotDialog::open(0, TextAnnotKind::TextBox, rect());
-        let mut actions = Vec::new();
-
-        // Frame 0: the field is created and requests focus.
-        let _ = ctx.run_ui(on_screen(0), |ui| {
-            d.show(ui.ctx(), &mut actions);
-        });
-
-        // Frame 1: a real keystroke, the way a keyboard delivers one.
-        let mut input = on_screen(1);
-        input.events.push(egui::Event::Text("h".to_owned()));
-        let _ = ctx.run_ui(input, |ui| {
-            d.show(ui.ctx(), &mut actions);
-        });
-
-        assert_eq!(d.text, "h", "the window took the keystroke");
-    }
-
-    /// ★★ **The regression test: focus LOST on the opening frame is re-taken.**
-    ///
-    /// The defect this replaced latched on having *asked* for focus rather than
-    /// on holding it, so a request that lost its frame was never retried and
-    /// the field sat there looking typeable while every keystroke went
-    /// elsewhere. That is unreachable in a bare `egui::Context` — the request
-    /// always wins when nothing competes — which is why the test above passed
-    /// on the broken build and why this one takes the focus away by hand.
-    ///
-    /// The theft models what the real frame does: the dialog's first draw is
-    /// the frame AFTER the gesture that opened it, so the pointer release that
-    /// finished the drag is still being resolved around the request.
-    #[test]
-    fn focus_stolen_on_the_opening_frame_is_taken_back() {
-        let ctx = egui::Context::default();
-        let mut d = TextAnnotDialog::open(0, TextAnnotKind::TextBox, rect());
-        let mut actions = Vec::new();
-        let thief = egui::Id::new("whatever-won-the-release");
-
-        // Frame 0: the dialog draws and asks for focus...
-        let _ = ctx.run_ui(on_screen(0), |ui| {
-            d.show(ui.ctx(), &mut actions);
-        });
-        // ...and loses it, the way a release being resolved would take it.
-        ctx.memory_mut(|m| m.request_focus(thief));
-
-        // The retry frames. Bounded by the budget rather than assuming one
-        // frame is enough: when two widgets ask for focus in the same pass egui
-        // keeps the earlier request, so the field can need a second attempt to
-        // win it back. The claim under test is *"within the budget"*, which is
-        // what the production code promises - not *"on the very next frame"*.
-        for frame in 1..=u32::from(FOCUS_ATTEMPT_FRAMES) {
-            let _ = ctx.run_ui(on_screen(frame), |ui| {
-                d.show(ui.ctx(), &mut actions);
-            });
-        }
-
-        // The keystroke, which is the assertion that matters -- "focus was
-        // requested" is the very claim that shipped broken.
-        let mut input = on_screen(u32::from(FOCUS_ATTEMPT_FRAMES) + 1);
-        input.events.push(egui::Event::Text("h".to_owned()));
-        let _ = ctx.run_ui(input, |ui| {
-            d.show(ui.ctx(), &mut actions);
-        });
-
-        assert_eq!(
-            d.text, "h",
-            "the field lost focus on its opening frame and never took it back, so the operator \
-             types into a window that is ignoring them"
-        );
-    }
-
-    /// ★ ...and the retry is BOUNDED, so Cancel stays clickable.
-    ///
-    /// The objection the original one-shot latch was written to answer, and it
-    /// is still correct: a field that asks for focus every frame takes it back
-    /// from whatever the operator clicked, and a window that cannot be
-    /// dismissed is worse than one that cannot be typed into.
-    ///
-    /// The competitor is a **real drawn button**, not a bare `Id`. egui drops
-    /// focus for an id no widget registered that frame, so focusing an invented
-    /// id proves nothing about who won — it only proves egui tidied up.
-    #[test]
-    fn the_focus_retry_gives_up_so_another_control_can_hold_it() {
-        let ctx = egui::Context::default();
-        let mut d = TextAnnotDialog::open(0, TextAnnotKind::TextBox, rect());
-        let mut actions = Vec::new();
-        let mut other = None;
-
-        // A real button, drawn every frame beside the dialog, taking focus the
-        // way a control the operator clicked would. Its id is read back from
-        // the `Response` rather than invented, so the assertion names the
-        // widget egui actually registered.
-        let mut n = 0;
-        let mut frame = |steal: bool, d: &mut TextAnnotDialog, other: &mut Option<egui::Id>| {
-            n += 1;
-            let _ = ctx.run_ui(on_screen(n), |ui| {
-                d.show(ui.ctx(), &mut actions);
-                let r = ui.button("Cancel");
-                *other = Some(r.id);
-                if steal {
-                    r.request_focus();
-                }
-            });
-        };
-
-        // Outlast the budget, taking focus back every single frame.
-        for _ in 0..(FOCUS_ATTEMPT_FRAMES as usize + 2) {
-            frame(true, &mut d, &mut other);
-        }
-        // One more frame with nobody competing: the field must NOT grab it.
-        frame(false, &mut d, &mut other);
-
-        assert_eq!(
-            ctx.memory(|m| m.focused()),
-            other,
-            "the field kept grabbing focus back, so nothing else in the window can be used"
-        );
-    }
-}
+#[path = "textannot_tests.rs"]
+mod tests;

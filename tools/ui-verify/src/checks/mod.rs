@@ -831,6 +831,11 @@ pub mod chords;
 /// have until `Pass 154.0`. Its header carries why link 3 of the chain — a
 /// widget raising the action — is unreachable by any unit test.
 pub mod comment_note;
+/// ★★★ **O172's placing half, driven** — one of the operator's OWN stamps
+/// is picked out of the gallery with the pointer and lands on a drawing. The
+/// collection is PLANTED into a scratch `%APPDATA%`, so the check is neither
+/// vacuous on a machine with no stamps nor dependent on his own folder.
+pub mod custom_stamp;
 /// ★★ **O173's ask-once offer**, and the only check in the suite that has to
 /// UNDO the sandbox's own seed before it can measure anything — see its header.
 pub mod default_app_offer;

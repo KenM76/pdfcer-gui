@@ -1327,7 +1327,29 @@ pub enum Action {
         /// and carried unconditionally rather than as an `Option` because a
         /// gallery always has a selection — there is no "no stamp chosen"
         /// state for the dialog to be in.
+        ///
+        /// ⚠ **Read only when [`Self::CommitTextAnnot::custom`] is `None`.**
         stamp: pdfcer_core::annot_author::StampName,
+        /// ★★★ **One of the operator's OWN stamps**, or `None` for a standard
+        /// one (`OPERATOR_REQUESTS.md` O172, engine `Pass 293.0`).
+        ///
+        /// `Some` overrides `stamp`, and the whole selection model is that
+        /// sentence: the gallery's two radio groups keep exactly one of the
+        /// two live, and `crate::app::actions::apply`'s arm reads this first.
+        ///
+        /// ★ An `Option<CustomStamp>` beside `stamp` rather than a `Custom`
+        /// arm added to `StampName`, because `StampName` is the engine's
+        /// spelling of §12.5.6.12's **closed vocabulary** — widening it here
+        /// would be this shell asserting something untrue about the standard.
+        ///
+        /// ★ It carries the collection's **path and page index**, not a
+        /// reference into the library that produced it. The library is
+        /// rescanned every time the dialog opens, so a borrow would either
+        /// pin a scan for the life of the queue or go stale between the click
+        /// and the drain — and the failure mode of the stale version is that
+        /// he places `Ken` and gets `Savy` because a file landed in Acrobat's
+        /// stamps folder in between.
+        custom: Option<crate::stamps::library::CustomStamp>,
         /// ☑ **How big the stamp's label is** (engine `Pass 287.0`), picked
         /// in the same dialog. Ignored by the other two kinds and carried
         /// unconditionally, for `stamp`'s reason exactly.

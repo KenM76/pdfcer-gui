@@ -73,23 +73,34 @@
 //! All three are reported **off-canvas**, in the dialog that is about to write
 //! the file, before it is written. None of them marks anything on a page.
 //!
-//! ## What is NOT here, and where it went instead
+//! ## ★★★ Placing a custom stamp — was NOT here, and now is
 //!
-//! **Placing a custom stamp on a drawing.** A custom stamp's artwork is a
-//! *page*, and the engine has no verb that draws one page's artwork onto
-//! another. Filed as
-//! `request_a_custom_stamp_can_be_read_and_authored_but_never_placed_on_a_page.md`.
-//! ★ A workaround exists — rasterise the stamp page and place it as an image —
-//! and is **declined**: a bitmap stamp on a vector CAD drawing does not
-//! survive zooming, inflates the file, and is not what Acrobat writes, which
-//! fails the operator's actual requirement. `ENGINE_BACKLOG.md`'s `Pass 288.0`
-//! row carries the full argument.
+//! This section used to read *"Placing a custom stamp on a drawing … the
+//! engine has no verb that draws one page's artwork onto another"*, and it was
+//! true when written. **`pdfcer-core` `Pass 293.0` shipped
+//! `EditSession::place_page_artwork`** in answer to this project's own filed
+//! request, and [`library`] is the half above it: which stamps exist, what
+//! they are called, and which page of which file each one is.
+//!
+//! ⇒ The eighth recurrence of this project's most expensive pattern — *a
+//! sentence about what the engine cannot do is a dated citation with a shelf
+//! life measured in hours*. The workaround this paragraph used to record
+//! (rasterise the stamp page and place it as an image) was **declined** at the
+//! time, on the grounds that a bitmap stamp on a vector CAD drawing does not
+//! survive zooming and is not what Acrobat writes. Declining it is what made
+//! the request worth filing, and the engine agreed: `place_page_artwork`
+//! imports the artwork as vector content. `ENGINE_BACKLOG.md`'s `Pass 288.0`
+//! and `Pass 293.0` rows carry the full argument.
 
 use pdfcer_core::stamp_file::{StampCollection, StampEntry};
 
 /// Where Acrobat looks for the operator's own stamps, so the picker can
 /// suggest it. Read-only discovery; it creates nothing.
 pub mod folder;
+/// ★ **The operator's own stamps, found and offered** — O172's half, and the
+/// answer to the "What is NOT here" note below, which was true until engine
+/// `Pass 293.0` shipped `place_page_artwork`.
+pub mod library;
 /// Turning a [`Plan`] into the bytes of a file Acrobat will load.
 pub mod write;
 

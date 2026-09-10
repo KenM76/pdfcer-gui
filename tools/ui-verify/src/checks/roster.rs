@@ -829,6 +829,18 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // now reads the tool's state before acting. A driven failure is a claim
         // about the check too.
         Box::new(stamp_dialog_reopen::TheSecondStampDialogStillHasItsButtons),
+        // ★★★ O172, 2026-09-10 — *"add our own custom stamps and use them"*.
+        // Beside the two checks above because it repeats their route as far as
+        // the dialog and then does the thing neither does: reads the gallery's
+        // CUSTOM half, presses one of the operator's own stamps, and follows
+        // the artwork all the way onto the page.
+        //
+        // ★ It plants `fixtures/stamp-collection.pdf` into a scratch
+        // `%APPDATA%` tree and redirects the child process's APPDATA at it.
+        // The obvious alternative — read his real Acrobat folder, SKIP when
+        // empty — is worthless on any other machine and goes vacuous on his
+        // own the day he deletes a stamp. A SKIP is not red.
+        Box::new(custom_stamp::CustomStampReachesThePage),
         Box::new(text_annot::TextAnnotPlacesAndAuthors),
         Box::new(text_annot_focus::TextAnnotTakesTheKeyboardUnclicked),
         Box::new(text_box::TextBoxTakesAParagraph),

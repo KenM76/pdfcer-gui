@@ -648,3 +648,160 @@ fn a_paste_the_mode_refuses_reaches_the_bar_through_the_dispatcher() {
          reaches only the trace is a keystroke that does nothing and says nothing"
     );
 }
+
+// =======================================================================
+// O172 — the operator's own stamps, and the gap this file had all along
+// =======================================================================
+
+/// ★★★ **A compile-time tripwire: a new `Declined` variant cannot be added
+/// without somebody reading this file.**
+///
+/// # The gap it closes, which is this project's most-repeated defect shape
+///
+/// Two tests above — [`no_two_declines_share_a_sentence`] and
+/// [`a_mode_refusal_reads_like_no_other_decline`] — assert that declines do not
+/// read alike, and both do it against a **hand-written list**. Between them
+/// they name four of the enum's variants. The other twenty-five are invisible
+/// to the checks built to find exactly this, and the count still adds up: the
+/// tests pass, the suite grows, and a new decline that paraphrases an old one
+/// ships without a single thing going red.
+///
+/// This function has no assertions and never runs. Its `match` has **no `_`
+/// arm**, so the compiler refuses the build the moment a variant is added, and
+/// the author who added it is standing in the file that says what to do.
+///
+/// # What to do when this stops compiling
+///
+/// 1. Add the new variant to [`no_two_declines_share_a_sentence`]'s list, with
+///    a representative payload if it carries one.
+/// 2. Add its arm here.
+///
+/// # ⚠ What this is NOT
+///
+/// It is not the census. The honest state, written down rather than implied:
+/// **four of twenty-nine variants are compared for a distinct sentence**, plus
+/// the six clipboard-mode refusals against those four. Building the full
+/// pairwise census needs one representative of each of the eight payload enums
+/// and would very likely surface a genuine collision or two — which is worth
+/// doing and is not worth doing inside O172's commit, because a collision is a
+/// **wording decision** and this file is not where wording decisions are made.
+/// Filed as its own job rather than left as an intention.
+#[allow(dead_code)]
+fn a_new_decline_cannot_be_added_unnoticed(declined: Declined) {
+    match declined {
+        Declined::NothingToFrame
+        | Declined::CanvasNotDrawn
+        | Declined::SaveFailed
+        | Declined::InsideForm
+        | Declined::TextStyle(_)
+        | Declined::Rotate(_)
+        | Declined::Unshare(_)
+        | Declined::SettingsNotSaved
+        | Declined::FieldNameTaken
+        | Declined::WidgetHasNoName
+        | Declined::FlattenCertified
+        | Declined::FieldDeleteRefused
+        | Declined::NodeToolNeedsEditMode
+        | Declined::VertexEditRefused(_)
+        | Declined::MarkupNodeRefused(_)
+        | Declined::FieldGroupPreviewRefused
+        | Declined::FieldGroupDeleteRefused
+        | Declined::CustomStampUnavailable(_)
+        | Declined::BookmarkMoveIntoOwnSubtree
+        | Declined::BookmarkMoveRefused
+        | Declined::NothingToUndo
+        | Declined::NothingToRedo
+        | Declined::EditRefused
+        | Declined::Reflow(_)
+        | Declined::EnterCannotSplit
+        | Declined::ClipboardMode(_)
+        | Declined::EditText(_)
+        // ★ These two are STRUCT variants, and they are why this tripwire
+        // earned its place before it had ever fired in anger: the first draft
+        // of the list above was built by a regular expression over the enum,
+        // and the regular expression matched `Name(` and `Name,` and missed
+        // both of these. The compiler found them in the first build. A
+        // hand-written list is wrong the day it is written, not later.
+        | Declined::ResizeNotRebuildable { .. }
+        | Declined::ResizeFixedSizeMarker { .. } => {}
+    }
+}
+
+/// **The two custom-stamp declines are two sentences, and neither is the
+/// engine floor's** — `OPERATOR_REQUESTS.md` O172.
+///
+/// ★ The comparison against [`Declined::EditRefused`] is the one that matters,
+/// because that floor is precisely what these two replace. Before this route
+/// existed, a stamp whose collection had moved reached the operator as *"that
+/// change was refused"* — true, and useless. If a later edit paraphrased the
+/// floor here, the feature would have been quietly undone while reading as
+/// though it were still there.
+///
+/// ★ And against each other, because they are the pair most at risk: both are
+/// about a stamp that is not where it was, both end by telling him to reopen
+/// the window, and the whole reason there are two is that one means the FILE is
+/// gone and the other means the file was REWRITTEN.
+#[test]
+fn the_custom_stamp_declines_say_two_different_things() {
+    use crate::text::stamps::CustomStampUnavailable;
+
+    let unreadable = Declined::CustomStampUnavailable(CustomStampUnavailable::Unreadable);
+    let gone = Declined::CustomStampUnavailable(CustomStampUnavailable::PageGone);
+
+    assert_ne!(
+        unreadable.line(),
+        gone.line(),
+        "a missing collection file and a rewritten one are different findings"
+    );
+    for mine in [unreadable, gone] {
+        assert_ne!(
+            mine.line(),
+            Declined::EditRefused.line(),
+            "{mine:?} fell back to the floor sentence it exists to replace"
+        );
+    }
+}
+
+/// **Neither custom-stamp decline claims anything was edited.**
+///
+/// R8b rule 4's honesty clause applied to prose rather than to pixels: the
+/// gesture was a drag on the page, nothing was placed, and the drawing is
+/// exactly as it was. A sentence beginning *"About your last edit"* — which is
+/// where `record_note` puts things, and where these two lived for an afternoon
+/// — would be a confident small lie.
+///
+/// ★ Asserted on the CHANNEL rather than on the words. Checking that the string
+/// avoids the phrase "last edit" would pass on a rewrite that said "your stamp
+/// was added but"; checking that the decline slot holds it proves it renders
+/// under `⊗`, which is the thing that is actually true.
+#[test]
+fn a_refused_stamp_is_not_reported_as_an_edit() {
+    use crate::text::stamps::CustomStampUnavailable;
+
+    retire();
+    record_custom_stamp_unavailable(CustomStampUnavailable::PageGone);
+    assert_eq!(
+        recorded_for_test(),
+        Some(Declined::CustomStampUnavailable(
+            CustomStampUnavailable::PageGone
+        )),
+        "the decline channel is the one that means `nothing happened`"
+    );
+    // …and it is still true on the next frame, because no edit moved past it.
+    // Every argument is the one that would retire some OTHER decline: a
+    // framable selection, a drawn canvas, a full history, a selection inside a
+    // form. None of them touches a stamps folder, and that is the assertion.
+    assert!(
+        Declined::CustomStampUnavailable(CustomStampUnavailable::PageGone).still_true(
+            true,
+            true,
+            History {
+                can_undo: true,
+                can_redo: true,
+            },
+            true,
+        ),
+        "a decline about a stamps folder has no live predicate to go stale on"
+    );
+    retire();
+}

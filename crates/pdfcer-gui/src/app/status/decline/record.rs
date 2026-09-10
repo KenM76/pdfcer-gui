@@ -155,6 +155,24 @@ pub(crate) fn record_field_group_delete_refused() {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::FieldGroupDeleteRefused));
 }
 
+/// Record that **one of the operator's own stamps could not be placed** —
+/// [`Declined::CustomStampUnavailable`], `OPERATOR_REQUESTS.md` O172.
+///
+/// ★★ Called from two places in `crate::app::actions::customstamp`, one on
+/// each side of the funnel: the collection is opened *before* `vector_edit`
+/// (a `DocumentView` must outlive the borrow), and the page is asked for
+/// *inside* it. That is why this recorder takes a reason rather than being
+/// split in two — the two call sites are an artefact of where a borrow ends,
+/// not two different things to say.
+///
+/// ★ It is the *verb speaking first*, in `vector_edit`'s sense: the inner call
+/// records this and then returns the engine's error, so the funnel's floor
+/// yields to it and the operator gets the sentence that names a remedy instead
+/// of `Declined::EditRefused`'s floor, which names none.
+pub(crate) fn record_custom_stamp_unavailable(why: crate::text::stamps::CustomStampUnavailable) {
+    LAST.with_borrow_mut(|slot| *slot = Some(Declined::CustomStampUnavailable(why)));
+}
+
 /// Record that the **Points tool** was asked for in a mode that cannot change
 /// page content — [`Declined::NodeToolNeedsEditMode`].
 ///

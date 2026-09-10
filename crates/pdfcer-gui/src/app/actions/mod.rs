@@ -91,6 +91,14 @@ pub mod bookmarks;
 /// this vocabulary with a type of its own. Re-exported below, so no call site
 /// learns that it moved.
 mod chrome;
+/// **Placing one of the operator's OWN stamps** — O172's second half.
+///
+/// Beside [`textannot`] because both end in a `/Stamp` annotation, and NOT
+/// inside it because a standard stamp is a *name* and a custom stamp is a
+/// *document*: this one opens a second PDF off his disk, imports an object
+/// graph, and comes back with four disclosures about what did and did not
+/// travel. Its header carries the argument in full.
+mod customstamp;
 /// Extracting pages into a new file — the one page verb that writes a file
 /// rather than changing the open document. Split out of `pages` under R2 on
 /// 2026-08-28; its header carries the seam.

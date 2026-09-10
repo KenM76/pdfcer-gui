@@ -634,9 +634,22 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             "the removal's funnel line vanished between two reads of the same trace file",
         ));
     };
-    if funnel.get("disclosures") == Some("0") {
+    // ⚠ `Some("none")`, NOT `Some("0")` - corrected 2026-09-10.
+    //
+    // The funnel writes the disclosure SENTENCES, joined by ` | `, and the
+    // literal word `none` when there are none. It has never written a count, so
+    // the condition this line used to carry - `== Some("0")` - could not become
+    // true on any build, and the assertion it guards had been silently green
+    // over every possible outcome since it was written. Found while writing
+    // `custom_stamp`, whose first version made the same mistake in the other
+    // direction and read the field with `get_usize`.
+    //
+    // ★ The standing lesson, and this is another instance of it: **a check
+    // that cannot fail is not evidence.** Falsify a new condition against a real
+    // trace line before quoting it as green.
+    if funnel.get("disclosures") == Some("none") {
         return Ok(Some(format!(
-            "★ the corner was removed and NOTHING WAS SAID: `{}` carries `disclosures=0`. The \
+            "★ the corner was removed and NOTHING WAS SAID: `{}` carries `disclosures=none`. The \
              shape changed and so did the number it prints, and the operator cannot recover the \
              old value — the geometry it was measured from is gone. \
              `crate::text::measure::vertex_removed` is the sentence and \
