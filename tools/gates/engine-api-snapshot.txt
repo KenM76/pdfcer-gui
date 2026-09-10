@@ -41,11 +41,12 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 5b8ec6105511e30f5ac8b868f04e0ea94c6f87ce
+# baseline: 369d4de98fb571e62c99cd0c7551d26732f71cd6
 # crates: pdfcer-core pdfcer-render pdfcer-print
-# items: 7363
+# items: 7368
 # ---------------------------------------------------------------------------
 
+exempt pdfcer-core struct pdfcer_core::xref::HybridPartition -- xref-internal plumbing that is public only because `pub mod xref;` publishes the whole module. It exists to answer ONE question, and the writer is the only thing that asks it: `is_reproducible()` gates `writer::save`'s full rewrite, and `Document`'s own field holding it is PRIVATE, read at writer/save.rs and nowhere else. The single public accessor `Document::hybrid_partition()` hands out a reference to it, so this shell COULD hold one -- and would learn nothing an operator can act on, because the only outcome that reaches him is already carried by `WriteError::HybridFullRewrite`, which this shell renders today (O157). Its two fields are a set of hidden object numbers and a did-the-XRefStm-parse flag: file-structure facts about SS 7.5.8.4, not document facts. DELETE THIS LINE if a surface ever needs to say WHICH objects a hybrid file hides -- that is the one thing in here the refusal variant does not carry.
 exempt pdfcer-render field pdfcer_render::font::RenderPolicy::stroke_display -- RenderPolicy is the interpreter's INTERNAL derived bundle, not a shell-facing type: every one of its fields' own doc comments reads "See RenderOptions::<the same name>", and the engine builds a RenderPolicy from the RenderOptions a caller hands it. This shell sets RenderOptions::stroke_display (View > Display > Line weights, O137) and constructs no RenderPolicy anywhere in the workspace. Exempted PER FIELD rather than wildcarded for the whole type, deliberately: every future RenderPolicy field mirrors a RenderOptions field this shell probably DOES want, so each one should cost one line and one look.
 
 pdfcer-core const pdfcer_core::HEADER_SCAN_WINDOW
@@ -1819,6 +1820,9 @@ pdfcer-core field pdfcer_core::redact::RedactionReport::overlay_text_burned
 pdfcer-core field pdfcer_core::redact::RedactionReport::overlay_transparent
 pdfcer-core field pdfcer_core::redact::RedactionReport::pages_redacted
 pdfcer-core field pdfcer_core::redact::RedactionReport::redacted_text
+pdfcer-core field pdfcer_core::redact::RedactionReport::residual_content_streams_blanked
+pdfcer-core field pdfcer_core::redact::RedactionReport::residual_sweep_entries_scrubbed
+pdfcer-core field pdfcer_core::redact::RedactionReport::residual_sweep_objects_scrubbed
 pdfcer-core field pdfcer_core::redact::RedactionReport::shadings_intersecting
 pdfcer-core field pdfcer_core::redact::RedactionReport::show_operators_edited
 pdfcer-core field pdfcer_core::redact::RedactionReport::vector_clips_kept
@@ -3267,6 +3271,7 @@ pdfcer-core method pdfcer_core::edit::EditSession::rotate_dimension
 pdfcer-core method pdfcer_core::edit::EditSession::rotate_page_by
 pdfcer-core method pdfcer_core::edit::EditSession::rotate_pages
 pdfcer-core method pdfcer_core::edit::EditSession::rotate_widget
+pdfcer-core method pdfcer_core::edit::EditSession::run_repertoire
 pdfcer-core method pdfcer_core::edit::EditSession::save_applying_redaction
 pdfcer-core method pdfcer_core::edit::EditSession::search_and_mark_redactions
 pdfcer-core method pdfcer_core::edit::EditSession::search_and_mark_redactions_styled
@@ -5649,6 +5654,7 @@ pdfcer-core variant pdfcer_core::recover::TrailerSource::SynthesizedFromCatalog
 pdfcer-core variant pdfcer_core::recover::TrailerSource::TrailerKeyword
 pdfcer-core variant pdfcer_core::recover::TrailerSource::XrefStreamDict
 pdfcer-core variant pdfcer_core::redact::CarrierAction::Absent
+pdfcer-core variant pdfcer_core::redact::CarrierAction::CheckedClean
 pdfcer-core variant pdfcer_core::redact::CarrierAction::DisclosedNotScrubbed
 pdfcer-core variant pdfcer_core::redact::CarrierAction::DroppedByRewrite
 pdfcer-core variant pdfcer_core::redact::CarrierAction::Scrubbed

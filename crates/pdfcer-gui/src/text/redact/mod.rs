@@ -498,10 +498,42 @@ pub fn verified_line(strings_checked: usize) -> String {
 /// [`crate::redact::proof::MIN_VERIFIABLE_LEN`] is the four this names. A proof
 /// that quietly skipped these would be claiming a completeness it does not
 /// have.
+///
+/// # ★★★ A second clause was cut on 2026-09-09, hours after it was written
+///
+/// It read: *"Some producers draw text one letter at a time; on such a file
+/// every removed piece is one character and this proof cannot see it at all."*
+/// That was **measured, true, and operator-visible** when it shipped this
+/// morning — his 24-page Ghostscript drawing reported `["3", ".", "5", " ",
+/// "T", "Y", "P"]` for one mark over `3.5 TYP`, seven needles all under the
+/// floor, so the proof genuinely saw nothing.
+///
+/// It became false at engine `369d4de` (`Pass 286.0`, the same day), which is
+/// the rev this repository is pinned to. `RedactionReport::redacted_text` is
+/// now **one entry per `/Redact` mark**, carrying the concatenation of what
+/// that mark removed — `["3.5 TYP"]` — so the per-glyph producer produces
+/// ordinary words and clears the floor like any other file. The engine
+/// volunteered that this *also* repaired `carrier_info` and the residual sweep
+/// on such files, for the same reason.
+///
+/// ⇒ The class again, and this is the fastest turn of it this project has
+/// seen: **a sentence describing an external limitation is a dated citation,
+/// not a verdict.** Nothing compiled differently when the limitation lifted,
+/// no test went red, and every gate stayed green — the shelf life of this one
+/// was about nine hours. `mark_covers_image` below carries the same scar from
+/// 2026-09-03 and the same argument.
+///
+/// ★ **The first clause stays, and it is not a leftover.** A mark that covers
+/// a genuinely short string — a single dimension `3`, an initial, a room
+/// number — still yields a genuinely short needle, and no grouping in the
+/// engine changes that. The engine said so in the same breath: *"a mark
+/// covering a single character still yields a single character, and no
+/// grouping changes that. Belt and braces is the right posture on the one
+/// operation where a false 'clean' is an incident."*
 #[must_use]
 pub fn verification_limit_line(too_short: usize) -> String {
     format!(
-        "{too_short} removed piece(s) were too short (under 4 characters) for any search to say anything useful — a single letter or digit is on every page of every document — so pdfcer could not verify those. Some producers draw text one letter at a time; on such a file every removed piece is one character and this proof cannot see it at all. The removal itself is still reported above."
+        "{too_short} removed piece(s) were too short (under 4 characters) for any search to say anything useful — a single letter or digit is on every page of every document — so pdfcer could not verify those. The removal itself is still reported above."
     )
 }
 
@@ -557,13 +589,25 @@ pub fn residual_heading() -> &'static str {
     "⚠  Read before continuing — pdfcer could not remove, or could not rule out, the following:"
 }
 
-/// One residual line for a carrier the engine detected and could not scrub.
-#[must_use]
-pub fn residual_carrier_line(carrier: &str) -> String {
-    format!(
-        "⚠  {carrier}: present in this document, and pdfcer cannot scrub it in this build. Whatever it holds will still be in the saved file — check it by hand."
-    )
-}
+// ---------------------------------------------------------------------------
+// The carriers — every place a copy of the removed text can hide
+//
+// A module of its own since 2026-09-09, added with the strings that surface
+// `pdfcer-core` `369d4de`'s `CarrierAction::CheckedClean` and its three
+// whole-file-sweep counters. `residual_carrier_line` moved into it rather than
+// staying here beside `residual_heading`, because the seam is "sentences that
+// name a carrier" and leaving the one existing member behind would have made
+// the split about what was added most recently — the exact mistake
+// `destination`'s header argues against.
+//
+// `pub use` rather than a `carriers::` path at every call site, so the split is
+// invisible to consumers and the catalog keeps one flat namespace.
+// ---------------------------------------------------------------------------
+mod carriers;
+pub use carriers::{
+    carrier_name, checked_clean_line, engine_notes_heading, engine_notes_lead,
+    residual_carrier_line, residual_sweep_line, sweep_scrubbed_line,
+};
 
 /// ★ **One residual line for a removed string that still occurs somewhere in
 /// the saved file while occurring in nothing the document draws.**

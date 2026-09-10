@@ -402,16 +402,39 @@ pub(super) fn survivors_in_content_streams(
 /// wrong about the stream and right about the word. So short needles are
 /// not refused on; they are **counted and disclosed** as unverifiable by
 /// [`verify_absence`] (`strings_too_short_for_raw_check`), and the operator
-/// reads that on the window. On a per-glyph producer that means the proof is
-/// blind, and the window says so rather than pretending to verify.
+/// reads that on the window.
 ///
 /// What is NOT relaxed: a needle of four or more characters surviving in drawn
 /// content is still a hard refusal, and the test
 /// `a_short_string_is_counted_as_unverifiable_and_the_long_one_still_refuses`
-/// holds both halves of that line. The engine has been asked to report words
-/// rather than glyph-strings
-/// (`request_redacted_text_carries_single_characters_on_a_per_glyph_producer_so_the_absence_proof_is_blind.md`),
-/// which is what would let the proof see again on this producer.
+/// holds both halves of that line.
+///
+/// # ★★ The blindness this was written for was fixed the same day — keep the
+/// floor anyway
+///
+/// This doc used to end: *"On a per-glyph producer that means the proof is
+/// blind … The engine has been asked to report words rather than
+/// glyph-strings, which is what would let the proof see again."* The engine
+/// shipped that at `369d4de` (`Pass 286.0`), the rev pinned here:
+/// `redacted_text` is now **one entry per `/Redact` mark** carrying the
+/// concatenation of what the mark removed, so `3.5 TYP` arrives as one
+/// seven-character needle instead of seven one-character ones, and this half
+/// refuses on it again as it always should have.
+///
+/// ★ **[`MIN_VERIFIABLE_LEN`] is not thereby obsolete, and must not be
+/// removed as a workaround whose cause is gone.** It was never only about
+/// per-glyph producers: a mark covering a genuinely short string still yields
+/// a genuinely short needle, and `"3"` on a drawing is `"3"` whoever wrote the
+/// file. What changed is how OFTEN the floor is reached on such producers, not
+/// whether it is right when it is. The engine agreed in the shipping reply and
+/// asked for the floor to stay: *"Belt and braces is the right posture on the
+/// one operation where a false 'clean' is an incident."*
+///
+/// ★ A test written on an ordinary producer cannot tell these two worlds
+/// apart — a file that draws the run in a single `Tj` reported `["3.5 TYP"]`
+/// both before and after the engine's change. The engine volunteered that as
+/// the general lesson, and it is this project's own: a plausible-looking test
+/// that is incapable of failing measures nothing.
 ///
 /// ★ 2026-09-04: the filter on [`StreamRole::Content`] is the whole of this
 /// work's change to the refusal. Before it, this function saw every stream in

@@ -206,6 +206,12 @@
 
 mod staged;
 
+// ★ The three report-body disclosures that read the engine's report and gate
+// nothing — the sweep counts, the clean census, and the engine's own notes.
+// Their own file since 2026-09-09; see its header for the seam and for what was
+// being discarded before it existed.
+mod disclosures;
+
 use std::path::{Path, PathBuf};
 
 use egui_shell::theme::Theme;
@@ -783,6 +789,11 @@ impl RedactDialog {
                     ui.add_space(4.0);
                     ui.label(t::info_scrubbed(report.info_strings_scrubbed));
                 }
+                // ★ …and what the SAME sweep found in the rest of the file.
+                // Directly beneath the line above because they are two halves
+                // of one question, and the engine counts them apart precisely
+                // so a shell can say which half a number came from.
+                disclosures::sweep(ui, report);
                 // ★★★ What happened to the raster images, stated even though it
                 // is a success. `pdfcer-core` v0.26.0 destroys the covered
                 // samples and re-encodes; before 2026-09-03 it refused the
@@ -845,6 +856,12 @@ impl RedactDialog {
                         .color(theme.palette.text_muted),
                     );
                 }
+                // ★★ The carriers the engine looked inside and found clean.
+                // With the proof rather than with the counts, because it is the
+                // same kind of statement — evidence that a check ran — and it
+                // is the difference between "nothing to do" and "checked,
+                // clean". See `disclosures::checked_clean`.
+                disclosures::checked_clean(ui, theme, report);
 
                 // --- what could not be removed ----------------------------
                 if !residuals.is_empty() {
@@ -863,6 +880,11 @@ impl RedactDialog {
                 ui.add_space(10.0);
                 ui.separator();
                 ui.label(egui::RichText::new(t::scope_reminder()).color(theme.palette.text_muted));
+
+                // ★★★ Last, and collapsed. `residual_sweep_line` promises the
+                // operator that the object numbers are "at the foot of this
+                // report"; this is the foot, and this is where they are.
+                disclosures::engine_notes(ui, theme, report);
             });
     }
 

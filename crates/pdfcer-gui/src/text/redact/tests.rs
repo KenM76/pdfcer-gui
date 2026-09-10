@@ -150,6 +150,34 @@ fn only_the_verification_line_and_the_clean_outcome_say_verified() {
             "applied_with_residuals(replaced)",
             applied_with_residuals("a.pdf", 2, 1, true),
         ),
+        // ★★★ The six carrier strings, added 2026-09-09 with `super::carriers`.
+        // `checked_clean_line` is the one that most needs to be here: it is the
+        // only *reassuring* sentence in the report body that rule 2 did not
+        // already govern, it is about a check that ran, and "checked" is one
+        // careless edit from "verified" — which would hand the engine's
+        // carrier sweep the word this shell's own byte sweep earns.
+        (
+            "checked_clean_line",
+            checked_clean_line(&["the document properties"]),
+        ),
+        ("sweep_scrubbed_line", sweep_scrubbed_line(3, 5, 2)),
+        (
+            "sweep_scrubbed_line(no content)",
+            sweep_scrubbed_line(3, 3, 0),
+        ),
+        ("residual_sweep_line", residual_sweep_line().to_owned()),
+        ("residual_carrier_line(xfa)", residual_carrier_line("xfa")),
+        ("engine_notes_heading", engine_notes_heading(4)),
+        ("engine_notes_lead", engine_notes_lead().to_owned()),
+        // ★★ …and four that have been in this catalog for weeks and were never
+        // in this sweep at all. Found while adding the six above, and they are
+        // the point of the module header's warning: this list is hand-written,
+        // hand-written lists go stale silently, and every one of these is a
+        // sentence in the report body that rule 2 was simply not reaching.
+        ("info_scrubbed", info_scrubbed(2)),
+        ("annotations_removed", annotations_removed(2)),
+        ("containers_decomposed", containers_decomposed(1, 4)),
+        ("marks_retained_line", marks_retained_line(1)),
     ];
     for (name, line) in &everything {
         assert!(
@@ -158,6 +186,25 @@ fn only_the_verification_line_and_the_clean_outcome_say_verified() {
              AbsenceVerification earns: {line}"
         );
     }
+    // ★★★ `verification_limit_line` is DELIBERATELY not in the sweep above, and
+    // this is the narrower assertion that covers it instead.
+    //
+    // It contains the word "verify" — *"so pdfcer could not verify those"* —
+    // and the sweep's `contains("verif")` would rightly go red on it. But the
+    // sentence is a **negation**, and rule 2 forbids claiming a verification
+    // that did not happen, not admitting one that could not. Adding it to the
+    // sweep would have forced the honest sentence to be reworded into a vaguer
+    // one to satisfy a blunt substring test, on the surface where vagueness is
+    // the defect. So the rule is applied to it in the form the rule actually
+    // has: it may say it could not verify; it may never say it did.
+    assert!(
+        !verification_limit_line(2)
+            .to_lowercase()
+            .contains("verified"),
+        "the limit sentence may admit what it could NOT verify and may never \
+         assert that it did: {}",
+        verification_limit_line(2)
+    );
     assert!(verified_line(3).to_lowercase().contains("verified"));
     for replaced in [false, true] {
         assert!(
@@ -519,4 +566,232 @@ fn the_census_changes_shape_rather_than_only_its_number() {
     assert!(marks_count(0).contains("No redaction marks"));
     assert!(!marks_count(0).contains('0'));
     assert!(marks_count(3).contains("STILL IN THIS FILE"));
+}
+
+// ===========================================================================
+// The carriers — `super::carriers`, added 2026-09-09
+// ===========================================================================
+
+/// Every carrier key `pdfcer_core::redact` can emit or documents.
+///
+/// ★ Hand-written, and it has to be: the engine's keys are `&'static str`
+/// literals passed to a private `add_carrier`, with no exported list to
+/// enumerate. That makes this exactly the shape the project's own note warns
+/// about — *a hand-written list inside a completeness test is the gap* — so it
+/// is worth saying what actually guards it. **`tools/gates/check-engine-api-drift.sh`
+/// does.** A new carrier arrives with the engine change that introduces it, and
+/// that gate fails on any engine item this crate neither consumes nor exempts;
+/// it is how `CarrierAction::CheckedClean` was found on the day it shipped.
+/// This list is the assertion, not the alarm.
+///
+/// Twelve are emitted by `369d4de`; `thumbnails` and `overlapping_annotations`
+/// are named by `CarrierStatus::carrier`'s own doc comment and are not produced
+/// by any current path. Both are here because an arm that is never taken costs
+/// nothing and a missing one costs an engine key on screen.
+const EVERY_CARRIER: &[&str] = &[
+    "info",
+    "xmp",
+    "residual_sweep",
+    "images",
+    "xfa",
+    "struct_tree",
+    "attachments",
+    "ocg",
+    "vector_paths",
+    "shadings",
+    "object_streams",
+    "prior_revisions",
+    "thumbnails",
+    "overlapping_annotations",
+];
+
+/// ★★★ **No residual line ever prints an engine key.**
+///
+/// The fourth wording rule, asserted over the whole vocabulary rather than over
+/// a sample. Until 2026-09-09 the sentence the operator read was literally
+/// *"⚠ struct_tree: present in this document…"* — an identifier the engine
+/// documents as being *"for the carrier"*, i.e. for a program, printed into a
+/// report written for a person.
+///
+/// ★★ **The assertion is "no underscore", not "does not contain the key", and
+/// the difference is a measurement.** The blunt substring form was written
+/// first and went red on `thumbnails`, whose English name is *"the page
+/// thumbnails stored in the file"* — the key and the operator's own word for
+/// the thing are the same word, and there is nothing wrong with that sentence.
+/// The defect was never "a carrier's name appears in its sentence"; it was
+/// **a machine identifier appearing in prose**, and what makes an identifier
+/// visible as one is the underscore. Twelve of the fourteen keys are
+/// `snake_case`, so this catches every one of them and every future one,
+/// without forcing a perfectly good English word out of a sentence to satisfy
+/// a test.
+///
+/// ★ The second assertion covers the two-word-free remainder from the other
+/// side: an identity mapping — the failure mode where somebody deletes an arm
+/// and the `other => other` fallback silently takes over — leaves the sentence
+/// *equal* to the key, which no translated name ever is.
+#[test]
+fn no_residual_line_shows_the_operator_an_engine_key() {
+    for key in EVERY_CARRIER {
+        let line = residual_carrier_line(key);
+        assert!(
+            !line.contains('_'),
+            "a machine identifier reached the operator in the line for `{key}`: {line}"
+        );
+        assert_ne!(
+            carrier_name(key),
+            *key,
+            "★ `{key}` fell through to the identity fallback: its arm has been deleted, and the operator is being shown the engine's own key"
+        );
+        assert!(
+            line.starts_with('⚠'),
+            "a residual line is a warning and is marked as one: {line}"
+        );
+    }
+}
+
+/// ★★★ **An engine key nobody has translated is still disclosed.**
+///
+/// The open-vocabulary case, and the one an over-tidy edit would break: the
+/// obvious "fix" for the test above is to return an empty string for an unknown
+/// key, which silently drops a residual the engine went to the trouble of
+/// reporting. On this surface a dropped disclosure is the worst available
+/// outcome, so an unknown carrier reads awkwardly and is *there*.
+///
+/// `CarrierStatus::carrier` is not a closed set and the engine may add one at
+/// any release — `residual_sweep` itself arrived that way — so this is a real
+/// state, not a hypothetical.
+#[test]
+fn a_carrier_this_shell_has_never_heard_of_is_still_named() {
+    let line = residual_carrier_line("some_future_carrier");
+    assert!(
+        line.contains("some_future_carrier"),
+        "an untranslated carrier must still be disclosed, awkwardly and \
+         completely, rather than dropped: {line}"
+    );
+}
+
+/// ★★★ **The whole-file sweep gets its own sentence, because the generic one is
+/// false about it.**
+///
+/// Every other carrier is a *place that holds content*, and the generic
+/// sentence says so. `residual_sweep` is not a place: it is the engine's search
+/// of every other object in the file, and it reports `DisclosedNotScrubbed`
+/// when that **search** could not finish. Telling the operator that a search
+/// "is present in this document and pdfcer cannot scrub it" is not jargon — it
+/// is a false sentence, in the residual list, on the one surface where rule 1
+/// forbids a comfortable one.
+///
+/// ★ The last assertion is the load-bearing half. Without it the test would
+/// pass on a build where **both** sentences had been rewritten into the sweep's
+/// wording, which discloses nothing about the other twelve carriers.
+#[test]
+fn the_whole_file_sweep_does_not_get_the_generic_carrier_sentence() {
+    let sweep = residual_carrier_line("residual_sweep");
+    let generic = residual_carrier_line("xfa");
+    assert_ne!(sweep, generic);
+    assert!(
+        !sweep.contains("cannot scrub it in this build"),
+        "the sweep is not a carrier that holds anything, and must not be \
+         described as one: {sweep}"
+    );
+    assert!(
+        sweep.contains("searches every object"),
+        "…and it must say what it actually is: {sweep}"
+    );
+    assert!(
+        generic.contains("cannot scrub it in this build"),
+        "★ the generic sentence must still exist, or the assertion above is \
+         measuring nothing: {generic}"
+    );
+}
+
+/// ★★ **The sweep's residual sentence points at the notes, and the notes
+/// section exists.**
+///
+/// A promise kept across two modules: [`super::residual_sweep_line`] tells the
+/// operator that pdfcer's own notes *"at the foot of this report"* say which
+/// objects were left, and `dialogs::redact::disclosures::engine_notes` is what
+/// puts them there. Before 2026-09-09 `RedactionReport::notes` was read by
+/// nothing in this crate, so a sentence like this one would have pointed at an
+/// empty part of the screen.
+#[test]
+fn the_sweep_sentence_points_somewhere_that_exists() {
+    assert!(residual_sweep_line().contains("notes"));
+    assert!(
+        engine_notes_heading(3).contains('3'),
+        "the count is advertised on the closed header, so the operator can see \
+         there is something in there without opening it"
+    );
+}
+
+/// ★★★ **The content-stream clause appears only when content streams were
+/// blanked.**
+///
+/// The engine counts `residual_content_streams_blanked` apart from the sweep's
+/// total for one stated reason: it is the only member of the sweep that edits
+/// **drawing instructions**. Everything else removes a metadata string nobody
+/// looks at; this changes what a page would paint. A report that said "and 0
+/// drawing-instruction streams" on every ordinary redaction would train the
+/// operator to skip the clause on the day it reads 3.
+#[test]
+fn the_drawing_instruction_clause_is_conditional() {
+    let with = sweep_scrubbed_line(4, 6, 2);
+    let without = sweep_scrubbed_line(4, 4, 0);
+    assert!(with.contains("drawing instruction"));
+    assert!(
+        !without.contains("drawing instruction"),
+        "a sweep that touched no content stream must not mention them: {without}"
+    );
+    // ★ Both counts survive into the sentence either way. The numbers are the
+    // whole content of the line, and a `format!` that dropped one would still
+    // read fluently.
+    for line in [&with, &without] {
+        assert!(
+            line.contains('4'),
+            "the entry count is missing from: {line}"
+        );
+    }
+    assert!(with.contains('6') && with.contains('2'));
+}
+
+/// ★★ **The clean census counts what it lists.**
+///
+/// The number and the list come from one argument, so they cannot disagree —
+/// this pins that both are actually derived from it, which a `format!` that
+/// hard-coded either would not be.
+#[test]
+fn the_clean_census_number_matches_its_list() {
+    let one = checked_clean_line(&["the document properties"]);
+    assert!(one.contains('1') && one.contains("the document properties"));
+    let three = checked_clean_line(&["a", "b", "c"]);
+    assert!(three.contains('3'));
+    for name in ["a", "b", "c"] {
+        assert!(three.contains(name), "`{name}` is missing from: {three}");
+    }
+}
+
+/// ★★★ **The clean census never reads as an all-clear.**
+///
+/// Rule 1's hardest case: this is the only sentence in the report that exists
+/// to reassure, and the report's whole purpose is to prevent a comfortable one.
+/// It is safe because of what it claims — pdfcer *checked* these places and
+/// found nothing *in them* — and this test pins the scope that keeps it narrow.
+/// A rewrite to "no trace of it anywhere in the file", or to "the document is
+/// clean", would be the defect.
+#[test]
+fn the_clean_census_claims_the_places_and_not_the_document() {
+    let line = checked_clean_line(&["the document properties", "gradient fills"]);
+    assert!(
+        line.contains("in any of them"),
+        "the claim is scoped to the carriers it just listed: {line}"
+    );
+    assert!(
+        !line.to_lowercase().contains("the document is"),
+        "★ nothing here may make a claim about the whole document: {line}"
+    );
+    assert!(
+        line.contains("checked"),
+        "the verb is what makes this evidence of diligence rather than a \
+         reassurance: {line}"
+    );
 }
