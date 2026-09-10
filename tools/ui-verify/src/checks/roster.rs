@@ -472,8 +472,11 @@ pub fn all() -> Vec<Box<dyn Check>> {
         //
         // ★ And it never presses commit, for the reason stated above.
         Box::new(print_paper::PrintPaperChangesThePlan),
-        // ★ Last of the four print checks, and after them all for the reason
-        // the two above give: every skip message it can produce defers to
+        // ★ After the print checks above it, for the reason the two above
+        // give — stated as a POSITION rather than an ordinal, because this
+        // comment once read "last of the four", a fifth was added saying "and
+        // last", and a sixth falsified both. A relative position stays true
+        // however many there are: every skip message it can produce defers to
         // `print_dialog` for the diagnosis — "the dialog never opened", "the
         // spooler refused", "the ribbon control is missing" are its subject.
         // A reader of a failing run should meet the specific cause first.
@@ -483,11 +486,50 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // adds a fifth by copying one of them, the copied file is what they
         // will read.
         Box::new(print_clip_claim::PrintClipClaimFollowsThePreview),
-        // ★ Fifth of the print family and last, for the reason the four above
-        // give. ⚠ **NEVER RUN** — registered 2026-09-05 with the operator at
+        // ★ After the print checks above it, for the reason they give.
+        // ⚠ **NEVER RUN** — registered 2026-09-05 with the operator at
         // his machine; its own header says so first and says what a first run
         // will probably teach it. It never presses commit, like the four above.
         Box::new(preview_popout::ThePrintPreviewPopsIntoItsOwnWindow),
+        // ★★★ After the print checks above it, for the reason they give: every
+        // skip it can produce — "the dialog never opened", "the ribbon control
+        // is missing" — is `print_dialog`'s subject, not this one's, and a
+        // reader of a failing run should meet the specific cause first.
+        //
+        // ★★★ **It WRITES `userdata/preferences.txt`, and it deletes it again
+        // on every path out.** It is the only check in the print family that
+        // writes an input to the program rather than only reading what the
+        // program wrote, so its position carries a second obligation the
+        // others do not have. The two other checks that touch that file —
+        // `page_display_pref` and `ui_scale` — are both registered far below
+        // this point AND both write or delete the file themselves before
+        // launching, so neither can be harmed by what this one leaves. That
+        // was verified, not assumed — and so was the thing that makes it
+        // mostly moot: **the suite sandboxes every check by default** (a
+        // private directory, `userdata/` NOT copied in, the whole directory
+        // removed afterwards), so under a default run no check can see another
+        // check's preferences file at all. The ordering above therefore only
+        // bites under `--shared-profile`, or if isolation fails. It is written
+        // down anyway, because that flag is what a person reaches for when
+        // they are already confused, and "it only matters when something else
+        // has gone wrong" describes every ordering rule in this file.
+        //
+        // ★ It never presses commit. Every print check now states that rule
+        // in its own words rather than referencing a neighbour, because the
+        // day somebody adds a seventh by copying one of them, the copied file
+        // is the only one they will read. The button it must never press is
+        // the one control in the application that consumes paper and cannot be
+        // undone.
+        //
+        // ★ It never presses Properties… either — that opens a vendor
+        // driver's own Win32 modal, and one left standing does not fail this
+        // check, it hangs every check after it.
+        //
+        // ⚠ It is TWO launches, not one: a control process to measure what the
+        // shipped defaults actually are, then a second against a seeded file.
+        // It is therefore among the most expensive checks in the suite, which
+        // is the other reason it is not higher.
+        Box::new(print_remembered::ThePrintWindowOpensOnTheSettingsYouLastUsed),
         // ★ Beside it because it is the same shape — two ribbon clicks into a
         // dialog — and because both are checks whose subject is a control that
         // was drawn and did nothing.

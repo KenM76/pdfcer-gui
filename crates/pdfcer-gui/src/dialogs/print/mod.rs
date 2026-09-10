@@ -534,6 +534,10 @@ impl PrintDialog {
     /// why the range, the preview's sheet, its zoom and the active tab are
     /// still literals here and always will be.
     pub(super) fn open(doc: &OpenDoc, remembered: &crate::app::prefs::PrintPrefs) -> Self {
+        // The preferences file's own token functions, aliased so the trace
+        // below spells every remembered value exactly as the file spells it.
+        use crate::app::prefs::printing as p;
+
         let (unavailable, printers) = match spooler::list_printers() {
             Ok(printers) => (None, printers),
             Err(error) => (Some(error), Vec::new()),
@@ -553,28 +557,7 @@ impl PrintDialog {
             .and_then(|name| printers.iter().position(|p| p.name == name))
             .or_else(|| printers.iter().position(|p| p.is_default))
             .unwrap_or(0);
-        crate::diag::trace(|| {
-            format!(
-                // ui-text-exempt: diagnostic trace, never displayed in the UI
-                "print-open printers={} selected={selected} remembered={} \
-                 unavailable={unavailable:?} page={}",
-                printers.len(),
-                // O166. A stable token rather than the name itself: the trace
-                // is split on whitespace by `tools/ui-verify`, and a printer
-                // called "HP DesignJet T1600" would arrive as three fields.
-                // `matched` = the remembered printer is on this machine and is
-                // selected; `missing` = a name was remembered and is not here;
-                // `none` = nothing has been remembered yet.
-                // ui-text-exempt: diagnostic trace, never displayed in the UI
-                match remembered.printer.as_deref() {
-                    None => "none",
-                    Some(name) if printers.iter().any(|p| p.name == name) => "matched",
-                    Some(_) => "missing",
-                },
-                doc.view.page_index,
-            )
-        });
-        Self {
+        let dialog = Self {
             unavailable,
             printers,
             selected,
@@ -651,7 +634,121 @@ impl PrintDialog {
             outcome: None,
             commit_requested: false,
             close_requested: false,
-        }
+        };
+
+        // ★★★ **Traced from the BUILT dialog, and the position of these
+        // lines is the whole point of them.**
+        //
+        // This block used to sit ABOVE the struct literal and read
+        // `remembered.*` — the parsed `PrintPrefs`. It was moved down here
+        // on 2026-09-10, within the hour, while trying to make the driven
+        // check that reads it FAIL on a broken build. It could not be made
+        // to fail, and the reason was this:
+        //
+        // ⚠ **A trace emitted from `remembered` proves the preferences
+        // file was PARSED. It says nothing about whether the dialog
+        // adopted a single one of those values.** The two are forty lines
+        // apart and were separate expressions, so a build whose struct
+        // literal ignored `remembered` entirely — exactly the regression
+        // O166 exists to prevent — would have printed a fully seeded line
+        // and gone green. The comment on the old block even said "as the
+        // dialog adopted them", which was a claim the code below it did
+        // not support.
+        //
+        // Reading `dialog.*` closes that: every field here is the value
+        // the operator is about to see, arrived at by whatever route the
+        // constructor actually takes. If a future edit drops a `remembered`
+        // on one of the thirteen assignments above, this line changes and
+        // the check goes red — which it could not do before.
+        //
+        // ★ It is a `trace(|| …)` closure, so none of this is formatted
+        // unless `PDFCER_DIAG` is set; running after the struct is built
+        // rather than before costs nothing at all.
+        crate::diag::trace(|| {
+            format!(
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                "print-open printers={} selected={} remembered={} \
+                 unavailable={:?} page={} \
+                 orientation={} duplex={} paper={} tray={} \
+                 scale={} percent={} markup={} dpi={} \
+                 copies={} collate={} subset={} reverse={}",
+                dialog.printers.len(),
+                dialog.selected,
+                // O166. A stable token rather than the name itself: the trace
+                // is split on whitespace by `tools/ui-verify`, and a printer
+                // called "HP DesignJet T1600" would arrive as three fields.
+                // `matched` = the remembered printer is on this machine and is
+                // selected; `missing` = a name was remembered and is not here;
+                // `none` = nothing has been remembered yet.
+                //
+                // ★ This one still reads `remembered`, and it is the one
+                // field that must: it reports what the FILE held, so that a
+                // check can tell "no preferences yet" from "a printer was
+                // remembered and this machine does not have it". The adopted
+                // half is `selected=`, immediately before it — the two
+                // together are the claim, which is why they are adjacent.
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                match remembered.printer.as_deref() {
+                    None => "none",
+                    Some(name) if dialog.printers.iter().any(|p| p.name == name) => "matched",
+                    Some(_) => "missing",
+                },
+                dialog.unavailable,
+                doc.view.page_index,
+                // ★★★ The other TWELVE answers, **as the dialog adopted
+                // them** — a sentence that is now true of the code beneath
+                // it. Added 2026-09-10 while writing O166's driven check:
+                // the fourth time in this project that sitting down to write
+                // one found a trace that could not tell apart the two states
+                // the check existed for.
+                //
+                // The two states are **"the preferences file reached the
+                // dialog"** and **"the file was ignored and these are the
+                // shipped defaults"**. `remembered=` separates them for the
+                // printer and for nothing else, so a build that restored the
+                // printer and silently dropped the other twelve would have
+                // shown a fully green line to any check writable before this.
+                //
+                // ⚠ These are the FILE's own token functions, not `{:?}`. A
+                // machine reads this line, and this project has already
+                // shipped a driven check that reported the opposite of the
+                // truth because it was parsing a `Debug` tuple. Spelling them
+                // the file's way has a second benefit: a driven check can
+                // compare this line against the `preferences.txt` it seeded
+                // LITERALLY, token for token, rather than against a second
+                // spelling of the same values that would be free to drift.
+                //
+                // `paper=` here is the POLICY — `device` or `match-pages` —
+                // which is all `PrintPrefs` can carry, because a hand-picked
+                // `Form(id)` is deliberately never remembered. `print-plan`'s
+                // own `paper=` is the RESOLVED request and is a different
+                // claim; both exist on purpose and a check that confused them
+                // would be asserting the wrong half of O167.
+                p::orientation_key(dialog.device.orientation),
+                p::duplex_key(dialog.device.duplex),
+                p::paper_key(dialog.device.paper),
+                crate::app::prefs::opening::bool_key(dialog.device.pick_tray_by_page_size),
+                // ★ `dialog.scale`, not `remembered.scale`, and the two are
+                // deliberately NOT the same value: the constructor rebuilds
+                // `Custom`'s multiplier from the percentage. `scale_key`
+                // reads only the variant, so both spell `custom` — but this
+                // reads the one the operator will see.
+                p::scale_key(dialog.scale),
+                dialog.custom_percent,
+                p::scope_key(dialog.scope),
+                dialog.max_dpi,
+                dialog.copies,
+                // Inverted, exactly as the file writes it: the file says
+                // collate, the struct says uncollated. Spelling it the file's
+                // way here is what lets a check compare the two directly —
+                // and an inversion that got lost on one side of the pair is a
+                // defect this line can now catch.
+                crate::app::prefs::opening::bool_key(!dialog.uncollated),
+                p::subset_key(dialog.subset),
+                crate::app::prefs::opening::bool_key(dialog.reverse),
+            )
+        });
+        dialog
     }
 
     /// Draw one frame of the dialog. Returns `false` when it should close.

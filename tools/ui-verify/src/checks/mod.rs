@@ -499,6 +499,7 @@ pub mod print_clip_claim;
 pub mod print_dialog;
 pub mod print_layout;
 pub mod print_paper;
+pub mod print_remembered;
 /// The Properties panel's document-metadata half: a title typed into it
 /// reaches the file, and an undo takes it back out of the box too.
 pub mod properties_metadata;
