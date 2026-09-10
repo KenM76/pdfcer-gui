@@ -80,7 +80,50 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
-## O169 — ◑ **FILED 2026-09-10, IN PROGRESS** — "if acrobat has a way of adding custom stamps or text, we need the same feature too with the same import/export to make the stamps as Adobe has and is compatible with adobe's"
+## O170 — ✅ **ANSWERED AND ACTED ON 2026-09-10** — "the stamp icon gap - are you using the latest engine? It just did some work on stamps."
+
+**Your words, 2026-09-10, mid-session.** A question, not a request, and it is
+filed anyway because the answer changed the build.
+
+### The answer, in one line
+
+**No, we were not — and now we are.** The pin was `d4a4e3b`; the engine's tip
+was `b1f4bbc`. `cargo update` moved it, and this release ships from the tip.
+
+### ★★★ What the stale pin was hiding, which is the part worth reading
+
+The engine's `Pass 289.0` had already fixed a defect on your files that nobody
+here had noticed and nobody could have reported: **a sticky note or an approval
+stamp that arrives from Acrobat without a baked appearance stream rendered as
+nothing at all.** Not a box, not a placeholder — clean paper. You could scroll
+a marked-up drawing past a colleague's comment and see no sign that it was
+there, and there was **no symptom to notice**, because clean paper is exactly
+what an unannotated drawing looks like.
+
+Bumping the pin fixed it with **no shell code at all**: the artwork is painted
+inside the shared annotation loop this shell's canvas already calls.
+
+### ★★ And the bump handed over something better than the fix
+
+The engine ships two numbers it deliberately refuses to add together — how many
+annotations the file carries with no appearance, and how many of those pdfcer
+nevertheless drew. Subtracting them answers, for the first time, *"how many
+comments on this page is Ken being shown nothing for?"*
+
+That is now the **tenth Render-notes finding** on the status bar, and it is
+placed **second, above every other absence**. The order is the argument: a
+missing font leaves a hole you can see, a skipped image leaves a hole you can
+see — this one leaves clean paper, so it is the one you cannot find by looking.
+
+### ⚠ The standing lesson, and it is the seventh time this project has met it
+
+`Cargo.lock` pins the engine **by git revision**, so an engine fix is not in
+your build until somebody runs `cargo update`. Any sentence in this repository
+that says *"the engine cannot do X"* is a claim about a **pin**, not about the
+engine, and it has a shelf life measured in hours. Under **O165** the pin is
+now checked at the top of every session rather than when something looks wrong.
+
+## O169 — ◑ **BOTH BUILDABLE HALVES BUILT AND DRIVEN 2026-09-10; the placing half is BLOCKED at the engine and filed** — "if acrobat has a way of adding custom stamps or text, we need the same feature too with the same import/export to make the stamps as Adobe has and is compatible with adobe's"
 
 **Your words.** Filed here today because it has become GUI work — the engine
 half landed as `Pass 288.0` and is already inside the pin we ship from, so the
@@ -105,7 +148,7 @@ Six Adobe collections — *Standard*, *Standard Business*, *Dynamic*, *Faces*,
 *Pointers*, *Sign Here* — and **one custom stamp of your own**. You already use
 this feature in Acrobat.
 
-### The half being built now
+### The half that is BUILT — read, author, and land in Acrobat's own folder
 
 **pdfcer reads a stamp collection and can write one.** Take a PDF whose pages
 are your stamps — a company approval block, a revision cloud legend, whatever

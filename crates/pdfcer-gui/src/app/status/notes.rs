@@ -161,14 +161,69 @@ fn notes_line(d: &pdfcer_render::Diagnostics) -> String {
     }
 }
 
+/// **Annotations the file carries that the operator was shown nothing for.**
+///
+/// ## ★★★ Why this is computed here rather than read off one counter
+///
+/// The engine reports two numbers and refuses to combine them, for a reason it
+/// states in its own doc comment: `annotations_without_ap` is a **fact about
+/// the file** — these annotations really do carry no appearance stream, and
+/// the map is the demand signal for the remaining appearance-generation work —
+/// while `annotations_icon_painted` is a fact about **what the operator saw**,
+/// counting the ones `Pass 289.0` nevertheless drew from pdfcer's own
+/// standard-icon artwork. *"Folding them together would make one of the two
+/// numbers a lie."*
+///
+/// This surface wants the second question and only the second question: *how
+/// much of this page's markup is invisible to the man looking at it?* So the
+/// subtraction happens **at the consumer**, once, with the argument written
+/// down — which is the shape this project keeps arriving at whenever an engine
+/// deliberately hands out the parts instead of the sum.
+///
+/// ⇒ The subtraction is sound because the engine increments them at the same
+/// site: `Appearance::None` counts into the map unconditionally and then adds
+/// to `annotations_icon_painted` only if the icon was actually drawn, so the
+/// painted set is a **subset** of the appearance-less set on every page.
+///
+/// ## ⚠ The one case where the subtraction would lie, and how it is stopped
+///
+/// A **narrowed annotation scope**. The census is taken under every scope so
+/// that a suppressed render still discloses what it is not showing, but the
+/// icon painter only runs for annotations in scope — so under a narrowed scope
+/// the subtraction would say *"not drawn"* about content that was **withheld
+/// on request**. Those are opposite facts, and the engine's own row is
+/// emphatic that *"withheld"* must stay distinguishable from *"tried and
+/// failed"*.
+///
+/// [`findings`] therefore drops this entry entirely when
+/// `annotations_out_of_scope` is non-zero, rather than reporting a smaller
+/// number. Today no screen render in this shell narrows the scope — the only
+/// `AnnotationScope` this crate sets lives in the **print** dialog
+/// (`app::prefs::printing`), and printing does not feed this bar — so the
+/// guard is dormant. It is written anyway because the day somebody adds a
+/// *View ▸ Display ▸ Comments* toggle is the day this sentence would quietly
+/// start accusing the file of something the operator did on purpose.
+fn annotations_not_drawn(d: &pdfcer_render::Diagnostics) -> usize {
+    if d.annotations_out_of_scope > 0 {
+        return 0;
+    }
+    let without_ap: usize = d.annotations_without_ap.values().copied().sum();
+    // `saturating_sub` rather than `-`: the subset relation above is the
+    // engine's invariant, not this crate's, and a future engine that counted
+    // an icon paint without the census entry would otherwise panic a release
+    // build's status bar. Zero is the right answer to "how many were invisible"
+    // when the two numbers disagree in that direction.
+    without_ap.saturating_sub(d.annotations_icon_painted)
+}
+
 /// **The renderer's report as an ordered list of sentences**, one per finding
 /// that actually occurred.
 ///
 /// ★ Split out of [`notes_line`] on 2026-08-15 so that the status bar's one
-/// line and the Render-diagnostics dialog's list are the *same nine decisions*
+/// line and the Render-diagnostics dialog's list are the *same ten decisions*
 /// — which counters are reported, which two are not, and in what order — made
 /// once. Two tables would agree on the day they were written and disagree the
-/// first time a tenth counter was added to one of them, and the symptom would
+/// first time an eleventh counter was added to one of them, and the symptom would
 /// be two surfaces describing one raster differently, which is the worst
 /// available outcome for a *diagnostic*.
 ///
@@ -189,7 +244,7 @@ fn notes_line(d: &pdfcer_render::Diagnostics) -> String {
 /// something the renderer absorbed and drew right anyway, and a `BX`/`EX`
 /// skip is spec-sanctioned (§7.8.2 Table 32) — the file is *telling* readers
 /// to skip it. Listing them **here** would put two numbers that mean "nothing
-/// is wrong" in front of the six that mean something is.
+/// is wrong" in front of the seven that mean something is.
 ///
 /// ★ They are not lost: the Render-diagnostics dialog shows them, separately
 /// and with a sentence saying they are not faults
@@ -207,10 +262,19 @@ fn notes_line(d: &pdfcer_render::Diagnostics) -> String {
 /// by the reader's. The dialog lists them top-down in the same order, for the
 /// same reason.
 pub(crate) fn findings(d: &pdfcer_render::Diagnostics) -> Vec<String> {
-    let entries: [NoteEntry; 9] = [
+    let entries: [NoteEntry; 10] = [
         (
             d.contents_streams_unresolved,
             t::diagnostics_contents_missing,
+        ),
+        // ★ Second, above every other absence, and the order is the argument.
+        // A missing font leaves a hole an operator can SEE; an annotation with
+        // no appearance leaves clean paper, and clean paper is what a drawing
+        // nobody commented on looks like. It is the one finding in this table
+        // the operator cannot discover by looking at the page.
+        (
+            annotations_not_drawn(d),
+            t::diagnostics_annots_no_appearance,
         ),
         (d.fonts_unsupported, t::diagnostics_fonts_skipped),
         (d.images_unsupported, t::diagnostics_images_skipped),
@@ -239,13 +303,116 @@ mod tests {
         assert_eq!(notes_line(&d), t::diagnostics_clean());
     }
 
+    /// **An annotation the file carries and pdfcer drew nothing for is
+    /// reported** — the finding an operator cannot make for himself.
+    ///
+    /// Two `/Square` marks with no `/AP`, nothing rescued by the icon painter.
+    /// Both are invisible on the page, and clean paper is what an unannotated
+    /// drawing looks like, so nothing about the render tells him to go looking.
+    #[test]
+    fn appearance_less_annotations_are_counted_as_not_drawn() {
+        let mut d = pdfcer_render::Diagnostics::default();
+        d.annotations_without_ap.insert("Square".to_owned(), 2);
+
+        assert_eq!(annotations_not_drawn(&d), 2);
+        let line = notes_line(&d);
+        assert!(
+            line.contains('2') && line.contains("not drawn"),
+            "the appearance-less pair must reach the line: {line}"
+        );
+    }
+
+    /// **The icon painter's rescues are subtracted, not counted twice.**
+    ///
+    /// ★ This is the whole reason the subtraction lives in this crate. The
+    /// engine counts an appearance-less annotation into `annotations_without_ap`
+    /// **and then** into `annotations_icon_painted` if it drew the standard icon
+    /// anyway (`Pass 289.0`), and refuses to fold them because the map is a fact
+    /// about the file while the counter is a fact about what the operator saw.
+    /// A surface that read the map alone would tell him three comments are
+    /// missing while two of them are on the screen in front of him.
+    #[test]
+    fn an_icon_pdfcer_painted_is_not_reported_as_missing() {
+        let mut d = pdfcer_render::Diagnostics::default();
+        d.annotations_without_ap.insert("Text".to_owned(), 2);
+        d.annotations_without_ap.insert("Square".to_owned(), 1);
+        d.annotations_icon_painted = 2;
+
+        assert_eq!(
+            annotations_not_drawn(&d),
+            1,
+            "only the /Square is invisible; both sticky notes were painted"
+        );
+    }
+
+    /// **Every appearance-less annotation was drawn ⇒ say nothing at all.**
+    ///
+    /// The complement of the test above, and the one that stops this finding
+    /// becoming the nagging R8b rule 4 forbids: a page whose sticky notes
+    /// pdfcer painted from its own artwork has nothing withheld from the
+    /// operator, so the line must be the clean one.
+    #[test]
+    fn a_page_whose_icons_were_all_painted_reports_clean() {
+        let mut d = pdfcer_render::Diagnostics::default();
+        d.annotations_without_ap.insert("Text".to_owned(), 3);
+        d.annotations_icon_painted = 3;
+
+        assert_eq!(annotations_not_drawn(&d), 0);
+        assert_eq!(notes_line(&d), t::diagnostics_clean());
+    }
+
+    /// **A narrowed scope suppresses the finding rather than shrinking it.**
+    ///
+    /// ⚠ The one way the subtraction could lie. The census is taken under every
+    /// scope so a suppressed render still discloses what it is not showing, but
+    /// the icon painter only runs in scope — so under a narrowed scope the
+    /// subtraction would report *"not drawn"* about content **withheld on
+    /// request**. Those are opposite facts and the engine's own row insists they
+    /// stay distinguishable.
+    ///
+    /// ★ Dormant today: the only `AnnotationScope` this crate sets is the print
+    /// dialog's, and printing does not feed this bar. Pinned anyway, because the
+    /// day somebody adds a *View ▸ Display ▸ Comments* toggle is the day this
+    /// sentence would start accusing the file of something the operator did.
+    #[test]
+    fn a_narrowed_scope_withholds_the_finding_instead_of_miscounting_it() {
+        let mut d = pdfcer_render::Diagnostics::default();
+        d.annotations_without_ap.insert("Text".to_owned(), 4);
+        d.annotations_out_of_scope = 4;
+
+        assert_eq!(
+            annotations_not_drawn(&d),
+            0,
+            "withheld on request is not the same fact as tried and failed"
+        );
+        assert_eq!(notes_line(&d), t::diagnostics_clean());
+    }
+
+    /// **A count that disagrees with the engine's own subset invariant does not
+    /// panic a release build's status bar.**
+    ///
+    /// `annotations_icon_painted` is incremented only inside the arm that has
+    /// just incremented the map, so it can never exceed the sum — today. That is
+    /// the ENGINE's invariant, not this crate's, and it reaches here across a
+    /// pinned git dependency that moves several times a week. `saturating_sub`
+    /// costs nothing and turns a future arithmetic overflow in a status bar into
+    /// the honest answer zero.
+    #[test]
+    fn an_impossible_engine_pair_saturates_rather_than_panicking() {
+        let mut d = pdfcer_render::Diagnostics::default();
+        d.annotations_without_ap.insert("Text".to_owned(), 1);
+        d.annotations_icon_painted = 5;
+
+        assert_eq!(annotations_not_drawn(&d), 0);
+    }
+
     /// Every reported field reaches the line, and none of them wraps it.
     ///
     /// The second half is R128 again: the disclosure gets **one** line, so a
     /// page with every finding at once must still produce a single line.
     #[test]
     fn every_reported_finding_reaches_the_one_line() {
-        let d = pdfcer_render::Diagnostics {
+        let mut d = pdfcer_render::Diagnostics {
             contents_streams_unresolved: 1,
             fonts_unsupported: 2,
             images_unsupported: 3,
@@ -257,9 +424,15 @@ mod tests {
             unknown_ops: 9,
             ..Default::default()
         };
+        // ★ The tenth, and it cannot be set in the struct literal above
+        // because it is a map rather than a count — which is precisely why it
+        // was the one a `[NoteEntry; 9]` table could not hold. Ten so that a
+        // finding silently dropped from the table is a MISSING NUMBER rather
+        // than a number that happens to collide with a neighbour's.
+        d.annotations_without_ap.insert("Square".to_owned(), 10);
 
         let line = notes_line(&d);
-        for n in 1..=9 {
+        for n in 1..=10 {
             assert!(
                 line.contains(&n.to_string()),
                 "finding {n} is missing from the line: {line}"

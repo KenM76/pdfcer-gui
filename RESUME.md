@@ -1,5 +1,66 @@
 # RESUME — read this, then say "continue"
 
+> ★★★ **LAST SESSION: 2026-09-10, afternoon. THE ENGINE PIN WAS THREE
+> COMMITS STALE AND A GATE — NOT A REPORT — FOUND WHAT THAT WAS COSTING.**
+> Sixth release. Read this first; the blocks below it are still accurate about
+> everything they describe except the pin, the counts, and O169's status.
+>
+> **What is in the build.** (1) **Custom stamps, O169** — pdfcer reads a stamp
+> collection, writes one, and suggests **the folder Acrobat actually scans**,
+> discovered at runtime rather than hard-coded. (2) **The tenth Render-notes
+> finding** — an annotation the file carries that pdfcer drew nothing for is
+> now stated off-canvas. (3) **The engine pin moved `d4a4e3b` → `b1f4bbc`**,
+> the tip of `main`.
+>
+> ★★★ **The finding to carry forward: an API-drift gate hit is sometimes a
+> FEATURE, not paperwork.** `check-engine-api-drift` went red on
+> `Diagnostics::annotations_icon_painted`, an engine counter this repository
+> named nowhere. The cheap discharge is an exemption line. The correct one was
+> to ask *what is this counter FOR* — and it turned out to be the missing half
+> of a disclosure. `annotations_icon_painted` ⊆ `annotations_without_ap`,
+> incremented in the same arm, so `sum(map) − painted` answers a question no
+> surface in this shell could previously ask: **how many comments on this page
+> is the operator being shown nothing for?** ⇒ Before reaching for an
+> exemption, spend five minutes on what the new item measures.
+>
+> ★★ **And the defect underneath it had no symptom.** A `/Text` sticky note or
+> a `/Stamp` naming a standard icon, arriving from Acrobat with no baked `/AP`,
+> rendered as **nothing at all**. Clean paper is exactly what an unannotated
+> drawing looks like, so an operator scrolling past a colleague's comment had
+> nothing to notice and nothing to report. That is the class the new finding
+> exists for, and it is why it sits **second in the table, above every other
+> absence**: a missing font leaves a hole he can see.
+>
+> ⚠ **The pin is a claim with a shelf life of hours, and this is the seventh
+> recurrence.** `Cargo.lock` pins by git revision, not by path. Every sentence
+> in this repository of the form *"the engine cannot do X"* is a statement
+> about **a pin**. Under O165 the first act of a session is
+> `cd /d/Dev/pdfcer && git log --oneline -1 main` compared against
+> `grep -m1 'pdfcer?branch=main#' Cargo.lock` — and if they differ, read the
+> intervening log **before** reading any backlog row.
+>
+> ⚠⚠ **THIS BUILD'S VERIFICATION IS WEAKER THAN THE LAST FOUR AND THAT IS
+> STATED IN `FEATURES.md` RATHER THAN GLOSSED.** 4,026 unit tests, 32 of 32
+> gates, and one off-screen smoke launch that drew a surface with no panic.
+> **Not one of the 204 driven checks was run** — Ken said *"once you are done I
+> am back using the pc"* and the sweep takes the desktop. ⇒ **First act of the
+> next session that has the machine: `bash tools/ui-verify/sweep-full.sh`.**
+> Two releases have now shipped without it.
+>
+> ⬜ **Also still owed, unchanged from the last block:** driven checks for the
+> four 2026-09-06 markup asks, `load_anomalies_are_listed_in_document_properties`,
+> `rereading_under_the_other_value_is_offered`,
+> `double_clicking_a_text_box_edits_the_text` (last known FAIL), O161, and a
+> Find zoom-box readout check.
+>
+> ⇒ **What a stamp session should pick up next, in order:** the engine's
+> `stamp-pack --stamps-from` arrived in this same pin and measured a real
+> 113-page artwork sheet with **no text layer**, so stamp names cannot be
+> derived from the page — `dialogs::stamp_collection` should offer a name-list
+> file the way the CLI does. Then the five requests O169 filed, of which
+> **placing** a custom stamp is the one Ken will reach for first and is
+> genuinely blocked at the engine.
+
 > ★★★ **LATE ADDENDUM, 2026-09-09 night: FOUR ENGINE CAPABILITIES WERE WIRED
 > HERE AND NEVER RECORDED AS CONSUMED, WHICH LEFT THE GATE FOR EXACTLY THAT
 > BLIND.** The librarian sweep's stale-limitation item is closed. Read this

@@ -77,6 +77,23 @@
 //!   deleted, because "this used to be absent and is now built" is exactly
 //!   what a catalog header should make legible.)
 
+/// **The Render-notes vocabulary** — every sentence the renderer's honesty
+/// report can produce, split out 2026-09-10 under R2 when the appearance-less
+/// annotation became the tenth finding and took this file to 1,509 lines.
+///
+/// ★ Re-exported whole, on [`selection`]'s precedent: a catalog area is keyed
+/// by the consumer it serves — here `app::status::notes` and nothing else —
+/// so no call site changed and `t::diagnostics_clean` resolves where it always
+/// did.
+mod diagnostics;
+pub use diagnostics::{
+    diagnostics_annots_no_appearance, diagnostics_clean, diagnostics_contents_missing,
+    diagnostics_fonts_skipped, diagnostics_glyphs_notdef, diagnostics_glyphs_substituted,
+    diagnostics_glyphs_supplied, diagnostics_images_skipped, diagnostics_join,
+    diagnostics_layers_hidden, diagnostics_ops_deferred, diagnostics_ops_unknown,
+    diagnostics_toggle, diagnostics_tooltip,
+};
+
 mod formdelete;
 mod refused;
 mod selection;
@@ -138,199 +155,6 @@ pub use selection::{
     // the same way, which is what stops the second being missed.
     too_many_anchors_in_part,
 };
-
-// ---------------------------------------------------------------------------
-// The narrator — the render diagnostics disclosure
-// ---------------------------------------------------------------------------
-
-/// The disclosure control's label, closed and open.
-///
-/// ★ **Closed is the default, and the caption is still shown.** `DEFECTS.md`
-/// records the old shell opening with a substitute-glyph census: *"The first
-/// thing a user reads is the app talking about itself. Excellent
-/// information, wrong prominence."* The fix is prominence, not deletion — so
-/// the report is one click away and named, rather than hidden behind a bare
-/// triangle nobody would think to press.
-///
-/// "Render notes" rather than "Diagnostics": the operator's question is
-/// *"did pdfcer draw my page faithfully?"*, and "diagnostics" is the word an
-/// application uses about itself.
-///
-/// ★ **The triangles are `⏵` (U+23F5) and `⏷` (U+23F7), and the choice was
-/// forced by measurement rather than taste.** The obvious glyphs for a
-/// disclosure — `▸` U+25B8 and `▾` U+25BE — are **absent from egui's
-/// bundled font set** (Ubuntu-Light + NotoEmoji + emoji-icon-font), as are
-/// `▶`/`◀`. They were in this file first and
-/// [`crate::app::status::tests::every_glyph_the_status_bar_draws_has_a_glyph`]
-/// caught them: on screen they would have been tofu boxes, which on a
-/// disclosure means an operator cannot tell open from closed.
-///
-/// `⏵` is therefore also [`next_page`]'s glyph, which is a real (small)
-/// collision and is accepted rather than worked around: the two controls sit
-/// at **opposite ends** of the bar, this one always carries the word "Render
-/// notes" beside it, and this one alternates while the page arrows never do.
-/// Substituting a non-triangle here — `›`, `»` — would trade a resolvable
-/// ambiguity for a control that no longer looks like a disclosure at all.
-#[must_use]
-pub fn diagnostics_toggle(open: bool) -> &'static str {
-    if open {
-        "⏷ Render notes"
-    } else {
-        "⏵ Render notes"
-    }
-}
-
-/// Hover text for the disclosure.
-///
-/// Says what the report is *about*, because the difference between "pdfcer
-/// approximated something" and "your document is damaged" is the single
-/// most valuable thing this surface can teach.
-#[must_use]
-pub fn diagnostics_tooltip() -> &'static str {
-    "What pdfcer had to substitute or leave out when it drew this page. \
-     These are facts about the renderer, not faults in your document."
-}
-
-/// Shown when the page drew with nothing substituted and nothing skipped.
-///
-/// Stated positively rather than left blank. An empty disclosure is
-/// indistinguishable from a disclosure that failed to fill itself, and the
-/// operator who opened it wanted an answer either way.
-#[must_use]
-pub fn diagnostics_clean() -> &'static str {
-    "Drawn with nothing substituted or left out"
-}
-
-/// Glyphs painted from a **bundled** substitute face.
-///
-/// Positions are the document's own; the shapes are pdfcer's. Worth its own
-/// line rather than being folded into [`diagnostics_glyphs_supplied`],
-/// because the two have different remedies: a bundled substitute is fixed by
-/// supplying the real font, and a supplied one is already the operator's own
-/// deliberate choice.
-#[must_use]
-pub fn diagnostics_glyphs_substituted(n: usize) -> String {
-    if n == 1 {
-        "1 glyph drawn with a bundled substitute face".to_owned()
-    } else {
-        format!("{n} glyphs drawn with a bundled substitute face")
-    }
-}
-
-/// Glyphs painted from an **operator-supplied** face.
-#[must_use]
-pub fn diagnostics_glyphs_supplied(n: usize) -> String {
-    if n == 1 {
-        "1 glyph drawn from a supplied font".to_owned()
-    } else {
-        format!("{n} glyphs drawn from a supplied font")
-    }
-}
-
-/// Glyphs that had no shape at all — `.notdef`, or nothing painted.
-#[must_use]
-pub fn diagnostics_glyphs_notdef(n: usize) -> String {
-    if n == 1 {
-        "1 glyph with no shape available".to_owned()
-    } else {
-        format!("{n} glyphs with no shape available")
-    }
-}
-
-/// Whole fonts whose machinery this build does not implement; their text was
-/// **skipped**, not approximated.
-///
-/// Worded as "text not drawn" rather than "fonts unsupported" because the
-/// consequence is what the operator can see on the page. A count of
-/// unsupported fonts is a fact about pdfcer; missing text is a fact about the
-/// picture in front of them.
-#[must_use]
-pub fn diagnostics_fonts_skipped(n: usize) -> String {
-    if n == 1 {
-        "text from 1 font not drawn".to_owned()
-    } else {
-        format!("text from {n} fonts not drawn")
-    }
-}
-
-/// Images that could not be drawn at all.
-#[must_use]
-pub fn diagnostics_images_skipped(n: usize) -> String {
-    if n == 1 {
-        "1 image not drawn".to_owned()
-    } else {
-        format!("{n} images not drawn")
-    }
-}
-
-/// Operators recognised but not yet implemented.
-#[must_use]
-pub fn diagnostics_ops_deferred(n: usize) -> String {
-    if n == 1 {
-        "1 drawing operator not yet implemented".to_owned()
-    } else {
-        format!("{n} drawing operators not yet implemented")
-    }
-}
-
-/// Operators not recognised at all.
-///
-/// Distinct from [`diagnostics_ops_deferred`]: "not implemented" is a gap in
-/// pdfcer with a name, and "unrecognised" means the content stream contained
-/// something no version of pdfcer expects — which is usually a fact about the
-/// file.
-#[must_use]
-pub fn diagnostics_ops_unknown(n: usize) -> String {
-    if n == 1 {
-        "1 unrecognised drawing operator".to_owned()
-    } else {
-        format!("{n} unrecognised drawing operators")
-    }
-}
-
-/// Optional-content sections that were hidden and therefore not drawn.
-///
-/// Reported even though hiding a layer is usually the operator's own doing,
-/// because the alternative reading of a suddenly-emptier page is "the render
-/// failed". Naming the cause is the difference between a control working and
-/// a control looking broken.
-#[must_use]
-pub fn diagnostics_layers_hidden(n: usize) -> String {
-    if n == 1 {
-        "1 hidden layer section not drawn".to_owned()
-    } else {
-        format!("{n} hidden layer sections not drawn")
-    }
-}
-
-/// `/Contents` entries that named an object the file does not contain.
-///
-/// The one entry here that is a statement about the **document** rather than
-/// about the renderer, and it is worded that way: the page is incomplete
-/// because part of it is missing from the file, not because pdfcer declined
-/// to draw it.
-#[must_use]
-pub fn diagnostics_contents_missing(n: usize) -> String {
-    if n == 1 {
-        "1 content stream missing from the file".to_owned()
-    } else {
-        format!("{n} content streams missing from the file")
-    }
-}
-
-/// Join the notes into the single line the disclosure shows.
-///
-/// The separator lives here rather than at the call site because it is
-/// operator-visible punctuation, and because putting it in the widget would
-/// be the first crack in "every string a human can read is defined here".
-///
-/// `·` (U+00B7) rather than a comma: the parts are independent facts, not a
-/// list in a sentence, and a middle dot survives being read at a glance in a
-/// small weak font better than a comma does.
-#[must_use]
-pub fn diagnostics_join(parts: &[String]) -> String {
-    parts.join(" · ")
-}
 
 // ---------------------------------------------------------------------------
 // The edit disclosure — rule 4's surviving half for the vector verbs

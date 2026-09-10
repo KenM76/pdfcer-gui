@@ -963,6 +963,52 @@ Smaller, unblocked, and recorded in `FEATURES.md`:
 
 ## 10. Things that will bite you
 
+- **★★★ An API-drift gate hit is sometimes a FEATURE REPORT, not paperwork —
+  and the cheap discharge destroys the report.**
+
+  On 2026-09-10 `check-engine-api-drift` went red on one new public engine
+  item: `pdfcer_render::Diagnostics::annotations_icon_painted`. The gate's
+  contract is only *"this repository names it somewhere"*, so an exemption
+  line discharges it in fifteen seconds, and the exemption would have been
+  defensible on its face — the counter records a duty pdfcer **discharged**,
+  not an inference it made, so R8b rule 4 asks nothing of it directly.
+
+  ★★ **The question that was worth asking instead is what the counter is
+  positioned relative to.** `annotations_icon_painted` is incremented inside
+  the same arm that has just written `annotations_without_ap`, so the painted
+  set is a **subset** of the appearance-less set on every page. The difference
+  is therefore a number no surface in this shell could previously compute:
+  *how many annotations on this page is the operator being shown nothing for?*
+
+  ⇒ It became the tenth Render-notes finding the same afternoon, placed second
+  in the table because the absence it reports is the only one that leaves
+  **clean paper** — and clean paper is exactly what an unannotated drawing
+  looks like, so it is the one absence he cannot discover by looking.
+
+  ★ **The engine had already refused to fold the two numbers**, in its own doc
+  comment: *"folding them together would make one of the two numbers a lie"* —
+  the map is a fact about the FILE, the counter a fact about what the OPERATOR
+  SAW. That refusal is what made the consumer-side subtraction the right shape
+  rather than a workaround, and it is the recurring pattern: **when an engine
+  deliberately hands out the parts instead of the sum, the sum belongs at the
+  consumer with its argument written down.**
+
+  ⚠ **And the one way the subtraction could lie was guarded before it shipped.**
+  The census is taken under every annotation scope but the icon painter runs
+  only in scope, so under a **narrowed** scope the subtraction would report
+  *"not drawn"* about content the operator **withheld on request**. Those are
+  opposite facts. The entry is dropped entirely when `annotations_out_of_scope`
+  is non-zero rather than being reported smaller. Dormant today — the only
+  scope this crate narrows is the print dialog's, which does not feed the bar —
+  and pinned by test, because the day somebody adds a *View ▸ Display ▸
+  Comments* toggle is the day this sentence starts accusing the file of
+  something the operator did on purpose.
+
+  ⇒ **The rule: before writing an exemption, spend five minutes on what the new
+  item measures and what it is measured against.** The gate exists to notice
+  the engine moving; an exemption is the one response that guarantees nobody
+  ever asks why it moved.
+
 - **★★★ When a blocker clears, the prose that DESCRIBED the blocker is the
   most dangerous thing in the tree — and no test on either side can see it.**
 
