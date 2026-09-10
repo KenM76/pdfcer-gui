@@ -63,10 +63,37 @@ fi
 # a sweep of every *.md: CONTINUE.md and HANDOFF.md are HISTORICAL records, and
 # a past tick correctly says "blocked" about the day it was written. Rewriting
 # history to keep a gate green would destroy the thing those files are for.
-DOCS=("OPERATOR_REQUESTS.md" "FEATURES.md" "GUI_ROADMAP.md")
+#
+# ★★★ ENGINE_BACKLOG.md WAS MISSING FROM THIS LIST UNTIL 2026-09-09, AND IT IS
+# THE FILE WHOSE ENTIRE PURPOSE IS BLOCKED ROWS.
+#
+# Three rows in it declared `BLOCKED` on requests the engine had answered on
+# 2026-09-06 — dashed borders, a discarded markup width, and `endings` not being
+# a `StyleEdit`. All three shipped, all three were wired here, and this gate ran
+# green over them for three days because it never opened the file. The list is
+# hand-written, so a document is invisible to the check built to find exactly
+# this class until somebody remembers to add it; nothing about the omission
+# looked wrong, and the count of documents scanned still added up.
+#
+# ⇒ When adding a document that carries status rows, add it HERE in the same
+# commit. There is no discovery step that will do it for you, and that is
+# deliberate: see the paragraph above about historical records, which is why
+# this cannot simply become a sweep of every *.md.
+#
+# ★★ AND ADDING THE FILE WAS ONLY HALF THE FIX. This gate's evidence is a
+# `*CONSUMED*.md` note that THIS side writes, which is correct — a reply that
+# schedules, defers or refuses must not clear a blocker, and only this side
+# knows when a capability has actually been taken. The consequence is that a
+# consumption nobody records makes the gate blind by construction. All four of
+# the 2026-09-06 markup asks were wired here and no note was ever written, so
+# even with the file in this list the gate would still have passed. Writing the
+# CONSUMED note is the act that arms this check; see
+# `open/done_2026-09-06-markup-style-four-CONSUMED.md`.
+DOCS=("OPERATOR_REQUESTS.md" "FEATURES.md" "GUI_ROADMAP.md" "ENGINE_BACKLOG.md")
 
 status=0
 found=0
+excused=0
 
 for doc in "${DOCS[@]}"; do
   path="$ROOT/$doc"
@@ -79,6 +106,53 @@ for doc in "${DOCS[@]}"; do
   while IFS= read -r hit; do
     lineno="${hit%%:*}"
     text="${hit#*:}"
+
+    # ★★★ A ROW THAT HAS ALREADY BEEN CORRECTED STILL CONTAINS THE WORD IT WAS
+    # CORRECTED ABOUT, AND FIRING ON IT IS WORSE THAN MISSING IT.
+    #
+    # Added 2026-09-09, immediately after this gate found three genuinely stale
+    # rows. Re-run on the FIXED file, it reported two more — and both were
+    # correct rows narrating their own history:
+    #
+    #   FEATURES.md      "⚠ THE ⛔ ON THIS ROW WAS STALE AND IS CORRECTED …"
+    #   ENGINE_BACKLOG.md "**Reachable** … ★★★ This row was `blocked` for about
+    #                      six hours and is the shortest-lived blocker …"
+    #
+    # Both are ✅/Reachable rows. Both name the request file, because a
+    # correction that erased its own citation could not be audited — which this
+    # project requires. ⇒ **The word "blocked" on those lines is a NARRATION OF
+    # THE PAST, not a claim about today**, and the gate had no way to tell the
+    # two apart because its predicate was "the token appears anywhere on the
+    # line".
+    #
+    # ★★ Why this mattered enough to fix rather than tolerate. This gate's own
+    # header records the first version firing on a TRUE warning and warns that
+    # such a failure "would have had somebody delete a true warning to make a
+    # build go green". A false positive on a correctly-updated row is the same
+    # hazard pointing the other way: the cheapest way to clear it is to delete
+    # the history sentence, and the history sentence is the most valuable part
+    # of a corrected row.
+    #
+    # The rule: a Markdown table row's VERDICT lives at the start of a cell, so
+    # a cell-initial closure token settles the row's status for today and any
+    # blocked token elsewhere on the line is history. The tokens below are the
+    # ones these four documents actually use — measured, not invented:
+    #   FEATURES.md / OPERATOR_REQUESTS.md / GUI_ROADMAP.md → ✅
+    #   ENGINE_BACKLOG.md → **Reachable, **Consumed, **WIRED, **UNBLOCKED
+    #
+    # ⬜ Known limit, stated rather than papered over: a row that is genuinely
+    # blocked TODAY and whose author begins its verdict cell with one of these
+    # tokens is excused. That shape does not exist in these documents and would
+    # be self-contradictory prose if it did — but it is a hole, not a proof.
+    #
+    # ⚠ Excuses are COUNTED AND REPORTED on every run, including green ones. An
+    # exclusion nobody can see is how a gate stops measuring without anybody
+    # noticing; see the SKIP-set discipline in the same family of findings.
+    if echo "$text" | grep -qE '\| *(✅|\*\*(Reachable|Consumed|WIRED|UNBLOCKED))'; then
+      excused=$((excused + 1))
+      continue
+    fi
+
     # Every request file named on this line.
     for req in $(echo "$text" | grep -o 'request_[a-z0-9_]*\.md' | sort -u); do
       if [ -f "$CHANNEL/$req" ]; then
@@ -116,6 +190,17 @@ for doc in "${DOCS[@]}"; do
     done
   done < <(grep -n -i -E '(BLOCKED|⛔|no verb (can|that)|cannot be (changed|done) at all)' "$path" || true)
 done
+
+# ⚠ Report the exclusions BEFORE the verdict, on green runs and red ones alike.
+# A number here that climbs without anybody noticing is this gate quietly
+# narrowing its own scope; a number that is suddenly zero is a token these
+# documents stopped using.
+if [ "$excused" -ne 0 ]; then
+  echo "check-stale-blockers: $excused line(s) excused as HISTORY — a cell-initial"
+  echo "  ✅ / Reachable / Consumed / WIRED / UNBLOCKED settles the row for today,"
+  echo "  so a 'blocked' elsewhere on the line is narration. Grep them if this"
+  echo "  count moves unexpectedly."
+fi
 
 if [ "$status" -ne 0 ]; then
   echo

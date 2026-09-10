@@ -61,3 +61,29 @@ is exactly the moment it matters.
 ★★ The disclosure is the part to keep. An agent that breaks a rule and says so
 is far more useful than one that does not break it and also does not tell you
 what it did — the report is what made this recordable at all.
+
+## ★★★ THE BACKUP IS FOR UNDOING THE EXPERIMENT, NOT FOR RESTORING YOUR WORK — 2026-09-09
+
+Same family, new costume, and it cost three finished edits.
+
+The sequence: copy `FEATURES.md` → `$SCR/FEATURES.md.bak`; make three
+corrections; then, to **falsify a gate**, copy the `.bak` back over the live
+file to reproduce the stale state; run the gate; and — restore only
+`ENGINE_BACKLOG.md`, because that one had a `.corrected` snapshot and
+`FEATURES.md` did not. The three corrections were gone, silently, with a green
+gate and a clean-looking tree.
+
+⇒ **A falsification overwrites the file you are trying to protect.** Before
+restoring a pre-edit copy for an experiment, snapshot the **post-edit** state
+too:
+
+```bash
+cp FILE "$SCR/FILE.corrected"     # <- the step that was missed
+cp "$SCR/FILE.bak" FILE           # reproduce the defect
+bash tools/gates/<gate>.sh        # expect RED
+cp "$SCR/FILE.corrected" FILE     # restore YOUR work, not the experiment's
+```
+
+★ The tell that it happened: `grep -c` for a phrase you know you wrote returns
+**0**. Check that immediately after any restore, for **every** file the
+experiment touched — the loss is silent and nothing downstream complains.

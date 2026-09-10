@@ -411,30 +411,58 @@ Wanted, and waiting on something named. Every row here says **what** it is waiti
 |---|---|
 | **Session verbs plan against the SESSION graph, not the base revision** — every text-edit planner takes `&DocumentView<'_>` and every `EditSession` verb passes `self.view()` … | **BLOCKED ON THE ENGINE PIN, and it is the answer to a measurement THIS repository made yesterday.** `Pass 257.0`. Commit `f9ded5a` recorded O141's font escape hatch failing at its last step and killed the shell-side hypothesis by construction: one `EditSession`, `format_text` then `edit_text` located by `find` text alone — **refused**; the identical pair with a save and reopen between them — **succeeds**. That is exactly the staleness this Pass removes: a `/Font` that `format_text` authored this session is typeable by the next `edit_text` at once, and handing a planner the base revision is now a compile error upstream. ⚠ **WAS: not in the build this shell compiles** — *"`Cargo.lock` pins `56dde4d` and this landed six commits later, unreleased — measured, not assumed."* ⇒ **SUPERSEDED 2026-09-08: `Pass 257.0` IS in the pin**, and how that was established is the part worth keeping. ★★★ **The commit this row cites, `f9ded5a`, NO LONGER EXISTS** — the engine rebased — so `git merge-base --is-ancestor f9ded5a <pin>` answers *not an ancestor*, which is **indistinguishable from "not shipped" and is a false negative wearing a measurement's clothes**. The capability was confirmed instead by grepping the pinned engine for the two refusal strings `Pass 257.0` removed (*"the page's content was already edited this session"* and *"the page set was changed this session"*): both are gone. ⇒ **Verify a capability by its own surface, not by a hash.** A hash can go stale in two independent directions — the work lands, or the commit is rebased away — and only one of them looks like progress. ★ The workaround this row said must be re-measured was deleted on 2026-09-08 when the reflow refusal was re-derived; see the commit. The pin is deliberately not moved from inside a session cutting a release from it. **What it costs once the pin moves:** the save-and-reopen workaround this shell wrote around the old behaviour must be RE-MEASURED and, if it is dead, deleted with its test — a workaround kept past its cause is the stale-blocker shape this file exists to catch. |
 
-### Annotations & markup — ★★★ four rows added 2026-09-06, and all four are OUR asks rather than the engine's offers
+### Annotations & markup — ★★★ CLOSED 2026-09-09. All three rows shipped on 2026-09-06 and this file said "blocked" for three days
 
-★★★ **These four are a different shape from every other row in this file, and
-the difference is worth stating before they are read.** Every row above is keyed
-on a capability the ENGINE'S OWN `FEATURES.md` advertises, and the verdict says
-whether this shell has it. These four are keyed on **absences this shell
-measured while building against the engine on 2026-09-06** and filed, one topic
-per file, in `D:\Dev\FeatureRequests\pdfce_FeatureRequests\open\`. They will
-never be surfaced by `check-engine-backlog.sh`, because that gate reads the
-engine's table and an absence is not in it. ⇒ **A gap this shell finds has no
-gate; it has only this file.** That is the same asymmetry the gate's own header
-records for prose-announced capabilities, running in the opposite direction, and
-it is why these rows are written here rather than left in the request channel to
-be found by accident.
+★★★ **Read the correction before the history, because the history is the
+part that is now wrong.** These three rows were keyed on **absences this shell
+measured while building against the engine on 2026-09-06** — not, like every
+other row in this file, on a capability the engine's own `FEATURES.md`
+advertises. That distinction still holds and is still worth keeping: a gap this
+shell *finds* is invisible to `check-engine-backlog.sh`, because that gate reads
+the engine's table and an absence is not in it. ⇒ **A gap this shell finds has
+no gate; it has only this file.**
 
-⚠ **All four were filed the same day and none has a reply.** Re-grep the channel
-for a `reply_*` or `done_*` file before repeating any of them as open — two
-entries in `RESUME.md` were stale on exactly that test on 2026-09-06.
+⚠⚠⚠ **And that is exactly how this block came to be wrong.** The engine
+answered all four asks the **same day** they were filed — the reply is
+`archive/2026-09-06-freetext-words-reply.md`, copied under all four request
+names — and every one of them was picked up, wired and shipped by this shell.
+**This file went on saying "BLOCKED" for three days anyway.** No gate could
+catch it, by the argument in the paragraph above: there is nothing on the
+engine's side for a gate to compare these rows against.
 
-| Row (this shell's filing, blocked) | Why |
-|---|---|
-| **`set_markup_style` accepts a `width` for a text markup and does nothing with it** — `request_set_markup_style_accepts_a_width_for_a_text_markup_and_does_nothing_with_it.md` | **BLOCKED ON A REPORT, NOT ON A PICTURE — and this is the one failure shape this project treats as worse than a refusal.** `set_markup_style(highlight_id, &MarkupStyle { width: Some(2.0), .. })` returns `Ok(MarkupStyleChange { .. })` with an **empty `dropped` list**, and the annotation is unchanged: `MarkupSpec::TextMarkup` has no border-width field, so the value is discarded without a word. Same for `/Underline`, `/StrikeOut` and `/Squiggly`. ★★★ **The picture is correct and the RETURN VALUE is wrong, which is why it is worth a Pass.** Everywhere else this verb is scrupulous: a `/BE` it cannot reproduce is `DroppedProperty::BorderEffect`, a dash is `DashPattern`, an exotic `/LE` is `LineEnding`, and a foreign appearance is `ForeignAppearance` **measured** rather than assumed — the engine's own comment says the measurement is the point, because *"a disclosure that fires on the overwhelmingly common path is one an operator learns to skip."* A width silently swallowed is the mirror image: **a disclosure that does not fire on a path where something WAS ignored.** A shell that trusted `Ok` plus an empty `dropped` would be entitled to tell the operator the width took. ★ **This shell does not send it** — `app::markupband` and `panels::properties::markup` both **hide** the width control for a text markup, on the shell's own knowledge that a highlight has no border — and it is filed anyway, because a workaround that depends on the caller knowing is a workaround the next caller will not have. |
-| **`MarkupStyle::endings` is not a `StyleEdit`, so `/LE` can be set and never removed** — `request_markupstyle_endings_is_not_a_styleedit_so_line_endings_cannot_be_removed.md` | **BLOCKED ON AN ASYMMETRY IN ONE FIELD OF AN OTHERWISE CONSISTENT STRUCT.** Four of `MarkupStyle`'s five fields distinguish *set* from *clear* through `StyleEdit`; `endings` is a bare `Option<(LineEnding, LineEnding)>`, so the nearest a caller can get to removing `/LE` is `Some((None, None))`, which **writes** `/LE [/None /None]` rather than removing the key. ★★ **Same picture, different bytes — and this project has been bitten before by treating those as equivalent.** An operator who turns an arrow's heads off and changes their mind has a document that no longer matches the one they opened, in a key nothing in either UI shows; undo covers the session and does not cover *"is this byte-identical to what my client sent me"*, which for a signed drawing is a question that gets asked. ★ It also **breaks the symmetry a caller reasons from**: this shell's two markup surfaces handle `stroke`, `interior` and `opacity` through one code path that understands `Set`/`Clear`, and `endings` needs a special case in both. **Small, and filed because the inconsistency is the kind that gets copied.** |
-| **A `/FreeText`'s painted words cannot be rewritten** — `request_a_text_boxs_painted_words_cannot_be_rewritten.md` | **BLOCKED ON A SECOND OBJECT THE COMMAND DOES NOT CARRY, and the divergence has no visible first moment.** `set_markup_note` on a `/FreeText` changes `/Contents` and leaves the page painting the old words. Three measured facts, all read out of engine source rather than inferred: (1) `annot_author::free_text` builds the `/AP` `/N` content from the caller's `text` and then writes **the same string** into `/Contents`, so at the instant a text box is placed the appearance and the dictionary **agree exactly**; (2) `write_markup_note`'s `Command` carries `objects: vec![ObjectWrite { id: annot_id, .. }]` — the `/AP` `/N` stream is a **separate object**, not in the command, not rewritten and not versioned with the change; (3) R43, in the engine's own words: *"pdfcer paints from `/AP` or not at all"*, so the stale stream is not a hypothetical about a stricter reader. ★★★ **The filing is NARROWER than it was briefed, and that is the part worth keeping.** A sticky note's `/Contents` is never painted and a stamp's is never written, so warning about those would have been **two invented defects**. Only `/FreeText` diverges. ★ This shell **discloses it twice, off-canvas, before and after the write**, and the request names a single unblocker rather than a wish list. |
+⚠ **The bitterest part, and the reason it is recorded rather than quietly
+edited away:** the block carried its own warning — *"All four were filed the
+same day and none has a reply. Re-grep the channel for a `reply_*` or `done_*`
+file before repeating any of them as open."* The warning was correct, it named
+the exact test that would have caught this, and **it was never run.** A note
+telling a future reader to check something is not a check. ⇒ **When a row's
+only guard is a sentence asking someone to re-verify it, that row needs a
+scheduled re-verification, not a better sentence.** The standing habit that
+replaces it: triage the reply channel every session — see the same finding in
+`RESUME.md` and in this project's memory under *"triage the reply channel — the
+engine fixes faster than we notice"*.
+
+⚠ **A fourth row is missing and its absence is also a defect.** The heading and
+this intro both said **four**; the table held **three**. The fourth —
+`request_markupstyle_cannot_express_a_dashed_border.md` — was closed and its
+row deleted without the surrounding prose being updated, so the count was wrong
+in two places for as long as the rows were wrong in three.
+
+**All four, verified at the pin (`pdfcer-core` v0.49.0, `369d4de`) on
+2026-09-09 — engine side AND shell side, because "the engine shipped it" is
+half an answer:**
+
+| Ask (filed 2026-09-06) | Shipped as | Consumed by this shell at |
+|---|---|---|
+| **`set_markup_style` accepts a `width` for a text markup and silently discards it** | `EditError::StylePropertyNotApplicable { id, subtype, property }` — a **refusal**, not a `DroppedProperty`, because the two are different sentences: `dropped` means *the FILE lost something*, this means *the CALL asked for something impossible*. Plus `MarkupStyleSupport::for_subtype`, so a shell never has to see the error. | `app/markupband.rs:245` imports it, `:792` builds it per `/Subtype`; the width, dash and endings controls are driven from it (`markupband/tests.rs:361/371/377` assert each control follows its own support flag). The old workaround — this shell hiding the width on its *own* knowledge that a highlight has no border — is gone, replaced by asking. |
+| **`MarkupStyle::endings` is a bare `Option`, so `/LE` can be set and never removed** | `endings: Option<StyleEdit<(LineEnding, LineEnding)>>` — `edit.rs:4939`. The field now matches the other four, so `Clear` removes the key rather than writing `/LE [/None /None]`. | `MarkupEdit::Endings(StyleEdit::Set(..))` — `app/markupband/tests.rs:159`. The special case in both markup surfaces is gone. |
+| **A `/FreeText`'s painted words cannot be rewritten** | `Pass 258.1`: the note now **re-bakes `/AP` `/N`** from the new words, and `MarkupNoteChange::appearance_rebaked` (`edit.rs:18584`) reports whether it did. `false` stays correct for a sticky or a stamp (their `/Contents` is never painted) **and** for a `/FreeText` whose existing appearance is one pdfcer would not have drawn — a hand- or Acrobat-authored stream with a shadow, a gradient or an image, deliberately left alone rather than replaced by pdfcer's plainer rendering. | `app/actions/annots.rs:804/844/894/921` read `change.appearance_rebaked`; `text/textannot.rs:403` gates the disclosure on `paints_its_note(subtype) && !appearance_rebaked`. ★ **So the operator-facing sentence was already correct** — it only fires on the narrow case that survives, and it says *why* ("this box was drawn by another program"). The staleness was **prose only**, never a wrong sentence shown to Ken. |
+| **`MarkupStyle` cannot express a dashed border** | All three asks, not the one that was asked for: preservation, authoring and removal. | `app/actions/apply.rs:636` `dash: pen.dash_option()`. ★ Deliberately **not** offered on a note, a text box or a stamp — `app/actions/textannot.rs:180-186` sets `dash: None` and says why: a dashed box around a comment reads as *provisional*, which R8b forbids content from doing. The dashed control belongs to the shapes. |
+
+★ **What is still owed on these four:** driven verification. All four are wired
+and unit-tested; none has a `ui-verify` check that drives the control and reads
+the result off the running binary. That is the R1 gap, and it is the reason
+`FEATURES.md` marks the `/FreeText` row **BUILT AND UNDRIVEN** rather than done.
 
 ### Reading, navigation & printing
 
@@ -547,16 +575,36 @@ into a specification.
   successfully and returns nothing, and a zero-byte `.txt` looks exactly like a
   successful export.
 
-★★ **The IMPORT half the operator asked for in the same sentence does not exist
-in the engine at all**, and that is a genuine gap with nowhere else to live:
-there is no document builder, no page-level text replace, and `add_ocr_layer`
-takes positioned words rather than a file. `add_text` is the nearest verb and
-stops at pagination — its overflow is *emitted, never clipped* (R76), so a
-two-page text file would produce one page with the second page painted off the
-sheet. Filed as
-`open/request_there_is_no_route_from_a_text_file_back_into_a_pdf.md`; the
-durable record is `app::actions::exporttext`'s module header. **No control was
-drawn for it.**
+★★ ⚠ **CORRECTED 2026-09-09. The paragraph that stood here said the import
+half "does not exist in the engine at all" and that "no control was drawn for
+it". Both were true when written and neither is true now.** The engine shipped
+**`EditSession::place_text`**, which does the whole job in one call — pagination
+included, so the `add_text`-overflows-off-the-sheet reasoning below no longer
+applies — and this shell has had the control since: `Action::ImportText`,
+reached from `dialogs::import_text`'s Import button, implemented in
+`app::actions::importtext`, and driven by
+`import_text::ATextFileBecomesPages` (`tools/ui-verify/src/checks/roster.rs:170`).
+
+★ **What the module actually spends its lines on is the disclosure**, which is
+the part worth carrying forward into any future reading of this row:
+`PlaceTextReport` has 23 fields, six of which are judgements the import made
+about the operator's own file — a paragraph split across a page break, a tab
+collapsed to a space, control bytes dropped, unmappable characters dropped,
+a U+000C he may not know he typed becoming a page break, a word too wide to
+wrap. Every one is an inference he **cannot see by looking at the result**: a
+paragraph split across a sheet looks like a paragraph he wrote that way. Rule
+4's surviving half, six times over. The undo promise is **read** from
+`coalesced` rather than assumed, because an import over 255 non-blank pages
+still places every page and simply fails to group them.
+
+⚠ **The stale history, kept because the shape of the mistake matters more than
+the mistake.** This row was filed as
+`request_there_is_no_route_from_a_text_file_back_into_a_pdf.md` and pointed at
+`open/`. That file is **not in `open/`** — the only surviving trace of it is a
+line in the channel's `INDEX.md`. So the row's own citation had rotted as well
+as its verdict, and neither was noticed for the same reason as the annotation
+block above: **a self-filed gap has no gate.** ⇒ Triage the reply channel every
+session; a row that says "filed as X" is a claim that X exists, and it expires.
 
 ### Vector objects (Inkscape-style editing)
 

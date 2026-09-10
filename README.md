@@ -10,10 +10,22 @@ Started 2026-08-12 as a design workspace. It became the code on
 
 ## What it does today
 
-Measured 2026-09-05 against `pdfcer-core` **v0.38.0** (`b01964f`), at commit
-`a926423`: **3,390 tests passing**, **29 of 29 CI gates**, **175 driven checks**
-in `tools/ui-verify`, **138 registered commands** across seven ribbon tabs plus
-a contextual Format tab, **12 dockable panels**, three modes.
+Measured 2026-09-09 against `pdfcer-core` **v0.49.0** (`369d4de`), at commit
+`c63812a`: **3,957 tests passing**, **32 of 32 CI gates**, **198 driven checks**
+in `tools/ui-verify`, **158 registered commands** across seven ribbon tabs plus
+a contextual Format tab, **13 dockable panels**, three modes.
+
+> ★ **This paragraph had gone four days stale while every other document was
+> refreshed** — it still named `pdfcer-core` v0.38.0, eleven minor versions
+> back, and was wrong on all six counts. Caught by a cross-document sweep on
+> 2026-09-09, not by a gate. The lesson is about *where* prose rots: the
+> release ritual re-measures `FEATURES.md`, `RESUME.md` and the current
+> hand-off, so those stay honest, and the **front door is the one page the
+> ritual never touches** — which is also the first page a new reader trusts.
+> Re-measure it whenever `FEATURES.md` is re-measured. The commands here are
+> `command(` entries in `shell/commands/catalog/`, the panels are
+> `Panel::ALL`'s length, and the checks are `Box::new(` inside
+> `ui-verify`'s `checks::all()`.
 
 **Read** — open, navigate, zoom, search, thumbnails, bookmarks, layers,
 attachments, page display modes, rulers, grid and guides. Encrypted documents

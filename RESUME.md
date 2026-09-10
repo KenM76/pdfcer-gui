@@ -1,5 +1,70 @@
 # RESUME — read this, then say "continue"
 
+> ★★★ **LATE ADDENDUM, 2026-09-09 night: FOUR ENGINE CAPABILITIES WERE WIRED
+> HERE AND NEVER RECORDED AS CONSUMED, WHICH LEFT THE GATE FOR EXACTLY THAT
+> BLIND.** The librarian sweep's stale-limitation item is closed. Read this
+> before the block below it; the block below is still accurate about the
+> release and the numbers.
+>
+> **What was actually wrong.** Four markup asks filed 2026-09-06 were answered
+> by the engine **the same day** and wired here within a day. `ENGINE_BACKLOG.md`
+> went on saying **`BLOCKED`** about three of them until tonight, `FEATURES.md`
+> carried the filed wording in two more places, and one section claimed all four
+> were sitting in `open/` when all four are in `archive/` with a reply. Three
+> days, four documents, **every gate green the whole time**.
+>
+> ★★★ **Two independent causes, either one sufficient — and the second is the
+> one worth carrying forward.**
+> 1. `check-stale-blockers.sh` scanned a hand-written `DOCS=(...)` that **did
+>    not include `ENGINE_BACKLOG.md`** — the one file in the project whose
+>    entire purpose is blocked rows. Fixed, with a comment at the list telling
+>    the next author to add their document in the same commit.
+> 2. **The gate's evidence is a `*CONSUMED*.md` note that WE write**, and no
+>    note was ever written for those four. So even with the file in scope it
+>    would still have passed. ⇒ **Filing the record is not paperwork; it is the
+>    act that arms the check.** Both notes now exist
+>    (`done_2026-09-06-markup-style-four-CONSUMED.md`,
+>    `done_2026-09-06-text-import-CONSUMED.md`).
+>
+> ★★ **A third thing came out of falsifying the fix, and it is a trap in the
+> other direction.** Re-run on the CORRECTED files, the gate reported two more
+> hits — both correct ✅/Reachable rows *narrating their own history* (*"the ⛔
+> on this row was stale and is corrected"*). Firing on those teaches the next
+> engineer to delete the history sentence, which is the most valuable part of a
+> corrected row. Fixed by reading the **cell-initial** verdict token rather than
+> the whole line, and the excused count is now **printed on every run, green
+> ones included**.
+>
+> ⚠ **What the program told Ken was never wrong.** The `/FreeText` stale-words
+> sentence has always been gated on `!appearance_rebaked`, so it only ever fired
+> on the narrow case that still survives (an appearance pdfcer would not have
+> drawn — a shadow, a gradient, an image). **The staleness was in our prose, not
+> in the software.** Do not "fix" the shell here.
+>
+> ✅ **Verified by falsification, not by reading:** stale documents restored
+> from copies → gate RED on exactly the three real rows, the two narration lines
+> excused; corrected documents restored → GREEN. All seven doc-reading gates
+> re-run green afterwards.
+>
+> ⚠⚠ **And a self-inflicted one, because it will happen again.** Restoring the
+> pre-edit `.bak` to reproduce the stale state **clobbered three finished
+> corrections** in `FEATURES.md`, because only `ENGINE_BACKLOG.md` had a
+> `.corrected` snapshot taken first. Before any falsification, snapshot the
+> **post-edit** state of every file the experiment touches. The tell is
+> `grep -c` for a phrase you know you wrote returning **0** — check it
+> immediately after every restore.
+>
+> ⬜ **Still owed on all four asks: driven verification.** Wired and
+> unit-tested is not driven (R1). None of the four has a `ui-verify` check that
+> works the control in a running binary. `FEATURES.md` says **BUILT AND
+> UNDRIVEN**, and that is accurate.
+>
+> ⇒ **The standing habit this replaces a warning sentence with: triage the reply
+> channel every session.** The old block carried its own note saying *"none has
+> a reply — re-grep the channel before repeating any of them as open"*. It named
+> the exact test that would have caught this and **it was never run**. A note
+> asking a future reader to re-verify something is not a check.
+
 > ★★★ **LAST SESSION: 2026-09-09, evening. THE LOAD-ANOMALY DISCLOSURE IS
 > DRIVEN, AND IT WAS FALSIFIED BOTH WAYS BEFORE IT WAS BELIEVED.** Fifth
 > release of the day. OneDrive **`pdfcer-gui2` (22:51) is the new build,
@@ -22,10 +87,10 @@
 > | tests | **3,957 passing, 0 failing, 51 ignored** | `CARGO_BUILD_JOBS=2 cargo test --workspace`, summing every `test result` through `awk` |
 > | gates | **32 of 32, 0 skipped** — and the run earned its keep, going red on 15 clippy `doc_lazy_continuation` sites in `status::anomalies` | `bash tools/gates/run-all.sh` |
 > | engine | `pdfcer-core` **0.49.0 at `369d4de`** (`Pass 286.0`). ★★ The tree is **2 commits ahead and no engine bump was owed** — `git diff --stat 369d4de..HEAD` touches only `docs/` and `.claude/`, nothing under `crates/`. Measured, not assumed | `grep -A3 'name = "pdfcer-core"' Cargo.lock`; `git -C D:/Dev/pdfcer diff --stat` |
-> | driven checks registered | **198** — up from 196 | `Box::new(` inside `checks/roster.rs`'s `all()`; the file holds **199**, one is deliberately outside `all()` |
+> | driven checks registered | **198** — up from 196 | `Box::new(` inside `checks/roster.rs`'s `all()`. ★ A raw `grep -c` over the file returns **199**; the 199th is `roster.rs:18`, a **doc-comment line**, not a check. Nothing sits outside `all()` — an earlier revision of this row said one did, which was a plausible reconciliation invented rather than measured, corrected 2026-09-09 |
 > | request channel | **215 files open, 53 `reply_*`**. Triaged: the three newest — the per-mark `redacted_text` reply, the residual-sweep notice and the load-anomaly notice — are all **consumed**, and the newest of them IS the current pin. One request filed by us this evening | `ls .../open \| wc -l` |
 > | smoke-launch | ✅ off-screen, `a1-titleblock.pdf` from the REPO ROOT, FINAL build: page drawn (`canvas-coverage covered=1.000`), no panic, no `overflow.*` region, **no `status-group:load-anomalies` on a clean file** (a third independent witness for the absence half), killed by PID+path | `PDFCER_DIAG=1 PDFCER_DIAG_VIEWPORT="-4200,-4200,1400,900"` |
-> | source | **541,789 lines of Rust in 954 tracked files**; `pdfcer-gui` 387,909; **53,658 lines of Markdown in 125 files** | `git ls-files '*.rs' \| xargs cat \| wc -l` — through `cat`, never `wc`'s per-batch totals |
+> | source | **541,789 lines of Rust in 954 tracked files**; `pdfcer-gui` 387,909; **~54,000 lines of Markdown in 125 files** — ★ quoted to the nearest thousand **on purpose**: this figure changes with every documentation commit, including the one that states it, so an exact number here is stale before it is read (it was 53,658 when first written and 54,056 two commits later). Re-measure, never quote | `git ls-files '*.rs' \| xargs cat \| wc -l` — through `cat`, never `wc`'s per-batch totals |
 >
 > ## ★★★ THE FINDING: A GREEN CHECK THAT HAS NEVER BEEN RED IS NOT EVIDENCE
 >

@@ -61,3 +61,28 @@ prose.** "X is covered elsewhere" inside the list's own documentation is the
 sentence that decays, because "elsewhere" asserts something about another test
 that nobody re-reads. If it is genuinely covered elsewhere, the list costs one
 line to include it anyway and the duplicate proves the claim.
+
+## ★★★ THE OMITTED FILE WAS THE ONE THE GATE EXISTED FOR — 2026-09-09
+
+`check-stale-blockers.sh` scans a hand-written `DOCS=(...)` for rows that
+declare `BLOCKED` on a request the engine has closed. Its list held
+`OPERATOR_REQUESTS.md`, `FEATURES.md`, `GUI_ROADMAP.md` — and **not
+`ENGINE_BACKLOG.md`, the one file in the project whose entire purpose is
+blocked rows.**
+
+Three rows in it declared blocked on asks the engine had shipped **the same day
+they were filed**, three days earlier. The gate ran green over them every
+session because it never opened the file. Nothing looked wrong: the gate
+reported OK, the documents it named were real, and the count of documents
+scanned added up.
+
+⇒ **When the check for a class has a hand-written scope, the first question is
+"is the canonical home of that class in the list?"** — not "are the entries in
+the list correct". The omission is invisible from inside; only naming the class
+and asking where it lives finds it.
+
+★ The list stays hand-written on purpose — `HANDOFF.md` and `CONTINUE.md` are
+HISTORICAL and a past tick correctly says "blocked" about the day it was
+written, so a sweep of every `*.md` would demand rewriting history to stay
+green. ⇒ The fix is not "make it automatic"; it is a comment at the list
+telling the next author to add their document **in the same commit**.
