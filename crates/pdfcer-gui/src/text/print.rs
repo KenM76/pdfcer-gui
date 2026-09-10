@@ -601,6 +601,119 @@ pub fn paper_form(name: &str, size_pt: (f64, f64)) -> String {
     format!("{name} — {} × {} mm", mm(size_pt.0), mm(size_pt.1))
 }
 
+/// The paper entry meaning "look at the pages and pick the sheet yourself" —
+/// operator request O167, 2026-09-10.
+///
+/// # Why the label names the SOURCE of the decision, not the decision
+///
+/// Same argument as [`paper_device_default`]: an entry called *"Automatic"*
+/// says only that something is chosen for you, and leaves an operator with a
+/// mixed drawing set no way to predict what. Naming the input — the pages of
+/// this document — makes the choice checkable against something the operator
+/// can already see, and the sentence underneath then reports which sheet came
+/// out of it.
+///
+/// It sits directly under [`paper_device_default`] and above the driver's own
+/// forms, because the two entries above the line are pdfcer's two *policies*
+/// and everything below is one specific sheet.
+#[must_use]
+pub const fn paper_auto() -> &'static str {
+    "Match the pages in this document"
+}
+
+/// What auto selection chose, when every page fits on it.
+///
+/// # ★ Why this sentence still says a request may be ignored
+///
+/// Because it is still a request. Auto selection changes *how the sheet is
+/// chosen*, not *what happens to the choice*: the same `DEVMODE` goes out with
+/// the same `DM_PAPERSIZE` asserted, and `pdfcer-print` measured two drivers
+/// silently ignoring one. An operator who reads "pdfcer matched A3 to your
+/// pages" and takes that for a guarantee has been misled by a sentence that
+/// was trying to be reassuring. See [`paper_is_a_request`] for the full
+/// argument and for why the disclosure is words beside the control rather than
+/// a mark on the preview.
+///
+/// # Why the page size is named as well as the sheet
+///
+/// So the match can be checked rather than trusted. *"A3 — 297 × 420 mm"* on
+/// its own is an assertion; *"your largest page is 297 × 420 mm, so A3"* is
+/// the working, and an operator whose drawing is not that size learns
+/// immediately that pdfcer measured something they did not expect — a rotated
+/// page, a stray cover sheet, a range they forgot they had narrowed.
+#[must_use]
+pub fn paper_auto_matched(name: &str, sheet_pt: (f64, f64), page_pt: (f64, f64)) -> String {
+    let mm = |pt: f64| (pt * 25.4 / 72.0).round() as i64;
+    format!(
+        "Largest page in this job: {} × {} mm. Closest sheet this printer offers: {name} ({} × {} mm). pdfcer asks the printer for it; a driver may ignore the request without reporting it, so check the first sheet that comes out.",
+        mm(page_pt.0),
+        mm(page_pt.1),
+        mm(sheet_pt.0),
+        mm(sheet_pt.1),
+    )
+}
+
+/// The extra sentence when the job does not have one page size throughout.
+///
+/// # ★ Why a mixed job gets an extra sentence rather than a different choice
+///
+/// A `DEVMODE` names one sheet and a job has many pages; there is no way to
+/// ask for two. Windows' own answer is the **choose tray by sheet size** flag,
+/// which this dialog already offers a few lines further down — so the honest
+/// disclosure is not "pdfcer cannot do this", it is "one sheet was chosen, the
+/// rest will be scaled onto it, and here is the one control that changes
+/// that."
+///
+/// Naming the control is the point. A sentence that reports a limitation
+/// without naming the remedy raises anxiety and resolves nothing; this project
+/// has written that lesson down once already, over the paper request itself.
+#[must_use]
+pub const fn paper_auto_mixed() -> &'static str {
+    "This job has more than one page size. Smaller pages will be scaled onto the chosen sheet — tick Choose tray by sheet size below if this printer has more than one tray or roll."
+}
+
+/// What auto selection chose when **nothing** the printer offers is big enough.
+///
+/// # ★ Why the biggest sheet, and why this is not treated as a failure
+///
+/// An A0 site plan on an office printer has no right answer. Falling back to
+/// saying nothing about paper would print on whatever the device happens to be
+/// standing on — chosen by nobody, reported by nothing. Picking the largest
+/// sheet the device has is the closest thing to what was asked for, and it is
+/// only defensible *because this sentence exists*: the operator is told the
+/// page is bigger than any sheet available, with both numbers, so the decision
+/// about what to do next is theirs and is made with the measurement in hand.
+///
+/// It does not say "the drawing will be cropped", because it will not be —
+/// the job is scaled to fit the sheet unless the operator has chosen actual
+/// size, and the clip disclosure in the footer covers the case where it is
+/// not. Two surfaces making overlapping claims about the same risk is how a
+/// dialog ends up contradicting itself.
+#[must_use]
+pub fn paper_auto_too_big(name: &str, sheet_pt: (f64, f64), page_pt: (f64, f64)) -> String {
+    let mm = |pt: f64| (pt * 25.4 / 72.0).round() as i64;
+    format!(
+        "Largest page in this job: {} × {} mm — bigger than any sheet this printer offers. Using its largest, {name} ({} × {} mm). pdfcer asks the printer for it; a driver may ignore the request without reporting it, so check the first sheet that comes out.",
+        mm(page_pt.0),
+        mm(page_pt.1),
+        mm(sheet_pt.0),
+        mm(sheet_pt.1),
+    )
+}
+
+/// Shown when auto selection is chosen but there is nothing to measure.
+///
+/// Reachable only for a document with no pages, which cannot print either —
+/// the combo is not drawn at all when the driver enumerated no sheets. It
+/// exists so that the disclosure line has a sentence for every state the
+/// choice can be in, rather than falling blank on one of them: a control with
+/// no line under it, where every other state has one, reads as a control that
+/// failed.
+#[must_use]
+pub const fn paper_auto_no_basis() -> &'static str {
+    "There are no pages to measure, so no sheet was chosen. The job will use whatever the printer's own settings name."
+}
+
 /// Shown in place of the paper list when the driver enumerated none.
 ///
 /// # Not an error, and not the same as an empty list being a bug

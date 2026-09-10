@@ -98,7 +98,7 @@ C: at **98 % full (23 GB free)**, the ranking was:
 | stale engine-pin source trees | **36 trees**, dominant | `~/.cargo/git/checkouts/pdfcer-*/` |
 | `target/debug` | 8.0 GB | project |
 | superseded `release/deps` artifacts | 3.76 GB | project |
-| dead pre-rename `pdfce` git cache | 1.5 GB | `~/.cargo/git/db/` |
+| dead pre-rename `pdfce` git cache | 1.5 GB | `~/.cargo/git/db/` | <!-- old-name-exempt: the stranded cache directory is literally named for the pre-rename project; naming it is the whole point of the row -->
 
 **Why this project specifically.** The engine is a `git+file://` dependency
 **pinned by revision**, and the pin moves almost daily. Cargo materialises a
@@ -113,7 +113,7 @@ from inside the project.
 Delete every sibling directory; cargo re-creates one from the bare `db/` repo on
 demand. Separately, `db/` is per **URL**, so it does not grow with pins but does
 strand a whole bare repo when a dependency is **renamed** — the pre-rename
-`pdfce` entries were dead for a week. Grep every `Cargo.lock` and `Cargo.toml`
+`pdfce` entries were dead for a week <!-- old-name-exempt: as above, this names a directory that exists on disk under the old name -->. Grep every `Cargo.lock` and `Cargo.toml`
 for the old URL before dropping one.
 
 ### ⚠ The `release/deps` correction, and the method that makes it safe

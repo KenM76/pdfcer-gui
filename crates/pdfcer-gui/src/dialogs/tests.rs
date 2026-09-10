@@ -78,7 +78,11 @@ fn an_answered_window_survives_its_own_close() {
 #[test]
 fn no_document_means_no_dialog() {
     let mut dialogs = DialogsState::default();
-    dialogs.open_print(&Status::Empty);
+    // The remembered settings are irrelevant to what this asserts — the guard
+    // fires before they are read — so the shipped defaults are the honest
+    // argument here. What matters is that no document means the spooler is
+    // never enumerated, whatever the operator last printed with.
+    dialogs.open_print(&Status::Empty, &crate::app::prefs::PrintPrefs::default());
     assert!(dialogs.print.is_none());
 }
 

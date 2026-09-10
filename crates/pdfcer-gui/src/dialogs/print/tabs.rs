@@ -318,6 +318,14 @@ pub(super) fn pages_layout(
     } else {
         let selected_text = match dialog.device.paper {
             PaperChoice::DeviceDefault => t::paper_device_default().to_owned(),
+            // ★ The label stays on the POLICY, never on the sheet the policy
+            // picked. See `PrintDialog::effective_device` for the argument:
+            // a combo that jumped to "A4" the moment auto was chosen would
+            // leave the operator unable to tell a match from a control that
+            // ignored them, and would carry the first document's sheet into
+            // the second under a label naming no policy at all. The sheet
+            // that was picked is reported in the line underneath.
+            PaperChoice::AutoFromPages => t::paper_auto().to_owned(),
             // A form id with no matching entry falls back to the default
             // label rather than showing a bare number. It is reachable in
             // one way: the driver's own properties dialog can name a form
@@ -352,6 +360,29 @@ pub(super) fn pages_layout(
                     &format!("{}0", super::REGION_PAPER_ITEM_PREFIX),
                     default.rect,
                 );
+
+                // ★ AUTO, second — operator request O167, 2026-09-10.
+                //
+                // The two entries above the separator are pdfcer's two
+                // *policies* — "say nothing" and "work it out from the pages"
+                // — and everything below is one specific sheet. Auto is
+                // second rather than first because the first entry is what
+                // this build has always done and what an operator who opens
+                // the list without meaning to change anything should find
+                // already selected.
+                //
+                // ⚠ Its region is `REGION_PAPER_AUTO`, deliberately outside
+                // the numbered namespace. That constant's doc carries why,
+                // and it is not a stylistic choice: numbering it would have
+                // silently re-aimed an existing driven check.
+                let auto = ui.selectable_value(
+                    &mut dialog.device.paper,
+                    PaperChoice::AutoFromPages,
+                    t::paper_auto(),
+                );
+                crate::diag::ui_rect(super::REGION_PAPER_AUTO, auto.rect);
+                ui.separator();
+
                 for (index, form) in dialog.forms.iter().enumerate() {
                     let entry = ui.selectable_value(
                         &mut dialog.device.paper,
@@ -384,8 +415,27 @@ pub(super) fn pages_layout(
     let line = match dialog.device.paper {
         PaperChoice::DeviceDefault => t::sheet_from_driver(sheet),
         PaperChoice::Form(_) => t::paper_is_a_request(sheet),
+        // ★ Auto reports the WORKING, not just the answer — the largest page
+        // it measured as well as the sheet it chose. An operator whose
+        // drawing is not the size named here learns immediately that pdfcer
+        // measured something they did not expect (a rotated page, a stray
+        // cover sheet), which a bare "A3" would have hidden.
+        PaperChoice::AutoFromPages => dialog.auto_paper_line(),
     };
     ui.label(egui::RichText::new(line).small().weak());
+
+    // ★★ The mixed-set sentence, on its own line and only when it applies.
+    //
+    // Separate from the line above because it is a different kind of claim:
+    // the first says what pdfcer did, this one says what the operator can do
+    // about a limitation of the format — a `DEVMODE` names one sheet and this
+    // job has more than one page size. Naming the remedy is the point; a
+    // disclosure that reports a limitation without naming the control that
+    // addresses it raises anxiety and resolves nothing.
+    if dialog.auto_paper_is_mixed() {
+        ui.add_space(2.0);
+        ui.label(egui::RichText::new(t::paper_auto_mixed()).small().weak());
+    }
 }
 
 // ---------------------------------------------------------------------------

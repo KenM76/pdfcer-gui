@@ -110,6 +110,12 @@ pub mod opening;
 /// ★ Which chord means which form-field paste — O58. Its own file because
 /// neither order is obviously right and the argument for each is worth keeping.
 pub mod pastechords;
+/// ★★ **What the Print window opens with** — `OPERATOR_REQUESTS.md` **O166**,
+/// 2026-09-10. Its own file because deciding *which* of that window's twenty
+/// controls may be remembered is a judgement worth keeping, and because it
+/// carries this group's whole file format — parser and writer together. See
+/// its header.
+pub(crate) mod printing;
 /// How sharply a page is drawn, and how long zoom waits before drawing it.
 /// The two preferences that change what a **frame costs**.
 pub mod quality;
@@ -121,6 +127,11 @@ pub use cache::PageCache;
 pub use chrome::{DEFAULT_UI_SCALE, MAX_UI_SCALE, MIN_UI_SCALE, UI_SCALE_STEP};
 pub use opening::{OpeningFit, PageChrome};
 pub use pastechords::PasteChords;
+// `pub(crate)`, not `pub`: `PrintPrefs` carries `dialogs::print::spooler`'s own
+// `pub(crate)` types, so it can be no more visible than they are. `Prefs` stays
+// `pub` and holds it on a `pub(crate)` field, which is legal and is what keeps
+// `private_interfaces` quiet.
+pub(crate) use printing::PrintPrefs;
 pub use quality::{DEFAULT_SETTLE_MS, MAX_SETTLE_MS, MIN_SETTLE_MS, RenderQuality};
 pub use wheel::WheelPaging;
 
@@ -662,6 +673,23 @@ pub struct Prefs {
     /// `pdfcer verify-signatures`. Filling this in while that is `Off` changes
     /// nothing, and the Settings group says so where both controls are drawn.
     pub acrobat_trust_store_path: String,
+
+    /// ★★★ **What the Print window opens with** — `OPERATOR_REQUESTS.md`
+    /// **O166**, his words of 2026-09-10: *"the printer dialogue box needs to
+    /// remember our last settings."*
+    ///
+    /// Read once by `crate::dialogs::print::PrintDialog::open`, written back
+    /// when a job is committed. See [`PrintPrefs`] for the rule that decides
+    /// which of that window's controls are in here and which are deliberately
+    /// not — the short version being that a setting is remembered only if it
+    /// would still be the right answer for a **different document**.
+    ///
+    /// ★ `pub(crate)` where every field above it is `pub`, because it carries
+    /// the print dialog's own crate-private types. That is deliberate and is
+    /// argued in [`printing`]'s header: storing the real types rather than a
+    /// mirrored set is what makes a new variant a compile error here instead of
+    /// a silent round-trip to the default.
+    pub(crate) print: PrintPrefs,
 }
 
 impl Default for Prefs {
@@ -711,6 +739,11 @@ impl Default for Prefs {
             // reason spelled out on the field: a cleared box is how a person
             // un-sets a path, so it cannot also mean "there is no store".
             acrobat_trust_store_path: String::new(),
+            // ★ Exactly what `PrintDialog::open` hard-coded before O166, so a
+            // fresh `userdata` folder opens the Print window in the state every
+            // previous build of pdfcer opened it in. Asserted, not assumed —
+            // see `printing::tests::the_default_is_what_the_dialog_used_to_hard_code`.
+            print: PrintPrefs::default(),
         }
     }
 }

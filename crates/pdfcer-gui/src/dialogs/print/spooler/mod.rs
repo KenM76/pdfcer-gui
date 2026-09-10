@@ -338,6 +338,26 @@ pub(crate) enum PaperChoice {
     DeviceDefault,
     /// A form the driver enumerates — a [`super::device::PaperForm::id`].
     Form(u16),
+    /// **Let pdfcer pick the sheet from the document's pages** — operator
+    /// request O167, 2026-09-10.
+    ///
+    /// # ★ This variant never reaches the engine, and that is the design
+    ///
+    /// `pdfcer_print::PaperSelection` has no auto variant and must not grow
+    /// one: the engine is handed a job, not a document, and the pages it is
+    /// handed have already been ranged, reversed and subsetted by this shell.
+    /// A rule that lives in the engine would be applied to the wrong list.
+    ///
+    /// So this value is a **statement of the operator's intent**, resolved to
+    /// a [`Self::Form`] (or back to [`Self::DeviceDefault`] when there is
+    /// nothing to measure) by [`super::super::autopaper::choose`] before the
+    /// job is planned or spooled. Everything downstream of
+    /// `PrintDialog::effective_device` sees a concrete sheet, which is why
+    /// [`to_engine_paper`] can map this arm to `DeviceDefault` as an ordinary
+    /// correct answer rather than as an unreachable case: *"no sheet could be
+    /// chosen"* and *"say nothing about paper"* are the same instruction to a
+    /// driver.
+    AutoFromPages,
 }
 
 /// The driver half of a job: what pdfcer asks the device to do.
@@ -684,7 +704,12 @@ const fn to_engine_settings(settings: DeviceSettings) -> pdfcer_print::DeviceSet
 /// bin, the whole driver-private tail — is carried through untouched.
 const fn to_engine_paper(paper: PaperChoice) -> pdfcer_print::PaperSelection {
     match paper {
-        PaperChoice::DeviceDefault => pdfcer_print::PaperSelection::DeviceDefault,
+        // `AutoFromPages` is resolved before it gets here — see its own doc.
+        // Reaching this arm means the resolution found no basis for a choice,
+        // and saying nothing about paper is the right answer to that.
+        PaperChoice::DeviceDefault | PaperChoice::AutoFromPages => {
+            pdfcer_print::PaperSelection::DeviceDefault
+        }
         PaperChoice::Form(id) => pdfcer_print::PaperSelection::Form(id),
     }
 }

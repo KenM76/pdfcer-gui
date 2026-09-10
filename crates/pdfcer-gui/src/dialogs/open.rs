@@ -83,14 +83,36 @@ impl DialogsState {
     ///   job would silently reset the range, the scale, the copy count and the
     ///   annotation scope — the operator's own settings, discarded by the
     ///   shortcut they pressed to look at them.
-    pub fn open_print(&mut self, status: &Status) {
+    ///
+    /// # `remembered` — O166
+    ///
+    /// The operator's last-used print settings, read from the preferences file
+    /// and handed to the constructor. See
+    /// [`crate::app::prefs::PrintPrefs`] for which of the Print window's
+    /// controls are in there and, more importantly, which are deliberately
+    /// not: the already-open guard above and this parameter answer two halves
+    /// of the same complaint, and it is worth seeing them together. The guard
+    /// stops a second press *discarding* a job you are half-way through
+    /// configuring; this stops the *first* press asking you four questions you
+    /// have already answered a hundred times.
+    ///
+    /// ⚠ `pub(crate)` where its siblings here are `pub`, and it is the
+    /// `remembered` parameter that demands it: `PrintPrefs` carries the print
+    /// dialog's own crate-private spooler enums, so a `pub` function naming it
+    /// trips `private_interfaces`. Nothing outside this crate calls it — the
+    /// only caller is the `file.print` arm of `app::dispatch`.
+    pub(crate) fn open_print(
+        &mut self,
+        status: &Status,
+        remembered: &crate::app::prefs::PrintPrefs,
+    ) {
         let Status::Open(doc) = status else {
             return;
         };
         if self.print.is_some() {
             return;
         }
-        self.print = Some(print::PrintDialog::open(doc));
+        self.print = Some(print::PrintDialog::open(doc, remembered));
     }
 
     /// Open the Recognise-text dialog for the document in `status`.

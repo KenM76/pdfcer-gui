@@ -80,7 +80,7 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
-## O166 — ⬜ **FILED 2026-09-10** — "the printer dialogue box needs to remember our last settings"
+## O166 — ◑ **BUILT 2026-09-10, NOT YET DRIVEN** — "the printer dialogue box needs to remember our last settings"
 
 **Your words, 2026-09-10**, in the same sentence as O167. Filed before any work
 started, per rule 1 of this file.
@@ -123,7 +123,7 @@ without being on screen.
 
 ### Where it is stored
 
-`userdata/prefs.txt`, beside the shell's other preferences — flat `key = value`,
+`userdata/preferences.txt`, beside the shell's other preferences — flat `key = value`,
 hand-editable, per-key recovery, and covered by the existing update
 instruction *"replace the program files, keep your `userdata` folder"*. Not in
 `settings.txt`: that file's every entry cites a clause the PDF standard is
@@ -131,11 +131,44 @@ silent on, and how many copies you usually print is not one.
 
 ### Status
 
-⬜ Not built at the moment of filing.
+◑ **Built 2026-09-10. Not yet driven, and that is the whole of what is
+outstanding.**
+
+**What the Print window now does.** Press **Print** and thirteen answers are
+written to your preferences file: the printer (by name), orientation, one- or
+two-sided, choose-tray-by-page-size, the paper policy, the sizing mode and its
+percentage, what gets printed of the markup, the resolution ceiling, the copy
+count, collate, odd/even/all, and reverse order. Open the window again — this
+session or next month — and it opens on those answers instead of on pdfcer's.
+
+**What it deliberately does NOT remember**, because these describe the
+*document* rather than you: the page range, which sheet the preview is showing,
+the preview's zoom and pan, and which tab was open. A range remembered from
+last week's 40-page set and applied to today's 3-page one is a wrong job that
+looks like a right one.
+
+**Two decisions worth knowing about.**
+
+- **Cancel forgets.** Settings are written when you press Print, not when the
+  window closes. Closing without printing is how a person says *"not this"*,
+  and every other print dialog on this machine behaves the same way.
+- **A failed print still remembers.** If the plotter is offline, the
+  configuration you just built is kept — losing it at the exact moment you need
+  to press Print again would be the worst possible time to lose it.
+
+**One deliberate loss.** If you pick a *specific* sheet from the driver's list,
+that choice is not remembered; the two general policies are. A driver's sheet
+numbers above the standard range mean whatever that one driver says they mean,
+and a preferences file outlives a printer — so a number remembered from the
+plotter could silently select something else entirely on the office copier.
+
+⚠ **Still owed: a driven check.** 3,186 unit tests pass and every gate is
+green, but nothing has yet proved by *running the program* that a setting
+survives a restart. Under this project's rule 1 that is not the same claim.
 
 ---
 
-## O167 — ⬜ **FILED 2026-09-10** — "we also need the option to auto select paper size based on the page sizes in the pdf"
+## O167 — ◑ **BUILT 2026-09-10, NOT YET DRIVEN** — "we also need the option to auto select paper size based on the page sizes in the pdf"
 
 **Your words, 2026-09-10.** Same sentence as O166, filed as its own row because
 it can ship on its own and because it is a genuinely different mechanism.
@@ -169,7 +202,23 @@ arithmetic we can already do, on data we already have.
 
 ### Status
 
-⬜ Not built at the moment of filing.
+◑ **Built 2026-09-10. Not yet driven.**
+
+The paper control has a third entry — **Match the pages in this document** —
+sitting under *from the printer's own settings* and above the driver's own
+forms, because those two are pdfcer's policies and everything below them is one
+specific sheet. Pick it and pdfcer measures every page the job will print at
+its rotated extent, finds the driver form that fits with the least waste, and
+asks for that sheet. The sentence beside the control says which sheet it chose
+and on what basis, and it says so **off the preview**, in words, exactly as the
+existing "a paper request is a request" disclosure does.
+
+A mixed set still resolves to one sheet, because a `DEVMODE` names one — so the
+*choose tray by page size* tick beside it is what makes a set of A1s and A3s
+land correctly on a device with more than one roll.
+
+⚠ **Still owed: a driven check** that picking the entry reaches the spooler with
+the chosen form, per rule 1.
 
 ---
 

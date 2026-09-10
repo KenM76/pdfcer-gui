@@ -78,7 +78,8 @@ pub const fn question_new() -> &'static str {
 /// infer it from the word *close*.
 #[must_use]
 pub const fn question_reread() -> &'static str {
-    "Reading this file again is a fresh start from what is on disk, so the      edits you have made here cannot come with it."
+    "Reading this file again is a fresh start from what is on disk, so the \
+     edits you have made here cannot come with it."
 }
 
 /// How much is at stake, in the operator's units rather than the engine's.

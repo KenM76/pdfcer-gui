@@ -449,7 +449,7 @@ impl PdfcerApp {
             // the commit button sets a flag, and the spool runs after the
             // window's closure has returned. Paper is as irreversible as it
             // gets; it is the rule being kept, not the mechanism.
-            "file.print" => self.dialogs.open_print(&self.status),
+            "file.print" => self.dialogs.open_print(&self.status, &self.prefs.print),
             // ★★★ Save a compacted copy — `OPERATOR_REQUESTS.md` O48.
             //
             // The only `open_*` on this list that can fail rather than decline:

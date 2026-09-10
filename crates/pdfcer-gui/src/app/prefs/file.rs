@@ -354,10 +354,33 @@ impl Prefs {
                         }),
                     }
                 }
-                _ => notes.push(PrefNote::UnknownKey {
-                    key: key.to_owned(),
-                    line,
-                }),
+                // ★★ The print group — thirteen keys, delegated whole.
+                //
+                // ⚠ This is the ONE family whose parser is not an arm in this
+                // match, and the reason is the rule this file's header states
+                // rather than an exception to it: the parser and the writer
+                // must stay together, and for this group they live together in
+                // `printing.rs` beside the type, its defaults and its token
+                // vocabulary. Adding a print preference is still one edit to
+                // one file. See `printing::parse_key`'s own header for the
+                // full argument.
+                //
+                // The `_` arm below is reached only when this returns
+                // `NotMine`, so an unknown key is still reported exactly once
+                // and a bad print value is reported against its own key rather
+                // than as a spelling mistake.
+                _ => match printing::parse_key(&mut prefs.print, key, value) {
+                    printing::KeyOutcome::Accepted => {}
+                    printing::KeyOutcome::BadValue => notes.push(PrefNote::BadValue {
+                        key: key.to_owned(),
+                        value: value.to_owned(),
+                        line,
+                    }),
+                    printing::KeyOutcome::NotMine => notes.push(PrefNote::UnknownKey {
+                        key: key.to_owned(),
+                        line,
+                    }),
+                },
             }
         }
         (prefs, notes)
@@ -648,6 +671,10 @@ impl Prefs {
             out.push_str(opening::bool_key(value));
             out.push('\n');
         }
+
+        // The print group's whole block — see `printing::write_block`, which
+        // sits beside the parser that reads it back.
+        printing::write_block(&self.print, &mut out);
 
         out
     }

@@ -980,14 +980,17 @@ impl eframe::App for PdfcerApp {
             self.dialogs.ask_for_password(&path);
         }
         let keymap = self.shell.as_ref().and_then(|s| s.keymap.as_ref());
-        self.dialogs.show(
-            &ctx,
-            &self.status,
-            &mut actions,
-            self.window,
+        self.dialogs.show(crate::dialogs::Frame {
+            ctx: &ctx,
+            status: &self.status,
+            actions: &mut actions,
+            window: self.window,
             keymap,
-            &self.commands,
-        );
+            registry: &self.commands,
+            // O166. The Print window is the only dialog that writes a
+            // preference; everything else here is read-only about `Prefs`.
+            prefs: &mut self.prefs,
+        });
 
         // ★★★ **Step 4a — the FLOATING PANELS' own windows.**
         //

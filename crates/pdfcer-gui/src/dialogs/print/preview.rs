@@ -1299,7 +1299,7 @@ fn texture_for(
     // The SAME builder the spooler calls. See `super::render_options` for the
     // choices it encodes and why a second copy of them here would defeat the
     // preview's entire purpose.
-    let options = super::render_options(dialog.scope, &inputs.doc.settings);
+    let options = super::commit::render_options(dialog.scope, &inputs.doc.settings);
     // `session.view()`, NOT `session.document()` — the view composes the
     // overlay and the staging buffer, so unsaved edits are what the operator
     // is about to print.

@@ -124,6 +124,10 @@
 /// all; the second needs an `egui::Ui`. Keeping them in one file would have
 /// put a page of pixel-threshold reasoning in the middle of a painting
 /// routine and pushed `preview.rs` toward R2's 1500-line ceiling.
+/// **Which sheet the pages want** — operator request O167, 2026-09-10. Pure
+/// arithmetic over the driver's form list and the job's rotated page extents,
+/// separated from the dialog because it is the half a unit test can drive.
+mod autopaper;
 pub(crate) mod ink;
 pub(crate) mod layout;
 /// **The preview in a window of its own** — operator request O112 ask 2. Its
@@ -131,7 +135,19 @@ pub(crate) mod layout;
 /// dialog's own column then draws nothing at all.
 mod popout;
 pub(crate) mod preview;
-mod spooler;
+/// ★ `pub(crate)` rather than private since 2026-09-10 (**O166**), because
+/// `crate::app::prefs::printing` persists the operator's print habits and
+/// stores **these** types — [`spooler::Orientation`], [`spooler::Duplex`],
+/// [`spooler::ScaleMode`], [`spooler::PageSubset`], [`spooler::PaperChoice`] —
+/// rather than a mirrored set of its own.
+///
+/// The alternative was a second copy of five enums on the other side of the
+/// boundary, and this project's standing lesson about mirrored enums is that
+/// they drift: a variant added here would round-trip through the preferences
+/// file as somebody else's default, silently, with every test still green.
+/// Widening this module is the cheaper of the two mistakes and the only one
+/// the compiler can police.
+pub(crate) mod spooler;
 pub(crate) mod tabs;
 
 /// **What the operator has actually looked at, and what may be said about the
@@ -139,12 +155,34 @@ pub(crate) mod tabs;
 /// whole argument: the count, the cache key, and the four sentences.
 mod verdicts;
 
+/// **Everything that happens the moment the operator presses Print** —
+/// the spool itself, the plan trace that precedes it, the receipt that
+/// follows it, and the render options all three share.
+///
+/// ★ Split out of this file on 2026-09-10 under **rule R2** (no source file
+/// over 1,500 lines) when O166 pushed it to 1,731. The seam is not
+/// arbitrary: everything left here is about the *window* — its state, what
+/// it draws, what it recomputes each frame — and everything moved is about
+/// the *job*, which is a transaction with one entry point and no UI.
+mod commit;
+
+/// **The dialog projected back into the preferences file** —
+/// `OPERATOR_REQUESTS.md` **O166**, his words of 2026-09-10: *"the printer
+/// dialogue box needs to remember our last settings."*
+///
+/// Two functions, and they are here rather than beside [`commit`] (which is
+/// what calls them) because the judgement they encode is a different
+/// subject: *which* of this window's twenty controls describe the operator
+/// rather than the document. See [`crate::app::prefs::printing`] for the
+/// rule and the argument for every inclusion and every omission.
+mod remembered;
+
 use egui::Ui;
 
 use crate::app::state::OpenDoc;
 use crate::dialogs::print::spooler::{
-    Collate, DeviceFeatures, DeviceSettings, DriverConfig, Job, JobSpec, PageBitmap, PageSubset,
-    PaperChoice, PaperForm, Printer, ScaleMode, SettingsSource, SpoolReport, Unavailable,
+    Collate, DeviceFeatures, DeviceSettings, DriverConfig, Job, JobSpec, PageSubset, PaperChoice,
+    PaperForm, Printer, ScaleMode, SpoolReport, Unavailable,
 };
 use crate::dialogs::print::tabs::{PrintRange, PrintTab};
 use crate::text::print as t;
@@ -175,6 +213,28 @@ pub(super) const REGION_PAPER: &str = "print.paper";
 /// no position anything outside the process could compute. Publishing them is
 /// the only route, and it costs nothing when `PDFCER_DIAG` is unset.
 pub(super) const REGION_PAPER_ITEM_PREFIX: &str = "print.paper.item.";
+
+/// The **Match the pages in this document** entry's own published region —
+/// operator request O167, 2026-09-10.
+///
+/// # ★ Why it is NOT `print.paper.item.1`
+///
+/// It sits second in the list on screen, so the obvious thing would have been
+/// to give it index 1 and push the driver's forms up by one. That would have
+/// been wrong in a way no gate would catch.
+///
+/// `REGION_PAPER_ITEM_PREFIX`'s numbering is a **contract with the driver's
+/// own form list**: index 0 is "say nothing", and index *n* is `forms[n - 1]`.
+/// A driven check reads those numbers to click a specific enumerated sheet and
+/// then asserts that the planned sheet moved. Inserting a policy entry into
+/// that namespace would leave the existing check clicking a different thing
+/// from the one it names, still green, still reporting a sentence about a
+/// form — the class of defect this project has now written down four times.
+///
+/// So auto gets a name of its own, outside the numbered namespace. Better for
+/// the check that needs it, too: `print.paper.auto` cannot silently become a
+/// different entry when the driver's list changes length.
+pub(super) const REGION_PAPER_AUTO: &str = "print.paper.auto";
 
 /// The print dialog's live state.
 ///
@@ -292,8 +352,29 @@ pub struct PrintDialog {
     /// Rendering resolution ceiling, in DPI. A memory bound, editable because
     /// the disclosure is worth more as a control than as a warning.
     max_dpi: u32,
-    /// Driver-level settings: orientation, duplex, tray choice.
+    /// Driver-level settings: orientation, duplex, tray choice, paper.
+    ///
+    /// ⚠ [`DeviceSettings::paper`] here is the operator's **choice**, which
+    /// may be [`PaperChoice::AutoFromPages`] — a value the engine has no
+    /// variant for. Everything that plans, spools or reports a job reads
+    /// [`Self::effective_device`] instead, which has resolved it.
     device: DeviceSettings,
+    /// What [`autopaper::choose`] decided **this frame**, and the evidence.
+    ///
+    /// # Why this is a field rather than a local
+    ///
+    /// Because four surfaces need the same answer and they are not on one
+    /// call path: the plan, the commit, the paper tab's disclosure line and
+    /// the diagnostic trace. Recomputing it at each would be four chances for
+    /// them to disagree, and a dialog whose sentence describes a different
+    /// sheet from the one it printed on is the exact failure the disclosure
+    /// exists to prevent.
+    ///
+    /// **Recomputed at the top of [`Self::show`], before anything reads it**,
+    /// from that frame's form list and page sizes — so it cannot go stale. It
+    /// is a memo of a derivation, not state the operator can change; the thing
+    /// the operator changes is [`Self::device`]'s `paper` field.
+    auto_paper: autopaper::AutoPaper,
     /// Odd/even filtering.
     subset: PageSubset,
     /// Print back to front.
@@ -438,17 +519,58 @@ impl PrintDialog {
     /// The guard against re-opening over a half-configured job is
     /// [`crate::dialogs::DialogsState::open_print`]'s, because it is the one
     /// place that can see whether a dialog already exists.
-    pub(super) fn open(doc: &OpenDoc) -> Self {
+    ///
+    /// # ★★★ `remembered` — operator request **O166**, 2026-09-10
+    ///
+    /// *"the printer dialogue box needs to remember our last settings."* Every
+    /// field below that reads `remembered` was a literal until that day, so an
+    /// operator who prints every drawing landscape, two-sided, on the plotter,
+    /// at 600 dpi re-answered all four questions on every single print.
+    ///
+    /// What is in that value and what is deliberately not is
+    /// [`crate::app::prefs::PrintPrefs`]'s subject, argued at length in its own
+    /// header. The rule, in one line: **a setting is remembered only if it
+    /// would still be the right answer for a different document.** Which is
+    /// why the range, the preview's sheet, its zoom and the active tab are
+    /// still literals here and always will be.
+    pub(super) fn open(doc: &OpenDoc, remembered: &crate::app::prefs::PrintPrefs) -> Self {
         let (unavailable, printers) = match spooler::list_printers() {
             Ok(printers) => (None, printers),
             Err(error) => (Some(error), Vec::new()),
         };
-        let selected = printers.iter().position(|p| p.is_default).unwrap_or(0);
+        // ★ The remembered printer is found BY NAME, and a name that no longer
+        // resolves falls silently back to the Windows default — which is what
+        // this build did before O166.
+        //
+        // Silence is the deliberate half. A printer being renamed, removed, or
+        // simply absent because this is a different PC is not a fault in the
+        // preferences file, and a note about it on every launch would outlive
+        // its usefulness by years. The operator sees the printer list with the
+        // usual device selected, exactly as they always have.
+        let selected = remembered
+            .printer
+            .as_deref()
+            .and_then(|name| printers.iter().position(|p| p.name == name))
+            .or_else(|| printers.iter().position(|p| p.is_default))
+            .unwrap_or(0);
         crate::diag::trace(|| {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
-                "print-open printers={} selected={selected} unavailable={unavailable:?} page={}",
+                "print-open printers={} selected={selected} remembered={} \
+                 unavailable={unavailable:?} page={}",
                 printers.len(),
+                // O166. A stable token rather than the name itself: the trace
+                // is split on whitespace by `tools/ui-verify`, and a printer
+                // called "HP DesignJet T1600" would arrive as three fields.
+                // `matched` = the remembered printer is on this machine and is
+                // selected; `missing` = a name was remembered and is not here;
+                // `none` = nothing has been remembered yet.
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                match remembered.printer.as_deref() {
+                    None => "none",
+                    Some(name) if printers.iter().any(|p| p.name == name) => "matched",
+                    Some(_) => "missing",
+                },
                 doc.view.page_index,
             )
         });
@@ -462,17 +584,51 @@ impl PrintDialog {
             properties_error: None,
             properties_requested: false,
             features_for: None,
+            // ★ NOT remembered, and this is the boundary O166 turns on: a
+            // range names pages of *this* document. `PrintRange::All` is the
+            // only honest answer for a file the last job never saw.
             range: PrintRange::All,
             range_text: String::new(),
-            scale: ScaleMode::Fit,
-            custom_percent: 100,
-            scope: pdfcer_render::AnnotationScope::Document,
-            max_dpi: 300,
-            device: DeviceSettings::default(),
-            subset: PageSubset::All,
-            reverse: false,
-            copies: 1,
-            uncollated: false,
+            // ★ The mode is remembered; the multiplier is REBUILT from the
+            // percentage rather than restored from the mode's own payload.
+            //
+            // `PrintPrefs` deliberately stores no payload for
+            // `ScaleMode::Custom` — the percentage has its own key, and a
+            // payload stored beside it would be the same number twice with two
+            // chances to disagree. This is the one place that pairing is
+            // re-formed, and it is the same expression `tabs::scale` uses when
+            // the operator drags the box.
+            scale: match remembered.scale {
+                ScaleMode::Custom(_) => {
+                    ScaleMode::Custom(f64::from(remembered.custom_percent) / 100.0)
+                }
+                other => other,
+            },
+            custom_percent: remembered.custom_percent,
+            scope: remembered.scope,
+            max_dpi: remembered.max_dpi,
+            device: DeviceSettings {
+                orientation: remembered.orientation,
+                // ★ Restored even onto a device that cannot duplex. The control
+                // is simply not drawn there — `DeviceFeatures::supports_duplex`
+                // gates it — so the value sits unused and comes back the moment
+                // the operator returns to a printer that can, which is what
+                // anybody who set it once would expect.
+                duplex: remembered.duplex,
+                pick_tray_by_page_size: remembered.pick_tray_by_page_size,
+                // ★ A POLICY, never a form id. `PrintPrefs::paper` cannot carry
+                // `Form(_)` at all — see its own note on why a `dmPaperSize`
+                // above `DMPAPER_USER` means whatever one driver says, and why
+                // a preferences file outlives a printer.
+                paper: remembered.paper,
+            },
+            // Recomputed at the top of every `show`; this is the value before
+            // the first frame, and it is never read.
+            auto_paper: autopaper::AutoPaper::NotChosen,
+            subset: remembered.subset,
+            reverse: remembered.reverse,
+            copies: remembered.copies,
+            uncollated: remembered.uncollated,
             preview_page: 0,
             active_tab: PrintTab::default(),
             // Fit, centred. Both are reset here rather than carried over from
@@ -535,6 +691,7 @@ impl PrintDialog {
         ctx: &egui::Context,
         doc: &OpenDoc,
         window: Option<isize>,
+        prefs: &mut crate::app::prefs::Prefs,
     ) -> bool {
         self.refresh_device();
 
@@ -561,10 +718,36 @@ impl PrintDialog {
             .collect();
 
         let spec = self.job_spec(&page_sizes, doc.view.page_index);
+
+        // ★★★ AUTO PAPER IS RESOLVED HERE, BEFORE ANYTHING READS IT — operator
+        // request O167, 2026-09-10.
+        //
+        // The position in this function is the whole of its correctness. It is
+        // after `page_sizes` (the input) and before `plan` (the first reader),
+        // so every surface below — the plan, the preview drawn from it, the
+        // disclosure line, the trace, and the commit at the bottom of this
+        // same function — sees one decision made once. See
+        // [`Self::auto_paper`] for why this is a field.
+        //
+        // ⚠ It is resolved against the WHOLE document rather than the selected
+        // range. That is deliberate and it is the one judgement in this
+        // feature worth arguing with: a range narrowed to page 1 of a mixed
+        // set would otherwise pick A4 and then, when the operator widened the
+        // range back, silently re-pick A3 and re-plan the job under them. A
+        // sheet that changes as a side effect of choosing pages is a control
+        // the operator is not driving. Choosing for the document means the
+        // answer is stable, and the disclosure names the largest page so the
+        // reasoning is visible either way.
+        self.auto_paper = match self.device.paper {
+            PaperChoice::AutoFromPages => autopaper::choose(&self.forms, &page_sizes),
+            PaperChoice::DeviceDefault | PaperChoice::Form(_) => autopaper::AutoPaper::NotChosen,
+        };
+        let device = self.effective_device();
+
         let printer_name = self.printers.get(self.selected).map(|p| p.name.clone());
         let job = printer_name
             .as_deref()
-            .map(|name| spooler::plan(name, self.device, self.config.as_ref(), &page_sizes, &spec))
+            .map(|name| spooler::plan(name, device, self.config.as_ref(), &page_sizes, &spec))
             .and_then(Result::ok);
 
         // Keep the stepper inside the job. A range narrowed while the dialog
@@ -682,6 +865,24 @@ impl PrintDialog {
         if std::mem::take(&mut self.commit_requested)
             && let (Some(printer), Some(job)) = (printer_name, job)
         {
+            // ★★★ O166, and the position is the decision: **the settings are
+            // remembered when the operator presses Print, not when the window
+            // closes.**
+            //
+            // Closing without printing is how a person says *"not this"* — they
+            // opened the window, changed the copy count, thought better of it,
+            // and cancelled. Persisting on close would make that abandoned
+            // configuration the state the next print opens in, which is the
+            // opposite of what cancelling means and is the behaviour no other
+            // print dialog on this machine has.
+            //
+            // ★ Before the spool rather than after it, and it is remembered
+            // even when the spool FAILS. The settings are the operator's
+            // answers; a driver refusing the job is a fact about the driver.
+            // An operator whose plotter was offline would otherwise lose the
+            // configuration they had just built at the exact moment they need
+            // to press Print again.
+            self.remember(prefs);
             let outcome = self.commit(&printer, doc, &job, &page_sizes);
             // ★★★ A SUCCESSFUL PRINT CLOSES THE DIALOG — 2026-09-03, and until
             // this day it did not.
@@ -812,9 +1013,99 @@ impl PrintDialog {
         self.features = features;
         self.forms = forms;
         self.config = None;
-        self.device.paper = PaperChoice::DeviceDefault;
+        // ★ A POLICY SURVIVES A CHANGE OF PRINTER; A SHEET DOES NOT.
+        //
+        // The reset above this line exists because `Form(257)` means one thing
+        // on an EPSON and something else on a plotter — see this function's
+        // doc. That argument is about a *device-specific id*, and it does not
+        // reach `AutoFromPages`, which names no id at all: it says "work the
+        // sheet out from the pages", and the new device's own form list is
+        // exactly what it will be worked out from on the very next frame.
+        //
+        // Clearing it would also have been a quiet trap for the operator who
+        // sets auto once and then switches from the office printer to the
+        // plotter — the one moment the feature is most obviously wanted.
+        if self.device.paper != PaperChoice::AutoFromPages {
+            self.device.paper = PaperChoice::DeviceDefault;
+        }
         self.properties_error = None;
         self.features_for = Some(self.selected);
+    }
+
+    /// **The device settings a job is actually planned and spooled with.**
+    ///
+    /// Identical to [`Self::device`] in every respect but one: a `paper` of
+    /// [`PaperChoice::AutoFromPages`] is replaced by whatever
+    /// [`Self::auto_paper`] resolved it to this frame — a concrete
+    /// [`PaperChoice::Form`] when a sheet was chosen, or
+    /// [`PaperChoice::DeviceDefault`] when there was no basis for one.
+    ///
+    /// # ★ Why the resolution is a function and not an assignment
+    ///
+    /// Because [`Self::device`] is what the **operator** chose and it must
+    /// survive. Collapsing `AutoFromPages` into `Form(9)` in place would mean
+    /// the combo stopped reading *"Match the pages in this document"* the
+    /// instant it was chosen: the operator would pick auto, watch the control
+    /// jump to "A4", and have no way to tell whether pdfcer had matched the
+    /// pages or simply ignored them. Worse, opening a second document in the
+    /// same session would then print on the first document's sheet under a
+    /// label that named no policy at all.
+    ///
+    /// So the choice is stored once and resolved on every read. The cost is a
+    /// struct copy per frame; the property bought is that *the control always
+    /// says what the operator asked for and the job always uses what pdfcer
+    /// worked out*, and neither can drift into the other.
+    ///
+    /// # Callers, and why there must be no others
+    ///
+    /// Three: [`Self::show`] (which plans with it), [`Self::commit`] (which
+    /// spools with it), and [`Self::trace_plan`] (which reports it). Any
+    /// fourth site reading `self.device` for a paper value is a site that can
+    /// hand `AutoFromPages` to something that has no meaning for it.
+    fn effective_device(&self) -> DeviceSettings {
+        let mut device = self.device;
+        if device.paper == PaperChoice::AutoFromPages {
+            device.paper = self.auto_paper.resolved();
+        }
+        device
+    }
+
+    /// **The disclosure sentence for auto paper selection**, for the paper tab.
+    ///
+    /// Lives here rather than in [`tabs`] because it reads [`Self::auto_paper`],
+    /// which is private to this module, and because keeping the four outcomes
+    /// in one `match` is what stops a state from silently having no sentence.
+    /// A control with no line under it, where every other state has one, reads
+    /// as a control that failed.
+    ///
+    /// [`autopaper::AutoPaper::NotChosen`] is unreachable from the caller — it
+    /// only asks when the operator picked auto — but it answers the no-basis
+    /// sentence rather than an empty string, for the same reason.
+    pub(super) fn auto_paper_line(&self) -> String {
+        match &self.auto_paper {
+            autopaper::AutoPaper::Matched(m) => {
+                t::paper_auto_matched(&m.name, m.sheet_pt, m.largest_page_pt)
+            }
+            autopaper::AutoPaper::TooBig(m) => {
+                t::paper_auto_too_big(&m.name, m.sheet_pt, m.largest_page_pt)
+            }
+            autopaper::AutoPaper::NoBasis | autopaper::AutoPaper::NotChosen => {
+                t::paper_auto_no_basis().to_owned()
+            }
+        }
+    }
+
+    /// Does this job have more than one page size?
+    ///
+    /// `false` unless auto selection actually ran and found one, so the extra
+    /// sentence cannot appear beside a hand-picked sheet — where it would be
+    /// true but pointless, the operator having already chosen the sheet
+    /// themselves.
+    pub(super) fn auto_paper_is_mixed(&self) -> bool {
+        match &self.auto_paper {
+            autopaper::AutoPaper::Matched(m) | autopaper::AutoPaper::TooBig(m) => m.mixed,
+            autopaper::AutoPaper::NoBasis | autopaper::AutoPaper::NotChosen => false,
+        }
     }
 
     /// Open the driver's own properties dialog and keep what it produces.
@@ -911,52 +1202,6 @@ impl PrintDialog {
                 Collate::Collated
             },
         }
-    }
-
-    /// **What a finished commit owes the operator, and whether the window is
-    /// done** — as a pure function, so it can be tested without a printer.
-    ///
-    /// Returns `Some(notes)` when the job went to the spooler: the sentences to
-    /// put on the application's disclosure row, in reading order. The caller
-    /// records them and closes the dialog. Returns `None` on failure, which
-    /// means *"say nothing here and leave the window open"* — the footer draws
-    /// the driver's own words and the operator picks another printer.
-    ///
-    /// # ★★★ Why this is extracted rather than left inline
-    ///
-    /// Because the behaviour it decides is the operator's 2026-09-03 report —
-    /// *"it doesn't close after I hit the print button [...] there was a dozen
-    /// jobs there"* — and the only way to drive the inline version is to
-    /// actually print. Spooling a real job to his printer to prove a window
-    /// closes is not a test, it is the defect.
-    ///
-    /// So the decision is separated from the act. `ui-verify` cannot reach it
-    /// (no headless route ends in a real spool), and this project's rule is
-    /// that a unit test is the floor rather than the ceiling — so what is
-    /// asserted here is deliberately the part that is **pure logic**: which
-    /// outcome closes, and which sentences travel. The act of printing is
-    /// `Self::commit`'s, and is covered by `print_dialog_reaches_the_spooler`.
-    ///
-    /// ★ Stated plainly because it is a real gap: *"the window closes after a
-    /// successful print"* is asserted as a decision, not as an observed
-    /// window disappearing. Closing that gap needs a driven check that prints
-    /// to a file device — `Microsoft Print to PDF` is on this machine — and it
-    /// is worth building; it is not built.
-    fn commit_notes(outcome: Result<&SpoolReport, &String>) -> Option<Vec<String>> {
-        let report = outcome.ok()?;
-        let mut notes = vec![t::sent(report.pages)];
-        // ★ The only one of the four `SettingsSource` values that is disclosed,
-        // and the operator could not learn it any other way: the job printed,
-        // and everything the driver held that pdfcer does not model was
-        // silently absent from it. See `SettingsSource::Synthesised`.
-        if report.settings_source == SettingsSource::Synthesised {
-            notes.push(t::settings_synthesised().to_owned());
-        }
-        // ★ Both sentences in ONE call. `record_notes`' own doc comment records
-        // why: the slot holds a single disclosure, so a second `record_note`
-        // REPLACES the first rather than joining it, and which one survived
-        // would be decided by statement order.
-        Some(notes)
     }
 
     /// The options column: the printer, then one of three tabs.
@@ -1076,136 +1321,6 @@ impl PrintDialog {
             }
         }
     }
-
-    /// Render every planned sheet and hand them to the spooler.
-    ///
-    /// # ★ The one place in the GUI that starts a print job
-    ///
-    /// Reached only from the commit button, via [`Self::commit_requested`].
-    /// Nothing here runs as a side effect of opening, previewing, saving or
-    /// rendering — which is the shell's half of `pdfcer-print`'s own contract
-    /// that *"`spool` is the only function that reaches `StartDoc`, and it is
-    /// reached only from a control an operator deliberately clicked."*
-    ///
-    /// # Why the whole job is rasterised inline
-    ///
-    /// It blocks the UI thread for as long as the job takes. That is the
-    /// honest behaviour for now and it is not an oversight: a print that
-    /// proceeds in the background needs a cancel affordance, a progress
-    /// surface and an answer to "what happens if the document is edited
-    /// mid-job", and shipping the render off-thread without those three would
-    /// replace a visible wait with an invisible race. The single-slot render
-    /// worker next door is for *display*, where a cancelled render costs
-    /// nothing; a cancelled print costs paper.
-    fn commit(
-        &self,
-        printer: &str,
-        doc: &OpenDoc,
-        job: &Job,
-        page_sizes: &[(f64, f64)],
-    ) -> Result<SpoolReport, String> {
-        // The SAME builder the preview calls. See `render_options` for the
-        // choices it encodes and why a second copy of them here would defeat
-        // the preview's purpose.
-        let options = render_options(self.scope, &doc.settings);
-        let view = doc.session.view();
-
-        let mut bitmaps = Vec::with_capacity(job.plans.len());
-        for plan in &job.plans {
-            let (Some(page), Some(&size)) = (doc.pages.get(plan.index), page_sizes.get(plan.index))
-            else {
-                // A plan naming a page the document no longer has. Skipped
-                // rather than refused, matching `plan_job`'s own posture: *"a
-                // job that refuses wholesale because one index is stale is
-                // worse than one that prints what it can and reports the
-                // count."*
-                continue;
-            };
-            let rendered = pdfcer_render::render_page_with_view(
-                &view,
-                page,
-                plan.render_scale as f32,
-                &options,
-            )
-            .map_err(|e| e.to_string())?;
-            bitmaps.push(PageBitmap {
-                width: rendered.pixmap.width(),
-                height: rendered.pixmap.height(),
-                // Premultiplied RGBA8, handed over unchanged — the engine's
-                // stated contract. Any conversion here would be a second
-                // colour convention.
-                rgba: rendered.pixmap.data().to_vec(),
-                placement: plan.placement,
-                page_pt: size,
-            });
-        }
-
-        // ★ The orientation page is the FIRST PLANNED page, taken from the
-        // bitmaps rather than from the document. The sequence may be reversed
-        // or range-filtered, which is exactly when `pages[0]` would be the
-        // wrong page — and the driver picks its paper from whichever one it is
-        // handed.
-        let first_page_pt = bitmaps
-            .first()
-            .map_or(US_LETTER_PORTRAIT_PT, |bitmap| bitmap.page_pt);
-        spooler::spool(
-            printer,
-            &bitmaps,
-            self.device,
-            self.config.as_ref(),
-            first_page_pt,
-        )
-        .map_err(|error| error.to_string())
-    }
-
-    /// One trace line describing the job the dialog is currently showing.
-    ///
-    /// ★ `scale=` is on this line beside `orientation=` because they are the
-    /// pair that exposes the orientation defect: a radio that changes
-    /// `orientation=` and not `scale=` on a landscape page is that regression,
-    /// restated. A harness can assert the relationship; a screenshot cannot.
-    ///
-    /// ★★ `clipped=` and `claim=` are on this line TOGETHER, and the pairing is
-    /// the assertion — operator request O113. `clipped=` is the unchanged
-    /// geometric count; `claim=` is what the button says, as `<state>:<count>`.
-    /// A driven check asserts the *correction* between them, which no capture
-    /// can supply: a button reading "Print" and a button reading "Print"
-    /// because the cache silently never matched are the same photograph.
-    fn trace_plan(&self, printer: Option<&str>, job: Option<&Job>, claim: verdicts::ClipClaim) {
-        crate::diag::trace(|| {
-            format!(
-                // ui-text-exempt: diagnostic trace, never displayed in the UI
-                "print-plan printer={printer:?} driver={:?} port={:?} sheets={:?} clipped={:?} \
-                 claim={}:{} \
-                 dpi={:?} capped={:?} uncapped_mb={:?} orientation={:?} duplex={:?} \
-                 paper={:?} sheet={:?} config={} \
-                 scale={:?} tab={:?}",
-                self.printers.get(self.selected).map(|p| &p.driver),
-                self.printers.get(self.selected).map(|p| &p.port),
-                job.map(|j| j.plans.len()),
-                job.map(Job::clipped),
-                claim.trace_word(),
-                claim.count(),
-                job.map(|j| j.resolution.dpi),
-                job.map(|j| j.resolution.capped),
-                job.map(|j| j.resolution.uncapped_page_mb),
-                self.device.orientation,
-                self.device.duplex,
-                // ★ `paper=` and `sheet=` are on this line TOGETHER, and the
-                // pairing is the assertion. `paper=` is what was asked for;
-                // `sheet=` is the physical sheet the geometry came back with.
-                // A build that took the request and planned against the
-                // device's default anyway would show `paper=Form(8)` beside an
-                // unchanged `sheet=` — the 77 %-scale defect in a second
-                // dimension, and invisible in any other evidence.
-                self.device.paper,
-                job.map(|j| j.device.physical_pt),
-                self.config.is_some(),
-                job.and_then(|j| j.plans.first()).map(|p| p.placement.scale),
-                self.active_tab,
-            )
-        });
-    }
 }
 
 /// The page size assumed for a job that plans no pages.
@@ -1214,147 +1329,3 @@ impl PrintDialog {
 /// the value never reaches paper; it exists so the commit path carries no
 /// `Option` for a case that cannot print.
 const US_LETTER_PORTRAIT_PT: (f64, f64) = (612.0, 792.0);
-
-/// The render options a print job — and its preview — are drawn with.
-///
-/// # ★ ONE builder, called from both, and that is the point
-///
-/// Two independently-written builders eventually disagree about something, and
-/// neither side can tell which one they are looking at. For a print preview
-/// that failure is the whole feature — a preview exists to say what will come
-/// out of the printer, so a preview built from its own options is a preview
-/// that can be confidently wrong.
-///
-/// The choices it encodes, carried across with their reasoning:
-///
-/// - **`view_magnification` stays `None`** — the PRINT answer under §8.11.4.5,
-///   which says a printing application *"shall not apply the changes based on
-///   usage application dictionaries"*. Inheriting the canvas's options would
-///   apply the zoom-driven optional-content states the operator happens to be
-///   looking at.
-/// - **The operator's layer overrides are NOT applied**, for the same clause:
-///   they are a viewing choice, and §8.11.4.5 puts printing on the document's
-///   own default configuration. `RenderOptions::layers` left at `None` is what
-///   expresses that — and `None` is *not* an empty set, which would reveal
-///   every layer the document turned off.
-/// - **The annotation scope IS the operator's**, because it is a statement
-///   about the job rather than about the view.
-///
-/// ## ★ The settings surface landed, and this paragraph is what it changed
-///
-/// This doc comment used to say:
-///
-/// > One choice the old shell encoded is missing here and its absence is not an
-/// > omission: **the CMYK conversion intent**. `pdfcer-core`'s settings surface
-/// > does not exist in this crate yet, so there is no operator choice to carry.
-/// > When it lands, it belongs here *and* in [`preview::PreviewKey`] in the
-/// > same commit — otherwise the preview keeps showing a page rendered under
-/// > the previous intent, which is the exact staleness class that key exists to
-/// > close.
-///
-/// It landed on 2026-08-17 and both halves were done together, as instructed.
-/// The options now come from `crate::app::settings::SettingsExt`, which carries
-/// **five** settings rather than the one that note anticipated — the CMYK
-/// intent, the mask resampling filter, the minification filter, the CMYK JPEG
-/// polarity, and what is drawn for an annotation with no stated appearance
-/// state. That last one reaches paper as well as the screen, which is why its
-/// radius line in the settings window is the only one that separately names
-/// printing.
-///
-/// [`preview::PreviewKey`] gained the same five, for the reason that note gave.
-fn render_options(
-    scope: pdfcer_render::AnnotationScope,
-    settings: &pdfcer_core::settings::Settings,
-) -> pdfcer_render::RenderOptions {
-    use crate::app::settings::SettingsExt;
-    settings.render_options().with_annotation_scope(scope)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    /// A spool report with the given page count and settings source.
-    ///
-    /// Built by hand rather than by printing, which is the whole reason
-    /// [`PrintDialog::commit_notes`] was extracted: proving that the window
-    /// closes must not require putting a job on the operator's printer.
-    fn report(pages: usize, source: SettingsSource) -> SpoolReport {
-        SpoolReport {
-            pages,
-            printed: true,
-            dpi: (300, 300),
-            clipped_pages: 0,
-            job_id: Some(1),
-            settings_source: source,
-        }
-    }
-
-    /// **A successful print returns sentences, which is what closes the
-    /// window** — the operator's 2026-09-03 report.
-    ///
-    /// > *"it doesn't close after I hit the print button [...] it looks greyed
-    /// > out as though it doesn't do anything even when I hit print - but it is
-    /// > working, so after many clicks I checked the printer and of course
-    /// > there was a dozen jobs there."*
-    ///
-    /// `Some` is the signal to record and close; `None` is the signal to stay
-    /// open. Asserting on the discriminant rather than on the wording, because
-    /// the wording belongs to `crate::text::print` and a test that pinned it
-    /// here would be a second copy of it.
-    #[test]
-    fn a_successful_print_asks_the_dialog_to_close() {
-        let ok = report(3, SettingsSource::DriverSupplied);
-        assert!(
-            PrintDialog::commit_notes(Ok(&ok)).is_some(),
-            "a job that reached the spooler must produce a receipt, which is what closes the \
-             window. Leaving it open is how one press became a dozen queued jobs."
-        );
-    }
-
-    /// **A FAILED print leaves the window open**, and the asymmetry is
-    /// deliberate rather than an oversight.
-    ///
-    /// On failure the operator's next act is to choose a different printer or a
-    /// different range — which is what this window is for — and the driver's
-    /// own words in the footer are the only thing telling them which. Closing
-    /// would destroy the reason and the settings together.
-    #[test]
-    fn a_failed_print_leaves_the_dialog_open() {
-        let why = "the device is offline".to_owned();
-        assert!(
-            PrintDialog::commit_notes(Err(&why)).is_none(),
-            "a failed job must NOT close the dialog: the footer's message is the only place the \
-             reason appears, and the settings that produced it are still on screen."
-        );
-    }
-
-    /// **The `Synthesised` disclosure travels WITH the receipt, in one call.**
-    ///
-    /// Two sentences, not two `record_note` calls. `record_notes`' doc comment
-    /// records why that matters: the slot holds one disclosure, so a second
-    /// call REPLACES the first and which one survived would be decided by
-    /// statement order rather than by importance.
-    ///
-    /// The receipt is first because it is the sentence an operator reads if
-    /// they read only one.
-    #[test]
-    fn a_synthesised_settings_source_adds_a_second_sentence_to_the_same_receipt() {
-        let plain = PrintDialog::commit_notes(Ok(&report(2, SettingsSource::DriverSupplied)))
-            .expect("a success returns notes");
-        let synthesised = PrintDialog::commit_notes(Ok(&report(2, SettingsSource::Synthesised)))
-            .expect("a success returns notes");
-
-        assert_eq!(plain.len(), 1, "an ordinary print says one thing");
-        assert_eq!(
-            synthesised.len(),
-            2,
-            "a job printed from settings pdfcer synthesised owes the operator that fact, and it \
-             is the one `SettingsSource` value they could not learn any other way"
-        );
-        assert_eq!(
-            plain[0], synthesised[0],
-            "the receipt must be the same sentence and must come FIRST in both cases"
-        );
-    }
-}

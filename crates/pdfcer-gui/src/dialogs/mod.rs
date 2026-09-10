@@ -580,6 +580,72 @@ pub struct DialogsState {
     signature: Option<signature::SignatureDialog>,
 }
 
+/// **Everything one frame of dialog drawing needs from the application**, in
+/// one value.
+///
+/// # Why this exists
+///
+/// [`DialogsState::show`] took seven loose parameters and, when O166 gave the
+/// Print window a preferences file to write to, an eighth. Clippy's
+/// `too_many_arguments` fired at that point, and the honest reading of that
+/// lint is not *"the limit is seven"* — it is that **a parameter list nobody
+/// has to name at the call site is a list that grows by accident.** Eight
+/// positional arguments at one call site in `app::frame` is a place where
+/// transposing two `Option`s of the same type compiles.
+///
+/// So the arguments are named here, once, with what each is for. Adding a
+/// ninth is still possible — it should be — but it now costs a field with a
+/// doc comment rather than a comma.
+///
+/// # Lifetimes
+///
+/// One, shared. Every borrow here is taken from disjoint fields of the same
+/// `PdfcerApp` for the duration of a single call, and none of them outlives
+/// the frame; distinguishing them would buy nothing and would put four
+/// lifetime parameters on a struct that lives for one statement.
+pub struct Frame<'a> {
+    /// The egui context this frame is being drawn into.
+    pub ctx: &'a egui::Context,
+
+    /// What the application currently has open.
+    ///
+    /// Document-scoped dialogs are closed wholesale when this is not
+    /// [`Status::Open`] — see [`DialogsState::show`] for which dialogs are
+    /// deliberately exempt from that and why.
+    pub status: &'a Status,
+
+    /// The frame's action queue, which dialogs **push** to rather than
+    /// applying anything themselves.
+    ///
+    /// A dialog that mutated the document directly would be a second edit path
+    /// with its own undo semantics. Pushing an [`crate::app::actions::Action`]
+    /// keeps every change on the one route that the undo stack, the diagnostic
+    /// trace and `ui-verify` all watch.
+    pub actions: &'a mut Vec<crate::app::actions::Action>,
+
+    /// The native window handle, for the dialogs that must parent an OS-level
+    /// window to it — the printer's own Properties sheet, chiefly.
+    pub window: Option<isize>,
+
+    /// The active keymap, so a dialog can show the chord that reaches it.
+    ///
+    /// `None` before the shell manifest has loaded, which is a real state
+    /// rather than an error: the dialog shows its label without a chord.
+    pub keymap: Option<&'a egui_shell::manifest::Keymap>,
+
+    /// The command registry, which is how a dialog learns that a capability
+    /// exists at all (**rule R8**) rather than by asking about a feature flag.
+    pub registry: &'a egui_shell::CommandRegistry,
+
+    /// The preferences file, mutable.
+    ///
+    /// ★ Added 2026-09-10 for **O166**. Exactly one dialog writes to it — the
+    /// Print window, which persists the operator's last-used print settings
+    /// the moment they press Print. Everything else here reads the
+    /// application's state and answers through [`Self::actions`].
+    pub prefs: &'a mut crate::app::prefs::Prefs,
+}
+
 impl DialogsState {
     /// **Open the Set-scale dialog with a reference line already measured.**
     ///
@@ -680,15 +746,23 @@ impl DialogsState {
     /// title-bar cross and its own Close button are both widgets), so the
     /// answer arrives out of the same call that needs `&mut` on the state
     /// being dropped.
-    pub fn show(
-        &mut self,
-        ctx: &egui::Context,
-        status: &Status,
-        actions: &mut Vec<crate::app::actions::Action>,
-        window: Option<isize>,
-        keymap: Option<&egui_shell::manifest::Keymap>,
-        registry: &egui_shell::CommandRegistry,
-    ) {
+    pub fn show(&mut self, cx: Frame<'_>) {
+        // ★ Destructured immediately, and deliberately: [`Frame`] exists to
+        // stop this function's parameter list growing without a thought (see
+        // its own header), NOT to make every use site downstream read
+        // `cx.ctx`. Below this line the body is written against the same seven
+        // names it has always used, which is why bundling them was a
+        // signature change rather than a rewrite of a two-hundred-line
+        // function.
+        let Frame {
+            ctx,
+            status,
+            actions,
+            window,
+            keymap,
+            registry,
+            prefs,
+        } = cx;
         // Application-scoped first, so that an empty canvas cannot skip it.
         // Ordering is the whole guard here: putting this after the early
         // return below is a one-line edit that would silently restore the old
@@ -728,7 +802,11 @@ impl DialogsState {
             return;
         };
         let doc: &OpenDoc = doc;
-        if self.print.as_mut().map(|d| d.show(ctx, doc, window)) == Some(false) {
+        // ★ The Print window is the one dialog here that WRITES a preference —
+        // O166, the operator's last-used print settings, persisted the moment
+        // he presses Print. That is why this function takes `&mut Prefs` at
+        // all; see `print::PrintDialog::remember`.
+        if self.print.as_mut().map(|d| d.show(ctx, doc, window, prefs)) == Some(false) {
             self.print = None;
         }
         if self.ocr.as_mut().map(|d| d.show(ctx, doc, actions)) == Some(false) {

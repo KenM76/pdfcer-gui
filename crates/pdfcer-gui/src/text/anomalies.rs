@@ -332,7 +332,10 @@ pub const fn reread_last_button() -> &'static str {
 /// the protection, and an operator who never hovers still keeps their work.
 #[must_use]
 pub const fn reread_tooltip() -> &'static str {
-    "pdfcer reads the file from disk again, so anything you have edited in this      document since opening it is not carried over — you are asked about that      first. Nothing is written to the file either way; this changes only how      pdfcer reads it."
+    "pdfcer reads the file from disk again, so anything you have edited in this \
+     document since opening it is not carried over — you are asked about that \
+     first. Nothing is written to the file either way; this changes only how \
+     pdfcer reads it."
 }
 
 /// *"Object 57 0 named /PageMode twice. pdfcer kept /UseOutlines and left

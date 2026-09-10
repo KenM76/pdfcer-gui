@@ -8,6 +8,10 @@
 #![cfg(test)]
 
 use super::*;
+// O166's group stores the print dialog's OWN types rather than a mirrored set
+// -- see `prefs::printing`'s header on why -- so the tests that build a
+// non-default `PrintPrefs` name them at their real home.
+use crate::dialogs::print::spooler::{Duplex, Orientation, PageSubset, PaperChoice, ScaleMode};
 use crate::viewer::{FitMode, ViewState};
 
 /// ★ Every value round-trips through the file.
@@ -90,6 +94,45 @@ fn every_preference_round_trips_through_the_file() {
                 // trip tests the writer's formatting rather than the
                 // loader's rounding — that is `an_off_step_ui_scale_is_rounded_and_reported`'s job.
                 ui_scale: 1.25,
+                // ★★ O166's thirteen keys, every one non-default, per this
+                // test's own rule. This is the only group whose parser and
+                // writer live outside `prefs::file` (they are in
+                // `prefs::printing`, together), so this assertion is the one
+                // that proves the delegation reaches both halves.
+                print: PrintPrefs {
+                    // A name with spaces AND parentheses — what a real second
+                    // plotter is actually called on a Windows machine, and the
+                    // string most likely to break a naive writer.
+                    printer: Some("HP DesignJet T1600 (Copy 2)".to_owned()),
+                    orientation: Orientation::Landscape,
+                    duplex: Duplex::ShortEdge,
+                    pick_tray_by_page_size: true,
+                    paper: PaperChoice::AutoFromPages,
+                    // ★ `Custom(1.0)` and not `Custom(2.5)`, deliberately, and
+                    // this is the one place in this test where a "more
+                    // non-default" value would be WRONG. `ScaleMode::Custom`'s
+                    // payload is not persisted — the percentage has its own
+                    // key and the payload is re-derived from it at the point
+                    // of use — so `1.0` is what `scale_from_key("custom")`
+                    // returns and any other payload would fail this round trip
+                    // for a duplication the design deliberately avoids. The
+                    // MODE is still non-default; the shipped one is `Fit`.
+                    scale: ScaleMode::Custom(1.0),
+                    // The number the payload above would be derived from, and
+                    // deliberately not 100: a writer emitting a constant would
+                    // otherwise pass.
+                    custom_percent: 250,
+                    scope: pdfcer_render::AnnotationScope::DocumentAndMarkups,
+                    max_dpi: 600,
+                    copies: 3,
+                    // ★ Non-default, and it is the field that proves the
+                    // INVERSION: the file says `print_collate` and the struct
+                    // holds `uncollated`, so a writer and parser that inverted
+                    // differently would land back on `false` here.
+                    uncollated: true,
+                    subset: PageSubset::Even,
+                    reverse: true,
+                },
             };
             let (read_back, notes) = Prefs::parse(&original.write_to_string());
             assert!(
@@ -555,6 +598,35 @@ fn the_writer_emits_no_key_the_parser_rejects() {
             guides: true,
         },
         ui_scale: 1.65,
+        // ★ O166. Deliberately a DIFFERENT set of values from the round-trip
+        // test above — a shared constant would make both tests depend on one
+        // combination, and this one is asking a different question: does every
+        // token this writer can emit parse back cleanly? So the enums are the
+        // arms the other test does not use, and the numbers are at the ENDS of
+        // their ranges, which is where a writer's formatting breaks.
+        print: PrintPrefs {
+            // ★ A name with a non-ASCII character. The file is UTF-8 and a
+            // printer's name is set by whoever installed it; a writer or reader
+            // that mangled it would silently print to the Windows default
+            // forever after, with nothing on screen to say so.
+            printer: Some("Konica Minolta bizhub — Atelier".to_owned()),
+            orientation: Orientation::Portrait,
+            duplex: Duplex::LongEdge,
+            pick_tray_by_page_size: true,
+            paper: PaperChoice::AutoFromPages,
+            scale: ScaleMode::ShrinkOversized,
+            // The top of the dialog's own `DragValue` range.
+            custom_percent: 1_000,
+            scope: pdfcer_render::AnnotationScope::FormFieldsOnly,
+            // The top of the range the file accepts. A number this large is
+            // exactly where a writer that formatted through an `f32` would
+            // start emitting something its own parser could not read.
+            max_dpi: 2_400,
+            copies: 999,
+            uncollated: true,
+            subset: PageSubset::Odd,
+            reverse: true,
+        },
     };
     let (_, notes) = Prefs::parse(&prefs.write_to_string());
     assert!(
