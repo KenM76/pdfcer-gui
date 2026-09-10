@@ -246,7 +246,7 @@ pub fn plan(doc: &OpenDoc, page: usize, run: usize, original: &str, replacement:
     // The run index is shared between the two extractions, which is safe and is
     // worth stating: `capture_provenance` populates a field and changes no
     // segmentation, so `runs[i]` names the same run under both options.
-    if let Some(page_ref) = doc.pages.get(page) {
+    {
         // ★ The funnel's output, MODIFIED — not a second construction.
         //
         // `with_provenance(true)` is the one thing no setting governs: it is the
@@ -258,11 +258,13 @@ pub fn plan(doc: &OpenDoc, page: usize, run: usize, original: &str, replacement:
         // paints and the find bar searches. Two extractions of one page under
         // two configurations would put the glyph the operator clicked and the
         // glyph this code edits one step out of step.
-        use crate::app::settings::SettingsExt;
-        let opts = doc.settings.extract_options().with_provenance(true);
-        if let Ok(text) =
-            pdfcer_core::text_extract::extract_page_view(&doc.session.view(), page_ref, page, &opts)
-        {
+        //
+        // ⇒ All of which is now the shared cache's contract rather than this
+        // function's — `crate::app::cache::provenance` — and on the commit
+        // path that matters twice over: the operator has already clicked in
+        // this run, so the extraction this needs was paid for at click time
+        // and this reads it for free.
+        if let Some(text) = doc.provenance_page_text(page) {
             let model = EditableTextModel::recognize(&text, &BlockRecognitionOptions::default());
             // ★★ The pin, and the buffer it indexes — [`pin::of_run`].
             //

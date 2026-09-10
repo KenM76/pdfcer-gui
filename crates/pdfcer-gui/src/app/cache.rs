@@ -72,6 +72,8 @@
 //! holds two `Ref`s at once, so the property is exercised and not merely
 //! argued.
 
+pub(crate) mod provenance;
+
 use std::cell::{Cell, Ref, RefCell};
 use std::time::Instant;
 
@@ -737,27 +739,29 @@ impl OpenDoc {
         if self.form_runs.built_for.get() == Some(key) {
             return;
         }
-        // Set BEFORE the work, exactly as `ensure_page_text` does: a failed
-        // extraction is deterministic for these bytes, so re-attempting it
-        // sixty times a second would burn a third of a second per frame to
-        // learn the same thing.
+        // ★ Recorded here, before the work — but **the order is not what
+        // makes a failed extraction cheap**, and this comment said it was
+        // until it was falsified on 2026-09-09 by moving the `set` below the
+        // extraction and watching nothing go red.
+        //
+        // It cannot be. The store at the bottom of this function runs whether
+        // the extraction succeeded or not, so the attempt is recorded either
+        // way and the next frame is a `Cell` read either way. The property
+        // that stops a third of a second per frame being spent re-learning a
+        // deterministic failure is that **the key is recorded on the failure
+        // arm at all** — which an early `return` there would quietly undo.
+        // `cache::provenance::ProvenanceTextCache::built_for` carries the
+        // measurement and the test that catches it.
         self.form_runs.built_for.set(Some(key));
         let started = Instant::now();
-        let built = self.current_page().and_then(|page| {
-            use crate::app::settings::SettingsExt;
-            // ★ The funnel's output MODIFIED, never `ExtractOptions::default()`
-            // - the same rule and the same reason as `ensure_page_text`. The run
-            // indices here must agree with the ones the canvas hit-tests and the
-            // ones the commit pins, and two extractions under two configurations
-            // segment differently.
-            let opts = self.settings.extract_options().with_provenance(true);
-            let text = pdfcer_core::text_extract::extract_page_view(
-                &self.session.view(),
-                page,
-                self.view.page_index,
-                &opts,
-            )
-            .ok()?;
+        // ★★★ **The shared extraction, not a private one.** This used to run
+        // its own `with_provenance(true)` extract right here, which meant a
+        // single click on a text run with the Properties panel open paid for
+        // the same `PageText` twice — once here, once inside `pin::inspect` —
+        // and threw one away. `crate::app::cache::provenance` carries the
+        // measurement (392 ms each, on the operator's benchmark sheet) and the
+        // argument for why the run indices are identical either way.
+        let built = self.provenance_page_text(self.view.page_index).map(|text| {
             // ★★★ THE ENGINE'S OWN QUERY, since `Pass 118.0` — and the whole
             // point of it was proved on 2026-08-20.
             //
@@ -791,12 +795,10 @@ impl OpenDoc {
             // would block text editing document-wide for a reason nobody
             // measured.
             use pdfcer_core::text_extract::Editability;
-            Some(
-                text.runs
-                    .iter()
-                    .map(|run| matches!(run.editability(), Editability::NoAnchor))
-                    .collect::<Vec<bool>>(),
-            )
+            text.runs
+                .iter()
+                .map(|run| matches!(run.editability(), Editability::NoAnchor))
+                .collect::<Vec<bool>>()
         });
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI

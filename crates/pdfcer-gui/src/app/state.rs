@@ -883,6 +883,13 @@ pub struct OpenDoc {
     /// see [`crate::app::cache`] for the cost measurement that made it a cache
     /// and for why it is per-page where a search is per-document.
     pub(super) page_text: PageTextCache,
+    /// **The current page's text WITH provenance**, which is the substrate
+    /// every text-editing verb needs and the read-only [`Self::page_text`]
+    /// deliberately does not carry. Read through
+    /// [`Self::provenance_page_text`]; see
+    /// [`crate::app::cache::provenance`] for the six duplicate extractions it
+    /// replaced and the 392 ms measurement behind it.
+    pub(super) provenance_text: crate::app::cache::provenance::ProvenanceTextCache,
     /// Which runs on the current page are inside a form XObject, and therefore
     /// cannot be edited by this cut of `pdfcer-core`. See `FormRunCache`.
     pub(super) form_runs: crate::app::cache::FormRunCache,
@@ -1066,6 +1073,7 @@ impl OpenDoc {
             page_objects: PageObjectCache::default(),
             fonts: FontCache::default(),
             page_text: PageTextCache::default(),
+            provenance_text: crate::app::cache::provenance::ProvenanceTextCache::default(),
             form_runs: crate::app::cache::FormRunCache::default(),
             links: crate::app::cache::LinkCache::default(),
             // Empty, like every other derived field here — see `selection`.

@@ -318,14 +318,10 @@ pub struct Inspected {
 /// [`operators_in_run`] for why the two are not the same thing.
 #[must_use]
 pub fn operators(doc: &OpenDoc, page: usize, run: usize) -> Vec<Operator> {
-    let Some(page_ref) = doc.pages.get(page) else {
-        return Vec::new();
-    };
-    use crate::app::settings::SettingsExt;
-    let opts = doc.settings.extract_options().with_provenance(true);
-    let Ok(text) =
-        pdfcer_core::text_extract::extract_page_view(&doc.session.view(), page_ref, page, &opts)
-    else {
+    // ★ The shared extraction — see `crate::app::cache::provenance`. `None`
+    // covers both "no such page" and "the text could not be read", which are
+    // one answer here: there are no operators to restyle either way.
+    let Some(text) = doc.provenance_page_text(page) else {
         return Vec::new();
     };
     let model = EditableTextModel::recognize(&text, &BlockRecognitionOptions::default());
@@ -459,12 +455,12 @@ pub fn font_preflight(
 /// hold a stale style struct alongside a fresh pin.
 #[must_use]
 pub fn inspect(doc: &OpenDoc, page: usize, run: usize) -> Option<Inspected> {
-    let page_ref = doc.pages.get(page)?;
-    use crate::app::settings::SettingsExt;
-    let opts = doc.settings.extract_options().with_provenance(true);
-    let text =
-        pdfcer_core::text_extract::extract_page_view(&doc.session.view(), page_ref, page, &opts)
-            .ok()?;
+    // ★★★ The shared extraction. **This is the 392 ms site** — the one
+    // `panels::properties::refusedchar`'s header measures by name, and the one
+    // that used to run a second time on every click that had already paid for
+    // the identical extraction inside `app::cache::ensure_form_runs`. See
+    // `crate::app::cache::provenance`.
+    let text = doc.provenance_page_text(page)?;
     let model = EditableTextModel::recognize(&text, &BlockRecognitionOptions::default());
     let pin = of_run(&model, run)?;
     let p = model.provenance(GlyphRef::new(run, 0))?;
@@ -732,12 +728,8 @@ pub fn object_text(doc: &OpenDoc, page: usize, object: usize) -> Option<ObjectTe
         }
     };
 
-    let page_ref = doc.pages.get(page)?;
-    use crate::app::settings::SettingsExt;
-    let opts = doc.settings.extract_options().with_provenance(true);
-    let text =
-        pdfcer_core::text_extract::extract_page_view(&doc.session.view(), page_ref, page, &opts)
-            .ok()?;
+    // ★ The shared extraction — see `crate::app::cache::provenance`.
+    let text = doc.provenance_page_text(page)?;
     let model = EditableTextModel::recognize(&text, &BlockRecognitionOptions::default());
 
     let mut first: Option<usize> = None;

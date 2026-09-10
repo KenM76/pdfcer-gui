@@ -48,20 +48,13 @@ use crate::app::state::OpenDoc;
 /// by the caller only insofar as it says so.
 #[must_use]
 pub fn block_of_run(doc: &OpenDoc, page_index: usize, run: usize) -> Option<usize> {
-    use crate::app::settings::SettingsExt;
-    let page_ref = doc.pages.get(page_index)?;
     // ★ `with_provenance(true)`, which `reflow_block` requires by name — it
     // answers `ReflowApplyError::NoProvenance` without it. The extraction
     // options are otherwise the operator's own, so the runs this addresses are
-    // segmented exactly as the runs the canvas paints.
-    let opts = doc.settings.extract_options().with_provenance(true);
-    let text = pdfcer_core::text_extract::extract_page_view(
-        &doc.session.view(),
-        page_ref,
-        page_index,
-        &opts,
-    )
-    .ok()?;
+    // segmented exactly as the runs the canvas paints. Both facts are now
+    // properties of the shared cache rather than of this function; see
+    // `crate::app::cache::provenance`.
+    let text = doc.provenance_page_text(page_index)?;
     let model = EditableTextModel::recognize(&text, &BlockRecognitionOptions::default());
     model.block_at(TextPosition::new(run, 0))
 }
