@@ -171,6 +171,7 @@ use pdfcer_core::edit::{InfoField, InfoText};
 
 use crate::app::actions::Action;
 use crate::app::state::OpenDoc;
+use crate::text::anomalies as t_anomalies;
 use crate::text::panels::docprops as t;
 
 /// The region this panel publishes.
@@ -332,6 +333,7 @@ fn info_body(ui: &mut Ui, doc: &OpenDoc, drafts: &mut InfoDrafts, actions: &mut 
     ui.label(t::heading());
     ui.label(egui::RichText::new(t::note()).small().weak());
     recovery_note(ui, doc);
+    load_anomalies_note(ui, doc);
     ui.add_space(4.0);
 
     facts(ui, doc);
@@ -600,6 +602,69 @@ fn recovery_note(ui: &mut Ui, doc: &OpenDoc) {
         .weak(),
     )
     .on_hover_text(t::recovered_tooltip());
+    ui.add_space(4.0);
+}
+
+/// ★★★ **Which places this file contradicted itself, and what pdfcer chose in
+/// each** — the long form of the status bar's census line. Engine
+/// `Pass 283.0`, decision 145, wired 2026-09-09.
+///
+/// # Why the detail is HERE and only a count is in the bar
+///
+/// The same division of labour [`recovery_note`] already has with its own status
+/// line, and for the same measured reason: the bar answers *"is there something
+/// I should know?"* in one elided row (**R128**), and this answers *"what,
+/// exactly?"* with as many rows as the file earned. A file with a doubled
+/// `/PageMode` produces a sentence naming the object, the key, the value pdfcer
+/// used and the value it left — which is four facts, and no width of status bar
+/// holds four facts for an unbounded number of objects.
+///
+/// ★★ And *this* panel rather than a dialog. `crate::dialogs::diagnostics` is
+/// the other long-form report in the shell and it is scoped by its own header to
+/// *"this page of this file"* — it describes a **render**, reads
+/// `doc.page_texture`, and draws nothing before the first raster. A load anomaly
+/// is a fact about the **file**, is true before anything has been drawn, and is
+/// true of every page at once. Document properties is where this shell already
+/// keeps facts of that kind, and it is where the recovered-index note that both
+/// status lines point at already lives — so the operator following either
+/// sentence arrives at one place.
+///
+/// # It is a disclosure, not a prompt
+///
+/// No control, no button, no way to act. That is not an omission: choosing the
+/// *other* value of a duplicate key is a **re-load with different
+/// `LoadOptions`**, not an edit — the engine is explicit that *"a decision made
+/// during parsing is not a value that can be edited afterwards, because the
+/// discarded one was never built into the document"* — and this shell has no
+/// re-load-with-options route yet. Filing that ask is `ENGINE_BACKLOG.md`'s job;
+/// drawing a disabled control for it here would be exactly the placeholder
+/// **R9** forbids. What the rows do give is the thing that makes the ask
+/// concrete: the operator can see both values and judge whether the choice
+/// mattered.
+///
+/// ★ Drawn inside [`body`]'s existing scroll area by construction — see
+/// [`info_body`]'s doc — which is what makes an unbounded row count safe here
+/// and unsafe in the bar.
+///
+/// ⚠ No epoch, no cache, no snapshot: read live from the open document, exactly
+/// as [`recovery_note`] above reads `Document::recovery()`. See
+/// [`crate::app::status::anomalies`]' header for why a load anomaly must
+/// **not** retire on the next edit.
+fn load_anomalies_note(ui: &mut Ui, doc: &OpenDoc) {
+    let rows = crate::app::status::anomalies::rows(doc.session.document().load_anomalies());
+    if rows.is_empty() {
+        return;
+    }
+    ui.label(egui::RichText::new(t_anomalies::heading()).color(ui.visuals().warn_fg_color));
+    ui.label(egui::RichText::new(t_anomalies::note()).small().weak())
+        .on_hover_text(t_anomalies::tooltip());
+    for row in &rows {
+        // ★ One label per anomaly rather than one joined paragraph. A paragraph
+        // reads as prose about the file in general; separate lines read as a
+        // list of specific places, which is what an operator checking a
+        // titleblock against a drawing needs to work down.
+        ui.label(egui::RichText::new(row).small().weak());
+    }
     ui.add_space(4.0);
 }
 

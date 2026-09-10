@@ -312,6 +312,12 @@
 /// header for the seam, and that one's for the control.
 // The four named zoom levels -- Actual size, Fit width, Fit height, Fit page.
 // Split out under R2 on 2026-08-24; see its header for the layout rule.
+/// ★★★ **What the file contradicted itself about** — the one reading of
+/// `Document::load_anomalies()` that both the bar's census line and the
+/// Document-properties list are drawn from. Added 2026-09-09 for engine
+/// `Pass 283.0`; see its header for why the derivation is shared and why it
+/// carries no `edit_epoch` key.
+pub(crate) mod anomalies;
 mod disclosure;
 mod fit;
 /// **What the bar can afford when the window is narrow** — the shed rule, and
@@ -570,6 +576,19 @@ pub(super) const REGION_EDIT_DISCLOSURE: &str = "status-group:edit-disclosure"; 
 
 /// See [`recovered_disclosure`].
 pub(super) const REGION_RECOVERED: &str = "status-group:recovered"; // ui-text-exempt: trace region name, never displayed
+/// ★★★ The *"this file contradicted itself and pdfcer decided"* line — engine
+/// `Pass 283.0`, decision 145.
+///
+/// The **third** region here that is about the FILE rather than about a gesture,
+/// and the one a driven check most needs by name: the engine's notice makes the
+/// whole tolerant-loading Pass conditional on the shell disclosing what was
+/// decided, so a census built into a zero-width rect would be the loader
+/// shipping without the thing that makes it honest. Only a published rect can
+/// tell "on screen and legible" from "constructed".
+///
+/// ⚠ Distinct from [`REGION_RECOVERED`] on purpose — the two conditions are
+/// disjoint and can be live together; see [`anomalies`]' header for the table.
+pub(super) const REGION_LOAD_ANOMALIES: &str = "status-group:load-anomalies"; // ui-text-exempt: trace region name, never displayed
 /// The blend-space disclosure's rect, for `ui-verify`.
 ///
 /// ★ A published region name is a cross-repo stability contract with the

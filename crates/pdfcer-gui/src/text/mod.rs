@@ -87,6 +87,12 @@ pub mod acrobat;
 /// that works in Read mode. Its header carries the two capabilities that are
 /// deliberately WORDLESS here, under R9, because the engine cannot reach them.
 pub mod annotpopup;
+/// ★★★ **What the file said twice, and which reading pdfcer used** — every
+/// word of the load-anomaly disclosure that engine `Pass 283.0` made owed.
+/// Consumed by `crate::app::status::disclosure` for the status bar's census
+/// line and by `crate::panels::docprops` for the per-object detail. Its header
+/// argues why there is deliberately no "this file opened cleanly" string.
+pub mod anomalies;
 /// ★★★ **Moving a mark that is already on the page** — the four refusals an
 /// arrow-key nudge can owe and the five disclosures a *Bring to front* can.
 /// Consumed by `crate::canvas::moving::nudge` and

@@ -17,22 +17,33 @@
 //! | [`fill_disclosure`] | what a form fill had to **infer** — an auto-size chosen, characters that could not be encoded |
 //! | [`edit_disclosure`] | what a move or delete had to change about an object's **form** to express the request |
 //! | [`recovered_disclosure`] | how this **file** was assembled, before anything was drawn |
+//! | [`load_anomalies_disclosure`] | what this **file** said twice, and which reading pdfcer used |
+//!
+//! ⚠ The table names the four rule-4 lines. Two further tenants have since
+//! joined the module and are **states rather than disclosures** —
+//! [`blend_space_disclosure`] and [`line_weights_disclosure`] — each arguing its
+//! own obligation in its own header; and [`catching_up`] is narration. The
+//! module is now "the bar's left-hand sentences", and only the four above are
+//! governed by the rule this header opens with.
 //!
 //! The obvious mistake, adding a third beside two, is an `else if` chain that
 //! shows whichever fires first. A document opened from a damaged index, then
 //! edited, with a form filled, owes the operator all three —
 //! `disclosure_independence` in the parent asserts they cannot collide.
 //!
-//! ★★ The third is the odd one out and the reason for this module's header: the
-//! first two are about **something the operator just did**, and the last is
-//! about **what the file was before they touched it**. It is also the only one
-//! that persists for the life of the document rather than until the next edit.
+//! ★★ The last two are the odd ones out and the reason for this module's
+//! header: the first two are about **something the operator just did**, and
+//! those two are about **what the file was before they touched it**. They are
+//! also the only ones that persist for the life of the document rather than
+//! until the next edit — see [`load_anomalies_disclosure`]'s lifetime section
+//! for why an `edit_epoch` key would be actively wrong for them.
 
 use egui::{Align, Layout, Vec2};
 
 use super::{
     NOTES_WIDTH_FRACTION, REGION_BLEND_SPACE, REGION_CATCHING_UP, REGION_EDIT_DISCLOSURE,
-    REGION_FILL_DISCLOSURE, REGION_LINE_WEIGHTS, REGION_RECOVERED, ROW_HEIGHT_PTS,
+    REGION_FILL_DISCLOSURE, REGION_LINE_WEIGHTS, REGION_LOAD_ANOMALIES, REGION_RECOVERED,
+    ROW_HEIGHT_PTS,
 };
 use crate::app::state::OpenDoc;
 use crate::text::forms as t_forms;
@@ -330,6 +341,82 @@ fn recovered_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
     disclosure_line(ui, REGION_RECOVERED, t::recovered_status_line());
 }
 
+/// ★★★ **This file contradicted itself, and pdfcer decided rather than
+/// refusing** — engine `Pass 283.0`, decision 145, wired 2026-09-09.
+///
+/// # What changed under the shell, and why silence was no longer an option
+///
+/// Until `Pass 283.0` a PDF whose catalog named `/PageMode` twice with two
+/// different values was **refused whole**. The operator hit it on a 46 KB
+/// drawing that opens in Acrobat, and his ruling is the reason the loader now
+/// opens it:
+///
+/// > *"acrobat just picks one — but what if it is the wrong one? … We should be
+/// > making pdfcer so that it opens pdfs that have errors, and have a way that
+/// > it manages those errors such that they aren't fatal, and if the user can
+/// > intervene in a decision that should always be an option along with them not
+/// > having to intervene."*
+///
+/// ★★ The half of that sentence a shell can get wrong is the *last* clause. A
+/// loader that quietly picks one of two values and says nothing has made the
+/// file open — and has also made pdfcer's choice invisible, which is the exact
+/// shape rule 4 forbids: **an inference the operator cannot see still owes them
+/// a report.** Before this line, a file with a doubled key opened, looked
+/// perfect, and disclosed nothing anywhere in the program.
+///
+/// # ★★★ Why this is not the recovered-index line with different words
+///
+/// [`recovered_disclosure`] fires when the stored cross-reference table could
+/// not be parsed and pdfcer rebuilt the index by scanning. This fires when an
+/// **object** contradicted itself, which happens on files whose index is
+/// perfect — the operator's file among them. The two are disjoint in both
+/// directions and can be live at once; see [`super::anomalies`]' header for the
+/// table. Folding them into one line would mean either claiming the index was
+/// damaged when it was not, or going quiet on the case that motivated the whole
+/// Pass.
+///
+/// # It is a DISCLOSURE, not a prompt — and never a modal
+///
+/// The engine's own notice puts the constraint in the imperative: *"The document
+/// is live and usable the instant it opens; what pdfcer guessed goes in a status
+/// line or a panel, off-canvas, and never gates the open. Do **not** build a
+/// modal in front of it. That is the shape he rejected by name."* So:
+///
+/// 1. **Off-canvas** (R8b, rule 4 as narrowed by decision 059). A line in the
+///    bar, never a badge, tint or outline on the page. The page as *drawn* is
+///    not in doubt; what is in doubt is which of two values the file offered was
+///    used, and marking the drawing would be a second rendering path over
+///    content that is fine.
+/// 2. **Never blocking.** Nothing here is asked, so nothing waits for an answer.
+/// 3. **It only appears for a file that actually contained a contradiction.** A
+///    sound file shows nothing — no all-clear, no placeholder (R9). See
+///    [`crate::text::anomalies`]' header for why the true "opened cleanly"
+///    sentence is deliberately not written.
+///
+/// # ★★ Its lifetime is the document's, and it carries no epoch key
+///
+/// [`fill_disclosure`] and [`edit_disclosure`] retire on the next edit because
+/// they describe something the operator just did. This describes **what the file
+/// was before they touched it**, which stays true through every edit, undo and
+/// save — so keying it on [`OpenDoc::edit_epoch`] would un-tell the operator the
+/// first time he nudged a line. It reads
+/// [`pdfcer_core::document::Document::load_anomalies`] live from the open
+/// document instead, exactly as [`recovered_disclosure`] reads `recovery()`:
+/// there is no cached state, so there is nothing to clear and no way for one
+/// file's anomalies to be shown against another's.
+///
+/// ★ The census only, never the detail. Which object and which two values is
+/// Document properties' job; a line long enough to carry a `/PageMode` pair
+/// would push the zoom and page controls off a narrow window, and the shared
+/// [`disclosure_line`] gives this all four R128 defences — bounded width, fixed
+/// row height, truncation rather than wrapping, whole sentence on hover.
+fn load_anomalies_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
+    let Some(line) = super::anomalies::status_line(doc.session.document().load_anomalies()) else {
+        return;
+    };
+    disclosure_line(ui, REGION_LOAD_ANOMALIES, &line);
+}
+
 /// ★★★ **The page's colours are approximate at this zoom**, because the raster
 /// grew past the size the engine will composite in CMYK.
 ///
@@ -488,6 +575,13 @@ pub(super) fn all(ui: &mut egui::Ui, doc: &OpenDoc) {
     fill_disclosure(ui, doc);
     edit_disclosure(ui, doc);
     recovered_disclosure(ui, doc);
+    // ★ Immediately after its nearest relative, and before the two render-state
+    // lines. Both of these are about **how this file was assembled before
+    // anything was drawn**, so they belong adjacent; and the index question
+    // comes first because a rebuilt index is the more sweeping fact — it says
+    // pdfcer had to find the objects at all, where this says what one of the
+    // objects it found said twice.
+    load_anomalies_disclosure(ui, doc);
     blend_space_disclosure(ui, doc);
     // ★★★ LAST, and the position is the argument. Every line above is about
     // something that HAPPENED — a fill, an edit, how the file was assembled, a
