@@ -80,6 +80,45 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
+## O165 — ◑ **STANDING ORDER, opened 2026-09-10** — "check for the next pdfcer engine release periodically then build and release with the new features when there is a new version"
+
+**This row does not close.** It is a standing instruction, not a task, so it
+stays under OPEN permanently and records each time it fired rather than being
+ticked off. Given while you were away from the machine, on your phone, with the
+PC handed over.
+
+### What it obliges
+
+1. **Poll the engine repository** for a new release, on a cadence, without being
+   asked again.
+2. When one lands: **bump the pin, build, drive, refresh `FEATURES.md`, package
+   from a clean tree, publish to both OneDrive and GitHub** — the full release
+   ritual, not just the bump.
+3. **"With the new features"** is the load-bearing phrase. A pin bump that
+   compiles is not the deliverable. Each release note in the engine names
+   capabilities, and this project's job is to make them *reachable* — a verb the
+   shell never calls is a capability you do not have. So every bump is followed
+   by a read of what shipped and a check that a route to it exists here.
+
+### State of the engine when this row was opened
+
+`v0.49.0` at `369d4de`, which is **already our pin**. HEAD was two commits
+further on (`d4b5845`) and both are librarian filings — documentation, no code,
+no new tag. ⇒ **Nothing to build at the moment this was asked.**
+
+### The log — every time this row fires
+
+| Date | Engine went | What was reachable afterwards | Released as |
+|---|---|---|---|
+| 2026-09-10 | *(polling; v0.49.0 still current)* | — | — |
+
+### ⚠ What this row must not become
+
+A bump that is published without a driven check, because the ritual is cheap and
+the polling is automatic. The release gates still apply in full: a smoke launch
+off screen before packaging, a clean tree, `FEATURES.md` re-measured against the
+build rather than edited from the changelog, and never `--prerelease`.
+
 ## O164 — ◑ **BUILT 2026-09-09, HALF DRIVEN** — not something you asked for: pdfcer now tells you when a file contradicted itself and pdfcer had to decide
 
 You did not request this row and it is here anyway, because it changes what the
