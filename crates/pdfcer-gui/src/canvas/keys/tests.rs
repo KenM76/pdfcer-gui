@@ -170,6 +170,7 @@ fn an_arrow_key_reaches_the_nudge_through_canvas_keys() {
         rotate: 0,
         contents: Vec::new(),
         contents_unresolved: 0,
+        resources_defaulted: false,
         contents_flattened: 0,
     };
     let mut selection = SelectionState::default();

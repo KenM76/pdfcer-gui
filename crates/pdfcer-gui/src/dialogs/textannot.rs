@@ -58,6 +58,14 @@ pub const REGION_BODY: &str = "dialog:text-annot"; // ui-text-exempt: trace regi
 pub const REGION_TEXT: &str = "text-annot.text"; // ui-text-exempt: trace region name, never displayed
 /// The region the Accept control publishes.
 pub const REGION_ACCEPT: &str = "text-annot.accept"; // ui-text-exempt: trace region name, never displayed
+/// **Cancel**, and it is declared for exactly the reason Accept is.
+///
+/// The operator's report of 2026-09-10 named both: *"I can't see the add or
+/// cancel button. Those buttons should always be available."* A harness that
+/// could see one of the two would report the answer row as reachable on a build
+/// where half of it had been clipped away.
+// ui-text-exempt: trace region name, never displayed
+pub const REGION_CANCEL: &str = "text-annot.cancel";
 /// The region the sticky note's icon chooser publishes, so a driven check can
 /// find it and press one of the seven.
 ///
@@ -353,7 +361,22 @@ impl TextAnnotDialog {
         .opening_near(opening_position(screen, size))
         .show(ctx, |ui| {
             crate::diag::ui_rect(REGION_BODY, ui.max_rect());
-            self.body(ui);
+            // ★★★ The body scrolls; the buttons do not. See
+            // [`crate::dialogs::host::Host::scrolled`] for the operator's rule
+            // this enacts and why it is structural rather than best-effort.
+            //
+            // This dialog is the one that made the rule: its height is a
+            // GUESS — `WINDOW_PTS` plus a per-kind constant — deliberately not
+            // measured from the content it sizes, because measuring it is
+            // R128's feedback loop. A guess that is too small used to clip the
+            // bottom of the window, and the bottom of this window is Add and
+            // Cancel.
+            crate::dialogs::host::Host::scrolled(
+                ui,
+                self,
+                |ui, this| this.body(ui),
+                |ui, this| this.footer(ui),
+            );
         });
         let open = !frame.closed;
 
@@ -376,7 +399,8 @@ impl TextAnnotDialog {
         !(self.close_requested || !open)
     }
 
-    /// The field or the gallery, then the two buttons.
+    /// The field or the gallery — everything above the button row, and the
+    /// only part of this window that scrolls.
     fn body(&mut self, ui: &mut Ui) {
         ui.label(t::intro(self.kind));
         ui.add_space(8.0);
@@ -404,9 +428,17 @@ impl TextAnnotDialog {
         // comes from its own `/Name` vocabulary and a `/FreeText` has no icon
         // at all.
         self.icons(ui);
+    }
 
-        ui.add_space(10.0);
-        ui.separator();
+    /// **The two buttons, pinned to the bottom of the window.**
+    ///
+    /// Separated from [`Self::body`] on 2026-09-10, on the operator's report
+    /// that the second stamp he placed opened a window whose Add and Cancel
+    /// were below its own bottom edge. They were the last items in a linear
+    /// layout, so they were the first thing an under-tall window clipped —
+    /// and a dialog whose Accept is off-screen is a transaction that cannot be
+    /// finished, only abandoned with the title bar's X.
+    fn footer(&mut self, ui: &mut Ui) {
         ui.horizontal(|ui| {
             // ★ Accept is greyed when there is nothing to author, with the
             // reason on hover. That is the one place this shell greys rather
@@ -415,14 +447,27 @@ impl TextAnnotDialog {
             // reserved for.
             let ready = self.kind.uses_gallery() || !self.text.trim().is_empty();
             let accept = ui.add_enabled(ready, egui::Button::new(t::accept()));
-            crate::diag::ui_rect(REGION_ACCEPT, accept.rect);
+            // ★★★ `ui_rect_visible`, NOT `ui_rect`, and the difference is the
+            // whole of the operator's report of 2026-09-10.
+            //
+            // `ui_rect` publishes a rectangle whether or not it is on the
+            // screen, so a check that read it would have found Accept
+            // "declared" on the very build where he could not see it, and would
+            // then have clicked a point below the window's own bottom edge —
+            // a plausible number, no error anywhere, and a defect reported as
+            // working. `ui_rect_visible` stays SILENT when the rect is outside
+            // its clip rect, which turns "was it declared?" into "was it on the
+            // screen?" and removes the last size anybody has to guess at.
+            crate::diag::ui_rect_visible(REGION_ACCEPT, accept.rect, ui.clip_rect());
             if accept.clicked() {
                 self.accept_requested = true;
             }
             if !ready {
                 accept.on_disabled_hover_text(t::accept_disabled(self.kind));
             }
-            if ui.button(t::cancel()).clicked() {
+            let cancel = ui.button(t::cancel());
+            crate::diag::ui_rect_visible(REGION_CANCEL, cancel.rect, ui.clip_rect());
+            if cancel.clicked() {
                 self.close_requested = true;
             }
         });

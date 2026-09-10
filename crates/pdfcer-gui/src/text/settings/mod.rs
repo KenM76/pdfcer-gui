@@ -945,7 +945,15 @@ mod tests {
     /// | `preset` | the preset row at the top of the window. It DOES call `header`, and that is precisely why it must be excluded rather than forgotten: a preset is not a setting, and counting its header would inflate the total by one forever |
     #[test]
     fn every_settings_module_is_counted() {
-        const NOT_A_GROUP: &[&str] = &["widgets", "preset"];
+        // `defaultapp` (O173) is the third entry and the least obvious. It is
+        // drawn at the top of the window and it looks exactly like a group, but
+        // it describes NO setting: it reads Windows, and it performs an act
+        // whose effect is outside pdfcer. Its words live in
+        // `crate::text::assoc` rather than in this catalog for that reason, so
+        // listing it in `GROUP_SOURCES` would make the sibling check
+        // `the_window_draws_exactly_the_settings_this_catalog_describes` look
+        // for catalog entries that must not exist.
+        const NOT_A_GROUP: &[&str] = &["widgets", "preset", "defaultapp"];
         let src = include_str!("../../dialogs/settings/mod.rs");
         let file = syn::parse_file(src).expect("dialogs/settings/mod.rs did not parse");
         let declared: Vec<String> = file

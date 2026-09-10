@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: d4a4e3b3c1d2b20acfe4a7c00a71f8d82f471d14
+# baseline: 15a12725c1ec81e66d41dc11fa745b0657e48881
 # crates: pdfcer-core pdfcer-render pdfcer-print
-# items: 7433
+# items: 7438
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-core field pdfcer_core::parser::DuplicateKeyRecord::discarded -- the value pdfcer threw away, which is the fact that makes the operator's choice offerable rather than theoretical -- the engine's own argument for carrying both. Reached here as `LoadAnomaly::DuplicateDictKey::discarded` and printed beside the kept value today; the override that would ACT on it is filed `wanted` in ENGINE_BACKLOG.md against `LoadOptions::with_duplicate_keys`, not against this field.
@@ -63,6 +63,7 @@ exempt pdfcer-core method pdfcer_core::xref::HybridPartition::is_reproducible --
 exempt pdfcer-core method pdfcer_core::xref::LoadedXref::hybrid_partition -- the constructor that copies the two `LoadedXref` fields into a `HybridPartition`. Unreachable from this shell for the mechanical reason that it needs a `LoadedXref` receiver and this shell never obtains one, and unwanted for the reason the struct's own exemption gives at length.
 exempt pdfcer-core struct pdfcer_core::parser::DuplicateKeyRecord -- the parser's own untagged record of one duplicate-key decision (key, kept, discarded). This shell wants all three facts and already has them, one layer up and better: `document::LoadAnomaly::DuplicateDictKey` carries the same three PLUS the `ObjId` they came from, and `app::status::anomalies` reads it live at draw time to say which object contradicted itself. The record cannot answer that -- the engine tags it with the object as it carries it out of the parser -- so a shell that reached for `DuplicateKeyRecord` would be trading down to the version with the object number missing. Exempted as a TYPE this shell should not name, not as a fact it does not want.
 exempt pdfcer-core struct pdfcer_core::xref::HybridPartition -- xref-internal plumbing that is public only because `pub mod xref;` publishes the whole module. It exists to answer ONE question, and the writer is the only thing that asks it: `is_reproducible()` gates `writer::save`'s full rewrite, and `Document`'s own field holding it is PRIVATE, read at writer/save.rs and nowhere else. The single public accessor `Document::hybrid_partition()` hands out a reference to it, so this shell COULD hold one -- and would learn nothing an operator can act on, because the only outcome that reaches him is already carried by `WriteError::HybridFullRewrite`, which this shell renders today (O157). Its two fields are a set of hidden object numbers and a did-the-XRefStm-parse flag: file-structure facts about SS 7.5.8.4, not document facts. DELETE THIS LINE if a surface ever needs to say WHICH objects a hybrid file hides -- that is the one thing in here the refusal variant does not carry.
+exempt pdfcer-core variant pdfcer_core::page_tree::PageTreeError::BadResources -- a NEW refusal from engine `Pass 290.0` (2026-09-10): `/Resources` is present and is not a dictionary. The widening in the same Pass is what this shell consumes -- an ABSENT `/Resources`, on the page and every ancestor, now resolves to the empty dictionary Table 30 names, and the shell discloses that through `Diagnostics::page_resources_defaulted` and `TextDiagnostics::pages_resources_defaulted`, both wired the same day. The refusal half is exempted because this shell never NAMES a `PageTreeError`: the only page-tree failure it can hold is the `String` in `StampCollection::page_tree_error`, which it prints verbatim through `text::stamps::properties_page_tree_unreadable` precisely so a cycle in `/Kids` and a bad `/Resources` stay distinguishable to the operator without the shell having an opinion about either. There is no act this shell would take for a bad `/Resources` that differs from any other page-tree refusal -- it cannot repair the file. DELETE THIS LINE the day a structure-repair surface exists, because that surface would need the variant, not the sentence.
 exempt pdfcer-render field pdfcer_render::font::RenderPolicy::stroke_display -- RenderPolicy is the interpreter's INTERNAL derived bundle, not a shell-facing type: every one of its fields' own doc comments reads "See RenderOptions::<the same name>", and the engine builds a RenderPolicy from the RenderOptions a caller hands it. This shell sets RenderOptions::stroke_display (View > Display > Line weights, O137) and constructs no RenderPolicy anywhere in the workspace. Exempted PER FIELD rather than wildcarded for the whole type, deliberately: every future RenderPolicy field mirrors a RenderOptions field this shell probably DOES want, so each one should cost one line and one look.
 
 pdfcer-core const pdfcer_core::HEADER_SCAN_WINDOW
@@ -1749,6 +1750,7 @@ pdfcer-core field pdfcer_core::page_tree::Page::crop_box
 pdfcer-core field pdfcer_core::page_tree::Page::id
 pdfcer-core field pdfcer_core::page_tree::Page::media_box
 pdfcer-core field pdfcer_core::page_tree::Page::resources
+pdfcer-core field pdfcer_core::page_tree::Page::resources_defaulted
 pdfcer-core field pdfcer_core::page_tree::Page::rotate
 pdfcer-core field pdfcer_core::page_tree::PageSlot::ancestors
 pdfcer-core field pdfcer_core::page_tree::PageSlot::id
@@ -1981,6 +1983,7 @@ pdfcer-core field pdfcer_core::span::ByteSpan::start
 pdfcer-core field pdfcer_core::stamp_file::CollectionWritten::skipped
 pdfcer-core field pdfcer_core::stamp_file::CollectionWritten::stamps_named
 pdfcer-core field pdfcer_core::stamp_file::StampCollection::category
+pdfcer-core field pdfcer_core::stamp_file::StampCollection::page_tree_error
 pdfcer-core field pdfcer_core::stamp_file::StampCollection::stamps
 pdfcer-core field pdfcer_core::stamp_file::StampEntry::display
 pdfcer-core field pdfcer_core::stamp_file::StampEntry::dynamic
@@ -2356,6 +2359,7 @@ pdfcer-core field pdfcer_core::text_extract::TextDiagnostics::invisible_glyphs
 pdfcer-core field pdfcer_core::text_extract::TextDiagnostics::ladder_failures
 pdfcer-core field pdfcer_core::text_extract::TextDiagnostics::lines_derived
 pdfcer-core field pdfcer_core::text_extract::TextDiagnostics::notes
+pdfcer-core field pdfcer_core::text_extract::TextDiagnostics::pages_resources_defaulted
 pdfcer-core field pdfcer_core::text_extract::TextDiagnostics::pages_unreadable
 pdfcer-core field pdfcer_core::text_extract::TextDiagnostics::predefined_cmaps_unavailable
 pdfcer-core field pdfcer_core::text_extract::TextDiagnostics::reversed_chars_sequences
@@ -6795,6 +6799,7 @@ pdfcer-render field pdfcer_render::image::SpotTexel::tint
 pdfcer-render field pdfcer_render::interpret::Diagnostics::annotation_notes
 pdfcer-render field pdfcer_render::interpret::Diagnostics::annotations_appearance_state_missing
 pdfcer-render field pdfcer_render::interpret::Diagnostics::annotations_hidden
+pdfcer-render field pdfcer_render::interpret::Diagnostics::annotations_icon_painted
 pdfcer-render field pdfcer_render::interpret::Diagnostics::annotations_out_of_scope
 pdfcer-render field pdfcer_render::interpret::Diagnostics::annotations_painted
 pdfcer-render field pdfcer_render::interpret::Diagnostics::annotations_placement_degenerate
@@ -6859,6 +6864,7 @@ pdfcer-render field pdfcer_render::interpret::Diagnostics::overprint_refused
 pdfcer-render field pdfcer_render::interpret::Diagnostics::overprint_requested
 pdfcer-render field pdfcer_render::interpret::Diagnostics::overprint_shadings_unsupported
 pdfcer-render field pdfcer_render::interpret::Diagnostics::page_content_suppressed
+pdfcer-render field pdfcer_render::interpret::Diagnostics::page_resources_defaulted
 pdfcer-render field pdfcer_render::interpret::Diagnostics::rendering_intents_set
 pdfcer-render field pdfcer_render::interpret::Diagnostics::sample_ops
 pdfcer-render field pdfcer_render::interpret::Diagnostics::shading

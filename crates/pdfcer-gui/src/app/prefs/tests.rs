@@ -53,6 +53,11 @@ fn every_preference_round_trips_through_the_file() {
                 use_os_fonts: true,
                 // ★ Non-default, like every field here, and with a SPACE in
                 // it — a path a person would really type on Windows. O122.
+                // Non-default, like every field here. O173 ships `true`, so a
+                // writer that emitted a constant would round-trip the offer as
+                // still-wanted after the operator had ticked Do not ask again -
+                // which is the one failure this preference exists to prevent.
+                ask_default_app: false,
                 acrobat_path: r"D:\Apps\Acrobat DC\Acrobat.exe".to_owned(),
                 // ★ Non-default, and deliberately a DIFFERENT string from the
                 // field above: two paths that happened to be equal would pass on a
@@ -570,6 +575,9 @@ fn the_writer_emits_no_key_the_parser_rejects() {
         // ★ Non-default and with a space in it — O122. A path is the one
         // value in this file most likely to contain the character that
         // breaks a naive writer.
+        // Non-default, for the reason this test states about every field, and
+        // in the direction that matters: O173 ships `true`.
+        ask_default_app: false,
         acrobat_path: r"D:\Apps\Acrobat DC\Acrobat.exe".to_owned(),
         // ★ Non-default, and deliberately a DIFFERENT string from the
         // field above: two paths that happened to be equal would pass on a

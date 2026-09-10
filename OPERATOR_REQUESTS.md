@@ -80,6 +80,191 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
+## O173 — ◑ **BUILT 2026-09-10, NOT YET DRIVEN** — "we should have an easy way to make pdfce-gui our default opener for pdfs. Ask once with a don't show me again check box option. Then it should be in the top of our settings as a button to execute the changeover." <!-- old-name-exempt: HIS words, quoted verbatim. He typed `pdfce-gui`; correcting an operator's own sentence inside the row that records it would stop the row being a quotation. -->
+
+**Your words, 2026-09-10.** Two surfaces for one act, and you specified both,
+which is the shape every application that does this well uses:
+
+1. **Asked once, on a launch, with a *don't show me again* box.** Once means
+   once: the answer — whichever way it goes — is written to settings and the
+   question never returns. A "later" that comes back next week is the nagging
+   this project's rule 4 forbids in a different costume.
+2. **A button at the top of Settings**, so the operator who ticked the box, or
+   who said no and changed his mind, has a route that does not depend on
+   remembering a dialog.
+
+### ★★ What "execute the changeover" can and cannot mean on Windows 11
+
+Worth writing down, because it constrains the wording of the button rather
+than the existence of it. **No application can silently seize the `.pdf`
+association on Windows 10 or 11.** Microsoft removed that ability deliberately
+— an unattended `SetDefault` was the single most abused API on the platform —
+and what is left is two halves:
+
+* **The half pdfcer can do alone, and it is the load-bearing half.** Register
+  as a *candidate*: a ProgID under `HKCU\Software\Classes` naming this exe,
+  an `OpenWithProgids` entry against `.pdf`, and a `RegisteredApplications`
+  capability block. After that pdfcer appears **in the list** — in *Open with*,
+  in *Choose a default*, and as an app Windows Settings can be pointed at. It
+  is not there today at all, which is why the changeover currently cannot even
+  be attempted.
+* **The half only the operator can do**: the actual confirmation, in the OS's
+  own dialog. The button opens that page directly, filtered to pdfcer, so it is
+  one click away rather than four levels down.
+
+⇒ So the button does everything up to the confirmation, and then hands you the
+exact page with pdfcer already on it. That is what "as easy as it can be" is
+on this OS, and the dialog says so plainly rather than implying a magic
+switch — a button that claimed to have changed the default and had not would be
+worse than no button.
+
+### ✅ Built 2026-09-10 — both surfaces, and what is still owed
+
+**Both halves you specified exist**, and a third thing you did not ask for but
+would have wanted the first time the registration went to the wrong copy.
+
+* **The startup offer.** One window, on the first launch that owes it, with the
+  *Don't ask me again* box you asked for. Three ways to answer and only one of
+  them brings it back: pressing the button stops it, ticking the box stops it,
+  *Not now* with the box clear leaves it for next launch. That last one is what
+  every browser on this machine does, and the standing rule is that the
+  convergence of the product class is the specification.
+* **The button, at the very top of Settings** — above the presets row, above
+  everything. It is not a collapsed heading, because a collapsed heading is a
+  button that is not on screen.
+* **A line that reads the machine rather than pdfcer's intention.** It says what
+  Windows *currently* opens PDFs with by name, and separately whether the build
+  you are running is the one registered. That third state — registered, but
+  pointing at a **different copy** of pdfcer — is the one that looks like
+  success from the inside, and it now says so in words.
+
+⚠ **Nothing on any of those three surfaces ever claims the default was
+changed.** A unit test enforces it across every string in the catalog: the only
+thing allowed to say pdfcer is the default is a live reading of Windows'
+`UserChoice`, taken after the fact.
+
+### What is still owed on this row
+
+* **The driven check is WRITTEN and has NOT BEEN RUN**, because the machine was
+  yours all session. It is
+  `tools/ui-verify/src/checks/default_app_offer.rs`, registered in the roster,
+  and it drives five phases: delete the sandbox's seeded preference, launch with
+  nothing open, assert the offer's body and **all three** of its controls are
+  declared, capture the window, tick the box and press *Not now*, then **launch
+  the same profile a second time and assert it does not ask again**. That last
+  phase is the half of *"ask once"* no unit test can reach — the unit tests prove
+  the preference is written; only a second launch proves it is read back.
+  ⚠ Until it has actually run, this row stays ◑.
+* **It asserts the two buttons by NOT guessing a size.** Both buttons and the
+  checkbox publish their rect only when it is inside their own clip rect, so the
+  check asking "was it declared?" *is* the check asking "was it on the screen?" —
+  which is your O171 sentence, mechanically, in a second window.
+* **It will never press the affirmative button.** That button writes ten registry
+  values on whatever machine runs the sweep and opens Windows' own settings page
+  in front of whoever is at it. The check drives the decline route only.
+* **One consequence worth knowing about:** every ui-verify sandbox is a fresh
+  profile, so the offer would have opened in front of **every other driven
+  check in the sweep** and taken their pointer presses. The sandbox now writes one preference to decline
+  it in advance — which is why the driven check's first act is to delete that
+  file, and it says so in three places.
+* **A fourth region was added while writing the check**, and it is not
+  bookkeeping: *Not now* was the one control in the answer row that no harness
+  could see. Your sentence was plural — *"those buttons should always be
+  available"* — and a check that could see one of the two would have reported the
+  row as reachable on a build where half of it had been clipped away.
+
+---
+
+## O172 — ◑ **FILED 2026-09-10** — "We also need to make it easy to add our own custom stamps and use them, preferrably exactly the same way acrobat does."
+
+**Your words, 2026-09-10.** The follow-on to O169, and it points straight at
+the half O169 recorded as blocked.
+
+O169 built **reading** a stamp collection and **authoring** one into the folder
+Acrobat scans. What it could not build was **placing** one of your own stamps
+on a drawing: the engine's stamp verb takes a fixed vocabulary of standard
+names with no free-label escape hatch, and there is no verb that carries a
+collection page into a target document. That is filed with the engine.
+
+*"Exactly the same way Acrobat does"* is the useful part of this row, because
+it names the whole expected behaviour rather than one verb: in Acrobat a custom
+stamp is a **menu entry beside the standard ones**, grouped by the category it
+was authored under, chosen the same way, placed the same way, and it remembers
+the last one used. That is the target — not "a second, different route for
+stamps you made yourself".
+
+---
+
+## O171 — ◑ **BUILT 2026-09-10, NOT YET DRIVEN** — "After I place the first stamp and go to make a second one the window for the options pops up but is undersized so I can't see the add or cancel button. Those buttons should always be available, and if there isn't size for all the features they get scrolled in their own space."
+
+**Your words, 2026-09-10.** A defect and a standing rule, and the rule is the
+larger half.
+
+### The defect, and the "first one is fine" was the whole clue
+
+The dialog grows itself to fit its content on the frame it opens — it has to,
+because its height is a guess and a guess that is too small clips the bottom of
+the window, which on this window is the button row. Two guards stop that growth
+becoming a runaway loop: *don't ask for a size you have already asked for*, and
+*don't grow more than three times*.
+
+Both guards were stored against the dialog's **name**, in memory that survives
+the window being closed. So on the second stamp: a brand-new window opened at
+the same too-small opening bid, measured the same overflow, computed the same
+answer — and the guard said *"you have already asked for that"* and threw the
+resize away. The window that had grown the first time refused to grow ever
+again.
+
+⇒ Fixed by scoping both guards to one **opening** rather than to the dialog's
+lifetime. The remembered *position* still survives a close, deliberately; the
+fit state does not, and now says which is which in writing.
+
+### ★★★ The rule, and it is now enforced structurally rather than by a size
+
+> *"Those buttons should always be available, and if there isn't size for all
+> the features they get scrolled in their own space."*
+
+That is Word's and Acrobat's shape for every options window they have, so under
+this project's standing *use the conventional interaction, never invent one*
+rule it is the spec. It is built as a shared mechanism rather than as a fix to
+one window: the button row is allocated out of the window's own rectangle
+**first**, and the body gets what is left, inside its own scroller.
+
+★★ Why that matters more than making the window taller: growing a window is a
+**negotiation** — it can be refused, it is budgeted, and it cannot help at all
+once the window is small because you made it small, or because the content is
+taller than the screen. Allocating the footer first is not a negotiation. There
+is no size at which the buttons are off-screen, because there is no path by
+which the body can take their space.
+
+### The driven check, written 2026-09-10, ⬜ NOT YET RUN
+
+`the_second_stamp_dialog_still_has_its_buttons`. It is the **only check in the
+suite that opens the same dialog twice**, which is the whole point: every
+existing stamp check opens it once, and the first opening was always fine, so
+the entire suite was structurally blind to this defect and stayed green through
+it.
+
+★★★ **It contains no size arithmetic, deliberately.** Both buttons publish their
+rectangles through the trace call that emits *only when the region is actually
+visible* — so *"was the region declared?"* and *"was the control on the
+screen?"* are the same question, and a check that measured pixel heights would
+be a second, weaker description of a fact the app already states. Seven phases:
+arm the tool, place a stamp, assert the first answer row, press **Add**, place a
+second stamp **300 pt away** so the drag cannot be read as grabbing the first
+one, assert the second answer row — that phase **is** O171 — then press
+**Cancel**.
+
+The first-opening phase fails with its own distinct sentence, ending *"this
+failed on the FIRST opening; whatever is wrong here is NOT the fit state carried
+between openings"* — so a failure there can never be mistaken for this defect
+recurring, and points at a different module.
+
+⬜ It has not been run. The machine was yours. It is the first thing the next
+session with the desktop drives.
+
+---
+
 ## O170 — ✅ **ANSWERED AND ACTED ON 2026-09-10** — "the stamp icon gap - are you using the latest engine? It just did some work on stamps."
 
 **Your words, 2026-09-10, mid-session.** A question, not a request, and it is

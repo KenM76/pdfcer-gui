@@ -67,8 +67,13 @@
 //! <exe dir>/.ui-verify-profiles/<check name>/userdata/…       ← what the check writes
 //! ```
 //!
-//! The launched process resolves its own directory, finds no `userdata/`, and
-//! creates one — private to this check and deleted with it.
+//! The launched process resolves its own directory and finds that `userdata/`
+//! — private to this check, and deleted with it.
+//!
+//! ⚠ It is **not empty**. [`seed_prefs`] puts exactly one preference in it
+//! before the process starts, and its own note argues why and what that costs a
+//! check written to measure the thing it suppresses. Nothing else of the
+//! operator's is brought across; see below.
 //!
 //! ## ★ Why a hard link rather than a copy
 //!
@@ -118,7 +123,8 @@
 //! project's life while the suite looked healthy. That is the `repo_fixture`
 //! shape [`crate::checks::CheckContext::out`] records paying for once already.
 //!
-//! **Not brought:** `userdata/`. That is the entire point. A sandbox seeded with
+//! **Not brought:** `userdata/` — bar the single seeded key [`seed_prefs`]
+//! writes. That is the entire point. A sandbox seeded with
 //! the operator's remembered mode would isolate the checks from each other and
 //! leave every one of them contaminated by whatever the last real session did.
 //!
@@ -256,6 +262,7 @@ impl Sandbox {
                 let _ = place(&dll, &dir.join(file));
             }
         }
+        seed_prefs(&dir);
         Ok(Self { dir, exe, how })
     }
 
@@ -290,6 +297,71 @@ impl Drop for Sandbox {
             );
         }
     }
+}
+
+/// The name `pdfcer-gui` reads its preferences from.
+///
+/// Spelt out rather than imported: `ui-verify` deliberately does not link the
+/// shell, so this is a **copy of somebody else's constant** and can go stale.
+/// The tripwire is loud rather than subtle — a stale name here means the seed
+/// below silently stops working and the sweep grows a dialog in front of every
+/// check, which is the failure it exists to prevent. If that ever happens, the
+/// truth is `crate::app::prefs::PREFS_FILE` in `pdfcer-gui`.
+const PREFS_FILE: &str = "preferences.txt";
+
+/// **The one thing this sandbox deliberately DOES seed**, and the reason is
+/// worth reading before deleting it.
+///
+/// The module header says `userdata/` is not brought across, and that is still
+/// true — nothing of the operator's is copied here. This writes a *new*
+/// `userdata/preferences.txt` containing a single key.
+///
+/// ## Why
+///
+/// `dialogs::defaultapp` (O173) offers, **once per launch on a fresh profile**,
+/// to make pdfcer the default PDF program. Every sandbox is by construction a
+/// fresh profile, so without this the offer would open in front of **every
+/// check in the sweep** — a window over the canvas, taking the pointer presses
+/// the check is about to make. That is the failure this project has already
+/// paid for once and written down: a window over the thing it describes takes
+/// that thing's gestures, and the object underneath becomes unreachable in
+/// silence.
+///
+/// ## ⚠ What this costs, stated rather than hidden
+///
+/// The sandbox's starting state is now *"a fresh install that has already
+/// declined the default-app offer"* rather than *"a fresh install"*. **A check
+/// written to drive that offer must delete this file first**, or it will assert
+/// against a starting state that defeats the very thing it measures — the
+/// standing lesson that a fixture defeating a default does not defeat a
+/// starting state.
+///
+/// ## Why one key and not a whole file
+///
+/// Every unknown key is preserved by `app::prefs`' reader and every absent one
+/// takes its compiled-in default, so a one-line file leaves the other
+/// forty-odd settings exactly where a fresh install would leave them. A fuller
+/// seed would silently pin settings the checks are supposed to be measuring.
+///
+/// ## Best effort, deliberately
+///
+/// Every failure here is swallowed. A sandbox that refused to exist because
+/// one preference could not be written would turn a cosmetic problem into a
+/// check that cannot run, and the symptom of the swallowed failure is loud
+/// anyway: the dialog appears and the check fails on a rect it cannot reach.
+fn seed_prefs(dir: &Path) {
+    let userdata = dir.join("userdata");
+    if std::fs::create_dir_all(&userdata).is_err() {
+        return;
+    }
+    let _ = std::fs::write(
+        userdata.join(PREFS_FILE),
+        b"# Written by ui-verify's sandbox. See `sandbox::seed_prefs`.\n\
+          # Suppresses the O173 startup offer, which would otherwise open in\n\
+          # front of every check in the sweep. A check that DRIVES that offer\n\
+          # must delete this file first.\n\
+          ask_default_app = false\n",
+    );
 }
 
 /// Hard-link `from` to `to`, falling back to a byte copy.

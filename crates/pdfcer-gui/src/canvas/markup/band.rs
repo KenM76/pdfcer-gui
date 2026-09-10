@@ -370,6 +370,7 @@ mod tests {
             rotate,
             contents: Vec::new(),
             contents_unresolved: 0,
+            resources_defaulted: false,
             contents_flattened: 0,
         }
     }

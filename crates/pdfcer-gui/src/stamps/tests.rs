@@ -370,10 +370,18 @@ fn the_driven_checks_fixtures_are_what_the_check_believes_they_are() {
     );
     assert_eq!(
         crate::stamps::unresolved_count(&collection),
-        0,
-        "every name in this fixture resolves. A dangling one would pin an \
-         ambiguity pdfcer cannot currently resolve rather than a behaviour — \
-         see `unresolved_count`'s own warning"
+        Some(0),
+        "every name in this fixture resolves. ★ `Some(0)` and not `0`: since engine `Pass 290.1` \
+         the count is `None` when the page tree could not be read at all, and a fixture that \
+         reads cleanly must prove it is on the answerable side of that split — otherwise this \
+         assertion would pass on a build that reported every document as unreadable"
+    );
+    assert_eq!(
+        crate::stamps::page_tree_unreadable(&collection),
+        None,
+        "the fixture's page tree reads, so `Some(_)` keeps meaning something. ★ This is the \
+         control for the assertion above: without it, a build that returned a page-tree error \
+         for every file would be caught only if `unresolved_count` also regressed"
     );
 
     // ★★ The property the row regions exist for: TREE ORDER IS NOT PAGE

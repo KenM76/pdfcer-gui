@@ -665,6 +665,63 @@ mod tests {
             }
         }
 
+        /// Is `path` a module its own parent gates out of release builds?
+        ///
+        /// Answers *"does the file that declares this one say `#[cfg(test)] mod
+        /// <stem>;`"*, which is the out-of-line spelling of the `#[cfg(test)]
+        /// mod tests { … }` that `visit_item_mod` already skips. The two are
+        /// the same fact about the same code; only the file boundary differs,
+        /// and a file boundary is exactly what R2 moves.
+        ///
+        /// # How the declaring file is located
+        ///
+        /// For `…/foo/bar.rs` the declaring module is the module for directory
+        /// `foo`, which Rust spells either `…/foo/mod.rs` (this crate's
+        /// convention) or `…/foo.rs` (the 2018 style). Both are tried, in that
+        /// order, and a miss returns `false` — **the safe direction**, because
+        /// a false `false` costs a spurious violation somebody reads, while a
+        /// false `true` would silently exempt shipped code from the whole
+        /// check.
+        ///
+        /// `mod.rs` itself is never test-only by this route: it is declared by
+        /// its *grandparent* under the directory's name, and a whole directory
+        /// gated out of release builds would be spelled `#![cfg(test)]` inside
+        /// it — which the caller already handles.
+        fn declared_test_only(path: &Path) -> bool {
+            let Some(stem) = path.file_stem().and_then(|s| s.to_str()) else {
+                return false;
+            };
+            if stem == "mod" || stem == "lib" || stem == "main" {
+                return false;
+            }
+            let Some(dir) = path.parent() else {
+                return false;
+            };
+            let candidates = [dir.join("mod.rs"), dir.with_extension("rs")];
+            for parent in candidates {
+                let Ok(text) = std::fs::read_to_string(&parent) else {
+                    continue;
+                };
+                let Ok(parsed) = syn::parse_file(&text) else {
+                    continue;
+                };
+                for item in &parsed.items {
+                    let syn::Item::Mod(m) = item else { continue };
+                    // `semi.is_some()` is the out-of-line form — `mod x;` with
+                    // no braces. An inline `mod x { … }` cannot be this file.
+                    if m.semi.is_none() || m.ident != stem {
+                        continue;
+                    }
+                    if m.attrs.iter().any(|a| {
+                        a.path().is_ident("cfg") && a.to_token_stream_string().contains("test")
+                    }) {
+                        return true;
+                    }
+                }
+            }
+            false
+        }
+
         fn walk(dir: &Path, out: &mut Vec<(String, Vec<String>)>) {
             let Ok(entries) = std::fs::read_dir(dir) else {
                 return;
@@ -710,6 +767,32 @@ mod tests {
                 {
                     continue;
                 }
+                // ★★★ A file whose PARENT declares it `#[cfg(test)] mod x;`
+                // is test-only, and the scan cannot see that from inside the
+                // file.
+                //
+                // This blind spot was found on 2026-09-10 by an **R2 split**,
+                // not by a report: `canvas/forms/boxes.rs` reached 1,501 lines
+                // and its `mod tests { … }` moved out into
+                // `canvas/forms/boxes/tests.rs`. Not one line of test code
+                // changed — but the `#[cfg(test)]` that had exempted those
+                // tests stayed behind in the parent, as `#[cfg(test)] mod
+                // tests;`, and three call sites that had been invisible for
+                // months became violations of a rule they do not break. The
+                // check went red on a refactor that could not possibly have
+                // introduced the defect it reports, which is the signature of
+                // an instrument measuring the wrong thing.
+                //
+                // ⇒ It is resolved the way the `#![cfg(test)]` case above is
+                // resolved: by asking what makes the exemption TRUE — *this
+                // code is not in the shipped binary* — rather than by adding
+                // `boxes/tests.rs` to the path list. A path would have to be
+                // added again by the next R2 split, and every one of those
+                // splits arrives as a red check in an unrelated module, which
+                // is the most expensive possible way to be told.
+                if declared_test_only(&path) {
+                    continue;
+                }
                 let Ok(text) = std::fs::read_to_string(&path) else {
                     continue;
                 };
@@ -753,6 +836,43 @@ mod tests {
         assert!(root.is_dir(), "cannot find src at {}", root.display());
         let mut violations = Vec::new();
         walk(&root, &mut violations);
+
+        // ★★★ Calibrate the exemption before trusting the emptiness below.
+        //
+        // `violations.is_empty()` is a green light whether the scan is working
+        // or has been silently switched off, and `declared_test_only` is
+        // exactly the kind of helper that can switch it off: a version that
+        // returned `true` unconditionally would exempt **every** file declared
+        // out of line — which is nearly all of them — and this assertion would
+        // pass forever while measuring nothing. So the helper is falsified in
+        // both directions against two files that are checked in and whose
+        // status is not in question.
+        //
+        // These two paths are deliberately NOT parameters or constants. If
+        // either file is renamed, `is_file()` fails loudly here rather than the
+        // calibration quietly becoming vacuous — the failure mode this project
+        // has recorded more often than any other.
+        let test_only = root.join("canvas/forms/boxes/tests.rs");
+        let shipped = root.join("app/settings.rs");
+        assert!(
+            test_only.is_file() && shipped.is_file(),
+            "the calibration files for `declared_test_only` have moved; re-point them at a \
+             file declared `#[cfg(test)] mod x;` and one declared `pub mod x;`, do not \
+             delete this check"
+        );
+        assert!(
+            declared_test_only(&test_only),
+            "`canvas/forms/boxes/tests.rs` is declared `#[cfg(test)] mod tests;` by its \
+             parent and must be recognised as test-only — otherwise every R2 split of a \
+             module away from its tests reports violations of a rule the code does not \
+             break"
+        );
+        assert!(
+            !declared_test_only(&shipped),
+            "`app/settings.rs` is declared `pub mod settings;` and ships — an exemption that \
+             swallows it swallows the whole scan, and the assertion below would pass \
+             forever"
+        );
 
         assert!(
             violations.is_empty(),

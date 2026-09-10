@@ -384,21 +384,61 @@ pub fn properties_stamp_page(page_number: usize) -> String {
     format!("page {page_number}")
 }
 
-/// ⚠ **The sentence this whole engine request exists to avoid getting wrong.**
+/// The second column when a stamp names no page of **this** document.
 ///
-/// When a stamp names no page of this document, there are two possible truths
-/// and pdfcer cannot currently tell them apart: the collection is genuinely
-/// broken, or **the document's page tree could not be read at all** and every
-/// stamp reports as missing regardless. Measured on the operator's own
-/// signature file, where one blank page with no `/Resources` produces exactly
-/// this, and filed as
-/// `request_a_page_tree_failure_is_reported_as_every_stamp_pointing_at_nothing.md`.
+/// # ★★ It is now a claim, and it was not before
 ///
-/// So the wording says **what pdfcer observed**, not what it concluded. *"No
-/// page in this document"* is true in both cases. *"This stamp is broken"* is
-/// true in only one, and is the sentence that tells an operator his signatures
-/// are corrupt when they are fine.
+/// This sentence used to be written defensively, because `page_index: None`
+/// carried two opposite truths at once: a name pointing outside the document,
+/// and a page tree that could not be read at all. Engine `Pass 290.1`
+/// (2026-09-10) split them — see [`crate::stamps::page_tree_unreadable`] — so
+/// this row is only ever drawn when the first is true, and the other case has
+/// its own words in [`properties_stamp_page_unreadable`].
+///
+/// ⚠ **Still not *"this stamp is broken"*, and that is not leftover caution.**
+/// A collection legitimately outlives the document it was cut from; Acrobat
+/// shows such an entry too. *"Names no page in this document"* is a fact about
+/// the pairing. *"Broken"* is a verdict on the file, and pdfcer does not have
+/// the standing to make it.
 #[must_use]
 pub const fn properties_stamp_no_page() -> &'static str {
     "names no page in this document"
+}
+
+/// The second column when the **page tree** could not be read.
+///
+/// ★ Deliberately not *"names no page in this document"*. That sentence is a
+/// statement about the stamp; this situation is a statement about the
+/// document, and pdfcer knows nothing at all about which page this stamp
+/// names. On the operator's own signature file the old, merged wording told
+/// him both of his signatures pointed at nothing when both were fine.
+///
+/// The cause is not repeated on every row — it is the same cause for all of
+/// them, and it is stated once by [`properties_page_tree_unreadable`].
+#[must_use]
+pub const fn properties_stamp_page_unreadable() -> &'static str {
+    "page not known"
+}
+
+/// The one sentence that names why no stamp in this collection has a page.
+///
+/// # Rule 4 — disclosure, off-canvas, and not a refusal notice
+///
+/// The names, display titles and dynamic flags above are read from the file's
+/// `/Names` → `/Pages` **name** tree and are entirely unaffected by whatever
+/// is wrong with the **page** tree. So this says what pdfcer could not work
+/// out and why, and explicitly says the list itself still stands — an operator
+/// who reads *"the page tree could not be read"* and nothing else will
+/// reasonably assume the twelve names above are suspect too.
+///
+/// `why` is the engine's own `PageTreeError` text, passed through rather than
+/// paraphrased: a cycle in `/Kids` and a missing `/MediaBox` are different
+/// repairs, and a shell that flattened both to *"damaged"* would cost him the
+/// one word that says which.
+#[must_use]
+pub fn properties_page_tree_unreadable(why: &str) -> String {
+    format!(
+        "Which page each stamp names could not be worked out: this document's page tree could \
+         not be read ({why}). The names above come from the file's name tree and are unaffected."
+    )
 }

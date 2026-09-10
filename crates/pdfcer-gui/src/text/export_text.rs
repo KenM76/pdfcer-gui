@@ -483,6 +483,31 @@ pub fn pages_unreadable(count: usize) -> String {
     )
 }
 
+/// Pages that named no resources of their own, so pdfcer supplied an empty set.
+///
+/// # ★★ Why this is one of the few `TextDiagnostics` counters worth a sentence
+///
+/// [`honesty_notes`](crate::app::actions::export) takes three of roughly
+/// thirty, on the test *"does it change what the operator should do next?"*.
+/// This one passes that test for a reason that is easy to miss: §7.8.3 lets a
+/// **Type 3 font** omit its own `/Resources` and inherit **the page's**, so a
+/// page with no dictionary of its own can be the reason text on it decoded to
+/// nothing. An operator reading a short export and no explanation concludes
+/// the file is a scan.
+///
+/// ★ Engine `Pass 290.0` (2026-09-10) is what made the page extractable at
+/// all — before it, one blank spacer page with no `/Resources` refused the
+/// whole document. This sentence is the disclosure half of that widening: the
+/// text comes out, and pdfcer says which pages it had to assume something for.
+#[must_use]
+pub fn pages_resources_defaulted(count: usize) -> String {
+    format!(
+        "{count} page(s) name no resources of their own — pdfcer assumed an empty set so they \
+         could be read. Text on such a page that used an inherited font may be missing rather \
+         than absent."
+    )
+}
+
 /// The plan named no page. Reachable only from a restored or malformed plan.
 #[must_use]
 pub const fn no_pages() -> &'static str {

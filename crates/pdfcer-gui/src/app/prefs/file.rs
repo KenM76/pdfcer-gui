@@ -315,6 +315,21 @@ impl Prefs {
                         line,
                     }),
                 },
+                // ui-text-exempt: a file KEY, matched literally.
+                // O173, 2026-09-10. Its own arm for its neighbour's reason: it
+                // belongs to no key family, and a reader meeting it inside a
+                // shared pattern would go looking for the family it does not
+                // have. A bad value is a note rather than a silent `false`,
+                // because silently suppressing a question is indistinguishable
+                // from never having had one.
+                "ask_default_app" => match opening::bool_from_key(value) {
+                    Some(on) => prefs.ask_default_app = on,
+                    None => notes.push(PrefNote::BadValue {
+                        key: key.to_owned(),
+                        value: value.to_owned(),
+                        line,
+                    }),
+                },
                 // The two auto-hide settings, 2026-09-05. One arm each rather
                 // than a shared pattern: they are two independent surfaces and
                 // a reader meeting one inside a joint arm would reasonably
@@ -630,6 +645,23 @@ impl Prefs {
         // ui-text-exempt: a file KEY, as above.
         out.push_str("find_zoom_on_jump = ");
         out.push_str(opening::bool_key(self.find_zoom_on_jump));
+        out.push('\n');
+        out.push_str(
+            "\n\
+             # ask_default_app: true | false. With this on, pdfcer offers\n\
+             # once, on startup, to add itself to the list of programs\n\
+             # Windows uses for PDF files. Ticking Do not ask me again in\n\
+             # that offer sets this to false. It only governs the\n\
+             # QUESTION -- the button that does it stays at the top of\n\
+             # Settings either way, so nothing is lost by turning the\n\
+             # offer off. Note that no program can make itself the\n\
+             # default PDF viewer on Windows 10 or 11: pdfcer can only\n\
+             # put itself in the list, and Windows then asks you to\n\
+             # confirm.\n",
+        );
+        // ui-text-exempt: a file KEY, as above.
+        out.push_str("ask_default_app = ");
+        out.push_str(opening::bool_key(self.ask_default_app));
         out.push('\n');
         out.push_str(
             "\n\

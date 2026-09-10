@@ -1149,8 +1149,8 @@ pub(super) fn text(doc: &mut OpenDoc, plan: &super::exporttext::TextExportPlan) 
     }
 }
 
-/// The three counters from `TextDiagnostics` that change what an operator
-/// should do next, worded — or nothing, when all three are zero.
+/// The four counters from `TextDiagnostics` that change what an operator
+/// should do next, worded — or nothing, when all four are zero.
 ///
 /// ★ A helper rather than three inline `if`s at two call sites, because **both**
 /// the refusal path and the success path owe exactly this set. A document whose
@@ -1158,7 +1158,7 @@ pub(super) fn text(doc: &mut OpenDoc, plan: &super::exporttext::TextExportPlan) 
 /// count that looks identical to a scan, and the counter is the only thing that
 /// tells them apart.
 ///
-/// `TextDiagnostics` carries roughly thirty counters and this takes three. The
+/// `TextDiagnostics` carries roughly thirty counters and this takes four. The
 /// other twenty-seven are true and are not **actionable**: `spaces_derived` and
 /// `lines_derived` are facts about every extraction ever run, and the window
 /// already said so in `loses_breaks` where an operator can read it before
@@ -1181,6 +1181,18 @@ fn honesty_notes(diagnostics: &pdfcer_core::text_extract::TextDiagnostics) -> Ve
         notes.push(t::undecodable_characters(
             diagnostics.ladder_failures,
             diagnostics.codes_total,
+        ));
+    }
+    // ★ Added 2026-09-10 with engine `Pass 290.0`, and it makes this helper's
+    // header say "four" where it says "three" — read that header before adding
+    // a fifth. It earns its place on the same test the other three pass: a
+    // Type 3 font may omit its own `/Resources` and inherit the page's
+    // (§7.8.3), so a page pdfcer had to assume an empty set for is a candidate
+    // explanation for text that came out short. Without it, that export is
+    // indistinguishable from a scan.
+    if diagnostics.pages_resources_defaulted > 0 {
+        notes.push(t::pages_resources_defaulted(
+            usize::try_from(diagnostics.pages_resources_defaulted).unwrap_or(usize::MAX),
         ));
     }
     if diagnostics.pages_unreadable > 0 {

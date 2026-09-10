@@ -587,6 +587,36 @@ pub struct Prefs {
     /// would put a Windows login into a document that leaves the building.
     pub author_name: String,
 
+    /// **Whether pdfcer may still offer to become the default PDF program**
+    /// on startup - `OPERATOR_REQUESTS.md` **O173**, his words of 2026-09-10:
+    /// *"Ask once with a don't show me again check box option."*
+    ///
+    /// `true` (the default) means the offer may be made; ticking the dialog's
+    /// *Don't ask me again* writes `false` here and it is never made again.
+    ///
+    /// # ★★ Named for the thing it permits, not the thing it suppresses
+    ///
+    /// A `suppress_default_app_prompt` would default to `false`, and a
+    /// hand-editable file whose every off-switch defaults to off is a file
+    /// where "on" and "off" stop meaning anything. The same choice
+    /// [`Self::find_zoom_on_jump`] makes.
+    ///
+    /// WARNING: **this governs the QUESTION, never the capability.** The button
+    /// lives at the top of Settings whether this is `true` or `false` - O173
+    /// asks for both, and a checkbox that removed the feature along with the
+    /// prompt would be a checkbox nobody could undo.
+    /// `crate::dialogs::settings` does not read this field at all, which is the
+    /// mechanical form of that promise.
+    ///
+    /// # ★ It is also **not** a record of whether pdfcer is the default
+    ///
+    /// That question has exactly one honest answer and it is
+    /// [`crate::app::assoc::is_default`], which asks Windows. A remembered
+    /// answer would go stale the moment the operator installed anything else
+    /// that opens PDFs, and would then be a settings line asserting something
+    /// false about the machine.
+    pub ask_default_app: bool,
+
     /// ★★★ **Where Acrobat is, when the operator has had to say** —
     /// `OPERATOR_REQUESTS.md` **O122**: *"have a setting where people can
     /// change it."*
@@ -734,6 +764,9 @@ impl Default for Prefs {
             author_name: String::new(),
             // ★ Empty = "ask Windows", deliberately. See the field's own note
             // on why a cleared field must not mean "no Acrobat".
+            // True: the offer may be made. See the field's note on why the
+            // key is named for what it permits rather than what it suppresses.
+            ask_default_app: true,
             acrobat_path: String::new(),
             // ★ Empty = "look in the usual places", deliberately, and for the
             // reason spelled out on the field: a cleared box is how a person

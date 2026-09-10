@@ -61,6 +61,7 @@ fn test_page(w: f64, h: f64, rotate: u16) -> Page {
         rotate,
         contents: Vec::new(),
         contents_unresolved: 0,
+        resources_defaulted: false,
         contents_flattened: 0,
     }
 }

@@ -65,6 +65,12 @@
 //! badly.
 
 pub mod actions;
+/// ★★ **Making Windows open PDFs with pdfcer** (O173) — the registry
+/// registration that puts this build in Windows' list of PDF programs, and the
+/// deep link to the Windows page where the operator confirms it. Its header
+/// carries why the second half cannot be automated on Windows 10/11 and why
+/// `reg.exe` was chosen over the registry API under `#![forbid(unsafe_code)]`.
+pub mod assoc;
 /// Where a document made by `file.new` comes from: the 443-byte blank-A4
 /// template that ships as an asset, and the argument for why New parses a file
 /// rather than the engine growing a way to create one.

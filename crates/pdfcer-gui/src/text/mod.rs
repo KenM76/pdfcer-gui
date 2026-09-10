@@ -100,6 +100,14 @@ pub mod anomalies;
 /// refuse for the same three reasons in the same words; its header argues why
 /// the lock sentence is deliberately NOT the Properties panel's.
 pub mod arrange;
+/// ★★★ **Every word `OPERATOR_REQUESTS.md` O173 puts on screen** — the
+/// ask-once offer, the Settings group it lives in afterwards, the line that says
+/// what Windows actually opens PDFs with, and the two strings Windows itself
+/// displays in its *Open with* menu. Consumed by `crate::app::assoc`,
+/// `crate::dialogs::defaultapp` and `crate::dialogs::settings::defaultapp`. Its
+/// header carries the platform fact every word is shaped by: no program can
+/// make itself the default PDF viewer, so the offer must never claim it did.
+pub mod assoc;
 /// The attachment clipboard's words, including the one question a paste must
 /// ask before the press: the engine REPLACES a same-named attachment.
 pub mod attachclip;

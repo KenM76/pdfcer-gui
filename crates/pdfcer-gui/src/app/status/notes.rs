@@ -262,6 +262,30 @@ fn annotations_not_drawn(d: &pdfcer_render::Diagnostics) -> usize {
 /// by the reader's. The dialog lists them top-down in the same order, for the
 /// same reason.
 pub(crate) fn findings(d: &pdfcer_render::Diagnostics) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+
+    // ★★★ FIRST, and it is not in the table below because it is not a count —
+    // it is a `bool`, and it is the CAUSE of several of the lines that can
+    // appear under it.
+    //
+    // Engine `Pass 290.0` (2026-09-10) stopped refusing a page that carries no
+    // `/Resources` on itself or on any ancestor: pdfcer now supplies the empty
+    // dictionary Table 30 names and the page opens. Before that, one blank
+    // spacer page cost EVERY page in the file, on every verb that walks the
+    // tree — measured on the operator's own Acrobat-written signature file.
+    //
+    // ⚠ The reason this is disclosed at all, rather than treated as a silent
+    // repair: §7.8.3 lets a form XObject or a Type 3 font omit its own
+    // `/Resources` and inherit **the page's**, and the ISO 32000-2 erratum
+    // extends that to **annotation appearance streams**. A page whose only
+    // marks are annotations — exactly the operator's file's shape — can
+    // therefore genuinely need the dictionary that was not there. So a font
+    // reported missing on the lines below may be missing BECAUSE of this line,
+    // and reading them the other way round sends him looking for the font.
+    if d.page_resources_defaulted {
+        out.push(t::diagnostics_resources_defaulted().to_owned());
+    }
+
     let entries: [NoteEntry; 10] = [
         (
             d.contents_streams_unresolved,
@@ -285,11 +309,13 @@ pub(crate) fn findings(d: &pdfcer_render::Diagnostics) -> Vec<String> {
         (d.deferred_ops, t::diagnostics_ops_deferred),
         (d.unknown_ops, t::diagnostics_ops_unknown),
     ];
-    entries
-        .into_iter()
-        .filter(|(n, _)| *n > 0)
-        .map(|(n, render)| render(n))
-        .collect()
+    out.extend(
+        entries
+            .into_iter()
+            .filter(|(n, _)| *n > 0)
+            .map(|(n, render)| render(n)),
+    );
+    out
 }
 
 #[cfg(test)]
@@ -301,6 +327,58 @@ mod tests {
     fn a_clean_render_reports_that_it_is_clean() {
         let d = pdfcer_render::Diagnostics::default();
         assert_eq!(notes_line(&d), t::diagnostics_clean());
+    }
+
+    /// ★★★ **A page pdfcer had to supply a resource dictionary for says so,
+    /// and says it FIRST.**
+    ///
+    /// Two assertions in one test because the ordering is the substance, not
+    /// the presentation. §7.8.3 and the ISO 32000-2 erratum let a form
+    /// XObject, a Type 3 font and an **annotation appearance stream** inherit
+    /// the page's `/Resources` — so a page with no dictionary of its own can
+    /// genuinely be the reason a font below it went missing. A findings list
+    /// that printed *"text from 1 font not drawn"* above *"this page names no
+    /// resources"* would send the operator looking for a font that was never
+    /// the problem.
+    ///
+    /// ⚠ The first assertion also guards the direction that costs nothing to
+    /// get wrong and everything to leave wrong: engine `Pass 290.0` made this
+    /// page **open** where it used to refuse the whole document, and a silent
+    /// repair is the shape rule 4 forbids.
+    #[test]
+    fn a_page_whose_resources_were_supplied_says_so_first() {
+        let d = pdfcer_render::Diagnostics {
+            page_resources_defaulted: true,
+            fonts_unsupported: 1,
+            ..Default::default()
+        };
+
+        let found = findings(&d);
+        assert_eq!(
+            found.len(),
+            2,
+            "the supplied dictionary is a finding in its own right, not a qualifier on the font \
+             line: {found:?}"
+        );
+        assert_eq!(
+            found[0],
+            t::diagnostics_resources_defaulted(),
+            "it must be read before anything it may have CAUSED: {found:?}"
+        );
+    }
+
+    /// The other direction: a page that named its own resources is silent.
+    ///
+    /// ★ Without this, the assertion above would pass on a build that printed
+    /// the line unconditionally — which would put a permanent, meaningless
+    /// sentence in the status bar of every document the operator opens.
+    #[test]
+    fn a_page_that_names_its_own_resources_is_not_mentioned() {
+        let d = pdfcer_render::Diagnostics::default();
+        assert!(
+            findings(&d).is_empty(),
+            "a clean page has no findings at all"
+        );
     }
 
     /// **An annotation the file carries and pdfcer drew nothing for is

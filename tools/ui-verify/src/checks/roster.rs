@@ -787,6 +787,13 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // words at all. The operator's report is the check's own defect string.
         // ⬜ NOT RUN; the module says so in its header.
         Box::new(comment_popup::ACommentCanBeReadOnThePageInReadMode),
+        // ★★ O173, 2026-09-10. It launches TWICE and deletes a file the
+        // sandbox wrote, which no other check does — both are explained at
+        // length in its header, and neither is optional: the seed exists so
+        // this offer does not open in front of the other two hundred checks,
+        // and the second launch is the only place "ask once" can be observed.
+        // ⬜ NOT RUN at the time of writing; the machine was the operator's.
+        Box::new(default_app_offer::TheDefaultAppOfferIsAskedOnce),
         // Last of the three new ones and the most expensive: it drives Insert
         // pages, the Forms panel and the Tab-order section in one session,
         // because the shape it registers does not exist in any fixture — pdfcer
@@ -795,6 +802,14 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(add_text::AddTextTakesRealKeystrokes),
         Box::new(chords::EveryDeclaredChordDispatches),
         Box::new(stamp_size::StampSizeReachesTheEngine),
+        // ★★ O171, 2026-09-10. Immediately after `stamp_size` because it
+        // repeats that check's route and then does the thing no other check
+        // does: opens the same dialog a SECOND time. The operator's report was
+        // that the first opening was fine and the second had its Add and
+        // Cancel below its own bottom edge, so a suite of checks that each
+        // open it once is structurally blind to it.
+        // ⬜ NOT RUN at the time of writing; the machine was the operator's.
+        Box::new(stamp_dialog_reopen::TheSecondStampDialogStillHasItsButtons),
         Box::new(text_annot::TextAnnotPlacesAndAuthors),
         Box::new(text_annot_focus::TextAnnotTakesTheKeyboardUnclicked),
         Box::new(text_box::TextBoxTakesAParagraph),

@@ -831,6 +831,9 @@ pub mod chords;
 /// have until `Pass 154.0`. Its header carries why link 3 of the chain — a
 /// widget raising the action — is unreachable by any unit test.
 pub mod comment_note;
+/// ★★ **O173's ask-once offer**, and the only check in the suite that has to
+/// UNDO the sandbox's own seed before it can measure anything — see its header.
+pub mod default_app_offer;
 pub mod dialog_windows;
 /// A selection INSIDE a text draft — Shift+arrows and the rule that drops it.
 /// Not to be confused with `text_selection`, which is about sweeping the
@@ -850,6 +853,10 @@ pub mod shortcuts;
 /// → `/Pages` tree, and is NOT drawn on one without, with the panel provably
 /// open both times.
 pub mod stamp_collection;
+/// ★★★ **O171** — the SECOND stamp's dialog still has its Add and Cancel on the
+/// screen. The only check in the suite that opens the same dialog twice, because
+/// the operator's report was about a window whose FIRST opening was fine.
+pub mod stamp_dialog_reopen;
 pub mod stamp_size;
 pub mod text_annot;
 pub mod text_annot_focus;

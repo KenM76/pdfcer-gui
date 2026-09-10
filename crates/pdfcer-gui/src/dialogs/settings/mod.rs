@@ -115,6 +115,10 @@ mod acrobat;
 pub mod appearance;
 pub mod colour;
 mod comments;
+/// The button O173 asks for at the top of this window, and the line that
+/// says what Windows actually opens PDFs with. Its header argues why it is
+/// above even the presets row and why it is not a collapsible group.
+pub mod defaultapp;
 mod preset;
 
 /// ★ The eighth group, and the only one not about the PDF standard: how pdfcer
@@ -223,6 +227,16 @@ pub struct Draft {
     /// ★ Taken by [`Self::take_focus`] rather than read, so it fires once. A
     /// group forced open on every frame is a group the operator cannot collapse.
     pub focus: Option<&'static str>,
+    /// **What the machine says about the default PDF program**, read once
+    /// per opening of this window - O173.
+    ///
+    /// Not a setting and not part of the draft: nothing here is written by
+    /// Save and nothing here is discarded by Cancel, because the act it
+    /// describes happens immediately and outside pdfcer. It lives on the
+    /// draft only because the draft is what has this window's lifetime, and
+    /// one probe per opening is the whole point. See
+    /// [`defaultapp::State`].
+    pub default_app: defaultapp::State,
     /// The edits in progress.
     pub working: Settings,
     /// What the settings were when the window opened.
@@ -310,6 +324,10 @@ impl Draft {
     ) -> Self {
         Self {
             focus,
+            // Deliberately empty rather than probed: filling it here would
+            // spawn subprocesses from a constructor that unit tests call.
+            // See `defaultapp::State`.
+            default_app: defaultapp::State::default(),
             working: current.clone(),
             original: current.clone(),
             // ★ Seeded from the operator's PERSISTED choice, so the window
@@ -513,6 +531,14 @@ pub fn show(
                 // accepted, and swapping the control would be improvising an
                 // interaction change while fixing a layout defect. It is worth
                 // proposing separately; it is not worth bundling here.
+                // O173, and FIRST - above even the presets row. It is the
+                // only entry in this window that is an ACT rather than a
+                // setting, and the only one somebody arrives at Settings
+                // specifically to press. `defaultapp`'s header carries the
+                // argument, including why it is not a collapsible group.
+                defaultapp::group(ui, &mut draft.default_app);
+                ui.add_space(10.0);
+                ui.separator();
                 widgets::group(ui, "presets", t::preset_title(), false, |ui| {
                     preset::row(ui, draft);
                 });
@@ -876,6 +902,16 @@ mod tests {
         ("colour", include_str!("colour.rs")),
         ("acrobat", include_str!("acrobat.rs")),
         ("comments", include_str!("comments.rs")),
+        // ★ Added 2026-09-10 IN THE SAME EDIT as the module, because the two
+        // tripwires above caught its absence within a minute of the module
+        // existing - which is the whole point of them, and the second time in
+        // this list's history that has happened. It binds no `Settings` field
+        // at all (its one stored value is a `Prefs` field, and the act it
+        // performs is outside pdfcer entirely), so listing it changes no
+        // verdict today. It is listed anyway: the check is about the DIRECTORY
+        // being fully scanned, and a module exempted because it happens to bind
+        // nothing is a module nobody re-checks when it starts binding something.
+        ("defaultapp", include_str!("defaultapp.rs")),
         ("display", include_str!("display.rs")),
         ("fonts", include_str!("fonts.rs")),
         ("images", include_str!("images.rs")),

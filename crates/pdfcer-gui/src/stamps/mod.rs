@@ -184,10 +184,12 @@ pub struct PlannedStamp {
 pub struct ExistingName {
     /// The page this name points at, when it points at one of this document's.
     ///
-    /// ⚠ `None` is **not** reliably "this stamp is broken" — see
-    /// [`unresolved_count`] for the engine defect that makes it ambiguous.
-    /// Here it simply means the name cannot be attached to a row, which is
-    /// true either way.
+    /// ⚠ `None` still is **not** "this stamp is broken" — it means the name
+    /// cannot be attached to a row, which is all a [`Plan`] needs to know.
+    /// Since engine `Pass 290.1` the *reason* is answerable
+    /// ([`page_tree_unreadable`]), but it is deliberately not carried here:
+    /// the reason changes what an operator should be **told**, and nothing
+    /// about which row a name attaches to.
     pub page_index: Option<usize>,
     /// The display half of the stored `internal=display` string.
     ///
@@ -509,23 +511,57 @@ pub fn dynamic_count(collection: &StampCollection) -> usize {
     collection.stamps.iter().filter(|s| s.dynamic).count()
 }
 
-/// Stamps whose named page is not one of the document's own.
+/// Why this document's page tree could not be read, when it could not be.
 ///
-/// ⚠ **This count is not trustworthy on a document whose page tree failed to
-/// read**, and pdfcer cannot currently tell the difference. `stamp_file::read`
-/// swallows a page-tree error and reports every stamp as pointing at nothing,
-/// so a perfectly good collection inside an unreadable document counts as
-/// entirely broken here. Measured on the operator's own signature file, where
-/// one blank page with no `/Resources` makes both real stamps report as
-/// missing. Filed as
-/// `request_a_page_tree_failure_is_reported_as_every_stamp_pointing_at_nothing.md`;
-/// until it is answered, callers must not phrase this as *"these stamps are
-/// broken"*.
+/// # ★★★ The field that makes every count below mean one thing again
+///
+/// Until engine `Pass 290.1` (2026-09-10, `bce4703`) `stamp_file::read` built
+/// its page list with `page_tree::pages(doc).map(…).unwrap_or_default()`, so a
+/// page tree that refused produced an **empty** list, so every
+/// `StampEntry::page_index` came back `None` — and `None` already meant
+/// something else and something specific: *"this name points at a page the
+/// document does not have."* Two opposite facts arrived in one value, and on
+/// the operator's own Acrobat-written signature file pdfcer reported both of
+/// his real signatures as pointing at nothing when neither did.
+///
+/// The engine now carries the failure separately, which is what lets this
+/// module's wording become a claim again instead of an observation carefully
+/// phrased to be true either way:
+///
+/// | this returns | what `page_index: None` means |
+/// |---|---|
+/// | `Some(why)` | **nothing about the stamp.** The page tree is unreadable; no `page_index` in the collection carries information |
+/// | `None` | the name genuinely points outside this document |
+///
+/// The names, display titles and dynamic flags are read from the `/Names` →
+/// `/Pages` **name** tree and are unaffected by whatever is wrong with the
+/// **page** tree, which is why `read` still returns a collection worth showing
+/// and this is an `Option` rather than the whole call becoming a `Result`.
 #[must_use]
-pub fn unresolved_count(collection: &StampCollection) -> usize {
-    collection
-        .stamps
-        .iter()
-        .filter(|s| s.page_index.is_none())
-        .count()
+pub fn page_tree_unreadable(collection: &StampCollection) -> Option<&str> {
+    collection.page_tree_error.as_deref()
+}
+
+/// Stamps whose named page is not one of the document's own — or `None` when
+/// that question is unanswerable.
+///
+/// ★ **`None` is not zero and must never be rendered as zero.** It means the
+/// page tree could not be read, so no `page_index` in the collection carries
+/// information; see [`page_tree_unreadable`] for why the two used to be
+/// indistinguishable and what it cost. A caller that unwrapped this to `0`
+/// would print *"every stamp resolves"* about a document where pdfcer resolved
+/// none of them, which is the same class of defect as the one the engine just
+/// removed, moved one crate along.
+#[must_use]
+pub fn unresolved_count(collection: &StampCollection) -> Option<usize> {
+    if collection.page_tree_error.is_some() {
+        return None;
+    }
+    Some(
+        collection
+            .stamps
+            .iter()
+            .filter(|s| s.page_index.is_none())
+            .count(),
+    )
 }

@@ -161,27 +161,41 @@ pub(super) fn section(ui: &mut Ui, doc: &OpenDoc) {
                 );
             }
 
+            // ★★★ Why no page number is shown, said ONCE and above the list.
+            //
+            // `page_index` used to be `None` in two opposite situations that
+            // pdfcer could not tell apart; engine `Pass 290.1` split them, and
+            // `crate::stamps::page_tree_unreadable` is the half that is a fact
+            // about the DOCUMENT rather than about any stamp. It belongs here,
+            // once, rather than repeated down every row: the cause is the same
+            // for all of them, and a per-row repetition reads as twelve
+            // separate faults.
+            let unreadable = crate::stamps::page_tree_unreadable(&collection);
+            if let Some(why) = unreadable {
+                ui.label(
+                    egui::RichText::new(t::properties_page_tree_unreadable(why))
+                        .small()
+                        .weak(),
+                );
+            }
+
             ui.add_space(2.0);
             for (index, stamp) in collection.stamps.iter().enumerate() {
                 let row = ui.horizontal_wrapped(|ui| {
                     ui.label(t::properties_stamp(&stamp.display, &stamp.internal));
-                    // ⚠ `page_index` is `None` in TWO different situations and
-                    // pdfcer cannot currently tell them apart — see
-                    // [`crate::stamps::unresolved_count`] for the engine defect
-                    // and the request filed against it. The wording therefore
-                    // says what pdfcer OBSERVED rather than what it concluded,
-                    // which is the only reason the row can be drawn at all:
-                    // *"names no page in this document"* is true both when the
-                    // collection is broken and when the page tree failed to
-                    // read, and *"this stamp is broken"* is true in one of them.
-                    ui.label(
-                        egui::RichText::new(stamp.page_index.map_or_else(
-                            || t::properties_stamp_no_page().to_owned(),
-                            |i| t::properties_stamp_page(i + 1),
-                        ))
-                        .small()
-                        .weak(),
-                    );
+                    // ⚠ The order of these three cases is the whole point. An
+                    // unreadable page tree is checked FIRST, because in that
+                    // state `page_index` is `None` for every stamp and means
+                    // nothing about any of them — printing *"names no page in
+                    // this document"* there is exactly the sentence that told
+                    // the operator both of his signatures were broken when
+                    // neither was.
+                    let page = match (unreadable, stamp.page_index) {
+                        (Some(_), _) => t::properties_stamp_page_unreadable().to_owned(),
+                        (None, Some(i)) => t::properties_stamp_page(i + 1),
+                        (None, None) => t::properties_stamp_no_page().to_owned(),
+                    };
+                    ui.label(egui::RichText::new(page).small().weak());
                 });
                 // ★ Per-row region. The section region below says *"this file is
                 // a stamp collection"*; only these say *"and here is what is in

@@ -348,6 +348,7 @@ fn navigating_the_view_never_alters_the_selection() {
             rotate: 0,
             contents: Vec::new(),
             contents_unresolved: 0,
+            resources_defaulted: false,
             contents_flattened: 0,
         })
         .collect();

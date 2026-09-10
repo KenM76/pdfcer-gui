@@ -74,6 +74,10 @@ pub mod buttonaction;
 /// the file BEFORE it opens: when a window asks somebody to trade something
 /// irreversible for a benefit, the benefit must be measured, not predicted.
 pub mod compact;
+/// The startup offer O173 asks for - *"Ask once with a don't show me again
+/// check box option"*. Its header carries the three ways the question can be
+/// answered and which two of them stop it coming back.
+pub mod defaultapp;
 /// The render report `tools.render_diagnostics` opens — what the renderer did
 /// with the page currently on the canvas, with the room the status bar's one
 /// elided line does not have.
@@ -409,6 +413,27 @@ pub struct DialogsState {
     sign: Option<sign::SignDialog>,
 
     // --- application-scoped: survives an empty canvas ---------------------
+    /// The default-PDF-program offer, when it is up - O173.
+    ///
+    /// **Application-scoped, and the only dialog here that opens itself.**
+    /// Everything else in this struct is opened by a command the operator
+    /// invoked; this one is a question pdfcer asks, once, on the launch
+    /// after it decides the question is owed. It is above the no-document
+    /// guard with About because it is not about a document at all - it is
+    /// about the machine, and on a fresh install there is nothing open when
+    /// it is asked.
+    default_app: Option<defaultapp::DefaultAppDialog>,
+
+    /// Whether the offer has already been considered this run.
+    ///
+    /// ★★ A separate flag from the dialog itself, and it is set whether or
+    /// not the dialog opens. [`defaultapp::should_offer`] costs two `reg.exe`
+    /// processes; without this it would run on **every frame**, which is
+    /// sixty subprocess pairs a second for the life of the session. The
+    /// preference alone would not do it, because the expensive half of the
+    /// condition is the reading of Windows rather than the reading of a file.
+    default_app_considered: bool,
+
     /// The About dialog, when one is open.
     ///
     /// Carries the attribution surface — see [`about`] and
@@ -786,6 +811,26 @@ impl DialogsState {
         // behaviour, which is why it is above it rather than beside it.
         if self.about.as_mut().map(|d| d.show(ctx)) == Some(false) {
             self.about = None;
+        }
+        // ★★★ O173's *"ask once"*, and the ONE place in this function that
+        // opens a dialog nobody asked for. Above the no-document guard with
+        // About, and for a stronger reason than any of its neighbours: the
+        // launch this fires on is usually a launch with nothing open, because
+        // the operator has just installed pdfcer and started it from the Start
+        // menu rather than by double-clicking a drawing - which is precisely
+        // the thing they cannot yet do.
+        //
+        // ★ `considered` is set BEFORE the condition is evaluated, not after,
+        // so a `should_offer` that returns false still costs its two
+        // subprocesses exactly once. See the field's own note.
+        if !self.default_app_considered {
+            self.default_app_considered = true;
+            if defaultapp::should_offer(prefs) {
+                self.default_app = Some(defaultapp::DefaultAppDialog::new());
+            }
+        }
+        if self.default_app.as_mut().map(|d| d.show(ctx, prefs)) == Some(false) {
+            self.default_app = None;
         }
         // Beside About, above the guard, and for a sharper version of the same
         // reason: this window's whole purpose is to produce a document, so a

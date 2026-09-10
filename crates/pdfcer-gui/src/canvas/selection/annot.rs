@@ -818,6 +818,7 @@ mod tests {
             contents: Vec::new(),
             contents_flattened: 0,
             contents_unresolved: 0,
+            resources_defaulted: false,
         };
 
         // ★ A `DocumentView` over the loose graph rather than the graph itself,
