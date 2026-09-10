@@ -1,6 +1,6 @@
 ---
 name: disk-is-tight-and-target-grows-unbounded
-description: Disk AND RAM are tight on the build machine; clear debug/doc target routinely, run the test suite with a job limit, and after a low-memory kill wait for the orphaned linkers before relaunching
+description: Disk AND RAM are tight; clear debug/doc target routinely, run the suite with a job limit, wait for orphaned linkers after a kill — and the BIGGEST item is not in target/ at all, it is one full engine source tree per pin bump under ~/.cargo
 metadata:
   type: project
 ---
@@ -29,9 +29,11 @@ else. Do the same for `target/doc` (regenerable) and for any
 `target/ui-verify-*` scratch directories older than the current line of
 work; anything worth keeping was already copied into `evidence/`, which
 is tracked and small. **Leave `target/release` alone** — a release
-rebuild is expensive and the harness depends on that binary; selectively
-deleting files out of `release/deps` risks a half-valid cache for a
-~2 GB return that is not worth it.
+rebuild is expensive and the harness depends on that binary. ⚠ The clause
+that used to sit here, *"selectively deleting files out of `release/deps`
+risks a half-valid cache for a ~2 GB return that is not worth it"*, was
+**wrong on both counts and is corrected below** (2026-09-10): the return
+was 3.76 GB and the prune is provably safe if cargo names the live set.
 
 Expect the reclaimed figure to come in **well under** what `du` predicts
 — on 2026-08-21 `du` accounted 53 GB deleted and `df` showed 29 GB
@@ -85,3 +87,63 @@ not a killed build.
 command: each is a separate memory peak and one kill voids all three. Before
 relaunching after a kill, `tasklist | grep -iE 'cargo|rustc|link'` and wait —
 the orphans are finishing the work you need cached.
+
+## ★★★ The biggest item is NOT in `target/` — 2026-09-10
+
+Every entry above treats `target/` as the problem. Measured on 2026-09-10 with
+C: at **98 % full (23 GB free)**, the ranking was:
+
+| Item | Size | Where |
+|---|---|---|
+| stale engine-pin source trees | **36 trees**, dominant | `~/.cargo/git/checkouts/pdfcer-*/` |
+| `target/debug` | 8.0 GB | project |
+| superseded `release/deps` artifacts | 3.76 GB | project |
+| dead pre-rename `pdfce` git cache | 1.5 GB | `~/.cargo/git/db/` |
+
+**Why this project specifically.** The engine is a `git+file://` dependency
+**pinned by revision**, and the pin moves almost daily. Cargo materialises a
+**complete working tree of the engine repo per revision** under
+`~/.cargo/git/checkouts/<name>-<hash>/<rev>/` and **never** removes one.
+`cargo clean` does not touch it — that command only knows `target/`. Thirty-seven
+trees had accumulated. It is on **C:**, the tighter drive, and it is invisible
+from inside the project.
+
+**How to apply.** Only the revision in `Cargo.lock` is live —
+`grep -A2 'name = "pdfcer-core"' Cargo.lock` gives it (`369d4de` on this date).
+Delete every sibling directory; cargo re-creates one from the bare `db/` repo on
+demand. Separately, `db/` is per **URL**, so it does not grow with pins but does
+strand a whole bare repo when a dependency is **renamed** — the pre-rename
+`pdfce` entries were dead for a week. Grep every `Cargo.lock` and `Cargo.toml`
+for the old URL before dropping one.
+
+### ⚠ The `release/deps` correction, and the method that makes it safe
+
+The old advice not to touch `release/deps` was right about the *risk* and wrong
+about the *return* and the *method*. **mtime is the wrong criterion** — cargo
+legitimately reuses a third-party `.rlib` built weeks ago, so age-based pruning
+forces a full rebuild of everything unchanged. Ask cargo instead:
+
+```sh
+CARGO_BUILD_JOBS=4 cargo build --release --workspace --message-format=json > live.json
+```
+
+Every unit emits a `compiler-artifact` line with `filenames` — **including fresh
+ones** — so the union of their `-<16 hex>` metadata hashes IS the live set.
+Delete any file in `deps/` whose hash is in none of them. Here that was **344
+files / 3.76 GB**, dominated by **62 accumulated copies of `libpdfcer_gui`**, one
+per pin bump. The proof it was correct: the very next
+`cargo build --release --workspace` printed **`Finished ... in 1.47s`** — nothing
+rebuilt — and an off-screen smoke launch drew a page at `covered=1.000` with no
+panic.
+
+### ⚠ And the `du`-vs-`df` note above is backwards for large deletions
+
+2026-08-21 recorded `df` returning *less* than `du` accounted. On 2026-09-10 it
+returned **far more**: C: 23 → 55 GB free after the pin trees, then 54 → **156
+GB** after a 1.5 GB delete, and D: 94 → **260 GB** after removing 8 GB. NTFS
+flushes large deletions lazily, so `df` lags by minutes and the delta attributed
+to the last command is meaningless. ⇒ **Re-measure `df` once at the end, and
+report the session total — never the per-step delta.**
+
+Full method, with the pitfalls, in `D:/dev/rag/rust/`
+(`cargo_git_pin_checkouts_accumulate_one_full_tree_per_rev.md`).
