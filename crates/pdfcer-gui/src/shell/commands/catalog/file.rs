@@ -514,6 +514,63 @@ pub(super) fn band() -> Vec<Command> {
         command("file.import_text", t::file_import_text(), 129)
             .with_icon("insert-pages")
             .enabled_when("doc.pages"),
+        // ★★★ **Save as stamp collection — `OPERATOR_REQUESTS.md` O169,
+        // wired 2026-09-10.** The operator: *"if acrobat has a way of adding
+        // custom stamps or text, we need the same feature too with the same
+        // import/export to make the stamps as Adobe has and is compatible with
+        // adobe's"*.
+        //
+        // ★★ **There is no import half to register, and that is a finding
+        // rather than a gap.** A stamp collection *is an ordinary PDF* — one
+        // page per stamp, the category in `/Info` `/Title`, the names in the
+        // catalog's name tree — so opening one is `file.open`, which already
+        // works, and handing somebody the file **is** the export. Acrobat has
+        // no interchange format to be compatible with; the file is the format.
+        // `crate::dialogs::stamp_collection`'s header carries the measurement
+        // this rests on, taken against the four Adobe collections on this
+        // machine.
+        //
+        // ★ `stamp` rather than `export`, on `file.export_image`'s argument
+        // three registrations above and not on the shared-key convention: the
+        // tray glyph is honest for a DXF and for form data because a coordinate
+        // list and a set of name/value pairs have no picture. **A stamp has a
+        // picture, and this set already draws it** — `markup.stamp` wears
+        // `stamp.svg`, so the operator has already learned in this application
+        // that this glyph means *a stamp*. Handing this one a generic tray
+        // would ask him to unlearn that on the one control the word is in the
+        // label of. The share with `markup.stamp` is the permitted kind: the
+        // art is equally true of both, the two sit on different tabs, and the
+        // labels — "Stamp" and "Save as stamp collection" — are not confusable
+        // in one pass.
+        //
+        // ★ `doc.pages` rather than `doc.open`, matching `file.export_dxf` and
+        // for the stronger version of its reason: the window draws one row per
+        // page, so a document with none opens a window with nothing in it and a
+        // greyed Save button explaining that every page is unticked — which is
+        // a true sentence about a state the operator cannot fix.
+        // ★★ Token **119**, and it took two tries to land on a free one.
+        //
+        // The first draft said 126 (`file.encrypt`'s) and the second said 127
+        // (`file.permissions`'), and `every_handler_token_is_unique` refused
+        // both. The second miss is the instructive one: it came from a script
+        // that scanned this file for `command("id", text, NNN)` on one line and
+        // was structurally blind to the three registrations written across four
+        // — `file.permissions`, `file.document_properties` and
+        // `file.open_in_acrobat` are all `rustfmt`-wrapped, so a
+        // formatter-driven line break had made three of this band's tokens
+        // invisible to the instrument looking for free ones.
+        //
+        // ⇒ **Enumerate from the registry, never from the source text.** That is
+        // exactly what the test does, which is why it caught what the script
+        // could not.
+        //
+        // 119 sits immediately below the derivative cluster (120-125: DXF, form
+        // data, page text, document text, image, text) and immediately above
+        // `file.import_form_data` at 118. The File band's genuinely free tokens
+        // after this one are 105-109, 114-117, 131-139, 143-149 and 153-159.
+        command("file.stamp_collection", t::file_stamp_collection(), 119)
+            .with_icon("stamp")
+            .enabled_when("doc.pages"),
         command("file.export_form_data", t::file_export_form_data(), 121)
             .with_icon("export")
             .enabled_when("doc.open"),

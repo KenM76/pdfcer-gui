@@ -174,6 +174,14 @@ use crate::app::state::OpenDoc;
 use crate::text::anomalies as t_anomalies;
 use crate::text::panels::docprops as t;
 
+/// The stamp-collection disclosure section — `OPERATOR_REQUESTS.md` **O169**.
+///
+/// Its own file because it is its own subject: everything else in this panel
+/// describes *a document*, and that module describes *a document that is also
+/// something else*. It draws nothing at all on a file that is not a collection,
+/// which is most of them.
+mod stamps;
+
 /// The region this panel publishes.
 ///
 /// ★★ **Unchanged by the move to a panel of its own, deliberately.** The name
@@ -376,6 +384,12 @@ fn info_body(ui: &mut Ui, doc: &OpenDoc, drafts: &mut InfoDrafts, actions: &mut 
     ui.add_space(4.0);
 
     facts(ui, doc);
+    // ★ After the read-only facts and BEFORE the editable rows, because it is
+    // one of the facts: what kind of file this is. Placing it below the `/Info`
+    // fields would put the sentence about the category under the very field
+    // that sets it, which reads as a note about the edit the operator just made
+    // rather than as a description of the file he opened.
+    stamps::section(ui, doc);
     ui.add_space(6.0);
 
     let stored = drafts.sync(doc);

@@ -224,10 +224,24 @@ pub fn register(reg: &mut CommandRegistry) {
         .expect("two shell commands claim the same id");
 }
 
-/// The properties every registration in this catalogue must hold — the command
-/// count, the icon-coverage split, the handler-token blocks, the condition
-/// vocabulary and the with-nothing-open enabled set, each carrying the running
-/// ledger of why its literal is the number it is. Split out under **R2** on
-/// 2026-09-06; see that module's header for the seam.
+/// **The two counters and the record of every time they moved** — the command
+/// count and the icon-coverage split, each carrying a line per command ever
+/// added or removed, written at the literal it changed.
+///
+/// Split out of [`tests`] under **R2** on 2026-09-10, when the O169 entry took
+/// that file past 1,500 lines. Roughly nine hundred lines of commentary against
+/// four of assertion, which is the point rather than an accident: an integer
+/// records nothing, and what a reader needs when one of them fails is whether
+/// the change that moved it was supposed to.
+#[cfg(test)]
+mod ledger;
+
+/// The properties every registration in this catalogue must hold — the
+/// handler-token blocks, the condition vocabulary, the with-nothing-open
+/// enabled set, the tooltip rule and the icon-key rules, each carrying the
+/// running ledger of why its literal is the number it is. Split out under
+/// **R2** on 2026-09-06; see that module's header for the seam.
+///
+/// ★ The two *counts* moved out again on 2026-09-10 — see [`ledger`].
 #[cfg(test)]
 mod tests;

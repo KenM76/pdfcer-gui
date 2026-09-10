@@ -144,6 +144,15 @@ pub mod open_in_acrobat;
 /// chosen — computed before the operator commits, from a facility the engine
 /// itself names as a residual it does not have.
 pub mod page_size;
+/// ★★★ The Save-as-stamp-collection window — this document's pages, named, in
+/// the file Acrobat reads its custom stamps out of. `OPERATOR_REQUESTS.md`
+/// O169.
+///
+/// Its header carries the finding the whole feature turns on: **there is no
+/// interchange format because Acrobat has none.** A stamp collection is an
+/// ordinary PDF, so the operator's "same import/export" was never a converter
+/// — it was a way to author one of those files.
+pub mod stamp_collection;
 
 pub mod password;
 pub mod placing;
@@ -481,6 +490,14 @@ pub struct DialogsState {
     /// **Document-scoped**, for its sibling's reason: its content is a plan
     /// computed against the open document's font inventory.
     unembed: Option<unembed::UnembedDialog>,
+
+    /// The Save-as-stamp-collection window, when one is open.
+    ///
+    /// **Document-scoped**: every row in it is a page of the open file, and the
+    /// names it shows were read out of that file's own name tree when it
+    /// existed. A window that survived its document would offer to write a
+    /// collection of pages nobody has open.
+    stamp_collection: Option<stamp_collection::StampCollectionDialog>,
 
     /// The Export-DXF window, when one is open.
     ///
@@ -841,6 +858,9 @@ impl DialogsState {
         if self.export_dxf.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.export_dxf = None;
         }
+        if self.stamp_collection.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
+            self.stamp_collection = None;
+        }
         if self.export_image.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.export_image = None;
         }
@@ -1174,6 +1194,11 @@ impl DialogsState {
         self.page_size = None;
         self.insert_image = None;
         self.export_dxf = None;
+        // ★ On this list because it holds a SNAPSHOT: the page count it built
+        // its rows from, and the names it read out of the file's name tree.
+        // A window that outlived its document would show one document's names
+        // over another document's pages.
+        self.stamp_collection = None;
         self.export_image = None;
         self.export_text = None;
         self.embed = None;

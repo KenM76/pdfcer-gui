@@ -57,7 +57,7 @@
 use super::{
     DialogsState, about, compact, diagnostics, embed, export_dxf, export_image, export_text,
     formfield, import_text, insert_image, insert_pages, new_document, ocr, page_size, print,
-    protect, redact, scale, shortcuts, textannot, unembed,
+    protect, redact, scale, shortcuts, stamp_collection, textannot, unembed,
 };
 use crate::app::state::Status;
 
@@ -491,6 +491,19 @@ impl DialogsState {
             return;
         }
         self.shortcuts = Some(shortcuts::ShortcutsDialog::open());
+    }
+
+    /// Open the Save-as-stamp-collection window for the open document.
+    ///
+    /// **The dispatch target for the `file.stamp_collection` command.**
+    /// [`Self::open_export_dxf`]'s two guards and for its reasons: the window
+    /// draws one row per page and seeds its category from the file, so there
+    /// is nothing to build without a document.
+    pub fn open_stamp_collection(&mut self, status: &Status) {
+        if self.stamp_collection.is_some() {
+            return;
+        }
+        self.stamp_collection = stamp_collection::open_for(status);
     }
 
     pub fn open_export_dxf(&mut self, status: &Status) {

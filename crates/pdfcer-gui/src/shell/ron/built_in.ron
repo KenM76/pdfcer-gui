@@ -77,6 +77,7 @@
                         Command(id: "file.export_image"),
                         Command(id: "file.export_text"),
                         Command(id: "file.import_text"),
+                        Command(id: "file.stamp_collection"),
                         Command(id: "file.export_form_data"),
                         Command(id: "file.import_form_data"),
                         Command(id: "file.copy_page_text"),

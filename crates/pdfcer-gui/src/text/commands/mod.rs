@@ -378,6 +378,30 @@ pub const fn file_export_dxf() -> CommandText {
     )
 }
 
+/// `file.stamp_collection` — `OPERATOR_REQUESTS.md` **O169**.
+///
+/// ★★ **The label and the tooltip are NOT written here.** They are
+/// [`crate::text::stamps::command_label`] and
+/// [`crate::text::stamps::command_tooltip`], and this function only pairs them
+/// into the shape the registry takes.
+///
+/// The reason is the one `crate::text::protect::group_file_security` records
+/// for a caption living beside its feature: **when a feature's copy is one
+/// subject and one module, splitting it across two modules gives it two places
+/// to drift.** Every other sentence this feature says — the window title, the
+/// per-page rows, the five adjustment disclosures, the eleven Document
+/// Properties strings — is in `crate::text::stamps`, and its vocabulary note
+/// (*stamp* vs *collection* vs *category* vs *display name*) is the reason
+/// those sentences agree with each other. A twelfth string over here would be
+/// outside the one header that keeps them consistent.
+#[must_use]
+pub const fn file_stamp_collection() -> CommandText {
+    CommandText::new(
+        crate::text::stamps::command_label(),
+        crate::text::stamps::command_tooltip(),
+    )
+}
+
 /// `file.import_form_data`
 ///
 /// ★★ The tooltip says **what it overwrites**, because that is the fact an

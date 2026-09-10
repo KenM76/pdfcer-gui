@@ -422,6 +422,29 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // The long form of the same disclosure, beside the other check that
         // opens the Document properties panel — they share its opener.
         Box::new(load_anomalies::LoadAnomaliesAreListedInDocumentProperties),
+        // ★★★ O169's read half, wired 2026-09-10, and placed here because it
+        // shares the Document properties opener with the two above it. Read in
+        // order the three say: the panel opens, it discloses what the loader
+        // had to decide, and it discloses what KIND of document this is.
+        //
+        // ⚠ Like its neighbours it pins its own two fixtures and ignores
+        // `--pdf`. The control launch is not optional: without it the check is
+        // satisfied by a build that pins a *Stamp collection* heading to every
+        // document in the shop.
+        Box::new(stamp_collection::AStampCollectionDisclosesItself),
+        // ★★★ O169's AUTHOR half, wired 2026-09-10, and it must stay directly
+        // under the read half rather than migrating to the export checks.
+        //
+        // Its final assertion is the read half's surface: it writes a
+        // collection, reopens it, and requires Document properties to disclose
+        // it. That is only evidence because the reader above was calibrated
+        // against `fixtures/stamp-collection.pdf`, which a Python script built
+        // from the spec with no pdfcer involved. ⚠ Delete or disable the check
+        // above and this one keeps passing while proving nothing.
+        //
+        // Read in order the two say: pdfcer can read somebody else's stamp
+        // collection, and the ones pdfcer writes are the same kind of thing.
+        Box::new(stamp_collection::StampCollectionReachesTheEngine),
         // ★★★ The way OUT of the same disclosure, wired 2026-09-10.
         //
         // Placed immediately after the check that proves the block is drawn,

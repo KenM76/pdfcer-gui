@@ -101,6 +101,16 @@ mod extract;
 /// property that decides where they live: both produce **new file bytes** and
 /// touch neither the session nor the undo log. See its header.
 pub(crate) mod merge;
+/// ★★★ Author an Acrobat **stamp collection** from this document's pages —
+/// `OPERATOR_REQUESTS.md` O169.
+///
+/// Beside [`extract`] and [`merge`] for the property all three share: they
+/// produce **new file bytes** and touch neither the session nor the undo log.
+/// Its own header carries why it is not an arm in [`export`] — the difference
+/// is not size, it is that this one authors a document whose *structure* means
+/// something to a second application. What goes IN the file lives in
+/// `crate::stamps`, which needs no picker to test.
+mod stamps;
 /// Authoring the annotations that carry WORDS — the sticky note, the text box
 /// and the stamp. Split out of `apply` under R2 on 2026-08-28; its header
 /// carries the seam, which is *composes rather than routes*.

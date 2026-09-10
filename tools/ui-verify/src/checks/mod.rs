@@ -845,6 +845,11 @@ pub mod save_after_edit;
 pub mod settings_theme;
 /// The keyboard reference lists every chord, and every chord names a command.
 pub mod shortcuts;
+/// ★★★ **Somebody else's stamp collection says what it is** — O169's read
+/// half, driven. Two launches: the section is drawn on a file with a `/Names`
+/// → `/Pages` tree, and is NOT drawn on one without, with the panel provably
+/// open both times.
+pub mod stamp_collection;
 pub mod stamp_size;
 pub mod text_annot;
 pub mod text_annot_focus;

@@ -1,7 +1,8 @@
 //! `app::dispatch::exchange` — the File ▸ Export band's commands, and the two
 //! lines of `dispatch.rs` they cost
 //!
-//! Six commands that move content **between this document and a file on disk**:
+//! Seven commands that move content **between this document and a file on
+//! disk**:
 //! three exports that write a derivative of the page's own content, and the
 //! three round-trip halves beside them.
 //!
@@ -13,6 +14,7 @@
 //! | `file.import_text` | **in** | picker, then [`crate::dialogs::import_text`] |
 //! | `file.export_form_data` | out | a save picker, no window |
 //! | `file.import_form_data` | **in** | a picker, no window |
+//! | `file.stamp_collection` | out | [`crate::dialogs::stamp_collection`] |
 //!
 //! ## ★★★ Why this is a module and not six arms in [`super`]
 //!
@@ -74,6 +76,7 @@ pub(crate) fn claims(id: &str) -> bool {
             | "file.import_text"
             | "file.export_form_data"
             | "file.import_form_data"
+            | "file.stamp_collection"
     )
 }
 
@@ -146,6 +149,24 @@ impl PdfcerApp {
                     }
                 }
             }
+            // ★★★ **Save as stamp collection — O169, wired 2026-09-10.**
+            //
+            // In this band because it is the same act every other verb here is:
+            // *content of this document, crossing its boundary to a file*. What
+            // is unusual is only the destination's meaning — the bytes land in
+            // the folder a second application scans at startup.
+            //
+            // ★ A window and not a bare picker, for `file.export_text`'s reason
+            // at its strongest: the operator decides a name **per page** plus a
+            // category for the set, and none of that is recoverable from a save
+            // dialog. The picker still runs, in the apply phase, after the
+            // window has closed.
+            //
+            // ★ There is no `file.import_stamp_collection` beside it, and that
+            // is a recorded finding rather than an omission: a stamp collection
+            // is an ordinary PDF, so its import is `file.open`. See the
+            // registration in `shell::commands::catalog::file`.
+            "file.stamp_collection" => self.dialogs.open_stamp_collection(&self.status),
             "file.export_form_data" => actions.push(Action::Write(
                 crate::app::actions::write::WriteAction::FormData,
             )),

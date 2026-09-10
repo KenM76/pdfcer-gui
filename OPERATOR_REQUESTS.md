@@ -80,6 +80,63 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
+## O169 — ◑ **FILED 2026-09-10, IN PROGRESS** — "if acrobat has a way of adding custom stamps or text, we need the same feature too with the same import/export to make the stamps as Adobe has and is compatible with adobe's"
+
+**Your words.** Filed here today because it has become GUI work — the engine
+half landed as `Pass 288.0` and is already inside the pin we ship from, so the
+next move is ours. Filed before any of it was built, per rule 1.
+
+### ★★★ The finding that changes the shape of the answer
+
+**There is no import/export format, because Acrobat does not have one either.**
+A custom stamp collection **is an ordinary PDF** — one file per category, one
+page per stamp, the category name in the file's title, the stamp names in a
+name tree inside it. "Exporting" a stamp, in Acrobat, is handing someone that
+PDF.
+
+That is not a shortfall in the answer to your question; it is the answer. You
+asked for the same import/export Adobe has, and the honest version is that the
+file *is* the interchange format. Every claim above was measured in **Adobe's
+own shipped stamp files on this machine**, not looked up.
+
+### What is already on your machine, which is why this matters
+
+Six Adobe collections — *Standard*, *Standard Business*, *Dynamic*, *Faces*,
+*Pointers*, *Sign Here* — and **one custom stamp of your own**. You already use
+this feature in Acrobat.
+
+### The half being built now
+
+**pdfcer reads a stamp collection and can write one.** Take a PDF whose pages
+are your stamps — a company approval block, a revision cloud legend, whatever
+you draw — name each page, give the set a category name, and save it where
+Acrobat looks. Your stamps then appear in **Acrobat's own stamp menu**, because
+the file pdfcer writes is the file Acrobat expects. Opening one of your existing
+collections in pdfcer shows it as a collection rather than as a stack of
+mystery pages.
+
+### ⚠ The half that is BLOCKED, named rather than quietly dropped
+
+**Placing a custom stamp onto a drawing from inside pdfcer.** A custom stamp's
+artwork *is a page*, and the engine has no verb that draws one page's artwork
+onto another page. Filed as
+`request_a_custom_stamp_can_be_read_and_authored_but_never_placed_on_a_page.md`.
+
+★ **A workaround exists and was declined**: pdfcer could rasterise the stamp
+page and drop it in as an image. It is refused because a bitmap stamp on a
+vector CAD drawing does not survive being zoomed, bloats the file, and is
+**not** what Acrobat writes — which fails the actual requirement in your
+sentence. Reported rather than done quietly.
+
+Until that verb exists, the placing happens in Acrobat, which is where it
+happens today anyway.
+
+### "or text"
+
+Your sentence said *"custom stamps or text"*. Read as one ask: a stamp whose
+content is text you wrote. That is covered — a page of text is a page. Say so
+if you meant something else by it and it gets its own row.
+
 ## O166 — ◑ **BUILT AND DRIVEN 2026-09-10** — "the printer dialogue box needs to remember our last settings"
 
 **Your words, 2026-09-10**, in the same sentence as O167. Filed before any work

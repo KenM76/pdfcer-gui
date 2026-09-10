@@ -165,6 +165,19 @@ pub mod shell;
 /// ordinary merge, with a `CapabilityAbsent` skip reason.
 #[cfg(feature = "signing")]
 pub mod sign;
+/// ★ **Acrobat-compatible custom stamp collections** — the shell half of
+/// engine `Pass 288.0`, and the answer to `OPERATOR_REQUESTS.md` **O169**.
+///
+/// A stamp collection is an ordinary PDF — one file per category, one page
+/// per stamp, names in the catalog's `/Names` → `/Pages` tree — which is why
+/// the operator's ask for *"the same import/export"* Acrobat has has no
+/// serialiser anywhere in here: **Acrobat has no interchange format**, and
+/// handing someone the PDF is the export. This module turns a document into a
+/// plan he can correct, and the plan into that file.
+///
+/// Consumed by `crate::dialogs::stamp_collection` and
+/// `crate::panels::docprops`.
+pub mod stamps;
 pub mod text;
 /// ★★★ Where signature trust ANCHORS come from, and the three facts they let
 /// this shell state.

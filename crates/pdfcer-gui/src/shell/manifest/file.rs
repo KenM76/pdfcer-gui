@@ -277,6 +277,20 @@ pub(super) fn tab() -> Tab {
                     // four lines down about the form-data pair — the same rule,
                     // applied to the pair it was written for.
                     command("file.import_text"),
+                    // ★★★ Save as stamp collection, O169, 2026-09-10. Last of
+                    // the verbs that write *a derivative of this document's own
+                    // page content to a file*, and before the form-data pair,
+                    // which is a round trip and reads as one — the band's
+                    // stated rule, applied.
+                    //
+                    // ★ **No import twin beside it, and none is missing.** The
+                    // three pairs above are pairs because their formats are not
+                    // PDF and something has to convert. A stamp collection is a
+                    // PDF, so its import is `file.open` on the File tab's first
+                    // band. A `file.import_stamp_collection` would be a second
+                    // door onto a verb the operator already has, and R9's rule
+                    // about controls that promise nothing new applies.
+                    command("file.stamp_collection"),
                     command("file.export_form_data"),
                     // ★ Import directly after export, in that order, because
                     // the pair is a round trip and an operator meets the half

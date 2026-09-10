@@ -419,6 +419,16 @@ pub mod signature;
 
 pub mod settings;
 
+/// ★ **Custom stamp collections** — the Save-as-stamp-collection window and
+/// the Document Properties section that discloses a collection someone else
+/// wrote. One catalog for two surfaces because they share a vocabulary, and
+/// its header fixes that vocabulary: *stamp*, *collection*, *category*,
+/// *display name*. ⚠ Carries the sentence the engine's `page_index` defect
+/// makes dangerous to word — see `properties_stamp_no_page`.
+/// Consumed by `crate::stamps`, `crate::dialogs::stamp_collection` and
+/// `crate::panels::docprops`.
+pub mod stamps;
+
 /// Every string the status bar shows. Consumed by `crate::app::status`.
 pub mod status;
 

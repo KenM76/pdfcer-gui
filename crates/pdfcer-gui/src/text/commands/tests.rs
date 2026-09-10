@@ -33,6 +33,7 @@ fn all() -> Vec<CommandText> {
         file_save_compacted(),
         file_export_dxf(),
         file_export_image(),
+        file_stamp_collection(),
         file_export_form_data(),
         // Moved from the Edit block below on 2026-08-14 with the commands
         // themselves; this list is in tab order for the same reason the

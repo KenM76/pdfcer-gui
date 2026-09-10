@@ -1181,6 +1181,14 @@ impl PdfcerApp {
                 // indistinguishable from a successful export.
                 super::write::WriteAction::Text { plan } => super::export::text(doc, &plan),
                 super::write::WriteAction::FormData => super::export::form_data(doc),
+                // ★★★ O169. The picker, the folder Acrobat scans, and the
+                // whole disclosure live in `super::stamps`. It changes no
+                // document: the ticked pages are extracted into a new one and
+                // the names are written to THAT, which is what makes
+                // `Save as stamp collection…` legal in Read mode.
+                super::write::WriteAction::StampCollection { plan } => {
+                    super::stamps::collection(doc, &plan);
+                }
                 super::write::WriteAction::Compacted { bytes, before } => {
                     crate::app::save::compacted(doc, &bytes, before);
                 }

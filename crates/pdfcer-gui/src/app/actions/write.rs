@@ -169,6 +169,36 @@ pub enum WriteAction {
     /// ★ No path. The picker opens inside the apply phase, for
     /// [`Self::FormData`]'s reason — a native file dialog must not open
     /// inside a layout pass.
+    /// ★★★ **Write this document's pages out as an Acrobat stamp
+    /// collection.** `OPERATOR_REQUESTS.md` **O169**.
+    ///
+    /// Raised by `crate::dialogs::stamp_collection` and by nothing else.
+    ///
+    /// # Why it carries a whole plan, like [`Self::Image`] and [`Self::Text`]
+    ///
+    /// A window collected a decision per page — whether the page is a stamp at
+    /// all, and what it is called — plus the category for the set. None of that
+    /// is recoverable from a save picker, and the plan is also the value the
+    /// writer takes: `crate::stamps::write::build_and_write` reads exactly this
+    /// struct.
+    ///
+    /// # ★★ Why the plan and not a name list plus a page list
+    ///
+    /// Because those are the two things that must not be allowed to drift
+    /// apart. `pdfcer_core::stamp_file::name_stamp_pages` names `stamps[i]` to
+    /// **page `i` by counting**, so a pair of lists carried separately is a
+    /// pair somebody can eventually filter differently — and the result is a
+    /// collection that opens, holds the right number of stamps, and names the
+    /// wrong artwork every time. [`crate::stamps::Plan`] derives both lists
+    /// from the same rows, so the invariant travels with the value.
+    ///
+    /// ★ No path. The picker opens inside the apply phase, for
+    /// [`Self::FormData`]'s reason — a native file dialog must not open inside
+    /// a layout pass.
+    StampCollection {
+        /// Every row the window showed, with its tick and its name.
+        plan: crate::stamps::Plan,
+    },
     Compacted {
         /// The whole file, already written by `to_full_bytes`.
         ///
