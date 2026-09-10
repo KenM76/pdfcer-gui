@@ -204,13 +204,28 @@ Shipped as `v0.5.0-dev.20260910.1`, on GitHub and in your OneDrive folder. It
 carries the engine bump to **v0.50.0** and the stamp size chooser above
 (**O162**, the half of it that could be built).
 
-⚠ **What "asap" cost, written down rather than folded into the green.** The
-driven check for the new size chooser is **not** written — the standing rule
-here is that a feature is not done until the running program has been made to
-show it, and this one has only unit tests and a smoke launch behind it. The
-smoke launch was done (off-screen, page drawn, no crash), the whole gate suite
-is green and the test suite passed, but none of that presses the control. The
-check is the next thing built.
+☑ **What "asap" cost, and when it was paid back.** This paragraph used to say
+the driven check for the new Size chooser was **not** written — that the release
+had unit tests, a clean smoke launch and a green gate suite behind it, and
+nothing at all that pressed the control. It was written the same afternoon. The
+check opens a stamp, drags a box, presses the Size chooser, picks **24 pt** off
+the popup, and then checks the number that actually reached the engine.
+
+★★★ **And it was made to fail twice before its green was believed.** A check
+that has only ever passed proves nothing about the program, only that it ran. So
+two defects were planted in real builds and driven:
+
+  1. **the dialog dropping your choice on the way to the page** — caught, and it
+     named the place it was dropped. This is the failure the feature was built
+     against, and it is invisible to every unit test, because each half works;
+  2. **the chooser opening on the engine's flat 12 pt** instead of letting your
+     drawn box decide — caught **before anything was pressed at all**. That is
+     the one that would have quietly shrunk every stamp on your drawings, as a
+     side effect of a fix you asked for.
+
+⚠ **No second release for this.** Nothing you can see changed — it is a test and
+two diagnostic lines — and a build in your OneDrive folder is reserved for
+things you would notice.
 
 ## O167 — ◑ **BUILT AND DRIVEN 2026-09-10** — "we also need the option to auto select paper size based on the page sizes in the pdf"
 
@@ -531,8 +546,12 @@ what size an existing stamp renders at is not public. So there is no
 width/height-for-the-box field in Properties yet, and there is nothing to fill
 a text-size field from. Both are filed with the engine rather than guessed at.
 
-⚠ **Not yet driven.** Released immediately on your word; the driven check is
-owed.
+☑ **Driven, later the same day.** Released immediately on your word, so it
+shipped on unit tests alone; the driven check was built straight afterwards. It
+presses the Size chooser in the running program and asserts that **24 pt**
+reached the engine — and it was made to fail against two planted defects, one of
+them the chooser opening on the engine's 12 pt rather than on your drawn box,
+before its green was quoted. Details under **O168**.
 
 
 ## O161 — ◑ **FILED 2026-09-09, MEASURED HEADLESSLY, NEEDS YOUR VERDICT** — "I should also be able to unselect things of redaction that i selected for redaction"

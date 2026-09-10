@@ -771,6 +771,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(adopt_widget::AdoptWidgetPutsAFormControlBack),
         Box::new(add_text::AddTextTakesRealKeystrokes),
         Box::new(chords::EveryDeclaredChordDispatches),
+        Box::new(stamp_size::StampSizeReachesTheEngine),
         Box::new(text_annot::TextAnnotPlacesAndAuthors),
         Box::new(text_annot_focus::TextAnnotTakesTheKeyboardUnclicked),
         Box::new(text_box::TextBoxTakesAParagraph),

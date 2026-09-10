@@ -354,6 +354,48 @@ impl StampSize {
             Self::Points(pt) => StampStyle::default().with_font_size(Some(f64::from(pt))),
         }
     }
+
+    /// This choice as a **stable token for a machine**, for the diagnostic
+    /// trace and for nothing else.
+    ///
+    /// # ★★★ Why this exists rather than `{:?}`
+    ///
+    /// A `Debug` rendering is a *rendering*, and this project has already been
+    /// bitten by one: a driven check once reported the opposite of the truth
+    /// while quoting the truth in its own failure message, because it was
+    /// pattern-matching on a `{:?}` tuple whose shape changed. The rule that
+    /// came out of it is absolute — **never `Debug`-format a field a machine
+    /// reads**. `Debug` belongs to the programmer at a breakpoint; a trace
+    /// field belongs to a parser, and a parser needs a contract.
+    ///
+    /// So the contract is here, in one place, testable:
+    ///
+    /// | choice | token |
+    /// |---|---|
+    /// | [`StampSize::FitTheBox`] | `derived` |
+    /// | [`StampSize::Points`] | the number, e.g. `24` |
+    ///
+    /// ★★ **`derived`, not `auto` and not `fit`.** The word has to say what
+    /// the engine is being asked to do — work the size out from the box the
+    /// operator drew — because the failure this token exists to catch is a
+    /// build that sends the engine's flat 12 pt instead. `auto` would be true
+    /// of that build too.
+    ///
+    /// ⚠ **It is deliberately not a number for the derived case**, even
+    /// though this shell could compute `(height × 0.42).clamp(8, 28)` and emit
+    /// one. That formula is the *engine's*, it is not part of any contract this
+    /// shell is entitled to restate, and it changed once already. Emitting it
+    /// would make this line a claim about the engine's arithmetic instead of a
+    /// record of the operator's choice — and the operator's choice is the only
+    /// thing the shell is answerable for.
+    #[must_use]
+    pub fn trace_token(self) -> String {
+        match self {
+            // ui-text-exempt: diagnostic token, never displayed.
+            Self::FitTheBox => "derived".to_owned(),
+            Self::Points(pt) => pt.to_string(),
+        }
+    }
 }
 
 /// The side, in PDF points, of the square a sticky note's rect is given.
@@ -699,37 +741,139 @@ pub fn spec(
         // deliberately not used: a stamp whose `/Name` and whose painted words
         // disagree is a document that says two things, and a reader other than
         // pdfcer shows the name.
-        TextAnnotKind::Stamp => TextAnnotSpec::Stamp {
-            rect,
-            name: stamp,
-            label: None,
-            color: Color::Rgb(r, g, b),
-            // ★★★ **The operator's own choice, and this field exists because a
-            // compiler asked for it.**
+        TextAnnotKind::Stamp => {
+            // ★★★ **THE ORACLE FOR THE SIZE CHOOSER, and the feature has no
+            // other one short of parsing the saved file.**
             //
-            // Engine `Pass 287.0` made `style` required, so this line had to
-            // be written to build at all — and **that is exactly the moment a
-            // feature gets silently declined.** The reflex is to reach for
-            // whatever reproduces the old behaviour, and here that spelling is
-            // available and named: `font_size: None` is documented as *"derive
-            // it from the box height as builds before Pass 287.0 did"*. It
-            // compiles, passes every test, and quietly keeps the defect the
-            // operator reported on 2026-09-09.
+            // `autosize_overflow`'s header states the rule this obeys: *a trace
+            // line must carry the number a wrong build would get wrong.* Every
+            // other line this route emits — `text-annot-note`,
+            // `add-text-annot`, `text-annot-page-rotate` — is **byte-identical**
+            // between a build that carries the operator's chosen size to the
+            // engine and a build that drops it on the floor somewhere between
+            // the dialog's combo and this function's argument. There are four
+            // hops in that chain and a unit test can see none of them at once.
             //
-            // [`StampSize`] carries the answer instead, and its header holds
-            // the argument: why the default is the derived size rather than
-            // the engine's flat 12 pt — taking the engine default silently
-            // would have shrunk every stamp on his drawings the day this shell
-            // pinned v0.50.0 — and why exactly one of `StampFit`'s three
-            // values is reachable from the dialog.
-            style: stamp_size.style(),
-        },
+            // ★★ **The rect is on the line with the size, and it is not
+            // padding.** Under `StampFit::GrowToText` the drawn rectangle is a
+            // *position and a minimum*, not a size — that is the sentence the
+            // dialog shows the operator — so the pair (what he asked for, what
+            // he drew) is what any later question about a wrong-looking stamp
+            // needs, and reading it out of two different lines invites reading
+            // two different frames.
+            //
+            // ⚠ What this line does **not** assert is what the engine then
+            // does with the number. That is the engine's own tests' job, and
+            // saying so here keeps a green driven check from being read as a
+            // claim about `pdfcer-core`'s renderer.
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed.
+                format!(
+                    "stamp-style size={} fit=grow rect_w={:.1} rect_h={:.1}",
+                    stamp_size.trace_token(),
+                    rect.urx - rect.llx,
+                    rect.ury - rect.lly,
+                )
+            });
+            TextAnnotSpec::Stamp {
+                rect,
+                name: stamp,
+                label: None,
+                color: Color::Rgb(r, g, b),
+                // ★★★ **The operator's own choice, and this field exists because a
+                // compiler asked for it.**
+                //
+                // Engine `Pass 287.0` made `style` required, so this line had to
+                // be written to build at all — and **that is exactly the moment a
+                // feature gets silently declined.** The reflex is to reach for
+                // whatever reproduces the old behaviour, and here that spelling is
+                // available and named: `font_size: None` is documented as *"derive
+                // it from the box height as builds before Pass 287.0 did"*. It
+                // compiles, passes every test, and quietly keeps the defect the
+                // operator reported on 2026-09-09.
+                //
+                // [`StampSize`] carries the answer instead, and its header holds
+                // the argument: why the default is the derived size rather than
+                // the engine's flat 12 pt — taking the engine default silently
+                // would have shrunk every stamp on his drawings the day this shell
+                // pinned v0.50.0 — and why exactly one of `StampFit`'s three
+                // values is reachable from the dialog.
+                style: stamp_size.style(),
+            }
+        }
     })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// ★★★ **The trace token's contract, asserted, because `ui-verify`'s
+    /// `stamp_size_reaches_the_engine` parses it and no compiler stands between
+    /// the two.**
+    ///
+    /// This is the failure mode worth naming. A token that drifts does not make
+    /// the harness fail to *build*; it makes it fail to *match*, and a check
+    /// that cannot find `size=24` reports **"the operator's chosen size did not
+    /// reach the engine"** — which is a defect report about the application,
+    /// written by a defect in the token. This project has spent whole
+    /// investigations on exactly that shape: a harness with a bad input
+    /// produced six plausible failure reports and four filed defects, none of
+    /// which existed.
+    ///
+    /// ★★ So four separate clauses, each of which a plausible future edit
+    /// breaks on its own:
+    ///
+    /// 1. the derived case is the literal word `derived` — not `auto`, not
+    ///    `fit`, not `none`;
+    /// 2. it contains **no digit**, so a check can distinguish "he let the box
+    ///    decide" from "he asked for a number" without knowing the vocabulary;
+    /// 3. a stated size is **just the number**, with no unit — the trace field
+    ///    is named `size=` and a parser reading `24pt` as an integer gets `0`
+    ///    or an error, neither of which says what happened;
+    /// 4. every offered choice produces a **distinct** token, or two different
+    ///    operator choices become the same observation.
+    #[test]
+    fn every_trace_token_is_parseable_and_distinct() {
+        assert_eq!(
+            StampSize::FitTheBox.trace_token(),
+            "derived",
+            "the derived case's token is parsed by name in tools/ui-verify"
+        );
+        assert!(
+            !StampSize::FitTheBox
+                .trace_token()
+                .chars()
+                .any(|c| c.is_ascii_digit()),
+            "the derived token must not read as a size"
+        );
+
+        let mut seen = std::collections::BTreeSet::new();
+        for size in STAMP_SIZES {
+            let token = size.trace_token();
+            assert!(!token.is_empty(), "{size:?} traces nothing");
+            assert!(
+                !token.contains(char::is_whitespace),
+                "{size:?} traces {token:?}, which would split the trace field"
+            );
+            if let StampSize::Points(pt) = size {
+                assert_eq!(
+                    token,
+                    pt.to_string(),
+                    "a stated size must trace as a bare number a parser can read"
+                );
+            }
+            assert!(
+                seen.insert(token.clone()),
+                "two choices trace the same token: {token:?}"
+            );
+        }
+        assert_eq!(
+            seen.len(),
+            STAMP_SIZES.len(),
+            "every offered choice must be distinguishable in the trace"
+        );
+    }
 
     fn rect() -> Rect {
         Rect {

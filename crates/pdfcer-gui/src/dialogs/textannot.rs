@@ -587,7 +587,46 @@ impl TextAnnotDialog {
             .selected_text(t::stamp_size_label(self.stamp_size))
             .show_ui(ui, |ui| {
                 for size in STAMP_SIZES {
-                    ui.selectable_value(&mut self.stamp_size, *size, t::stamp_size_label(*size));
+                    let entry = ui.selectable_value(
+                        &mut self.stamp_size,
+                        *size,
+                        t::stamp_size_label(*size),
+                    );
+                    // ★★★ **Each open entry declares its own region, and this is
+                    // what makes the chooser DRIVABLE at all.**
+                    //
+                    // The alternative a harness is pushed into without this is
+                    // arithmetic: press the combo, then click `row_height × n`
+                    // below its top-left corner. That is a guess about egui's
+                    // interior spacing dressed as a coordinate, it silently
+                    // selects the WRONG SIZE when a theme changes a row's
+                    // padding by two points — and a check that selected 18 pt
+                    // while asking for 24 pt reports *"the operator's choice
+                    // did not reach the engine"*, which is a defect report
+                    // about the application written by a defect in the
+                    // harness. This project has already lost a day to that
+                    // exact shape.
+                    //
+                    // ★★ The name is keyed on
+                    // [`StampSize::trace_token`](crate::canvas::textannot::StampSize::trace_token)
+                    // — the same token the commit's `stamp-style size=` field
+                    // carries — so the check presses `…stamp-size.24` and then
+                    // looks for `size=24`. **One vocabulary, both ends.** A
+                    // drift that renamed one and not the other could otherwise
+                    // leave the check pressing a control that exists and
+                    // matching a field that no longer says what it pressed.
+                    //
+                    // ⚠ These are declared only while the popup is OPEN. A
+                    // region that stops being declared emits `ui-rect-gone`, so
+                    // a check must read the frame *after* the press that opens
+                    // it, not a cached one — the standing lesson that a
+                    // whole-capture `last()` on a surface that has since closed
+                    // returns a fossil.
+                    crate::diag::ui_rect(
+                        // ui-text-exempt: diagnostic region name, never displayed.
+                        &format!("{REGION_STAMP_SIZE}.{}", size.trace_token()),
+                        entry.rect,
+                    );
                 }
             })
             .response;
@@ -601,6 +640,33 @@ impl TextAnnotDialog {
             REGION_STAMP_SIZE,
             egui::Rect::from_min_max(top, ui.cursor().min).union(response.rect),
         );
+        // ★★★ **The control reports its own state, and this is a separate fact
+        // from the size reaching the engine.**
+        //
+        // A combo that stores the operator's pick correctly and goes on
+        // displaying the previous one is a control he cannot trust: he has no
+        // way to tell an accepted choice from an ignored click, and the
+        // document he gets is right for a reason he could not have predicted.
+        // `canvas::textannot`'s `stamp-style` line proves the *commit* carried
+        // the number; nothing there proves the *window* ever admitted it.
+        //
+        // ★★ [`crate::diag::trace_changed`] rather than `trace`, because this
+        // is a frame-loop call site: an unchanged value re-reported sixty times
+        // a second answers the question no better and buries every other line
+        // in the capture. The slot de-duplicates on the formatted line, so the
+        // first draw emits the default and nothing else is emitted until the
+        // operator changes it — which is precisely the two observations a
+        // driven check wants and no third one.
+        //
+        // ⚠ The value is [`StampSize::trace_token`], **not** `t::stamp_size_label`.
+        // The label is operator copy — it is allowed to be reworded on a
+        // Tuesday, it is translatable in principle, and a machine keyed on it
+        // would break silently on an edit that improved it.
+        crate::diag::trace_changed("stamp-size-chooser", || {
+            let token = self.stamp_size.trace_token();
+            // ui-text-exempt: diagnostic trace, never displayed.
+            format!("stamp-size-chooser selected={token}")
+        });
         ui.label(egui::RichText::new(t::stamp_size_bound()).small().weak());
     }
 

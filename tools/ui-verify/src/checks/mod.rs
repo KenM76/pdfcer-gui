@@ -845,6 +845,7 @@ pub mod save_after_edit;
 pub mod settings_theme;
 /// The keyboard reference lists every chord, and every chord names a command.
 pub mod shortcuts;
+pub mod stamp_size;
 pub mod text_annot;
 pub mod text_annot_focus;
 /// ★ The operator's own report, driven: Edit text on a REAL CAD sheet, aimed at a
