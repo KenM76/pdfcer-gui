@@ -224,6 +224,11 @@ pub use caret::{backspace, delete_forward, insert, word_left, word_right};
 /// one producer of `(pinned_span, EditTarget)` in this shell, shared by the
 /// caret's `edit_text` and the restyle verbs' `format_text`.
 pub mod pin;
+/// **The alphabet the caret's run will accept, measured once when the caret
+/// lands** — the shell side of `EditSession::run_repertoire`, and the reason a
+/// key the run's font cannot spell is declined as it is pressed instead of
+/// costing the operator the whole word at commit.
+pub mod repertoire;
 
 pub use place::{Click, begin_box, click};
 pub mod disposition;
@@ -558,6 +563,48 @@ pub enum Refusal {
     ///
     /// [`Editability::NoAnchor`]: pdfcer_core::text_extract::Editability::NoAnchor
     NoAnchor,
+    /// ★★★ **The run is real, addressable, and its font can spell nothing at
+    /// all** — so the caret declines to open rather than open and refuse every
+    /// key. `Pass 280.0`, 2026-09-09.
+    ///
+    /// # The engine built this distinction because this shell asked for it
+    ///
+    /// `EditSession::run_repertoire` could have reported an un-invertible font
+    /// as an `Err`. It does not: it answers an **empty**
+    /// `RunRepertoire` with `RunRepertoire::reason` set, and the engine's own
+    /// rustdoc says why in as many words — *"so an editor can decline to open
+    /// rather than open and refuse every key. The requesting shell asked for
+    /// that distinction by name."*
+    ///
+    /// A run that cannot be **located** is still an `Err` and lands on
+    /// [`Self::NoRun`] or [`Self::NoText`]. The two are not interchangeable:
+    /// one says *there is nothing here*, this one says *this text is here and
+    /// pdfcer cannot spell into it*.
+    ///
+    /// # ★★ Why a refusal and not a caret that greys out
+    ///
+    /// Because there is no key it would accept. [`Self::NoAnchor`]'s argument
+    /// applies unchanged and is the module's oldest lesson: *a control that
+    /// accepts input it will discard is this project's defining defect class.*
+    /// A caret in a run with an empty repertoire is exactly that control — it
+    /// blinks, it takes clicks, it moves with the arrow keys, and every printable
+    /// key does nothing. One honest refusal at the click is cheaper than
+    /// discovering it one keystroke at a time.
+    ///
+    /// # ⚠ The engine's `reason` string does NOT reach the operator
+    ///
+    /// It is good prose and it is in the engine's vocabulary: *"none of the 217
+    /// character(s) this font addresses can be shown by this run — an embedded
+    /// subset carries only the codes already drawn on this page (R-INV-1)"*.
+    /// `text::redact`'s wording rule, generalised: **say where in HIS
+    /// vocabulary, never in the engine's.** So the `reason` goes to
+    /// `PDFCER_DIAG` — where the clause number is exactly what a reader wants
+    /// — and `crate::text::textedit::refusal` says the same fact in his terms.
+    ///
+    /// ★ It carries no payload for that reason. A `String` here would be the
+    /// engine's sentence travelling towards a surface that must not show it,
+    /// and `Refusal` would stop being `Copy` to carry it.
+    NoUsableEncoding,
 }
 
 /// ★★★ **Is the operator composing text ANYWHERE?** The one predicate, asked in
@@ -624,6 +671,11 @@ pub(crate) fn store(ctx: &egui::Context, draft: Draft) {
 pub fn abandon(ctx: &egui::Context) -> bool {
     let had = read(ctx).is_some();
     ctx.data_mut(|d| d.remove::<Draft>(egui::Id::new(DRAFT_MEMORY_KEY)));
+    // The draft's run alphabet dies with the draft. `repertoire::of_run`'s key
+    // check would reject it anyway on the next caret; this is the belt to that
+    // pair of braces, and the reason is in `repertoire::forget`'s own docs — a
+    // slot that outlives its subject is a fossil a later reader will trust.
+    repertoire::forget(ctx);
     if had {
         // ui-text-exempt: diagnostic trace, never displayed.
         crate::diag::trace(|| "text-edit-abandon".to_owned());

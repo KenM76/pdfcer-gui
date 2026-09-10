@@ -146,6 +146,47 @@ pub fn click(
             Err(other) => return Err(other),
         },
     };
+    // ★★★ **A RUN WHOSE FONT CAN SPELL NOTHING GETS NO CARET AT ALL.**
+    //
+    // `run_repertoire` answers with an *empty* repertoire and a `reason` — not
+    // an `Err` — when a run's font offers no character `edit_text` could put
+    // back: a symbolic face with no usable encoding, a `Type0` whose CMap the
+    // engine cannot invert, an embedded subset with no reachable codes. The
+    // engine returns it that way **by this project's own request**, so the shell
+    // could tell *"the question failed"* from *"the answer is nothing"*.
+    //
+    // Putting a caret in such a run would be the defect class this project named
+    // on 2026-08-14 and has refused since: **a control that accepts input it
+    // will discard**. Every keystroke would be declined by the gate below, the
+    // draft would end empty, and the operator would have spent a word learning
+    // what one sentence could have told him before the first key.
+    //
+    // ⚠ Only the *measured* empty case refuses. `of_run` answering `None` means
+    // the run could not be pinned or the engine would not answer, and that is
+    // permission to proceed — see `repertoire`'s header. Refusing on `None`
+    // would make every run the engine cannot address completely untypeable,
+    // which is worse than the defect this gate exists to fix.
+    if let Anchor::Run { run, .. } = &anchor
+        && let Some(rep) = super::repertoire::of_run(ctx, click.doc, click.page_index, *run)
+        && !rep.is_editable()
+    {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed.
+            //
+            // The engine's `reason` is allowed here and nowhere else: it is
+            // written in the engine's vocabulary (`/Encoding`, CMap, code
+            // ranges) and the operator gets `crate::text::textedit::refusal`
+            // instead. A reader debugging this needs the engine's words; he
+            // does not.
+            format!(
+                "text-edit-refused reason=no-usable-encoding page={} run={run} font={} said={}",
+                click.page_index,
+                rep.base_font,
+                rep.reason.as_deref().unwrap_or("none"),
+            )
+        });
+        return Err(Refusal::NoUsableEncoding);
+    }
     let text = match &anchor {
         Anchor::Run { original, .. } => original.clone(),
         // Both authoring anchors start empty. A box is not pre-filled with

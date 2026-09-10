@@ -95,6 +95,83 @@ pub(crate) fn record_enter_cannot_split() {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::EnterCannotSplit));
 }
 
+/// ★★★ **Record that a key was declined before it reached the draft** —
+/// `OPERATOR_REQUESTS.md` **O140/O141**, pre-commit half, 2026-09-09.
+///
+/// The operator's report was *"if I try to edit the edit is not accepted"*, and
+/// [`record_edit_text_refusal`] below answered it at the point the engine
+/// refused: at `Ctrl+Enter`, after a whole word had been typed and with that
+/// word already gone, because `commit_into` calls `abandon` whether or not the
+/// engine accepted. That answer is correct and it arrives too late to be much
+/// use.
+///
+/// `EditSession::run_repertoire` — built by the engine in direct answer to this
+/// project's 2026-09-09 request — makes the run's alphabet knowable when the
+/// caret lands. `canvas::textedit::repertoire` measures it once,
+/// `canvas::textedit::keys` sieves each keystroke against it, and this is where
+/// the declined key becomes a sentence and an offer.
+///
+/// # ★★ Why the sentence is [`EditRefusal::RunCannotTake`] and not one of the
+/// # two that name a cause
+///
+/// Because the shell does not have a cause here — it has a **set**, and the
+/// engine's own source says why the two are not the same thing. A character's
+/// absence from `RunRepertoire::accepted` is the union of at least four
+/// distinct refusals: no glyph for the scalar (R-INV-1/6/7), the embedded
+/// subset's floor, a scalar above the BMP (R-INV-8), and — on the *composite*
+/// font path only — an ambiguous encoding where two CIDs map to one scalar
+/// (R-INV-5), which the simple-font path *accepts* and the composite path
+/// silently drops.
+///
+/// ⇒ Reusing `FontLacksTheCharacter` would put the sentence *"the font here was
+/// built with only the letters your page already prints"* in front of an
+/// operator whose font has the letter twice. And because this gate stops the
+/// keystroke, the engine's own correct sentence would never be reached to
+/// contradict it. So the sentence reports the **measurement** — pdfcer checked,
+/// and this character is not in the set — and points at the remedy, which is
+/// the same remedy for all four causes.
+///
+/// # ★★★ `typed: None`, and it is not an omission
+///
+/// [`crate::panels::properties::refusedchar::record`]'s last argument is *what
+/// the operator was trying to write*, and it exists because the commit-time
+/// refusal destroys the draft: without it, taking the offer changes the face
+/// and leaves the operator to retype the word. **Here the draft is still
+/// alive.** He is standing in the text, his caret has not moved, and every
+/// character before the refused one is still in the box. Handing the offer a
+/// copy of the text to re-apply would make the offer re-write text that has not
+/// been lost — the same word twice.
+///
+/// ★ So this recorder is the *pre*-commit twin of [`record_edit_text_refusal`],
+/// and the difference between them is exactly one fact: whether the draft
+/// survived. That difference is also the one clause
+/// [`EditRefusal::RunCannotTake`]'s sentence carries and its two neighbours
+/// cannot — *"nothing you have already typed is lost"* — and it is pinned by a
+/// test in `text::editrefusal` so a later edit cannot quietly give it to one of
+/// them.
+///
+/// [`EditRefusal::RunCannotTake`]: crate::text::textedit::EditRefusal::RunCannotTake
+pub(crate) fn record_key_refused(page: usize, run: usize, character: char, base_font: String) {
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        //
+        // ★★ Flat fields, and `character='q'` in the same spelling
+        // `edit-text-classified` and `refusedchar` both use, so a driven check
+        // can compare the pre-commit refusal against the commit-time one
+        // without knowing which surface it came from. The 2026-09-05 finding
+        // that a debug-formatted tuple made a correct build report itself broken
+        // is why this is spelled out rather than derived.
+        format!(
+            "text-edit-key-declined page={page} run={run} character='{character}' character_font={base_font}"
+        )
+    });
+    record_edit_text(crate::text::textedit::EditRefusal::RunCannotTake(character));
+    // O141's offer, raised in the same breath as the sentence — one event, two
+    // surfaces, written together here so a build cannot say one without the
+    // other. `typed: None`: see the note above.
+    crate::panels::properties::refusedchar::record(page, run, character, base_font, None);
+}
+
 /// ★★★ **Record that a committed text edit was refused, and which kind of
 /// refusal it was** — `OPERATOR_REQUESTS.md` **O140**, 2026-09-05.
 ///

@@ -292,6 +292,54 @@ pub enum EditRefusal {
     /// `RefusalKind::Other` — an invalid parameter, an unbuilt combination, a
     /// parse or save failure. The engine's own words are on the trace.
     Unstated,
+    /// ★★★ **The keystroke was refused before it landed** — the run's own
+    /// alphabet was measured when the caret was placed, and this character is
+    /// not in it. `Pass 280.0`, consumed 2026-09-09.
+    ///
+    /// # Why this is a different sentence from the two beside it
+    ///
+    /// [`Self::FontLacksTheCharacter`] and [`Self::FontHasTwoGlyphsFor`] are
+    /// built from `pdfcer_core::text_edit::Refusal`, which names its own
+    /// trigger: the engine has *tried* the edit and is reporting which of the
+    /// R-INV clauses stopped it. Those two sentences can therefore state a
+    /// **cause**, and they state opposite ones.
+    ///
+    /// This variant has no such datum and must not pretend to.
+    /// `EditSession::run_repertoire` answers with a **set** —
+    /// `RunRepertoire::accepted` — and a character's absence from that set is
+    /// the union of every reason it could be absent: the face has no glyph for
+    /// it (R-INV-1/6/7), the embedded subset does not carry the code this page
+    /// would need (R-INV-1's floor), the scalar is outside the BMP (R-INV-8),
+    /// or — on a composite run — two CIDs spell it and the engine will not
+    /// choose (R-INV-5). **Those need four different sentences and we have one
+    /// fact**, so the sentence reports the fact: *pdfcer checked this run's
+    /// font, and that letter is not one it can be edited with.*
+    ///
+    /// ⚠ Reusing [`Self::FontLacksTheCharacter`] here was the first design and
+    /// it was wrong for the fourth case, where the letter is on his page twice
+    /// over. `RefusalKind`'s own header names that failure by name — *telling
+    /// the operator the wrong reason, which is strictly worse than the silence
+    /// it replaced* — and the pre-commit gate makes it worse still, because
+    /// gating the keystroke means the engine's correct sentence is never
+    /// reached: the wrong one is the only one he ever sees.
+    ///
+    /// # ★★ It is the one variant [`Self::of`] cannot produce, deliberately
+    ///
+    /// Every other variant classifies an `EditError` the engine returned. This
+    /// one is raised by `canvas::textedit::keys` from a measurement taken
+    /// *before* any verb ran, and routed through
+    /// `app::status::decline::textedit::record_key_refused`. That is not a dead
+    /// variant needing a tripwire — it has a producer, a caller and a driven
+    /// check; it simply has a different producer, because it answers a question
+    /// asked at a different time.
+    ///
+    /// ★ The **remedy** is identical to its two neighbours' and the sentence
+    /// ends on the same control, because
+    /// `panels::properties::refusedchar::record` is raised beside this decline
+    /// exactly as it is beside theirs. What changes is only *when*: at the
+    /// first keystroke instead of after the last, which is the whole of what
+    /// `Pass 280.0` was requested for.
+    RunCannotTake(char),
 }
 
 /// **Which of the two character-level font refusals the engine raised** —
@@ -492,6 +540,7 @@ impl EditRefusal {
             Self::DocumentProtected => "DocumentProtected",
             Self::TextMovedAway => "TextMovedAway",
             Self::Unstated => "Unstated",
+            Self::RunCannotTake(_) => "RunCannotTake",
         }
     }
 
@@ -637,6 +686,14 @@ impl EditRefusal {
             // copy of their taxonomy that drifts and then tells the operator
             // the WRONG reason" that `RefusalKind` exists to prevent.
             Self::Unstated => crate::text::status::edit_declined_by_engine(),
+            // ★★★ The third sentence in this catalog built from a runtime value,
+            // and the second reason `line` returns a `Cow`. Same `'c'` spelling
+            // as its two neighbours and as both traces, for the reason
+            // 2026-09-05 taught: two spellings of one character made a correct
+            // build report itself broken.
+            Self::RunCannotTake(c) => {
+                return std::borrow::Cow::Owned(run_cannot_take(c));
+            }
         };
         Cow::Borrowed(fixed)
     }
@@ -722,6 +779,47 @@ pub fn font_has_two_glyphs_for(character: char) -> String {
     )
 }
 
+/// ★★★ **"pdfcer cannot type a `q` here, and it knew before you pressed
+/// the key"** — the status bar's ⊗ sentence for the pre-commit repertoire gate
+/// (`Pass 280.0`, 2026-09-09).
+///
+/// # ★★ The clause this sentence has and the other two do not
+///
+/// **"Nothing you have already typed is lost."** It is not politeness and it is
+/// not shared with [`font_lacks_the_character`], because it is the one fact
+/// that is *different* about this refusal. The commit-time refusals arrive
+/// after `Ctrl+Enter` has called `commit_into` and then `abandon`, so the draft
+/// really is gone and the catalog's usual reassurance — *your document is
+/// unchanged* — is the whole of what can be said. This one arrives at a
+/// keystroke, with the draft alive and the rest of the word still in the box.
+///
+/// An operator who has just watched one key do nothing does not know which of
+/// those two worlds he is in, and the difference decides whether he keeps
+/// typing or starts again. So the sentence says it.
+///
+/// # ★★ Why the second clause reports a MEASUREMENT rather than a cause
+///
+/// Rule 4's surviving half: *inferences the operator cannot see still owe an
+/// off-canvas report.* Nothing visible happened here — a key was pressed and
+/// no letter appeared — and the reason is a set pdfcer computed silently when
+/// the caret landed. Saying *"pdfcer checked this run's font"* discloses that
+/// the check happened; naming a cause the set cannot carry would be the
+/// invented reason [`EditRefusal::RunCannotTake`]'s own docs argue against.
+///
+/// ★ The clause order is [`EditRefusal::line`]'s, because
+/// `app::status::disclosure::disclosure_line` truncates at 45 % of the bar:
+/// the claim with the character first, the measurement second, the
+/// reassurance third, the route last.
+#[must_use]
+pub fn run_cannot_take(character: char) -> String {
+    format!(
+        "pdfcer cannot type '{character}' into this text. It checked this line's font when \
+         you put the cursor here, and '{character}' is not one of the letters that font can \
+         be edited with. Nothing you have already typed is lost. Open Properties, which names \
+         the character and offers the faces that can type it."
+    )
+}
+
 // ★★★ `ambiguous_on_the_page` LIVED HERE and was deleted on 2026-09-08.
 //
 // Forty lines arguing a sentence that no longer has an occasion: *"pdfcer will
@@ -762,7 +860,7 @@ mod tests {
     /// on purpose, because the sentence interpolated the count and `2` is the
     /// one value a build could hard-code and still satisfy a sweep that only
     /// checked a number was present.
-    const EVERY: [EditRefusal; 7] = [
+    const EVERY: [EditRefusal; 8] = [
         EditRefusal::SplitAcrossPieces,
         EditRefusal::UnsupportedFont,
         // ★ The character is arbitrary here on purpose: this list exists to
@@ -773,7 +871,46 @@ mod tests {
         EditRefusal::DocumentProtected,
         EditRefusal::TextMovedAway,
         EditRefusal::Unstated,
+        // ★ `Pass 280.0`'s pre-commit gate. Same `'q'` as its two neighbours
+        // on purpose: the three sentences must be distinguishable from one
+        // another with the character held constant, because the character is
+        // the one thing an operator meeting any of them already knows.
+        EditRefusal::RunCannotTake('q'),
     ];
+
+    /// ★★★ **The three character-naming sentences say three different
+    /// things**, and a build that collapsed any two of them would still satisfy
+    /// every other test in this file.
+    ///
+    /// The failure this pins is the design that was rejected on 2026-09-09:
+    /// raising [`EditRefusal::FontLacksTheCharacter`] from the pre-commit gate
+    /// because the remedy is the same. It would have been invisible — the
+    /// wording is good, the route is right, the offer appears — and it would
+    /// have told an operator whose composite font spells a letter **twice**
+    /// that his font does not have it.
+    #[test]
+    fn the_three_character_sentences_are_three_sentences() {
+        let lacks = EditRefusal::FontLacksTheCharacter('q').line().into_owned();
+        let two = EditRefusal::FontHasTwoGlyphsFor('q').line().into_owned();
+        let gate = EditRefusal::RunCannotTake('q').line().into_owned();
+        assert_ne!(
+            lacks, gate,
+            "the pre-commit gate must not borrow a cause it did not measure"
+        );
+        assert_ne!(two, gate);
+        assert_ne!(lacks, two);
+        // ★ And the gate's own distinguishing clause, by content rather than
+        // by inequality: the draft survives, which is the whole difference
+        // between a refused KEY and a refused COMMIT.
+        assert!(
+            gate.contains("Nothing you have already typed is lost"),
+            "the pre-commit sentence must say the draft survived: {gate:?}"
+        );
+        assert!(
+            !lacks.contains("already typed is lost") && !two.contains("already typed is lost"),
+            "a commit-time refusal cannot promise a draft that `commit_into` has already abandoned"
+        );
+    }
 
     /// **No sentence opens with the operator.** His report is *"the edit is not
     /// accepted"*, and a sentence beginning with what he did reads as a
@@ -817,6 +954,7 @@ mod tests {
             EditRefusal::SplitAcrossPieces,
             EditRefusal::UnsupportedFont,
             EditRefusal::FontLacksTheCharacter('q'),
+            EditRefusal::RunCannotTake('q'),
             EditRefusal::DocumentProtected,
             EditRefusal::TextMovedAway,
         ] {

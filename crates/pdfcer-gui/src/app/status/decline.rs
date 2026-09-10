@@ -1448,7 +1448,9 @@ mod textedit;
 /// and `decline::record_enter_cannot_split()`. `floor`'s rule: the split is
 /// about where the code lives, and a call site should not have to learn that a
 /// submodule exists.
-pub(crate) use textedit::{record_edit_text_refusal, record_enter_cannot_split, record_reflow};
+pub(crate) use textedit::{
+    record_edit_text_refusal, record_enter_cannot_split, record_key_refused, record_reflow,
+};
 
 /// ★★★ **Every writer of the decline slot**, split out under R2 on 2026-09-05
 /// when this file reached 1,497 lines against the ceiling for the third time —

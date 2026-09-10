@@ -279,13 +279,79 @@ pub fn typing(
         let frame_shift = ui.input(|i| i.modifiers.shift);
         for ev in ui.input(|i| i.events.clone()) {
             match ev {
-                // ★★ TYPING REPLACES THE SELECTION. Rule 2 of the four in
-                // `caret`'s selection section, and the one an operator notices
-                // first: select a word, type a word, and the old one is gone.
+                // A typed character: sieved against the run's alphabet
+                // first, then inserted, replacing any selection. Both halves
+                // are argued inside the arm.
                 egui::Event::Text(t) if !t.is_empty() => {
-                    draft.caret = take_selection(&mut draft);
-                    draft.caret = insert(&mut draft.text, draft.caret, &t);
-                    changed = true;
+                    // ★★★ **THE PRE-COMMIT WALL, 2026-09-09.** The character is
+                    // declined HERE, as the key is pressed, instead of at
+                    // `Ctrl+Enter` where the engine used to decline the whole
+                    // edit and take the operator's word with it.
+                    //
+                    // The request this shell sent the engine, quoted back in
+                    // `run_repertoire`'s own rustdoc:
+                    //
+                    // > *"the refusal arrives at commit, so he types a whole
+                    // > word and then loses it. The alphabet is knowable before
+                    // > the first keystroke and we do not use it that way yet."*
+                    //
+                    // ★ Only a caret in an EXISTING run has a wall. An
+                    // `Origin`/`Box` anchor is text pdfcer is about to author
+                    // with a face pdfcer chooses, so nothing constrains it — and
+                    // `sieve` is not even asked, which also keeps the page walk
+                    // off the Add-text path entirely.
+                    //
+                    // ★★ `take_selection` runs only if something survives. A
+                    // keystroke that is refused whole must leave the selection
+                    // standing: the operator has not replaced his selection, he
+                    // has pressed a key that did nothing, and eating the
+                    // selection would be a second, silent loss on top of the
+                    // first.
+                    let sieved = match &draft.anchor {
+                        Anchor::Run { run, .. } => {
+                            super::repertoire::sieve(ctx, doc, draft.page, *run, &t)
+                        }
+                        Anchor::Origin { .. } | Anchor::Box { .. } => super::repertoire::Sieved {
+                            kept: t.clone(),
+                            refused: None,
+                        },
+                    };
+                    if let (Anchor::Run { run, .. }, Some((character, base_font))) =
+                        (&draft.anchor, sieved.refused)
+                    {
+                        crate::diag::trace(|| {
+                            // ui-text-exempt: diagnostic trace, never displayed.
+                            //
+                            // ★★ FLAT FIELDS, and `character='q'` in the SAME
+                            // spelling `panels::properties::refusedchar` uses —
+                            // the standing finding from 2026-09-05, when a
+                            // debug-formatted tuple on the commit-time trace made
+                            // a driven check report the opposite of the truth
+                            // while quoting the truth in its own message.
+                            format!(
+                                "text-edit-key-refused page={} run={run} character='{character}' \
+                                 character_font={base_font}",
+                                draft.page
+                            )
+                        });
+                        actions.push(crate::app::actions::Action::Text(
+                            crate::app::actions::text::TextAction::KeyRefused {
+                                page: draft.page,
+                                run: *run,
+                                character,
+                                base_font,
+                            },
+                        ));
+                    }
+                    if !sieved.kept.is_empty() {
+                        // ★★ TYPING REPLACES THE SELECTION. Rule 2 of the four
+                        // in `caret`'s selection section, and the one an
+                        // operator notices first: select a word, type a word,
+                        // and the old one is gone.
+                        draft.caret = take_selection(&mut draft);
+                        draft.caret = insert(&mut draft.text, draft.caret, &sieved.kept);
+                        changed = true;
+                    }
                 }
                 // ★ Rule 3: with a selection, Backspace and Delete remove
                 // THAT and nothing else — they stop being different keys, which

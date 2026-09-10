@@ -85,4 +85,48 @@ pub enum TextAction {
     /// enum"*. The subject fits: this variant's subject is the page's own text
     /// and the caret in it, which is what this enum is for.
     EnterCannotSplit,
+    /// ★★★ **A key was pressed that the caret's run cannot spell** — the
+    /// pre-commit half of `OPERATOR_REQUESTS.md` **O140/O141**, 2026-09-09.
+    ///
+    /// Raised by `canvas::textedit::keys` when
+    /// `canvas::textedit::repertoire::sieve` drops a character, and by nothing
+    /// else. Like [`Self::EnterCannotSplit`] it changes **no document**: the
+    /// keystroke has already been declined by the time this is raised, and this
+    /// exists solely to carry the sentence — and the offer — across the
+    /// `crate::app` boundary. The same module-visibility argument applies
+    /// verbatim; see that variant's docs.
+    ///
+    /// # ★★ Why this one carries fields when its neighbour carries none
+    ///
+    /// Because there are two surfaces to feed, not one. The status bar gets a
+    /// sentence that names the character; `panels::properties::refusedchar`
+    /// gets the character *and* the face it was refused against, and offers the
+    /// faces that could type it. `EnterCannotSplit` has one thing to say and no
+    /// remedy to offer, so it carries nothing.
+    ///
+    /// `base_font` is the run's `/BaseFont` — the font's own name, `SUBSET+…`
+    /// tag and all — because that is what the chooser is replacing and what its
+    /// candidate list is measured against. It is **not** the `/Resources /Font`
+    /// key.
+    ///
+    /// # ★★★ The one thing this variant must never become
+    ///
+    /// A mark on the page. The draft is left alive and the text in it renders
+    /// exactly as it did before the refused key — no red, no strike, no
+    /// placeholder glyph, nothing standing in for the character that did not
+    /// arrive. **R8b rule 4**: applied content renders as saved content will,
+    /// and the disclosure lives off-canvas. What the operator sees is that the
+    /// letter did not appear and a sentence in the bar saying why, which is the
+    /// same shape every other refusal in this shell takes.
+    KeyRefused {
+        /// The 0-based page the draft is on.
+        page: usize,
+        /// The run the caret is in — the same index the repertoire was measured
+        /// for, so the offer and the measurement cannot disagree.
+        run: usize,
+        /// The first character the run's font cannot spell.
+        character: char,
+        /// The run's `/BaseFont`, which is the face the offer replaces.
+        base_font: String,
+    },
 }

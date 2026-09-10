@@ -41,6 +41,7 @@ use pdfcer_core::text_edit::BlockAlignment;
 // mechanical obligation into a diff nobody could review.
 pub use super::editrefusal::{
     EditRefusal, RefusedCharacter, font_has_two_glyphs_for, font_lacks_the_character,
+    run_cannot_take,
 };
 
 /// The sentence for a refusal to place a caret.
@@ -96,6 +97,36 @@ pub const fn refusal(reason: Refusal) -> &'static str {
             "This text was supplied as a description rather than drawn as letters, so there is \
              nothing here to edit in place. Use Add text to put new text over it, or change it \
              in the program the drawing came from."
+        }
+        // ★★★ `Pass 280.0`, 2026-09-09. The caret declines to open because
+        // the run's alphabet came back **empty** — not because the run is
+        // missing, and not because one character is.
+        //
+        // The three obligations `Refusal::NoAnchor`'s sentence set are met the
+        // same way, and the second is the hard one here:
+        //
+        // 1. **It is not his mistake.** He clicked on real text and it is real
+        //    text, still on his page, still printing.
+        // 2. **It says what is different about this text**, without the word
+        //    *encoding*, without *subset*, and without a clause number. What is
+        //    true and sayable is that pdfcer can read this text but cannot
+        //    write in the alphabet it was drawn in — which is also exactly why
+        //    the rest of the document may edit normally, and that contrast is
+        //    the half he works out for himself if nobody says it.
+        // 3. **It says what he can do instead**, and both routes are real:
+        //    `Add text` writes the engine's bundled face over the top, and
+        //    Properties' face chooser is the same control the character-level
+        //    refusals send him to. Neither is invented — R9's rule for a
+        //    sentence: a remedy named is a claim about the build.
+        //
+        // ⚠ It deliberately does not say *"this font has no usable
+        // encoding"*. That is the engine's `RunRepertoire::reason`, it is on
+        // the trace, and it belongs there.
+        Refusal::NoUsableEncoding => {
+            "pdfcer can read this text but cannot write in it — the font it is drawn with \
+             does not spell any letter pdfcer could put back. Other text in this document may \
+             still edit normally. Use Add text to write over it, or open Properties to give \
+             this line a face pdfcer can type in."
         }
     }
 }
@@ -631,9 +662,28 @@ mod tests {
     ///
     /// The whole point of the module: the old shell's answer to the cross-run
     /// case was no sentence at all.
+    ///
+    /// ⚠ **This list was two variants long until 2026-09-09 and the enum was
+    /// four.** `NoAnchor` and `NoUsableEncoding` were both reachable, both
+    /// carried a sentence, and neither had ever been measured by the check
+    /// written to measure exactly that. A hand-written list inside a
+    /// completeness sweep is the gap it was built to find — this project's
+    /// standing finding, and this is its fourth recurrence.
+    ///
+    /// ★ It is tolerable here for the same one reason [`EditRefusal`]'s
+    /// `EVERY` gives: [`refusal`]'s own `match` is exhaustive, so a fifth
+    /// variant is a **compile error** in the catalog before it can be a silent
+    /// gap in this list. The list is a convenience over a closed set, not the
+    /// closure itself — which is why the compile error is the tripwire and this
+    /// paragraph is only the reminder to extend the array when it fires.
     #[test]
     fn every_refusal_says_something() {
-        for r in [Refusal::NoRun, Refusal::NoText] {
+        for r in [
+            Refusal::NoRun,
+            Refusal::NoText,
+            Refusal::NoAnchor,
+            Refusal::NoUsableEncoding,
+        ] {
             let s = refusal(r);
             assert!(s.len() > 40, "{r:?} needs a real sentence, got {s:?}");
             assert!(

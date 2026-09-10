@@ -115,6 +115,31 @@
 //! to show the engine's own named refusal in the status bar. That is what
 //! happens.
 //!
+//! ⚠ **The CONCLUSION above stands; the REASON given for it stopped being true
+//! on 2026-09-09.** `EditSession::run_repertoire` — `Pass 280.0`, built in
+//! answer to this project's own request — *is* a per-run glyph-coverage test,
+//! it runs in one call, and `canvas::textedit::repertoire` calls it on every
+//! caret landing. So *"a per-run glyph-coverage test it cannot run"* is a
+//! sentence about a build this shell no longer is.
+//!
+//! ⇒ What it answers, though, is *which characters the run's **current** font
+//! accepts* — not *would `set_font` accept **Calibri-Bold** for this run*, which
+//! is the question greying these two buttons would need answered. That question
+//! still has only one instrument, `preview_font_resources_for`, and the engine's
+//! own rustdoc says what it costs: it *"answers by walking every operation in
+//! the page's content stream"*, which on the operator's benchmark sheet is a
+//! walk over 129,758 objects. Per frame, per button, that is not a greying rule
+//! — it is a hang.
+//!
+//! ★ So the paragraph is corrected rather than deleted, because the two halves
+//! fail differently and a later reader deciding whether to grey these buttons
+//! needs to know which half he is up against. Left as written it would have
+//! read as *nothing can be measured here*, and the first person to check would
+//! have found a verb that measures exactly that and concluded the header was
+//! simply out of date — which is how a correct conclusion loses its argument.
+//! **A limitation sentence is a citation with an hours-long shelf life**, and
+//! this file has now been corrected on that ground twice.
+//!
 //! ## ★★★ Why the runs are edited in DESCENDING order
 //!
 //! The load-bearing decision in the file, and invisible until it is wrong.

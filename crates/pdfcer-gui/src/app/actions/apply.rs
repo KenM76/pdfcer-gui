@@ -1137,6 +1137,19 @@ impl PdfcerApp {
             Action::Text(super::text::TextAction::EnterCannotSplit) => {
                 crate::app::status::decline::record_enter_cannot_split();
             }
+            // ★ The second arm here that changes no document, and for the same
+            // reason: a keystroke handler in `canvas::` cannot reach the
+            // decline store, which is `pub(super)` of `crate::app` on purpose.
+            // The character was already declined before this ran — this arm
+            // only says so, on the bar and in the properties panel.
+            Action::Text(super::text::TextAction::KeyRefused {
+                page,
+                run,
+                character,
+                base_font,
+            }) => {
+                crate::app::status::decline::record_key_refused(page, run, character, base_font);
+            }
             Action::Write(write) => match write {
                 // (the enum is `super::write::WriteAction`)
                 super::write::WriteAction::Dxf { page, options } => {
