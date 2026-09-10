@@ -373,4 +373,137 @@ mod tests {
         assert!(row.contains("Object 9 0"), "{row}");
         assert!(row.contains("parse error at byte 43992"), "{row}");
     }
+
+    /// ★★★ **A REAL FILE, THROUGH THE REAL LOADER** — the one test here that is
+    /// not this module talking to itself.
+    ///
+    /// Every test above builds its `LoadAnomaly`s by hand and asserts on the
+    /// prose. That is the right way to pin wording, and it proves **nothing at
+    /// all** about whether the engine ever hands this shell an anomaly, or
+    /// whether the variants it hands over are the ones these tests construct.
+    /// A build where `Document::load_anomalies()` always returned empty would
+    /// pass every one of them, and the operator would see a status bar that
+    /// never mentions his file.
+    ///
+    /// So this one opens `fixtures/contradicts-itself.pdf` — a catalog naming
+    /// `/PageMode` twice with two different values, the shape of engine
+    /// decision 145's own file — and asserts three things in order of what
+    /// they would cost if untrue:
+    ///
+    /// 1. **It loads.** Before `Pass 283.0` a file like this was refused
+    ///    whole. `open_local_fixture` panics if it does not, so this claim is
+    ///    made by the test existing.
+    /// 2. **Exactly one anomaly comes out**, and it is the duplicate key. Not
+    ///    "at least one": a loader that reported the same contradiction twice
+    ///    would put a wrong count in the status bar, and the count is the
+    ///    entire content of the census clause.
+    /// 3. **Both values survive the trip.** The kept value and the discarded
+    ///    one reach the panel row, which is what makes the operator's eventual
+    ///    override offerable rather than theoretical.
+    ///
+    /// ⚠ The kept value is `/UseOutlines` — the LAST occurrence, under the
+    /// engine's default `DuplicateKeyPolicy::KeepLast`. If a future engine
+    /// revision changed the winner this assertion would go red, which is
+    /// wanted: it is a change an operator can see.
+    ///
+    /// ⚠ It also asserts the recovery line stays SILENT. `recovery()` and
+    /// `load_anomalies()` are disjoint questions — the xref of this fixture is
+    /// sound and every offset correct — and a fixture that lit both would let
+    /// a check pass while reading the wrong disclosure.
+    #[test]
+    fn the_contradicting_fixture_produces_exactly_one_anomaly_through_the_engine() {
+        let doc = crate::app::state::open_local_fixture(crate::app::state::CONTRADICTS_ITSELF);
+        let document = doc.session.document();
+        let anomalies = document.load_anomalies();
+        assert_eq!(
+            anomalies.len(),
+            1,
+            "★ the fixture is authored for exactly one contradiction; the engine reported {}: {anomalies:?}",
+            anomalies.len()
+        );
+        assert!(
+            matches!(anomalies[0], LoadAnomaly::DuplicateDictKey { .. }),
+            "★ the one anomaly should be the doubled /PageMode: {:?}",
+            anomalies[0]
+        );
+        assert!(!census(anomalies).is_clean());
+
+        let line = status_line(anomalies).expect("one anomaly is not clean");
+        assert!(
+            line.contains("1 duplicate dictionary key"),
+            "the census clause should count exactly one: {line}"
+        );
+
+        let rows = rows(anomalies);
+        let row = rows.first().expect("one anomaly, one row");
+        assert!(row.contains("PageMode"), "the key is missing: {row}");
+        assert!(
+            row.contains("/UseOutlines"),
+            "the KEPT value is missing (KeepLast should keep the second): {row}"
+        );
+        assert!(
+            row.contains("/UseOC"),
+            "the DISCARDED value is missing, which is the half that makes an override offerable: {row}"
+        );
+
+        assert!(
+            document.recovery().is_none(),
+            "★ this fixture's xref is sound by construction. A recovery report here means the file was rebuilt by scan, and a check reading the disclosure would be reading the wrong one."
+        );
+    }
+
+    /// **The control: the fixtures a driven run uses as "a file that does NOT
+    /// contradict itself" really do not.**
+    ///
+    /// ★★★ Without this, `ui-verify`'s `load_anomalies_are_disclosed` is a check
+    /// that cannot fail in one direction. That check launches twice - once on
+    /// `contradicts-itself.pdf`, asserting the status line and the
+    /// Document-properties rows are THERE, and once on a clean file, asserting
+    /// they are NOT - and the second launch is the half that distinguishes
+    /// "the disclosure works" from "the disclosure is always on screen".
+    ///
+    /// If the control fixture quietly grew an anomaly of its own, that absence
+    /// assertion would start failing and the report would name the wrong
+    /// defect: it would say the disclosure leaks onto clean files, when what
+    /// actually happened is that the control stopped being clean. That is the
+    /// harness-input failure mode this project has paid for more than once -
+    /// a check whose verdict is about its own fixture, worded as a verdict
+    /// about the program.
+    ///
+    /// ⚠ So this is a tripwire for the harness's INPUT, not for this module's
+    /// logic, and both fixture names live here rather than only in the check:
+    /// a Rust test runs on every `cargo test`, and a driven check runs when
+    /// somebody has the machine's pointer to spare.
+    #[test]
+    fn the_control_fixtures_a_driven_run_uses_are_genuinely_clean() {
+        // The names are spelled literally rather than through
+        // `crate::app::state::FOUR_PAGES`, which resolves against the ENGINE's
+        // read-only corpus (`pageops/four-pages.pdf`) and not this repository's
+        // `fixtures/`. `open_local_fixture` takes a path relative to THIS
+        // repository, and the driven check launches the binary on the same two
+        // paths, so the two instruments have to be naming the same bytes.
+        for name in ["a1-titleblock.pdf", "four-pages.pdf"] {
+            let doc = crate::app::state::open_local_fixture(name);
+            let anomalies = doc.session.document().load_anomalies();
+            assert!(
+                anomalies.is_empty(),
+                "{name} is a CONTROL for the driven disclosure check and it reported {} load \
+                 anomaly/anomalies: {anomalies:?}. Either pick a different control or accept \
+                 that this file is no longer one - do not widen the check.",
+                anomalies.len()
+            );
+            assert!(
+                census(anomalies).is_clean(),
+                "{name} has no anomalies and the census still does not call it clean"
+            );
+            assert!(
+                status_line(anomalies).is_none(),
+                "{name} is clean and still produced a status line"
+            );
+            assert!(
+                rows(anomalies).is_empty(),
+                "{name} is clean and still produced Document-properties rows"
+            );
+        }
+    }
 }

@@ -194,6 +194,35 @@ pub const REGION: &str = "properties.info"; // ui-text-exempt: trace region name
 /// constant changing.
 pub const REGION_FIELD_PREFIX: &str = "properties.info."; // ui-text-exempt: trace region name, never displayed
 
+/// **The load-anomaly block's own region** — the heading, the note and every
+/// row, as one rectangle.
+///
+/// Published by [`load_anomalies_note`] and **only when the file actually
+/// contradicted itself**, because that function returns before drawing
+/// anything when the row list is empty. That absence is the half of the
+/// contract a driven check can only test with a second launch: a region that
+/// is declared on `fixtures/contradicts-itself.pdf` and declared on a clean
+/// file too would be a heading that is always there, which is a different
+/// defect wearing the same green tick.
+///
+/// ★ Named `properties.` like its neighbours so that
+/// `declared_names(&trace, ui_rect, "properties")` — which several checks
+/// already print when they cannot find a region — lists it. A region under a
+/// prefix nobody enumerates is discoverable only by whoever wrote it.
+pub const REGION_ANOMALIES: &str = "properties.load-anomalies"; // ui-text-exempt: trace region name, never displayed
+
+/// The prefix of the per-anomaly row regions; the row's index in
+/// [`crate::app::status::anomalies::rows`]' output is appended.
+///
+/// Indexed by **position in the engine's own anomaly list**, exactly as
+/// [`REGION_FIELD_PREFIX`] is indexed by position in `InfoField::all()`, so a
+/// second anomaly in a fixture is addressable without this constant changing.
+///
+/// ⚠ The count of these regions is the only thing a driven run can use to say
+/// *how many* places the file contradicted itself; the block region above says
+/// only that at least one did. A check that wants the census must count these.
+pub const REGION_ANOMALY_ROW_PREFIX: &str = "properties.load-anomalies."; // ui-text-exempt: trace region name, never displayed
+
 /// How many fields `InfoField::all()` returns.
 ///
 /// ★ Derived from the engine's array rather than written as `4`, because
@@ -655,16 +684,43 @@ fn load_anomalies_note(ui: &mut Ui, doc: &OpenDoc) {
     if rows.is_empty() {
         return;
     }
-    ui.label(egui::RichText::new(t_anomalies::heading()).color(ui.visuals().warn_fg_color));
-    ui.label(egui::RichText::new(t_anomalies::note()).small().weak())
-        .on_hover_text(t_anomalies::tooltip());
-    for row in &rows {
-        // ★ One label per anomaly rather than one joined paragraph. A paragraph
-        // reads as prose about the file in general; separate lines read as a
-        // list of specific places, which is what an operator checking a
-        // titleblock against a drawing needs to work down.
-        ui.label(egui::RichText::new(row).small().weak());
-    }
+    // ★★ The whole block is scoped so that its union rect is a value rather
+    // than something reconstructed from two cursor readings. `ui.cursor()`
+    // before and after would give a rect that is right today and wrong the
+    // first time a caller wraps this in a horizontal layout — the scope's own
+    // response is the same fact, computed by egui, and it cannot drift.
+    let block = ui
+        .scope(|ui| {
+            ui.label(egui::RichText::new(t_anomalies::heading()).color(ui.visuals().warn_fg_color));
+            ui.label(egui::RichText::new(t_anomalies::note()).small().weak())
+                .on_hover_text(t_anomalies::tooltip());
+            for (index, row) in rows.iter().enumerate() {
+                // ★ One label per anomaly rather than one joined paragraph. A
+                // paragraph reads as prose about the file in general; separate
+                // lines read as a list of specific places, which is what an
+                // operator checking a titleblock against a drawing needs to
+                // work down.
+                let response = ui.label(egui::RichText::new(row).small().weak());
+                // ★ Per-row region, published under `REGION_ANOMALY_ROW_PREFIX`.
+                // The block region below says "the file contradicted itself";
+                // only counting these says "in how many places", and a
+                // regression that drew the heading with no rows under it would
+                // be invisible to the block region alone.
+                crate::diag::ui_rect_visible(
+                    // ui-text-exempt: trace region name, never displayed
+                    &format!("{REGION_ANOMALY_ROW_PREFIX}{index}"),
+                    response.rect,
+                    ui.clip_rect(),
+                );
+            }
+        })
+        .response
+        .rect;
+    // ★ `ui_rect_visible` rather than `ui_rect`, for the reason `info_body`
+    // states at its own publication: this draws inside `body`'s `ScrollArea`,
+    // and a rect published for a scrolled-out control gets clicked by the
+    // harness at a coordinate the operator can never reach.
+    crate::diag::ui_rect_visible(REGION_ANOMALIES, block, ui.clip_rect());
     ui.add_space(4.0);
 }
 

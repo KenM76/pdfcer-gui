@@ -184,11 +184,16 @@ pub mod foreign_icon_name;
 /// header names the five links and the four with no test anywhere else, and
 /// records why a dialog needs `frame_of` rather than `session.frame()`.
 pub mod import_text;
+pub mod line_weights;
 /// ★★★ **The CAD "line weights off" display mode** — `OPERATOR_REQUESTS.md`
 /// O137, asked for by name. The pixel assertion is SIGNED (strictly LESS ink),
 /// because the convention he asked for and the one it is confused with are
 /// opposites. ⬜ NOT RUN; see the module's own header.
-pub mod line_weights;
+/// The load-anomaly disclosure, driven: a PDF whose catalogue contradicts
+/// itself says so in the status bar and lists WHERE in Document properties,
+/// and a clean file says neither. Each check launches twice; the second
+/// launch is what makes it a check.
+pub mod load_anomalies;
 /// Putting a control where the pointer can hit it — scrolling a pane, raising a
 /// dock tab, bringing a control inside its panel's body. Split from
 /// [`driving`] on 2026-09-05 under R2; its header carries the seam.

@@ -67,6 +67,25 @@ pub struct LaunchSpec {
     pub allow_stale: bool,
     /// Source tree to check the binary's age against.
     pub source_root: Option<PathBuf>,
+    /// Whether [`Session::place`] may move the window after it appears.
+    ///
+    /// **Default `true`, which is what every check that clicks anything wants**
+    /// -- see `place`'s own documentation for the on-screen keyboard it dodges.
+    ///
+    /// ★★ Set `false` ONLY by a launch that sends no input at all. `place`
+    /// overrules the position half of `PDFCER_DIAG_VIEWPORT` unconditionally,
+    /// so a check that asks for a window off the desktop -- because it reads
+    /// the trace and never a pixel, and would rather not cover the operator's
+    /// screen while he works -- gets one at `(780, 40)` instead, and any
+    /// sentence it wrote about being out of his way is false. That is the
+    /// shape this project keeps paying for: a claim in a doc comment that the
+    /// code below does not implement.
+    ///
+    /// ⚠ A `false` here is a promise that no pointer or keystroke is sent to
+    /// this session. Breaking it does not fail loudly; it produces clicks aimed
+    /// at coordinates `SetCursorPos` clamps, which land somewhere plausible and
+    /// report a defect in the application.
+    pub place: bool,
 }
 
 impl LaunchSpec {
@@ -84,6 +103,7 @@ impl LaunchSpec {
             window_timeout: Duration::from_secs(30),
             allow_stale: false,
             source_root: None,
+            place: true,
         }
     }
 }
@@ -299,7 +319,9 @@ impl Session {
                 && frame.client_size.1 >= MIN_CLIENT_PX
             {
                 session.window = Some(w);
-                session.place();
+                if spec.place {
+                    session.place();
+                }
                 break;
             }
             std::thread::sleep(Duration::from_millis(100));

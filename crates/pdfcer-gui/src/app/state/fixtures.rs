@@ -98,3 +98,15 @@ pub(crate) const PAINTED_LAYERS: &str = "layers/painted-layers.pdf";
 /// three load-bearing properties are asserted in `crate::dialogs::signature`.
 #[cfg(test)]
 pub(crate) const SIGNED_TWO_PAGES: &str = "signed-two-pages.pdf";
+/// **A document whose catalog names `/PageMode` twice, with two different
+/// values** — the shape of engine decision 145's file, hand-authored because
+/// nothing else in either corpus reaches `Document::load_anomalies()`.
+///
+/// ★ Two facts make it worth its bytes and both are asserted rather than
+/// assumed: it **loads** (before `Pass 283.0` the engine refused a file like
+/// this whole), and it produces **exactly one** anomaly with the kept and
+/// discarded values the operator would see. `fixtures/contradicts-itself.PROVENANCE.py`
+/// is the generator and carries the full account, including why its xref is
+/// deliberately sound.
+#[cfg(test)]
+pub(crate) const CONTRADICTS_ITSELF: &str = "contradicts-itself.pdf";

@@ -405,6 +405,23 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // because it is the other surface that edits the DOCUMENT rather than
         // a page's content.
         Box::new(properties_metadata::PropertiesMetadataRoundTrips),
+        // The load-anomaly disclosure, both halves, wired 2026-09-09.
+        //
+        // ★ The status-bar one is placed HERE, among the checks that drive a
+        // real document, rather than up among the chrome checks that run
+        // without a fixture — it pins its own two documents and ignores
+        // `--pdf`, but it is still entirely about what a document does to
+        // the window.
+        //
+        // ★★ It sends no input at all and puts its window off the desktop, so
+        // it is one of the few checks that can run while the operator is at
+        // the machine. Do not fuse it with the panel check below on the
+        // grounds that they share a subject: the panel one SKIPs under
+        // `--no-input`, and a SKIP is not red.
+        Box::new(load_anomalies::LoadAnomaliesReachTheStatusBar),
+        // The long form of the same disclosure, beside the other check that
+        // opens the Document properties panel — they share its opener.
+        Box::new(load_anomalies::LoadAnomaliesAreListedInDocumentProperties),
         // ★ Two ribbon clicks and one trace line — cheap, no capture, no
         // canvas gesture, no keystroke — so its position is chosen for what a
         // reader wants adjacent rather than for cost.

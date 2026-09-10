@@ -378,7 +378,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 /// used, which is also why the check aims at a specific id rather than at "the
 /// first item in the band": an item-position search would have silently kept
 /// passing against the old control.
-fn open_document_properties(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
+pub fn open_document_properties(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
     let trace = session.trace()?;
     let tab = declared(&trace, ui_rect, "ribbon.tab.file").ok_or_else(|| {
         Error::new(format!(

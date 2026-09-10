@@ -1472,6 +1472,7 @@ pub(crate) use fixtures::{
     // `use crate::app::state::{FOUR_PAGES, open_fixture}`, and an R2 split is
     // a change to where code LIVES, not to what the crate offers. A split that
     // rewrote forty imports would be a diff nobody could read.
+    CONTRADICTS_ITSELF,
     FOUR_PAGES,
     PAINTED_LAYERS,
     ROTATED_TEXT,
