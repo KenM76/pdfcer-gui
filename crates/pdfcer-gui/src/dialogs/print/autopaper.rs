@@ -199,6 +199,74 @@ pub(super) fn outcome_token(outcome: &AutoPaper) -> &'static str {
     }
 }
 
+/// **A point-pair as one whitespace-free token**, for the trace: `"595.28x841.89"`.
+///
+/// # ⚠ Why this exists rather than `{:?}` on the tuple
+///
+/// `sheet=` was `{:?}` until 2026-09-10 and printed `Some((1190.4, 841.68))`.
+/// That survived only because `tools/ui-verify`'s splitter tracks bracket
+/// depth; every consumer still had to do string surgery to get a number out,
+/// and this project has already shipped a driven check that **reported the
+/// opposite of the truth** because it was parsing a `Debug` tuple. A field a
+/// machine reads gets a spelling chosen for the machine.
+///
+/// Two decisions inside it:
+///
+/// - **Two decimal places, always.** Fixed rather than `{}` so the spelling is
+///   deterministic — `1190.4` and `1190.40` are the same number and two
+///   different tokens, and a check that string-compares a before and an after
+///   would see a change that did not happen. 0.01 pt is 3.5 micron, two orders
+///   below the 2 pt fit tolerance, so nothing is lost by rounding here.
+/// - **`none` for absent**, not `None`: lower-case, no punctuation, and it
+///   reads the same as the other absent-value tokens on the same line.
+pub(super) fn size_token(size: Option<(f64, f64)>) -> String {
+    match size {
+        // ui-text-exempt: a diagnostic token, never displayed in the UI.
+        None => "none".to_owned(),
+        Some((w, h)) => format!("{w:.2}x{h:.2}"),
+    }
+}
+
+/// **The largest page the auto decision measured**, as a [`size_token`].
+///
+/// ★ This is the field that makes O167 checkable from outside the process,
+/// and it is worth saying why the other three are not enough. `pick=auto` says
+/// the operator chose the policy; `auto=matched` says the decision ran;
+/// `paper=Form(8)` says it was turned into a request. **None of them says the
+/// sheet has anything to do with this document.** A build that resolved auto
+/// to the first form in the driver's list would emit all three, correctly, and
+/// be completely wrong — and the operator's words were *"based on the page
+/// sizes in the pdf"*.
+///
+/// With this beside `sheet=`, a driven check can assert the actual invariant:
+/// `matched` means the largest page fits the chosen sheet either way round,
+/// and `toobig` means it does not. That is the rule the module header states,
+/// measured against a real driver's geometry rather than against the fixture
+/// list a unit test supplies.
+pub(super) fn largest_token(outcome: &AutoPaper) -> String {
+    match outcome {
+        AutoPaper::Matched(m) | AutoPaper::TooBig(m) => size_token(Some(m.largest_page_pt)),
+        AutoPaper::NotChosen | AutoPaper::NoBasis => size_token(None),
+    }
+}
+
+/// **Whether the job has more than one page size**, as a stable token.
+///
+/// `off` rather than `no` when auto was never chosen, because "this job is not
+/// mixed" and "nobody asked" are different answers and a check that read the
+/// first for the second would be asserting a property of a decision that never
+/// happened. The same three-state care as `outcome_token`, one field along.
+pub(super) fn mixed_token(outcome: &AutoPaper) -> &'static str {
+    match outcome {
+        // ui-text-exempt: a diagnostic token, never displayed in the UI.
+        AutoPaper::Matched(m) | AutoPaper::TooBig(m) if m.mixed => "yes",
+        // ui-text-exempt: a diagnostic token, never displayed in the UI.
+        AutoPaper::Matched(_) | AutoPaper::TooBig(_) => "no",
+        // ui-text-exempt: a diagnostic token, never displayed in the UI.
+        AutoPaper::NotChosen | AutoPaper::NoBasis => "off",
+    }
+}
+
 /// Does `page` lie on `sheet`, either way round, within tolerance?
 ///
 /// Both orientations are tried because `dmPaperSize` names a physical sheet
@@ -491,6 +559,87 @@ mod tests {
             );
         }
         assert_eq!(AutoPaper::NoBasis.resolved(), PaperChoice::DeviceDefault);
+    }
+
+    /// **A size token survives the trip out and back**, which is the only
+    /// property of it that matters.
+    ///
+    /// `size_token` is unlike [`pick_token`] and [`outcome_token`]: it is not
+    /// a fixed vocabulary, it is a measurement written for another process to
+    /// read. So this parses it the way `tools/ui-verify` parses it — split on
+    /// `x`, two `f64`s — rather than asserting a literal, because a test that
+    /// asserted `"595.28x841.89"` would pass on a spelling no consumer could
+    /// read back, and that is precisely the failure this token replaced.
+    ///
+    /// ★ The tolerance is one hundredth of a point, which is the rounding the
+    /// two-decimal format applies on purpose. 0.01 pt is 3.5 micron; the fit
+    /// tolerance this number is compared against is [`FIT_TOLERANCE_PT`], two
+    /// hundred times larger.
+    #[test]
+    fn a_size_token_reads_back_as_the_number_it_was_written_from() {
+        // Deliberately awkward: an exact ISO size with more precision than the
+        // token keeps, a whole number that must not lose its decimals, and a
+        // value that rounds UP at the second place.
+        for (w, h) in [(595.276, 841.89), (1190.0, 1684.0), (612.345_6, 792.0)] {
+            let token = size_token(Some((w, h)));
+            assert!(
+                !token.contains(char::is_whitespace),
+                "{token:?} carries whitespace, which truncates the field and every field after it"
+            );
+            let (left, right) = token
+                .split_once('x')
+                .unwrap_or_else(|| panic!("{token:?} has no `x` separator"));
+            let back: (f64, f64) = (
+                left.parse()
+                    .unwrap_or_else(|_| panic!("{left:?} is not a number")),
+                right
+                    .parse()
+                    .unwrap_or_else(|_| panic!("{right:?} is not a number")),
+            );
+            assert!(
+                (back.0 - w).abs() <= 0.01 && (back.1 - h).abs() <= 0.01,
+                "{token:?} read back as {back:?}, which is not ({w}, {h})"
+            );
+        }
+        assert_eq!(size_token(None), "none");
+    }
+
+    /// **`largest=` and `mixed=` say `none`/`off` when auto was never chosen**,
+    /// rather than a value that reads like an answer.
+    ///
+    /// The distinction is the same one [`outcome_token`] makes: *"this job is
+    /// not mixed"* and *"nobody asked"* are different facts, and a driven check
+    /// that read the first for the second would be asserting a property of a
+    /// decision that never ran. A `false` in that slot would be indistinguishable
+    /// from a real measurement.
+    #[test]
+    fn an_unchosen_auto_reports_absence_rather_than_an_answer() {
+        for outcome in [AutoPaper::NotChosen, AutoPaper::NoBasis] {
+            assert_eq!(largest_token(&outcome), "none", "{outcome:?}");
+            assert_eq!(mixed_token(&outcome), "off", "{outcome:?}");
+        }
+
+        let single = Match {
+            id: 9,
+            name: "A4".to_owned(),
+            sheet_pt: (595.276, 841.89),
+            largest_page_pt: (595.276, 841.89),
+            mixed: false,
+        };
+        let many = Match {
+            mixed: true,
+            ..single.clone()
+        };
+        assert_eq!(mixed_token(&AutoPaper::Matched(single.clone())), "no");
+        assert_eq!(mixed_token(&AutoPaper::TooBig(many.clone())), "yes");
+        // ★ And the page it reports is the page the choice was made FOR, not
+        // the sheet it chose — the two are equal in this fixture on purpose,
+        // so the assertion below uses a Match where they differ.
+        let bigger = Match {
+            largest_page_pt: (1190.0, 1684.0),
+            ..single
+        };
+        assert_eq!(largest_token(&AutoPaper::TooBig(bigger)), "1190.00x1684.00");
     }
 
     /// **The trace tokens are distinct, and contain nothing a parser splits

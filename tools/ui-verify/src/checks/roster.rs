@@ -472,6 +472,33 @@ pub fn all() -> Vec<Box<dyn Check>> {
         //
         // ★ And it never presses commit, for the reason stated above.
         Box::new(print_paper::PrintPaperChangesThePlan),
+        // ★ IMMEDIATELY after `print_paper`, because it drives the same
+        // control and every skip it can produce about that control — "the
+        // dialog published no `print.paper` region", "the device enumerated
+        // no forms" — is answered more specifically by the check above it.
+        // A reader of a failing run should meet the general cause first and
+        // the special one second.
+        //
+        // ★★ The two are NOT redundant and the difference is worth stating,
+        // because they look alike from the roster. `print_paper` clicks a
+        // numbered driver form and asserts the plan followed it — that the
+        // combo is wired to the job at all. This one clicks the **auto**
+        // entry, which is not a sheet but a policy, and asserts that the
+        // sheet it produces has something to do with the document's own page
+        // sizes. The first would stay green on a build where auto resolved
+        // to the first form in the list; that build is exactly the defect
+        // this one exists for.
+        //
+        // ⚠ It is deliberately fixture-sensitive in one direction only: it
+        // asserts an INVARIANT (`matched` implies the page fits) rather than
+        // a sheet name, so it holds against any driver on any machine — but
+        // a document with no measurable pages makes it SKIP, saying so.
+        //
+        // ★ It never presses commit, and it never presses Properties… — the
+        // rule every print check states in its own words, because the day
+        // somebody adds another by copying one of these files, the copied
+        // file is the only one they will read.
+        Box::new(print_auto_paper::MatchThePagesPicksTheSheetFromTheDocument),
         // ★ After the print checks above it, for the reason the two above
         // give — stated as a POSITION rather than an ordinal, because this
         // comment once read "last of the four", a fifth was added saying "and

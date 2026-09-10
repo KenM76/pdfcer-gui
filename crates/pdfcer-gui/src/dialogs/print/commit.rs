@@ -186,7 +186,7 @@ impl PrintDialog {
                 "print-plan printer={printer:?} driver={:?} port={:?} sheets={:?} clipped={:?} \
                  claim={}:{} \
                  dpi={:?} capped={:?} uncapped_mb={:?} orientation={:?} duplex={:?} \
-                 paper={:?} pick={} auto={} sheet={:?} config={} \
+                 paper={:?} pick={} auto={} sheet={} largest={} mixed={} config={} \
                  scale={:?} tab={:?}",
                 self.printers.get(self.selected).map(|p| &p.driver),
                 self.printers.get(self.selected).map(|p| &p.port),
@@ -223,7 +223,28 @@ impl PrintDialog {
                 self.effective_device().paper,
                 autopaper::pick_token(self.device.paper),
                 autopaper::outcome_token(&self.auto_paper),
-                job.map(|j| j.device.physical_pt),
+                // ★ `sheet=` is a `size_token`, not `{:?}`, since 2026-09-10.
+                // It used to print `Some((1190.4, 841.68))` and survived only
+                // because the harness's splitter tracks bracket depth — see
+                // `autopaper::size_token` for why a field a machine reads does
+                // not get a `Debug` spelling.
+                autopaper::size_token(job.map(|j| j.device.physical_pt)),
+                // ★★ `largest=` and `mixed=`, added for O167's driven check.
+                //
+                // `largest=` is the page the auto decision was made FOR, in the
+                // same vocabulary as `sheet=` beside it — deliberately, so the
+                // two can be compared literally rather than through a second
+                // spelling free to drift. The pairing is the assertion, exactly
+                // as `paper=`/`sheet=` is one field along: `auto=matched` with a
+                // `largest=` that does not fit `sheet=` is a decision that ran
+                // and got the wrong answer, and no other field on this line can
+                // tell that from a decision that got the right one.
+                //
+                // ⚠ They are BOTH `none`/`off` when auto is not the operator's
+                // choice, rather than absent. A missing field on a success line
+                // is a parse bug by the harness's own contract, never a zero.
+                autopaper::largest_token(&self.auto_paper),
+                autopaper::mixed_token(&self.auto_paper),
                 self.config.is_some(),
                 job.and_then(|j| j.plans.first()).map(|p| p.placement.scale),
                 self.active_tab,

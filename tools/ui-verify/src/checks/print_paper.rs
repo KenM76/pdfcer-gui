@@ -36,12 +36,21 @@
 //!
 //! ```text
 //! print-plan printer="…" … orientation=Auto duplex=Simplex paper=DeviceDefault
-//!            sheet=Some((612.0, 792.0)) config=false scale=Some(0.97) tab=PagesLayout
+//!            pick=device auto=off sheet=612.00x792.00 largest=none mixed=off
+//!            config=false scale=Some(0.97) tab=PagesLayout
 //! ```
 //!
 //! `paper=` is what was **asked for**; `sheet=` is the physical sheet the
 //! geometry came **back** with. The check reads the line before and after
 //! choosing an entry from the list, and requires both to move:
+//!
+//! ⚠ `sheet=` was `Some((612.0, 792.0))` until 2026-09-10 and is now a bare
+//! `WxH` token — see `autopaper::size_token` for why a field a machine reads
+//! does not get a `Debug` spelling. **This check is unaffected**, because it
+//! compares the field to itself before and after by string equality and never
+//! parses it; the example above is corrected so that a reader of this file is
+//! not shown a line the program no longer emits. The other three fields on
+//! that line belong to `print_auto_paper`, which is the check that reads them.
 //!
 //! | `paper=` | `sheet=` | verdict |
 //! |---|---|---|

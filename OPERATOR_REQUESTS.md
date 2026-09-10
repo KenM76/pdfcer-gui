@@ -80,7 +80,7 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
-## O166 — ◑ **BUILT 2026-09-10, NOT YET DRIVEN** — "the printer dialogue box needs to remember our last settings"
+## O166 — ◑ **BUILT AND DRIVEN 2026-09-10** — "the printer dialogue box needs to remember our last settings"
 
 **Your words, 2026-09-10**, in the same sentence as O167. Filed before any work
 started, per rule 1 of this file.
@@ -162,13 +162,41 @@ numbers above the standard range mean whatever that one driver says they mean,
 and a preferences file outlives a printer — so a number remembered from the
 plotter could silently select something else entirely on the office copier.
 
-⚠ **Still owed: a driven check.** 3,186 unit tests pass and every gate is
-green, but nothing has yet proved by *running the program* that a setting
-survives a restart. Under this project's rule 1 that is not the same claim.
+### ★ Driven, later the same day — and the driving found something
+
+**It works, proved by running the program rather than by a passing test.**
+A check now launches pdfcer twice: once with the preferences file deleted,
+to see what the window opens on when it has nothing to go by, and once with
+twelve settings written into it. All twelve come back — landscape,
+two-sided long edge, match-the-page-sizes, tray by size, custom at 137%,
+document-and-markups, 600 dpi, 3 copies, uncollated, odd pages, reversed —
+and the job that gets planned from them is planned landscape and two-sided,
+which is the part that reaches the plotter.
+
+★★★ **What it found is worth more than the green.** As built yesterday,
+the diagnostic line the check reads was printing the settings *as they came
+out of the file*, not *as the window adopted them* — two things forty lines
+apart in the same function. Ten of the twelve checks were therefore proving
+only that the file had been read. A build that read your preferences
+perfectly and then threw them away when drawing the window would have been
+reported as working. That is the exact failure this request exists to
+prevent, and it took writing the check to see it.
+
+It is fixed, and then the check was **deliberately sabotaged** to make sure
+it could still fail: a version of pdfcer was built that reads your
+preferences file and ignores it. The check named all twelve settings and
+said where to look. Then the sabotage was removed and it went green again.
+
+⚠ **One half is still not driven, deliberately.** The check never presses
+Print, because this machine's default printer is your plotter and the suite
+runs unattended. So *"the window opens on what you last chose"* is proved by
+running the program; *"pressing Print records what you chose"* is held by the
+compiler and three round-trip tests. That is a weaker claim and is written
+down as one rather than folded into the green.
 
 ---
 
-## O167 — ◑ **BUILT 2026-09-10, NOT YET DRIVEN** — "we also need the option to auto select paper size based on the page sizes in the pdf"
+## O167 — ◑ **BUILT AND DRIVEN 2026-09-10** — "we also need the option to auto select paper size based on the page sizes in the pdf"
 
 **Your words, 2026-09-10.** Same sentence as O166, filed as its own row because
 it can ship on its own and because it is a genuinely different mechanism.
@@ -202,7 +230,7 @@ arithmetic we can already do, on data we already have.
 
 ### Status
 
-◑ **Built 2026-09-10. Not yet driven.**
+◑ **Built and driven 2026-09-10.**
 
 The paper control has a third entry — **Match the pages in this document** —
 sitting under *from the printer's own settings* and above the driver's own
@@ -217,8 +245,45 @@ A mixed set still resolves to one sheet, because a `DEVMODE` names one — so th
 *choose tray by page size* tick beside it is what makes a set of A1s and A3s
 land correctly on a device with more than one roll.
 
-⚠ **Still owed: a driven check** that picking the entry reaches the spooler with
-the chosen form, per rule 1.
+### ★ Driven, on your own benchmark drawing
+
+**It works, proved by running the program on your CAD site plan.** With the
+drawing open, pdfcer was standing on the printer's own Letter landscape.
+Choosing *Match the pages in this document* moved it to **A3 landscape** —
+the drawing's pages measure 1191×842 pt and the sheet it asked the driver
+for is 1190.4×841.68, which is the same sheet written two ways. It then
+went back to the printer's own settings when told to, and forgot the
+measurement, which is the difference between a policy and a one-way switch.
+
+★★★ **What building the check taught, which is the part worth reading.**
+Three obvious things could be checked after clicking that entry: that the
+click landed, that the decision ran, and that its answer reached the
+printer. **All three are worth almost nothing.** A version of pdfcer that
+simply took the first sheet on the driver's list — without looking at your
+drawing at all — would report all three correctly. Your words were *"based
+on the page sizes in the pdf"*, and none of those three is about your pages.
+
+So pdfcer now reports the largest page it measured alongside the sheet it
+asked for, and the check compares them. Then that exact wrong build was
+**deliberately made**, to be sure the check could catch it: pdfcer was
+altered to take the front of the driver's list regardless of the drawing.
+The three obvious signals all stayed green, and the check failed it — an A3
+site plan on an A4 sheet, out by 349 pt, named in those words. Then the
+alteration was removed and it went green again.
+
+★ **And the first run corrected the check rather than pdfcer.** It reported
+an ambiguity on a 0.6 pt difference between your page and the sheet. That is
+not noise — CAD exporters write A3 as a clean 1191×842 and the driver calls
+the same sheet 1190.4×841.68, and pdfcer tolerates exactly that by design.
+The check was modelling the wrong thing and now tests the rule pdfcer
+actually states about itself.
+
+⚠ **Two things it does not prove, written down rather than folded into the
+green.** It never presses Print, because this machine's default printer is
+your plotter and the suite runs unattended. And when pdfcer says *nothing
+here is big enough*, the check can confirm the sheet it named is too small
+but not that it was the largest one available — that half is held by unit
+tests over a fixture list.
 
 ---
 
