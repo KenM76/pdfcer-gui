@@ -340,6 +340,25 @@ pub(super) fn selection_event(selection: &SelectionState, kind: &str, modifier: 
 ///   undrawn pages are saying on screen; `drawn == visible` is a settled
 ///   strip. A check that measured only `visible` could not tell a filled strip
 ///   from an empty one.
+/// * `crop=` and `rot=` — **added 2026-09-10, and they close a whole class of
+///   harness defect.** `ui-verify` had been reading a page's size by scanning
+///   the PDF's first `/MediaBox` with a regular expression, and doing the
+///   document→canvas conversion as a single `height - y` flip. That is correct
+///   for an upright page whose crop origin is (0, 0) and silently wrong for
+///   every other page — the same defect, in the harness, that O174 was in the
+///   renderer. On the operator's `A-591.pdf` (an incremental update rewrites
+///   `/Rotate 0` to `/Rotate 270`, so even a *correct* regex finds the wrong
+///   one) every `--doc-point` in the suite aimed at the wrong place, and the
+///   right-hand third of the canvas was unreachable because the bounds check
+///   thought the page was 792 pt wide when the canvas is 1224.
+///
+///   The application already knows the answer — it holds the parsed `Page`.
+///   Tracing it makes the harness's mapping a *reading* rather than a *guess*,
+///   and keeps `ui-verify` free of the `pdfcer-core` dependency its own header
+///   argues against. `crop=` is `llx,lly,urx,ury` in PDF user space; `rot=` is
+///   the page's effective `/Rotate` in degrees, already inherited down the page
+///   tree. Both describe the page named by `page=`, i.e. the one `rect=` is
+///   the rect of.
 pub(super) fn layout(
     doc: &OpenDoc,
     image_rect: Rect,
@@ -348,6 +367,15 @@ pub(super) fn layout(
     visible: usize,
     with_raster: usize,
 ) {
+    // ★ The acting page's own frame, appended below so a harness never has to
+    // scan the PDF for it. See the `crop=` / `rot=` note above.
+    let (crop, rotate) = doc.pages.get(doc.view.page_index).map_or(
+        (
+            pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, 0.0, 0.0),
+            0,
+        ),
+        |p| (p.crop_box, p.rotate),
+    );
     crate::diag::trace_changed(LAYOUT_SLOT, || {
         format!(
             // ui-text-exempt: diagnostic trace, never displayed in the UI.
@@ -355,12 +383,17 @@ pub(super) fn layout(
             // enclosing call: the gate's scope is the line, and rustfmt is
             // free to reflow a call's arguments out from under a comment
             // placed further up.
-            "canvas rect={image_rect:?} zoom={:.4} page={} pages={} off={scroll_offset:?} sel={selected} display={} visible={} drawn={with_raster}",
+            "canvas rect={image_rect:?} zoom={:.4} page={} pages={} off={scroll_offset:?} sel={selected} display={} visible={} drawn={with_raster} crop={:.3},{:.3},{:.3},{:.3} rot={}",
             doc.view.zoom,
             doc.view.page_index,
             doc.pages.len(),
             doc.view.display.id(),
             visible,
+            crop.llx,
+            crop.lly,
+            crop.urx,
+            crop.ury,
+            rotate,
         )
     });
 }

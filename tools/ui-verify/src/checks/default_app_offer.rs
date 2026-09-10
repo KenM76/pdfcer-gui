@@ -2,7 +2,7 @@
 //! answers are reachable, and it does not come back once it has been answered.**
 //!
 //! `OPERATOR_REQUESTS.md` **O173**, his words of 2026-09-10: *"we should have
-//! an easy way to make pdfce-gui our default opener for pdfs. Ask once with a
+//! an easy way to make pdfce-gui our default opener for pdfs. Ask once with a (old-name-exempt: HIS words, quoted verbatim from O173 — correcting an operator's own sentence would stop this being a quotation)
 //! don't show me again check box option."*
 //!
 //! # ★★★ The one thing this check must do before it launches anything

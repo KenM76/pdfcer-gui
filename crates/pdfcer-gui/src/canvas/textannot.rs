@@ -266,30 +266,67 @@ pub const DEFAULT_STAMP: StampName = StampName::Approved;
 /// So the default here is [`Self::FitTheBox`], which keeps the derived size,
 /// and the stated sizes are the new capability sitting beside it.
 ///
-/// # ★★ Every variant pairs its size with `StampFit::GrowToText`, deliberately
+/// # ★★ Every variant pairs its size with `StampFit::GrowToText`, and the REASON changed
 ///
-/// `StampFit` has three values and this enum reaches one of them. That is an
-/// argued decision, not an omission, and the argument is R8b rule 4:
+/// `StampFit` has three values — widen the box, shrink the words, cut the
+/// words off at the edge — and every variant below reaches exactly one of
+/// them, the engine's default `GrowToText`. That is an argued decision, and
+/// **the argument changed on 2026-09-10**, which is worth stating rather than
+/// quietly editing: the conclusion is the same and the reason behind it is
+/// completely different.
+///
+/// ## ⚠ What this paragraph used to say, and why it is no longer true
+///
+/// Until `pdfcer-core` `Pass 291.0` the other two policies were *unofferable*,
+/// not merely unoffered. Both decide something the operator did not ask for —
+/// a label drawn at a size they did not choose, or characters dropped — and
+/// R8b rule 4 owes a sentence for exactly that. There was nothing to build the
+/// sentence from: `AuthoredTextAnnot::applied_autosize` was the only outcome
+/// field, it carries the **variable-text** auto-size, and it is `None`
+/// whenever `/DA` names an explicit size. A stamp's fitted size *is* written
+/// as an explicit size (`Pass 287.0`), so it was `None` on every stamp, always
+/// — including every stamp where a size had been chosen for the operator. The
+/// number was computed, used, written to the file and dropped on the way back.
+/// Measured against `annot_author.rs` at pin `d4a4e3b`.
+///
+/// ☑ Filed rather than worked around, and answered: `Pass 291.0` added
+/// `stamp_label_fit` — a **second** field, which is what the request asked for
+/// by name in preference to widening `applied_autosize`'s meaning — to both
+/// the authoring outcome and the restyle change.
+/// [`crate::app::actions::textannot`] takes the reporting entry point to read
+/// it, and [`crate::panels::properties::markup::textannot`] reads the restyle
+/// half. **The engine limit is gone.**
+///
+/// ## ★★★ Why the placing dialog still shows no fit control anyway
+///
+/// Because the reason is now an interaction judgement, and the two are worth
+/// keeping apart: an engine limit disappears the day a pin moves, a judgement
+/// does not, and a comment that conflates them sends the next reader to the
+/// wrong repository.
 ///
 ///   * `GrowToText` widens the box when the label does not fit. **Visible on
-///     the canvas as itself** — the operator sees a wider stamp — so it owes
-///     no separate disclosure and cannot be quietly wrong.
-///   * `ShrinkToBox` draws the label at a size the operator did not ask for.
-///     The engine's own doc says *"the size actually used is reported, because
-///     a silently shrunk label is an inference"* — but **it is not reported**:
-///     `AuthoredTextAnnot::applied_autosize` carries the *variable-text*
-///     auto-size, which is `None` whenever `/DA` names an explicit size, and
-///     the shrunk size is passed as an explicit size. Measured against
-///     `annot_author.rs` at pin `d4a4e3b`. Offering it would mean either
-///     staying silent about an inference or re-deriving the shrink here, which
-///     is a second description of the engine's rule.
-///   * `ClipToBox` hides characters, for the same reason and with the same
-///     absence of a report. It is also, in the engine's own words, *"the one
-///     the operator reported"*.
+///     the canvas as itself** — the operator sees a wider stamp — and
+///     [`crate::text::textannot::stamp_size_bound`] says so in the dialog
+///     *before* the drag is committed. It cannot be quietly wrong.
+///   * `ClipToBox` is, in the engine's own words, *"the one the operator
+///     reported"*: widening a stamp to reveal clipped text enlarged the text
+///     by the same act, so it never stopped being clipped. Offering the
+///     reported defect back as a choice on the dialog that fixes it is not a
+///     feature.
+///   * `ShrinkToBox` is a real preference some operator will want, and the
+///     placing dialog is the wrong surface for it. At placing time the box is
+///     being dragged **this instant**, so *"what if the words do not fit"* has
+///     a better answer than a dropdown: draw it bigger. On a stamp already on
+///     the page it does not, which is precisely where the chooser lives — in
+///     the properties panel, under the number it qualifies, sharing one
+///     session preference through [`crate::canvas::stampfit`].
 ///
-/// ☑ Both are filed against the engine rather than worked around — see
-/// `ENGINE_BACKLOG.md`'s `Pass 287.0` row. When the fitted size is reported
-/// they become two more variants here and one more sentence in the status line.
+/// ★ O171 is also on the record here: the operator's report that this dialog
+/// was already too small to reach its own buttons. That was fixed
+/// structurally rather than by height, so a row is no longer unaffordable —
+/// which is why the case above is made on what the control *means* and not on
+/// what it costs. If it were an affordability argument it would expire the
+/// next time the window grew.
 ///
 /// # The point sizes
 ///

@@ -54,12 +54,22 @@
 //! Phase 4 doubled its size. That file's header already named the seam: it
 //! answers *"what is open"*, and this answers *"what should the picture be"*.
 
-/// ★★ **Tests only** — the engine properties O23's second half will stand on,
-/// asserted here because the engine's own suite has never exercised them.
-///
-/// `render_page_region` accepts a rectangle outside the `/CropBox` by
-/// construction and is untested there; a shell feature built on an unexercised
-/// engine path is one whose first failure looks like a shell defect.
+// ★ A NOTE ON THE ORDER OF WHAT FOLLOWS, because it has already eaten four
+// module headers once and the damage is silent.
+//
+// `rustfmt`'s `reorder_modules` is on by default and it sorts a contiguous run
+// of `mod` items alphabetically. It does **not** carry an item's doc comment
+// with it. So inserting one new module into a sorted run re-sorts the run,
+// leaves every doc comment where it was, and the result compiles, passes every
+// gate, and renders four modules' documentation onto whichever module happens
+// to be last — which is what had happened to this block before 2026-09-10, and
+// is why `offpage`, `raster` and `strategy` each spent some time described by
+// somebody else's header.
+//
+// The rule that keeps it fixed: **each `pub mod` sits directly under its own
+// doc comment, and the run stays alphabetical.** A doc comment stranded above a
+// `pub mod` whose name it does not describe is the tell.
+
 /// **The pixel proof for O137's "line weights off" display mode** — that the
 /// mode really thins a drawing, and thins it in the direction the operator
 /// asked for rather than the opposite one.
@@ -68,15 +78,23 @@
 /// header carries why four passing wiring tests were not enough.
 mod hairline;
 
-pub mod offpage;
-pub mod raster;
-/// ★★★ **Whole page, or just the window?** — O24's one decision, made from
-/// numbers in one place.
+/// **Is there anything in this raster?** — the `ink=` field of
+/// `render-async-done`, and the reason a blank canvas at deep zoom can be told
+/// apart from a lost one.
 ///
-/// Its header carries the constraint that shaped it: panning at full detail is
-/// a property of rasterizing the WHOLE PAGE, and region rendering would cost
-/// it. So the region path engages only above the pixmap ceiling, where the
-/// whole-page path cannot work at all — nothing is taken away to pay for it.
+/// Its header is the record of an afternoon spent proving the shell innocent by
+/// hand: a near-uniform canvas has two causes, and until this module existed
+/// the harness could see only one of them.
+pub mod ink;
+
+/// ★★ **Tests only** — the engine properties O23's second half will stand on,
+/// asserted here because the engine's own suite has never exercised them.
+///
+/// `render_page_region` accepts a rectangle outside the `/CropBox` by
+/// construction and is untested there; a shell feature built on an unexercised
+/// engine path is one whose first failure looks like a shell defect.
+pub mod offpage;
+
 /// ★★ **Screen ⟷ PDF for a RASTER** — the two conversions the region tier
 /// needs, kept together because they are inverses and the round trip is the
 /// property that matters.
@@ -84,7 +102,24 @@ pub mod raster;
 /// Its header carries the y flip, which is the half that goes wrong: a missed
 /// flip shows the opposite end of the page, which at deep zoom looks like a
 /// blank raster rather than a coordinate error.
+pub mod raster;
+
+/// **The window's rectangle, in the space the engine documents** — the region
+/// tier's one conversion from canvas space to PDF user space.
+///
+/// Its header carries O174: this module handed `render_page_region` a
+/// canvas-space rectangle, which is right for an upright page at the origin and
+/// wrong for a turned one, so the operator's `/Rotate 270` sheet jumped and
+/// distorted above the whole-page → region crossover and nowhere below it.
 pub mod region;
+
+/// ★★★ **Whole page, or just the window?** — O24's one decision, made from
+/// numbers in one place.
+///
+/// Its header carries the constraint that shaped it: panning at full detail is
+/// a property of rasterizing the WHOLE PAGE, and region rendering would cost
+/// it. So the region path engages only above the pixmap ceiling, where the
+/// whole-page path cannot work at all — nothing is taken away to pay for it.
 pub mod strategy;
 // The per-frame raster decision, and the strip's scheduling.
 pub mod settle;

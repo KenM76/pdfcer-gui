@@ -792,7 +792,9 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // length in its header, and neither is optional: the seed exists so
         // this offer does not open in front of the other two hundred checks,
         // and the second launch is the only place "ask once" can be observed.
-        // ⬜ NOT RUN at the time of writing; the machine was the operator's.
+        // ✅ DRIVEN 2026-09-10: PASS. The offer opened, its action, decline and
+        // checkbox were all declared, the answer reached the profile's
+        // preferences file, and the second launch did not ask again.
         Box::new(default_app_offer::TheDefaultAppOfferIsAskedOnce),
         // Last of the three new ones and the most expensive: it drives Insert
         // pages, the Forms panel and the Tab-order section in one session,
@@ -802,13 +804,30 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(add_text::AddTextTakesRealKeystrokes),
         Box::new(chords::EveryDeclaredChordDispatches),
         Box::new(stamp_size::StampSizeReachesTheEngine),
+        // ★★ Adjacent to `stamp_size` deliberately: the two are the AUTHORING
+        // and RESTYLE halves of one operator report, and reading either without
+        // the other leaves the impression that a sentence he wrote twice is
+        // covered when half of it is. This one places its own stamp first, so it
+        // depends on no fixture carrying one.
+        // ✅ DRIVEN 2026-09-10: PASS, and falsified the same day. The label-size
+        // row is drawn for a placed stamp, seeded from the file at 28 pt, and
+        // reads back 30 pt after the edit — typed, written and read back.
+        Box::new(stamp_size_properties::StampSizeInThePropertiesBox),
         // ★★ O171, 2026-09-10. Immediately after `stamp_size` because it
         // repeats that check's route and then does the thing no other check
         // does: opens the same dialog a SECOND time. The operator's report was
         // that the first opening was fine and the second had its Add and
         // Cancel below its own bottom edge, so a suite of checks that each
         // open it once is structurally blind to it.
-        // ⬜ NOT RUN at the time of writing; the machine was the operator's.
+        // ✅ DRIVEN 2026-09-10: PASS — both stamp dialogs have Add and Cancel on
+        // the screen, so O171's report is closed by measurement rather than by
+        // reading the layout code.
+        //
+        // ★ Its FIRST driven run failed, and the defect was in the check: it
+        // clicked Markup > Stamp before each placement, and that ribbon item is
+        // a toggle, so the second click put the armed tool DOWN. `arm_stamp`
+        // now reads the tool's state before acting. A driven failure is a claim
+        // about the check too.
         Box::new(stamp_dialog_reopen::TheSecondStampDialogStillHasItsButtons),
         Box::new(text_annot::TextAnnotPlacesAndAuthors),
         Box::new(text_annot_focus::TextAnnotTakesTheKeyboardUnclicked),

@@ -485,6 +485,51 @@ pub fn note_clear_disclosure(subtype: &str, appearance_rebaked: bool) -> Option<
     )
 }
 
+/// The status-line disclosure after a mark is placed whose words contained
+/// characters pdfcer could **not** write, or `None`.
+///
+/// # ★★★ Why a substitution the operator can SEE still owes a sentence
+///
+/// The Base-14 fonts a stamp label and a text box are drawn in are encoded in
+/// `WinAnsi`, which has no code point for an em dash, a curly quote, an
+/// accented character outside Latin-1, or anything at all in Greek, Cyrillic
+/// or CJK. The engine does not refuse those: it substitutes `?` and reports
+/// how many, which is the right call — refusing a whole stamp because one
+/// character came out of a word processor's autocorrect would be worse than
+/// drawing it with a `?`.
+///
+/// ★★★ The `?` is on the page for anyone to see, so this looks at first like
+/// the kind of visible outcome R8b rule 4 says owes nothing. **It is not**,
+/// and the distinction is the one that rule turns on: what the operator
+/// cannot see is *that pdfcer did it*. A `?` in the middle of a stamp reads
+/// as a typo they made, or as a rendering fault, and neither sends them
+/// anywhere useful. The sentence names the cause and the count, so the act is
+/// attributable to the program that performed it.
+///
+/// ⚠ `panels::forms` has said this for a form field since the day the engine
+/// reported it, through `forms_fill_unencodable_note`. An annotation went
+/// through the same substitution **in silence** until 2026-09-10, purely
+/// because the placing path called the entry point that returns an id and
+/// drops the outcome. Two routes into one capability and only one of them
+/// disclosing is the shape this project has a standing rule about — adding a
+/// second route is an audit of the capability, and this is what the audit
+/// found.
+///
+/// ★ A separate sentence from the forms one rather than a shared helper, for
+/// this module's standing reason: the two describe different acts on
+/// different objects, and a shared sentence is one an author can reword for a
+/// form field and silently change for a stamp. The forms sentence also names
+/// the FIELD, and an annotation has no counterpart for that.
+#[must_use]
+pub fn placed_unencodable(count: usize) -> Option<String> {
+    (count > 0).then(|| {
+        format!(
+            "{count} character(s) in these words have no code in the font this mark is drawn \
+             in, and were written as `?`. The rest of the mark is exactly as you typed it."
+        )
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -204,3 +204,239 @@ pub const fn markup_icon_foreign_note() -> &'static str {
      — including when you change the colour — but pdfcer draws its own sticky-note symbol for \
      it, so it will not look the way it does in the program that made it."
 }
+
+// ===========================================================================
+// The stamp's label size — `Pass 292.0`, 2026-09-10
+// ===========================================================================
+
+/// The label on the stamp's label-size control.
+///
+/// # ★★ Why *"Text size"* and not *"Font size"*
+///
+/// The operator's own words, twice: *"still can't adjust the size of a stamp
+/// on the canvas, or by entering a different size in the properties box."* He
+/// is describing the words on the stamp getting bigger, not choosing a
+/// typeface's metrics — and pdfcer does not let him choose the face at all
+/// here (a stamp's label is Helvetica Bold, always). A control called *Font
+/// size* sitting where no font can be picked invites the next question, which
+/// is where the font control is, and the answer is that there is not one.
+#[must_use]
+pub const fn stamp_text_size_label() -> &'static str {
+    "Text size"
+}
+
+/// The unit suffix inside the stamp label-size spinner.
+///
+/// ★ A suffix rather than a second word, because a point size is a number an
+/// operator already reads with its unit attached, and the row lives in a
+/// narrow column shared with every other properties section.
+#[must_use]
+pub const fn stamp_text_size_suffix() -> &'static str {
+    " pt"
+}
+
+/// The label on the chooser for what happens when the resized label no longer
+/// fits the stamp's box.
+///
+/// ★ *"If it does not fit"* rather than *"Fit policy"*. The operator meets
+/// this control at the moment he has typed a larger number, so the words that
+/// help are the ones naming the situation he is about to be in — not the
+/// engine's term for the family of answers.
+#[must_use]
+pub const fn stamp_fit_label() -> &'static str {
+    "If it does not fit"
+}
+
+/// `StampFit::GrowToText`, for the chooser.
+///
+/// ★ *"Make the stamp wider"* names what the operator will SEE. The engine's
+/// own doc for this variant makes the same point from the other side — the
+/// drawn box becomes *"a position and a minimum size rather than a cage"* —
+/// and it is the default here for the reason that doc gives: a wider stamp is
+/// visible as itself and therefore cannot be quietly wrong (R8b rule 4).
+#[must_use]
+pub const fn stamp_fit_grow() -> &'static str {
+    "Make the stamp wider"
+}
+
+/// `StampFit::ShrinkToBox`, for the chooser.
+///
+/// ★★ It says *"shrink"* in the option itself, because this is the variant
+/// that changes the number the operator just typed. The disclosure after the
+/// fact ([`stamp_label_shrunk`]) says by how much; this says that it can
+/// happen at all, before he chooses it.
+#[must_use]
+pub const fn stamp_fit_shrink() -> &'static str {
+    "Shrink the words to fit"
+}
+
+/// `StampFit::ClipToBox`, for the chooser.
+///
+/// # ★★★ Why the option that hides characters is offered at all
+///
+/// Because it is the behaviour every build before `Pass 287.0` had, it is the
+/// one that produced the operator's original complaint, and — in the engine's
+/// own words — *"a behaviour that can only be obtained by accident is worse
+/// than one that can be requested"*. Somebody reproducing an existing
+/// document's appearance needs it.
+///
+/// ★ The wording carries the consequence rather than the mechanism. *"Cut the
+/// words off"* is what happens; *"clip to the bounding box"* is how. An
+/// operator who picks this one has been told what he is picking.
+#[must_use]
+pub const fn stamp_fit_clip() -> &'static str {
+    "Cut the words off at the edge"
+}
+
+/// **One policy, as the chooser lists it** — the dispatcher the two surfaces
+/// share.
+///
+/// # ★★★ Why a dispatcher and not three call sites picking their own string
+///
+/// Because there are **two** surfaces that ask this question — the placing
+/// dialog and the properties panel — and a policy labelled *"Make the stamp
+/// wider"* in one and *"Grow the box"* in the other is two policies as far as
+/// the operator is concerned. The shell would then own a private, diverging
+/// vocabulary for somebody else's enum, which is the same failure mode as a
+/// second reader of somebody else's format.
+///
+/// ⚠ `StampFit` is `#[non_exhaustive]`, so this cannot be an exhaustive
+/// `match` and the fallback matters. A fourth policy the engine adds and this
+/// build does not know gets [`stamp_fit_unknown`] — a sentence that says the
+/// build does not know it, rather than a plausible label invented from the
+/// variant's name. `crate::canvas::stampfit::FITS` is what a control iterates,
+/// so an unknown policy is never *offered*; this arm exists for the day one is
+/// *read back* from somewhere.
+#[must_use]
+pub const fn stamp_fit_option(fit: pdfcer_core::annot_author::StampFit) -> &'static str {
+    use pdfcer_core::annot_author::StampFit;
+    match fit {
+        StampFit::GrowToText => stamp_fit_grow(),
+        StampFit::ShrinkToBox => stamp_fit_shrink(),
+        StampFit::ClipToBox => stamp_fit_clip(),
+        _ => stamp_fit_unknown(),
+    }
+}
+
+/// A fit policy this build has no words for. See [`stamp_fit_option`].
+///
+/// ★ It names the situation rather than guessing: an operator who sees this
+/// is looking at a build older than the file or older than the engine it was
+/// linked against, and *"this build does not know"* is the only true thing
+/// that can be said about it.
+#[must_use]
+pub const fn stamp_fit_unknown() -> &'static str {
+    "A fit rule this build does not know"
+}
+
+/// ⚠ **Shown when the stamp's `/DA` is present and unreadable** —
+/// `StampSizeSource::DaUnreadable`.
+///
+/// # Why this is the one size source that owes a sentence
+///
+/// The three sources are not three degrees of confidence, and it is worth
+/// being exact about which one is anomalous:
+///
+/// | source | what it means | owed |
+/// |---|---|---|
+/// | `DeclaredInDa` | the author stated it | nothing — it is their number |
+/// | `RecoveredFromAppearance` | no `/DA` at all; read off the baked `Tf` | **nothing** |
+/// | `DaUnreadable` | a `/DA` is there and yields no size | this sentence |
+///
+/// ★★ The middle row is the one a shell gets wrong. It is tempting to warn
+/// that a recovered number is *"less certain"*, and it is not: the engine's
+/// own doc says it is *"not an anomaly and owes no warning — every stamp
+/// authored before `Pass 287.0` is in this state, and so is anything another
+/// producer wrote. The number is exactly what is on the page."* A warning
+/// there would fire on the majority of stamps in the world and teach the
+/// operator to ignore the one that matters.
+///
+/// ★ The last clause is the actionable half. The operator is about to
+/// overwrite a `/DA` string pdfcer could not parse, and that is a thing he is
+/// entitled to know **before** he presses, not after.
+#[must_use]
+pub const fn stamp_size_da_unreadable() -> &'static str {
+    "This stamp declares a text size that pdfcer cannot read, so the size shown was measured \
+     from the stamp's own picture instead. Setting a size here will replace what the file \
+     declares."
+}
+
+/// ★ **The stamp's label was drawn smaller than asked for** —
+/// `StampLabelFit::LabelShrunk`.
+///
+/// Off-canvas, in the status line: R8b rule 4's surviving half. The stamp
+/// itself renders exactly as a saved-and-reopened copy will render — nothing
+/// is tinted, badged or outlined — and the fact that a size was decided for
+/// the operator reaches him in words instead.
+///
+/// ★ Both numbers, because the size alone cannot answer the question the
+/// disclosure exists to answer. *"12 pt"* is the same sentence whether he
+/// asked for 12 and got it or asked for 24 and the box took half of it away;
+/// the pair is what makes it an inference report rather than a readout.
+#[must_use]
+pub fn stamp_label_shrunk(drawn: f64, requested: f64) -> String {
+    format!(
+        "The stamp's words were shrunk to {drawn:.0} pt to fit its box — you asked for \
+         {requested:.0} pt."
+    )
+}
+
+/// ⚠ **Characters the operator typed are not on the page** —
+/// `StampLabelFit::LabelClipped`.
+///
+/// The most serious of the four outcomes, and the only one where the file no
+/// longer shows something the operator wrote. It states the count, because
+/// *"some of the words"* is a sentence somebody can look at a stamp and
+/// disagree with.
+///
+/// ★ *"the words are centred, so the loss is split between both ends"* is not
+/// padding: the engine counts a character as hidden when its advance is not
+/// **entirely** inside the box, and the label is drawn centred. An operator
+/// counting the missing letters at the right-hand edge alone would otherwise
+/// make the number look wrong.
+#[must_use]
+pub fn stamp_label_clipped(hidden: usize) -> String {
+    format!(
+        "{hidden} character(s) of this stamp's words are cut off by its box — the words are \
+         centred, so the loss is split between both ends."
+    )
+}
+
+/// **The stamp's box was widened to hold the label** —
+/// `StampLabelFit::BoxGrown`.
+///
+/// ★★ Reported, but as the mildest of the three, and the engine says why:
+/// growing *"is disclosed by the canvas itself — the operator drew a rectangle
+/// and got a wider one, which is visible as itself and cannot be quietly
+/// wrong."* So this sentence is a courtesy rather than an obligation, and it
+/// exists because the operator who has just typed a number into a properties
+/// field is **not** watching the canvas — he is watching the field.
+#[must_use]
+pub fn stamp_label_box_grown(width: f64) -> String {
+    format!("The stamp was widened to {width:.0} pt so its words fit.")
+}
+
+/// ⚠ **The stamp's words were fitted in a way this build has no words for** —
+/// a `StampLabelFit` variant added to `pdfcer-core` after this build was
+/// linked.
+///
+/// # ★★★ Why an unknown inference gets a sentence rather than silence
+///
+/// Because the three named outcomes are disclosed, and an operator who has
+/// learnt that pdfcer says when it changed something will read silence as
+/// *nothing changed*. `StampLabelFit` is `#[non_exhaustive]` precisely so the
+/// engine can add a fourth, and `is_inference()` already answers `true` for
+/// it — so the fact that a decision was made is known, and only its shape is
+/// not.
+///
+/// ⇒ Say the known half and name the unknown half as unknown. A sentence that
+/// says *"pdfcer changed this and this build cannot say how"* sends the
+/// operator to look at the stamp; a silence sends them nowhere. This is the
+/// same posture `stamp_fit_unknown` takes one file along, and both are
+/// tripwires: seeing either in the wild means the pin has moved past this
+/// shell's vocabulary and the three sentences above owe a fourth.
+#[must_use]
+pub const fn stamp_label_fit_unknown() -> &'static str {
+    "pdfcer had to adjust this stamp's words to fit its box, in a way this version cannot \
+     describe. Check the stamp."
+}

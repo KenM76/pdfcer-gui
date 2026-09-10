@@ -80,7 +80,85 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
-## O173 — ◑ **BUILT 2026-09-10, NOT YET DRIVEN** — "we should have an easy way to make pdfce-gui our default opener for pdfs. Ask once with a don't show me again check box option. Then it should be in the top of our settings as a button to execute the changeover." <!-- old-name-exempt: HIS words, quoted verbatim. He typed `pdfce-gui`; correcting an operator's own sentence inside the row that records it would stop the row being a quotation. -->
+## O174 — ◑ **MEASURED AND FIXED 2026-09-10, NOT YET DRIVEN BY A CHECK** — "this pdf `A-591.pdf` causes problems zooming past about 1600% - the view appears to jump to another location and when I pan back to where something is visible it appears to be distorted."
+
+**Your words, 2026-09-10**, with the path elided to the filename. The file is
+`C:\Users\Ken\OneDrive\pdfTests\A-591.pdf` and it is **yours**, not a fixture
+this repository generated — which is the first thing that matters about this
+row.
+
+### What you described, taken apart
+
+Two symptoms, and they are almost certainly not one defect:
+
+1. **The view jumps to another location** past roughly 1600 %. A zoom that moves
+   the page is a *scroll offset* fault: the point under the cursor is supposed to
+   stay under the cursor, and something in that arithmetic stops holding at a
+   magnitude.
+2. **What is visible is distorted** once you pan back. Distortion is a
+   *rasterisation* fault, not a scroll one. A page drawn at the wrong scale, on a
+   tile sized for a different one, or through a transform that has lost
+   precision, comes out stretched or smeared — and it would look exactly like
+   this whether or not the view had jumped.
+
+★★★ **They are filed as one row because you saw them together, and separated in
+the analysis because they fail in different places.** This project has a standing
+lesson about exactly this shape — *"and at other junctions too" is the
+load-bearing clause* — from the day one reported symptom at one zoom turned out
+to be seven distinct causes. Nothing here may be called closed because the first
+of the two reproduces and gets fixed.
+
+### "about 1600%" is a report, not a threshold
+
+Your sentence names a magnitude you noticed, not a number the code contains. The
+standing lesson is to **measure the boundary you name** rather than adopt it:
+walk the zoom series either side of it and find where the behaviour actually
+changes, because two samples either side of a transition look exactly like no
+transition. If the real edge is 1024 % or 2048 % that is a much louder finding
+than 1600 %, because those are the shapes of a texture-dimension or a fixed-point
+limit.
+
+### Status
+
+**MEASURED AND FIXED 2026-09-10.** Both halves of your sentence, one cause.
+
+**The boundary is not 1600 %, it is ~1340 %, and it is a code constant.** Above a
+whole-page raster of 16,382 pixels on its longest side the shell stops
+rasterising the whole sheet and rasterises only the window you are looking at.
+For `A-591.pdf` that changeover lands at about 13.4× — which at your display
+scale is the "about 1600 %" you saw. Below it nothing was ever wrong; above it
+everything was, on that file and on every other turned sheet.
+
+**The cause: the window rectangle was handed to the engine in the wrong space.**
+The engine wants the rectangle in PDF user space — y counted **up** from the
+bottom-left of the *un-rotated* page. The shell was handing it canvas space — y
+counted **down**, on the page as you see it after rotation. For an upright page
+sitting at the origin those two are the same rectangle, which is why every
+fixture in this repository passed for the whole life of the feature. `A-591.pdf`
+is `/Rotate 270`. On a turned page the two spaces disagree by a quarter turn plus
+a flip: the engine was asked for a rectangle somewhere else on the sheet
+(**the jump**) with its width and height swapped (**the distortion**). One
+mistake, both symptoms, exactly as the analysis above predicted they would be two.
+
+★ **The same one-flip mistake was in the harness too**, independently — so the
+instrument that should have caught it agreed with the defect. Both sides now
+carry the full four-quadrant conversion table, deliberately written twice rather
+than shared, so the two can disagree.
+
+### What is still open on this row
+
+- **A driven check.** The fix is measured by a zoom gallery on your own file, not
+  yet by a check that runs in the suite. That needs a *dense* `/Rotate 90/180/270`
+  fixture; this repository has no rotated fixture with enough ink on it to
+  photograph.
+- **A blank canvas can now prove itself innocent.** The gallery used to report
+  "the canvas is blank" and could not say whether the *document* was blank there.
+  The renderer now records whether the raster contained any ink at all, so at
+  547,647 % on your sheet the harness says "and so is the raster — that is a
+  statement about the document at this magnification" instead of accusing the
+  shell. Falsified by forcing the opposite answer and watching the verdict flip.
+
+## O173 — ◑ **BUILT AND DRIVEN 2026-09-10** — "we should have an easy way to make pdfce-gui our default opener for pdfs. Ask once with a don't show me again check box option. Then it should be in the top of our settings as a button to execute the changeover." <!-- old-name-exempt: HIS words, quoted verbatim. He typed `pdfce-gui`; correcting an operator's own sentence inside the row that records it would stop the row being a quotation. -->
 
 **Your words, 2026-09-10.** Two surfaces for one act, and you specified both,
 which is the shape every application that does this well uses:
@@ -173,6 +251,15 @@ thing allowed to say pdfcer is the default is a live reading of Windows'
   available"* — and a check that could see one of the two would have reported the
   row as reachable on a build where half of it had been clipped away.
 
+### ✅ Driven 2026-09-10
+
+**The offer opens once and then stops asking.** Driven on the real binary from a
+fresh profile: the window appeared, all four of its regions — the action button,
+*Not now*, the checkbox and the answer row — were declared inside their own clip
+rects, the decline answer reached the profile's preferences file, and the second
+launch did not ask again. The *"ask once"* half of your sentence is now an
+assertion rather than an intention.
+
 ---
 
 ## O172 — ◑ **FILED 2026-09-10** — "We also need to make it easy to add our own custom stamps and use them, preferrably exactly the same way acrobat does."
@@ -195,7 +282,7 @@ stamps you made yourself".
 
 ---
 
-## O171 — ◑ **BUILT 2026-09-10, NOT YET DRIVEN** — "After I place the first stamp and go to make a second one the window for the options pops up but is undersized so I can't see the add or cancel button. Those buttons should always be available, and if there isn't size for all the features they get scrolled in their own space."
+## O171 — ◑ **BUILT AND DRIVEN 2026-09-10** — "After I place the first stamp and go to make a second one the window for the options pops up but is undersized so I can't see the add or cancel button. Those buttons should always be available, and if there isn't size for all the features they get scrolled in their own space."
 
 **Your words, 2026-09-10.** A defect and a standing rule, and the rule is the
 larger half.
@@ -260,8 +347,21 @@ failed on the FIRST opening; whatever is wrong here is NOT the fit state carried
 between openings"* — so a failure there can never be mistaken for this defect
 recurring, and points at a different module.
 
-⬜ It has not been run. The machine was yours. It is the first thing the next
-session with the desktop drives.
+### ✅ Driven 2026-09-10 — and the first run accused the wrong thing
+
+**Both stamp dialogs have Add and Cancel on the screen.** Measured, on the real
+binary, by placing a stamp and then placing a second one 300 pt away and reading
+what each window declared. Your report is answered by measurement, not by reading
+the layout code.
+
+★ **Its first driven run FAILED, and the defect was in the check.** It clicked
+`Markup ▸ Stamp` before each placement to be sure the tool was armed — but that
+ribbon item is a **toggle**, and the stamp tool is already sticky across a
+placement, so the second click put the tool *down*. The check then reported that
+the second dialog never opened. Its own failure message offered two hypotheses
+and the truth was a third one it had ruled out by construction. It now reads the
+armed tool's state before acting, and a driven failure is now understood here as
+a claim about the check as much as about the build.
 
 ---
 

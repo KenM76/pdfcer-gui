@@ -97,6 +97,30 @@ pub struct Vocabulary {
     /// experiment that would settle it. `None` means "treated as zero", which
     /// is correct for an unscrolled view either way.
     pub canvas_scroll_field: Option<&'static str>,
+    /// Fields on it holding the acting page's **frame** — its crop box in PDF
+    /// user space (`llx,lly,urx,ury`) and its effective `/Rotate` in degrees.
+    ///
+    /// # ★★★ Why these are optional, and why they matter more than they look
+    ///
+    /// `None` means "this build does not trace its page frame", and the mapping
+    /// then falls back to the historical arithmetic: treat a document point as
+    /// canvas-relative and flip y once against the page height. That fallback
+    /// is **correct only for an upright page whose crop origin is (0, 0)**.
+    ///
+    /// It shipped that way, and on 2026-09-10 it was measured wrong on the
+    /// operator's `A-591.pdf`, a `/Rotate 270` sheet: every `--doc-point` aimed
+    /// at the wrong place, and the bounds check refused the right-hand third of
+    /// the canvas because it believed a 1224 pt-wide canvas was a 792 pt-wide
+    /// page. The harness was making the *same* mistake the renderer was making
+    /// in defect O174 — a single `height - y` where a rotation belonged.
+    ///
+    /// The legacy binary cannot emit these, which is why they are `Option` and
+    /// not a hard requirement: a profile that demanded them would turn every
+    /// legacy check into a SKIP, and a SKIP is not red.
+    pub canvas_crop_field: Option<&'static str>,
+    /// See [`Self::canvas_crop_field`] — the two are read together or not at
+    /// all.
+    pub canvas_rotate_field: Option<&'static str>,
     /// Field on it holding the current selection size.
     pub canvas_selection_field: &'static str,
     /// The event emitted when a click is resolved against the page.
@@ -165,6 +189,8 @@ impl Vocabulary {
             canvas_rect_field: "rect",
             canvas_zoom_field: "zoom",
             canvas_scroll_field: None,
+            canvas_crop_field: Some("crop"),
+            canvas_rotate_field: Some("rot"),
             canvas_selection_field: "sel",
             click_event: "vector-click",
             click_hits_field: "hits",
@@ -208,6 +234,8 @@ impl Vocabulary {
             canvas_rect_field: "rect",
             canvas_zoom_field: "zoom",
             canvas_scroll_field: None,
+            canvas_crop_field: None,
+            canvas_rotate_field: None,
             canvas_selection_field: "sel",
             click_event: "vector-click",
             click_hits_field: "hits",

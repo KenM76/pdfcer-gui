@@ -858,6 +858,12 @@ pub mod stamp_collection;
 /// the operator's report was about a window whose FIRST opening was fine.
 pub mod stamp_dialog_reopen;
 pub mod stamp_size;
+/// ★★★ **The OTHER half of the same report** — a stamp already on the page
+/// is given a new label size by typing into the properties panel. `stamp_size`
+/// closes the placing dialog's chooser; this closes *"or by entering a
+/// different size in the properties box"*, which no dialog can be opened for
+/// once the stamp exists.
+pub mod stamp_size_properties;
 pub mod text_annot;
 pub mod text_annot_focus;
 /// ★ The operator's own report, driven: Edit text on a REAL CAD sheet, aimed at a

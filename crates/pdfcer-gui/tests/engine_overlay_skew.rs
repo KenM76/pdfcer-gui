@@ -430,6 +430,15 @@ fn a_foreign_icon_name_survives_a_colour_only_restyle() {
             &pdfcer_core::edit::TextAnnotStyle {
                 icon: None,
                 color: Some(pdfcer_core::annot_author::Color::Rgb(0.0, 1.0, 0.0)),
+                // Both added by `Pass 292.0` and both `None` HERE for the same
+                // reason `icon` is: this check exists to prove that a
+                // colour-only restyle touches nothing else, so every other
+                // field must say "leave it alone". Spelt out rather than
+                // reached through `..Default::default()` so that the next
+                // field the engine adds breaks this file and gets read about,
+                // instead of being silently declined.
+                font_size: None,
+                stamp_fit: None,
             },
         )
         .expect("a sticky note restyles");

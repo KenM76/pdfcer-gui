@@ -854,9 +854,22 @@ impl RenderWorker {
                     Outcome::Cancelled => "cancelled",
                     Outcome::Failed(_) => "failed",
                 };
+                // ★ How much ink the raster actually carries. See
+                // [`sampled_tone_count`] for why this is on the line at all;
+                // `-1` means "not applicable", i.e. there is no pixmap because
+                // the render was cancelled or failed.
+                let ink = match &outcome {
+                    Outcome::Done(pixels) => {
+                        i32::from(super::ink::sampled_tone_count(&pixels.pixmap))
+                    }
+                    Outcome::Cancelled | Outcome::Failed(_) => -1,
+                };
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
                 crate::diag::trace(|| {
-                    format!("render-async-done gen={generation} ms={elapsed_ms} outcome={kind}")
+                    format!(
+                        "render-async-done gen={generation} ms={elapsed_ms} outcome={kind} \
+                         ink={ink}"
+                    )
                 });
                 Self::outcome_to_result(outcome)
             }

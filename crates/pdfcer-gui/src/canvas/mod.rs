@@ -416,6 +416,11 @@ pub mod snap;
 // Which page the frame is about, in what order the rest should be drawn, and
 // where a navigated-to page lands. The canvas's half of Phase 4's strip.
 mod backdrop;
+/// The operator's standing answer to *"what happens when a stamp's words do
+/// not fit its box?"* — one preference, shared by the placing dialog and the
+/// properties panel, because nothing in the file records an author's fit
+/// intent and a per-stamp control would be showing a value it invented.
+pub mod stampfit;
 pub mod strip;
 pub mod target;
 // Selecting TEXT on the page, and copying it: the mode gate that needs no

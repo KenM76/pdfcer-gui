@@ -32,6 +32,11 @@ use super::apply::vector_edit;
 use crate::app::prefs::Prefs;
 use crate::app::state::OpenDoc;
 use crate::canvas::textannot::TextAnnotKind;
+// The stamp-fit sentences, shared verbatim with the properties panel's
+// restyle route: one act described in one place, so the two surfaces
+// cannot drift into wording the operator has to reconcile.
+use crate::text::panels::textannotstyle as ts;
+use pdfcer_core::annot_author::StampLabelFit;
 
 /// **Author a text-bearing annotation** — a sticky note, a text box or a stamp
 /// — signed, dated, and at the pen's opacity.
@@ -85,6 +90,121 @@ pub(super) struct Placement {
     /// they do not belong to, and both are unconditional rather than
     /// `Option`al because a chooser always has a selection.
     pub icon: pdfcer_core::annot_author::StickyIcon,
+}
+
+/// **What the placing act tells the operator afterwards** — the surviving half
+/// of R8b rule 4, read off `TextAnnotOutcome` (`pdfcer-core` `Pass 291.0`).
+///
+/// # ★★★ What is said, what is deliberately NOT, and why the silences are the argued half
+///
+/// Rule 4 has two clauses that pull in opposite directions and only one of
+/// them is about drawing. The forbidden half — no badge, no tint, no dashed
+/// outline, nothing that would make a screenshot of the editing canvas differ
+/// from a screenshot of the same file saved and reopened — is honoured here by
+/// construction: this function returns `String`s and touches no painter. The
+/// owed half is *"an inference the operator cannot see still gets a sentence,
+/// off-canvas"*, and that is what this decides, outcome by outcome.
+///
+/// # The three fields, and what each one is worth saying
+///
+/// | field | said? | why |
+/// |---|---|---|
+/// | `unencodable_chars` | **yes**, when non-zero | the `?` is visible; *that pdfcer put it there* is not |
+/// | `stamp_label_fit` = `LabelShrunk` / `LabelClipped` | **yes** | the operator cannot tell a label drawn small from one they asked for small |
+/// | `stamp_label_fit` = `BoxGrown` | **no** | a wider stamp is visible as itself, and the dialog said so before the drag |
+/// | `stamp_label_fit` = `AsRequested` | **no** | nothing was decided for anyone |
+/// | `applied_autosize` | **no** | always `None` here; see below |
+///
+/// ★★★ **`BoxGrown` is the interesting silence, and it is argued rather than
+/// overlooked.** It is an inference — pdfcer chose a rectangle the operator
+/// did not drag — so the reflex is to disclose it. Two things say not to. The
+/// stamp is *visibly* wider than the box that was dragged, which is the test
+/// rule 4 states: a screenshot of this canvas matches a screenshot of the
+/// saved file, and the difference from the drag is on the screen in front of
+/// them. And `text::textannot::stamp_size_bound` already tells them, in the
+/// dialog, **before** they commit — so a sentence afterwards would be pdfcer
+/// telling the operator a thing it had just told them, which is the exact
+/// failure mode that teaches somebody to stop reading the status line. The
+/// nagging in the old GUI is on the record as having cost real visibility
+/// bugs; this is where that lesson is spent.
+///
+/// ★★ **The restyle route rules the opposite way on the same variant, and both
+/// are right.** [`crate::app::actions::annots::set_text_annot_style`] does
+/// disclose `BoxGrown`, because there the rectangle is **existing content
+/// pdfcer changed** rather than a request in progress — a stamp that has sat
+/// on the page for months, at a size the operator chose, whose right edge
+/// moves because they typed a number into a properties field. Nothing
+/// forewarned them, and nothing about the act said "and the box will grow".
+/// ⇒ The question is never *"can they see it?"* — they can see it on both
+/// routes — but *"did they author it, in the act they just performed?"* That
+/// module's own comment carries the long form.
+///
+/// ⚠ **`LabelShrunk` and `LabelClipped` are unreachable from this route
+/// today**, because the placing dialog offers no fit policy and every
+/// `StampSize` variant carries the engine's default `GrowToText`. They are
+/// handled anyway, and that is deliberate: the day a fit control appears on
+/// this dialog — or the day the engine changes which policy `StampStyle`
+/// defaults to — the disclosure must already be here, or the feature ships
+/// silent. A branch that is currently dead is cheaper than a rule 4 breach
+/// that is currently invisible.
+///
+/// ★ `StampLabelFit` is `#[non_exhaustive]`. A fourth outcome this build has
+/// no words for still answers `is_inference()` and lands on the `_` arm, which
+/// says something true and vague rather than nothing at all. Silence there
+/// would be the worst of the three options: an inference that happened,
+/// reported as though it had not.
+///
+/// ★★ `applied_autosize` is not read, and the engine says why in as many
+/// words: it is the **variable-text** auto-size, `None` whenever `/DA` names
+/// an explicit size, and a stamp's fitted size is always written as an
+/// explicit size. It is `None` on every stamp, always — which is the measured
+/// fact that produced `Pass 291.0` in the first place. A `/FreeText` this
+/// shell authors never asks for `0 Tf`, so it is `None` there too. Reading it
+/// would be a field that can only ever say nothing.
+/// ★★★ **Takes the two facts rather than the `TextAnnotOutcome` that carries
+/// them, and that is about being testable at all.**
+///
+/// `TextAnnotOutcome` is `#[non_exhaustive]`, so no code outside `pdfcer-core`
+/// can build one — which would make every assertion below reachable only by
+/// opening a document, authoring a real annotation and hoping the engine
+/// produced the outcome the case needs. That is a test of the engine wearing a
+/// test of this function's rules, and the rules are where the operator-visible
+/// decisions live. `StampLabelFit`'s variants **are** constructible, so passing
+/// the field lets each silence be asserted directly, including the ones that
+/// are unreachable from today's placing dialog.
+///
+/// ★ The caller therefore does the unwrapping, in one place, in sight of the
+/// engine call. That is the seam this project already uses for the same reason
+/// elsewhere: the impure read stays where the session is, the decision stays
+/// pure.
+fn disclosures(unencodable_chars: usize, fit: Option<&StampLabelFit>) -> Vec<String> {
+    let mut said = Vec::new();
+    if let Some(line) = crate::text::textannot::placed_unencodable(unencodable_chars) {
+        said.push(line);
+    }
+    // ★★ `is_inference()` first, which is the ENGINE's question rather than a
+    // re-derivation of it, and then the match narrows to the two outcomes a
+    // screenshot cannot show. Written as a guard plus a match rather than as
+    // one match with three silent arms, so that a new variant added upstream
+    // falls into `_` *inside* the inference branch and is spoken about,
+    // instead of being swallowed by an `AsRequested`-shaped catch-all.
+    if let Some(fit) = fit
+        && fit.is_inference()
+    {
+        match fit {
+            StampLabelFit::LabelShrunk { size, requested } => {
+                said.push(ts::stamp_label_shrunk(*size, *requested));
+            }
+            StampLabelFit::LabelClipped { hidden_chars, .. } => {
+                said.push(ts::stamp_label_clipped(*hidden_chars));
+            }
+            // Silent, and argued in this function's header: visible as itself,
+            // and forewarned in the dialog before the drag was committed.
+            StampLabelFit::BoxGrown { .. } => {}
+            _ => said.push(ts::stamp_label_fit_unknown().to_owned()),
+        }
+    }
+    said
 }
 
 pub(super) fn commit(
@@ -263,7 +383,31 @@ pub(super) fn commit(
             format!("text-annot-page-rotate page={page} rotate={rotate} turn={upright_turn:?}")
         });
         vector_edit(doc, "add-text-annot", page, 1, |session| {
-            let id = session.add_text_annotation_with(page, &spec, &options)?;
+            // ★★★ **`_reporting`, not `_with`, and the difference is three
+            // disclosures this route dropped on the floor until 2026-09-10.**
+            //
+            // The three entry points do identical work, take identical
+            // guards and leave one identical undo entry; they differ only in
+            // what they hand back. `add_text_annotation_with` returns the new
+            // object's id, which is the shape forty call sites in the engine
+            // use, and it is the shape this shell reached for because it was
+            // the one named in the example. `add_text_annotation_reporting`
+            // returns a `TextAnnotOutcome`, and the engine's own doc says
+            // what only this route can tell you.
+            //
+            // ⚠ It is the same class of mistake as taking
+            // `..Default::default()` on a struct that grew a field: nothing
+            // fails, nothing warns, and a capability is declined on the
+            // operator's behalf without a word appearing anywhere. There is
+            // no compiler between `_with` and `_reporting` — both compile,
+            // both author the same annotation, and only one of them can say
+            // what it did.
+            //
+            // ★ Costs nothing. `_with` is literally
+            // `_reporting(...).map(|o| o.annot_id)`, so this is the same call
+            // with the discard removed.
+            let out = session.add_text_annotation_reporting(page, &spec, &options)?;
+            let id = out.annot_id;
             if let Some(deg) = upright_turn {
                 let pivot = ((rect.llx + rect.urx) / 2.0, (rect.lly + rect.ury) / 2.0);
                 let turned = session.set_annotation_rotation(id, pivot, deg)?;
@@ -275,7 +419,10 @@ pub(super) fn commit(
                     )
                 });
             }
-            Ok::<Vec<String>, pdfcer_core::edit::EditError>(Vec::new())
+            Ok::<Vec<String>, pdfcer_core::edit::EditError>(disclosures(
+                out.unencodable_chars,
+                out.stamp_label_fit.as_ref(),
+            ))
         });
     } else {
         crate::diag::trace(|| {
@@ -441,5 +588,220 @@ mod tests {
                 && ((stretched.ury - stretched.lly) - (after.ury - after.lly)).abs() < 0.5,
             "a non-proportional resize of a stamp must land too: {after:?} -> {stretched:?}"
         );
+    }
+
+    /// ★★★ **The operator's own sentence, asked twice, and the half that
+    /// was still open on 2026-09-10:** *"still can't adjust the size of a stamp
+    /// on the canvas, or by entering a different size in the properties box."*
+    ///
+    /// The first half of that sentence — the canvas grips — was answered on
+    /// 2026-09-09 by [`super::super::annots::resize`], and the test below this
+    /// one asserts it. **The second half was not**, and the reason was a real
+    /// gap rather than an oversight: until `pdfcer-core` `Pass 292.0` a stamp
+    /// already on the page had a label size that could be neither read nor
+    /// written. There was no verb to call.
+    ///
+    /// ★★ This test drives BOTH new verbs against a real document and asserts
+    /// they agree with each other, which is the property a panel depends on
+    /// and neither verb can guarantee alone. `set_text_annot_style` writing
+    /// `/DA` is worth nothing if `stamp_label_parameters` reads a different
+    /// number back — the properties spinner would then be seeded with a value
+    /// the operator did not type, on the very next frame, and would look like
+    /// the edit had failed.
+    ///
+    /// ⚠ Deliberately NOT a test of the widget. It asserts the round trip the
+    /// widget sits on top of; whether a `DragValue` commits on `drag_stopped`
+    /// is a driven-check question and this project's founding rule says a
+    /// passing unit test is not a report of working software. That check is
+    /// owed and is recorded as owed.
+    #[test]
+    fn a_stamp_already_on_the_page_takes_a_new_label_size_and_reads_it_back() {
+        let mut doc = open_local_fixture("four-pages.pdf");
+        let (id, _) = place_stamp(
+            &mut doc,
+            Rect {
+                llx: 100.0,
+                lly: 400.0,
+                urx: 260.0,
+                ury: 450.0,
+            },
+        );
+
+        // ★★ The size the stamp starts at is DERIVED, not stated — the
+        // gallery's default is `FitTheBox` — so this is the shape of stamp
+        // every build before `Pass 287.0` produced and the majority of the
+        // stamps on the operator's drawings. Starting from a stated size would
+        // have tested the easy case.
+        let before = doc
+            .session
+            .stamp_label_parameters(id)
+            .expect("a stamp reports its label parameters")
+            .expect("this stamp's appearance paints words");
+        assert_eq!(before.label, "APPROVED");
+        assert!(
+            before.size > 0.0,
+            "a size read off a baked appearance is still a size: {before:?}"
+        );
+
+        // ★★ Through the SHELL's function, not the engine's, so the undo
+        // entry, the epoch bump and the texture drop are exercised with it.
+        // `doc.session` is an `Arc` and cannot be borrowed mutably here at
+        // all, which is the type system enforcing the same thing: every write
+        // goes through the funnel.
+        super::super::annots::set_text_annot_style(
+            &mut doc,
+            id,
+            &pdfcer_core::edit::TextAnnotStyle {
+                font_size: Some(30.0),
+                stamp_fit: Some(pdfcer_core::annot_author::StampFit::GrowToText),
+                color: None,
+                icon: None,
+            },
+        );
+
+        let after = doc
+            .session
+            .stamp_label_parameters(id)
+            .expect("still readable")
+            .expect("still painting words");
+        assert!(
+            (after.size - 30.0).abs() < 0.01,
+            "the size he typed must be the size the file states, or the spinner reseeds itself \
+             with a number he did not choose: asked 30, read {}",
+            after.size
+        );
+        assert_eq!(
+            after.label, "APPROVED",
+            "and the WORDS must survive a size change untouched — a restyle that replaced the \
+             label is the defect this shell already shipped once"
+        );
+    }
+
+    /// ★★★ **What the placing act says, and — the harder half — what it deliberately does not.**
+    ///
+    /// Every one of these is a **silence** or a **sentence**, and the silences
+    /// are the ones worth asserting: a sentence that goes missing is noticed
+    /// the first time somebody uses the feature, while a sentence that appears
+    /// where the header argued for silence is nagging — the failure mode the
+    /// old GUI is on the record for, and the one that costs real visibility
+    /// bugs rather than a shrug.
+    mod placing_disclosures {
+        use super::super::disclosures;
+        use pdfcer_core::annot_author::StampLabelFit;
+
+        /// The ordinary case says nothing at all.
+        #[test]
+        fn a_stamp_that_fitted_as_asked_is_not_talked_about() {
+            let said = disclosures(0, Some(&StampLabelFit::AsRequested { size: 18.0 }));
+            assert!(
+                said.is_empty(),
+                "reporting a label that fitted at the size the operator chose is reporting their \
+                 own instruction back at them, and it teaches them to stop reading the line: \
+                 {said:?}"
+            );
+        }
+
+        /// ★★★ **The argued silence, and it is asserted rather than left to the comment above it.**
+        ///
+        /// `BoxGrown` answers `is_inference() == true`, so the reflex reading of
+        /// R8b rule 4 says disclose it. The header argues the opposite on two
+        /// grounds — it is visible on the canvas as itself, and the dialog said
+        /// it would happen before the drag was committed — and an argument in a
+        /// comment is one an editor can delete by agreeing with the reflex. This
+        /// is the argument in a form that goes red.
+        #[test]
+        fn a_grown_box_is_silent_because_it_is_visible_and_was_forewarned() {
+            let grown = StampLabelFit::BoxGrown {
+                size: 24.0,
+                width: 180.0,
+            };
+            assert!(
+                grown.is_inference(),
+                "the engine calls a grown box an inference, and this test's whole point is that \
+                 this shell stays silent about one anyway — if that stops being true the silence \
+                 below is no longer a decision, it is an accident"
+            );
+            let said = disclosures(0, Some(&grown));
+            assert!(
+                said.is_empty(),
+                "a stamp the operator can SEE is wider than the box they dragged, having been \
+                 told in the dialog that it would be, does not also get a sentence afterwards: \
+                 {said:?}"
+            );
+        }
+
+        /// The two a screenshot cannot show DO get a sentence.
+        #[test]
+        fn a_shrunk_or_clipped_label_is_always_disclosed() {
+            let shrunk = disclosures(
+                0,
+                Some(&StampLabelFit::LabelShrunk {
+                    size: 9.0,
+                    requested: 24.0,
+                }),
+            );
+            assert_eq!(shrunk.len(), 1, "one sentence, not none and not two");
+            assert!(
+                shrunk[0].contains('9') && shrunk[0].contains("24"),
+                "the sentence has to carry BOTH numbers — the size drawn and the size asked for \
+                 — because the operator cannot tell them apart by looking: {shrunk:?}"
+            );
+
+            let clipped = disclosures(
+                0,
+                Some(&StampLabelFit::LabelClipped {
+                    size: 24.0,
+                    hidden_chars: 3,
+                    overflow: 40.0,
+                }),
+            );
+            assert_eq!(clipped.len(), 1);
+            assert!(
+                clipped[0].contains('3'),
+                "the count is the whole value of the sentence: {clipped:?}"
+            );
+        }
+
+        /// ★★ **The gap this pass found**, and the reason it existed: the placing
+        /// path called the entry point that returns an id and drops the outcome, so
+        /// an annotation was substituted in silence while a form field with the same
+        /// character had said so for months.
+        #[test]
+        fn an_unencodable_character_is_named_even_though_the_question_mark_is_visible() {
+            let said = disclosures(2, None);
+            assert_eq!(
+                said.len(),
+                1,
+                "a `?` pdfcer substituted looks exactly like a `?` the operator typed, and only \
+                 one of those is worth investigating: {said:?}"
+            );
+            assert!(
+                said[0].contains('2'),
+                "the count says how much of the mark to check: {said:?}"
+            );
+            assert!(
+                disclosures(0, None).is_empty(),
+                "and nothing is said when nothing was substituted"
+            );
+        }
+
+        /// ★ Two facts, two sentences — not one summary.
+        #[test]
+        fn the_two_kinds_of_disclosure_are_independent() {
+            let said = disclosures(
+                1,
+                Some(&StampLabelFit::LabelShrunk {
+                    size: 8.0,
+                    requested: 36.0,
+                }),
+            );
+            assert_eq!(
+                said.len(),
+                2,
+                "a substitution and a shrink are two separate facts about one mark, and a shell \
+                 that reported only the first would leave the operator believing the size they \
+                 typed is the size on the page: {said:?}"
+            );
+        }
     }
 }

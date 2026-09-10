@@ -1,7 +1,7 @@
 //! # `text::assoc` — every word O173 puts on screen
 //!
 //! `OPERATOR_REQUESTS.md` **O173**: *"we should have an easy way to make
-//! pdfce-gui our default opener for pdfs. Ask once with a don't show me again
+//! pdfce-gui our default opener for pdfs. Ask once with a don't show me again (old-name-exempt: HIS words, quoted verbatim from O173 — correcting an operator's own sentence would stop this being a quotation)
 //! check box option. Then it should be in the top of our settings as a button
 //! to execute the changeover."*
 //!

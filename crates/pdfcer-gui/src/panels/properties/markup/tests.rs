@@ -733,3 +733,54 @@ fn an_unmodelled_icon_name_is_carried_and_disclosed_and_a_modelled_one_is_not() 
     );
     assert_eq!(absent.icon, Some(StickyIcon::Note));
 }
+
+/// ★★ **The three sources are three distinct words, and none of them is the
+/// tripwire word.**
+///
+/// `super::textannot::source_token` is the vocabulary a driven check matches on
+/// when it asks *"where did the size in the properties box come from?"*, and
+/// nothing else in the repository holds it to anything. Two variants that
+/// collapsed to one token would make a check that distinguishes them pass on a
+/// build that cannot; and any of them returning `unknown` would fire the
+/// `#[non_exhaustive]` tripwire on a build where nothing had drifted, which is
+/// worse — a tripwire that cries on every run is a tripwire nobody reads.
+///
+/// ⚠ The `_` arm is deliberately NOT exercised here. It is reachable only from
+/// a variant this build does not know about, so a test that reached it would
+/// have to fabricate one, and what it would prove is that `match` works.
+#[test]
+fn every_label_size_source_is_named_distinctly() {
+    use super::textannot::source_token;
+    use pdfcer_core::annot::StampSizeSource;
+
+    let all = [
+        StampSizeSource::DeclaredInDa,
+        StampSizeSource::RecoveredFromAppearance,
+        StampSizeSource::DaUnreadable,
+    ];
+    let tokens: Vec<&str> = all.iter().copied().map(source_token).collect();
+
+    for token in &tokens {
+        assert_ne!(
+            *token, "unknown",
+            "a variant this build names must not answer with the tripwire word: seeing \
+             `source=unknown` in a driven run is supposed to mean the engine grew a fourth \
+             answer, and a known variant answering it makes that signal useless"
+        );
+        assert!(
+            !token.contains(' ') && !token.contains('='),
+            "`{token}` is written into a `key=value` trace line, so a space or an equals sign \
+             in it silently breaks whatever parses that line"
+        );
+    }
+
+    let mut sorted = tokens.clone();
+    sorted.sort_unstable();
+    sorted.dedup();
+    assert_eq!(
+        sorted.len(),
+        tokens.len(),
+        "two sources sharing a token would make `source=` unable to answer the question it \
+         exists for: {tokens:?}"
+    );
+}

@@ -690,9 +690,32 @@ impl Current {
             .then(|| text_spec_from_dict(&graph, dict).ok())
             .flatten();
 
+        // ★★★ **The stamp's label parameters, and the ONE call that needs the
+        // session rather than the spec** (`pdfcer-core` `Pass 292.0`).
+        //
+        // A stamp's label size is not in `TextAnnotSpec` and cannot be — it is
+        // recovered by parsing the annotation's `/AP` `/N` content stream for
+        // its `Tf`, or by reading `/DA` when one is present. So it needs the
+        // object graph *and* the R45 staging buffer behind it, which is why
+        // this is the session method and not `annot::stamp_label_parameters_in`
+        // with a `StreamSource::Contiguous(doc.bytes())`: a stamp authored this
+        // session has its appearance staged, not on disk, and the contiguous
+        // form would answer `None` for exactly the stamp the operator just
+        // placed and is now looking at.
+        //
+        // ★ `.ok().flatten()` collapses two different `None`s that mean the
+        // same thing HERE and nothing else: `Err(AnnotationNotFound)` — the id
+        // is not an annotation on any page of this session — and `Ok(None)`,
+        // which is the engine's honest answer for a stamp whose appearance
+        // shows no text (Acrobat's custom stamps are artwork). Both produce an
+        // absent size row, which is the correct outcome for both, and the panel
+        // has nothing different to say about them.
+        let stamp_label = doc.session.stamp_label_parameters(id).ok().flatten();
+
         Self::from_spec(
             markup.as_ref(),
-            text.as_ref().map(textannot::Reading::of),
+            text.as_ref()
+                .map(|spec| textannot::Reading::of(spec).map(|r| r.with_stamp_label(stamp_label))),
             support,
             alpha,
             dash,

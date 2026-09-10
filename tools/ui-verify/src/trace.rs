@@ -136,6 +136,24 @@ impl TraceLine {
         Some(crate::geom::Pt::new(x, y))
     }
 
+    /// A field parsed as a comma-separated list of floats: `1.5,2,3,4`.
+    ///
+    /// # ★ Why a list accessor exists at all
+    ///
+    /// Added 2026-09-10 for the canvas line's `crop=llx,lly,urx,ury`. The
+    /// alternative — four fields `cropx0=`, `cropy0=`, … — was rejected because
+    /// the four numbers are one measurement and a partial read of them is worse
+    /// than no read: three-quarters of a crop box, silently defaulted, is
+    /// exactly the class of defect the crop box was traced to eliminate.
+    /// Returns `None` unless **every** element parses, for the same reason.
+    #[must_use]
+    pub fn get_f64_list(&self, key: &str) -> Option<Vec<f64>> {
+        let v = unwrap_debug_option(self.get(key)?)?;
+        v.split(',')
+            .map(|t| t.trim().parse::<f64>().ok())
+            .collect::<Option<Vec<f64>>>()
+    }
+
     /// Every field on the line, in key order — for diagnostics that want to
     /// show what *was* there when the field being looked for was not.
     #[must_use]

@@ -150,6 +150,7 @@
 //! what it will or will not preserve.
 
 use egui::Ui;
+use pdfcer_core::annot::{StampLabelParameters, StampSizeSource};
 use pdfcer_core::annot_author::{Color, StickyIcon, TextAnnotSpec};
 use pdfcer_core::edit::TextAnnotStyle;
 
@@ -162,6 +163,64 @@ use crate::text::textannot as tt;
 /// The region this subsection publishes, so a driven check can find the icon
 /// chooser on a placed note rather than only on the placing dialog.
 pub(super) const REGION: &str = "properties.markup.textannot"; // ui-text-exempt: trace region name, never displayed
+
+/// The **label-size spinner**'s own region, published only when the row is
+/// actually on screen.
+///
+/// # ★★★ Why this constant exists at all, and what shipped without it
+///
+/// The operator asked twice — 2026-09-09 and again after the fix for the
+/// authoring half landed — for the same thing in the same words:
+///
+/// > *"still can't adjust the size of a stamp on the canvas, **or by entering a
+/// > different size in the properties box**."*
+///
+/// The second clause is this row. It was built with unit tests in front of
+/// every hop and **no way for a driven check to find it**: a region is how
+/// `tools/ui-verify` locates a control, and a control with no region can be
+/// drawn under another widget, clipped off the bottom of the panel's scroller,
+/// or not drawn at all, with every test in the crate still green. This project
+/// has shipped exactly that — a panel that was unreachable in a real build with
+/// every gate green — which is why R1 says a phase is not done until the
+/// behaviour is asserted by driving the binary.
+///
+/// ⇒ Published through [`crate::diag::ui_rect_visible`] and not `ui_rect`, for
+/// the reason the rail's header gives in full: this row lives inside a
+/// scrolling panel, and a rectangle published for a row that is scrolled out of
+/// view is a rectangle a driven check will click on — hitting whatever is
+/// really there.
+pub(super) const SIZE_REGION: &str = "properties.markup.textannot.size"; // ui-text-exempt: trace region name, never displayed
+
+/// The **fit chooser**'s region — see [`SIZE_REGION`] for the argument.
+///
+/// Separate from the spinner's because the two are separate failure modes: a
+/// build can draw the number and clip the chooser below it, and the operator
+/// then has a size they can change and no way to say what should give when it
+/// stops fitting.
+pub(super) const FIT_REGION: &str = "properties.markup.textannot.fit"; // ui-text-exempt: trace region name, never displayed
+
+/// The trace slot the label row reports **its own reading** through.
+///
+/// ```text
+/// pdfcer-diag stamp-label-row size=24 source=declared-in-da fit=grow
+/// ```
+///
+/// # ★★ Why a line, when the number is on the screen
+///
+/// Because a driven check cannot read a number off a screenshot, and the
+/// alternative this project has been bitten by is a check that *describes* the
+/// absence it never measured — an unevidenced excuse, which reads as an
+/// answered question and stops anybody looking again. `stamp-size-chooser` was
+/// added to the placing dialog for the identical reason on 2026-09-10; this is
+/// its twin on the restyle side.
+///
+/// ★ It carries `source=` as well as `size=`, because the two answer different
+/// questions. `size=` is what the operator sees. `source=` is where it came
+/// from, and it is the only way a check can tell *"the file declared 24"* from
+/// *"pdfcer read 24 off the picture because the file declares nothing"* — a
+/// distinction no screenshot contains and the whole reason
+/// `StampSizeSource` has three variants rather than being an `Option`.
+const ROW_SLOT: &str = "stamp-label-row"; // ui-text-exempt: diagnostic trace slot, never displayed
 
 /// ★★★ **Which of `pdfcer-core`'s TWO annotation-style verbs reaches the
 /// selected mark** — the guard between them, as a `match` the compiler
@@ -303,6 +362,30 @@ pub(super) struct Reading {
     /// dictionary. `read_icon_name` is deleted, with the reason it existed kept
     /// at its old site.
     pub(super) foreign_icon: bool,
+    /// **What the stamp's own appearance says its label is** — the words, the
+    /// size in points, and where that size came from (`pdfcer-core`
+    /// `Pass 292.0`). `None` for a sticky note, and `None` for a stamp whose
+    /// picture shows no text pdfcer can read a size off.
+    ///
+    /// # ★★★ Why this is NOT filled by [`Reading::of`]
+    ///
+    /// Because `of` is **pure** and takes the spec and nothing else, which is
+    /// what lets six tests build a `Reading` in one expression. The label
+    /// parameters are not in the spec at all — they are recovered by parsing
+    /// the annotation's `/AP` `/N` stream, so reading them needs the session,
+    /// the object graph and the R45 staging buffer behind it.
+    ///
+    /// ⇒ The read stays in [`super::Reach::read`], where the session already
+    /// is, and arrives here through [`Reading::with_stamp_label`]. That keeps
+    /// the impure half in the one function that was always impure, rather than
+    /// making every test of the pure half construct a document.
+    ///
+    /// ⚠ A `Reading` built by `of` alone therefore has `label: None`, which is
+    /// indistinguishable from *"this stamp has no describable label"*. That is
+    /// deliberate and it is safe in the only direction that matters: the size
+    /// row is **absent** rather than wrong. A test that means to assert the row
+    /// appears must call `with_stamp_label`.
+    pub(super) label: Option<StampLabelParameters>,
 }
 
 impl Reading {
@@ -339,12 +422,21 @@ impl Reading {
                 // inventing anything.
                 foreign_icon: matches!(icon, StickyIcon::Other(_)),
                 icon: Some(icon.clone()),
+                // A sticky note draws an ICON, not text. `set_text_annot_style`
+                // refuses a label size on one BY NAME
+                // (`StylePropertyNotApplicable`, property "a label font
+                // size"), so this is not "we did not read it" — there is
+                // nothing to read.
+                label: None,
             }),
             TextAnnotSpec::Stamp { color, .. } => Some(Self {
                 face: Face::Stamp,
                 colour: super::swatch_of(Some(color)),
                 icon: None,
                 foreign_icon: false,
+                // Filled by [`Self::with_stamp_label`] from the session; see the
+                // field's own note on why `of` cannot.
+                label: None,
             }),
             // (2) above. The verb would take it; this shell will not send it.
             TextAnnotSpec::FreeText { .. } => None,
@@ -356,6 +448,36 @@ impl Reading {
             // `MarkupStyleSupport::for_subtype`'s own stated posture.
             _ => None,
         }
+    }
+
+    /// **Carry the stamp's label parameters in**, read from the session by
+    /// [`super::Reach::read`] (`pdfcer-core` `Pass 292.0`).
+    ///
+    /// # ★★ Why a builder and not a second argument to [`Self::of`]
+    ///
+    /// Because `of` used to take a second argument — the raw `/Name` bytes —
+    /// and this module's own history says what that cost. It was deleted on
+    /// 2026-09-07 when `Pass 253.5` put the fact in the value, and the note
+    /// left at its site is the general form: a second read beside the spec is
+    /// a second chance to disagree with the engine about an operator's file,
+    /// and it makes the pure function impure for every caller including the
+    /// six tests.
+    ///
+    /// ⇒ A builder keeps `of`'s signature at *one spec in, one reading out*
+    /// and puts the session-shaped read where the session already is. The
+    /// tests that assert the reachability verdict never see it; the one test
+    /// that means to assert the size row appears calls this.
+    ///
+    /// ⚠ It takes an `Option` rather than a value, and passes it straight
+    /// through, because `EditSession::stamp_label_parameters` answers
+    /// `Ok(None)` for a stamp whose appearance shows no text — Acrobat's own
+    /// custom stamps are artwork — and the engine is explicit that this is
+    /// *"the honest answer … not a failure"*. Collapsing it to a default here
+    /// would invent a size for a picture of a signature.
+    #[must_use]
+    pub(super) fn with_stamp_label(mut self, label: Option<StampLabelParameters>) -> Self {
+        self.label = label;
+        self
     }
 }
 
@@ -438,12 +560,268 @@ pub(super) fn rows(
                 .weak(),
         );
     }
+    // ★★ The size sits between the colour and the icon, and the two never
+    // appear together: a stamp takes a size and no icon, a sticky note takes an
+    // icon and no size. It is placed here rather than last so that the ORDER a
+    // reader sees is stable across the two faces — colour, then whatever the
+    // face's own property is — rather than the icon jumping above the size on
+    // one selection and below it on the next.
+    size_row(ui, current, target, actions);
     icon_row(ui, current, target, actions);
     ui.label(
         egui::RichText::new(ts::markup_text_annot_note())
             .small()
             .weak(),
     );
+}
+
+/// The smallest and largest label size the spinner offers, in points.
+///
+/// # ⚠ These are THIS SHELL's bounds. The engine has none.
+///
+/// `set_text_annot_style` does not clamp `font_size`, and `StampStyle` does
+/// not either — a caller may ask for 0.1 pt or 900 pt and get it. So these two
+/// numbers are a usability judgement made here, not a limit reported from
+/// anywhere, and this comment exists so that nobody later quotes them as an
+/// engine fact. Below about four points Helvetica Bold is a smudge on paper;
+/// above about a gross the box `GrowToText` produces is wider than a letter
+/// page, so the stamp leaves the sheet.
+///
+/// ★★★ **And a range is a hazard, which [`size_row`] handles rather than
+/// ignores.** A control narrower than the values its subject accepts *silently
+/// rewrites a value the operator never touched*: open a stamp declaring 200 pt
+/// under a spinner capped at 144, and the spinner shows 144 — then one
+/// keystroke anywhere commits it. That has happened on this project before, in
+/// the settings window, and the fix taken there is the one taken here: the
+/// range is **widened to admit whatever the file said**, and the action is
+/// pushed only when the number actually differs from what was read.
+const MIN_LABEL_PT: f64 = 4.0;
+/// See [`MIN_LABEL_PT`].
+const MAX_LABEL_PT: f64 = 144.0;
+
+/// **The stamp's label size, and what to do when it stops fitting** —
+/// `pdfcer-core` `Pass 292.0`.
+///
+/// # ★★★ What this closes, in the operator's own words — asked TWICE
+///
+/// 2026-09-09, at the machine: ***"I STILL can't adjust the size of a stamp on
+/// the canvas, or by entering a different size in the properties box."***
+///
+/// The first half of that sentence was answered the same day — `annots::resize`
+/// now sets `scale_stroke_width` and `allow_appearance_distortion` for a
+/// `/Stamp` target, so the canvas grips and the Properties width/height fields
+/// scale the picture. **The second half was not**, and the reason was a real
+/// gap rather than an oversight: until `Pass 292.0` a stamp already on the page
+/// had a label size that could be neither read nor written. There was no verb
+/// to call. This row is the consuming half of the two the engine shipped.
+///
+/// # ★★ Why it is a size ROW and not another entry in the placing dialog's list
+///
+/// Because the two controls answer different questions. `canvas::textannot::
+/// StampSize` offers a *list* — `Fit the box I drew`, then a ladder of stated
+/// sizes — because at placing time the operator has no stamp to look at and a
+/// ladder is how every tool they own presents a font size. Here the stamp
+/// exists, its size is a **number that came out of the file**, and the act is
+/// *change this number*. A combo box would have to invent an entry for a stamp
+/// whose file says 17 pt.
+///
+/// ⚠ **`Fit the box I drew` has no counterpart here, deliberately.** That
+/// choice means *derive the size from the box*, i.e. `font_size: None`, and
+/// `None` on this verb means *leave the size alone* — the field's contract, and
+/// the same contract that keeps a colour change from touching the icon. The two
+/// meanings collide, and the engine's field cannot express the first. Offering
+/// it would be a control whose press does nothing, which is the defect this
+/// panel already shipped once (*"live controls, every press refused"*).
+///
+/// # ★ Absent, not greyed, when the stamp has no label pdfcer can describe
+///
+/// `stamp_label_parameters` answers `None` for a stamp whose appearance shows
+/// no text — **Acrobat's own custom stamps are artwork**, not a laid-out
+/// label — and the engine is explicit that this is *"the honest answer … not a
+/// failure"*. R9: nothing is drawn. A greyed spinner would imply that a size
+/// could appear if something were different, and for a picture of a signature
+/// nothing can be different.
+fn size_row(
+    ui: &mut Ui,
+    current: &Reading,
+    target: &crate::canvas::selection::annot::AnnotTarget,
+    actions: &mut Vec<Action>,
+) {
+    // ★ Two guards, and they are not the same guard twice. The first is about
+    // the FACE — a sticky note draws an icon and has no label to size, which is
+    // the refusal `set_text_annot_style` makes by name
+    // (`StylePropertyNotApplicable`, property "a label font size"). The second
+    // is about this PARTICULAR stamp — the face is right and its appearance
+    // still shows no text pdfcer can read a size off.
+    if current.face != Face::Stamp {
+        return;
+    }
+    let Some(label) = current.label.as_ref() else {
+        return;
+    };
+
+    let read_size = label.size;
+    let mut size = read_size;
+    let ctx = ui.ctx().clone();
+    let mut fit = crate::canvas::stampfit::read(&ctx);
+
+    // ★★ The row's own reading, before anything is pressed. `trace_changed`
+    // rather than `trace`, so a panel drawn at sixty frames a second writes one
+    // line per actual change; see [`ROW_SLOT`] for why the line exists at all
+    // and why it carries `source=`.
+    crate::diag::trace_changed(ROW_SLOT, || {
+        format!(
+            // ui-text-exempt: diagnostic trace, never displayed. The exemption sits
+            // HERE and not above `format!` because check-ui-strings reads the comment
+            // block immediately above the LITERAL; one intervening line of code and
+            // the reason is invisible to it.
+            "{ROW_SLOT} size={read_size} source={} fit={}",
+            source_token(label.size_source),
+            crate::canvas::stampfit::trace_token(fit)
+        )
+    });
+
+    ui.horizontal(|ui| {
+        ui.label(ts::stamp_text_size_label());
+        let response = ui.add(
+            egui::DragValue::new(&mut size)
+                // ★★★ The range ADMITS whatever the file said. See
+                // [`MIN_LABEL_PT`] — a spinner that clamps a value it did not
+                // author is a spinner that edits documents nobody asked it to.
+                .range(MIN_LABEL_PT.min(read_size)..=MAX_LABEL_PT.max(read_size))
+                .speed(0.5)
+                .suffix(ts::stamp_text_size_suffix()),
+        );
+        // ★ `drag_stopped` and `lost_focus`, never `changed` — the parent's
+        // `width_row` carries the full argument. A `DragValue` reports a change
+        // on every pixel of a drag and each one here is an appearance re-bake
+        // plus an undo entry, so one drag across the control would leave forty
+        // entries on the stack.
+        //
+        // ★★ **And `size != read_size` beside it**, which `width_row` does not
+        // need and this one does. A `lost_focus` fires when the operator clicks
+        // away having changed nothing, and on a stamp whose declared size lies
+        // outside this shell's range the displayed number is not the file's
+        // number — so an unconditional commit here would rewrite a `/DA` the
+        // operator never touched, on a mark they only looked at.
+        // ★★★ `ui_rect_visible`, and the clip rect is the panel's — not the
+        // window's. A row scrolled below the properties panel's viewport is
+        // still laid out and still has a rectangle; publishing it would hand a
+        // driven check a coordinate that lands on whatever is drawn over it,
+        // and the resulting report would name this feature for a defect in the
+        // panel above it.
+        crate::diag::ui_rect_visible(SIZE_REGION, response.rect, ui.clip_rect());
+        if (response.drag_stopped() || response.lost_focus()) && size != read_size {
+            push_size(target, size, fit, actions);
+        }
+    });
+
+    // ★★★ The fit chooser sits UNDER the number it qualifies, because it is
+    // read at the moment the operator has just typed a larger one and is
+    // wondering what will happen. `REVIEW_TRIAGE.md`'s placement rule cuts the
+    // other way for a *caveat* — a warning below the thing it warns about
+    // arrives after the conclusion has been drawn — but this is not a caveat,
+    // it is the second half of one instruction, and an operator reads the two
+    // in the order they are committed.
+    ui.horizontal(|ui| {
+        ui.label(ts::stamp_fit_label());
+        let combo = egui::ComboBox::from_id_salt("properties-stamp-fit") // ui-text-exempt: widget id salt, never displayed.
+            .selected_text(ts::stamp_fit_option(fit))
+            .show_ui(ui, |ui| {
+                // ★ `stampfit::FITS`, never a hand-written list here. A
+                // completeness test keys on that constant, and a second list
+                // written out at a call site is invisible to it — the exact
+                // shape of defect this project has a standing rule about.
+                for policy in crate::canvas::stampfit::FITS.iter().copied() {
+                    ui.selectable_value(&mut fit, policy, ts::stamp_fit_option(policy));
+                }
+            });
+        crate::diag::ui_rect_visible(FIT_REGION, combo.response.rect, ui.clip_rect());
+    });
+    if fit != crate::canvas::stampfit::read(&ctx) {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed.
+            format!(
+                "stamp-fit-chosen {}",
+                crate::canvas::stampfit::trace_token(fit)
+            )
+        });
+        crate::canvas::stampfit::store(&ctx, fit);
+    }
+
+    // ⚠ **One source of the three owes a sentence, and it is not the one a
+    // shell reaches for first.** `RecoveredFromAppearance` — no `/DA` at all,
+    // the size read off the baked `Tf` — covers *every stamp authored before
+    // `Pass 287.0` and everything another producer wrote*, and the engine is
+    // explicit that it is "not an anomaly and owes no warning … the number is
+    // exactly what is on the page". A caution there would fire on the majority
+    // of stamps in the world and teach the operator to ignore the one that
+    // matters. `DaUnreadable` is the one that matters: the file states a size,
+    // pdfcer cannot parse it, and setting one here overwrites it.
+    if label.size_source == StampSizeSource::DaUnreadable {
+        ui.label(
+            egui::RichText::new(ts::stamp_size_da_unreadable())
+                .small()
+                .weak(),
+        );
+    }
+}
+
+/// **Where the displayed label size came from**, as one word for the trace.
+///
+/// # ★★ Why the shell writes this token and the engine does not
+///
+/// `StampLabelFit` publishes `token()` because a *driven check reads it* and
+/// the engine tests that contract. `StampSizeSource` publishes no such thing —
+/// it is a panel-facing distinction, and the engine's own doc says as much:
+/// *"the three cases are kept apart because a panel owes different things to
+/// each"*. So the vocabulary is this shell's, and it is written here, once,
+/// rather than at the format string, so a check and a reader are looking at the
+/// same list.
+///
+/// ⚠ **`StampSizeSource` is `#[non_exhaustive]`**, so the `_` arm is reachable
+/// by nothing but a pin bump — and it is a **tripwire**, not a fallback. A
+/// driven run showing `source=unknown` means the engine grew a fourth answer to
+/// *"where did this number come from?"*, and this row's disclosure rule (only
+/// `DaUnreadable` owes a sentence) was written against three. Seeing it is the
+/// signal to go and read the new variant before deciding whether it owes one.
+pub(super) fn source_token(source: StampSizeSource) -> &'static str {
+    // ui-text-exempt: diagnostic trace tokens, never displayed.
+    match source {
+        StampSizeSource::DeclaredInDa => "declared-in-da",
+        StampSizeSource::RecoveredFromAppearance => "recovered-from-appearance",
+        StampSizeSource::DaUnreadable => "da-unreadable",
+        _ => "unknown",
+    }
+}
+
+/// Raise the restyle that carries a new label size — and **nothing else**.
+///
+/// ★ Split out from [`size_row`] so the struct literal that names every field
+/// of `TextAnnotStyle` sits in one place per act rather than inside a closure
+/// three levels deep. The `None`s are the contract, not a formality: *a field
+/// left `None` is left alone*, so a size change does not touch the colour and
+/// cannot touch the icon.
+fn push_size(
+    target: &crate::canvas::selection::annot::AnnotTarget,
+    size: f64,
+    fit: pdfcer_core::annot_author::StampFit,
+    actions: &mut Vec<Action>,
+) {
+    actions.push(Action::Annot(AnnotAction::SetTextAnnotStyle {
+        id: target.id,
+        style: TextAnnotStyle {
+            font_size: Some(size),
+            // ★★ Named even though it equals the engine's default, because the
+            // operator has an opinion about it and a `None` here would hide
+            // that the chooser above had been read at all. `stamp_fit` is
+            // "ignored unless `font_size` is set" — which is exactly the call
+            // this is.
+            stamp_fit: Some(fit),
+            color: None,
+            icon: None,
+        },
+    }));
 }
 
 /// The annotation's colour, `/C`.
@@ -485,13 +863,26 @@ fn colour_row(
                         f64::from(rgb[1]) / 255.0,
                         f64::from(rgb[2]) / 255.0,
                     )),
-                    // ★ Explicit `None`, and it is the contract rather than a
-                    // formality: "a field left `None` is left alone", so a call
-                    // that names only the colour does not touch the icon. Spelt
-                    // out rather than reached through `..Default::default()`
-                    // because `TextAnnotStyle` has exactly two fields and
-                    // naming both is what makes the omission visible.
+                    // ★★ Explicit `None` on EVERY other field, and it is
+                    // the contract rather than a formality: "a field left
+                    // `None` is left alone", so a call that names only the
+                    // colour does not touch the icon, the label size or the
+                    // fit policy.
+                    //
+                    // ★★★ **Spelt out rather than reached through
+                    // `..Default::default()`, and `Pass 292.0` is why that is
+                    // load-bearing rather than tidy.** This literal named two
+                    // fields for months; the engine then grew `font_size` and
+                    // `stamp_fit`, and the build broke here — which is the
+                    // outcome we wanted. `..Default::default()` would have
+                    // compiled silently and taken `font_size: None`, i.e. it
+                    // would have DECLINED a new capability on the operator's
+                    // behalf without a single word appearing anywhere. A
+                    // compile error is an invitation to read the engine's
+                    // reply; a default is a way of not receiving it.
                     icon: None,
+                    font_size: None,
+                    stamp_fit: None,
                 },
             }));
         }
@@ -587,8 +978,12 @@ fn icon_row(
                 id: target.id,
                 style: TextAnnotStyle {
                     icon: Some(icon),
-                    // Left alone — see [`colour_row`]'s note on the same field.
+                    // Left alone — see [`colour_row`]'s note on naming every
+                    // other field explicitly, and on why a `..Default::default()`
+                    // here would be a silent decline rather than a shorthand.
                     color: None,
+                    font_size: None,
+                    stamp_fit: None,
                 },
             }));
         }

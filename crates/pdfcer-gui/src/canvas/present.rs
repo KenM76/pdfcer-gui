@@ -718,7 +718,10 @@ fn show_in(
                 if let Some(visible_canvas) = visible_canvas {
                     doc.raster_region = Some((
                         current,
-                        crate::render::region::page_region(visible_canvas, extent),
+                        crate::render::region::page_region(
+                            visible_canvas,
+                            crate::render::region::PageFrame::of(&doc.pages[current]),
+                        ),
                     ));
                 }
             }
@@ -802,7 +805,7 @@ fn show_in(
                         .unwrap_or_else(viewer::deep::DeepAnchor::origin);
                     crate::render::region::region_on_screen_deep(
                         region,
-                        viewer::page_extent_pts(&doc.pages[placement.page]),
+                        crate::render::region::PageFrame::of(&doc.pages[placement.page]),
                         anchor,
                         f64::from(doc.view.zoom),
                         outer_rect.min,
@@ -811,6 +814,7 @@ fn show_in(
                 Some(region) => crate::render::region::region_on_screen(
                     region,
                     viewer::page_extent_pts(&doc.pages[placement.page]),
+                    crate::render::region::PageFrame::of(&doc.pages[placement.page]),
                     rect,
                 ),
                 None => rect,

@@ -97,7 +97,20 @@ const ACCEPT: &str = "text-annot.accept";
 /// Cancel. `dialogs::textannot::REGION_CANCEL`, added with this check.
 const CANCEL: &str = "text-annot.cancel";
 /// The ribbon control that arms the stamp tool.
+///
+/// ★ It is a **toggle**, not a momentary button. See [`arm_stamp`].
 const STAMP_ITEM: &str = "ribbon.item.markup.stamp";
+
+/// The trace line naming the armed markup tool. Emitted on change only.
+const TOOL_EVENT: &str = "markup-tool";
+
+/// The prefix every text-annotation tool's name carries — `TextAnnot(Stamp)`,
+/// `TextAnnot(Note)`, and so on.
+///
+/// Matched on the prefix rather than the whole string deliberately: this check
+/// is about the *dialog*, and it must not fail because the shell started
+/// spelling the stamp variant differently.
+const TOOL_TEXT_ANNOT: &str = "TextAnnot";
 
 /// See the module documentation.
 pub struct TheSecondStampDialogStillHasItsButtons;
@@ -123,18 +136,66 @@ impl Check for TheSecondStampDialogStillHasItsButtons {
     }
 }
 
-/// **Arm the stamp tool from the Markup tab.**
+/// **The tool the shell says is armed right now, or `None` if it has never
+/// said.**
 ///
-/// Called before *each* placement rather than once, and that is deliberate: the
-/// markup tools disarm themselves after a placement in some modes and not in
-/// others, and a check that assumed the wrong one would report *"the second
-/// dialog never opened"* about a shell behaving exactly as designed. Re-arming
-/// an already-armed tool costs one click and closes the question.
+/// `markup-tool` is emitted on CHANGE, so the last one in the trace is the
+/// current state and an absent line means *the tool has not moved since
+/// launch*. Both readings matter to [`arm_stamp`], and conflating them is what
+/// the first version of this check did.
+fn armed_tool(session: &Session) -> Result<Option<String>> {
+    Ok(session
+        .trace()?
+        .last(TOOL_EVENT)
+        .and_then(|l| l.get("tool"))
+        .map(str::to_owned))
+}
+
+/// **Arm the stamp tool from the Markup tab — but only if it is not already
+/// armed.**
+///
+/// # ★★★ The ribbon item is a TOGGLE, and the first version of this check did
+/// not know that — 2026-09-10
+///
+/// It was written to click Markup > Stamp before *each* placement, on the
+/// reasoning that *"markup tools disarm themselves after a placement in some
+/// modes and not in others… re-arming an already-armed tool costs one click and
+/// closes the question."*
+///
+/// **It costs one click and OPENS the question**, because `markup.stamp` is a
+/// toggle. Driven on 2026-09-10 the trace read, in three consecutive lines:
+///
+/// ```text
+/// egui-shell-diag ribbon-command-invoked id=markup.stamp handler=522
+/// pdfcer-diag      markup-tool tool=Select
+/// ```
+///
+/// — the command fired and the tool went to **Select**. The shell had kept the
+/// stamp tool armed across the first placement (which is the right behaviour,
+/// and the behaviour Acrobat has: the tool is sticky, and clicking the armed
+/// tool again puts it down). So the defensive second click *disarmed* it, the
+/// second drag was a text selection, no dialog opened, and the check reported
+/// *"the second drag traced no further `text-annot-open`"* — a true sentence
+/// about a build in which the operator's own route works.
+///
+/// ★★ The lesson is the standing one and it earned another instance: **a driven
+/// failure is a claim about the check too.** The check's own failure message
+/// offered two hypotheses — *"either the tool did not re-arm or the drag landed
+/// on the first stamp"* — and the truth was a third the author had ruled out by
+/// construction.
+///
+/// ⇒ So this now READS the state before acting. Clicking is reserved for the
+/// case where the tool genuinely is not armed, which keeps the original
+/// intention (do not assume stickiness) without the toggle's side effect.
 ///
 /// # Errors
 ///
 /// If the ribbon item is not on the tab, or the click armed nothing.
 fn arm_stamp(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
+    // ★ Already armed? Then there is nothing to do, and doing it would undo it.
+    if armed_tool(session)?.is_some_and(|t| t.starts_with(TOOL_TEXT_ANNOT)) {
+        return Ok(());
+    }
     let trace = session.trace()?;
     let item = declared(&trace, ui_rect, STAMP_ITEM).ok_or_else(|| {
         Error::new(format!(
@@ -144,7 +205,22 @@ fn arm_stamp(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
     })?;
     driver.click_at(session.frame()?.declared_center(item))?;
     session.settle(14);
-    Ok(())
+    // ★★ And say so if the click did not arm it. Without this the failure
+    // surfaces one step later, as "the dialog never opened", which reads as a
+    // dialog defect rather than a tool one.
+    match armed_tool(session)? {
+        Some(t) if t.starts_with(TOOL_TEXT_ANNOT) => Ok(()),
+        Some(t) => Err(Error::new(format!(
+            "clicking `{STAMP_ITEM}` left the tool at `{t}`, not \
+             `{TOOL_TEXT_ANNOT}(..)`. The ribbon item is a toggle: if the tool \
+             was already armed, this click put it down. Nothing below can \
+             open a dialog."
+        ))),
+        None => Err(Error::new(format!(
+            "clicking `{STAMP_ITEM}` traced no `{TOOL_EVENT}` line at all, so \
+             the control armed nothing."
+        ))),
+    }
 }
 
 /// **Drag one stamp box.**

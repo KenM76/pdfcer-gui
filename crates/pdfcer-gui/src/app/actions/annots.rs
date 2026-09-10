@@ -35,6 +35,16 @@ use pdfcer_core::object::ObjId;
 use crate::app::state::OpenDoc;
 
 mod inknodes;
+/// **The text-annotation restyle verb** — `set_text_annot_style` and the
+/// stamp-label disclosure it owes. Split out 2026-09-10 under R2; its header
+/// says why this one verb is a module and its neighbours are arms.
+mod textannotstyle;
+// pub(super) rather than private: the round-trip test that closes the
+// operator's "can't enter a size in the properties box" report lives beside
+// the AUTHORING verb in `actions::textannot`, and drives this one through the
+// shell rather than the engine so the undo entry and the texture drop are
+// exercised with it.
+pub(super) use textannotstyle::set_text_annot_style;
 /// **The polygon/polyline node verbs** - `move_node`, `insert_node`, `remove_node`
 /// over `reshape_annotation`. Split out 2026-09-09 under R2.
 mod vertexnodes;
@@ -1100,155 +1110,6 @@ pub(super) fn set_open(doc: &mut OpenDoc, id: ObjId, open: bool) {
             .map(str::to_owned)
             .into_iter()
             .collect()
-        })
-    });
-}
-
-// ===========================================================================
-// The NODES of a markup shape — `Pass 255.0`, the operator's report of
-// 2026-09-05
-// ===========================================================================
-//
-// > *"I also can't edit or delete nodes of a markup shape once it is drawn."*
-//
-// Three engine wrappers over one planner. They share everything except which
-// `VertexEdit` they build, which is why they share [`reshape`] here rather than
-// each spelling the funnel out — the disclosure obligation is identical for all
-// three and stating it once is what stops the third one growing up without it.
-//
-// ★★★ **`reshape_annotation` and not the three wrappers**, and that is a
-// deliberate reversal of the obvious call. The wrappers are one-liners that
-// pass `modified: None`, so they can never stamp `/M`; this shell knows the
-// time and the engine reads no clock, on purpose:
-//
-// > pdfcer reads no clock (determinism — the same edit on the same file
-// > produces the same bytes), so the three convenience wrappers leave `/M`
-// > exactly as it was and say so.
-//
-// A reviewer's comment whose shape changed and whose modification date did not
-// is a comment that lies about when it was last touched, and §12.5.2 admits any
-// string for `/M`. So this shell supplies one, in the ASN.1 form §7.9.4
-// defines, and `AnnotationReshape::mod_date_written` reports whether it landed.
-
-// ★★ **The date comes from `app::clock::pdf_date_utc`, and this paragraph is
-// here because the first draft of this file did NOT.**
-//
-// A second civil-from-days implementation was written out in full — twelve
-// lines of Howard Hinnant's algorithm — before `cargo test` surfaced a doctest
-// for `app::clock::pdf_date_utc` doing the identical job, with the identical
-// UTC ruling and a better failure mode. ⇒ **Two copies of a calendar are two
-// calendars**, and the one nobody looks at is the one that claims 30 February.
-// The duplicate was deleted rather than kept beside it.
-//
-// Its `None` case is the one this call site cares about: a clock before the
-// Unix epoch yields no stamp, `/M` is left exactly as it was, and the
-// annotation's date is unchanged rather than false. `AnnotationReshape::
-// mod_date_written` reports which happened.
-
-/// **Apply one node edit to a markup annotation**, as one undoable command.
-///
-/// ★★★ **Restyle a text-BEARING annotation** — a sticky note's icon and
-/// colour, a stamp's colour. `EditSession::set_text_annot_style`
-/// (`pdfcer-core` `edit.rs:27124`).
-///
-/// # ★★★ Why this is a second function beside the markup restyle, not a branch
-/// # inside it
-///
-/// Because it is a second **verb over a second spec family**, and the engine's
-/// own doc on `edit::TextAnnotStyle` (`edit.rs:15969`) is the argument:
-///
-/// > `MarkupStyle` reaches its annotation through
-/// > `annot_author::spec_from_dict`, whose arms are the geometric family and
-/// > the four text markups. **There is no `/Text` arm** … So the two verbs are
-/// > not a split anyone chose for tidiness — they read through different
-/// > functions because the two families are modelled by different spec types.
-///
-/// ⇒ A single body with an `if subtype == "Text"` inside it would put the
-/// routing decision where nothing checks it. It is a `match` instead, on
-/// `crate::panels::properties::markup::textannot::Reach`, decided in the panel
-/// by asking each of the two engine readers in turn — and this function is only
-/// ever reached down one arm of it.
-///
-/// # ★★ The page is `0`, and that is not a defect
-///
-/// `set_text_annot_style` takes an `ObjId` and nothing else — the property that
-/// puts this variant in `AnnotAction` at all — so there is no page to pass.
-/// [`clear_note`] and the node verbs pass `0` for the identical reason, and the
-/// funnel uses the argument for its undo label and its raster invalidation
-/// rather than to find anything. `EditScope::Document` (the plain
-/// [`super::apply::vector_edit`], not the `_on_page` twin) is right for the
-/// same reason it is right for a note: the annotation may not be on the page
-/// the view is showing, and a `/Popup` companion may not be on its own.
-///
-/// # ★ What the trace carries, and why it is not the values
-///
-/// `icon_written` and `color_written` — the engine's own two booleans off
-/// [`pdfcer_core::edit::TextAnnotStyleChange`] — plus how the appearance was
-/// written. **Not the icon name**, and that is deliberate: the icon is
-/// invisible in pdfcer's own picture by construction
-/// (`annot_author::sticky_note` draws one marker for all seven), so what a
-/// driven check needs is *did `/Name` change at all*, which no screenshot can
-/// answer. A name in the trace would only restate what the panel already
-/// displays.
-///
-/// # ★ The undo entry it pushes
-///
-/// `pdfcer_core::edit::CommandKind::SetTextAnnotStyle` — the engine's own
-/// label for this command, pushed by the verb itself rather than by the funnel,
-/// so an undo of a restyle is one entry and names the act rather than the
-/// appearance rewrite underneath it.
-///
-/// ★ No disclosure list. Unlike `set_markup_style`, this verb reports no
-/// `dropped` catalogue — it re-bakes from a spec the same reader hands the
-/// authoring path, so there is nothing it can silently lose that this shell
-/// could name.
-pub(super) fn set_text_annot_style(
-    doc: &mut OpenDoc,
-    id: ObjId,
-    style: &pdfcer_core::edit::TextAnnotStyle,
-) {
-    super::apply::vector_edit(doc, "set-text-annot-style", 0, 1, |session| {
-        session.set_text_annot_style(id, style).map(|change| {
-            crate::diag::trace(|| {
-                // ui-text-exempt: diagnostic trace, never displayed.
-                //
-                // ★★★ `was_foreign=` is new with `pdfcer-core` `Pass 253.5`,
-                // and it is traced rather than DISCLOSED, deliberately.
-                //
-                // The engine's field reports that the annotation's previous
-                // appearance was one pdfcer would not have drawn — a
-                // designer's stream with a shadow or a gradient — and that
-                // re-baking has just replaced it with pdfcer's plainer
-                // rendering. That is exactly the class of thing Rule 4's
-                // surviving half says must reach the operator off-canvas.
-                //
-                // ⚠ **It cannot happen through this shell today**, and the
-                // reason is worth stating rather than discovering: the field is
-                // `false` for every subtype but `/FreeText`, and the only
-                // surface that raises this action —
-                // `panels::properties::markup::textannot` — **declines a
-                // `/FreeText` by name**. So a disclosure wired here would be a
-                // sentence no operator could ever see, which is worse than none:
-                // it reads as covered.
-                //
-                // ⇒ It goes on the trace, which is where a fact with no reader
-                // belongs, and it becomes the **tripwire** for the day a
-                // `/FreeText` does reach this verb: a driven run showing
-                // `was_foreign=1` means the panel's decline has been lifted and
-                // an operator-facing sentence is now owed. That is the same
-                // posture `appearance_matrix_updated` gets one module along.
-                format!(
-                    "set-text-annot-style-applied id={} subtype={} icon={} colour={} \
-                     was_foreign={} ap={:?}",
-                    id.num,
-                    change.subtype,
-                    change.icon_written,
-                    change.color_written,
-                    u8::from(change.appearance_was_foreign),
-                    change.appearance
-                )
-            });
-            Vec::new()
         })
     });
 }

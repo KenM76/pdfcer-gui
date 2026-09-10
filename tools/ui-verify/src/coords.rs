@@ -138,6 +138,132 @@ pub struct PageGeometry {
     pub height_pt: f64,
 }
 
+/// **A page's frame: its crop box in PDF user space, plus its `/Rotate`.**
+///
+/// # ★★★ What this is for, and the defect that bought it — 2026-09-10
+///
+/// [`DocPoint`] has always been documented as *PDF user space*, and until this
+/// type existed the conversion did not honour that: it took `p.x` as a canvas
+/// coordinate unchanged and flipped `p.y` once against the page height. For an
+/// upright page whose crop origin is `(0, 0)` — every fixture in this
+/// repository — that is exactly right, which is why it survived.
+///
+/// It is wrong for every other page, and it was measured wrong on the
+/// operator's `A-591.pdf`. That sheet's `/Rotate` is **270**, so the canvas is
+/// 1224 × 792 while the crop box is 792 × 1224. Consequences, all silent:
+///
+/// * every `--doc-point` landed at a transposed position, so a check that
+///   *reported* aiming at (396, 612) actually aimed somewhere else entirely;
+/// * the bounds check refused any `x > 792`, i.e. **the right-hand third of the
+///   canvas was unreachable by the harness**, reported as "outside the page
+///   box" — which reads as a typo in the check, not as a defect in the mapping;
+/// * a check that then found nothing there would have blamed the application.
+///
+/// ★★ This is the same defect, in the harness, that O174 was in the renderer:
+/// one `height - y` subtraction standing in for a rotation. Finding it twice in
+/// one afternoon is the argument for this type existing at all — the mapping is
+/// now written once, in terms the PDF actually uses, instead of open-coded as
+/// arithmetic at each site.
+///
+/// # The two spaces
+///
+/// | space | origin | y | `/Rotate` |
+/// |---|---|---|---|
+/// | **PDF user space** | crop box lower-left | **up** | not applied |
+/// | **canvas space** | page top-left as drawn | **down** | already applied |
+///
+/// `canvas space` is what the application lays out in and what `rect=` and
+/// `zoom=` are expressed against, so it is the space the window conversion
+/// needs. [`Self::user_to_canvas`] is the bridge.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct PageFrame {
+    /// Crop box, PDF user space: `(llx, lly, urx, ury)`.
+    crop: (f64, f64, f64, f64),
+    /// Effective `/Rotate`, degrees, already inherited down the page tree.
+    /// Normalised to one of 0, 90, 180, 270 on construction.
+    rotate: u16,
+}
+
+impl PageFrame {
+    /// Build a frame, normalising the rotation.
+    ///
+    /// A `/Rotate` that is not a multiple of 90 is not representable and is
+    /// treated as 0 — the same reading the application takes, so the harness
+    /// and the application agree about a malformed page rather than disagreeing
+    /// about it.
+    #[must_use]
+    pub fn new(crop: (f64, f64, f64, f64), rotate: i32) -> Self {
+        let r = rotate.rem_euclid(360);
+        let rotate = match r {
+            90 | 180 | 270 => u16::try_from(r).unwrap_or(0),
+            _ => 0,
+        };
+        Self { crop, rotate }
+    }
+
+    /// The page's extent **as drawn**: width and height in canvas space.
+    ///
+    /// A quarter turn swaps them. This is the number a bounds check must use,
+    /// and using the crop box's own width instead is what made a third of the
+    /// canvas unreachable.
+    #[must_use]
+    pub fn canvas_extent(&self) -> (f64, f64) {
+        let (llx, lly, urx, ury) = self.crop;
+        let (w, h) = ((urx - llx).abs(), (ury - lly).abs());
+        if self.rotate == 90 || self.rotate == 270 {
+            (h, w)
+        } else {
+            (w, h)
+        }
+    }
+
+    /// PDF user space → canvas space.
+    ///
+    /// ★ The coefficients mirror `pdfcer-render`'s own region geometry table,
+    /// which is the only authority on how this application draws a turned page.
+    /// They are the *inverse* of the shell's `render::region::PageFrame::
+    /// canvas_to_user`, and the pair is falsified together by that module's
+    /// round-trip test — this copy exists because `ui-verify` deliberately has
+    /// no `pdfcer-core` dependency (see its `Cargo.toml` header) and because a
+    /// harness that shares the code under test cannot measure it.
+    #[must_use]
+    pub fn user_to_canvas(&self, x: f64, y: f64) -> (f64, f64) {
+        let (llx, lly, urx, ury) = self.crop;
+        match self.rotate {
+            90 => (y - lly, x - llx),
+            180 => (urx - x, y - lly),
+            270 => (ury - y, urx - x),
+            _ => (x - llx, ury - y),
+        }
+    }
+
+    /// Whether a user-space point lies inside the crop box, with a hair of
+    /// tolerance so a point written as an exact edge is not refused by a
+    /// rounding in the traced crop.
+    #[must_use]
+    pub fn contains(&self, x: f64, y: f64) -> bool {
+        let (llx, lly, urx, ury) = self.crop;
+        const EPS: f64 = 0.01;
+        x >= llx.min(urx) - EPS
+            && x <= llx.max(urx) + EPS
+            && y >= lly.min(ury) - EPS
+            && y <= lly.max(ury) + EPS
+    }
+
+    /// The crop box, for a failure message that has to say what it measured
+    /// against.
+    #[must_use]
+    pub fn crop(&self) -> (f64, f64, f64, f64) {
+        self.crop
+    }
+
+    /// The effective rotation in degrees.
+    #[must_use]
+    pub fn rotate(&self) -> u16 {
+        self.rotate
+    }
+}
+
 /// A point in egui logical points, relative to the window's client origin.
 ///
 /// Fields are readable — a failure report should be able to say *where* it
@@ -210,7 +336,22 @@ pub struct CanvasMapping {
     /// would settle it.
     pub scroll: Pt,
     /// The page's own size, from the document.
+    ///
+    /// ★ Retained as the **fallback** geometry only. When [`Self::frame`] is
+    /// present it is the authority and this is not consulted, because a
+    /// `/MediaBox` scanned out of the file cannot see `/Rotate`, cannot see a
+    /// `/CropBox` that differs from it, and — on a file carrying an incremental
+    /// update, as `A-591.pdf` does — cannot even see which of two `/Rotate`
+    /// values is live.
     pub page: PageGeometry,
+    /// The acting page's crop box and rotation, when the application traced
+    /// them.
+    ///
+    /// `None` for a build whose profile does not name the fields (the legacy
+    /// binary). The conversion then falls back to the historical single flip,
+    /// which is correct for an upright page at origin and wrong for any other —
+    /// see [`PageFrame`] for the measurement that established that.
+    pub frame: Option<PageFrame>,
     /// Which page [`Self::image_rect`] shows.
     pub page_index: usize,
 }
@@ -336,24 +477,71 @@ impl CanvasMapping {
             .and_then(|field| line.get_vec2(field))
             .unwrap_or(Pt::new(0.0, 0.0));
 
+        // ★ Read together or not at all. A crop box without its rotation is
+        // three-quarters of a measurement, and defaulting the missing quarter
+        // to zero is precisely how the upright assumption got in.
+        let frame = match (vocab.canvas_crop_field, vocab.canvas_rotate_field) {
+            (Some(crop_field), Some(rot_field)) => {
+                match (line.get_f64_list(crop_field), line.get_f32(rot_field)) {
+                    (Some(c), Some(rot)) if c.len() == 4 => {
+                        Some(PageFrame::new((c[0], c[1], c[2], c[3]), rot as i32))
+                    }
+                    _ => None,
+                }
+            }
+            _ => None,
+        };
+
         Ok(Self {
             image_rect,
             zoom,
             scroll,
             page,
+            frame,
             page_index,
         })
     }
 
+    /// **PDF user space → canvas space, the one place this crate does it.**
+    ///
+    /// Every conversion in this type calls this, so there is exactly one
+    /// arithmetic to be wrong. Before 2026-09-10 there were two copies of a
+    /// single `height - y` flip, in this file, forty lines apart — and both were
+    /// wrong on a turned page in the same way, which is precisely why neither
+    /// could catch the other.
+    ///
+    /// With a traced [`PageFrame`] the mapping is the real one, `/Rotate` and
+    /// crop origin included. Without it, the historical behaviour is preserved
+    /// exactly: `x` unchanged, `y` flipped against the page height. That
+    /// fallback is not a compromise so much as a statement of what the legacy
+    /// binary's trace can support — it cannot emit a crop box, so the harness
+    /// cannot honour one.
+    fn user_to_canvas(&self, p: DocPoint) -> (f32, f32) {
+        match self.frame {
+            Some(frame) => {
+                let (cx, cy) = frame.user_to_canvas(p.x, p.y);
+                (cx as f32, cy as f32)
+            }
+            None => (p.x as f32, (self.page.height_pt - p.y) as f32),
+        }
+    }
+
     /// Convert a document point to a window point.
     ///
-    /// The whole conversion, and the only place this crate flips y:
+    /// Two steps, and the first of them is [`Self::user_to_canvas`]:
     ///
     /// ```text
-    /// canvas_x = doc.x                       (PDF x and canvas x agree)
-    /// canvas_y = page_height - doc.y         (the flip: PDF y is up, egui y is down)
-    /// window   = image_rect.min + canvas * zoom - scroll
+    /// canvas = user_to_canvas(doc)           (PDF user space -> canvas space)
+    /// window = image_rect.min + canvas * zoom - scroll
     /// ```
+    ///
+    /// ★ This doc comment used to state the first step inline, as
+    /// `canvas_x = doc.x; canvas_y = page_height - doc.y`, and called it *"the
+    /// whole conversion"*. That was true for every fixture in this repository
+    /// and false for the operator's `A-591.pdf`, whose `/Rotate` is 270 — see
+    /// [`PageFrame`] for what it cost. The arithmetic is deliberately no longer
+    /// restated here: a second copy of a conversion, in prose, is a second copy
+    /// to go stale, and this one did.
     ///
     /// # Errors
     ///
@@ -375,15 +563,31 @@ impl CanvasMapping {
                 self.page_index, p.page
             )));
         }
-        if p.x < 0.0 || p.y < 0.0 || p.x > self.page.width_pt || p.y > self.page.height_pt {
+        if let Some(frame) = self.frame {
+            if !frame.contains(p.x, p.y) {
+                let (llx, lly, urx, ury) = frame.crop();
+                let (cw, ch) = frame.canvas_extent();
+                return Err(Error::new(format!(
+                    "document point ({}, {}) is outside the page's crop box ({llx}, {lly}) - \
+                     ({urx}, {ury}), which the application itself traced. This is PDF USER \
+                     space (y up, origin at the crop box lower-left), NOT the canvas: this \
+                     page's /Rotate is {}, so the canvas is {cw:.0}x{ch:.0} while the crop box \
+                     is {:.0}x{:.0}.",
+                    p.x,
+                    p.y,
+                    frame.rotate(),
+                    (urx - llx).abs(),
+                    (ury - lly).abs(),
+                )));
+            }
+        } else if p.x < 0.0 || p.y < 0.0 || p.x > self.page.width_pt || p.y > self.page.height_pt {
             return Err(Error::new(format!(
                 "document point ({}, {}) is outside the {}x{} pt page box",
                 p.x, p.y, self.page.width_pt, self.page.height_pt
             )));
         }
 
-        let canvas_x = p.x as f32;
-        let canvas_y = (self.page.height_pt - p.y) as f32; // the flip, once
+        let (canvas_x, canvas_y) = self.user_to_canvas(p);
 
         let wx = self.image_rect.min.x + canvas_x * self.zoom - self.scroll.x;
         let wy = self.image_rect.min.y + canvas_y * self.zoom - self.scroll.y;
@@ -445,8 +649,7 @@ impl CanvasMapping {
                 self.page_index, p.page
             )));
         }
-        let canvas_x = p.x as f32;
-        let canvas_y = (self.page.height_pt - p.y) as f32; // the flip, once
+        let (canvas_x, canvas_y) = self.user_to_canvas(p);
         let wx = self.image_rect.min.x + canvas_x * self.zoom - self.scroll.x;
         let wy = self.image_rect.min.y + canvas_y * self.zoom - self.scroll.y;
         // ★★★ **THE VIEWPORT, NOT `image_rect`** — and getting this wrong was
@@ -769,6 +972,11 @@ mod tests {
     use super::*;
     use crate::profile::Vocabulary;
 
+    /// The legacy mapping: no traced frame, so the historical single flip.
+    ///
+    /// ★ Deliberately left frameless. These tests are the record of what the
+    /// fallback does, and a build whose profile names no crop field still takes
+    /// this path — so it has to keep being measured.
     fn mapping() -> CanvasMapping {
         CanvasMapping {
             image_rect: LRect::new(Pt::new(200.0, 100.0), Pt::new(1000.0, 900.0)),
@@ -778,8 +986,140 @@ mod tests {
                 width_pt: 612.0,
                 height_pt: 792.0,
             },
+            frame: None,
             page_index: 0,
         }
+    }
+
+    /// The same mapping, but with a frame the application traced.
+    ///
+    /// `crop` and `rotate` are the caller's; `image_rect` is sized to the
+    /// resulting canvas extent so a corner check has somewhere to land.
+    fn framed(crop: (f64, f64, f64, f64), rotate: i32) -> CanvasMapping {
+        let frame = PageFrame::new(crop, rotate);
+        let (w, h) = frame.canvas_extent();
+        CanvasMapping {
+            image_rect: LRect::new(
+                Pt::new(200.0, 100.0),
+                Pt::new(200.0 + w as f32, 100.0 + h as f32),
+            ),
+            zoom: 1.0,
+            scroll: Pt::new(0.0, 0.0),
+            page: PageGeometry {
+                width_pt: (crop.2 - crop.0).abs(),
+                height_pt: (crop.3 - crop.1).abs(),
+            },
+            frame: Some(frame),
+            page_index: 0,
+        }
+    }
+
+    /// **A quarter turn swaps the canvas extent.**
+    ///
+    /// The assertion the old mapping could not make, and the one whose absence
+    /// made the right-hand third of `A-591.pdf`'s canvas unreachable.
+    #[test]
+    fn a_quarter_turn_swaps_the_canvas_extent() {
+        let upright = PageFrame::new((0.0, 0.0, 792.0, 1224.0), 0);
+        assert_eq!(upright.canvas_extent(), (792.0, 1224.0));
+        for turn in [90, 270] {
+            let turned = PageFrame::new((0.0, 0.0, 792.0, 1224.0), turn);
+            assert_eq!(
+                turned.canvas_extent(),
+                (1224.0, 792.0),
+                "/Rotate {turn} draws a 792x1224 pt page as a 1224x792 canvas"
+            );
+        }
+        let half = PageFrame::new((0.0, 0.0, 792.0, 1224.0), 180);
+        assert_eq!(half.canvas_extent(), (792.0, 1224.0));
+    }
+
+    /// **Every corner of the crop box lands on the matching corner of the
+    /// canvas, on every rotation.**
+    ///
+    /// ★★★ This is the falsifiable form of the whole fix. A mapping that
+    /// ignored `/Rotate` — the one that shipped — sends the crop box's four
+    /// corners to the canvas's four corners on `/Rotate 0` and to a transposed
+    /// set on every other, so the upright case alone proves nothing. Looping
+    /// over all four is what makes the test able to fail.
+    ///
+    /// The expected canvas corner per rotation is derived from where the page
+    /// is *drawn*: at 270° the crop box's lower-left `(llx, lly)` appears at the
+    /// canvas's top-right, and so on around.
+    #[test]
+    fn each_crop_corner_lands_on_the_matching_canvas_corner() {
+        let crop = (20.0_f64, 35.0, 632.0, 827.0);
+        let (cw, ch) = ((crop.2 - crop.0), (crop.3 - crop.1));
+        // (rotate, expected canvas position of the crop box's LOWER-LEFT)
+        let cases = [
+            (0, (0.0, ch)),
+            (90, (0.0, 0.0)),
+            (180, (cw, 0.0)),
+            (270, (ch, cw)),
+        ];
+        for (rotate, expected) in cases {
+            let f = PageFrame::new(crop, rotate);
+            let got = f.user_to_canvas(crop.0, crop.1);
+            assert!(
+                (got.0 - expected.0).abs() < 1e-9 && (got.1 - expected.1).abs() < 1e-9,
+                "/Rotate {rotate}: the crop box's lower-left maps to canvas {got:?}, \
+                 expected {expected:?}"
+            );
+            // And the whole box must land exactly on the canvas extent.
+            let (ew, eh) = f.canvas_extent();
+            let a = f.user_to_canvas(crop.0, crop.1);
+            let b = f.user_to_canvas(crop.2, crop.3);
+            let (x0, y0) = (a.0.min(b.0), a.1.min(b.1));
+            let (x1, y1) = (a.0.max(b.0), a.1.max(b.1));
+            assert!(
+                x0.abs() < 1e-9 && y0.abs() < 1e-9,
+                "/Rotate {rotate}: the box's canvas origin is ({x0}, {y0}), not (0, 0)"
+            );
+            assert!(
+                (x1 - ew).abs() < 1e-9 && (y1 - eh).abs() < 1e-9,
+                "/Rotate {rotate}: the box covers {x1}x{y1}, not the canvas {ew}x{eh}"
+            );
+        }
+    }
+
+    /// **A point on the far side of a turned page is reachable.**
+    ///
+    /// The literal symptom: on `A-591.pdf` the harness refused every
+    /// `--doc-point` whose user-space `x` exceeded 792, because it measured
+    /// against the crop box's width where the canvas is 1224 wide. Here the
+    /// point is well inside the crop box and near the canvas's right edge, and
+    /// the conversion must produce a window position inside the image rect
+    /// rather than an error.
+    #[test]
+    fn a_point_near_the_far_edge_of_a_turned_page_is_reachable() {
+        let m = framed((0.0, 0.0, 792.0, 1224.0), 270);
+        let w = m.doc_to_window(DocPoint::new(0, 737.25, 69.75)).unwrap();
+        // canvas = (ury - y, urx - x) = (1224 - 69.75, 792 - 737.25)
+        assert!((w.x() - (200.0 + 1154.25)).abs() < 0.01, "x was {}", w.x());
+        assert!((w.y() - (100.0 + 54.75)).abs() < 0.01, "y was {}", w.y());
+    }
+
+    /// **The refusal names user space, so the reader does not "fix" the check.**
+    ///
+    /// A point outside the crop box is still refused — that guard is not
+    /// relaxed. What changed is the message: it has to say which space it
+    /// measured in and what the rotation was, because the failure a rotated
+    /// page produces looks exactly like a typo in the check.
+    #[test]
+    fn a_point_off_a_turned_page_is_refused_in_the_words_of_user_space() {
+        let m = framed((0.0, 0.0, 792.0, 1224.0), 270);
+        let err = m
+            .doc_to_window(DocPoint::new(0, 900.0, 100.0))
+            .unwrap_err()
+            .to_string();
+        assert!(
+            err.contains("USER"),
+            "the refusal must name the space: {err}"
+        );
+        assert!(
+            err.contains("270"),
+            "the refusal must name the rotation: {err}"
+        );
     }
 
     /// The y-flip, stated as a test so it cannot be "simplified" away: the

@@ -44,6 +44,37 @@
 //! can still be drawn off-screen; a shell that stopped asking cannot report a
 //! failure.
 //!
+//! # ★★★ The fourth thing, added 2026-09-10: what the raster itself contained
+//!
+//! The uniformity assertion above is correct, and it is what caught O174. It is
+//! also unfalsifiable in one direction, and that cost most of an afternoon.
+//!
+//! A near-uniform canvas is consistent with **two** worlds: the shell lost a
+//! raster that had ink in it (a defect), or the engine faithfully drew a blank
+//! rectangle (not a defect). At five thousand percent a viewport is about a
+//! fifth of a point across, and most fifth-of-a-point squares of a real drawing
+//! contain nothing at all — so on any fixture other than the one this ladder was
+//! calibrated against, world two is the *common* one at the deep rungs.
+//!
+//! This check reported world two as world one, three rungs running, on the
+//! operator's `A-591.pdf`. Settling it took a hand-written test that scraped the
+//! region rectangles out of the trace and called `pdfcer_render` on them
+//! directly; the engine returned one tone for the two deepest.
+//!
+//! `ink=` on `render-async-done` (see `crates/pdfcer-gui/src/render/ink.rs`)
+//! makes that hand-written test permanent and free. The rule is now:
+//!
+//! | canvas | raster | verdict |
+//! |---|---|---|
+//! | uniform | `ink=1` | the DOCUMENT is blank here — SKIP, so the run is INCOMPLETE, not FAILED |
+//! | uniform | `ink>1` | **the defect** — the engine drew a picture and the shell did not show it |
+//! | uniform | no field | the old, weaker verdict, and the message says the field was missing |
+//! | not uniform | — | the rung passes, as before |
+//!
+//! ★★ The blank-document case is deliberately not a pass. A rung that measured
+//! nothing is a third state, and collapsing it into either verdict is how a
+//! check comes to look green while seeing nothing.
+//!
 //! # ★ The captures are evidence, kept on pass as well as fail
 //!
 //! Written to the output directory and named by zoom, because the question
@@ -237,6 +268,28 @@ fn drawn_now(session: &Session) -> Result<u32> {
         .unwrap_or(0))
 }
 
+/// **The tone count of the most recent completed raster, if the build says.**
+///
+/// Reads `ink=` off the last `render-async-done` whose `outcome=done`. Renders
+/// that were cancelled or failed carry `ink=-1` and are filtered out rather than
+/// read as a count: a cancelled render says nothing about what the page
+/// contains, and letting `-1` through would turn every mid-zoom cancellation
+/// into a spurious *"the engine drew nothing"*.
+///
+/// `None` means the build does not trace the field at all — the honest answer
+/// for the legacy binary and for any build older than 2026-09-10. The caller
+/// then falls back to the original, weaker verdict and says so in the message,
+/// rather than treating a missing field as a zero.
+fn last_ink(session: &Session) -> Result<Option<i64>> {
+    Ok(session
+        .trace()?
+        .events(RENDER_EVENT)
+        .filter(|l| l.get("outcome").is_some_and(|o| o == "done"))
+        .filter_map(|l| l.get("ink").and_then(|v| v.trim().parse::<i64>().ok()))
+        .filter(|n| *n >= 0)
+        .last())
+}
+
 /// Capture the window and assert it shows a drawn page.
 ///
 /// Returns `Ok(Some(verdict))` when it does not — the three ways of being wrong
@@ -285,13 +338,74 @@ fn photograph(
     let region = frame.logical_to_capture_pixels(canvas);
     let uniformity = crate::pixels::region_not_uniform(&image, region);
     if uniformity.is_uniform() {
-        return Ok(Some(format!(
-            "at {:.0}% the CANVAS is near-uniform ({}) — the page is not being drawn, \
-             whatever the rest of the window shows. The capture is at {}.",
-            zoom * 100.0,
-            uniformity.summary(),
-            path.display()
-        )));
+        // ★★★ A BLANK CANVAS HAS TWO CAUSES AND THIS IS WHERE THEY PART.
+        //
+        // Added 2026-09-10, after this assertion spent an afternoon accusing an
+        // innocent shell. The two worlds a near-uniform canvas is consistent
+        // with:
+        //
+        //   1. the engine drew ink and the shell failed to show it — a defect,
+        //      and the defect O174 actually was at 2,025 % on a rotated sheet;
+        //   2. the engine drew blank paper, faithfully, because at this
+        //      magnification the viewport is a fifth of a point across and
+        //      there is nothing in it.
+        //
+        // World 2 is the COMMON one at depth on any real drawing. This check's
+        // own zoom ladder was calibrated against `banana.pdf`, a fixture built
+        // to carry detail at every decade; run it against the operator's
+        // `A-591.pdf` and three rungs are legitimately empty. Reported as a
+        // failure, those are three investigations into nothing — and settling
+        // the first of them took a hand-written test that called the engine on
+        // the rectangles scraped out of the trace.
+        //
+        // `ink=` on `render-async-done` is that hand-written test, made
+        // permanent and free: `crates/pdfcer-gui/src/render/ink.rs` counts the
+        // raster's own distinct tones. So the shell can now be ASKED what it
+        // was given, instead of inferred about.
+        let ink = last_ink(session)?;
+        if ink == Some(1) {
+            // ★★ Deliberately an Error, which is a SKIP, which makes the run
+            // INCOMPLETE (exit 3) rather than FAILED (exit 1) — and NOT a pass.
+            //
+            // A rung that photographed blank paper measured nothing, and
+            // neither verdict is a true report of that. Calling it a pass is
+            // how a check comes to look green while seeing nothing, which is a
+            // failure mode this project has met more than once; calling it a
+            // failure sends someone to read `render::region` about a document
+            // that is simply empty at this magnification.
+            return Err(Error::new(format!(
+                "at {:.0}% the CANVAS is near-uniform ({}) — AND SO IS THE RASTER: the renderer \
+                 traced `ink=1`, meaning the rectangle it was asked for contains a single tone. \
+                 The shell is drawing what the engine gave it, and what the engine gave it is \
+                 blank paper. That is a statement about the DOCUMENT at this magnification, not \
+                 about the canvas: a fifth of a point of a CAD drawing is usually empty. This \
+                 rung needs a fixture carrying detail at this scale — `banana.pdf` has it by \
+                 construction, a real sheet does not. Capture at {}.",
+                zoom * 100.0,
+                uniformity.summary(),
+                path.display()
+            )));
+        }
+        return Ok(Some(match ink {
+            Some(n) => format!(
+                "at {:.0}% the CANVAS is near-uniform ({}) while the renderer traced `ink={n}` — \
+                 the engine produced a picture with {n} distinct tones and the operator is \
+                 looking at blank paper. THIS IS THE DEFECT: the raster exists and the shell is \
+                 not putting it on screen. Capture at {}.",
+                zoom * 100.0,
+                uniformity.summary(),
+                path.display()
+            ),
+            None => format!(
+                "at {:.0}% the CANVAS is near-uniform ({}) — the page is not being drawn, \
+                 whatever the rest of the window shows. The capture is at {}. (This build traces \
+                 no `ink=` on `{RENDER_EVENT}`, so the harness cannot say whether the raster \
+                 itself was blank; see `render::ink` for what that field would settle.)",
+                zoom * 100.0,
+                uniformity.summary(),
+                path.display()
+            ),
+        }));
     }
 
     let drawn = drawn_now(session)?;
