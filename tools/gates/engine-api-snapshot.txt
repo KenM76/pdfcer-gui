@@ -41,33 +41,34 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 369d4de98fb571e62c99cd0c7551d26732f71cd6
+# baseline: d4a4e3b3c1d2b20acfe4a7c00a71f8d82f471d14
 # crates: pdfcer-core pdfcer-render pdfcer-print
-# items: 7368
+# items: 7433
 # ---------------------------------------------------------------------------
 
+exempt pdfcer-core field pdfcer_core::parser::DuplicateKeyRecord::discarded -- the value pdfcer threw away, which is the fact that makes the operator's choice offerable rather than theoretical -- the engine's own argument for carrying both. Reached here as `LoadAnomaly::DuplicateDictKey::discarded` and printed beside the kept value today; the override that would ACT on it is filed `wanted` in ENGINE_BACKLOG.md against `LoadOptions::with_duplicate_keys`, not against this field.
+exempt pdfcer-core field pdfcer_core::parser::DuplicateKeyRecord::kept -- the value pdfcer kept under the policy in force. Reached here as `LoadAnomaly::DuplicateDictKey::kept`; see the two lines above. It is the half the operator sees in the disclosure sentence -- `pdfcer kept /UseOutlines` -- and the shell renders it from the tagged anomaly, never from the parser.
+exempt pdfcer-core field pdfcer_core::parser::DuplicateKeyRecord::key -- the repeated key without its solidus. Reached here as `LoadAnomaly::DuplicateDictKey::key` and printed in Document properties today; see the struct's exemption above for why the parser-level copy is the wrong one to hold. Exempted per field rather than wildcarded on the struct, deliberately: if the engine ever adds a fourth fact to the record that `LoadAnomaly` does NOT mirror, that is exactly the divergence this project wants to cost one line and one look.
 exempt pdfcer-core field pdfcer_core::xref::HybridPartition::hidden -- the object numbers whose winning xref entry came from the /XRefStm stream. This is the ONE fact in the hybrid cluster that `WriteError::HybridFullRewrite` does not already carry, and it is still not actionable: an operator cannot do anything with a set of object numbers, and the surface that would need them -- a structure report saying WHICH parts of a hybrid file a full rewrite would drop -- does not exist and is not planned. See the struct's exemption above, which names the condition for deleting both.
 exempt pdfcer-core field pdfcer_core::xref::HybridPartition::stream_unreadable -- a did-the-XRefStm-parse flag. Its ONLY consumer is `is_reproducible()`, which is the gate on `writer::save`'s full rewrite, and this shell already renders the outcome of that gate as `WriteError::HybridFullRewrite` (O157). Reading the flag would let the shell predict the refusal one step earlier; it would not let it say anything new, and a prediction that disagreed with the writer's own check would be a second description of the rule.
 exempt pdfcer-core field pdfcer_core::xref::LoadedXref::hidden_objects -- the same set as `HybridPartition::hidden`, one layer down, on the type `load_xref_chain` returns. This shell never holds a `LoadedXref`: it opens documents through `Document::load`, which consumes the xref chain internally. Exempted separately from the `HybridPartition` copy rather than folded into it, because the two would have to be exempted separately again if the engine ever stopped keeping them in sync.
 exempt pdfcer-core field pdfcer_core::xref::LoadedXref::hybrid_stream_unreadable -- the same flag as `HybridPartition::stream_unreadable`, on the type this shell never holds. See the two lines above; the argument is theirs.
+exempt pdfcer-core method pdfcer_core::document::Document::hybrid_partition -- the single public accessor for `xref::HybridPartition`, which this snapshot already exempts at length two lines below along with both of its fields and its `is_reproducible` gate. It is listed separately rather than folded into that argument because it lives on `Document` -- the one engine type this shell holds for every open file -- so it is the ONE member of the hybrid cluster that is actually reachable from here, and a reader who found the struct exempted could reasonably assume the cluster was unreachable and stop. It is not unreachable; it is unwanted, for the reason the struct's own line gives: everything in a `HybridPartition` that an operator can act on already reaches him as `WriteError::HybridFullRewrite`, which this shell renders today (O157). DELETE THIS LINE together with the struct's, under the same condition it names.
+exempt pdfcer-core method pdfcer_core::parser::Parser::duplicate_keys -- every duplicate key one `Parser` resolved. This shell never constructs a `Parser` and never will: it opens documents through `Document::load`, which drives the parser internally, tags each record with its object and hands the result out as `Document::load_anomalies()` -- the call `app::status::anomalies` actually makes. Reading the parser's own list would require standing up a second parse of the same bytes, and would produce a report that disagreed with the one on screen the moment the two parses were given different `LoadOptions`.
+exempt pdfcer-core method pdfcer_core::parser::Parser::duplicate_keys_resolved -- the count of the list above. The shell's census clause in the status bar counts the same thing, derived from `load_anomalies()` by matching on the variant, so the number an operator reads is a count of the anomalies actually being itemised in Document properties -- which is the property that matters and the one a separate counter would eventually break. Same `Parser`-receiver argument as the line above.
+exempt pdfcer-core method pdfcer_core::parser::Parser::with_duplicate_key_policy -- the parser-level opt-in to `DuplicateKeyPolicy`. The capability behind it IS wanted here and is filed as such: ENGINE_BACKLOG.md carries `Offer the operator the value pdfcer discarded` under `wanted`, naming `LoadOptions::with_duplicate_keys(policy)` -- the DOCUMENT-level builder, which is the one a re-load of the same bytes goes through. This parser-level twin is the same switch one layer down, on a type this shell never holds, and wiring it would mean re-implementing `Document::load` to reach a policy the loader already forwards. NOTE the trap the backlog row also records: `DuplicateKeyPolicy`'s own `Default` is `Refuse`, which is the behaviour that cost the operator his 46 KB drawing -- so neither builder may ever be called with `DuplicateKeyPolicy::default()`.
 exempt pdfcer-core method pdfcer_core::text_edit::encoding::CompositeEncoding::candidate_chars -- the set of characters an encoding COULD carry, which the engine's own doc comment is careful to call necessary and not sufficient: a candidate can still be refused as ambiguous, as ligature-only, or by the embedded-subset floor. The engine deliberately split asking from deciding (`R221`) so that only `EditSession::run_repertoire` composes the two, and run_repertoire is what this shell wires. Calling candidate_chars directly would be this shell re-deriving acceptance from the necessary half, i.e. the exact second description of the refusal rules that split exists to prevent.
 exempt pdfcer-core method pdfcer_core::text_edit::encoding::InverseEncoding::candidate_chars -- the simple-font twin of the line above, with the same doc comment and the same R221 argument. Exempted per type rather than wildcarded because the two encodings answer for different font shapes, and a future divergence between them should cost a look.
 exempt pdfcer-core method pdfcer_core::xref::HybridPartition::is_reproducible -- the writer's own precondition, called at writer/save.rs and nowhere else in the engine. A shell that called it would be asking whether a save is about to refuse, which is exactly what attempting the save answers, authoritatively and without a second copy of the condition. Calling it to grey a control would also break R9's reservation of greying for TEMPORARILY unavailable, since a hybrid file with an unreadable stream is not a state the operator can leave.
 exempt pdfcer-core method pdfcer_core::xref::LoadedXref::hybrid_partition -- the constructor that copies the two `LoadedXref` fields into a `HybridPartition`. Unreachable from this shell for the mechanical reason that it needs a `LoadedXref` receiver and this shell never obtains one, and unwanted for the reason the struct's own exemption gives at length.
+exempt pdfcer-core struct pdfcer_core::parser::DuplicateKeyRecord -- the parser's own untagged record of one duplicate-key decision (key, kept, discarded). This shell wants all three facts and already has them, one layer up and better: `document::LoadAnomaly::DuplicateDictKey` carries the same three PLUS the `ObjId` they came from, and `app::status::anomalies` reads it live at draw time to say which object contradicted itself. The record cannot answer that -- the engine tags it with the object as it carries it out of the parser -- so a shell that reached for `DuplicateKeyRecord` would be trading down to the version with the object number missing. Exempted as a TYPE this shell should not name, not as a fact it does not want.
 exempt pdfcer-core struct pdfcer_core::xref::HybridPartition -- xref-internal plumbing that is public only because `pub mod xref;` publishes the whole module. It exists to answer ONE question, and the writer is the only thing that asks it: `is_reproducible()` gates `writer::save`'s full rewrite, and `Document`'s own field holding it is PRIVATE, read at writer/save.rs and nowhere else. The single public accessor `Document::hybrid_partition()` hands out a reference to it, so this shell COULD hold one -- and would learn nothing an operator can act on, because the only outcome that reaches him is already carried by `WriteError::HybridFullRewrite`, which this shell renders today (O157). Its two fields are a set of hidden object numbers and a did-the-XRefStm-parse flag: file-structure facts about SS 7.5.8.4, not document facts. DELETE THIS LINE if a surface ever needs to say WHICH objects a hybrid file hides -- that is the one thing in here the refusal variant does not carry.
 exempt pdfcer-render field pdfcer_render::font::RenderPolicy::stroke_display -- RenderPolicy is the interpreter's INTERNAL derived bundle, not a shell-facing type: every one of its fields' own doc comments reads "See RenderOptions::<the same name>", and the engine builds a RenderPolicy from the RenderOptions a caller hands it. This shell sets RenderOptions::stroke_display (View > Display > Line weights, O137) and constructs no RenderPolicy anywhere in the workspace. Exempted PER FIELD rather than wildcarded for the whole type, deliberately: every future RenderPolicy field mirrors a RenderOptions field this shell probably DOES want, so each one should cost one line and one look.
-exempt pdfcer-core method pdfcer_core::document::Document::hybrid_partition -- the single public accessor for `xref::HybridPartition`, which this snapshot already exempts at length two lines below along with both of its fields and its `is_reproducible` gate. It is listed separately rather than folded into that argument because it lives on `Document` -- the one engine type this shell holds for every open file -- so it is the ONE member of the hybrid cluster that is actually reachable from here, and a reader who found the struct exempted could reasonably assume the cluster was unreachable and stop. It is not unreachable; it is unwanted, for the reason the struct's own line gives: everything in a `HybridPartition` that an operator can act on already reaches him as `WriteError::HybridFullRewrite`, which this shell renders today (O157). DELETE THIS LINE together with the struct's, under the same condition it names.
-exempt pdfcer-core struct pdfcer_core::parser::DuplicateKeyRecord -- the parser's own untagged record of one duplicate-key decision (key, kept, discarded). This shell wants all three facts and already has them, one layer up and better: `document::LoadAnomaly::DuplicateDictKey` carries the same three PLUS the `ObjId` they came from, and `app::status::anomalies` reads it live at draw time to say which object contradicted itself. The record cannot answer that -- the engine tags it with the object as it carries it out of the parser -- so a shell that reached for `DuplicateKeyRecord` would be trading down to the version with the object number missing. Exempted as a TYPE this shell should not name, not as a fact it does not want.
-exempt pdfcer-core field pdfcer_core::parser::DuplicateKeyRecord::key -- the repeated key without its solidus. Reached here as `LoadAnomaly::DuplicateDictKey::key` and printed in Document properties today; see the struct's exemption above for why the parser-level copy is the wrong one to hold. Exempted per field rather than wildcarded on the struct, deliberately: if the engine ever adds a fourth fact to the record that `LoadAnomaly` does NOT mirror, that is exactly the divergence this project wants to cost one line and one look.
-exempt pdfcer-core field pdfcer_core::parser::DuplicateKeyRecord::kept -- the value pdfcer kept under the policy in force. Reached here as `LoadAnomaly::DuplicateDictKey::kept`; see the two lines above. It is the half the operator sees in the disclosure sentence -- `pdfcer kept /UseOutlines` -- and the shell renders it from the tagged anomaly, never from the parser.
-exempt pdfcer-core field pdfcer_core::parser::DuplicateKeyRecord::discarded -- the value pdfcer threw away, which is the fact that makes the operator's choice offerable rather than theoretical -- the engine's own argument for carrying both. Reached here as `LoadAnomaly::DuplicateDictKey::discarded` and printed beside the kept value today; the override that would ACT on it is filed `wanted` in ENGINE_BACKLOG.md against `LoadOptions::with_duplicate_keys`, not against this field.
-exempt pdfcer-core method pdfcer_core::parser::Parser::duplicate_keys -- every duplicate key one `Parser` resolved. This shell never constructs a `Parser` and never will: it opens documents through `Document::load`, which drives the parser internally, tags each record with its object and hands the result out as `Document::load_anomalies()` -- the call `app::status::anomalies` actually makes. Reading the parser's own list would require standing up a second parse of the same bytes, and would produce a report that disagreed with the one on screen the moment the two parses were given different `LoadOptions`.
-exempt pdfcer-core method pdfcer_core::parser::Parser::duplicate_keys_resolved -- the count of the list above. The shell's census clause in the status bar counts the same thing, derived from `load_anomalies()` by matching on the variant, so the number an operator reads is a count of the anomalies actually being itemised in Document properties -- which is the property that matters and the one a separate counter would eventually break. Same `Parser`-receiver argument as the line above.
-exempt pdfcer-core method pdfcer_core::parser::Parser::with_duplicate_key_policy -- the parser-level opt-in to `DuplicateKeyPolicy`. The capability behind it IS wanted here and is filed as such: ENGINE_BACKLOG.md carries `Offer the operator the value pdfcer discarded` under `wanted`, naming `LoadOptions::with_duplicate_keys(policy)` -- the DOCUMENT-level builder, which is the one a re-load of the same bytes goes through. This parser-level twin is the same switch one layer down, on a type this shell never holds, and wiring it would mean re-implementing `Document::load` to reach a policy the loader already forwards. NOTE the trap the backlog row also records: `DuplicateKeyPolicy`'s own `Default` is `Refuse`, which is the behaviour that cost the operator his 46 KB drawing -- so neither builder may ever be called with `DuplicateKeyPolicy::default()`.
 
 pdfcer-core const pdfcer_core::HEADER_SCAN_WINDOW
 pdfcer-core const pdfcer_core::annot::MAX_ANNOTS_PER_PAGE
 pdfcer-core const pdfcer_core::annot::MAX_VE_DEPTH
+pdfcer-core const pdfcer_core::annot_author::DEFAULT_STAMP_FONT_SIZE
 pdfcer-core const pdfcer_core::annot_author::PUSH_BUTTON_PLATE_GRAY
 pdfcer-core const pdfcer_core::attachments::FALLBACK_SAFE_NAME
 pdfcer-core const pdfcer_core::attachments::MAX_ATTACHMENTS
@@ -243,6 +244,7 @@ pdfcer-core enum pdfcer_core::annot_author::Color
 pdfcer-core enum pdfcer_core::annot_author::LineEnding
 pdfcer-core enum pdfcer_core::annot_author::MarkupSpec
 pdfcer-core enum pdfcer_core::annot_author::SpecReadError
+pdfcer-core enum pdfcer_core::annot_author::StampFit
 pdfcer-core enum pdfcer_core::annot_author::StampName
 pdfcer-core enum pdfcer_core::annot_author::StickyIcon
 pdfcer-core enum pdfcer_core::annot_author::TextAnnotSpec
@@ -280,6 +282,8 @@ pdfcer-core enum pdfcer_core::dimension::units::ScaleEntry
 pdfcer-core enum pdfcer_core::dimension::units::ScaleState
 pdfcer-core enum pdfcer_core::dimension::units::Unit
 pdfcer-core enum pdfcer_core::document::DocError
+pdfcer-core enum pdfcer_core::document::LoadAnomaly
+pdfcer-core enum pdfcer_core::document::UnreadableObjectPolicy
 pdfcer-core enum pdfcer_core::edit::AnnotKind
 pdfcer-core enum pdfcer_core::edit::AnnotationDeletionRoute
 pdfcer-core enum pdfcer_core::edit::AppearanceWrite
@@ -410,6 +414,7 @@ pdfcer-core enum pdfcer_core::pageops::separation::SeparationPolicy
 pdfcer-core enum pdfcer_core::pageops::split::SplitCriterion
 pdfcer-core enum pdfcer_core::paper::Orientation
 pdfcer-core enum pdfcer_core::paper::PaperSize
+pdfcer-core enum pdfcer_core::parser::DuplicateKeyPolicy
 pdfcer-core enum pdfcer_core::parser::ParseErrorKind
 pdfcer-core enum pdfcer_core::parser::StreamLengthPolicy
 pdfcer-core enum pdfcer_core::parser::TerminatorPolicy
@@ -617,6 +622,8 @@ pdfcer-core field pdfcer_core::annot_author::RedactSpec::fill
 pdfcer-core field pdfcer_core::annot_author::RedactSpec::overlay_text
 pdfcer-core field pdfcer_core::annot_author::RedactSpec::quadding
 pdfcer-core field pdfcer_core::annot_author::RedactSpec::quads
+pdfcer-core field pdfcer_core::annot_author::StampStyle::fit
+pdfcer-core field pdfcer_core::annot_author::StampStyle::font_size
 pdfcer-core field pdfcer_core::attachments::Attachment::checksum
 pdfcer-core field pdfcer_core::attachments::Attachment::created
 pdfcer-core field pdfcer_core::attachments::Attachment::declared_size
@@ -774,6 +781,10 @@ pdfcer-core field pdfcer_core::dimension::units::ScalePreview::unit
 pdfcer-core field pdfcer_core::document::DocumentEncryption::auth
 pdfcer-core field pdfcer_core::document::DocumentEncryption::config
 pdfcer-core field pdfcer_core::document::DocumentEncryption::perms
+pdfcer-core field pdfcer_core::document::LoadOptions::duplicate_keys
+pdfcer-core field pdfcer_core::document::LoadOptions::stream_lengths
+pdfcer-core field pdfcer_core::document::LoadOptions::terminators
+pdfcer-core field pdfcer_core::document::LoadOptions::unreadable_objects
 pdfcer-core field pdfcer_core::edit::AdoptOutcome::acroform_created
 pdfcer-core field pdfcer_core::edit::AdoptOutcome::field_id
 pdfcer-core field pdfcer_core::edit::AdoptOutcome::field_type
@@ -1967,6 +1978,14 @@ pdfcer-core field pdfcer_core::signature_verify::SignatureVerdict::sub_filter
 pdfcer-core field pdfcer_core::signature_verify::SignatureVerdict::trust
 pdfcer-core field pdfcer_core::span::ByteSpan::len
 pdfcer-core field pdfcer_core::span::ByteSpan::start
+pdfcer-core field pdfcer_core::stamp_file::CollectionWritten::skipped
+pdfcer-core field pdfcer_core::stamp_file::CollectionWritten::stamps_named
+pdfcer-core field pdfcer_core::stamp_file::StampCollection::category
+pdfcer-core field pdfcer_core::stamp_file::StampCollection::stamps
+pdfcer-core field pdfcer_core::stamp_file::StampEntry::display
+pdfcer-core field pdfcer_core::stamp_file::StampEntry::dynamic
+pdfcer-core field pdfcer_core::stamp_file::StampEntry::internal
+pdfcer-core field pdfcer_core::stamp_file::StampEntry::page_index
 pdfcer-core field pdfcer_core::structure::DumpOptions::max_depth
 pdfcer-core field pdfcer_core::structure::DumpOptions::max_objects
 pdfcer-core field pdfcer_core::structure::DumpOptions::max_stream_bytes
@@ -2124,6 +2143,13 @@ pdfcer-core field pdfcer_core::text_edit::format::FormatRequest::set_word_spacin
 pdfcer-core field pdfcer_core::text_edit::format::FormatRequest::target
 pdfcer-core field pdfcer_core::text_edit::format::NewFill::components
 pdfcer-core field pdfcer_core::text_edit::format::NewFill::model
+pdfcer-core field pdfcer_core::text_edit::format::RunRepertoire::accepted
+pdfcer-core field pdfcer_core::text_edit::format::RunRepertoire::base_font
+pdfcer-core field pdfcer_core::text_edit::format::RunRepertoire::candidates_tested
+pdfcer-core field pdfcer_core::text_edit::format::RunRepertoire::embedded_subset
+pdfcer-core field pdfcer_core::text_edit::format::RunRepertoire::reason
+pdfcer-core field pdfcer_core::text_edit::format::RunRepertoire::resource
+pdfcer-core field pdfcer_core::text_edit::format::RunRepertoire::text
 pdfcer-core field pdfcer_core::text_edit::format::ScriptMetrics::rise_ratio
 pdfcer-core field pdfcer_core::text_edit::format::ScriptMetrics::size_factor
 pdfcer-core field pdfcer_core::text_edit::format::Std14Entry::acceptance
@@ -2812,6 +2838,9 @@ pdfcer-core fn pdfcer_core::signature::impact_of
 pdfcer-core fn pdfcer_core::signature_verify::verify
 pdfcer-core fn pdfcer_core::signature_verify::verify_all
 pdfcer-core fn pdfcer_core::signature_verify::verify_all_with_trust
+pdfcer-core fn pdfcer_core::stamp_file::name_stamp_pages
+pdfcer-core fn pdfcer_core::stamp_file::read
+pdfcer-core fn pdfcer_core::stamp_file::stamp_name_string
 pdfcer-core fn pdfcer_core::structure::inventory
 pdfcer-core fn pdfcer_core::structure::layout
 pdfcer-core fn pdfcer_core::structure::render_object
@@ -2856,6 +2885,7 @@ pdfcer-core fn pdfcer_core::vartext::default_appearance_string
 pdfcer-core fn pdfcer_core::vartext::parse_default_appearance
 pdfcer-core fn pdfcer_core::vartext::standard14_font_dict
 pdfcer-core fn pdfcer_core::vartext::text_band_height
+pdfcer-core fn pdfcer_core::vartext::text_width
 pdfcer-core fn pdfcer_core::vartext::visible_line_count
 pdfcer-core fn pdfcer_core::vector::centerline::derive_from_path
 pdfcer-core fn pdfcer_core::vector::centerline::page_candidates
@@ -2943,6 +2973,10 @@ pdfcer-core method pdfcer_core::annot_author::CheckStyle::mk_caption_char
 pdfcer-core method pdfcer_core::annot_author::CheckStyle::parse
 pdfcer-core method pdfcer_core::annot_author::Quad::from_rect
 pdfcer-core method pdfcer_core::annot_author::RedactAppearance::to_spec
+pdfcer-core method pdfcer_core::annot_author::StampStyle::legacy_derived
+pdfcer-core method pdfcer_core::annot_author::StampStyle::points
+pdfcer-core method pdfcer_core::annot_author::StampStyle::with_fit
+pdfcer-core method pdfcer_core::annot_author::StampStyle::with_font_size
 pdfcer-core method pdfcer_core::annot_author::StickyIcon::from_name
 pdfcer-core method pdfcer_core::annot_author::StickyIcon::from_name_lossless
 pdfcer-core method pdfcer_core::annot_author::StickyIcon::name
@@ -3093,11 +3127,14 @@ pdfcer-core method pdfcer_core::document::Document::bytes
 pdfcer-core method pdfcer_core::document::Document::catalog
 pdfcer-core method pdfcer_core::document::Document::encryption
 pdfcer-core method pdfcer_core::document::Document::from_bytes
+pdfcer-core method pdfcer_core::document::Document::from_bytes_with_options
 pdfcer-core method pdfcer_core::document::Document::from_bytes_with_password
 pdfcer-core method pdfcer_core::document::Document::get
 pdfcer-core method pdfcer_core::document::Document::is_hybrid
 pdfcer-core method pdfcer_core::document::Document::linearization
 pdfcer-core method pdfcer_core::document::Document::load
+pdfcer-core method pdfcer_core::document::Document::load_anomalies
+pdfcer-core method pdfcer_core::document::Document::load_with_options
 pdfcer-core method pdfcer_core::document::Document::load_with_password
 pdfcer-core method pdfcer_core::document::Document::loaded_via_recovery
 pdfcer-core method pdfcer_core::document::Document::next_object_number
@@ -3113,6 +3150,11 @@ pdfcer-core method pdfcer_core::document::Document::trailer
 pdfcer-core method pdfcer_core::document::Document::version
 pdfcer-core method pdfcer_core::document::Document::view
 pdfcer-core method pdfcer_core::document::Document::xref
+pdfcer-core method pdfcer_core::document::LoadAnomaly::kind
+pdfcer-core method pdfcer_core::document::LoadAnomaly::object
+pdfcer-core method pdfcer_core::document::LoadOptions::new
+pdfcer-core method pdfcer_core::document::LoadOptions::strict
+pdfcer-core method pdfcer_core::document::LoadOptions::with_duplicate_keys
 pdfcer-core method pdfcer_core::edit::BorderStyle::name
 pdfcer-core method pdfcer_core::edit::BorderStyle::token
 pdfcer-core method pdfcer_core::edit::ChoiceOption::new
@@ -3311,6 +3353,7 @@ pdfcer-core method pdfcer_core::edit::EditSession::set_markup_note
 pdfcer-core method pdfcer_core::edit::EditSession::set_markup_style
 pdfcer-core method pdfcer_core::edit::EditSession::set_media_box
 pdfcer-core method pdfcer_core::edit::EditSession::set_media_boxes
+pdfcer-core method pdfcer_core::edit::EditSession::set_named_pages
 pdfcer-core method pdfcer_core::edit::EditSession::set_object_paint
 pdfcer-core method pdfcer_core::edit::EditSession::set_outline_open
 pdfcer-core method pdfcer_core::edit::EditSession::set_outline_title
@@ -3800,6 +3843,7 @@ pdfcer-core method pdfcer_core::span::ByteSpan::is_empty
 pdfcer-core method pdfcer_core::span::ByteSpan::new
 pdfcer-core method pdfcer_core::span::ByteSpan::range
 pdfcer-core method pdfcer_core::span::ByteSpan::slice
+pdfcer-core method pdfcer_core::stamp_file::StampCollection::is_stamp_file
 pdfcer-core method pdfcer_core::structure::DumpOptions::with_depth
 pdfcer-core method pdfcer_core::structure::DumpOptions::with_max_objects
 pdfcer-core method pdfcer_core::structure::DumpOptions::with_max_stream_bytes
@@ -3862,6 +3906,8 @@ pdfcer-core method pdfcer_core::text_edit::format::MetricSpec::raw
 pdfcer-core method pdfcer_core::text_edit::format::MetricSpec::resolve
 pdfcer-core method pdfcer_core::text_edit::format::MetricSpec::unit_label
 pdfcer-core method pdfcer_core::text_edit::format::NewFill::new
+pdfcer-core method pdfcer_core::text_edit::format::RunRepertoire::accepts
+pdfcer-core method pdfcer_core::text_edit::format::RunRepertoire::is_editable
 pdfcer-core method pdfcer_core::text_edit::format::ScriptPosition::label
 pdfcer-core method pdfcer_core::text_edit::format::ScriptPosition::metrics
 pdfcer-core method pdfcer_core::text_edit::format::StyleOutcome::is_real_face
@@ -4182,6 +4228,7 @@ pdfcer-core struct pdfcer_core::annot_author::MarkupCarry
 pdfcer-core struct pdfcer_core::annot_author::Quad
 pdfcer-core struct pdfcer_core::annot_author::RedactAppearance
 pdfcer-core struct pdfcer_core::annot_author::RedactSpec
+pdfcer-core struct pdfcer_core::annot_author::StampStyle
 pdfcer-core struct pdfcer_core::attachments::Attachment
 pdfcer-core struct pdfcer_core::attachments::AttachmentClip
 pdfcer-core struct pdfcer_core::attachments::AttachmentNotes
@@ -4221,6 +4268,7 @@ pdfcer-core struct pdfcer_core::dimension::units::NumberFormat
 pdfcer-core struct pdfcer_core::dimension::units::ScalePreview
 pdfcer-core struct pdfcer_core::document::Document
 pdfcer-core struct pdfcer_core::document::DocumentEncryption
+pdfcer-core struct pdfcer_core::document::LoadOptions
 pdfcer-core struct pdfcer_core::edit::AdoptOutcome
 pdfcer-core struct pdfcer_core::edit::AnnotationDeletion
 pdfcer-core struct pdfcer_core::edit::AnnotationFlagsChange
@@ -4434,6 +4482,9 @@ pdfcer-core struct pdfcer_core::signature::ByteRangeCoverage
 pdfcer-core struct pdfcer_core::signature::SignatureCensus
 pdfcer-core struct pdfcer_core::signature_verify::SignatureVerdict
 pdfcer-core struct pdfcer_core::span::ByteSpan
+pdfcer-core struct pdfcer_core::stamp_file::CollectionWritten
+pdfcer-core struct pdfcer_core::stamp_file::StampCollection
+pdfcer-core struct pdfcer_core::stamp_file::StampEntry
 pdfcer-core struct pdfcer_core::structure::DumpOptions
 pdfcer-core struct pdfcer_core::structure::FileLayout
 pdfcer-core struct pdfcer_core::structure::Inventory
@@ -4461,6 +4512,7 @@ pdfcer-core struct pdfcer_core::text_edit::format::FormatOutcome
 pdfcer-core struct pdfcer_core::text_edit::format::FormatReport
 pdfcer-core struct pdfcer_core::text_edit::format::FormatRequest
 pdfcer-core struct pdfcer_core::text_edit::format::NewFill
+pdfcer-core struct pdfcer_core::text_edit::format::RunRepertoire
 pdfcer-core struct pdfcer_core::text_edit::format::ScriptMetrics
 pdfcer-core struct pdfcer_core::text_edit::format::Std14Entry
 pdfcer-core struct pdfcer_core::text_edit::format::StyleLadder
@@ -4600,6 +4652,9 @@ pdfcer-core variant pdfcer_core::annot_author::MarkupSpec::Square
 pdfcer-core variant pdfcer_core::annot_author::MarkupSpec::TextMarkup
 pdfcer-core variant pdfcer_core::annot_author::SpecReadError::BadGeometry
 pdfcer-core variant pdfcer_core::annot_author::SpecReadError::UnsupportedSubtype
+pdfcer-core variant pdfcer_core::annot_author::StampFit::ClipToBox
+pdfcer-core variant pdfcer_core::annot_author::StampFit::GrowToText
+pdfcer-core variant pdfcer_core::annot_author::StampFit::ShrinkToBox
 pdfcer-core variant pdfcer_core::annot_author::StampName::Approved
 pdfcer-core variant pdfcer_core::annot_author::StampName::AsIs
 pdfcer-core variant pdfcer_core::annot_author::StampName::Confidential
@@ -4773,6 +4828,12 @@ pdfcer-core variant pdfcer_core::document::DocError::PasswordRequiredR6
 pdfcer-core variant pdfcer_core::document::DocError::PasswordRequiresNormalisation
 pdfcer-core variant pdfcer_core::document::DocError::Recovery
 pdfcer-core variant pdfcer_core::document::DocError::Xref
+pdfcer-core variant pdfcer_core::document::LoadAnomaly::DuplicateDictKey
+pdfcer-core variant pdfcer_core::document::LoadAnomaly::MissingEndobjRecovered
+pdfcer-core variant pdfcer_core::document::LoadAnomaly::ObjectUnreadable
+pdfcer-core variant pdfcer_core::document::LoadAnomaly::StreamLengthRecovered
+pdfcer-core variant pdfcer_core::document::UnreadableObjectPolicy::Refuse
+pdfcer-core variant pdfcer_core::document::UnreadableObjectPolicy::TreatAsUndefined
 pdfcer-core variant pdfcer_core::edit::AnnotKind::Circle
 pdfcer-core variant pdfcer_core::edit::AnnotKind::FreeText
 pdfcer-core variant pdfcer_core::edit::AnnotKind::Highlight
@@ -4890,6 +4951,7 @@ pdfcer-core variant pdfcer_core::edit::CommandKind::SetMarkupNote
 pdfcer-core variant pdfcer_core::edit::CommandKind::SetMarkupStyle
 pdfcer-core variant pdfcer_core::edit::CommandKind::SetMediaBox
 pdfcer-core variant pdfcer_core::edit::CommandKind::SetMediaBoxes
+pdfcer-core variant pdfcer_core::edit::CommandKind::SetNamedPages
 pdfcer-core variant pdfcer_core::edit::CommandKind::SetObjectPaint
 pdfcer-core variant pdfcer_core::edit::CommandKind::SetPageRotation
 pdfcer-core variant pdfcer_core::edit::CommandKind::SetTextAnnotStyle
@@ -5634,6 +5696,9 @@ pdfcer-core variant pdfcer_core::paper::PaperSize::Executive
 pdfcer-core variant pdfcer_core::paper::PaperSize::Legal
 pdfcer-core variant pdfcer_core::paper::PaperSize::Letter
 pdfcer-core variant pdfcer_core::paper::PaperSize::Tabloid
+pdfcer-core variant pdfcer_core::parser::DuplicateKeyPolicy::KeepFirst
+pdfcer-core variant pdfcer_core::parser::DuplicateKeyPolicy::KeepLast
+pdfcer-core variant pdfcer_core::parser::DuplicateKeyPolicy::Refuse
 pdfcer-core variant pdfcer_core::parser::ParseErrorKind::BadObjectHeader
 pdfcer-core variant pdfcer_core::parser::ParseErrorKind::BadStreamEol
 pdfcer-core variant pdfcer_core::parser::ParseErrorKind::BadStreamLength

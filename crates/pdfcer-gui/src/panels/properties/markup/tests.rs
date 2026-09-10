@@ -540,6 +540,11 @@ fn stamp() -> pdfcer_core::annot_author::TextAnnotSpec {
         name: pdfcer_core::annot_author::StampName::Approved,
         label: None,
         color: Color::Rgb(0.0, 0.0, 0.0),
+        // The same choice the authoring call site makes, and for the same
+        // reason — see `canvas::textannot`. A fixture that took the legacy
+        // `font_size: None` would be asserting the properties panel against a
+        // stamp the application no longer authors.
+        style: pdfcer_core::annot_author::StampStyle::default(),
     }
 }
 

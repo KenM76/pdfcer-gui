@@ -42,7 +42,7 @@
 //! Stating it because the ordering is the kind of thing that looks obvious
 //! until a third claimant is added to `canvas::keys`' ladder.
 
-use pdfcer_core::annot_author::{Color, StampName, StickyIcon, TextAnnotSpec};
+use pdfcer_core::annot_author::{Color, StampName, StampStyle, StickyIcon, TextAnnotSpec};
 use pdfcer_core::fontdata::Std14;
 use pdfcer_core::page_tree::Rect;
 use pdfcer_core::vartext::{Quadding, TextColor};
@@ -580,6 +580,42 @@ pub fn spec(
             name: stamp,
             label: None,
             color: Color::Rgb(r, g, b),
+            // ★★★ `StampStyle::default()`, and the choice is deliberate rather
+            // than the path of least resistance.
+            //
+            // Engine `Pass 287.0` made this field required, which is the only
+            // reason this line exists — the compiler asked. **That is exactly
+            // the moment a feature gets silently declined**, because the
+            // reflex is to reach for whatever reproduces the old behaviour and
+            // move on, and here that spelling is available and named:
+            // `font_size: None` is documented as *"derive it from the box
+            // height as builds before Pass 287.0 did"*. Taking it would have
+            // compiled, passed every test, and quietly kept the defect the
+            // operator reported.
+            //
+            // The default is an explicit 12 pt label with `StampFit::GrowToText`,
+            // so the box the operator drags becomes **a position and a minimum
+            // size rather than a cage**. That is the direct answer to his own
+            // words — *"I have to draw the size before it gets applied"* — and
+            // 12 pt sits in the middle of the old derived range, so a stamp
+            // drawn at a typical size looks like one authored the old way and
+            // no existing document changes appearance for a reason nobody
+            // asked for.
+            //
+            // ★ It is also the only one of the three fits that owes no
+            // disclosure. `ShrinkToBox` silently changes the size the operator
+            // asked for and the engine reports the size it used precisely
+            // because that is an inference under rule 4; `ClipToBox` hides
+            // characters. Growing the box is visible on the canvas as itself.
+            //
+            // ⚠ The other two are NOT unreachable by design — they are
+            // unreachable by omission. `ENGINE_BACKLOG.md`'s Pass 287.0 row
+            // owes a font-size field and a three-way fit control seeded from
+            // `recover_stamp_parameters`, so an operator can ask for a fixed
+            // size in a title block. Until that lands this call site takes the
+            // engine's own recommendation, which its doc comment states in
+            // those words: *"`StampStyle::default()` is the safe choice"*.
+            style: StampStyle::default(),
         },
     })
 }
