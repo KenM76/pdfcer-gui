@@ -238,6 +238,124 @@ pub const DEFAULT_STICKY_ICON: StickyIcon = StickyIcon::Comment;
 /// review is the one that says the review passed.
 pub const DEFAULT_STAMP: StampName = StampName::Approved;
 
+/// **How big a stamp's label is** — the operator's half of engine `Pass 287.0`.
+///
+/// # ★★★ Why this control exists, and it is not "the engine gained a field"
+///
+/// Before `Pass 287.0` a stamp's text size was **derived from the box**:
+/// `(height * 0.42).clamp(8.0, 28.0)`, stored nowhere. Drag a bigger box, get
+/// bigger text. That is the behaviour on the operator's desk today and it is
+/// also the behaviour he complained about, for a reason that only looks
+/// contradictory until the two halves are separated:
+///
+///   * **What he liked** — the drag chooses the size. That is how every stamp
+///     tool he has ever used works, Acrobat's included, where a stamp is
+///     artwork scaled into the box.
+///   * **What he reported** — *"I have to draw the size before it gets
+///     applied"*, and widening a stamp to reveal clipped text enlarged the text
+///     by the same act, so it never stopped being clipped.
+///
+/// The engine's answer was to make the size a property with a default of a flat
+/// 12 pt. ⚠ **Taking that default silently would have shrunk every stamp he
+/// draws**: a typical 60 pt-high stamp box derived a 25 pt label before the
+/// bump and would have got 12 pt after it — a visible change in his documents,
+/// arriving as a side effect of a fix he asked for, with no control anywhere to
+/// undo it. That is the shape this project treats as a defect regardless of
+/// which side of the crate boundary caused it.
+///
+/// So the default here is [`Self::FitTheBox`], which keeps the derived size,
+/// and the stated sizes are the new capability sitting beside it.
+///
+/// # ★★ Every variant pairs its size with `StampFit::GrowToText`, deliberately
+///
+/// `StampFit` has three values and this enum reaches one of them. That is an
+/// argued decision, not an omission, and the argument is R8b rule 4:
+///
+///   * `GrowToText` widens the box when the label does not fit. **Visible on
+///     the canvas as itself** — the operator sees a wider stamp — so it owes
+///     no separate disclosure and cannot be quietly wrong.
+///   * `ShrinkToBox` draws the label at a size the operator did not ask for.
+///     The engine's own doc says *"the size actually used is reported, because
+///     a silently shrunk label is an inference"* — but **it is not reported**:
+///     `AuthoredTextAnnot::applied_autosize` carries the *variable-text*
+///     auto-size, which is `None` whenever `/DA` names an explicit size, and
+///     the shrunk size is passed as an explicit size. Measured against
+///     `annot_author.rs` at pin `d4a4e3b`. Offering it would mean either
+///     staying silent about an inference or re-deriving the shrink here, which
+///     is a second description of the engine's rule.
+///   * `ClipToBox` hides characters, for the same reason and with the same
+///     absence of a report. It is also, in the engine's own words, *"the one
+///     the operator reported"*.
+///
+/// ☑ Both are filed against the engine rather than worked around — see
+/// `ENGINE_BACKLOG.md`'s `Pass 287.0` row. When the fitted size is reported
+/// they become two more variants here and one more sentence in the status line.
+///
+/// # The point sizes
+///
+/// A stamp is a word or two in Helvetica Bold, so the useful range is wide and
+/// coarse. These are the sizes a word processor's font-size box offers over the
+/// same span, which is the list an operator already knows how to read; nothing
+/// here depends on the exact set.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum StampSize {
+    /// Size the label from the box the operator drew, as every build before
+    /// `Pass 287.0` did — and widen the box if the word still does not fit.
+    ///
+    /// ★ **Not the same as the engine's `StampStyle::legacy_derived()`**, and
+    /// the difference is the whole point. That constructor pairs the derived
+    /// size with `StampFit::ClipToBox`, which is the pre-Pass behaviour
+    /// *including* the clipping the operator reported. This pairs the derived
+    /// size with `GrowToText`, so the drag still chooses the size and the word
+    /// is never cut off. It is the old behaviour with the defect removed,
+    /// rather than the old behaviour reproduced.
+    #[default]
+    FitTheBox,
+    /// A stated size in points; the box grows if the label is wider.
+    Points(u32),
+}
+
+/// The label sizes the dialog offers, in the order it lists them.
+///
+/// [`StampSize::FitTheBox`] first because it is the default and because a list
+/// whose first entry is the one already selected is a list an operator reads
+/// downwards from the answer they have — the same ordering rule
+/// [`STICKY_ICONS`] states.
+pub const STAMP_SIZES: &[StampSize] = &[
+    StampSize::FitTheBox,
+    StampSize::Points(8),
+    StampSize::Points(10),
+    StampSize::Points(12),
+    StampSize::Points(14),
+    StampSize::Points(18),
+    StampSize::Points(24),
+    StampSize::Points(36),
+    StampSize::Points(48),
+    StampSize::Points(72),
+];
+
+/// The label size a fresh gallery offers. See [`StampSize`]'s header for why
+/// this is the derived size and not the engine's 12 pt.
+pub const DEFAULT_STAMP_SIZE: StampSize = StampSize::FitTheBox;
+
+impl StampSize {
+    /// The engine style this asks for.
+    ///
+    /// ★ Built from `StampStyle::default()` by `with_font_size` rather than by
+    /// struct literal, and not only because `StampStyle` is
+    /// `#[non_exhaustive]`. A field the engine adds arrives here carrying the
+    /// engine's own default instead of failing to compile with a value this
+    /// shell would have to invent — and the one field this shell has an opinion
+    /// about is stated explicitly, so the opinion is visible in the diff.
+    #[must_use]
+    pub fn style(self) -> StampStyle {
+        match self {
+            Self::FitTheBox => StampStyle::default().with_font_size(None),
+            Self::Points(pt) => StampStyle::default().with_font_size(Some(f64::from(pt))),
+        }
+    }
+}
+
 /// The side, in PDF points, of the square a sticky note's rect is given.
 ///
 /// # ★ It is not a size the operator sees
@@ -340,6 +458,12 @@ pub fn spec(
     // the type is no longer `Copy` and a by-value parameter would move the
     // caller's value out of a struct it is still using.
     icon: &StickyIcon,
+    // ★ The operator's label-size choice, following `stamp` and `icon` down
+    // the same route. Meaningless for the two kinds that are not stamps and
+    // passed anyway, for the reason `Placement::icon` already states: a
+    // chooser always has a selection, so an `Option` here would model a state
+    // the dialog cannot be in.
+    stamp_size: StampSize,
     colour: (f64, f64, f64),
 ) -> Option<TextAnnotSpec> {
     let text = painted_text(text);
@@ -580,42 +704,25 @@ pub fn spec(
             name: stamp,
             label: None,
             color: Color::Rgb(r, g, b),
-            // ★★★ `StampStyle::default()`, and the choice is deliberate rather
-            // than the path of least resistance.
+            // ★★★ **The operator's own choice, and this field exists because a
+            // compiler asked for it.**
             //
-            // Engine `Pass 287.0` made this field required, which is the only
-            // reason this line exists — the compiler asked. **That is exactly
-            // the moment a feature gets silently declined**, because the
-            // reflex is to reach for whatever reproduces the old behaviour and
-            // move on, and here that spelling is available and named:
-            // `font_size: None` is documented as *"derive it from the box
-            // height as builds before Pass 287.0 did"*. Taking it would have
-            // compiled, passed every test, and quietly kept the defect the
-            // operator reported.
+            // Engine `Pass 287.0` made `style` required, so this line had to
+            // be written to build at all — and **that is exactly the moment a
+            // feature gets silently declined.** The reflex is to reach for
+            // whatever reproduces the old behaviour, and here that spelling is
+            // available and named: `font_size: None` is documented as *"derive
+            // it from the box height as builds before Pass 287.0 did"*. It
+            // compiles, passes every test, and quietly keeps the defect the
+            // operator reported on 2026-09-09.
             //
-            // The default is an explicit 12 pt label with `StampFit::GrowToText`,
-            // so the box the operator drags becomes **a position and a minimum
-            // size rather than a cage**. That is the direct answer to his own
-            // words — *"I have to draw the size before it gets applied"* — and
-            // 12 pt sits in the middle of the old derived range, so a stamp
-            // drawn at a typical size looks like one authored the old way and
-            // no existing document changes appearance for a reason nobody
-            // asked for.
-            //
-            // ★ It is also the only one of the three fits that owes no
-            // disclosure. `ShrinkToBox` silently changes the size the operator
-            // asked for and the engine reports the size it used precisely
-            // because that is an inference under rule 4; `ClipToBox` hides
-            // characters. Growing the box is visible on the canvas as itself.
-            //
-            // ⚠ The other two are NOT unreachable by design — they are
-            // unreachable by omission. `ENGINE_BACKLOG.md`'s Pass 287.0 row
-            // owes a font-size field and a three-way fit control seeded from
-            // `recover_stamp_parameters`, so an operator can ask for a fixed
-            // size in a title block. Until that lands this call site takes the
-            // engine's own recommendation, which its doc comment states in
-            // those words: *"`StampStyle::default()` is the safe choice"*.
-            style: StampStyle::default(),
+            // [`StampSize`] carries the answer instead, and its header holds
+            // the argument: why the default is the derived size rather than
+            // the engine's flat 12 pt — taking the engine default silently
+            // would have shrunk every stamp on his drawings the day this shell
+            // pinned v0.50.0 — and why exactly one of `StampFit`'s three
+            // values is reachable from the dialog.
+            style: stamp_size.style(),
         },
     })
 }
@@ -649,6 +756,7 @@ mod tests {
                 "note",
                 DEFAULT_STAMP,
                 &DEFAULT_STICKY_ICON,
+                DEFAULT_STAMP_SIZE,
                 colour
             ),
             Some(TextAnnotSpec::FreeText { .. })
@@ -660,6 +768,7 @@ mod tests {
                 "note",
                 DEFAULT_STAMP,
                 &DEFAULT_STICKY_ICON,
+                DEFAULT_STAMP_SIZE,
                 colour
             ),
             Some(TextAnnotSpec::Sticky { .. })
@@ -671,6 +780,7 @@ mod tests {
                 "",
                 DEFAULT_STAMP,
                 &DEFAULT_STICKY_ICON,
+                DEFAULT_STAMP_SIZE,
                 colour
             ),
             Some(TextAnnotSpec::Stamp { .. })
@@ -703,6 +813,7 @@ mod tests {
                         blank,
                         DEFAULT_STAMP,
                         &DEFAULT_STICKY_ICON,
+                        DEFAULT_STAMP_SIZE,
                         (0.0, 0.0, 0.0)
                     )
                     .is_none(),
@@ -725,6 +836,7 @@ mod tests {
             "  hello  ",
             DEFAULT_STAMP,
             &DEFAULT_STICKY_ICON,
+            DEFAULT_STAMP_SIZE,
             (0.0, 0.0, 0.0),
         ) else {
             panic!("a text box with words must author");
@@ -761,6 +873,7 @@ mod tests {
             typed,
             DEFAULT_STAMP,
             &DEFAULT_STICKY_ICON,
+            DEFAULT_STAMP_SIZE,
             (0.0, 0.0, 0.0),
         ) else {
             panic!("a text box with words must author");
@@ -793,6 +906,7 @@ mod tests {
             "a",
             DEFAULT_STAMP,
             &DEFAULT_STICKY_ICON,
+            DEFAULT_STAMP_SIZE,
             (0.0, 0.0, 0.0),
         ) else {
             panic!("a text box must author");
@@ -805,6 +919,7 @@ mod tests {
             "a",
             DEFAULT_STAMP,
             &DEFAULT_STICKY_ICON,
+            DEFAULT_STAMP_SIZE,
             (0.0, 0.0, 0.0),
         ) else {
             panic!("a sticky must author");
@@ -896,6 +1011,7 @@ mod tests {
                 "",
                 *chosen,
                 &DEFAULT_STICKY_ICON,
+                DEFAULT_STAMP_SIZE,
                 (0.0, 0.0, 0.0),
             ) else {
                 panic!("{chosen:?} must author");
@@ -921,6 +1037,7 @@ mod tests {
                 "",
                 DEFAULT_STAMP,
                 &DEFAULT_STICKY_ICON,
+                DEFAULT_STAMP_SIZE,
                 (0.0, 0.0, 0.0)
             )
             .is_some(),
@@ -1017,6 +1134,7 @@ mod tests {
                 "note",
                 DEFAULT_STAMP,
                 chosen,
+                DEFAULT_STAMP_SIZE,
                 (0.0, 0.0, 0.0),
             ) else {
                 panic!("{chosen:?} must author a sticky");
@@ -1038,6 +1156,7 @@ mod tests {
                 "note",
                 DEFAULT_STAMP,
                 &StickyIcon::Key,
+                DEFAULT_STAMP_SIZE,
                 (0.0, 0.0, 0.0)
             ),
             Some(TextAnnotSpec::FreeText { .. })
@@ -1049,6 +1168,7 @@ mod tests {
                 "",
                 DEFAULT_STAMP,
                 &StickyIcon::Key,
+                DEFAULT_STAMP_SIZE,
                 (0.0, 0.0, 0.0)
             ),
             Some(TextAnnotSpec::Stamp { .. })

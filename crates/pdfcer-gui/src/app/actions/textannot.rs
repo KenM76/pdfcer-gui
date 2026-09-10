@@ -42,20 +42,22 @@ use crate::canvas::textannot::TextAnnotKind;
 /// sitting in**, and applied on the frame they press Accept, so there is no
 /// window across which the value could go stale. `CommitMarkup` is raised by a
 /// gesture that finished frames before the queue drains.
-/// **What the operator placed** — the four values that come off the action,
+/// **What the operator placed** — the six values that come off the action,
 /// grouped so the function that consumes them takes four arguments rather than
-/// nine.
+/// ten.
 ///
 /// ★ A struct rather than a longer parameter list, and not only to satisfy a
-/// lint: `page`, `kind`, `rect`, `stamp` and `icon` are **one thing the
-/// operator did**, while `prefs` and the pen are settings that happen to be in
-/// scope. A signature that mixed all seven in a row would let a caller
+/// lint: `page`, `kind`, `rect`, `stamp`, `stamp_size` and `icon` are **one
+/// thing the operator did**, while `prefs` and the pen are settings that happen
+/// to be in scope. A signature that mixed all eight in a row would let a caller
 /// transpose two of them silently, which on `(usize, …)` positions is the class
 /// of mistake that compiles.
 ///
 /// ⚠ The doc above said **four values** and **six arguments** until
-/// 2026-09-06; it now describes five and seven. Corrected rather than left,
-/// because the sentence's whole point is the count.
+/// 2026-09-06, then five and seven; it now describes **six** and **eight**.
+/// Corrected each time rather than left, because the sentence's whole point is
+/// the count — a prose count that has drifted from the struct is worse than no
+/// count, since it reads as a measurement.
 pub(super) struct Placement {
     /// The page it goes on.
     pub page: usize,
@@ -65,6 +67,16 @@ pub(super) struct Placement {
     pub rect: pdfcer_core::page_tree::Rect,
     /// Which stamp face, for the stamp kind.
     pub stamp: pdfcer_core::annot_author::StampName,
+    /// ☑ **How big the stamp's label is drawn** (engine `Pass 287.0`), for
+    /// the stamp kind.
+    ///
+    /// `stamp`'s and `icon`'s third sibling, and it arrived by the same route
+    /// they did: dialog → `Action::CommitTextAnnot` → here →
+    /// `crate::canvas::textannot::spec`. Ignored by the two kinds it does not
+    /// belong to, and unconditional rather than `Option`al because a chooser
+    /// always has a selection — here the selection that means *"let the box
+    /// decide"*, which is a value, not an absence.
+    pub stamp_size: crate::canvas::textannot::StampSize,
     /// ★ Which icon (`/Name`, §12.5.6.4 Table 172), for the sticky kind.
     ///
     /// The exact counterpart of `stamp` one field up, and it arrived by
@@ -88,6 +100,7 @@ pub(super) fn commit(
         kind,
         rect,
         stamp,
+        stamp_size,
         ref icon,
     } = *placed;
     // ★ The pen's ink, so a callout matches the comments beside it
@@ -192,7 +205,9 @@ pub(super) fn commit(
         // that broken. One control, one meaning, every kind.
         opacity,
     };
-    if let Some(spec) = crate::canvas::textannot::spec(kind, rect, text, stamp, icon, ink) {
+    if let Some(spec) =
+        crate::canvas::textannot::spec(kind, rect, text, stamp, icon, stamp_size, ink)
+    {
         // ★★ The note's three keys, on the diagnostic channel and
         // NOT on the status line. An operator who typed a comment
         // does not need to be told their own name was written; a
@@ -299,6 +314,9 @@ mod tests {
             kind: TextAnnotKind::Stamp,
             rect,
             stamp: StampName::Approved,
+            // The gallery's own default, so these tests measure the stamp an
+            // operator actually gets rather than one this module invented.
+            stamp_size: crate::canvas::textannot::DEFAULT_STAMP_SIZE,
             icon: crate::canvas::textannot::DEFAULT_STICKY_ICON,
         };
         commit(

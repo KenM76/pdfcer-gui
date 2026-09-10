@@ -29,7 +29,7 @@
 //! could soften either without touching the other. The section banner below
 //! carries the measurement.
 
-use crate::canvas::textannot::TextAnnotKind;
+use crate::canvas::textannot::{StampSize, TextAnnotKind};
 use pdfcer_core::annot_author::{StampName, StickyIcon};
 
 /// The window's title.
@@ -234,6 +234,64 @@ pub const fn sticky_icon_bound() -> &'static str {
 pub const fn stamp_bound() -> &'static str {
     "These are the standard stamps. pdfcer does not add a name or a date to \
      them, because it does not know who you are."
+}
+
+/// The label over the stamp's size chooser.
+///
+/// ★ *"Size"* and not *"Font size"*. The operator is choosing how big the
+/// stamp reads on the sheet; the fact that a stamp's appearance is drawn with a
+/// font is pdfcer's business. The same rule [`sticky_icon_heading`] follows one
+/// screen up — a label is the operator's vocabulary and an id is the format's.
+#[must_use]
+pub const fn stamp_size_heading() -> &'static str {
+    "Size"
+}
+
+/// One label size, as an operator reads it in the chooser.
+///
+/// # ★★ Why the default entry is a SENTENCE and the others are numbers
+///
+/// [`StampSize::FitTheBox`] is not a size, it is a **policy** — *the box you
+/// drew decides*. Listing it as a number would be a lie about what it does, and
+/// listing it as `"Auto"` would be the file format's habit of naming a
+/// behaviour after the fact that nobody typed a value. It says what happens.
+///
+/// ⚠ The point sizes carry the unit. `"12"` in a list whose first entry is a
+/// sentence reads as an item number; `"12 pt"` cannot.
+#[must_use]
+pub fn stamp_size_label(size: StampSize) -> String {
+    match size {
+        StampSize::FitTheBox => "Fit the box I drew".to_string(),
+        StampSize::Points(pt) => format!("{pt} pt"),
+    }
+}
+
+/// ★★★ **What the size chooser does to the box**, said once under it.
+///
+/// # Why this sentence has to exist
+///
+/// The operator drew a rectangle and is now told a number may override it. Two
+/// facts about that are true, neither is guessable, and one of them is a
+/// visible change to their drawing:
+///
+///   * **The box grows if the words do not fit.** Engine
+///     `StampFit::GrowToText`, which every entry in this chooser pairs with —
+///     see `crate::canvas::textannot::StampSize`'s header for why exactly one
+///     of the three fit policies is offered. So the rectangle is a position and
+///     a minimum, not a cage.
+///   * **The box is never shrunk.** A 12 pt label in a large box leaves the
+///     box large, which is what a caller who drew a deliberately big stamp
+///     meant.
+///
+/// ★ It is **not** a disclosure of an inference under R8b rule 4, and that
+/// distinction matters because the sentence looks like one. A grown box is
+/// visible on the canvas *as itself* — the operator sees a wider stamp, and a
+/// screenshot of it matches a screenshot of the saved file. This sentence is
+/// told **before** the act, so the operator knows what the drag means, which is
+/// the opposite end from a report about something already done.
+#[must_use]
+pub const fn stamp_size_bound() -> &'static str {
+    "The stamp gets wider if the words need it, and never narrower than the box you drew."
 }
 
 /// The commit control.
@@ -495,6 +553,84 @@ mod tests {
                 assert_ne!(stamp_label(*a), stamp_label(*b));
             }
         }
+    }
+
+    /// ☑ **Every label size the chooser offers has a distinct label, and the
+    /// numeric ones carry their unit.**
+    ///
+    /// [`every_offered_stamp_is_named_distinctly`]'s argument, with one clause
+    /// that gallery does not need: a combo shows exactly one entry when it is
+    /// closed, so a duplicate label there is not merely confusing — the
+    /// operator cannot tell which of two entries is currently selected, and the
+    /// control silently stops reporting its own state.
+    ///
+    /// ★ The unit clause is the one that would actually fire. `"12"` and
+    /// `"12 pt"` are both plausible things for a future edit to produce, they
+    /// are distinct from each other, and only one of them is readable in a list
+    /// whose first entry is a sentence.
+    #[test]
+    fn every_offered_stamp_size_is_named_distinctly_and_carries_its_unit() {
+        use crate::canvas::textannot::STAMP_SIZES;
+        for size in STAMP_SIZES {
+            let label = stamp_size_label(*size);
+            assert!(!label.is_empty(), "{size:?} has no label");
+            match size {
+                StampSize::Points(pt) => {
+                    assert!(
+                        label.contains("pt"),
+                        "{pt} pt is offered without its unit: {label:?}"
+                    );
+                    assert!(
+                        label.contains(&pt.to_string()),
+                        "{pt} pt is offered without its number: {label:?}"
+                    );
+                }
+                // The policy entry must NOT read as a number, which is the
+                // whole reason it is a sentence. Asserted rather than trusted,
+                // because "Auto" would pass every other clause here.
+                StampSize::FitTheBox => assert!(
+                    !label.chars().any(|c| c.is_ascii_digit()),
+                    "the fit-the-box entry reads as a size: {label:?}"
+                ),
+            }
+        }
+        for (i, a) in STAMP_SIZES.iter().enumerate() {
+            for b in STAMP_SIZES.iter().skip(i + 1) {
+                assert_ne!(
+                    stamp_size_label(*a),
+                    stamp_size_label(*b),
+                    "two entries in the size chooser read the same"
+                );
+            }
+        }
+    }
+
+    /// ★★★ **The size disclosure says the box GROWS and says it is never
+    /// narrowed** — both halves, because either alone is a different promise.
+    ///
+    /// The operator drew a rectangle. Telling them it may widen, without
+    /// telling them it will never be shrunk, leaves them believing a stamp
+    /// might come out smaller than the space they cleared for it — which on a
+    /// title block is the difference between using the control and not.
+    ///
+    /// ⚠ Asserted on the words rather than on the behaviour because this is
+    /// the `text` crate: the behaviour is `StampFit::GrowToText`'s, tested
+    /// where it is called. What is tested here is that the sentence still
+    /// describes it. A future edit that softened this to *"the stamp resizes
+    /// to fit"* would be true of `ShrinkToBox` too, and this shell does not
+    /// offer `ShrinkToBox`.
+    #[test]
+    fn the_size_disclosure_states_both_directions() {
+        let said = stamp_size_bound();
+        assert!(
+            said.contains("wider"),
+            "the growth half is missing: {said:?}"
+        );
+        assert!(
+            said.contains("never"),
+            "the never-shrunk half is missing: {said:?}"
+        );
+        assert!(!stamp_size_heading().is_empty());
     }
 
     /// The three subtypes an operator can write a note onto, plus a handful of

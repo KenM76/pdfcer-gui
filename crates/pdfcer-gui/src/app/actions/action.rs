@@ -1328,6 +1328,17 @@ pub enum Action {
         /// gallery always has a selection — there is no "no stamp chosen"
         /// state for the dialog to be in.
         stamp: pdfcer_core::annot_author::StampName,
+        /// ☑ **How big the stamp's label is** (engine `Pass 287.0`), picked
+        /// in the same dialog. Ignored by the other two kinds and carried
+        /// unconditionally, for `stamp`'s reason exactly.
+        ///
+        /// ★ The default is the DERIVED size — the box the operator dragged
+        /// chooses the size, as every build before `Pass 287.0` did — and not
+        /// the engine's flat 12 pt. `crate::canvas::textannot::StampSize`
+        /// holds the argument; the short version is that adopting the engine
+        /// default silently would have shrunk every stamp on his drawings as a
+        /// side effect of a fix he asked for.
+        stamp_size: crate::canvas::textannot::StampSize,
         /// ★★★ **The sticky note's icon (`/Name`, §12.5.6.4 Table 172)**,
         /// picked in the dialog. Ignored by the other two kinds, and carried
         /// unconditionally for `stamp`'s reason exactly — a chooser always has

@@ -739,6 +739,7 @@ impl PdfcerApp {
                 rect,
                 text,
                 stamp,
+                stamp_size,
                 icon,
             } => super::textannot::commit(
                 doc,
@@ -748,6 +749,7 @@ impl PdfcerApp {
                     kind,
                     rect,
                     stamp,
+                    stamp_size,
                     icon,
                 },
                 &text,

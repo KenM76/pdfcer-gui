@@ -196,6 +196,22 @@ down as one rather than folded into the green.
 
 ---
 
+## O168 — ◑ **DONE 2026-09-10** — "release new version asap"
+
+**Your words, 2026-09-10**, arriving mid-build.
+
+Shipped as `v0.5.0-dev.20260910.1`, on GitHub and in your OneDrive folder. It
+carries the engine bump to **v0.50.0** and the stamp size chooser above
+(**O162**, the half of it that could be built).
+
+⚠ **What "asap" cost, written down rather than folded into the green.** The
+driven check for the new size chooser is **not** written — the standing rule
+here is that a feature is not done until the running program has been made to
+show it, and this one has only unit tests and a smoke launch behind it. The
+smoke launch was done (off-screen, page drawn, no crash), the whole gate suite
+is green and the test suite passed, but none of that presses the control. The
+check is the next thing built.
+
 ## O167 — ◑ **BUILT AND DRIVEN 2026-09-10** — "we also need the option to auto select paper size based on the page sizes in the pdf"
 
 **Your words, 2026-09-10.** Same sentence as O166, filed as its own row because
@@ -468,7 +484,7 @@ machine.
 
 ---
 
-## O162 — ⬜ **FILED 2026-09-09, ENGINE ASKED (re-escalated)** — "if I drew the stamp too small for the text to fit, resizing just stretches the entire object as is — I should be able to double-click again and drag and edit just the box size without affecting the text. Box size properties should also be available to edit in the position and size separate from the text size."
+## O162 — ◑ **HALF BUILT 2026-09-10, NOT YET DRIVEN** — "if I drew the stamp too small for the text to fit, resizing just stretches the entire object as is — I should be able to double-click again and drag and edit just the box size without affecting the text. Box size properties should also be available to edit in the position and size separate from the text size."
 
 **Your words, 2026-09-09**, on the build that first let stamps resize at all.
 
@@ -485,6 +501,39 @@ alongside the existing text size, and a second drag mode (double-click, then
 drag) resizes the box without scaling the text. Until then: resize scales
 the whole stamp; to get a bigger box with the same text size, delete and
 place again larger.
+
+### ★★★ The engine answered on 2026-09-10, and half of this is now built
+
+**You can set a stamp's text size when you place it, and the box now grows to
+hold the words instead of cutting them off.** The stamp window has a **Size**
+list beside the stamp faces: *Fit the box I drew* — which is what it has
+always done — and then 8, 10, 12, 14, 18, 24, 36, 48 and 72 pt.
+
+That takes the trap out of the loop you described. Before, widening a stamp to
+reveal clipped text made the text bigger by the same act, so it never stopped
+being clipped. Now the rectangle you drag is a **position and a minimum**: pick
+24 pt, draw roughly, and the stamp comes out at 24 pt and as wide as the word
+needs.
+
+★★★ **And your existing stamps do not change size.** The engine's new default
+is a flat 12 pt for everybody, and pdfcer would have picked that up silently —
+a stamp box the height you usually draw was working out around 25 pt before
+this, so every stamp you drew would have come out noticeably smaller from one
+release to the next, as a side effect of a fix you asked for. The size list
+opens on *Fit the box I drew* instead, so a fresh stamp behaves exactly as it
+did yesterday, minus the clipping.
+
+⬜ **The other half is still not possible and it is still the engine's, not a
+decision here.** Changing the size of a stamp **already on the page** needs a
+verb that does not exist: the one that edits a placed annotation's style
+carries only its icon and its colour, and the function that could tell pdfcer
+what size an existing stamp renders at is not public. So there is no
+width/height-for-the-box field in Properties yet, and there is nothing to fill
+a text-size field from. Both are filed with the engine rather than guessed at.
+
+⚠ **Not yet driven.** Released immediately on your word; the driven check is
+owed.
+
 
 ## O161 — ◑ **FILED 2026-09-09, MEASURED HEADLESSLY, NEEDS YOUR VERDICT** — "I should also be able to unselect things of redaction that i selected for redaction"
 

@@ -47,7 +47,8 @@ use pdfcer_core::page_tree::Rect;
 
 use crate::app::actions::Action;
 use crate::canvas::textannot::{
-    DEFAULT_STAMP, DEFAULT_STICKY_ICON, MAX_TEXT_CHARS, STAMPS, STICKY_ICONS, TextAnnotKind,
+    DEFAULT_STAMP, DEFAULT_STAMP_SIZE, DEFAULT_STICKY_ICON, MAX_TEXT_CHARS, STAMP_SIZES, STAMPS,
+    STICKY_ICONS, StampSize, TextAnnotKind,
 };
 use crate::text::textannot as t;
 
@@ -65,6 +66,15 @@ pub const REGION_ACCEPT: &str = "text-annot.accept"; // ui-text-exempt: trace re
 /// chooser is on screen"* against the window's own rectangle would pass on a
 /// window with no chooser in it at all.
 pub const REGION_ICON: &str = "text-annot.icon"; // ui-text-exempt: trace region name, never displayed
+/// The region the stamp's label-size chooser publishes, so a driven check
+/// can find it and open it.
+///
+/// ★ Its own region for [`REGION_ICON`]'s reason exactly, and that reason is
+/// sharper here: the stamp body ALREADY had a gallery before this chooser
+/// existed, so a check written against [`REGION_BODY`] would have passed on
+/// every build since 2026-08-28 — including all of the ones with no size
+/// control in them at all.
+pub const REGION_STAMP_SIZE: &str = "text-annot.stamp-size"; // ui-text-exempt: trace region name, never displayed
 
 /// One open text-annotation dialog.
 pub struct TextAnnotDialog {
@@ -85,6 +95,10 @@ pub struct TextAnnotDialog {
     /// The stamp selected in the gallery. Meaningless for the other kinds and
     /// carried anyway — see `Action::CommitTextAnnot`'s field of the same name.
     stamp: StampName,
+    /// ☑ **The label size selected in the stamp's size chooser** (engine
+    /// `Pass 287.0`). Meaningless for the other kinds and carried anyway,
+    /// exactly as [`Self::stamp`] and [`Self::icon`] are.
+    stamp_size: StampSize,
     /// The icon selected in the sticky note's chooser. Meaningless for the
     /// other kinds and carried anyway, exactly as [`Self::stamp`] is.
     icon: StickyIcon,
@@ -157,6 +171,27 @@ const WINDOW_PTS: egui::Vec2 = egui::vec2(420.0, 240.0);
 /// dialog they can resize and drag; under-tall costs them the Accept button.
 const STICKY_EXTRA_PTS: f32 = 190.0;
 
+/// **How much taller the stamp's window opens**, in points.
+///
+/// ★★ [`STICKY_EXTRA_PTS`]'s argument, applied to a smaller addition. The
+/// stamp body was seven radio rows and a wrapped disclosure inside 240 pt;
+/// `Pass 287.0`'s size chooser adds a heading, one combo row and a second
+/// wrapped disclosure under them. That is roughly three rows' worth, not
+/// ten — the ten sizes live inside the combo's popup, which is drawn in its
+/// own layer and costs the window no height at all.
+///
+/// ★ That is the concrete reason the chooser is a combo and the gallery is
+/// radios, stated here rather than only in [`TextAnnotDialog::sizes`]: ten
+/// radio rows would have needed roughly 250 pt and made the stamp the
+/// tallest of the three dialogs by a wide margin, for a control every other
+/// program on his desk draws as a dropdown.
+///
+/// ⚠ Derived from what is being ADDED and stated as a constant, never
+/// measured from the `Ui` being laid out inside the window this sizes —
+/// `print/layout.rs`' rule and `Host::fit`'s, which this project has met
+/// three times as R128.
+const STAMP_EXTRA_PTS: f32 = 70.0;
+
 /// The smallest the note window may be, by resize or by squeeze.
 ///
 /// The same floor handed to `Host` as its `min_size`, read from one constant so
@@ -188,12 +223,18 @@ const SCREEN_MARGIN_PTS: f32 = 40.0;
 fn window_size(screen: egui::Rect, kind: TextAnnotKind) -> egui::Vec2 {
     // ★ The height is per-KIND as of 2026-09-06, and the width is not. The
     // three bodies are the same width by construction — a field, a gallery and
-    // a chooser all stretch to the window — and only the sticky's grew
+    // a chooser all stretch to the window — and two of the three grew
     // downwards. Making the width vary too would be a second number with no
     // reason behind it.
+    //
+    // ⚠ The text box is now the ONLY kind with no addition, so this match no
+    // longer folds two arms into one. Written out rather than left as
+    // `_ => 0.0`, so a fourth kind is a compile error here instead of a
+    // silently unsized dialog.
     let extra = match kind {
         TextAnnotKind::Sticky => STICKY_EXTRA_PTS,
-        TextAnnotKind::TextBox | TextAnnotKind::Stamp => 0.0,
+        TextAnnotKind::Stamp => STAMP_EXTRA_PTS,
+        TextAnnotKind::TextBox => 0.0,
     };
     egui::vec2(
         WINDOW_PTS
@@ -261,6 +302,13 @@ impl TextAnnotDialog {
             rect,
             text: String::new(),
             stamp: DEFAULT_STAMP,
+            // ⚠ The named constant, never `StampSize::default()`, even though
+            // the two are the same value today. The constant is where the
+            // argument lives for why a fresh gallery offers the DERIVED size
+            // rather than the engine's flat 12 pt, and a `default()` call
+            // would let that argument be silently overturned by an edit to a
+            // `#[derive]` attribute three files away.
+            stamp_size: DEFAULT_STAMP_SIZE,
             icon: DEFAULT_STICKY_ICON,
             accept_requested: false,
             close_requested: false,
@@ -317,6 +365,7 @@ impl TextAnnotDialog {
                 rect: self.rect,
                 text: std::mem::take(&mut self.text),
                 stamp: self.stamp,
+                stamp_size: self.stamp_size,
                 icon: self.icon.clone(),
             });
             return false;
@@ -498,6 +547,63 @@ impl TextAnnotDialog {
         ui.label(egui::RichText::new(t::sticky_icon_bound()).small().weak());
     }
 
+    /// ☑ **The stamp's label-size chooser** — engine `Pass 287.0`'s operator
+    /// half, and the answer to *"I have to draw the size before it gets
+    /// applied"*.
+    ///
+    /// # ★★ A combo, where the two galleries beside it are radios
+    ///
+    /// [`Self::icons`] argues for radios and gives the reason — *seven entries
+    /// is a set an operator reads at a glance* — and then says using the same
+    /// control for both choosers is deliberate because *"they are the same act
+    /// (pick one of seven)"*. This is a different act, and the difference is
+    /// the point rather than an exception to that rule:
+    ///
+    ///   * A stamp face and a note icon are **named things from a closed set**
+    ///     the operator wants to see all of. A size is a **number on a scale**,
+    ///     where the list is a convenience and the operator already knows what
+    ///     18 pt is without reading the other nine.
+    ///   * Every program on his desk — Word, Acrobat, every CAD annotation
+    ///     dialog — draws a size as a dropdown. Standing rule: **use the
+    ///     conventional interaction, never invent one.** The convergence of a
+    ///     product class is the specification, and a vertical stack of ten
+    ///     size radios would be pdfcer's own invention.
+    ///   * It costs the window ~70 pt instead of ~250. See
+    ///     [`STAMP_EXTRA_PTS`].
+    ///
+    /// # ★ What the disclosure under it is, and what it is NOT
+    ///
+    /// [`crate::text::textannot::stamp_size_bound`] tells the operator the box
+    /// will widen if the words need it. That is **not** an R8b rule 4
+    /// disclosure of an inference — a grown box is visible on the canvas as
+    /// itself, and a screenshot of it matches a screenshot of the saved file.
+    /// It is told before the act, so the drag means what the operator thinks
+    /// it means.
+    fn sizes(&mut self, ui: &mut Ui) {
+        ui.add_space(8.0);
+        ui.label(t::stamp_size_heading());
+        let top = ui.cursor().min;
+        let response = egui::ComboBox::from_id_salt("text-annot-stamp-size") // ui-text-exempt: internal widget id
+            .selected_text(t::stamp_size_label(self.stamp_size))
+            .show_ui(ui, |ui| {
+                for size in STAMP_SIZES {
+                    ui.selectable_value(&mut self.stamp_size, *size, t::stamp_size_label(*size));
+                }
+            })
+            .response;
+        // ★ The region covers the CONTROL, not the popup. The popup is drawn
+        // in its own layer and exists only while it is open, so a driven check
+        // has to press this rectangle first and read the popup's own entries
+        // afterwards. The union with the cursor is taken because the heading
+        // above belongs to the chooser, and a check looking for the words
+        // should find them inside the region that names them.
+        crate::diag::ui_rect(
+            REGION_STAMP_SIZE,
+            egui::Rect::from_min_max(top, ui.cursor().min).union(response.rect),
+        );
+        ui.label(egui::RichText::new(t::stamp_size_bound()).small().weak());
+    }
+
     /// The stamp gallery, for the one kind whose words come from `/Name`.
     fn gallery(&mut self, ui: &mut Ui) {
         // A vertical list of radios rather than a combo box: seven entries is
@@ -508,6 +614,14 @@ impl TextAnnotDialog {
         }
         ui.add_space(4.0);
         ui.label(egui::RichText::new(t::stamp_bound()).small().weak());
+        // ★ The size chooser is drawn by the gallery rather than by
+        // `Self::body`, which is where `Self::icons` is called from. The
+        // difference is that `icons` guards on the kind itself and returns
+        // early for the other two; this function is ALREADY the stamp-only
+        // branch, so a second guard would be a condition that can never be
+        // false — and a condition that cannot be false is a line a reader has
+        // to prove harmless.
+        self.sizes(ui);
     }
 }
 
@@ -629,21 +743,31 @@ mod tests {
         );
     }
 
-    /// ★★★ **The sticky note's window is taller than the other two, and the
-    /// other two did not move.**
+    /// ★★★ **Each kind's window is as tall as its own body needs, and the one
+    /// kind with nothing added did not move.**
     ///
-    /// The icon chooser added seven radio rows, a heading and a disclosure under
-    /// the sticky's text field on 2026-09-06. Without the extra height the
-    /// Accept button sits below the window's own bottom edge — a dialog the
-    /// operator cannot finish, which is a worse failure than any it replaces.
+    /// Two chooser have been added under two of the three bodies: the sticky's
+    /// icon radios on 2026-09-06, and the stamp's label-size combo on
+    /// 2026-09-10 (engine `Pass 287.0`). Without the extra height the Accept
+    /// button sits below the window's own bottom edge — a dialog the operator
+    /// cannot finish, which is a worse failure than any it replaces.
     ///
-    /// ★★ The second and third assertions are the **positive controls** for the
-    /// first, and they are what make it a test. Asserting only *"the sticky is
+    /// ★★ **The text-box assertion is the positive control** and it is what
+    /// makes this a test at all. Asserting only *"the sticky and the stamp are
     /// taller"* passes on a `window_size` that had gone taller for **every**
-    /// kind — the change would be invisible, the text box and the stamp would
-    /// both grow a strip of empty window, and nothing here would say so.
+    /// kind — the change would be invisible, the text box would grow a strip of
+    /// empty window, and nothing here would say so.
+    ///
+    /// ⚠ **This test was renamed on 2026-09-10, and the old name is the
+    /// lesson.** It was `only_the_sticky_notes_window_grew_for_its_chooser`,
+    /// and it asserted `stamp.y == WINDOW_PTS.y` with the message *"the stamp
+    /// has no chooser and must not have grown"*. That sentence was true when it
+    /// was written and became false the moment the stamp got one. A test whose
+    /// **name and message state a property the program no longer has** is worse
+    /// than no test: it reads as a measurement, and the next person to grep for
+    /// *"which kinds have choosers?"* finds an answer rather than a question.
     #[test]
-    fn only_the_sticky_notes_window_grew_for_its_chooser() {
+    fn each_kinds_window_is_as_tall_as_its_body_needs() {
         let screen = screen();
         let sticky = window_size(screen, TextAnnotKind::Sticky);
         let boxed = window_size(screen, TextAnnotKind::TextBox);
@@ -653,18 +777,27 @@ mod tests {
             sticky.y > boxed.y,
             "the icon chooser needs room the text box does not: {sticky:?} vs {boxed:?}"
         );
-        assert_eq!(
-            boxed.y, WINDOW_PTS.y,
-            "the text box has no chooser and must not have grown"
+        assert!(
+            stamp.y > boxed.y,
+            "the size chooser needs room the text box does not: {stamp:?} vs {boxed:?}"
+        );
+        // ★ The ordering, not merely the inequality. Seven radio rows and a
+        // disclosure is a taller addition than a heading, one combo row and a
+        // disclosure, and if that ever inverts it is because somebody changed
+        // one of the two constants without reading the other's argument.
+        assert!(
+            sticky.y > stamp.y,
+            "seven radio rows must ask more room than one combo: {sticky:?} vs {stamp:?}"
         );
         assert_eq!(
-            stamp.y, WINDOW_PTS.y,
-            "the stamp has no chooser and must not have grown"
+            boxed.y, WINDOW_PTS.y,
+            "the text box has nothing added and must not have grown"
         );
         assert_eq!(
             sticky.x, boxed.x,
             "only the height is per-kind; a second varying number would have no reason"
         );
+        assert_eq!(stamp.x, boxed.x, "the width is per-kind for nobody");
     }
 
     /// ★★★ **The icon the operator picked reaches the action — and the two
@@ -690,6 +823,7 @@ mod tests {
         );
         d.icon = StickyIcon::Key;
         d.stamp = StampName::Final;
+        d.stamp_size = StampSize::Points(24);
         d.text = "note".to_owned();
         d.accept_requested = true;
 
@@ -699,7 +833,13 @@ mod tests {
             d.show(ui.ctx(), &mut actions);
         });
 
-        let Some(Action::CommitTextAnnot { icon, stamp, .. }) = actions.first() else {
+        let Some(Action::CommitTextAnnot {
+            icon,
+            stamp,
+            stamp_size,
+            ..
+        }) = actions.first()
+        else {
             panic!("Accept must raise a commit, got {actions:?}");
         };
         assert_eq!(*icon, StickyIcon::Key, "the operator's icon did not travel");
@@ -708,14 +848,38 @@ mod tests {
             StampName::Final,
             "the field the icon was modelled on must still travel too"
         );
+        // ☑ The third operand, added 2026-09-10 with the size chooser, and it
+        // is asserted at a NON-default value for the reason the two above are:
+        // a field left at its default travels identically whether it is carried
+        // or silently reconstructed at the far end.
+        assert_eq!(
+            *stamp_size,
+            StampSize::Points(24),
+            "the operator's label size did not travel"
+        );
     }
 
-    /// A fresh dialog carries no words and the gallery's default.
+    /// A fresh dialog carries no words and every chooser's stated default.
+    ///
+    /// ★★ **The size assertion is the load-bearing one**, and it is not merely
+    /// completeness. `StampSize`'s own header argues that a fresh gallery must
+    /// offer the size DERIVED from the drawn box — the behaviour of every build
+    /// before engine `Pass 287.0` — rather than the engine's flat 12 pt,
+    /// because adopting the engine default would have shrunk every stamp on the
+    /// operator's drawings as a side effect of a fix he asked for. That
+    /// argument is only enforced if something asserts the value.
     #[test]
     fn a_fresh_dialog_is_empty_and_defaulted() {
         let d = TextAnnotDialog::open(0, TextAnnotKind::TextBox, rect());
         assert!(d.text.is_empty(), "no words are invented for the operator");
         assert_eq!(d.stamp, DEFAULT_STAMP);
+        assert_eq!(d.icon, DEFAULT_STICKY_ICON);
+        assert_eq!(
+            d.stamp_size,
+            StampSize::FitTheBox,
+            "a fresh gallery must offer the size the drawn box implies, \
+             not the engine's flat 12 pt"
+        );
         assert!(!d.accept_requested);
     }
 
