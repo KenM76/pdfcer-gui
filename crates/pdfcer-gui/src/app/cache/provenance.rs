@@ -311,12 +311,43 @@ mod tests {
     /// — which on the edit path means a pinned span naming a byte range in the
     /// wrong content stream, i.e. an edit applied to a page the operator is not
     /// looking at.
+    /// ★★★ **The handle is HELD, never dropped, and that is the whole
+    /// correctness of this test.**
+    ///
+    /// This test was written with `drop(page0)` before the two comparisons and
+    /// it **failed in the full suite while passing when run alone**
+    /// (2026-09-09). The reason is not flakiness and not shared state: once
+    /// `page0` is dropped the cache has already evicted its own copy — it
+    /// holds exactly one page, and page 1 displaced page 0 — so the last `Rc`
+    /// is gone and the allocation is **freed**. `ptr0` is then a dangling
+    /// address, and the allocator is entitled to hand that same address
+    /// straight back for the next `PageText`, which is exactly what it did
+    /// once the other tests in this binary had warmed the heap into a
+    /// different shape.
+    ///
+    /// ⇒ **A pointer-identity check across a deallocation is not an identity
+    /// check.** It is asked "is this a different allocation?" and the
+    /// allocator is free to answer "no" about a genuinely different object.
+    /// Both directions are unsound: it can report a rebuild as a cache hit
+    /// (the failure actually seen), and it could equally have reported a cache
+    /// hit as a rebuild, which would have sent somebody hunting a cache bug
+    /// that does not exist.
+    ///
+    /// Holding `page0` for the life of the test fixes that at the root rather
+    /// than by tolerance: while a strong `Rc` is alive the address cannot be
+    /// reused by anything, so a differing pointer is proof of a different
+    /// allocation and an equal pointer is proof of the same one. It costs
+    /// nothing — `CachedText` is a handle, and this module hands out an `Rc`
+    /// precisely so that overlapping handles are legal.
+    ///
+    /// ⚠ Its sibling above, `a_second_reader_shares_the_extraction_…`, was
+    /// never exposed to this: it compares two handles that are **both alive**,
+    /// which is the sound shape. Do not "fix" that one by symmetry.
     #[test]
     fn a_page_step_rebuilds_the_extraction() {
         let doc = open_fixture(FOUR_PAGES);
         let page0 = doc.provenance_page_text(0).expect("page 0");
         let ptr0 = std::rc::Rc::as_ptr(&page0.text);
-        drop(page0);
         let page1 = doc.provenance_page_text(1).expect("page 1");
         assert!(
             !std::ptr::eq(ptr0, std::rc::Rc::as_ptr(&page1.text)),
@@ -330,6 +361,9 @@ mod tests {
             !std::ptr::eq(ptr0, std::rc::Rc::as_ptr(&back.text)),
             "the cache holds one page; returning to page 0 re-extracts it"
         );
+        // ★ Dropped only now, after every comparison, for the reason the doc
+        // comment above gives at length. Moving this line up is the defect.
+        drop(page0);
     }
 
     /// **An edit invalidates it.**

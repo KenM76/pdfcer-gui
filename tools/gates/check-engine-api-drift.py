@@ -360,6 +360,36 @@ import tempfile
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 import engine_path  # noqa: E402
 
+# ---------------------------------------------------------------------------
+# Make this gate's own output survive a non-UTF-8 console.
+# ---------------------------------------------------------------------------
+#
+# ★★ This is not cosmetic and it was not theoretical. Every string this gate
+# prints in its FINDINGS is prose somebody else wrote -- an `exempt` reason out
+# of the snapshot, a doc-comment excerpt, a path -- and this project's prose is
+# full of `★`, `⚠` and `—`, because that is the house style for
+# emphasis in every register file here. On Windows, a bare `python x.py`
+# inherits the console code page (cp1252 on this machine) for `sys.stdout`, and
+# the FIRST such character raises `UnicodeEncodeError` *mid-report*.
+#
+# ⇒ The failure mode is the bad one: the gate dies with a traceback while
+# printing, so it exits non-zero -- which looks like the gate FAILING on the
+# engine's surface, when in fact it never got as far as deciding. A reader sees
+# red, reads a Python stack, and has no way to tell "the engine grew something
+# unaccounted" from "somebody put a star in an exemption". The exemption is
+# also the thing MOST likely to carry one, since it is the longest piece of
+# argued prose in the whole data file.
+#
+# Found 2026-09-09 by writing an exemption with a `⚠` in it. The offending
+# character was removed from the snapshot as well (it is a generated file and
+# ASCII costs nothing there), but removing it is not the fix: the next reason,
+# in the next session, will have one. `errors="replace"` rather than `"strict"`
+# so that an un-encodable character degrades to `?` and the FINDING still
+# reaches the reader, which is the entire point of a gate's output.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
 
 #: The committed baseline, overridable by `PDFCER_ENGINE_API_SNAPSHOT`.
