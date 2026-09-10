@@ -1,5 +1,99 @@
 # RESUME — read this, then say "continue"
 
+> ★★★ **LAST SESSION: 2026-09-09, evening. THE LOAD-ANOMALY DISCLOSURE IS
+> DRIVEN, AND IT WAS FALSIFIED BOTH WAYS BEFORE IT WAS BELIEVED.** Fifth
+> release of the day. OneDrive **`pdfcer-gui2` (22:51) is the new build,
+> `pdfcer-gui1` (10:57) is the fallback**; GitHub `v0.5.0-dev.20260909.5` at
+> `a98dad5`, verified from his side (`releases/latest` returns it,
+> `prerelease: false`, one zip, 23,434,943 bytes). ⚠ He runs
+> **`OneDrive\pdfcer\pdfcer-gui.exe`** — a THIRD location the rotation script
+> does not touch, and three instances of it were live all session.
+> **Measured 2026-09-09 evening: it is the 10:20 build — TWO releases behind.**
+> So the redaction override ruling (10:57), the Find Zoom tick-box and the
+> load-anomaly disclosure (22:51) are all absent from the program he actually
+> runs. ★ Not copied over: the exe was live in three processes, and that folder
+> is his install rather than a rotation slot — **tell him, do not overwrite it.**
+> Always check its date before reading any report as "not fixed".
+>
+> **State, every number re-measured 2026-09-09 evening in the session that wrote this block:**
+>
+> | | | measured with |
+> |---|---|---|
+> | tests | **3,957 passing, 0 failing, 51 ignored** | `CARGO_BUILD_JOBS=2 cargo test --workspace`, summing every `test result` through `awk` |
+> | gates | **32 of 32, 0 skipped** — and the run earned its keep, going red on 15 clippy `doc_lazy_continuation` sites in `status::anomalies` | `bash tools/gates/run-all.sh` |
+> | engine | `pdfcer-core` **0.49.0 at `369d4de`** (`Pass 286.0`). ★★ The tree is **2 commits ahead and no engine bump was owed** — `git diff --stat 369d4de..HEAD` touches only `docs/` and `.claude/`, nothing under `crates/`. Measured, not assumed | `grep -A3 'name = "pdfcer-core"' Cargo.lock`; `git -C D:/Dev/pdfcer diff --stat` |
+> | driven checks registered | **198** — up from 196 | `Box::new(` inside `checks/roster.rs`'s `all()`; the file holds **199**, one is deliberately outside `all()` |
+> | request channel | **215 files open, 53 `reply_*`**. Triaged: the three newest — the per-mark `redacted_text` reply, the residual-sweep notice and the load-anomaly notice — are all **consumed**, and the newest of them IS the current pin. One request filed by us this evening | `ls .../open \| wc -l` |
+> | smoke-launch | ✅ off-screen, `a1-titleblock.pdf` from the REPO ROOT, FINAL build: page drawn (`canvas-coverage covered=1.000`), no panic, no `overflow.*` region, **no `status-group:load-anomalies` on a clean file** (a third independent witness for the absence half), killed by PID+path | `PDFCER_DIAG=1 PDFCER_DIAG_VIEWPORT="-4200,-4200,1400,900"` |
+> | source | **541,789 lines of Rust in 954 tracked files**; `pdfcer-gui` 387,909; **53,658 lines of Markdown in 125 files** | `git ls-files '*.rs' \| xargs cat \| wc -l` — through `cat`, never `wc`'s per-batch totals |
+>
+> ## ★★★ THE FINDING: A GREEN CHECK THAT HAS NEVER BEEN RED IS NOT EVIDENCE
+>
+> `load_anomalies_reach_the_status_bar` passed the first time it ran. That is
+> the moment to distrust it, not to file it. Two falsifications, one per clause:
+>
+> - point the **present**-assertion at the clean fixture — RED, and with the
+>   right complaint ("the status bar declares no `status-group:load-anomalies`
+>   region, so the census line never drew");
+> - point the **control** at the contradicting fixture — RED, with the *other*
+>   right complaint ("the census line is on for files that have nothing to
+>   disclose").
+>
+> Each clause fails on its own; neither is carried by the other. Restore from a
+> **copy**, never `git checkout` — the file was untracked and that verb would
+> have deleted the session's work.
+>
+> ★★ **And the control fixture is asserted clean, not assumed clean.**
+> `the_control_fixtures_a_driven_run_uses_are_genuinely_clean` opens both
+> fixtures through the real engine on every `cargo test`. ⚠ It spells the two
+> names **literally**, because `app::state::FOUR_PAGES` resolves against the
+> ENGINE's read-only corpus (`pageops/four-pages.pdf`) and not this repository's
+> `fixtures/` — the two instruments have to be naming the same bytes, and a
+> constant that quietly names other bytes is how a control stops being one.
+>
+> ## ★★ THE SECOND FINDING: `Session::place` OVERRULED THE VIEWPORT
+>
+> `PDFCER_DIAG_VIEWPORT`'s **position** was being discarded: `launch::Session::place`
+> moved every launched window to desktop `(780, 40)` unconditionally to dodge
+> the on-screen keyboard. A no-input check whose doc comment said *"the window
+> is placed off the desktop"* would have put it in the middle of his screen
+> while claiming otherwise. `LaunchSpec::place` is the opt-out, documented at
+> both ends as a promise that **no pointer or keystroke is sent by that launch**.
+> Do not set it `false` on anything that clicks.
+>
+> ## WHAT TO DO NEXT, in his likely order
+>
+> 1. **Run `load_anomalies_are_listed_in_document_properties`.** Written,
+>    registered, compiles, **never run** — it needs the pointer. It clicks a
+>    mode segment, a ribbon tab and a ribbon item, then asserts
+>    `properties.load-anomalies` is declared with **exactly one** row region on
+>    the contradicting file, and absent (with `properties.info` present, proving
+>    the panel is open) on the clean one.
+>    Command: `target/debug/ui-verify.exe --check load_anomalies_are_listed_in_document_properties --out target/ui-verify/loadanom-panel`
+> 2. **The 29 geometry/gesture checks, still unrun** since the solid scroll bars
+>    landed 2026-09-08 — and now the dock fix, the engine pin, the Find zoom
+>    box and the anomaly panel are all under them too.
+> 3. **`double_clicking_a_text_box_edits_the_text`** — last known FAIL, still
+>    uninvestigated.
+> 4. **O161** — a redaction mark is selectable and deletable headlessly but he
+>    could not select it at the keyboard. Drive it.
+> 5. **The driven check for the Find Zoom box** — assert the zoom readout is
+>    identical either side of a find jump with the box unticked. Owed since
+>    `870fe72`.
+>
+> ## WHAT NOT TO DO
+>
+> - **Do not `taskkill /IM pdfcer-gui.exe`.** Kill by PID, verified by path.
+> - **Do not run a driven sweep while he is at the PC.** Smoke-launch off-screen.
+> - **Do not fuse the two load-anomaly checks.** The panel one SKIPs under
+>   `--no-input`, and a SKIP is not red; fusing would silence the cheap half on
+>   every unattended sweep.
+> - **Do not bump the engine reflexively before a build without reading the
+>   diff.** It is right when the engine moved code and it is a 10-minute engine
+>   rebuild when the engine moved two librarian filings. Read
+>   `git diff --stat <pin>..HEAD` first — `crates/` or not is the question.
+
+
 > ★★★ **LAST SESSION: 2026-09-09, 04:30–10:30. READ `HANDOFF_20260909.md`
 > FIRST** — it is the long form of everything below. FOUR releases today;
 > **`pdfcer-gui1` (10:57) is the newest, `pdfcer-gui2` (10:20) the fallback**;

@@ -80,6 +80,55 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
+## O164 — ◑ **BUILT 2026-09-09, HALF DRIVEN** — not something you asked for: pdfcer now tells you when a file contradicted itself and pdfcer had to decide
+
+You did not request this row and it is here anyway, because it changes what the
+program says to you and rule 1 of this file is that you should never have to
+discover a change by tripping over it.
+
+### What it is
+
+Some PDFs are self-contradictory — the same entry is written twice with two
+different values in one place. pdfcer has always had to pick one to open the
+file at all (it keeps the **second**). Until now it picked silently. A file
+that says two things and gets read as one thing, with no mention of it, is the
+exact shape of the problem you named on the redaction nagging: **the program
+knowing something about your document and not saying so.**
+
+### What you see now
+
+- **In the status line**, only when there is something to say: one sentence
+  naming how many contradictions the file had and that pdfcer decided rather
+  than refusing to open it, ending with *"Document properties says which."*
+- **In Document Properties**, one row per contradiction, in plain words —
+  which object, which entry, what pdfcer kept and what it left.
+- **On a clean file: nothing.** No badge, no green tick, no "0 anomalies"
+  line. Silence is the normal case and it should look normal.
+- **Nothing is drawn on the page.** The drawing renders exactly as it will
+  render when saved. This is the rule you set after the old GUI's red-flagging:
+  report off to the side, never mark the document.
+
+### ✅ Driven — and, unusually, proved able to fail
+
+`load_anomalies_reach_the_status_bar` drives the real binary against a
+contradicting file and a clean one, and asserts the sentence appears for the
+first and is absent for the second.
+
+★ **It was then deliberately broken, twice, to prove it can go red.** Aimed at
+the wrong file each way round, it failed each time with a *different* and
+correct complaint — so neither half of it is coasting on the other. A check
+that has only ever been green is not evidence, and this one is no longer in
+that category.
+
+### ⬜ NOT DRIVEN — the Document Properties list
+
+`load_anomalies_are_listed_in_document_properties` is written and registered
+and has **never been run**. It needs the mouse, and you were at the machine.
+It will be run on the next unattended pass. Until then the status sentence is
+verified and the list behind it is not.
+
+---
+
 ## O163 — ✅ **BUILT 2026-09-09, NOT YET DRIVEN** — "add a checkbox option to our search bar called zoom - when I unchecked just jump to the page and highlight the found item as before but don't change the zoom"
 
 **Your words, 2026-09-09.**

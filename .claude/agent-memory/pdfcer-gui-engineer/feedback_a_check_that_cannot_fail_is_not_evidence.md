@@ -76,3 +76,39 @@ proxy for it. And it composes with the plant-landed check —
 [[feedback_a_backlog_row_is_a_record_not_evidence]] — so a falsification now
 needs three things, all of them: **the plant matched, the test's own line said
 FAILED, and the file was restored.**
+
+## ★★★ FALSIFY ONCE PER CLAUSE, NOT ONCE PER CHECK — 2026-09-09
+
+A check with two independent claims needs **two** falsifications, one per
+claim, each changing exactly one constant — and the payoff is not that it goes
+red, it is that the **two complaints are different sentences**.
+
+`load_anomalies_reach_the_status_bar` asserts (1) the disclosure region is
+present on a contradicting file and (2) absent on a clean one. Aimed the
+presence constant at the clean fixture → *"…declares no
+`status-group:load-anomalies` region, so the census line never drew"*. Aimed
+the control at the contradicting fixture → *"The census line is on for files
+that have nothing to disclose."* Two clauses, two messages, neither carrying
+the other.
+
+**If both falsifications produce the same sentence, one clause is wearing a
+costume** and a future regression in either half will point at the wrong half.
+
+**Why this is the moment to distrust it:** the check passed the **first time it
+was ever run**. That is not reassurance — a check that has only ever been green
+is indistinguishable from a check that asserts nothing. The trace-oracle green
+failure modes are all first-run-green: a misspelled region so the "present"
+branch was never taken, `.last()` on a change log returning a fossil, a clause
+that is trivially true, a fixture already in the end state.
+
+★★ **The control fixture is a claim too.** Assert it through the real engine on
+every `cargo test`, and spell the filename **literally** if the constant you
+would reuse resolves against a different corpus — `app::state::FOUR_PAGES`
+points into the ENGINE's read-only tree, same basename, different bytes. A
+constant that quietly names other bytes is how a control stops being a control
+with every gate green.
+
+**How to apply:** restore **from a copy in `$TMP`**, never by reverting through
+git — a new check is usually untracked and a revert deletes rather than
+restores. See [[never-git-checkout-to-undo-an-experiment]] and
+[[an-or-between-two-required-conditions-asserts-neither]].

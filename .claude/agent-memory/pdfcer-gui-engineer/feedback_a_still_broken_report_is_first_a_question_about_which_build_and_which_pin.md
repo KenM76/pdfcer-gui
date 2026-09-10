@@ -40,3 +40,20 @@ it" is usually "the fix exists and is not in the build I run".
 - Where a sentence was false, fix the sentence the same session even if the
   capability must wait; his "get rid of the code that doesn't work" is R9,
   and a true refusal is the minimum it demands.
+
+## ★★★ THERE IS A THIRD LOCATION, AND IT IS THE ONE HE ACTUALLY RUNS — 2026-09-09
+
+`C:\Users\Ken\OneDrive\pdfcer\pdfcer-gui.exe` is his install. The rotation
+script writes `pdfcer-gui1` and `pdfcer-gui2` and **never touches it**. So
+"published to OneDrive" and "he has it" are different claims, and the gap is
+not small: measured that evening after five releases in one day, his exe was
+the **10:20** build — two releases behind. Everything from 10:57 and 22:51 was
+absent from the program he was using while reporting on it.
+
+**How to apply:** `ls -l` that exact path as part of triaging any report, and
+put the measured date in `RESUME.md` so a cold session does not re-derive it.
+Say it in the reply too — he cannot see it.
+
+⚠ **Do not copy over it.** Three instances were live; the folder is his install
+rather than a rotation slot, and overwriting a running exe is either a failed
+write or a broken session. Tell him it is stale and let him take the update.
