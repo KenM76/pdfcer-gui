@@ -756,6 +756,44 @@ shell into `D:\Dev\pdfcer` today would ship a *regression*, because measure,
 redaction, the settings dialog and text editing still live only in the old
 shell.
 
+> ### ⚠⚠ **CORRECTED 2026-09-10 — the block below is TRUE HISTORY and FALSE ABOUT THIS BUILD. Read this first.**
+>
+> Two of its load-bearing facts have changed, and both would send a reader
+> down a dead end:
+>
+> 1. **It no longer fetches from GitHub.** `crates/pdfcer-gui/Cargo.toml:437`
+>    reads `pdfcer-core = { git = "file:///D:/Dev/pdfcer", branch = "main", … }`
+>    — the **local** tree, on a **branch**, not a `rev` on `origin`. So the
+>    "unpushed commits are invisible" hazard in point 2 below is retired: local
+>    `main` is exactly what this shell can see. The commits do not need pushing
+>    to be reachable.
+> 2. **A branch dependency still pins.** `Cargo.lock` records the resolved sha
+>    and Cargo will not re-resolve it on its own, so the staleness hazard is
+>    unchanged in kind even though its mechanism moved. On 2026-09-10 the pin
+>    was `d4a4e3b` against a tip of `b1f4bbc`, **three commits behind**, and one
+>    of the three was the standard-icon painting that had been rendering
+>    appearance-less sticky notes and stamps as *nothing at all*.
+>
+> **The check that is actually correct today**, and it is two lines rather than
+> one because a count alone does not say what was missed:
+>
+> ```bash
+> grep -m1 'pdfcer?branch=main#' Cargo.lock            # what this build has
+> cd /d/Dev/pdfcer && git log --oneline -1 main         # what the engine has
+> cd /d/Dev/pdfcer && git log --oneline <pin>..main     # WHAT IS IN BETWEEN — read it
+> ```
+>
+> Discharged by `cargo update -p pdfcer-core -p pdfcer-render -p pdfcer-print`
+> and by nothing else.
+>
+> ★★★ **And the standing consequence, which outlives both mechanisms:** every
+> sentence in this repository of the form *"the engine cannot do X"* is a claim
+> about **a pin**, not about the engine, with a shelf life measured in hours.
+> This project has now corrected that class of sentence seven times. Under
+> **O165** the pin comparison is the **first act of a session**, not a thing
+> done when a rendering complaint arrives — because the 2026-09-10 case had no
+> complaint and could not have had one: the defect's symptom was clean paper.
+
 ### ★★ The engine is PINNED, and it goes stale silently — checked 2026-08-17
 
 The sentence above used to say *"depends on `pdfcer-core` and `pdfcer-render`
