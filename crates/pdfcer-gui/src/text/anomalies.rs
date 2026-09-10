@@ -243,10 +243,18 @@ pub const fn heading() -> &'static str {
 ///
 /// ★★ It says the document is fine *as opened* and that the choices are pdfcer's
 /// documented defaults, because without that the list underneath reads as a list
-/// of damage the operator is expected to repair. There is nothing to repair here
-/// and no control that would repair it; saying so is what keeps the disclosure
-/// from behaving like a prompt, which decision 059 and the engine's own notice
-/// both forbid by name.
+/// of damage the operator is expected to repair. There is nothing to repair
+/// here; saying so is what keeps the disclosure from behaving like a prompt,
+/// which decision 059 and the engine's own notice both forbid by name.
+///
+/// ★★★ **Corrected 2026-09-10.** This doc used to end *"and no control that
+/// would repair it"*, which was true when it was written and stopped being true
+/// the day [`reread_first_button`] landed under these rows. The sentence itself
+/// did not need changing and has not changed — *"the document is complete and
+/// usable as it is"* is exactly what a control **underneath** must not
+/// contradict, and it is what makes pressing the button a choice rather than a
+/// repair. What needed changing was the doc's claim about the shell, and a
+/// stale limitation sentence is a defect in whoever believes it.
 #[must_use]
 pub const fn note() -> &'static str {
     "Other programs open this file too, and make their own choices in the same \
@@ -260,6 +268,73 @@ pub const fn tooltip() -> &'static str {
     "A PDF can say two different things in the same place — the same dictionary key twice with different values, a stream whose stated length does not match its contents, an object with no end marker. pdfcer used to refuse a file like that outright. It now reads it the way other PDF programs do and lists every place it had to decide, so that if something looks wrong on the page you know where the file was ambiguous."
 }
 
+/// **The button that reads the file again, taking the FIRST of each pair.**
+///
+/// # ★★★ The third of the operator's three obligations
+///
+/// > *"...and if the user can intervene in a decision that should always be an
+/// > option along with them not having to intervene."*
+///
+/// The document opens (not fatal) and nothing has to be answered first
+/// (intervention not required); this is the sentence that makes intervention
+/// *possible*. Until 2026-09-10 the panel said what pdfcer had chosen and
+/// offered no way to choose otherwise, which is the difference between being
+/// told and being asked.
+///
+/// # ★★ Why it names the VALUE and not the policy
+///
+/// The engine's term is `DuplicateKeyPolicy::KeepFirst`, and *"keep first"* is
+/// meaningless to an operator looking at a titleblock. The rows above have just
+/// said *"pdfcer kept /UseOutlines and left /UseOC"*, so the button says the
+/// thing that follows from those rows: take the one it left. The word *"first"*
+/// appears because the rows are ordered and the operator can see which is which.
+///
+/// ⚠ **Whole file, not this row.** `LoadOptions::with_duplicate_keys` sets one
+/// policy for the entire load — there is no per-key form — so the label must not
+/// promise one. *"every"* is doing that work and is not decoration.
+#[must_use]
+pub const fn reread_first_button() -> &'static str {
+    "Read this file again, using the first value at every one of these"
+}
+
+/// **The same button when the file is already open under the first values** —
+/// it offers pdfcer's ordinary reading back.
+///
+/// ★★ **R9, and the reason there are two strings rather than one greyed
+/// control.** A re-read is not a toggle whose off state is unavailable: after
+/// re-reading, the *other* choice is exactly as available as this one was, so
+/// the honest control is one button whose label names whichever reading the
+/// operator does not currently have. A disabled *"use the first value"* button
+/// on a document already read that way would be a placeholder describing a
+/// state the operator is standing in.
+///
+/// ★ It says *usual* rather than *default*, and *last* rather than *KeepLast*,
+/// for [`reread_first_button`]'s reason: the operator is choosing between two
+/// values they can see, not between two settings.
+#[must_use]
+pub const fn reread_last_button() -> &'static str {
+    "Read this file again, using pdfcer's usual choice (the last value)"
+}
+
+/// The hover sentence on either re-read button.
+///
+/// # ★★★ It states the cost, because the button cannot show it
+///
+/// Pressing this closes the document and parses the bytes on disk again. The
+/// tab does not go away, the path does not change and the pages look identical
+/// — and every edit made since the file was opened is gone, because the
+/// intervention is a re-load rather than a patch. That is the single most
+/// surprising fact about this control and it is the first clause here.
+///
+/// ⚠ It is not the whole guard. `crate::app::actions::document`'s
+/// `apply_reread_with_duplicate_keys` asks about unsaved edits before anything
+/// is discarded, exactly as a close does. A tooltip is a warning; the prompt is
+/// the protection, and an operator who never hovers still keeps their work.
+#[must_use]
+pub const fn reread_tooltip() -> &'static str {
+    "pdfcer reads the file from disk again, so anything you have edited in this      document since opening it is not carried over — you are asked about that      first. Nothing is written to the file either way; this changes only how      pdfcer reads it."
+}
+
 /// *"Object 57 0 named /PageMode twice. pdfcer kept /UseOutlines and left
 /// /UseOC."*
 ///
@@ -270,9 +345,16 @@ pub const fn tooltip() -> &'static str {
 /// says a count *"makes the intervention theoretical"*. This sentence is where
 /// that pair becomes readable, and it answers the operator's exact question —
 /// *"what if it is the wrong one?"* — as far as this build can: he can see both
-/// values and judge. Choosing the other one is a re-load rather than an edit and
-/// is filed in `ENGINE_BACKLOG.md`; this row is what makes that ask concrete
-/// rather than abstract.
+/// values and judge.
+///
+/// ★★★ **And, since 2026-09-10, take the other one.** Choosing it is a re-load
+/// rather than an edit — the engine is explicit that *"a decision made during
+/// parsing is not a value that can be edited afterwards"* — and the button that
+/// performs that re-load is drawn directly under these rows by
+/// `crate::panels::docprops`. This row is what makes it meaningful: without both
+/// values on screen, *use the first value instead* is a button an operator has
+/// no basis to press. (This paragraph used to say the ask *"is filed in
+/// `ENGINE_BACKLOG.md`"*. It was, as rows 280 and 281; both are wired.)
 ///
 /// ★ "left" rather than "discarded" or "threw away". The discarded value is
 /// still in the file and still visible to any other reader; pdfcer did not

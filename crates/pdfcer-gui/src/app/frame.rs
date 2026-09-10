@@ -975,7 +975,7 @@ impl eframe::App for PdfcerApp {
         //
         // `ask_for_password` returns immediately when it is already asking for
         // this path, so calling it unconditionally costs one comparison.
-        if let Status::NeedsPassword { path } = &self.status {
+        if let Status::NeedsPassword { path, .. } = &self.status {
             let path = path.clone();
             self.dialogs.ask_for_password(&path);
         }

@@ -133,6 +133,19 @@ impl PdfcerApp {
                 self.apply_new();
                 return;
             }
+            // ★★ The FIFTH arm that replaces the open document, and the first
+            // one that replaces it with *the same file read differently*.
+            //
+            // It returns like its four neighbours and for their reason: what
+            // follows below is edit-epoch bookkeeping, and a re-load is not an
+            // edit. The document that comes back has a brand-new `EditSession`
+            // with an empty undo stack, because it is a new parse of the bytes
+            // on disk — which is exactly why `apply_reread_with_duplicate_keys`
+            // carries both of `super::document`'s guards.
+            Action::RereadWithDuplicateKeys { policy } => {
+                self.apply_reread_with_duplicate_keys(policy);
+                return;
+            }
             Action::NewSized {
                 width_pt,
                 height_pt,
@@ -352,7 +365,8 @@ impl PdfcerApp {
             | Action::SaveCopy
             | Action::SaveAs
             | Action::Find(_)
-            | Action::SetFindZoom(_) => {
+            | Action::SetFindZoom(_)
+            | Action::RereadWithDuplicateKeys { .. } => {
                 // ui-text-exempt: a panic message, read from a stack trace by
                 // whoever moved one of these arms. Never rendered.
                 unreachable!("handled before the document guard")

@@ -162,6 +162,25 @@ pub enum PendingIntent {
         /// Page height in points.
         height_pt: f64,
     },
+    /// ★★★ `Action::RereadWithDuplicateKeys` — **the fifth variant, and the
+    /// second one anything constructs.**
+    ///
+    /// It is the odd one out in this enum and worth saying how: the four above
+    /// are about *which document is on screen*, and this one is about **the
+    /// same document, read differently**. The tab that comes back has the same
+    /// path, the same name and the same pages. What it does not have is the
+    /// edits, because a re-read is a fresh parse of the bytes on disk with an
+    /// empty undo stack — which is precisely why it belongs here rather than
+    /// beside the harmless commands.
+    ///
+    /// ★ It carries the [`pdfcer_core::document::LoadOptions`] across the
+    /// dialog rather than re-deriving them on the other side. The operator
+    /// chose a reading and then answered a question about saving; the answer
+    /// must not be able to change which reading they get.
+    Reread {
+        /// The reading the operator asked for, held until they have answered.
+        options: pdfcer_core::document::LoadOptions,
+    },
 }
 
 // ---------------------------------------------------------------------------
@@ -204,6 +223,10 @@ impl PendingIntent {
             Self::Close => t::question_close(),
             Self::Open(_) => t::question_open(),
             Self::New | Self::NewSized { .. } => t::question_new(),
+            // ★ Its own sentence, not `question_close`'s. An operator who
+            // pressed *use the first value* and is asked about **closing** will
+            // read the prompt as being about a control they did not touch.
+            Self::Reread { .. } => t::question_reread(),
         }
     }
 
@@ -221,6 +244,7 @@ impl PendingIntent {
             Self::Close => t::discard_close(),
             Self::Open(_) => t::discard_open(),
             Self::New | Self::NewSized { .. } => t::discard_new(),
+            Self::Reread { .. } => t::discard_reread(),
         }
     }
 }

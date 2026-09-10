@@ -29,6 +29,7 @@
 //! | `apply_new_sized` | **no** | none |
 //! | `apply_close` | yes — the one on screen | both |
 //! | `apply_close_document` | yes — the one whose tab was clicked | both |
+//! | `apply_reread_with_duplicate_keys` | **yes** — replaces it with a fresh parse of its own bytes | both |
 //!
 //! Before the document tabs, Open and New *replaced* what was open, and the
 //! guard on them was the most valuable one in the file — see `apply_open`,
@@ -79,6 +80,29 @@
 //! correct, and was answering a different question.** A reader arriving at
 //! `Action::Close` saw a guard, saw a doc comment explaining the guard, and had
 //! no reason to ask whether it was the guard the tooltip was describing.
+//!
+//! ## ★★★ 2026-09-10: a SIXTH arm, and it discards a document without closing
+//! anything
+//!
+//! `apply_reread_with_duplicate_keys` is the first arm here whose destruction
+//! is invisible in its own shape. It does not say *close*. The tab does not go
+//! away. The path, the name and the page count are all identical afterwards.
+//! What is gone is **every edit made since the file was opened**, because the
+//! engine's intervention is a re-load rather than a patch — *"a decision made
+//! during parsing is not a value that can be edited afterwards, because the
+//! discarded one was never built into the document"* — so the document that
+//! comes back is a fresh parse of the bytes on disk with an empty undo stack.
+//!
+//! That is exactly the 2026-08-19 defect's shape arriving from a new direction:
+//! **a reader has no reason to ask whether this arm needs the guards**, because
+//! nothing about it looks destructive. It is in this file, in the table above,
+//! and inside the test's destructive set for that reason and no other.
+//!
+//! The test needed one change to see it, and the change is a finding in itself:
+//! its `closes_a_document` predicate searched for two *close* verbs, which is a
+//! proxy for *discards a document*. The proxy held while every discarding arm
+//! closed something. This arm discards by re-opening, so the predicate now
+//! names the re-read verb too — see the test's own note.
 //!
 //! Putting every such arm in one file with the guard table above is the
 //! structural half of not repeating that. The other half is
@@ -179,6 +203,86 @@ impl PdfcerApp {
         self.new_document_sized(pdfcer_core::page_tree::Rect::from_corners(
             0.0, 0.0, width_pt, height_pt,
         ));
+    }
+
+    /// `Action::RereadWithDuplicateKeys` — **read this file again, taking the
+    /// other value wherever it names a key twice.**
+    ///
+    /// The sixth arm, and the operator's own intervention in a parse decision:
+    ///
+    /// > *"We should be making pdfcer so that it opens pdfs that have errors,
+    /// > and have a way that it manages those errors such that they aren't
+    /// > fatal, and if the user can intervene in a decision that should always
+    /// > be an option along with them not having to intervene."*
+    ///
+    /// Raised only by `crate::panels::docprops`, from beside the list of places
+    /// the file contradicted itself — which is where it has to be raised from,
+    /// because the disclosure is the only thing on screen that makes the offer
+    /// mean anything. R8b rule 4 puts that disclosure **off-canvas** and this
+    /// keeps its control there with it.
+    ///
+    /// # ★★★ Why it carries both guards when nothing about it says *close*
+    ///
+    /// Because it destroys as much as a Close does and advertises none of it.
+    /// The tab stays, the path stays, the pages look identical — and every edit
+    /// since the file was opened is gone, because the engine's intervention is
+    /// a re-load: *"the discarded one was never built into the document"*. An
+    /// operator who has marked up a drawing and then presses *use the first
+    /// value* out of curiosity has lost the afternoon.
+    ///
+    /// So: same two questions, same order, same reasons as
+    /// [`Self::apply_close`]. This file's header carries the argument for the
+    /// order and it transfers here without amendment.
+    ///
+    /// # ★★ The intent is `Reread`, not `Close`, and that is load-bearing
+    ///
+    /// [`PendingIntent::Reread`] carries the operator's chosen
+    /// [`pdfcer_core::document::LoadOptions`] **across the dialog**. Resuming
+    /// through `PendingIntent::Close` would close the tab and stop — the
+    /// operator would answer a question about their edits and watch their
+    /// document vanish instead of coming back read the way they asked. Every
+    /// step of the chain has to hold the reading, and this is the step where it
+    /// would be easiest to drop.
+    ///
+    /// # ⚠ It does not validate `policy`, and one value must never reach it
+    ///
+    /// [`pdfcer_core::parser::DuplicateKeyPolicy::Refuse`] is representable in
+    /// the action and is that enum's own `Default`. Sent to a loader it is the
+    /// behaviour that **refused the operator's 46 KB drawing whole over one
+    /// repeated `/PageMode`** — the exact failure `Pass 283.0` exists to end.
+    /// The rule is enforced where the value is constructed, in
+    /// `crate::panels::docprops`, which offers two of the three; this arm is
+    /// the transport and cannot second-guess a policy the engine may extend.
+    pub(super) fn apply_reread_with_duplicate_keys(
+        &mut self,
+        policy: pdfcer_core::parser::DuplicateKeyPolicy,
+    ) {
+        // As `apply_close`: an intervention the operator started themselves
+        // ends any `Close others` sequence that was waiting for an answer.
+        self.closing_others = None;
+        if self.save_pending() {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                "reread-declined reason=save-pending".to_owned()
+            });
+            return;
+        }
+        let options = pdfcer_core::document::LoadOptions::new().with_duplicate_keys(policy);
+        if self
+            .dialogs
+            .ask_unsaved(&self.status, PendingIntent::Reread { options })
+        {
+            // The question is up. `PdfcerApp::resume_after_unsaved` finishes
+            // this, with the same `options` — that is what the intent carries
+            // them for.
+            return;
+        }
+        // Nothing at stake, so it happens now. The `false` return — no file
+        // behind this document — is traced by the callee and needs no handling
+        // here: the control that raises this action is drawn only over a
+        // document that reported load anomalies, and a document with no bytes
+        // cannot have reported any.
+        let _ = self.reread_active_document(options);
     }
 
     /// `Action::Close` — put the document away.
@@ -426,24 +530,52 @@ mod tests {
         let marker = format!("    pub(super) {}", "fn apply_");
         let bodies: Vec<&str> = SRC.split(marker.as_str()).skip(1).collect();
         assert!(
-            bodies.len() >= 5,
+            bodies.len() >= 6,
             "found {} arms; the scan has stopped measuring anything",
             bodies.len()
         );
 
-        // ★ The two verbs that actually destroy a document. Assembled the same
-        // way and for the same reason: spelled as one literal each, they would
+        // ★ The verbs that actually destroy a document. Assembled the same way
+        // and for the same reason: spelled as one literal each, they would
         // appear in this test's own body and make every arm look destructive.
+        //
+        // ★★★ **The third verb does not close anything, and adding it was the
+        // finding of 2026-09-10.**
+        //
+        // Since 2026-08-19 this predicate was two *close* verbs, and it was
+        // right every day of that — because every arm that discarded a document
+        // did it by closing one. That made "names a close verb" a **proxy** for
+        // the property actually being asserted, which is *"this arm can destroy
+        // the operator's work"*.
+        //
+        // `apply_reread_with_duplicate_keys` breaks the proxy. It discards every
+        // edit in the document and closes nothing: the tab stays, the path
+        // stays, and the engine hands back a fresh parse of the same bytes with
+        // an empty undo stack. Under the old predicate it would have been
+        // classified **harmless**, the loop would have skipped it, the arm count
+        // would still have added up, and the test would have gone green over an
+        // arm that could lose an afternoon.
+        //
+        // That is this project's recurring shape — a check keyed on a name
+        // rather than on the property — and the guard against the next one is
+        // not a better name. It is the rule stated here: **when an arm can
+        // discard a document, it goes in this list, whatever its verb is
+        // called.**
         let closes_a_document = |body: &str| {
             let whole = format!("close_{}", "document();");
             let one = format!("close_{}", "slot(");
-            body.contains(whole.as_str()) || body.contains(one.as_str())
+            let again = format!("reread_active_{}", "document(");
+            body.contains(whole.as_str())
+                || body.contains(one.as_str())
+                || body.contains(again.as_str())
         };
 
         let destructive: Vec<&&str> = bodies.iter().filter(|b| closes_a_document(b)).collect();
         assert!(
-            destructive.len() >= 2,
-            "no arm was found to close a document; the scan is measuring nothing"
+            destructive.len() >= 3,
+            "found {} arms that discard a document; the scan is measuring less \
+             than it did on 2026-09-10",
+            destructive.len()
         );
 
         for body in destructive {

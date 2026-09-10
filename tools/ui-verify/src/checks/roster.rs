@@ -422,6 +422,18 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // The long form of the same disclosure, beside the other check that
         // opens the Document properties panel — they share its opener.
         Box::new(load_anomalies::LoadAnomaliesAreListedInDocumentProperties),
+        // ★★★ The way OUT of the same disclosure, wired 2026-09-10.
+        //
+        // Placed immediately after the check that proves the block is drawn,
+        // because it depends on that block being drawn and its failure message
+        // would otherwise be ambiguous between "no control" and "no block".
+        // Read in order, the two say: the rows are there, and the button under
+        // them reaches a loader.
+        //
+        // It is the longest chain any check in this file drives — panel to
+        // action to two guards to a pending intent to the loader — and every
+        // step of it has a unit test that cannot see the next one.
+        Box::new(load_anomalies::RereadingUnderTheOtherValueIsOffered),
         // ★ Two ribbon clicks and one trace line — cheap, no capture, no
         // canvas gesture, no keystroke — so its position is chosen for what a
         // reader wants adjacent rather than for cost.

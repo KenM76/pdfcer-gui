@@ -229,7 +229,7 @@ impl PdfcerApp {
             Some(Status::Open(doc)) => doc.origin == Origin::Opened && doc.path == path,
             Some(Status::Failed { path: p, .. })
             | Some(Status::Unsupported { path: p, .. })
-            | Some(Status::NeedsPassword { path: p }) => p == path,
+            | Some(Status::NeedsPassword { path: p, .. }) => p == path,
             Some(Status::Empty) | None => false,
         })
     }
@@ -308,7 +308,7 @@ impl PdfcerApp {
             ),
             Some(Status::Failed { path, .. })
             | Some(Status::Unsupported { path, .. })
-            | Some(Status::NeedsPassword { path }) => format!(
+            | Some(Status::NeedsPassword { path, .. }) => format!(
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
                 "close slot={slot} unopened path={path:?}"
             ),
@@ -434,7 +434,7 @@ impl PdfcerApp {
             Status::Open(doc) => Some(doc.path.as_path()),
             Status::Failed { path, .. }
             | Status::Unsupported { path, .. }
-            | Status::NeedsPassword { path } => Some(path.as_path()),
+            | Status::NeedsPassword { path, .. } => Some(path.as_path()),
             Status::Empty => None,
         }
     }

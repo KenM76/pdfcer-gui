@@ -1026,7 +1026,7 @@ impl PdfcerApp {
             // says what STATE the document is in; the dialog is where the
             // question is answered — so the two must agree and must not
             // duplicate the ask.
-            Status::NeedsPassword { path } => {
+            Status::NeedsPassword { path, .. } => {
                 let text = crate::text::open_needs_password(path);
                 ui.centered_and_justified(|ui| ui.label(text))
             }

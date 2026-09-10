@@ -811,6 +811,40 @@ pub enum Action {
         /// The imported picture. See above for why it is an `Arc`.
         image: std::sync::Arc<pdfcer_core::image_import::ImportedImage>,
     },
+    /// ★★★ **Read this document's bytes again under the OTHER reading of a
+    /// key the file names twice** — the operator's intervention in a parse
+    /// decision.
+    ///
+    /// Raised by `crate::panels::docprops`, beside the list of places the file
+    /// contradicted itself, and by nothing else. It is the third obligation of
+    /// the operator's own ruling about damaged files — *"if the user can
+    /// intervene in a decision that should always be an option"* — which had
+    /// no route in this shell until 2026-09-10.
+    ///
+    /// # ★★ It carries a POLICY, not a key and not a value
+    ///
+    /// `pdfcer_core::document::LoadOptions::with_duplicate_keys` sets **one**
+    /// policy for the whole load. There is no per-key form and inventing a
+    /// per-row control would promise something the engine cannot do, so the
+    /// offer is honestly *"take the first value everywhere in this file"*.
+    ///
+    /// # ⚠ `Refuse` is representable here and must never be sent
+    ///
+    /// [`pdfcer_core::parser::DuplicateKeyPolicy`] has a third variant, and it
+    /// is that enum's own `Default`. It is right for a conformance checker and
+    /// it is **the exact behaviour that refused the operator's 46 KB drawing
+    /// whole over one repeated `/PageMode`**. `crate::panels::docprops` offers
+    /// two of the three and never that one; this variant is plain data and
+    /// cannot enforce it, which is why the rule is written at the surface that
+    /// constructs it and again here.
+    RereadWithDuplicateKeys {
+        /// Which occurrence of a repeated key wins on the re-read.
+        ///
+        /// The engine's own enum, carried unchanged — a policy added to
+        /// `pdfcer-core` reaches this variant without a translation layer that
+        /// could grow its own opinion.
+        policy: pdfcer_core::parser::DuplicateKeyPolicy,
+    },
     /// ★ **Set or clear one of the document's own information fields** —
     /// `/Title`, `/Author`, `/Subject`, `/Keywords`.
     ///

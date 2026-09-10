@@ -40,7 +40,7 @@
 
 use std::path::PathBuf;
 
-use pdfcer_core::document::{DocError, Document};
+use pdfcer_core::document::{DocError, Document, LoadOptions};
 use pdfcer_core::xref::XrefErrorKind;
 
 use crate::app::PdfcerApp;
@@ -76,7 +76,12 @@ impl PdfcerApp {
             self.activate_slot(slot);
             return;
         }
-        self.open_path_inner(path, None);
+        // ★ `LoadOptions::new()`, spelled rather than defaulted. It is the
+        // ordinary open: decide the contradictions, report them, do not ask.
+        // See `Self::reread_active_document` for the one caller that passes
+        // something else, and `crate::app::state::OpenDoc::load_options` for
+        // why the value is then remembered.
+        self.open_path_inner(path, None, LoadOptions::new());
     }
 
     /// **Open a document that needs a password, with one** — `Action::OpenWithPassword`.
@@ -122,10 +127,114 @@ impl PdfcerApp {
         // still saying it needs a password. `open_path`'s guard cannot be reused
         // here for the same reason: it would find that tab and "activate" it,
         // which shows the operator the failure they are trying to get past.
+        //
+        // ★★ The slot's own [`LoadOptions`] are read BEFORE it is closed, and
+        // that is the whole of how the operator's chosen reading survives a
+        // password prompt. `Status::NeedsPassword` carries them for exactly
+        // this step; its field doc has the argument.
+        let options = match self.slot_of_path(&path) {
+            Some(slot) => {
+                let carried = match self.slot(slot) {
+                    Some(Status::NeedsPassword { options, .. }) => *options,
+                    // Any other status at this path is not a password retry —
+                    // the ordinary reading is right, and is what the prompt
+                    // would have produced before this field existed.
+                    _ => LoadOptions::new(),
+                };
+                self.close_slot(slot);
+                carried
+            }
+            None => LoadOptions::new(),
+        };
+        self.open_path_inner(path, Some(password), options)
+    }
+
+    /// **Read the open document's bytes again under a different reading** —
+    /// the second half of `Pass 283.0`, and this shell's answer to the middle
+    /// clause of the operator's own ruling.
+    ///
+    /// # ★★★ The ruling, and which third of it was missing
+    ///
+    /// > *"We should be making pdfcer so that it opens pdfs that have errors,
+    /// > and have a way that it manages those errors such that they aren't
+    /// > fatal, and if the user can intervene in a decision that should always
+    /// > be an option along with them not having to intervene."*
+    ///
+    /// Three obligations. Two of them shipped here on 2026-09-09: the document
+    /// opens (**not fatal**), and nothing has to be answered before it does
+    /// (**intervention is not required**). The third — **intervention is
+    /// possible** — had no route at all: `crate::panels::docprops` printed
+    /// *"pdfcer kept /UseOutlines and left /UseOC"* and there was nowhere to
+    /// say *use the other one*. A disclosure the operator cannot act on is the
+    /// difference between being told and being asked, and the engine went to
+    /// the trouble of carrying **both** values precisely so this could exist.
+    ///
+    /// # ★★ Why it is a re-load rather than an edit, in the engine's words
+    ///
+    /// > *"A decision made during parsing is not a value that can be edited
+    /// > afterwards, because the discarded one was never built into the
+    /// > document. Carrying both would make every dictionary lookup ambiguous
+    /// > for the life of the session."*
+    ///
+    /// So this closes the tab and opens the same path again. It is deliberately
+    /// the **same mechanism** the password retry above uses, down to the order
+    /// of the two statements, because the two are the same act: *these bytes,
+    /// read again, under something the operator supplied*.
+    ///
+    /// # ⚠ What the caller owes, and what this does NOT do
+    ///
+    /// **It does not ask about unsaved edits.** This is the mechanic; the two
+    /// guards are the caller's, and they live with every other document-
+    /// discarding arm in [`crate::app::actions::document`] where the table of
+    /// which arms guard is kept. Calling this from a new site without them
+    /// would destroy an afternoon's work silently — which is the exact defect
+    /// that file exists to prevent, found once already by an audit rather than
+    /// by a test.
+    ///
+    /// # Returns
+    ///
+    /// `false` when there was nothing to re-read — no document open, or one
+    /// with no file behind it (`file.new`'s blank sheet has no bytes to read
+    /// again). Traced either way, so a control that appears to do nothing can
+    /// be told from one that was never reached.
+    pub(crate) fn reread_active_document(&mut self, options: LoadOptions) -> bool {
+        let Some(path) = self.active_document_path() else {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                "reread-declined reason=no-file".to_owned()
+            });
+            return false;
+        };
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed in the UI.
+            //
+            // ★ The policy is spelled as a STABLE token rather than left to
+            // `{:?}` on the engine's enum. A driven check keys on this line,
+            // and a `Debug` rendering is a formatting detail of somebody
+            // else's crate — this project has already shipped one
+            // machine-read field that changed meaning when a `Debug` impl did.
+            format!(
+                "reread-begin policy={} path={path:?}",
+                crate::app::state::policy_token(options)
+            )
+        });
         if let Some(slot) = self.slot_of_path(&path) {
             self.close_slot(slot);
         }
-        self.open_path_inner(path, Some(password))
+        self.open_path_inner(path, None, options);
+        true
+    }
+
+    /// The file behind the document on screen, or `None` when there is not one.
+    ///
+    /// A created document's `path` is a *name*, not a location — see
+    /// [`crate::app::state::OpenDoc::origin`] — so re-reading it would open
+    /// whatever happens to sit at `Untitled 1.pdf` in the working directory.
+    fn active_document_path(&self) -> Option<PathBuf> {
+        match &self.status {
+            Status::Open(doc) => doc.stored_under().map(std::path::Path::to_path_buf),
+            _ => None,
+        }
     }
 
     /// The shared body of [`Self::open_path`] and [`Self::open_path_with_password`].
@@ -146,15 +255,35 @@ impl PdfcerApp {
     /// typed it wrong', which would send the operator to re-check a password
     /// that was correct."* Flattening them here would undo that on the last
     /// step, which is the only step the operator sees.
+    ///
+    /// ★★★ **`options` is not a defaulted argument and must never become
+    /// one.** It is *which reading of a self-contradicting file this is*, and
+    /// both call sites state it: `open_path` writes `LoadOptions::new()`
+    /// because the ordinary open takes pdfcer's documented choices, and
+    /// [`Self::reread_active_document`] passes the operator's. The value is
+    /// stored on the resulting [`OpenDoc`] and carried by
+    /// [`Status::NeedsPassword`], so no route through this function can lose
+    /// it — which is the property that stops the feature from silently
+    /// declining itself on an encrypted file.
     fn open_path_inner(
         &mut self,
         path: PathBuf,
         password: Option<&crate::secret::Secret>,
+        options: LoadOptions,
     ) -> Option<crate::dialogs::password::Rejection> {
-        let loaded = match password {
-            Some(pw) => Document::load_with_password(&path, Some(pw.expose())),
-            None => Document::load(&path),
-        };
+        // ★★ ONE loading verb now, where there used to be two.
+        //
+        // `Document::load(p)` is `load_with_options(p, None, LoadOptions::new())`
+        // and `load_with_password(p, pw)` is the same with a password — the
+        // engine says so at both definitions, and the equivalence is what makes
+        // this collapse a *widening* rather than a behaviour change: every
+        // existing caller reaches exactly the bytes it reached before, because
+        // `open_path` supplies exactly the defaults those two verbs supplied.
+        let loaded = Document::load_with_options(
+            &path,
+            password.map(crate::secret::Secret::expose),
+            options,
+        );
         // Captured before the `match` consumes the error, because the branch
         // below folds both password errors into one `Status` — which is right
         // for the tab and loses the distinction the prompt needs.
@@ -175,11 +304,14 @@ impl PdfcerApp {
                     // silently discards the operator's `quad_point_order`,
                     // which is what it did here until 2026-08-28.
                     // `app::settings`' fourth funnel carries the argument.
-                    Status::Open(Box::new(OpenDoc::new(
-                        path,
-                        self.settings.open_session(doc),
-                        pages,
-                    )))
+                    let mut open = OpenDoc::new(path, self.settings.open_session(doc), pages);
+                    // ★ Assigned here and nowhere else. `OpenDoc::assemble`
+                    // starts it at `LoadOptions::new()` for the two dozen test
+                    // constructors that neither know nor care; this is the one
+                    // site that knows, and it is one line from the load that
+                    // used the value.
+                    open.load_options = options;
+                    Status::Open(Box::new(open))
                 }
                 // The header and cross-reference table were fine and the
                 // page tree is not. That is a damaged file, not an
@@ -192,7 +324,10 @@ impl PdfcerApp {
             // §7.6: pdfcer CAN decrypt this one and has not been told how.
             // Neither damaged nor unsupported — a third thing.
             Err(DocError::PasswordRequired | DocError::PasswordRequiresNormalisation) => {
-                Status::NeedsPassword { path }
+                // ★ The reading travels with the tab. See the field's doc: an
+                // encrypted file re-read under `KeepFirst` must not come back
+                // under `KeepLast` because the password prompt forgot.
+                Status::NeedsPassword { path, options }
             }
             Err(err) if is_unsupported_structure(&err) => Status::Unsupported {
                 path,
@@ -848,6 +983,23 @@ impl PdfcerApp {
             } => self.new_document_sized(pdfcer_core::page_tree::Rect::from_corners(
                 0.0, 0.0, width_pt, height_pt,
             )),
+            // ★★ The reading travels the whole way. It was chosen in
+            // `crate::panels::docprops`, carried through `Action`, parked in
+            // the intent while the operator answered about their edits, and is
+            // handed to the loader here — with no step in between able to
+            // supply a default. That chain is the feature; a
+            // `LoadOptions::new()` anywhere along it would be a control that
+            // appears to work and quietly does the ordinary thing.
+            //
+            // The return value is dropped deliberately: `false` means there was
+            // no file behind the document, and by this point there was one —
+            // the control that raised the action is only drawn over a document
+            // that reported load anomalies, which a document with no bytes
+            // cannot have. `reread_active_document` traces either way, so the
+            // impossible case is legible rather than silent.
+            PendingIntent::Reread { options } => {
+                let _ = self.reread_active_document(options);
+            }
         }
 
         // ★★ **And carry on closing, if this answer was one of a sequence.**
@@ -1178,323 +1330,7 @@ fn is_unsupported_structure(err: &DocError) -> bool {
     ) || matches!(err, DocError::Encryption(_))
 }
 
+/// What must never be true after a document arrives or leaves, in its own
+/// file since 2026-09-10 — see [`tests`]'s header for the seam.
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::app::state::{FOUR_PAGES, open_fixture};
-    use crate::panels::objects::test_support::engine_fixture;
-
-    // =======================================================================
-    // Opening a document is what forgets the panels' state
-    //
-    // Moved here with `open_path` when `state.rs` was split under R2. They are
-    // the test for whether that split was along a seam: every one of them is
-    // about the **transition**, and none reads a field of `OpenDoc` except to
-    // check it was reset.
-    // =======================================================================
-
-    /// **★ Opening a document forgets the panels' view state.**
-    ///
-    /// The second half of the `DocKey` deletion. Expansion sets and the
-    /// Properties focus are paint-order indices that live on `PdfcerApp`, so
-    /// they genuinely do outlive a document. The old answer was to compare a
-    /// document identity every frame; the answer here is that documents are
-    /// opened in exactly one place, so forgetting is one statement at the one
-    /// moment it is true.
-    ///
-    /// Without it, opening a second document leaves the Objects panel with
-    /// rows expanded for a page that no longer exists and the Properties
-    /// panel describing whatever object lands at that index in the new
-    /// file.
-    #[test]
-    fn opening_a_document_forgets_the_panels_focus_and_expansion() {
-        let mut app = PdfcerApp::new();
-        app.panels.set_focus(7);
-        app.panels.tree_mut().toggle_object(7);
-        assert_eq!(app.panels.focus(), Some(7));
-
-        app.open_path(engine_fixture(FOUR_PAGES));
-        assert!(matches!(app.status, Status::Open(_)), "the fixture opens");
-        assert_eq!(
-            app.panels.focus(),
-            None,
-            "a new document makes every paint-order index meaningless"
-        );
-        assert!(app.panels.tree_mut().objects_expanded.is_empty());
-    }
-
-    // =======================================================================
-    // Phase 4 — which arrangement a document opens in
-    // =======================================================================
-
-    /// ★ **Read mode opens a document continuous; every other mode opens it
-    /// single page.**
-    ///
-    /// `MODES_AND_PANELS.md`'s table and the operator decision of 2026-08-13,
-    /// asserted through the **open path** rather than through
-    /// `PageDisplay::default_for_mode` — which is already tested in its own
-    /// module. What this adds is that `open_path` actually consults it: the
-    /// rule existing and the rule being applied are two different facts, and
-    /// the second is the one an operator experiences.
-    ///
-    /// Driven with no remembered choice for the fixture (nothing has ever set
-    /// one for a path under the engine fixtures directory), so what is measured
-    /// is the mode default and not a leftover.
-    #[test]
-    fn read_mode_opens_a_document_continuous_and_the_others_paged() {
-        for (mode, expected) in [
-            ("read", viewer::PageDisplay::Continuous),
-            ("review", viewer::PageDisplay::Single),
-            ("edit", viewer::PageDisplay::Single),
-        ] {
-            let mut app = PdfcerApp::new();
-            app.ribbon.set_mode(mode.to_owned());
-            app.open_path(engine_fixture(FOUR_PAGES));
-            let Status::Open(doc) = &app.status else {
-                panic!("the fixture opens");
-            };
-            assert_eq!(
-                doc.view.display, expected,
-                "{mode} mode opened the document in {:?}",
-                doc.view.display
-            );
-        }
-    }
-
-    /// A freshly opened document is not mistaken for one that has been
-    /// navigated to.
-    ///
-    /// `tracked_page` starting anywhere but at `view.page_index` would make
-    /// the canvas scroll a continuous strip on the first frame after an open,
-    /// which the operator did not ask for and which would fight a saved scroll
-    /// position the moment there is one.
-    #[test]
-    fn a_freshly_opened_document_is_not_mid_navigation() {
-        let doc = open_fixture(FOUR_PAGES);
-        assert_eq!(doc.tracked_page, doc.view.page_index);
-        assert!(doc.strip_visible.is_empty());
-        assert!(doc.strip_rasters.is_empty());
-        assert!(doc.render_in_flight.is_none());
-    }
-
-    // =======================================================================
-    // `file.new` — making a document rather than opening one
-    // =======================================================================
-
-    /// The handler token the ribbon would raise for `id`.
-    fn token_for(app: &PdfcerApp, id: &str) -> egui_shell::commands::HandlerToken {
-        app.commands
-            .get(id)
-            .unwrap_or_else(|| panic!("`{id}` must be registered")) // ui-text-exempt: test panic, never displayed
-            .handler
-    }
-
-    /// ★ **`file.new` raises `Action::New`, and applying it makes a document.**
-    ///
-    /// Driven through the real token lookup rather than by calling the arm,
-    /// exactly as `the_close_command_empties_the_shell` is, so a command that
-    /// stopped being registered fails here instead of silently taking the
-    /// `command-unimplemented` path — which is the failure `file.open` and
-    /// `file.close` both shipped with, and which no test that called the
-    /// function directly could ever have caught.
-    ///
-    /// The starting state is `Empty`, which is the state New exists for: an
-    /// operator who has just launched pdfcer with no argument.
-    #[test]
-    fn the_new_command_makes_a_blank_document_from_nothing() {
-        // A bare context: this exercises the dispatcher, not a frame.
-        let ctx = egui::Context::default();
-        let mut app = PdfcerApp::new();
-        assert!(matches!(app.status, Status::Empty));
-
-        let mut actions = Vec::new();
-        app.dispatch_token(&ctx, token_for(&app, "file.new"), &mut actions);
-        assert_eq!(actions, vec![crate::app::actions::Action::New]);
-
-        app.apply_actions(actions, 1.0);
-        let Status::Open(doc) = &app.status else {
-            panic!("New must leave a document open");
-        };
-        assert_eq!(doc.pages.len(), 1, "New makes a one-page document");
-        assert_eq!(
-            doc.origin,
-            crate::app::state::Origin::Created,
-            "a document New made has no file behind it"
-        );
-    }
-
-    /// ★ **New replaces what is open, and forgets what belonged to it.**
-    ///
-    /// The reason [`PdfcerApp::adopt`] was extracted rather than copied. A New
-    /// that left the panels' paint-order indices behind would show the Objects
-    /// panel expanded over rows of a four-page drawing that is no longer open,
-    /// on a document that has one blank page — and every test of `open_path`
-    /// would still pass, because `open_path` would still be doing it correctly.
-    ///
-    /// The page count moving from four to one is what makes "replaced" a
-    /// measurement rather than an assumption.
-    #[test]
-    fn new_replaces_the_open_document_and_forgets_its_panel_state() {
-        let mut app = PdfcerApp::new();
-        app.open_path(engine_fixture(FOUR_PAGES));
-        app.panels.set_focus(3);
-        app.panels.tree_mut().toggle_object(3);
-        let Status::Open(doc) = &app.status else {
-            panic!("the fixture opens");
-        };
-        assert_eq!(doc.pages.len(), 4, "the fixture is the four-page one");
-
-        app.apply_actions(vec![crate::app::actions::Action::New], 1.0);
-
-        let Status::Open(doc) = &app.status else {
-            panic!("New must leave a document open");
-        };
-        assert_eq!(doc.pages.len(), 1, "the four-page document was replaced");
-        assert_eq!(
-            app.panels.focus(),
-            None,
-            "a paint-order index into the previous document means nothing here"
-        );
-        assert!(app.panels.tree_mut().objects_expanded.is_empty());
-    }
-
-    /// ★ **Successive new documents are numbered, and the number is visible.**
-    ///
-    /// `crate::text::files::untitled`'s own test pins that the *function*
-    /// numbers; this pins that the **application** advances the ordinal, which
-    /// is a different fact and the one that breaks if the increment is dropped
-    /// or placed after the name is built. Without it both documents would be
-    /// `Untitled 1.pdf`, the forms cache would key two different documents the
-    /// same way, and the trace of a driven run could not tell a second New
-    /// from a New that did nothing.
-    #[test]
-    fn each_new_document_is_numbered_from_one() {
-        let mut app = PdfcerApp::new();
-
-        app.apply_actions(vec![crate::app::actions::Action::New], 1.0);
-        let Status::Open(first) = &app.status else {
-            panic!("New must leave a document open");
-        };
-        assert_eq!(first.path, PathBuf::from("Untitled 1.pdf"));
-
-        app.apply_actions(vec![crate::app::actions::Action::New], 1.0);
-        let Status::Open(second) = &app.status else {
-            panic!("New must leave a document open");
-        };
-        assert_eq!(second.path, PathBuf::from("Untitled 2.pdf"));
-    }
-
-    /// ★ **A document with no file gets no Recent row — and one with a file
-    /// still does.**
-    ///
-    /// Both halves, because the interesting failure is not "New was skipped"
-    /// but "the guard was written the wrong way round and now nothing is ever
-    /// remembered". A Recent menu offering `Untitled 1.pdf` is a row that
-    /// cannot be opened, on a surface whose whole promise is *this worked
-    /// before*.
-    ///
-    /// `PdfcerApp::new()` under `cfg(test)` builds a `RecentFiles` that points
-    /// nowhere and writes nothing, so this reads the in-memory list and leaves
-    /// the operator's own recent file untouched.
-    #[test]
-    fn a_created_document_is_not_remembered_but_an_opened_one_is() {
-        let mut app = PdfcerApp::new();
-
-        app.apply_actions(vec![crate::app::actions::Action::New], 1.0);
-        assert!(
-            app.recent.is_empty(),
-            "`Untitled 1.pdf` is a name, not a file; a Recent row for it could never be opened"
-        );
-
-        app.open_path(engine_fixture(FOUR_PAGES));
-        assert_eq!(
-            app.recent.entries().len(),
-            1,
-            "the guard must not have turned the recent list off altogether"
-        );
-
-        // …and a New over the top of it does not add a second row, nor drop
-        // the one that is there. Closing is not disowning, and neither is
-        // replacing.
-        app.apply_actions(vec![crate::app::actions::Action::New], 1.0);
-        assert_eq!(app.recent.entries().len(), 1);
-    }
-
-    /// ★ **`stored_under` is the whole of the difference, in both directions.**
-    ///
-    /// The predicate three call sites consult. Asserted as a pair rather than
-    /// one at a time, because a version that answered `None` for everything
-    /// would satisfy every assertion about created documents in this file and
-    /// would silently stop persisting page-display and guide choices for real
-    /// ones — a regression with no visible symptom until the next session.
-    #[test]
-    fn only_a_document_with_a_file_has_somewhere_to_store_its_preferences() {
-        let mut app = PdfcerApp::new();
-
-        app.apply_actions(vec![crate::app::actions::Action::New], 1.0);
-        let Status::Open(created) = &app.status else {
-            panic!("New must leave a document open");
-        };
-        assert_eq!(created.stored_under(), None);
-
-        let fixture = engine_fixture(FOUR_PAGES);
-        app.open_path(fixture.clone());
-        let Status::Open(opened) = &app.status else {
-            panic!("the fixture opens");
-        };
-        assert_eq!(opened.stored_under(), Some(fixture.as_path()));
-    }
-
-    /// ★ **A new document lands in the mode's default arrangement, not in a
-    /// remembered one.**
-    ///
-    /// The sibling of `read_mode_opens_a_document_continuous_and_the_others_paged`,
-    /// and it asserts something that test cannot: a created document reaches
-    /// the *second* source every time, because `stored_under` answers `None`
-    /// and there is nothing to recall. New therefore inherits the mode the
-    /// operator is in rather than changing it — see `new_document`'s own note
-    /// on why it does not switch to Edit.
-    #[test]
-    fn a_new_document_takes_the_modes_default_arrangement() {
-        for (mode, expected) in [
-            ("read", viewer::PageDisplay::Continuous),
-            ("review", viewer::PageDisplay::Single),
-            ("edit", viewer::PageDisplay::Single),
-        ] {
-            let mut app = PdfcerApp::new();
-            app.ribbon.set_mode(mode.to_owned());
-            app.apply_actions(vec![crate::app::actions::Action::New], 1.0);
-            let Status::Open(doc) = &app.status else {
-                panic!("New must leave a document open");
-            };
-            assert_eq!(
-                doc.view.display, expected,
-                "{mode} mode made the new document {:?}",
-                doc.view.display
-            );
-            assert_eq!(
-                app.ribbon.mode(),
-                Some(mode),
-                "New must not move the operator to another mode"
-            );
-        }
-    }
-
-    /// …and a FAILED open forgets it too.
-    ///
-    /// Whatever was showing is gone either way, and stale expansion state
-    /// over a document that could not be read is the worse of the two states
-    /// to leave behind: the panel would look populated while the shell says
-    /// the file is damaged.
-    #[test]
-    fn a_failed_open_forgets_the_panels_state_as_well() {
-        let mut app = PdfcerApp::new();
-        app.panels.set_focus(3);
-        app.open_path(engine_fixture("not-a-pdf.bin"));
-        assert!(
-            matches!(app.status, Status::Failed { .. }),
-            "this fixture must fail to open, or the test proves nothing"
-        );
-        assert_eq!(app.panels.focus(), None);
-    }
-}
+mod tests;

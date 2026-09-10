@@ -41,6 +41,24 @@
 //! blame the program for something that is true of the fixture — so the
 //! tripwire lives in the crate that runs on every `cargo test`, not here.
 //!
+//! # ★★★ The third check is not a disclosure at all — it is the way out
+//!
+//! `RereadingUnderTheOtherValueIsOffered` drives the **control** that arrived
+//! at the foot of that same block on 2026-09-10. The operator's ruling is that
+//! *"if the user can intervene in a decision that should always be an option"*,
+//! and until that day this shell reported the decision and offered no way to
+//! revisit it.
+//!
+//! It is the check with the most between its ends. A press on that button
+//! travels through an `Action`, both of `app::actions::document`'s guards, a
+//! `PendingIntent` that carries the operator's chosen `LoadOptions` across a
+//! dialog that may or may not appear, `reread_active_document`, and finally
+//! `Document::load_with_options`. **Eight of those steps have unit tests and
+//! not one of them can see the step in front of it** — the standing lesson of
+//! this project, paid for by a feature that passed eight green tests while
+//! doing one fourteenth of its job. So the two trace events at the far ends
+//! are asserted together: the button was pressed, *and* a loader started.
+//!
 //! # Why two checks and not one
 //!
 //! Because they cost different things. The status-bar half needs **no pointer
@@ -99,6 +117,38 @@ const STATUS_REGION: &str = "status-group:load-anomalies";
 const PANEL_REGION: &str = "properties.load-anomalies";
 /// The prefix of the per-anomaly row regions inside that block.
 const ROW_PREFIX: &str = "properties.load-anomalies.";
+/// The **control** at the foot of that block: *read this file again, taking
+/// the other value*.
+///
+/// ★ It is inside [`ROW_PREFIX`]'s namespace on purpose — it belongs to the
+/// anomaly block and disappears with it — which means the row-count assertion
+/// in `drive_panel` has to subtract it. See that function's note; the count
+/// went from "one row" to "one row and one control" on 2026-09-10 and a check
+/// that had not been told would have reported a phantom second anomaly.
+const REREAD_REGION: &str = "properties.load-anomalies.reread";
+
+/// The shell trace the control emits when it is pressed, and the one the
+/// loader emits when it acts on it.
+///
+/// **Two events and not one, because they are two different claims.** The
+/// first says a button was hit; the second says a re-load actually started.
+/// Between them sit both of `apply_reread_with_duplicate_keys`' guards, and a
+/// build where those guards mis-fire — a stale `save_pending`, an unsaved
+/// dialog raised over a document with nothing to save — traces the first and
+/// never the second. That gap is precisely what a unit test on the arm cannot
+/// see, and it is why this check exists at all.
+const REREAD_REQUESTED: &str = "reread-requested";
+/// See [`REREAD_REQUESTED`].
+const REREAD_BEGIN: &str = "reread-begin";
+/// The policy both of those events must name.
+///
+/// ⚠ Asserted as a **string**, against `crate::app::state::policy_token`'s
+/// output, and that function exists so this comparison is against a contract
+/// rather than against `{:?}` on somebody else's `#[non_exhaustive]` enum.
+/// A `Debug` rendering is not a machine-readable field and this project has
+/// already had one driven check report the opposite of the truth while
+/// quoting the truth in its own message.
+const KEEP_FIRST: &str = "keep-first";
 /// The metadata form's region — the panel's *other* content, used here only as
 /// proof that the panel itself is open on the control launch.
 const PANEL_OPEN_WITNESS: &str = "properties.info";
@@ -326,7 +376,15 @@ fn drive_panel(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<St
             list(&declared_names(&trace, ui_rect, "properties"))
         )));
     }
-    let rows = declared_names(&trace, ui_rect, ROW_PREFIX);
+    // ★★ The control is published inside the row prefix's namespace and is
+    // NOT a row. Subtracting it here rather than renaming its region keeps the
+    // block's regions in one namespace — they appear and disappear together —
+    // at the cost of this one line, which is the trade this check would rather
+    // have than a second prefix that could drift out of step with the first.
+    let rows: Vec<String> = declared_names(&trace, ui_rect, ROW_PREFIX)
+        .into_iter()
+        .filter(|name| name != REREAD_REGION)
+        .collect();
     if rows.len() != 1 {
         return Ok(Some(format!(
             "the anomaly block drew {} row region(s) and this fixture is authored for exactly \
@@ -389,6 +447,223 @@ fn drive_panel(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<St
         )));
     }
     report.note("the clean file's panel is open and carries no anomaly block");
+
+    Ok(None)
+}
+
+// ---------------------------------------------------------------------------
+// 3: the way out
+// ---------------------------------------------------------------------------
+
+/// See the module documentation.
+pub struct RereadingUnderTheOtherValueIsOffered;
+
+impl Check for RereadingUnderTheOtherValueIsOffered {
+    fn name(&self) -> &'static str {
+        "rereading_under_the_other_value_is_offered"
+    }
+
+    fn defect(&self) -> &'static str {
+        "pdfcer tells the operator his file said two things and that it picked one of them, and \
+         then offers him nothing to do about it. The button that reads the file again under the \
+         other value is missing, or it is drawn and reaches no loader — which is worse, because \
+         he presses it, the document comes back looking identical, and the only conclusion \
+         available to him is that pdfcer ignored him. Or the opposite: the button is drawn on a \
+         clean file, offering to re-read a document that never contradicted itself"
+    }
+
+    fn run(&self, ctx: &CheckContext) -> CheckReport {
+        let mut report = CheckReport::new(self.name(), self.defect());
+        match drive_reread(ctx, &mut report) {
+            Ok(Some(failure)) => report.fail(failure),
+            Ok(None) => report.pass(),
+            Err(why) => report.from_error(&why),
+        }
+    }
+}
+
+fn drive_reread(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
+    let exe = resolve_exe(ctx)?;
+    let ui_rect = ui_rect_event(ctx)?;
+    if !ctx.allow_input {
+        return Err(Error::new(
+            "input is disabled (--no-input). This check clicks a mode segment, the File tab, the \
+             Document properties item and then the re-read control itself. Reported as SKIPPED \
+             rather than passed: a check that did not run has learned nothing.",
+        ));
+    }
+
+    // --- 1: the file that contradicts itself, and the button it earns ------
+    let session = launch_visible(ctx, &exe, CONTRADICTS, "reread.contradicts.trace.txt")?;
+    report.note(format!(
+        "launched {} on fixtures/{CONTRADICTS} as pid {}",
+        exe.display(),
+        session.pid()
+    ));
+    report.artifact(session.trace_path().to_path_buf());
+    session.settle(40);
+    session.maximize();
+    session.settle(20);
+    let driver = Driver::new(session.window());
+    crate::checks::driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    open_properties(&session, &driver, ui_rect)?;
+
+    let trace = session.trace()?;
+    if trace.last(STATUS_LINE).is_none() {
+        return Err(Error::new(format!(
+            "the application launched and never traced a `{STATUS_LINE}` line, so it opened no \
+             document. Every region below would be legitimately absent and the verdict would be \
+             about an empty shell. fixtures/{CONTRADICTS}."
+        )));
+    }
+    if declared(&trace, ui_rect, PANEL_OPEN_WITNESS).is_none() {
+        return Err(Error::new(format!(
+            "the Document properties panel did not come up — no `{PANEL_OPEN_WITNESS}` region — \
+             so the absence of a control inside it proves nothing. Regions beginning \
+             `properties`: {}.",
+            list(&declared_names(&trace, ui_rect, "properties"))
+        )));
+    }
+    let Some(button) = declared(&trace, ui_rect, REREAD_REGION) else {
+        return Ok(Some(format!(
+            "the Document properties panel is open on a file the engine reports one \
+             `DuplicateDictKey` for, the anomaly block is drawn, and there is no \
+             `{REREAD_REGION}` control at the foot of it. The operator is told a value was \
+             chosen for him and given no way to ask for the other one — which is the half of \
+             his ruling about damaged files that this shell went without until 2026-09-10. \
+             Regions beginning `{ROW_PREFIX}`: {}.",
+            list(&declared_names(&trace, ui_rect, ROW_PREFIX))
+        )));
+    };
+    report.note("the re-read control is drawn at the foot of the anomaly block");
+
+    // ★★ The mark is taken BEFORE the click, and everything below is read
+    // `_after` it.
+    //
+    // The document was opened at launch, so the trace already carries a
+    // `status` line, a page render and every region this panel published on
+    // the way here. A whole-trace `last()` would happily find a
+    // `reread-begin` from... nothing, today — but the shape has bitten this
+    // project twice: an absence assertion stayed green against a planted
+    // defect because the setup had emitted the event sixteen times on the way
+    // in. Marking first costs one line and makes the assertion say what it
+    // means: *after this click*.
+    let mark = trace.mark();
+    driver.click_at(session.frame()?.declared_center(button))?;
+    session.settle(30);
+
+    let trace = session.trace()?;
+    let Some(requested) = trace.last_after(REREAD_REQUESTED, mark) else {
+        return Ok(Some(format!(
+            "the `{REREAD_REGION}` control was clicked at its published centre and the shell \
+             traced no `{REREAD_REQUESTED}` line afterwards, so the press reached no handler. \
+             ★ Before suspecting the panel, check that nothing is drawn OVER this button: a \
+             pop-up laid over the control it describes takes the press silently, and egui gives \
+             the click to the top layer without a word. The button's rect was {button:?}."
+        )));
+    };
+    match requested.get("policy") {
+        Some(KEEP_FIRST) => {}
+        other => {
+            return Ok(Some(format!(
+                "the control was pressed and asked for `policy={other:?}`, not `{KEEP_FIRST}`. \
+                 The fixture was opened pdfcer's ordinary way — last value wins — so the only \
+                 reading worth offering is the first, and `offered_reading`'s whole contract is \
+                 that the button offers the reading NOT in effect. ⚠ If this says `refuse`, \
+                 stop: that policy makes the loader reject the whole file, and it is the \
+                 behaviour this feature exists to end."
+            )));
+        }
+    }
+    report.note("the press was heard, and it asked for the first values");
+
+    let Some(begun) = trace.last_after(REREAD_BEGIN, mark) else {
+        return Ok(Some(format!(
+            "the press was heard — `{REREAD_REQUESTED}` is in the trace — and no \
+             `{REREAD_BEGIN}` followed it, so nothing was re-loaded. The action reached the \
+             shell and died somewhere between the dispatcher and the loader. ★ The two guards \
+             in `apply_reread_with_duplicate_keys` are the suspects and they trace their own \
+             refusals: look for `reread-declined reason=save-pending` (a save the shell thinks \
+             is in flight) or `reread-declined reason=no-file` (a document with no path behind \
+             it). If NEITHER is present, the action never reached the arm at all and the \
+             dispatcher is where to look. ⚠ A freshly opened document has nothing unsaved, so \
+             the unsaved-changes dialog must NOT have appeared here; if it did, `ask_unsaved` is \
+             raising a question about a document with no edits."
+        )));
+    };
+    if begun.get("policy") != Some(KEEP_FIRST) {
+        return Ok(Some(format!(
+            "the button asked for `{KEEP_FIRST}` and the loader started with \
+             `policy={:?}`. The reading is dropped or rewritten somewhere on the way — the \
+             `PendingIntent::Reread` that carries it across the dialog is the one step designed \
+             to be able to lose it, and `open_path_inner`'s `options` argument is the other. \
+             A re-read that silently uses the reading the operator did not choose is worse than \
+             no control at all.",
+            begun.get("policy")
+        )));
+    }
+    report.note("a loader started, under the reading the operator asked for");
+
+    // ★ And the document survived it.
+    //
+    // A re-load replaces the open document. If it replaced it with nothing —
+    // a load that failed under the new policy, a slot closed and not refilled
+    // — the operator pressed a button in a properties panel and watched his
+    // drawing disappear. The status line is the cheapest witness that
+    // something is still open, and its ABSENCE after the click would be the
+    // most serious result this check can produce.
+    if trace.last_after(STATUS_LINE, mark).is_none() {
+        return Ok(Some(format!(
+            "a re-read started and the shell traced no `{STATUS_LINE}` line after it, so no \
+             document is open. Pressing a button in the properties panel closed the operator's \
+             file. ⚠ Check `open_path_inner`'s failure path: a load that refuses under the \
+             requested policy must leave the operator with something, and the slot must not be \
+             closed before the replacement is known to have loaded."
+        )));
+    }
+    report.note("a document is still open after the re-read");
+    drop(session);
+
+    // --- 2: ★★ the control, and it is R9 rather than tidiness ----------
+    //
+    // A clean file has no duplicate key, so there is no other reading to offer
+    // and the button must not exist. Not greyed — absent. Greying is reserved
+    // in this shell for things that are TEMPORARILY unavailable, and "this
+    // file does not contradict itself" is not a temporary condition of the
+    // document. A disabled button here would also be a standing invitation to
+    // hover something that can never be pressed.
+    let session = launch_visible(ctx, &exe, CLEAN, "reread.clean.trace.txt")?;
+    report.note(format!(
+        "control launch on fixtures/{CLEAN} as pid {}",
+        session.pid()
+    ));
+    report.artifact(session.trace_path().to_path_buf());
+    session.settle(40);
+    session.maximize();
+    session.settle(20);
+    let driver = Driver::new(session.window());
+    crate::checks::driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    open_properties(&session, &driver, ui_rect)?;
+
+    let trace = session.trace()?;
+    if declared(&trace, ui_rect, PANEL_OPEN_WITNESS).is_none() {
+        return Err(Error::new(format!(
+            "the control launch's Document properties panel did not come up — no \
+             `{PANEL_OPEN_WITNESS}` region — so the absence of a re-read button in it is the \
+             absence of the whole panel, and proves nothing."
+        )));
+    }
+    if let Some(rect) = declared(&trace, ui_rect, REREAD_REGION) {
+        return Ok(Some(format!(
+            "fixtures/{CLEAN} loads without a single anomaly and the Document properties panel \
+             drew `{REREAD_REGION}` at {rect:?} anyway — a button offering to read the file \
+             again under the other value on a file where no key has two values. ★ Check \
+             `reread_control`'s first statement: it must return on `duplicates == 0` BEFORE it \
+             draws or publishes anything. R9 — a capability that does not apply renders \
+             nothing, not a stub."
+        )));
+    }
+    report.note("the clean file's panel carries no re-read control");
 
     Ok(None)
 }

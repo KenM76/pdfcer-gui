@@ -60,6 +60,27 @@ pub const fn question_new() -> &'static str {
      a new one will close it."
 }
 
+/// The question, when the operator is re-reading this same file under the
+/// other reading of a key it names twice.
+///
+/// # ★★ It says the edits cannot survive it, because they cannot
+///
+/// Every other sentence here is about *leaving* a document. This one is about
+/// **the same document coming back**, which is a distinction an operator will
+/// draw on their own and get wrong: re-reading sounds like refreshing, and
+/// refreshing sounds like something edits survive.
+///
+/// They do not. The engine's own words for why the intervention is a re-load
+/// rather than an edit — *"a decision made during parsing is not a value that
+/// can be edited afterwards"* — mean the document that comes back is a new
+/// parse of the bytes on disk, with an empty undo stack. So the sentence spends
+/// its second clause saying exactly that rather than leaving the operator to
+/// infer it from the word *close*.
+#[must_use]
+pub const fn question_reread() -> &'static str {
+    "Reading this file again is a fresh start from what is on disk, so the      edits you have made here cannot come with it."
+}
+
 /// How much is at stake, in the operator's units rather than the engine's.
 ///
 /// # ★ Why this counts EDITS and says so, rather than saying "changes"
@@ -178,6 +199,17 @@ pub const fn discard_open() -> &'static str {
 #[must_use]
 pub const fn discard_new() -> &'static str {
     "Start a new one, lose the edits"
+}
+
+/// The destructive button, when the operator is re-reading the same file.
+///
+/// ★ *Read* rather than *Reread*, and *lose the edits* in the same words the
+/// two buttons above use. The verb changes; the consequence clause does not,
+/// because an operator reading only the buttons — which is most operators,
+/// most of the time — is scanning for the consequence.
+#[must_use]
+pub const fn discard_reread() -> &'static str {
+    "Read it again, lose the edits"
 }
 
 /// The button that changes nothing.

@@ -223,6 +223,16 @@ pub const REGION_ANOMALIES: &str = "properties.load-anomalies"; // ui-text-exemp
 /// only that at least one did. A check that wants the census must count these.
 pub const REGION_ANOMALY_ROW_PREFIX: &str = "properties.load-anomalies."; // ui-text-exempt: trace region name, never displayed
 
+/// **The region the re-read button publishes**, so a driven check can assert
+/// that the operator's intervention is reachable rather than merely built.
+///
+/// ★ Published with `ui_rect_visible` like everything else in this block: it
+/// draws inside `body`'s `ScrollArea`, and a rect published for a scrolled-out
+/// control gets clicked by the harness at a coordinate the operator can never
+/// reach. This project has shipped panels that were unreachable in a real build
+/// with every gate green; the visible-rect discipline is what ended that.
+pub const REGION_ANOMALY_REREAD: &str = "properties.load-anomalies.reread"; // ui-text-exempt: trace region name, never displayed
+
 /// How many fields `InfoField::all()` returns.
 ///
 /// ★ Derived from the engine's array rather than written as `4`, because
@@ -362,7 +372,7 @@ fn info_body(ui: &mut Ui, doc: &OpenDoc, drafts: &mut InfoDrafts, actions: &mut 
     ui.label(t::heading());
     ui.label(egui::RichText::new(t::note()).small().weak());
     recovery_note(ui, doc);
-    load_anomalies_note(ui, doc);
+    load_anomalies_note(ui, doc, actions);
     ui.add_space(4.0);
 
     facts(ui, doc);
@@ -658,18 +668,42 @@ fn recovery_note(ui: &mut Ui, doc: &OpenDoc) {
 /// status lines point at already lives — so the operator following either
 /// sentence arrives at one place.
 ///
-/// # It is a disclosure, not a prompt
+/// # ★★★ It is a disclosure that now ENDS in a control — 2026-09-10
 ///
-/// No control, no button, no way to act. That is not an omission: choosing the
-/// *other* value of a duplicate key is a **re-load with different
-/// `LoadOptions`**, not an edit — the engine is explicit that *"a decision made
-/// during parsing is not a value that can be edited afterwards, because the
-/// discarded one was never built into the document"* — and this shell has no
-/// re-load-with-options route yet. Filing that ask is `ENGINE_BACKLOG.md`'s job;
-/// drawing a disabled control for it here would be exactly the placeholder
-/// **R9** forbids. What the rows do give is the thing that makes the ask
-/// concrete: the operator can see both values and judge whether the choice
-/// mattered.
+/// This section used to read *"No control, no button, no way to act"*, and
+/// explained at length that choosing the other value of a duplicate key is a
+/// **re-load with different `LoadOptions`** rather than an edit, that the shell
+/// had no such route, and that drawing a disabled control for it would be the
+/// placeholder **R9** forbids. Every clause of that was correct. The last one
+/// stopped being true when `ENGINE_BACKLOG.md` rows 280 and 281 were wired, and
+/// a limitation sentence outliving its limitation is a defect in whoever
+/// believes it.
+///
+/// What is drawn now: the rows, unchanged, followed by **one button** —
+/// [`crate::text::anomalies::reread_first_button`] or its opposite, whichever
+/// names the reading the operator does not currently have. It raises
+/// [`Action::RereadWithDuplicateKeys`], which asks about unsaved edits and then
+/// hands the same bytes back to the engine under the other policy.
+///
+/// # ★★ Three properties of that control that are not obvious
+///
+/// 1. **It is drawn only when a duplicate key was actually found.** A file whose
+///    only anomaly was a recovered stream length gets the rows and no button,
+///    because there is no second reading to offer — the engine measured what the
+///    file failed to state and there was never a choice. R9: an unavailable
+///    capability renders **nothing**, not a greyed stub.
+/// 2. **It never offers `DuplicateKeyPolicy::Refuse`**, which is that enum's own
+///    `Default` and is the behaviour that refused the operator's 46 KB drawing
+///    whole over one repeated `/PageMode`. Two of the three, and this is the
+///    surface where that rule is enforced.
+/// 3. **It stays off-canvas**, which is R8b rule 4 and the reason this control
+///    lives here rather than as a badge on the page. The document renders
+///    exactly as it will render when saved; what pdfcer had to decide is
+///    reported in a panel, never drawn into the view.
+///
+/// The rows still carry their old load: without both values on screen the
+/// button has nothing to mean, so the disclosure is what makes the control
+/// legible rather than the other way round.
 ///
 /// ★ Drawn inside [`body`]'s existing scroll area by construction — see
 /// [`info_body`]'s doc — which is what makes an unbounded row count safe here
@@ -679,11 +713,18 @@ fn recovery_note(ui: &mut Ui, doc: &OpenDoc) {
 /// as [`recovery_note`] above reads `Document::recovery()`. See
 /// [`crate::app::status::anomalies`]' header for why a load anomaly must
 /// **not** retire on the next edit.
-fn load_anomalies_note(ui: &mut Ui, doc: &OpenDoc) {
-    let rows = crate::app::status::anomalies::rows(doc.session.document().load_anomalies());
+fn load_anomalies_note(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) {
+    let anomalies = doc.session.document().load_anomalies();
+    let rows = crate::app::status::anomalies::rows(anomalies);
     if rows.is_empty() {
         return;
     }
+    // ★ Counted here rather than inside the scope, because the button's
+    // existence is a property of the FILE and the scope's job is drawing. The
+    // census is the same one both status lines use — one definition of "how
+    // many duplicate keys", not a second `iter().filter()` that could disagree
+    // with the sentence the operator read in the bar two seconds ago.
+    let census = crate::app::status::anomalies::census(anomalies);
     // ★★ The whole block is scoped so that its union rect is a value rather
     // than something reconstructed from two cursor readings. `ui.cursor()`
     // before and after would give a rect that is right today and wrong the
@@ -713,6 +754,7 @@ fn load_anomalies_note(ui: &mut Ui, doc: &OpenDoc) {
                     ui.clip_rect(),
                 );
             }
+            reread_control(ui, doc, census.duplicate_keys, actions);
         })
         .response
         .rect;
@@ -724,9 +766,187 @@ fn load_anomalies_note(ui: &mut Ui, doc: &OpenDoc) {
     ui.add_space(4.0);
 }
 
+use pdfcer_core::parser::DuplicateKeyPolicy;
+
+/// **Which reading to offer, given the one in effect** — the whole of
+/// [`reread_control`]'s judgement, separated from its drawing.
+///
+/// # ★★ Why this is a function rather than four lines inside the button
+///
+/// Because a unit test can drive it and cannot drive a `Ui`. Two of the three
+/// properties that matter here are decidable without a window — *the offer is
+/// always the reading you do not have*, and *`Refuse` is never offered* — and
+/// this project's standing lesson is that a verb's unit test cannot see the
+/// chain in front of it. So: the decision is tested here, and the chain from
+/// this button to the loader is asserted by driving the binary. Both, because
+/// neither alone is evidence.
+///
+/// Returns the policy to request and the label that names it, as one value, so
+/// a label can never drift from the policy it describes — the failure mode
+/// being a button that reads *"use the first value"* and asks for the last.
+///
+/// ⚠ The `_` arm sends anything this build does not recognise back to pdfcer's
+/// documented reading. [`DuplicateKeyPolicy`] is `#[non_exhaustive]`, so a
+/// newer engine can put a policy here that this file has never heard of; the
+/// conservative direction is the one whose label is certainly true, and
+/// [`DuplicateKeyPolicy::Refuse`] must never be the answer — it is the
+/// behaviour that refused the operator's 46 KB drawing whole.
+fn offered_reading(current: DuplicateKeyPolicy) -> (DuplicateKeyPolicy, &'static str) {
+    match current {
+        // Already reading the first values, so the offer is pdfcer's ordinary
+        // reading back.
+        DuplicateKeyPolicy::KeepFirst => (
+            DuplicateKeyPolicy::KeepLast,
+            t_anomalies::reread_last_button(),
+        ),
+        // The ordinary reading, and anything this build does not know.
+        _ => (
+            DuplicateKeyPolicy::KeepFirst,
+            t_anomalies::reread_first_button(),
+        ),
+    }
+}
+
+/// **Offer the operator the reading they do not currently have** — the third
+/// of the three obligations in the operator's own ruling about damaged files.
+///
+/// Drawn as the last thing inside [`load_anomalies_note`]'s block, under the
+/// rows that say what pdfcer chose. That position is the argument: the rows
+/// name both values, and this offers the other one. Read in the other order it
+/// would be a button with nothing to mean.
+///
+/// # ★★★ `duplicates == 0` renders NOTHING — R9, and it is not a formality
+///
+/// A file whose only anomaly was a recovered stream length or a missing
+/// `endobj` gets the rows and no button, because there was no second reading to
+/// choose between: the engine measured what the file failed to state. A greyed
+/// button there would be a placeholder describing a capability that does not
+/// apply to this file, which is the exact thing **R9** forbids — greying is for
+/// *temporarily* unavailable, and "this file has no duplicate keys" is not a
+/// condition the operator can clear.
+///
+/// # ★★ One button, whose LABEL names the other reading
+///
+/// Not a pair of radio buttons and not a checkbox. After a re-read the opposite
+/// choice is exactly as available as this one was, so the honest control is a
+/// single button that always offers the reading currently *not* in effect —
+/// read off [`crate::app::state::OpenDoc::load_options`], which is carried for
+/// this purpose and for the password retry.
+///
+/// # ⚠ [`pdfcer_core::parser::DuplicateKeyPolicy::Refuse`] is never offered
+///
+/// It is that enum's own `Default` and it is the behaviour that refused the
+/// operator's 46 KB drawing whole over one repeated `/PageMode` — the exact
+/// failure `Pass 283.0` exists to end. Two of the three policies reach a
+/// loader from this shell, and **this function is the only place that decides
+/// which**; `Action::RereadWithDuplicateKeys` is transport and cannot enforce
+/// it.
+///
+/// ⚠ The `_` arm below is not a catch-all for convenience. `DuplicateKeyPolicy`
+/// is `#[non_exhaustive]`, so a policy added to `pdfcer-core` compiles here
+/// without a word from the compiler; the arm sends such a document back to
+/// pdfcer's own documented reading, which is the conservative direction and the
+/// one whose label is certainly true.
+fn reread_control(ui: &mut Ui, doc: &OpenDoc, duplicates: usize, actions: &mut Vec<Action>) {
+    if duplicates == 0 {
+        return;
+    }
+    let (policy, label) = offered_reading(doc.load_options.duplicate_keys);
+    ui.add_space(4.0);
+    let response = ui
+        .button(egui::RichText::new(label).small())
+        .on_hover_text(t_anomalies::reread_tooltip());
+    crate::diag::ui_rect_visible(REGION_ANOMALY_REREAD, response.rect, ui.clip_rect());
+    if response.clicked() {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed in the UI.
+            //
+            // Names the policy being ASKED FOR and how many places it applies
+            // to. A driven check keys on this line to prove the control is
+            // reachable, which a unit test calling the action cannot show.
+            format!(
+                "reread-requested policy={} duplicates={duplicates}",
+                crate::app::state::policy_token(
+                    pdfcer_core::document::LoadOptions::new().with_duplicate_keys(policy)
+                )
+            )
+        });
+        actions.push(Action::RereadWithDuplicateKeys { policy });
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// **The button always offers the reading the operator does not have.**
+    ///
+    /// Both directions, because a control that only ever offers one of them is
+    /// a one-way door: an operator who re-reads a 200-page drawing under the
+    /// first values and finds it worse has to close the tab and reopen the file
+    /// to get back, and will reasonably conclude pdfcer changed something.
+    ///
+    /// ★ Asserted on the **policy**, not on the label — the label is prose and
+    /// prose gets reworded. The pairing between them is what the shared return
+    /// type makes unbreakable; see [`offered_reading`]'s doc.
+    #[test]
+    fn the_offer_is_always_the_reading_not_in_effect() {
+        assert_eq!(
+            offered_reading(DuplicateKeyPolicy::KeepLast).0,
+            DuplicateKeyPolicy::KeepFirst,
+            "a document read pdfcer's usual way must be offered the first values"
+        );
+        assert_eq!(
+            offered_reading(DuplicateKeyPolicy::KeepFirst).0,
+            DuplicateKeyPolicy::KeepLast,
+            "a document already read under the first values must be offered the \
+             way back"
+        );
+    }
+
+    /// **`Refuse` is never what this shell asks a loader for.**
+    ///
+    /// ⚠ The variant this test exists for is [`DuplicateKeyPolicy`]'s own
+    /// `Default`, so it is the value anything careless produces — and sent to a
+    /// loader it is *the behaviour that refused the operator's 46 KB drawing
+    /// whole over one repeated `/PageMode`*, which is the failure the whole
+    /// re-read feature exists to end. Offering it from the panel that reports
+    /// that failure would be a control that recreates it.
+    ///
+    /// It is checked across every policy this build can name **including
+    /// `Refuse` itself**, which is the interesting input: a document somehow
+    /// carrying it must be offered a way out, not a way further in.
+    #[test]
+    fn the_panel_never_offers_the_policy_that_refuses_the_file() {
+        for current in [
+            DuplicateKeyPolicy::KeepLast,
+            DuplicateKeyPolicy::KeepFirst,
+            DuplicateKeyPolicy::Refuse,
+        ] {
+            let (offered, _) = offered_reading(current);
+            assert_ne!(
+                offered,
+                DuplicateKeyPolicy::Refuse,
+                "the properties panel offered `Refuse` to a document read as \
+                 {current:?}; that policy refuses the whole file"
+            );
+        }
+    }
+
+    /// **The two labels are different sentences.**
+    ///
+    /// A control whose label does not change when the reading does is a button
+    /// that appears to do nothing the second time it is pressed — the operator
+    /// presses it, the document comes back, the button still says *use the
+    /// first value*, and the only honest conclusion available to them is that
+    /// it failed.
+    #[test]
+    fn the_two_readings_are_labelled_differently() {
+        assert_ne!(
+            offered_reading(DuplicateKeyPolicy::KeepLast).1,
+            offered_reading(DuplicateKeyPolicy::KeepFirst).1
+        );
+    }
 
     /// The draft array is exactly as long as the engine's field list.
     ///

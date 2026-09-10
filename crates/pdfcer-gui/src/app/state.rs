@@ -96,6 +96,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Instant;
 
+use pdfcer_core::document::LoadOptions;
 use pdfcer_core::edit::EditSession;
 use pdfcer_core::object::ObjId;
 use pdfcer_core::page_tree::Page;
@@ -103,7 +104,7 @@ use pdfcer_core::page_tree::Page;
 use crate::app::cache::{FontCache, PageObjectCache, PageTextCache};
 use crate::canvas::selection::SelectionState;
 use crate::render::raster::PageTexture;
-use crate::render::worker::{RenderKey, RenderRequest, RenderWorker};
+use crate::render::worker::{RenderKey, RenderWorker};
 use crate::viewer::{self, ViewState};
 
 /// What, if anything, is open.
@@ -123,7 +124,54 @@ pub enum Status {
     /// The file is well-formed and uses something pdfcer does not implement.
     Unsupported { path: PathBuf, message: String },
     /// The file is encrypted and pdfcer has not been given the password.
-    NeedsPassword { path: PathBuf },
+    NeedsPassword {
+        /// Where the file is. The prompt is keyed on it, and so is the tab.
+        path: PathBuf,
+        /// ★★ **The reading the operator had already asked for**, carried
+        /// across the password prompt so the retry does not quietly drop it.
+        ///
+        /// Almost always [`LoadOptions::new()`] — the ordinary open. It is
+        /// something else only on the path this field exists for: an encrypted
+        /// document whose Document-properties disclosure offered *"keep the
+        /// first value instead"*, where the re-read has to ask for the password
+        /// again because this shell deliberately never stores one
+        /// (`crate::secret`). Without the field the retry would call
+        /// `Document::load_with_password` with the defaults and open the
+        /// document under **the reading the operator had just rejected**, with
+        /// nothing anywhere saying so.
+        ///
+        /// That is the failure mode this project has met before under a
+        /// different name: a new argument with a keep-old-behaviour default,
+        /// silently declining the feature while every gate stays green.
+        options: LoadOptions,
+    },
+}
+
+/// **The stable name for one duplicate-key reading**, for a trace a machine
+/// reads.
+///
+/// # ★★ Why this exists rather than `{:?}` on the engine's enum
+///
+/// Because a `Debug` rendering belongs to `pdfcer-core`, and a driven check
+/// keyed on one is asserting a formatting detail of somebody else's crate. This
+/// project has already shipped a machine-read field that inverted its meaning
+/// when an upstream `Debug` impl changed shape, and the check kept quoting the
+/// truth while reporting the opposite of it.
+///
+/// So: two tokens, owned here, changed only deliberately. They are **not**
+/// operator copy and never reach a surface — `crate::text::anomalies` owns the
+/// sentences a person reads.
+///
+/// ⚠ The `_` arm is not laziness. [`pdfcer_core::parser::DuplicateKeyPolicy`]
+/// is `#[non_exhaustive]`, and `Refuse` — which this shell must never send to a
+/// loader, see `crate::panels::docprops` — is a third variant today.
+#[must_use]
+pub(crate) fn policy_token(options: LoadOptions) -> &'static str {
+    match options.duplicate_keys {
+        pdfcer_core::parser::DuplicateKeyPolicy::KeepLast => "keep-last",
+        pdfcer_core::parser::DuplicateKeyPolicy::KeepFirst => "keep-first",
+        _ => "other",
+    }
 }
 
 /// Where the pointer was over the page when a Ctrl+wheel arrived.
@@ -184,6 +232,11 @@ mod identity;
 /// different subject from the document model around it.
 mod ink;
 pub mod pageepoch;
+/// **What this view is asking the renderer for** — the render key, the region
+/// and the request, split out 2026-09-10 under R2. Its header carries why the
+/// order placed with `pdfcer-render` is a different subject from the document
+/// model that produces it, and why `OpenDoc::strip` stayed behind.
+mod renderreq;
 
 pub use identity::{Origin, SelectedField};
 /// One open document and everything the shell knows about looking at it.
@@ -271,6 +324,38 @@ pub struct OpenDoc {
     pub session: Arc<EditSession>,
     /// The flattened page vector, resolved once at open.
     pub pages: Vec<Page>,
+    /// ★★★ **Which reading of the file this is** — the [`LoadOptions`] the
+    /// bytes were parsed under.
+    ///
+    /// # Why an `OpenDoc` has to remember this at all
+    ///
+    /// Because a self-contradicting file has more than one honest reading, and
+    /// the operator is allowed to pick. `pdfcer-core` records every place it
+    /// had to choose ([`pdfcer_core::document::Document::load_anomalies`]) and
+    /// this shell lists them in Document properties; the control beside that
+    /// list offers **the other value**, and to write a label saying which value
+    /// is on offer it has to know which one is in force.
+    ///
+    /// ★★ **It cannot be re-derived from the document**, and that is the
+    /// engine's design rather than an omission. Its own header: *"a decision
+    /// made during parsing is not a value that can be edited afterwards,
+    /// because the discarded one was never built into the document"*. The
+    /// alternative reading exists only in the anomaly record and in the bytes
+    /// on disk — so *which policy produced this session* is a fact about the
+    /// **load**, and the load is what this struct is the result of.
+    ///
+    /// ⚠ Defaults to [`LoadOptions::new()`] for every constructor, and is
+    /// overwritten by `crate::app::lifecycle::open_path_inner` — the same shape
+    /// [`Self::settings`] uses and for the same reason: two dozen call sites
+    /// build an `OpenDoc` in tests and none of them cares. The one site that
+    /// does care assigns it explicitly and immediately.
+    ///
+    /// ⚠ A document rebuilt from freshly written bytes — `actions::redact`
+    /// after a redaction — correctly resets to the default. Its bytes are
+    /// pdfcer's own output and contain no contradiction to choose between; the
+    /// operator's earlier choice was applied to the input and is already baked
+    /// into what was written.
+    pub load_options: LoadOptions,
     /// Which page, at what zoom, chosen how.
     pub view: ViewState,
     /// The **current page's** cached raster, or `None` before the first one
@@ -1002,6 +1087,13 @@ impl OpenDoc {
             // an argument for this would mean every test constructing an
             // `OpenDoc` had to state a configuration it does not care about.
             settings: pdfcer_core::settings::Settings::default(),
+            // ★ The ordinary reading, for the same reason `settings` above
+            // takes the shipped defaults: `assemble` cannot see which load
+            // produced this document, and requiring an argument would make
+            // every test that builds an `OpenDoc` state a policy it does not
+            // care about. `crate::app::lifecycle::open_path_inner` is the one
+            // site that knows, and it assigns this one line later.
+            load_options: LoadOptions::new(),
             prefs: crate::app::prefs::Prefs::default(),
             // ★ Default rather than sized to `pages.len()` here: an empty set
             // answers the same floor for every index (see `PageEpochs::get`),
@@ -1157,121 +1249,6 @@ impl OpenDoc {
     /// make an `objects n=` line re-trace as though an edit had happened.
     pub fn set_annotations_visible(&mut self, visible: bool) {
         self.annotations = visible;
-    }
-
-    /// What a render of the current view would be *of*.
-    ///
-    /// The staleness key the shell wants, built from the same constructor the
-    /// worker labels its output with — see
-    /// [`crate::render::worker::RenderKey::new`]. One arithmetic path, so
-    /// "what I want" and "what I have" cannot disagree about how a key is
-    /// spelled.
-    ///
-    /// `pub(crate)` for one reason: a panel whose control is blocked on
-    /// something else needs to be able to assert that *its* input reaches the
-    /// key. `crate::panels::layers` does exactly that — see
-    /// `the_render_key_no_longer_blocks_a_layer_toggle` — which is how the
-    /// next person to restore that checkbox learns which of its three
-    /// preconditions is still open without re-deriving the answer.
-    pub(crate) fn render_key(&self, raster_scale: f32) -> RenderKey {
-        self.render_key_for(self.view.page_index, raster_scale)
-    }
-
-    /// What a render of **any** page in this view's current settings would be
-    /// *of*.
-    ///
-    /// [`Self::render_key`]'s general form, and the one a continuous strip
-    /// needs: every visible page is rendered with the same scale, annotation
-    /// stance and layer override, so the only thing that varies between them
-    /// is the page index. Written as one function with the current page as a
-    /// special case, rather than two, because two would be two places for the
-    /// annotation stance to be forgotten — and a key that omitted it would
-    /// leave the strip's pages showing annotations after the operator turned
-    /// them off, while the current page obeyed.
-    pub(crate) fn render_key_for(&self, page_index: usize, raster_scale: f32) -> RenderKey {
-        RenderKey::new(
-            page_index,
-            raster_scale,
-            self.annotations,
-            self.layers.generation,
-            // ★★★ O137. Through `ViewState::stroke_display`, which is also what
-            // `render_request_for` hands the worker — one conversion, so "what
-            // I want" and "what I have" cannot disagree about whether line
-            // weights were on. Omit it and the toggle looks inert: the cache
-            // reports a hit and serves the picture drawn under the other
-            // answer.
-            self.view.stroke_display(),
-        )
-        .with_region(self.region_for(page_index))
-    }
-
-    /// The region to rasterize for `page_index`, if the canvas set one **for
-    /// that page**.
-    ///
-    /// ★ The page check is the whole of this method's job. Without it a
-    /// region computed for page 4 would be applied to page 5 as well, and
-    /// both rectangles are valid — so the wrong part of the neighbour would
-    /// be rasterized with nothing reporting an error.
-    #[must_use]
-    pub(crate) fn region_for(&self, page_index: usize) -> Option<pdfcer_core::page_tree::Rect> {
-        self.raster_region
-            .filter(|(page, _)| *page == page_index)
-            .map(|(_, rect)| rect)
-    }
-
-    /// Everything a worker needs to rasterize `page_index`, or `None` if there
-    /// is no such page.
-    ///
-    /// The one constructor for a [`RenderRequest`], so the current page and a
-    /// strip page cannot be rendered with different options. It exists here,
-    /// on the document, rather than in [`crate::render::settle`] because the
-    /// annotation stance and the layer override are **private** fields of this
-    /// type — and they should stay private: they are changed through
-    /// [`Self::set_annotations_visible`] and [`Self::set_hidden_layers`],
-    /// which are the methods that keep the staleness keys moving.
-    pub(crate) fn render_request_for(
-        &self,
-        page_index: usize,
-        raster_scale: f32,
-    ) -> Option<RenderRequest> {
-        let page = self.pages.get(page_index)?;
-        Some(RenderRequest {
-            // ★ O24's region tier, live since 2026-08-22. `None` below the
-            // pixmap ceiling — which is every zoom that can render whole-page,
-            // so panning there is unchanged — and `Some` above it, where the
-            // alternative is the operator's `MAX_PIXMAP_EDGE` failure.
-            region: self.region_for(page_index),
-            // The `Arc` is handed over rather than a `DocumentView`, which is
-            // what lets the borrow stay local to the worker thread.
-            session: Arc::clone(&self.session),
-            page: page.clone(),
-            page_index,
-            raster_scale,
-            annotations: self.annotations,
-            // ★★★ O137 — `view.line_weights`, canvas only. The same conversion
-            // the key above uses; see `ViewState::stroke_display` for why it is
-            // a function and not two `if`s. `render_on_worker` is the only
-            // place this is read, and no export or print path builds a
-            // `RenderRequest` at all.
-            stroke_display: self.view.stroke_display(),
-            layers: self.layer_visibility(),
-            layers_generation: self.layers.generation,
-            // ★ The SNAPSHOT, not a live read — see the field's own docs.
-            //
-            // The worker runs on another thread and may finish after the
-            // operator has changed a setting, so what it must be given is the
-            // configuration this document's caches are keyed to. Handing it a
-            // live value would produce a texture drawn under settings that no
-            // cached neighbour shares, and nothing would notice: the render key
-            // does not carry the settings, because `adopt_settings` drops every
-            // cache instead, which is the more direct mechanism and the visible
-            // one.
-            //
-            // Cloned rather than shared: one `String` and twelve `Copy` fields,
-            // paid once per render request, against a rasterization measured in
-            // tens of milliseconds.
-            settings: self.settings.clone(),
-        })
     }
 
     /// **Where every page this view is showing sits**, in one coordinate

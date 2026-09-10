@@ -293,7 +293,7 @@ impl PdfcerApp {
                     t::tab_tooltip_unopened(path, message),
                 )
             }
-            Some(Status::NeedsPassword { path }) => egui_shell::tabstrip::TabItem::new(
+            Some(Status::NeedsPassword { path, .. }) => egui_shell::tabstrip::TabItem::new(
                 t::tab_label(path, false),
                 t::tab_tooltip_unopened(path, t::tab_reason_needs_password()),
             ),

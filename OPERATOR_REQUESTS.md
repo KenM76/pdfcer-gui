@@ -80,6 +80,99 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
+## O166 — ⬜ **FILED 2026-09-10** — "the printer dialogue box needs to remember our last settings"
+
+**Your words, 2026-09-10**, in the same sentence as O167. Filed before any work
+started, per rule 1 of this file.
+
+### What happens today, measured rather than assumed
+
+`PrintDialog::open` builds every field from a literal every single time the
+dialog is opened: `ScaleMode::Fit`, `copies: 1`, `max_dpi: 300`,
+`DeviceSettings::default()` (portrait, one-sided, no tray-by-size, no paper
+request), `PageSubset::All`, `reverse: false`, `uncollated: false`, and the
+printer set to whichever device Windows calls the default. **Nothing about a
+print survives closing the dialog** — not even within one session, because the
+dialog object is dropped when it closes.
+
+So an operator who prints every drawing landscape, two-sided, on the plotter,
+at 600 dpi, re-answers all four questions on every single print. That is the
+literal shape of the complaint.
+
+### The distinction that decides which fields are remembered
+
+Some of what is in that dialog is **about the job** and some is **about the
+operator's habits**. Only the second kind may be remembered:
+
+| Remembered | Not remembered, and why |
+|---|---|
+| Which printer | The page range — it names pages of *this* document |
+| Orientation, two-sided, tray-by-size | The typed custom range, same reason |
+| Scale mode and the custom percentage | Which preview sheet you were on |
+| Whether markup prints | Preview zoom, pan, width, popped-out — arrangement of a window, not a setting |
+| Resolution ceiling | Which tab was open — already argued in `active_tab`'s own doc |
+| Copies, collate, odd/even, reverse | The driver's own `DEVMODE` — it is one driver's private format and cannot be persisted safely |
+
+⚠ **Copies is the one that could bite.** Remembering `copies: 25` and then
+having you print a 200-page drawing without noticing is a worse outcome than
+retyping `25`. It is remembered anyway *because you asked for the settings to
+be remembered* and a silent exception would be exactly the kind of unstated
+carve-out this file exists to prevent — but the count is stated in the commit
+button's own label, which already reads the number, so it cannot be committed
+without being on screen.
+
+### Where it is stored
+
+`userdata/prefs.txt`, beside the shell's other preferences — flat `key = value`,
+hand-editable, per-key recovery, and covered by the existing update
+instruction *"replace the program files, keep your `userdata` folder"*. Not in
+`settings.txt`: that file's every entry cites a clause the PDF standard is
+silent on, and how many copies you usually print is not one.
+
+### Status
+
+⬜ Not built at the moment of filing.
+
+---
+
+## O167 — ⬜ **FILED 2026-09-10** — "we also need the option to auto select paper size based on the page sizes in the pdf"
+
+**Your words, 2026-09-10.** Same sentence as O166, filed as its own row because
+it can ship on its own and because it is a genuinely different mechanism.
+
+### What exists today
+
+The paper control offers two things: *from the printer's own settings* (the
+default — pdfcer says nothing about paper at all) and one entry per sheet the
+driver enumerates, which you pick by hand. There is no third option, so a
+mixed-size drawing set is printed either onto whatever the device is standing
+on, or onto one sheet size you chose for all of it.
+
+### What you asked for
+
+A third choice: **let pdfcer pick the sheet from the page**. The driver already
+tells us every form it has and how big each one is in points, and pdfcer already
+measures every page at its rotated extent for the preview — so the match is
+arithmetic we can already do, on data we already have.
+
+### The two things that make this less obvious than it sounds
+
+1. **A job has many pages and a `DEVMODE` names one sheet.** A 40-page set with
+   two A1s and 38 A3s cannot ask for both. Windows' own answer to this is the
+   *choose tray by sheet size* flag, which pdfcer already exposes — so auto
+   selection picks a sheet for the job and that flag is what makes a mixed set
+   land right on a device with more than one roll or tray.
+2. **A paper request is a request.** Two drivers were measured silently ignoring
+   one. That disclosure already sits beside the control in words and it covers
+   this choice unchanged — pdfcer will say which sheet it picked and why, and
+   will not pretend to know the driver honoured it.
+
+### Status
+
+⬜ Not built at the moment of filing.
+
+---
+
 ## O165 — ◑ **STANDING ORDER, opened 2026-09-10** — "check for the next pdfcer engine release periodically then build and release with the new features when there is a new version"
 
 **This row does not close.** It is a standing instruction, not a task, so it
