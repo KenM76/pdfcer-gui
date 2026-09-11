@@ -1,0 +1,114 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /PageMode /UseOC /OCProperties << /OCGs [6 0 R 7 0 R 8 0 R 9 0 R 10 0 R 11 0 R] /D << /Name (Default) /BaseState /ON /Order [6 0 R 7 0 R 8 0 R 9 0 R 10 0 R 11 0 R] /ON [6 0 R 7 0 R 8 0 R 9 0 R 11 0 R] /OFF [10 0 R] >> >> >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 2384 1684] /Resources << /Font << /Helv 5 0 R >> /Properties << /OC1 6 0 R /OC2 7 0 R /OC3 8 0 R /OC4 9 0 R /OC5 10 0 R /OC6 11 0 R >> >> /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 1333 >>
+stream
+/OC /OC1 BDC
+q
+0 0 0 RG 3 w 40 40 2304 1604 re S
+1.5 w 1684 40 660 300 re S
+BT /Helv 28 Tf 1710 250 Td (LAYERED TEST SHEET) Tj ET
+BT /Helv 18 Tf 1710 200 Td (fixtures/layered-drawing.pdf) Tj ET
+Q
+EMC
+/OC /OC2 BDC
+q
+0.8 0.8 0.8 RG 0.5 w
+140 40 m 140 1644 l S
+340 40 m 340 1644 l S
+540 40 m 540 1644 l S
+740 40 m 740 1644 l S
+940 40 m 940 1644 l S
+1140 40 m 1140 1644 l S
+1340 40 m 1340 1644 l S
+1540 40 m 1540 1644 l S
+1740 40 m 1740 1644 l S
+1940 40 m 1940 1644 l S
+2140 40 m 2140 1644 l S
+40 140 m 2344 140 l S
+40 340 m 2344 340 l S
+40 540 m 2344 540 l S
+40 740 m 2344 740 l S
+40 940 m 2344 940 l S
+40 1140 m 2344 1140 l S
+40 1340 m 2344 1340 l S
+40 1540 m 2344 1540 l S
+Q
+EMC
+/OC /OC3 BDC
+q
+0 0 0.8 RG 1 w 300 1200 m 300 1350 l S 900 1200 m 900 1350 l S
+300 1300 m 900 1300 l S
+BT /Helv 22 Tf 0 0 0.8 rg 540 1315 Td (600) Tj ET
+Q
+EMC
+/OC /OC4 BDC
+q
+0.4 0.4 1 RG 1 w 300 900 m 300 1050 l S 1500 900 m 1500 1050 l S
+300 1000 m 1500 1000 l S
+BT /Helv 22 Tf 0.4 0.4 1 rg 850 1015 Td (1200 REF) Tj ET
+Q
+EMC
+/OC /OC5 BDC
+q
+0.85 0.1 0.1 rg 300 200 m 800 200 l 800 500 l 300 500 l f
+BT /Helv 24 Tf 1 1 1 rg 340 330 Td (ELECTRICAL) Tj ET
+Q
+EMC
+/OC /OC6 BDC
+q
+BT /Helv 20 Tf 0 0.5 0 rg 140 1500 Td (NOTE 1 - every layer here paints something.) Tj ET
+BT /Helv 20 Tf 0 0.5 0 rg 140 1460 Td (NOTE 2 - Electrical is off by default.) Tj ET
+Q
+EMC
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+6 0 obj
+<< /Type /OCG /Name (Title Block) /Intent /View >>
+endobj
+7 0 obj
+<< /Type /OCG /Name (Grid Lines) /Intent /View >>
+endobj
+8 0 obj
+<< /Type /OCG /Name (Dimensions) /Intent /View >>
+endobj
+9 0 obj
+<< /Type /OCG /Name (Dimensions Reference) /Intent /View >>
+endobj
+10 0 obj
+<< /Type /OCG /Name (Electrical) /Intent /View >>
+endobj
+11 0 obj
+<< /Type /OCG /Name (Notes) /Intent /View >>
+endobj
+xref
+0 12
+0000000000 65535 f 
+0000000015 00000 n 
+0000000285 00000 n 
+0000000342 00000 n 
+0000000558 00000 n 
+0000001942 00000 n 
+0000002039 00000 n 
+0000002105 00000 n 
+0000002170 00000 n 
+0000002235 00000 n 
+0000002310 00000 n 
+0000002376 00000 n 
+trailer
+<< /Size 12 /Root 1 0 R >>
+startxref
+2437
+%%EOF

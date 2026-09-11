@@ -1245,6 +1245,137 @@ Smaller, unblocked, and recorded in `FEATURES.md`:
   with every scaffolded command that gets an argued reason, so it will
   hit the wall on ordinary work, not on a rewrite.
 
+- **★★★ The idle machine is the one time the driven suite cannot run — and the
+  read path records only the opposite hazard.**
+
+  Measured 2026-08-22. After several hours with no human input, **every** driven
+  check began reporting *"the window could not be brought to the front. Windows
+  refuses `SetForegroundWindow` to a process without foreground rights"* — with
+  no code change between the working runs and the failing ones, and with unit
+  tests and every gate green throughout. Windows grants `SetForegroundWindow`
+  only to a process that is already foreground, received the last input, or has
+  recent user input behind it; on an idle desktop a background harness has none
+  of those.
+
+  ★★ `RESUME.md` and the standing memory both say the suite may not run *while
+  he is at the machine*, which invites the inference that the ideal window is
+  overnight. **It is not. Schedule driven runs for when he hands the machine
+  over, not for when nobody is there.** And read a window-activation SKIP as an
+  **environment** verdict rather than an application one — it survives
+  re-running, so it reads exactly like a defect.
+
+  ★ The unattended set was measured, not assumed, and its shape outlives its
+  counts: under `--no-input`, 4 of the 68 checks that then existed verified
+  anything, with nineteen skipping on *"this check clicks a mode segment"*
+  alone. **An input-disabled run is not a reduced suite; it is a different and
+  much smaller thing.** What the four that did run were is the durable part:
+  capture and dialog checks — so **screen capture needs no foreground rights,
+  only synthesised input does.** The unattended set is therefore unit tests, the
+  gates, an off-screen launch under `PDFCER_DIAG_VIEWPORT` / `PDFCER_DIAG_INVOKE`
+  asserting on the trace, and the capture checks. Everything that asserts *a
+  gesture produces a result* needs an attended machine.
+
+- **★★★ A flow made only of commands can be verified at any hour; a flow made of
+  gestures waits for the desktop — so the shape of a check is a scheduling
+  decision taken at authoring time.**
+
+  Measured 2026-08-29. Nine new surfaces had landed in two days. Exactly **one**
+  — the unsaved-changes warning on the signature path: a structural edit, a save
+  attempt and a modal — had a complete operator flow reachable end to end **by
+  command id**, with no pointer anywhere in it. That is why it was the only one
+  of the nine verified that night, on a machine that was not available.
+
+  ★★ This is the converse of the prohibition in `RESUME.md`, and the converse is
+  the half that changes what a blocked session can do.
+  `PDFCER_DIAG_INVOKE=mode.edit,edit.form_push_button` reaches `dispatch_command`
+  without passing the ribbon at all, and an off-screen launch proves a surface
+  drew. **Where both routes are possible, prefer the command** — not because it
+  is a better test of the gesture (it is not), but because a check that can only
+  run while he is away is a check that runs rarely, and this project has already
+  measured what a check that stopped running costs.
+
+- **★★ A keystroke is not a reliable harness primitive while a panel is open.**
+
+  Measured 2026-08-28 on `the_line_weight_switch_reaches_the_resize`: three of
+  six runs failed at the same step. `V` — the chord that selects the pointer
+  tool — **never arrived at all** with a dock panel open; `Escape` arrived on
+  attempt 1, or not within five polled attempts. A chord is routed through
+  whatever holds focus, and an open panel holds it.
+
+  ⇒ The remedy is not a longer wait or a retry loop: **click the command
+  (`ribbon.item.view.tool_select`) instead of pressing its chord**, because the
+  dispatcher's own surface is the only route whose delivery the harness can
+  confirm. `tools/ui-verify/src/input.rs:148,1030` records the mechanism — *a
+  keystroke follows the focus* — but nothing said it makes a chord unusable as a
+  step, and **three other checks still press a chord after opening a panel.**
+
+  ★ From the same investigation: that check's magnitude constant was wrong three
+  times, each differently — page fractions, then points, then fractions of the
+  shape. **A uniform scale is equal RATIOS, not equal distances**, and a check's
+  travel must be expressed in the operand's own space or it measures nothing at
+  the size it happens to run at.
+
+- **★★ A smoke launch is not idempotent — it mutates the persisted layout, so
+  two runs of one command can answer differently.**
+
+  Measured 2026-08-29. A smoke launch writes the dock arrangement back to
+  `target/release/userdata/`. Run 1 closed a panel and the layout was saved;
+  **run 2 found the panel absent, which reads as a different defect entirely.**
+  The trap is not the state, it is that the second run's report is *plausible*:
+  it names a surface that is genuinely not on screen, and nothing in it hints
+  that the previous run is the reason. A session that repeats a smoke launch to
+  confirm a finding gets a fresh, confident, wrong answer.
+
+  ★ The good news, which must not be generalised: that state lives under
+  `target/release/`, so **his published build's own settings were never
+  touched** — and that holds only because the smoke launch runs the repo's own
+  release binary. The same technique aimed at a copied exe writes beside that
+  copy instead, which is why *"copy the exe to `target/scratch/drive/` first"*
+  exists for the driven suite.
+
+  ⇒ The remedy is to **normalise or tolerate both**. A check that asserts about a
+  toggled surface must first ask whether the surface is already drawing, never
+  assume the arrangement it last left behind — which is also what makes such a
+  check survive whatever arrangement the operator happens to have saved.
+
+- **★★ A check written by the author of the feature inherits the author's model
+  of it, and nothing in the source reads wrong.**
+
+  Measured 2026-08-29. Nine driven checks were written in one session by the
+  same agent that wrote the features they cover, in the same hour. An
+  adversarial review the next tick found **three of the nine cannot detect the
+  defect they exist for, and one cannot pass at all.** Every one was green in
+  the sense that matters least: it compiled.
+
+  ★★ The read path carries only the *fixture* half of this —
+  `tools/ui-verify/src/checks/text_edit_real.rs:19`: *"a feature verified only
+  against the fixture that was written to verify it is verified against the
+  author's model of the problem, not against the problem."* That is about the
+  document a check opens. **This is about the check itself, and it is the harder
+  half.** The clearest case was a check whose fixture carried **one** invocation
+  of a form while the check asserted about the others; the author never noticed,
+  because the author already believed the form was shared.
+
+  ⇒ The remedy is a separate adversarial pass whose only question is *"is this
+  fixture able to tell the two answers apart?"* ⚠ That review's own addendum
+  referenced its findings #12 and #13 — **two further unrun checks that cannot
+  detect the defect they were written for, neither ever identified.** Re-run a
+  review over `git log 539835f^..HEAD` before trusting that part of the suite.
+
+- **★★ `--second-pdf` must have MORE THAN ONE PAGE, and not one check says so.**
+
+  A one-page source cannot be moved out of, because **the engine refuses to
+  leave a document with no pages** — so `page_drag_between_documents`,
+  `drop_onto_thumbnails` and their siblings fail on a perfectly valid second
+  document for a reason none of them states. Their refusal messages say only
+  that the file must be *DIFFERENT from `--pdf`*
+  (`page_drag_between_documents.rs:173`, `document_tabs.rs:122`,
+  `drop_onto_thumbnails.rs:159`, `attachment_clip.rs:165`), so the next reader
+  supplies a one-page file, satisfies the stated condition, and gets a failure
+  that looks like the feature being broken rather than the fixture being wrong.
+  The fixture `CONTINUE.md` named (`D:/Dev/temp/pdfcer/big.pdf`, 5 pages) no
+  longer exists, so **this has to be carried as a rule, not as a path.**
+
 ---
 
 ## 11. The relationship with `D:\Dev\pdfcer`

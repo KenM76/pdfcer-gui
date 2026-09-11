@@ -1,0 +1,80 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.2760 841.8900] /Group << /S /Transparency /CS /DeviceCMYK /I true /K false >> /Resources << /ExtGState << /GSalpha 5 0 R >> /Shading << /Sh0 6 0 R >> >> /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 723 >>
+stream
+q
+1.000 0.000 0.000 0.000 k
+60.00 661.89 100.00 100.00 re f
+0.000 1.000 0.000 0.000 k
+180.00 661.89 100.00 100.00 re f
+0.000 0.000 1.000 0.000 k
+300.00 661.89 100.00 100.00 re f
+0.000 0.000 0.000 1.000 k
+420.00 661.89 100.00 100.00 re f
+Q
+q
+/GSalpha gs
+0.900 0.100 0.000 0.000 k
+60.00 481.89 160.00 120.00 re f
+0.000 0.850 0.900 0.000 k
+140.00 481.89 160.00 120.00 re f
+Q
+q
+/GSalpha gs
+0.050 0.950 0.050 0.000 k
+60.00 331.89 160.00 120.00 re f
+0.800 0.000 0.900 0.000 k
+140.00 331.89 160.00 120.00 re f
+Q
+q
+/GSalpha gs
+0.000 0.100 0.950 0.000 k
+60.00 181.89 160.00 120.00 re f
+0.750 0.600 0.000 0.100 k
+140.00 181.89 160.00 120.00 re f
+Q
+q
+340 61.89 200 420 re W n
+/Sh0 sh
+Q
+q
+0 0 0 0 K
+6 w
+40 371.89 m 555.28 371.89 l S
+Q
+endstream
+endobj
+5 0 obj
+<< /Type /ExtGState /BM /Multiply /ca 0.55 /CA 0.55 >>
+endobj
+6 0 obj
+<< /ShadingType 2 /ColorSpace /DeviceCMYK /Coords [340 61.89 540 481.89] /Function 7 0 R /Extend [true true] >>
+endobj
+7 0 obj
+<< /FunctionType 2 /Domain [0 1] /C0 [0.60 0.40 0.40 1.00] /C1 [0 0 0 0] /N 1 >>
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000121 00000 n 
+0000000356 00000 n 
+0000001129 00000 n 
+0000001199 00000 n 
+0000001326 00000 n 
+trailer
+<< /Size 8 /Root 1 0 R >>
+startxref
+1422
+%%EOF

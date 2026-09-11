@@ -64,17 +64,41 @@ gates were green both times; neither is evidence that a control is reachable.
    And per standing memory, **the first full sweep after a long gap yields more
    harness defects than application ones** — audit the check before filing an
    app defect against it.
-2. **The owed driven checks** — the four 2026-09-06 markup asks,
+2. **The owed driven checks — and MEASURE the list before working it.**
+   `target/scratch/driven-audit.md` (2026-09-11) is the measured register: every
+   `OPERATOR_REQUESTS.md` row whose heading says *"not yet driven"*, checked
+   against `roster.rs`. ★★ **The headings are stale in both directions.** Three
+   checks named as owed on 2026-09-11 —
    `load_anomalies_are_listed_in_document_properties`,
-   `rereading_under_the_other_value_is_offered`,
-   `double_clicking_a_text_box_edits_the_text` (last known FAIL), O161, and a
-   Find zoom-box readout check. `CONTINUE.md` is the register.
-3. **Finish restoring the request channel's signal.** `open/` held **228 files**
-   on 2026-09-11 against a README whose contract is *"a session lists `open/`
-   and nothing else — EMPTY = NOTHING IS OWED"*. 68 of them were closed
-   exchanges never archived. Closing one is a move of both halves into
-   `archive/` **plus** one row in `INDEX.md` naming where the durable answer
-   lives in a repository — the row is the memory, `archive/` is not read.
+   `rereading_under_the_other_value_is_offered` and
+   `double_clicking_a_text_box_edits_the_text` — had been registered all along;
+   the naming document was the only thing that said otherwise. A registered
+   `Box::new(…)` line in `roster.rs` is the evidence, not a row that claims a
+   gap. `CONTINUE.md` is history, not a backlog.
+3. **★ Wire the eight engine deliveries this shell does not call.** The request
+   channel was audited end to end on 2026-09-11 and is **done**: `open/` went
+   **229 → 13**, `archive/` 84 → 301, `INDEX.md` 79 → 228 rows, every citation
+   re-measured as resolving. Do not re-triage it; read `open/` and believe it.
+   **What came out of it is the work.** Eight capabilities the engine shipped —
+   in several cases in answer to this shell's own request — have **zero call
+   sites here**, each now a `wanted` row in `ENGINE_BACKLOG.md` opening
+   `**★ 2026-09-11 channel audit.**` (grep that marker to get the set):
+   the automatic bold ladder, `SignReport::appearance_lines`,
+   `hit_test_rect_deep`, `EditSession::page_objects`, `MkColor`,
+   `add_named_destination`, `FieldPathCrossesTerminal`, and the narrowed
+   hybrid-rewrite refusal our prose still states too widely.
+   ★★ **Start with `hit_test_rect_deep`**: it is not an absence but a
+   **diverged duplicate** — our `provider::hit_test_rect` grew a `MarqueeMode`
+   and a container filter (O88) the engine's version knows nothing about, so two
+   implementations of one question now disagree. Its `INDEX.md` row said so on
+   2026-09-05 and nobody read it for six days.
+   ⚠ **An absence claim has to name the receiver.** `page_objects` returns 164
+   hits in this repo and every one is *ours* (`OpenDoc::page_objects`), not the
+   engine's (`EditSession::page_objects`). A bare-name grep reads as thoroughly
+   consumed and is the exact opposite.
+   The 13 still open: four asks the engine owes (two of them **the same
+   tiny-skia region-render defect filed twice by us**), eight deliveries above,
+   and the 2026-09-07 protocol note.
 4. **Under O165, release when the engine moves.** Compare the two pin rows
    above at the start of every session; if they differ, read the intervening log
    before reading any backlog row.
