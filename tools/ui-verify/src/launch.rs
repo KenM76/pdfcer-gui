@@ -154,6 +154,13 @@ pub struct Session {
     /// See [`Session::trace`] for what this guards and why it defaults to
     /// `false`. `Cell` for the same reason the child is a `RefCell`.
     exit_expected: Cell<bool>,
+    /// Whether this check has said, in as many words, that a **thread** of the
+    /// process is allowed to have panicked while the process itself lived on.
+    ///
+    /// See [`Session::trace`]'s "a thread can die without the process dying"
+    /// section. Defaults to `false` for the same reason [`Self::exit_expected`]
+    /// does: the interesting failure is the one nobody declared.
+    panic_expected: Cell<bool>,
 }
 
 /// Whether a pre-window exit was the accessibility subclass failing to
@@ -283,6 +290,7 @@ impl Session {
             // The safe default: a check that says nothing about exiting is
             // asserting the program survived it. See `trace`.
             exit_expected: Cell::new(false),
+            panic_expected: Cell::new(false),
         };
 
         // Poll for the window rather than sleeping a fixed time. A fixed sleep
@@ -425,8 +433,31 @@ impl Session {
         self
     }
 
+    /// Declare that a **background thread** of this application is expected to
+    /// panic during this check, so [`Self::trace`] will not treat one as a
+    /// failure.
+    ///
+    /// Distinct from [`Self::expect_exit`], which is about the whole process.
+    /// A render worker panicking leaves the window up, the event loop running
+    /// and every trace line the check greps for already written — see
+    /// [`Self::trace`].
+    ///
+    /// There is no caller today and that is the intended state: nothing in this
+    /// application is *supposed* to panic. It exists so that a check which one
+    /// day provokes one on purpose says so in a greppable way, rather than the
+    /// detection being weakened for everybody.
+    #[allow(
+        dead_code,
+        reason = "the declared-intent half of a guard whose whole value is that nobody needs it yet" // ui-text-exempt: clippy lint justification, never displayed
+    )]
+    pub fn expect_thread_panic(&self) -> &Self {
+        self.panic_expected.set(true);
+        self
+    }
+
     /// Read the trace, **and refuse to hand back a trace from a process that
-    /// died unless the check said it might**.
+    /// died — or from one whose worker threads died — unless the check said it
+    /// might**.
     ///
     /// # ★★★ WHY THIS GUARD EXISTS — 2026-09-03 (evening)
     ///
@@ -454,6 +485,38 @@ impl Session {
     /// asks the question directly, and a "does it quit cleanly" check would —
     /// calls [`Session::expect_exit`] first. That is greppable, and it is a
     /// statement rather than an omission.
+    ///
+    /// # ★★★ A THREAD CAN DIE WITHOUT THE PROCESS DYING — 2026-09-10
+    ///
+    /// The guard above asks one question: *did the process exit?* On
+    /// 2026-09-10 `the_page_still_renders_at_every_decade_of_zoom` reported the
+    /// canvas going blank at 50,970,380 % and attributed it, in its own words,
+    /// to the shell:
+    ///
+    /// > the raster exists and the shell is not putting it on screen. THIS IS
+    /// > THE DEFECT.
+    ///
+    /// It was not. The capture contained, **573 times**:
+    ///
+    /// > thread '<unnamed>' panicked at tiny-skia-0.11.4/src/pipeline/mod.rs:188:9:
+    /// > range start index 356280245632 out of range for slice of length 1088737
+    ///
+    /// The render worker was dying on every spawn. The process was perfectly
+    /// alive — window up, event loop running, ribbon responsive, every trace
+    /// line the check greps for written on schedule — so the liveness test
+    /// above had nothing to say, and the check went looking for its explanation
+    /// in the only place it knew about.
+    ///
+    /// **A misattributed failure is worse than a missed one.** A missed failure
+    /// gets found later; a misattributed one sends somebody to rewrite a
+    /// correct module. The fix belongs here rather than in that check for the
+    /// same reason the process-exit guard does: it is a property of *every*
+    /// trace-reading check in the harness, and a rule each check has to
+    /// remember is a rule most of them will not.
+    ///
+    /// Measured before it was adopted: of the 53 captures the previous full
+    /// sweep left behind, **none** contained a panic line. This detection turns
+    /// red the checks that are looking at a broken renderer, and no others.
     ///
     /// # Errors
     ///
@@ -484,7 +547,65 @@ impl Session {
             // pass. See `Error::fatal`.
             .fatal());
         }
-        self.trace_unchecked()
+        let trace = self.trace_unchecked()?;
+        if let Some(panic) = Self::thread_panic_in(&trace)
+            && !self.panic_expected.get()
+        {
+            return Err(Error::new(format!(
+                "A THREAD OF THE APPLICATION PANICKED while the process carried on.
+  {panic}
+
+The window is still up, the event loop is still running and every trace line this                  check greps for may well have been written — a worker that dies is invisible to                  the liveness test above, which only asks whether the PROCESS exited. Full                  capture: {}
+
+If this check provokes a panic on purpose, say so with                  `session.expect_thread_panic()`.",
+                self.stderr_path.display()
+            ))
+            .fatal());
+        }
+        Ok(trace)
+    }
+
+    /// The first `panicked at` line in the capture **and the line after it**,
+    /// if there is one.
+    ///
+    /// Reads [`Trace::other`] — the lines that did **not** carry the diagnostic
+    /// prefix — rather than re-reading the file, so this costs nothing beyond
+    /// a scan of what was already parsed. A panic message is exactly what that
+    /// field was kept for; see its own documentation.
+    ///
+    /// ★ **Two lines, not one.** Rust's panic hook writes the location first
+    /// and the payload second:
+    ///
+    /// ```text
+    /// thread '<unnamed>' panicked at tiny-skia-0.11.4/src/pipeline/mod.rs:188:9:
+    /// range start index 356280245632 out of range for slice of length 1088737
+    /// ```
+    ///
+    /// The first line says a crate and a line number; the second says *what
+    /// went wrong*, and it is the one somebody can act on. Reporting only the
+    /// `panicked at` line names the victim and withholds the cause — which is
+    /// how the first version of this guard read, for about ten minutes.
+    ///
+    /// The `note: run with RUST_BACKTRACE` line is skipped: it is advice to the
+    /// reader, not evidence, and it would crowd out the payload on the runs
+    /// where the payload is on the line after it.
+    fn thread_panic_in(trace: &Trace) -> Option<String> {
+        let at = trace.other.iter().position(|l| l.contains("panicked at"))?;
+        let head = trace.other[at].trim().to_owned();
+        let payload = trace
+            .other
+            .iter()
+            .skip(at + 1)
+            .take(2)
+            .map(|l| l.trim())
+            .find(|l| !l.is_empty() && !l.starts_with("note:") && !l.contains("panicked at"));
+        Some(match payload {
+            Some(reason) => format!(
+                "{head}
+  {reason}"
+            ),
+            None => head,
+        })
     }
 
     /// The trace, with no opinion about whether the process is alive.

@@ -720,20 +720,39 @@ pub fn raster_scale(
 /// A page's on-screen extent in PDF user-space units, with `/Rotate`
 /// already applied (a 90°-rotated portrait page is landscape on screen).
 ///
-/// Delegates to [`pdfcer_render::page_device_geometry`] at scale `1.0`
-/// rather than reading `page.crop_box` directly. That is the point: the
-/// GUI's idea of how big a page is and the renderer's idea of how big
-/// the pixmap will be come from **one** function, so they cannot drift
-/// apart — a fit-page computed from an un-rotated CropBox against a
-/// rotated raster is the classic version of this bug.
+/// # One definition of how big a page is
+///
+/// Delegates to [`crate::render::region::PageFrame::extent_pts`] rather than
+/// reading `page.crop_box` directly. That is the point, and it has not
+/// changed: a fit-page computed from an un-rotated `CropBox` against a rotated
+/// raster is the classic version of this bug, so the rotation table lives in
+/// exactly one place — the same place that holds the canvas↔user conversion
+/// this extent has to agree with.
+///
+/// # ★★ What DID change, 2026-09-10, and why it was a real defect
+///
+/// This used to call [`pdfcer_render::page_device_geometry`] at scale `1.0`
+/// and return its `u32` pixmap dimensions. Those are **ceiled**, so a page
+/// measuring 2383.937 × 1683.78 pt was laid out as 2384 × 1684 — a canvas
+/// space 0.22 pt taller than the page whose coordinates it carried, because
+/// `PageFrame::user_to_canvas` translates in points and puts that page's
+/// bottom edge at 1683.78.
+///
+/// At 100 % that is a fifth of a pixel and nobody could see it. At 1040 % the
+/// ratio is multiplied by a page 17,509 pt tall on screen and
+/// `render::region::region_on_screen` painted a region raster **2.3 pt** away
+/// from where the page's own rect says it belongs — measured by `ui-verify`'s
+/// `panning_at_deep_zoom_stays_where_it_was_put`, which is the only instrument
+/// in the project that compares a raster's *painted* rect against a rect
+/// recomputed independently from the page.
+///
+/// The full argument, including why the pixmap still being a fraction of a
+/// pixel larger than the page is harmless and why the ceiled extent's version
+/// of the same error was not, is on
+/// [`crate::render::region::PageFrame::extent_pts`].
 #[must_use]
 pub fn page_extent_pts(page: &Page) -> (f32, f32) {
-    let (w, h, _) = pdfcer_render::page_device_geometry(page, 1.0);
-    #[allow(
-        clippy::cast_precision_loss,
-        reason = "page edges are bounded by MAX_PIXMAP_EDGE" // ui-text-exempt: clippy lint justification, never displayed
-    )]
-    (w as f32, h as f32)
+    crate::render::region::PageFrame::of(page).extent_pts()
 }
 
 // ---------------------------------------------------------------------------

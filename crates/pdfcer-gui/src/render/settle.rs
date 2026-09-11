@@ -140,9 +140,27 @@ impl OpenDoc {
         // page that misses that budget returns `None` and is collected by
         // `poll_render` on a later frame, with the previous texture staying on
         // screen meanwhile.
+        // ★ Record WHAT IS BEING ASKED FOR before the inline wait.
+        //
+        // `poll_render` does this for the asynchronous path by reading
+        // `rendering_key()` before it polls, because a failure arrives as a
+        // bare message with no key of its own. The inline path has no poll to
+        // read before -- and it is not the rare path for a failure, it is the
+        // usual one: a worker that panics drops its end of the channel, so
+        // `recv_timeout` returns `Disconnected` at once and `spawn` hands the
+        // refusal straight back here. Every one of the 573 panics that
+        // `OpenDoc::render_refused` exists to stop arrived this way, with an
+        // empty slot, which is why the refusal could not be attributed and so
+        // could not be held.
+        let asked = RenderKey::of(&request);
+        self.render_in_flight = Some(asked);
         if let Some(result) = self.render_worker.spawn(request) {
             self.absorb_render(ctx, result);
         }
+        // Consumed by the absorb above if it failed; cleared here for the
+        // ordinary case, so nothing downstream reads a stale slot as a render
+        // still running.
+        self.render_in_flight = None;
         // Rasterization happens *after* the canvas has already been laid out
         // this frame, so the new texture cannot be drawn until the next one.
         // Without this the display would wait for whatever unrelated input
@@ -252,6 +270,12 @@ impl OpenDoc {
                     // re-rasterise the canvas while it is showing sheet 7.
                     self.page_texture_epoch = self.page_epochs.get(page);
                     self.render_error = None;
+                    // A picture arrived, so whatever was refused before is no
+                    // longer the answer for this page. Cleared unconditionally
+                    // rather than by comparing keys: any success at all means
+                    // the page draws, and a memo kept past that would refuse a
+                    // request the evidence says would work.
+                    self.render_refused = None;
                 } else {
                     self.strip_rasters.insert(
                         page,
@@ -286,7 +310,25 @@ impl OpenDoc {
                             PageRaster::Failed(message),
                         );
                     }
-                    _ => {
+                    slot => {
+                        // ★★★ THE MEMO THAT STOPS THE RETRY STORM.
+                        //
+                        // `render_error` alone cannot do this job -- see
+                        // `OpenDoc::render_refused` for the two independent
+                        // reasons, both measured. The key is the whole
+                        // invalidation rule: a different zoom, region,
+                        // annotation stance or page is a different key and
+                        // gets its own attempt; the epoch does the same for an
+                        // edit.
+                        //
+                        // `slot` is `None` only if a refusal arrives with no
+                        // record of what was asked, which the stamp in
+                        // `rasterize` and the one in `poll_render` between them
+                        // prevent. If it ever does, the honest response is to
+                        // hold nothing and try again -- an unattributable
+                        // refusal is not evidence about any particular request.
+                        self.render_refused =
+                            slot.map(|key| (key, self.page_epochs.get(self.view.page_index)));
                         self.page_texture = None;
                         self.render_error = Some(message);
                     }
@@ -359,12 +401,33 @@ impl OpenDoc {
             Some(PageRaster::Ready(texture)) => {
                 self.page_texture = Some(*texture);
                 self.render_error = None;
+                self.render_refused = None;
             }
             Some(PageRaster::Failed(message)) => {
                 self.page_texture = None;
                 self.render_error = Some(message);
+                // The refusal was filed under a key, and `take` only returned
+                // it because that key is `wanted`. Adopting it as the memo is
+                // what stops the page being re-asked the instant it becomes
+                // current -- without this, arriving at a page that already
+                // refused costs one more dead render before the hold takes.
+                self.render_refused = Some((wanted, self.page_epochs.get(self.view.page_index)));
             }
-            None => self.render_error = None,
+            // ★ Nothing cached for the incoming page. That clears the OUTGOING
+            // page's sentence -- which is the whole reason this arm assigns at
+            // all -- but it must not clear a sentence about the page now
+            // current. A refusal nulls the texture, so this function stops
+            // early-returning and runs every frame afterwards; assigning
+            // `None` unconditionally is what erased the disclosure one frame
+            // after it was set, and with it the spawn gate's only evidence.
+            None => {
+                if !self
+                    .render_refused
+                    .is_some_and(|(key, _)| key.page() == self.view.page_index)
+                {
+                    self.render_error = None;
+                }
+            }
         }
     }
 
@@ -534,15 +597,26 @@ impl PdfcerApp {
         // zoom without making a pan feel slow.
         let stale_region = current.is_some_and(|k| !k.same_region(&wanted));
 
-        // A page whose previous render failed must not be retried every frame:
-        // the failure is deterministic (same bytes, same code), so retrying
-        // would peg a core producing the same error. Any discrete change is a
-        // genuinely different request and clears the hold — hiding annotations
-        // can be exactly what makes a page that would not draw draw.
+        // ★★★ A PAGE WHOSE PREVIOUS RENDER FAILED MUST NOT BE RETRIED EVERY
+        // FRAME: the failure is deterministic -- same bytes through the same
+        // code -- so a retry can only reproduce it, and each one costs a
+        // thread. Any genuinely different request is a different key or a
+        // different epoch and gets its own attempt; hiding annotations can be
+        // exactly what makes a page that would not draw draw.
         //
         // The strip is still serviced below: one page that will not draw must
         // not stop the pages around it from filling in.
-        let current_held = doc.render_error.is_some() && !stale_discrete;
+        //
+        // ★★ Why this asks `render_refused` and not `render_error`. It used to
+        // read `doc.render_error.is_some() && !stale_discrete`, and that could
+        // not fire at all -- `render_error` did not survive the frame it was
+        // set in, and `stale_discrete` is unconditionally true once a texture
+        // has been nulled, which is the first thing a refusal does. Measured
+        // 2026-09-10: 611 spawns and ~573 dead worker threads in one check.
+        // The full argument is on `OpenDoc::render_refused`.
+        let current_held = doc.render_refused.is_some_and(|(key, epoch)| {
+            key == wanted && epoch == doc.page_epochs.get(doc.view.page_index)
+        });
 
         if !current_held {
             if stale_discrete {

@@ -262,16 +262,24 @@ assertion rather than an intention.
 
 ---
 
-## O172 — ◑ **FILED 2026-09-10** — "We also need to make it easy to add our own custom stamps and use them, preferrably exactly the same way acrobat does."
+## O172 — ◑ **BUILT AND DRIVEN 2026-09-10** — "We also need to make it easy to add our own custom stamps and use them, preferrably exactly the same way acrobat does."
 
 **Your words, 2026-09-10.** The follow-on to O169, and it points straight at
-the half O169 recorded as blocked.
+the half O169 recorded as blocked — **a record that went stale within a day;
+see the correction under O169. The placing half is built and driven.**
 
 O169 built **reading** a stamp collection and **authoring** one into the folder
-Acrobat scans. What it could not build was **placing** one of your own stamps
-on a drawing: the engine's stamp verb takes a fixed vocabulary of standard
-names with no free-label escape hatch, and there is no verb that carries a
-collection page into a target document. That is filed with the engine.
+Acrobat scans. What it could not build — *on the morning of 2026-09-10* — was
+**placing** one of your own stamps on a drawing: the engine's stamp verb took a
+fixed vocabulary of standard names with no free-label escape hatch, and no verb
+carried a collection page into a target document.
+
+★★★ **That was filed with the engine and the engine answered the same day.**
+Placing is built, and it is driven end to end by
+`custom_stamp_reaches_the_page`: a planted stamp collection, the real pointer
+on the gallery, a drag onto a drawing, and the artwork asserted on the page.
+Your sentence is answered in all three of its parts — add, use, and the same
+route Acrobat uses.
 
 *"Exactly the same way Acrobat does"* is the useful part of this row, because
 it names the whole expected behaviour rather than one verb: in Acrobat a custom
@@ -279,6 +287,12 @@ stamp is a **menu entry beside the standard ones**, grouped by the category it
 was authored under, chosen the same way, placed the same way, and it remembers
 the last one used. That is the target — not "a second, different route for
 stamps you made yourself".
+
+★ **Built to that description, not to the literal ask.** Your stamps appear in
+the same gallery as the standard ones, under the category you authored them
+into, picked with the same click and placed with the same drag. There is no
+separate "custom stamp" route, because a separate route is the failure this
+paragraph names.
 
 ---
 
@@ -408,7 +422,7 @@ that says *"the engine cannot do X"* is a claim about a **pin**, not about the
 engine, and it has a shelf life measured in hours. Under **O165** the pin is
 now checked at the top of every session rather than when something looks wrong.
 
-## O169 — ◑ **BOTH BUILDABLE HALVES BUILT AND DRIVEN 2026-09-10; the placing half is BLOCKED at the engine and filed** — "if acrobat has a way of adding custom stamps or text, we need the same feature too with the same import/export to make the stamps as Adobe has and is compatible with adobe's"
+## O169 — ◑ **ALL THREE HALVES BUILT AND DRIVEN; the placing half stopped being blocked on 2026-09-10 and is now driven by `custom_stamp_reaches_the_page`** — "if acrobat has a way of adding custom stamps or text, we need the same feature too with the same import/export to make the stamps as Adobe has and is compatible with adobe's"
 
 **Your words.** Filed here today because it has become GUI work — the engine
 half landed as `Pass 288.0` and is already inside the pin we ship from, so the
@@ -443,7 +457,26 @@ the file pdfcer writes is the file Acrobat expects. Opening one of your existing
 collections in pdfcer shows it as a collection rather than as a stack of
 mystery pages.
 
-### ⚠ The half that is BLOCKED, named rather than quietly dropped
+### ★★★ The half that WAS blocked — and is not, since 2026-09-10
+
+**Corrected 2026-09-11.** Everything below this heading was true when it was
+written and was **false within a day**, which is the standing hazard of this
+file: *a limitation sentence is a citation with an hours-long shelf life.* It
+is kept rather than deleted because the reasoning still explains why the
+bitmap workaround was refused, and that refusal still stands.
+
+**Placing a custom stamp onto a drawing from inside pdfcer now works.** The
+engine shipped the artwork-import verb the same day the request was filed, and
+the shell drives it: `tools/ui-verify/src/checks/custom_stamp.rs` —
+*`custom_stamp_reaches_the_page`* — plants a stamp collection under a
+redirected `%APPDATA%`, picks one of "his" stamps out of the gallery with the
+real pointer, drops it on a drawing and asserts the artwork arrives. Nine hops,
+none of them assumed.
+
+⚠ What is recorded below is therefore **history, not status.** Read the
+check, not this paragraph, for what the program does.
+
+---
 
 **Placing a custom stamp onto a drawing from inside pdfcer.** A custom stamp's
 artwork *is a page*, and the engine has no verb that draws one page's artwork
@@ -457,7 +490,8 @@ vector CAD drawing does not survive being zoomed, bloats the file, and is
 sentence. Reported rather than done quietly.
 
 Until that verb exists, the placing happens in Acrobat, which is where it
-happens today anyway.
+happens today anyway. — **and the verb existed by the end of the same day.
+See the correction at the top of this section.**
 
 ### "or text"
 
@@ -13650,7 +13684,26 @@ off the page. I should also be able to move the view of the corner of the page
 to the center of the screen, or even all the way vertically to the opposite
 corner if I want to."*
 
-**Status:** **RECORDED 2026-08-21. NOT STARTED.** ★ This **answers `O22`'s open
+**Status:** ★★★ **BOTH HALVES BUILT AND DRIVEN — A on 2026-09-08, B on
+2026-09-10.** Corrected 2026-09-11: everything below this line was written on
+the day the row was filed and still said *"NOT STARTED"* three weeks after the
+first half shipped. Read the driven checks, not the prose, for what the program
+does.
+
+| half | what it is | driven by |
+|---|---|---|
+| **A** free scrolling | a pasteboard one viewport deep on every side, so any corner of the sheet can be brought to any corner of the screen | `scrolling_far_keeps_the_canvas_its_pointer_input`, `a_pan_keeps_the_fit_and_the_resize_keeps_the_position` |
+| **B** off-page content | **reach** — the margin takes a press instead of only a hover | `a_band_dragged_into_the_margin_reaches_an_object_off_the_page`, `a_band_that_starts_in_the_margin_reaches_an_object_off_the_page` |
+| **B** off-page content | **see** — the pasteboard is painted from the same raster as the sheet, so an object past the edge is visible rather than merely selectable | `an_object_off_the_page_is_actually_drawn` |
+
+★★ **"Reachable" turned out to be two requirements wearing one word**, and only
+the first was in the original analysis. An object you can select but cannot see
+satisfies every sentence in this row and none of his intent — his complaint was
+*"when I do I can't get them back"*, and you cannot get back a thing you cannot
+find. The *see* half was built on 2026-09-10 after the *reach* half made the
+gap obvious.
+
+★ This **answers `O22`'s open
 convention question** — the pasteboard is what he wants — and then asks for more
 than `O22` proposed. `O22`'s three candidate fixes are settled by this row:
 candidate 3, sized as below.

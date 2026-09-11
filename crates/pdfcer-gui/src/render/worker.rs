@@ -561,7 +561,16 @@ impl RenderKey {
     }
 
     /// The key `request` describes.
-    fn of(request: &RenderRequest) -> Self {
+    ///
+    /// `pub(crate)` rather than private since 2026-09-10, for one caller:
+    /// `render::settle`'s `OpenDoc::rasterize` stamps
+    /// `OpenDoc::render_in_flight` with this before the inline wait, so a
+    /// refusal that arrives *inside* the frame budget still knows which
+    /// request it is about. See `OpenDoc::render_refused` for why that
+    /// mattered - a panicked worker drops its channel and reports
+    /// `Disconnected` immediately, so the fast path is the one every panic
+    /// takes.
+    pub(crate) fn of(request: &RenderRequest) -> Self {
         Self::new(
             request.page_index,
             request.raster_scale,

@@ -1119,6 +1119,126 @@ mod tests {
         assert_eq!(ids, vec!["view.zoom_fit_width".to_owned()]);
     }
 
+    /// ★★★ **Every chord the manifest binds is written down in `MANUAL.md`.**
+    ///
+    /// # The defect this exists for, measured 2026-09-11
+    ///
+    /// The manual's *"Every keyboard shortcut"* section documented **33** of
+    /// the **40** chords `built_in.ron` binds. The seven it did not mention
+    /// were `Ctrl+A`, `Ctrl+D`, `Ctrl+Shift+V`, `Ctrl+[`, `Ctrl+]`,
+    /// `Ctrl+Shift+[` and `Ctrl+Shift+]` — and `Ctrl+D` and the four arrange
+    /// chords were absent from the **whole document**, not merely from the
+    /// table.
+    ///
+    /// The operator's report that started this was about a different feature
+    /// he could not find; the shape is the same one either way.
+    ///
+    /// ★ Both numbers are measurements of that day's tree and are *not* what
+    /// this test asserts — it reads the manifest every run, so it stays right
+    /// as the keymap grows. Quoted here only to record the size of the gap an
+    /// unchecked table had been carrying.
+    ///
+    /// Nothing could have caught it. Grepping the repository for `MANUAL.md`
+    /// on that date returned no gate, no test and no tool: a section whose
+    /// entire job is completeness had no instrument, and a hand count of a
+    /// forty-row table read as done every time anybody looked.
+    ///
+    /// # Why the assertion runs in this direction
+    ///
+    /// The list of chords is **read out of the manifest**, never written here.
+    /// A test that carried its own list would go stale in exactly the way the
+    /// manual did, and it would do it silently, because the count would still
+    /// add up against itself. Bind a new chord and this fails until the manual
+    /// says what it does. That is the only property worth having.
+    ///
+    /// The reverse direction — a chord in the manual that nothing binds — is
+    /// **not** asserted, and deliberately. The manual writes `Ctrl + mouse
+    /// wheel`, `Escape`, `Alt+F4` and a handful of drag gestures that are not
+    /// keymap entries at all, so a reverse sweep would be a list of exceptions
+    /// rather than a measurement. What a stale manual entry costs is a reader
+    /// pressing a key that does nothing; what a missing one costs is a
+    /// capability that ships unreachable. The expensive direction is the one
+    /// under guard.
+    ///
+    /// # How a chord is recognised in the prose
+    ///
+    /// The manual bolds every chord, so the haystack is the set of `**…**`
+    /// runs. Two rewrites are applied to each run, and **both are shapes of
+    /// the prose, not names of commands** — no command id and no chord
+    /// spelling is hard-coded below:
+    ///
+    /// 1. **Arrow glyphs become egui key names.** The manual writes
+    ///    `**Alt+↑**` because that is what is on the keycap; the manifest
+    ///    writes `Alt+Up` because that is what [`Key::from_name`] accepts.
+    /// 2. **A slash list distributes its modifier prefix.** `Ctrl+X / C / V`
+    ///    is three chords in one row, and spelling it out as three rows would
+    ///    make the table worse to read in order to make this test simpler to
+    ///    write. The prefix is whatever precedes the last `+` of the first
+    ///    element, applied only to later elements that carry no `+` of their
+    ///    own.
+    ///
+    /// A rewrite can only ever **add** spellings to the haystack, so the worst
+    /// it can do is let a genuinely missing chord pass by coincidence — and
+    /// for that it would have to coincide with a chord the manual does
+    /// document. It cannot produce a false failure.
+    #[test]
+    fn every_chord_the_manifest_binds_is_written_down_in_the_manual() {
+        /// The operator-facing manual, compiled in so the test cannot be
+        /// pointed at a copy that is not the shipped one.
+        const MANUAL: &str = include_str!("../../../../MANUAL.md");
+
+        // Every bolded run in the manual, in source order.
+        let mut spellings: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
+        let mut rest = MANUAL;
+        while let Some(open) = rest.find("**") {
+            rest = &rest[open + 2..];
+            let Some(close) = rest.find("**") else {
+                break;
+            };
+            let run = rest[..close]
+                .trim()
+                .replace('↑', "Up")
+                .replace('↓', "Down")
+                .replace('←', "Left")
+                .replace('→', "Right");
+            rest = &rest[close + 2..];
+
+            // Rewrite 2: distribute a modifier prefix over a slash list.
+            let parts: Vec<&str> = run.split(" / ").map(str::trim).collect();
+            let prefix = parts
+                .first()
+                .and_then(|first| first.rfind('+'))
+                .map(|at| parts[0][..=at].to_owned())
+                .unwrap_or_default();
+            for part in &parts {
+                if part.contains('+') || prefix.is_empty() {
+                    spellings.insert((*part).to_owned());
+                } else {
+                    spellings.insert(format!("{prefix}{part}"));
+                }
+            }
+            spellings.insert(run);
+        }
+
+        let keymap = built_in_keymap();
+        let missing: Vec<String> = keymap
+            .0
+            .iter()
+            .filter(|(chord, _)| !spellings.contains(chord.as_str()))
+            .map(|(chord, id)| format!("{chord} -> {id}"))
+            .collect();
+
+        assert!(
+            missing.is_empty(),
+            "★ MANUAL.md does not mention {} of the {} chords built_in.ron              binds. An operator cannot use a shortcut nobody told them about,              and no other check in this repository reads MANUAL.md. Add a row              to \"Every keyboard shortcut\" for each:
+  {}",
+            missing.len(),
+            keymap.0.len(),
+            missing.join("
+  ")
+        );
+    }
+
     /// A chord bound to nothing produces nothing.
     ///
     /// `Ctrl+1` in a keymap that does not mention it must not fall back to

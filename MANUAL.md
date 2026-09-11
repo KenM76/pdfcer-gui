@@ -112,6 +112,28 @@ than a small one.
 If you have set a maximum zoom in Settings and want more, that number is yours
 to raise; pdfcer does not decide it for you.
 
+### There is room around the page, and things out there are real
+
+You can scroll well past the edge of the sheet — far enough to bring any corner
+of the drawing to any corner of your screen. That grey space is not empty
+padding. **If an object has been dropped off the page, it is drawn out there and
+you can click it, box it and drag it back.**
+
+This matters because a CAD export can put geometry outside the sheet without
+telling you, and because it is easy to drag something off the edge by accident.
+In most viewers that object is simply gone. Here it is where you left it.
+
+Two ways to get one back:
+
+* **Scroll to it and click it**, the same as anything on the sheet.
+* **Box it.** Start the box on the page and drag out into the grey, or start it
+  in the grey and drag back — either way a **right-to-left** box takes
+  everything it *touches*, so it does not have to surround the object.
+
+★ If you cannot find it, **Ctrl + A** — *Edit ▸ Content ▸ Select all* — takes
+everything on the page **including** whatever is off it. Drag the lot back on,
+or just look at where the handles appear to find what had wandered.
+
 ---
 
 ## The ribbon
@@ -162,6 +184,26 @@ Four pointer tools, on the View tab and by single keystroke:
 
 A selected object gets handles: drag inside to **move**, drag a corner to
 **resize**, and use the round handle above it to **rotate**.
+
+**Which way you drag a box matters**, the same as it does in AutoCAD and
+SOLIDWORKS:
+
+| direction | what you get |
+|---|---|
+| **left → right** | only what the box completely **surrounds** |
+| **right → left** | everything the box **touches**, even partly |
+
+Right-to-left is the one to reach for on a dense sheet, and it is the only one
+that can pick up a table hard against the edge of the page — there is no room
+to draw a surrounding box around it.
+
+Hold **Shift** while clicking or boxing to **add** to what you have; hold
+**Ctrl** to **take things out** again. A Ctrl box that hits nothing leaves your
+selection alone rather than clearing it.
+
+**Ctrl + A** — *Edit ▸ Content ▸ Select all* — takes every object on the page,
+including any that are off the sheet. It **replaces** what you had selected
+rather than adding to it.
 
 **Right-click** almost anything for the commands that apply to it.
 
@@ -258,6 +300,28 @@ intact, within a document or across two open ones.
 
 ★ Paste works in **Review** as well as Edit. Review may paste a *comment*; it
 may not paste *page content*, and it says so by name rather than doing nothing.
+
+### Making another one of the same comment — without losing your clipboard
+
+**Ctrl+D** puts a second copy of the selected comment on the same page, a little
+down and to the right, and **does not touch the clipboard**. That is the whole
+reason it exists: marking up a row of revision bubbles with Ctrl+C / Ctrl+V
+threw away whatever you were carrying, once per bubble.
+
+### When two comments overlap
+
+To change which one is on top, select it and use **Markup ▸ Arrange**:
+
+| | |
+|---|---|
+| **Ctrl+]** | bring it forward one step |
+| **Ctrl+[** | send it back one step |
+| **Ctrl+Shift+]** | bring it right to the front |
+| **Ctrl+Shift+[** | send it right to the back |
+
+★ These are the **square brackets with Ctrl held**. The bare **[** and **]**
+rotate the *page* — a different job, and no modifier means no comment is
+involved.
 
 ---
 
@@ -524,11 +588,20 @@ so a button bearing a standard's name cannot imply more authority than it has.
 |---|---|
 | **Ctrl+Z** | Undo |
 | **Ctrl+Y** *or* **Ctrl+Shift+Z** | Redo |
+| **Ctrl+A** | Select everything on the page, including anything off the sheet |
 | **Ctrl+X / C / V** | Cut, copy, paste |
+| **Ctrl+Shift+V** | Paste a form field as another view of the *same* field, not a new one |
+| **Ctrl+D** | Duplicate the selected comment in place — the clipboard is left alone |
 | **Ctrl+E** | Edit text |
 | **Ctrl+Shift+E** | Add text |
 | **Ctrl+F** | Find |
 | **Ctrl+Shift+C** | Copy the page's text |
+
+### Stacking order
+| | |
+|---|---|
+| **Ctrl+]** / **Ctrl+[** | Bring forward / send backward one step |
+| **Ctrl+Shift+]** / **Ctrl+Shift+[** | Bring to front / send to back |
 
 ### Tools
 | | |
@@ -551,7 +624,7 @@ so a button bearing a standard's name cannot imply more authority than it has.
 | | |
 |---|---|
 | **Alt+↑** / **Alt+↓** | Move page up / down |
-| **[** / **]** | Rotate left / right |
+| **[** / **]** | Rotate left / right — *no Ctrl*; with Ctrl they restack a comment |
 
 ★ **Escape** steps back one thing at a time: it abandons a shape in progress,
 then puts the tool away, then clears a selection. It does not do all three at

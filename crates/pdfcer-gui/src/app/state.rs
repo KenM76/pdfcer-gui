@@ -488,6 +488,66 @@ pub struct OpenDoc {
     /// rect, because one bad sheet in a forty-page set must not replace the
     /// other thirty-nine with a message.
     pub render_error: Option<String>,
+    /// **The exact request the current page last REFUSED**, so it is not
+    /// asked again every frame.
+    ///
+    /// `(key, page epoch)` — the [`RenderKey`] the worker was given and the
+    /// revision of the page it was a picture of. Set beside
+    /// [`Self::render_error`] when a *current-page* render comes back `Err`,
+    /// cleared the moment one comes back `Ok`.
+    ///
+    /// # ★★★ Why a separate field, when `render_error` already exists
+    ///
+    /// **Found by driving the binary, 2026-09-10.** A deep-zoom check reported
+    /// a blank canvas, and the capture held **611 `render-spawn` lines and
+    /// ~573 worker-thread panics for a single check** — the shell re-asking
+    /// for the identical picture on every frame, and a thread dying each time.
+    ///
+    /// `render::settle`'s spawn gate did have a hold, spelled
+    /// `doc.render_error.is_some() && !stale_discrete`, and it could not fire,
+    /// for two independent reasons:
+    ///
+    /// * **`render_error` does not survive the frame it is set in.** A failed
+    ///   render assigns `page_texture = None`, so
+    ///   [`OpenDoc::rehome_current_page`] no longer early-returns on "already
+    ///   holding the current page"; it falls through to its cache lookup,
+    ///   finds nothing filed for this page, and its `None` arm clears
+    ///   `render_error` outright. The sentence the operator was owed is gone
+    ///   before it can be drawn, and the hold with it.
+    /// * **A page with no texture is "discretely stale" by definition.**
+    ///   `stale_discrete` starts `current.is_none_or(…)`, and `current` *is*
+    ///   the texture's key. A refusal nulls the texture, so `stale_discrete`
+    ///   is unconditionally true afterwards and `!stale_discrete` can never
+    ///   hold. The guard was self-defeating: the very act it guards against is
+    ///   what makes its own condition false.
+    ///
+    /// Filing the refusal into [`Self::strip_rasters`] — which is what the
+    /// *strip* path does, and what this module's own comment prescribes —
+    /// halves the problem and no more, because `StripRasters::take` is a
+    /// **take**: the refusal comes back out on the next frame and the frame
+    /// after that is blank again. The state that is wanted is a memo that
+    /// persists until something invalidates it, which is this field.
+    ///
+    /// # Why key-and-epoch rather than a flag
+    ///
+    /// A flag would have to be cleared by hand from every place that changes
+    /// what is being asked for, and the one that is forgotten is a page that
+    /// never draws again. Comparing the *request* instead makes the
+    /// invalidation total and automatic: a different zoom, a different region,
+    /// a different annotation stance or a different page all produce a
+    /// different [`RenderKey`], and an edit produces a different epoch. Every
+    /// one of those is a genuinely different question and gets its one
+    /// attempt. Only the identical question — same page, same revision, same
+    /// scale, same region — is refused a second time, and that one is
+    /// deterministic: the same bytes through the same code cannot succeed on
+    /// the retry, it can only burn a core and, as here, a thread.
+    ///
+    /// The failure that exposed this is an engine defect (`tiny-skia` panics
+    /// on a page-device pixmap at ~5.1e7 % zoom), and this field does **not**
+    /// hide it: the refusal is still reported through `render_error`, and the
+    /// harness still reads the panic out of the capture. What it removes is
+    /// the shell's contribution — 573 attempts where one was asked for.
+    pub render_refused: Option<(RenderKey, u64)>,
     /// **How many fonts the last mark-by-search in this document could not
     /// read**, or 0 — Pass 127.1's disclosure.
     ///
@@ -1125,6 +1185,7 @@ impl OpenDoc {
             wheel_travel: 0.0,
             render_in_flight: None,
             render_error: None,
+            render_refused: None,
             // Nothing has been marked yet, so there is nothing to disclose.
             last_redaction_unreadable_fonts: 0,
             // Nothing has been redacted into this document, so there is nothing

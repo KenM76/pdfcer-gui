@@ -150,6 +150,86 @@ impl PageFrame {
         self.crop
     }
 
+    /// The page's extent in **canvas space**, in PDF points, with `/Rotate`
+    /// already applied — a 90-degree-rotated portrait page measures landscape.
+    ///
+    /// This is the size of the rectangle canvas space occupies, and it is the
+    /// value [`crate::viewer::page_extent_pts`] returns; that function
+    /// delegates here so the shell has exactly one definition of how big a
+    /// page is.
+    ///
+    /// # THE EXACT CROP EXTENT, NOT THE PIXMAP'S SIZE
+    ///
+    /// It used to be the pixmap's size: `page_extent_pts` called
+    /// `pdfcer_render::page_device_geometry(page, 1.0)` and returned its `u32`
+    /// width and height. That was chosen so the shell's idea of a page and the
+    /// renderer's idea of a pixmap came from one function -- a good instinct
+    /// aimed at the wrong quantity, because `page_device_geometry` **ceils**:
+    ///
+    /// ```text
+    /// w = ((urx - llx) * scale).ceil()
+    /// ```
+    ///
+    /// so a sheet whose `/MediaBox` is `[0 0 2383.937 1683.78]` -- the
+    /// operator's A1 title-block drawing -- was laid out as **2384 x 1684**.
+    /// Canvas space was therefore 0.22 pt taller than the page it described,
+    /// while every *coordinate* in canvas space is produced by
+    /// [`Self::user_to_canvas`], which is a pure translation in points and
+    /// puts the bottom of the sheet at 1683.78. The page's own bottom edge and
+    /// the canvas coordinate of the page's own bottom edge were different
+    /// numbers.
+    ///
+    /// Sub-pixel, and invisible -- until [`region_on_screen`] multiplies the
+    /// ratio by the height of the page **on screen**. At 1040% that height is
+    /// about 17,509 pt, so the 0.22 pt discrepancy became
+    /// `0.22 / 1684 * 17509 ~= 2.3 pt` of misplacement, which is what
+    /// `ui-verify`'s `panning_at_deep_zoom_stays_where_it_was_put` measured and
+    /// reported as *"the pixels are in the wrong place ... painted -0.0,-2.3
+    /// points away"*. The error was entirely in y for that sheet because its
+    /// `llx` is 0 and its width rounded the other way; a page that rounded in
+    /// x would show it in x.
+    ///
+    /// # The pixmap is still bigger than the page, and that is fine
+    ///
+    /// Nothing here claims the raster is `extent * scale` pixels. It is
+    /// `ceil(extent * scale)`, and the extra fraction of a pixel along the
+    /// right and bottom edges is blank. Painting that pixmap stretched into a
+    /// rect of `extent * zoom` therefore over-stretches the content by
+    /// `frac / (extent * scale)`, which at the far edge is at most
+    /// `1 / (pixels_per_point * quality)` -- **under one logical point, at any
+    /// zoom** -- because the numerator is bounded by one *device* pixel while
+    /// the denominator grows with the magnification.
+    ///
+    /// That is strictly better than what the ceiled extent gave, where the
+    /// same far-edge error was `zoom * frac` -- ten points at 1040%, and
+    /// unbounded above. Stretch-to-fit costs a fraction of a device pixel; it
+    /// used to cost a fraction of a *canvas* point, and those two only look
+    /// alike at 100%.
+    ///
+    /// # Degenerate pages
+    ///
+    /// Clamped at zero the way `page_device_geometry` clamps, so an inverted
+    /// or empty crop box yields `(0.0, 0.0)` rather than a negative extent that
+    /// would flow into a fit-zoom division. Callers reject a zero extent
+    /// (`viewer::geometry_inputs_ok`) rather than dividing by it.
+    #[must_use]
+    pub fn extent_pts(self) -> (f32, f32) {
+        let Rect { llx, lly, urx, ury } = self.crop;
+        #[allow(
+            clippy::cast_possible_truncation,
+            reason = "the corners are already f32-exact - see Self::new; this narrowing is the identity" // ui-text-exempt: clippy lint justification, never displayed
+        )]
+        let (w, h) = (((urx - llx) as f32).max(0.0), ((ury - lly) as f32).max(0.0));
+        // The same arms `pdfcer_render::page_device_geometry` matches, in the
+        // same order, with the same "anything else is upright" fallback. A
+        // second normalisation rule here would be a second opinion about what
+        // `/Rotate 450` means - see this type's own documentation.
+        match self.rotate {
+            90 | 270 => (h, w),
+            _ => (w, h),
+        }
+    }
+
     /// The frame from a crop box and a rotation given directly, for tests and
     /// for any caller holding those rather than a [`Page`].
     #[must_use]
@@ -440,6 +520,136 @@ mod tests {
             ),
             ("A-591 (the report)", a591(), A591_CANVAS),
         ]
+    }
+
+    /// The operator's A1 title-block drawing, whose `/MediaBox` is
+    /// `[0 0 2383.937 1683.78]`. Neither edge is a whole number of points, and
+    /// that is the entire reason the defect this fixture pins was invisible:
+    /// **every other fixture in this repository measures a whole number**, so
+    /// a ceiled extent and an exact extent were the same value everywhere the
+    /// test suite could see.
+    const A1_CROP: (f64, f64) = (2383.937, 1683.78);
+
+    /// The ceiling `pdfcer_render::page_device_geometry` would have returned at
+    /// scale 1 for [`A1_CROP`] — the value this module used to call the page's
+    /// extent, kept so the tests can assert the extent is **not** it.
+    const A1_CEILED: (f32, f32) = (2384.0, 1684.0);
+
+    // =======================================================================
+    // ★★★ The extent and the conversion must describe the SAME rectangle
+    // =======================================================================
+
+    /// ★★★ **The page's own crop box fills canvas space exactly** — it starts
+    /// at the canvas origin and ends at [`PageFrame::extent_pts`].
+    ///
+    /// # Why this is the test that matters
+    ///
+    /// Canvas space is defined twice over, and the two definitions have to be
+    /// the same rectangle:
+    ///
+    /// * by [`PageFrame::user_to_canvas`], which says where a *point* of the
+    ///   page lands; and
+    /// * by [`PageFrame::extent_pts`], which says how *big* the page is, and
+    ///   therefore how big the rect the shell lays out for it is.
+    ///
+    /// From 2026-08 to 2026-09-10 they disagreed. `extent_pts`'s ancestor
+    /// returned `page_device_geometry`'s ceiled pixmap size, so on the
+    /// operator's A1 sheet the conversion put the bottom edge at 1683.78 while
+    /// the layout drew the page 1684 tall. Nothing in the suite could see it,
+    /// because a disagreement of 0.22 pt is under half a pixel at 100 % and
+    /// every fixture measured a whole number anyway — and
+    /// `render::region::region_on_screen` then multiplied the ratio by the
+    /// page's on-screen height, which at 1040 % is 17,509 pt, and painted the
+    /// region raster 2.3 pt from where it belonged.
+    ///
+    /// So the assertion is not "the extent is 2383.937". It is that the two
+    /// definitions agree, on every rotation, on an offset crop box, and on a
+    /// box with a fraction — which is a property, not a number, and would have
+    /// caught the defect on the day it was written.
+    #[test]
+    fn the_pages_own_box_fills_canvas_space_exactly() {
+        let a1_box = Rect::from_corners(0.0, 0.0, A1_CROP.0, A1_CROP.1);
+        // A fractional box that ALSO does not start at the origin, so a fix
+        // that happened to work by assuming `llx == 0` is rejected too.
+        let a1_offset = Rect::from_corners(12.5, 7.25, 12.5 + A1_CROP.0, 7.25 + A1_CROP.1);
+        let mut cases: Vec<(String, PageFrame)> = frames()
+            .into_iter()
+            .map(|(name, frame, _)| (name.to_owned(), frame))
+            .collect();
+        for &rotate in &[0_u16, 90, 180, 270, 450] {
+            cases.push((
+                format!("A1 fractional, rotate {rotate}"),
+                PageFrame::new(a1_box, rotate),
+            ));
+            cases.push((
+                format!("A1 fractional offset crop, rotate {rotate}"),
+                PageFrame::new(a1_offset, rotate),
+            ));
+        }
+        for (name, frame) in cases {
+            let (w, h) = frame.extent_pts();
+            let (x0, y0, x1, y1) = frame.canvas_box_of(frame.crop());
+            assert!(
+                x0.abs() <= 1e-4 && y0.abs() <= 1e-4,
+                "{name}: the page's own crop box must start at the canvas origin, got ({x0}, {y0})"
+            );
+            assert!(
+                (x1 - f64::from(w)).abs() <= 1e-4 && (y1 - f64::from(h)).abs() <= 1e-4,
+                "{name}: the page's own crop box ends at ({x1}, {y1}) but the page measures ({w}, {h}) — canvas space is two different rectangles"
+            );
+        }
+    }
+
+    /// ★★ **A page 1683.78 pt tall measures 1683.78, not 1684.**
+    ///
+    /// The literal regression pin for the defect above. Separate from the
+    /// property test because a future change that broke the property in the
+    /// *other* direction — making the conversion agree with a ceiled extent —
+    /// would satisfy the property and still be wrong: the engine's region
+    /// origin is in page-device space, which is canvas space times the scale
+    /// with no rounding at all, so the exact crop extent is the one both sides
+    /// of the boundary already use.
+    #[test]
+    fn a_fractional_sheet_reports_its_fraction_not_the_pixmaps_ceiling() {
+        let frame = PageFrame::new(Rect::from_corners(0.0, 0.0, A1_CROP.0, A1_CROP.1), 0);
+        let (w, h) = frame.extent_pts();
+        assert!(
+            (f64::from(w) - A1_CROP.0).abs() <= 1e-3 && (f64::from(h) - A1_CROP.1).abs() <= 1e-3,
+            "the A1 sheet measures ({w}, {h}); it is {A1_CROP:?} pt"
+        );
+        assert!(
+            (w - A1_CEILED.0).abs() > 1e-3 && (h - A1_CEILED.1).abs() > 1e-3,
+            "the extent came back as the pixmap's ceiling {A1_CEILED:?} — the defect is back"
+        );
+        // And the quarter turns swap the axes, fraction and all.
+        let turned = PageFrame::new(Rect::from_corners(0.0, 0.0, A1_CROP.0, A1_CROP.1), 90);
+        assert!(
+            (f64::from(turned.extent_pts().0) - A1_CROP.1).abs() <= 1e-3,
+            "a quarter turn must swap the axes"
+        );
+    }
+
+    /// A degenerate crop box measures zero, never a negative — the contract
+    /// `viewer::page_extent_pts`'s callers rely on when they reject a page
+    /// rather than dividing by its size.
+    ///
+    /// ★ Built by struct literal, **not** by `Rect::from_corners`, which
+    /// normalises: a crop box arrives here as `pdfcer_core` parsed it, and a
+    /// file whose `/CropBox` has its corners the wrong way round is exactly
+    /// the case worth pinning. Writing the test through the normalising
+    /// constructor would have asserted that `from_corners` works.
+    #[test]
+    fn an_inverted_crop_box_measures_zero_rather_than_negative() {
+        let frame = PageFrame::new(
+            Rect {
+                llx: 500.0,
+                lly: 400.0,
+                urx: 100.0,
+                ury: 50.0,
+            },
+            0,
+        );
+        assert_eq!(frame.extent_pts(), (0.0, 0.0));
     }
 
     // =======================================================================

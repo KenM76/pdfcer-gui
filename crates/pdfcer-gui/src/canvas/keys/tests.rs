@@ -1342,6 +1342,20 @@ fn delete_acts_on_an_annotation_when_the_gate_is_open() {
 /// than on the bare fact of a panic, because a panic from somewhere else in
 /// `canvas_keys` would satisfy an unqualified `should_panic` and report this
 /// tripwire as working when it had not run at all.
+///  And why it is compiled out of a RELEASE test run.
+///
+/// The tripwire is a `debug_assert`, so `cargo test --release` compiles the
+/// panic away and this test then fails for a reason that says nothing about
+/// the program: *"test did not panic as expected"*. Found 2026-09-10 -- the
+/// release suite reported `3313 passed; 1 failed` while the debug suite
+/// reported `3314 passed; 0 failed`, and the difference was entirely this.
+///
+/// A permanently-red test in one profile is worse than no test, because the
+/// only way to keep using that profile is to learn to ignore the red -- and a
+/// suite you ignore cannot tell you about the fifth recurrence this tripwire
+/// exists to catch. Gating it on `debug_assertions` is the honest shape: the
+/// assertion under test does not exist in release, so neither does the test.
+#[cfg(debug_assertions)]
 #[test]
 #[should_panic(expected = "never ASKED for the")]
 fn a_delete_declined_for_want_of_asking_is_not_allowed_to_be_quiet() {
