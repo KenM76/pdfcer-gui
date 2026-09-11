@@ -646,3 +646,45 @@ pub(super) fn surface(
         )
     });
 }
+
+/// The slot [`halo`] de-duplicates on.
+///
+/// Separate from [`LAYOUT_SLOT`] for the same reason [`SURFACE_SLOT`] is: the
+/// tier is decided every frame, and a run that never emits `tier=halo` is the
+/// evidence that O23's "see" half never engaged.
+pub(super) const HALO_SLOT: &str = "canvas-halo"; // ui-text-exempt: trace slot name, never displayed
+
+/// ★★★ **Which raster tier the current page is on, and how far past the sheet
+/// it reaches** — the only external evidence that O23's "see" half is live.
+///
+/// `canvas-halo tier=whole|halo|region known=<bool> box=<llx,lly,urx,ury|none>`
+///
+/// * `tier=whole` — an ordinary page: one raster of the crop box, unchanged
+///   since before this feature existed.
+/// * `tier=halo` — the raster has been widened to cover content placed off the
+///   sheet. **This line is the feature.**
+/// * `tier=region` — above the pixmap (or ink) ceiling, so the request is the
+///   visible rectangle instead; off-page content is still covered, by
+///   [`crate::render::halo::reach`] rather than by a widened box, and `box=`
+///   is the visible region in the page's own space.
+///
+/// ★ `known=` is the field that distinguishes *"this page has no off-page
+/// content"* from *"nobody has decomposed this page yet"*, which look
+/// identical from outside and need opposite responses. See
+/// `crate::app::state::OpenDoc::content_bounds_if_known` for why the second
+/// state exists at all and why it resolves itself a frame later.
+///
+/// ⚠ De-duplicated, so a still canvas emits once and not once per frame.
+pub(super) fn halo(tier: &str, known: bool, box_of: Option<pdfcer_core::page_tree::Rect>) {
+    crate::diag::trace_changed(HALO_SLOT, || match box_of {
+        Some(r) => format!(
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            "canvas-halo tier={tier} known={known} box={:.3},{:.3},{:.3},{:.3}",
+            r.llx, r.lly, r.urx, r.ury
+        ),
+        None => format!(
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            "canvas-halo tier={tier} known={known} box=none"
+        ),
+    });
+}

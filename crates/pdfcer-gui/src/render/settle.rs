@@ -428,6 +428,25 @@ impl PdfcerApp {
         // cannot be forgotten beats three that can.
         doc.trace_object_count();
 
+        // ★★★ O23's "see" half needs to know where this page's ink actually
+        // reaches, and that answer comes from a decomposition — 469 ms on the
+        // operator's benchmark sheet.
+        //
+        // Built HERE and not in `canvas::present`, and the placement is the
+        // whole design: this runs once per frame *after* the layout, the
+        // actions and the render decision, so the cost lands on a frame in
+        // which the picture has already been asked for rather than inside the
+        // one the operator is waiting on. `canvas::present` peeks at the
+        // result through `OpenDoc::content_bounds_if_known` and gets `None`
+        // until this has run, which is why a huge drawing shows its sheet on
+        // one frame and its off-page content on the next.
+        //
+        // Idempotent: `ensure_page_objects` records its `(page, content
+        // generation)` key before doing the work, so this is a `Cell` compare
+        // on every frame but the first of each key — including for a page that
+        // will not decompose at all.
+        doc.ensure_content_bounds();
+
         // Collect a background render FIRST, before deciding staleness. Order
         // matters: a render that finished since the last frame has already
         // updated a texture's key, so polling first is what stops the

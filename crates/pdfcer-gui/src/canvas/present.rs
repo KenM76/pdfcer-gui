@@ -667,90 +667,24 @@ fn show_in(
         let sense = Sense::click_and_drag();
         let mut drawn: Vec<strip::DrawnPage> = Vec::new();
 
-        // ★★★ O24's REGION TIER, decided here because only the canvas knows
-        // where the operator is looking.
+        // ★★★ **Which picture this page needs** — the region / halo / whole
+        // decision, in `canvas::tier`. Decided here, from the canvas, because
+        // only the canvas knows where the operator is looking; kept in its own
+        // module because it is the only block in this file that decides what to
+        // ASK the renderer for rather than what to draw with what arrived.
         //
-        // The operator, 2026-08-22, at 2382 % on a US Letter page:
-        //
-        // > *"I got a requested raster size 14580x18868 is empty or exceeds
-        // > MAX_PIXMAP_EDGE"*
-        //
-        // 18,868 device pixels against a 16,384 cap. Above that ceiling the
-        // whole-page raster cannot be made at all, so the request becomes the
-        // visible rectangle instead — whose device size is a multiple of the
-        // WINDOW and therefore constant at every zoom.
-        //
-        // ★ Set for the page being acted on only. A region is in one page's
-        // own coordinate space, and `OpenDoc::region_for` refuses it for any
-        // other page rather than rasterizing the wrong part of a neighbour.
-        doc.raster_region = None;
-        if let Some(place) = layout.rect_of(current) {
-            let extent = viewer::page_extent_pts(&doc.pages[current]);
-            // ★ The THIRD argument, added 2026-08-26: whether this page is
-            // blended in ink, and at what ceiling. It ends the whole-page tier
-            // at the colour ceiling as well as the pixmap one — but only for a
-            // page that has been observed asking for ink, which on a CAD sheet
-            // is never. `render::strategy::Ink` carries the whole argument,
-            // including the 263 % measurement that made the unconditional
-            // version unacceptable.
-            if crate::render::strategy::for_page(extent, raster_scale, doc.ink_at(current))
-                == crate::render::strategy::Strategy::Region
-                && place.width() > 0.0
-                && place.height() > 0.0
-            {
-                // What is visible OF THIS PAGE, in strip space, then in the
-                // page's own points. The two scales are derived from the
-                // placement rather than from the zoom, so a page whose
-                // placement has been rounded still maps exactly onto itself.
-                // ★★ At tier 3 the visible rect comes from the ANCHOR, for the
-                // same reason the placement does: `place` has a magnitude of
-                // ~10^12 at deep zoom, and `seen.min.x - place.min.x` subtracts
-                // two huge `f32`s to get a small one — losing exactly the
-                // precision the answer needs. `DeepAnchor::visible_rect` does
-                // that subtraction in `f64`.
-                let visible_canvas = if deep {
-                    let anchor = doc
-                        .deep_anchor
-                        .unwrap_or_else(viewer::deep::DeepAnchor::origin);
-                    // ★★★ HANDED ON IN `f64` — O24i. This used to cast to
-                    // `f32` here, and that one line is what stopped detail
-                    // improving past about 10⁷ %: the rect is a few times
-                    // 10⁻⁸ pt wide at an absolute position near 540, and no
-                    // `f32` holds both magnitudes. See
-                    // `render::strategy::region_for`.
-                    Some(anchor.visible_rect((avail.x, avail.y), f64::from(doc.view.zoom)))
-                } else {
-                    let seen = visible_rect.intersect(place);
-                    if seen.width() > 0.0 && seen.height() > 0.0 {
-                        let sx = extent.0 / place.width();
-                        let sy = extent.1 / place.height();
-                        // ★ Widened to `f64`, losslessly. Below the deep
-                        // threshold the `f32` arithmetic was never the
-                        // problem — the rect is a fair fraction of the page
-                        // there — but `page_region` takes one type, and a
-                        // second entry point that narrowed would be the seam
-                        // the defect crawled back through.
-                        Some((
-                            f64::from((seen.min.x - place.min.x) * sx),
-                            f64::from((seen.min.y - place.min.y) * sy),
-                            f64::from((seen.max.x - place.min.x) * sx),
-                            f64::from((seen.max.y - place.min.y) * sy),
-                        ))
-                    } else {
-                        None
-                    }
-                };
-                if let Some(visible_canvas) = visible_canvas {
-                    doc.raster_region = Some((
-                        current,
-                        crate::render::region::page_region(
-                            visible_canvas,
-                            crate::render::region::PageFrame::of(&doc.pages[current]),
-                        ),
-                    ));
-                }
-            }
-        }
+        // Its whole output is `doc.raster_region`, which `OpenDoc::region_for`
+        // feeds into both the cache key and the engine request — so the draw
+        // loop below needs to be told nothing.
+        tier::decide(
+            doc,
+            &layout,
+            current,
+            raster_scale,
+            deep,
+            visible_rect,
+            avail,
+        );
 
         for placement in layout.visible(visible_rect) {
             let rect = placement.rect.translate(strip_origin);
@@ -869,6 +803,42 @@ fn show_in(
                     // since a colour with no role in the palette is one a
                     // restyle cannot reach. This form has no colour at all.
                     egui::Image::from_texture(&texture).paint_at(ui, paint_rect);
+                    // ★★★ WHERE THE SHEET ENDS, when the picture is bigger
+                    // than it.
+                    //
+                    // A halo raster covers the ground outside the page, and
+                    // the engine flattens every raster over white (§11.4.7
+                    // page group), so that ground arrives as WHITE PAPER. Left
+                    // alone, the operator would see one white rectangle with
+                    // no way to tell which part of it is his page — and the
+                    // answer decides what saves, what prints and what a page
+                    // resize would crop.
+                    //
+                    // So the boundary is drawn as chrome: the same
+                    // `render::strip::boundary_stroke` an undrawn page uses,
+                    // whose own comment states the rule this inherits — *"the
+                    // boundary is a real fact about the document, so it is
+                    // drawn at full strength rather than as a hint."*
+                    //
+                    // ★ R8b rule 4 is satisfied and it is worth saying why,
+                    // because a line drawn near content usually is not: this
+                    // marks the SHEET, not the object. Nothing about the
+                    // off-page content is styled, tinted or flagged — it
+                    // renders exactly as it will render when saved and
+                    // reopened, and the only difference is that the operator
+                    // can now see where the paper stops.
+                    //
+                    // ★ The condition also picks up the region tier's
+                    // overscan, which has always bled a little white past the
+                    // sheet edge at deep zoom with nothing to say so.
+                    if !rect.contains_rect(paint_rect) {
+                        ui.painter().rect_stroke(
+                            rect,
+                            0.0,
+                            crate::render::strip::boundary_stroke(ui.visuals()),
+                            egui::StrokeKind::Inside,
+                        );
+                    }
                     ui.allocate_rect(rect, sense)
                 }
                 None => {

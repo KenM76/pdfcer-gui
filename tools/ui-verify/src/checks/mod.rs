@@ -392,6 +392,14 @@ pub mod off_page_marquee;
 /// the sheet at all, and before 2026-09-10 it produced no band whatsoever. The
 /// two fail on disjoint causes, which is why they are two checks.
 pub mod off_page_press;
+/// ★★★ **The off-page object is actually PAINTED** — O23's other verb, and the
+/// one the operator asked about three weeks after the reach half shipped:
+/// *"how do I view and edit objects that are off of the page?"*. Its two
+/// siblings above prove the object can be **reached**; this one counts ink in a
+/// screenshot, because the defect is a pixmap SIZE and every layer above it
+/// reports success. Paired with a paper control off the sheet, so a
+/// uniformly-dark capture cannot pass.
+pub mod off_page_visible;
 /// ★ The **Pages tab**, all of which did nothing: six verbs registered, drawn,
 /// offered by a context menu and four of them bound to chords, with no dispatch
 /// arm between them. The only check in the suite whose subject is a

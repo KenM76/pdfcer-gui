@@ -439,6 +439,13 @@ mod backdrop;
 pub mod stampfit;
 pub mod strip;
 pub mod target;
+// ★★★ **Which picture this page needs** — region, halo, or the whole sheet.
+// The one block in `present` that decided what to ASK the renderer for rather
+// than what to draw with what arrived; split out on 2026-09-10 when O23's halo
+// tier put that file at 1,503 lines and the R2 gate refused it. Its header
+// carries the three tiers, why their ORDER is a safety argument, and why it
+// peeks at the page's content bounds and never builds them.
+pub mod tier;
 // Selecting TEXT on the page, and copying it: the mode gate that needs no
 // capability, the interaction decisions and which of Acrobat / Inkscape /
 // SolidWorks each came from, and the one derivation that makes what is

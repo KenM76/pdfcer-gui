@@ -426,6 +426,76 @@ impl OpenDoc {
         .ok()
     }
 
+    /// **Where the ink on this page actually reaches**, in PDF user space —
+    /// or [`None`] if nobody has decomposed the page yet.
+    ///
+    /// `PageObjects::page_bbox()` unioned over the whole page, which
+    /// `crate::render::offpage`'s `the_content_union_is_available_and_non_empty`
+    /// asserts includes geometry **outside** the crop box. That is the input
+    /// [`crate::render::halo::region`] turns into "how big a raster do I need
+    /// so the operator can see what he placed off the sheet" — O23's "see"
+    /// half.
+    ///
+    /// # ★★★ It PEEKS. It does not build, and that is the whole point
+    ///
+    /// [`Self::page_objects`] builds on first use, and on the operator's own
+    /// benchmark sheet that build is **469 ms**:
+    ///
+    /// ```text
+    /// page-objects-built page=0 objects=129758 leaves=10256 ms=469
+    /// ```
+    ///
+    /// `OpenDoc::trace_object_count` is gated behind `PDFCER_DIAG` for exactly
+    /// that reason — *"nothing is built with tracing off"* — and the canvas
+    /// runs on every frame. A halo that forced a decomposition from the render
+    /// path would pay that half-second again after **every content edit**,
+    /// which is `OPERATOR_REQUESTS.md` O74 at its most expensive point:
+    /// *"the last thing that should matter is updating the preview."*
+    ///
+    /// So the canvas reads what is already there, and
+    /// [`Self::ensure_content_bounds`] is called separately from
+    /// `render::settle`, **after** the picture has landed. The consequence is
+    /// visible and is the honest one: on the first frame after opening a huge
+    /// drawing there is no halo, and one frame later there is. A picture that
+    /// arrives a moment late beats an edit that stalls.
+    ///
+    /// The staleness check is the same `(page, content generation)` key
+    /// [`Self::ensure_page_objects`] builds against, so a model built for the
+    /// previous page — or from before a content edit — reads as "not known"
+    /// rather than as a bounding box for the wrong picture.
+    #[must_use]
+    pub fn content_bounds_if_known(&self) -> Option<pdfcer_core::page_tree::Rect> {
+        if self.page_objects.built_for.get()
+            != Some((self.view.page_index, self.page_objects_revision()))
+        {
+            return None;
+        }
+        let slot = self.page_objects.provider.borrow();
+        let bounds = slot.as_ref()?.as_ref().ok()?.page_objects().page_bbox();
+        Some(pdfcer_core::page_tree::Rect::from_corners(
+            bounds.min.x,
+            bounds.min.y,
+            bounds.max.x,
+            bounds.max.y,
+        ))
+    }
+
+    /// Build the decomposition now, so that [`Self::content_bounds_if_known`]
+    /// can answer on the next frame.
+    ///
+    /// A separate name from [`Self::page_objects`] because the intent is
+    /// different and the intent is the thing that must survive a refactor:
+    /// this caller does not want the objects, it wants the **cost paid at a
+    /// moment of its choosing**. See [`Self::content_bounds_if_known`] for
+    /// which moment and why.
+    ///
+    /// Idempotent and cheap after the first call: `ensure_page_objects`
+    /// records its key *before* doing the work, so a page that will not
+    /// decompose is attempted once rather than on every frame.
+    pub fn ensure_content_bounds(&self) {
+        self.ensure_page_objects();
+    }
+
     /// Why the current page would not decompose, if it would not.
     ///
     /// Separate from [`Self::page_objects`] because the two audiences differ:

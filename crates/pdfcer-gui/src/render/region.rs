@@ -135,6 +135,21 @@ impl PageFrame {
         Self::new(page.crop_box, page.rotate)
     }
 
+    /// The crop box **as this type holds it** — already narrowed through
+    /// `f32` the way the engine narrows it.
+    ///
+    /// ★ Exposed so [`super::halo::region`] — and `canvas::present`, which
+    /// calls it — union the content box against the *same* numbers
+    /// [`Self::canvas_box_of`] maps against. Reading `page.crop_box` there
+    /// instead would be a second source for one value, and the two differ by
+    /// up to an `f32` ulp — enough for a halo that is exactly the crop box to
+    /// come back as a one-ulp overhang and flip a whole document into a bigger
+    /// raster for nothing.
+    #[must_use]
+    pub const fn crop(self) -> Rect {
+        self.crop
+    }
+
     /// The frame from a crop box and a rotation given directly, for tests and
     /// for any caller holding those rather than a [`Page`].
     #[must_use]
@@ -232,8 +247,15 @@ impl PageFrame {
     /// here is a multiple of 90°, so the box of the two opposite corners is
     /// the exact image of the rectangle — no rotation-of-a-rotated-rect
     /// inflation is possible.
+    ///
+    /// ★ Visible to the rest of `render` rather than private, because
+    /// [`super::halo::reach`] needs the same mapping for the content bounding
+    /// box and O174 is exactly the class of defect that a second hand-written
+    /// copy reproduces. Deliberately **not** `pub`: PDF-user-space geometry is
+    /// this module's subject, and a caller outside `render` that wants canvas
+    /// coordinates wants [`region_on_screen`] instead.
     #[must_use]
-    fn canvas_box_of(self, region: Rect) -> (f64, f64, f64, f64) {
+    pub(in crate::render) fn canvas_box_of(self, region: Rect) -> (f64, f64, f64, f64) {
         let (ax, ay) = self.user_to_canvas(region.llx, region.lly);
         let (bx, by) = self.user_to_canvas(region.urx, region.ury);
         (ax.min(bx), ay.min(by), ax.max(bx), ay.max(by))

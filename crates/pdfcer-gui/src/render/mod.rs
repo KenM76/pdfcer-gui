@@ -78,6 +78,16 @@
 /// header carries why four passing wiring tests were not enough.
 mod hairline;
 
+/// ★★★ **The ground OUTSIDE the sheet** — O23's "see" half: the box to
+/// rasterize so that an object placed past the page edge is actually painted,
+/// and how far the visible-region tier may look past the sheet.
+///
+/// Its header carries the one-sentence cause — `render_page` sizes its pixmap
+/// to the `/CropBox`, so nothing culls the content, there are simply no pixels
+/// out there — and why a halo that would not fit is declined rather than
+/// clamped.
+pub mod halo;
+
 /// **Is there anything in this raster?** — the `ink=` field of
 /// `render-async-done`, and the reason a blank canvas at deep zoom can be told
 /// apart from a lost one.

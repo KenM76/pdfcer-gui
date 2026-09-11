@@ -947,6 +947,11 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // fixture and one ribbon route, so a failure in both at once names the
         // harness and a failure in one names the feature.
         Box::new(off_page_press::ABandThatStartsInTheMarginReachesAnObjectOffThePage),
+        // ★ Third of the off-page group, and last of the three on purpose: it is
+        // the only one that takes a screenshot, and a pixel oracle is worth
+        // nothing until the two trace-level siblings have said the object is
+        // there to be painted.
+        Box::new(off_page_visible::AnObjectOffThePageIsActuallyDrawn),
         // Two launches and an Alt+F4, so it is placed with the other
         // multi-process checks rather than among the single-window ones.
         Box::new(page_display_pref::APageDisplayChoiceSurvivesACloseAndReachesANewDocument),

@@ -100,13 +100,19 @@
 //!
 //! # What this check does NOT claim
 //!
-//! **It does not claim the operator can SEE the object.** The raster is still
-//! sized to the crop box, so square B is not painted — what this measures is
+//! **It does not claim the operator can SEE the object.** What this measures is
 //! that it can be *reached*: banded, selected, and therefore outlined (the
 //! selection overlay is clipped to the canvas viewport, not to the page) and
-//! dragged home. Making it visible is the render half of part B and will have
-//! its own check. Conflating the two would produce one check that cannot say
-//! which half broke.
+//! dragged home — every one of which works whether or not a single pixel of
+//! square B was ever painted.
+//!
+//! Making it visible is the render half of part B and it has its own check,
+//! `off_page_visible`, which counts ink in a screenshot at square B's centre
+//! against a paper control 60 pt below it. Conflating the two would produce one
+//! check that cannot say which half broke — and they did break separately: the
+//! reach half shipped on 2026-09-10 with the raster still sized to the crop
+//! box, which is exactly the state the operator reported as *"I didn't see how
+//! to enable it"*.
 //!
 //! # Every way this reports SKIP
 //!
