@@ -1001,6 +1001,155 @@ Smaller, unblocked, and recorded in `FEATURES.md`:
 
 ## 10. Things that will bite you
 
+- **★★★ One sentence from the operator can describe TWO consequences produced
+  by TWO functions — and a check that watches one of them reports green on a
+  half-flipped switch.**
+
+  2026-09-11, O175. The ask was *"in our view ribbon area we need an option to
+  show the stuff that is off page or not"*, and the parenthesis that followed
+  is the part that mattered: *"and when not showing the stuff that is off page
+  there shouldn't be a gap between pages where the stuff is, so it just goes
+  back to looking before we added the view things that are off the page
+  feature."*
+
+  Read quickly that is a restatement — *hide the off-sheet ink*. It is not.
+  The shell reaches past the sheet for **three separate reasons**, only two of
+  which this feature owns — and his one sentence names both of those:
+
+  | layer | function | what it does | gated? |
+  |---|---|---|---|
+  | base pasteboard | `canvas::tier` | `viewport × PASTEBOARD_FRACTION`, the free-navigation slack | **no** — predates the feature |
+  | the raster tier | `canvas::tier::decide` | widens the rendered bitmap to hold off-sheet ink (`halo`) | yes |
+  | the overhang | `canvas::tier::overhang` | widens the **layout** so the canvas reaches past the sheet | yes |
+
+  The first clause is `decide`. The parenthesis is `overhang`. Suppress only
+  `decide` and the off-sheet square vanishes while the band of grey stands
+  exactly where he said it must not be — and every test, gate and eyeball on
+  the ink would call that shipped.
+
+  ★ **So the two gate sites were put ADJACENT, in one file, deliberately**:
+  `content = None` inside `decide`, and an early `return Vec2::ZERO` at the top
+  of `overhang`. Adjacency is the cheap half of the defence; the expensive half
+  is that `off_page_toggle` now reads **two oracles on every rung** — the
+  `canvas-raster` tier *and* a new `canvas-pasteboard offpage=… overhang=x,y`
+  line carrying the number the layout was actually given.
+
+  ★★ **The early return is what makes an EXACT-ZERO assertion legitimate.**
+  `overhang` returns before measuring rather than multiplying a measured box by
+  zero, so there is no rounding to forgive and the check asserts `(0.0, 0.0)`
+  with no tolerance. A tolerance here would have been a place for a one-pixel
+  band to hide, and the whole complaint is about a band.
+
+- **★★★ "Remembered per mode" is not observable in a one-launch check, and a
+  single global flag passes the first four rungs of the obvious ladder.**
+
+  The same request asked for defaults of Read = **off**, Review = **on**,
+  Edit = **on**, all three changeable, each remembered **separately**. The
+  rule lives in `app::prefs::offpage` and is three lines long; proving it is
+  the work.
+
+  `ui-verify` sandboxes **per check**, not per launch: `--isolate` hands each
+  check a private exe copy and a private `userdata/`. That is what makes the
+  proof possible — a **five-rung ladder inside ONE check** shares persisted
+  state across launches, which is the only arrangement in which the word
+  *remembered* means anything.
+
+  | # | rung | launch | must be | and the EVENT is the assertion |
+  |---|---|---|---|---|
+  | 1 | `read-default` | Read | **off** | `off-page-seed` — the answer came from the store at document open |
+  | 2 | `read-toggled-on` | Read, then toggle | **on** | `off-page-remembered` — raised through `dispatch_command`, the same choke point a click reaches |
+  | 3 | `read-remembered` | Read | **still on** | `off-page-seed` — a preference that lasts until the program closes is not remembered |
+  | 4 | `edit-toggled-off` | Edit, then toggle | **off**, having started **on** | `off-page-mode` first (Edit's default), then `off-page-remembered` |
+  | 5 | `read-unaffected` | Read | **still on** | `off-page-mode` — Read is untouched by what rung 4 did in Edit |
+
+  ★ **Which event carries the answer IS part of the assertion.** A rung that
+  expects `off-page-seed` is asserting the answer came from the **store** at
+  document open; one that expects `off-page-mode` is asserting it came from
+  the **mode change**. A build that computed the right boolean by the wrong
+  route fails on the event name, before the pixels are ever looked at.
+
+  ★★ **Rung 5 is the whole point.** A single global boolean — the
+  implementation anybody would write first — passes rungs 1 to 4 and fails
+  only rung 5, which is why its `means` string opens *"★★★ THE ANSWER IS NOT
+  PER MODE … one global flag wearing the name of three preferences."* Drop
+  that rung and the check certifies a feature the operator did not ask for.
+
+  ⚠ Rung 4 also carries a `before` clause — an earlier line in the **same**
+  run that must hold — because it has two things to say: that Edit *starts*
+  on, and that the toggle then turns it off. Those are two of the operator's
+  sentences and collapsing them into one rung would have proved neither.
+
+- **★★ Falsifying a check by driving an OLDER binary tests the harness, not the
+  check.**
+
+  First falsification attempt: run `off_page_toggle` against the pre-feature
+  release. It returned **SKIP**, with *"the application emitted no
+  `canvas-pasteboard` line"* — which is correct behaviour and completely
+  worthless as evidence, because it exercises the missing-trace error path and
+  never reaches `judge` at all. A binary that predates the instrument cannot be
+  interrogated with it.
+
+  Second attempt, which is the one that counts: **plant the defect in source**
+  — `default_for_mode` rewritten to `let _ = mode; true`, i.e. the always-on
+  build — rebuild, drive. Genuine **FAIL on rung 1**, naming Read. Restored
+  from a kept copy (`offpage.rs.GOOD`), never through git.
+
+  ⚠ A SKIP is not red. A check that has quietly stopped being able to fail
+  looks exactly like a check that keeps passing — which is why the falsification
+  has to end in the word FAIL, not in the absence of the word FAIL.
+
+- **★★ A compile error from an engine bump is an invitation to read the reply.**
+
+  The 2026-09-11 pin bump (`1eb1c7c` → `f3ca53d`, v0.52.0 → v0.53.0) produced
+  exactly one `E0061`: `offpage_bands(scan)` had grown `tolerance: f64`.
+  `0.0` compiles, passes every test, and **declines both halves of the engine's
+  fix in silence**:
+
+  - a border stroked **on** the page boundary overhangs by half its line width,
+    so an exact band would cut content a scan with a fringe had just reported
+    clean — one feature giving two answers to one question;
+  - a full-bleed image reaching a hair past the edge **intersects** an exact
+    band, so every such image is decoded, cleared by a sliver and re-encoded.
+    The engine measured half a second becoming ten minutes on a forty-sheet
+    drawing.
+
+  The call site passes `offpage::DEFAULT_TOLERANCE_PT` and carries a comment
+  saying why, and saying that it must track the tolerance the SCAN used, 84
+  lines above it in the same file. **A new parameter with a keep-old-behaviour default is the
+  compiler going quiet about a decision you have not made.**
+
+- **★★ A measured state table can carry a WRONG COMMAND, and re-measuring
+  faithfully reproduces the wrong answer forever.**
+
+  `RESUME.md`'s state table said *driven checks: 212*, measured with
+  `ui-verify --list | wc -l`. `--list` prints **two lines per check plus a
+  header**, so that command answers **434**, and the true count is **213**
+  (`grep -cE '^  [a-z0-9_]+$'`). The discipline this project built over eight
+  count-drift corrections — *never quote, always re-measure* — defends
+  against a stale number and is completely blind to a wrong instrument. The
+  header warning about drift sat four lines above the drifting row.
+
+  ⇒ The first time a command enters a measured table, check its **output
+  shape** before its output: `head -6` before `wc -l`. Any `wc -l` over
+  something with a header, a blank line, or a multi-line record is a claim
+  about formatting, not about the subject.
+
+- **⚠ Three pointer-driven off-page checks were EDITED and never DRIVEN, and
+  that is the exact failure mode this harness exists to remove.**
+
+  `an_object_off_the_page_survives_being_zoomed_in_on`,
+  `a_band_dragged_into_the_margin_reaches_an_object_off_the_page` and
+  `a_band_that_starts_in_the_margin_reaches_an_object_off_the_page` each had
+  their `PDFCER_DIAG_INVOKE` string changed to open in **Edit**, because Read
+  now correctly hides off-page content. The operator's instruction was *"go
+  ahead and build without screen testing it"* — pointer checks need his
+  desktop and he was at it — so the release shipped with the edits unrun.
+
+  Both directions are wrong until they are driven: a mode-less run would now
+  report a **defect that is a correctly-implemented setting**, and a mode-ful
+  run that was never made reports **nothing at all**. `RESUME.md` carries this
+  as item 1 of "Do next", in those words.
+
 - **★★★ An API-drift gate hit is sometimes a FEATURE REPORT, not paperwork —
   and the cheap discharge destroys the report.**
 

@@ -26,16 +26,23 @@ file points at them rather than quoting them.
 Every figure below has the command that produced it. **Run the command.** Prose
 drifting from a count is the defect this project has spent eight corrections on.
 
-| What | Command | Value, 2026-09-11 |
+| What | Command | Value, 2026-09-11 afternoon |
 |---|---|---|
-| Engine pin | `grep -m1 'pdfcer?branch=main#' Cargo.lock` | `1eb1c7c` |
-| Engine HEAD | `cd /d/Dev/pdfcer && git log --oneline -1 main` | `1eb1c7c` — **current, v0.52.0** |
-| Last release | `git fetch --tags origin && git describe --tags --abbrev=0` | `v0.5.0-dev.20260911.1` — **0 commits behind** |
-| Driven checks | `cargo run -q -p ui-verify -- --list \| wc -l` | 212 |
+| Engine pin | `grep -m1 'pdfcer?branch=main#' Cargo.lock` | `f3ca53d` |
+| Engine HEAD | `cd /d/Dev/pdfcer && git log --oneline -1 main` | `f3ca53d` — **current, v0.53.0** |
+| Last release | `git fetch --tags origin && git describe --tags --abbrev=0` | `v0.5.0-dev.20260911.2` — **0 commits behind** |
+| Driven checks | `ui-verify --list \| grep -cE '^  [a-z0-9_]+$'` | 213 |
 | Gates | `bash tools/gates/run-all.sh` | **32 passed, 0 failed, 0 skipped** |
-| Unit tests | `cargo test --workspace` | 4,161 passing |
-| Source files | `find crates -name '*.rs' \| wc -l` | 771 |
+| Unit tests | `cargo test --workspace` | 4,174 passing |
+| Source files | `find crates -name '*.rs' \| wc -l` | 772 |
 | Backlog register | `python tools/walk-engine-backlog.py` | 170 rows |
+
+⚠ **The check-count command was wrong in this very table.** `--list` prints
+**two** lines per check plus a header, so `wc -l` answered 434 where the
+answer is 213. It had been quoted as 212 for long enough that the drift went
+unnoticed — in the table whose own heading says *re-measure, never quote*.
+The row now carries a command that counts check NAMES. If you see 434
+anywhere, it is this defect.
 
 ⚠ **The pin is a claim with a shelf life of hours.** `Cargo.lock` pins the
 engine by git revision, not by path, so every sentence in this repository of the
@@ -54,7 +61,22 @@ local state about a fact that lives remotely. ⇒ **Any sentence containing
 *"commits unreleased"* or a release date gets a `git fetch --tags origin`
 immediately in front of it**, and a cross-check against `gh release list`.
 
-⚠ **The last three releases shipped without the driven sweep**, this one
+★★★ **`v0.5.0-dev.20260911.2` shipped 2026-09-11 12:11** — the off-page display
+switch (`O175`) and engine **v0.53.0**. Zip on GitHub, mirror in
+`OneDrive\pdfcer-gui2`; `pdfcer-gui1` still holds the 06:34 build.
+
+⚠ **THREE POINTER-DRIVEN OFF-PAGE CHECKS ARE OWED AGAINST THIS BUILD.**
+`an_object_off_the_page_survives_being_zoomed_in_on`,
+`a_band_dragged_into_the_margin_reaches_an_object_off_the_page` and
+`a_band_that_starts_in_the_margin_reaches_an_object_off_the_page` each had
+their `PDFCER_DIAG_INVOKE` string changed to open in **Edit**, because their
+subject is off the sheet and Read now hides it. That edit is exactly the kind
+a green build hides: the check would SKIP or misreport rather than go red.
+The operator was at the machine and said *“go ahead and build without screen
+testing it”*, so they were not run. `an_object_off_the_page_is_actually_drawn`
+needs no pointer and **was** run, green. Run the other three first thing.
+
+⚠ **The last four releases shipped without the driven sweep**, this one
 included. Unit tests, 32 gates and an off-screen smoke launch were green each
 time; none of the three is evidence that a control is *reachable*. The
 blocker today is not time — an Outlook *Internet Email* password prompt sits
@@ -72,7 +94,13 @@ close it.** Confirm it is gone before scheduling a sweep:
 > while clicking a stamp did nothing at all. The engine's replies are an input
 > to *how* a thing gets built, never to *which* thing.
 
-1. **Read the sweep result, then triage every FAIL and every SKIP.** The full
+1. **Run the three owed off-page pointer checks against the shipped build.**
+   They are named in the warning above. This is first because the thing not
+   measured is an edit made TO the instruments, and an instrument edited but
+   not run is the failure mode this harness exists to remove — a mode-less run
+   would now report a defect that is a correctly-implemented setting, and a
+   mode-ful run that was never made reports nothing at all.
+2. **Read the sweep result, then triage every FAIL and every SKIP.** The full
    driven sweep ran on 2026-09-11 for the first time in three releases; its log
    is `target/scratch/sweep-full.log`. ★★ **`=== SWEEP-DONE` alone means
    nothing** — the runner now prints `=== TALLY passed=… failed=… skipped=…
@@ -82,7 +110,7 @@ close it.** Confirm it is gone before scheduling a sweep:
    And per standing memory, **the first full sweep after a long gap yields more
    harness defects than application ones** — audit the check before filing an
    app defect against it.
-2. **The owed driven checks — and MEASURE the list before working it.**
+3. **The owed driven checks — and MEASURE the list before working it.**
    `target/scratch/driven-audit.md` (2026-09-11) is the measured register: every
    `OPERATOR_REQUESTS.md` row whose heading says *"not yet driven"*, checked
    against `roster.rs`. ★★ **The headings are stale in both directions.** Three
@@ -93,7 +121,7 @@ close it.** Confirm it is gone before scheduling a sweep:
    the naming document was the only thing that said otherwise. A registered
    `Box::new(…)` line in `roster.rs` is the evidence, not a row that claims a
    gap. `CONTINUE.md` is history, not a backlog.
-3. **★ Wire the eight engine deliveries this shell does not call.** The request
+4. **★ Wire the eight engine deliveries this shell does not call.** The request
    channel was audited end to end on 2026-09-11 and is **done**: `open/` went
    **229 → 13**, `archive/` 84 → 301, `INDEX.md` 79 → 228 rows, every citation
    re-measured as resolving. Do not re-triage it; read `open/` and believe it.
@@ -117,7 +145,7 @@ close it.** Confirm it is gone before scheduling a sweep:
    The 13 still open: four asks the engine owes (two of them **the same
    tiny-skia region-render defect filed twice by us**), eight deliveries above,
    and the 2026-09-07 protocol note.
-4. **Under O165, release when the engine moves.** Compare the two pin rows
+5. **Under O165, release when the engine moves.** Compare the two pin rows
    above at the start of every session; if they differ, read the intervening log
    before reading any backlog row.
 

@@ -90,3 +90,4 @@
 - [A runner's sentinel is a claim about the runner](feedback_a_runners_sentinel_is_a_claim_about_the_runner.md) — 210 checks "swept" in under a minute, every chunk rc=2, log ending SWEEP-DONE. Print a tally that can be zero.
 - [A tool that mutates the tree before stamping it reports its own dirt](feedback_a_tool_that_mutates_the_tree_before_stamping_it_reports_its_own_dirt.md) — `cargo update` earned the `-dirty`; and the re-package's changelog said 1 commit where 21 belonged.
 - [`gh release create` tags remotely, so `git describe` goes stale](feedback_gh_release_create_tags_remotely_so_git_describe_goes_stale.md) — I told Ken "51 commits unreleased"; fetch tags first, it was 21.
+- [A count command can be wrong, not just its quoted answer](feedback_a_count_command_can_be_wrong_not_just_its_quoted_answer.md) — `--list | wc -l` said 434 where the answer is 213; audit the output SHAPE before the first `wc -l`.
