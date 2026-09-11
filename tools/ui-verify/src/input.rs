@@ -267,6 +267,35 @@ impl Driver {
     /// step: a released-and-pressed pointer is *n* gestures, not one.
     pub fn drag(&self, from: ScreenPoint, to: ScreenPoint) -> Result<()> {
         self.raise_and_confirm()?;
+        // ★★★ **Both endpoints, and this was missing until 2026-09-11.**
+        //
+        // See [`Self::confirm_uncovered`] for the whole argument. It had been
+        // wired into `click_at` and `right_click_at` and into no verb that
+        // presses the button anywhere else — which left the single most
+        // important gesture in the harness, the canvas drag, driving blind into
+        // whatever happened to be lying on the desktop.
+        //
+        // Measured that day on `the_second_stamp_dialog_still_has_its_buttons`.
+        // An Outlook *"Internet Email"* dialog (`#32770`, pid 30956) was open
+        // over the right-hand half of the target window. The first drag missed
+        // it and placed a stamp; the second was aimed at desktop (1408, 571),
+        // which was inside the Outlook dialog, so pdfcer saw the pointer leave
+        // the canvas (`canvas-gesture … pos=0`) and never saw a button at all.
+        // The check then reported *"the second drag traced no further
+        // `text-annot-open` line … either the tool did not re-arm or the drag
+        // landed on the first stamp"* — an accusation against a feature that
+        // works, naming two causes that were both disproved by the same trace.
+        //
+        // ★ The sibling check `stamp_size_reaches_the_engine`, driven in the
+        // same minute against the same desktop, SKIPPED with *"the point
+        // (1212, 605) is owned by \"Internet Email — ken@toprops.com\""*. Same
+        // machine, same obstruction, same second — and one of the two said so
+        // while the other blamed the application. **The difference was entirely
+        // which verb it happened to use.**
+        //
+        // ⇒ Every verb that presses at a coordinate asks the question now.
+        self.confirm_uncovered(from)?;
+        self.confirm_uncovered(to)?;
         sys::set_cursor_position(from.x(), from.y())?;
         std::thread::sleep(MOVE_SETTLE);
         sys::mouse_button(true);
@@ -354,6 +383,13 @@ impl Driver {
         to: ScreenPoint,
     ) -> Result<()> {
         self.raise_and_confirm()?;
+        // ★ All three, for the reason in [`Self::drag`]. The waypoint matters
+        // as much as the endpoints here: this gesture RESTS on `via` until a
+        // dwell timer fires, so a covered waypoint is a second of the pointer
+        // sitting inside somebody else's window with the button down.
+        self.confirm_uncovered(from)?;
+        self.confirm_uncovered(via)?;
+        self.confirm_uncovered(to)?;
         sys::set_cursor_position(from.x(), from.y())?;
         std::thread::sleep(MOVE_SETTLE);
         sys::mouse_button(true);
@@ -424,6 +460,9 @@ impl Driver {
         // pointer is positioned and settled once, and the two press/release
         // pairs follow with only `CLICK_HOLD` between them.
         self.raise_and_confirm()?;
+        // ★ Not two `click_at` calls, so it does not inherit their guard — see
+        // [`Self::drag`] for the day that distinction cost a false FAIL.
+        self.confirm_uncovered(p)?;
         sys::set_cursor_position(p.x(), p.y())?;
         std::thread::sleep(MOVE_SETTLE);
         for _ in 0..2 {
@@ -544,6 +583,11 @@ impl Driver {
     ///
     /// If the pointer cannot be moved.
     pub fn scroll_at(&self, p: ScreenPoint, notches: i32) -> Result<()> {
+        // ★ A wheel notch goes to the window under the pointer, exactly as a
+        // press does, so this asks the same question a press asks. See
+        // [`Self::drag`]. `move_to` alone only checks the point is on a
+        // monitor, which a covered point always is.
+        self.confirm_uncovered(p)?;
         self.move_to(p)?;
         sys::wheel(notches);
         std::thread::sleep(MOVE_SETTLE);
@@ -580,6 +624,9 @@ impl Driver {
         times: usize,
     ) -> Result<()> {
         self.raise_and_confirm()?;
+        // ★ As [`Self::scroll_at`]. Ctrl+wheel into a foreign window is worse
+        // than a plain notch: it zooms whatever owns the pixel.
+        self.confirm_uncovered(p)?;
         self.move_to(p)?;
         sys::with_modifiers(modifiers, || {
             std::thread::sleep(MOVE_SETTLE);

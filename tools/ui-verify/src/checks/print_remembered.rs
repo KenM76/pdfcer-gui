@@ -570,13 +570,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         text.push_str(value);
         text.push('\n');
     }
-    if let Err(why) = std::fs::create_dir_all(&dir) {
-        return Err(Error::new(format!(
-            "could not create {}: {why}",
-            dir.display()
-        )));
-    }
-    if let Err(why) = std::fs::write(&prefs_path, &text) {
+    // ★ Through `sandbox::write_prefs`, which carries the O173 suppression as a
+    // header. Writing this file directly used to drop it, which opened the
+    // default-app offer in front of this check's own window — see that
+    // function for the full account.
+    if let Err(why) = crate::sandbox::write_prefs(&dir, &text) {
         return Err(Error::new(format!(
             "could not write {}: {why}",
             prefs_path.display()

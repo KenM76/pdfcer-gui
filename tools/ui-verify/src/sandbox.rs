@@ -350,18 +350,94 @@ const PREFS_FILE: &str = "preferences.txt";
 /// check that cannot run, and the symptom of the swallowed failure is loud
 /// anyway: the dialog appears and the check fails on a rect it cannot reach.
 fn seed_prefs(dir: &Path) {
-    let userdata = dir.join("userdata");
-    if std::fs::create_dir_all(&userdata).is_err() {
-        return;
+    let _ = write_prefs(&dir.join("userdata"), "");
+}
+
+/// The header every sandbox-written preferences file carries, including the
+/// one key that must survive any check's own seeding.
+///
+/// ★★★ **A header of the only write path, rather than a line each caller
+/// remembers to add.** That distinction is the whole point — see
+/// [`write_prefs`].
+const PREFS_HEADER: &str = "\
+# Written by ui-verify. See `sandbox::write_prefs`.
+#
+# `ask_default_app = false` suppresses the O173 startup offer, which would
+# otherwise open a real OS window in front of the check. It is written by the
+# sandbox and RE-written by every check that seeds its own preferences, so that
+# seeding one key cannot silently restore the offer. A check that DRIVES the
+# offer must delete this file; see `checks/default_app_offer.rs`.
+ask_default_app = false
+";
+
+/// **Write a preferences file for a sandboxed run, with the startup offer
+/// suppressed whatever else the caller asked for.**
+///
+/// `body` is the caller's own keys, one `key = value` per line, appended after
+/// [`PREFS_HEADER`]. Pass `""` for the bare seed.
+///
+/// # ★★★ Why this function exists, and what it cost not to have it
+///
+/// `seed_prefs` has written `ask_default_app = false` into every sandbox since
+/// the offer shipped, and the reasoning above it is correct. It had one hole:
+/// **three checks write this same file themselves**, each overwriting the seed
+/// with their own keys —
+///
+/// | check | what it did | effect |
+/// |---|---|---|
+/// | `ui_scale_resizes_the_chrome` | wrote a file containing only `ui_scale` | seed gone |
+/// | `the_print_window_opens_on_the_settings_you_last_used` | wrote its thirteen seeded answers | seed gone |
+/// | `a_page_display_choice_survives_a_close…` | **deleted** the file to normalise | seed gone |
+///
+/// Every absent key takes its compiled-in default, and the default for
+/// `ask_default_app` is `true`. So all three re-enabled the very offer the
+/// sandbox had just turned off, and the 2026-09-11 sweep shows the dialog in
+/// exactly those three checks' traces and nowhere else.
+///
+/// In `ui_scale`'s case that produced a **FAIL against the application**:
+/// `find_window_for_pid` returns the front-most window of the process, the
+/// offer was front-most, so the check measured the *dialog's* client area and
+/// reported that the UI-scale preference "did not reach
+/// `Context::set_zoom_factor` at all". It had reached it. The application was
+/// correct and the accusation was specific, confident and wrong — which is the
+/// failure mode this project has recorded more times than any other.
+///
+/// ⇒ **A suppression a caller has to remember is a suppression that will be
+/// forgotten.** Making it a header of the only write path removes the memory
+/// from the loop: a check can write whatever keys it likes and cannot restore
+/// the offer by doing so.
+///
+/// # Errors
+///
+/// The `userdata` directory could not be created, or the file could not be
+/// written. Callers in the sandbox path swallow this (see `seed_prefs`);
+/// callers in a check should report it as a SKIP, because a preference that
+/// could not be written means the check never began.
+pub fn write_prefs(userdata: &Path, body: &str) -> std::io::Result<()> {
+    std::fs::create_dir_all(userdata)?;
+    let mut text = String::from(PREFS_HEADER);
+    if !body.is_empty() {
+        text.push_str(body);
+        if !text.ends_with('\n') {
+            text.push('\n');
+        }
     }
-    let _ = std::fs::write(
-        userdata.join(PREFS_FILE),
-        b"# Written by ui-verify's sandbox. See `sandbox::seed_prefs`.\n\
-          # Suppresses the O173 startup offer, which would otherwise open in\n\
-          # front of every check in the sweep. A check that DRIVES that offer\n\
-          # must delete this file first.\n\
-          ask_default_app = false\n",
-    );
+    std::fs::write(userdata.join(PREFS_FILE), text)
+}
+
+/// Restore a sandbox's preferences file to the bare seed.
+///
+/// The correct way for a check to *normalise* persisted preferences between
+/// launches. **Deleting the file is not** — deletion takes the suppression
+/// with it, which is precisely how
+/// `a_page_display_choice_survives_a_close_and_reaches_a_new_document` grew
+/// the startup offer in front of its own second launch. See [`write_prefs`].
+///
+/// # Errors
+///
+/// As [`write_prefs`].
+pub fn reset_prefs(userdata: &Path) -> std::io::Result<()> {
+    write_prefs(userdata, "")
 }
 
 /// Hard-link `from` to `to`, falling back to a byte copy.

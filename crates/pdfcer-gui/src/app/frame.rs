@@ -359,6 +359,60 @@ impl eframe::App for PdfcerApp {
             ctx.set_zoom_factor(ui_scale);
         }
 
+        // ★★★ Step 0b¹ — **publish the root window's size in POINTS, and the
+        // pixels-per-point it was drawn at.**
+        //
+        // ```text
+        // pdfcer-diag window-inner rect=[[0.0 0.0] - [1100.0 800.0]] ppp=1.000 zoom=1.00
+        // ```
+        //
+        // # Why the application has to say this, rather than a harness working it out
+        //
+        // A harness can measure the OS window with `GetClientRect`, which gives
+        // **physical pixels**, and it can read a `ui-rect` line, which is in
+        // **egui logical points**. The number that joins them is
+        // `pixels_per_point`, and until this line existed nothing published it
+        // — so every check that needed it multiplied the OS DPI ratio by the
+        // scale it had just *asked for*, which is not a measurement of
+        // anything. It is the assumption restated.
+        //
+        // That cost a wrong verdict on 2026-09-11. `ui_scale_resizes_the_chrome`
+        // computed the client area as `client_px / (os_dpi × requested_scale)`
+        // and asserted the two runs' results differed by the scale factor —
+        // an assertion its own arithmetic had already decided, and which
+        // therefore reported on nothing but which window `GetClientRect`
+        // happened to land on. (It landed on a dialog. See
+        // `tools/ui-verify/src/checks/ui_scale.rs`.)
+        //
+        // # What a reader may and may not conclude from it
+        //
+        // `rect` is `ctx.content_rect()` — the root viewport's own area, in
+        // points, origin at the client area's top-left corner, which is the
+        // same origin every `ui-rect` line uses. `ppp` is
+        // `ctx.pixels_per_point()`, the number egui is *actually* drawing at
+        // this frame. `zoom` is `ctx.zoom_factor()`, the preference's
+        // contribution to it; `ppp = native_ppp × zoom`, so publishing both
+        // lets a reader separate "the operator asked for a bigger UI" from
+        // "the monitor is at 150%".
+        //
+        // ⚠ **It is the application reporting on itself, so it needs an
+        // independent calibration and the check performs one**: `client_px /
+        // rect.width` must equal `ppp`, and the left side comes from the OS.
+        // A build that published a `ppp` it was not drawing at is caught by
+        // that comparison rather than believed.
+        //
+        // Emitted through `trace_on_change`, so a window sitting still costs
+        // one string compare per frame and a resize reports its travel.
+        crate::diag::trace_on_change("window-inner", || {
+            format!(
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                "rect={:?} ppp={:.3} zoom={:.2}",
+                ctx.content_rect(),
+                ctx.pixels_per_point(),
+                ctx.zoom_factor(),
+            )
+        });
+
         // ★★ Step 0b² — **carry the persisted Smart-Selector answer into the
         // canvas's live copy** — `OPERATOR_REQUESTS.md` O70.
         //

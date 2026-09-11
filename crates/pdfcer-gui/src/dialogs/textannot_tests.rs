@@ -182,6 +182,42 @@ fn the_note_window_is_squeezed_but_never_below_its_own_floor() {
 /// **name and message state a property the program no longer has** is worse
 /// than no test: it reads as a measurement, and the next person to grep for
 /// *"which kinds have choosers?"* finds an answer rather than a question.
+///
+/// # ★★★ The sticky-versus-stamp ordering INVERTED on 2026-09-11
+///
+/// Until that day this test asserted `sticky.y > stamp.y`, with the reason
+/// *"seven radio rows and a disclosure is a taller addition than a heading,
+/// one combo row and a disclosure"* and the standing instruction that an
+/// inversion means somebody changed one constant without reading the
+/// other's argument. **The argument was read, and the premise was wrong** —
+/// it compared the two ADDITIONS while ignoring that the additions sit on
+/// different bodies.
+///
+/// From the driven run of 2026-09-11, in the dialog's own content
+/// coordinates:
+///
+/// | body | what it holds | measured |
+/// |---|---|---|
+/// | text box | the four-line field | `54 … 118` — 64 pt |
+/// | stamp | seven gallery radios, heading, disclosure | `12 … 278` |
+/// | stamp | … **and** the size heading, combo and disclosure | `360 … 440` — 80 pt |
+///
+/// The sticky holds the field **and** a seven-radio gallery. The stamp holds
+/// a seven-radio gallery **and** the size section, and no field. So the
+/// comparison reduces to 80 pt of size section against 64 pt of text field,
+/// both measured — and the stamp is the taller window.
+///
+/// ⇒ The assertion is therefore `stamp.y >= sticky.y` and the operator is
+/// `>=` on purpose: the two constants are currently equal at 190 pt, the
+/// derivation only supports a 16 pt difference, and an assertion tighter
+/// than its evidence is the defect this whole doc block is about.
+///
+/// ⚠ **What is still owed:** [`STICKY_EXTRA_PTS`] has never been measured
+/// against a driven run the way [`STAMP_EXTRA_PTS`] now has. It is an
+/// estimate from 2026-09-06 by the same method that left the stamp's
+/// chooser below the fold for five days. Open the sticky dialog under
+/// `ui-verify`, read `dialog:text-annot` and the last region the body
+/// declares, and either confirm 190 or correct it here with the numbers.
 #[test]
 fn each_kinds_window_is_as_tall_as_its_body_needs() {
     let screen = screen();
@@ -197,13 +233,14 @@ fn each_kinds_window_is_as_tall_as_its_body_needs() {
         stamp.y > boxed.y,
         "the size chooser needs room the text box does not: {stamp:?} vs {boxed:?}"
     );
-    // ★ The ordering, not merely the inequality. Seven radio rows and a
-    // disclosure is a taller addition than a heading, one combo row and a
-    // disclosure, and if that ever inverts it is because somebody changed
-    // one of the two constants without reading the other's argument.
+    // ★ The ordering, not merely the inequality — and it reversed on
+    // 2026-09-11 when the stamp's constant was measured instead of guessed.
+    // See this test's doc for the two numbers it now rests on: an 80 pt size
+    // section against a 64 pt text field, both read off a driven trace.
     assert!(
-        sticky.y > stamp.y,
-        "seven radio rows must ask more room than one combo: {sticky:?} vs {stamp:?}"
+        stamp.y >= sticky.y,
+        "the stamp body carries the sticky's gallery AND a size section, where the \
+         sticky carries the gallery and a shorter text field: {stamp:?} vs {sticky:?}"
     );
     assert_eq!(
         boxed.y, WINDOW_PTS.y,

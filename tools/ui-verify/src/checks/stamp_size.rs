@@ -315,13 +315,63 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // Accept button, produces a check that presses nothing and an operator who
     // cannot use the feature — and the unit test asserting the window grew is
     // green in both cases.
+    //
+    // ★★★ **This step does NOT scroll, and that is the assertion — 2026-09-11.**
+    //
+    // The application publishes this region through `diag::ui_rect_visible`, so
+    // it is declared only on the frames where it is actually on the screen. A
+    // check that scrolled the body until it appeared would therefore be green
+    // on a dialog whose Size chooser opens below its own fold — which is
+    // precisely the state the full sweep of 2026-09-11 found and the state
+    // `STAMP_EXTRA_PTS` was corrected to 190 pt to fix. Scrolling here would
+    // have converted an operator-visible defect into a harness step.
+    //
+    // ⇒ The absence of a scroll is load-bearing. If this ever fails with "was
+    // never drawn" on a build where the chooser plainly exists, the answer is
+    // in `dialogs::textannot`'s window height, not in this file.
     let Some(combo) = declared(&trace, ui_rect, "text-annot.stamp-size") else {
         return Ok(Some(format!(
             "the stamp dialog is open and declares no `text-annot.stamp-size` region, so the \
-             Size chooser was never drawn. Regions the dialog declared: {}.",
+             Size chooser is not on the screen when the dialog opens. ★ The region is \
+             published through `diag::ui_rect_visible`, which stays silent for a rectangle \
+             clipped out of its scroll area — so the likely cause is a window too short for \
+             its own body (`dialogs::textannot::STAMP_EXTRA_PTS` plus `custom_extra_pts`), \
+             not a missing control. The operator's version of this is a chooser he has to \
+             scroll to find under a gallery that fills the window. Regions the dialog \
+             declared: {}.",
             list(&declared_names(&trace, ui_rect, "text-annot."))
         )));
     };
+
+    // ★★ **Declared is not the same as WHOLLY on screen**, and the difference is
+    // 40 % of the control.
+    //
+    // `diag::ui_rect_visible` publishes the FULL rectangle once
+    // `VISIBLE_FRACTION` (0.6) of it survives the clip. That threshold is right
+    // for the application — a control 80 % shown is a control the operator can
+    // use — but it leaves a chooser whose bottom third is under the pinned
+    // footer declaring an aimable centre. The centre would still be pressable
+    // here, so this check would pass; the operator would be looking at a combo
+    // sliced by the Add button.
+    //
+    // So the containment is asserted separately against `dialog:text-annot`,
+    // which is the window's whole content rectangle. It is a stricter question
+    // than the one the application answers, asked by the surface whose job is
+    // to ask stricter questions.
+    if let Some(body) = declared(&trace, ui_rect, "dialog:text-annot") {
+        if !body.contains_rect(combo) {
+            return Ok(Some(format!(
+                "the Size chooser is declared at {combo:?}, which is not wholly inside the \
+                 dialog's content rectangle {body:?}. ★ `diag::ui_rect_visible` publishes a \
+                 region once 60 % of it survives the clip, so a control sliced by the pinned \
+                 Add/Cancel row still declares a pressable centre — this check passes and the \
+                 operator sees a cut-off combo. The window is short of its own body by about \
+                 {} pt; see `dialogs::textannot::STAMP_EXTRA_PTS`.",
+                (combo.max.y - body.max.y).ceil().max(0.0)
+            )));
+        }
+        report.note("the Size chooser is wholly inside the dialog, not merely declared");
+    }
     report.note("the stamp dialog drew a Size chooser");
 
     // --- 5: ★★★ the default, ASSERTED before anything is pressed ------------

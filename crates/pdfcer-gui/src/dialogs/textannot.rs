@@ -240,24 +240,75 @@ const STICKY_EXTRA_PTS: f32 = 190.0;
 
 /// **How much taller the stamp's window opens**, in points.
 ///
-/// ★★ [`STICKY_EXTRA_PTS`]'s argument, applied to a smaller addition. The
-/// stamp body was seven radio rows and a wrapped disclosure inside 240 pt;
-/// `Pass 287.0`'s size chooser adds a heading, one combo row and a second
-/// wrapped disclosure under them. That is roughly three rows' worth, not
-/// ten — the ten sizes live inside the combo's popup, which is drawn in its
-/// own layer and costs the window no height at all.
+/// ★★ [`STICKY_EXTRA_PTS`]'s argument. The stamp body is seven radio rows, a
+/// heading and a wrapped disclosure where the text box has a four-line field,
+/// and `Pass 287.0`'s size chooser adds a second heading, one combo row and a
+/// second wrapped disclosure under all of it.
 ///
-/// ★ That is the concrete reason the chooser is a combo and the gallery is
-/// radios, stated here rather than only in [`TextAnnotDialog::sizes`]: ten
-/// radio rows would have needed roughly 250 pt and made the stamp the
-/// tallest of the three dialogs by a wide margin, for a control every other
-/// program on his desk draws as a dropdown.
+/// ★ The ten sizes live inside the combo's POPUP, which is drawn in its own
+/// layer and costs the window no height at all. That is the concrete reason
+/// the chooser is a combo and the gallery is radios, stated here rather than
+/// only in [`TextAnnotDialog::sizes`]: ten radio rows would have needed
+/// roughly 250 pt and made the stamp the tallest of the three dialogs by a
+/// wide margin, for a control every other program on his desk draws as a
+/// dropdown.
+///
+/// # ★★★ Why this is 190 and not 70 — 2026-09-11, and it is the SECOND
+/// time this constant has been a claim the body outgrew
+///
+/// 70 pt was written on 2026-09-06 as *"roughly three rows' worth"* — an
+/// estimate of the size chooser ALONE, added to a base that was already too
+/// small for the gallery underneath it. The full driven sweep of 2026-09-11
+/// measured the result, and the numbers are worth keeping because they are
+/// what makes this constant arguable:
+///
+/// | quantity | measured (content coordinates) |
+/// |---|---|
+/// | the window's content rectangle | `12 … 402` — 390 pt |
+/// | Add / Cancel, pinned by [`Host::scrolled`] | `378 … 402` |
+/// | ⇒ the SCROLLED body's viewport | `12 … 372` — 360 pt |
+/// | the standard gallery | `12 … 278` |
+/// | two of the operator's own stamps, one category | `278 … 360` |
+/// | the Size chooser's combo row | `381 … 409` |
+/// | its wrapped `.small()` disclosure below | to roughly `440` |
+/// | ⇒ the body's real extent | 425 pt, in a 360 pt viewport |
+///
+/// The Size chooser was therefore **below the fold on a freshly opened stamp
+/// dialog**, exactly as the operator's own three stamps were on 2026-09-10 and
+/// for the same reason: *a guessed size is a claim about the content, and the
+/// content changed under the claim.*
+///
+/// The arithmetic the new number comes from, so a reader can redo it:
+///
+/// ```text
+/// body viewport = WINDOW_PTS.y + STAMP_EXTRA_PTS + custom_extra
+///                 - 24 (the window's insets)
+///                 - 30 (the pinned footer and its spacing)
+///               = 186 + STAMP_EXTRA_PTS + custom_extra
+/// body needed   = 343 + custom_extra          (425 measured, less the 82 pt
+///                                              the two custom stamps and their
+///                                              category contributed)
+/// ⇒ STAMP_EXTRA_PTS ≥ 157
+/// ```
+///
+/// 190 is that floor with about 33 pt of slack, which buys the disclosure a
+/// third wrapped line on a narrow window. `custom_extra` cancels out of the
+/// inequality entirely — [`custom_extra_pts`] already pays for its own
+/// content — which is why one constant can be right for a library of nought
+/// stamps and a library of eleven.
+///
+/// ⚠ Deliberately generous, for [`STICKY_EXTRA_PTS`]' reason: over-tall costs
+/// the operator nothing on a dialog he can resize and drag, and under-tall
+/// costs him a control he cannot see.
 ///
 /// ⚠ Derived from what is being ADDED and stated as a constant, never
 /// measured from the `Ui` being laid out inside the window this sizes —
 /// `print/layout.rs`' rule and `Host::fit`'s, which this project has met
-/// three times as R128.
-const STAMP_EXTRA_PTS: f32 = 70.0;
+/// three times as R128. A number read off a TRACE is not that loop: nothing
+/// about the laid-out window can reach back and change a constant in this
+/// file, which is precisely the property [`CUSTOM_STAMP_ROW_PTS`] relies on
+/// too.
+const STAMP_EXTRA_PTS: f32 = 190.0;
 
 /// **How much taller the stamp's window opens for each CATEGORY of the
 /// operator's own stamps**, in points.
@@ -898,8 +949,10 @@ impl TextAnnotDialog {
     ///     conventional interaction, never invent one.** The convergence of a
     ///     product class is the specification, and a vertical stack of ten
     ///     size radios would be pdfcer's own invention.
-    ///   * It costs the window ~70 pt instead of ~250. See
-    ///     [`STAMP_EXTRA_PTS`].
+    ///   * It costs the window ~80 pt instead of ~250 — a heading, one combo
+    ///     row and a wrapped disclosure, measured at content y 360–440 in the
+    ///     driven run of 2026-09-11. See [`STAMP_EXTRA_PTS`], whose doc
+    ///     carries that measurement and the arithmetic it feeds.
     ///
     /// # ★ What the disclosure under it is, and what it is NOT
     ///
@@ -966,9 +1019,35 @@ impl TextAnnotDialog {
         // afterwards. The union with the cursor is taken because the heading
         // above belongs to the chooser, and a check looking for the words
         // should find them inside the region that names them.
-        crate::diag::ui_rect(
+        //
+        // ★★★ **`ui_rect_visible`, not `ui_rect` — 2026-09-11, and it is the
+        // third control in this one window to need it.**
+        //
+        // `Self::body` scrolls and `Self::footer` does not. A rectangle in the
+        // scrolled content is a position in the CONTENT, and past the bottom
+        // of the viewport it names a place on the screen that belongs to
+        // something else. The full-sweep run of 2026-09-11 published this
+        // region at content y 381–409 in a window whose content area ended at
+        // 402 and whose Add and Cancel sat at 378–402. A driven check pressed
+        // the chooser's declared centre, the press landed on a BUTTON, the
+        // dialog closed, and the check reported — accurately, and about
+        // entirely the wrong thing — that pressing the Size chooser opened no
+        // popup.
+        //
+        // The operator's version of the same fault is worse and quieter: egui
+        // gives a press to the top layer without complaint, so a control drawn
+        // under the pinned footer is unreachable **in silence**. `REGION_ACCEPT`
+        // was given this treatment on 2026-09-10 and `REGION_CUSTOM_STAMPS.{i}`
+        // on the same day, both from driven failures with the same shape.
+        //
+        // ⇒ In this window, any region a check may PRESS must be published
+        // through `ui_rect_visible`. Publishing it unconditionally does not
+        // describe a control the operator can use; it describes one he would
+        // have to scroll to, while asserting he need not.
+        crate::diag::ui_rect_visible(
             REGION_STAMP_SIZE,
             egui::Rect::from_min_max(top, ui.cursor().min).union(response.rect),
+            ui.clip_rect(),
         );
         // ★★★ **The control reports its own state, and this is a separate fact
         // from the size reaching the engine.**
@@ -1197,9 +1276,28 @@ impl TextAnnotDialog {
         // this function drew, headings included. A check asking *"are his
         // stamps offered"* reads this one; a check pressing a particular stamp
         // reads the ordinal-keyed ones above.
+        //
+        // ⚠ **`ui.cursor().min`, never `ui.cursor().max`.** `Ui::cursor` is
+        // the space still AVAILABLE, so in a vertical layout its `max` is
+        // `f32::INFINITY` — and until 2026-09-11 this line published
+        // `rect=[[12.0 278.0] - [408.0 inf]]` on every frame. That is not a
+        // rectangle; it is a region that contains every point below it,
+        // including the footer, the window's own edge and the desktop. The
+        // first reader of the 2026-09-11 sweep took the `inf` for a layout
+        // overflow and spent the investigation on the wrong subsystem.
+        //
+        // The cursor's `min` is where the next widget WOULD go, i.e. the
+        // bottom of everything drawn — which is the quantity this line always
+        // meant. The width comes from `min_rect`, the extent actually used.
+        //
+        // Not `ui_rect_visible`: this region is a census (*"are his stamps
+        // offered at all?"*), not a press target, and it legitimately extends
+        // past the viewport whenever the library is longer than the window.
+        // The ordinal-keyed rows above are the press targets and they are
+        // already clipped.
         crate::diag::ui_rect(
             REGION_CUSTOM_STAMPS,
-            egui::Rect::from_min_max(top, ui.cursor().max),
+            egui::Rect::from_min_max(top, egui::pos2(ui.min_rect().max.x, ui.cursor().min.y)),
         );
         true
     }

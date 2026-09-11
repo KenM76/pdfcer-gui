@@ -192,8 +192,16 @@ impl Check for UiScaleResizesTheChrome {
 struct Measured {
     /// Every region the application declared, by name.
     names: Vec<String>,
-    /// The client area, in points.
+    /// The client area, in points, **as the application published it** on its
+    /// `window-inner` line. Not derived from the OS window and an assumed
+    /// factor; see [`measure`].
     client: LRect,
+    /// `pixels_per_point` the application says it drew this frame at.
+    ppp: f32,
+    /// The OS client area in **physical pixels**, from `GetClientRect`. Kept
+    /// so the two numbers above can be calibrated against something the
+    /// application did not produce.
+    client_px: (u32, u32),
     /// Whether the application traced that it applied a scale at start-up.
     traced_initial: bool,
     /// Where the trace went, for the report.
@@ -254,28 +262,51 @@ fn measure(
         ))
     })?;
 
-    // ★ The client area in the APPLICATION's points, which is not the
-    // harness's points.
+    // ★★★ **The client area in points is READ from the application, never
+    // derived from the OS window and the scale this check asked for.**
     //
-    // `WindowFrame::scale` is the **OS** device-pixel ratio, measured from the
-    // window. The application's `ui-rect` events are in `egui` logical points,
-    // and egui's points-per-pixel is `native_pixels_per_point × zoom_factor`.
-    // So at a zoom factor of 1.8 a 1100 px window is 611 pt wide to the
-    // application, not 1100.
+    // The derivation this replaced was `client_px / (os_dpi_ratio ×
+    // requested_scale)`, and it is worth stating exactly what was wrong with
+    // it, because it looked like careful arithmetic and read like a
+    // measurement:
     //
-    // Getting this wrong would make assertion 2 fire on every region in a
-    // scaled window — every rect would appear to be outside a client area
-    // measured 1.8× too large — which is the most confident possible way to
-    // report a defect that is entirely the harness's arithmetic.
+    // * It divided by the scale under test. Assertion 0 then compared the two
+    //   runs and found them to differ by that scale — a conclusion the
+    //   arithmetic had already reached before any pixel was measured.
+    // * `WindowFrame` comes from `find_window_for_pid`, which returns the
+    //   **front-most** window of the process. On 2026-09-11 that was the O173
+    //   default-app offer, not the main window, so the numbers were the
+    //   dialog's. The check reported the UI-scale preference as never reaching
+    //   `Context::set_zoom_factor`. It had reached it. See
+    //   `sandbox::write_prefs` for how the offer got there.
+    // * Its report line hard-coded *"the OS window is 1100x800 px at both
+    //   scales"* — a premise it never measured and which is false whenever
+    //   eframe sizes the window in points.
+    //
+    // `window-inner` (published by `app::frame` step 0b¹) carries the root
+    // viewport's `screen_rect` in points and the `pixels_per_point` egui is
+    // actually drawing at. Both are properties of the frame that rendered,
+    // which is the thing under test.
+    //
+    // ⚠ It is the application reporting on itself, so `drive` calibrates it
+    // against `GetClientRect` before trusting it — an oracle built from the
+    // system under test needs an independent check, and this one has one.
     let frame = session.frame()?;
-    let points_per_pixel = frame.scale * scale;
-    let client = LRect::new(
-        crate::geom::Pt::new(0.0, 0.0),
-        crate::geom::Pt::new(
-            frame.client_size.0 as f32 / points_per_pixel,
-            frame.client_size.1 as f32 / points_per_pixel,
-        ),
-    );
+    let inner = trace.last("window-inner").ok_or_else(|| {
+        Error::new(
+            "the application published no `window-inner` line, so it never said how big its \
+             window is in points or what pixels-per-point it drew at. That line is emitted by \
+             `app::frame` step 0b¹ on every change; its total absence means either the build \
+             predates it or `PDFCER_DIAG` was not honoured. Reported as a SKIP rather than a \
+             scaling failure: a check that could not read the property has not measured it.",
+        )
+    })?;
+    let client = inner
+        .get_rect("rect")
+        .ok_or_else(|| Error::new("the `window-inner` line carries no parseable `rect=` field."))?;
+    let ppp = inner
+        .get_f32("ppp")
+        .ok_or_else(|| Error::new("the `window-inner` line carries no parseable `ppp=` field."))?;
     let traced_initial = trace.events("ui-scale-initial").next().is_some();
     let names = declared_names(&trace, ui_rect, "");
     // ★ The capture. Assertion 2 is about WHERE things landed, and a rect list
@@ -305,6 +336,8 @@ fn measure(
         Measured {
             names,
             client,
+            ppp,
+            client_px: frame.client_size,
             traced_initial,
             trace_path: path,
         },
@@ -370,14 +403,27 @@ fn write_preference(exe: &Path, scale: f32) -> Result<()> {
         .join("userdata");
     std::fs::create_dir_all(&dir)
         .map_err(|e| Error::new(format!("could not create {}: {e}", dir.display())))?;
-    let path = dir.join("preferences.txt");
-    // Only the one key. Every other preference is absent, which the loader
-    // treats as "use the default" — the same state a first run produces, so
-    // this isolates the variable under test from anything a previous check
-    // happened to leave behind.
-    let body = format!("# written by ui-verify's ui_scale check\nui_scale = {scale:.2}\n");
-    std::fs::write(&path, body)
-        .map_err(|e| Error::new(format!("could not write {}: {e}", path.display())))?;
+    // ★★★ Through `sandbox::write_prefs`, NOT `fs::write`.
+    //
+    // Only the one key of our own. Every other preference is absent, which the
+    // loader treats as "use the default" — the same state a first run
+    // produces, so this isolates the variable under test from anything a
+    // previous check happened to leave behind.
+    //
+    // ⚠ **With exactly one exception, and it was a recorded defect.** Until
+    // 2026-09-11 this function wrote the file directly, which silently
+    // destroyed the sandbox's `ask_default_app = false` seed and let the O173
+    // startup offer open in front of both launches. `find_window_for_pid`
+    // returns the front-most window, so this check then measured the OFFER's
+    // client area and reported that the UI-scale preference never reached
+    // `Context::set_zoom_factor`. It had. `sandbox::write_prefs` carries the
+    // suppression as a header so no caller can drop it by accident.
+    crate::sandbox::write_prefs(&dir, &format!("ui_scale = {scale:.2}\n")).map_err(|e| {
+        Error::new(format!(
+            "could not write the preferences in {}: {e}",
+            dir.display()
+        ))
+    })?;
     Ok(())
 }
 
@@ -419,10 +465,70 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let (base, base_trace) = measure(ctx, report, 1.0, "base")?;
     let (big, big_trace) = measure(ctx, report, LARGE, "large")?;
 
-    // --- assertion 0: `pixels_per_point` actually moved ---------------------
+    // --- assertion 0a: the harness's own oracle is calibrated ---------------
     //
-    // ★ Measured from the CLIENT AREA IN POINTS, not from a trace line, and
-    // the first version of this check got that wrong too.
+    // ★★★ **Before comparing the two runs, check that what the application
+    // says about itself agrees with the operating system.**
+    //
+    // `window-inner` is emitted by the program under test. An oracle built
+    // from the system under test proves nothing on its own: a build that
+    // computed `ppp` wrongly and drew wrongly would be self-consistent and
+    // would pass. The independent quantity is `GetClientRect`, which is the
+    // OS's count of physical pixels and which no bug in this application can
+    // move.
+    //
+    // `client_px / client_pt` must be `ppp`. If it is not, the failure is
+    // reported as exactly that — a disagreement between the application and
+    // the OS — rather than as a scaling defect, because at that point the
+    // check does not know which of the two numbers is wrong and saying so is
+    // the honest answer.
+    //
+    // The tolerance is loose (2%) because `screen_rect` is the viewport egui
+    // laid out in, which can differ from the client area by a sub-point
+    // rounding on a fractional DPI.
+    for (tag, m) in [("1.00", &base), ("1.80", &big)] {
+        if m.client.width() <= 1.0 {
+            return Ok(Some(format!(
+                "at ui_scale = {tag} the application published a window {:.1} pt wide, which \
+                 is not a window. Trace: {}.",
+                m.client.width(),
+                m.trace_path.display()
+            )));
+        }
+        let implied = m.client_px.0 as f32 / m.client.width();
+        report.note(format!(
+            "at ui_scale = {tag}: {} x {} px (OS) over {:.1} x {:.1} pt (application) = \
+             {implied:.3} px/pt, and the application reports ppp={:.3}",
+            m.client_px.0,
+            m.client_px.1,
+            m.client.width(),
+            m.client.height(),
+            m.ppp
+        ));
+        if (implied - m.ppp).abs() > m.ppp * 0.02 {
+            return Ok(Some(format!(
+                "at ui_scale = {tag} the application says it drew at {:.3} pixels per point, \
+                 but its own window is {} px wide and {:.1} pt wide, which is {implied:.3}. \
+                 Those cannot both be true. This is NOT a report that the scale preference \
+                 failed — it is a disagreement between the application's `window-inner` line \
+                 and `GetClientRect`, and until it is resolved neither number can be used to \
+                 judge the preference. The likeliest causes are a `window-inner` emitted from \
+                 a viewport that is not the root, and a harness measuring a window that is \
+                 not the one that drew the frame (`find_window_for_pid` returns the \
+                 FRONT-MOST window of the process, which is a dialog whenever one is open). \
+                 Trace: {}.",
+                m.ppp,
+                m.client_px.0,
+                m.client.width(),
+                m.trace_path.display()
+            )));
+        }
+    }
+
+    // --- assertion 0b: `pixels_per_point` actually moved --------------------
+    //
+    // ★ The property itself, not a report of it, and not the harness's own
+    // arithmetic restated.
     //
     // The obvious oracle is *"did the application trace that it changed the
     // zoom factor?"*. It is the wrong question, and the reason is a good one:
@@ -432,30 +538,45 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // traced nothing would then be the CORRECT build**, and asserting on the
     // line would fail the fix.
     //
-    // The client area in points is the property itself rather than a report of
-    // it. The OS window is the same 1100 x 800 px at both scales — the harness
-    // never resizes it — so if `pixels_per_point` moved by 1.8, the window
-    // must be 1.8x SMALLER in points. Nothing can fake that, and it holds
-    // whichever code path set the factor.
+    // `ppp` is what egui was drawing at, on the frame that drew. Calibrated
+    // above against the OS, so it cannot be a self-serving claim. If the
+    // preference reached `set_zoom_factor`, the ratio between the two runs is
+    // the scale factor; nothing else in the program can produce that.
+    //
+    // ⚠ **The window's size in POINTS is deliberately not the oracle.** It is
+    // reported below as corroboration and no more: whether it shrinks by the
+    // scale factor depends on whether eframe sized the OS window in points (in
+    // which case the pixel size grows instead and the point size is constant),
+    // and a check must not encode a guess about which. That guess is precisely
+    // what this assertion used to be.
     //
     // `ui-scale-initial` is still read, as corroboration and for the report.
+    let ppp_ratio = big.ppp / base.ppp;
     let client_ratio = base.client.width() / big.client.width();
     report.note(format!(
-        "client area {:.0}x{:.0} pt → {:.0}x{:.0} pt (the OS window is 1100x800 px at both \
-         scales, so a smaller area in POINTS is `pixels_per_point` having moved) — x{:.2}",
+        "pixels-per-point {:.3} → {:.3} = x{ppp_ratio:.2} (the property under test); the \
+         window went {:.0}x{:.0} pt → {:.0}x{:.0} pt and {}x{} px → {}x{} px, reported \
+         because the two are the same fact seen from either side",
+        base.ppp,
+        big.ppp,
         base.client.width(),
         base.client.height(),
         big.client.width(),
         big.client.height(),
-        client_ratio
+        base.client_px.0,
+        base.client_px.1,
+        big.client_px.0,
+        big.client_px.1,
     ));
-    if (client_ratio - LARGE).abs() > RATIO_TOLERANCE {
+    if (ppp_ratio - LARGE).abs() > RATIO_TOLERANCE {
         return Ok(Some(format!(
-            "the window is {client_ratio:.2}x smaller in points at ui_scale = {LARGE:.2} \
-             when it should be {LARGE:.2}x smaller. A ratio of 1.00 means \
-             `pixels_per_point` never moved, so the preference did not reach \
+            "pixels-per-point moved by x{ppp_ratio:.2} between ui_scale = 1.00 and \
+             ui_scale = {LARGE:.2}, when it should have moved by x{LARGE:.2}. A ratio of \
+             1.00 means it never moved, so the preference did not reach \
              `Context::set_zoom_factor` at all — the candidates are the start-up call in \
-             `lib.rs` and the per-frame hook in `app::frame` step 0b. Trace: {}.",
+             `lib.rs` and the per-frame hook in `app::frame` step 0b. The window in points \
+             went x{client_ratio:.2}, which is corroboration and not the assertion. \
+             Trace: {}.",
             big.trace_path.display()
         )));
     }

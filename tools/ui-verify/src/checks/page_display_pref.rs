@@ -124,6 +124,10 @@ const SECOND: &str = "fixtures/paragraph.pdf";
 /// Deleted before the first launch so every run starts from the shipped
 /// defaults. `D:/dev/rag/egui/` carries the rule this follows: *a driven check
 /// that mutates persisted state must normalise at the start.*
+/// ⚠ **`preferences.txt` is RESET, not deleted** — see `normalise`. It is
+/// named here because the tier it represents must be normalised; the mechanism
+/// differs because deleting it would take the sandbox's O173 suppression with
+/// it and open the default-app offer in front of this check's second launch.
 const STATE_FILES: [&str; 3] = ["page-display.txt", "preferences.txt", "layout.ron"];
 
 /// How long to wait for the window to go after `Alt+F4`, in settle frames.
@@ -174,6 +178,23 @@ fn normalise(exe: &Path, report: &mut CheckReport) {
     };
     let mut removed = Vec::new();
     for name in STATE_FILES {
+        // ★★★ The preferences file is RESET to the sandbox's seed rather than
+        // deleted, and the difference is not cosmetic.
+        //
+        // Deleting it removes `ask_default_app = false` along with everything
+        // else, and every absent key takes its compiled-in default — which for
+        // that one is `true`. The 2026-09-11 sweep found the O173 startup
+        // offer in this check's trace for exactly that reason: normalising the
+        // state under test also un-normalised a piece of state the sandbox had
+        // deliberately set. `sandbox::reset_prefs` gives the same fresh-install
+        // starting point for every key this check cares about while keeping the
+        // offer shut.
+        if name == "preferences.txt" {
+            if crate::sandbox::reset_prefs(&dir).is_ok() {
+                removed.push(name);
+            }
+            continue;
+        }
         let path = dir.join(name);
         if path.exists() && std::fs::remove_file(&path).is_ok() {
             removed.push(name);
@@ -184,7 +205,9 @@ fn normalise(exe: &Path, report: &mut CheckReport) {
     } else {
         report.note(format!(
             "normalised {} in {} — every run starts from the shipped defaults, or a previous \
-             run's preference would satisfy this check without the feature working",
+             run's preference would satisfy this check without the feature working \
+             (`preferences.txt` is reset to the sandbox seed rather than deleted, so the \
+             default-app offer stays shut)",
             driving::list_str(&removed),
             dir.display()
         ));

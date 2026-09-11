@@ -90,6 +90,63 @@ const BOX_PT: f64 = 220.0;
 /// input produces defects that do not exist.
 const SECOND_OFFSET_PT: f64 = 300.0;
 
+/// **Where the second stamp goes, given where the first one went and how big
+/// the page is.**
+///
+/// # ★★★ Why this is a function and not `target + SECOND_OFFSET_PT`
+///
+/// It was `target + SECOND_OFFSET_PT` on both axes until 2026-09-11, and the
+/// full sweep SKIPPED this check because of it:
+///
+/// > *document point (2520, 840) is outside the page's crop box (0, 0) —
+/// > (2383.937, 1683.78)*
+///
+/// The sweep's shared aim is `0,2000,320` on a 2384 x 1684 sheet, so adding
+/// 300 pt of offset and 220 pt of box ran 356 pt off the right-hand edge. The
+/// coordinate was never wrong in any absolute sense — it was wrong for the
+/// document the sweep happened to hand this check, and a check that works only
+/// for the aim points it was written beside is a check that stops running the
+/// day somebody re-aims the chunk it lives in.
+///
+/// ⚠ **A SKIP is not red.** This one sat in the sweep output reading like a
+/// deliberate exclusion, next to a `detects:` line describing a real O171
+/// regression nobody was watching for any more.
+///
+/// # ★★ What it does
+///
+/// Offsets **away from the nearer edge on each axis independently**, so the
+/// second box lands on paper wherever on the sheet the first one was:
+///
+///   * the offset is positive when `target + SECOND_OFFSET_PT + BOX_PT` still
+///     fits inside the page, and negative otherwise;
+///   * the result is clamped to `[0, page - BOX_PT]` on both axes, because a
+///     page smaller than `2 x (SECOND_OFFSET_PT + BOX_PT)` has nowhere that
+///     satisfies both directions and a clamp is a better answer than an
+///     off-page drag.
+///
+/// ★ The 300 pt separation is what stops the second drag from starting inside
+/// the first stamp, and the sign does not affect it — 300 pt left of the first
+/// box clears it exactly as well as 300 pt right of it, because the box is
+/// 220 pt wide. That is the property [`SECOND_OFFSET_PT`]'s own doc is about,
+/// and it is preserved by construction rather than by the clamp.
+#[must_use]
+fn second_point(target: DocPoint, page: PageGeometry) -> DocPoint {
+    fn axis(from: f64, extent: f64) -> f64 {
+        let forward = from + SECOND_OFFSET_PT;
+        let placed = if forward + BOX_PT <= extent {
+            forward
+        } else {
+            from - SECOND_OFFSET_PT
+        };
+        placed.clamp(0.0, (extent - BOX_PT).max(0.0))
+    }
+    DocPoint {
+        page: target.page,
+        x: axis(target.x, page.width_pt),
+        y: axis(target.y, page.height_pt),
+    }
+}
+
 /// The dialog's body.
 const BODY: &str = "dialog:text-annot";
 /// Add. `dialogs::textannot::REGION_ACCEPT`.
@@ -428,23 +485,67 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
 
     // --- E: the SECOND stamp, which is the whole point ---------------------
+    //
+    // ★★★ **The main window is raised first — and the reason this comment
+    // originally gave was WRONG, which is the more useful half. 2026-09-11.**
+    //
+    // The raise itself is cheap and correct: the dialog owned the foreground a
+    // moment ago, and a check that drives the canvas immediately after a
+    // viewport closes should say which window it means. Keep it.
+    //
+    // What is worth recording is the diagnosis it was added for, because that
+    // diagnosis was confidently written into this file and was false. The
+    // driven run showed `canvas-gesture started=0 dragging=0 stopped=0
+    // clicked=0 pos=1` followed by `pos=0` — the pointer appeared over the
+    // canvas once and then left, and no button event was ever seen. The
+    // conclusion drawn was *"a viewport closing is a foreground change, and a
+    // synthetic press during a foreground change is swallowed"*. Plausible,
+    // general-sounding, and it survived one round of fixing because adding the
+    // raise did not change the outcome — which should have killed it and did
+    // not.
+    //
+    // The instrument that settled it was three `eprintln!`s inside [`place`],
+    // printing the doc point, the window point, the desktop point and the
+    // frame. They said the aim was **exactly right**: doc (1700, 620) → window
+    // (619.7, 500.2) → desktop (1408, 571), against a client at (788, 71).
+    // The press was delivered to the pixel it was aimed at. Something else
+    // owned that pixel: an Outlook *"Internet Email"* dialog covering the
+    // right-hand half of the target window, which the sibling check
+    // `stamp_size_reaches_the_engine` named by SKIPPING in the same minute.
+    //
+    // ⇒ The defect was in `input::Driver::drag`, which never asked
+    // `confirm_uncovered` — the guard `click_at` has had since 2026-08-27. It
+    // asks now, and this failure mode reports as a SKIP naming the offending
+    // window instead of as an accusation against the stamp tool.
+    //
+    // ★★ The standing lesson, earning yet another instance: **a driven failure
+    // is a claim about the check too**, and the way to test that claim is to
+    // print what the check actually did rather than to reason about what it
+    // probably did. Two hypotheses were written into this file before one
+    // `eprintln!` disproved both in a single run.
+    session.raise();
+    session.settle(12);
     arm_stamp(&session, &driver, ui_rect)?;
-    let second = DocPoint {
-        page: target.page,
-        x: target.x + SECOND_OFFSET_PT,
-        y: target.y + SECOND_OFFSET_PT,
-    };
+    let second = second_point(target, page);
     report.note(format!(
-        "placing a second stamp {SECOND_OFFSET_PT:.0} pt away from the first, which clears its \
-         rectangle — a drag that started inside the first stamp would be read as grabbing it"
+        "placing a second stamp {SECOND_OFFSET_PT:.0} pt away from the first at \
+         ({:.0}, {:.0}), which clears its rectangle — a drag that started inside the first \
+         stamp would be read as grabbing it",
+        second.x, second.y
     ));
     place(&session, &driver, ctx, page, second)?;
     let trace = session.trace()?;
     if trace.events("text-annot-open").count() < 2 {
         return Ok(Some(
             "the second drag traced no further `text-annot-open` line, so the dialog never \
-             opened a second time. Either the tool did not re-arm or the drag landed on the \
-             first stamp instead of on empty paper."
+             opened a second time.\n\n★ Read the trace before believing any of the obvious \
+             causes. On 2026-09-11 this exact sentence was produced by a foreign window \
+             covering the target, with the tool still armed and the two boxes nowhere near \
+             each other; `input::Driver::drag` now refuses that case by name, so it should \
+             not recur. What remains: the tool did not re-arm (look for a second \
+             `markup-tool` line retiring it), or the drag landed on the first stamp (compare \
+             the two boxes), or the press was delivered and the canvas ignored it (look for \
+             `canvas-gesture started=1`)."
                 .to_owned(),
         ));
     }

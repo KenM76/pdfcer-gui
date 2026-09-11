@@ -192,6 +192,34 @@ impl Rung {
         }
     }
 
+    /// The file-name stem this rung's artefacts are written under.
+    ///
+    /// ★★★ **One per rung, and the reason is a recorded failure.** The three
+    /// checks in this module are three `Check` implementations over one
+    /// `drive` body, and until 2026-09-11 that body named its trace
+    /// `deeper_rung_delete.trace.txt` — one literal, shared by all three.
+    /// They launch three separate processes, so the third to run overwrote the
+    /// first two, and every failure message printed an `artifact:` line
+    /// pointing at **another check's run**.
+    ///
+    /// That is worse than having no artefact. A trace from the wrong process
+    /// is internally consistent, looks exactly like evidence, and reads as a
+    /// coherent story about the wrong thing: the 2026-09-11 sweep's point-rung
+    /// failure was first diagnosed from the label rung's trace, and the
+    /// diagnosis was confidently wrong in both directions at once.
+    ///
+    /// ⇒ **An artefact path must be a function of the check, never of the
+    /// module.** `tools/gates/check-artifact-paths.sh` enforces that no two
+    /// roster entries can collide on one, because a rule described in prose is
+    /// a rule that will be approximated.
+    const fn stem(self) -> &'static str {
+        match self {
+            Self::Label => "deeper_rung_delete.label",
+            Self::Line => "deeper_rung_delete.line",
+            Self::Point => "deeper_rung_delete.point",
+        }
+    }
+
     /// The operator's word for the thing being removed, for failure prose.
     const fn thing(self) -> &'static str {
         match self {
@@ -418,7 +446,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport, rung: Rung) -> Result<Opt
     };
 
     // --- launch -------------------------------------------------------------
-    let mut spec = LaunchSpec::new(&exe, ctx.out("deeper_rung_delete.trace.txt"));
+    let mut spec = LaunchSpec::new(&exe, ctx.out(&format!("{}.trace.txt", rung.stem())));
     spec.pdf = Some(pdf.clone());
     spec.env.push((
         ctx.profile.diag_env.0.to_owned(),
