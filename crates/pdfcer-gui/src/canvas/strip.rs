@@ -170,15 +170,18 @@ pub(super) fn page_scroll_offset(
     let size = strip.size();
     // ★ The rect is STRIP space and the answer is a SCROLL offset; since O23
     // they differ by the pasteboard. `strip_to_scroll` is the one conversion.
+    let overhang = (doc.pasteboard_overhang.x, doc.pasteboard_overhang.y);
     let x = crate::canvas::geometry::strip_to_scroll(
         rect.center().x - viewport.0 / 2.0,
         size.x,
         viewport.0,
+        overhang.0,
     );
     let y = crate::canvas::geometry::strip_to_scroll(
         rect.min.y - viewer::strip::ROW_GAP,
         size.y,
         viewport.1,
+        overhang.1,
     );
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed in the UI
@@ -275,8 +278,18 @@ pub(super) fn track_current_page(
     // construction, so leaving `page_index` alone is both correct and cheap.
     let view_rect = Rect::from_min_size(
         Pos2::new(
-            geometry::scroll_to_strip(scroll_offset.0, display_size.x, viewport_size.x),
-            geometry::scroll_to_strip(scroll_offset.1, display_size.y, viewport_size.y),
+            geometry::scroll_to_strip(
+                scroll_offset.0,
+                display_size.x,
+                viewport_size.x,
+                doc.pasteboard_overhang.x,
+            ),
+            geometry::scroll_to_strip(
+                scroll_offset.1,
+                display_size.y,
+                viewport_size.y,
+                doc.pasteboard_overhang.y,
+            ),
         ),
         viewport_size,
     );
@@ -375,6 +388,7 @@ mod tests {
             rect.min.y - crate::viewer::strip::ROW_GAP,
             strip.size().y,
             viewport.1,
+            0.0,
         );
         assert!(
             (offset.y - want).abs() < 0.01,
@@ -430,7 +444,7 @@ mod tests {
             (offset.x, size.x, viewport.0),
             (offset.y, size.y, viewport.1),
         ] {
-            let range = (crate::canvas::geometry::content_extent(extent, v) - v).max(0.0);
+            let range = (crate::canvas::geometry::content_extent(extent, v, 0.0) - v).max(0.0);
             assert!(
                 (0.0..=range).contains(&got),
                 "{got} is outside the scrollable range 0..={range}"

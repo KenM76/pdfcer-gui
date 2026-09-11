@@ -755,6 +755,39 @@ pub struct OpenDoc {
     /// than a frame late — which is the difference between panning that
     /// tracks the hand and panning that lags it.
     pub last_scroll_offset: egui::Vec2,
+    /// ★★★ **How far the drawn content reaches past the sheet, in LOGICAL
+    /// SCREEN POINTS** — the pasteboard's overhang term, published once per
+    /// canvas frame.
+    ///
+    /// `(0.0, 0.0)` means *"nothing hangs off the sheet, or nobody has
+    /// decomposed the page yet"*, which is the state of every ordinary
+    /// document and gives exactly the original one-viewport pasteboard.
+    ///
+    /// # Why it lives on the document rather than being recomputed
+    ///
+    /// Eight call sites across `canvas::{present, offset, deep, fit, strip}`
+    /// hand it to [`crate::canvas::geometry`], and **they must all be handed
+    /// the same number**. Two spellings of the pasteboard is precisely the
+    /// defect O23 spent three attempts on: the scroll offset and the strip
+    /// offset are different spaces, they differ by the pasteboard, and a
+    /// pasteboard that disagreed between the two made the canvas draw nothing
+    /// at all. One field, written once at the top of the frame, read
+    /// everywhere, is the mechanical guarantee that cannot drift.
+    ///
+    /// # What writes it
+    ///
+    /// `canvas::present`, from [`crate::render::halo::overhang`] — the
+    /// content bounding box the halo raster already uses — multiplied by this
+    /// frame's zoom, because the geometry functions work in screen points
+    /// while the overhang is a fact about the drawing.
+    ///
+    /// ★ It is read from [`Self::content_bounds_if_known`], which **peeks and
+    /// never builds**: a canvas that forced a decomposition would pay 469 ms
+    /// on the operator's benchmark sheet after every content edit. So on the
+    /// first frame after opening a large drawing this is zero and one frame
+    /// later it is not — the same honest lateness the halo raster has, and for
+    /// the same reason.
+    pub pasteboard_overhang: egui::Vec2,
 
     /// ★★ **Which page-space rectangle to rasterize, and for which page** —
     /// `OPERATOR_REQUESTS.md` O24's region tier.
@@ -1208,6 +1241,7 @@ impl OpenDoc {
             content_generation: std::cell::Cell::new(None),
             objects_traced_for: None,
             last_scroll_offset: egui::Vec2::ZERO,
+            pasteboard_overhang: egui::Vec2::ZERO,
             // Whole page until the canvas says otherwise.
             raster_region: None,
             deep_anchor: None,

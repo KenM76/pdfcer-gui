@@ -35,6 +35,7 @@ fn panning_moves_the_content_opposite_the_offset_so_the_page_follows_the_hand() 
         (30.0, -20.0),
         (1600.0, 1600.0),
         (800.0, 800.0),
+        (0.0, 0.0),
     );
     assert_eq!(
         out,
@@ -48,7 +49,13 @@ fn an_unscrollable_canvas_refuses_to_pan_rather_than_rubber_banding() {
     // The fit-page case: page smaller than the viewport, offset pinned.
     // Before the clamp this returned -50 and the page visibly slid, then
     // snapped back when the drag ended.
-    let out = pan_offset((0.0, 0.0), (50.0, 50.0), (600.0, 600.0), (800.0, 800.0));
+    let out = pan_offset(
+        (0.0, 0.0),
+        (50.0, 50.0),
+        (600.0, 600.0),
+        (800.0, 800.0),
+        (0.0, 0.0),
+    );
     assert_eq!(out, (0.0, 0.0));
 }
 
@@ -75,6 +82,7 @@ fn panning_stops_a_whole_viewport_past_the_page_edge() {
         (-500.0, 0.0),
         (1000.0, 1000.0),
         (800.0, 800.0),
+        (0.0, 0.0),
     );
     assert_eq!(
         out.0, 1200.0,
@@ -87,10 +95,11 @@ fn panning_stops_a_whole_viewport_past_the_page_edge() {
         (-500.0, 0.0),
         (1000.0, 1000.0),
         (800.0, 800.0),
+        (0.0, 0.0),
     );
     assert_eq!(
         far.0,
-        content_extent(1000.0, 800.0) - 800.0,
+        content_extent(1000.0, 800.0, 0.0) - 800.0,
         "there is still an end; it is the end of the PASTEBOARD, not of the page"
     );
 }
@@ -105,10 +114,10 @@ fn any_page_corner_can_be_brought_to_the_centre_and_to_the_opposite_corner() {
     // A page smaller than the window — the hard case, because there is no
     // scrolling to be had from the page's own size.
     let (d, v) = (200.0_f32, 800.0_f32);
-    let range = (content_extent(d, v) - v).max(0.0);
+    let range = (content_extent(d, v, 0.0) - v).max(0.0);
 
     // Where the strip's own origin sits inside the content.
-    let origin = strip_margin(d, v);
+    let origin = strip_margin(d, v, 0.0);
 
     // "the corner of the page to the center of the screen": the offset that
     // puts the strip's top-left half a viewport in from the view's left.
@@ -214,9 +223,16 @@ fn the_offset_never_leaves_the_scrollable_range() {
     // failure the original test was written for and it must still be
     // impossible.
     let (v, d) = (800.0_f32, 400.0_f32);
-    let range = content_extent(d, v) - v;
+    let range = content_extent(d, v, 0.0) - v;
     for probe in [out.0, -5000.0, 0.0, 5000.0] {
-        let reached = strip_offset((probe, probe), (0.0, 0.0), (d, d), (d, d), (v, v));
+        let reached = strip_offset(
+            (probe, probe),
+            (0.0, 0.0),
+            (d, d),
+            (d, d),
+            (v, v),
+            (0.0, 0.0),
+        );
         assert!(
             reached.0 >= 0.0 && reached.0 <= range,
             "{probe} reached {reached:?}, outside [0, {range}]"
@@ -229,8 +245,16 @@ fn the_offset_never_leaves_the_scrollable_range() {
     // the whole of O24e.
     let (v2, d2) = (800.0_f32, 1000.0_f32);
     let solved = zoom_anchor_offset((900.0, 0.0), (500.0, 500.0), (d2, d2), (v2, v2), (5.0, 0.0)).0;
-    let reached = strip_offset((solved, 0.0), (0.0, 0.0), (d2, d2), (d2, d2), (v2, v2)).0;
-    let range2 = content_extent(d2, v2) - v2;
+    let reached = strip_offset(
+        (solved, 0.0),
+        (0.0, 0.0),
+        (d2, d2),
+        (d2, d2),
+        (v2, v2),
+        (0.0, 0.0),
+    )
+    .0;
+    let range2 = content_extent(d2, v2, 0.0) - v2;
     assert!(
         reached <= range2 + 0.01,
         "offset {reached} exceeds the maximum scroll {range2}"
@@ -242,7 +266,7 @@ fn the_offset_never_leaves_the_scrollable_range() {
 ///
 /// This test used to assert that [`zoom_anchor_offset`] saturated at
 /// `display - viewport`, the range a page has when the scroll content is
-/// the page and nothing else. The pasteboard (O23) made that false, and
+/// the page and nothing else. The pasteboard (O23, 0.0) made that false, and
 /// the stale clamp became `OPERATOR_REQUESTS.md` **O24e**: at a fit-page
 /// zoom the page is no larger than the viewport, the range collapsed to
 /// `[0, 0]`, and every zoom threw away whatever the operator had panned to.
@@ -278,7 +302,15 @@ fn the_scroll_offset_saturates_at_the_pasteboard_edge_not_at_the_page_edge() {
     // number it returns is in a different space and is not expected to
     // equal the solve. What matters is that it was not truncated to the
     // page's 200 — the position the operator panned to is still reachable.
-    let reached = strip_offset((solved, 0.0), (0.0, 0.0), (d1, d1), (d1, d1), (v, v)).0;
+    let reached = strip_offset(
+        (solved, 0.0),
+        (0.0, 0.0),
+        (d1, d1),
+        (d1, d1),
+        (v, v),
+        (0.0, 0.0),
+    )
+    .0;
     assert!(
         reached > d1 - v,
         "reached {reached}, which is inside the page's own range of {} — the pasteboard \
@@ -287,11 +319,19 @@ fn the_scroll_offset_saturates_at_the_pasteboard_edge_not_at_the_page_edge() {
     );
 
     // 3. The saturation itself still happens — at the pasteboard's edge.
-    let far = content_extent(d1, v) * 4.0;
-    let limit = strip_offset((far, 0.0), (0.0, 0.0), (d1, d1), (d1, d1), (v, v)).0;
+    let far = content_extent(d1, v, 0.0) * 4.0;
+    let limit = strip_offset(
+        (far, 0.0),
+        (0.0, 0.0),
+        (d1, d1),
+        (d1, d1),
+        (v, v),
+        (0.0, 0.0),
+    )
+    .0;
     assert_eq!(
         limit,
-        content_extent(d1, v) - v,
+        content_extent(d1, v, 0.0) - v,
         "an absurd offset must saturate at the end of the scrollable content"
     );
 }
@@ -394,10 +434,10 @@ fn a_non_finite_placement_falls_back_to_the_origin() {
 fn the_strip_bridge_is_a_pure_pasteboard_shift_for_a_single_page() {
     let v = (800.0_f32, 600.0_f32);
     for &page in &[(400.0_f32, 300.0_f32), (1600.0, 2400.0), (800.0, 600.0)] {
-        let pad = (pasteboard(v.0), pasteboard(v.1));
+        let pad = (pasteboard(v.0, 0.0), pasteboard(v.1, 0.0));
         let range = (
-            (content_extent(page.0, v.0) - v.0).max(0.0),
-            (content_extent(page.1, v.1) - v.1).max(0.0),
+            (content_extent(page.0, v.0, 0.0) - v.0).max(0.0),
+            (content_extent(page.1, v.1, 0.0) - v.1).max(0.0),
         );
         for &off in &[(0.0_f32, 0.0_f32), (120.0, 55.0), (900.0, 1800.0)] {
             // ★ Going OUT: the page-local offset gains exactly one
@@ -411,7 +451,7 @@ fn the_strip_bridge_is_a_pure_pasteboard_shift_for_a_single_page() {
                 (off.1 + pad.1).clamp(0.0, range.1),
             );
             assert_eq!(
-                strip_offset(off, (0.0, 0.0), page, page, v),
+                strip_offset(off, (0.0, 0.0), page, page, v, (0.0, 0.0)),
                 expected,
                 "page {page:?} offset {off:?}"
             );
@@ -421,7 +461,7 @@ fn the_strip_bridge_is_a_pure_pasteboard_shift_for_a_single_page() {
             // bite. **This is the property that matters** — the pad must
             // not accumulate, or every frame would drift one viewport
             // further into blank paper.
-            let back = page_local_offset(expected, (0.0, 0.0), page, page, v);
+            let back = page_local_offset(expected, (0.0, 0.0), page, page, v, (0.0, 0.0));
             if expected.0 > 0.0 && expected.0 < range.0 {
                 assert!(
                     (back.0 - off.0).abs() < 0.001,
@@ -476,7 +516,7 @@ fn the_strip_bridge_preserves_where_a_page_point_lands_on_screen() {
                                 - off.1,
                         );
                         // Where the single-page solves think it is.
-                        let local = page_local_offset(off, origin, strip, page, v);
+                        let local = page_local_offset(off, origin, strip, page, v, (0.0, 0.0));
                         let via_bridge = anchor_screen_pos(frac, local, page, v);
                         assert!(
                             (via_bridge.0 - truth.0).abs() < 1e-2
@@ -542,7 +582,7 @@ fn measuring_the_offset_from_the_drawn_rect_matches_the_solved_one() {
                             + v.1 * PASTEBOARD_FRACTION
                             + origin.1,
                     );
-                    let solved = page_local_offset(off, origin, strip, page, v);
+                    let solved = page_local_offset(off, origin, strip, page, v, (0.0, 0.0));
                     let measured = offset_from_drawn(page_min, viewport_min, page, v);
                     assert!(
                         (measured.0 - solved.0).abs() < 1e-2
@@ -590,9 +630,9 @@ fn the_strip_origin_is_the_plain_expression_wherever_that_expression_is_exact() 
     for &vp in &[600.0_f32, 619.0, 1000.0] {
         for &display in &[100.0_f32, 599.0, 600.0, 1200.0, 40_000.0] {
             for &avail in &[400.0_f32, 600.0, 5_000.0] {
-                let outer = content_extent(display, vp).max(avail);
+                let outer = content_extent(display, vp, 0.0).max(avail);
                 let plain = (outer - display) / 2.0;
-                let symbolic = strip_origin_offset(display, vp, avail);
+                let symbolic = strip_origin_offset(display, vp, avail, 0.0);
                 assert!(
                     (plain - symbolic).abs() < 1e-3,
                     "display={display} vp={vp} avail={avail}: plain {plain} vs symbolic \n                         {symbolic}"
@@ -704,8 +744,8 @@ fn the_strip_bridge_round_trips_within_the_scroll_range() {
     let page = (612.0_f32, 792.0_f32);
     let origin = (0.0_f32, 1200.0_f32);
     for &off in &[(0.0_f32, 0.0_f32), (0.0, 1500.0), (0.0, 3400.0)] {
-        let local = page_local_offset(off, origin, strip, page, v);
-        let back = strip_offset(local, origin, strip, page, v);
+        let local = page_local_offset(off, origin, strip, page, v, (0.0, 0.0));
+        let back = strip_offset(local, origin, strip, page, v, (0.0, 0.0));
         assert!(
             (back.0 - off.0).abs() < 1e-2 && (back.1 - off.1).abs() < 1e-2,
             "{off:?} round-tripped to {back:?}"
@@ -721,26 +761,26 @@ fn the_return_leg_clamps_and_survives_a_nan() {
     let v = (800.0_f32, 600.0_f32);
     let strip = (612.0_f32, 4000.0_f32);
     let page = (612.0_f32, 792.0_f32);
-    let out = strip_offset((99_000.0, 99_000.0), (0.0, 0.0), strip, page, v);
+    let out = strip_offset((99_000.0, 99_000.0), (0.0, 0.0), strip, page, v, (0.0, 0.0));
     // ★ The ceiling is the CONTENT's range, not the strip's — O23. On x this
     // used to be 0.0, because a strip narrower than the viewport had nowhere
     // to scroll; there is now a pasteboard either side of it.
     assert_eq!(
         out,
         (
-            content_extent(strip.0, v.0) - v.0,
-            content_extent(strip.1, v.1) - v.1
+            content_extent(strip.0, v.0, 0.0) - v.0,
+            content_extent(strip.1, v.1, 0.0) - v.1
         )
     );
     assert!(out.0 > 0.0, "a narrow page must still be pannable sideways");
-    let out = strip_offset((-9_000.0, -9_000.0), (0.0, 0.0), strip, page, v);
+    let out = strip_offset((-9_000.0, -9_000.0), (0.0, 0.0), strip, page, v, (0.0, 0.0));
     assert_eq!(out, (0.0, 0.0));
     assert_eq!(
-        strip_offset((f32::NAN, 100.0), (0.0, 0.0), strip, page, v).0,
+        strip_offset((f32::NAN, 100.0), (0.0, 0.0), strip, page, v, (0.0, 0.0)).0,
         0.0
     );
     assert_eq!(
-        page_local_offset((f32::NAN, 100.0), (0.0, 0.0), strip, page, v).0,
+        page_local_offset((f32::NAN, 100.0), (0.0, 0.0), strip, page, v, (0.0, 0.0)).0,
         0.0
     );
 }
@@ -900,4 +940,120 @@ fn the_opening_seed_centres_a_large_page_and_is_a_no_op_for_a_small_one() {
     // Fits: identical to the literal the seed used before O78.
     assert_eq!(centre((400.0, 300.0)), (0.0, 0.0));
     assert_eq!(centre(v), (0.0, 0.0));
+}
+
+// ---- the pasteboard's overhang term — O23's second half ------------
+//
+// The operator, 2026-09-11: *"how do I view and edit objects that are off of
+// the page?"* The first half of O23 made them reachable and visible; these
+// pin the half that makes them **editable**, which means zoomable-to.
+//
+// Every number below is the one measured on the real canvas: a 470 px-wide
+// viewport, a 200 pt sheet, and an object 100 pt off its left edge.
+
+/// The arithmetic of the old defect, stated so it cannot come back silently.
+///
+/// With a fixed one-viewport pasteboard, the slack is a count of **screen**
+/// pixels, so the slice of the **drawing** it covers is `viewport / zoom` and
+/// shrinks with every notch. Centring a point 100 pt off the sheet needs
+/// `pasteboard ≥ 100 × zoom + viewport / 2`; with `pasteboard = viewport`
+/// that is `zoom ≤ 235 / 100`, i.e. **235 %**. Above it the object walks off
+/// the screen while the operator zooms toward it.
+#[test]
+fn a_fixed_pasteboard_stops_reaching_off_page_content_at_a_calculable_zoom() {
+    const V: f32 = 470.0;
+    const OFF_PTS: f32 = 100.0;
+    let ceiling = (V / 2.0) / OFF_PTS; // 2.35
+    for (zoom, reachable) in [(2.0_f32, true), (2.3, true), (2.4, false), (10.0, false)] {
+        let over_px = OFF_PTS * zoom;
+        // The OLD rule: no overhang term at all.
+        let got = pasteboard(V, 0.0) >= over_px + V / 2.0;
+        assert_eq!(
+            got, reachable,
+            "at {zoom}x (ceiling {ceiling}) a fixed pasteboard reaching={got}"
+        );
+    }
+}
+
+/// ★★★ **The fix: the off-page object is centreable at every zoom.**
+///
+/// `strip_offset` is the one function whose answer actually reaches the
+/// `ScrollArea`, and it is the one that clamps — so a solve that is thrown
+/// away by the clamp is indistinguishable, to the operator, from a solve that
+/// was never made. This drives the whole chain: the offset that would put the
+/// off-page point at the viewport's centre must survive the clamp unchanged.
+///
+/// Single page, so `page_origin` is `(0,0)` and `strip == page_display`; that
+/// is the geometry the driven check `an_object_off_the_page_is_actually_drawn`
+/// exercises, and the same shape as `off-page-object.pdf`.
+#[test]
+fn an_object_off_the_page_can_be_centred_at_every_zoom() {
+    const V: f32 = 470.0;
+    const PAGE_PTS: f32 = 200.0;
+    const OFF_PTS: f32 = 100.0;
+    for zoom in [0.5_f32, 1.0, 2.35, 5.0, 20.0, 100.0, 800.0] {
+        let d = PAGE_PTS * zoom;
+        let over = (OFF_PTS * zoom, 0.0);
+        // The point is OFF the page, so its page-local x is negative; the
+        // offset that centres it is that, less half a viewport.
+        let want_local = (-OFF_PTS * zoom - V / 2.0, 0.0);
+        let got = strip_offset(want_local, (0.0, 0.0), (d, d), (d, d), (V, V), over);
+        // Round-tripping through the inverse is the honest check: it says the
+        // clamp did not eat the answer, in the space the answer was asked in.
+        let back = page_local_offset(got, (0.0, 0.0), (d, d), (d, d), (V, V), over);
+        assert!(
+            (back.0 - want_local.0).abs() < 0.01,
+            "at {zoom}x the clamp moved the centring offset: wanted {}, got {}",
+            want_local.0,
+            back.0
+        );
+    }
+}
+
+/// The `max` in [`pasteboard`] keeps the operator's one-viewport slack
+/// whenever it is the larger, so **every document with nothing off the sheet
+/// is byte for byte unchanged**. This is the regression guard for the 99 %
+/// case, and it is the reason the fix could ship without re-driving every
+/// zoom, pan and fit check in the suite.
+#[test]
+fn a_page_with_nothing_off_it_keeps_exactly_the_old_pasteboard() {
+    for v in [1.0_f32, 470.0, 578.3, 2000.0] {
+        assert_eq!(pasteboard(v, 0.0), v * PASTEBOARD_FRACTION);
+        // A small overhang is still smaller than the old slack, so it is the
+        // old slack that wins — the term only bites once the content genuinely
+        // reaches further than a viewport.
+        assert_eq!(pasteboard(v, v / 4.0), v * PASTEBOARD_FRACTION);
+    }
+}
+
+/// A non-finite or negative overhang is ignored rather than propagated, on the
+/// same rule every other input in this module follows: a frame measured before
+/// layout must not be able to produce a NaN scroll content.
+#[test]
+fn nonsense_overhang_falls_back_to_the_fixed_pasteboard() {
+    for bad in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY, -1.0, -1e30] {
+        assert_eq!(pasteboard(470.0, bad), 470.0 * PASTEBOARD_FRACTION);
+        assert!(content_extent(1000.0, 470.0, bad).is_finite());
+    }
+}
+
+/// ★★ The bound. The overhang term is multiplied by the zoom, so left alone it
+/// would push the scroll content past the point where an `f32` offset stops
+/// addressing every screen pixel — while the strip, which is what the `f64`
+/// deep tier keys its hand-over on, was still below it. The cap is a quarter
+/// of that constant, so the content extent stays inside one and a half times
+/// the strip's own ceiling however far the content reaches.
+#[test]
+fn the_pasteboard_is_bounded_by_the_tier_the_deep_model_hands_over_at() {
+    let cap = crate::viewer::ceiling::SUB_PIXEL_CONTENT_EXTENT / 4.0;
+    for over in [1e6_f32, 1e9, 1e30] {
+        assert!(
+            pasteboard(470.0, over) <= cap,
+            "an overhang of {over} produced a pasteboard of {}",
+            pasteboard(470.0, over)
+        );
+    }
+    // And the cap is not a floor: an overhang under it is honoured exactly.
+    let modest = cap / 2.0;
+    assert_eq!(pasteboard(470.0, modest), modest + 470.0 / 2.0);
 }

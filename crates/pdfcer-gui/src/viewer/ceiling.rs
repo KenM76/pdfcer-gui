@@ -41,7 +41,13 @@ use super::{MAX_ZOOM, MIN_ZOOM, max_zoom_for_page};
 /// Letter page drew at a content extent of 20.5 billion — a 2,048 px step —
 /// and stopped at 41 billion. Drawing is therefore NOT the limit that matters;
 /// usability gives out four orders of magnitude earlier, and this is that point.
-pub(super) const SUB_PIXEL_CONTENT_EXTENT: f32 = 1_048_576.0;
+/// ★ `pub` since 2026-09-11, because [`crate::canvas::geometry`] bounds the
+/// pasteboard against it. The pasteboard grows with the zoom now (an overhang
+/// measured in points, multiplied by the scale), so without a bound tied to
+/// THIS number the scroll content could pass the sub-pixel point while the
+/// strip itself was still comfortably below the tier boundary — the position
+/// model would have handed over late, and silently. One constant, both uses.
+pub const SUB_PIXEL_CONTENT_EXTENT: f32 = 1_048_576.0;
 
 // ★★★ 2^24 -> 2^20 on 2026-08-28. `OPERATOR_REQUESTS.md` **O49**, answered
 // "yes to all three".

@@ -13695,6 +13695,7 @@ does.
 | **A** free scrolling | a pasteboard one viewport deep on every side, so any corner of the sheet can be brought to any corner of the screen | `scrolling_far_keeps_the_canvas_its_pointer_input`, `a_pan_keeps_the_fit_and_the_resize_keeps_the_position` |
 | **B** off-page content | **reach** — the margin takes a press instead of only a hover | `a_band_dragged_into_the_margin_reaches_an_object_off_the_page`, `a_band_that_starts_in_the_margin_reaches_an_object_off_the_page` |
 | **B** off-page content | **see** — the pasteboard is painted from the same raster as the sheet, so an object past the edge is visible rather than merely selectable | `an_object_off_the_page_is_actually_drawn` |
+| **B** off-page content | **edit** — an object past the edge can be **zoomed in on**, which is what editing one means | `an_object_off_the_page_survives_being_zoomed_in_on` |
 
 ★★ **"Reachable" turned out to be two requirements wearing one word**, and only
 the first was in the original analysis. An object you can select but cannot see
@@ -13702,6 +13703,69 @@ satisfies every sentence in this row and none of his intent — his complaint wa
 *"when I do I can't get them back"*, and you cannot get back a thing you cannot
 find. The *see* half was built on 2026-09-10 after the *reach* half made the
 gap obvious.
+
+### ★★★ The third verb — **edit** — and the two defects that stood between it and him
+
+**Asked again 2026-09-11:** *"how do I view and edit objects that are off of the
+page? we added this feature but I didn't see how to enable it."*
+
+Reach and see had shipped. **Edit had not**, and the answer to *"how do I enable
+it"* was that there was nothing to enable — the shell would not let him magnify
+an off-page object, and every editing gesture this program has is performed at a
+magnification where you can see what you are doing.
+
+Two independent defects, measured on 2026-09-11 by the driven check named in the
+table above. Neither was visible to a unit test, to a gate, or to the three
+sibling off-page checks — **all three of those run at 100%**, and both defects
+need a magnification no other check in the suite reaches.
+
+**1 — the pasteboard was a fixed count of SCREEN pixels.** `viewport × 1.0`, so
+the slice of the **drawing** it covered was `viewport / zoom` and shrank at every
+notch. Centring a point `k` points off the sheet needs
+`pasteboard ≥ k × zoom + viewport / 2`; with `pasteboard = viewport` that caps out
+at `zoom ≤ viewport / 2k` — **645%** on the measured 1290 pt canvas with 100 pt of
+overhang, and past **1290%** the object could not be reached at all. ★★ It
+presented as the zoom anchor being broken and the anchor was correct throughout:
+the anchor solved the right offset and `geometry::strip_offset`'s **clamp** threw
+it away, because the clamp is `content_extent − viewport` and `content_extent`
+was built from the fixed slack. The fix makes the slack rise with the content:
+`max(viewport × FRACTION, min(overhang × zoom + viewport / 2, cap))`, published
+once per frame onto `OpenDoc::pasteboard_overhang` because eight geometry call
+sites read it and two spellings of the pasteboard is the defect this row has
+already spent three attempts on.
+
+**2 — ★★★ a page was culled on its SHEET, not on its content.** `Strip::visible`
+kept a page only while `page.rect.intersects(view)`. That was the whole truth
+until the halo tier taught the renderer to paint past the sheet edge — after
+which the sheet can leave the viewport while the object being edited sits dead
+centre on screen, and the cull then returns **nothing at all**. Measured at 978%:
+the viewport spanned window x 288…1578, the page's rect 1562…3486, and the object
+−4…1170. The canvas laid out nothing, traced `canvas-unavailable
+reason=nothing-visible`, dropped its `page` and `canvas-viewport` rects, **and
+went grey.** The app was alive the entire time — frames ticking, other panels
+drawing, the render worker returning a good raster for the right scale.
+
+The fix is one line at the caller, `visible_rect.expand2(overhang)`, used **only**
+for the cull. ★ It is deliberately *not* handed to `tier::decide`: the region
+tier already intersects the true viewport with the page's box widened to its
+content, and feeding it a window inflated by `overhang × zoom` would grow the
+region raster with the document and break the one property that makes that tier
+safe at any magnification — its device size is a multiple of the **window**,
+never of the document.
+
+**How it was driven.** `an_object_off_the_page_survives_being_zoomed_in_on`
+calibrates its target from the **measured** viewport — `1.5 × viewport_pt /
+off_pts` — rather than from a hard-coded percentage, because a constant that is a
+real test on a laptop is vacuous on a wide monitor and is green either way. It
+rolls Ctrl+wheel, settling after every notch, until it passes that target, then
+photographs an **ink** patch and a **paper** control 40 pt either side of the
+off-page square's bottom edge. On the fixed build: 15 notches, 100% → **2009%**,
+ink 1.000, paper 0.000.
+
+★★ Its first run **declined** rather than falsely passing — SKIP at 962% against
+a 1935% target, reported as *"the zoom saturated"* — and the reason it saturated
+was defect 2, which nothing else in this project had ever seen.
+
 
 ★ This **answers `O22`'s open
 convention question** — the pasteboard is what he wants — and then asks for more

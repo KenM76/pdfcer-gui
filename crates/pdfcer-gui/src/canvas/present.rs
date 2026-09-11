@@ -408,6 +408,54 @@ fn show_in(
     // `geometry` and every centre in `fit::placement` is derived against this
     // number, so it must be the room the content will actually get.
     let vp = inner_avail;
+
+    // ★★★ **THE PASTEBOARD'S OVERHANG, PUBLISHED ONCE FOR THE WHOLE FRAME.**
+    //
+    // O23's third and last part. Parts A and B gave the operator slack to
+    // scroll into and made a press out there a gesture; this is what makes the
+    // off-page object survive being **zoomed in on**, which is what "edit"
+    // means and is the half his follow-up report was about:
+    //
+    // > *"how do I view and edit objects that are off of the page? we added
+    // > this feature but I didn't see how to enable it."*
+    //
+    // `geometry::pasteboard` carries the arithmetic and the measurement. In
+    // one line: the slack was a fixed count of **screen pixels**, so the slice
+    // of the **drawing** it covered shrank in exact proportion to the zoom,
+    // and above a few hundred per cent an object placed off the sheet could no
+    // longer be brought to the middle of the screen at all.
+    //
+    // ★ Written to the document rather than threaded as an argument because
+    // eight call sites below hand it to `geometry`, and two spellings of the
+    // pasteboard is the exact defect O23 spent three attempts on — see the
+    // field's own documentation.
+    //
+    // ★ `content_bounds_if_known` PEEKS. A canvas that forced a decomposition
+    // here would pay 469 ms on the operator's benchmark sheet after every
+    // content edit, which is O74 at its most expensive point. The consequence
+    // is the honest one and is the same as the halo raster's: on the first
+    // frame after opening a large drawing the pasteboard is the plain one, and
+    // one frame later it is the wider one.
+    //
+    // ★ Multiplied by the zoom HERE, because the overhang is a fact about the
+    // drawing (canvas points) and every `geometry` term is in screen points.
+    // `halo::overhang` resolves `/Rotate` through `PageFrame::canvas_box_of`,
+    // which is O174's single place for it.
+    doc.pasteboard_overhang = doc.pages.get(current).map_or(egui::Vec2::ZERO, |page| {
+        let (ox, oy) = crate::render::halo::overhang(
+            viewer::page_extent_pts(page),
+            crate::render::region::PageFrame::of(page),
+            doc.content_bounds_if_known(),
+        );
+        let z = doc.view.zoom;
+        if z.is_finite() && z > 0.0 {
+            vec2(ox * z, oy * z)
+        } else {
+            egui::Vec2::ZERO
+        }
+    });
+    let overhang = doc.pasteboard_overhang;
+
     // The page the pending zoom anchor was armed against, and that page's
     // drawn size — which is what `zoom::consume_anchor` must compare its
     // recorded size against, for the same reason.
@@ -544,8 +592,8 @@ fn show_in(
             avail
         } else {
             vec2(
-                geometry::content_extent(display_size.x, vp.x).max(avail.x),
-                geometry::content_extent(display_size.y, vp.y).max(avail.y),
+                geometry::content_extent(display_size.x, vp.x, overhang.x).max(avail.x),
+                geometry::content_extent(display_size.y, vp.y, overhang.y).max(avail.y),
             )
         };
         // ★★ The response is KEPT, and Ctrl+wheel is gated on it —
@@ -617,8 +665,10 @@ fn show_in(
             // intermediate is formed and the origin is exact at every zoom.
             Rect::from_min_size(
                 Pos2::new(
-                    outer_rect.min.x + geometry::strip_origin_offset(display_size.x, vp.x, avail.x),
-                    outer_rect.min.y + geometry::strip_origin_offset(display_size.y, vp.y, avail.y),
+                    outer_rect.min.x
+                        + geometry::strip_origin_offset(display_size.x, vp.x, avail.x, overhang.x),
+                    outer_rect.min.y
+                        + geometry::strip_origin_offset(display_size.y, vp.y, avail.y, overhang.y),
                 ),
                 display_size,
             )
@@ -648,12 +698,56 @@ fn show_in(
         } else {
             Rect::from_min_size(
                 Pos2::new(
-                    geometry::scroll_to_strip(doc.last_scroll_offset.x, display_size.x, vp.x),
-                    geometry::scroll_to_strip(doc.last_scroll_offset.y, display_size.y, vp.y),
+                    geometry::scroll_to_strip(
+                        doc.last_scroll_offset.x,
+                        display_size.x,
+                        vp.x,
+                        overhang.x,
+                    ),
+                    geometry::scroll_to_strip(
+                        doc.last_scroll_offset.y,
+                        display_size.y,
+                        vp.y,
+                        overhang.y,
+                    ),
                 ),
                 avail,
             )
         };
+
+        // ★★★ **A PAGE IS VISIBLE WHEN ITS CONTENT IS, NOT WHEN ITS SHEET IS.**
+        //
+        // `OPERATOR_REQUESTS.md` **O23**, third verb, measured on 2026-09-11 by
+        // `ui-verify`'s `an_object_off_the_page_survives_being_zoomed_in_on`.
+        //
+        // `Strip::visible` culls on the PAGE's rectangle, and that was the only
+        // truth there was until this shell learned to draw outside it. With the
+        // halo tier a page's *content* can reach far past its own sheet — the
+        // whole point of the feature — so the sheet can slide entirely off the
+        // viewport while the object the operator is editing is sitting in the
+        // middle of the screen. The canvas then laid out **nothing**, traced
+        // `canvas-unavailable reason=nothing-visible`, dropped its `page` and
+        // `canvas-viewport` rects, and went grey.
+        //
+        // ★★ Measured, not reasoned: at 978 % on a 200 pt sheet with an object
+        // 160 pt off its left edge, the page rect stood at x 1562…3486 against
+        // a viewport of 288…1578 — sixteen points of overlap, then none — while
+        // that object spanned x −4…1170, squarely inside it. The operator was
+        // looking straight at his object and the shell had decided there was
+        // nothing to draw.
+        //
+        // ★ Expanding the VIEW by the overhang is exactly equivalent to
+        // expanding each page's rect by it, and is one operation instead of
+        // one per page. It is also the conservative direction: the worst a too
+        // generous bound can do is rasterize a page a fraction of a second
+        // early at a row boundary, where the worst a too tight one does is
+        // what the paragraph above describes.
+        //
+        // `overhang` is already this frame's content reach multiplied by the
+        // zoom — the same number the pasteboard is built from, published once
+        // by `OpenDoc::pasteboard_overhang` — so it is in strip points here,
+        // which is the space `visible_rect` is in.
+        let visible_content = visible_rect.expand2(overhang);
 
         // `click_and_drag`, not `hover`, on EVERY page — not only the current
         // one. A press on a page the operator is not currently "on" is how
@@ -682,11 +776,19 @@ fn show_in(
             current,
             raster_scale,
             deep,
+            // ★ The TRUE viewport, deliberately, and not `visible_content`.
+            // The region tier already intersects this with
+            // `halo::reach(place, ..)` — the page's box WIDENED to its
+            // content — so it reaches off-page ink without help. Handing it
+            // the inflated window instead would grow the region raster with
+            // `overhang × zoom` and break the one property that makes that
+            // tier safe at any magnification: its device size is a multiple
+            // of the WINDOW, never of the document.
             visible_rect,
             avail,
         );
 
-        for placement in layout.visible(visible_rect) {
+        for placement in layout.visible(visible_content) {
             let rect = placement.rect.translate(strip_origin);
             let key = doc.render_key_for(placement.page, raster_scale);
             // The current page's raster lives in its own slot; every other

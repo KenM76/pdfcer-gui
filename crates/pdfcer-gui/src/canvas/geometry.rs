@@ -45,16 +45,17 @@ pub fn pan_offset(
     pan: (f32, f32),
     display: (f32, f32),
     viewport: (f32, f32),
+    overhang: (f32, f32),
 ) -> (f32, f32) {
-    fn axis(last: f32, pan: f32, d: f32, v: f32) -> f32 {
+    fn axis(last: f32, pan: f32, d: f32, v: f32, over: f32) -> f32 {
         if !(last.is_finite() && pan.is_finite() && d.is_finite() && v.is_finite()) {
             return last;
         }
-        (last - pan).clamp(0.0, (content_extent(d, v) - v).max(0.0))
+        (last - pan).clamp(0.0, (content_extent(d, v, over) - v).max(0.0))
     }
     (
-        axis(last.0, pan.0, display.0, viewport.0),
-        axis(last.1, pan.1, display.1, viewport.1),
+        axis(last.0, pan.0, display.0, viewport.0, overhang.0),
+        axis(last.1, pan.1, display.1, viewport.1, overhang.1),
     )
 }
 
@@ -77,14 +78,81 @@ fn margin(display: f32, viewport: f32) -> f32 {
 /// corner, and the operator asked for the second.
 const PASTEBOARD_FRACTION: f32 = 1.0;
 
-/// The pasteboard on one axis, in logical points. Zero for a degenerate
-/// viewport so a frame measured before layout cannot produce a NaN extent.
+/// ★★★ **The pasteboard on one axis, in logical points — and it is NOT a
+/// count of screen pixels.**
+///
+/// `overhang` is how far the drawn content reaches past the strip on this
+/// axis, **already multiplied by the zoom**, as
+/// [`crate::render::halo::overhang`] computes it in canvas points. Zero means
+/// *"nothing hangs over, or nobody has looked"* and gives exactly the original
+/// one-viewport pasteboard.
+///
+/// # ★★★ Why the overhang term exists, in the operator's own words
+///
+/// O23, 2026-08-21: *"objects should still be reachable even if they are off
+/// the page."* Three weeks later, with the reach and the sight both shipped:
+/// *"how do I view and edit objects that are off of the page?"*
+///
+/// **Edit.** Editing an object means zooming in on it, and until this term
+/// existed zooming in *took it away*. The pasteboard was `viewport × 1.0` — a
+/// fixed number of **screen pixels** — so the slice of the *drawing* it covered
+/// was `viewport / zoom` and shrank with every notch. An object 100 pt off the
+/// left edge of a sheet, on a 470 px-wide canvas, could be brought to the
+/// middle of the screen only while `235 / zoom ≥ 100`: **below about 235 %**.
+/// Above that the scroll offset ran into a clamp, the anchored zoom's solved
+/// offset was clamped away, and the object walked off the edge of the screen
+/// while the operator zoomed toward it. Measured on 2026-09-11 — see
+/// [`crate::render::halo::overhang`] for the trace and the arithmetic.
+///
+/// # The rule, and why the half viewport
+///
+/// ```text
+/// pasteboard = max(viewport × PASTEBOARD_FRACTION, overhang + viewport / 2)
+/// ```
+///
+/// The `+ viewport / 2` is the difference between *reaching* a point and
+/// *looking at* it. Slack of exactly `overhang` puts the farthest scrap of
+/// content at the viewport's **edge** and no further; half a viewport more puts
+/// it at the **centre**, which is where a person puts the thing they are about
+/// to work on and is where a Ctrl+wheel zoom anchors. The same reasoning as
+/// `PASTEBOARD_FRACTION`'s own note, applied to the content instead of to the
+/// sheet.
+///
+/// The `max` keeps the operator's pasteboard whenever it is the larger, so the
+/// overwhelming majority of documents — nothing off the sheet — are byte for
+/// byte unchanged.
+///
+/// # ★★ The bound, and why it is tied to the tier boundary rather than picked
+///
+/// The overhang term is **multiplied by the zoom**, so it grows without limit
+/// where the fixed pasteboard never could. Left unbounded it would push the
+/// scroll content past the point where an `f32` offset stops addressing every
+/// screen pixel —
+/// [`crate::viewer::ceiling::SUB_PIXEL_CONTENT_EXTENT`] — while the *strip*
+/// was still well below it, and the `f64` deep tier keys its hand-over on the
+/// strip. The position model would have handed over late, and silently.
+///
+/// So the pasteboard is capped at a quarter of that constant, which holds the
+/// whole content extent to at most one and a half times the strip's own
+/// ceiling. The cap does not bite for anything a person draws: on US Letter it
+/// first applies at roughly `262144 / (overhang_pts × 1324)` — about
+/// **132,000 %** for a 200 pt overhang — and above that the operator is looking
+/// at a hundredth of a point of paper and the object is long since centred.
+///
+/// Zero for a degenerate viewport, so a frame measured before layout cannot
+/// produce a NaN extent; and a non-finite or negative overhang is ignored
+/// rather than propagated, on the same rule.
 #[must_use]
-fn pasteboard(viewport: f32) -> f32 {
-    if viewport.is_finite() && viewport > 0.0 {
-        viewport * PASTEBOARD_FRACTION
+fn pasteboard(viewport: f32, overhang: f32) -> f32 {
+    if !(viewport.is_finite() && viewport > 0.0) {
+        return 0.0;
+    }
+    let base = viewport * PASTEBOARD_FRACTION;
+    if overhang.is_finite() && overhang > 0.0 {
+        let cap = crate::viewer::ceiling::SUB_PIXEL_CONTENT_EXTENT / 4.0;
+        base.max((overhang + viewport / 2.0).min(cap))
     } else {
-        0.0
+        base
     }
 }
 
@@ -92,9 +160,13 @@ fn pasteboard(viewport: f32) -> f32 {
 /// never smaller than the viewport. This is what `display.max(viewport)` used
 /// to be at every call site, back when the strip and the content were the
 /// same rectangle.
+///
+/// `overhang` is [`pasteboard`]'s, in logical points — see it for the whole
+/// argument. Pass `0.0` for *"no page content hangs off the sheet, or nobody
+/// has looked yet"*; that is the original behaviour exactly.
 #[must_use]
-pub fn content_extent(display: f32, viewport: f32) -> f32 {
-    let out = display.max(viewport) + 2.0 * pasteboard(viewport);
+pub fn content_extent(display: f32, viewport: f32, overhang: f32) -> f32 {
+    let out = display.max(viewport) + 2.0 * pasteboard(viewport, overhang);
     if out.is_finite() {
         out
     } else {
@@ -121,8 +193,8 @@ pub fn content_extent(display: f32, viewport: f32) -> f32 {
 /// **symbolically** rather than by subtracting two large rectangles. See
 /// [`strip_origin_offset`].
 #[must_use]
-pub fn strip_margin(display: f32, viewport: f32) -> f32 {
-    margin(display, viewport) + pasteboard(viewport)
+pub fn strip_margin(display: f32, viewport: f32, overhang: f32) -> f32 {
+    margin(display, viewport) + pasteboard(viewport, overhang)
 }
 
 /// **How far the strip's top-left sits from the scroll content's, on one
@@ -169,10 +241,10 @@ pub fn strip_margin(display: f32, viewport: f32) -> f32 {
 /// [`tests::the_strip_origin_is_the_plain_expression_wherever_that_expression_is_exact`]
 /// asserts.
 #[must_use]
-pub fn strip_origin_offset(display: f32, viewport: f32, avail: f32) -> f32 {
-    let content = content_extent(display, viewport);
+pub fn strip_origin_offset(display: f32, viewport: f32, avail: f32, overhang: f32) -> f32 {
+    let content = content_extent(display, viewport, overhang);
     let out = if content >= avail {
-        strip_margin(display, viewport)
+        strip_margin(display, viewport, overhang)
     } else {
         (avail - display) / 2.0
     };
@@ -197,18 +269,21 @@ pub fn strip_origin_offset(display: f32, viewport: f32, avail: f32) -> f32 {
 /// looked correct, because it was published before the region went; and
 /// `drawn=0`, because nothing was visible to raster.
 #[must_use]
-pub fn scroll_to_strip(scroll: f32, strip: f32, viewport: f32) -> f32 {
-    let out = scroll - strip_margin(strip, viewport);
+pub fn scroll_to_strip(scroll: f32, strip: f32, viewport: f32, overhang: f32) -> f32 {
+    let out = scroll - strip_margin(strip, viewport, overhang);
     if out.is_finite() { out } else { 0.0 }
 }
 
 /// Convert a position in **strip space** into the **scroll offset** that puts
 /// it at the viewport's top-left, clamped to what can be reached.
 #[must_use]
-pub fn strip_to_scroll(in_strip: f32, strip: f32, viewport: f32) -> f32 {
-    let out = in_strip + strip_margin(strip, viewport);
+pub fn strip_to_scroll(in_strip: f32, strip: f32, viewport: f32, overhang: f32) -> f32 {
+    let out = in_strip + strip_margin(strip, viewport, overhang);
     if out.is_finite() {
-        out.clamp(0.0, (content_extent(strip, viewport) - viewport).max(0.0))
+        out.clamp(
+            0.0,
+            (content_extent(strip, viewport, overhang) - viewport).max(0.0),
+        )
     } else {
         0.0
     }
@@ -543,9 +618,10 @@ pub fn page_local_offset(
     strip: (f32, f32),
     page_display: (f32, f32),
     viewport: (f32, f32),
+    overhang: (f32, f32),
 ) -> (f32, f32) {
-    fn axis(off: f32, origin: f32, strip: f32, page: f32, v: f32) -> f32 {
-        let out = off - origin - strip_margin(strip, v) + margin(page, v);
+    fn axis(off: f32, origin: f32, strip: f32, page: f32, v: f32, over: f32) -> f32 {
+        let out = off - origin - strip_margin(strip, v, over) + margin(page, v);
         if out.is_finite() { out } else { 0.0 }
     }
     (
@@ -555,6 +631,7 @@ pub fn page_local_offset(
             strip.0,
             page_display.0,
             viewport.0,
+            overhang.0,
         ),
         axis(
             strip_offset.1,
@@ -562,6 +639,7 @@ pub fn page_local_offset(
             strip.1,
             page_display.1,
             viewport.1,
+            overhang.1,
         ),
     )
 }
@@ -580,11 +658,12 @@ pub fn strip_offset(
     strip: (f32, f32),
     page_display: (f32, f32),
     viewport: (f32, f32),
+    overhang: (f32, f32),
 ) -> (f32, f32) {
-    fn axis(off: f32, origin: f32, strip: f32, page: f32, v: f32) -> f32 {
-        let out = off + origin + strip_margin(strip, v) - margin(page, v);
+    fn axis(off: f32, origin: f32, strip: f32, page: f32, v: f32, over: f32) -> f32 {
+        let out = off + origin + strip_margin(strip, v, over) - margin(page, v);
         if out.is_finite() {
-            out.clamp(0.0, (content_extent(strip, v) - v).max(0.0))
+            out.clamp(0.0, (content_extent(strip, v, over) - v).max(0.0))
         } else {
             0.0
         }
@@ -596,6 +675,7 @@ pub fn strip_offset(
             strip.0,
             page_display.0,
             viewport.0,
+            overhang.0,
         ),
         axis(
             page_local.1,
@@ -603,6 +683,7 @@ pub fn strip_offset(
             strip.1,
             page_display.1,
             viewport.1,
+            overhang.1,
         ),
     )
 }

@@ -400,6 +400,7 @@ pub mod off_page_press;
 /// reports success. Paired with a paper control off the sheet, so a
 /// uniformly-dark capture cannot pass.
 pub mod off_page_visible;
+pub mod off_page_zoom;
 /// ★ The **Pages tab**, all of which did nothing: six verbs registered, drawn,
 /// offered by a context menu and four of them bound to chords, with no dispatch
 /// arm between them. The only check in the suite whose subject is a

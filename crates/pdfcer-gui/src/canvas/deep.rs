@@ -96,6 +96,12 @@ pub(super) fn track(
     let current_origin = layout
         .rect_of(current)
         .map_or((0.0, 0.0), |r| (r.min.x, r.min.y));
+    // Bound BEFORE the closure and before any `&mut doc` borrow: the one
+    // number this frame's pasteboard is built from, read once so every
+    // conversion in this module and in `offset::decide` agrees with the
+    // scroll content that `canvas::present` actually built. See
+    // `OpenDoc::pasteboard_overhang`.
+    let overhang = (doc.pasteboard_overhang.x, doc.pasteboard_overhang.y);
     let to_strip = |local: (f32, f32)| {
         let (x, y) = geometry::strip_offset(
             local,
@@ -103,6 +109,7 @@ pub(super) fn track(
             (display_size.x, display_size.y),
             current_display,
             (vp.x, vp.y),
+            overhang,
         );
         vec2(x, y)
     };
@@ -142,8 +149,8 @@ pub(super) fn track(
             // last settled one only when no zoom is landing, which is the case
             // where they agree anyway.
             let from = landed.unwrap_or(doc.last_scroll_offset);
-            let seen = geometry::scroll_to_strip(from.x, display_size.x, vp.x);
-            let seen_y = geometry::scroll_to_strip(from.y, display_size.y, vp.y);
+            let seen = geometry::scroll_to_strip(from.x, display_size.x, vp.x, overhang.0);
+            let seen_y = geometry::scroll_to_strip(from.y, display_size.y, vp.y, overhang.1);
             let origin = layout
                 .rect_of(current)
                 .map_or((0.0, 0.0), |r| (r.min.x, r.min.y));

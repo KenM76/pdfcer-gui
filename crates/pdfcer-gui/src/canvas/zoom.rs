@@ -1100,10 +1100,11 @@ mod tests {
             display_after,
             display_after,
             f.viewport,
+            (0.0, 0.0),
         );
         let range = (
-            geometry::content_extent(display_after.0, f.viewport.0) - f.viewport.0,
-            geometry::content_extent(display_after.1, f.viewport.1) - f.viewport.1,
+            geometry::content_extent(display_after.0, f.viewport.0, 0.0) - f.viewport.0,
+            geometry::content_extent(display_after.1, f.viewport.1, 0.0) - f.viewport.1,
         );
         assert!(
             reached.0 >= 0.0 && reached.0 <= range.0,

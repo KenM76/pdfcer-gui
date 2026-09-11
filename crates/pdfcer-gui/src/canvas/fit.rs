@@ -291,6 +291,7 @@ pub(super) fn placement(
             (display_size.x, display_size.y),
             current_display,
             (vp.x, vp.y),
+            (doc.pasteboard_overhang.x, doc.pasteboard_overhang.y),
         );
         let (x, y) = geometry::fit_placement_offset(pinned, now, current_display, (vp.x, vp.y));
         return Some(vec2(x, y));

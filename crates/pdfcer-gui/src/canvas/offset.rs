@@ -96,6 +96,12 @@ pub(super) fn decide(
     // through. Spelled here rather than passed in as a closure so this module
     // can be read on its own; it is the same one `canvas::show` uses, and
     // `canvas::geometry`'s header carries the argument for why it exists.
+    // Read once, before the closures and before `&mut doc` is captured
+    // anywhere: the frame's pasteboard overhang. Every conversion below must
+    // use the SAME number the scroll content was built from, or an offset
+    // solved here lands in a content rectangle that does not exist. See
+    // `OpenDoc::pasteboard_overhang`.
+    let overhang = (doc.pasteboard_overhang.x, doc.pasteboard_overhang.y);
     let strip_offset_for = |page: usize, local: (f32, f32)| {
         let rect = layout
             .rect_of(page)
@@ -106,6 +112,7 @@ pub(super) fn decide(
             (display_size.x, display_size.y),
             (rect.width(), rect.height()),
             (vp.x, vp.y),
+            overhang,
         );
         vec2(x, y)
     };
@@ -187,6 +194,7 @@ pub(super) fn decide(
             (pan.x, pan.y),
             (display_size.x, display_size.y),
             (vp.x, vp.y),
+            overhang,
         );
         // ★★★ **A PAN NO LONGER LEAVES THE FIT**, as of 2026-08-31, and the
         // reversal is recorded here rather than in a commit message because

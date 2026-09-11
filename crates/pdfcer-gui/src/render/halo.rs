@@ -262,9 +262,103 @@ pub fn reach(
     )
 }
 
+/// **How far the drawn content reaches past the sheet, per axis, in canvas
+/// points** — the number O23's *scroll* half (part A) was missing.
+///
+/// Returns `(x, y)`, each the **larger** of the two sides on that axis and
+/// never negative. `(0.0, 0.0)` whenever nothing is known or nothing hangs
+/// over, so a caller has no branch and the ordinary page keeps exactly today's
+/// behaviour.
+///
+/// * `extent` — the page's canvas extent in points, as
+///   [`crate::viewer::page_extent_pts`] reports it (`/Rotate` resolved).
+/// * `frame` — the page's crop box and `/Rotate`.
+/// * `content` — the drawn content's bounding box in PDF user space, or
+///   [`None`] when nobody has decomposed the page. [`None`] is *"nobody has
+///   looked"*, not *"there is nothing out there"*, and the caller must not read
+///   the resulting zero as a guarantee — see
+///   [`crate::app::cache`]'s `content_bounds_if_known`, which peeks rather than
+///   builds precisely so the canvas can run this every frame.
+///
+/// # ★★★ Why the canvas needs this and [`reach`] would not do
+///
+/// [`reach`] answers *"what rectangle on screen may I paint into"*, and it
+/// needs the page's **placement** to answer, which is only known **after** the
+/// scroll area has laid out. The scroll area's own content size has to be
+/// decided **before** it lays out. Feeding it `reach` would be a frame late and
+/// would be R128's feedback loop besides — a content size that depends on where
+/// the content was put.
+///
+/// So this states the same fact one step earlier in the frame, in canvas points
+/// rather than screen pixels, and the caller multiplies by the zoom. Both
+/// functions take the box from [`crate::render::region::PageFrame::canvas_box_of`],
+/// which is the single place `/Rotate` is resolved — O174's rule, and the
+/// reason neither of them maps corners by hand.
+///
+/// # ★★★ What it is for, stated as the defect it removes
+///
+/// Measured 2026-09-11, on the trace of
+/// `zooming_does_not_throw_away_where_the_operator_panned`:
+///
+/// `content_extent` puts **one viewport of slack** on every side of the strip,
+/// and a viewport is a count of **screen pixels**. So the pasteboard is a fixed
+/// number of pixels wide at every zoom, and the region of the *drawing* it
+/// covers shrinks in exact proportion to the zoom. An object 100 pt off the
+/// left edge of the sheet can be brought to the middle of a 470 px-wide canvas
+/// only while `235 / zoom ≥ 100` — that is, **only below about 235 %**. Above
+/// it the operator can see the object, select it and drag it, and cannot zoom
+/// in on it: every notch walks it back toward the edge of the screen and then
+/// off it, because the scroll offset has hit a clamp that the anchor solve
+/// knows nothing about.
+///
+/// The same arithmetic is what made the driven check fail. It panned to a point
+/// 3.6 pt below the bottom of the sheet and zoomed; at 7,683 % the view was
+/// 274 px into a 578 px pasteboard, at 9,384 % it was against the clamp at
+/// 289 px, and the page point under the viewport centre slid 0.48 pt. The zoom
+/// anchor was solving correctly and [`crate::canvas::geometry::strip_offset`]
+/// was clamping its answer away.
+///
+/// With the overhang folded into the pasteboard the slack stops being a count
+/// of pixels and becomes a region of the drawing plus half a screen, so every
+/// point of the content can be brought to the centre of the viewport at **any**
+/// zoom. That is [`crate::canvas::geometry::content_extent`]'s rule; this
+/// function only supplies the number it needs.
+#[must_use]
+pub fn overhang(extent: (f32, f32), frame: PageFrame, content: Option<Rect>) -> (f32, f32) {
+    const NONE: (f32, f32) = (0.0, 0.0);
+    let Some(content) = content else {
+        return NONE;
+    };
+    if !finite(content) || content.urx < content.llx || content.ury < content.lly {
+        return NONE;
+    }
+    let (ex, ey) = (f64::from(extent.0), f64::from(extent.1));
+    if !(ex > 0.0 && ey > 0.0) {
+        return NONE;
+    }
+    let (cx0, cy0, cx1, cy1) = frame.canvas_box_of(content);
+    // The larger of the two sides on each axis. Symmetric on purpose: the
+    // pasteboard this feeds is the same width on both sides of the strip, so
+    // a drawing that hangs off only the left still gets the room on the right.
+    // That room is blank paper the operator already had a viewport of, and
+    // making it asymmetric would mean two different strip margins per axis —
+    // a second offset space, which is the shape of the defect O23 spent three
+    // attempts on.
+    let ox = (-cx0).max(cx1 - ex).max(0.0);
+    let oy = (-cy0).max(cy1 - ey).max(0.0);
+    if !(ox.is_finite() && oy.is_finite()) {
+        return NONE;
+    }
+    #[allow(
+        clippy::cast_possible_truncation,
+        reason = "canvas points are f32 everywhere in the canvas; this is the same boundary `reach` documents" // ui-text-exempt: clippy lint justification, never displayed
+    )]
+    (ox as f32, oy as f32)
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{OVERHANG_TOLERANCE_PTS, reach, region};
+    use super::{OVERHANG_TOLERANCE_PTS, overhang, reach, region};
     use crate::render::region::PageFrame;
     use pdfcer_core::page_tree::Rect;
 
@@ -407,5 +501,101 @@ mod tests {
         );
         assert_eq!(out.min.x, place.min.x, "x must not move: {out:?}");
         assert!((out.min.y - (50.0 - 320.0)).abs() < 0.01, "{out:?}");
+    }
+
+    // ---- `overhang` --------------------------------------------------
+    //
+    // The same four questions `reach` is asked, one step earlier and in
+    // canvas POINTS rather than screen pixels, because the pasteboard has to
+    // be sized before the page has a placement. See `overhang`'s own header
+    // for why `reach` cannot answer them at that moment.
+
+    /// The ordinary page: nothing hangs over, so the pasteboard term is zero
+    /// and `canvas::geometry` produces byte-for-byte what it did before O23's
+    /// second half existed.
+    #[test]
+    fn a_page_whose_content_is_on_the_sheet_has_no_overhang() {
+        assert_eq!(
+            overhang(
+                (200.0, 200.0),
+                PageFrame::new(CROP, 0),
+                Some(r(10.0, 10.0, 190.0, 190.0))
+            ),
+            (0.0, 0.0)
+        );
+    }
+
+    /// ★ An unmeasured page is not a page with nothing off it — the same
+    /// distinction `region` draws in its case 1. `content_bounds_if_known`
+    /// PEEKS, so `None` is the answer on every page the operator has not
+    /// decomposed, which is most of them most of the time.
+    #[test]
+    fn an_unmeasured_page_has_no_overhang() {
+        assert_eq!(
+            overhang((200.0, 200.0), PageFrame::new(CROP, 0), None),
+            (0.0, 0.0)
+        );
+    }
+
+    /// ★★★ The feature, in points. An object 160 pt off the left edge of a
+    /// 200 pt sheet gives 160 pt of x overhang and no y overhang, so the
+    /// pasteboard grows on the axis the object is actually on.
+    #[test]
+    fn an_object_off_the_left_edge_overhangs_on_x_only() {
+        let (ox, oy) = overhang(
+            (200.0, 200.0),
+            PageFrame::new(CROP, 0),
+            Some(r(-160.0, 100.0, 100.0, 140.0)),
+        );
+        assert!((ox - 160.0).abs() < 0.01, "x overhang {ox}");
+        assert!(oy.abs() < 0.01, "y overhang {oy}");
+    }
+
+    /// ★★ O174's case again, and the reason this goes through
+    /// `PageFrame::canvas_box_of` rather than subtracting the crop box
+    /// directly: on a `/Rotate 90` page the PDF's −x is the canvas's −y, so
+    /// the SAME object overhangs the other axis. A hand-rolled
+    /// `crop.llx - content.llx` would have grown the pasteboard sideways on a
+    /// landscape sheet and left the object as unreachable as before.
+    #[test]
+    fn overhang_follows_the_rotation() {
+        let (ox, oy) = overhang(
+            (200.0, 200.0),
+            PageFrame::new(CROP, 90),
+            Some(r(-160.0, 100.0, 100.0, 140.0)),
+        );
+        assert!(ox.abs() < 0.01, "x overhang {ox}");
+        assert!((oy - 160.0).abs() < 0.01, "y overhang {oy}");
+    }
+
+    /// A degenerate extent cannot produce a NaN pasteboard. `canvas::present`
+    /// asks this question before layout, so a page whose size is not yet known
+    /// is an ordinary case, not an error.
+    #[test]
+    fn a_degenerate_extent_has_no_overhang() {
+        assert_eq!(
+            overhang(
+                (0.0, 0.0),
+                PageFrame::new(CROP, 0),
+                Some(r(-160.0, 100.0, 100.0, 140.0))
+            ),
+            (0.0, 0.0)
+        );
+    }
+
+    /// `Bounds::EMPTY` is `min = +∞, max = −∞`, and an infinite overhang would
+    /// make the scroll content infinite. Declined, like `region` declines it.
+    #[test]
+    fn an_empty_content_box_has_no_overhang() {
+        let empty = Rect {
+            llx: f64::INFINITY,
+            lly: f64::INFINITY,
+            urx: f64::NEG_INFINITY,
+            ury: f64::NEG_INFINITY,
+        };
+        assert_eq!(
+            overhang((200.0, 200.0), PageFrame::new(CROP, 0), Some(empty)),
+            (0.0, 0.0)
+        );
     }
 }

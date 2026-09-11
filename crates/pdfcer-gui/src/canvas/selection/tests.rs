@@ -275,6 +275,7 @@ fn navigating_the_view_never_alters_the_selection() {
         (30.0, -20.0),
         (1_600.0, 1_600.0),
         (800.0, 800.0),
+        (0.0, 0.0),
     );
     assert_ne!(panned, (120.0, 80.0), "the pan must actually move the view");
 

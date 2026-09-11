@@ -952,6 +952,12 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // nothing until the two trace-level siblings have said the object is
         // there to be painted.
         Box::new(off_page_visible::AnObjectOffThePageIsActuallyDrawn),
+        // Fourth and last of the off-page group, and the most expensive: it
+        // takes a screenshot AND rolls the wheel a dozen-odd notches with a
+        // settle after each. Placed after its three siblings so that a build
+        // where the object cannot be reached, or is not painted at all, says
+        // so before this one spends a minute proving it is also not zoomable.
+        Box::new(off_page_zoom::AnObjectOffThePageSurvivesBeingZoomedInOn),
         // Two launches and an Alt+F4, so it is placed with the other
         // multi-process checks rather than among the single-window ones.
         Box::new(page_display_pref::APageDisplayChoiceSurvivesACloseAndReachesANewDocument),
