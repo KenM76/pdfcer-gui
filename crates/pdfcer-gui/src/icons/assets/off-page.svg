@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Generic page outline with line work running out past its edge — generic, no trademark risk -->
+  <!-- Edit ▸ Check for content off the sheet (`edit.offpage`, the fourth
+       marking route, 2026-09-11). Authored for this command; nothing in the set
+       was borrowed, and the registration's own comment says why: this file's
+       recurring mistake is borrowing a glyph on what two commands are ABOUT
+       rather than on what they DO, and this one does the thing none of the
+       other three redaction controls do — it LOOKS.
+
+       What it depicts, drawn as literally as 48 units allow: a sheet, and
+       content that does not stop at the sheet. One rule starts inside the page
+       and runs out through its left edge (the engine's `OffPage::Partial`), and
+       a second sits entirely outside it with nothing holding it (`Fully`). Both
+       cases the census reports, in one picture.
+
+       ★ THE CROSSING IS THE WHOLE GLYPH. A page beside a separate mark reads as
+       two objects side by side — a layout icon, a two-pane view, a compare
+       control. A line that CUTS the page boundary cannot be read as anything
+       but something escaping the page, and it is the detail that resolves
+       first at 16 px because it is a contrast reversal exactly at the frame's
+       stroke.
+
+       ★★ Deliberately the LEFT edge. A drawing's title block is bottom-right on
+       every CAD sheet ever exported, so content dragged off a sheet is
+       overwhelmingly dragged off the left or the top — and the left edge is the
+       one this shell's ribbon and dock do not crowd, so the overhang is never
+       the first thing clipped when the button is drawn small.
+
+       ★★★ STROKE-ONLY, AND THAT IS A DECISION RATHER THAN A DEFAULT. The three
+       redaction siblings (`redact`, `redact-selection`, `apply-redactions`) all
+       carry a SOLID bar, and `icons::tests::fill_is_semantic_and_the_set_that_uses_it_is_closed`
+       enumerates exactly which glyphs are entitled to a fill. This one is not on
+       that list and must not join it: the closed set's written reason is that a
+       filled bar means "content is being destroyed permanently", and this
+       command destroys nothing — it reports. A filled version of this glyph
+       would tell an operator, in the one cue that survives downscaling, that
+       pressing it removes something.
+
+       ⇒ Which also makes it un-confusable with its three neighbours in the same
+       ribbon group at a glance: they are the ones with the black bar.
+
+       ★ The page frame is 16,8 24×32 — narrower and pushed right, unlike
+       `redact.svg`'s centred square page (8,8 32×32), because the left third of
+       the viewBox is spent on the overhang. `page-extract.svg` is the only
+       other rounded page-with-something-below and separates on the arrow; the
+       two share no stroke. -->
+  <path d="M16 8h24v32H16z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M6 22h18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M6 32h8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

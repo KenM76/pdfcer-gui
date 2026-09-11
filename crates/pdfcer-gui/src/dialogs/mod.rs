@@ -158,6 +158,10 @@ pub mod page_size;
 /// — it was a way to author one of those files.
 pub mod stamp_collection;
 
+/// ★★ The census of everything drawn OUTSIDE a page boundary — the half of
+/// "view and edit objects that are off the page" that no amount of looking at a
+/// document could answer, because off-page content does not render.
+pub mod offpage;
 pub mod password;
 pub mod placing;
 pub mod print;
@@ -530,6 +534,14 @@ pub struct DialogsState {
     /// computed against the open document's font inventory.
     unembed: Option<unembed::UnembedDialog>,
 
+    /// The off-the-sheet census window, when one is open.
+    ///
+    /// **Document-scoped**, and more sharply than its neighbours: it holds a
+    /// part-finished walk of *this* document's pages. A window that survived its
+    /// document would either resume scanning pages that are gone or, worse,
+    /// present a completed census of one file over another file.
+    offpage: Option<offpage::OffPageDialog>,
+
     /// The Save-as-stamp-collection window, when one is open.
     ///
     /// **Document-scoped**: every row in it is a page of the open file, and the
@@ -700,6 +712,23 @@ pub struct Frame<'a> {
     /// the moment they press Print. Everything else here reads the
     /// application's state and answers through [`Self::actions`].
     pub prefs: &'a mut crate::app::prefs::Prefs,
+
+    /// ★★ **The redaction panel's chosen mark appearance**, added 2026-09-11
+    /// for the off-the-sheet census window.
+    ///
+    /// Passed in rather than defaulted, and this is the same ruling
+    /// `app::dispatch` makes for `edit.redact_selection`: there are now **four**
+    /// routes that author a `/Redact` mark — a search, a whole page, the canvas
+    /// selection, and everything outside the sheet — and an operator who set the
+    /// fill to grey in the panel must not get a black mark from any of them.
+    /// One look, however the mark was asked for.
+    ///
+    /// ★ Resolved at the call site each frame rather than snapshotted when a
+    /// window opens, so the appearance that travels is the one the operator had
+    /// **when they pressed the button** — `actions::RedactAction::BySearch`'s
+    /// rule, and the reason it is a rule is that the mark's colour is baked into
+    /// the annotation at creation and no verb modifies one afterwards.
+    pub redact_appearance: pdfcer_core::annot_author::RedactAppearance,
 }
 
 impl DialogsState {
@@ -818,6 +847,7 @@ impl DialogsState {
             keymap,
             registry,
             prefs,
+            redact_appearance,
         } = cx;
         // Application-scoped first, so that an empty canvas cannot skip it.
         // Ordering is the whole guard here: putting this after the early
@@ -934,6 +964,21 @@ impl DialogsState {
         }
         if self.unembed.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.unembed = None;
+        }
+        // ★ Takes `doc` AND an appearance, unlike every other window here. The
+        // `doc` is what it scans, one page per frame (see its header); the
+        // appearance is the redaction panel's own chosen look, passed in rather
+        // than defaulted so that a mark authored from this window cannot be a
+        // different colour from one authored from the panel beside it. Four
+        // marking routes, one look — `app::dispatch`'s rule for
+        // `edit.redact_selection`, applied to the fourth.
+        if self
+            .offpage
+            .as_mut()
+            .map(|d| d.show(ctx, doc, actions, redact_appearance.clone()))
+            == Some(false)
+        {
+            self.offpage = None;
         }
         // ★ The Manage-dimension-groups WINDOW used to be drawn here, and the
         // comment that stood in its place said the order was load-bearing —
@@ -1273,6 +1318,10 @@ impl DialogsState {
         self.export_text = None;
         self.embed = None;
         self.unembed = None;
+        // ★ On this list for `stamp_collection`'s reason in its strongest form:
+        // see the field. A part-finished scan of a closed document is not a
+        // window that merely goes stale — it is one that keeps working.
+        self.offpage = None;
         self.compact = None;
     }
 

@@ -980,6 +980,13 @@ impl eframe::App for PdfcerApp {
             self.dialogs.ask_for_password(&path);
         }
         let keymap = self.shell.as_ref().and_then(|s| s.keymap.as_ref());
+        // ★★ Read out BEFORE `self.dialogs` is borrowed, which is the whole
+        // reason it is a local rather than a field access in the literal below:
+        // `panels` and `dialogs` are sibling fields, and taking one mutably
+        // while the other is mutably borrowed is what the borrow checker exists
+        // to stop. It is a small owned value, so the copy costs nothing and the
+        // appearance that travels is this frame's.
+        let redact_appearance = self.panels.redact_mut().appearance.to_core();
         self.dialogs.show(crate::dialogs::Frame {
             ctx: &ctx,
             status: &self.status,
@@ -990,6 +997,8 @@ impl eframe::App for PdfcerApp {
             // O166. The Print window is the only dialog that writes a
             // preference; everything else here is read-only about `Prefs`.
             prefs: &mut self.prefs,
+            // One look for all four marking routes — see the field.
+            redact_appearance,
         });
 
         // ★★★ **Step 4a — the FLOATING PANELS' own windows.**

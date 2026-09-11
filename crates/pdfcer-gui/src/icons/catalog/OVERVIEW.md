@@ -67,3 +67,54 @@ under deadline pressure at 1,495 lines.
 
 ★ Until it happens, treat this file as full. A variant added here without
 moving one out is a variant added to a file that is already at its limit.
+
+---
+
+## ★★★ What happened when it was finally done, 2026-09-11 — the prediction above was half wrong, in the useful direction
+
+`edit.offpage` added `Icon::OffPage`, the file went to **1,517** and
+`check-file-size.sh` went red, exactly as the paragraph above said it would.
+The seam was taken. What it found was **not a migration**:
+
+> Of the twenty-five fattest variants, **twenty-three already had their entire
+> ruling in the `.svg`**, word for word and usually at greater length. The enum
+> was carrying a **second copy**.
+
+`put-down.svg` runs thirty-three lines of ruling; the variant repeated all of
+it in twenty-eight. `save-compact.svg` states the `download.svg` /
+`page-extract.svg` objection in more detail than the variant that restates it.
+Only `attachment.svg` and `reflow.svg` were genuinely thin, and those two are
+the only assets this pass actually moved prose *into*.
+
+⇒ **So the 2026-09-04 convention did not fail to spread — it spread, and
+nobody deleted what it superseded.** That is a different defect from the one
+this section predicted, and it has a different lesson: when a convention moves
+a document's home, the old copy does not announce itself. It sits there reading
+as authoritative, and the two drift silently, which is the exact failure
+[`Icon::name`]'s single-spelling rule exists to prevent one file over.
+
+### How the deletion was decided, so the next batch can be done the same way
+
+Not by eye. Per **paragraph**, the fraction of its five-letter-and-longer words
+appearing anywhere in the asset's comment was measured; at **≥ 0.75** the
+paragraph was deleted as a restatement, below it was kept. Every backticked
+identifier in a deleted paragraph was then checked to still exist in either the
+asset or what remained of the variant — three apparent losses were all
+re-spellings (`icons::tests::fill_is…` vs `fill_is…`, `super::super::svg`
+vs `icons::svg`, `crate::panels::layers` vs `panels/layers.rs`), so nothing was
+lost.
+
+**What consistently scored below the threshold is worth knowing**: the
+*registration history* — *"this retires two recorded refusals"*, *"authored
+2026-09-04 out of a five-way share"*, *"it replaces a borrow of X"*. The asset
+records what the glyph IS; the variant records why this shell came to have one.
+Those are different subjects and the split falls cleanly between them.
+
+### The state after this pass
+
+**1,313 lines**, and the remaining ≈117 variants have not been through it.
+The next time this file approaches the limit, run the same measurement over the
+next band rather than improvising. One caution it earned: an asset that scores
+thin is not automatically a target to paste into. Two of the twenty-five were
+thin, and the right reading of a thin asset is that **its ruling was never
+written**, which is a drawing job rather than a text move.

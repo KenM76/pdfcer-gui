@@ -84,9 +84,17 @@ fn all_is_exhaustive_and_free_of_duplicates() {
     // is deliberate — gating the art would put a `#[cfg]` in `icons`, which is
     // a second place that knows about a capability and is exactly what
     // `SHELL_FRAMEWORK.md` §5b forbids.
+    // ★ 141 → 142 on 2026-09-11: `off-page`, AUTHORED for `edit.offpage` —
+    // the census that answers *"how do I view and edit objects that are off of
+    // the page?"*. The reuse it declined was `redact`, and the reason is the
+    // one the asset's own comment argues at length: the three redaction glyphs
+    // carry a filled bar that means *content is being destroyed*, and this
+    // control destroys nothing until a separate, second press. Borrowing it
+    // would have put the strongest cue in the set on the one command in the
+    // group that does not earn it.
     assert_eq!(
         Icon::ALL.len(),
-        141,
+        142,
         "the catalogue changed size: add the new variant to Icon::ALL and update this count"
     );
 }

@@ -958,6 +958,13 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // where the object cannot be reached, or is not painted at all, says
         // so before this one spends a minute proving it is also not zoomable.
         Box::new(off_page_zoom::AnObjectOffThePageSurvivesBeingZoomedInOn),
+        // ★ Fifth and last of the off-page group. Deliberately AFTER the four
+        // that prove the object can be reached, painted and zoomed: this one
+        // asserts the census FINDS it, and a census that reports nothing on a
+        // fixture whose object is not actually there would be a true answer
+        // reported as a defect. Its siblings running first is what makes its
+        // `objects >= 1` assertion mean something.
+        Box::new(off_page_census::TheOffPageCensusFindsTheObjectAndMarksIt),
         // Two launches and an Alt+F4, so it is placed with the other
         // multi-process checks rather than among the single-window ones.
         Box::new(page_display_pref::APageDisplayChoiceSurvivesACloseAndReachesANewDocument),

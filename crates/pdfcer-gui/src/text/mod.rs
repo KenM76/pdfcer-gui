@@ -266,6 +266,13 @@ pub mod merge;
 /// `crate::dialogs::new_document`.
 pub mod new_document;
 pub mod ocr;
+/// ★★★ The words for **content that is in the file but not on the
+/// sheet** — the census window's copy. Its header carries the sentence the
+/// whole module exists for: off-page marks do not render and are still
+/// extractable, so the disclosure leads with WHAT THEY SAY rather than with a
+/// count. Consumed by `crate::dialogs::offpage` and
+/// `crate::app::actions::offpage`.
+pub mod offpage;
 /// ★★★ The words for **changing the paper an open drawing sits on** — the
 /// sheet-size window and the disclosures its commit raises. Consumed by
 /// `crate::dialogs::page_size` and `crate::app::actions::pagesize`. Its header

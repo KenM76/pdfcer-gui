@@ -577,6 +577,24 @@ impl PdfcerApp {
                 ));
             }
             "edit.redact_apply" => self.dialogs.open_redact(&self.status),
+            // ★★★ The FOURTH marking route, 2026-09-11 — and the only one that
+            // begins with a question rather than with an operand.
+            //
+            // `edit.redact_selection` above needs a selection, `edit.redact`
+            // opens a panel over the current sheet, and `edit.redact_apply`
+            // needs marks. This one needs **nothing**: it opens a window that
+            // walks the whole document and answers *"is anything drawn outside
+            // a page boundary?"* — content that does not render, does not print
+            // and is invisible to every ordinary reading of the file, which is
+            // exactly why the operator could not find it by looking.
+            //
+            // No appearance is read here, unlike `edit.redact_selection`. The
+            // window authors its marks on a LATER frame, when the operator
+            // presses its button, so reading the swatch at this press would
+            // carry a choice they had before they opened a window they may sit
+            // in for twenty seconds. `dialogs::Frame::redact_appearance` hands
+            // it the panel's live choice every frame instead.
+            "edit.offpage" => self.dialogs.open_offpage(&self.status),
             // ★ Recent. The operand comes from the `recent_files` custom item
             // (see `Self::ribbon_band`), which parked it before returning this
             // command's token.

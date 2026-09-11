@@ -211,6 +211,72 @@ pub enum RedactAction {
         /// [`Self::BySearch`]'s field of the same name.
         appearance: pdfcer_core::annot_author::RedactAppearance,
     },
+    /// ★★★ **Mark everything drawn outside the page boundary, on every sheet
+    /// that has any** — the fourth marking route, added 2026-09-11.
+    ///
+    /// Raised by [`crate::dialogs::offpage`], and it is the only one of the
+    /// four raised by a **window**. That is not an accident of where the button
+    /// ended up: the other three mark something the operator is already looking
+    /// at (a search hit, the current sheet, a selection), and this one marks
+    /// content that **is not on screen and cannot be** — it does not render, it
+    /// does not print, and the whole reason the window exists is that nothing in
+    /// an ordinary reading of the document discloses it.
+    ///
+    /// # ★★★ Why the BANDS travel and not the objects
+    ///
+    /// The census this comes from lists objects, and it would be natural to
+    /// carry their boxes. It would also be wrong twice over:
+    ///
+    /// - **A box per object is a mark per object.** A CAD sheet with a
+    ///   superseded revision block off its left edge decomposes into hundreds
+    ///   of stroked paths, and marking each would author hundreds of `/Redact`
+    ///   annotations for one operator gesture. `pdfcer_core::offpage::offpage_bands`
+    ///   answers with at most four **non-overlapping** rectangles per page that
+    ///   cover the same area, which is what §12.5.6.23's `/QuadPoints` list is
+    ///   for.
+    /// - **An object's box is not the area to remove.** Removing "that path"
+    ///   leaves whatever else happens to sit beside it, and the operator's
+    ///   request is *"take off what is outside the sheet"* — an area, not an
+    ///   inventory.
+    ///
+    /// ⇒ So the window runs the census, asks the engine for the bands, and
+    /// sends the bands. The objects stay in the window, where they are the
+    /// **disclosure** — which is exactly rule 4's split: what is removed is a
+    /// geometry, what is reported is the words that were found in it.
+    ///
+    /// # ★★ Why the page indices travel with them
+    ///
+    /// One press covers many sheets, so there is no "current page" to resolve
+    /// against — and resolving against one would silently mark one sheet of a
+    /// thirty-six-sheet set. The pairing is carried whole for
+    /// [`Self::WholePage`]'s reason taken further: the operator marked the
+    /// sheets the **census** named, and a frame in which they also paged away
+    /// must not change which.
+    OffPage {
+        /// One entry per sheet with content outside its own boundary: the
+        /// 0-based page index, and the bands the engine computed for it.
+        ///
+        /// A sheet with an empty band list is not expected here — the window
+        /// filters clean pages out — but an empty list is skipped rather than
+        /// treated as an error, because an action is plain data a test can
+        /// build and four zero-area marks would be four annotations that do
+        /// nothing.
+        bands: Vec<(usize, Vec<pdfcer_core::page_tree::Rect>)>,
+        /// How many sheets the census could not read at all.
+        ///
+        /// ★★ Carried so the status line can say so, and it is the sentence
+        /// that keeps this window from issuing a clean bill it has not earned:
+        /// a page whose content streams will not decode was **not checked**,
+        /// and "marked everything outside the sheet" said over such a document
+        /// is a claim about pages nobody looked at. `pdfcer_core::offpage`
+        /// returns the two separately for precisely this reason.
+        unreadable: usize,
+        /// How the marks will look once applied. See [`Self::BySearch`]'s field
+        /// of the same name — and note that this route reads the **panel's**
+        /// chosen appearance like the other three, so a window on the Edit tab
+        /// cannot produce a differently-coloured mark from the panel beside it.
+        appearance: pdfcer_core::annot_author::RedactAppearance,
+    },
     /// **Take one redaction mark off.**
     ///
     /// Raised by a row's Remove control. The engine's
@@ -447,6 +513,116 @@ pub fn apply(doc: &mut OpenDoc, action: RedactAction, settings: &pdfcer_core::se
                     format!("redact-mark-page-declined page={page} reason=no-such-page")
                 });
             }
+        }
+        // ===============================================================
+        // ★★★ THE FOURTH MARKING ROUTE — content off the sheet, 2026-09-11.
+        //
+        // The only arm here that authors marks on MORE THAN ONE PAGE, and
+        // the only one whose geometry the operator never saw on screen.
+        // Everything structural about it is on the variant; what is below is
+        // the loop and the two things the loop has to be honest about.
+        // ===============================================================
+        RedactAction::OffPage {
+            bands,
+            unreadable,
+            appearance,
+        } => {
+            // `page` for the trace is the first sheet touched, which is this
+            // funnel's convention everywhere; the count is what makes the
+            // line useful — and here it counts BANDS, because that is what
+            // will appear in the operator's review list.
+            let first = bands.first().map_or(0, |(page, _)| *page);
+            let total: usize = bands.iter().map(|(_, rects)| rects.len()).sum();
+            if total == 0 {
+                crate::diag::trace(|| {
+                    // ui-text-exempt: diagnostic trace, never displayed in the UI
+                    format!("redact-mark-offpage-declined reason=no-bands unreadable={unreadable}")
+                });
+                return;
+            }
+            vector_edit(doc, "redact-mark-offpage", first, total, |session| {
+                let mut marked_pages = 0usize;
+                let mut marked_bands = 0usize;
+                let mut refused_pages = 0usize;
+                // The engine's own words about the first refusal, kept for the
+                // trace only. `vector_edit`'s Err arm documents why an
+                // `EditError`'s `Display` may not become UI text; this is the
+                // same rule applied to a PARTIAL failure, which that arm cannot
+                // see because a partial failure returns `Ok`.
+                let mut first_refusal: Option<String> = None;
+                for (page, rects) in &bands {
+                    if rects.is_empty() {
+                        continue;
+                    }
+                    // ★ One annotation per PAGE carrying every band, not one
+                    // per band — §12.5.6.23 makes `/QuadPoints` a list
+                    // precisely so a single mark can cover a disjoint region,
+                    // and `actions::redactsel` made the same call for the same
+                    // clause. Four annotations per sheet would be four rows in
+                    // the review list for one gesture on one page.
+                    let quads: Vec<pdfcer_core::annot_author::Quad> = rects
+                        .iter()
+                        .copied()
+                        .map(pdfcer_core::annot_author::Quad::from_rect)
+                        .collect();
+                    let spec = appearance.to_spec(quads);
+                    match session.add_redaction(*page, &spec) {
+                        Ok(_) => {
+                            marked_pages += 1;
+                            marked_bands += rects.len();
+                        }
+                        Err(error) => {
+                            refused_pages += 1;
+                            let _ = first_refusal.get_or_insert_with(|| error.to_string());
+                        }
+                    }
+                }
+                if marked_pages == 0 {
+                    // ★★★ NOTHING landed, so this is a decline and must travel
+                    // as one. Returning `Ok` with a sad sentence would bump the
+                    // epoch, invalidate every page cache and write a disclosure
+                    // about an edit that did not happen — and the operator
+                    // would be told to go and review marks that are not there.
+                    return Err(first_refusal.unwrap_or_else(|| {
+                        // ui-text-exempt: diagnostic trace, never displayed in the UI
+                        "no page accepted a mark".to_owned()
+                    }));
+                }
+                // ★★★ From here the edit SUCCEEDED, partially or wholly, and
+                // every remaining sentence is rule 4's surviving half: the
+                // marks are visible, so nothing below is about what the
+                // operator can see. It is about what they cannot —
+                //
+                //   • that Undo will take these back one sheet at a time,
+                //     because the engine records one command per page and
+                //     there is no range verb (see `text::offpage`);
+                //   • that some sheets were never checked;
+                //   • that some sheets were checked, found dirty, and refused.
+                //
+                // All three are invisible on a canvas that now shows red
+                // outlines exactly where they were asked for.
+                let mut notes = vec![crate::text::offpage::marked_disclosure(
+                    marked_bands,
+                    marked_pages,
+                )];
+                if marked_pages > 1 {
+                    notes.push(crate::text::offpage::marked_undo_note(marked_pages));
+                }
+                if unreadable > 0 {
+                    notes.push(crate::text::offpage::marked_skipped(unreadable));
+                }
+                if refused_pages > 0 {
+                    notes.push(crate::text::offpage::marked_refused(refused_pages));
+                    crate::diag::trace(|| {
+                        format!(
+                            // ui-text-exempt: diagnostic trace, never displayed in the UI
+                            "redact-mark-offpage-partial refused={refused_pages} detail={}",
+                            first_refusal.as_deref().unwrap_or("none")
+                        )
+                    });
+                }
+                Ok::<_, String>(notes)
+            });
         }
         RedactAction::RemoveMark { annot_id } => {
             let page = doc.view.page_index;

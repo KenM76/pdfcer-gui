@@ -635,6 +635,40 @@ pub(super) fn band() -> Vec<Command> {
         command("edit.redact_apply", t::edit_redact_apply(), 441)
             .with_icon("apply-redactions")
             .enabled_when("doc.pages"),
+        // ★★★ **THE FOURTH MARKING ROUTE — 2026-09-11.** `edit.offpage`, and it
+        // joins the arm/mark/obliterate family as a **mark**: it authors
+        // `/Redact` annotations over the area outside each page boundary and
+        // removes nothing. `edit.redact_apply` above remains the only control in
+        // this program that destroys content, which is the property the family
+        // was split into three glyphs to protect and which a fourth member must
+        // not quietly break.
+        //
+        // ⇒ A control that scanned and deleted on one press would be exactly
+        // that break — the middle step skipped, on the one operation where the
+        // wrong press is not a wasted click.
+        //
+        // ★★ Why it is in **Protect** and not in View. Off-page content is not
+        // a display mode, it is a **leak class**: a cropped title block with the
+        // old revision table still past the left edge, a superseded note dragged
+        // off the sheet rather than deleted, a customer's name moved out of the
+        // frame. None of it renders. All of it is extractable, searchable, and
+        // sent. That is the same sentence the rest of this group exists for.
+        //
+        // ★★ `doc.pages`, not `selection.any` and not a capability predicate.
+        // Its operand is the whole document and it needs nothing else — which is
+        // what makes it the one redaction control that is useful before the
+        // operator suspects anything. A document with no pages has nothing to
+        // walk, and that is the only state where it is meaningless.
+        //
+        // ★ The glyph is its own (`off-page`), not a borrow of `redact`. This
+        // file's recurring mistake is borrowing on what two commands are ABOUT
+        // rather than on what they DO, and this one does something none of the
+        // other three do: it **looks**. Its art is a page outline with a mark
+        // sitting outside it — the subject stated literally, which at 16 px is
+        // the only thing that survives.
+        command("edit.offpage", t::edit_offpage(), 443)
+            .with_icon("off-page")
+            .enabled_when("doc.pages"),
         // Undo and redo live on the QAT alone. Their predicates are the
         // canonical example of "greying is for temporarily unavailable":
         // an empty stack is a state that ends the moment anything happens,

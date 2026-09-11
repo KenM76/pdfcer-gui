@@ -321,6 +321,7 @@
                     items: [
                         Command(id: "edit.redact", size: Large),
                         Command(id: "edit.redact_selection"),
+                        Command(id: "edit.offpage"),
                         Command(id: "edit.redact_apply"),
                     ],
                     collapse: 1,

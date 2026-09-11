@@ -1112,7 +1112,14 @@ impl PdfcerApp {
             // the open document — the operator's report that the dialog offered
             // only a "don't apply yet" button. Same module for the same stated
             // reason: it is the other half of arming.
-                | RedactAction::ApplyNow { .. }),
+                | RedactAction::ApplyNow { .. }
+            // ★★★ …and, since 2026-09-11, the one that marks everything drawn
+            // OUTSIDE the sheet — `pdfcer_core::offpage`'s census turned into
+            // marks. Beside the other three for the plainest version of the
+            // reason: it is a fourth marking route, it shares their appearance,
+            // their funnel and their review list, and the only thing it does
+            // differently is touch more than one page.
+                | RedactAction::OffPage { .. }),
             ) => {
                 // ★ Settings travel with it since 2026-09-08: `ApplyNow`
                 // builds a NEW `EditSession`, and

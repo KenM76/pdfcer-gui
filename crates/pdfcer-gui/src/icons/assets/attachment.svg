@@ -6,5 +6,34 @@
        Deliberately NOT a page behind a page: that is copy.svg's vocabulary
        and would claim this command duplicates something. An attachment is a
        foreign file riding in the PDF, not a copy of anything in it. -->
+  <!-- ★ The ruling for this glyph, migrated from `Icon::Attachment`'s doc
+       comment on 2026-09-11. `catalog/OVERVIEW.md` § "The real seam"
+       carries the argument: the constraint belongs where the person about
+       to break it is looking, which is this file rather than the enum.
+
+       A paperclip: one open spiral of three concentric arcs with two free ends.
+
+       ★ This variant RETIRES a recorded refusal, and the refusal named the
+       exact glyph it was refusing. The registration read: *"the conventional
+       glyph for this is a paperclip; `icons/assets/PROVENANCE.md` makes that
+       directory the operator's own work, so the alternative to shipping none is
+       not 'draw one' but 'ask him for one' … A home-made paperclip beside four
+       hand-drawn glyphs is the mismatch a borrowed icon set exists to avoid."*
+       Nothing in that is an argument against a paperclip; all of it is an
+       argument against pdfcer inventing one. The asking has happened, so the
+       refusal is spent rather than overturned.
+
+       Distinct from `Icon::Combine` — `link.svg`, the chain — and the pair
+       needs the note because both depict "a thing fastened to a thing". The
+       chain is two CLOSED interlocking rings, symmetric, with no free ends: it
+       means two files becoming one. The clip is a SINGLE open curve with two
+       visible ends, and the openness is the meaning — an attachment is carried,
+       separably, and can be taken out again, which is exactly what the panel
+       behind this button offers (attach one, save one out, remove one).
+
+       Distinct from `Icon::ShapeInk`, which is also one unbroken stroke, by
+       regularity: `shape-ink.svg` is deliberately aperiodic with no baseline
+       because it means "the path your hand took". These arcs are concentric and
+       evenly nested — machined, not drawn. -->
   <path d="M31 15L19 27a4.5 4.5 0 0 0 6.4 6.4L38 20.8a8 8 0 0 0-11.3-11.3L13 23.2A11.5 11.5 0 0 0 29.3 39.5L39 29.8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

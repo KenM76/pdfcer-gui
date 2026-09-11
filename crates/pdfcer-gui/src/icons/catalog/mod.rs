@@ -239,18 +239,14 @@ pub enum Icon {
     /// View ▸ Navigate → the **text tool**, which makes the primary drag sweep
     /// a range of text instead of marqueeing objects.
     ///
-    /// A bare I-beam — the shape every operating system, word processor and PDF
-    /// reader draws over selectable text, and literally the `CursorIcon` the
-    /// tool installs, which is the strongest thing an icon can be: a picture of
-    /// what the control does to the pointer.
+    /// ★ The ruling for the ART — what the glyph depicts, and which
+    /// neighbours it may not be mistaken for — is in `assets/text-select.svg`.
+    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
+    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
+    /// asset states its own rules, and a rule stated twice drifts.
     ///
-    /// Deliberately not [`Icon::AddText`], which is this glyph plus a small
-    /// badge. The badge is the difference and it is the right one: a plus
-    /// **creates** text, and this tool creates nothing — it selects what the
-    /// page already carries. The two live on different tabs and never share a
-    /// band, so what has to survive is an operator carrying the vocabulary
-    /// between them; the beam here is therefore centred and full-width where
-    /// `AddText`'s is pushed left to clear its badge.
+    /// What survives below is the part the asset does not say — the
+    /// registration history, and the refusals this variant retired.
     ///
     /// Nor [`Icon::Fonts`]'s A-on-a-baseline, which reads as "type" — a property
     /// of the document — where this must read as "cursor", a property of the
@@ -589,64 +585,35 @@ pub enum Icon {
     /// else. This is the box-with-escaping-arrow every browser uses.
     PickLink,
 
-    // ── the 2026-09-04 batch ──────────────────────────────────────────────
-    //
-    // Thirty-six glyphs adopted from the outside review of 2026-09-03. Nine
-    // discharge a written "No icon" refusal; the rest take a role off a glyph
-    // it was borrowing. See [`super::super::assets`] for the batch note.
     /// Edit ▸ Apply redactions (`edit.redact_apply`) — the one irreversible
     /// command in the redaction family.
     ///
-    /// It borrowed [`Icon::Redact`] until now, which meant the button that ARMS
-    /// a marking tool and the button that PERMANENTLY DESTROYS content were the
-    /// same picture, on the same tab, two rows apart. That is the most
-    /// expensive icon collision this set could carry: the cost of the wrong
-    /// press is not a wasted click, it is content that cannot be recovered.
-    ///
-    /// A redaction bar with a tick struck against it — the mark is no longer a
-    /// proposal, it has been carried out. Deliberately UNFRAMED, where
-    /// [`Icon::Redact`] wraps its bar in a page outline with two text rules:
-    /// arming puts a mark ON a page, applying is done to the whole document, so
-    /// the bar floats free. Against [`Icon::RedactSelection`] the difference is
-    /// tick-versus-enclosure, which is the strongest pairwise cue available at
-    /// 16 px.
-    ///
-    /// The tick is the same figure as [`Icon::FinishShape`]'s, and that is
-    /// intended: a tick means "this gesture is now committed" in both places.
-    /// They never share a band, and the mark each one accompanies — a solid bar
-    /// versus an open vertex run — differs completely.
+    /// ★ The ruling for the ART — what the glyph depicts, and which
+    /// neighbours it may not be mistaken for — is in `assets/apply-redactions.svg`.
+    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
+    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
+    /// asset states its own rules, and a rule stated twice drifts.
     ApplyRedactions,
 
     /// Attachments (`edit.attachments`) — the files this document carries
     /// inside itself, which appear on no page.
     ///
-    /// A paperclip: one open spiral of three concentric arcs with two free ends.
-    ///
-    /// ★ This variant RETIRES a recorded refusal, and the refusal named the
-    /// exact glyph it was refusing. The registration read: *"the conventional
-    /// glyph for this is a paperclip; `icons/assets/PROVENANCE.md` makes that
-    /// directory the operator's own work, so the alternative to shipping none is
-    /// not 'draw one' but 'ask him for one' … A home-made paperclip beside four
-    /// hand-drawn glyphs is the mismatch a borrowed icon set exists to avoid."*
-    /// Nothing in that is an argument against a paperclip; all of it is an
-    /// argument against pdfcer inventing one. The asking has happened, so the
-    /// refusal is spent rather than overturned.
-    ///
-    /// Distinct from [`Icon::Combine`] — `link.svg`, the chain — and the pair
-    /// needs the note because both depict "a thing fastened to a thing". The
-    /// chain is two CLOSED interlocking rings, symmetric, with no free ends: it
-    /// means two files becoming one. The clip is a SINGLE open curve with two
-    /// visible ends, and the openness is the meaning — an attachment is carried,
-    /// separably, and can be taken out again, which is exactly what the panel
-    /// behind this button offers (attach one, save one out, remove one).
-    ///
-    /// Distinct from [`Icon::ShapeInk`], which is also one unbroken stroke, by
-    /// regularity: `shape-ink.svg` is deliberately aperiodic with no baseline
-    /// because it means "the path your hand took". These arcs are concentric and
-    /// evenly nested — machined, not drawn.
+    /// ★ The ruling — what the glyph depicts, and which neighbours it
+    /// must not be mistaken for — lives in `assets/attachment.svg`, beside the art
+    /// it constrains. Migrated there 2026-09-11 under the seam `OVERVIEW.md`
+    /// names: the enum is a list of roles, the asset carries its own rules.
     Attachment,
 
     /// Complete the gesture in progress — `markup.finish` and `measure.finish`.
+    ///
+    /// ★ The ruling for the ART — what the glyph depicts, and which
+    /// neighbours it may not be mistaken for — is in `assets/check.svg`.
+    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
+    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
+    /// asset states its own rules, and a rule stated twice drifts.
+    ///
+    /// What survives below is the part the asset does not say — the
+    /// registration history, and the refusals this variant retired.
     ///
     /// ★ This variant **retires two recorded refusals**, which were written in the
     /// same sentence at both registrations: *"There is no check-mark, tick or
@@ -655,10 +622,6 @@ pub enum Icon {
     /// shape of correction [`Icon::Pages`] records. Both notes must be rewritten
     /// at their registrations rather than left standing as though their premise
     /// still held.
-    ///
-    /// It could not have been a text glyph in any case: `✓` U+2713 is measured
-    /// **absent** from the shipped font stack by `icons::glyphs`, so this concept
-    /// had no fallback at all.
     ///
     /// A bare tick with two unequal limbs — a short down-stroke and a long
     /// up-stroke. Distinct from [`Icon::ChevronRight`], whose limbs are equal and
@@ -669,45 +632,23 @@ pub enum Icon {
 
     /// Place a **check box** — one independent on/off box.
     ///
-    /// Authored 2026-09-04 to break a five-way share: `edit.form_check_box`,
-    /// `edit.form_radio_button`, `edit.form_choice` and `edit.form_push_button`
-    /// all drew [`Icon::FormField`], which belongs to `edit.form_text_field`.
-    /// The five are one ribbon group drawn side by side, so the share left five
-    /// buttons carrying five different words under one identical picture — the
-    /// fault the text-markup pass refused when it declined to reuse
-    /// `shape-highlight` for underline, strikeout and squiggly.
-    ///
-    /// ★★ **It puts the first tick in the set, and two recorded refusals assumed
-    /// there was none.** `shell::commands::catalog`'s refusal table denies
-    /// `measure.finish` and `markup.finish` a glyph because "the set has no
-    /// check/tick/accept glyph". That sentence is now false in the letter. The
-    /// refusals stand on the ground that survives: this tick is ENCLOSED IN A BOX
-    /// and the box is the subject, so it names a field type rather than an accept
-    /// verb. A bare tick still does not exist and must not be extracted from this
-    /// file to make one.
-    ///
-    /// Distinct from [`Icon::Signatures`], which is forbidden from being a
-    /// checkmark at all (a checkmark reads as VALIDATED and pdfcer verifies
-    /// nothing): that glyph is the mark itself on a rule, with no frame; this one
-    /// is a 30-unit box first and a mark second.
+    /// ★ The ruling for the ART — what the glyph depicts, and which
+    /// neighbours it may not be mistaken for — is in `assets/check-box.svg`.
+    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
+    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
+    /// asset states its own rules, and a rule stated twice drifts.
     CheckBox,
 
     /// Close every open document except one — `view.close_other_documents`.
     ///
-    /// Two square-on sheets: a complete one in front, untouched, and behind it a
-    /// second carrying a small ✕ at its top-right. The front sheet is the one you
-    /// keep; the mark is on the others. Which document is kept depends on the
-    /// route — the tab that was right-clicked, or the one on screen — and the
-    /// glyph says only "this one stays, those go", which is true from both.
+    /// ★ The ruling for the ART — what the glyph depicts, and which
+    /// neighbours it may not be mistaken for — is in `assets/close-others.svg`.
+    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
+    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
+    /// asset states its own rules, and a rule stated twice drifts.
     ///
-    /// Distinct from [`Icon::Close`], the bare full-frame ✕ that `file.close`
-    /// wears: that means *dismiss the thing in front of you*, and this means the
-    /// opposite — the thing in front of you is the survivor. Scale and placement
-    /// are the cue, and they are load-bearing, because getting it backwards closes
-    /// the wrong documents.
-    ///
-    /// Distinct from [`Icon::Copy`], also two offset rects, by the ✕ (and from
-    /// [`Icon::SaveCopy`] by having no shutter).
+    /// What survives below is the part the asset does not say — the
+    /// registration history, and the refusals this variant retired.
     ///
     /// ★ Adopting this retires half of a recorded refusal rather than ignoring it.
     /// The registration declines an icon on the ground that a context-menu row's
@@ -760,17 +701,14 @@ pub enum Icon {
 
     /// Copy this page's text to the clipboard — `file.copy_page_text`.
     ///
-    /// A page carrying three full-width text rules, with a second sheet showing
-    /// behind and below it. The rules say TEXT, the second sheet says COPY, and
-    /// the front page being whole is what says *this one page*.
+    /// ★ The ruling for the ART — what the glyph depicts, and which
+    /// neighbours it may not be mistaken for — is in `assets/copy-page-text.svg`.
+    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
+    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
+    /// asset states its own rules, and a rule stated twice drifts.
     ///
-    /// It replaces a borrow. Until now this command wore [`Icon::Copy`], the plain
-    /// two-blank-rects clipboard glyph, alongside `edit.copy`, `pages.copy` and
-    /// [`Icon::CopyDocumentText`] — four controls drawn identically, which is
-    /// precisely what `catalog::file`'s convention says makes several controls read
-    /// as one control drawn repeatedly. The rules are what separate it from
-    /// `edit.copy`'s selection and `pages.copy`'s sheets: only this one copies
-    /// WORDS.
+    /// What survives below is the part the asset does not say — the
+    /// registration history, and the refusals this variant retired.
     ///
     /// Distinct from [`Icon::CopyDocumentText`] by COUNT, deliberately, because
     /// the two sit adjacent in the same group and differ only in scope: two sheets
@@ -781,26 +719,11 @@ pub enum Icon {
     /// Dimension groups — `measure.manage_groups`, and the caption's dock tab
     /// (`crate::panels::Panel::DimensionGroups`) with it.
     ///
-    /// Two stacked dimension lines, each a rule capped at both ends by an upright
-    /// extension tick, the lower one shorter and resuming past its right-hand
-    /// tick as a detached stub.
-    ///
-    /// ★ It retires this command's share of [`Icon::ManageList`], and the reason
-    /// is the one that variant's own doc gives for the share: the family was one
-    /// of **action, not of subject**, because "dimension groups" was a phrase
-    /// only the label could say. This glyph says it. A rule terminated by an
-    /// extension tick at each end is a dimension and nothing else; two stacked is
-    /// a set of them; and a set of them carrying one scale, one number format and
-    /// one drafting standard is precisely what a dimension group is.
-    ///
-    /// Apart from [`Icon::Measure`] by having **no enclosing band and no
-    /// graduated ladder** — ticks sit only at the ends, because a ruler is
-    /// subdivided where a dimension is terminated. Apart from
-    /// [`Icon::ManageList`]'s three equal rules by the **unequal row lengths**,
-    /// and the **stub** past the lower tick is the "and more" cue that makes two
-    /// rows read as a list rather than as exactly two. Apart from
-    /// [`Icon::MeasureLength`], whose ticks also flank a run, because that run is
-    /// single and curved — a measurement being taken, not measurements listed.
+    /// ★ The ruling for the ART — what the glyph depicts, and which
+    /// neighbours it may not be mistaken for — is in `assets/dimension-groups.svg`.
+    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
+    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
+    /// asset states its own rules, and a rule stated twice drifts.
     DimensionGroups,
 
     /// Switch to the next open document — `view.next_document` (Ctrl+Tab).
@@ -820,16 +743,14 @@ pub enum Icon {
     /// Switch to the previous open document — `view.previous_document`
     /// (Ctrl+Shift+Tab).
     ///
-    /// A page with a left-pointing shafted arrow beside it. The PAGE says what
-    /// moves — a whole document, not a position within one — and the SHAFT says
-    /// how far.
+    /// ★ The ruling for the ART — what the glyph depicts, and which
+    /// neighbours it may not be mistaken for — is in `assets/document-previous.svg`.
+    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
+    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
+    /// asset states its own rules, and a rule stated twice drifts.
     ///
-    /// It replaces a borrow of [`Icon::ChevronLeft`], and the borrow was against a
-    /// written reservation: that variant is documented "Previous page", and
-    /// `chevron-left.svg`'s own note keeps the bare two-segment chevron for a STEP
-    /// through a sequence. Switching documents is a JUMP between files, and
-    /// `back.svg` already settled what a jump gets — "straight-with-shaft is the
-    /// untaken slot".
+    /// What survives below is the part the asset does not say — the
+    /// registration history, and the refusals this variant retired.
     ///
     /// Distinct from [`Icon::Back`], the set's other shafted left arrow, by the
     /// page: Back leaves a surface with nothing else in frame, this carries the
@@ -840,41 +761,29 @@ pub enum Icon {
 
     /// Place a **drop-down** (the `/Ch` choice field).
     ///
-    /// The variant is named for the LABEL, not the command id: `edit.form_choice`
-    /// ships as "Drop-down" (`text::commands::edit_form_choice`), and an icon key
-    /// answers to what the operator reads.
+    /// ★ The ruling for the ART — what the glyph depicts, and which
+    /// neighbours it may not be mistaken for — is in `assets/drop-down.svg`.
+    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
+    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
+    /// asset states its own rules, and a rule stated twice drifts.
+    ///
+    /// What survives below is the part the asset does not say — the
+    /// registration history, and the refusals this variant retired.
     ///
     /// Authored 2026-09-04 out of the same five-way share as [`Icon::CheckBox`].
-    ///
-    /// ★ **The delicate pair is [`Icon::ChevronDown`]**, which is not another
-    /// command's art but the ribbon's own split-button disclosure marker — so it
-    /// can appear in the same band, on the chrome of a neighbouring control. The
-    /// cue is the FRAME and nothing else: a bare chevron means "this control opens
-    /// something below it"; a chevron inside a field rectangle means "the control
-    /// IS a list". The box must never be dropped for optical balance.
-    ///
-    /// Distinct from [`Icon::FormField`], one item to its left in the same group,
-    /// by what stands inside: a text field carries a VERTICAL typing caret and a
-    /// plus badge outside the box; this carries a HORIZONTAL value line and a
-    /// chevron within it. Caret means "type here"; line-and-chevron means "pick
-    /// from these".
     DropDown,
 
     /// Embed the font programs a document references but does not carry
     /// (`tools.embed_fonts`).
     ///
-    /// A capital A sealed inside a **solid** frame. It exists because three
-    /// controls shared one glyph: [`Icon::Fonts`] belongs to the Fonts panel,
-    /// which writes nothing, and both font *commands* borrowed it — so a panel
-    /// that only reports and two commands that rewrite the document's font
-    /// programs were one picture drawn three times, in two different tabs.
+    /// ★ The ruling for the ART — what the glyph depicts, and which
+    /// neighbours it may not be mistaken for — is in `assets/embed-fonts.svg`.
+    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
+    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
+    /// asset states its own rules, and a rule stated twice drifts.
     ///
-    /// Distinct from [`Icon::Fonts`] by the FRAME. An A standing on an open
-    /// baseline rule reads as "a typeface, listed"; an A closed inside a box
-    /// reads as "the face is held inside this container", which is what
-    /// embedding is. Distinct from [`Icon::UnembedFonts`] by that frame being
-    /// solid rather than dashed, and the pair may not be redrawn separately —
-    /// the dash is the whole distinction between them.
+    /// What survives below is the part the asset does not say — the
+    /// registration history, and the refusals this variant retired.
     ///
     /// Deliberately not from the I-beam family ([`Icon::AddText`],
     /// [`Icon::TextSelect`]) and not [`Icon::EditText`]'s pencil: those act on
@@ -882,6 +791,15 @@ pub enum Icon {
     EmbedFonts,
 
     /// A tree row whose children are **hidden** — press to reveal them.
+    ///
+    /// ★ The ruling for the ART — what the glyph depicts, and which
+    /// neighbours it may not be mistaken for — is in `assets/expand.svg`.
+    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
+    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
+    /// asset states its own rules, and a rule stated twice drifts.
+    ///
+    /// What survives below is the part the asset does not say — the
+    /// registration history, and the refusals this variant retired.
     ///
     /// ★ This variant **retires a font workaround**, the way [`Icon::Pages`]
     /// retired a recorded refusal. The Bookmarks panel draws `⏵` U+23F5 today
@@ -899,79 +817,37 @@ pub enum Icon {
     /// CLOSED triangle, which is the tree-disclosure convention in every file
     /// manager, IDE and sidebar the operator uses. **The closing edge is the only
     /// cue**, so it may not be dropped in a later tidy-up.
-    ///
-    /// Its pair is [`Icon::Collapse`]. Neither may be redrawn without the other:
-    /// two glyphs that mean two states of one control must stay one family.
     Expand,
 
     /// Markup ▸ Finish shape (`markup.finish`) — commit the vertex run a
     /// Polyline or Polygon gesture has laid down. The same glyph answers
     /// `measure.finish`, which is its twin in every respect that matters.
     ///
-    /// ★ Both registrations carry a written refusal that names precisely what
-    /// was missing — *"There is no check-mark, tick or accept glyph in the set,
-    /// and no existing key means 'complete this gesture'"* — so this asset
-    /// discharges the refusal's stated cause rather than working around it.
-    ///
-    /// Two marks, because the command is two things at once: it is ABOUT a
-    /// vertex run in progress, and it ENDS it. A bare tick was the obvious
-    /// drawing and the wrong one — an accept mark alone belongs to no tool, and
-    /// this is not a generic OK, it commits one specific gesture.
-    ///
-    /// Deliberately close to, and deliberately distinct from,
-    /// [`Icon::ShapePolyline`]: that glyph's run is four vertices over three
-    /// aperiodic segments ending upward, and this one's run is the same figure,
-    /// because this is the control that finishes that tool. The whole
-    /// separation is the tick in the lower right, and the run is drawn shorter
-    /// and pushed up-left to make room for it. At 16 px the surviving cue is
-    /// the count: one mark in the tile is Polyline, two marks is Finish.
-    ///
-    /// Also not [`Icon::ShowPoints`]: that one puts square node boxes ON its
-    /// run and means "these points are aimable". This run is bare, because
-    /// Finish is about the run being over, not about its vertices being
-    /// targets.
+    /// ★ The ruling for the ART — what the glyph depicts, and which
+    /// neighbours it may not be mistaken for — is in `assets/finish-shape.svg`.
+    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
+    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
+    /// asset states its own rules, and a rule stated twice drifts.
     FinishShape,
 
     /// A row the **document** forbids changing — an optional-content group
     /// carrying `/Locked` (ISO 32000-1 Table 101), or a `/Ff` read-only form
     /// field.
     ///
-    /// A padlock. Those rows draw a disabled control today and carry the reason
-    /// only on hover; [`crate::panels::layers`]' own header argues that this is
-    /// the wrong shape of disclosure — "a locked row with nothing where the tick
-    /// goes reads as a rendering fault" — and records that a tooltip-only version
-    /// of the same fact was a shipped defect. This is the positive mark that
-    /// argument asks for, and R84's "never a colour-class cue alone" points the
-    /// same way: greyness is a colour cue.
-    ///
-    /// ★ **It must never appear on a signature row.** [`Icon::Signatures`] is
-    /// deliberately not a seal, badge, shield or checkmark because pdfcer performs
-    /// no cryptographic verification and every one of those reads as VALIDATED. A
-    /// padlock reads the same way. This glyph claims exactly one thing: *the
-    /// document says this control may not be operated here.* Not "secure", not
-    /// "verified", not "encrypted".
+    /// ★ The ruling for the ART — what the glyph depicts, and which
+    /// neighbours it may not be mistaken for — is in `assets/lock.svg`.
+    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
+    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
+    /// asset states its own rules, and a rule stated twice drifts.
     Locked,
 
     /// Two-line measurement — `measure.two_line`.
     ///
-    /// Two straight lines meeting at a vertex with a small arc swept across the
-    /// corner: the drafting convention for an angular dimension, and a picture of
-    /// the gesture — pick one line, pick a second, and
-    /// `pdfcer_core::dimension::author_from_two_lines` places whichever dimension
-    /// the geometry calls for.
-    ///
-    /// ★ **The arc draws only half of what the tool does, and that is deliberate.**
-    /// The tool is linear between parallels and angular between lines that meet.
-    /// Two parallels with a dimension across them is [`Icon::Measure`]'s job and
-    /// would put a fourth near-identical band in this group — exactly the outcome
-    /// the Measure registrations argue against. The angled case is the one with a
-    /// shape of its own and the one nothing else on the tab can express.
-    ///
-    /// Distinct from [`Icon::ShapePolyline`], the other bare-strokes-at-vertices
-    /// glyph, by the **arc** (nothing in the shapes family draws one) and by
-    /// having **one** vertex where that one needs three to read as a chain.
-    /// Distinct from [`Icon::ShapeArrow`], the other single-vertex glyph, because
-    /// its second mark is a chevron head and this one's is a curve.
+    /// ★ The ruling for the ART — what the glyph depicts, and which
+    /// neighbours it may not be mistaken for — is in `assets/measure-angle.svg`.
+    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
+    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
+    /// asset states its own rules, and a rule stated twice drifts.
     MeasureAngle,
 
     /// Path-length measurement — `measure.length`.
@@ -1013,10 +889,14 @@ pub enum Icon {
 
     /// Radius / diameter measurement — `measure.radius_diameter`.
     ///
-    /// A closed circle with a spoke from its centre to the rim and a dot on the
-    /// centre: the drafting convention for a radius dimension. One glyph serves
-    /// both readings because the two are one stored geometry at two scales
-    /// (decision 011, `diameter = 2 x radius`), not two measurements.
+    /// ★ The ruling for the ART — what the glyph depicts, and which
+    /// neighbours it may not be mistaken for — is in `assets/measure-radius.svg`.
+    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
+    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
+    /// asset states its own rules, and a rule stated twice drifts.
+    ///
+    /// What survives below is the part the asset does not say — the
+    /// registration history, and the refusals this variant retired.
     ///
     /// ★ Its dangerous neighbour is [`Icon::ShapeEllipse`], whose bare circle is
     /// this one's outer ring to within a unit. The ring cannot carry the
@@ -1034,30 +914,11 @@ pub enum Icon {
 
     /// Merge another file's pages INTO the open document (`pages.merge_into`).
     ///
-    /// Two streams entering from the left, bending together, and leaving as one
-    /// line under an arrowhead.
-    ///
-    /// ★ This variant ends a shared key. `pages.merge_into` had no art of its
-    /// own and named `combine`, whose documented owner is [`Icon::Combine`] —
-    /// *"Combine files…"*, i.e. `tools.merge_files`. The two commands are
-    /// different operations and the catalogue already knew it: each one's
-    /// tooltip ends by naming the other (*"To combine files into a new one
-    /// instead, leaving this document alone, use Tools ▸ Merge files"*). A
-    /// tooltip is the last thing an operator reads and a glyph is the first, so
-    /// the disambiguation was being done in the wrong order.
-    ///
-    /// Distinct from [`Icon::Combine`] by DIRECTION. `link.svg` is two closed
-    /// interlocking rings: symmetric, no free ends, no statement about which
-    /// input survives. This one is a Y-junction with an arrowhead — two tails
-    /// in, one line out — which is exactly the difference the two labels make:
-    /// Merge files writes a NEW file and changes neither input; Merge into this
-    /// document consumes the others into the one already open.
-    ///
-    /// Distinct from [`Icon::ShapeArrow`] because the arrowhead there terminates
-    /// a single straight shaft (a `/Line` annotation is a straight drag); here
-    /// the head terminates a junction and the two curved tails carry the whole
-    /// meaning. Distinct from [`Icon::PageExtract`], which is the same family's
-    /// opposite sense — an arrow leaving a page, direction OUT.
+    /// ★ The ruling for the ART — what the glyph depicts, and which
+    /// neighbours it may not be mistaken for — is in `assets/merge.svg`.
+    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
+    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
+    /// asset states its own rules, and a rule stated twice drifts.
     MergeInto,
 
     /// New (blank) document — `file.new`.
@@ -1094,57 +955,32 @@ pub enum Icon {
 
     /// Place a **push button** — the `/Btn` field with no on/off state.
     ///
-    /// Authored 2026-09-04 out of the same five-way share as [`Icon::CheckBox`].
-    /// `edit.form_push_button` is `enabled_when("forms.push_button_runnable")` and
-    /// was greyed-always until 2026-09-01; the history is on its registration and
-    /// does not change the art. What it changes is the weight of the argument: a
-    /// control that spends time dimmed needs its OWN picture more, not less —
-    /// five identical glyphs of which one is greyed reads as a rendering fault
-    /// rather than as an unavailable capability.
-    ///
-    /// ★ **The collision to watch is [`Icon::Stamp`]**, because the two share a
-    /// base line at the same height. Stamp is head + narrow handle + wide base: a
-    /// TALL stack read vertically, 20 units across. This is a single WIDE slab 32
-    /// units across with its base directly beneath and no handle between. One is
-    /// portrait, one is landscape, and that is the cue.
-    ///
-    /// Distinct from [`Icon::FormField`] and [`Icon::DropDown`], its neighbours in
-    /// the group, by CORNER RADIUS and by the base line: those are square-cornered
-    /// rectangles because a field is a hole in the page; this is rounded on all
-    /// four corners and stands on a line, because a button is an object on top of
-    /// it.
+    /// ★ The ruling for the ART — what the glyph depicts, and which
+    /// neighbours it may not be mistaken for — is in `assets/push-button.svg`.
+    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
+    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
+    /// asset states its own rules, and a rule stated twice drifts.
     PushButton,
 
     /// Put the armed tool down — the Tool panel's row 4.
     ///
-    /// A pot with three tools standing in it and a fourth angling in over the
-    /// rim. The pot is the point: this control does not perform the tool's verb,
-    /// it ENDS the arming, and a container is the only shape in the set that
-    /// says *the implement goes back*.
-    ///
-    /// ★ It must not be [`Icon::Pointer`]'s arrow, and that is the whole reason
-    /// this variant exists rather than a shared key. `panels::tool::armed`'s
-    /// button arms Select (`canvas::tool::select(ctx, CanvasTool::Select)`), so
-    /// `cursor` is the mechanically honest key and is exactly the wrong one: the
-    /// Tool panel and the ribbon's Select control are on screen together, and two
-    /// controls drawn with one glyph read as one control drawn twice — the
-    /// shared-key hazard `crate::shell::commands`' header names. "Put this tool
-    /// down" and "arm the Select tool" are the same code path and different
-    /// promises.
-    ///
-    /// Distinct from [`Icon::Tools`]' wrench, which is one implement lying at
-    /// 45° and means *the box of things you can do*. This is several implements
-    /// upright inside a container, symmetric about the vertical — a rest, not a
-    /// tool. Distinct from [`Icon::AddText`] and [`Icon::EditText`] for the same
-    /// reason at the other end: ONE implement, held, means writing; SEVERAL,
-    /// stood in a pot, means not writing.
-    ///
-    /// The three uprights step 14/16/12 units rather than landing on one line,
-    /// for the reason [`Icon::Hand`]'s art records about its finger tips — a flat
-    /// top reads as a comb.
+    /// ★ The ruling for the ART — what the glyph depicts, and which
+    /// neighbours it may not be mistaken for — is in `assets/put-down.svg`.
+    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
+    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
+    /// asset states its own rules, and a rule stated twice drifts.
     PutDown,
 
     /// Place a **radio button** — one of a mutually exclusive set.
+    ///
+    /// ★ The ruling for the ART — what the glyph depicts, and which
+    /// neighbours it may not be mistaken for — is in `assets/radio-button.svg`.
+    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
+    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
+    /// asset states its own rules, and a rule stated twice drifts.
+    ///
+    /// What survives below is the part the asset does not say — the
+    /// registration history, and the refusals this variant retired.
     ///
     /// Authored 2026-09-04, breaking the same five-way share as
     /// [`Icon::CheckBox`]: this command drew [`Icon::FormField`], two items from
@@ -1155,17 +991,6 @@ pub enum Icon {
     /// because "at 16 px two concentric circles read as a target or a radio
     /// button — neither of which is a list of named things". The deviation is now
     /// load-bearing in both directions, and the two glyphs are genuinely adjacent.
-    ///
-    /// ★★ **The inner mark is a RING, not a filled dot**, which is not a style
-    /// choice. A real radio button's selected state is a filled disc, and
-    /// `icons::tests::fill_is_semantic_and_the_set_that_uses_it_is_closed` closes the filled set:
-    /// [`Icon::Redact`]'s fill is the one semantic exception and also the icon
-    /// pipeline's only coverage of the fill path. Borrowing it here would cost
-    /// both.
-    ///
-    /// Distinct from [`Icon::Search`], [`Icon::ZoomIn`] and [`Icon::ZoomOut`] —
-    /// the set's other circles — by having no handle: a lens is a circle with a
-    /// stem running off it; this is two circles about one centre and nothing else.
     RadioButton,
 
     /// Recently-opened documents — `file.recent`, the menu button in File ▸ File.
@@ -1188,11 +1013,14 @@ pub enum Icon {
 
     /// Recognise text (OCR) — `file.ocr`.
     ///
-    /// A page carrying a capital A, with a dashed rule sweeping across its foot.
-    /// The page says *this document*, the letterform says *text*, and the dashed
-    /// sweep says the text is being FOUND rather than typed — recognition is a
-    /// scan, and a dashed line is the one cue that reads as "in progress, not yet
-    /// certain" at 16 px.
+    /// ★ The ruling for the ART — what the glyph depicts, and which
+    /// neighbours it may not be mistaken for — is in `assets/recognise-text.svg`.
+    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
+    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
+    /// asset states its own rules, and a rule stated twice drifts.
+    ///
+    /// What survives below is the part the asset does not say — the
+    /// registration history, and the refusals this variant retired.
     ///
     /// The near neighbour is [`Icon::Fonts`], which is also a capital A on a rule.
     /// Two cues separate them and both matter: this A is INSIDE a page outline,
@@ -1201,57 +1029,53 @@ pub enum Icon {
     /// into "a typeface", and that panel only reports. This command writes a text
     /// layer into the file, so it may not borrow the glyph of a surface that
     /// changes nothing.
-    ///
-    /// Deliberately not [`Icon::Search`]'s magnifier over a page: that would say
-    /// Find, which is a different command that also exists.
     RecogniseText,
+
+    /// Edit ▸ Check for content off the sheet (`edit.offpage`) — the census of
+    /// everything drawn outside a page boundary, and the fourth member of the
+    /// redaction family.
+    ///
+    /// ★★★ **It does not borrow the family's solid bar, and that is the point.**
+    /// [`Icon::Redact`], [`Icon::RedactSelection`] and [`Icon::ApplyRedactions`]
+    /// share a filled rectangle because all three are about content being
+    /// removed permanently; [`tests::fill_is_semantic_and_the_set_that_uses_it_is_closed`]
+    /// enumerates them and fails on any other filled glyph. This command
+    /// **reports** — it walks the document and says what it found — so a filled
+    /// version would promise destruction in the cue that resolves first at
+    /// 16 px. Stroke-only, and it must stay that way.
+    ///
+    /// What it draws: a sheet, with one rule crossing its left edge and a second
+    /// sitting entirely clear of it — the engine's `OffPage::Partial` and
+    /// `OffPage::Fully` in one picture. The **crossing** is what makes it
+    /// unreadable as a two-pane layout glyph.
+    OffPage,
 
     /// Edit ▸ Redact selection (`edit.redact_selection`) — mark whatever is
     /// selected, in one action.
+    ///
+    /// ★ The ruling for the ART — what the glyph depicts, and which
+    /// neighbours it may not be mistaken for — is in `assets/redact-selection.svg`.
+    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
+    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
+    /// asset states its own rules, and a rule stated twice drifts.
+    ///
+    /// What survives below is the part the asset does not say — the
+    /// registration history, and the refusals this variant retired.
     ///
     /// It borrowed [`Icon::Redact`] until now, which drew the button that ARMS
     /// a marking tool and the button that marks A SELECTION as the same
     /// picture, three buttons apart on the same tab. The redaction family is
     /// not one verb over three operands — it is arm, mark, obliterate — so it
     /// is the wrong place for the shared-glyph convention.
-    ///
-    /// A marching-ants marquee with a redaction bar already laid down inside
-    /// it, which is the command's contract drawn literally. The solid bar is
-    /// the family mark it keeps from [`Icon::Redact`]; what separates them is
-    /// the DASHED outline, this shell's vocabulary for "a selection", which
-    /// resolves before any other detail at 16 px. [`Icon::Redact`] also carries
-    /// two text rules above and below its bar, saying "a page of words"; this
-    /// one carries none, because a selection need not be text.
-    ///
-    /// ★ The dash is load-bearing, not decoration, and `super::super::svg`
-    /// says so in its own words: without it this glyph *is* [`Icon::Redact`].
-    /// That is why `stroke-dasharray` stopped being an ignored attribute.
     RedactSelection,
 
     /// Reflow paragraph (`edit.reflow_block`) — re-wrap the paragraph the caret
     /// is in so its lines fill their box again.
     ///
-    /// Three naked rules, the third stopping short, with a return arrow hooking
-    /// down from the right margin and back to the left: the carriage return
-    /// every text editor draws for word wrap.
-    ///
-    /// ★ This variant RETIRES a recorded refusal. `edit.reflow_block` was
-    /// registered on 2026-08-28 with no icon and the reason was argued rather
-    /// than inherited: *"the operator's own art is the only art this build
-    /// ships, and 're-wrap this paragraph' has no conventional glyph to borrow —
-    /// Word gives it a menu line, not a picture. A home-made pilcrow-with-arrows
-    /// would be a symbol nobody has been taught."* The blocker was supply, not
-    /// principle, and it is spent: the art arrived from outside, and it is not
-    /// the pilcrow the refusal rejected — it is the wrap arrow, which is the one
-    /// mark for this idea an operator HAS been taught.
-    ///
-    /// Distinct from [`Icon::ManageList`] by the absence of markers: `list.svg`
-    /// puts a small square beside each rule, because a list is an inventory of
-    /// named things. These rules have nothing beside them, because they are
-    /// prose. Distinct from [`Icon::Properties`] and [`Icon::Text`] by the
-    /// absence of a page frame: those wrap their rules in a sheet, because they
-    /// mean "a document"; this one is text with no paper around it, because what
-    /// it acts on is a paragraph and not a file.
+    /// ★ The ruling — what the glyph depicts, and which neighbours it
+    /// must not be mistaken for — lives in `assets/reflow.svg`, beside the art
+    /// it constrains. Migrated there 2026-09-11 under the seam `OVERVIEW.md`
+    /// names: the enum is a list of roles, the asset carries its own rules.
     Reflow,
 
     /// Report how the page was actually drawn (`tools.render_diagnostics`).
@@ -1339,30 +1163,21 @@ pub enum Icon {
 
     /// The wheel-paging toggle on the status bar — `OPERATOR_REQUESTS.md` O30.
     ///
+    /// ★ The ruling for the ART — what the glyph depicts, and which
+    /// neighbours it may not be mistaken for — is in `assets/wheel-flip.svg`.
+    /// The paragraphs that repeated it here were deleted 2026-09-11 under the
+    /// seam `OVERVIEW.md` § "The real seam" names: the enum lists roles, the
+    /// asset states its own rules, and a rule stated twice drifts.
+    ///
+    /// What survives below is the part the asset does not say — the
+    /// registration history, and the refusals this variant retired.
+    ///
     /// A mouse, and a sheet carrying a forward chevron. Read left to right it is
     /// the sentence the control makes: *the wheel turns the page*. The control
     /// draws its two words today in a bar whose own module documents a fixed 30
     /// point height and a right-hand cluster that must not move
     /// ([`crate::app::status`]), so this is the one place on the surface where a
     /// glyph buys width rather than spending it.
-    ///
-    /// Distinct from [`Icon::ChevronRight`], which is this glyph's chevron and
-    /// nothing else. That one is a single act — go to the next thing, once,
-    /// because you pressed it. Enclosing the chevron in a SHEET and setting a
-    /// MOUSE beside it turns the act into a policy about an input device, which
-    /// is what this control actually sets. The mouse is the cue and it is
-    /// load-bearing: without it the glyph is Next page with decoration.
-    ///
-    /// Distinct from [`Icon::PageSingle`] and its three siblings by breaking
-    /// their family rule on purpose. Those four are BARE page silhouettes
-    /// because the arrangement is the whole information; this sheet is marked —
-    /// a folded corner and an interior chevron — which is exactly the interior
-    /// detail that family forbids itself, and is therefore what keeps this glyph
-    /// out of it. It does not say how many pages are on screen.
-    ///
-    /// Distinct from [`Icon::Properties`]' `document.svg`, the other marked
-    /// sheet: that one carries three ruled lines and means *a page about which
-    /// something is true*. This one carries a direction.
     WheelFlip,
     // ── assets orphaned by breaking their aliases, 2026-09-04 ────────────
     // ★ `Document` rejoined the ribbon on 2026-09-05; `Convert` below is the

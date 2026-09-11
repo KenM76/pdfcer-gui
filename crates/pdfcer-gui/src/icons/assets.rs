@@ -1043,6 +1043,15 @@ pub(super) const RECENT: &str = include_str!("assets/recent.svg");
 /// Recognise text (OCR) — `file.ocr`.
 pub(super) const RECOGNISE_TEXT: &str = include_str!("assets/recognise-text.svg");
 
+/// `off-page.svg` — the art for [`super::Icon::OffPage`].
+///
+/// Edit ▸ Check for content off the sheet (`edit.offpage`) — a page outline
+/// with line work running out past its left edge. **Stroke-only, deliberately**:
+/// its three redaction siblings all carry a solid bar and this command removes
+/// nothing, so joining the closed fill set would say "destroys content" in the
+/// one cue that survives downscaling. The asset's own header carries the rest.
+pub(super) const OFF_PAGE: &str = include_str!("assets/off-page.svg");
+
 /// `redact-selection.svg` — the art for [`super::Icon::RedactSelection`].
 ///
 /// Edit ▸ Redact selection (`edit.redact_selection`) — mark whatever is

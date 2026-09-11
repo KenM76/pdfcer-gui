@@ -6,6 +6,32 @@
        but EVEN: even rules mean "this is text", ragged rules plus the return
        arrow mean "this text is being re-broken". The arrow is what separates
        it from add-text.svg as well, which adds a plus rather than a wrap. -->
+  <!-- ★ The ruling for this glyph, migrated from `Icon::Reflow`'s doc
+       comment on 2026-09-11. `catalog/OVERVIEW.md` § "The real seam"
+       carries the argument: the constraint belongs where the person about
+       to break it is looking, which is this file rather than the enum.
+
+       Three naked rules, the third stopping short, with a return arrow hooking
+       down from the right margin and back to the left: the carriage return
+       every text editor draws for word wrap.
+
+       ★ This variant RETIRES a recorded refusal. `edit.reflow_block` was
+       registered on 2026-08-28 with no icon and the reason was argued rather
+       than inherited: *"the operator's own art is the only art this build
+       ships, and 're-wrap this paragraph' has no conventional glyph to borrow —
+       Word gives it a menu line, not a picture. A home-made pilcrow-with-arrows
+       would be a symbol nobody has been taught."* The blocker was supply, not
+       principle, and it is spent: the art arrived from outside, and it is not
+       the pilcrow the refusal rejected — it is the wrap arrow, which is the one
+       mark for this idea an operator HAS been taught.
+
+       Distinct from `Icon::ManageList` by the absence of markers: `list.svg`
+       puts a small square beside each rule, because a list is an inventory of
+       named things. These rules have nothing beside them, because they are
+       prose. Distinct from `Icon::Properties` and `Icon::Text` by the
+       absence of a page frame: those wrap their rules in a sheet, because they
+       mean "a document"; this one is text with no paper around it, because what
+       it acts on is a paragraph and not a file. -->
   <path d="M8 12h32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
   <path d="M8 20h32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
   <path d="M8 28h18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>

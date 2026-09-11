@@ -325,6 +325,42 @@ pub const fn edit_redact_selection() -> CommandText {
     )
 }
 
+/// `edit.offpage` — find everything drawn outside the sheet.
+///
+/// ★★★ **The label says what the operator is looking for, not what the program
+/// does.** *"Check for content off the sheet"* over *"Off-page census"* or
+/// *"Scan document"*: the first is a sentence a draughtsman would say out loud
+/// about a drawing they are about to send, and the other two are a description
+/// of a mechanism nobody asked about.
+///
+/// ★★★ The tooltip leads with the CONSEQUENCE, and it must. Every other control
+/// in the Protect group is about content the operator can see and has decided to
+/// remove; this one is about content they **cannot see and do not know is
+/// there** — it does not render, it does not print, and no amount of looking at
+/// the drawing discloses it. An operator with no reason to believe their file
+/// contains anything hidden will not press a button that offers to look.
+///
+/// ★★ The third sentence names the examples, because the abstraction is the
+/// part that fails to land: "objects outside the page boundary" means nothing,
+/// and "a revision note dragged off the sheet instead of deleted" is a thing
+/// every draughtsman has done.
+///
+/// ★ It does **not** promise removal, for `edit.redact_selection`'s reason
+/// turned around: that one has to say *nothing is removed until you apply*
+/// because its name sounds destructive. This one has to avoid implying removal
+/// at all, because its name sounds like a report — and it is one. What it offers
+/// is a mark, and the mark's own button says so.
+#[must_use]
+pub const fn edit_offpage() -> CommandText {
+    CommandText::new(
+        "Check for content off the sheet",
+        "Look for anything drawn outside the page boundary on any sheet. It does not print and \
+         does not show on screen, but it is still in the file and still travels when you send it \
+         \u{2014} an old revision note dragged off the edge, a cropped title block, a name moved \
+         out of the frame. pdfcer lists what it finds and can mark it for removal.",
+    )
+}
+
 /// See the module header.
 #[must_use]
 pub const fn view_tool_select() -> CommandText {

@@ -56,8 +56,8 @@
 
 use super::{
     DialogsState, about, compact, diagnostics, embed, export_dxf, export_image, export_text,
-    formfield, import_text, insert_image, insert_pages, new_document, ocr, page_size, print,
-    protect, redact, scale, shortcuts, stamp_collection, textannot, unembed,
+    formfield, import_text, insert_image, insert_pages, new_document, ocr, offpage, page_size,
+    print, protect, redact, scale, shortcuts, stamp_collection, textannot, unembed,
 };
 use crate::app::state::Status;
 
@@ -162,6 +162,32 @@ impl DialogsState {
             return;
         }
         self.redact = redact::open_for(status);
+    }
+
+    /// **Open the off-the-sheet census window** — `edit.offpage`.
+    ///
+    /// The dispatch target for the command, and it is the one window in this
+    /// file that opens **unconditionally** over any open document. Its
+    /// neighbours all compute something first and decline when the answer is
+    /// empty; this one must not, because *"nothing is drawn outside any page
+    /// boundary in this document"* is the answer the operator pressed the
+    /// control to get — see `crate::dialogs::offpage`'s header.
+    ///
+    /// ★ The no-document guard is still real: there is nothing to scan, and a
+    /// window over no document would be closed again by [`Self::show`]'s own
+    /// guard on its very next frame, which is a control that flickers rather
+    /// than one that declines.
+    ///
+    /// ★★ The already-open guard is the strong one here, for a reason none of
+    /// its neighbours have: this window is **mid-walk**. A second press would
+    /// throw away a scan that may be twenty sheets in — each of which cost up
+    /// to half a second — and restart it from page one, while looking to the
+    /// operator exactly like a window that had reset itself for no reason.
+    pub fn open_offpage(&mut self, status: &Status) {
+        if self.offpage.is_some() {
+            return;
+        }
+        self.offpage = offpage::open_for(status);
     }
 
     /// Open the Encrypt / Permissions window — `file.encrypt` and

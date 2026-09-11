@@ -384,6 +384,15 @@ pub mod ocr_progress;
 /// on-page one, so `hits == 1` alone proves the marquee left the sheet — no
 /// index, no ordering assumption. Its header carries why the band must touch
 /// the off-page square without being able to enclose it.
+/// ★★★ **The operator can FIND OUT a sheet has content beside it** — the
+/// third verb of his off-page question, and the only one that scales. Its three
+/// siblings all answer *"I know something is over there"*; on a drawing set
+/// nobody knows that, and scrolling every sheet out to its pasteboard is not a
+/// procedure a person performs. Its header carries why the oracle is the object
+/// COUNT rather than the dirty-page count, and why the applied line is matched
+/// on its `epoch` field rather than on its name — the edit funnel's refusal
+/// branch shares the success line's first token.
+pub mod off_page_census;
 pub mod off_page_marquee;
 /// ★★★ **A press that BEGINS in the grey margin** — O23's second half, and
 /// the half that had nothing to enable. Its sibling above drags a band FROM

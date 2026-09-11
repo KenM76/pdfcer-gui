@@ -345,9 +345,27 @@ fn registration_succeeds_and_registers_every_command() {
     // the export; `file.open` is the import. Registering an `file.import_stamps`
     // twin would be a second door onto `file.open` with a narrower filter, which
     // is a control that exists to make a menu look symmetrical.
+    //
+    // ★★★ 158 → 159 on 2026-09-11: `edit.offpage`, and it moves the counter
+    // by ONE for a reason worth the two lines. The operator asked *"how do I
+    // view and edit objects that are off of the page?"* — three verbs, and the
+    // first two were already reachable: the canvas shows the off-sheet band
+    // once the view is zoomed out past the page, and the selection model has
+    // never cared whether a `/Rect` lies inside the `/MediaBox`. What he could
+    // not do was **find out which sheets have anything out there at all**,
+    // which on a 36-sheet drawing set is the only part a person cannot do by
+    // looking.
+    //
+    // ⇒ So this is a census, not a fourth editing verb, and the temptation it
+    // refuses is the obvious one: a `edit.offpage_delete` twin that skips the
+    // list and removes everything it finds. That control would destroy content
+    // the operator has never seen, on his say-so about a number. The window
+    // marks — `edit.redact_apply` still has to be pressed — which keeps this
+    // command inside the arm/mark/obliterate family the `protect` group is
+    // built around rather than opening a private back door through it.
     assert_eq!(
         registry().len(),
-        158 + usize::from(cfg!(feature = "signing"))
+        159 + usize::from(cfg!(feature = "signing"))
     );
 }
 
@@ -702,9 +720,19 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // The two sit on different tabs and are never drawn side by side, which is
     // the condition the `file.import_text` note above says a reuse must meet.
     // Nothing was drawn, so `icons/assets/PROVENANCE.md` is untouched.
+    //
+    // ★ 141 → 142 on 2026-09-11: `edit.offpage` names `off-page`, a glyph
+    // DRAWN for it rather than borrowed, and the borrow it declined is the
+    // near one: `redact`. The three redaction commands carry a solid bar
+    // because they are about **removal**; this command's whole claim is that
+    // it removes nothing until a second, separate press. A shared glyph would
+    // have said the opposite of the header above it. The asset's own embedded
+    // XML comment carries that argument, which is where this note's neighbours
+    // put it; `icons/assets/PROVENANCE.md` covers the whole directory as the
+    // operator's own work and takes no per-glyph row, by its own instruction.
     assert_eq!(
         named,
-        141 + usize::from(cfg!(feature = "signing")),
+        142 + usize::from(cfg!(feature = "signing")),
         "commands naming an icon"
     );
     // ★ 12 → 17 on 2026-08-27: the Format ▸ Font group's five commands
