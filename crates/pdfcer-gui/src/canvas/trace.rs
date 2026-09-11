@@ -601,3 +601,48 @@ pub(super) fn position(
         )
     });
 }
+
+/// The slot [`pasteboard`] de-duplicates on.
+///
+/// Separate from [`LAYOUT_SLOT`] for the ordinary reason — a surface decision
+/// is taken every frame and the layout line is not — but also for a sharper
+/// one: the whole VALUE of this trace is that it changes. A run that never
+/// emits `surface=pasteboard` is a run in which the operator never reached off
+/// the page, and sharing a slot with a line that churns would hide that.
+pub(super) const SURFACE_SLOT: &str = "canvas-surface"; // ui-text-exempt: trace slot name, never displayed
+
+/// ★★★ **Which of the canvas's two interactive rectangles owned this frame's
+/// gesture** — the only external evidence that O23's off-page half is live.
+///
+/// `canvas-surface surface=page|pasteboard onpage=<bool> pagegesture=<bool>
+/// pastegesture=<bool>`
+///
+/// Emitted from `present::show` immediately before `interact`, on the value
+/// [`super::pasteboard::surface`] returned and the four booleans it was
+/// handed. The booleans ride along deliberately: when a driven check finds
+/// `surface=page` where it expected `pasteboard`, the next question is always
+/// *"which input was wrong?"*, and without them the answer needs a second run
+/// with a debugger. They are the difference between a check that reports a
+/// failure and one that reports a cause.
+///
+/// ⚠ De-duplicated, so a stationary pointer emits once and not once per
+/// frame. A check must therefore read this with `events()` and not assume one
+/// line per gesture — three presses in the pasteboard with no page visit in
+/// between produce ONE line.
+pub(super) fn surface(
+    surface: super::pasteboard::Surface,
+    on_page: bool,
+    page_gesture: bool,
+    paste_gesture: bool,
+) {
+    crate::diag::trace_changed(SURFACE_SLOT, || {
+        format!(
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            "canvas-surface surface={} onpage={on_page} pagegesture={page_gesture} pastegesture={paste_gesture}",
+            match surface {
+                super::pasteboard::Surface::Page => "page",
+                super::pasteboard::Surface::Pasteboard => "pasteboard",
+            }
+        )
+    });
+}

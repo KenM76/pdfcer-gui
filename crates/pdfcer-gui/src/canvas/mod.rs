@@ -24,6 +24,7 @@
 //! | [`menus`] | the right-click: which of the two canvas menus opens, and the select-first rule that makes it about the thing you pointed at |
 //! | [`overlay`] | what all of it looks like — and what rule 4 forbids it looking like |
 //! | [`geometry`] | the pan and zoom-anchor arithmetic |
+//! | [`pasteboard`] | ★ **off-page reach** — which of the canvas's two interactive rectangles owns this frame's gesture |
 //! | [`keys`] | Escape and Delete, and which of Escape's three claimants gets it |
 //! | [`tool`] | select or hand, and the space bar that borrows the hand |
 //! | [`zoom`] | **the anchor rule**, the two-frame handshake, and the five zoom paths that route through it |
@@ -341,6 +342,21 @@ pub mod pagedrop;
 pub mod notepopup;
 // The wheel as a page turn, under a one-page-at-a-time display mode -- O30.
 mod paging;
+/// ★★★ **Reaching an object that is off the page** — which of the canvas's
+/// two interactive rectangles owns this frame's gesture.
+///
+/// O23's second half. The operator, 2026-09-10: *"how do I view and edit
+/// objects that are off of the page? we added this feature but I didn't see
+/// how to enable it."* There was nothing to enable: the pasteboard — the
+/// viewport of scrollable slack [`geometry::content_extent`] puts on every side
+/// of the strip — sensed hover and refused clicks, so a press out there never
+/// became a gesture and an object dragged past the sheet edge was unreachable.
+///
+/// Its header carries the whole argument, including why this is a choice
+/// between two responses rather than one widened page rect, and the two
+/// clauses about a drag that crosses the sheet edge mid-gesture.
+pub mod pasteboard;
+
 /// ★ Everything the canvas draws, once everything is decided — lifted out of
 /// [`interact`] when that file crossed R2's ceiling. Its header carries the
 /// layer order and the argument for each position in it.

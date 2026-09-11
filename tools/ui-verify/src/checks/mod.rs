@@ -385,6 +385,13 @@ pub mod ocr_progress;
 /// index, no ordering assumption. Its header carries why the band must touch
 /// the off-page square without being able to enclose it.
 pub mod off_page_marquee;
+/// ★★★ **A press that BEGINS in the grey margin** — O23's second half, and
+/// the half that had nothing to enable. Its sibling above drags a band FROM
+/// blank paper into the margin, which always worked because an `egui::Response`
+/// keeps reporting after the pointer leaves its widget; this one has no point on
+/// the sheet at all, and before 2026-09-10 it produced no band whatsoever. The
+/// two fail on disjoint causes, which is why they are two checks.
+pub mod off_page_press;
 /// ★ The **Pages tab**, all of which did nothing: six verbs registered, drawn,
 /// offered by a context menu and four of them bound to chords, with no dispatch
 /// arm between them. The only check in the suite whose subject is a

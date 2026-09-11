@@ -85,13 +85,34 @@ use crate::report::CheckReport;
 /// Content selection needs Edit.
 const RIBBON_MODE: &str = "edit";
 
-/// Fit the page first, so the aim is a statement about the document rather than
-/// about whatever scroll the run inherited — `marquee_table`'s own lesson.
+/// Single-page display, then **100%** — so the aim is a statement about the
+/// document rather than about whatever scroll the run inherited
+/// (`marquee_table`'s own lesson), and so that the grey is wide enough to aim
+/// into.
 ///
-/// ★ Fitting also *creates* the margin this check drags into: a page fitted
-/// inside a wider viewport has grey on both sides, and that grey is where the
-/// off-page object lives.
-const INVOKE: &str = "view.page_single,view.zoom_fit_page";
+/// ## ⚠ This read `view.zoom_fit_page` until 2026-09-10, and the check had
+/// stopped running
+///
+/// Measured that day, while writing the sibling `off_page_press`: **this check
+/// was reporting SKIP on every run**, and had been for an unknown length of
+/// time. Fit-page on a 200 × 200 fixture in a maximised window puts the sheet
+/// at about 3.8 px per point, so the band's destination at x = −100 pt lands
+/// 381 px left of the page edge — where the viewport has only about 243 px of
+/// grey. `doc_to_window_off_page` refuses to convert a point outside the
+/// canvas, correctly and with a message naming the geometry, and the run ends
+/// SKIPPED.
+///
+/// ★★ **A SKIP is not red.** Nothing in the suite summary distinguished "this
+/// check held" from "this check has not run in weeks", and the feature it
+/// guards — O92, *"I sometimes drop objects there, and when I do I can't get
+/// them back"* — was unattended the whole time.
+///
+/// At 100% the sheet is ~200 px wide inside a ~1250 px viewport, every point
+/// either check aims at is comfortably inside the grey, and the geometry stops
+/// depending on the window size on the day. Fitting was never what *created*
+/// the margin — `geometry::content_extent` does that, at any zoom — it was only
+/// what happened to leave some.
+const INVOKE: &str = "view.page_single,view.zoom_actual";
 
 /// The selection census.
 const SELECTION: &str = "canvas-selection"; // ui-text-exempt: a trace event name, never displayed

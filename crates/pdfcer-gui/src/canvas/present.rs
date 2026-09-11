@@ -553,7 +553,32 @@ fn show_in(
         // every page, the gaps between them, and O23's pasteboard. See the
         // wheel block near the end of `show` for why the current page's own
         // response was the wrong gate.
-        let (outer_rect, content_response) = ui.allocate_exact_size(outer, Sense::hover());
+        //
+        // ★★★ **AND IT SENSES CLICKS — this `Sense` was O23's one-way door.**
+        // It read `Sense::hover()` from the day the pasteboard shipped until
+        // 2026-09-10, and that single word was the whole of why the operator
+        // could not find the off-page feature: there was a viewport of slack
+        // to scroll into on every side, and a press out there was not a
+        // gesture, so an object dragged past the sheet edge became invisible,
+        // unclickable, and still in the file. Everything underneath already
+        // coped — `mapping::PageMapping::to_page` does not clamp, the engine's
+        // decomposer does not cull to the page box, and `hit_test_point_all`
+        // asks only that the query point be finite.
+        //
+        // ★★ **Widening this does NOT steal clicks from the pages.** This
+        // rectangle is allocated BEFORE any page, and egui resolves an overlap
+        // in favour of the widget registered later, so every page still wins
+        // on its own sheet and this one only ever sees a pointer no page
+        // wanted. That ordering is load-bearing: reverse it and every click on
+        // paper would land out here instead. It is also why the fix is not the
+        // obvious one of widening each page's own interaction rect — in a
+        // continuous strip those overlap each OTHER, and the last page
+        // allocated would steal clicks aimed at its neighbours.
+        //
+        // Which of the two responses a frame's gesture belongs to is decided
+        // by [`super::pasteboard::surface`], at the `interact` call site near
+        // the end of `show`.
+        let (outer_rect, content_response) = ui.allocate_exact_size(outer, Sense::click_and_drag());
         // The strip's own rect on screen. Every page's rect is this origin
         // plus its strip-space placement, which is what makes the strip the
         // single owner of "where is page N".
@@ -899,10 +924,19 @@ fn show_in(
         // with `geometry::offset_from_drawn`, which measures against the
         // viewport instead and therefore needs nothing from in here that the
         // pages do not already carry.
-        (drawn, avail, content_response.hovered())
+        // ★★ The whole `Response` now rides out, not just its `hovered()`.
+        // O23's off-page half needs it: it is the OTHER of the two surfaces a
+        // gesture can belong to, and `interact` — which runs after the closure
+        // has closed — has to be able to be handed it. `egui::Response` is a
+        // plain cloneable struct with no borrow of the `Ui`, so carrying it out
+        // costs nothing and borrows nothing. `content_hovered` is still
+        // computed in here, unchanged, because the Ctrl+wheel gate below reads
+        // only that and reading it at two different moments would be a second
+        // way to be wrong.
+        (drawn, avail, content_response.hovered(), content_response)
     });
 
-    let (drawn, viewport_size, content_hovered) = scroll_output.inner;
+    let (drawn, viewport_size, content_hovered, content_response) = scroll_output.inner;
     // The offset the area settled on THIS frame: the `offset_before` of any
     // zoom step the operator starts now, and the base the next frame's
     // middle-drag pan moves from.
@@ -1125,13 +1159,37 @@ fn show_in(
         },
     );
 
+    // ★★★ **Which surface this frame's gesture belongs to — O23's off-page
+    // half.** The rule, and the argument for each of its four rows, is in
+    // [`pasteboard`]; it is a pure function here so that the rows a running
+    // window is awkward to put into a given state can still be held by a unit
+    // test. The two `Response`s differ in exactly one way that matters: the
+    // page's covers its sheet, the content's covers the sheet AND the gaps AND
+    // the slack `geometry::content_extent` adds on every side, which is where
+    // an object dragged past the page edge actually is.
+    let page_gesture = image_response.dragged()
+        || image_response.drag_stopped()
+        || image_response.clicked()
+        || image_response.secondary_clicked();
+    let paste_gesture = content_response.dragged()
+        || content_response.drag_stopped()
+        || content_response.clicked()
+        || content_response.secondary_clicked();
+    let on_page = image_response.contains_pointer();
+    let surface = pasteboard::surface(on_page, page_gesture, paste_gesture, content_hovered);
+    trace::surface(surface, on_page, page_gesture, paste_gesture);
+    let acting_response = match surface {
+        pasteboard::Surface::Page => &image_response,
+        pasteboard::Surface::Pasteboard => &content_response,
+    };
+
     // Selection, before the layout trace: the trace reports `sel=`, and a
     // count taken before the frame's click was applied would describe the
     // previous frame.
     let (selected, tokens) = interact(
         ui,
         doc,
-        &image_response,
+        acting_response,
         &Frame {
             pen,
             map,

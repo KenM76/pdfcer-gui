@@ -943,6 +943,10 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // minute each. A run that fails on something cheap should fail before
         // paying for something expensive.
         Box::new(off_page_marquee::ABandDraggedIntoTheMarginReachesAnObjectOffThePage),
+        // ★ Immediately after its sibling, and deliberately: they share one
+        // fixture and one ribbon route, so a failure in both at once names the
+        // harness and a failure in one names the feature.
+        Box::new(off_page_press::ABandThatStartsInTheMarginReachesAnObjectOffThePage),
         // Two launches and an Alt+F4, so it is placed with the other
         // multi-process checks rather than among the single-window ones.
         Box::new(page_display_pref::APageDisplayChoiceSurvivesACloseAndReachesANewDocument),
