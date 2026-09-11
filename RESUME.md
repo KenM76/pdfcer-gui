@@ -32,7 +32,7 @@ drifting from a count is the defect this project has spent eight corrections on.
 | Engine HEAD | `cd /d/Dev/pdfcer && git log --oneline -1 main` | `f3ca53d` — **current, v0.53.0** |
 | Last release | `git fetch --tags origin && git describe --tags --abbrev=0` | `v0.5.0-dev.20260911.2` — **0 commits behind** |
 | Driven checks | `ui-verify --list \| grep -cE '^  [a-z0-9_]+$'` | 213 |
-| Gates | `bash tools/gates/run-all.sh` | **32 passed, 0 failed, 0 skipped** |
+| Gates | `bash tools/gates/run-all.sh` | **33 passed, 0 failed, 0 skipped** — up one on 2026-09-11: `walk-engine-backlog --check` was named by this file and by all five of `ENGINE_BACKLOG.md`'s heading comments and **registered in no runner**. The first run found 25 rows filed under `wanted` whose own cells said WIRED — that section read 70 where the gap was 48. |
 | Unit tests | `cargo test --workspace` | 4,174 passing |
 | Source files | `find crates -name '*.rs' \| wc -l` | 772 |
 | Backlog register | `python tools/walk-engine-backlog.py` | 170 rows |
@@ -77,7 +77,7 @@ testing it”*, so they were not run. `an_object_off_the_page_is_actually_drawn`
 needs no pointer and **was** run, green. Run the other three first thing.
 
 ⚠ **The last four releases shipped without the driven sweep**, this one
-included. Unit tests, 32 gates and an off-screen smoke launch were green each
+included. Unit tests, the gate suite and an off-screen smoke launch were green each
 time; none of the three is evidence that a control is *reachable*. The
 blocker today is not time — an Outlook *Internet Email* password prompt sits
 at desktop 1134,407–1514,625, over the middle of the only display, and every
