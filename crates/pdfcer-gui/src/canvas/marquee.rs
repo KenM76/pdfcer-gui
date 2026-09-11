@@ -53,7 +53,7 @@
 //! would have quietly included the whole sheet — and the operator's next gesture
 //! moves it. Under `Enclosed` that could not happen, which is why it is new.
 
-use pdfcer_core::vector::MarqueeMode;
+use pdfcer_core::vector::{FormMarquee, MarqueeMode};
 
 use crate::canvas::target::TargetId;
 
@@ -251,7 +251,15 @@ pub fn select_with(
     selection: &mut crate::canvas::selection::SelectionState,
 ) {
     let mode = mode_for(crossing);
-    let mut hits = targets.map_or_else(Vec::new, |t| t.hit_test_rect(page_index, rect, mode));
+    // ★ `Include` — the container comes back alongside its leaves. The long
+    // argument is on the live provider's `hit_test_rect`; the short one is
+    // that a leaf is not an edit operand in this shell and the form is, so a
+    // band that returned leaves alone would select things nothing can move.
+    // The page-sized-wrapper case that would make this obnoxious is dropped
+    // two lines down, by this shell's own rule rather than by the hit test.
+    let mut hits = targets.map_or_else(Vec::new, |t| {
+        t.hit_test_rect(page_index, rect, mode, FormMarquee::Include)
+    });
     if let (true, Some(t)) = (crossing, targets) {
         hits = without_page_wrappers(
             hits,

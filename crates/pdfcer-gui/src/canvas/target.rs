@@ -53,7 +53,7 @@
 //! [`crate::canvas::mapping::SELECT_SCREEN_TOLERANCE_PX`] exists to close.
 
 use egui::{Pos2, Rect};
-use pdfcer_core::vector::MarqueeMode;
+use pdfcer_core::vector::{FormMarquee, MarqueeMode};
 
 use crate::canvas::pick::PickClass;
 use crate::panels::objects::provider::ObjectModelProvider;
@@ -152,12 +152,6 @@ pub trait CanvasTargetProvider {
         None
     }
 
-    /// Every target **fully enclosed** by a canvas-space marquee rect.
-    ///
-    /// Fully-enclosed rather than touched is the shipped convention
-    /// (decision 011, matching Inkscape's default and the old shell): a
-    /// marquee that grabs everything it grazes is unusable on a dense
-    /// drawing, which is the document class pdfcer is for.
     /// **Is this container worth selecting instead of what is inside it?**
     ///
     /// # ★★★ The question the Smart-Selector forgot to ask
@@ -199,14 +193,38 @@ pub trait CanvasTargetProvider {
         true
     }
 
-    /// Every target a marquee rect takes, under `mode`.
+    /// Every target a marquee rect takes, under `mode` and `forms`.
     ///
     /// ★ `mode` is a parameter as of 2026-09-02 (`OPERATOR_REQUESTS.md` O88):
     /// a left-to-right drag encloses, a right-to-left drag touches. The caller
     /// decides from the drag's direction and every implementor obeys, rather
     /// than each deciding for itself — see the live provider's own
     /// `hit_test_rect` for the report that motivated it.
-    fn hit_test_rect(&self, page_index: usize, rect: Rect, mode: MarqueeMode) -> Vec<TargetId>;
+    ///
+    /// ★★ `forms` is a parameter as of 2026-09-11, and for the same reason one
+    /// rung up: the engine's [`pdfcer_core::vector::hit_test_rect_deep`] makes
+    /// it explicit *"a deliberate act at the call site rather than a
+    /// surprise"*, and a shell that pinned it to one value inside one
+    /// implementation would be re-taking a decision the engine had just handed
+    /// to the caller. The three callers in this crate do not all want the same
+    /// answer, which is the practical half of the same argument:
+    ///
+    /// | caller | passes | because |
+    /// |---|---|---|
+    /// | the rubber band | `Include` | a leaf is not an edit operand here; the container is |
+    /// | Select All | `Include` | it is a census, and the form is one of the things on the page |
+    /// | *"are there images on this page?"* | `Exclude` | it asks about **ink**, and a `/BBox` is an extent declaration |
+    ///
+    /// The live provider's `hit_test_rect` carries the long form of the first
+    /// row, including why this shell does **not** take the engine's `Exclude`
+    /// default.
+    fn hit_test_rect(
+        &self,
+        page_index: usize,
+        rect: Rect,
+        mode: MarqueeMode,
+        forms: FormMarquee,
+    ) -> Vec<TargetId>;
 
     /// One target's canvas-space bounding rect, or `None` for a target this
     /// provider no longer knows.
@@ -493,8 +511,14 @@ impl CanvasTargetProvider for ObjectModelProvider {
         Self::object_sample_points(self, index)
     }
 
-    fn hit_test_rect(&self, page_index: usize, rect: Rect, mode: MarqueeMode) -> Vec<TargetId> {
-        Self::hit_test_rect(self, page_index, rect, mode)
+    fn hit_test_rect(
+        &self,
+        page_index: usize,
+        rect: Rect,
+        mode: MarqueeMode,
+        forms: FormMarquee,
+    ) -> Vec<TargetId> {
+        Self::hit_test_rect(self, page_index, rect, mode, forms)
     }
 
     /// ★ `Self::containing_form`, spelled as the inherent call rather than as
@@ -667,9 +691,19 @@ pub struct StubTargets {
     /// `leaves[1]` are different things, and that only the first is an edit
     /// operand.
     ///
-    /// Deliberately **not** hit by [`Self::hit_test_rect`], matching the live
-    /// provider — see its `hit_test_rect` for why a marquee stays on the
-    /// page's own list.
+    /// ★★★ Hit by [`Self::hit_test_rect`] as of 2026-09-11, and the sentence
+    /// that used to be here was **false for as long as it stood**.
+    ///
+    /// It read *"deliberately not hit by `hit_test_rect`, matching the live
+    /// provider"*. The live provider has returned leaves from a marquee since
+    /// the day that method was written — its own comment says so at length —
+    /// so the stub and the shell disagreed about the one thing this list
+    /// exists to model, and every test that used the stub to reason about a
+    /// band near a form was measuring a shell that does not exist.
+    ///
+    /// ★ The general rule, which this is the second instance of in this file:
+    /// **a double's doc comment claiming to match the real thing is a claim to
+    /// measure, not a note to write.** Nothing fails when it stops being true.
     pub leaves: Vec<Rect>,
     /// Optional per-object part rects, in part order. An object with no
     /// entry has no parts — the image case.
@@ -808,19 +842,50 @@ impl CanvasTargetProvider for StubTargets {
             .map(|object| TargetId::Object(*object as u64))
     }
 
-    fn hit_test_rect(&self, page_index: usize, rect: Rect, mode: MarqueeMode) -> Vec<TargetId> {
+    fn hit_test_rect(
+        &self,
+        page_index: usize,
+        rect: Rect,
+        mode: MarqueeMode,
+        forms: FormMarquee,
+    ) -> Vec<TargetId> {
         if page_index != self.page {
             return Vec::new();
         }
-        self.objects
+        let selects = |r: &Rect| match mode {
+            MarqueeMode::Enclosed => rect.contains_rect(*r),
+            MarqueeMode::Touched => rect.intersects(*r),
+        };
+        // ★ The stub has no `ImageSource`, so it cannot tell a form from any
+        // other page object the way the engine does. What it CAN model is the
+        // consequence, which is the part a caller depends on: under `Exclude`
+        // an object that some leaf names as its container is skipped. That is
+        // the same derivation `without_page_wrappers` uses — a container is
+        // whatever `containers` says is one — so the stub's notion of a form
+        // and the shell's notion of a form come from one place.
+        let is_form = |i: usize| self.containers.values().any(|c| *c == i);
+        let mut out: Vec<TargetId> = self
+            .objects
             .iter()
             .enumerate()
-            .filter(|(_, r)| match mode {
-                MarqueeMode::Enclosed => rect.contains_rect(**r),
-                MarqueeMode::Touched => rect.intersects(**r),
-            })
+            .filter(|(i, r)| selects(r) && !(forms == FormMarquee::Exclude && is_form(*i)))
             .map(|(i, _)| TargetId::Object(i as u64))
-            .collect()
+            .collect();
+        // ★★ Leaves, appended rather than interleaved. The live provider gets
+        // paint order from the engine; this stub has no paint order to get,
+        // because a `Rect` carries none. Appending is therefore an honest
+        // simplification rather than a divergence to hide: the SET is the
+        // contract these tests assert on, and the one test that cared about
+        // ordering asserts it against the real provider, where the order is
+        // real.
+        out.extend(
+            self.leaves
+                .iter()
+                .enumerate()
+                .filter(|(_, r)| selects(r))
+                .map(|(i, _)| TargetId::Leaf(i as u64)),
+        );
+        out
     }
 
     fn bounds(&self, page_index: usize, target: TargetId) -> Option<Rect> {
@@ -947,7 +1012,7 @@ mod tests {
         );
         let grazing = Rect::from_min_size(Pos2::new(5.0, 5.0), egui::vec2(200.0, 200.0));
         assert_eq!(
-            p.hit_test_rect(0, grazing, MarqueeMode::Enclosed),
+            p.hit_test_rect(0, grazing, MarqueeMode::Enclosed, FormMarquee::Include),
             vec![TargetId::Object(1)],
             "an object the marquee only grazes must not be selected"
         );
@@ -959,9 +1024,61 @@ mod tests {
         // parameter added, threaded, and never read. Asserting both modes over
         // one rect is the only way this test can tell them apart.
         assert_eq!(
-            p.hit_test_rect(0, grazing, MarqueeMode::Touched),
+            p.hit_test_rect(0, grazing, MarqueeMode::Touched, FormMarquee::Include),
             vec![TargetId::Object(0), TargetId::Object(1)],
             "a crossing window must take the object it only grazes as well"
+        );
+    }
+
+    /// ★★★ The stub's marquee reaches INSIDE a form, and honours `FormMarquee`.
+    ///
+    /// # What this is really testing, and why it is not the engine's job
+    ///
+    /// Until 2026-09-11 `StubTargets::hit_test_rect` ignored `leaves` outright,
+    /// and its doc comment said that *matched the live provider*. It did not:
+    /// the live provider has returned form interiors from a marquee since the
+    /// day it was written. So every selection test that used this stub to
+    /// reason about a band near a form was reasoning about a shell that does
+    /// not exist — and none of them could fail, because the stub agreed with
+    /// itself.
+    ///
+    /// The engine proves its own deep marquee against real content streams.
+    /// What is proved here is narrower and is the part the engine cannot see:
+    /// **that this crate's test double answers the same SHAPE of question the
+    /// live provider answers**, so a selection-layer test written against it is
+    /// evidence about the shipped program.
+    ///
+    /// # Both values of `forms`, one rect, deliberately
+    ///
+    /// An `Include`-only assertion passes against a stub that accepts the
+    /// parameter and never reads it, which is precisely the shape a hurried
+    /// threading of this change would have — the same trap
+    /// [`the_stub_marquee_requires_full_enclosure`] names for `mode`, one
+    /// argument later.
+    #[test]
+    fn the_stub_marquee_reaches_inside_a_form_and_honours_the_policy() {
+        // Object 0 is the form: object 1's leaf names it as its container.
+        // Object 1 sits outside the band entirely, so it cannot be confused
+        // with the leaf in either direction.
+        let mut p = StubTargets::new(
+            0,
+            [rect(0.0, 0.0, 100.0, 100.0), rect(500.0, 500.0, 10.0, 10.0)],
+        );
+        p.leaves = vec![rect(10.0, 10.0, 20.0, 20.0)];
+        p.containers.insert(0, 0);
+        let band = Rect::from_min_size(Pos2::new(-5.0, -5.0), egui::vec2(120.0, 120.0));
+
+        assert_eq!(
+            p.hit_test_rect(0, band, MarqueeMode::Enclosed, FormMarquee::Include),
+            vec![TargetId::Object(0), TargetId::Leaf(0)],
+            "Include must return the container AND what is drawn inside it — \
+             which is what the shipped rubber band does"
+        );
+        assert_eq!(
+            p.hit_test_rect(0, band, MarqueeMode::Enclosed, FormMarquee::Exclude),
+            vec![TargetId::Leaf(0)],
+            "Exclude must drop the container and keep the leaf; a stub that \
+             accepted `forms` and ignored it would return the container here"
         );
     }
 

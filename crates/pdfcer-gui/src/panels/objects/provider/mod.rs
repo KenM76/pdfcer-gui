@@ -114,8 +114,8 @@ mod geometry;
 use egui::{Pos2, Rect};
 use pdfcer_core::page_tree::Page;
 use pdfcer_core::vector::{
-    Bounds, Handle, HitTarget, MarqueeMode, Matrix, PageObjects, Point, Segment, VectorObject,
-    decompose_page, hit_test_point_deep, hit_test_rect,
+    Bounds, FormMarquee, Handle, HitTarget, MarqueeMode, Matrix, PageObjects, Point, Segment,
+    VectorObject, decompose_page, hit_test_point_deep, hit_test_rect_deep,
 };
 use pdfcer_core::view::DocumentView;
 use pdfcer_render::page_device_geometry;
@@ -1198,7 +1198,8 @@ impl ObjectModelProvider {
             .next()
     }
 
-    /// Every object a canvas-space marquee rect takes, under `mode`.
+    /// Every object a canvas-space marquee rect takes, under `mode` and
+    /// `forms`.
     ///
     /// # ★★★ `mode` is a parameter as of 2026-09-02, and it is `OPERATOR_REQUESTS.md` O88
     ///
@@ -1230,62 +1231,86 @@ impl ObjectModelProvider {
     /// (`app::actions::apply`), and must: it hands an infinite rect, under
     /// which the two modes agree, and stating the mode keeps the call readable
     /// rather than resting on that coincidence.
+    ///
+    /// # ★★★ The engine answers this now — and the duplicate it replaced is the
+    /// reason to trust the replacement
+    ///
+    /// Until 2026-09-11 the body below was two answers stapled together: the
+    /// engine's shallow `hit_test_rect` for the page's own list, plus a
+    /// hand-written loop over `objects.leaves` applying `contained_by` /
+    /// `intersects` here. That loop was **reported to the request channel when
+    /// it was written**, under decision 058, in these words:
+    ///
+    /// > *"It is still a second statement of the enclosure rule, in another
+    /// > crate… it will drift the day `MarqueeMode` grows a third mode, or the
+    /// > day `Enclosed` stops meaning `contained_by` — and it will drift
+    /// > **silently**, because our copy will keep compiling and keep returning
+    /// > something plausible."*
+    ///
+    /// The engine shipped [`hit_test_rect_deep`] in answer, and said *delete
+    /// your extension*. It was not deleted, and on 2026-09-02 our copy grew a
+    /// `MarqueeMode` the engine's version had to grow separately — which is the
+    /// predicted drift, arrived on schedule. It is deleted now.
+    ///
+    /// ★★ **What the engine's version does that ours did not**: it interleaves
+    /// the two lists on [`pdfcer_core::vector::FormLeaf::paint_order`] instead
+    /// of appending every leaf after every object, so a marquee's result and a
+    /// click's result order the same objects the same way. Front-most **last**,
+    /// deliberately — a point query answers *"which one?"* and wants the winner
+    /// first; a marquee answers *"which ones?"* and a caller drawing handles or
+    /// re-emitting them wants paint order.
+    ///
+    /// # ★★ `forms` is the caller's, and this shell's answer is not the
+    /// engine's default
+    ///
+    /// [`FormMarquee::Exclude`] is the engine's default and the one that makes
+    /// a marquee agree with a click, which is the argument this method's own
+    /// comment used to make. **This shell's callers pass
+    /// [`FormMarquee::Include`] anyway**, and the reason is a property of this
+    /// shell rather than a disagreement with the engine:
+    ///
+    /// A leaf here is **not an edit operand**. `canvas::moving` refuses it by
+    /// name — `Refusal::InsideForm` — because a leaf's geometry lives in the
+    /// form's own content stream. The container **is** an operand: one page
+    /// object, addressable by `object-move` and `object-delete`. So a band over
+    /// a title block that returned leaves alone would hand the operator a
+    /// selection that every edit verb refuses, which is precisely the trap the
+    /// engine's `Exclude` default exists to prevent — with the roles the other
+    /// way round, because in the engine's shell the form is the unreachable
+    /// thing and here it is the reachable one.
+    ///
+    /// ★ And the case that would make `Include` obnoxious is already handled
+    /// **downstream**, not here: a page-sized wrapper touched by every crossing
+    /// band is dropped by `canvas::marquee::without_page_wrappers`, which reuses
+    /// `container_is_worth_selecting` — the click ladder's own rule. That is why
+    /// `Include` is safe in this shell and would not be in one without it.
     #[must_use]
-    pub fn hit_test_rect(&self, page_index: usize, rect: Rect, mode: MarqueeMode) -> Vec<TargetId> {
+    pub fn hit_test_rect(
+        &self,
+        page_index: usize,
+        rect: Rect,
+        mode: MarqueeMode,
+        forms: FormMarquee,
+    ) -> Vec<TargetId> {
         if page_index != self.page_index {
             return Vec::new();
         }
         let Some(bounds) = self.canvas_rect_to_pdf_bounds(rect) else {
             return Vec::new();
         };
-        // The page's own list, from the engine's rule.
-        let mut out: Vec<TargetId> = hit_test_rect(&self.objects, bounds, mode)
+        // ★ One call, one enclosure rule, one ordering. The mapping below is
+        // the only thing this shell still owns about a marquee: the engine
+        // answers in its own index spaces and this turns them into the two
+        // `TargetId` variants the selection vocabulary uses. It is the same
+        // mapping `hit_test_all` performs for a click, written the same way,
+        // because they are the same two spaces.
+        hit_test_rect_deep(&self.objects, bounds, mode, forms)
             .into_iter()
-            .map(|i| TargetId::Object(i as u64))
-            .collect();
-        // ...and the form interiors, by the SAME rule, applied here because
-        // the engine has no deep marquee to call.
-        //
-        // Without this, a click could select an object inside a form and a
-        // rubber-band across the identical object could not - two gestures
-        // that mean "select this" disagreeing about what is selectable, which
-        // is the kind of inconsistency an operator meets in the first minute.
-        //
-        // `contained_by` is the engine's own `MarqueeMode::Enclosed` predicate,
-        // called directly rather than re-derived, so the two halves of this
-        // answer cannot come to different conclusions about the same rect. A
-        // leaf's `page_bbox` is already page space - `decompose_page` maps it
-        // on the way out - so no second projection happens here.
-        //
-        // Written up for the request channel as a boundary finding rather than
-        // kept quiet: `hit_test_rect` is the engine's marquee and it should
-        // have a deep form the way `hit_test_point` now does, so that
-        // `pdfcer` and this shell cannot drift on what a rubber-band
-        // selects.
-        out.extend(
-            self.objects
-                .leaves
-                .iter()
-                .enumerate()
-                .filter(|(_, leaf)| match mode {
-                    // The engine's own two predicates, called rather than
-                    // re-derived, so the deep half and the page half of this
-                    // answer cannot come to different conclusions about the
-                    // same rect — which is the property this filter existed to
-                    // keep before it had a mode to get wrong as well.
-                    MarqueeMode::Enclosed => leaf.object.page_bbox().contained_by(bounds),
-                    MarqueeMode::Touched => leaf.object.page_bbox().intersects(bounds),
-                    // ★ No wildcard, deliberately. `MarqueeMode` is NOT
-                    // `#[non_exhaustive]`, so a third variant added upstream
-                    // breaks this build — which is the outcome to want. A
-                    // wildcard would silently give the new mode whichever
-                    // behaviour it fell through to, on a surface where the two
-                    // existing behaviours differ by "did the operator get
-                    // objects they did not ask for".
-                })
-                .map(|(i, _)| TargetId::Leaf(i as u64)),
-        );
-        out
+            .map(|hit| match hit {
+                HitTarget::Object(i) => TargetId::Object(i as u64),
+                HitTarget::Leaf(i) => TargetId::Leaf(i as u64),
+            })
+            .collect()
     }
 
     /// One object's canvas-space bounding rect, or `None` for a stale id.

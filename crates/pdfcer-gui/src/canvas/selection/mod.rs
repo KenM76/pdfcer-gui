@@ -623,18 +623,6 @@ impl SelectionState {
         self.normalise();
     }
 
-    /// Replace or extend the selection with a marquee's enclosed set.
-    ///
-    /// Always resolves to the **Object** rung, and ascends if the operator
-    /// was inside one. A rubber-band names a region of the page, and a region
-    /// contains objects; there is no sensible reading of "every subpath of
-    /// some other object that this box happens to cover".
-    ///
-    /// Plain replaces, `Shift` adds. An empty plain marquee therefore clears,
-    /// which is the Inkscape convention and is **not** the failure invariant
-    /// 2 is about: that one is about a *press*, and this runs on release,
-    /// after a real enclosure test. Panning is the middle button and never
-    /// reaches here at all.
     /// **Take a band's hits OUT of the selection** — `OPERATOR_REQUESTS.md`
     /// O104.
     ///
@@ -667,6 +655,27 @@ impl SelectionState {
         self.normalise();
     }
 
+    /// Replace or extend the selection with a marquee's hits.
+    ///
+    /// ⚠ **This doc comment spent nine days attached to
+    /// [`Self::marquee_remove`]** — the O104 edit of 2026-09-03 inserted that
+    /// method's own block immediately below this one without a blank line, so
+    /// Rust glued the two together and this function shipped undocumented while
+    /// its neighbour carried a contract that was false for it. Two sentences
+    /// below, the merged comment said *"★★ The level is left alone"*, directly
+    /// contradicting the *"always resolves to the Object rung"* above it. A
+    /// reader believes the first half.
+    ///
+    /// Always resolves to the **Object** rung, and ascends if the operator
+    /// was inside one. A rubber-band names a region of the page, and a region
+    /// contains objects; there is no sensible reading of "every subpath of
+    /// some other object that this box happens to cover".
+    ///
+    /// Plain replaces, `Shift` adds. An empty plain marquee therefore clears,
+    /// which is the Inkscape convention and is **not** the failure invariant
+    /// 2 is about: that one is about a *press*, and this runs on release,
+    /// after a real enclosure test. Panning is the middle button and never
+    /// reaches here at all.
     pub fn marquee(&mut self, page: usize, hits: &[TargetId], shift: bool) {
         let found: Vec<Selection> = hits
             .iter()

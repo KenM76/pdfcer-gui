@@ -263,14 +263,14 @@ fn a_marquee_encloses_objects_inside_a_form() {
     // only.
     let rect = Rect::from_min_max(canvas(70.0, 130.0), canvas(130.0, 70.0));
     assert_eq!(
-        p.hit_test_rect(0, rect, MarqueeMode::Enclosed),
+        p.hit_test_rect(0, rect, MarqueeMode::Enclosed, FormMarquee::Include),
         vec![TargetId::Leaf(1)]
     );
     // And a marquee that only grazes it takes nothing -- enclosure, not
     // touching, on both index spaces.
     let grazing = Rect::from_min_max(canvas(100.0, 130.0), canvas(130.0, 100.0));
     assert!(
-        p.hit_test_rect(0, grazing, MarqueeMode::Enclosed)
+        p.hit_test_rect(0, grazing, MarqueeMode::Enclosed, FormMarquee::Include)
             .is_empty()
     );
     // ★ …and the SAME grazing band as a crossing window takes it. Added
@@ -278,7 +278,7 @@ fn a_marquee_encloses_objects_inside_a_form() {
     // half a claim, because it cannot distinguish "enclosure is enforced"
     // from "the deep index space is unreachable by any marquee at all".
     assert_eq!(
-        p.hit_test_rect(0, grazing, MarqueeMode::Touched),
+        p.hit_test_rect(0, grazing, MarqueeMode::Touched, FormMarquee::Include),
         vec![TargetId::Object(0), TargetId::Leaf(1)],
         "a crossing window must reach a form's interior, or the two index spaces \
          disagree about what a right-to-left drag means"
@@ -296,6 +296,30 @@ fn a_marquee_encloses_objects_inside_a_form() {
     //
     // ★ Asserting the raw answer keeps the seam visible. An expectation written
     // as the filtered result would pass whether the filter existed or not.
+
+    // ★★★ …and the SAME band under `Exclude` drops the wrapper and keeps the
+    // leaf — which is the one assertion that proves `FormMarquee` travels all
+    // the way to the engine.
+    //
+    // Added 2026-09-11 with the adoption of `hit_test_rect_deep`. Every other
+    // assertion in this test would pass just as happily if `Include` were
+    // hard-coded inside the provider, or inside the engine, or if the argument
+    // were accepted and dropped — the failure mode this crate has met twice
+    // before with `mode`. One rect, both policies, is the only shape that can
+    // tell a threaded parameter from a decorative one.
+    //
+    // ★★ This is also the closest thing to a direct test of the engine's
+    // interleave that this crate should own: `Object(0)` is the form, `Leaf(1)`
+    // is inside it, and under `Include` the container sorts FIRST because a
+    // leaf of the form at index n sorts after the form itself. Reverse that
+    // and an operator's handles would draw in the wrong order.
+    assert_eq!(
+        p.hit_test_rect(0, grazing, MarqueeMode::Touched, FormMarquee::Exclude),
+        vec![TargetId::Leaf(1)],
+        "under `Exclude` the form itself must not be selected, and what is drawn \
+         inside it still must be — a provider that ignored the policy would return \
+         the wrapper here"
+    );
 }
 
 /// Nesting is reported by depth, so a shell can say "three wrappers down"
@@ -397,6 +421,7 @@ fn marquee_encloses_only_fully_contained_objects() {
         0,
         Rect::from_min_max(Pos2::new(0.0, 0.0), Pos2::new(100.0, 100.0)),
         MarqueeMode::Enclosed,
+        FormMarquee::Include,
     );
     assert_eq!(hits, vec![TargetId::Object(0)]);
     // A marquee spanning both encloses both.
@@ -404,12 +429,18 @@ fn marquee_encloses_only_fully_contained_objects() {
         0,
         Rect::from_min_max(Pos2::new(0.0, 0.0), Pos2::new(300.0, 300.0)),
         MarqueeMode::Enclosed,
+        FormMarquee::Include,
     );
     assert_eq!(both, vec![TargetId::Object(0), TargetId::Object(1)]);
     // Wrong page: nothing.
     assert!(
-        p.hit_test_rect(1, Rect::EVERYTHING, MarqueeMode::Enclosed)
-            .is_empty()
+        p.hit_test_rect(
+            1,
+            Rect::EVERYTHING,
+            MarqueeMode::Enclosed,
+            FormMarquee::Include
+        )
+        .is_empty()
     );
 }
 

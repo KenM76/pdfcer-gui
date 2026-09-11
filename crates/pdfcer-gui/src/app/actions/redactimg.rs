@@ -69,7 +69,7 @@
 use crate::app::state::OpenDoc;
 use crate::canvas::pick::PickClass;
 use crate::canvas::target::CanvasTargetProvider;
-use pdfcer_core::vector::MarqueeMode;
+use pdfcer_core::vector::{FormMarquee, MarqueeMode};
 
 /// How many of `targets` on `page_index` are raster images.
 ///
@@ -130,6 +130,24 @@ pub fn images_on_page(doc: &OpenDoc, page_index: usize) -> usize {
     // a `/Rotate` or a crop.
     let (w, h, _) = pdfcer_render::page_device_geometry(page, 1.0);
     let whole = egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(w as f32, h as f32));
-    let hits = provider.hit_test_rect(page_index, whole, MarqueeMode::Touched);
+    // ★ `Exclude`, and the choice is about MEANING rather than about the
+    // number. This question is *"is there ink here that redaction cannot
+    // destroy?"*, and a form's `/BBox` is a clipping extent (§8.10.1), not
+    // ink — so a container has no business in the answer. The count is
+    // unchanged either way today, because `object_class` reports a form as
+    // `PickClass::FormXObject` and never as `PickClass::Image`; stating
+    // `Exclude` is what keeps that from being the reason, because the day a
+    // form starts classing as an image is the day this would start warning
+    // about a page with no images on it.
+    //
+    // ★★ Images INSIDE a form are still counted — leaves are candidates under
+    // both policies. That is the half that matters: a logo in a title block
+    // is the commonest raster on a CAD sheet.
+    let hits = provider.hit_test_rect(
+        page_index,
+        whole,
+        MarqueeMode::Touched,
+        FormMarquee::Exclude,
+    );
     image_count(doc, page_index, &hits)
 }

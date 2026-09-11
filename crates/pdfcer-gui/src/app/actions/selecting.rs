@@ -33,7 +33,7 @@
 //! file.
 
 use crate::app::state::OpenDoc;
-use pdfcer_core::vector::MarqueeMode;
+use pdfcer_core::vector::{FormMarquee, MarqueeMode};
 
 /// **What is selected**, as an action a panel can raise.
 #[derive(Debug, Clone, PartialEq)]
@@ -139,7 +139,13 @@ pub(super) fn apply_action(doc: &mut OpenDoc, action: SelectionAction) {
                 // `Rect::EVERYTHING` the two modes agree, and a reader must
                 // not have to work that out before believing Select All is
                 // unaffected by a change to what a rubber band means.
-                .map(|p| p.hit_test_rect(page, all, MarqueeMode::Enclosed))
+                // ★ `Include` as of 2026-09-11 — which is what Select All has
+                // always answered, now said out loud. Select All is a census:
+                // a form on the page is one of the things on the page, it is
+                // an edit operand, and leaving it out would make *"select
+                // everything, then delete"* quietly leave the title block
+                // behind.
+                .map(|p| p.hit_test_rect(page, all, MarqueeMode::Enclosed, FormMarquee::Include))
                 .unwrap_or_default();
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
