@@ -1230,12 +1230,13 @@ mod tests {
 
         assert!(
             missing.is_empty(),
-            "★ MANUAL.md does not mention {} of the {} chords built_in.ron              binds. An operator cannot use a shortcut nobody told them about,              and no other check in this repository reads MANUAL.md. Add a row              to \"Every keyboard shortcut\" for each:
-  {}",
+            "★ MANUAL.md does not mention {} of the {} chords built_in.ron binds. \
+             An operator cannot use a shortcut nobody told them about, and no other \
+             check in this repository reads MANUAL.md. Add a row to \"Every \
+             keyboard shortcut\" for each:\n  {}",
             missing.len(),
             keymap.0.len(),
-            missing.join("
-  ")
+            missing.join("\n  ")
         );
     }
 
