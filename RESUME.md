@@ -26,14 +26,14 @@ file points at them rather than quoting them.
 Every figure below has the command that produced it. **Run the command.** Prose
 drifting from a count is the defect this project has spent eight corrections on.
 
-| What | Command | Value, 2026-09-10 |
+| What | Command | Value, 2026-09-11 |
 |---|---|---|
-| Engine pin | `grep -m1 'pdfcer?branch=main#' Cargo.lock` | `15a1272` |
-| Engine HEAD | `cd /d/Dev/pdfcer && git log --oneline -1 main` | `ca15151` — **the pin is stale** |
-| Driven checks | `grep -c 'Box::new(' tools/ui-verify/src/checks/roster.rs` | 206 |
-| Gates | `bash tools/gates/run-all.sh` | 30 gates plus self-tests |
+| Engine pin | `grep -m1 'pdfcer?branch=main#' Cargo.lock` | `0a9f989` |
+| Engine HEAD | `cd /d/Dev/pdfcer && git log --oneline -1 main` | `0a9f989` — **current, v0.52.0** |
+| Driven checks | `grep -c 'Box::new(' tools/ui-verify/src/checks/roster.rs` | 213 |
+| Gates | `grep -cE '^run ' tools/gates/run-all.sh` | 30 runs — 22 gates and 8 self-tests |
 | Unit tests | `cargo test --workspace` | re-run it |
-| Source files | `find crates -name '*.rs' \| wc -l` | 757 |
+| Source files | `find crates -name '*.rs' \| wc -l` | 771 |
 | Backlog register | `python tools/walk-engine-backlog.py` | 162 rows |
 
 ⚠ **The pin is a claim with a shelf life of hours.** `Cargo.lock` pins the
@@ -54,27 +54,30 @@ gates were green both times; neither is evidence that a control is reachable.
 > while clicking a stamp did nothing at all. The engine's replies are an input
 > to *how* a thing gets built, never to *which* thing.
 
-1. **`bash tools/ui-verify/sweep-full.sh`** — first act of the next session that
-   has the desktop. It takes the real cursor and keyboard, so it needs the
-   operator off the machine. `stamp_dialog_reopen` (O171) and
-   `default_app_offer` (O173) are both written and have **never executed**.
-2. **Bump the engine pin** — `cargo update -p pdfcer-core -p pdfcer-render -p pdfcer-print`.
-   The pin above is stale, and the intervening passes carry a fix for a live
-   data-destroying defect in a verb this shell already calls: restyling a
-   stamp's colour rewrote its label to the stamp name's default text.
-3. **Wire the stamp size surface** — a size field in the stamp's properties
-   panel. He asked twice, most recently 2026-09-09: *"still can't adjust the
-   size of a stamp on the canvas, or by entering a different size in the
-   properties box."* The engine has now shipped both halves; the backlog row
-   names the calls.
-4. **Place a custom stamp (O172)** — `place_page_artwork` landed in the engine
-   on 2026-09-10 and is the half of O169 he will reach for first. It was
-   blocked; it is not blocked now.
-5. **The owed driven checks** — the four 2026-09-06 markup asks,
+1. **Read the sweep result, then triage every FAIL and every SKIP.** The full
+   driven sweep ran on 2026-09-11 for the first time in three releases; its log
+   is `target/scratch/sweep-full.log`. ★★ **`=== SWEEP-DONE` alone means
+   nothing** — the runner now prints `=== TALLY passed=… failed=… skipped=…
+   codes: …` beside it, and a sweep whose `passed` is zero ran nothing at all.
+   That is not hypothetical: the first attempt on 2026-09-11 reported
+   SWEEP-DONE having launched no window, because the harness binary was stale.
+   And per standing memory, **the first full sweep after a long gap yields more
+   harness defects than application ones** — audit the check before filing an
+   app defect against it.
+2. **The owed driven checks** — the four 2026-09-06 markup asks,
    `load_anomalies_are_listed_in_document_properties`,
    `rereading_under_the_other_value_is_offered`,
    `double_clicking_a_text_box_edits_the_text` (last known FAIL), O161, and a
-   Find zoom-box readout check.
+   Find zoom-box readout check. `CONTINUE.md` is the register.
+3. **Finish restoring the request channel's signal.** `open/` held **228 files**
+   on 2026-09-11 against a README whose contract is *"a session lists `open/`
+   and nothing else — EMPTY = NOTHING IS OWED"*. 68 of them were closed
+   exchanges never archived. Closing one is a move of both halves into
+   `archive/` **plus** one row in `INDEX.md` naming where the durable answer
+   lives in a repository — the row is the memory, `archive/` is not read.
+4. **Under O165, release when the engine moves.** Compare the two pin rows
+   above at the start of every session; if they differ, read the intervening log
+   before reading any backlog row.
 
 Open operator rows: `grep '^## O' OPERATOR_REQUESTS.md` and read the ones not
 marked closed. **Only Ken closes a row.**
@@ -114,7 +117,7 @@ marked closed. **Only Ken closes a row.**
    version information. GitHub as well, never marked pre-release, push before
    creating the release, and package from a **clean** tree.
 3. **Smoke-launch off-screen before every release.** Ninety seconds. It has
-   beaten four thousand unit tests and thirty green gates to a live defect.
+   beaten four thousand unit tests and twenty-two green gates to a live defect.
 4. **A register row is a verdict plus one paragraph**, capped at 1,200
    characters and checked by `python tools/walk-engine-backlog.py --check`. File
    a row and set the five headings in the same edit with
