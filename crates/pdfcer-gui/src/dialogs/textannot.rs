@@ -452,6 +452,41 @@ fn opening_position(screen: egui::Rect, size: egui::Vec2) -> egui::Pos2 {
     )
 }
 
+/// **What the gallery did with the memory it was handed, in one word a machine
+/// can read.**
+///
+/// Four answers, not three, and the fourth is the one worth having:
+///
+/// | Word | Means |
+/// |---|---|
+/// | `default` | nothing was remembered -- first stamp of the session |
+/// | `standard` | a remembered standard face was re-selected |
+/// | `custom` | one of the operator's own stamps was found again and re-selected |
+/// | `gone` | a custom stamp WAS remembered and is no longer in the folder |
+///
+/// ★★★ `gone` exists because the operator is told nothing when it happens, and
+/// that silence is deliberate: to him, *"the collection I deleted"* and *"the
+/// first stamp of this session"* are the same situation, so a sentence about it
+/// would be noise about his own housekeeping. But the two are NOT the same
+/// thing to a harness -- one is a fallback, the other is a fresh start -- and
+/// collapsing them into `standard` would have made a check that watches a
+/// deleted collection indistinguishable from one whose memory never arrived.
+///
+/// ⚠ Do not route this word to the operator. It is a diagnostic, and R8b
+/// rule 4 keeps a disclosure off-canvas AND out of his way when there is
+/// nothing he can act on.
+const fn restored_kind(
+    last: Option<&LastStamp>,
+    custom: Option<&crate::stamps::library::CustomStamp>,
+) -> &'static str {
+    match (last, custom) {
+        (None, _) => "default",
+        (Some(_), Some(_)) => "custom",
+        (Some(LastStamp::Standard(_)), None) => "standard",
+        (Some(LastStamp::Custom { .. }), None) => "gone",
+    }
+}
+
 impl TextAnnotDialog {
     /// Open for a placed annotation.
     ///
@@ -513,15 +548,15 @@ impl TextAnnotDialog {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
                 format!(
-                    "stamp-gallery-opens remembered={} restored={}",
-                    last.map_or_else(|| "none".to_owned(), LastStamp::token),
-                    if custom.is_some() {
-                        "custom"
-                    } else if last.is_some() {
-                        "standard"
-                    } else {
-                        "default"
-                    }
+                    "stamp-gallery-opens restored={} remembered={}",
+                    restored_kind(last, custom.as_ref()),
+                    // ★ The value is QUOTED because a category name holds spaces --
+                    // this fixture's is *Site Review*. A driven check parses these
+                    // lines by splitting on whitespace at `key=`, so an unquoted
+                    // token would arrive truncated, and a label spelled `Rev=1`
+                    // would mint a phantom key. Never emit an unquoted free
+                    // string into a field a machine reads.
+                    last.map_or_else(|| "\"none\"".to_owned(), |l| format!("\"{}\"", l.token()))
                 )
             });
         }

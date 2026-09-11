@@ -40,6 +40,7 @@
 //! release build and the module costs the shipped binary nothing.
 
 use super::*;
+use crate::stamps::lastused::LastStamp;
 use crate::stamps::library::Category;
 
 fn rect() -> Rect {
@@ -908,4 +909,46 @@ fn a_remembered_stamp_that_has_gone_falls_back_without_a_sentence() {
     let d = TextAnnotDialog::open(0, TextAnnotKind::Stamp, rect(), Some(&last));
     assert!(d.custom.is_none());
     assert_eq!(d.stamp, DEFAULT_STAMP);
+}
+
+/// ★★★ **The four answers a harness reads, and the one that would otherwise
+/// not exist.** `gone` and `default` both put the default face in the gallery
+/// and both say nothing on screen -- deliberately, because to the operator
+/// "the collection I deleted" and "my first stamp today" are the same
+/// situation. They are not the same situation to a driven check, and this is
+/// the only place the difference is written down.
+#[test]
+fn the_gallery_says_in_one_word_what_it_did_with_the_memory() {
+    let standard = LastStamp::Standard(StampName::Draft);
+    let custom = LastStamp::Custom {
+        category: "Signatures".to_owned(),
+        label: "Ken".to_owned(),
+    };
+    let found = a_custom_stamp();
+
+    assert_eq!(restored_kind(None, None), "default");
+    assert_eq!(restored_kind(Some(&standard), None), "standard");
+    assert_eq!(restored_kind(Some(&custom), Some(&found)), "custom");
+    assert_eq!(restored_kind(Some(&custom), None), "gone");
+}
+
+/// ⚠ **The trace value is quoted, and that is load-bearing.** A category
+/// name holds spaces -- the check fixture's is *Site Review* -- and the harness
+/// parses a trace line by finding `key=` at a word boundary. An unquoted token
+/// would arrive truncated at the first space, and a label spelled `Rev=1` would
+/// mint a phantom key in the parsed line.
+#[test]
+fn the_remembered_token_survives_a_category_with_a_space_in_it() {
+    let last = LastStamp::Custom {
+        category: "Site Review".to_owned(),
+        label: "Issued".to_owned(),
+    };
+    let line = format!(
+        "stamp-gallery-opens restored=custom remembered=\"{}\"",
+        last.token()
+    );
+    assert!(
+        line.ends_with("remembered=\"custom:Site Review/Issued\""),
+        "{line}"
+    );
 }

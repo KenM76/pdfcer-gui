@@ -115,6 +115,16 @@
 //! | E | click ordinal 0 | `custom-stamp-chosen name=Issued page=2 dynamic=true` |
 //! | F | press **Add** | `custom-stamp-requested`, then `custom-stamp-placed distorted=true` |
 //! | G | read the answer | the funnel line carries TWO joined sentences, and the status bar declares its disclosure region |
+//! | H | arm **Stamp** again, drag a second box elsewhere | `stamp-gallery-opens restored=custom remembered="custom:Site Review/Issued"` |
+//! | I | press **Add** without touching the gallery | a SECOND `custom-stamp-requested name=Issued` -- the memory reached the page |
+//!
+//! ★ **Phases H and I have been seen to fail.** On their first driven run
+//! `REMEMBERED_TOKEN` carried the quotes the shell writes, `trace::parse_fields`
+//! had already stripped them, and the check refused -- printing the line it
+//! refused on, which is why the mistake cost thirty seconds. A phase that has
+//! only ever been seen green is indistinguishable from one that cannot go red;
+//! these two have a red to their name and it was the check's fault, not the
+//! application's.
 
 use crate::checks::driving::{
     SHELL_DIAG_ENV, TAB_EVENT, declared, declared_names, frame_of, list, shell_trace,
@@ -197,6 +207,34 @@ const FUNNEL_EVENT: &str = "place-custom-stamp";
 /// How many sentences this placement owes: the stretch, and the dynamic
 /// promise. Both are guaranteed by the fixture's shape — see the header.
 const OWED_DISCLOSURES: usize = 2;
+
+/// How far, in **pdf** points, the SECOND box of phase H is dragged from the
+/// first.
+///
+/// ★ It has to miss the first stamp's rectangle. A drag that STARTS inside an
+/// annotation that already exists is a different gesture -- the canvas reads it
+/// as grabbing that object -- so the dialog would never open and phase H would
+/// report a memory failure that never happened. Borrowed, with its reason, from
+/// `stamp_dialog_reopen`, which learned it the hard way.
+const SECOND_OFFSET_PT: f64 = 300.0;
+
+/// `stamp-gallery-opens restored= remembered=` -- what the window did with the
+/// memory it was handed. See `dialogs::textannot::restored_kind`.
+const GALLERY_EVENT: &str = "stamp-gallery-opens";
+
+/// The word the second opening must report.
+const RESTORED_CUSTOM: &str = "custom";
+
+/// The token the second opening must report.
+///
+/// ★ **The space in it is the assertion.** The shell QUOTES this value
+/// because the category name holds a space, and `trace::parse_fields` tracks
+/// quoting and hands the value back with the quotes stripped -- measured on
+/// 2026-09-10, when this constant was first written with the quotes left in and
+/// the check failed against a line whose value was exactly right. So the quoting
+/// is doing its job precisely when this constant does NOT mention it: an
+/// unquoted emission would arrive here truncated at `custom:Site`.
+const REMEMBERED_TOKEN: &str = "custom:Site Review/Issued";
 
 /// How many times a click is repeated before it is called unheard.
 const CLICK_TRIES: usize = 4;
@@ -728,6 +766,126 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
 
     let shot = ctx.out("custom-stamp-placed.png");
+    if crate::capture::window_to_png(&session, &shot).is_ok() {
+        report.artifact(shot);
+    }
+
+    // --- H: the window opens again, on the stamp he just used --------------
+    //
+    // ★★★ **This is the half no unit test can reach.** `TextAnnotDialog::open`
+    // scans the real stamps folder off `%APPDATA%`, so a test inside the crate
+    // can hand the window a remembered CUSTOM stamp and watch it fail to
+    // resolve, but it cannot plant a library for it to succeed against. This
+    // check owns the folder it planted, which makes it the only place the
+    // memory's whole round trip -- committed, carried, re-resolved against a
+    // fresh scan -- is ever measured. `dialogs::textannot_tests` says so in its
+    // own header so a reader does not mistake the gap there for coverage.
+    arm_stamp(&session, &driver, ui_rect)?;
+    // ⚠ LEFT and down, not right and down. The sweep aims at 2000 pt on a
+    // 2383.9 pt wide sheet, so `x + 300 + BOX_PT` is 136 pt off the right edge --
+    // a box the engine would still accept and whose artwork would land half off
+    // the paper, which is a placement this check would then report as a memory
+    // result. The offset only has to MISS the first stamp; which way it goes is
+    // free, so it goes the way that stays on the sheet.
+    let second = DocPoint {
+        page: target.page,
+        x: target.x - SECOND_OFFSET_PT,
+        y: target.y + SECOND_OFFSET_PT,
+    };
+    let trace = session.trace()?;
+    let mapping = CanvasMapping::from_trace(&trace, &ctx.profile.vocab, page, target.page)?;
+    let frame = session.frame()?;
+    let from = frame.to_screen(mapping.doc_to_window(second)?);
+    let to = frame.to_screen(mapping.doc_to_window(DocPoint {
+        page: second.page,
+        x: second.x + BOX_PT,
+        y: second.y + BOX_PT,
+    })?);
+    driver.drag(from, to)?;
+    session.settle(24);
+
+    let trace = session.trace()?;
+    let Some(gallery) = trace.last(GALLERY_EVENT) else {
+        return Ok(Some(format!(
+            "the second drag traced no `{GALLERY_EVENT}` line, so either the dialog did not open \
+             a second time -- `stamp_dialog_reopen` is the check for that, and a failure there \
+             explains a failure here -- or the line is emitted only for a stamp and the kind \
+             guard stopped matching. Regions on the dialog: {}.",
+            list(&declared_names(&trace, ui_rect, "text-annot"))
+        )));
+    };
+    let gallery_raw = gallery.raw.clone();
+    let restored = gallery.get("restored").unwrap_or_default().to_owned();
+    let remembered = gallery.get("remembered").unwrap_or_default().to_owned();
+    if restored != RESTORED_CUSTOM {
+        return Ok(Some(format!(
+            "the stamp window opened a second time and reported restored=`{restored}`, not \
+             `{RESTORED_CUSTOM}`. `default` means the memory never reached it, so \
+             `DialogsState::last_stamp` was not written on accept or not read on open. \
+             `standard` means a STANDARD face was remembered where a custom one was placed. \
+             `gone` means the memory arrived and did not resolve -- the label or the category it \
+             names is not in the folder this check planted, which is what a memory keyed on a \
+             page index would do the moment the collection was re-sorted. Line: `{gallery_raw}`."
+        )));
+    }
+    if remembered != REMEMBERED_TOKEN {
+        return Ok(Some(format!(
+            "the window restored a custom stamp and named it `{remembered}`, not \
+             `{REMEMBERED_TOKEN}`. The category comes from the collection's `/Info` `/Title` and \
+             the label from its name-tree entry, so a mismatch here says the memory is keyed on \
+             something else -- the file stem, or the ordinal. Note the quotes: the category holds \
+             a space, and an unquoted value would arrive truncated at it. Line: `{gallery_raw}`."
+        )));
+    }
+    report.note(format!(
+        "the second opening came up on {remembered} with no click -- the memory survived a \
+         placement and a fresh folder scan"
+    ));
+
+    // --- I: and it is that stamp that lands, not merely that label ---------
+    //
+    // ⚠ The gallery showing the right thing and the commit sending the right
+    // thing are two claims. A restored selection the accept path did not read
+    // would look exactly like phase H passing, and would place `Approved`.
+    let accept = declared(&trace, ui_rect, ACCEPT).ok_or_else(|| {
+        Error::new(format!(
+            "no `{ACCEPT}` region on the SECOND stamp dialog. `stamp_dialog_reopen` is the check \
+             for that defect -- O171 -- and a failure there explains this one."
+        ))
+    })?;
+    driver.click_at(frame_of(&session, &trace, ui_rect, ACCEPT)?.declared_center(accept))?;
+    session.settle(30);
+
+    let trace = session.trace()?;
+    let requests: Vec<String> = trace
+        .events(REQUESTED_EVENT)
+        .filter_map(|l| l.get("name").map(str::to_owned))
+        .collect();
+    if requests.len() < 2 {
+        return Ok(Some(format!(
+            "Add was pressed on the restored window and the run recorded {} `{REQUESTED_EVENT}` \
+             line(s), not 2. The gallery said `{remembered}` was selected, so a commit that did \
+             not fork to the custom route means the accept path reads a different field than the \
+             one `open` restored.",
+            requests.len()
+        )));
+    }
+    if requests.last().map(String::as_str) != Some(FIRST_LABEL) {
+        return Ok(Some(format!(
+            "the restored window committed `{}`, and the memory named `{FIRST_LABEL}`. The right \
+             label was shown and a different stamp was sent -- precisely the failure the memory \
+             is stored as a NAME to prevent, since a stored page index names a different entry \
+             the moment the collection is re-sorted. Requests this run: {}.",
+            requests.last().map_or("nothing", String::as_str),
+            list(&requests)
+        )));
+    }
+    report.note(format!(
+        "the restored stamp reached the page: {} placements, the last of them `{FIRST_LABEL}`",
+        requests.len()
+    ));
+
+    let shot = ctx.out("custom-stamp-remembered.png");
     if crate::capture::window_to_png(&session, &shot).is_ok() {
         report.artifact(shot);
     }
