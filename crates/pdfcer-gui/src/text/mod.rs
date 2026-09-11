@@ -586,6 +586,73 @@ pub fn canvas_render_failed(detail: &str) -> String {
     format!("This page could not be drawn. {detail}")
 }
 
+/// The `detail` clause for the one render refusal that has a remedy the
+/// operator can carry out, and the reason this shell does **not** pass the
+/// engine's own sentence through here.
+///
+/// # What it covers
+///
+/// `pdfcer-render` `Pass 296.0` (`69d4d67`, consumed 2026-09-11) added
+/// `RenderError::RasterizerLimit { scale, panic_message }`. Before it, a
+/// region render at an extreme zoom **panicked a worker thread inside
+/// `tiny-skia`**; now the panic is caught at the one `catch_unwind` in that
+/// crate and returned as an ordinary refusal, so the worker lives and the
+/// canvas gets a sentence instead of a dead tile.
+///
+/// # ★★★ Why the engine's `Display` is deliberately thrown away here
+///
+/// [`canvas_render_failed`]'s doc argues, correctly, that `pdfcer-render`'s
+/// errors are structured diagnostics worth passing through verbatim
+/// ("requested raster size 115200x86400 exceeds MAX_PIXMAP_EDGE"). **This one
+/// is the exception.** The reason changed on 2026-09-11 and the superseded
+/// one is recorded here rather than deleted, because it is the stronger
+/// evidence for the rule that survived it.
+///
+/// **Until `Pass 296.5` (`4f6f5a5`)**, `RasterizerLimit`'s `Display` was
+/// `"the rasterizer cannot work at scale {scale}: {panic_message}"`, where
+/// `panic_message` is **third-party panic text from `tiny-skia`** — e.g.
+/// *"range start index 442613758592 out of range for slice of length
+/// 1088737"*. The reply that shipped the variant said outright that it *"is
+/// third-party text and explicitly not a contract, so please do not match on
+/// it"*, in the same breath as putting it in the message. This shell wrote a
+/// named arm to stop it reaching a canvas and reported the workaround under
+/// decision 058; the engine treated that as the defect report it was and took
+/// the panic text out. **The `Display` is now `"the rasterizer cannot work at
+/// scale {scale}"`, and nothing would leak if this function did not exist.**
+///
+/// ⇒ **It still exists, on the half of the argument that was never about the
+/// leak.** The engine's sentence is a *fact about the renderer*; this one is
+/// an *instruction to an operator*. A man looking at a blank drawing cannot
+/// act on "the rasterizer cannot work at scale 8053069" — he can act on "zoom
+/// out", and he needs to be told his page is undamaged. Passing the engine's
+/// sentence through now would be correct, contract-respecting, and useless.
+///
+/// The diagnosis still goes to a `diag::trace` — where it is exactly as useful
+/// as the reply intended, and where the deliberately-unsilenced panic hook has
+/// already printed it — and the operator gets the half of the event that is
+/// actionable: **zoom out**.
+///
+/// # Why it names no number
+///
+/// The engine measured the first failing scale across six page geometries and
+/// got three distinct values **ordering with nothing**: an E-size sheet fails
+/// at 284,964 while a business card and an A1 sheet share 8,053,069, and the
+/// largest sheet is the most fragile. There is therefore no threshold this
+/// sentence could honestly quote, and `MAX_GUARANTEED_REGION_SCALE` is
+/// published as a floor rather than a ceiling for that reason. "Zoom out"
+/// is true at every geometry; "zoom out below X" would be invented.
+///
+/// # Why it says the page is unchanged
+///
+/// A refusal that appears where a picture was is read as damage. It is not:
+/// nothing was written, nothing was edited, and the same page at a lower zoom
+/// draws exactly as it did before. Saying so costs one clause and removes the
+/// question.
+#[must_use]
+pub fn canvas_zoom_past_rasterizer() -> &'static str {
+    "This zoom is further in than pdfcer can rasterize. Zoom out and it will draw again. Nothing about the page has changed."
+}
+
 // ---------------------------------------------------------------------------
 // The three things a page with no picture says about itself
 // ---------------------------------------------------------------------------
@@ -763,6 +830,75 @@ mod tests {
         for message in [&a, &b, &c] {
             assert!(message.contains("drawing.pdf"));
         }
+    }
+
+    /// ★★ **The engine's own sentence must still be free of panic text.**
+    ///
+    /// This is a tripwire on `pdfcer-render`, not on this crate, and that is
+    /// the point. Until `Pass 296.5` (`4f6f5a5`), `RasterizerLimit`'s
+    /// `Display` carried `tiny-skia`'s panic text and the shell's named arm in
+    /// `crate::render::worker` was the only thing keeping *"range start index
+    /// 442613758592 out of range for slice of length 1088737"* off a site
+    /// plan. The engine took it out, and the comment on that arm now states
+    /// plainly that **the wildcard arm below it would no longer leak
+    /// anything**.
+    ///
+    /// That is a claim about somebody else's source, on a pin that moves
+    /// several times a day. A comment asserting it is worth nothing; this
+    /// constructs the variant and reads what the engine actually renders. If
+    /// the panic text ever returns to the format string, the sentence on that
+    /// arm becomes false and this goes red the same hour.
+    ///
+    /// It deliberately does NOT assert the whole string. The wording is the
+    /// engine's to choose; what was promised is that the field does not appear
+    /// in it, and that the scale — the actionable half — still does.
+    #[test]
+    fn the_engine_keeps_its_panic_text_out_of_the_message() {
+        let panic_message =
+            "range start index 442613758592 out of range for slice of length 1088737";
+        let e = pdfcer_render::RenderError::RasterizerLimit {
+            scale: 8_053_069.0,
+            panic_message: panic_message.to_owned(),
+        };
+        let shown = e.to_string();
+        assert!(
+            !shown.contains(panic_message) && !shown.contains("range start index"),
+            "pdfcer-render put third-party panic text back into RasterizerLimit's Display, \
+             which makes the wildcard arm in render::worker unsafe again: {shown}"
+        );
+        assert!(
+            shown.contains("8053069"),
+            "the scale is the half of this refusal a caller can act on and it must survive: {shown}"
+        );
+    }
+
+    /// ★ **This shell's sentence is an instruction, not a paraphrase of the
+    /// engine's fact.**
+    ///
+    /// [`canvas_zoom_past_rasterizer`] outlived the leak it was written to
+    /// stop, and the doc on it explains why: the engine reports *what the
+    /// renderer could not do*, and an operator staring at a blank drawing
+    /// needs *what to do next* plus the assurance that nothing was damaged.
+    ///
+    /// A future edit that "simplifies" this back to the engine's wording would
+    /// compile, pass every gate, and quietly delete the reason the function is
+    /// still here. So the three clauses are asserted, and the engine's phrasing
+    /// is asserted absent.
+    #[test]
+    fn the_zoom_refusal_tells_him_what_to_do_and_that_nothing_broke() {
+        let ours = canvas_zoom_past_rasterizer();
+        assert!(
+            !ours.contains("rasterizer cannot work at scale"),
+            "this must not decay into a restatement of the engine's Display: {ours}"
+        );
+        assert!(
+            ours.contains("Zoom out"),
+            "the remedy is the only actionable half of this event: {ours}"
+        );
+        assert!(
+            ours.contains("Nothing about the page has changed"),
+            "a refusal where a picture was reads as damage unless it says otherwise: {ours}"
+        );
     }
 
     /// A path with no file name must still produce a usable sentence.

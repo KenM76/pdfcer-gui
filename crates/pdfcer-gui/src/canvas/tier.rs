@@ -172,6 +172,14 @@ pub(super) fn decide(
         // is never. `render::strategy::Ink` carries the whole argument,
         // including the 263 % measurement that made the unconditional
         // version unacceptable.
+        // ★ ASKED, not waited for. Until 2026-09-11 the only way to know was
+        // to render the page and read the counters, so an ink page's FIRST
+        // raster was always chosen on the assumption it was additive —
+        // harmless on a document opened at a fit zoom, and not harmless on one
+        // reopened at a remembered deep zoom, where that first raster is the
+        // one the answer was needed for. `OpenDoc::learn_ink` asks once per
+        // page and remembers both answers.
+        doc.learn_ink(current);
         if crate::render::strategy::for_page(extent, raster_scale, doc.ink_at(current))
             == crate::render::strategy::Strategy::Region
             && place.width() > 0.0

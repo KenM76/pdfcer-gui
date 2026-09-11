@@ -624,6 +624,12 @@ fn every_actionable_format_refusal_keeps_its_own_sentence() {
     use crate::text::status::TextStyleRefusal as R;
     use pdfcer_core::text_edit::FormatError as E;
 
+    // ★ The two faces the fixture claims WOULD show the run. Named once so
+    // the construction and the sentence assertion cannot drift apart while
+    // both keep passing.
+    const REMEDY_A: &str = "Times-Roman";
+    const REMEDY_B: &str = "Helvetica";
+
     // One real error per case, CONSTRUCTED rather than described — so a field
     // the engine renames fails to compile here instead of drifting quietly.
     let cases = [
@@ -665,8 +671,17 @@ fn every_actionable_format_refusal_keeps_its_own_sentence() {
                 Some('o'),
                 "Times-Bold",
                 "R-INV-1: character U+006F 'o' has no code in font 'Times-Bold'",
+                // ★★ A REAL remedy list, not `Vec::new()`. `Pass 296.1`
+                // added this fifth argument and `rustc`'s own suggestion was
+                // `/* Vec<String> */`. An empty vec compiles, keeps every
+                // assertion below green, and silently declines the feature the
+                // engine had just shipped — the whole point of
+                // `remedy_faces` is that the sentence can NAME the faces that
+                // would show the run, so the fixture has to carry names or the
+                // interpolating branch is executed by no test at all.
+                vec![REMEDY_A.to_owned(), REMEDY_B.to_owned()],
             )),
-            R::FaceLacksCharacters,
+            R::FaceLacksCharacters(vec![REMEDY_A.to_owned(), REMEDY_B.to_owned()]),
         ),
         // ★ `rung_one` carries a WHOLE CLAUSE since `Pass 295.0`, not the face
         // list it used to (`passed`). The old field was interpolated straight
@@ -703,6 +718,47 @@ fn every_actionable_format_refusal_keeps_its_own_sentence() {
             );
         }
     }
+
+    // ★★★ The variant is half the delivery. `refusal_of` reaching
+    // `FaceLacksCharacters` was already true when the payload did not exist,
+    // so an assertion on the variant alone passes just as happily against
+    // `Vec::new()` — which is exactly the shape of a consumed-in-name-only
+    // wiring. What has to be asserted is that the engine's list reaches the
+    // OPERATOR'S SENTENCE, by name, because the names are the only part of
+    // this refusal anybody can act on.
+    let named = super::refusal_of(&E::CoverageFailure(pdfcer_core::text_edit::Refusal::new(
+        pdfcer_core::text_edit::RInvTrigger::TargetAbsent,
+        Some('o'),
+        "Times-Bold",
+        "R-INV-1: character U+006F 'o' has no code in font 'Times-Bold'",
+        vec![REMEDY_A.to_owned(), REMEDY_B.to_owned()],
+    )))
+    .line();
+    assert!(
+        named.contains(REMEDY_A) && named.contains(REMEDY_B),
+        "the coverage sentence must NAME the faces the engine says would show this run, and it said: {named}"
+    );
+
+    // ★★ Empty is a REAL value, not a missing one. An engine that knows of no
+    // covering face sends an empty list, and the shell must answer with a
+    // whole sentence of its own rather than a dangling "can show this text"
+    // with nothing in front of it.
+    let bare = super::refusal_of(&E::CoverageFailure(pdfcer_core::text_edit::Refusal::new(
+        pdfcer_core::text_edit::RInvTrigger::TargetAbsent,
+        Some('o'),
+        "Times-Bold",
+        "R-INV-1: character U+006F 'o' has no code in font 'Times-Bold'",
+        Vec::new(),
+    )))
+    .line();
+    assert!(
+        !bare.is_empty() && !bare.contains(REMEDY_A),
+        "with no remedy the sentence must still stand on its own, and it said: {bare}"
+    );
+    assert_ne!(
+        named, bare,
+        "the remedy list changed nothing about the sentence, which means it was not consumed"
+    );
 
     // ★ The control. `NoOp` is the variant this shell raises internally to
     // abort a `vector_edit`, and it is CORRECT for it to land in `Other` — the

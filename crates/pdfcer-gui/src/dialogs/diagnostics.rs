@@ -175,6 +175,32 @@ impl DiagnosticsDialog {
         ui.label(t::raster(texture.key.raster_scale(), size[0], size[1]))
             .on_hover_text(t::raster_tooltip());
 
+        // What the page was BLENDED in, and where that was decided.
+        //
+        // Keyed on the TEXTURE's page for the same reason the subject line
+        // above is: the canvas is showing that raster, and describing a
+        // different page's colour beside that raster's duration would be a
+        // sentence about neither.
+        //
+        // Drawn only when `learn_ink` has an answer - R9. A page whose ink was
+        // learned by OBSERVING a render (`render::settle`, the second writer)
+        // has a `composites_in_ink` and no source, because the render counters
+        // say the colorant buffer was engaged and do not say who decided it.
+        // That page gets nothing here rather than a guessed origin.
+        if let Some(&source) = doc.ink_source.get(&texture.key.page()) {
+            let in_ink = doc.ink_pages.contains(&texture.key.page());
+            ui.label(t::blended_in(in_ink));
+            // The ORIGIN is drawn, not hovered, and that is a rule-4 call
+            // rather than a layout one: this window is a disclosure surface,
+            // and a disclosure a screenshot does not contain is one the
+            // operator cannot send anybody. Muted, because it is the reason
+            // for the line above rather than a measurement of its own - the
+            // same role `absorbed` takes at the foot of the findings list.
+            ui.label(
+                egui::RichText::new(t::blend_space_from(source)).color(theme.palette.text_muted),
+            );
+        }
+
         ui.add_space(12.0);
         ui.separator();
         ui.add_space(6.0);

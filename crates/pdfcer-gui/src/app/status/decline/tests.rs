@@ -176,13 +176,13 @@ fn the_two_history_declines_do_not_share_a_slot_or_a_sentence() {
     retire();
     record_history_empty(Declined::NothingToUndo);
     assert_eq!(
-        LAST.with_borrow(|slot| *slot),
+        LAST.with_borrow(Clone::clone),
         Some(Declined::NothingToUndo)
     );
     retire();
     record_history_empty(Declined::NothingToRedo);
     assert_eq!(
-        LAST.with_borrow(|slot| *slot),
+        LAST.with_borrow(Clone::clone),
         Some(Declined::NothingToRedo)
     );
     assert_ne!(
@@ -212,7 +212,7 @@ fn a_failed_save_is_recorded_and_retired_by_the_next_command() {
     retire();
     record_save_failure();
     assert_eq!(
-        LAST.with_borrow(|slot| *slot),
+        LAST.with_borrow(Clone::clone),
         Some(Declined::SaveFailed),
         "the failure must reach the store, or the bar has nothing to draw"
     );
@@ -223,14 +223,14 @@ fn a_failed_save_is_recorded_and_retired_by_the_next_command() {
 
     // …and the operator's next command ends it.
     retire();
-    assert_eq!(LAST.with_borrow(|slot| *slot), None);
+    assert_eq!(LAST.with_borrow(Clone::clone), None);
 
     // Two failures in a row are two events: the second press retires the
     // first sentence through `retire` and then records its own.
     record_save_failure();
     retire();
     record_save_failure();
-    assert_eq!(LAST.with_borrow(|slot| *slot), Some(Declined::SaveFailed));
+    assert_eq!(LAST.with_borrow(Clone::clone), Some(Declined::SaveFailed));
     retire();
 }
 
@@ -543,7 +543,7 @@ fn a_clipboard_verb_the_mode_refuses_is_worded_and_then_retired() {
 
     record_mode_refusal(ModeRefusal::PasteContent);
     assert_eq!(
-        LAST.with_borrow(|slot| *slot),
+        LAST.with_borrow(Clone::clone),
         Some(Declined::ClipboardMode(ModeRefusal::PasteContent)),
         "a paste the mode does not do must be recorded, not merely traced"
     );
@@ -553,7 +553,7 @@ fn a_clipboard_verb_the_mode_refuses_is_worded_and_then_retired() {
     // an operand that changed under them must change the sentence with it.
     record_mode_refusal(ModeRefusal::PasteMarkup);
     assert_eq!(
-        LAST.with_borrow(|slot| *slot),
+        LAST.with_borrow(Clone::clone),
         Some(Declined::ClipboardMode(ModeRefusal::PasteMarkup))
     );
 
@@ -562,7 +562,7 @@ fn a_clipboard_verb_the_mode_refuses_is_worded_and_then_retired() {
     // available here: the condition it reports is the one the sentence asks
     // the operator to change.
     retire();
-    assert_eq!(LAST.with_borrow(|slot| *slot), None);
+    assert_eq!(LAST.with_borrow(Clone::clone), None);
 }
 
 /// ★★ **The six mode refusals are six sentences, and none of them is any

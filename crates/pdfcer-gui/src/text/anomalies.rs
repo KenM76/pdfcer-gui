@@ -79,54 +79,50 @@ pub fn key_name(key: &[u8]) -> String {
 
 /// One PDF value, short enough to sit inside a sentence.
 ///
-/// # ★★★ Why this exists at all
+/// # ★★★ This used to be twenty-six match arms, and the engine took them
 ///
-/// [`pdfcer_core::object::Object`] has no `Display`, only `Debug`, and `Debug`
-/// on a `Dict` is a whole object graph. This is the *sentence-sized* rendering:
-/// the scalar kinds are shown exactly, and the three container kinds are named
-/// rather than expanded.
+/// [`pdfcer_core::object::Object`] had no `Display`, only `Debug`, and `Debug`
+/// on a `Dict` is a whole object graph. So this shell wrote the sentence-sized
+/// rendering itself: scalars shown exactly, containers named rather than
+/// expanded. That asymmetry is still the design — it is just no longer ours.
 ///
-/// That asymmetry is the design, not a shortcut. The pair this function serves
-/// is `kept` versus `discarded` on a duplicate key, and the question the
-/// operator is answering is *"did pdfcer pick the right one?"*. For the case
-/// that motivated the whole Pass — `/PageMode /UseOC` against
-/// `/PageMode /UseOutlines` — the answer is two short names side by side, and it
-/// is readable at a glance. For a doubled key whose values are two large
-/// dictionaries there is no glance-sized answer, and pretending otherwise by
-/// dumping a graph into a status-bar sentence would make the readable case
-/// unreadable too. Naming the shape ("a dictionary of 14 entries") is the honest
-/// amount to say, and it still tells the operator the two values differ in kind
-/// or in size when they do.
+/// `Pass 296.2` (`90576a8`, consumed 2026-09-11) put `Display` on `Object` and
+/// on `Name`, **with the contract this file had arrived at**, because the
+/// argument for it was the one that decided the request: the type is
+/// `#[non_exhaustive]`, so the catch-all arm below rendered *"a value this
+/// build does not recognise"* — and **adding a variant in the engine would
+/// have quietly made every shell say that about it, with nothing red
+/// anywhere**. A rendering that degrades silently on the consuming side is a
+/// correctness problem, not a tidiness one, and it belongs where the variant
+/// is added.
 ///
-/// ⚠ [`pdfcer_core::object::Object`] is `#[non_exhaustive]`, so the wildcard arm
-/// is genuinely reachable rather than a formality — a value kind a later engine
-/// adds must produce *a* description here, not a compile error and not a blank.
+/// The engine improved on two arms while it was there, and both are visible in
+/// what an operator now reads:
+///
+/// * a **string** renders `(Hello)` or `<0102FF>`, the forms §7.3.4.2/.3 use,
+///   instead of this shell's `from_utf8_lossy` — which put U+FFFD replacement
+///   characters in front of the operator and called them the value;
+/// * a **stream** reports its dictionary's size rather than the bare word
+///   `a stream`.
+///
+/// # ★ Why the function survived the arms
+///
+/// Two reasons, and neither is sentiment.
+///
+/// **R4.** `check-ui-strings` requires every operator-visible literal to live
+/// in this catalog. The two drawing sites are in `crate::app::status::anomalies`
+/// and must contain none; routing through here keeps that true whatever the
+/// rendering becomes.
+///
+/// **Width is ours.** The engine's reply said so explicitly — *"localisation,
+/// wrapping, truncation and width are yours"*. A doubled key whose two values
+/// are large dictionaries still has a sentence-length budget, and this is the
+/// one place a truncation rule could be applied without a second call site
+/// disagreeing about it. There is no such rule today; there is a place to put
+/// one.
 #[must_use]
 pub fn value(object: &Object) -> String {
-    match object {
-        Object::Null => "null".to_owned(),
-        Object::Boolean(b) => if *b { "true" } else { "false" }.to_owned(),
-        Object::Integer(n) => n.to_string(),
-        Object::Real(r) => r.to_string(),
-        // Quoted, because a PDF string's content can be empty or all spaces and
-        // an unquoted empty string in the middle of a sentence reads as a bug in
-        // the sentence.
-        Object::String(bytes) => format!("\u{201c}{}\u{201d}", String::from_utf8_lossy(bytes)),
-        Object::Name(name) => key_name(name.as_bytes()),
-        Object::Array(items) => match items.len() {
-            1 => "an array of 1 item".to_owned(),
-            n => format!("an array of {n} items"),
-        },
-        Object::Dict(dict) => match dict.len() {
-            1 => "a dictionary of 1 entry".to_owned(),
-            n => format!("a dictionary of {n} entries"),
-        },
-        Object::Stream(_) => "a stream".to_owned(),
-        // `num gen R` — the form the reference is written in inside the file, so
-        // an operator comparing this against the bytes finds it.
-        Object::Reference(id) => format!("{id} R"),
-        _ => "a value this build does not recognise".to_owned(),
-    }
+    object.to_string()
 }
 
 /// How a row names the object an anomaly is about.

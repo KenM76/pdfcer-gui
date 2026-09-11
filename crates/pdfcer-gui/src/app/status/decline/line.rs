@@ -52,7 +52,7 @@ impl Declined {
     /// frame — allocates nothing except on the frames that are reporting that
     /// one refusal.
     #[must_use]
-    pub(super) fn line(self) -> std::borrow::Cow<'static, str> {
+    pub(super) fn line(&self) -> std::borrow::Cow<'static, str> {
         // ★ Bound through a `&'static str` so only the arms that interpolate
         // carry machinery. They `return`; the catalog below is unchanged.
         let fixed: &'static str = match self {
@@ -65,8 +65,8 @@ impl Declined {
             Self::NothingToRedo => t::redo_declined_empty(),
             Self::FieldNameTaken => t::adopt_declined_name_taken(),
             Self::WidgetHasNoName => t::adopt_declined_no_name(),
-            Self::ResizeNotRebuildable { uniform } => t::resize_not_rebuildable(uniform),
-            Self::ResizeFixedSizeMarker { by_flag } => t::resize_fixed_size_marker(by_flag),
+            Self::ResizeNotRebuildable { uniform } => t::resize_not_rebuildable(*uniform),
+            Self::ResizeFixedSizeMarker { by_flag } => t::resize_fixed_size_marker(*by_flag),
             Self::FlattenCertified => t::flatten_declined_certified(),
             Self::FieldDeleteRefused => t::field_delete_declined_structural(),
             // ★ Stays in `crate::text::status` rather than reaching across the
@@ -86,7 +86,7 @@ impl Declined {
             // caret and the paragraph under it. `ReflowRefusal::line` is the
             // one mapping, so the shell-side causes and the engine-side ones
             // cannot drift into two voices.
-            Self::Reflow(why) => why.line(),
+            Self::Reflow(why) => (*why).line(),
             // ★ Same catalog and same subject as the reflow family above: the
             // text caret and what the page under it will accept.
             Self::EnterCannotSplit => crate::text::textedit::enter_cannot_split_existing_text(),
@@ -112,7 +112,7 @@ impl Declined {
             // ★ Reaches across to `text::stamps` on the same catalog rule the
             // two above record: the module that owns this surface's other
             // sentences owns this one.
-            Self::CustomStampUnavailable(why) => crate::text::stamps::place_declined(why),
+            Self::CustomStampUnavailable(why) => crate::text::stamps::place_declined(*why),
             // ★ These two reach across to `text::panels::bookmarks` on the
             // identical argument the field-group pair above records: a string
             // lives in `crate::text::…`, and the module that owns this
@@ -125,15 +125,19 @@ impl Declined {
             Self::BookmarkMoveRefused => {
                 crate::text::panels::bookmarks::bookmark_move_declined_engine()
             }
-            Self::TextStyle(why) => why.line(),
-            Self::Rotate(why) => why.line(),
-            Self::Unshare(why) => why.line(),
+            // ★ Returns early like `EditText` below, because this sentence can
+            // name the faces that WOULD show the run — `Refusal::remedy_faces`,
+            // consumed 2026-09-11. Without a list it is still borrowed static
+            // prose and still allocates nothing.
+            Self::TextStyle(why) => return why.line(),
+            Self::Rotate(why) => (*why).line(),
+            Self::Unshare(why) => (*why).line(),
             // ★ Reaches across to `crate::text::clipboard` on the same rule the
             // arms above use: a string lives with the surface that owns its
             // subject, and this one's subject is the clipboard — where the
             // other three clipboard refusals already live, so a fourth wording
             // of "that did not happen" cannot grow up beside them.
-            Self::ClipboardMode(why) => why.line(),
+            Self::ClipboardMode(why) => (*why).line(),
             // ★★ Same catalog as `Reflow` and `EnterCannotSplit` above, and the
             // same rule: this enum owns which sentence, `crate::text::textedit`
             // owns the words. `EditRefusal::Unstated` forwards to
@@ -151,14 +155,14 @@ impl Declined {
             // string lives with the surface that owns its subject, and this
             // one's subject is what a ce dimension measures — where the
             // vertex-move disclosure it is the refusal twin of already lives.
-            Self::VertexEditRefused(why) => why.line(),
+            Self::VertexEditRefused(why) => (*why).line(),
             // ★ Reaches across to `crate::text::markup` on the same rule
             // every arm above uses: a string lives with the surface that owns
             // its subject, and this one's subject is a markup shape — where the
             // other twenty sentences about markup already live, so a second
             // wording of "that shape did not change" cannot grow up beside
             // them.
-            Self::MarkupNodeRefused(why) => why.line(),
+            Self::MarkupNodeRefused(why) => (*why).line(),
         };
         std::borrow::Cow::Borrowed(fixed)
     }

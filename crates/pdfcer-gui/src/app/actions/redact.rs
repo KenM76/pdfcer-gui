@@ -434,10 +434,40 @@ pub fn apply(doc: &mut OpenDoc, action: RedactAction, settings: &pdfcer_core::se
                     //
                     // ★ Both populations RENDER PERFECTLY, which is what makes
                     // it invisible. Nothing on the page looks unredacted.
+                    //
+                    // ★★★ **Both routes disclose now**, and until 2026-09-11 only
+                    // one did. The pattern branch called
+                    // `mark_redactions_by_pattern_styled`, which returns the
+                    // marks and nothing else, and this shell then wrote
+                    // `(created, None)` — discarding a census the engine had
+                    // already computed on that exact scan.
+                    //
+                    // `None` here did NOT mean *unknown*. It collapsed into
+                    // `unreadable = 0` two statements below, which is the
+                    // shell asserting *"no font in this document hides text
+                    // from a search"* — on the route least able to know it.
+                    // Worse: a pattern pass run after a literal one
+                    // **overwrote a true warning already on screen**, so the
+                    // operator watched an honest disclosure disappear.
+                    //
+                    // ★★ And the pattern route is the MORE exposed of the two,
+                    // not the less. What people reach for wildcards for is
+                    // structured confidential material — account numbers,
+                    // dates of birth, case references — which is exactly the
+                    // content a redaction is run for.
+                    //
+                    // `search_and_mark_redactions_by_pattern_styled`
+                    // (`Pass 296.3`, `5943beb`) is the same scan with the
+                    // diagnostics attached, and it is now the single
+                    // implementation the other three pattern entry points
+                    // delegate to, so the four cannot disagree about what was
+                    // marked. ★ Wiring it found the identical blind spot in
+                    // pdfcer's own CLI — `redact-mark --pattern` was silent
+                    // where `--search` three lines above it disclosed.
                     let marked = if pattern {
                         session
-                            .mark_redactions_by_pattern_styled(&query, true, &appearance)
-                            .map(|created| (created, None))
+                            .search_and_mark_redactions_by_pattern_styled(&query, true, &appearance)
+                            .map(|m| (m.created, Some(m.diagnostics)))
                     } else {
                         session
                             .search_and_mark_redactions_styled(

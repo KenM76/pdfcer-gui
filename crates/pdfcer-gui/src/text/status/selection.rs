@@ -242,7 +242,23 @@ pub fn selection_with_depth(line: &str, taken: usize, of: usize) -> String {
 /// **act on**, and there are three. Everything else is either impossible from
 /// this surface (a bad page index, an empty request) or is not improved by
 /// being subdivided.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+///
+/// # ★★ It stopped being `Copy` on 2026-09-11, and the reason is a feature
+///
+/// One variant now owns a list of face names the engine computed, so the enum
+/// holds a `Vec<String>` and cannot be `Copy`. Three doc comments in
+/// [`crate::app::status::decline`] used to argue that this type is `Copy`
+/// *"so that `Declined` stays `Copy` and `Declined::line` stays
+/// `&'static str`"*, and both halves of that sentence have now been overtaken:
+/// `Declined::line` became a [`std::borrow::Cow`] on 2026-09-10 for O141's
+/// *"pdfcer cannot type a `q`"*, and the `Copy` half went here.
+///
+/// ★ What the argument was actually protecting is intact and is worth naming
+/// so it is not lost with the derive: **the engine's prose must not reach the
+/// status bar.** That is still true. What travels here is a list of
+/// `/BaseFont` names — data pdfcer computed, not a sentence pdfcer wrote —
+/// and the connective words around it are this catalog's own.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TextStyleRefusal {
     /// Nothing resolved to a run to restyle.
     NoRun,
@@ -253,8 +269,43 @@ pub enum TextStyleRefusal {
     FaceNotOnPage,
     /// A synthetic slant would move the line that follows this run.
     ItalicWouldMove,
-    /// The chosen face cannot show every character in the run.
-    FaceLacksCharacters,
+    /// The chosen face cannot show every character in the run — and the faces
+    /// that **could**, which is the payload.
+    ///
+    /// # ★★★ Why this variant carries data when none of its neighbours do
+    ///
+    /// Because it is the one refusal in this enum an operator can act on
+    /// *immediately*, and until 2026-09-11 the shell knew the remedy and said
+    /// nothing.
+    ///
+    /// `pdfcer-core`'s `Pass 274.0` made this refusal end on a **working**
+    /// remedy instead of on *"choose a font that covers it"*, and `Pass 279.0`
+    /// made that remedy **page-aware** — because the naive list was measured
+    /// wrong in its most prominent position on `subset_missing.pdf`, where it
+    /// named `Helvetica` and `Helvetica` resolved straight back into the
+    /// `ABCDEF+Helvetica` that had just refused. Both improvements landed
+    /// inside `Refusal::message`, a prose field.
+    ///
+    /// ★★ So this shell could not reach them. Splitting that message on
+    /// `"these standard-14 faces have it: "` would have put a locator for
+    /// another crate's sentence format inside a GUI, to break silently the
+    /// first time the clause was reworded — and the public helper that looks
+    /// like the answer, `std14_faces_covering`, is the **naive** one the engine
+    /// measured as wrong, while the corrected `std14_faces_reachable` is
+    /// `pub(crate)`. The two differ by one word. Reaching for the public one
+    /// would have compiled, passed every gate, and sent the operator in a
+    /// circle.
+    ///
+    /// ★ Filed rather than worked around (`Pass 296.1`, requested and shipped
+    /// the same afternoon). `Refusal::remedy_faces` is now the same list the
+    /// message's tail names, structured — one computation rendered twice — so
+    /// what the operator reads here is exactly what pdfcer said, never more.
+    ///
+    /// **Empty is a real value and is not a failure.** It means nothing among
+    /// the faces pdfcer can offer covers the character, which is also when the
+    /// message's tail is absent; [`TextStyleRefusal::line`] falls back to the
+    /// sentence that was there before this field existed.
+    FaceLacksCharacters(Vec<String>),
     /// The operator's `style_policy` is `Refuse` and the only way to satisfy
     /// this request was to fake the weight or the slant.
     ///
@@ -302,8 +353,13 @@ impl TextStyleRefusal {
     /// Remedy first in every arm that has one, because the operator is looking
     /// at text that did not change and the useful half is *what to do now*.
     #[must_use]
-    pub const fn line(self) -> &'static str {
-        match self {
+    pub fn line(&self) -> std::borrow::Cow<'static, str> {
+        // ★ Bound through a `&'static str` so only the arm that interpolates
+        // carries machinery — the same shape, and for the same reason, as
+        // `crate::app::status::decline::Declined::line`, which this feeds. The
+        // bar redraws every frame; it allocates only on the frames reporting
+        // the one refusal that names faces.
+        let fixed: &'static str = match self {
             // Not "nothing is selected" — the operator may well have something
             // selected. What they do not have is TEXT selected, and naming the
             // wrong absence sends them to fix the wrong thing.
@@ -349,9 +405,10 @@ impl TextStyleRefusal {
             Self::ItalicWouldMove => {
                 "Slanting this text would shift the line that follows it, because the two share a position in the file. pdfcer changed nothing rather than move text you did not select."
             }
-            Self::FaceLacksCharacters => {
-                "That face has no shape for one or more characters in this text. pdfcer changed nothing rather than substitute a different letter or leave a blank."
-            }
+            // ★★★ The only arm that returns early, because it is the only one
+            // with a subject the operator can see. See the variant's own docs
+            // for why the list could not be had until `Pass 296.1`.
+            Self::FaceLacksCharacters(remedy) => return coverage_line(remedy),
             // ★ Remedy first, and the remedy is a SETTING, so the sentence
             // names where it lives. A refusal caused by the operator's own
             // choice that does not say which choice reads as a program defect.
@@ -369,7 +426,56 @@ impl TextStyleRefusal {
             Self::PartOnly => {
                 "Part of the selection was restyled before that happened. Ctrl+Z takes back what did change."
             }
-        }
+        };
+        std::borrow::Cow::Borrowed(fixed)
+    }
+}
+
+/// The coverage refusal's sentence, with or without the engine's remedy list.
+///
+/// # ★★ Remedy first, which reverses the sentence when there is one
+///
+/// This module's rule is *remedy first in every arm that has one*, because the
+/// operator is looking at text that did not change and the useful half is what
+/// to do now. Without a list there is no remedy to lead with and the sentence
+/// opens on the diagnosis; with one it opens on the faces. That is two
+/// sentences rather than one with a clause bolted on, and it is deliberate: a
+/// sentence that opens *"That face has no shape…"* and ends *"… Times-Roman
+/// can"* buries the actionable half behind the explanation.
+///
+/// ★ `"The face you picked"` rather than naming it. The name is in the face
+/// chooser the operator is looking at, and repeating it costs width on a bar
+/// that is already carrying up to fourteen face names in the first clause.
+///
+/// # ★ Why `const WITHOUT` and not a second catalog function
+///
+/// Because it is the *same* refusal. Two catalog entries would be two
+/// sentences that must be kept consistent with each other by hand, and this
+/// project has a gate (`check-ui-strings`) that would be content with both.
+fn coverage_line(remedy: &[String]) -> std::borrow::Cow<'static, str> {
+    const WITHOUT: &str = "That face has no shape for one or more characters in this text. pdfcer changed nothing rather than substitute a different letter or leave a blank.";
+    if remedy.is_empty() {
+        return std::borrow::Cow::Borrowed(WITHOUT);
+    }
+    std::borrow::Cow::Owned(format!(
+        "{} can show this text. The face you picked has no shape for one or more characters in it, so pdfcer changed nothing rather than substitute a different letter or leave a blank.",
+        join_or(remedy)
+    ))
+}
+
+/// `["a", "b", "c"]` → `"a, b or c"`.
+///
+/// ★ `or`, not `and`: the faces are **alternatives**, and `join_and` in
+/// `crate::text::page_size` — whose subject is edges a drawing runs past, all
+/// of which are true at once — would read as though the operator needed all
+/// three. Copied rather than shared for exactly that reason: the two differ in
+/// the one word that carries the meaning, so a shared helper would need a
+/// parameter that is really a choice about a sentence.
+fn join_or(parts: &[String]) -> String {
+    match parts {
+        [] => String::new(),
+        [only] => only.clone(),
+        [rest @ .., last] => format!("{} or {last}", rest.join(", ")),
     }
 }
 

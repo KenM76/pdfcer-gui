@@ -996,6 +996,69 @@ pub struct OpenDoc {
     /// virtually every document, since about 0.4 % of real files declare a
     /// subtractive page group.
     pub ink_pages: std::collections::HashSet<usize>,
+    /// ★★★ **Which pages have been ASKED**, as opposed to
+    /// [`Self::ink_pages`], which is which pages answered *yes*.
+    ///
+    /// Two sets and not one, because "not in `ink_pages`" has meant two
+    /// different things since 2026-09-11 and conflating them is how the ask
+    /// would be paid for on every frame: *this page is additive* and *nobody
+    /// has looked yet*. A page that answers `false` is a page this shell must
+    /// not ask about again, and there is nowhere else to record that.
+    ///
+    /// # Why an ask exists at all now
+    ///
+    /// Until `Pass 296.4` (`8d2f6bb`, consumed 2026-09-11) `page_blend_space`
+    /// was `pub(crate)` and the only way to learn a page's blending space was
+    /// to **render it once and read the counters afterwards**. That inference
+    /// was sound — the engine confirmed it is exactly the union it computes —
+    /// and it cost a full raster to answer a question the page's own `/Group`
+    /// dictionary answers. `pdfcer_render::page_composites_in_ink` is that
+    /// question, asked directly.
+    ///
+    /// # ★★ The gap the observation left, which is small and real
+    ///
+    /// [`crate::render::strategy::Ink`]'s doc argues that a document opens at
+    /// a fit zoom and renders once before any zoom is possible, so the
+    /// observation is in hand before it can matter. That is true of a document
+    /// opened at a fit zoom. It is **not** true of one reopened at a remembered
+    /// deep zoom, where the first raster of an ink page is also the one whose
+    /// tier the answer was needed for — and it is not true at all of a shell
+    /// that would rather not derive an engine fact it can ask for (R74).
+    ///
+    /// The observed write in `crate::render::settle` is kept, as a second
+    /// writer that can only ever agree: the engine's test pins the ask and the
+    /// render to the same answer, so a disagreement would be a bug in the
+    /// engine and this shell would rather record `true` than argue.
+    pub ink_asked: std::collections::HashSet<usize>,
+    /// Where each asked page's blending space CAME FROM - the second half of
+    /// what [`Self::learn_ink`] is told, kept because it is the only answer to
+    /// *why* a page composites the way it does.
+    ///
+    /// [`Self::ink_pages`] records *what* the space is, which is the fact the
+    /// render tier acts on. This records *where it was decided*, which is the
+    /// fact the operator is owed when the answer surprises them: a CAD sheet
+    /// that blends in ink because its own page group says so is a different
+    /// document from one that blends in ink because the file carries a
+    /// four-colorant output intent and the page group declares nothing, and
+    /// Settings - Colour carries a control (`page_blend_space_source`) whose
+    /// whole subject is the second case.
+    ///
+    /// # Why a map and not a third set
+    ///
+    /// Three values, not two. `pdfcer_render::interpret::BlendSpaceFrom` is a
+    /// unit-variant enum and is `Copy`, so the map costs one word per asked
+    /// page and reads without a clone.
+    ///
+    /// # Why it has ONE writer where [`Self::ink_pages`] has two
+    ///
+    /// `crate::render::settle` writes `ink_pages` from the render counters, as
+    /// a second observer that can only agree with the ask. Those counters say
+    /// *the colorant buffer was engaged or refused*; they do **not** say which
+    /// of Table 147, the output intent or the device decided it. So an
+    /// observed page has no source, this map has no entry for it, and every
+    /// reader must be prepared for that - which is R9: a fact this shell does
+    /// not have renders **nothing**, never a guess and never a stub.
+    pub ink_source: std::collections::HashMap<usize, pdfcer_render::interpret::BlendSpaceFrom>,
     /// ★★★ **The [`Self::edit_epoch`] the file on disk currently holds** — i.e.
     /// the revision a successful *Save* last wrote over the operator's own file.
     ///
@@ -1254,6 +1317,8 @@ impl OpenDoc {
             base_texture: None,
             base_texture_epoch: 0,
             ink_pages: std::collections::HashSet::new(),
+            ink_asked: std::collections::HashSet::new(),
+            ink_source: std::collections::HashMap::new(),
             saved_epoch: 0,
             // Read above, before `path` was moved into the struct.
             guides,

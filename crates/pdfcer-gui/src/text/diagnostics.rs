@@ -33,6 +33,8 @@
 //! rule [`crate::text::status::diagnostics_layers_hidden`] follows one surface
 //! over: **name the cause, or the number reads as a fault.**
 
+use pdfcer_render::interpret::BlendSpaceFrom;
+
 /// The dialog's title.
 ///
 /// The command's own label, so an operator who pressed *Render diagnostics*
@@ -78,6 +80,73 @@ pub fn took(millis: u128) -> String {
 #[must_use]
 pub fn raster(scale: f32, width: usize, height: usize) -> String {
     format!("Rasterized at {scale:.2}× — {width} × {height} pixels")
+}
+
+/// **What colour space this page was BLENDED in** - one short line, beside the
+/// other two measurements.
+///
+/// # Why an operator is owed this at all
+///
+/// It is the fact that explains the line above it. A page that composites in
+/// four colorant planes costs more to draw than the same geometry composited in
+/// three, and a CAD sheet exported for print routinely does - so a duration
+/// that looks wrong on one sheet and fine on the next is very often this, and
+/// nothing else in this shell says so.
+///
+/// It is also the precondition of `max_cmyk_buffer_bytes` meaning anything: the
+/// operator can raise that ceiling in Settings > Colour and see no change
+/// whatever, because the page never asked for ink in the first place.
+///
+/// # Why it names CMYK rather than "subtractive"
+///
+/// The engine's own vocabulary is *subtractive*, which is correct and is the
+/// word its documentation uses. The operator's vocabulary is CMYK, and this is
+/// the surface where his word wins - the same ruling the markup and text colour
+/// disclosures already took.
+#[must_use]
+pub const fn blended_in(composites_in_ink: bool) -> &'static str {
+    if composites_in_ink {
+        "Blended in CMYK ink"
+    } else {
+        "Blended in screen colour (RGB)"
+    }
+}
+
+/// **Where that blending space was decided**, which is a different fact from
+/// what it is, and the only one of the two an operator can act on.
+///
+/// # The three cases, and why the middle one is not a failure
+///
+/// * [`BlendSpaceFrom::PageGroup`] - the page's own `/Group` dictionary named a
+///   space (ISO 32000-1 Table 147). The file said so; nothing was inferred, and
+///   no setting in this shell can change the answer.
+/// * [`BlendSpaceFrom::DeviceNative`] - the page group named nothing, so the
+///   output device's own space stands, which for pdfcer is sRGB. This is the
+///   ordinary case for almost every PDF ever made and reads as a non-event; it
+///   is stated anyway, because an operator comparing two sheets needs to see
+///   which of them declared something and which did not.
+/// * [`BlendSpaceFrom::OutputIntent`] - the page group named nothing AND the
+///   document carries an `/OutputIntents` entry pdfcer could resolve, so the
+///   intent's own colorant count decided it. **This is the only case
+///   `page_blend_space_source` governs**, and naming it is how an operator
+///   learns which setting would change this page.
+///
+/// # Why the sentence names the setting in the third case only
+///
+/// R9's rule applied to prose rather than to a widget: pointing at a control
+/// that cannot change the answer is the same defect as drawing a disabled one.
+/// The first two cases say what happened and stop.
+#[must_use]
+pub const fn blend_space_from(source: BlendSpaceFrom) -> &'static str {
+    match source {
+        BlendSpaceFrom::PageGroup => "The page declares that space itself",
+        BlendSpaceFrom::DeviceNative => {
+            "The page declares no space, so the screen's own colour stands"
+        }
+        BlendSpaceFrom::OutputIntent => {
+            "The page declares no space, so the file's print output intent decided it - Settings > Colour is where that rule lives"
+        }
+    }
 }
 
 /// Hover text for the measurement group.
@@ -251,6 +320,86 @@ mod tests {
             "a zero count reads as a template: {none}"
         );
         assert_ne!(none, absorbed(1, 0));
+    }
+
+    /// **The three blend-space origins are three different sentences**, and the
+    /// falsification is per-variant rather than one combined assertion.
+    ///
+    /// A `match` over a unit-variant enum is the shape that reads as obviously
+    /// correct and is the shape a copy-paste edit silently collapses: two arms
+    /// returning the same string still compiles, still passes a test that only
+    /// checks "the answer is non-empty", and hands the operator a sentence
+    /// about the wrong document. Pairwise inequality is the only assertion that
+    /// can fail for that.
+    #[test]
+    fn every_blend_space_origin_says_something_different() {
+        let all = [
+            BlendSpaceFrom::PageGroup,
+            BlendSpaceFrom::DeviceNative,
+            BlendSpaceFrom::OutputIntent,
+        ];
+        for (i, a) in all.iter().enumerate() {
+            assert!(
+                !blend_space_from(*a).is_empty(),
+                "an origin with no sentence is a silence, not a short answer"
+            );
+            for b in &all[i + 1..] {
+                assert_ne!(
+                    blend_space_from(*a),
+                    blend_space_from(*b),
+                    "two origins share one sentence, so one of them is wrong"
+                );
+            }
+        }
+    }
+
+    /// **Only the output-intent origin points at a setting**, because it is the
+    /// only one a setting can change.
+    ///
+    /// R9's rule applied to prose. `page_blend_space_source` decides what to do
+    /// when the page group declares nothing AND the document carries a
+    /// resolvable output intent; on a page whose own `/Group` named a space it
+    /// is not consulted at all. A sentence sending the operator to Settings for
+    /// a page Settings cannot affect is the prose form of a disabled button,
+    /// and it costs more than a disabled button because he goes and looks.
+    ///
+    /// ★ Asserted BOTH ways. The positive half alone would pass a catalog that
+    /// named the setting in all three; the negative half alone would pass one
+    /// that named it in none.
+    #[test]
+    fn only_the_output_intent_origin_names_the_setting() {
+        assert!(
+            blend_space_from(BlendSpaceFrom::OutputIntent).contains("Settings"),
+            "the one origin a control governs must name that control"
+        );
+        for quiet in [BlendSpaceFrom::PageGroup, BlendSpaceFrom::DeviceNative] {
+            let line = blend_space_from(quiet);
+            assert!(
+                !line.contains("Settings"),
+                "this origin cannot be changed by a setting, so naming one sends \
+                 the operator somewhere that will not help: {line}"
+            );
+        }
+    }
+
+    /// **Ink and screen are different sentences, and neither is a bare word.**
+    ///
+    /// The failure this pins is the one-word readout - `CMYK` / `RGB` - which
+    /// looks tidy in a report and is unreadable next to a duration, because
+    /// nothing on the line says what the acronym is a property OF.
+    #[test]
+    fn the_blend_line_says_what_was_blended_and_not_just_a_colour_model() {
+        let ink = blended_in(true);
+        let screen = blended_in(false);
+        assert_ne!(ink, screen);
+        assert!(
+            ink.contains("CMYK"),
+            "the operator's word, not 'subtractive'"
+        );
+        assert!(
+            ink.to_lowercase().contains("blend") && screen.to_lowercase().contains("blend"),
+            "the line must name the operation, or the colour model has no subject"
+        );
     }
 
     /// The subject line names a page **number**, not an index.

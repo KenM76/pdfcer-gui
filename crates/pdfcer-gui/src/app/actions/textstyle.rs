@@ -876,7 +876,23 @@ fn refusal_of(error: &FormatError) -> t::TextStyleRefusal {
     match error {
         FormatError::TargetFontMissing(_) => t::TextStyleRefusal::FaceNotOnPage,
         FormatError::ShearUnsupported(_) => t::TextStyleRefusal::ItalicWouldMove,
-        FormatError::CoverageFailure(_) => t::TextStyleRefusal::FaceLacksCharacters,
+        // ★★★ The ONLY arm that carries a payload out of the engine's error,
+        // and the reason is that this is the only refusal here an operator can
+        // act on without guessing. `Refusal::remedy_faces` is the faces that
+        // WOULD show this run — the same list the engine's own message names
+        // in prose, structured (`Pass 296.1`, requested and shipped
+        // 2026-09-11). Cloned rather than borrowed because the sentence
+        // outlives the error: it is recorded in the decline slot and read by
+        // the bar on later frames.
+        //
+        // ★ Before this, the shell showed nothing. Reaching the list meant
+        // splitting `Refusal::message` on a clause, and the public helper that
+        // looks like the answer is the naive one the engine measured as WRONG
+        // on the very fixture this refusal exists for. Filed rather than
+        // worked around; see the variant's docs.
+        FormatError::CoverageFailure(refusal) => {
+            t::TextStyleRefusal::FaceLacksCharacters(refusal.remedy_faces.clone())
+        }
         // ★ The operator's own setting, reported back as their setting. This
         // variant carries `style`, `run_font`, `passed` and `flag`; none of them
         // reaches the sentence, because the remedy is *"turn the setting off"*

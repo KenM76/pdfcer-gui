@@ -236,7 +236,7 @@ a claim that sixty things are unbuilt.
 
 ---
 
-## `wanted` — a real gap — **46 of 170** <!-- counted by tools/walk-engine-backlog.py, 2026-09-11; do not retype -->
+## `wanted` — a real gap — **46 of 171** <!-- counted by tools/walk-engine-backlog.py, 2026-09-11; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -370,7 +370,7 @@ from here and no box in it is ticked by this pass.
 
 ---
 
-## `blocked` — waiting on something named — **8 of 170** <!-- counted by tools/walk-engine-backlog.py, 2026-09-11; do not retype -->
+## `blocked` — waiting on something named — **8 of 171** <!-- counted by tools/walk-engine-backlog.py, 2026-09-11; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it is waiting on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat, and this project has found seven stale blockers already.
 
@@ -456,14 +456,14 @@ rule.
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 170** <!-- counted by tools/walk-engine-backlog.py, 2026-09-11; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 171** <!-- counted by tools/walk-engine-backlog.py, 2026-09-11; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess. **This section is empty**, and that is a claim: see *★★ Why nothing is `unknown`* in the header before you trust it.
 
 
 ---
 
-## `declined` — deliberately no surface — **7 of 170** <!-- counted by tools/walk-engine-backlog.py, 2026-09-11; do not retype -->
+## `declined` — deliberately no surface — **7 of 171** <!-- counted by tools/walk-engine-backlog.py, 2026-09-11; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -492,7 +492,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **109 of 170** <!-- counted by tools/walk-engine-backlog.py, 2026-09-11; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **110 of 171** <!-- counted by tools/walk-engine-backlog.py, 2026-09-11; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Sixty-five of ninety (★ 64 → 65 on 2026-09-04, when the encryption-authoring row moved out of `blocked` on the operator's O119 ruling), which is the single largest finding of this triage. Each row names the surface or the call site, and where this project's own record dates the work, the date. These rows are kept, never deleted — `EDITABLE_SURFACES.md`'s own rule, and the argument is the valuable part.
 
@@ -677,6 +677,7 @@ session; a row that says "filed as X" is a claim that X exists, and it expires.
 | Transparency GROUP compositing — pdfcer owns the arithmetic (`pdfcer-render/src/compositor.rs`) … | **Reachable — it is what the canvas draws.** Transparency-group compositing, knockout groups and backdrop removal all happen in the raster this shell uploads. |
 | Overprint SIMULATION — ISO 32000-1 §11.7.4.3 … | **Reachable — it is what the canvas draws.** Overprint simulation is on the screen; what is **not** on the screen is the counter that says when it was refused, and that is the row below, where it belongs. |
 | Choose whether a grey fill knocks a spot backdrop out … | **Reachable — Settings ▸ Colour carries `overprint_zero_tint_scope`** (`dialogs::settings::colour`), *Grey over a spot colour in print-ready files*, surfaced under O100 beside its sibling. The engine's *"`D:\dev\pdfcer-gui` … has not been offered the setting"* is stale by a filing. |
+| **Ask whether a page composites in ink, without rendering it** — `pdfcer_render::page_composites_in_ink` … | **Consumed 2026-09-11, `Pass 296.4` (`8d2f6bb`) + `Pass 296.8` (`f392b19`), asked for as `G006`.** `OpenDoc::learn_ink` asks once per page per open document and keeps BOTH answers: `ink_pages` is *said yes*, `ink_asked` is *has been asked*, apart because one set conflates *additive* with *nobody looked* and the tier decision runs every frame. `canvas::tier` calls it before `render::strategy::for_page`, so a page's first raster already knows its blending space — previously learned by rendering and reading the counters afterwards, which stays in `render::settle` as a second writer that can only agree. ★ The SPACE question; `will_composite_in_cmyk(w, h, budget)` is the BUDGET half and stays where the pixel dimensions are. `source` is the operator-facing half, disclosed in Render diagnostics; the trace uses `source.token()` rather than the `Debug` derive, which is what `296.8` published on request — a `PageGroup => "page_group"` table here would be the drift `token()` exists to prevent (R74). The engine's `[ ]` is stale as of this date. |
 | Soft masks from `ExtGState /SMask` — `/Alpha` and `/Luminosity` mask groups … | **Reachable — it is what the canvas draws.** `/Alpha` and `/Luminosity` soft masks are built and applied in the raster this shell uploads. |
 | Type 3 font rendering — vector glyph procedures (`d0`/`d1` … | **Reachable — it is what the canvas draws.** Type 3 vector and bitmap glyph procedures render on screen. ★ Type 3 **search and copy** is a different row in *Text* with its own `/ToUnicode` gate, and rendering does not imply either. |
 | Remove an embedded font's program, refusing by name (reason … | **Reachable — `app::actions::fonts` carries both document-level font verbs**, embedding and removing, and the Fonts panel's `removability` verdict is the control's own gate. The engine's *"a report, not an editor"* was measured 2026-08-19 and the editor arrived after it. |

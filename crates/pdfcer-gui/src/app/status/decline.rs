@@ -148,7 +148,7 @@ const REGION_DECLINE: &str = "status-group:decline"; // ui-text-exempt: trace re
 /// grant and not a decline — see the module docs), and a store that could hold
 /// it would be a store a future edit could word. This one cannot represent a
 /// grant at all.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum Declined {
     /// Nothing on the page resolved to a box to frame.
     ///
@@ -220,10 +220,29 @@ pub(crate) enum Declined {
     /// **A restyle of existing text did not happen** — O37, 2026-08-27.
     ///
     /// The payload is [`crate::text::status::TextStyleRefusal`], which is the
-    /// shell's own reading of which refusals an operator can act on. It is a
-    /// `Copy` enum rather than a `String` so this whole type stays `Copy` and
-    /// [`Declined::line`] stays `&'static str`; the reasoning for keeping the
-    /// engine's own prose OFF the status bar is on that enum.
+    /// shell's own reading of which refusals an operator can act on. The
+    /// reasoning for keeping the engine's own prose OFF the status bar is on
+    /// that enum.
+    ///
+    /// # ★★ This paragraph used to say the payload is `Copy`, and it was the
+    /// # reason the whole enum was
+    ///
+    /// It read: *"It is a `Copy` enum rather than a `String` so this whole type
+    /// stays `Copy` and `Declined::line` stays `&'static str`."* **Both halves
+    /// are now overtaken, and neither by accident.**
+    ///
+    /// `Declined::line` stopped being `&'static str` on 2026-09-10, when O141's
+    /// *"pdfcer cannot type a `q` into this text"* needed to name the
+    /// character; that arm's own docs record that the generic wording had been
+    /// defended in three separate places as a design choice when it was a
+    /// return type. And `Copy` went on 2026-09-11, when
+    /// [`crate::text::status::TextStyleRefusal::FaceLacksCharacters`] took the
+    /// engine's `Refusal::remedy_faces` — the faces that *would* show the run
+    /// — which is a `Vec<String>`.
+    ///
+    /// ★ The rule the old sentence was really protecting survives untouched:
+    /// **no engine prose on this bar.** What travels is a list of `/BaseFont`
+    /// names pdfcer computed. The words around them are this shell's.
     ///
     /// # ★ It is retired by the operator's next act, and by nothing else
     ///
@@ -245,9 +264,12 @@ pub(crate) enum Declined {
     /// **A rotation did not happen** — the ninth handle, 2026-08-28.
     ///
     /// The payload is [`crate::text::rotating::RotateRefusal`], modelled on
-    /// [`Self::TextStyle`]'s and for the identical reasons: a `Copy` enum keeps
-    /// this type `Copy` and [`Declined::line`] `&'static str`, and it keeps the
-    /// engine's own prose off the status bar.
+    /// [`Self::TextStyle`]'s and for the reason that outlived the modelling:
+    /// it keeps the engine's own prose off the status bar. (It cited
+    /// `Copy`-ness too, until [`Self::TextStyle`] stopped being `Copy` on
+    /// 2026-09-11 to carry a remedy the operator can act on. This one has no
+    /// such payload and stays a fieldless `Copy` enum — which now costs
+    /// nothing either way, since the enum around it is `Clone`.)
     ///
     /// # ★★★ Why this variant exists for a gesture that should never refuse
     ///
@@ -287,10 +309,12 @@ pub(crate) enum Declined {
     /// verb, 2026-08-28.
     ///
     /// The payload is [`crate::text::unshare::UnshareRefusal`], modelled on
-    /// [`Self::TextStyle`]'s and [`Self::Rotate`]'s and for the identical
-    /// reasons: a `Copy` enum keeps this type `Copy` and [`Declined::line`]
-    /// `&'static str`, and it keeps the engine's own diagnostic prose off the
-    /// status bar.
+    /// [`Self::TextStyle`]'s and [`Self::Rotate`]'s and for the reason that
+    /// outlived the modelling: it keeps the engine's own diagnostic prose off
+    /// the status bar. (The `Copy` half of that argument is gone — see
+    /// [`Self::TextStyle`], which stopped being `Copy` on 2026-09-11 to carry
+    /// a remedy an operator can act on. This refusal has no such remedy to
+    /// carry.)
     ///
     /// # ★★★ Why this refusal matters more than any other in this enum
     ///
@@ -561,10 +585,10 @@ pub(crate) enum Declined {
     /// > drawn."*
     ///
     /// The payload is [`crate::text::measure::VertexEditRefusal`], modelled on
-    /// [`Self::TextStyle`]'s and [`Self::Rotate`]'s and for the identical two
-    /// reasons: a `Copy` enum keeps this type `Copy` and [`Declined::line`]
-    /// `&'static str`, and it keeps the engine's own diagnostic prose off the
-    /// status bar.
+    /// [`Self::TextStyle`]'s and [`Self::Rotate`]'s and for the reason that
+    /// outlived the modelling: it keeps the engine's own diagnostic prose off
+    /// the status bar. (The `Copy` half is gone — see [`Self::TextStyle`],
+    /// 2026-09-11.)
     ///
     /// # ★ Why a gesture with a preflight still needs a decline
     ///
@@ -776,7 +800,8 @@ pub(crate) enum Declined {
     /// # ★★ It carries NO payload, unlike every other refusal variant here
     ///
     /// [`Self::TextStyle`], [`Self::Rotate`] and [`Self::Unshare`] each carry a
-    /// `Copy` enum saying *which* refusal, because in those three cases the
+    /// small enum of this shell's own saying *which* refusal, because in those
+    /// three cases the
     /// shell can tell: the verb has a small, closed set of engine errors and a
     /// hand-written `refusal_for` maps them. This one deliberately has none,
     /// and adding one would be the exact mistake those three narrowly avoid at
@@ -986,7 +1011,7 @@ impl Declined {
     /// other's stack.
     #[must_use]
     fn still_true(
-        self,
+        &self,
         has_bounds: bool,
         canvas_has_drawn: bool,
         history: History,
@@ -1248,8 +1273,8 @@ pub(super) fn live(ctx: &egui::Context, doc: &OpenDoc) -> Option<Declined> {
         .leaf_indices_on(doc.view.page_index)
         .is_empty();
     LAST.with_borrow(|slot| {
-        slot.filter(|d| d.still_true(has_bounds, canvas_has_drawn, history, selection_in_form))
-            .to_owned()
+        slot.clone()
+            .filter(|d| d.still_true(has_bounds, canvas_has_drawn, history, selection_in_form))
     })
 }
 
@@ -1286,7 +1311,7 @@ pub(crate) fn record_inside_form() {
 #[cfg(test)]
 #[must_use]
 pub(crate) fn recorded_for_test() -> Option<Declined> {
-    LAST.with_borrow(|slot| *slot)
+    LAST.with_borrow(Clone::clone)
 }
 
 // ---------------------------------------------------------------------------
