@@ -810,8 +810,8 @@ pub fn text_italic_hint_real_face(face: &str) -> String {
     )
 }
 
-/// The bold button's hover text when **no real bold face covers this text**, so
-/// the letters will be thickened.
+/// The bold button's hover text when **no real bold face on this page covers
+/// this text**.
 ///
 /// `StyleOutcome::WouldSynthesize`. A synthetic weight is the regular face
 /// stroked, and R90 makes it declinable rather than a preference — which is why
@@ -821,17 +821,51 @@ pub fn text_italic_hint_real_face(face: &str) -> String {
 /// the engine's: acceptance is **per run**, because a face that covers `Hello`
 /// may not cover `Hellö`. A sentence claiming the page has no bold face at all
 /// would be a stronger claim than was tested.
+///
+/// # ★★★ It stopped promising to thicken the letters on 2026-09-11
+///
+/// It read: *"… so pdfcer will thicken the letters and tell you it did."* That
+/// was true while this shell pressed Bold through `set_synthetic`, where the
+/// gate finding nothing and the letters being thickened are one fact.
+///
+/// `crate::app::actions::textstyle` now presses Bold through
+/// [`FormatRequest::set_style`], which puts a rung in between: with no real
+/// face on the page, the engine binds the **standard-14 sibling of the run's
+/// own family** — `Helvetica-Bold` for a run set in `Helvetica`, which is most
+/// CAD title blocks — and the letters come out genuinely bold. The hint was
+/// promising a fake where the button delivers the real thing.
+///
+/// ★★ **The fix is a narrower sentence, not a better prediction**, and that is
+/// deliberate. Predicting the rung needs an instrument that does not exist: the
+/// engine has no read-only preview of the ladder — its own docs say a shell
+/// wanting the whole answer must call `set_style` and read `style_ladder`,
+/// i.e. *after committing* — and `preview_font_resources` answers *"by walking
+/// every operation in the page's content stream"*, 129,758 objects on the
+/// operator's benchmark sheet. Per hover, that is a hang. Re-deriving the
+/// family stem here is decision 058's case and engine invariant R74 forbids it
+/// by name.
+///
+/// ⇒ So the sentence now states exactly what the preview MEASURED — nothing on
+/// this page can do it — and makes a promise pdfcer can keep whichever rung it
+/// lands on: it will use a real face if one can be found, and it will say which.
+/// Asked for as an instrument in
+/// `request_the_style_ladder_has_no_read_only_preview.md`.
+///
+/// [`FormatRequest::set_style`]: pdfcer_core::text_edit::FormatRequest::set_style
 #[must_use]
 pub const fn text_bold_hint_synthetic() -> &'static str {
-    "Set this text in bold. No real bold face on this page covers this text, so pdfcer will \
-     thicken the letters and tell you it did."
+    "Set this text in bold. No bold face on this page can show this text, so pdfcer will use a \
+     real bold typeface if it can find one and thicken the letters if it cannot — and it will \
+     tell you which it did."
 }
 
-/// The italic button's twin of [`text_bold_hint_synthetic`].
+/// The italic button's twin of [`text_bold_hint_synthetic`], narrowed on the
+/// same day and for the same reason — read that one for the argument.
 #[must_use]
 pub const fn text_italic_hint_synthetic() -> &'static str {
-    "Set this text in italic. No real italic face on this page covers this text, so pdfcer will \
-     slant the letters and tell you it did."
+    "Set this text in italic. No italic face on this page can show this text, so pdfcer will use \
+     a real italic typeface if it can find one and slant the letters if it cannot — and it will \
+     tell you which it did."
 }
 
 /// ★★★ The bold button's hover text for the case in which **the press will be

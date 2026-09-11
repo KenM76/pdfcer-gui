@@ -258,20 +258,37 @@ pub enum TextStyleRefusal {
     /// The operator's `style_policy` is `Refuse` and the only way to satisfy
     /// this request was to fake the weight or the slant.
     ///
-    /// ★★ NOT the same thing the ENGINE's `StylePolicy::Refuse` refuses.
+    /// # ★★★ Raised by the ENGINE since 2026-09-11 — and it used to be ours
     ///
-    /// The engine's gate refuses a synthesis only when a **real face was
-    /// available** and would have been passed over. That is the right contract
-    /// for a crate whose caller might genuinely mean "fake it". It is not what
-    /// an operator who ticked *"never fake it"* asked for: on a page carrying
-    /// no bold face at all, the engine's gate has nothing to refuse in favour
-    /// of and thickens the strokes.
+    /// This doc comment said the opposite until the automatic style ladder was
+    /// wired, and the correction is worth keeping because the reasoning was
+    /// right and the mechanism was temporary.
     ///
-    /// ⇒ So this variant is raised by the SHELL, from
-    /// `EditSession::preview_style_resolution`, and it is the wider reading —
-    /// see `crate::app::actions::textstyle`. Recorded here because a future
-    /// session reading only the engine's docs would conclude this variant is
-    /// unreachable, and it is reached on the commonest page of all.
+    /// The old account: the engine's `set_synthetic` gate refuses a synthesis
+    /// only when a **real face was available** and would have been passed over.
+    /// That is the right contract for a crate whose caller might genuinely mean
+    /// "fake it". It is not what an operator who ticked *"never fake it"* asked
+    /// for — on a page carrying no bold face at all, that gate has nothing to
+    /// refuse in favour of, and it thickens the strokes. So this shell raised
+    /// the variant itself, from a `preview_style_resolution` probe pinned to
+    /// `StylePolicy::Refuse`, to get the wider reading.
+    ///
+    /// ★★ `FormatRequest::set_style` refuses on the wide reading natively.
+    /// Its posture gate fires when the ladder reaches its **fourth** rung —
+    /// after a real face on the page and after the standard-14 sibling have
+    /// both been tried and neither was available — and returns
+    /// [`FormatError::SynthesisRefusedByPosture`], naming the style, the run's
+    /// font and the setting that caused the refusal. That is this variant's
+    /// meaning exactly, decided by the side that knows what it tried.
+    ///
+    /// ⇒ The probe is deleted and `refusal_of` in
+    /// `crate::app::actions::textstyle` maps the engine's error here. The
+    /// variant is reached **less often** than before and that is the
+    /// improvement: it now fires only when pdfcer genuinely had no real face to
+    /// offer, where the shell's own probe also fired on pages where a
+    /// standard-14 sibling was one resource away.
+    ///
+    /// [`FormatError::SynthesisRefusedByPosture`]: pdfcer_core::text_edit::FormatError::SynthesisRefusedByPosture
     FakingDeclined,
     /// Anything else the engine refused.
     Other,
@@ -356,17 +373,170 @@ impl TextStyleRefusal {
     }
 }
 
-/// Disclosure: a real face was used instead of a synthetic weight.
+/// `bold` / `italic` / `bold italic` — the axes, in the operator's words, and
+/// **the engine's** words.
+///
+/// # ★★ Why the shell has to choose this word at all now
+///
+/// Until 2026-09-11 every sentence in this group took a `style: &str` that came
+/// straight off `FormatError::RealFaceAvailable`, and the shell never had to
+/// own it. The automatic ladder ([`FormatRequest::set_style`]) reports a
+/// [`StyleSynthesis`] instead, so the word is chosen on this side — and the
+/// catalog is the only place in this crate where an operator-facing word may be
+/// written at all (`check-ui-strings.sh`).
+///
+/// # ★★★ It DELEGATES, and the first draft of it did not
+///
+/// [`StyleSynthesis::axes`] is a public `const fn` on the engine's own type,
+/// written for precisely this: its doc says *"for sentences about a style that
+/// a REAL face may have supplied (`Pass 179.0`)"*, which is this whole group.
+///
+/// ★★ This function shipped for three hours with a hand-written
+/// `match (bold, italic)` and a doc comment explaining that the engine's
+/// version *"is private"* and so could not be called. It is not private, it was
+/// never called `axes_label`, and **nothing was measured before that was
+/// written** — the claim was inferred from the shape of the problem, in a file
+/// whose own header says *"a limitation sentence is a citation with an
+/// hours-long shelf life."* The cost of believing it would have been a second
+/// copy of the engine's word list, drifting the first time a third axis
+/// appeared, with a comment beside it explaining why the copy was correct.
+///
+/// ★ The one case that is NOT delegated: `StyleSynthesis::None` renders as
+/// `"nothing"`, which is right for the engine's *"synthesised nothing"* and
+/// wrong for *"this text is already nothing"*. It is unreachable from either
+/// control — Bold and Italic each send exactly one axis — and it is answered
+/// with a word that reads correctly rather than with `unreachable!`, because a
+/// catalog function that can panic is a catalog function that can take the
+/// program down over a word.
+///
+/// [`FormatRequest::set_style`]: pdfcer_core::text_edit::FormatRequest::set_style
+/// [`StyleSynthesis`]: pdfcer_core::text_edit::StyleSynthesis
+/// [`StyleSynthesis::axes`]: pdfcer_core::text_edit::StyleSynthesis::axes
+fn axes(bold: bool, italic: bool) -> &'static str {
+    let style = pdfcer_core::text_edit::StyleSynthesis::new(bold, italic);
+    if style.is_none() {
+        // ui-text-exempt: unreachable filler; see the doc comment above
+        return "that way";
+    }
+    style.axes()
+}
+
+/// Disclosure, **ladder rung 1**: a real face already on the page was used
+/// instead of a synthetic weight, and the sentence names the face it replaced.
 ///
 /// ★ Worded as a **better** outcome rather than as a substitution, because it
 /// is one. The operator asked for bold; the page turned out to carry a genuine
 /// bold face, so they got a genuine bold face. Wording it as "pdfcer did
 /// something other than what you asked" would train them to distrust a control
 /// that just did its best possible job.
+///
+/// # ★★★ It names the OLD face too, and that is a downgrade being disclosed
+///
+/// This used to be one of a PAIR. Its twin, `text_style_used_other_family`,
+/// fired when the face pdfcer bound belonged to a different family, and said
+/// so in the one way the operator can act on: *"the letterforms will look
+/// different, not just heavier or slanted."* That distinction is the engine's
+/// own — a cross-family fallback is *"a bigger change than a weight swap"* —
+/// and it is the half of a restyle the operator can SEE.
+///
+/// The twin's input was `FormatError::RealFaceAvailable { same_family, .. }`.
+/// The automatic ladder never produces that error: rung 1 binds the face
+/// directly and reports it on [`StyleLadder`], which carries `requested`,
+/// `bound`, `rung`, `synthesised` and `passed_over` — **and no `same_family`**.
+/// The engine's own matching rule (`family_stem`) is private, and re-deriving
+/// it here is decision 058's exact case: a shell second-guessing pdfcer's font
+/// selection, with the answer guaranteed to drift the first time the heuristic
+/// changes.
+///
+/// ⇒ So the flag is **asked for** —
+/// `request_style_ladder_does_not_say_whether_the_face_it_bound_is_the_same_family.md`
+/// — and until it arrives the sentence names both `/BaseFont`s and lets the
+/// operator read them. *"was set in Calibri and is now set in Times-Bold"* is a
+/// fact this shell is entitled to state, needs no family rule to produce, and
+/// is legible as a family change to the person looking at it. It is weaker than
+/// the sentence it replaces and it is not a guess.
+///
+/// [`StyleLadder`]: pdfcer_core::text_edit::StyleLadder
 #[must_use]
-pub fn text_style_used_real_face(style: &str, face: &str) -> String {
+pub fn text_style_used_real_face(bold: bool, italic: bool, from: &str, to: &str) -> String {
+    let style = axes(bold, italic);
     format!(
-        "This page carries a real {style} face, so pdfcer used it: the text is now set in {face} rather than being thickened or slanted artificially."
+        "This page already carried a real {style} face, so pdfcer used it rather than thickening or slanting the letters artificially: this text was set in {from} and is now set in {to}."
+    )
+}
+
+/// Disclosure, **ladder rung 2**: the standard-14 sibling of this text's own
+/// family was bound, and nothing was embedded.
+///
+/// # ★★★ The rung that was unreachable from this shell until 2026-09-11
+///
+/// There was no sentence for this because there was no outcome for it. This
+/// shell asked for bold with `set_synthetic`, whose gate only ever looks at
+/// faces **already on the page**; a page carrying nothing but `Helvetica` —
+/// which is most CAD-exported title blocks, and pdfcer's own `rotated-text.pdf`
+/// — has no bold resource, so the gate passed and the strokes were thickened.
+/// `Helvetica-Bold` was a standard-14 name the whole time: every conforming
+/// reader carries it, ISO 32000-1 §9.6.2.2 says it needs no font file, and
+/// binding it is one new `/Font` resource of about sixty bytes.
+///
+/// ★★ So the operator was getting a **faked** weight on the commonest page in
+/// their working set, five days after the engine shipped the rung that binds a
+/// real one. The sentence says which of the two happened, because after this
+/// change "pdfcer made it bold" has two very different meanings and only one of
+/// them survives being printed at 1:1 on a plotter.
+///
+/// ★ It names the growth explicitly. An operator whose file must stay small —
+/// a drawing going to a portal with an upload cap — is entitled to know that
+/// this route did not embed a typeface, and the alternative reading ("pdfcer
+/// added a font to my file") is the one they would otherwise assume.
+#[must_use]
+pub fn text_style_used_standard_face(bold: bool, italic: bool, to: &str) -> String {
+    let style = axes(bold, italic);
+    format!(
+        "No {style} face on this page could show this text, so pdfcer set it in {to} — one of the fourteen faces every PDF reader is required to carry. The letters are genuinely {style} rather than thickened or slanted artificially, and nothing was embedded, so the file is essentially no larger."
+    )
+}
+
+/// Disclosure, **ladder rung `AlreadyStyled`**: the text was already that way.
+///
+/// # ★★ Not a refusal, and the distinction is the whole point
+///
+/// Bold and Italic are buttons that APPLY, not switches that reflect — there is
+/// no "is this run bold" bit in a PDF, so a pressed-in toggle would be claiming
+/// to have read a fact that is not recorded. Pressing Bold on a run already set
+/// in `Times-Bold` is therefore an ordinary, expected gesture, and the engine
+/// answers it by taking the ladder's zeroth rung and changing nothing.
+///
+/// ★ Reported rather than silent, because "I pressed it and nothing happened"
+/// is indistinguishable from a broken button. This sentence is the difference
+/// between a control that did nothing and a control that had nothing to do.
+#[must_use]
+pub fn text_style_already_that_way(bold: bool, italic: bool) -> String {
+    let style = axes(bold, italic);
+    format!("This text is already {style}, so pdfcer left its weight and slant alone.")
+}
+
+/// Disclosure, **ladder rung 4**: nothing real was available, so the letters
+/// were thickened or slanted artificially.
+///
+/// ★★ Both halves of the ladder's failure are named, because they send the
+/// operator to different remedies. *"Nothing on this page"* is answered by
+/// adding a face to the drawing; *"no standard face for this family"* is
+/// answered by choosing a different family. A sentence saying only "pdfcer
+/// faked it" leaves them with neither.
+///
+/// ★ It does **not** name the faces pdfcer tried and rejected. It could not
+/// without parsing the other side's prose: `StyleLadder::passed_over` is a
+/// `Vec<String>` of pre-formatted `"BaseFont (the whole refusal message)"`
+/// pairs, and splitting on the space before the bracket is a locator living
+/// beside the engine's. The engine's own disclosure — which is carried into the
+/// same list, verbatim — names every one of them. Asked for as structure in
+/// `request_style_ladder_passed_over_is_prose_a_shell_has_to_parse.md`.
+#[must_use]
+pub fn text_style_faked(bold: bool, italic: bool) -> String {
+    let style = axes(bold, italic);
+    format!(
+        "No real {style} face was available for this text — nothing on this page can show these characters that way, and this text's family has no standard {style} face to fall back on — so pdfcer thickened or slanted the letters artificially instead."
     )
 }
 
@@ -389,27 +559,35 @@ pub const fn text_style_faked_warning() -> &'static str {
     "pdfcer faked that weight or slant — no real face on this page could show this text that way, so the letters are thickened or shaped artificially rather than set in a genuine bold or italic face."
 }
 
-/// Disclosure: a real face was offered, tried, and could not show the text, so
-/// pdfcer faked it instead.
-///
-/// # ★★★ The third rung, and the sentence is the whole point of having it
-///
-/// This is the outcome that used to be a **refusal**. The engine's gate names
-/// a real face of the run's own family; `set_font` then rejects it because it
-/// has no shape for one of the characters — `Times-Bold` remaps `o` to a
-/// bullet, so it cannot show `hello world` on a page where `Calibri-Bold` can.
-///
-/// The old behaviour said *"there is a real bold face, use it"* about a face
-/// that had just failed, and changed nothing. This says what actually
-/// happened, **and names the face**, because "pdfcer faked it" without the
-/// reason invites the operator to go looking for a bold face that is right
-/// there and does not work.
-#[must_use]
-pub fn text_style_faked_instead(face: &str) -> String {
-    format!(
-        "This page carries {face}, but it has no shape for one or more characters in this text, so pdfcer thickened or slanted the letters artificially instead of using it."
-    )
-}
+// ★★★ `text_style_faked_instead(face)` WAS HERE until 2026-09-11, and it is
+// deleted rather than kept, because **its subject is gone**.
+//
+// It said: *"This page carries {face}, but it has no shape for one or more
+// characters in this text, so pdfcer thickened or slanted the letters
+// artificially instead of using it."* That was the third rung of a dance this
+// shell rolled by hand — ask for synthesis, catch
+// `FormatError::RealFaceAvailable`, retry with the face it names, and when THAT
+// refuses for coverage, fake it and say whose fault it was. The face in the
+// sentence was `real_font`, straight off the refusal.
+//
+// The engine's automatic ladder (`Pass 179.0`) does that walk itself, better:
+// it skips a face the coverage gate would refuse instead of trying and failing
+// (`find_styled_face` filters on `accepted.is_ok()`), tries the standard-14
+// sibling that this shell never reached at all, and only then synthesises. It
+// reports the refused faces on `StyleLadder::passed_over` — as prose, not as
+// names — and discloses them in its own words in the same note list.
+//
+// ⇒ There is no longer a route on which this shell holds a bare face name at
+// the moment it fakes a weight. `text_style_faked` above is the replacement;
+// it names the two REASONS, which is what the operator can act on, and the
+// faces arrive in the engine's own verbatim sentence beside it.
+//
+// ★ The standing rule is the reason this is a tombstone and not a retained
+// function: a mechanism with no caller rots, and the next reader cannot tell a
+// deliberate fallback from a forgotten one. What is worth keeping is the
+// ARGUMENT — that "pdfcer faked it" without the reason invites the operator to
+// go looking for a bold face that is right there and does not work — and that
+// argument is now carried by `text_style_faked`'s doc comment.
 
 /// Disclosure: how many separate pieces of text one gesture restyled.
 ///
@@ -430,25 +608,39 @@ pub fn text_style_multi(count: usize) -> String {
     )
 }
 
-/// Disclosure: bold or italic was applied by switching to a face from a
-/// **different family**.
-///
-/// ★★★ A separate sentence from [`text_style_used_real_face`], because the
-/// engine draws the distinction itself and says why: a fallback to another
-/// family is *"a bigger change than a weight swap"*, offered only when no face
-/// of the run's own family on that page can show the run.
-///
-/// ★★ It is also the one substitution the operator **will** see. A weight swap
-/// within a family looks like bold; a family change looks like different
-/// letters. Reporting it in the same words as an ordinary real-face
-/// substitution would be true and would bury the half they can notice — which
-/// is Rule 4 read backwards, disclosing the invisible and hiding the visible.
-#[must_use]
-pub fn text_style_used_other_family(style: &str, face: &str) -> String {
-    format!(
-        "No {style} face of this text's own family is on the page, so pdfcer used {face} instead. The letterforms will look different, not just heavier or slanted."
-    )
-}
+// ★★★ `text_style_used_other_family(style, face)` WAS HERE until 2026-09-11,
+// and it is deleted because **the flag it was chosen by no longer exists on
+// this route** — not because the distinction stopped mattering. It matters
+// more than any other sentence in this group, and that is why the deletion is
+// recorded at length rather than tidied away.
+//
+// It said: *"No {style} face of this text's own family is on the page, so
+// pdfcer used {face} instead. The letterforms will look different, not just
+// heavier or slanted."* It was chosen against
+// `FormatError::RealFaceAvailable { same_family, .. }`, and the argument for
+// it is the engine's own: a fallback to another family is *"a bigger change
+// than a weight swap"*, and it is **the one substitution the operator will
+// SEE**. Reporting it in the same words as an ordinary real-face substitution
+// is Rule 4 read backwards — disclosing the invisible and hiding the visible.
+//
+// The automatic ladder never returns that error. Rung 1 binds the face and
+// reports `StyleLadder { requested, bound, rung, synthesised, passed_over }`,
+// which does not say whether `bound` is of the run's own family. The engine
+// KNOWS — `plan_style_ladder` searches same-family first and then any family,
+// so the answer is a branch it has already taken — and does not publish it;
+// its own ladder disclosure does not draw the distinction either.
+//
+// ⇒ Filed as
+// `request_style_ladder_does_not_say_whether_the_face_it_bound_is_the_same_family.md`,
+// argued from rule 4 rather than from convenience: the visible half of an
+// automatic decision is the half that must be disclosed.
+//
+// ★ NOT re-derived here. `family_stem` is private, and a shell that
+// re-implements pdfcer's font-family matching is decision 058's exact case —
+// it would agree on every fixture, disagree on the first real drawing, and be
+// the workaround every other consumer then has to write for itself. Until the
+// flag arrives, `text_style_used_real_face` names BOTH `/BaseFont`s and the
+// operator reads them.
 
 /// ★★★ **The cap fired on a PART, and nothing was said** —
 /// `OPERATOR_REQUESTS.md` O69: *"the nodes are hard to see and click on."*

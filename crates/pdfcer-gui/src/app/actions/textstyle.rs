@@ -45,17 +45,14 @@
 //! instruction stands and is unchanged: *"Do not grey out a bold button. Offer
 //! it, and surface the disclosure when synthesis fires."*
 //!
-//! So [`apply`] asks for synthesis first and, when the engine refuses **because
-//! a real face is available**, retries with that face — which the refusal names
-//! (`RealFaceAvailable { real_font, .. }`). The operator presses one button and
-//! gets the best weight the page can give: a genuine typeface where one exists,
-//! a disclosed synthetic one where it does not.
-//!
-//! ★ That retry is the one place this module reacts to an error variant rather
-//! than reporting it, and it is not cleverness papering over a refusal: the
-//! refusal's own prose *names the remedy and asks for it to be applied*. Not
-//! taking it would mean showing the operator a sentence telling them to do
-//! something the program could have done.
+//! ⚠ ~~So [`apply`] asks for synthesis first and, when the engine refuses
+//! **because a real face is available**, retries with that face — which the
+//! refusal names (`RealFaceAvailable { real_font, .. }`).~~ **That is how this
+//! module worked until 2026-09-11; the walk now belongs to the engine.** See
+//! *"the ladder is the engine's"* below. The OUTCOME the struck sentence
+//! describes is unchanged and better: the operator presses one button and gets
+//! the best weight the page can give — a genuine typeface where one exists, a
+//! disclosed synthetic one where it does not.
 //!
 //! A synthetic weight is the regular face thickened by stroking; a synthetic
 //! slant is the upright face sheared. `R90` means neither is ever a preference
@@ -91,8 +88,11 @@
 //! as available only if `set_font` would accept it **for this run**.
 //!
 //! ⇒ **Shipped as `Pass 144.0` (`cfa2c44`) and consumed by this file the same
-//! day** — see the `RealFaceAvailable` arm below, whose own comment carries the
-//! `selector`-not-`real_font` finding that came with it. So *"Bold is
+//! day.** ~~See the `RealFaceAvailable` arm below~~ — that arm was deleted on
+//! 2026-09-11 with the hand-rolled retry; the fix now reaches this shell
+//! through `set_style`, whose rung 1 inherits it (`find_styled_face` filters on
+//! `accepted.is_ok()`, so a coverage-refusing same-family face is SKIPPED
+//! rather than offered and then refused). So *"Bold is
 //! unreachable there through either route"* has been false since 2026-08-28,
 //! and the sentence before it was written in the future tense about work that
 //! had already landed.
@@ -140,6 +140,104 @@
 //! **A limitation sentence is a citation with an hours-long shelf life**, and
 //! this file has now been corrected on that ground twice.
 //!
+//! ## ★★★ 2026-09-11 — the ladder is the ENGINE's, and rung 2 is the whole point
+//!
+//! Everything above describes a walk this module performed by hand: ask for
+//! synthesis under a pinned `Refuse`, take the real face the refusal names, and
+//! fake it when that face cannot cover the run. Three rungs, correct, and
+//! **missing the one that matters most on the operator's own drawings.**
+//!
+//! [`FormatRequest::set_style`] (`Pass 179.0`, engine `71d13aa`, 2026-08-30,
+//! shipped 2026-09-06) does the walk inside the engine, with four rungs:
+//!
+//! | rung | what it binds | reported as |
+//! |---|---|---|
+//! | 1 | a real face already on the page that CLAIMS the style and passes the coverage gate — same family first, then any family | `StyleRung::RealFaceOnPage` |
+//! | 2 | the **standard-14 sibling of the run's own family**, as a new `/Font` resource, nothing embedded | `StyleRung::StandardFourteenSibling` |
+//! | 3 | a `--font-dir` donor (`Pass 142.0`) | not built |
+//! | 4 | synthesis — the stroke or the shear | `StyleRung::Synthetic` |
+//!
+//! ### ★★ Rung 2 is what this shell was missing, and it fires constantly
+//!
+//! A CAD title block exported with `Helvetica` and nothing else — pdfcer's own
+//! `rotated-text.pdf`, and most of the operator's working set — carries **no
+//! bold font resource at all**. `gate_synthesis`'s first branch reads *"No font
+//! resources to search: nothing better exists, so the fallback is genuinely the
+//! only option. Proceed."* That is true of the page and false of the world:
+//! `Helvetica-Bold` is one of the fourteen faces every conforming reader is
+//! **required** to carry, needs no font file (ISO 32000-1 §9.6.2.2), and costs
+//! about sixty bytes to name.
+//!
+//! ⇒ So for five days after the engine shipped the rung, pressing Bold on the
+//! commonest page in the operator's working set thickened the strokes of
+//! `Helvetica` when it could have bound `Helvetica-Bold`. Nothing failed. No
+//! gate was red. The difference is visible at 1:1 on a plotter and invisible in
+//! a test that asserts the epoch moved.
+//!
+//! ### ★ What was deleted, and why each deletion is safe
+//!
+//! * **The `Refuse`-pinned probe.** It was how this shell ASKED which real face
+//!   was available — *"the refusal is never shown to the operator, because the
+//!   very next thing that happens is taking the offer it names."* The ladder
+//!   answers by binding, so the question is gone and [`FormatOptions`] now
+//!   carries the operator's real posture.
+//! * **The `preview_style_resolution` pre-check.** It raised
+//!   `TextStyleRefusal::FakingDeclined` because the engine's `set_synthetic`
+//!   gate refuses only when a real face was passed over, and an operator who
+//!   ticked *"never fake it"* meant something wider. `set_style`'s posture gate
+//!   fires at **rung 4** — after both real rungs have been tried — and returns
+//!   [`FormatError::SynthesisRefusedByPosture`]. Same variant, decided by the
+//!   side that knows what it tried, and reached less often.
+//! * **The entire `RealFaceAvailable` arm and its nested `Auto` fake-retry.**
+//!   That error is returned only for the **explicit** `set_synthetic` verb under
+//!   `Refuse`. This module never sets that verb again, so the arm was
+//!   unreachable code with a plausible comment on it.
+//!
+//! ★★ **The `selector`-not-`real_font` finding is kept here rather than lost
+//! with the arm that held it**, because it is about the engine's contract and
+//! not about the deleted code: two `/Font` resources can share one `/BaseFont`,
+//! a retry built from the NAME reaches only one of the twins — *"possibly the
+//! twin that refuses"* — and `selector` is defined as the string that reaches
+//! the face pdfcer actually checked. Filed by the engine in `Pass 144.0`'s reply
+//! under "ACT ON THIS", and this shell kept using `real_font` for a day
+//! afterwards. **A reply read is not a reply consumed**, which is also the
+//! sentence that explains the five-day gap this section closes.
+//!
+//! ### ⚠ One sentence was LOST, and it is not a small one
+//!
+//! `text_style_used_other_family` said *"the letterforms will look different,
+//! not just heavier or slanted"* — the one substitution an operator can SEE.
+//! Its input was `RealFaceAvailable { same_family, .. }`. [`StyleLadder`]
+//! carries `requested`, `bound`, `rung`, `synthesised` and `passed_over`, and
+//! **no `same_family`**; the engine knows (rung 1 searches same-family first,
+//! then any family) and does not publish it. `family_stem` is private and
+//! engine invariant R74 forbids this shell re-deriving it.
+//!
+//! ⇒ Asked for, argued from rule 4 — the visible half of an automatic decision
+//! is the half that must be disclosed — in
+//! `request_style_ladder_does_not_say_whether_the_face_it_bound_is_the_same_family.md`.
+//! Until it lands, [`ladder_note`] names **both** `/BaseFont`s out of
+//! `FormatReport::font_change`, which is a fact this shell is entitled to state
+//! and needs no family rule to produce.
+//!
+//! ### ⚠ And the hover hints now predict the wrong thing
+//!
+//! `panels::properties::text`'s `bold_hint` / `italic_hint` are built from
+//! `StyleOutlook`, which comes from `preview_style_resolution` — **a preview of
+//! the GATE, not of the LADDER**. `StyleOutcome::WouldSynthesize` means only
+//! *"no real face on this page"*; it cannot see rung 2, so it promises
+//! thickening on every page where a standard-14 sibling is about to be bound.
+//!
+//! The engine has no ladder preview and says so: a shell wanting the whole
+//! answer must call `set_style` and read `style_ladder`, i.e. after committing.
+//! Asked for in `request_the_style_ladder_has_no_read_only_preview.md`. Until
+//! then the two hint sentences are softened to stop promising an outcome they
+//! cannot predict — honest, pre-commit, and no re-derivation.
+//!
+//! [`FormatRequest::set_style`]: pdfcer_core::text_edit::FormatRequest::set_style
+//! [`FormatError::SynthesisRefusedByPosture`]: pdfcer_core::text_edit::FormatError::SynthesisRefusedByPosture
+//! [`StyleLadder`]: pdfcer_core::text_edit::StyleLadder
+//!
 //! ## ★★★ Why the runs are edited in DESCENDING order
 //!
 //! The load-bearing decision in the file, and invisible until it is wrong.
@@ -180,7 +278,8 @@
 
 use pdfcer_core::settings::StylePolicy;
 use pdfcer_core::text_edit::{
-    FormatError, FormatOptions, FormatRequest, NewFill, StyleOutcome, StyleSynthesis,
+    FormatError, FormatOptions, FormatReport, FormatRequest, NewFill, StyleLadder, StyleRung,
+    StyleSynthesis,
 };
 
 use crate::app::state::OpenDoc;
@@ -210,9 +309,12 @@ pub enum StyleChange {
     /// Weight and slant, as two independent flags.
     ///
     /// ★ Deliberately **not** named `Synthetic`, because whether it ends up
-    /// synthetic is the engine's decision and not the operator's: see the
-    /// module header on the two-verb retry. The operator asked for bold; how
-    /// bold is achieved on this page is a fact they are told afterwards.
+    /// synthetic is the engine's decision and not the operator's. That was an
+    /// aspiration when the name was chosen — the decision was really this
+    /// module's, taken in a hand-rolled retry — and since 2026-09-11 it is
+    /// literally true: the variant maps to `set_style`, and the engine walks
+    /// its four-rung ladder. The operator asked for bold; how bold is achieved
+    /// on this page is a fact they are told afterwards.
     Weight {
         /// Bold wanted.
         bold: bool,
@@ -232,7 +334,20 @@ impl StyleChange {
             Self::Size(points) => req.size(*points),
             Self::Fill(fill) => req.fill(fill.clone()),
             Self::Face(selector) => req.font(pdfcer_core::text_edit::FontSelector::new(selector)),
-            Self::Weight { bold, italic } => req.synthetic(StyleSynthesis::new(*bold, *italic)),
+            // ★★★ `style`, NOT `synthetic` — changed 2026-09-11, and the one
+            // word is the whole feature.
+            //
+            // `set_synthetic` means *"thicken the strokes"* and is gated;
+            // `set_style` means *"make this bold"* and walks the ladder. The
+            // difference the operator sees is a real `Helvetica-Bold` instead
+            // of a stroked `Helvetica` on every page that carries no bold
+            // resource, which is most CAD title blocks. Module header.
+            //
+            // ⚠ The two are MUTUALLY EXCLUSIVE per axis: combining `set_style`
+            // with `set_font`, or with an overlapping `set_synthetic`, is
+            // `FormatError::Unsupported`. Nothing else in this table sets
+            // either, and `Face` is its own variant, so one press is one verb.
+            Self::Weight { bold, italic } => req.style(StyleSynthesis::new(*bold, *italic)),
         }
     }
 
@@ -392,184 +507,41 @@ pub(super) fn apply(doc: &mut OpenDoc, page: usize, runs: &[usize], change: &Sty
             let mut outcome: Option<FormatError> = None;
             let mut notes: Vec<String> = Vec::new();
             super::apply::vector_edit(doc, "format-text", page, 1, |session| {
-                // ★★★ THE OPERATOR'S POSTURE MUST NOT REACH THIS CALL, AND THE
-                // REASON IS THAT THE PROBE IS A QUESTION, NOT AN ACTION.
+                // ★★★ THE OPERATOR'S POSTURE, PASSED STRAIGHT THROUGH — and until
+                // 2026-09-11 it was pinned to `Refuse` here on purpose.
                 //
-                // `Pass 179.0` (engine `71d13aa`, 2026-08-30) made the
-                // synthesis gate posture-dependent. Under its new default —
-                // `StylePolicy::Auto` — asking for synthetic bold on a page
-                // that carries a real bold face no longer refuses: it fakes the
-                // weight and reports the face it passed over.
+                // The old comment, kept because the reasoning was sound and the
+                // mechanism is what changed: *"the probe pins `Refuse`
+                // unconditionally. The refusal is how this shell ASKS which real
+                // face is available; it is never shown to the operator as a
+                // refusal, because the very next thing that happens is taking
+                // the offer it names."* Three rungs, hand-rolled, and one of
+                // them — the standard-14 sibling — unreachable.
                 //
-                // ★★ That silently removed this shell's Bold button. The retry
-                // below is triggered BY the refusal, so when the refusal
-                // stopped arriving the retry stopped happening, and pressing
-                // Bold on a page carrying `Calibri-Bold` began thickening
-                // `Calibri` instead of using it. Nothing failed anywhere; one
-                // test caught it only because it asserts the face BY NAME.
+                // ★★ `set_style` walks all four rungs itself, so there is no
+                // question left to ask by provoking a refusal, and the posture
+                // goes where it belongs: to the engine, as the operator set it.
+                // Under `Auto` the ladder decides and discloses; under `Warn` it
+                // does the same and [`ladder_note`] raises the synthetic case to
+                // a sentence of its own; under `Refuse` the ladder's **fourth**
+                // rung returns `SynthesisRefusedByPosture`, which is the wide
+                // reading this shell used to have to construct for itself.
                 //
-                // ⇒ So the probe pins `Refuse` unconditionally. The refusal is
-                // how this shell ASKS which real face is available; it is never
-                // shown to the operator as a refusal, because the very next
-                // thing that happens is taking the offer it names. The engine
-                // says this in as many words: *"a shell must read the posture
-                // to know what pressing the button does."* This shell's answer
-                // is that the button always means "make this bold", so it reads
-                // the posture for a different question — see `policy` below.
-                let probe = FormatOptions::default().with_style_policy(StylePolicy::Refuse);
+                // ★ Module header for what was deleted and why each deletion is
+                // safe. This is one call where there were up to three.
+                let options = FormatOptions::default().with_style_policy(policy);
 
-                // ★★ Under `Refuse` a fake is declined even when NO real face
-                // was available, and the gate cannot say so.
-                //
-                // `gate_synthesis` refuses only when a real face exists — a run
-                // whose page carries no bold at all sails through it and gets
-                // thickened. That is the engine's contract and it is right for
-                // the engine. It is not what an operator who chose "never fake
-                // it" asked for, so the read-only preview is asked instead.
-                //
-                // ★ Only under `Refuse`, so the overwhelmingly common path pays
-                // nothing for a posture nobody selected.
-                if policy == StylePolicy::Refuse
-                    && let StyleChange::Weight { bold, italic } = change
-                {
-                    let want = StyleSynthesis::new(*bold, *italic);
-                    // An empty `find` WITH a pin is addressed by the pin alone —
-                    // the same addressing `request` uses. An empty find with no
-                    // pin is refused by name, which is why the pin is passed.
-                    let would_fake = session
-                        .preview_style_resolution(page, "", Some(op.pin.span), want)
-                        .is_ok_and(|res| {
-                            matches!(res.combined, Some(StyleOutcome::WouldSynthesize))
-                        });
-                    if would_fake {
-                        decline::record_text_style(t::TextStyleRefusal::FakingDeclined);
-                        outcome = Some(FormatError::NoOp);
-                        return Err(FormatError::NoOp);
-                    }
-                }
-
-                match session.format_text(&change.stamp(request(page, op.pin)), &probe) {
+                match session.format_text(&change.stamp(request(page, op.pin)), &options) {
                     Ok(report) => {
-                        // ★ Nothing real was on offer, so whatever happened here
-                        // is the honest best available. Under `Warn` the fact
-                        // that it was FAKED is raised from a quiet disclosure to
-                        // a sentence of its own — the engine's own reading of
-                        // that posture, applied to the one thing this shell can
-                        // observe about it.
-                        if policy == StylePolicy::Warn && !report.synthesis.is_none() {
-                            notes.push(t::text_style_faked_warning().to_owned());
+                        // ★ The ladder's own sentence FIRST, then the engine's
+                        // disclosures. The order is the operator's reading
+                        // order: what happened to their text, then the details
+                        // pdfcer owes them about how.
+                        if let Some(note) = ladder_note(&report, policy) {
+                            notes.push(note);
                         }
                         notes.extend(report.disclosures);
                         Ok(notes.clone())
-                    }
-                    // ★★ The two-verb retry. The engine refused synthesis
-                    // *because a real face is available* and named it; taking
-                    // that offer is what makes one Bold button work on every
-                    // page. See the module header — the alternative is showing
-                    // the operator a sentence telling them to do a thing the
-                    // program could have done.
-                    // ★★★ `selector`, NOT `real_font`, and the engine had to
-                    // tell this project so.
-                    //
-                    // They are the same string on almost every page and differ
-                    // exactly where two `/Font` resources share one
-                    // `/BaseFont`. A retry built from the NAME reaches only one
-                    // of the twins - *"possibly the twin that refuses"* - and
-                    // `selector` is defined as the string that reaches the face
-                    // pdfcer actually checked.
-                    //
-                    // ★★ The failure it prevents is silent and would have read
-                    // as a font bug: the operator presses Bold, the engine
-                    // names a face it has verified can show the run, the shell
-                    // asks for that face BY NAME, and lands on a different
-                    // resource that refuses. Every sentence in the chain is
-                    // true and the button does nothing.
-                    //
-                    // => Filed by the engine in `Pass 144.0`'s reply, under
-                    // "ACT ON THIS", and this shell kept using `real_font` for
-                    // a day. A reply read is not a reply consumed.
-                    Err(FormatError::RealFaceAvailable {
-                        selector,
-                        real_font,
-                        style,
-                        same_family,
-                        ..
-                    }) => {
-                        let retry = request(page, op.pin)
-                            .font(pdfcer_core::text_edit::FontSelector::new(&selector));
-                        match session.format_text(&retry, &probe) {
-                            Ok(report) => {
-                                // ★★ `same_family` gets its own sentence. The
-                                // engine says outright that a fallback to
-                                // another family is *"a bigger change than a
-                                // weight swap"*, and it is the one an operator
-                                // will SEE - the letterforms change, not just
-                                // their weight. Reporting it as an ordinary
-                                // real-face substitution would be true and
-                                // would bury the part they can notice.
-                                notes.push(if same_family {
-                                    t::text_style_used_real_face(style, &real_font)
-                                } else {
-                                    t::text_style_used_other_family(style, &real_font)
-                                });
-                                notes.extend(report.disclosures);
-                                Ok(notes.clone())
-                            }
-                            // ★★★ THE THIRD RUNG, AND IT IS NEW.
-                            //
-                            // On `textedit/format_family.pdf` the gate names
-                            // `Times-Bold` — family-matching the run — and
-                            // `Times-Bold` remaps `o` to a bullet, so it cannot
-                            // cover "hello world" while `Calibri-Bold` on the
-                            // same page can. "There is a real bold face, use
-                            // it" is useless advice when using it is what just
-                            // failed.
-                            //
-                            // ★★ Until 2026-08-30 this shell STOPPED here, and
-                            // the operator got a refusal for a request pdfcer
-                            // could have satisfied badly-but-visibly. That was
-                            // defensible while the engine itself refused; it is
-                            // not defensible now that the engine's own default
-                            // posture is "decide and apply" and the operator's
-                            // ruling behind it was **"shouldn't have to
-                            // intervene"**.
-                            //
-                            // ⇒ So: fake it, and SAY which real face was tried
-                            // and could not show this text. Under `Refuse` the
-                            // operator has said they would rather be told, and
-                            // the refusal stands.
-                            Err(error) => {
-                                if policy == StylePolicy::Refuse {
-                                    decline::record_text_style(refusal_of(&error));
-                                    outcome = Some(error);
-                                    return Err(FormatError::NoOp);
-                                }
-                                // `Auto`, explicitly, whatever the operator
-                                // chose: the shell has ALREADY established that
-                                // no usable real face exists, so the gate has
-                                // nothing left to refuse in favour of, and
-                                // pinning the posture here keeps the second call
-                                // from re-asking a question already answered.
-                                let fake =
-                                    FormatOptions::default().with_style_policy(StylePolicy::Auto);
-                                let fresh = change.stamp(request(page, op.pin));
-                                match session.format_text(&fresh, &fake) {
-                                    Ok(report) => {
-                                        notes.push(t::text_style_faked_instead(&real_font));
-                                        notes.extend(report.disclosures);
-                                        Ok(notes.clone())
-                                    }
-                                    // The RETRY's refusal is reported, not this
-                                    // one: it names the face that was tried,
-                                    // which is the half the operator can act on.
-                                    Err(_) => {
-                                        decline::record_text_style(refusal_of(&error));
-                                        outcome = Some(error);
-                                        Err(FormatError::NoOp)
-                                    }
-                                }
-                            }
-                        }
                     }
                     Err(error) => {
                         decline::record_text_style(refusal_of(&error));
@@ -654,6 +626,124 @@ fn stop(doc: &mut OpenDoc, applied: usize, why: t::TextStyleRefusal) {
     });
 }
 
+/// The one sentence the style ladder earns, or `None` to let the engine speak.
+///
+/// # ★★★ One sentence per RUNG, and never two about one outcome
+///
+/// [`StyleLadder::rung`] is the engine's own account of how it made the text
+/// bold, and it is a closed question with one answer — so this is a mapping,
+/// not an accumulation. The hand-rolled dance it replaces pushed a sentence per
+/// *branch it took*, which is how a `Warn`-posture synthesis could produce both
+/// *"pdfcer had to fake this"* and *"no real face was available"* about the same
+/// event.
+///
+/// ★★ The `Warn` and default synthetic sentences are therefore **mutually
+/// exclusive**, not additive. `Warn` means the operator asked to be told
+/// prominently; they are told once, in the catalog's `Warn` words. Adding the
+/// ordinary sentence underneath would be the same fact twice, and a disclosure
+/// repeated is a disclosure skipped.
+///
+/// # ★★ What returns `None`, and why silence is the right answer there
+///
+/// `None` is not "nothing happened" — [`FormatReport::disclosures`] is appended
+/// immediately after this in every case, and the engine's ladder disclosure is
+/// already in it, naming the rung, the bound face and every face passed over.
+/// `None` means **this shell has nothing to add that the engine did not say
+/// better**, and there are three such cases:
+///
+/// * **A change that is not a style change.** `style_ladder` is `None` unless
+///   `set_style` was set, so size, colour and face fall out here.
+/// * **A rung this build does not know.** [`StyleRung`] is `#[non_exhaustive]`;
+///   rung 3 (`--font-dir` donors, `Pass 142.0`) is not built yet and a fifth is
+///   possible. An invented sentence for an outcome nobody here has seen is
+///   worse than the engine's precise one — it would be untestable, and it would
+///   assert something about a mechanism this file has never read. Traced so it
+///   is visible to whoever wires it.
+/// * **A MIXED outcome** — a real face bound for one axis while the other was
+///   synthesised. The engine supports it per axis (an exceed over Acrobat) and
+///   it is **unreachable from this shell**, because both controls send exactly
+///   one axis: `dispatch::format` sends `{bold: true, italic: false}` and the
+///   properties panel sends `{bold: false, italic: true}`. A sentence for a
+///   state no gesture can produce is a sentence no test can falsify.
+///
+/// # ★ Why `font_change` and not `bound` for rung 1
+///
+/// Both name the face that was bound. `font_change` also names the one it
+/// replaced, and naming both is this shell's substitute for the `same_family`
+/// flag [`StyleLadder`] does not carry — see the module header. Rung 2 uses
+/// `bound`, because the operator does not need the old face there: the sentence
+/// is about a standard face being added, not about a family being swapped.
+///
+/// [`StyleLadder`]: pdfcer_core::text_edit::StyleLadder
+/// [`StyleLadder::rung`]: pdfcer_core::text_edit::StyleLadder::rung
+/// [`StyleRung`]: pdfcer_core::text_edit::StyleRung
+/// [`FormatReport::disclosures`]: pdfcer_core::text_edit::FormatReport::disclosures
+fn ladder_note(report: &FormatReport, policy: StylePolicy) -> Option<String> {
+    let ladder: &StyleLadder = report.style_ladder.as_ref()?;
+    let bold = ladder.requested.bold();
+    let italic = ladder.requested.italic();
+
+    // A real rung that left one axis synthetic — unreachable from this shell.
+    // Traced rather than guessed at; see the doc comment.
+    let mixed = !ladder.synthesised.is_none() && !matches!(ladder.rung, StyleRung::Synthetic);
+
+    match ladder.rung {
+        _ if mixed => {
+            trace_rung(ladder, "mixed");
+            None
+        }
+        StyleRung::AlreadyStyled => Some(t::text_style_already_that_way(bold, italic)),
+        StyleRung::RealFaceOnPage => match report.font_change.as_ref() {
+            Some((from, to)) => Some(t::text_style_used_real_face(bold, italic, from, to)),
+            // ★ `font_change` is built from the same `font_plan` that binds the
+            // rung, so a bound rung without it would be an engine invariant
+            // breaking. Traced rather than asserted: a shell that panics on the
+            // other side's invariant takes the operator's document down over a
+            // sentence it could simply not have said.
+            None => {
+                trace_rung(ladder, "no-font-change");
+                None
+            }
+        },
+        StyleRung::StandardFourteenSibling => match ladder.bound.as_deref() {
+            Some(to) => Some(t::text_style_used_standard_face(bold, italic, to)),
+            None => {
+                trace_rung(ladder, "no-bound-face");
+                None
+            }
+        },
+        // ★★ Mutually exclusive with the `Warn` sentence, never both. See above.
+        StyleRung::Synthetic => Some(if policy == StylePolicy::Warn {
+            t::text_style_faked_warning().to_owned()
+        } else {
+            t::text_style_faked(bold, italic)
+        }),
+        _ => {
+            trace_rung(ladder, "unknown-rung");
+            None
+        }
+    }
+}
+
+/// Trace a ladder outcome this build has no sentence for.
+///
+/// ★ Its own function so every `None` arm above costs one readable line, and so
+/// the trace format is written once. `StyleRung` has a `Display` that spells the
+/// rung in words (*"rung 2: the standard-14 sibling"*), which is what a future
+/// session grepping a trace for an unhandled outcome needs to see.
+fn trace_rung(ladder: &StyleLadder, why: &'static str) {
+    let rung = ladder.rung.to_string();
+    let bound = ladder.bound.as_deref().unwrap_or("-").to_owned();
+    let requested = ladder.requested.axes();
+    let synthesised = ladder.synthesised.axes();
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!(
+            "text-style-ladder-unhandled why={why} rung={rung} bound={bound} requested={requested} synthesised={synthesised}"
+        )
+    });
+}
+
 /// Which operator-facing sentence a refusal earns.
 ///
 /// ★ The engine's own `Display` prose is deliberately **not** the sentence.
@@ -662,15 +752,44 @@ fn stop(doc: &mut OpenDoc, applied: usize, why: t::TextStyleRefusal) {
 /// trace, where whoever is debugging wants it, and the catalog says the same
 /// thing in the operator's terms with the remedy first.
 ///
-/// Three named cases and a catch-all, chosen because they are the three an
+/// Four named cases and a catch-all, chosen because they are the ones an
 /// operator can *do something about*. Everything else — encryption, a no-op
 /// request, a page index — is either impossible from this surface or is not
 /// improved by being subdivided.
+///
+/// # ★★★ The wildcard is why the fourth case had to be added by hand
+///
+/// `FormatError` is `#[non_exhaustive]` and this `match` ends in `_`, so the
+/// compiler cannot tell anyone that a new variant arrived — it lands in
+/// `Other`, gets the generic sentence, and nothing anywhere goes red. The rule
+/// is stated in `text::textedit::reflow_refusal`'s header and it is exactly
+/// this shape: *"any `match` of yours ending in `_` just gained a variant it
+/// will not distinguish, and the one it will not distinguish is the one you
+/// care about."*
+///
+/// ★★ Wiring `set_style` on 2026-09-11 made
+/// [`FormatError::SynthesisRefusedByPosture`] reachable for the first time, and
+/// it is the single most important refusal this surface can produce: it fires
+/// **only** when the operator explicitly chose `StylePolicy::Refuse` and pdfcer
+/// then walked every real rung and found nothing. Left to the wildcard, an
+/// operator who ticked *"never fake it"* would press Bold, have their setting
+/// honoured exactly as asked, and be told *"pdfcer could not change that text"*
+/// — which reads as a malfunction rather than as their own instruction being
+/// obeyed.
+///
+/// [`FormatError::SynthesisRefusedByPosture`]: pdfcer_core::text_edit::FormatError::SynthesisRefusedByPosture
 fn refusal_of(error: &FormatError) -> t::TextStyleRefusal {
     match error {
         FormatError::TargetFontMissing(_) => t::TextStyleRefusal::FaceNotOnPage,
         FormatError::ShearUnsupported(_) => t::TextStyleRefusal::ItalicWouldMove,
         FormatError::CoverageFailure(_) => t::TextStyleRefusal::FaceLacksCharacters,
+        // ★ The operator's own setting, reported back as their setting. This
+        // variant carries `style`, `run_font`, `passed` and `flag`; none of them
+        // reaches the sentence, because the remedy is *"turn the setting off"*
+        // and naming the face pdfcer refused to fake would invite the operator
+        // to go looking for a face that does not exist. The full detail is in
+        // the `text-style-declined detail=` trace, where debugging wants it.
+        FormatError::SynthesisRefusedByPosture { .. } => t::TextStyleRefusal::FakingDeclined,
         _ => t::TextStyleRefusal::Other,
     }
 }
