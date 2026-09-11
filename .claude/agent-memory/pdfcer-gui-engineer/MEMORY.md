@@ -93,3 +93,5 @@
 - [A count command can be wrong, not just its quoted answer](feedback_a_count_command_can_be_wrong_not_just_its_quoted_answer.md) — `--list | wc -l` said 434 where the answer is 213; audit the output SHAPE before the first `wc -l`.
 - [A checker named in every document and registered in no runner](feedback_a_checker_named_in_every_document_and_registered_in_no_runner.md) — grep the runner, not the prose; a one-way check invites its own hole.
 - [A gate that crashes after its headline reads as a broken tool](feedback_a_gate_that_crashes_after_its_headline_reads_as_a_broken_tool.md) — it sent me to debug the tool while the named row sat unfixed; `errors="replace"`.
+- [An assertion both outcomes satisfy measures neither](feedback_an_assertion_both_outcomes_satisfy_is_not_a_measurement_of_which_one_shipped.md) — name what the WRONG mechanism cannot produce.
+- [A gate hit inside the repo is not a mandate to sweep outside it](feedback_a_gate_hit_inside_the_repo_is_not_a_mandate_to_sweep_outside_it.md) — a half-renamed archive is worse than an old-named one.

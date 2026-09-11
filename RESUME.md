@@ -26,16 +26,17 @@ file points at them rather than quoting them.
 Every figure below has the command that produced it. **Run the command.** Prose
 drifting from a count is the defect this project has spent eight corrections on.
 
-| What | Command | Value, 2026-09-11 afternoon |
+| What | Command | Value, 2026-09-11 late afternoon |
 |---|---|---|
 | Engine pin | `grep -m1 'pdfcer?branch=main#' Cargo.lock` | `f3ca53d` |
-| Engine HEAD | `cd /d/Dev/pdfcer && git log --oneline -1 main` | `f3ca53d` — **current, v0.53.0** |
-| Last release | `git fetch --tags origin && git describe --tags --abbrev=0` | `v0.5.0-dev.20260911.2` — **0 commits behind** |
+| Engine HEAD | `cd /d/Dev/pdfcer && git log --oneline -1 main` | `f3ca53d` — **equal, v0.53.0** |
+| Last release | `git fetch --tags origin && git describe --tags --abbrev=0` | `v0.5.0-dev.20260911.3` |
 | Driven checks | `ui-verify --list \| grep -cE '^  [a-z0-9_]+$'` | 213 |
-| Gates | `bash tools/gates/run-all.sh` | **33 passed, 0 failed, 0 skipped** — up one on 2026-09-11: `walk-engine-backlog --check` was named by this file and by all five of `ENGINE_BACKLOG.md`'s heading comments and **registered in no runner**. The first run found 25 rows filed under `wanted` whose own cells said WIRED — that section read 70 where the gap was 48. |
-| Unit tests | `cargo test --workspace` | 4,174 passing |
+| Gates | `bash tools/gates/run-all.sh` | **33 passed, 0 failed, 0 skipped** |
+| Unit tests | `cargo test --workspace` | **4,177 passing**, 51 ignored |
 | Source files | `find crates -name '*.rs' \| wc -l` | 772 |
-| Backlog register | `python tools/walk-engine-backlog.py` | 170 rows |
+| Backlog register | `python tools/walk-engine-backlog.py` | 170 rows — wanted 46 / blocked 8 / declined 7 / **shipped 109** |
+| Request channel | `ls /d/Dev/FeatureRequests/pdfce_FeatureRequests/open \| wc -l` | 19 |
 
 ⚠ **The check-count command was wrong in this very table.** `--list` prints
 **two** lines per check plus a header, so `wc -l` answered 434 where the
@@ -47,43 +48,51 @@ anywhere, it is this defect.
 ⚠ **The pin is a claim with a shelf life of hours.** `Cargo.lock` pins the
 engine by git revision, not by path, so every sentence in this repository of the
 form *"the engine cannot do X"* is a statement about **a pin**, not about the
-engine. Under O165 the first act of a session is to compare the two rows above
+engine. Under O165 the first act of a session is to compare the two pin rows
 and, if they differ, read the intervening log **before** reading any backlog row.
 
-⚠ **`git describe` LIES in a fresh clone or a repo that has not fetched.**
-`gh release create` makes the tag **on GitHub**, not here — nothing pulls it
-back. On 2026-09-11 the operator asked *"new release soon?"* and the answer
-began **"51 commits have stacked up since Tuesday's build"**, computed from a
-`describe` that had never seen the three releases cut since. After
-`git fetch --tags origin` the true figures were **21 commits** and
-**yesterday afternoon**. Both commands were right; the instrument was reading
-local state about a fact that lives remotely. ⇒ **Any sentence containing
-*"commits unreleased"* or a release date gets a `git fetch --tags origin`
-immediately in front of it**, and a cross-check against `gh release list`.
+⚠ **`git describe` LIES in a repo that has not fetched.** `gh release create`
+makes the tag **on GitHub**, not here — nothing pulls it back. On 2026-09-11 the
+operator asked *"new release soon?"* and the answer began **"51 commits have
+stacked up since Tuesday's build"**, computed from a `describe` that had never
+seen the three releases cut since; the true figures were **21 commits** and
+**yesterday afternoon**. ⇒ **Any sentence containing *"commits unreleased"* or
+a release date gets a `git fetch --tags origin` immediately in front of it.**
 
-★★★ **`v0.5.0-dev.20260911.2` shipped 2026-09-11 12:11** — the off-page display
-switch (`O175`) and engine **v0.53.0**. Zip on GitHub, mirror in
-`OneDrive\pdfcer-gui2`; `pdfcer-gui1` still holds the 06:34 build.
+★★★ **`v0.5.0-dev.20260911.3` shipped 2026-09-11 15:38** — the fifth release of
+the day. Engine **v0.53.0** (unchanged from `.2`); the shell change is the
+style-ladder wiring. Zip on GitHub and verified as what `releases/latest`
+advertises; mirror in **`OneDrive\pdfcer-gui1`**, and **`pdfcer-gui2` holds the
+12:11 build**, so the fallback survives.
 
-⚠ **THREE POINTER-DRIVEN OFF-PAGE CHECKS ARE OWED AGAINST THIS BUILD.**
-`an_object_off_the_page_survives_being_zoomed_in_on`,
-`a_band_dragged_into_the_margin_reaches_an_object_off_the_page` and
-`a_band_that_starts_in_the_margin_reaches_an_object_off_the_page` each had
-their `PDFCER_DIAG_INVOKE` string changed to open in **Edit**, because their
-subject is off the sheet and Read now hides it. That edit is exactly the kind
-a green build hides: the check would SKIP or misreport rather than go red.
-The operator was at the machine and said *“go ahead and build without screen
-testing it”*, so they were not run. `an_object_off_the_page_is_actually_drawn`
-needs no pointer and **was** run, green. Run the other three first thing.
+---
 
-⚠ **The last four releases shipped without the driven sweep**, this one
-included. Unit tests, the gate suite and an off-screen smoke launch were green each
-time; none of the three is evidence that a control is *reachable*. The
-blocker today is not time — an Outlook *Internet Email* password prompt sits
-at desktop 1134,407–1514,625, over the middle of the only display, and every
-pointer-driven check SKIPs on it. **It is the operator's window; ask, never
-close it.** Confirm it is gone before scheduling a sweep:
-`Get-Process OUTLOOK | Select MainWindowTitle`.
+## ⚠ The four things owed against the shipped build, all blocked on the desktop
+
+**None of the last five releases had the driven sweep run against it.** Unit
+tests, 33 gates and an off-screen smoke launch were green every time; not one of
+the three is evidence that a control is *reachable*. The blocker is not time —
+the operator is at the machine, and `ui-verify` drives the real cursor and
+keyboard. Confirm the desktop is free before scheduling any of this.
+
+1. **The bold ladder is WIRED, NOT DRIVEN.** Shipped in `.3` with that caveat
+   printed in his release notes. The unit evidence is strong (the assertion
+   moved from *"an edit happened"* to *"the run's `/Font` resource key changed"*
+   and was falsified by putting the old call back), but nobody has pressed Bold
+   on a title block in the running program. **If he reports bold misbehaving,
+   this is the first place to look.**
+2. **Three off-page pointer checks**, each of whose `PDFCER_DIAG_INVOKE` string
+   was changed to open in **Edit** because their subject is off the sheet and
+   Read now hides it: `an_object_off_the_page_survives_being_zoomed_in_on`,
+   `a_band_dragged_into_the_margin_reaches_an_object_off_the_page`,
+   `a_band_that_starts_in_the_margin_reaches_an_object_off_the_page`. **An
+   instrument edited but not run is the failure mode this harness exists to
+   remove.** `an_object_off_the_page_is_actually_drawn` needs no pointer and
+   **was** run, green.
+3. **The deep-marquee adoption has no driven check at all.** Our duplicate
+   `hit_test_rect` is deleted and the engine's `hit_test_rect_deep` answers
+   instead; a band and a click can no longer disagree, and nothing has confirmed
+   that by dragging one.
 
 ---
 
@@ -94,60 +103,49 @@ close it.** Confirm it is gone before scheduling a sweep:
 > while clicking a stamp did nothing at all. The engine's replies are an input
 > to *how* a thing gets built, never to *which* thing.
 
-1. **Run the three owed off-page pointer checks against the shipped build.**
-   They are named in the warning above. This is first because the thing not
-   measured is an edit made TO the instruments, and an instrument edited but
-   not run is the failure mode this harness exists to remove — a mode-less run
-   would now report a defect that is a correctly-implemented setting, and a
-   mode-ful run that was never made reports nothing at all.
+1. **When the desktop frees up, drive the four owed items above** — the ladder
+   first, because it is what he was given today and what he will notice.
 2. **Read the sweep result, then triage every FAIL and every SKIP.** The full
    driven sweep ran on 2026-09-11 for the first time in three releases; its log
    is `target/scratch/sweep-full.log`. ★★ **`=== SWEEP-DONE` alone means
-   nothing** — the runner now prints `=== TALLY passed=… failed=… skipped=…
-   codes: …` beside it, and a sweep whose `passed` is zero ran nothing at all.
-   That is not hypothetical: the first attempt on 2026-09-11 reported
-   SWEEP-DONE having launched no window, because the harness binary was stale.
-   And per standing memory, **the first full sweep after a long gap yields more
-   harness defects than application ones** — audit the check before filing an
-   app defect against it.
+   nothing** — the runner prints `=== TALLY passed=… failed=… skipped=…` beside
+   it, and a sweep whose `passed` is zero ran nothing at all. That is not
+   hypothetical: the first attempt that day reported SWEEP-DONE having launched
+   no window, because the harness binary was stale. And per standing memory,
+   **the first full sweep after a long gap yields more harness defects than
+   application ones** — audit the check before filing an app defect against it.
 3. **The owed driven checks — and MEASURE the list before working it.**
    `target/scratch/driven-audit.md` (2026-09-11) is the measured register: every
    `OPERATOR_REQUESTS.md` row whose heading says *"not yet driven"*, checked
-   against `roster.rs`. ★★ **The headings are stale in both directions.** Three
-   checks named as owed on 2026-09-11 —
-   `load_anomalies_are_listed_in_document_properties`,
-   `rereading_under_the_other_value_is_offered` and
-   `double_clicking_a_text_box_edits_the_text` — had been registered all along;
-   the naming document was the only thing that said otherwise. A registered
-   `Box::new(…)` line in `roster.rs` is the evidence, not a row that claims a
-   gap. `CONTINUE.md` is history, not a backlog.
-4. **★ Wire the eight engine deliveries this shell does not call.** The request
-   channel was audited end to end on 2026-09-11 and is **done**: `open/` went
-   **229 → 13**, `archive/` 84 → 301, `INDEX.md` 79 → 228 rows, every citation
-   re-measured as resolving. Do not re-triage it; read `open/` and believe it.
-   **What came out of it is the work.** Eight capabilities the engine shipped —
-   in several cases in answer to this shell's own request — have **zero call
-   sites here**, each now a `wanted` row in `ENGINE_BACKLOG.md` opening
-   `**★ 2026-09-11 channel audit.**` (grep that marker to get the set):
-   the automatic bold ladder, `SignReport::appearance_lines`,
-   `hit_test_rect_deep`, `EditSession::page_objects`, `MkColor`,
-   `add_named_destination`, `FieldPathCrossesTerminal`, and the narrowed
-   hybrid-rewrite refusal our prose still states too widely.
-   ★★ **Start with `hit_test_rect_deep`**: it is not an absence but a
-   **diverged duplicate** — our `provider::hit_test_rect` grew a `MarqueeMode`
-   and a container filter (O88) the engine's version knows nothing about, so two
-   implementations of one question now disagree. Its `INDEX.md` row said so on
-   2026-09-05 and nobody read it for six days.
+   against `roster.rs`. ★★ **The headings are stale in both directions** — three
+   checks named as owed had been registered all along. A registered `Box::new(…)`
+   line in `roster.rs` is the evidence, not a row that claims a gap.
+   `CONTINUE.md` is history, not a backlog.
+4. **★ Wire the remaining SIX engine deliveries this shell does not call.** The
+   2026-09-11 channel audit found eight with zero call sites; **two are now
+   done** — the automatic bold ladder and `hit_test_rect_deep`. Grep
+   `ENGINE_BACKLOG.md` for `**★ 2026-09-11 channel audit.**` to get the set. The
+   six left: `SignReport::appearance_lines`, `EditSession::page_objects`,
+   `MkColor` (**a rule-4 violation live in the build** — a widget's `/MK /BG` is
+   painted over with theme grey, so the canvas shows something the saved file
+   will not), `add_named_destination`, `FieldPathCrossesTerminal`, and the
+   narrowed `HybridFullRewrite` refusal whose prose is still too wide at three
+   sites (`app/save.rs`, `dialogs/compact.rs`, `app/dispatch.rs`) plus a stale
+   `FormLeaf::is_editable` sentence in `canvas/moving/mod.rs`.
    ⚠ **An absence claim has to name the receiver.** `page_objects` returns 164
-   hits in this repo and every one is *ours* (`OpenDoc::page_objects`), not the
-   engine's (`EditSession::page_objects`). A bare-name grep reads as thoroughly
-   consumed and is the exact opposite.
-   The 13 still open: four asks the engine owes (two of them **the same
-   tiny-skia region-render defect filed twice by us**), eight deliveries above,
-   and the 2026-09-07 protocol note.
-5. **Under O165, release when the engine moves.** Compare the two pin rows
-   above at the start of every session; if they differ, read the intervening log
-   before reading any backlog row.
+   hits here and every one is *ours* (`OpenDoc::page_objects`), not the engine's
+   (`EditSession::page_objects`). A bare-name grep reads as thoroughly consumed
+   and is the exact opposite.
+5. **Under O165, release when the engine moves.** Compare the two pin rows at
+   the start of every session; if they differ, read the intervening log before
+   reading any backlog row.
+
+★ **Five requests are open on the channel against the style ladder** and none
+has a reply yet: no `same_family` on `StyleLadder`, no read-only ladder preview,
+`passed_over` is prose a shell must parse, `FormatError::CoverageFailure` is
+unconstructable by a consumer (E0639), and `SynthesisRefusedByPosture`'s
+`Display` runs two words together. **Two of them are gating features that were
+not written**, not workarounds — read them before redesigning the disclosure.
 
 Open operator rows: `grep '^## O' OPERATOR_REQUESTS.md` and read the ones not
 marked closed. **Only Ken closes a row.**
@@ -168,6 +166,11 @@ marked closed. **Only Ken closes a row.**
 - **Do not revert an experiment through git.** A reverting verb inside a chained
   command discards uncommitted work in the same file — it has done, twice, and a
   hook now refuses it. Keep a copy and restore from the copy.
+- **Do not deliver a patch script through a Bash heredoc.** Non-ASCII prose and
+  backslashes are mangled in transit, and the failure is a needle matching
+  **nothing** — a clean exit that changed nothing, indistinguishable from
+  success. Write the script to a file, run the file, and `assert` its own match
+  count. Eleven occurrences now; see `D:/dev/rag/rust/`.
 - **Do not start Phase 5 (text editing) early.** Deliberately last, `HANDOFF.md` §8.
 - **Do not build S6 deep zoom or tiling.** Measured as a 9× regression.
 
@@ -187,13 +190,18 @@ marked closed. **Only Ken closes a row.**
    version information. GitHub as well, never marked pre-release, push before
    creating the release, and package from a **clean** tree.
 3. **Smoke-launch off-screen before every release.** Ninety seconds. It has
-   beaten four thousand unit tests and twenty-two green gates to a live defect.
+   beaten four thousand unit tests and thirty-three green gates to a live defect.
 4. **A register row is a verdict plus one paragraph**, capped at 1,200
    characters and checked by `python tools/walk-engine-backlog.py --check`. File
    a row and set the five headings in the same edit with
    `python tools/walk-engine-backlog.py --write YYYY-MM-DD` — never by adding to
    the figure that was there. A rule described in prose is a rule that will be
    approximated.
+5. **A test that proves WHICH mechanism ran must assert what the WRONG mechanism
+   cannot produce.** The bold test asserted *"the edit epoch moved"* for five
+   days; the faked weight moves it too, so the test was green on the outcome its
+   own name ruled out. Falsify by putting the old call back, never by breaking
+   the input.
 
 ### When the engine repo is busy, the packager races itself
 

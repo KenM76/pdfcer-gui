@@ -1001,6 +1001,82 @@ Smaller, unblocked, and recorded in `FEATURES.md`:
 
 ## 10. Things that will bite you
 
+- **★★★ An engine capability can ship, be announced on the channel,
+  and sit unreached for FIVE DAYS behind a test that is green the whole time.**
+
+  2026-09-11, the automatic style ladder. `Pass 179.0` landed on 2026-08-30 and
+  `notice_2026-09-06-automatic-bold-ladder.md` announced it. This shell kept
+  calling the old verb until the afternoon of 2026-09-11.
+
+  **What the ladder does**, four rungs, in order: (1) a real face already on the
+  page that claims the style and passes coverage; (2) **the standard-14 sibling
+  of the run's own family**, bound as a new `/Font` resource with nothing
+  embedded; (3) a `--font-dir` donor; (4) synthesis — thicken the strokes —
+  subject to `StylePolicy`.
+
+  ★★★ **Rung 2 is the whole operator-visible story, and it fires on
+  his commonest page.** A CAD title block carrying `Helvetica` and nothing else
+  has **no bold resource on the page**. The shell's own question was *"is there
+  a real bold face here?"*, which answered **no**, so `gate_synthesis` passed
+  and the letters got thickened — while `Helvetica-Bold`, standard-14 and
+  requiring no font file at all, was one binding away. In his terms: **Bold was
+  faking it, and worst on the page he looks at most.**
+
+  ★★ **The shell's workaround was a whole mechanism, and it had its own
+  defect.** What the ladder replaced was: build a request pinned to `Refuse`,
+  send it as a probe, read the refusal, learn a face name from the refusal's
+  prose, then re-issue with `RealFaceAvailable`. That probe **overwrote the
+  operator's own posture**, so *Settings ▸ Fonts ▸ never fake it* was being
+  rewritten before the engine ever saw it — the setting was doing less than it
+  said, and nothing said so. Deleting the workaround deleted the defect. Per
+  decision 058 that is the shape to expect: **a workaround is a boundary defect,
+  and its side effects are usually invisible from inside the workaround.**
+
+  ★★★ **Why nothing caught it: the test asserted a property BOTH
+  outcomes have.** `bold_applies_on_a_page_with_no_bold_face` — a name written
+  specifically to describe the interesting case — asserted exactly one thing:
+  that the edit epoch moved. **The faked weight moves the edit epoch too.** So
+  the test was green on the outcome its own name was written to rule out, for
+  five days, in a suite of four thousand.
+
+  The repair is the generalisable part. **Name the observable the WRONG
+  mechanism cannot produce.** Here it is the run's **`/Font` resource key
+  changing**: rung 2 binds a new resource, and synthesis cannot — it thickens
+  strokes on the same one. One field, and the two branches separate cleanly.
+  Falsified by **putting the old call back** and watching it go red — not by
+  breaking the input, which only proves the test can fail for some reason.
+
+  ★ **The tell, for next time:** a test whose *name* contains a mechanism and
+  whose *assert* contains a side effect. *"…uses a real bold face"* asserting
+  *"something changed"*. *"…falls back to X"* asserting *"no error"*.
+  *"…picks the nearest Y"* asserting *"a Y was picked"*.
+
+  ★★ **Five requests came out of one consumption, and two of them gate
+  FEATURES that were not written — read them before redesigning the
+  disclosure.** All five are in the channel's `open/`, one topic per file:
+
+  | what is missing | what it cost |
+  |---|---|
+  | `StyleLadder` has no `same_family` flag | The shell cannot say *"we used the bold sibling of your own font"* versus *"we substituted a different family"* without re-deriving `family_stem`, which **R74 forbids**. It names both `/BaseFont`s instead — correct, and worse prose. |
+  | No read-only ladder preview | `preview_style_resolution` previews the **R90 gate**, not the ladder, and `preview_font_resources` walks 129,758 objects on the benchmark sheet, so it is not a hover instrument. The hover hints were narrowed to what the gate measures. |
+  | `passed_over` is pre-formatted prose | **This one cost a feature, not a workaround.** The *"which faces were tried, and why each was rejected"* sentence was never written, because writing it would mean parsing strings the engine formatted. |
+  | `FormatError::CoverageFailure(Refusal)` is unconstructable by a consumer | `Refusal` is `#[non_exhaustive]` with a private constructor, so E0639 — **we cannot fixture the arm we most need to defend.** |
+  | `SynthesisRefusedByPosture`'s `Display` runs two words together | `"rung 1: page facesHelvetica-Bold"`. Trace-only here; `pdfcer-cli` surfaces it verbatim. And *"page faces X"* reads as *"X was used"* when it means *"X was tried and rejected"*. |
+
+  ★ **Disclosure obeys rule 4 and that had to be argued for.** The rung is
+  reported **off-canvas only** — a status-line sentence built from
+  `StyleLadder`. Nothing is drawn onto the page, so a screenshot of the editing
+  canvas and a screenshot of the same file saved and reopened are identical.
+  `SynthesisRefusedByPosture` now reaches a **named** arm ahead of the wildcard,
+  so *"never fake it"* reads to the operator as pdfcer **obeying his setting**
+  rather than failing — which is the difference between a setting he trusts
+  and one he turns back off.
+
+  ⚠ **Shipped in `v0.5.0-dev.20260911.3` WIRED AND NOT DRIVEN**, with that
+  caveat printed in his release notes, because the operator was at the machine.
+  Unit and gate evidence only. **If bold misbehaves on a real page, start here.**
+
+
 - **★★★ One sentence from the operator can describe TWO consequences produced
   by TWO functions — and a check that watches one of them reports green on a
   half-flipped switch.**
