@@ -50,6 +50,7 @@ use crate::canvas::textannot::{
     DEFAULT_STAMP, DEFAULT_STAMP_SIZE, DEFAULT_STICKY_ICON, MAX_TEXT_CHARS, STAMP_SIZES, STAMPS,
     STICKY_ICONS, StampSize, TextAnnotKind,
 };
+use crate::stamps::lastused::LastStamp;
 use crate::stamps::library::{CustomStamp, Library};
 use crate::text::stamps as st;
 use crate::text::textannot as t;
@@ -158,6 +159,17 @@ pub struct TextAnnotDialog {
     /// tests, because it is held by two call sites rather than by a type.
     custom: Option<CustomStamp>,
     /// Set by Accept, consumed after the window's closure returns.
+    /// **What to remember, once this window has committed** -- `None` until it
+    /// does, and `None` forever on any window that is not a stamp.
+    ///
+    /// ★★ Written at the commit, read by the host after [`Self::show`] has
+    /// returned `false`, and that ordering is the whole design. The alternative
+    /// -- the host reading `self.stamp` / `self.custom` when the window closes
+    /// -- cannot tell Add from Cancel, so dismissing a window would set the
+    /// memory to a stamp the operator explicitly declined to place. A field
+    /// only the accept path writes makes that unrepresentable rather than
+    /// merely avoided.
+    committed: Option<LastStamp>,
     accept_requested: bool,
     /// Set by Cancel, consumed by [`Self::show`].
     close_requested: bool,
@@ -442,8 +454,20 @@ fn opening_position(screen: egui::Rect, size: egui::Vec2) -> egui::Pos2 {
 
 impl TextAnnotDialog {
     /// Open for a placed annotation.
+    ///
+    /// `last` is the stamp the operator most recently committed **this
+    /// session**, or `None` when he has not placed one yet -- O172's *"and it
+    /// remembers the last one used"* clause. See
+    /// [`crate::stamps::lastused`] for why the memory is a name that is
+    /// re-resolved here rather than a stored stamp.
+    ///
+    /// ★★ It is a REQUIRED argument rather than one with a
+    /// keep-the-old-behaviour default. A defaulted parameter silently declines
+    /// the feature at every call site written before it existed, the compiler
+    /// goes quiet about it, and the tests stay green -- this project has been
+    /// bitten by exactly that. Every caller now has to say what it means.
     #[must_use]
-    pub fn open(page: usize, kind: TextAnnotKind, rect: Rect) -> Self {
+    pub fn open(page: usize, kind: TextAnnotKind, rect: Rect, last: Option<&LastStamp>) -> Self {
         crate::diag::trace(|| {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
@@ -452,42 +476,79 @@ impl TextAnnotDialog {
                 rect.ury - rect.lly
             )
         });
+        // Scanned here, guarded on the kind -- see the `library` field's own
+        // note for why it is per-open rather than per-session, and why the
+        // other two kinds do not pay for it.
+        let library = if matches!(kind, TextAnnotKind::Stamp) {
+            let found = crate::stamps::library::scan();
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                format!(
+                    "custom-stamp-library categories={} stamps={} unreadable={} unplaceable={} folder={}",
+                    found.categories.len(),
+                    found.len(),
+                    found.unreadable,
+                    found.unplaceable,
+                    found.folder.is_some()
+                )
+            });
+            found
+        } else {
+            Library::default()
+        };
+        // ⚠ Resolved against the library that was just scanned, NOT against the
+        // one that existed when the memory was taken. That is the entire
+        // contract of `LastStamp::resolve`: a collection the operator has since
+        // edited in Acrobat has renumbered pages, and a remembered index would
+        // place different artwork under the right label.
+        //
+        // A memory that no longer resolves falls back to the default and says
+        // nothing on screen -- it is indistinguishable to him from the first
+        // stamp of a session. The trace is what tells the two apart, so a
+        // driven check can assert the difference the operator cannot see.
+        let (stamp, custom) = last.map_or((DEFAULT_STAMP, None), |l| {
+            l.resolve(&library, DEFAULT_STAMP)
+        });
+        if matches!(kind, TextAnnotKind::Stamp) {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                format!(
+                    "stamp-gallery-opens remembered={} restored={}",
+                    last.map_or_else(|| "none".to_owned(), LastStamp::token),
+                    if custom.is_some() {
+                        "custom"
+                    } else if last.is_some() {
+                        "standard"
+                    } else {
+                        "default"
+                    }
+                )
+            });
+        }
         Self {
             page,
             kind,
             rect,
             text: String::new(),
-            stamp: DEFAULT_STAMP,
+            stamp,
             // ⚠ The named constant, never `StampSize::default()`, even though
             // the two are the same value today. The constant is where the
             // argument lives for why a fresh gallery offers the DERIVED size
             // rather than the engine's flat 12 pt, and a `default()` call
             // would let that argument be silently overturned by an edit to a
             // `#[derive]` attribute three files away.
+            //
+            // ★★ It is deliberately NOT remembered alongside the stamp. The
+            // size is a property of the box he is drawing right now, and
+            // `FitTheBox` already derives it from that box; carrying a literal
+            // point size over from a stamp placed on a different sheet would
+            // make the next one silently the wrong size. Acrobat does not
+            // remember it either.
             stamp_size: DEFAULT_STAMP_SIZE,
             icon: DEFAULT_STICKY_ICON,
-            // Scanned here, guarded on the kind — see the field's own note for
-            // why it is per-open rather than per-session, and why the other
-            // two kinds do not pay for it.
-            library: if matches!(kind, TextAnnotKind::Stamp) {
-                let found = crate::stamps::library::scan();
-                crate::diag::trace(|| {
-                    // ui-text-exempt: diagnostic trace, never displayed in the UI
-                    format!(
-                        "custom-stamp-library categories={} stamps={} unreadable={} \
-                         unplaceable={} folder={}",
-                        found.categories.len(),
-                        found.len(),
-                        found.unreadable,
-                        found.unplaceable,
-                        found.folder.is_some()
-                    )
-                });
-                found
-            } else {
-                Library::default()
-            },
-            custom: None,
+            library,
+            custom,
+            committed: None,
             accept_requested: false,
             close_requested: false,
             focused_once: false,
@@ -552,6 +613,13 @@ impl TextAnnotDialog {
 
         if self.accept_requested {
             self.accept_requested = false;
+            // Taken BEFORE the action is pushed and before `text` is moved
+            // out, so the memory describes the choice that is actually being
+            // committed. Only meaningful for a stamp; the other two kinds have
+            // no gallery and nothing to remember.
+            if self.kind.uses_gallery() {
+                self.committed = Some(LastStamp::taken(self.stamp, self.custom.as_ref()));
+            }
             actions.push(Action::CommitTextAnnot {
                 page: self.page,
                 kind: self.kind,
@@ -568,6 +636,17 @@ impl TextAnnotDialog {
         // nothing. That is the honest reading: the operator dismissed a
         // question, and a dismissed question is not an answer.
         !(self.close_requested || !open)
+    }
+
+    /// **The memory this window earned**, or `None` if it was cancelled, was
+    /// not a stamp, or has not committed yet.
+    ///
+    /// Takes the value rather than borrowing it: the host calls this exactly
+    /// once, on the frame the window closes, and is about to drop the window.
+    /// A borrow would invite a second read of a value that has already been
+    /// stored somewhere else.
+    pub fn remembered(&mut self) -> Option<LastStamp> {
+        self.committed.take()
     }
 
     /// The field or the gallery — everything above the button row, and the

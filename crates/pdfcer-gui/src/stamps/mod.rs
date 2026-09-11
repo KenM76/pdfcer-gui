@@ -101,6 +101,12 @@ pub mod folder;
 /// answer to the "What is NOT here" note below, which was true until engine
 /// `Pass 293.0` shipped `place_page_artwork`.
 pub mod library;
+
+/// ★★ **Which stamp he reached for last** -- O172's *"and it remembers the
+/// last one used"* clause. A NAME re-resolved against a fresh scan, never a
+/// stored `CustomStamp`, because editing a collection in Acrobat renumbers its
+/// pages and a remembered index would silently name a different stamp.
+pub mod lastused;
 /// Turning a [`Plan`] into the bytes of a file Acrobat will load.
 pub mod write;
 

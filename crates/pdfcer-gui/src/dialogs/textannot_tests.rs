@@ -231,7 +231,7 @@ fn each_kinds_window_is_as_tall_as_its_body_needs() {
 /// assertion would still be about a live route.
 #[test]
 fn the_chosen_icon_reaches_the_commit_action() {
-    let mut d = TextAnnotDialog::open(3, TextAnnotKind::Sticky, rect());
+    let mut d = TextAnnotDialog::open(3, TextAnnotKind::Sticky, rect(), None);
     assert_eq!(
         d.icon, DEFAULT_STICKY_ICON,
         "a fresh chooser opens on Acrobat's default, not the engine's"
@@ -285,7 +285,7 @@ fn the_chosen_icon_reaches_the_commit_action() {
 /// argument is only enforced if something asserts the value.
 #[test]
 fn a_fresh_dialog_is_empty_and_defaulted() {
-    let d = TextAnnotDialog::open(0, TextAnnotKind::TextBox, rect());
+    let d = TextAnnotDialog::open(0, TextAnnotKind::TextBox, rect(), None);
     assert!(d.text.is_empty(), "no words are invented for the operator");
     assert_eq!(d.stamp, DEFAULT_STAMP);
     assert_eq!(d.icon, DEFAULT_STICKY_ICON);
@@ -305,7 +305,7 @@ fn a_fresh_dialog_is_empty_and_defaulted() {
 /// else to assert it on — the whole point is that nothing re-reads them.
 #[test]
 fn the_page_and_rect_are_captured_at_open() {
-    let d = TextAnnotDialog::open(7, TextAnnotKind::Sticky, rect());
+    let d = TextAnnotDialog::open(7, TextAnnotKind::Sticky, rect(), None);
     assert_eq!(d.page, 7);
     assert!((d.rect.urx - 100.0).abs() < f64::EPSILON);
 }
@@ -321,10 +321,10 @@ fn the_page_and_rect_are_captured_at_open() {
 fn readiness_follows_the_gallery_rule() {
     let ready = |d: &TextAnnotDialog| d.kind.uses_gallery() || !d.text.trim().is_empty();
 
-    let stamp = TextAnnotDialog::open(0, TextAnnotKind::Stamp, rect());
+    let stamp = TextAnnotDialog::open(0, TextAnnotKind::Stamp, rect(), None);
     assert!(ready(&stamp), "a stamp needs no typed words");
 
-    let mut box_ = TextAnnotDialog::open(0, TextAnnotKind::TextBox, rect());
+    let mut box_ = TextAnnotDialog::open(0, TextAnnotKind::TextBox, rect(), None);
     assert!(!ready(&box_), "an empty callout must not be authorable");
     box_.text = "   ".to_owned();
     assert!(!ready(&box_), "whitespace is not words");
@@ -343,7 +343,7 @@ fn readiness_follows_the_gallery_rule() {
 #[test]
 fn typing_into_the_open_window_reaches_the_draft() {
     let ctx = egui::Context::default();
-    let mut d = TextAnnotDialog::open(0, TextAnnotKind::TextBox, rect());
+    let mut d = TextAnnotDialog::open(0, TextAnnotKind::TextBox, rect(), None);
     let mut actions = Vec::new();
 
     // Frame 0: the field is created and requests focus.
@@ -376,7 +376,7 @@ fn typing_into_the_open_window_reaches_the_draft() {
 #[test]
 fn focus_stolen_on_the_opening_frame_is_taken_back() {
     let ctx = egui::Context::default();
-    let mut d = TextAnnotDialog::open(0, TextAnnotKind::TextBox, rect());
+    let mut d = TextAnnotDialog::open(0, TextAnnotKind::TextBox, rect(), None);
     let mut actions = Vec::new();
     let thief = egui::Id::new("whatever-won-the-release");
 
@@ -426,7 +426,7 @@ fn focus_stolen_on_the_opening_frame_is_taken_back() {
 #[test]
 fn the_focus_retry_gives_up_so_another_control_can_hold_it() {
     let ctx = egui::Context::default();
-    let mut d = TextAnnotDialog::open(0, TextAnnotKind::TextBox, rect());
+    let mut d = TextAnnotDialog::open(0, TextAnnotKind::TextBox, rect(), None);
     let mut actions = Vec::new();
     let mut other = None;
 
@@ -496,7 +496,7 @@ fn a_custom_stamp() -> CustomStamp {
 /// testing the value.
 #[test]
 fn exactly_one_of_the_two_galleries_holds_the_selection() {
-    let mut d = TextAnnotDialog::open(0, TextAnnotKind::Stamp, rect());
+    let mut d = TextAnnotDialog::open(0, TextAnnotKind::Stamp, rect(), None);
     assert!(
         d.custom.is_none(),
         "a fresh gallery opens on a standard stamp"
@@ -531,7 +531,7 @@ fn exactly_one_of_the_two_galleries_holds_the_selection() {
 /// surviving assertion is still about a live route.
 #[test]
 fn the_operators_own_stamp_reaches_the_commit_action() {
-    let mut d = TextAnnotDialog::open(2, TextAnnotKind::Stamp, rect());
+    let mut d = TextAnnotDialog::open(2, TextAnnotKind::Stamp, rect(), None);
     d.stamp = StampName::Final;
     d.select_custom(a_custom_stamp());
     d.accept_requested = true;
@@ -577,7 +577,7 @@ fn the_operators_own_stamp_reaches_the_commit_action() {
 #[test]
 fn only_the_stamp_kind_scans_the_stamps_folder() {
     for kind in [TextAnnotKind::Sticky, TextAnnotKind::TextBox] {
-        let d = TextAnnotDialog::open(0, kind, rect());
+        let d = TextAnnotDialog::open(0, kind, rect(), None);
         assert!(
             d.library.is_empty(),
             "{kind:?} has no gallery and must not walk the disk"
@@ -604,9 +604,9 @@ fn only_the_stamp_kind_scans_the_stamps_folder() {
 fn the_custom_half_appears_only_when_there_is_something_in_it() {
     let ctx = egui::Context::default();
 
-    let mut empty = TextAnnotDialog::open(0, TextAnnotKind::Stamp, rect());
+    let mut empty = TextAnnotDialog::open(0, TextAnnotKind::Stamp, rect(), None);
     empty.library = Library::default();
-    let mut full = TextAnnotDialog::open(0, TextAnnotKind::Stamp, rect());
+    let mut full = TextAnnotDialog::open(0, TextAnnotKind::Stamp, rect(), None);
     full.library = Library {
         categories: vec![Category {
             name: "Signatures".to_owned(),
@@ -764,4 +764,148 @@ fn a_library_of(n: usize) -> Library {
         })
         .collect();
     lib
+}
+
+// ---------------------------------------------------------------------------
+// O172's LAST-USED clause: *"and it remembers the last one used"*
+// ---------------------------------------------------------------------------
+//
+// These test the dialog's two halves of the memory -- what it EARNS on commit,
+// and what it RESTORES on open. `crate::stamps::lastused` tests the memory type
+// itself, including the case this window cannot see: a collection the operator
+// edited in Acrobat between two openings.
+//
+// ★★ **What this file structurally CANNOT test, and where it is tested
+// instead.** `open` scans the real stamp folder off `%APPDATA%`, so a unit test
+// cannot plant a library and therefore cannot watch a remembered CUSTOM stamp be
+// re-selected -- the half the memory exists for. That is asserted by driving the
+// binary, in `ui-verify`'s custom-stamp check, which owns the folder it plants.
+// Saying so here so a later reader does not mistake the gap for coverage.
+//
+// Falsification, 2026-09-10: with `open` patched to ignore its `last` argument,
+// `a_remembered_standard_stamp_is_selected_when_the_window_reopens` went red and
+// the rest stayed green -- so the restoring half is genuinely measured, and the
+// fallback test below is the negative arm of that pair, not evidence on its own.
+
+/// ★★★ **Cancel must not remember.** The whole reason
+/// [`TextAnnotDialog::remembered`] reads a field only the accept path writes,
+/// rather than reading `stamp`/`custom` when the window closes: a dismissed
+/// window is the operator saying no, and a memory taken from it would
+/// pre-select, on his next stamp, the one he had just declined to place.
+#[test]
+fn a_cancelled_window_remembers_nothing() {
+    let mut d = TextAnnotDialog::open(0, TextAnnotKind::Stamp, rect(), None);
+    d.select_custom(a_custom_stamp());
+    d.close_requested = true;
+
+    let ctx = egui::Context::default();
+    let mut actions = Vec::new();
+    let mut open = true;
+    let _ = ctx.run_ui(on_screen(0), |ui| {
+        open = d.show(ui.ctx(), &mut actions);
+    });
+    assert!(!open, "the window should have closed");
+    assert!(
+        d.remembered().is_none(),
+        "a cancelled window must earn no memory"
+    );
+}
+
+/// The positive control for the test above: the SAME window, committed rather
+/// than dismissed, does earn one. Without this pair, a `remembered` that always
+/// answered `None` would pass the cancel test and the feature would be absent.
+#[test]
+fn a_committed_stamp_is_what_gets_remembered() {
+    let mut d = TextAnnotDialog::open(0, TextAnnotKind::Stamp, rect(), None);
+    d.select_custom(a_custom_stamp());
+    d.accept_requested = true;
+
+    let ctx = egui::Context::default();
+    let mut actions = Vec::new();
+    let _ = ctx.run_ui(on_screen(0), |ui| {
+        d.show(ui.ctx(), &mut actions);
+    });
+
+    assert_eq!(
+        d.remembered(),
+        Some(crate::stamps::lastused::LastStamp::Custom {
+            category: "Signatures".to_owned(),
+            label: "Ken".to_owned(),
+        })
+    );
+}
+
+/// A standard stamp is remembered too. Acrobat's Stamp menu re-opens on the
+/// last stamp placed whichever kind it was, and this project's standing rule is
+/// that the convention IS the spec -- so remembering only the custom half would
+/// be an invented interaction, not a smaller one.
+#[test]
+fn a_standard_stamp_is_remembered_as_well_as_one_of_his_own() {
+    let mut d = TextAnnotDialog::open(0, TextAnnotKind::Stamp, rect(), None);
+    d.select_standard(StampName::Draft);
+    d.accept_requested = true;
+
+    let ctx = egui::Context::default();
+    let mut actions = Vec::new();
+    let _ = ctx.run_ui(on_screen(0), |ui| {
+        d.show(ui.ctx(), &mut actions);
+    });
+
+    assert_eq!(
+        d.remembered(),
+        Some(crate::stamps::lastused::LastStamp::Standard(
+            StampName::Draft
+        ))
+    );
+}
+
+/// The two kinds with no gallery have nothing to remember, and must not write
+/// one -- otherwise a sticky note would clear the stamp memory on its way past.
+#[test]
+fn a_sticky_note_and_a_text_box_earn_no_stamp_memory() {
+    for kind in [TextAnnotKind::Sticky, TextAnnotKind::TextBox] {
+        let mut d = TextAnnotDialog::open(0, kind, rect(), None);
+        d.text = "something".to_owned();
+        d.accept_requested = true;
+
+        let ctx = egui::Context::default();
+        let mut actions = Vec::new();
+        let _ = ctx.run_ui(on_screen(0), |ui| {
+            d.show(ui.ctx(), &mut actions);
+        });
+        assert!(
+            d.remembered().is_none(),
+            "{kind:?} has no gallery and must earn no stamp memory"
+        );
+    }
+}
+
+/// **The restoring half.** A memory handed to `open` selects that standard
+/// stamp instead of the default.
+#[test]
+fn a_remembered_standard_stamp_is_selected_when_the_window_reopens() {
+    let last = crate::stamps::lastused::LastStamp::Standard(StampName::Expired);
+    let d = TextAnnotDialog::open(0, TextAnnotKind::Stamp, rect(), Some(&last));
+    assert_eq!(d.stamp, StampName::Expired);
+    assert!(d.custom.is_none());
+    assert_ne!(
+        StampName::Expired,
+        DEFAULT_STAMP,
+        "the fixture must not be the default, or this test passes on a dialog that ignored the memory entirely"
+    );
+}
+
+/// ⚠ A memory naming a stamp that is no longer in the folder opens on the
+/// default and says nothing on screen. The trace is what tells that apart from
+/// a first-of-session opening; the operator has nothing to be told, because to
+/// him the two situations are the same situation.
+#[test]
+fn a_remembered_stamp_that_has_gone_falls_back_without_a_sentence() {
+    let last = crate::stamps::lastused::LastStamp::Custom {
+        category: "A collection he deleted".to_owned(),
+        label: "Gone".to_owned(),
+    };
+    let d = TextAnnotDialog::open(0, TextAnnotKind::Stamp, rect(), Some(&last));
+    assert!(d.custom.is_none());
+    assert_eq!(d.stamp, DEFAULT_STAMP);
 }

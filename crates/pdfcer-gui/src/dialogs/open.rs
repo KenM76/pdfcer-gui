@@ -297,7 +297,15 @@ impl DialogsState {
         if !matches!(status, Status::Open(_)) {
             return;
         }
-        self.text_annot = Some(textannot::TextAnnotDialog::open(page, kind, rect));
+        // The session's stamp memory, handed in rather than reached for: the
+        // dialog resolves it against the library it scans on this opening. See
+        // `crate::stamps::lastused`.
+        self.text_annot = Some(textannot::TextAnnotDialog::open(
+            page,
+            kind,
+            rect,
+            self.last_stamp.as_ref(),
+        ));
     }
 
     /// **Open the placement dialog for a form control just put on the page.**

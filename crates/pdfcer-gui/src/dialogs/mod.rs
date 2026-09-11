@@ -413,6 +413,20 @@ pub struct DialogsState {
     sign: Option<sign::SignDialog>,
 
     // --- application-scoped: survives an empty canvas ---------------------
+    /// ★★ **The stamp he placed most recently** -- O172's *"and it remembers
+    /// the last one used"*.
+    ///
+    /// Application-scoped rather than document-scoped, and that is the point:
+    /// stamping a drawing set means opening thirty files, and a memory reset by
+    /// `File > Open` would be reset exactly when it is needed. It does not
+    /// survive the program closing -- see [`crate::stamps::lastused`] for why
+    /// that stopping point is deliberate.
+    ///
+    /// A NAME, not a stamp. The library is re-scanned every time the gallery
+    /// opens and the memory is resolved against it, so a collection the
+    /// operator has edited in Acrobat in between cannot make this point at the
+    /// wrong artwork.
+    last_stamp: Option<crate::stamps::lastused::LastStamp>,
     /// The default-PDF-program offer, when it is up - O173.
     ///
     /// **Application-scoped, and the only dialog here that opens itself.**
@@ -954,6 +968,17 @@ impl DialogsState {
             self.form_field = None;
         }
         if self.text_annot.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
+            // ★★ Read on the frame the window closes and only then -- see
+            // `TextAnnotDialog::remembered`. A Cancel answers `None`, so
+            // dismissing the window cannot set the memory to a stamp he
+            // declined to place.
+            if let Some(last) = self
+                .text_annot
+                .as_mut()
+                .and_then(textannot::TextAnnotDialog::remembered)
+            {
+                self.last_stamp = Some(last);
+            }
             self.text_annot = None;
         }
         // ★ LAST, and the position is load-bearing in a way none of its
