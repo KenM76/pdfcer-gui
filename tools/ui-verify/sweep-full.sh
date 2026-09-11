@@ -75,6 +75,40 @@
 # The log ends with `=== SWEEP-DONE`. Its absence means the sweep was killed,
 # which is a different fact from "every check passed" and must not be read as
 # one.
+#
+# ## ★★★ And its PRESENCE never meant "something ran" — measured 2026-09-11
+#
+# A sweep was started against a harness whose source was thirty-two seconds
+# newer than its binary. `ui-verify` refused, correctly and at length, **once
+# per chunk**: eleven chunks and two ALONE records, every one `rc=2`, the whole
+# thing over in under a minute, and the log ending in `=== SWEEP-DONE`. Two
+# hundred and ten checks were reported as swept and not one of them launched
+# anything.
+#
+# Nothing here was lying. The script printed every `rc=` it promised. But the
+# only sentence a reader had been given to check was the sentinel, and the
+# sentinel was true. That is this project's most-repeated defect shape wearing a
+# new coat: **a runner whose green is a statement about the runner rather than
+# about the subject.**
+#
+# Three changes, and each closes a different half of it:
+#
+# 1. **The binaries are BUILT here, not assumed.** The stale refusal could only
+#    happen because this script took "somebody ran cargo build" on trust. It no
+#    longer does, and a build failure stops the sweep before it takes the
+#    desktop.
+# 2. **`rc=2` aborts immediately.** Exit 2 is `ui-verify` saying *the command
+#    line was wrong* — a stale binary, a missing fixture, a renamed flag. It
+#    is never a result about the application, so spending twenty more launches
+#    on the same mistake buys nothing and buries the one line that names the
+#    cause under a thousand lines of usage text.
+# 3. **The sentinel is followed by a TALLY that must add up.** The final line
+#    counts the PASS / FAIL / SKIP actually present in the log and states the
+#    set of chunk return codes. A sweep that ran nothing now says `passed=0`
+#    beside `SWEEP-DONE`, and a zero is something a reader can disbelieve.
+#
+# ⇒ Exit status: **0** only when every chunk returned 0; **1** a check failed,
+# **2** a command line was wrong, **3** something did not run.
 set -u
 
 cd "$(dirname "$0")/../.." || exit 1
@@ -86,6 +120,35 @@ DRIVE=$OUT/drive
 
 mkdir -p "$OUT" "$DRIVE" || exit 1
 : > "$LOG"
+
+# **The sweep's own verdict line.** Counts what is in the log rather than what
+# the script believes it did — the two came apart on 2026-09-11 and the header
+# says how. Printed on every exit path, including the aborts.
+tally() {
+    passed=$(grep -c "^\[PASS\]" "$LOG" 2>/dev/null || echo 0)
+    failed=$(grep -c "^\[FAIL\]" "$LOG" 2>/dev/null || echo 0)
+    skipped=$(grep -c "^\[SKIP" "$LOG" 2>/dev/null || echo 0)
+    codes=$(grep -o "rc=[0-9]*" "$LOG" 2>/dev/null | sort -u | tr "
+" " ")
+    echo "=== TALLY passed=$passed failed=$failed skipped=$skipped codes: $codes" | tee -a "$LOG"
+    if [ "$passed" -eq 0 ] && [ "$failed" -eq 0 ]; then
+        echo "sweep-full: NOTHING RAN. Not one check reached the application." >&2
+        echo "            A sweep with no results is not a clean sweep." >&2
+    fi
+}
+
+# Rule 0: BUILD BOTH BINARIES. Not a convenience — the failure it closes is in
+# the header. `ui-verify` refuses to drive a binary older than its own sources,
+# and it refuses per invocation, so an unbuilt harness turns a whole sweep into
+# eleven identical usage dumps and a SWEEP-DONE.
+#
+# ★ Built BEFORE the desktop is taken, so a compile error costs seconds rather
+# than interrupting the operator for nothing.
+echo "=== building the harness and the application"
+if ! cargo build --release -p ui-verify -p pdfcer-gui; then
+    echo "sweep-full: the build failed, so there is nothing honest to drive." >&2
+    exit 2
+fi
 
 # Rule 1: drive a copy. `cp` every run, so the copy cannot be an old build
 # quietly answering for a new one.
@@ -146,6 +209,10 @@ ALONE_TABLE
 N=$(wc -l < "$LIST")
 echo "=== sweeping $N checks in chunks, plus the ALONE table" | tee -a "$LOG"
 
+# The worst return code any chunk produced, so this script's exit status is a
+# statement about the whole run rather than about its last chunk.
+worst=0
+
 for start in $(seq 1 20 "$N"); do
     ARGS=$(sed -n "${start},$((start + 19))p" "$LIST" | sed 's/^/--check /' | tr '\n' ' ')
     echo "=== chunk $start" >> "$LOG"
@@ -154,7 +221,18 @@ for start in $(seq 1 20 "$N"); do
         --pdf fixtures/a1-titleblock.pdf --doc-point 0,2000,320 \
         --second-pdf fixtures/four-pages.pdf --out "$OUT/uv-full" \
         $ARGS >> "$LOG" 2>&1
-    echo "=== chunk $start rc=$?" >> "$LOG"
+    rc=$?
+    echo "=== chunk $start rc=$rc" >> "$LOG"
+    [ "$rc" -gt "$worst" ] && worst=$rc
+    if [ "$rc" -eq 2 ]; then
+        echo "=== ABORTED: chunk $start rejected the command line (rc=2)." >> "$LOG"
+        echo "sweep-full: ABORTED at chunk $start — ui-verify rejected the" >&2
+        echo "            command line (rc=2). Every later chunk would be" >&2
+        echo "            rejected identically. The cause is the last" >&2
+        echo "            screenful of $LOG." >&2
+        tally
+        exit 2
+    fi
 done
 
 while IFS='|' read -r name args; do
@@ -166,9 +244,20 @@ while IFS='|' read -r name args; do
     # shellcheck disable=SC2086
     ./target/release/ui-verify.exe --exe "$DRIVE/pdfcer-gui.exe" \
         $args --check "$name" --out "$OUT/uv-full-$name" >> "$LOG" 2>&1
-    echo "=== alone $name rc=$?" >> "$LOG"
+    rc=$?
+    echo "=== alone $name rc=$rc" >> "$LOG"
+    [ "$rc" -gt "$worst" ] && worst=$rc
+    if [ "$rc" -eq 2 ]; then
+        echo "=== ABORTED: alone $name rejected the command line (rc=2)." >> "$LOG"
+        echo "sweep-full: ABORTED on '$name' — rc=2. Its ALONE arguments name" >&2
+        echo "            a fixture or a flag that is wrong. See $LOG." >&2
+        tally
+        exit 2
+    fi
 done <<ALONE_TABLE
 $ALONE
 ALONE_TABLE
 
 echo "=== SWEEP-DONE" >> "$LOG"
+tally
+exit "$worst"
