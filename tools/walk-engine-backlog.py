@@ -145,6 +145,75 @@ def over_cap(text: str, cap: int) -> list[tuple[str, int, str]]:
     return out
 
 
+#: A verdict cell that opens by announcing the capability is already here.
+#: Matched against the cell's FIRST bolded run only — see `misfiled` below.
+CONSUMED_MARKERS = ("\u2705", "WIRED", "CONSUMED", "SHIPPED AND")
+
+
+def misfiled(text: str) -> list[tuple[str, int, str, str]]:
+    """Rows whose verdict CELL says consumed while their SECTION says otherwise.
+
+    Returns ``(section verdict, line number, opening clause, the marker found)``.
+
+    # Why this check exists
+
+    A row's verdict in this register is **the section it sits in** — that is
+    what :func:`rows_by_verdict` counts, and it is the right choice, because a
+    section heading cannot be quietly contradicted by a sentence three hundred
+    characters into a cell.
+
+    But the reverse is not guarded at all. A row can be wired, marked
+    ``**✅ WIRED 2026-09-06 — …**`` in its own cell by the session that wired
+    it, and still sit under ``## `wanted``` forever, because moving it is a
+    separate act that nothing checks. Three rows in the `wanted` section are in
+    exactly that state as this is written.
+
+    ⇒ **The count is right about what it measures and wrong about what a reader
+    takes it for**, which is the failure this whole file was written against.
+    `wanted`'s own heading tells the reader *"these are the rows to read if you
+    are choosing what to build next"*, so a wired row left there hands somebody
+    work that is finished.
+
+    # Why it is narrow, and why it reports rather than fails
+
+    The marker must appear in the cell's **first bolded run** — the place this
+    register's convention puts a verdict. That keeps it away from the very
+    common prose *"…filed as X and shipped the same week"* in the body of a
+    genuinely-wanted row, which describes the ENGINE shipping something, not
+    this shell consuming it.
+
+    It is a report, not an exit-1, for the same reason `check-engine-backlog.sh`
+    is *"deliberately weak in one direction"*: there are legitimate rows whose
+    cell opens `**✅ Accounted for …**` for a capability only partly consumed,
+    and a gate that forced those to move would teach people to re-baseline it.
+    Somebody has to look. The tool's job is to make sure somebody is told.
+    """
+    out: list[tuple[str, int, str, str]] = []
+    current: str | None = None
+    for n, line in enumerate(text.splitlines(), start=1):
+        if line.startswith("## "):
+            m = HEADING.match(line)
+            current = m.group("verdict") if m and m.group("verdict") in VERDICTS else None
+            continue
+        stripped = line.strip()
+        if current is None or current == "shipped" or not stripped.startswith("|"):
+            continue
+        cells = stripped.split("|")
+        if len(cells) < 4:
+            continue
+        first = cells[1].strip()
+        if not first or first.startswith("---") or first.startswith("Row (") or set(first) <= set("-: "):
+            continue
+        cell = cells[2].strip()
+        # The first bolded run, i.e. everything up to the closing `**`.
+        head = cell[2:].split("**")[0] if cell.startswith("**") else cell[:60]
+        for marker in CONSUMED_MARKERS:
+            if marker in head:
+                out.append((current, n, first[:60], marker))
+                break
+    return out
+
+
 def headings(text: str) -> dict[str, tuple[int, int] | None]:
     """Return the ``**N of T**`` figures each verdict heading claims."""
     claimed: dict[str, tuple[int, int] | None] = {}
@@ -197,6 +266,24 @@ def rewrite_headings(text: str, counts: dict[str, int], total: int, stamp: str) 
 
 
 def main() -> int:
+    # ★★ A gate that cannot PRINT its finding has not found anything.
+    #
+    # Python on this machine opens stdout as cp1252, and every interesting row
+    # in the register opens with `★`. On 2026-09-11 `--check` printed
+    # "1 row(s) exceed the 1200-character cap:" and then died with
+    # `UnicodeEncodeError` on the line that would have said WHICH row — so the
+    # run looked like a broken tool rather than a register that needed an edit,
+    # and the natural next act was to go and debug this file.
+    #
+    # `errors="replace"` rather than a bare utf-8 switch, deliberately: a
+    # console that genuinely cannot draw a character should show `?` and keep
+    # going. **A decoration must never be able to kill a measurement.**
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):  # not a real console; nothing to fix
+            pass
+
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--at", metavar="REV", help="walk `git show REV:ENGINE_BACKLOG.md`")
     ap.add_argument("--check", action="store_true",
@@ -247,6 +334,21 @@ def main() -> int:
             bad = True
         print(f"  {v:<9} {counts[v]:>4} of {total}{note}")
     print(f"  {'TOTAL':<9} {total:>4}")
+
+    wrong_section = misfiled(text)
+    if wrong_section:
+        print()
+        print(f"{len(wrong_section)} row(s) say consumed in a section that says not:")
+        for v, n, opening, marker in wrong_section:
+            print(f"  {v:<9} line {n:<5} [{marker}] {opening}")
+        print()
+        print("A row's VERDICT is the section it sits in - that is what the counts")
+        print("above measure. A wired row left under `wanted` is handed to the next")
+        print("reader as work to do, because `wanted`'s own heading says those are")
+        print("the rows to read when choosing what to build next. Move it to")
+        print("`shipped`, then re-run with --write to move the headings. This is a")
+        print("REPORT, not a failure: a partly-consumed row may legitimately open")
+        print("with a tick. Somebody has to look.")
 
     long_rows = over_cap(text, args.cap)
     if long_rows:

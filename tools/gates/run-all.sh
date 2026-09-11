@@ -320,6 +320,38 @@ run "check-old-name-absent" bash "$HERE/check-old-name-absent.sh"
 run "check-engine-backlog --self-test" bash "$HERE/check-engine-backlog.sh" --self-test
 run "check-engine-backlog" bash "$HERE/check-engine-backlog.sh"
 
+# ★★★ `walk-engine-backlog --check`, registered 2026-09-11 — and the delay is
+# the finding.
+#
+# The gate above asks whether `ENGINE_BACKLOG.md` ACCOUNTS for every capability
+# the engine says it has. This one asks whether the register is internally
+# honest: that its five section headings equal a real walk, and that no row has
+# grown past the 1,200-character cap that keeps a verdict from turning into an
+# essay.
+#
+# Both rules already had this checker. `RESUME.md` names it for both.
+# `ENGINE_BACKLOG.md` names it in all five heading comments. **Nothing ran it**,
+# because it was never registered here — and the header of
+# `check-engine-backlog.sh`, in this same directory, states exactly what that
+# means: *"A gate nobody runs is a gate that does not exist."* That sentence was
+# written about itself, it was acted on for itself, and its twin was left out.
+#
+# ★★ What the unregistered checker was hiding, found the first time it was run:
+#
+#   * **25 rows filed under `wanted` whose own cells opened `✅ WIRED`** — the
+#     section that tells a reader *"these are the rows to read if you are
+#     choosing what to build next"* read **70** where the real gap was **48**.
+#     22 were moved; 3 stay for stated reasons.
+#   * **One row 3,856 characters long** against the 1,200 cap — written that
+#     morning, by the session that added this line.
+#
+# ★ It is `--check`, so a disagreeing heading or an over-long row FAILS rather
+# than printing and exiting zero. The report of rows whose cell says consumed in
+# a section that says otherwise is deliberately NOT a failure: a partly-consumed
+# row may legitimately open with a tick, and a gate that forced those to move
+# would teach people to re-baseline it.
+run "walk-engine-backlog" python "$ROOT/tools/walk-engine-backlog.py" --check
+
 # ★★★ `check-engine-api-drift`, added 2026-09-05 — and it exists because the
 # two gates immediately above are BLIND TO THE SAME THING.
 #
