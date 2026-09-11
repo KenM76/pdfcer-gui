@@ -67,7 +67,7 @@
 
 use crate::checks::driving;
 use crate::checks::zoom_keeps_place::{
-    CANVAS_REGION, DRIFT_FRACTION, RESOLUTION_FLOOR, VK_CONTROL, held, tier,
+    CANVAS_REGION, DRIFT_FRACTION, RESOLUTION_FLOOR, VK_CONTROL, held, settled, tier,
 };
 use crate::checks::{Check, CheckContext, CheckReport};
 use crate::error::{Error, Result};
@@ -225,7 +225,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     driver.scroll_at_held(centre, &[VK_CONTROL], 1, PAST_THRESHOLD)?;
     session.settle(20);
 
-    let Some(mut prev) = held(&session, canvas)? else {
+    // ★ `settled`, not `held` — see its documentation. egui smooths a
+    // Ctrl+wheel notch across about a dozen frames, and the turn-round point is
+    // the reading every drift below is measured against: taken mid-animation it
+    // biases the whole descent.
+    let Some(mut prev) = settled(&session, canvas)? else {
         return Err(Error::new(
             "the canvas never published a rect and a zoom, so there is no page point to follow. \
              SKIPPED.",
@@ -252,8 +256,15 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let mut notch = 0usize;
     while notch < budget && shallow_run < SETTLE_NOTCHES {
         driver.scroll_at_held(centre, &[VK_CONTROL], -1, 1)?;
-        session.settle(6);
         notch += 1;
+
+        // ★ Wait for the notch to LAND before reading anything about it —
+        // both the position and the tier. See [`super::zoom_keeps_place::settled`].
+        let Some(after) = settled(&session, canvas)? else {
+            return Err(Error::new(
+                "the canvas stopped publishing a rect and a zoom. SKIPPED.",
+            ));
+        };
 
         let now = tier(&session)?;
         if tiers.last().map(String::as_str) != Some(now.as_str()) {
@@ -264,12 +275,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         } else {
             shallow_run = 0;
         }
-
-        let Some(after) = held(&session, canvas)? else {
-            return Err(Error::new(
-                "the canvas stopped publishing a rect and a zoom. SKIPPED.",
-            ));
-        };
         if after.zoom < prev.zoom {
             descended += 1;
         }

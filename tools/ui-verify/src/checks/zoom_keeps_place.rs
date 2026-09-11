@@ -262,6 +262,96 @@ pub(crate) fn held(session: &Session, canvas: crate::geom::LRect) -> Result<Opti
     }))
 }
 
+/// How many frames to wait between two settling reads. See [`settled`].
+const SETTLE_STEP: u32 = 3;
+
+/// How many settling reads before giving up. See [`settled`].
+///
+/// `SETTLE_STEP × SETTLE_ROUNDS` frames is the worst case per notch — about
+/// two seconds on an idle machine, and reached only when the view genuinely
+/// never stops moving, which is a finding in itself and is reported as an
+/// error rather than swallowed.
+const SETTLE_ROUNDS: usize = 24;
+
+/// Read [`held`] repeatedly until two consecutive reads agree exactly, so the
+/// reading is of a **settled** view rather than of one still in flight.
+///
+/// # ★★★ The probe defect this closes, measured on 2026-09-11
+///
+/// `zooming_does_not_throw_away_where_the_operator_panned` failed sporadically
+/// — three runs of the same binary failed at 2826 %, at 5150 %, and not until
+/// 6,898,097 % — with a drift of about 2.6 × the tolerance on one notch out of
+/// a hundred and thirty, while every other notch sat at 18–33 % of it. A defect
+/// that discards the position does not behave like that. A probe reading a
+/// half-applied gesture does.
+///
+/// **egui smooths a `Ctrl`+wheel notch across about a dozen frames.** The wheel
+/// event reaches `InputState` as a scroll delta, is smoothed there, and is
+/// converted to `zoom_delta()` a slice at a time; `canvas::present` arms a
+/// fresh anchor and pushes a fresh `ZoomBy` on **every one of those frames**.
+/// Read out of the trace of one failing run, a single notch from 2826 % to
+/// 3452 % passed through 30.12, 30.53, 31.71, 32.53, 33.16, 33.58, 33.88,
+/// 34.08, 34.22, 34.32, 34.39 and only then 34.52, at which point the frames
+/// began repeating byte for byte.
+///
+/// The check waited `settle(6)` after each notch — six frames of a twelve-frame
+/// animation. So **every** reading it has ever taken was of a partially applied
+/// zoom, and the quantity it compared was the anchor identity evaluated across
+/// two arbitrary mid-flight frames, each of which had also just armed a new
+/// anchor from a scroll offset the `ScrollArea` had not yet been handed. That
+/// holds to within a fifth of the tolerance nearly always, and occasionally
+/// does not.
+///
+/// ★ The fix is to read the settled frame, **not to widen the tolerance**.
+/// Those are opposite changes: one removes a variable the check never modelled,
+/// the other blinds it to the defect it exists for. Waiting for the view to
+/// stop makes the check strictly stronger — it now judges the position the
+/// operator is actually left looking at, which is the only one they can see.
+///
+/// # How "settled" is decided
+///
+/// Exact equality of the zoom **and** of the page point, between two reads
+/// `SETTLE_STEP` frames apart. Exact, not approximate: once the animation has
+/// finished, the canvas re-emits the identical line every frame — the numbers
+/// come from the same `f32` state through the same formatter — so equality is
+/// reachable and is the strongest available statement. A tolerance here would
+/// declare a slow tail settled while it was still moving, which is the failure
+/// this function exists to remove.
+///
+/// Returns `Ok(None)` when the canvas publishes nothing at all, which is the
+/// same "no reading" that [`held`] reports and is the caller's to interpret.
+/// Returns `Err` when the view never stops moving inside the budget: that is
+/// not a skip and it is not a pass, it is a claim about the application that
+/// the caller must surface.
+pub(crate) fn settled(session: &Session, canvas: crate::geom::LRect) -> Result<Option<Held>> {
+    let mut last: Option<Held> = None;
+    for _ in 0..SETTLE_ROUNDS {
+        session.settle(SETTLE_STEP);
+        let Some(now) = held(session, canvas)? else {
+            return Ok(None);
+        };
+        #[allow(
+            clippy::float_cmp,
+            reason = "a settled canvas re-emits the identical trace line, so these are the same bits, not two computations of one quantity" // ui-text-exempt: clippy lint justification, never displayed
+        )]
+        let same = last.is_some_and(|prev: Held| {
+            prev.zoom == now.zoom && prev.page.0 == now.page.0 && prev.page.1 == now.page.1
+        });
+        if same {
+            return Ok(Some(now));
+        }
+        last = Some(now);
+    }
+    Err(Error::new(format!(
+        "the canvas never stopped moving: {} reads {SETTLE_STEP} frame(s) apart and the zoom or \
+         the position changed every time, last at {:.0}%. A gesture that never lands is a real \
+         finding — reported as an ERROR rather than measured, because every number this check \
+         would then print would be of a view still in flight.",
+        SETTLE_ROUNDS,
+        last.map_or(0.0, |h| h.zoom * 100.0)
+    )))
+}
+
 /// Which position tier the canvas last reported.
 pub(crate) fn tier(session: &Session) -> Result<String> {
     let trace = session.trace()?;
@@ -327,7 +417,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     driver.scroll_at(frame.declared_at(canvas, PAN_AT.0, PAN_AT.1), -4)?;
     session.settle(20);
 
-    let Some(mut prev) = held(&session, canvas)? else {
+    let Some(mut prev) = settled(&session, canvas)? else {
         return Err(Error::new(
             "the canvas never published a rect and a zoom, so there is no page point to follow. \
              SKIPPED.",
@@ -355,18 +445,25 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         // budget for one, and failed a correct build by 3.17 pt against 2.57.
         for notch in 0..STAGE {
             driver.scroll_at_held(centre, &[VK_CONTROL], 1, 1)?;
-            session.settle(6);
 
+            // ★ Wait for the notch to LAND. See [`settled`]: egui smooths a
+            // Ctrl+wheel notch over about a dozen frames, and a fixed short
+            // wait here read a half-applied zoom on every notch this check has
+            // ever measured.
+            let Some(after) = settled(&session, canvas)? else {
+                return Err(Error::new(
+                    "the canvas stopped publishing a rect and a zoom. SKIPPED.",
+                ));
+            };
+
+            // ★ Read AFTER settling, so the tier named in a failure message is
+            // the tier the judged reading was taken on and not one the view
+            // passed through on its way there.
             let now = tier(&session)?;
             if !tiers.contains(&now) {
                 tiers.push(now.clone());
             }
 
-            let Some(after) = held(&session, canvas)? else {
-                return Err(Error::new(
-                    "the canvas stopped publishing a rect and a zoom. SKIPPED.",
-                ));
-            };
             let drift = (after.page.0 - prev.page.0)
                 .abs()
                 .max((after.page.1 - prev.page.1).abs());
