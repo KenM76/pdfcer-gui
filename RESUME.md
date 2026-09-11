@@ -28,13 +28,14 @@ drifting from a count is the defect this project has spent eight corrections on.
 
 | What | Command | Value, 2026-09-11 |
 |---|---|---|
-| Engine pin | `grep -m1 'pdfcer?branch=main#' Cargo.lock` | `0a9f989` |
-| Engine HEAD | `cd /d/Dev/pdfcer && git log --oneline -1 main` | `0a9f989` — **current, v0.52.0** |
-| Driven checks | `grep -c 'Box::new(' tools/ui-verify/src/checks/roster.rs` | 213 |
-| Gates | `grep -cE '^run ' tools/gates/run-all.sh` | 30 runs — 22 gates and 8 self-tests |
-| Unit tests | `cargo test --workspace` | re-run it |
+| Engine pin | `grep -m1 'pdfcer?branch=main#' Cargo.lock` | `1eb1c7c` |
+| Engine HEAD | `cd /d/Dev/pdfcer && git log --oneline -1 main` | `1eb1c7c` — **current, v0.52.0** |
+| Last release | `git fetch --tags origin && git describe --tags --abbrev=0` | `v0.5.0-dev.20260911.1` — **0 commits behind** |
+| Driven checks | `cargo run -q -p ui-verify -- --list \| wc -l` | 212 |
+| Gates | `bash tools/gates/run-all.sh` | **32 passed, 0 failed, 0 skipped** |
+| Unit tests | `cargo test --workspace` | 4,161 passing |
 | Source files | `find crates -name '*.rs' \| wc -l` | 771 |
-| Backlog register | `python tools/walk-engine-backlog.py` | 162 rows |
+| Backlog register | `python tools/walk-engine-backlog.py` | 170 rows |
 
 ⚠ **The pin is a claim with a shelf life of hours.** `Cargo.lock` pins the
 engine by git revision, not by path, so every sentence in this repository of the
@@ -42,8 +43,25 @@ form *"the engine cannot do X"* is a statement about **a pin**, not about the
 engine. Under O165 the first act of a session is to compare the two rows above
 and, if they differ, read the intervening log **before** reading any backlog row.
 
-⚠ **The last two releases shipped without the driven sweep.** Unit tests and
-gates were green both times; neither is evidence that a control is reachable.
+⚠ **`git describe` LIES in a fresh clone or a repo that has not fetched.**
+`gh release create` makes the tag **on GitHub**, not here — nothing pulls it
+back. On 2026-09-11 the operator asked *"new release soon?"* and the answer
+began **"51 commits have stacked up since Tuesday's build"**, computed from a
+`describe` that had never seen the three releases cut since. After
+`git fetch --tags origin` the true figures were **21 commits** and
+**yesterday afternoon**. Both commands were right; the instrument was reading
+local state about a fact that lives remotely. ⇒ **Any sentence containing
+*"commits unreleased"* or a release date gets a `git fetch --tags origin`
+immediately in front of it**, and a cross-check against `gh release list`.
+
+⚠ **The last three releases shipped without the driven sweep**, this one
+included. Unit tests, 32 gates and an off-screen smoke launch were green each
+time; none of the three is evidence that a control is *reachable*. The
+blocker today is not time — an Outlook *Internet Email* password prompt sits
+at desktop 1134,407–1514,625, over the middle of the only display, and every
+pointer-driven check SKIPs on it. **It is the operator's window; ask, never
+close it.** Confirm it is gone before scheduling a sweep:
+`Get-Process OUTLOOK | Select MainWindowTitle`.
 
 ---
 

@@ -1383,6 +1383,80 @@ def main() -> int:
             # build whose engine moved under it and was never re-tested is
             # exactly the state `BUILD-INFO.txt`'s verification line exists to
             # report, and a warning here reaches the person who can still act.
+            # ★★★ **AND THE UPDATE HAS JUST DIRTIED THE TREE THIS SCRIPT IS
+            # ABOUT TO STAMP. Measured 2026-09-11, cutting
+            # v0.5.0-dev.20260911.1.**
+            #
+            # `cargo update` rewrites `Cargo.lock`. The identity block, forty
+            # lines below, reads `git describe --dirty`. So whenever the pin
+            # moves, a build packaged from a **provably clean tree** is named
+            # `-dirty` **by construction**:
+            #
+            #     pdfcergui-20260911-0631-1eb1c7c-5e1ba78-dirty-d95f2bedd9c9
+            #                                              ^^^^^
+            #
+            # The standing rule is *package from a clean tree*, the rule was
+            # being followed, and the only modification in that tree was one
+            # this script had written thirty seconds earlier. **A tool that
+            # mutates its subject before measuring it reports the mutation as
+            # the subject's fault, and every particular of the report is
+            # true.** That is why it survives review: there is nothing to
+            # disagree with.
+            #
+            # ★★ The SECOND defect is the one the workaround causes, and it is
+            # worse because it is quiet. Commit the lock and re-package into
+            # the same slot, and [`changelog`] diffs against **the build it
+            # finds in the destination** — which is now the RETRACTED one. The
+            # corrected package reported *"Shell commits since the previous
+            # build (5e1ba78): 7e439eb Engine pin ... (documentation only)"*:
+            # ONE commit, a pin bump, for a release carrying **21** and five
+            # operator-visible landings. Nothing threw. The number that should
+            # have been 21 was 1, and `BUILD-INFO.txt` exists for no other
+            # purpose than to carry that number.
+            #
+            # ⇒ **A changelog that diffs against "the last artefact" rather
+            # than "the last artefact the operator has" is silently wrong for
+            # exactly as long as a retraction is in play.**
+            #
+            # THE FIX, when this is touched deliberately and not mid-release:
+            #   1. Read the identity BEFORE `cargo update`, or commit the lock
+            #      here, or refuse with *"the pin moved, commit Cargo.lock and
+            #      re-run"*. Any of the three closes defect 1.
+            #   2. Let `changelog` take an explicit baseline, and have the
+            #      `--slot` path default it to the OTHER slot — which is, by
+            #      the rotation's own design, the build the operator has.
+            #
+            # Until then the warning below is the whole mitigation, and it is
+            # printed rather than commented because a reader who is going to
+            # hit this in ninety seconds does not read source.
+            print(
+                "  NOTE: Cargo.lock was just rewritten, so this tree is now DIRTY"
+            )
+            print(
+                "        and the build will be stamped `-dirty` even though it was"
+            )
+            print(
+                "        clean when you started. That dirt is THIS SCRIPT'S. To get"
+            )
+            print("        a clean stamp:")
+            print("          git add Cargo.lock && git commit")
+            print(
+                "          python tools/package-portable.py --no-update --no-build \\"
+            )
+            print("                 --slot <the slot this run just wrote>")
+            print(
+                "        Force the slot: the rotation replaces the OLDER one, and this"
+            )
+            print(
+                "        run has just made that slot the NEWER one, so the default would"
+            )
+            print(
+                "        overwrite your last known-good fallback. Then CHECK the"
+            )
+            print(
+                "        changelog block — it will diff against the build you are"
+            )
+            print("        replacing, not against the one the operator has.")
             if not args.verify:
                 print(
                     "  WARNING: the engine MOVED and --verify was not passed, so nothing"
