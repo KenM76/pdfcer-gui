@@ -693,6 +693,24 @@ impl PdfcerApp {
         // than from `doc.prefs`, because `doc.prefs` is a snapshot taken when
         // the document opened and this decision is being made AS it opens.
         let default_display = self.prefs.default_page_display;
+        // ★★★ **Off-page display, resolved for the mode this document opens
+        // in** — the operator's request of 2026-09-11: *"by default, read
+        // doesn't show off page items, review and edit do show off page
+        // items … their preference is remembered for each read review edit
+        // modes."*
+        //
+        // TWO tiers, not three, and the missing one is the point:
+        // `crate::app::prefs::offpage` holds the operator's answer PER MODE
+        // and falls back to the mode's rule. There is deliberately no
+        // per-document tier — see that module's *"What is NOT stored here"*
+        // — because a document that remembered its own answer would fight
+        // the mode's, and the operator asked for the mode's.
+        //
+        // Hoisted out of the borrow below for the same reason
+        // `default_display` is: `self.prefs` and `self.status` are two
+        // fields, but reading one inside a `&mut` of the other reads worse
+        // than it compiles.
+        let off_page = self.prefs.off_page.for_mode(&ribbon_mode);
         if let Status::Open(doc) = &mut self.status {
             let remembered = doc.stored_under().and_then(viewer::remembered::recall);
             let display = remembered
@@ -736,6 +754,17 @@ impl PdfcerApp {
                         "mode-default" // ui-text-exempt: trace token, never displayed
                     },
                 )
+            });
+            // ★ Seeded here rather than in `ViewState::default`, because the
+            // answer depends on the ribbon mode and a `ViewState` does not
+            // know one. The default stays `false` so that a state built in a
+            // test is the plain one; every state the OPERATOR sees passes
+            // through here or through `prefs::offpage::apply_mode`, and those
+            // are the only two moments the answer changes without a click.
+            doc.view.off_page = off_page;
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                format!("off-page-seed mode={ribbon_mode} on={off_page}")
             });
         }
 

@@ -401,6 +401,16 @@ pub mod off_page_marquee;
 /// the sheet at all, and before 2026-09-10 it produced no band whatsoever. The
 /// two fail on disjoint causes, which is why they are two checks.
 pub mod off_page_press;
+/// ★★★ **The operator's switch for off-sheet content** — five launches
+/// against ONE profile directory, which is the only arrangement in which
+/// *"their preference is remembered for each read review edit modes"* can be
+/// observed at all. Read opens hidden, the toggle shows it, a restart still
+/// shows it, Edit opens shown and its toggle hides it, and Read is unaffected
+/// by that last part. The fifth rung is the one a single global flag passes
+/// the first four of. Every rung reads both a trace line (which of the three
+/// writers resolved the answer) and pixels (whether the page obeyed), because
+/// a hidden object and a missing one photograph identically.
+pub mod off_page_toggle;
 /// ★★★ **The off-page object is actually PAINTED** — O23's other verb, and the
 /// one the operator asked about three weeks after the reach half shipped:
 /// *"how do I view and edit objects that are off of the page?"*. Its two

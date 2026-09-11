@@ -425,6 +425,28 @@ pub struct ViewState {
     /// `crate::text::commands::view_line_weights` for that decision and where a
     /// preference would go if he asks for one.
     pub line_weights: bool,
+    /// ★★★ **`view.off_page` — may the canvas show, and reach, the marks
+    /// that sit outside the sheet?**
+    ///
+    /// A CAD export often carries geometry beyond its own `/MediaBox` — a
+    /// title block dragged off the sheet, a detail parked in the margin.
+    /// pdfcer can rasterize and hit-test that material, and when it does the
+    /// canvas grows a band of pasteboard wide enough to hold it.
+    ///
+    /// **`false` is not "hide it" — it is "do not grow for it".** The band
+    /// is the cost: an operator who is only reading pays for it in scroll
+    /// distance and in the grey gap it opens between one sheet and the next.
+    /// So the flag gates exactly two things, both in [`crate::canvas::tier`]:
+    /// the pasteboard **overhang** (⇒ no band, no gap — the layout is
+    /// byte-for-byte what it was before the feature existed) and the **halo
+    /// raster tier** (⇒ nothing off-sheet is drawn or reachable). Nothing
+    /// else in the shell reads it.
+    ///
+    /// **Default `false` — but the mode decides.** Read opens with it off,
+    /// Review and Edit with it on, and the operator's own answer is
+    /// remembered per mode. All of that lives in
+    /// [`crate::app::prefs::offpage`], with the argument for the split.
+    pub off_page: bool,
 }
 
 impl Default for ViewState {
@@ -478,6 +500,13 @@ impl Default for ViewState {
             // weights OFF. See the field's own docs for why the toggle is
             // named for the weights rather than for the hairline.
             line_weights: true,
+            // ★ Off, and this is the one default that is routinely
+            // *overridden* on the way in: `crate::app::prefs::offpage`
+            // answers per ribbon mode (Read off, Review and Edit on) and
+            // remembers the operator's own answer for each. Off here for
+            // the same reason `display` is `Single` here — the path that
+            // knows the mode is the path that may know better.
+            off_page: false,
         }
     }
 }

@@ -657,7 +657,7 @@ pub(super) const HALO_SLOT: &str = "canvas-halo"; // ui-text-exempt: trace slot 
 /// ★★★ **Which raster tier the current page is on, and how far past the sheet
 /// it reaches** — the only external evidence that O23's "see" half is live.
 ///
-/// `canvas-halo tier=whole|halo|region known=<bool> box=<llx,lly,urx,ury|none>`
+/// `canvas-halo tier=whole|halo|region known=<bool> offpage=on|off box=<llx,lly,urx,ury|none>`
 ///
 /// * `tier=whole` — an ordinary page: one raster of the crop box, unchanged
 ///   since before this feature existed.
@@ -674,17 +674,103 @@ pub(super) const HALO_SLOT: &str = "canvas-halo"; // ui-text-exempt: trace slot 
 /// `crate::app::state::OpenDoc::content_bounds_if_known` for why the second
 /// state exists at all and why it resolves itself a frame later.
 ///
+/// ★★★ `offpage=` is the field that keeps `known=` HONEST, added
+/// 2026-09-11 with the View ▸ Display toggle.
+///
+/// With off-page display switched off, [`crate::canvas::tier`] substitutes
+/// `None` for the content bounds — which is the same value the *not yet
+/// decomposed* state produces, and would therefore be reported as
+/// `known=false`. Those are opposite facts: one resolves itself on the next
+/// frame and one never will, because the operator asked for it. A reader of
+/// the trace — and `ui-verify`, which reads exactly this distinction — must
+/// be able to tell *"the halo is suppressed by a setting"* from *"the halo
+/// is missing"*, so the suppression is stated on its own field rather than
+/// left to be inferred from a value that means something else.
+///
 /// ⚠ De-duplicated, so a still canvas emits once and not once per frame.
-pub(super) fn halo(tier: &str, known: bool, box_of: Option<pdfcer_core::page_tree::Rect>) {
+pub(super) fn halo(
+    tier: &str,
+    known: bool,
+    off_page: bool,
+    box_of: Option<pdfcer_core::page_tree::Rect>,
+) {
+    // ui-text-exempt: trace field VALUES, never displayed in the UI.
+    let offpage = if off_page { "on" } else { "off" };
     crate::diag::trace_changed(HALO_SLOT, || match box_of {
         Some(r) => format!(
             // ui-text-exempt: diagnostic trace, never displayed in the UI
-            "canvas-halo tier={tier} known={known} box={:.3},{:.3},{:.3},{:.3}",
+            "canvas-halo tier={tier} known={known} offpage={offpage} box={:.3},{:.3},{:.3},{:.3}",
             r.llx, r.lly, r.urx, r.ury
         ),
         None => format!(
             // ui-text-exempt: diagnostic trace, never displayed in the UI
-            "canvas-halo tier={tier} known={known} box=none"
+            "canvas-halo tier={tier} known={known} offpage={offpage} box=none"
         ),
+    });
+}
+
+/// The slot [`pasteboard`] de-duplicates on.
+///
+/// Its own slot rather than sharing [`HALO_SLOT`], because the two lines
+/// report the two halves of one switch and they do not change together: the
+/// tier is a property of the page's content, the overhang is a property of the
+/// content AND the zoom. Sharing a slot would let a change in one suppress the
+/// other and leave a check reading a fossil.
+pub(super) const PASTEBOARD_SLOT: &str = "canvas-pasteboard"; // ui-text-exempt: trace slot name, never displayed
+
+/// ★★★ **How far the layout reaches past the sheets** — the second half of
+/// `View ▸ Display ▸ Off-page content`, and the half the operator described
+/// first.
+///
+/// `canvas-pasteboard offpage=on|off overhang=<x>,<y>`
+///
+/// # Why this exists as its own line
+///
+/// The toggle has **two** consequences, produced by two functions:
+/// [`crate::canvas::tier::decide`] widens the *raster*, and
+/// [`crate::canvas::tier::overhang`] widens the *layout*. [`halo`] above
+/// reports the first. Nothing reported the second, which left the operator's
+/// own words — *"when not showing the stuff that is off page there shouldn't
+/// be a gap between pages where the stuff is"* — with no oracle a driven check
+/// could read.
+///
+/// That asymmetry is the exact shape of defect this suite keeps finding: a
+/// check watches the off-sheet ink disappear, reports green, and a band of
+/// grey is still standing where the operator said it must not be. The ink and
+/// the gap are different observations and they need different evidence.
+///
+/// # What the numbers mean
+///
+/// **Screen points, not page points.** The value has already been multiplied
+/// by the zoom, because that is the form its nine consumers want. A check
+/// comparing across two launches must therefore either hold the zoom — which
+/// `view.zoom_actual` does — or compare against zero. Comparing against zero
+/// is the assertion that matters anyway: with the switch off this is
+/// **exactly** `0.000,0.000`, produced by an early return rather than by
+/// arithmetic on a measured box, so not one rounding away from a one-pixel
+/// band nobody could explain. See [`crate::canvas::tier::overhang`] on why
+/// that distinction was made deliberately.
+///
+/// # Why `offpage=` is repeated here
+///
+/// So the line stands alone. A reader who has only this line must be able to
+/// tell *the switch is off, hence no overhang* from *the switch is on and this
+/// page simply has nothing outside its sheet*. Both print zeros and they are
+/// not the same fact — the first is a setting working, the second is a page
+/// with nothing to show, and a third state that prints the same zeros is *the
+/// page has not been decomposed yet*, which resolves itself one frame later.
+/// `offpage=` separates the first from the other two; [`halo`]'s `known=`
+/// separates those two from each other.
+///
+/// ⚠ De-duplicated, so a still canvas emits once and not once per frame.
+pub(super) fn pasteboard(overhang: egui::Vec2, off_page: bool) {
+    // ui-text-exempt: trace field VALUES, never displayed in the UI.
+    let offpage = if off_page { "on" } else { "off" };
+    crate::diag::trace_changed(PASTEBOARD_SLOT, || {
+        format!(
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            "canvas-pasteboard offpage={offpage} overhang={:.3},{:.3}",
+            overhang.x, overhang.y
+        )
     });
 }

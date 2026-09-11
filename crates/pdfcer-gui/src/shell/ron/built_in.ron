@@ -185,6 +185,7 @@
                         Command(id: "view.grid", size: Small),
                         Command(id: "view.guides", size: Small),
                         Command(id: "view.line_weights", size: Small),
+                        Command(id: "view.off_page", size: Small),
                     ],
                     collapse: 2,
                 ),

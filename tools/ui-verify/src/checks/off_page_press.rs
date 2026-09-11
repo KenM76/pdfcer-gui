@@ -151,7 +151,19 @@ const RIBBON_MODE: &str = "edit";
 /// ★★ It also fixes the aim in a way fit-page cannot: 100% is a property of
 /// the DOCUMENT, so the geometry this check depends on no longer varies with
 /// the window size on the day.
-const INVOKE: &str = "view.page_single,view.zoom_actual";
+///
+/// ★★★ `mode.edit` is named FIRST, and it is not decoration. Since
+/// 2026-09-11 the display of off-sheet content is a per-mode preference and
+/// **Read ships with it OFF** — the operator's request: *"by default, read
+/// doesn't show off page items, review and edit do show off page items."*
+/// This check's whole subject is off the sheet, so without an explicit mode it
+/// would run in whatever mode the shell opens in, find nothing, and report a
+/// defect that is a correctly-implemented setting.
+///
+/// Edit rather than Review because that is the mode this check's gestures
+/// belong in anyway, and because a mode named explicitly cannot drift when a
+/// later session changes which mode the shell opens in.
+const INVOKE: &str = "mode.edit,view.page_single,view.zoom_actual";
 
 /// The band's mode and kind breakdown.
 const MODE: &str = "marquee-mode"; // ui-text-exempt: a trace event name, never displayed

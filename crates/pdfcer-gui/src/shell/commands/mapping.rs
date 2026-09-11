@@ -106,12 +106,12 @@ pub fn page_display_for_command(id: &str) -> Option<crate::viewer::PageDisplay> 
 /// toggle's state into the `selected:` condition that renders its button
 /// pressed — and a mapping spelled twice is a mapping that drifts.
 ///
-/// The difference from the page-display pair is that these three are
-/// **independent toggles rather than a radio**: all, none or any two may be
-/// on at once, so `conditions` publishes between zero and three of these
+/// The difference from the page-display pair is that these are
+/// **independent toggles rather than a radio**: all, none or any subset may
+/// be on at once, so `conditions` publishes between zero and six of these
 /// conditions where it publishes exactly one page-display condition. That is
-/// the whole of what makes them read as three switches instead of one
-/// three-position control.
+/// the whole of what makes them read as a row of switches instead of one
+/// multi-position control.
 #[must_use]
 pub fn chrome_command(chrome: crate::app::actions::ViewChrome) -> &'static str {
     use crate::app::actions::ViewChrome as C;
@@ -126,6 +126,8 @@ pub fn chrome_command(chrome: crate::app::actions::ViewChrome) -> &'static str {
         C::ShowPoints => "view.show_points",
         // ui-text-exempt: command ids, never displayed
         C::LineWeights => "view.line_weights",
+        // ui-text-exempt: command ids, never displayed
+        C::OffPage => "view.off_page",
     }
 }
 

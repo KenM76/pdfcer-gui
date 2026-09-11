@@ -434,6 +434,43 @@ pub(super) fn band() -> Vec<Command> {
         command("view.line_weights", t::view_line_weights(), 235)
             .with_icon("line-weights")
             .enabled_when("doc.pages"),
+        // ★★★ **`view.off_page` — the operator's request of 2026-09-11**,
+        // and the second entry in this group whose "off" costs nothing to
+        // draw because it stops something being drawn:
+        //
+        // > *"in our view ribbon area we need an option to show the stuff
+        // > that is off page or not (and when not showing the stuff that is
+        // > off page there shouldn't be a gap between pages where the stuff
+        // > is, so it just goes back to looking before we added the view
+        // > things that are off the page feature)."*
+        //
+        // ★★ **Token 236**, contiguous with rulers/grid/guides (232-234)
+        // and line weights (235), which is where a Display toggle belongs.
+        // The retired tokens 210-214 stay retired — a token is an
+        // operator's saved keybinding.
+        //
+        // ★★★ **It NAMES `off-page`, the glyph drawn five hours earlier
+        // for `edit.offpage`, and this is the strongest shared-key case
+        // this catalogue has recorded.** The convention (see
+        // `catalog/edit.rs`) permits a reuse when two controls are about
+        // the same SUBJECT and are never drawn side by side. These two are
+        // about the same subject in the most literal sense available —
+        // *content outside the sheet* — and the glyph is a picture of
+        // exactly that: a sheet with one rule crossing its edge and one
+        // clear of it. They sit on different tabs (View, Protect), and one
+        // tab's band shows at a time. Nothing was drawn, so
+        // `icons/assets/PROVENANCE.md` is untouched.
+        //
+        // ⚠ What tells them apart is the label, which is what the
+        // convention requires the label to do: this one is a **display
+        // switch** and the Protect one is a **census** that walks the
+        // document and reports. Neither removes anything.
+        //
+        // `doc.pages`, with the rest of the Display group: a question about
+        // what lies outside a sheet needs a sheet.
+        command("view.off_page", t::view_off_page(), 236)
+            .with_icon("off-page")
+            .enabled_when("doc.pages"),
         // The sidebar is the application's own furniture and toggles with
         // or without a document; the panels inside it need one to describe.
         // ★★★ `view.sidebar` was HERE until 2026-08-31 — O68's sweep.

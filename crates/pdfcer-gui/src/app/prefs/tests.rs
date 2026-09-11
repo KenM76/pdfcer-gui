@@ -138,6 +138,29 @@ fn every_preference_round_trips_through_the_file() {
                     subset: PageSubset::Even,
                     reverse: true,
                 },
+                // ★★★ Off-page display, and every one of these three is
+                // the OPPOSITE of what that mode ships — Read ships off,
+                // Review and Edit ship on. That is not decoration: this
+                // group stores only the answers actually GIVEN, so a
+                // writer that skipped an answer equal to its default, or a
+                // parser that dropped one, would still round-trip cleanly
+                // if the values here agreed with the defaults. Inverted,
+                // either bug lands on the wrong bool and fails.
+                //
+                // ★ The fourth key is a mode this build does not ship. The
+                // family is a PREFIX rather than three fixed keys, because
+                // ribbon modes come from the manifest and an operator may
+                // customize it; a parser that closed over the three shipped
+                // modes would silently drop this line and fail here, which
+                // is the whole point of it being present.
+                off_page: {
+                    let mut p = OffPagePrefs::default();
+                    p.set("read", true);
+                    p.set("review", false);
+                    p.set("edit", false);
+                    p.set("proof", true);
+                    p
+                },
             };
             let (read_back, notes) = Prefs::parse(&original.write_to_string());
             assert!(
@@ -634,6 +657,20 @@ fn the_writer_emits_no_key_the_parser_rejects() {
             uncollated: true,
             subset: PageSubset::Odd,
             reverse: true,
+        },
+        // ★ Off-page display. A DIFFERENT set from the round-trip test
+        // above, per this test's own rule, and one of the mode ids carries
+        // a SPACE — which a manifest's mode id legitimately may, and which
+        // is the character most likely to break a writer or a parser that
+        // splits a line by whitespace rather than at the first `=`. The
+        // round trip above would not see that: it compares structs, and a
+        // key that failed to parse would be reported in `notes`, which is
+        // exactly what this test asserts is empty.
+        off_page: {
+            let mut p = OffPagePrefs::default();
+            p.set("read", true);
+            p.set("drawing review", false);
+            p
         },
     };
     let (_, notes) = Prefs::parse(&prefs.write_to_string());

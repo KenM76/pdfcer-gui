@@ -384,18 +384,35 @@ impl Prefs {
                 // `NotMine`, so an unknown key is still reported exactly once
                 // and a bad print value is reported against its own key rather
                 // than as a spelling mistake.
-                _ => match printing::parse_key(&mut prefs.print, key, value) {
-                    printing::KeyOutcome::Accepted => {}
-                    printing::KeyOutcome::BadValue => notes.push(PrefNote::BadValue {
-                        key: key.to_owned(),
-                        value: value.to_owned(),
-                        line,
-                    }),
-                    printing::KeyOutcome::NotMine => notes.push(PrefNote::UnknownKey {
-                        key: key.to_owned(),
-                        line,
-                    }),
-                },
+                //
+                // ★ A SECOND delegated family joined it on 2026-09-11:
+                // `off_page.<mode>`, whose key is a PREFIX and so cannot be a
+                // literal arm above at all. The two are chained rather than
+                // nested — `offpage` first, falling through to `printing` on
+                // `NotMine` — because both speak the same `KeyOutcome` and the
+                // single `match` below stays the one place a note is made. A
+                // second `match` per family is how one of them comes to report
+                // a bad value as an unknown key.
+                _ => {
+                    let outcome = match offpage::parse_key(&mut prefs.off_page, key, value) {
+                        printing::KeyOutcome::NotMine => {
+                            printing::parse_key(&mut prefs.print, key, value)
+                        }
+                        mine => mine,
+                    };
+                    match outcome {
+                        printing::KeyOutcome::Accepted => {}
+                        printing::KeyOutcome::BadValue => notes.push(PrefNote::BadValue {
+                            key: key.to_owned(),
+                            value: value.to_owned(),
+                            line,
+                        }),
+                        printing::KeyOutcome::NotMine => notes.push(PrefNote::UnknownKey {
+                            key: key.to_owned(),
+                            line,
+                        }),
+                    }
+                }
             }
         }
         (prefs, notes)
@@ -707,6 +724,13 @@ impl Prefs {
         // The print group's whole block — see `printing::write_block`, which
         // sits beside the parser that reads it back.
         printing::write_block(&self.print, &mut out);
+
+        // Off-page display, one answer per ribbon mode. Same arrangement and
+        // same reason: `offpage::write_block` sits beside the parser that
+        // reads it back. Its comment block is written even when the operator
+        // has answered nothing, because a preference nobody can discover is a
+        // preference nobody has.
+        offpage::write_block(&self.off_page, &mut out);
 
         out
     }

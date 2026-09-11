@@ -345,6 +345,21 @@ pub(super) fn tab() -> Tab {
                     // the order puts the most consequential switch where a
                     // reader arrives at it having understood the cheap ones.
                     icon_only("view.line_weights"),
+                    // ★★★ **LAST, and it is the only member of this
+                    // group that changes the LAYOUT.** The three overlays
+                    // add furniture; `view.line_weights` changes the
+                    // texture; this one changes how much canvas there is,
+                    // because off-sheet marks are only reachable if the
+                    // pasteboard grows to hold them. The order therefore
+                    // still reads cheapest-first, with one more rung on
+                    // the end.
+                    //
+                    // ⚠ It is also the only one whose state is remembered
+                    // PER MODE, so an operator moving between Read and
+                    // Edit will see this button change with the mode while
+                    // its five neighbours hold. That is the operator's own
+                    // request (2026-09-11) and is disclosed in the tooltip.
+                    icon_only("view.off_page"),
                 ],
             ),
             // ---------------------------------------------------------------

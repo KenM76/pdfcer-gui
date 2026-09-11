@@ -430,31 +430,17 @@ fn show_in(
     // pasteboard is the exact defect O23 spent three attempts on — see the
     // field's own documentation.
     //
-    // ★ `content_bounds_if_known` PEEKS. A canvas that forced a decomposition
-    // here would pay 469 ms on the operator's benchmark sheet after every
-    // content edit, which is O74 at its most expensive point. The consequence
-    // is the honest one and is the same as the halo raster's: on the first
-    // frame after opening a large drawing the pasteboard is the plain one, and
-    // one frame later it is the wider one.
-    //
-    // ★ Multiplied by the zoom HERE, because the overhang is a fact about the
-    // drawing (canvas points) and every `geometry` term is in screen points.
-    // `halo::overhang` resolves `/Rotate` through `PageFrame::canvas_box_of`,
-    // which is O174's single place for it.
-    doc.pasteboard_overhang = doc.pages.get(current).map_or(egui::Vec2::ZERO, |page| {
-        let (ox, oy) = crate::render::halo::overhang(
-            viewer::page_extent_pts(page),
-            crate::render::region::PageFrame::of(page),
-            doc.content_bounds_if_known(),
-        );
-        let z = doc.view.zoom;
-        if z.is_finite() && z > 0.0 {
-            vec2(ox * z, oy * z)
-        } else {
-            egui::Vec2::ZERO
-        }
-    });
+    // ★★★ The MEASUREMENT moved to `tier::overhang` on 2026-09-11, with
+    // `View ▸ Off-Page Content`. It is the same decision `tier::decide` makes
+    // — *does this page reach past its sheet, and is the operator asking to be
+    // shown it?* — asked against the layout instead of against the raster, and
+    // the two halves of one switch must not live in two files. That function
+    // carries the peek's 469 ms argument, the zoom multiplication and the
+    // gate; what stays HERE is the single write, because the field must be
+    // written exactly once per frame and this is that frame.
+    doc.pasteboard_overhang = super::tier::overhang(doc, current);
     let overhang = doc.pasteboard_overhang;
+    super::trace::pasteboard(overhang, doc.view.off_page);
 
     // The page the pending zoom anchor was armed against, and that page's
     // drawn size — which is what `zoom::consume_anchor` must compare its

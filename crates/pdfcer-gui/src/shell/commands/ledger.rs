@@ -363,9 +363,30 @@ fn registration_succeeds_and_registers_every_command() {
     // marks — `edit.redact_apply` still has to be pressed — which keeps this
     // command inside the arm/mark/obliterate family the `protect` group is
     // built around rather than opening a private back door through it.
+    //
+    // ★★★ 159 → 160 on 2026-09-11: `view.off_page`, and it is the
+    // SECOND command about off-page content registered in one day. The two
+    // are not a duplication and the distinction is the reason this row is
+    // worth its paragraph: `edit.offpage` (Protect, above) is a **census**
+    // — it walks the document and reports which sheets have anything out
+    // there, which is the part a person cannot do by looking. This one is
+    // a **display switch**, and it exists because the answer to the census
+    // turned out to cost something:
+    //
+    // > *"in our view ribbon area we need an option to show the stuff that
+    // > is off page or not (and when not showing the stuff that is off page
+    // > there shouldn't be a gap between pages where the stuff is ...)"*
+    //
+    // ⇒ ONE command and not two, and the temptation refused is a
+    // `view.off_page_always` / per-document twin. The answer is remembered
+    // **per ribbon mode** (`crate::app::prefs::offpage`) rather than per
+    // document, because the question *"is the band worth it"* is a
+    // question about what the operator is doing, not about which file is
+    // open. A second, per-document control could only contradict the
+    // first, and the contradiction would present as the toggle forgetting.
     assert_eq!(
         registry().len(),
-        159 + usize::from(cfg!(feature = "signing"))
+        160 + usize::from(cfg!(feature = "signing"))
     );
 }
 
@@ -730,9 +751,19 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // XML comment carries that argument, which is where this note's neighbours
     // put it; `icons/assets/PROVENANCE.md` covers the whole directory as the
     // operator's own work and takes no per-glyph row, by its own instruction.
+    //
+    // ★★ 142 → 143 on 2026-09-11: `view.off_page` names `off-page` — a
+    // REUSE under this header's shared-key convention, the fifth, and the
+    // one with the least to argue. The glyph was drawn five hours earlier
+    // for `edit.offpage` and it is a picture of *content outside the
+    // sheet*, which is precisely and identically this command's subject.
+    // The two sit on different tabs (View, Protect), one tab's band shows
+    // at a time, and what tells them apart is the label — which is what
+    // the convention asks a label to do. Nothing was drawn, so
+    // `icons/assets/PROVENANCE.md` is untouched.
     assert_eq!(
         named,
-        142 + usize::from(cfg!(feature = "signing")),
+        143 + usize::from(cfg!(feature = "signing")),
         "commands naming an icon"
     );
     // ★ 12 → 17 on 2026-08-27: the Format ▸ Font group's five commands

@@ -613,6 +613,72 @@ pub const fn view_line_weights() -> CommandText {
     )
 }
 
+/// `view.off_page`
+///
+/// ★★★ **The operator's request of 2026-09-11, in full**, because both
+/// halves of it are in this tooltip:
+///
+/// > *"in our view ribbon area we need an option to show the stuff that is
+/// > off page or not (and when not showing the stuff that is off page there
+/// > shouldn't be a gap between pages where the stuff is, so it just goes
+/// > back to looking before we added the view things that are off the page
+/// > feature). by default, read doesn't show off page items, review and edit
+/// > do show off page items."*
+///
+/// # Why the label names the CONTENT and not the band
+///
+/// **"Off-page content"**, on [`view_line_weights`]'s reasoning and for the
+/// same structural reason: a toggle's label must name the thing it governs,
+/// so that *pressed* reads as *that thing is on*. A label naming the side
+/// effect — *Pasteboard*, *Margin* — would render pressed when the operator
+/// was looking at extra grey, which describes the cost rather than the
+/// feature. It is also the operator's own phrase: *"the stuff that is off
+/// page"*.
+///
+/// # Every clause of the tooltip, and the job it does
+///
+/// **"Some drawings carry marks outside the sheet"** establishes that this
+/// is about the file rather than about pdfcer, because an operator meeting
+/// the control on a document with nothing out there will press it, see no
+/// change, and otherwise conclude it is broken.
+///
+/// **"click them"** is not padding: this switch governs REACH as well as
+/// sight (`crate::canvas::tier`), and a reader who thought it only affected
+/// drawing would be surprised to find a visible object unselectable.
+///
+/// **"the page is shown on its own, with no extra space around it"** is the
+/// parenthesis in the request, stated as the *off* state's promise. It is
+/// what he will check first.
+///
+/// **"Read starts with this off; Review and Edit start with it on"** — the
+/// per-mode default, disclosed at the control. Without it, an operator who
+/// switches to Read and watches the layout change has met an unexplained
+/// event; with it, he has met a documented one. See
+/// [`crate::app::prefs::offpage`].
+///
+/// **"pdfcer remembers your answer for each"** is the last clause of the
+/// request and the reason there is no Settings twin: the answer is not a
+/// value set once, it is three answers the program keeps for him. A
+/// Settings page would offer a fourth, global one that could only
+/// contradict them.
+///
+/// ⚠ The tooltip deliberately does NOT say *nothing is hidden from
+/// printing or export*. It is true — this is a view switch and reaches no
+/// renderer but the canvas — but saying so raises the possibility that a
+/// view setting might silently change an exported file, which is a fear
+/// this shell should not plant in order to allay.
+#[must_use]
+pub const fn view_off_page() -> CommandText {
+    CommandText::new(
+        "Off-page content",
+        "Some drawings carry marks outside the sheet itself — a title block dragged off the \
+         page, a detail parked in the margin. Turn this on to draw them and let you click \
+         them; pdfcer widens the canvas around the page to make room. Turn it off and the \
+         page is shown on its own, with no extra space around it. Read starts with this \
+         off; Review and Edit start with it on, and pdfcer remembers your answer for each.",
+    )
+}
+
 /// `view.sidebar`
 #[must_use]
 pub const fn view_sidebar() -> CommandText {

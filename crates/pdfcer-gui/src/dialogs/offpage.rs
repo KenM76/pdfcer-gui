@@ -282,7 +282,25 @@ impl OffPageDialog {
             let bands: Vec<(usize, Vec<pdfcer_core::page_tree::Rect>)> = self
                 .scans
                 .iter()
-                .map(|scan| (scan.page_index, offpage::offpage_bands(scan)))
+                // ★★★ THE SAME TOLERANCE THE SCAN USED, and it is not a formality.
+                // The engine grew this parameter on 2026-09-11 because bands drawn
+                // at the exact page box contradict a scan that ignores a fringe: a
+                // border stroked ON the boundary overhangs by half its line width,
+                // so pdfcer would cut content it had just reported clean — one
+                // feature giving two answers to one question. It is also where the
+                // feature's cost lived: a full-bleed scan whose image reaches a hair
+                // past the edge INTERSECTS an exact band, so every such image is
+                // decoded, cleared by a sliver and re-encoded. The engine measured
+                // half a second becoming ten minutes on a forty-sheet drawing.
+                //
+                // Passing `0.0` here would compile, pass every test, and decline
+                // both halves of that fix in silence. The value must track line 217.
+                .map(|scan| {
+                    (
+                        scan.page_index,
+                        offpage::offpage_bands(scan, offpage::DEFAULT_TOLERANCE_PT),
+                    )
+                })
                 .filter(|(_, rects)| !rects.is_empty())
                 .collect();
             let total: usize = bands.iter().map(|(_, rects)| rects.len()).sum();

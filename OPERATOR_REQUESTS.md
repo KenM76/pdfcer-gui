@@ -80,6 +80,101 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
+## O175 — ◑ **BUILT, DRIVEN AND FALSIFIED 2026-09-11** — "in our view ribbon area we need an option to show the stuff that is off page or not"
+
+**Your words, 2026-09-11, in full**, because every clause of the paragraph is a
+separate requirement and the shape of the answer depends on all six:
+
+> *"release asap with this one small change before you continue work in the
+> rest: in our view ribbon area we need an option to show the stuff that is off
+> page or not (and when not showing the stuff that is off page there shouldn't
+> be a gap between pages where the stuff is, so it just goes back to looking
+> before we added the view things that are off the page feature). by default,
+> read doesn't show off page items, review and edit do show off page items.
+> these settings can be changed by the user and their preference is remembered
+> for each read review edit modes."*
+
+### The six requirements, and where each one lives
+
+| # | What you asked for | Where it is |
+|---|---|---|
+| a | A switch in the **View** ribbon area | `View ▸ Display ▸ Off-page content`, last in the group, a toggle like its five neighbours |
+| b | With it off, **no gap between pages** | The pasteboard overhang is zeroed, so the sheets sit where they sat before the off-page feature existed |
+| c | Read defaults to **off**; Review and Edit default to **on** | The mode's rule, used whenever you have not answered for that mode |
+| d | You can change it in any mode | It is an ordinary toggle, reachable by ribbon item and by the command |
+| e | Your answer is remembered **per mode** | Three independent answers, written to your preferences file the instant you click |
+| f | Ship it **before** the rest of the queue | It did; everything else on 2026-09-11 waited behind it |
+
+### What "no gap" actually meant, because it is the subtle one
+
+There are **two** pieces of grey around a sheet and they arrived at different
+times, which is why the request needed taking apart rather than implementing
+literally.
+
+1. **The margin that has always been there** — a fixed fraction of the window,
+   so a page can be dragged away from the edge and panned comfortably. That is
+   older than the off-page feature and is **not** touched by this switch. If it
+   were, turning the switch off would not restore *"looking like before"*; it
+   would produce something you have never seen.
+2. **The extra band opened to hold material that lies past the page edge** —
+   which is the off-page feature, and *is* the gap you are describing. That band
+   is what this switch removes.
+
+So with the switch off the layout is byte-for-byte what it was before the
+off-page work landed, which is the sentence you wrote. It is one condition in
+one file, controlling both the widened raster and the widened reach, so the two
+halves cannot be half-flipped.
+
+### What is remembered, and what deliberately is not
+
+Only **answers you actually gave**. A mode you have never toggled stores
+nothing and falls back to its rule — so *"I chose the default"* and *"I have
+never been asked"* stay different facts, and a future change to a default
+reaches the modes you never had an opinion about instead of being silently
+overridden by a line that recorded your agreement with an old default.
+
+There is deliberately **no per-document answer**. A document that remembered
+its own would fight the mode's, and you asked for the mode's.
+
+### Evidence
+
+`the_off_page_toggle_is_per_mode_and_remembered` — five launches against one
+preferences file, in order: Read opens **hidden**, the toggle **shows** it, a
+restart **still shows** it, Edit opens **shown** and its toggle **hides** it,
+and Read is **unaffected** by that last part. The fifth is the one that
+separates three preferences from one global flag wearing three names. Every
+rung reads a trace line (which of the three writers resolved the answer) and
+pixels (whether the page obeyed), with an on-sheet control patch on every rung
+so that an absence cannot be supplied by a window that never drew anything.
+
+Four existing off-page checks were also given an explicit **Edit** mode: their
+subject is off the sheet, and Read now hides it, so without a mode they would
+have failed on a correctly-implemented setting.
+
+#### What it measured, 2026-09-11, against the release build
+
+| Rung | Which writer answered | The gap, in screen points | The square |
+|---|---|---|---|
+| Read, first ever launch | the mode's rule | `0.000, 0.000` | not drawn |
+| Read, after the toggle | your answer | `160.000, 0.000` | drawn |
+| Read, next launch | your answer, off disk | `160.000, 0.000` | drawn |
+| Edit, after ITS toggle | your answer | `0.000, 0.000` | not drawn |
+| Read again | still your Read answer | `160.000, 0.000` | drawn |
+
+The gap column is requirement (b) measured directly rather than inferred:
+**exactly** zero when the switch is off, because the code returns early on
+that condition instead of multiplying a measured box by nothing, so there is
+no rounding behind which a one-pixel band could hide. An on-sheet control
+patch read full ink on all five rungs, so no "not drawn" above was supplied
+by a window that drew nothing.
+
+#### The check was proved able to fail
+
+A build was made in which the per-mode rule was replaced by a single always-on
+flag — the exact defect this check exists to catch — and the check failed on
+the first rung, naming the sentence it had broken. The pre-feature build,
+driven for the same reason, reported *cannot be measured* rather than green.
+
 ## O174 — ◑ **MEASURED AND FIXED 2026-09-10, NOT YET DRIVEN BY A CHECK** — "this pdf `A-591.pdf` causes problems zooming past about 1600% - the view appears to jump to another location and when I pan back to where something is visible it appears to be distorted."
 
 **Your words, 2026-09-10**, with the path elided to the filename. The file is

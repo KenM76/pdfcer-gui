@@ -965,6 +965,13 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // reported as a defect. Its siblings running first is what makes its
         // `objects >= 1` assertion mean something.
         Box::new(off_page_census::TheOffPageCensusFindsTheObjectAndMarksIt),
+        // ★★★ Sixth and by far the most expensive of the off-page group:
+        // FIVE launches, five maximizes and five screenshots, against one
+        // shared profile. Last of the group deliberately — every rung of it
+        // rests on the object being reachable and painted, which is exactly
+        // what the five above establish. If they are red, this one's report
+        // about a preference would be a true statement about the wrong thing.
+        Box::new(off_page_toggle::TheOffPageToggleIsPerModeAndRemembered),
         // Two launches and an Alt+F4, so it is placed with the other
         // multi-process checks rather than among the single-window ones.
         Box::new(page_display_pref::APageDisplayChoiceSurvivesACloseAndReachesANewDocument),

@@ -76,6 +76,39 @@ pub enum ViewChrome {
     /// whose "on" is the shipped behaviour rather than an addition — the
     /// operator's gesture is turning it **off**.
     LineWeights,
+    /// `view.off_page` — **may the canvas show, and reach, the marks that
+    /// sit outside the sheet?**
+    ///
+    /// The operator's request of 2026-09-11, verbatim: *"in our view ribbon
+    /// area we need an option to show the stuff that is off page or not
+    /// (and when not showing the stuff that is off page there shouldn't be
+    /// a gap between pages where the stuff is, so it just goes back to
+    /// looking before we added the view things that are off the page
+    /// feature)."*
+    ///
+    /// ★★★ **The sixth variant, and the only one whose "off" changes the
+    /// LAYOUT.** The other five add or remove a mark; this one decides how
+    /// big the canvas is, because off-sheet material is only reachable if
+    /// the pasteboard grows to hold it. The parenthesis in the request is
+    /// the requirement that follows from that and it is the hard half: with
+    /// this off, the gap the band opened between one sheet and the next
+    /// must be **gone**, not merely empty. Both are one mechanism —
+    /// [`crate::canvas::tier::overhang`] returns zero, so no band is
+    /// measured, so no layout ever hears about it.
+    ///
+    /// ⚠ Unlike the other five, this one has a **remembered answer per
+    /// ribbon mode** ([`crate::app::prefs::offpage`]): Read ships off,
+    /// Review and Edit ship on, and the operator's own answer is kept for
+    /// each. So the `ToggleViewChrome` arm persists for this variant and
+    /// for no other, and a mode change re-seeds it.
+    ///
+    /// ★ It needs **no** stale-raster handling, which is the way it differs
+    /// from [`Self::LineWeights`] and the thing a reader will expect it to
+    /// share. `canvas::tier::decide` recomputes the raster region every
+    /// frame and `OpenDoc::region_for` feeds both the cache key and the
+    /// request from that one value, so a changed region is already a
+    /// changed key.
+    OffPage,
 }
 
 impl ViewChrome {
@@ -92,6 +125,7 @@ impl ViewChrome {
         ViewChrome::Guides,
         ViewChrome::ShowPoints,
         ViewChrome::LineWeights,
+        ViewChrome::OffPage,
     ];
 
     /// Read this toggle out of a view state.
@@ -103,13 +137,14 @@ impl ViewChrome {
             ViewChrome::Guides => view.guides,
             ViewChrome::ShowPoints => view.show_points,
             ViewChrome::LineWeights => view.line_weights,
+            ViewChrome::OffPage => view.off_page,
         }
     }
 
     /// Write this toggle into a view state.
     ///
     /// The pair with [`Self::read`], so the enum's mapping onto
-    /// [`crate::viewer::ViewState`]'s three fields is stated exactly twice, in
+    /// [`crate::viewer::ViewState`]'s own fields is stated exactly twice, in
     /// adjacent functions, instead of once per consumer.
     pub fn write(self, view: &mut crate::viewer::ViewState, on: bool) {
         match self {
@@ -118,6 +153,7 @@ impl ViewChrome {
             ViewChrome::Guides => view.guides = on,
             ViewChrome::ShowPoints => view.show_points = on,
             ViewChrome::LineWeights => view.line_weights = on,
+            ViewChrome::OffPage => view.off_page = on,
         }
     }
 }

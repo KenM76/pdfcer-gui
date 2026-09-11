@@ -123,7 +123,19 @@ use crate::report::CheckReport;
 
 /// Single-page display, then **100 %** — a property of the document rather than
 /// of the window, so the climb starts from the same place on every machine.
-const INVOKE: &str = "view.page_single,view.zoom_actual";
+///
+/// ★★★ `mode.edit` is named FIRST, and it is not decoration. Since
+/// 2026-09-11 the display of off-sheet content is a per-mode preference and
+/// **Read ships with it OFF** — the operator's request: *"by default, read
+/// doesn't show off page items, review and edit do show off page items."*
+/// This check's whole subject is off the sheet, so without an explicit mode it
+/// would run in whatever mode the shell opens in, find nothing, and report a
+/// defect that is a correctly-implemented setting.
+///
+/// Edit rather than Review because that is the mode this check's gestures
+/// belong in anyway, and because a mode named explicitly cannot drift when a
+/// later session changes which mode the shell opens in.
+const INVOKE: &str = "mode.edit,view.page_single,view.zoom_actual";
 
 /// The fixture, relative to the workspace root. Shared with all three siblings,
 /// because three fixtures for one property is three chances for one of them to

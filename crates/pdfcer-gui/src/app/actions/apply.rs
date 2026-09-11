@@ -49,6 +49,7 @@ use super::forms::FieldAction;
 
 use super::Action;
 use crate::app::PdfcerApp;
+use crate::app::prefs::offpage;
 use crate::app::state::Status;
 use crate::viewer;
 
@@ -1053,6 +1054,13 @@ impl PdfcerApp {
             Action::ToggleViewChrome(chrome) => {
                 let on = !chrome.read(&doc.view);
                 chrome.write(&mut doc.view, on);
+                // ★★★ One of the six has a REMEMBERED answer, kept per
+                // ribbon mode; `prefs::offpage::remember` owns which one and
+                // is a no-op for the rest, so this arm stays one arm. The
+                // borrow is legal because `self.status` (which `doc` came
+                // from), `self.prefs` and `self.ribbon` are three fields.
+                let mode = self.ribbon.mode().map(str::to_owned);
+                offpage::remember(chrome, on, &mut self.prefs, mode.as_deref());
                 crate::diag::trace(|| {
                     // ui-text-exempt: diagnostic trace, never displayed in the UI
                     format!("view-chrome {chrome:?} on={on}")

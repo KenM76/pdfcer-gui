@@ -107,6 +107,12 @@ pub mod chrome;
 /// document open, never on the hot path.
 pub mod opening;
 // What a plain wheel does when the document is not one long scroll -- O30.
+/// ★★ **Whether the canvas grows to show what sits off the sheet — one
+/// answer per ribbon mode**, 2026-09-11. Its own file because *why the
+/// answer is per mode at all* is the whole of the operator's request, and
+/// because it carries this group's file format — parser and writer
+/// together, on [`printing`]'s precedent. See its header.
+pub mod offpage;
 /// ★ Which chord means which form-field paste — O58. Its own file because
 /// neither order is obviously right and the argument for each is worth keeping.
 pub mod pastechords;
@@ -125,6 +131,7 @@ use std::path::PathBuf;
 
 pub use cache::PageCache;
 pub use chrome::{DEFAULT_UI_SCALE, MAX_UI_SCALE, MIN_UI_SCALE, UI_SCALE_STEP};
+pub use offpage::OffPagePrefs;
 pub use opening::{OpeningFit, PageChrome};
 pub use pastechords::PasteChords;
 // `pub(crate)`, not `pub`: `PrintPrefs` carries `dialogs::print::spooler`'s own
@@ -410,6 +417,22 @@ pub struct Prefs {
     /// **precedence**, not absence: per document beats global beats per mode.
     /// Three tiers with a stated order is one axis, not two.
     pub default_page_display: Option<crate::viewer::PageDisplay>,
+    /// ★★★ **Whether the canvas shows, and reaches, what sits off the
+    /// sheet — one remembered answer per ribbon mode**, 2026-09-11.
+    ///
+    /// Not a `bool`, and that is the whole design: Read opens without the
+    /// band of pasteboard that off-page material needs, Review and Edit
+    /// open with it, and each mode remembers the operator's own last word
+    /// independently. [`offpage`] carries the argument, the defaults and
+    /// this group's file keys.
+    ///
+    /// Read at exactly two moments — document open
+    /// (`crate::app::lifecycle`) and ribbon-mode change
+    /// (`crate::app::surfaces`) — and written at one, the
+    /// `ToggleViewChrome` arm in `crate::app::actions`. Everything after
+    /// that reads [`crate::viewer::ViewState::off_page`], which is where a
+    /// per-document answer legitimately diverges from the remembered one.
+    pub off_page: OffPagePrefs,
     /// **Whether a click selects a whole container or one line inside it** —
     /// `OPERATOR_REQUESTS.md` **O70**, 2026-08-31.
     ///
@@ -729,6 +752,10 @@ impl Default for Prefs {
             // O58: the operator's own ruling, not Acrobat's. He was told about
             // the divergence and asked for a setting rather than a swap.
             paste_chords: PasteChords::default(),
+            // Empty — nobody has answered yet, so every mode gets
+            // `OffPagePrefs::default_for_mode`. See that function on why
+            // *unanswered* is stored as absence rather than as `false`.
+            off_page: OffPagePrefs::default(),
             page_cache: PageCache::default(),
             zoom_settle_ms: DEFAULT_SETTLE_MS,
             // ★ The shipped default is today's ceiling, so a fresh install

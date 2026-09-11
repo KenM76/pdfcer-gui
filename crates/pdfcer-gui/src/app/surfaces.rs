@@ -34,6 +34,7 @@
 use eframe::egui;
 
 use super::actions::Action;
+use super::prefs::offpage;
 use super::state::Status;
 use super::{DOCK_SLOT, PdfcerApp, REGION_STATUS_MESSAGE, actions};
 
@@ -877,6 +878,12 @@ impl PdfcerApp {
                 &self.panel_registry,
             );
             self.on_mode_capabilities_changed(ui.ctx());
+            // ★★★ The new mode's answer about off-page display, applied to
+            // every open document. This is the single site where a mode
+            // change is observed, and `offpage::apply_mode` carries the
+            // whole argument — including why a mode change may legitimately
+            // change the page layout.
+            offpage::apply_mode(&self.prefs, &mode, &mut self.status, &mut self.parked);
         }
         if report.layout_changed {
             let arrangement = self.dock.layout().clone();
