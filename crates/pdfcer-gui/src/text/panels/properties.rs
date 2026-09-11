@@ -728,13 +728,13 @@ pub const fn text_colour_not_plain() -> &'static str {
 
 // ---------------------------------------------------------------------------
 // ★★★ What Bold and Italic would ACTUALLY do to this run —
-// `EditSession::preview_style_resolution`, consumed 2026-08-29
+// `EditSession::preview_style_ladder`, consumed 2026-09-11
 // ---------------------------------------------------------------------------
 //
-// # What these six replace, and why the sentence they replace was not wrong
+// # What these replace, and why the sentence they replace was not wrong
 //
-// `text_bold_hint` and `text_italic_hint` are still here and still used. They
-// say:
+// `text_bold_hint` and `text_italic_hint` are still here and still used, for
+// the run whose ladder cannot be planned. They say:
 //
 // > If this page already carries a real bold face, pdfcer uses it; if it does
 // > not, pdfcer thickens the letters and tells you it did.
@@ -742,20 +742,48 @@ pub const fn text_colour_not_plain() -> &'static str {
 // That is an accurate statement of the **mechanism** and a poor answer to the
 // operator's actual question, which is *what is going to happen to my drawing
 // when I press this?* It hands them a conditional and leaves them to evaluate
-// it against a fact they cannot see — which font resources this page carries,
-// and whether any of them covers the characters they swept.
+// it against facts they cannot see — which font resources this page carries,
+// whether any of them covers the characters they swept, and whether the one
+// that does belongs to the same typeface as the text they are looking at.
 //
-// `preview_style_resolution` evaluates that conditional. It is `&self`,
-// side-effect-free, and derives every field by calling `gate_synthesis` itself
-// — the same function the commit path calls — so the answer here and the
-// outcome there cannot disagree. The engine's own account of why it exists:
+// # ★★★ The instrument changed on 2026-09-11, and so did the number of answers
 //
-// > A caller could only learn the answer *after* acting — the wrong side of
-// > rule 4 for a change that alters how the operator's document renders. R90's
-// > own word for synthesis is "declinable", and declining sensibly means
-// > knowing what is on offer before the click, not after it.
+// These sentences were first written on 2026-08-29 against
+// `preview_style_resolution`, which previews the **R90 synthesis gate**: one
+// bit, *"is there a real face on this page that claims this style"*. The gate
+// is one input to the decision, not the decision. `Pass 179.0` had already
+// turned the commit path into a four-rung ladder, and the gate cannot see rung
+// 2 by construction — the standard-14 sibling of the run's own family is
+// **not on the page**, which is the whole point of it.
 //
-// # ★★★ NONE of these greys the button, and the engine's ruling is why
+// So the old hover, on the commonest CAD page there is — a title block set in
+// `Helvetica` with no bold resource anywhere — answered *"no real bold face,
+// pdfcer will thicken the letters"* about a press that binds `Helvetica-Bold`
+// and produces genuinely bold type. It was not a hedge that could be tightened;
+// it was the wrong question, answered accurately.
+//
+// `EditSession::preview_style_ladder` is the right question. It runs
+// `plan_style_ladder` — **the function `format_text` runs** — read-only
+// against the staged content, walks the page once, and stages nothing. The
+// preview and the commit are two readings of one answer rather than two answers
+// kept in step by hand. Requested as
+// `request_the_style_ladder_has_no_read_only_preview.md`; delivered in
+// `Pass 295.0`.
+//
+// # ★★ The passed-over clause, and why it lives HERE and not on the status line
+//
+// A ladder that lands on rung 2 or rung 4 usually got there by stepping over a
+// face that claimed the style and could not show the text. The engine
+// discloses that **after** the commit, in `FormatReport::disclosures`, and this
+// shell already surfaces those verbatim — so repeating it in the status line
+// would be the same fact twice, which this project treats as a disclosure
+// skipped rather than a disclosure doubled.
+//
+// Before the press there was nothing, and that is the gap
+// [`text_hint_faces_tried`] fills. It is the same information one gesture
+// earlier, where it can still change what the operator does.
+//
+// # ★★★ NONE of these greys a button, and the engine's ruling is why
 //
 // `pdfcer-core`, verbatim and unchanged: *"Do not grey out a bold button. Offer
 // it, and surface the disclosure when synthesis fires."*
@@ -766,160 +794,224 @@ pub const fn text_colour_not_plain() -> &'static str {
 // operator be able to know before the gesture, not that every foreseeable
 // refusal become an absent control.
 //
-// ⇒ The one case where greying would now be defensible is
-// [`text_bold_hint_face_cannot_cover`] — the shell can, for the first time,
-// predict that refusal, because `preview_font_resources` runs the per-run
-// glyph-coverage test the old argument said it could not. It is still a
-// sentence, deliberately: the engine has a **queued fix** that will turn that
-// case into ordinary synthesis, and a control withheld on the strength of a
-// defect that is about to be fixed is a control that stays withheld for
-// months. A sentence degrades to a stale sentence; a greyed button degrades to
-// a missing feature.
+// ⇒ The one case where greying could now be argued is
+// [`text_bold_hint_declined`], which is a **measured** prediction of a refusal
+// rather than a guess. It is still a sentence, because what produces it is a
+// setting the operator owns: R9 reserves greying for the *temporarily*
+// unavailable and demands the reason on hover, and the reason here is *"you
+// told pdfcer never to fake it"*, which is a sentence by nature.
+//
+// ★ The pair this block replaces, `text_bold_hint_face_cannot_cover` and its
+// italic twin, is **deleted rather than retargeted**. Its subject is gone: a
+// face that claims the style and cannot show the run is no longer an outcome
+// at all, it is an entry in `passed_over` on the way to a rung that works. The
+// engine defect it previewed — `gate_synthesis` naming `Times-Bold` and
+// `set_font` then refusing it, so neither verb reached bold — was fixed by the
+// ladder itself. A sentence kept alive past its subject is how a shell ends up
+// warning about a limit that no longer exists.
 
-/// The bold button's hover text when **a real bold face resolves and will be
-/// used**.
+/// The bold button's hover text when **this text is already bold**.
 ///
-/// `StyleOutcome::RealFaceResolves`, whose `selector` the run's own font
-/// pre-flight also accepts. One press takes two verbs: `set_synthetic` is
-/// refused *because* a real face is available, and
-/// `crate::app::actions::textstyle` retries with the face the refusal names —
-/// so the operator gets a genuine typeface rather than thickened letters.
-///
-/// ★ It names the face. That is the whole value over the conditional it
-/// replaces: *"pdfcer will use Arial-Bold"* is checkable by the operator against
-/// what they see afterwards, where *"if this page carries a bold face"* is not.
+/// `StyleRung::AlreadyStyled` — the run's own face already claims the weight,
+/// so the press is a no-op rather than a change. Said plainly and without a
+/// warning tone: pressing it costs nothing and does nothing, which is what a
+/// toggle showing a state it is already in should say.
 #[must_use]
-pub fn text_bold_hint_real_face(face: &str) -> String {
+pub const fn text_bold_hint_already() -> &'static str {
+    "This text is already bold, so pressing this will not change it."
+}
+
+/// The italic button's twin of [`text_bold_hint_already`].
+#[must_use]
+pub const fn text_italic_hint_already() -> &'static str {
+    "This text is already italic, so pressing this will not change it."
+}
+
+/// The bold button's hover text when **the bold form of this text's own
+/// typeface is already on the page**.
+///
+/// Rung 1 with `StyleLadder::same_family == Some(true)`. The best outcome the
+/// ladder has: nothing is added to the file, nothing is embedded, and the
+/// letterforms are the ones the document already uses.
+///
+/// ★ It names the face *and* the relationship. *"pdfcer will use Arial-Bold"*
+/// is checkable; *"the bold form of this text's own typeface"* is the part that
+/// tells the operator the result will look like the rest of their drawing. The
+/// shell does not work that relationship out — `same_family` is the engine's
+/// verdict, and engine invariant R74 forbids re-deriving it here.
+#[must_use]
+pub fn text_bold_hint_sibling_face(face: &str) -> String {
     format!(
-        "Set this text in bold. This page carries {face}, so pdfcer will use that real \
-         typeface rather than thickening the letters."
+        "Set this text in bold. This page already carries {face}, the bold form of this text's own typeface, so pdfcer will use it — nothing is added to the file and the letterforms stay in the family."
     )
 }
 
-/// The italic button's twin of [`text_bold_hint_real_face`].
+/// The italic button's twin of [`text_bold_hint_sibling_face`].
 ///
 /// ★ *"Slant"*, not *"thicken"* — the two synthetic operations are different
 /// and an operator who has read one sentence should not have to guess that the
-/// other means something else. `crate::app::actions::textstyle`'s own table
-/// keeps them distinct for the same reason.
+/// other means something else.
 #[must_use]
-pub fn text_italic_hint_real_face(face: &str) -> String {
+pub fn text_italic_hint_sibling_face(face: &str) -> String {
     format!(
-        "Set this text in italic. This page carries {face}, so pdfcer will use that real \
-         typeface rather than slanting the letters."
+        "Set this text in italic. This page already carries {face}, the italic form of this text's own typeface, so pdfcer will use it — nothing is added to the file and the letterforms stay in the family."
     )
 }
 
-/// The bold button's hover text when **no real bold face on this page covers
-/// this text**.
+/// The bold button's hover text when **the only real bold face on the page
+/// belongs to a different typeface**.
 ///
-/// `StyleOutcome::WouldSynthesize`. A synthetic weight is the regular face
-/// stroked, and R90 makes it declinable rather than a preference — which is why
-/// the sentence says what will happen rather than merely offering to do it.
+/// Rung 1 with `StyleLadder::same_family == Some(false)`. Still a real face,
+/// still nothing embedded — but the letterforms will not match the rest of the
+/// run, and that is a visible change the operator should be able to expect
+/// rather than discover.
 ///
-/// ★ It says *"for this text"*, not *"on this page"*, and the distinction is
-/// the engine's: acceptance is **per run**, because a face that covers `Hello`
-/// may not cover `Hellö`. A sentence claiming the page has no bold face at all
-/// would be a stronger claim than was tested.
-///
-/// # ★★★ It stopped promising to thicken the letters on 2026-09-11
-///
-/// It read: *"… so pdfcer will thicken the letters and tell you it did."* That
-/// was true while this shell pressed Bold through `set_synthetic`, where the
-/// gate finding nothing and the letters being thickened are one fact.
-///
-/// `crate::app::actions::textstyle` now presses Bold through
-/// [`FormatRequest::set_style`], which puts a rung in between: with no real
-/// face on the page, the engine binds the **standard-14 sibling of the run's
-/// own family** — `Helvetica-Bold` for a run set in `Helvetica`, which is most
-/// CAD title blocks — and the letters come out genuinely bold. The hint was
-/// promising a fake where the button delivers the real thing.
-///
-/// ★★ **The fix is a narrower sentence, not a better prediction**, and that is
-/// deliberate. Predicting the rung needs an instrument that does not exist: the
-/// engine has no read-only preview of the ladder — its own docs say a shell
-/// wanting the whole answer must call `set_style` and read `style_ladder`,
-/// i.e. *after committing* — and `preview_font_resources` answers *"by walking
-/// every operation in the page's content stream"*, 129,758 objects on the
-/// operator's benchmark sheet. Per hover, that is a hang. Re-deriving the
-/// family stem here is decision 058's case and engine invariant R74 forbids it
-/// by name.
-///
-/// ⇒ So the sentence now states exactly what the preview MEASURED — nothing on
-/// this page can do it — and makes a promise pdfcer can keep whichever rung it
-/// lands on: it will use a real face if one can be found, and it will say which.
-/// Asked for as an instrument in
-/// `request_the_style_ladder_has_no_read_only_preview.md`.
-///
-/// [`FormatRequest::set_style`]: pdfcer_core::text_edit::FormatRequest::set_style
+/// ★★ It says *"the letters will be shaped differently"*, which is the thing
+/// that distinguishes this from the sibling case. Both sentences would
+/// otherwise read *"pdfcer will use a real bold face"* and the operator would
+/// have no way to tell from the hover which of two quite different results is
+/// coming.
 #[must_use]
-pub const fn text_bold_hint_synthetic() -> &'static str {
-    "Set this text in bold. No bold face on this page can show this text, so pdfcer will use a \
-     real bold typeface if it can find one and thicken the letters if it cannot — and it will \
-     tell you which it did."
+pub fn text_bold_hint_other_family(face: &str) -> String {
+    format!(
+        "Set this text in bold. No bold form of this text's own typeface is here, so pdfcer will use {face} — a real bold face from a different typeface. The letters will be shaped differently, not just heavier."
+    )
 }
 
-/// The italic button's twin of [`text_bold_hint_synthetic`], narrowed on the
+/// The italic button's twin of [`text_bold_hint_other_family`].
+#[must_use]
+pub fn text_italic_hint_other_family(face: &str) -> String {
+    format!(
+        "Set this text in italic. No italic form of this text's own typeface is here, so pdfcer will use {face} — a real italic face from a different typeface. The letters will be shaped differently, not just slanted."
+    )
+}
+
+/// The bold button's hover text when **pdfcer will add a standard PDF face**.
+///
+/// Rung 2: the standard-14 sibling of the run's own family, bound as a new
+/// `/Font` resource with **no font file embedded** (ISO 32000-1 §9.6.2.2 —
+/// every conforming reader is required to have these fourteen). This is the
+/// rung the old `preview_style_resolution` hover could not see at all, and it
+/// is the one that fires on the commonest CAD page there is: a title block set
+/// in `Helvetica` carrying no bold resource.
+///
+/// ★★ *"the file does not grow"* is in the sentence deliberately. The
+/// operator's standing worry about font work is what it does to a drawing they
+/// have to email, and a rung that adds a resource but not a font program is
+/// exactly the reassurance that worry wants — and it is true, which is the
+/// only reason it is here.
+#[must_use]
+pub fn text_bold_hint_standard_sibling(face: &str) -> String {
+    format!(
+        "Set this text in bold. This page carries no bold face, so pdfcer will add {face} — one of the fourteen typefaces every PDF reader already has. Real bold letters, and no font file is embedded, so the file does not grow."
+    )
+}
+
+/// The italic button's twin of [`text_bold_hint_standard_sibling`].
+#[must_use]
+pub fn text_italic_hint_standard_sibling(face: &str) -> String {
+    format!(
+        "Set this text in italic. This page carries no italic face, so pdfcer will add {face} — one of the fourteen typefaces every PDF reader already has. Real italic letters, and no font file is embedded, so the file does not grow."
+    )
+}
+
+/// The bold button's hover text when **the letters will be thickened**.
+///
+/// Rung 4, the last rung: no real face anywhere on the ladder could show this
+/// run, so pdfcer strokes the regular face. R90 makes that declinable rather
+/// than a preference, which is why the sentence says what *will* happen rather
+/// than merely offering to do it.
+///
+/// # ★★★ It became a measurement on 2026-09-11, and the hedge came out
+///
+/// From 2026-08-29 to 2026-09-11 this read *"… pdfcer will use a real bold
+/// typeface if it can find one and thicken the letters if it cannot — and it
+/// will tell you which it did."* That hedge was correct and unavoidable: the
+/// shell was previewing the **R90 gate**, which cannot see rung 2, so it knew
+/// the gate had found nothing and did not know what the ladder would do next.
+/// The doc comment of the day argued at length that predicting the rung needed
+/// an instrument that did not exist.
+///
+/// ⇒ It exists now. `preview_style_ladder` returns the rung the commit will
+/// land on, so this sentence is only ever shown when the answer is **rung 4**,
+/// and a hedge that offers a possibility the preview has already ruled out is
+/// worse than the conditional it replaced. Both halves of that argument are
+/// recorded because the hedge was right when it was written; the fix was a new
+/// measurement, not better wording.
+#[must_use]
+pub const fn text_bold_hint_synthetic() -> &'static str {
+    "Set this text in bold. No real bold face can show this text, so pdfcer will thicken the letters instead — and it will tell you it did."
+}
+
+/// The italic button's twin of [`text_bold_hint_synthetic`], measured on the
 /// same day and for the same reason — read that one for the argument.
 #[must_use]
 pub const fn text_italic_hint_synthetic() -> &'static str {
-    "Set this text in italic. No italic face on this page can show this text, so pdfcer will use \
-     a real italic typeface if it can find one and slant the letters if it cannot — and it will \
-     tell you which it did."
+    "Set this text in italic. No real italic face can show this text, so pdfcer will slant the letters instead — and it will tell you it did."
 }
 
-/// ★★★ The bold button's hover text for the case in which **the press will be
-/// refused**, said before the press.
+/// ★★★ The bold button's hover text when **the press will be refused, because
+/// the operator said so**.
 ///
-/// # This is a shipped engine defect, previewed rather than hidden
+/// `FormatError::SynthesisRefusedByPosture` — the ladder reached rung 4, and
+/// `StylePolicy::Refuse` is set. The refusal is not a defect and not a limit:
+/// it is the setting working, and the sentence says which setting so the
+/// operator can change it in one move if this is the run they want it for.
 ///
-/// `crate::app::actions::textstyle`'s header carries the retraction in full.
-/// The short form: `gate_synthesis` prefers a real face by **family**, so for a
-/// run set in `Times` it names `Times-Bold` and gates synthesis off — and if
-/// `Times-Bold` does not map every character in that run, `set_font` then
-/// refuses it too. Neither verb reaches bold. It is reproduced on pdfcer's own
-/// `textedit/format_family.pdf`, confirmed by the engine, and a fix is queued.
-///
-/// Until then the operator's experience was: press Bold, nothing happens to the
-/// text, and a refusal naming a font appears in the status bar. This says it
-/// first.
-///
-/// # ★★ How the shell knows, without re-deriving a single engine rule
-///
-/// Two engine answers, joined by a string the engine itself issues:
-///
-/// * `preview_style_resolution` returns `RealFaceResolves { selector, .. }` —
-///   *"the string to hand to `set_font` to reach that face"*;
-/// * `preview_font_resources` returns, for **this run's characters**, every
-///   resource `set_font` would accept, each with the same kind of `selector`.
-///
-/// If the first selector is not among the second's, the retry cannot succeed.
-/// That is a comparison of two engine-issued selectors, not a second
-/// implementation of the family heuristic or of the coverage test — which is
-/// the line `StyleResolution`'s own invariant draws: *"No matching rule is
-/// re-derived here or — critically — in `pdfcer-gui`."*
-///
-/// ★ It does **not** tell the operator to pick a different font, though the
-/// face chooser is two rows up and would work. Naming a remedy that depends on
-/// which faces this particular page carries would be this shell guessing at
-/// pdfcer's font selection — decision 058's exact case. Saying what will happen
-/// is the honest half; choosing the way round is the operator's.
+/// ★ It names the setting rather than describing it, because a hover that says
+/// *"your settings prevent this"* sends the operator hunting through a
+/// preferences dialog for a phrase that may not be there. Matching the words on
+/// the control is the difference between a disclosure and a riddle.
 #[must_use]
-pub fn text_bold_hint_face_cannot_cover(face: &str) -> String {
-    format!(
-        "Bold is not available for this text. pdfcer would use {face}, but that face has no \
-         shape for every character here, so the change would be refused. This is a known \
-         limit and a fix is on the way."
-    )
+pub const fn text_bold_hint_declined() -> &'static str {
+    "Bold will be refused for this text. No real bold face can show it, and you have set pdfcer never to fake a style, so it will not thicken the letters. Change that setting to allow it."
 }
 
-/// The italic button's twin of [`text_bold_hint_face_cannot_cover`].
+/// The italic button's twin of [`text_bold_hint_declined`].
 #[must_use]
-pub fn text_italic_hint_face_cannot_cover(face: &str) -> String {
+pub const fn text_italic_hint_declined() -> &'static str {
+    "Italic will be refused for this text. No real italic face can show it, and you have set pdfcer never to fake a style, so it will not slant the letters. Change that setting to allow it."
+}
+
+/// ★★ The clause appended to any style hint when **the ladder will step over
+/// faces on the way**.
+///
+/// `StyleLadder::passed_over` — each entry a face that claimed the style and
+/// could not show this run's characters. Written as an addendum rather than
+/// folded into the seven sentences because it is orthogonal to all of them: a
+/// ladder can pass over faces on its way to any rung, including the one that
+/// ends in a refusal.
+///
+/// # ★★★ The character, and why it earns its own parenthesis
+///
+/// The engine's own `reason` string is accurate and technical —
+/// *"R-INV-1: character U+006F 'o' has no code in font 'Times-Bold'"*. On a
+/// hover the operator wants **no 'o'**, which is the same fact in the form that
+/// answers *why not*. `Refusal::character` is the engine handing that over as a
+/// field, so this is a reformatting of an engine answer rather than a parse of
+/// its prose — the distinction decision 058 turns on, and the reason
+/// `PassedOver` was asked for as a struct instead of a `Vec<String>`.
+///
+/// ★ A face with no character named gets no parenthesis rather than an empty
+/// one. `Refusal::character` is `Option`, and a refusal about the whole run
+/// rather than one glyph is a real case; *"Times-Bold ()"* would be this shell
+/// rendering an absence as a presence.
+///
+/// ★ Leading space, and it is not an oversight. The clause is pushed onto a
+/// sentence that already ends in a full stop, and owning the separator here is
+/// what keeps the call sites from each getting it right independently.
+#[must_use]
+pub fn text_hint_faces_tried(tried: &[(&str, Option<char>)]) -> String {
+    let list: Vec<String> = tried
+        .iter()
+        .map(|(face, ch)| match ch {
+            Some(ch) => format!("{face} (no '{ch}')"),
+            None => (*face).to_owned(),
+        })
+        .collect();
     format!(
-        "Italic is not available for this text. pdfcer would use {face}, but that face has no \
-         shape for every character here, so the change would be refused. This is a known \
-         limit and a fix is on the way."
+        " It will pass over {}, which cannot show this text.",
+        list.join(", ")
     )
 }
 

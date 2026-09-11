@@ -4,6 +4,7 @@ description: A gate names one line in this repo; grepping the same token across 
 metadata:
   type: feedback
 ---
+<!-- old-name-exempt-file: this memory is about a mis-fix of the rename, so the old name is quoted as EVIDENCE throughout — including a table row that exists to map the old name to the new one. Rewriting these lines would destroy the finding. -->
 
 **When a gate flags an old name, fix the line it names. Do not grep the same
 token across the shared request channel, `D:\Dev\pdfcer`, or anything else

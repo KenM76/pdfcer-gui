@@ -635,29 +635,50 @@ fn every_actionable_format_refusal_keeps_its_own_sentence() {
             E::ShearUnsupported("the follower would move".to_owned()),
             R::ItalicWouldMove,
         ),
-        // ⚠ `E::CoverageFailure` IS MISSING FROM THIS LIST, and it is missing
-        // because it cannot be built — not because it does not matter.
+        // ★★★ `E::CoverageFailure` WAS MISSING FROM THIS LIST until 2026-09-11,
+        // and it was missing because it could not be BUILT — not because it did
+        // not matter.
         //
         // It wraps `text_edit::Refusal`, which is `#[non_exhaustive]` with all
-        // fields public and **no public constructor** (`Refusal::char_refusal`
-        // is private). A struct expression is `E0639` and there is nothing else
-        // to call, so no consumer of `pdfcer-core` can produce one.
+        // fields public and, until `Pass 295.0`, **no public constructor**
+        // (`Refusal::char_refusal` is private). A struct expression is `E0639`
+        // and there was nothing else to call, so no consumer of `pdfcer-core`
+        // could produce one — the public variant was untestable by
+        // construction and for ever.
         //
-        // ★★ The arm it would cover is `FaceLacksCharacters`, which is the
-        // refusal that fires on `Times-Bold`-with-a-remapped-`o` — the exact
-        // page that produced this project's `Pass 144.0` request. Of the four
-        // named arms it is among the likeliest to be broken by a careless edit
-        // and it is the one this test cannot defend.
+        // It was filed as
+        // `request_format_error_coverage_failure_cannot_be_constructed_by_a_consumer.md`
+        // and `Refusal::new` is now public. The engine kept `#[non_exhaustive]`
+        // — which is right; it reserves the right to add a fifth field — and
+        // removed the side effect nobody chose.
         //
-        // ⇒ Stated here rather than quietly dropped, and filed as
-        // `request_format_error_coverage_failure_cannot_be_constructed_by_a_consumer.md`.
-        // When a constructor lands, add the case — the distinctness sweep below
-        // then covers it for free.
+        // ★★ The arm it covers is `FaceLacksCharacters`, the refusal that fires
+        // on `Times-Bold`-with-a-remapped-`o`: the exact page that produced this
+        // project's `Pass 144.0` request, and the one of the named arms most
+        // likely to be broken by a careless edit. `RInvTrigger::TargetAbsent`
+        // and a real character are used rather than defaults, so the case is a
+        // refusal that could actually arrive rather than a shape that merely
+        // type-checks.
+        (
+            E::CoverageFailure(pdfcer_core::text_edit::Refusal::new(
+                pdfcer_core::text_edit::RInvTrigger::TargetAbsent,
+                Some('o'),
+                "Times-Bold",
+                "R-INV-1: character U+006F 'o' has no code in font 'Times-Bold'",
+            )),
+            R::FaceLacksCharacters,
+        ),
+        // ★ `rung_one` carries a WHOLE CLAUSE since `Pass 295.0`, not the face
+        // list it used to (`passed`). The old field was interpolated straight
+        // after the words `page faces`, which ran them together — `page
+        // facesHelvetica-Bold` — and, worse, read as *"X was used"* where it
+        // meant *"X was tried and rejected"*. `thiserror`'s format string
+        // cannot branch, so the branch moved to the construction site.
         (
             E::SynthesisRefusedByPosture {
                 style: "bold",
                 run_font: "Helvetica".to_owned(),
-                passed: "Helvetica-Bold".to_owned(),
+                rung_one: "rung 1: page faces Helvetica-Bold could not show the run".to_owned(),
                 flag: "style_policy",
             },
             R::FakingDeclined,

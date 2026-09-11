@@ -421,8 +421,8 @@ fn axes(bold: bool, italic: bool) -> &'static str {
     style.axes()
 }
 
-/// Disclosure, **ladder rung 1**: a real face already on the page was used
-/// instead of a synthetic weight, and the sentence names the face it replaced.
+/// Disclosure, **ladder rung 1, SAME family**: the page already carried the
+/// bold or italic form of this text's own typeface, and pdfcer bound it.
 ///
 /// ★ Worded as a **better** outcome rather than as a substitution, because it
 /// is one. The operator asked for bold; the page turned out to carry a genuine
@@ -430,38 +430,85 @@ fn axes(bold: bool, italic: bool) -> &'static str {
 /// something other than what you asked" would train them to distrust a control
 /// that just did its best possible job.
 ///
-/// # ★★★ It names the OLD face too, and that is a downgrade being disclosed
+/// ★★ It ends by saying the letterforms are **unchanged**, which is the whole
+/// reason this sentence and [`text_style_used_other_family`] are two sentences
+/// and not one. To a draughtsman those are different events: taking the same
+/// family's bold face is invisible on the plot, and taking another family's
+/// changes the look of a title block. Only one of the two is worth his
+/// attention, and a single sentence covering both would either alarm him about
+/// the harmless case or fail to warn him about the visible one.
 ///
-/// This used to be one of a PAIR. Its twin, `text_style_used_other_family`,
-/// fired when the face pdfcer bound belonged to a different family, and said
-/// so in the one way the operator can act on: *"the letterforms will look
-/// different, not just heavier or slanted."* That distinction is the engine's
-/// own — a cross-family fallback is *"a bigger change than a weight swap"* —
-/// and it is the half of a restyle the operator can SEE.
+/// # ★★★ Why this is a PAIR again, and what it cost to be one sentence
 ///
-/// The twin's input was `FormatError::RealFaceAvailable { same_family, .. }`.
-/// The automatic ladder never produces that error: rung 1 binds the face
-/// directly and reports it on [`StyleLadder`], which carries `requested`,
-/// `bound`, `rung`, `synthesised` and `passed_over` — **and no `same_family`**.
-/// The engine's own matching rule (`family_stem`) is private, and re-deriving
-/// it here is decision 058's exact case: a shell second-guessing pdfcer's font
-/// selection, with the answer guaranteed to drift the first time the heuristic
-/// changes.
+/// It was a pair before 2026-09-11, keyed on
+/// `FormatError::RealFaceAvailable { same_family, .. }`. Adopting the automatic
+/// ladder deleted that error — rung 1 binds the face directly — and
+/// [`StyleLadder`] as shipped on 2026-08-30 carried `requested`, `bound`,
+/// `rung`, `synthesised` and `passed_over` and **no `same_family`**. The
+/// engine's matching rule (`family_stem`) is private and engine invariant R74
+/// forbids `pdfcer-gui` re-deriving it by name, so the shell could not recover
+/// the answer: **the better verb carried less information than the two it
+/// replaced.**
 ///
-/// ⇒ So the flag is **asked for** —
+/// What stood here instead named both `/BaseFont`s — *"was set in Calibri and
+/// is now set in Times-Bold"* — a fact the shell was entitled to state, needing
+/// no family rule, and legible as a family change to whoever read it carefully.
+/// Weaker than the sentence it replaced, and not a guess.
+///
+/// ⇒ It was filed as
 /// `request_style_ladder_does_not_say_whether_the_face_it_bound_is_the_same_family.md`
-/// — and until it arrives the sentence names both `/BaseFont`s and lets the
-/// operator read them. *"was set in Calibri and is now set in Times-Bold"* is a
-/// fact this shell is entitled to state, needs no family rule to produce, and
-/// is legible as a family change to the person looking at it. It is weaker than
-/// the sentence it replaces and it is not a guess.
+/// and `Pass 295.0` shipped [`StyleLadder::same_family`], so the workaround is
+/// **deleted** rather than left dormant: the engine's reply says in as many
+/// words that naming both faces was the right call and can now go. The old
+/// sentence's `from` argument went with it, which is why nothing here reads
+/// `FormatReport::font_change` any more.
+///
+/// ★ `same_family` is `Option<bool>` and `None` — *nothing was bound* — must
+/// **not** be flattened into `Some(false)`. Neither of this pair fires for it;
+/// see `crate::app::actions::textstyle::ladder_note`, which traces it as an
+/// engine invariant breaking rather than inventing a third sentence.
 ///
 /// [`StyleLadder`]: pdfcer_core::text_edit::StyleLadder
+/// [`StyleLadder::same_family`]: pdfcer_core::text_edit::StyleLadder::same_family
 #[must_use]
-pub fn text_style_used_real_face(bold: bool, italic: bool, from: &str, to: &str) -> String {
+pub fn text_style_used_sibling_face(bold: bool, italic: bool, to: &str) -> String {
     let style = axes(bold, italic);
     format!(
-        "This page already carried a real {style} face, so pdfcer used it rather than thickening or slanting the letters artificially: this text was set in {from} and is now set in {to}."
+        "This page already carried {to}, the {style} form of this text's own typeface, so pdfcer used it rather than thickening or slanting the letters artificially. The letterforms are unchanged."
+    )
+}
+
+/// Disclosure, **ladder rung 1, DIFFERENT family**: the only real face that
+/// could show this text belonged to another typeface, and pdfcer used it.
+///
+/// # ★★★ This is the half of a restyle the operator can SEE
+///
+/// The engine's own word for a cross-family fallback is that it is *"a bigger
+/// change than a weight swap"*, and on a drawing that is literally true: a
+/// title block set in `Calibri` and restyled into `Times-Bold` does not merely
+/// get heavier, it changes shape, and it changes shape at 1:1 on a plotter
+/// where nobody is looking at a status line any more.
+///
+/// ★★ So the sentence leads with the **constraint** — no bold form of the
+/// text's own typeface was available — before naming what pdfcer did instead.
+/// That order matters: *"pdfcer used Times-Bold"* read cold sounds like a
+/// choice somebody made carelessly, where *"nothing in your own typeface could
+/// do it, so pdfcer used Times-Bold"* is the same fact with its reason
+/// attached, and the reason is what tells the operator whether to accept it or
+/// to add a face to the drawing.
+///
+/// ★ It does **not** name the old face. It used to, because naming both was
+/// the shell's substitute for knowing the family relationship; now that
+/// [`StyleLadder::same_family`] answers the question directly, the old name
+/// adds a second `/BaseFont` to read and no information. See
+/// [`text_style_used_sibling_face`] for the whole history.
+///
+/// [`StyleLadder::same_family`]: pdfcer_core::text_edit::StyleLadder::same_family
+#[must_use]
+pub fn text_style_used_other_family(bold: bool, italic: bool, to: &str) -> String {
+    let style = axes(bold, italic);
+    format!(
+        "No {style} form of this text's own typeface could show it, so pdfcer used {to} — a real {style} face from a different typeface. The letterforms themselves will look different, not just heavier or slanted."
     )
 }
 
@@ -525,13 +572,33 @@ pub fn text_style_already_that_way(bold: bool, italic: bool) -> String {
 /// answered by choosing a different family. A sentence saying only "pdfcer
 /// faked it" leaves them with neither.
 ///
-/// ★ It does **not** name the faces pdfcer tried and rejected. It could not
-/// without parsing the other side's prose: `StyleLadder::passed_over` is a
-/// `Vec<String>` of pre-formatted `"BaseFont (the whole refusal message)"`
-/// pairs, and splitting on the space before the bracket is a locator living
-/// beside the engine's. The engine's own disclosure — which is carried into the
-/// same list, verbatim — names every one of them. Asked for as structure in
-/// `request_style_ladder_passed_over_is_prose_a_shell_has_to_parse.md`.
+/// # ★★★ It still does not name the faces pdfcer tried, and the reason CHANGED
+///
+/// It used to be unable to. `StyleLadder::passed_over` was a `Vec<String>` of
+/// pre-formatted `"BaseFont (the whole refusal message)"` pairs, and splitting
+/// on the space before the bracket would have been a locator for the engine's
+/// message format living in a GUI — filed as
+/// `request_style_ladder_passed_over_is_prose_a_shell_has_to_parse.md`, and
+/// `Pass 295.0` shipped `Vec<PassedOver>` with `base_font`, `reason` and a
+/// structured `refusal` carrying the offending character.
+///
+/// ★★ **The structure landed and this sentence still does not use it, which is
+/// a decision and not an oversight.** `FormatReport::disclosures` already
+/// carries the engine's own *"Passed over (could not show these characters):
+/// …"* clause, verbatim, into the very same status line, one line below this
+/// one. Adding a shell sentence naming the same faces would be the same fact
+/// twice, and this module's own rule — stated in
+/// `crate::app::actions::textstyle::ladder_note` — is that **a disclosure
+/// repeated is a disclosure skipped**.
+///
+/// ⇒ Where the structure went instead is the surface that had nothing:
+/// **the hover, before the press.** `crate::panels::properties::text` reads
+/// `EditSession::preview_style_ladder`'s `passed_over` and says which faces
+/// pdfcer will pass over and which character defeats each one — in plain words
+/// (*"no 'o'"*) rather than the engine's `R-INV-1: character U+006F`. After the
+/// press the engine speaks; before it, nothing did.
+///
+/// [`PassedOver`]: pdfcer_core::text_edit::PassedOver
 #[must_use]
 pub fn text_style_faked(bold: bool, italic: bool) -> String {
     let style = axes(bold, italic);
@@ -608,39 +675,38 @@ pub fn text_style_multi(count: usize) -> String {
     )
 }
 
-// ★★★ `text_style_used_other_family(style, face)` WAS HERE until 2026-09-11,
-// and it is deleted because **the flag it was chosen by no longer exists on
-// this route** — not because the distinction stopped mattering. It matters
-// more than any other sentence in this group, and that is why the deletion is
-// recorded at length rather than tidied away.
+// ★★★ `text_style_used_other_family` WAS DELETED AND RESTORED ON THE SAME DAY,
+// 2026-09-11, and the round trip is recorded because the reasoning on the way
+// down is what got it back.
 //
-// It said: *"No {style} face of this text's own family is on the page, so
-// pdfcer used {face} instead. The letterforms will look different, not just
-// heavier or slanted."* It was chosen against
-// `FormatError::RealFaceAvailable { same_family, .. }`, and the argument for
-// it is the engine's own: a fallback to another family is *"a bigger change
-// than a weight swap"*, and it is **the one substitution the operator will
-// SEE**. Reporting it in the same words as an ordinary real-face substitution
-// is Rule 4 read backwards — disclosing the invisible and hiding the visible.
+// It was deleted in the morning because **the flag it was chosen by did not
+// exist on the automatic route** — not because the distinction stopped
+// mattering. Rung 1 reported `StyleLadder { requested, bound, rung, synthesised,
+// passed_over }`, which did not say whether `bound` belonged to the run's own
+// family. The engine KNEW — `plan_style_ladder` searches same-family first and
+// then any family, so the answer is a branch it had already taken — and did not
+// publish it.
 //
-// The automatic ladder never returns that error. Rung 1 binds the face and
-// reports `StyleLadder { requested, bound, rung, synthesised, passed_over }`,
-// which does not say whether `bound` is of the run's own family. The engine
-// KNOWS — `plan_style_ladder` searches same-family first and then any family,
-// so the answer is a branch it has already taken — and does not publish it;
-// its own ladder disclosure does not draw the distinction either.
+// The argument for wanting it back was rule 4 read forwards: a fallback to
+// another family is *"a bigger change than a weight swap"*, and it is **the one
+// substitution the operator will SEE**. Reporting it in the same words as an
+// ordinary same-family swap is rule 4 read backwards — disclosing the invisible
+// and hiding the visible. Filed as
+// `request_style_ladder_does_not_say_whether_the_face_it_bound_is_the_same_family.md`.
 //
-// ⇒ Filed as
-// `request_style_ladder_does_not_say_whether_the_face_it_bound_is_the_same_family.md`,
-// argued from rule 4 rather than from convenience: the visible half of an
-// automatic decision is the half that must be disclosed.
+// ⇒ Answered in `Pass 295.0` the same day: `StyleLadder::same_family:
+// Option<bool>`. The sentence is back above, as
+// [`text_style_used_other_family`], paired with
+// [`text_style_used_sibling_face`], and the pair is now chosen by an engine
+// verdict rather than by a `FormatError` variant that the automatic route never
+// returns.
 //
-// ★ NOT re-derived here. `family_stem` is private, and a shell that
-// re-implements pdfcer's font-family matching is decision 058's exact case —
-// it would agree on every fixture, disagree on the first real drawing, and be
-// the workaround every other consumer then has to write for itself. Until the
-// flag arrives, `text_style_used_real_face` names BOTH `/BaseFont`s and the
-// operator reads them.
+// ★ NOT re-derived here, then or now. `family_stem` is private, and a shell
+// that re-implements pdfcer's font-family matching is decision 058's exact
+// case — it would agree on every fixture, disagree on the first real drawing,
+// and be the workaround every other consumer then has to write for itself. The
+// four hours between the deletion and the restoration were spent asking, which
+// is the whole point of the request channel.
 
 /// ★★★ **The cap fired on a PART, and nothing was said** —
 /// `OPERATOR_REQUESTS.md` O69: *"the nodes are hard to see and click on."*

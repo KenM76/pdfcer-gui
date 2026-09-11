@@ -203,40 +203,99 @@
 //! afterwards. **A reply read is not a reply consumed**, which is also the
 //! sentence that explains the five-day gap this section closes.
 //!
-//! ### ⚠ One sentence was LOST, and it is not a small one
+//! ## ★★★ 2026-09-11, LATER THE SAME DAY — the five gaps consuming it opened
+//! are all shut
+//!
+//! Adopting the ladder cost one sentence and one working instrument, and left
+//! three smaller holes. All five were filed the same afternoon, one topic per
+//! file; `Pass 295.0` (engine `2752b72`) answered all five in one Pass, and
+//! **every workaround below is deleted rather than left dormant** — a
+//! mechanism with no caller rots, and the next session cannot tell a live
+//! workaround from a dead one.
+//!
+//! ### ★★ The sentence that was lost, and is back
 //!
 //! `text_style_used_other_family` said *"the letterforms will look different,
-//! not just heavier or slanted"* — the one substitution an operator can SEE.
-//! Its input was `RealFaceAvailable { same_family, .. }`. [`StyleLadder`]
-//! carries `requested`, `bound`, `rung`, `synthesised` and `passed_over`, and
-//! **no `same_family`**; the engine knows (rung 1 searches same-family first,
-//! then any family) and does not publish it. `family_stem` is private and
-//! engine invariant R74 forbids this shell re-deriving it.
+//! not just heavier or slanted"* — the one substitution an operator can SEE on
+//! a plot. Its input was `RealFaceAvailable { same_family, .. }`, an error the
+//! ladder never produces, and [`StyleLadder`] as first shipped carried no
+//! `same_family` of its own. `family_stem` is private and engine invariant R74
+//! forbids this shell re-deriving it, so for one afternoon [`ladder_note`]
+//! named **both** `/BaseFont`s out of `FormatReport::font_change` — entitled,
+//! unguessed, and weaker.
 //!
-//! ⇒ Asked for, argued from rule 4 — the visible half of an automatic decision
-//! is the half that must be disclosed — in
-//! `request_style_ladder_does_not_say_whether_the_face_it_bound_is_the_same_family.md`.
-//! Until it lands, [`ladder_note`] names **both** `/BaseFont`s out of
-//! `FormatReport::font_change`, which is a fact this shell is entitled to state
-//! and needs no family rule to produce.
+//! [`StyleLadder::same_family`] is `Option<bool>`, `None` meaning *nothing was
+//! bound* and explicitly **not** to be flattened into `Some(false)`. Rung 1 is
+//! now two sentences keyed on it, and nothing in this module reads
+//! `font_change` any more.
 //!
-//! ### ⚠ And the hover hints now predict the wrong thing
+//! ### ★★★ The hover hints predicted the wrong thing, and now predict the right
+//! one
 //!
-//! `panels::properties::text`'s `bold_hint` / `italic_hint` are built from
-//! `StyleOutlook`, which comes from `preview_style_resolution` — **a preview of
-//! the GATE, not of the LADDER**. `StyleOutcome::WouldSynthesize` means only
-//! *"no real face on this page"*; it cannot see rung 2, so it promises
-//! thickening on every page where a standard-14 sibling is about to be bound.
+//! `panels::properties::text`'s `bold_hint` / `italic_hint` were built from
+//! `StyleOutlook`, which came from `preview_style_resolution` — **a preview of
+//! the R90 GATE, not of the LADDER**. `StyleOutcome::WouldSynthesize` means
+//! only *"no real face on this page claims that style and covers this run"*,
+//! which stopped being the same question as *"what will pressing Bold do?"* the
+//! moment rung 2 existed: the standard-14 sibling is by construction **not on
+//! the page**, so the gate cannot see it. The tooltip promised thickening on
+//! every page where a real `Helvetica-Bold` was about to be bound, and the
+//! status line then reported the real face — two instruments disagreeing by
+//! construction, on a CAD title block.
 //!
-//! The engine has no ladder preview and says so: a shell wanting the whole
-//! answer must call `set_style` and read `style_ladder`, i.e. after committing.
-//! Asked for in `request_the_style_ladder_has_no_read_only_preview.md`. Until
-//! then the two hint sentences are softened to stop promising an outcome they
-//! cannot predict — honest, pre-commit, and no re-derivation.
+//! `EditSession::preview_style_ladder` runs **the same planner `format_text`
+//! runs**, walks the page's content once, stages nothing, and takes the
+//! [`FormatOptions`] the commit will use — so under `Refuse` it previews the
+//! refusal rather than predicting a synthesis that would never happen. The
+//! hover now names the rung, and the softened sentences that stood in for it
+//! are gone.
+//!
+//! ⇒ **The `preview_font_resources` join went with them.** Telling "a real face
+//! will be used" from "a real face will be refused for this run" used to take a
+//! string equality between two engine-issued selectors, evaluated against the
+//! run's own font pre-flight, in an order that was load-bearing and
+//! commented as such. The ladder answers directly, so the join, the ordering
+//! constraint and `StyleOutlook::FaceCannotCover` are all deleted — the last
+//! of those because **its subject is gone**: a face that claims the style and
+//! cannot cover the run is no longer an outcome, it is an entry in
+//! `passed_over` on the way to a rung that works.
+//!
+//! ### ★★ `passed_over` cost a FEATURE, not a workaround — and the feature is
+//! written now
+//!
+//! It was `Vec<String>` of `"BaseFont (reason)"`, so saying *"pdfcer tried
+//! `Times-Bold` and it has no `o`"* in this shell's own voice would have meant
+//! splitting on `" ("` — a locator for the engine's message format, living in
+//! a GUI, breaking silently the first time a reason gained a parenthesis. A
+//! shell disciplined about not re-deriving engine facts keeps quiet instead, so
+//! **the sentence was never written at all.**
+//!
+//! `PassedOver { base_font, reason, refusal }` is structured, and
+//! `Refusal::character` gives the offending character. The sentence went to the
+//! **hover**, not to the status line: `FormatReport::disclosures` already
+//! carries the engine's own passed-over clause verbatim one line below
+//! [`ladder_note`]'s, and a disclosure repeated is a disclosure skipped. Before
+//! the press, nothing said it at all.
+//!
+//! ### ★ Two smaller ones
+//!
+//! * **[`FormatError::CoverageFailure`] was unconstructable by a consumer**
+//!   (`E0639` — `Refusal` is `#[non_exhaustive]` with a private constructor),
+//!   so the arm this module most needs to defend was the one its walk-every-
+//!   variant test could not cover. `Refusal::new` is public; the case is in the
+//!   test.
+//! * **[`FormatError::SynthesisRefusedByPosture`]'s `Display` ran two words
+//!   together** — `page facesHelvetica-Bold` — and read as *"X was used"* where
+//!   it meant *"X was tried and rejected"*. The field carries a whole clause
+//!   now (`thiserror`'s format string cannot branch), so it reads *"rung 1: page
+//!   faces Times-Bold could not show the run"* or *"rung 1: no page face claims
+//!   it"*. Trace-only here; `pdfcer-cli` surfaces it verbatim.
 //!
 //! [`FormatRequest::set_style`]: pdfcer_core::text_edit::FormatRequest::set_style
 //! [`FormatError::SynthesisRefusedByPosture`]: pdfcer_core::text_edit::FormatError::SynthesisRefusedByPosture
+//! [`FormatError::CoverageFailure`]: pdfcer_core::text_edit::FormatError::CoverageFailure
 //! [`StyleLadder`]: pdfcer_core::text_edit::StyleLadder
+//! [`StyleLadder::same_family`]: pdfcer_core::text_edit::StyleLadder::same_family
 //!
 //! ## ★★★ Why the runs are edited in DESCENDING order
 //!
@@ -666,13 +725,36 @@ fn stop(doc: &mut OpenDoc, applied: usize, why: t::TextStyleRefusal) {
 ///   properties panel sends `{bold: false, italic: true}`. A sentence for a
 ///   state no gesture can produce is a sentence no test can falsify.
 ///
-/// # ★ Why `font_change` and not `bound` for rung 1
+/// # ★★★ Rung 1 is TWO sentences, keyed on `same_family`
 ///
-/// Both name the face that was bound. `font_change` also names the one it
-/// replaced, and naming both is this shell's substitute for the `same_family`
-/// flag [`StyleLadder`] does not carry — see the module header. Rung 2 uses
-/// `bound`, because the operator does not need the old face there: the sentence
-/// is about a standard face being added, not about a family being swapped.
+/// Between 2026-08-30 and 2026-09-11 this arm read `FormatReport::font_change`
+/// and named **both** `/BaseFont`s — *"was set in Calibri and is now set in
+/// Times-Bold"* — because [`StyleLadder`] as first shipped carried no
+/// `same_family` flag and engine invariant R74 forbids `pdfcer-gui`
+/// re-deriving `family_stem` to work one out. That was a workaround: correct,
+/// stated as a fact rather than a guess, and worse prose than the thing it
+/// stood in for.
+///
+/// `Pass 295.0` shipped [`StyleLadder::same_family`] and the engine's reply
+/// said in as many words that the workaround was the right call and can now be
+/// dropped. It is dropped. **Nothing in this function reads `font_change` any
+/// more**, and the two sentences are:
+///
+/// * `Some(true)` — the page carried the bold or italic form of this text's
+///   own typeface. The letterforms are unchanged, and the sentence says so,
+///   because that is the outcome the operator needs no warning about.
+/// * `Some(false)` — the only real face that could show the run belonged to
+///   another typeface. The letterforms will look different, not just heavier,
+///   and on a plot that is visible where a status line is not.
+///
+/// ★★ `None` means **nothing was bound**, and it must not be flattened into
+/// `Some(false)` — the engine says so at the field. On a rung that bound a face
+/// it is an engine invariant breaking, so it is **traced, not guessed at**: a
+/// third sentence for it would be a sentence about a state the engine says
+/// cannot arise here, which is untestable by construction. The same reasoning,
+/// and the same shape, as the `no-bound-face` arm below.
+///
+/// [`StyleLadder::same_family`]: pdfcer_core::text_edit::StyleLadder::same_family
 ///
 /// [`StyleLadder`]: pdfcer_core::text_edit::StyleLadder
 /// [`StyleLadder::rung`]: pdfcer_core::text_edit::StyleLadder::rung
@@ -693,15 +775,16 @@ fn ladder_note(report: &FormatReport, policy: StylePolicy) -> Option<String> {
             None
         }
         StyleRung::AlreadyStyled => Some(t::text_style_already_that_way(bold, italic)),
-        StyleRung::RealFaceOnPage => match report.font_change.as_ref() {
-            Some((from, to)) => Some(t::text_style_used_real_face(bold, italic, from, to)),
-            // ★ `font_change` is built from the same `font_plan` that binds the
-            // rung, so a bound rung without it would be an engine invariant
-            // breaking. Traced rather than asserted: a shell that panics on the
-            // other side's invariant takes the operator's document down over a
-            // sentence it could simply not have said.
-            None => {
-                trace_rung(ladder, "no-font-change");
+        StyleRung::RealFaceOnPage => match (ladder.bound.as_deref(), ladder.same_family) {
+            (Some(to), Some(true)) => Some(t::text_style_used_sibling_face(bold, italic, to)),
+            (Some(to), Some(false)) => Some(t::text_style_used_other_family(bold, italic, to)),
+            // ★ A rung that bound a face and reports no family verdict would be
+            // an engine invariant breaking — `same_family` is `None` only when
+            // `bound` is. Traced rather than asserted: a shell that panics on
+            // the other side's invariant takes the operator's document down
+            // over a sentence it could simply not have said.
+            _ => {
+                trace_rung(ladder, "no-family-verdict");
                 None
             }
         },
@@ -736,10 +819,21 @@ fn trace_rung(ladder: &StyleLadder, why: &'static str) {
     let bound = ladder.bound.as_deref().unwrap_or("-").to_owned();
     let requested = ladder.requested.axes();
     let synthesised = ladder.synthesised.axes();
+    // ★★ Spelled by hand, NOT `{:?}` over the `Option<bool>`. A machine-read
+    // field rendered through `Debug` is this project's standing defect: a
+    // driven check keying on `family=false` would match `family=Some(false)`
+    // and `family=None` alike once somebody widened the pattern, and would
+    // then report the opposite of the truth while quoting the truth.
+    let family = match ladder.same_family {
+        Some(true) => "same",
+        Some(false) => "other",
+        None => "none-bound",
+    };
+    let passed = ladder.passed_over.len();
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed in the UI
         format!(
-            "text-style-ladder-unhandled why={why} rung={rung} bound={bound} requested={requested} synthesised={synthesised}"
+            "text-style-ladder-unhandled why={why} rung={rung} bound={bound} requested={requested} synthesised={synthesised} family={family} passed={passed}"
         )
     });
 }

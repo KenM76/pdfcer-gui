@@ -103,39 +103,61 @@
 //! `crate::app::actions::textstyle` takes whichever verb the page allows and
 //! discloses which one it took.
 //!
-//! ## ★★★ AMENDED 2026-08-29 — the premise above is now half false, and the
-//! conclusion still holds
+//! ## ★★★ AMENDED TWICE — 2026-08-29 made the premise half false, and
+//! 2026-09-11 removed its subject entirely
 //!
 //! The paragraph two up says greying would mean *"predicting a refusal that
 //! depends on a per-run glyph-coverage test this shell cannot run without doing
-//! the engine's work."* That was true when it was written and it is **no longer
-//! true**, which is worth saying plainly rather than leaving as a claim nobody
-//! re-measured:
+//! the engine's work."* Both amendments are kept, in order, because the first
+//! one's reasoning is what earned the second.
 //!
-//! * `EditSession::preview_style_resolution` (consumed here on 2026-08-29) says
-//!   whether a real face resolves and hands back **the string to pass to
-//!   `set_font` to reach it**;
-//! * `preview_font_resources` — which [`TextStyleDraft::sync`] has called since
-//!   2026-08-27 for the face chooser — says which resources `set_font` would
-//!   accept **for this run's characters**, each with the same kind of string.
+//! ### 2026-08-29 — the shell could predict the `format_family.pdf` refusal
 //!
-//! Comparing the two is a string equality between two engine-issued selectors.
-//! It is not the coverage test re-implemented, and it is not the family
-//! heuristic re-derived — the line `StyleResolution`'s own invariant draws,
-//! *"critically, in `pdfcer-gui`"*. So this shell **can** now predict the
-//! `format_family.pdf` refusal, and [`StyleOutlook::FaceCannotCover`] is that
-//! prediction.
+//! `EditSession::preview_style_resolution` said whether a real face resolves
+//! and handed back the string to pass to `set_font`; `preview_font_resources`
+//! said which resources `set_font` would accept for this run's characters, each
+//! with the same kind of string. Comparing the two was a string equality
+//! between two engine-issued selectors — not the coverage test re-implemented,
+//! not the family heuristic re-derived. `StyleOutlook::FaceCannotCover` was
+//! that prediction, and the buttons still did not grey, because the engine had
+//! a queued fix that would turn the case into ordinary synthesis.
 //!
-//! ⇒ ★★ **The buttons still do not grey**, and the reason has changed from *we
-//! cannot know* to *knowing is not a reason to withhold*:
+//! ### ★★★ 2026-09-11 — the fix landed, and the whole outcome went away
+//!
+//! It was not a narrower `gate_synthesis`. `Pass 179.0`'s automatic **style
+//! ladder** replaced the decision the gate was making, and under it *"a real
+//! face claims the style and cannot show the run"* is **no longer an outcome
+//! at all** — it is an entry in `StyleLadder::passed_over` on the way to a rung
+//! that works. So `FaceCannotCover` is deleted rather than retargeted; a
+//! sentence kept alive past its subject is how a shell ends up warning about a
+//! limit that no longer exists.
+//!
+//! ⇒ ★★ And the instrument changed with it. The 2026-08-29 join was previewing
+//! the **R90 gate**: one bit, *"is there a real face on this page that claims
+//! this style"*. The gate is one input to the ladder's decision, not the
+//! decision, and it **cannot see rung 2 by construction** — the standard-14
+//! sibling of the run's own family is not on the page, which is the whole point
+//! of it. On the commonest CAD page there is, a title block set in `Helvetica`
+//! with no bold resource, the old hover promised thickened letters about a
+//! press that binds `Helvetica-Bold` and produces genuinely bold type.
+//!
+//! `EditSession::preview_style_ladder` (`Pass 295.0`, consumed here the day it
+//! shipped) runs `plan_style_ladder` — **the function `format_text` runs** —
+//! read-only against the staged content, walks the page once and stages
+//! nothing. The preview and the commit are two readings of one answer rather
+//! than two answers kept in step by hand, and the join, its load-bearing
+//! ordering constraint in [`TextStyleDraft::sync`], and `FaceCannotCover` all
+//! die together because they were one workaround.
+//!
+//! ⇒ ★★ **The buttons still do not grey**, and the reason has moved once more
+//! — from *we cannot know*, to *knowing is not a reason to withhold*, to *the
+//! only refusal left is the operator's own setting*:
 //!
 //! 1. The engine's instruction is unconditional and unwithdrawn.
-//! 2. The engine has a **queued fix** — `gate_synthesis` will treat a real face
-//!    as available only if `set_font` would accept it for the run — which turns
-//!    this case into ordinary synthesis. A control withheld on the strength of a
-//!    defect that is about to be fixed is a control that stays withheld for
-//!    months after it starts working. A sentence that goes stale is read once
-//!    and corrected in one line.
+//! 2. The one predictable refusal is now [`StyleOutlook::Declined`] — the
+//!    ladder reached rung 4 and `StylePolicy::Refuse` is set. That is a setting
+//!    working, not a defect, and what it wants is a sentence naming the setting
+//!    so the operator can change it in one move.
 //! 3. R9 reserves greying for the *temporarily* unavailable **and requires it to
 //!    explain itself on hover**. The hover is where the explanation already is,
 //!    and it now carries the whole answer — so greying would add a disabled
@@ -143,7 +165,7 @@
 //!
 //! What changed instead is which sentence the hover carries, and that is exactly
 //! R83's size of change: the operator learns before the gesture rather than from
-//! a refusal after it. [`bold_hint`] carries the four-row table.
+//! a refusal after it. [`bold_hint`] carries the seven-row table.
 //!
 //! ★ This is also why the two toggles do **not** show the run's current state.
 //! There is no "is this run bold" bit in a PDF: weight is a property of the
@@ -290,16 +312,21 @@ pub struct TextStyleDraft {
     /// falling back to a list of entries that cannot work.
     faces: Vec<FaceChoice>,
     /// ★★★ **What pressing Bold would actually do to this run** —
-    /// `EditSession::preview_style_resolution`, consumed 2026-08-29.
+    /// `EditSession::preview_style_ladder`, consumed 2026-09-11.
     ///
     /// Behind the same stamp as everything else here, because it costs a third
     /// content-stream plan and answers a question that changes only when the
     /// selection or the document does. `None` when the probe could not be run
-    /// at all, which is a fourth state distinct from the three
-    /// [`StyleOutlook`] carries and is rendered as the old conditional hint —
-    /// the sentence that was there before this landed, and which is still the
-    /// honest thing to say when nothing is known.
-    bold_outlook: Option<StyleOutlook>,
+    /// at all, which is a state distinct from every rung [`StyleOutlook`]
+    /// carries and is rendered as the old conditional hint — the sentence that
+    /// was there before any of this landed, and which is still the honest thing
+    /// to say when nothing is known.
+    ///
+    /// ★★ It was `preview_style_resolution` from 2026-08-29 to 2026-09-11 and
+    /// previewed the **R90 gate**, which is a different question from *"what
+    /// will this button do?"* the moment a rung exists that binds a face the
+    /// page does not carry. [`StyleOutlook`]'s header has the whole account.
+    bold_outlook: Option<StyleForecast>,
     /// The italic twin of [`Self::bold_outlook`], probed **separately**.
     ///
     /// ★★ Two probes and not one, and it is not symmetry for its own sake.
@@ -314,44 +341,7 @@ pub struct TextStyleDraft {
     /// ⇒ `StyleResolution::is_mixed` is deliberately not consulted anywhere in
     /// this module: it can only fire for a combined request, and this shell
     /// never issues one.
-    italic_outlook: Option<StyleOutlook>,
-}
-
-/// ★★★ **What one of the two weight buttons would do to this run**, as three
-/// distinguishable outcomes.
-///
-/// Derived entirely from two engine answers — `preview_style_resolution` and
-/// `preview_font_resources` — and from no rule re-implemented here.
-/// `StyleResolution`'s own invariant is explicit that a shell must not
-/// re-derive the matching heuristics, *"critically, in `pdfcer-gui`"*, because a
-/// second copy would drift from the commit path the first time the heuristic
-/// changed and would be lost in the WASM fork besides.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) enum StyleOutlook {
-    /// A real face resolves **and the retry will reach it**: one press gets a
-    /// genuine typeface.
-    ///
-    /// `set_synthetic` is refused *because* a real face is available, and
-    /// `crate::app::actions::textstyle` retries with the face the refusal names
-    /// — so the two-verb path completes. The string is the human `/BaseFont`,
-    /// shortened the way the face chooser shortens it, because it is going into
-    /// a sentence a person reads.
-    RealFace(String),
-    /// A real face resolves and **`set_font` would refuse it for this run**, so
-    /// neither verb reaches the weight and the press will be declined.
-    ///
-    /// ★★★ The shipped engine defect `crate::app::actions::textstyle`'s header
-    /// retracts a claim over: `gate_synthesis` prefers a face by *family* and
-    /// gates synthesis off, and the face it names may not map every character
-    /// in the run. Reproduced on pdfcer's `textedit/format_family.pdf`,
-    /// confirmed, and a fix is queued — which is precisely why this is a
-    /// **sentence in the hover and not a greyed button**: when the fix lands
-    /// this case becomes [`Self::Synthesized`] on its own, where a withheld
-    /// control would stay withheld until somebody noticed.
-    FaceCannotCover(String),
-    /// No real face covers what was asked, so the letters will be thickened or
-    /// slanted and the engine will say so afterwards.
-    Synthesized,
+    italic_outlook: Option<StyleForecast>,
 }
 
 // ★★★ `FaceChoice` was DEFINED HERE until 2026-08-29 and now lives in
@@ -365,7 +355,25 @@ pub(crate) enum StyleOutlook {
 // menu. The two surfaces that draw it (this section and the ribbon's Format ▸
 // Font group) were already two copies of one loop; they are now one.
 
-use super::face::{FaceChoice, FaceOrigin};
+pub(crate) mod style;
+
+// ★ Re-exported rather than referred to by the longer path. The split on
+// 2026-09-11 was about R2's line ceiling, not about the shape of the module's
+// interface, and a caller outside this file should not be able to tell that
+// the forecast moved.
+//
+// ★★ `style` is `pub(crate)` rather than private, and the reason is a lint
+// rather than a caller: [`TextStyleDraft::bold_outlook`] is `pub(crate)` and
+// returns a `StyleForecast`, so a private module would make the return type
+// less visible than the function that returns it — `private_interfaces`, which
+// is denied by R4's `-D warnings`. Widening the module is the honest fix;
+// narrowing the accessor would be hiding a real part of the draft's surface to
+// satisfy a lint.
+pub(crate) use style::StyleForecast;
+
+use style::{bold_hint, italic_hint};
+
+use super::face::FaceChoice;
 
 impl TextStyleDraft {
     /// Re-read from the document when the stamp has moved; otherwise keep what
@@ -378,6 +386,7 @@ impl TextStyleDraft {
             return self.face.is_some();
         }
         self.stamp = Some(stamp);
+        let started = std::time::Instant::now();
         self.face = None;
         self.size = 0.0;
         self.colour = None;
@@ -387,6 +396,17 @@ impl TextStyleDraft {
         // ★ The expensive call, made exactly here and nowhere else in this
         // module. See the module header on the 392 ms.
         let Some(read) = crate::canvas::textedit::pin::inspect(doc, page, run) else {
+            // The unresolved run still gets a line. A failed `inspect` is the
+            // EXPENSIVE failure — it walked the content stream and found no run
+            // — and a panel that silently draws nothing after 400 ms is the
+            // exact report ("the properties panel is blank and slow") that has
+            // no evidence behind it unless the miss is traced as loudly as the
+            // hit.
+            let whole_ms = started.elapsed().as_millis();
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                format!("text-style-synced page={page} run={run} whole_ms={whole_ms} resolved=0")
+            });
             return false;
         };
         self.size = f64::from(read.style.size);
@@ -437,97 +457,58 @@ impl TextStyleDraft {
         // stamp does. Twice — once per axis — because the two buttons issue two
         // separate single-axis requests; see `Self::italic_outlook`.
         //
-        // ★★ AFTER `self.faces`, and the order is load-bearing rather than
-        // incidental: `Self::outlook` joins the preview's `selector` against
-        // the pre-flight's accepted list to tell `StyleOutlook::RealFace` from
-        // `StyleOutlook::FaceCannotCover`, so the pre-flight has to be in hand
-        // before the probes are read.
-        self.bold_outlook = self.outlook(doc, page, &read, true);
-        self.italic_outlook = self.outlook(doc, page, &read, false);
-        self.face.is_some()
-    }
+        // ★★★ THE ORDERING CONSTRAINT HERE IS GONE, and its deletion is the
+        // point of the 2026-09-11 change. This read:
+        //
+        // > AFTER `self.faces`, and the order is load-bearing rather than
+        // > incidental: `Self::outlook` joins the preview's `selector` against
+        // > the pre-flight's accepted list to tell `StyleOutlook::RealFace`
+        // > from `StyleOutlook::FaceCannotCover`, so the pre-flight has to be
+        // > in hand before the probes are read.
+        //
+        // That join was this shell telling two engine answers apart to
+        // reconstruct a third. `preview_style_ladder` IS the third answer, so
+        // `Self::forecast` reads nothing of `self` and could be called in any
+        // order or from anywhere. It stays here because the cost belongs behind
+        // the stamp, not because anything above it is a prerequisite.
+        let forecast_started = std::time::Instant::now();
+        self.bold_outlook = self.forecast(doc, page, &read, true);
+        self.italic_outlook = self.forecast(doc, page, &read, false);
+        let forecast_ms = forecast_started.elapsed().as_millis();
 
-    /// One axis's [`StyleOutlook`], or `None` when the probe did not answer.
-    ///
-    /// # ★★★ The join, and why it is not a rule re-implemented here
-    ///
-    /// `preview_style_resolution` says whether a real face resolves and, when
-    /// one does, hands back **the string to pass to `set_font` to reach it**.
-    /// `preview_font_resources` says which resources `set_font` would accept
-    /// **for this run's characters**, each with the same kind of string. Both
-    /// are the engine's own selectors, issued by the engine for the same
-    /// purpose, and comparing them is a string equality rather than a second
-    /// implementation of the family heuristic or of the per-glyph coverage
-    /// test.
-    ///
-    /// ⇒ That distinction is the whole licence for this function.
-    /// `StyleResolution`'s invariant forbids `pdfcer-gui` re-deriving
-    /// `family_stem`, `name_claims_bold` or `name_claims_italic`, and nothing
-    /// here does: the shell asks two questions and notices when the answers
-    /// disagree.
-    ///
-    /// ★ `combined` rather than the per-axis probe, even though the request is
-    /// single-axis. For a one-axis request the two are the same answer by
-    /// construction — `combined` **is** `set_synthetic(want)`'s verdict, which
-    /// is what the button will do — and reading the field that describes the
-    /// act rather than the field that describes an axis is what keeps this
-    /// right if a caller ever asks for both at once.
-    fn outlook(
-        &self,
-        doc: &OpenDoc,
-        page: usize,
-        read: &crate::canvas::textedit::pin::Inspected,
-        bold: bool,
-    ) -> Option<StyleOutlook> {
-        use pdfcer_core::text_edit::{StyleOutcome, StyleSynthesis};
-        let want = StyleSynthesis::new(bold, !bold);
-        let resolution = doc
-            .session
-            .preview_style_resolution(page, "", Some(read.pin.span), want)
-            .ok()?;
-        match resolution.combined? {
-            StyleOutcome::WouldSynthesize => Some(StyleOutlook::Synthesized),
-            StyleOutcome::RealFaceResolves {
-                real_font,
-                selector,
-                ..
-            } => {
-                let label = shorten(&real_font).to_owned();
-                // ★★★ **The page's own faces only**, and the filter is not
-                // cosmetic. `gate_synthesis` names a real face it found by
-                // surveying THIS PAGE's resources, so the question this join
-                // asks is *"is the face it named one `set_font` would accept for
-                // this run?"* — and the answer has to be looked for in the same
-                // population the engine looked in.
-                //
-                // Since 2026-08-29 `self.faces` also carries the fourteen
-                // standard faces pdfcer would ADD, which are by construction not
-                // on the page. Matching against those would answer
-                // `StyleOutlook::RealFace` — *"this page carries Helvetica-Bold,
-                // so pdfcer will use that real typeface"* — about a page that
-                // carries no such thing, and the press would then be refused
-                // exactly as `FaceCannotCover` predicted. A hover made confidently
-                // wrong by a list gaining rows for an unrelated reason is the
-                // shape of defect this project spends its time on.
-                if self
-                    .faces
-                    .iter()
-                    .filter(|face| face.origin == FaceOrigin::OnThisPage)
-                    .any(|face| face.selector == selector)
-                {
-                    Some(StyleOutlook::RealFace(label))
-                } else {
-                    Some(StyleOutlook::FaceCannotCover(label))
-                }
-            }
-            // ★ A named catch-all rather than a fall-through, because
-            // `StyleOutcome` is `#[non_exhaustive]`: a variant the engine adds
-            // later must land somewhere honest, and "nothing is known" is the
-            // one answer that is true of an outcome this build has never seen.
-            // It renders the conditional hint, which is what was said before
-            // any of this existed.
-            _ => None,
-        }
+        // ★★★ **The only instrument on this path, and it was added the day
+        // the path got more expensive.**
+        //
+        // Before 2026-09-11 this module emitted nothing at all. It now makes
+        // TWO `preview_style_ladder` calls per sync, each of which walks the
+        // page's content stream — on top of the `inspect` this function's own
+        // header records at 392 ms on the operator's site plan. The cost is
+        // paid once per `(page, run, edit_epoch)` rather than per frame, so it
+        // lands as a pause when text is SWEPT, which is exactly the shape of
+        // report that arrives as *"selecting text got slow"* and has nothing
+        // behind it to read.
+        //
+        // ★★ Measured rather than assumed, and reported even when it is
+        // cheap: a number nobody logged until somebody complained is a number
+        // with no baseline, and this project has already spent a session
+        // reasoning about where time went instead of reading it
+        // (`BENCHMARK.md`'s opening argument).
+        //
+        // ★ `whole_ms` is the outer figure the operator would feel;
+        // `forecast_ms` is this change's share of it. Both, because the ratio
+        // is the actionable part — a slow sync whose forecast is 2 ms is not
+        // this code's problem, and saying so takes one subtraction.
+        let whole_ms = started.elapsed().as_millis();
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            format!(
+                "text-style-synced page={page} run={run} whole_ms={whole_ms} forecast_ms={forecast_ms} resolved=1 faces={} bold={} italic={}",
+                self.faces.len(),
+                u8::from(self.bold_outlook.is_some()),
+                u8::from(self.italic_outlook.is_some()),
+            )
+        });
+        self.face.is_some()
     }
 
     // -----------------------------------------------------------------------
@@ -598,14 +579,14 @@ impl TextStyleDraft {
     /// What pressing **Bold** would do to this run, or `None` when the probe
     /// did not answer.
     #[must_use]
-    pub(crate) fn bold_outlook(&self) -> Option<&StyleOutlook> {
+    pub(crate) fn bold_outlook(&self) -> Option<&StyleForecast> {
         self.bold_outlook.as_ref()
     }
 
     /// What pressing **Italic** would do to this run, or `None` when the probe
     /// did not answer.
     #[must_use]
-    pub(crate) fn italic_outlook(&self) -> Option<&StyleOutlook> {
+    pub(crate) fn italic_outlook(&self) -> Option<&StyleForecast> {
         self.italic_outlook.as_ref()
     }
 }
@@ -827,63 +808,6 @@ fn weight_row(
     });
 }
 
-/// The Bold button's hover text, given what the engine says would happen.
-///
-/// # ★★★ Four sentences, and the fourth is the one that was there before
-///
-/// | outlook | what the operator reads |
-/// |---|---|
-/// | [`StyleOutlook::RealFace`] | *this page carries **Arial-Bold**, so pdfcer will use that real typeface* |
-/// | [`StyleOutlook::Synthesized`] | *no real bold face covers this text, so pdfcer will thicken the letters* |
-/// | [`StyleOutlook::FaceCannotCover`] | *bold is not available for this text*, naming the face and the reason |
-/// | `None` — the probe did not answer | the conditional hint, unchanged |
-///
-/// The fourth row is not a fallback that should have been designed away. A
-/// probe returns `None` for a page whose content cannot be planned, for an
-/// `#[non_exhaustive]` outcome this build has never seen, and for an encrypted
-/// document — and in every one of those the honest thing to say is the
-/// mechanism rather than a prediction. That is exactly what
-/// [`crate::text::panels::properties::text_bold_hint`] already said, which is
-/// why it stays.
-///
-/// # ★★ None of the four greys the button, and that is the engine's ruling
-///
-/// *"Do not grey out a bold button. Offer it, and surface the disclosure when
-/// synthesis fires."* The third row is the one where greying could now be
-/// argued — the shell can predict that refusal for the first time, because
-/// `preview_font_resources` runs the per-run coverage test the old argument
-/// said it could not — and it is still a sentence, because the engine has a
-/// **queued fix** that turns that case into ordinary synthesis. A control
-/// withheld on the strength of a defect that is about to be fixed is a control
-/// that stays withheld for months; a sentence that goes stale is read once and
-/// corrected in one line.
-fn bold_hint(draft: &TextStyleDraft) -> String {
-    match draft.bold_outlook() {
-        Some(StyleOutlook::RealFace(face)) => t::text_bold_hint_real_face(face),
-        Some(StyleOutlook::FaceCannotCover(face)) => t::text_bold_hint_face_cannot_cover(face),
-        Some(StyleOutlook::Synthesized) => t::text_bold_hint_synthetic().to_owned(),
-        None => t::text_bold_hint().to_owned(),
-    }
-}
-
-/// The Italic button's hover text. See [`bold_hint`] for the whole argument;
-/// this is the same four rows with *slant* in place of *thicken*, from the
-/// draft's separately-probed italic axis.
-///
-/// ★ It reads [`TextStyleDraft::italic_outlook`] and never the bold one. The
-/// two are genuinely different answers on an ordinary page — one holding a real
-/// `Arial-Bold` and no `Arial-Italic` gives `RealFace` for one button and
-/// `Synthesized` for the other — and a shared sentence would be wrong on
-/// exactly the pages an operator is most likely to be working on.
-fn italic_hint(draft: &TextStyleDraft) -> String {
-    match draft.italic_outlook() {
-        Some(StyleOutlook::RealFace(face)) => t::text_italic_hint_real_face(face),
-        Some(StyleOutlook::FaceCannotCover(face)) => t::text_italic_hint_face_cannot_cover(face),
-        Some(StyleOutlook::Synthesized) => t::text_italic_hint_synthetic().to_owned(),
-        None => t::text_italic_hint().to_owned(),
-    }
-}
-
 /// The fill colour.
 ///
 /// ★ `None` renders a sentence, not a swatch. A run painted in DeviceCMYK, a
@@ -1007,134 +931,5 @@ pub(super) fn rgb_of(colour: pdfcer_core::text_extract::TextColor) -> Option<[u8
         // `TextColor` is `#[non_exhaustive]`: a space added later is unknown,
         // and unknown means do not guess.
         _ => None,
-    }
-}
-
-#[cfg(test)]
-mod outlook_tests {
-    use super::*;
-
-    /// A draft carrying the two outlooks and nothing else.
-    ///
-    /// A constructor rather than three field assignments after
-    /// `Default::default()`, which is what clippy's `field_reassign_with_default`
-    /// asks for and is better here anyway: what these tests vary is the pair of
-    /// outlooks, and a helper that takes exactly the pair says so.
-    fn drafted(bold: Option<StyleOutlook>, italic: Option<StyleOutlook>) -> TextStyleDraft {
-        TextStyleDraft {
-            bold_outlook: bold,
-            italic_outlook: italic,
-            ..Default::default()
-        }
-    }
-
-    /// ★★★ **Four outlooks, four different sentences**, per axis.
-    ///
-    /// If any two collapsed, the probe would be decoration: an operator whose
-    /// page carries `Arial-Bold` and one whose page carries nothing would read
-    /// the same words and learn nothing either way. The `None` row is included
-    /// deliberately — it is the sentence that was there before
-    /// `preview_style_resolution` was consumed, and it must remain
-    /// distinguishable from the three predictions rather than being absorbed
-    /// into one of them.
-    #[test]
-    fn every_outlook_earns_its_own_sentence() {
-        let mut seen: Vec<String> = Vec::new();
-        for outlook in [
-            None,
-            Some(StyleOutlook::RealFace("Arial-Bold".to_owned())),
-            Some(StyleOutlook::FaceCannotCover("Times-Bold".to_owned())),
-            Some(StyleOutlook::Synthesized),
-        ] {
-            let draft = drafted(outlook, None);
-            let line = bold_hint(&draft);
-            assert!(
-                !seen.contains(&line),
-                "two outlooks produced the same hover text: {line}"
-            );
-            seen.push(line);
-        }
-    }
-
-    /// ★★ **The two axes read their own probes**, and never each other's.
-    ///
-    /// The state this pins is the ordinary one, not an exotic one: a page
-    /// carrying a real `Arial-Bold` and no `Arial-Italic` gives `RealFace` for
-    /// one button and `Synthesized` for the other. A shared sentence — or a
-    /// copy-paste that read `bold_outlook` in both helpers — would be wrong on
-    /// exactly the pages an operator is most likely to be working on, and would
-    /// be invisible on every page where the two answers happen to agree.
-    #[test]
-    fn the_two_buttons_do_not_borrow_each_others_answer() {
-        let draft = drafted(
-            Some(StyleOutlook::RealFace("Arial-Bold".to_owned())),
-            Some(StyleOutlook::Synthesized),
-        );
-        assert!(bold_hint(&draft).contains("Arial-Bold"));
-        assert!(!italic_hint(&draft).contains("Arial-Bold"));
-        assert!(italic_hint(&draft).contains("slant"));
-    }
-
-    /// ★ **Bold thickens and italic slants**, and neither sentence borrows the
-    /// other's verb.
-    ///
-    /// They are different synthetic operations — a weight is the regular face
-    /// stroked, a slant is the upright face sheared — and an operator who has
-    /// read one should not have to guess that the other means something else.
-    #[test]
-    fn the_synthetic_sentences_name_the_right_operation() {
-        let draft = drafted(
-            Some(StyleOutlook::Synthesized),
-            Some(StyleOutlook::Synthesized),
-        );
-        let bold = bold_hint(&draft);
-        let italic = italic_hint(&draft);
-        assert!(bold.contains("thicken"), "{bold}");
-        assert!(!bold.contains("slant"), "{bold}");
-        assert!(italic.contains("slant"), "{italic}");
-        assert!(!italic.contains("thicken"), "{italic}");
-    }
-
-    /// ★★★ **The unreachable case names the face and says the press will be
-    /// refused**, which is the whole point of predicting it.
-    ///
-    /// `crate::app::actions::textstyle`'s header retracts the claim that the
-    /// two verbs cover every page: `gate_synthesis` prefers a face by *family*
-    /// and gates synthesis off, and the face it names may map none of the run's
-    /// characters. Before this, the operator pressed Bold, watched nothing
-    /// happen, and read a font name in the status bar afterwards.
-    ///
-    /// ★ It must NOT tell them to pick a different font. The face chooser is
-    /// two rows up and would often work, but naming that remedy would be this
-    /// shell second-guessing pdfcer's font selection — decision 058's exact
-    /// case. Saying what will happen is the honest half.
-    #[test]
-    fn the_unreachable_case_names_the_face_and_not_a_remedy() {
-        let draft = drafted(
-            Some(StyleOutlook::FaceCannotCover("Times-Bold".to_owned())),
-            None,
-        );
-        let line = bold_hint(&draft);
-        assert!(line.contains("Times-Bold"), "{line}");
-        assert!(line.contains("refused"), "{line}");
-        assert!(
-            !line.to_lowercase().contains("choose another"),
-            "the sentence must not prescribe a font: {line}"
-        );
-    }
-
-    /// ★★ **A fresh draft says the conditional**, not a prediction.
-    ///
-    /// `TextStyleDraft::default()` has never been synced, so both outlooks are
-    /// `None` — and the honest thing to say about a run nothing has been read
-    /// from is the mechanism, which is exactly what the hint said before any of
-    /// this landed. A build that guessed `Synthesized` here would tell an
-    /// operator their letters are about to be thickened on a page that carries
-    /// a real bold face.
-    #[test]
-    fn an_unsynced_draft_promises_nothing() {
-        let draft = drafted(None, None);
-        assert_eq!(bold_hint(&draft), t::text_bold_hint());
-        assert_eq!(italic_hint(&draft), t::text_italic_hint());
     }
 }

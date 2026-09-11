@@ -142,17 +142,24 @@ pub use selection::{
     selection_one_in_form_unsized,
     selection_one_unsized,
     selection_with_depth,
-    // ★ The five ladder sentences, one per rung the engine can report
-    // (`StyleLadder::rung`), plus the `Warn`-posture one. Two names that used
-    // to be here — `text_style_faked_instead` and
-    // `text_style_used_other_family` — were retired on 2026-09-11 with the
-    // hand-rolled retry they served; `selection.rs` carries a tombstone for
-    // each saying what it said and which engine request would bring it back.
+    // ★ The six ladder sentences, one per outcome the engine can report
+    // (`StyleLadder::rung`, split at rung 1 by `StyleLadder::same_family`),
+    // plus the `Warn`-posture one.
+    //
+    // ★★ `text_style_faked_instead` was retired on 2026-09-11 with the
+    // hand-rolled retry it served, and `selection.rs` carries a tombstone
+    // saying what it said. `text_style_used_other_family` was retired the same
+    // morning and **restored the same afternoon**, when `Pass 295.0` shipped
+    // the `same_family` verdict it needed; its tombstone became the record of
+    // the round trip. `text_style_used_real_face` is the name that did not come
+    // back: it named both `/BaseFont`s because the shell could not tell the two
+    // cases apart, and the pair below is what telling them apart looks like.
     text_style_already_that_way,
     text_style_faked,
     text_style_faked_warning,
     text_style_multi,
-    text_style_used_real_face,
+    text_style_used_other_family,
+    text_style_used_sibling_face,
     text_style_used_standard_face,
     // ★ O69's sibling of `too_many_anchors` below. It lives in `selection`
     // rather than in this file because this file is at 1,482 lines against
