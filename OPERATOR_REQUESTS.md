@@ -80,6 +80,339 @@ Two observations that are mine to act on, not his to have to make again:
 
 # OPEN
 
+## ★★★ O177–O189 — `FEATURE.txt`, 2026-09-12 — thirteen rows from one file, FILED BEFORE ANY WORK
+
+**Source:** `C:\Users\Ken\OneDrive\pdfTests\FEATURE.txt`, written 2026-09-12
+08:50, read the same morning. Every paragraph in it became a row below, in the
+order he wrote them, **before any of it was measured** — the rule of this file
+is that a request is written down when he says it, not when the work lands.
+
+⚠ **Nothing below has been measured yet unless its own row says so.** A row
+that says FILED means exactly that: his words are recorded and nothing else.
+
+---
+
+## O177 — ◑ **FILED 2026-09-12** — "the page or pages view should snap back to center of the canvas", and fit-page in two-up should fit BOTH pages
+
+> *"when switching the view from scroll pages to show one page at a time or
+> show two pages side by side the page or pages view should snap back to center
+> of the canvas. also fit page when in 2 pages side by side views should fit the
+> two side by side pages onto the canvas - right now it snaps to fitting one."*
+
+Two separate defects in one paragraph and they must not be merged:
+
+1. **Changing the page-display mode leaves the view wherever it was.** The
+   scroll offset from continuous mode survives into single-page or two-up, so
+   the page lands off-centre. Switching a display mode is a request to be shown
+   the page, not a request to keep an offset that was computed for a different
+   layout.
+2. **Fit-page in two-up fits one page.** The fit computation is reading one
+   page's box where the layout puts two side by side, so the pair overflows and
+   he has to zoom out by hand. ⇒ the fit target in two-up is the *spread*, not
+   the page.
+
+Both are shell work. Neither is filed with the engine.
+
+---
+
+## O178 — ◑ **FILED 2026-09-12** — tabs between windows, a tab torn into its own window, and a right-click menu that offers it
+
+> *"it might be a limitation of rust, but with several windows of pdfcer-gui
+> open we should be able to drag tabs and items between them as though they were
+> tabs within the same window. Also tabs should be able to be dragged into their
+> own new window or dragged to be moved onto the tab space. right-click on a tab
+> should also have the option to open in its own window."*
+
+Four capabilities, and the right-click one is deliberately last because it is
+the one that works without any drag machinery at all:
+
+1. Drag a document tab from window A onto window B's tab strip.
+2. Drag panel *items* between windows the same way.
+3. Drag a tab out to empty space and have it become its own window.
+4. Right-click a tab → **Open in its own window**.
+
+**"It might be a limitation of rust"** — it is not Rust. It is that each
+`eframe` window is its own event loop with its own drag state, so a drag that
+crosses a window boundary is two drags with nothing joining them, and the
+answer is an explicit hand-off rather than a native OS drag. ★ That is an
+answer about *cost*, not about *possibility*, and the row will say which parts
+are cheap once it is measured. (4) is cheap and should not wait for (1)–(3).
+
+---
+
+## O179 — ◑ **FILED 2026-09-12, AND IT IS A REPORT AGAINST O163** — the search zoom checkbox is unchecked and it still zooms
+
+> *"In the search options when I unselect the zoom option, instead of jumping to
+> the page that the text is found on and leaving the page in its current
+> position on the canvas it still zooms and repositions the page on the canvas."*
+
+**O163 is the row that built this checkbox** and it is marked *"BUILT
+2026-09-08, NOT YET DRIVEN"*. He has now driven it and it does not do what it
+says. ⇒ this is not the first time a row marked built-but-not-driven turned out
+not to work; the pattern is the row, not the feature.
+
+What he asked for, restated so the fix cannot drift: with zoom **off**, a hit
+changes the *page* and nothing else. Not the zoom, not the scroll position, not
+the centring. The highlight still appears; the operator finds it by looking.
+
+---
+
+## O180 — ◑ **FILED 2026-09-12** — a trailing space pasted from Excel stops the search finding the text
+
+> *"trailing spaces/tabs/etc stops a search from finding text on the page that
+> doesn't have these symbols - this should be an option in the settings to
+> include or exclude such items in the search. copy pasting from excel seems to
+> give a trailing space that I have to remove to search."*
+
+The query he types is not always the query he means, because the clipboard he
+pasted it from added a character he cannot see. Excel copies a cell with a
+trailing space (and a trailing tab or newline for a row), and the search then
+looks for *"SW41177 "* on a page that says *"SW41177"*.
+
+He asked for **a setting**, not a silent trim, and that is the right call: a
+trailing space is meaningful in some searches. So:
+
+- a settings option governing whether leading/trailing whitespace in the query
+  is ignored;
+- ⇒ and, because the failure is invisible, the search bar should *disclose*
+  when the query it was given ends in whitespace. Off-canvas, non-blocking,
+  Rule 4 — the operator cannot see the character, so the program must say it.
+
+---
+
+## O181 — ◑ **FILED 2026-09-12** — the Add Text font list does not offer installed fonts, and the Format ribbon's font controls look dead
+
+> *"The dropdown for font selection when adding text doesn't show installed
+> fonts as an option. Also it looks like the font ribbon commands under the
+> format ribbon menu aren't enabled."*
+
+Two halves, and the second may be a consequence of the first:
+
+1. **The chooser offers the fonts already in the document plus the standard 14,
+   and not the fonts on his machine.** He has a font installed, wants to author
+   text in it, and there is no route to it.
+2. **The Format tab's font group appears disabled.** Whether that is a genuine
+   enablement bug or the group correctly greying because nothing eligible is
+   selected is exactly what has to be measured first — and if it is the latter,
+   **the greying owes a hover explanation**, which is R9.
+
+⚠ Embedding a machine font into the PDF is engine territory. If the shell can
+choose a face the engine cannot embed, that is a hand-off, not a shell fix.
+
+---
+
+## O182 — ◑ **FILED 2026-09-12, LIKELY AN ENGINE ROW** — white gaps between the image tiles of a colour rendering
+
+> *"OneDrive pdfTests TR-0180__KUBOTA RTV X1130 EMS ROPS FOPS CONCEPT.pdf
+> renders with white gaps between the images that make up the colour rendering.
+> these gaps don't appear in acrobat."*
+
+The file is on disk and is 4.2 MB. A colour rendering exported as a grid of
+tiled images shows hairline white seams between the tiles in pdfcer and no
+seams in Acrobat. ⇒ classic sampling/rounding at tile edges: each image is
+placed at a fractional device coordinate and rasterised independently, so
+adjacent tiles round apart and leave a sub-pixel line of paper.
+
+This is almost certainly `pdfcer-render` and not the shell. **Measure it
+first — on his file, at his zoom — then file it**, because a renderer request
+that cannot state the coordinates is a request that gets triaged into the bin.
+
+---
+
+## O183 — ★★★ **FILED 2026-09-12** — the dimension row: units, tolerance, live preview, leaders, arrows, and a comment box that should not be there
+
+His longest paragraph, and it is **nine** distinct requirements. They are
+numbered here so no half of it can be silently dropped, which this file exists
+to prevent.
+
+> *"for a dimension group, I can't set the units to fractions or any of the
+> related settings after creation in the properties. This feature also doesn't
+> do anything when I override it for a specific dimension. Also the tolerance
+> setting is missing for the group, and the setting doesn't work for the
+> override. there isn't the same amount of control over how dimension tolerances
+> are handled the way there is in Solidworks. There is also not a live preview
+> when I make or try to move a dimension, and it is hard to tell when I am
+> moving the dimension text itself vs the dimension line. When I click on a
+> dimension the comment box pops up, but it isn't needed for these, unless it
+> were to contain all of the editing options, and even then it would be nice to
+> have a setting to turn it off and just edit from the properties tab. When I am
+> creating or selecting an existing radius dimension there is no way to change
+> leader location, style of leader (should have the same options as solidworks
+> and glyphs to match), or whether it is a radius or diameter, and whether the
+> center mark is shown, and how it looks (like solidworks has). Again, it should
+> have a live preview, be easy to select the dimension text or the leader to
+> relocate. Also we should have control over how arrows are displayed."*
+
+1. **Units cannot be changed after creation.** A **ce dimension** group's unit
+   setting — fractions in particular — is authoring-time only; the properties
+   panel does not offer it on an existing group.
+2. **The per-dimension override does nothing.** Setting units on one dimension
+   against its group has no effect on what is drawn.
+3. **Tolerance is missing from the group entirely.**
+4. **Tolerance does not work on the override either.**
+5. **Tolerance control is thinner than SolidWorks'** — bilateral, limit,
+   symmetric, min/max, fit, with precision per side. This one is a scope
+   question and gets its own measurement against SolidWorks before any
+   promise.
+6. **No live preview when creating or moving a dimension**, and **no way to
+   tell whether you are dragging the text or the line.** ⇒ two different
+   cursors, or two different hover highlights. This is a *pre-commit
+   affordance*, which Rule 4 explicitly welcomes.
+7. **Clicking a dimension pops the comment box, which does not belong there.**
+   Either it carries the editing controls, or it goes away — and even if it
+   carries them, he wants a setting to suppress it and edit from Properties.
+8. **Radius dimensions have no controls at all**: leader location, leader
+   style (with glyphs matching SolidWorks), radius-versus-diameter, whether
+   the centre mark shows and what it looks like.
+9. **Arrow display is not controllable.**
+
+⚠ **Rule 15 applies to every line of this row.** These are **ce dimensions**,
+the ones pdfcer authors. Nothing here touches **pdf dimensions** — the CAD
+-exported page content — and any fix that alters those is a defect.
+
+---
+
+## O184 — ◑ **FILED 2026-09-12** — the drag preview outline grows with zoom until it is the width of the canvas
+
+> *"The live preview blue outlines that appear when we drag and object scale
+> with zooming in and out of the page instead of being independent of zoom - at
+> high zoom levels they end up being the width of the canvas. I think they keep
+> the same size as the line widths they are moving and that is ok- but if we set
+> the line width view to the one pixel width option the preview lines should
+> also be affected by this setting."*
+
+★ He has diagnosed it himself and the diagnosis is almost certainly right: the
+preview outline is drawn in **document** units, so it scales with the page, and
+at 3000 % a 1 pt outline is thirty pixels and then three hundred.
+
+And his ruling on what it should do is more precise than "make it constant":
+the outline may track the line width of what it is moving — **but the
+one-pixel line-width view setting must govern it too.** That setting is a
+statement about how strokes are shown on glass; a preview that ignores it is
+showing a different program's answer.
+
+⇒ This is the **inverse** of O176's finding. There, a grip sized in screen
+units vanished at low zoom. Here, an outline sized in document units explodes
+at high zoom. Same underlying question: *which space does an affordance live
+in?* — and the answer is not the same for both.
+
+---
+
+## O185 — ◑ **FILED 2026-09-12, AND IT EXTENDS O166** — Print must remember, and must have a Cancel that actually reverts
+
+> *"The Print Dialogue window should remember the last settings that were used
+> when we press print or close. We should add a cancel button that doesn't save
+> the changes we made since opening the dialogue and they revert back to what
+> they were when we opened the print dialogue before cancelling. if possible it
+> would be great to have another button to save settings with pdf, but I imagine
+> that isn't something that is supported by pdf, and if it would make it a
+> special setting that only works with our program, then don't implement it."*
+
+1. **Remember on Print *and* on close.** O166 built remembering; this says it
+   must also happen when the dialogue is dismissed, not only when a print is
+   sent.
+2. **A Cancel button that reverts.** Cancel means the settings go back to what
+   they were when the dialogue opened. ⇒ the dialogue needs a *snapshot* taken
+   on open, which it does not have today, and Cancel restores it.
+3. **Save settings inside the PDF — he withdrew this himself in the same
+   sentence.** *"if it would make it a special setting that only works with our
+   program, then don't implement it."* ⇒ **Do not build it.** It would be a
+   private key in the document catalogue that no other reader honours, which is
+   precisely the thing he ruled out. ★ The row records the withdrawal so nobody
+   re-proposes it in three weeks.
+
+---
+
+## O186 — ◑ **FILED 2026-09-12, AND IT IS THE SAME SUBJECT AS O174** — the cursor still jumps at deep zoom, and the raster error should be a stop, not an error
+
+> *"At deeper zooms I am still experiencing the cursor jumping, and at some
+> point it sometimes repositions to where the object area I was zooming into is
+> no longer on screen. Maybe some other variables have to switch to 64 bit at
+> night level zoom? I think this sometimes results in similar error to 'This
+> page could not be drawn. requested raster size 50411508x32619210 is empty or
+> exceeds MAX_PIXMAP_EDGE'. perhaps the zoom is fine, but the cursor has jumped
+> somewhere unsuported. If this error is caused by some other limitation that
+> will always happen, zoom should stop at the limit and not end up showing an
+> error - the canvas will just stop zooming in and can still function. the error
+> can still be shown on the bottom bar so the user has some idea as to why
+> zooming stopped short of 1 trillion percent."*
+
+**O174 fixed one cause of this on 2026-09-10 and was never driven by a check.**
+He is reporting that it still happens. ⇒ first question is which build he is
+running and what it was pinned to; second is whether O174's fix covers the
+path he is on.
+
+The three claims, separated:
+
+1. **The cursor jumps at deep zoom** and the anchor point ends up off screen.
+2. **His hypothesis — 32-bit arithmetic overflowing** — is worth measuring
+   rather than dismissing; 50411508 x 32619210 is over 1.6 x 10^15 pixels and
+   the product does not fit in an `i32` or an `f32` mantissa.
+3. ★★★ **His ruling on the error, which is the part to build first and is
+   cheap:** if a limit will always exist, **the zoom stops at the limit**. No
+   error dialogue, no failed draw, no blank page — the canvas simply stops
+   zooming and keeps working, and the *status bar* says why. That is the
+   correct shape and it is Rule 4: disclose off-canvas, never block.
+
+---
+
+## O187 — ◑ **FILED 2026-09-12, AND IT IS A DEFECT AGAINST O151** — the page-preview timeout must be remembered, and 0 must mean never
+
+> *"the draw page previews timeout needs to be remembered, and setting it to 0
+> should set it to infinity (never time out)"*
+
+**O151** built *"the drawing page previews checkbox should never automatically
+turn off"* on 2026-09-08 and is marked NOT YET DRIVEN. This adds two things it
+did not do:
+
+1. The **timeout value** is not persisted across sessions — only the checkbox
+   was.
+2. **0 means never.** Today 0 presumably means "give up immediately", which is
+   the opposite of what anybody typing 0 into that box wants. ⇒ and the field
+   should *say* so, next to itself, rather than making him discover it.
+
+---
+
+## O188 — ◑ **FILED 2026-09-12** — the text in a title block is one lump; he wants the pieces
+
+> *"In text that is grouped together or whatever it is called, such as in my
+> title blocks, I would like a way to move the individual text blocks within it
+> around, and have the ability to delete them like I can when I add text using
+> our Add text tool."*
+
+★ This is the **second** report of the same underlying fact, and the first is
+already recorded: *the shell's unit of selection is not the operator's*. One
+PDF path object holds 6,681 anchors across half his sheet; one text object
+holds every string in his title block. Selecting it selects all of it, and he
+wants one line of it.
+
+What he asked for, exactly: **move an individual text piece inside the group**,
+and **delete it**, with the same freedom he has over text he placed himself
+with the Add Text tool.
+
+⇒ The measurement to make first is what the engine's unit actually is here —
+one `BT..ET` block, one `Tj`, or one show-operator — because the answer decides
+whether this is a selection-model change in the shell or a new engine verb.
+
+---
+
+## O189 — ◑ **FILED 2026-09-12** — dragging pages between documents leaves the bookmarks behind
+
+> *"Dragging pages from one open pdf to another doesn't transfer the
+> bookmarks."*
+
+A page carried from document A into document B arrives without the outline
+entries that pointed at it. ⇒ the destinations in B's outline tree are either
+absent or still pointing into A.
+
+⚠ **An outline entry can point at a page that is not being moved**, and a
+bookmark tree is a tree — moving one page out of a five-page chapter cannot
+carry the chapter heading without deciding what happens to the other four. So
+the row is not "copy the bookmarks"; it is "decide the rule, state it, then
+build it", and the rule is his to approve once it is written down.
+
+---
+
 ## O176 — ◑ **MEASURED 2026-09-12, NEEDS YOUR VERDICT** — not something you asked for: on a big sheet at fit zoom, a small form field is all grip and no body
 
 You did not ask for this row. It is here because a full drive of the shipped
