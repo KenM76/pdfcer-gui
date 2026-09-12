@@ -104,3 +104,4 @@
 - [A decline that revalidates its own precondition deletes itself](feedback_a_decline_that_revalidates_its_own_precondition_deletes_itself.md) — the control goes silent, not wrong, and every unit test still passes.
 - [A document that quotes its measurement command can be broken by it](feedback_a_document_that_quotes_its_measurement_command_can_be_broken_by_it.md) — a verbatim newline delimiter split a table row for six days; only a renderer can see it.
 - [A fix that names its victims can still miss one](feedback_a_fix_that_names_its_victims_can_still_miss_one.md) — a guard on the write path does not cover the DELETE path; reset to the seed, never remove.
+- [A stopped background task is a claim about the wrapper](feedback_a_stopped_background_task_is_a_claim_about_the_wrapper.md) — the sweep ran an hour after it was "killed"; prove it stopped before planning a resume.
