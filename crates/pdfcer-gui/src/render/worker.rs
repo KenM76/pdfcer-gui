@@ -211,11 +211,105 @@ pub struct RenderedPixels {
 /// What a worker sends back: pixels, a failure, or nothing at all.
 enum Outcome {
     Done(Box<RenderedPixels>),
-    Failed(String),
+    Failed(RenderRefusal),
     /// The render observed its cancellation token and stopped early.
     /// Distinguished from a failure so the shell does not report a
     /// deliberate abandonment as a render error.
     Cancelled,
+}
+
+/// **Why a render came back with no pixels**, as a fact the shell can act on
+/// rather than only repeat.
+///
+/// # ★★★ Why a refusal stopped being a bare `String` — `OPERATOR_REQUESTS.md` O186
+///
+/// The operator, 2026-09-12:
+///
+/// > *"If this error is caused by some other limitation that will always
+/// > happen, zoom should stop at the limit and not end up showing an error —
+/// > the canvas will just stop zooming in and can still function."*
+///
+/// That ruling is only executable if the shell can tell **this page cannot be
+/// rasterized any further** apart from **this page is broken**. Both arrive
+/// here as an `Err`; both used to arrive as a sentence; and a sentence is
+/// exactly the wrong thing to branch on — see the standing lesson *never
+/// substring-match another crate's prose*, which this project has been bitten
+/// by before (a narrowing left the words in place and shrank the condition
+/// underneath them).
+///
+/// So the category travels beside the sentence, typed, set in exactly the two
+/// arms of [`render_on_worker`]'s `match` that know it.
+///
+/// ## The sentence is still the operator's, not the engine's
+///
+/// `message` is always one of [`crate::text`]'s strings. It is built here, on
+/// the worker side, because this is the one place that can see which
+/// `RenderError` variant arrived; it is never `RenderError::to_string()` for
+/// the two refusals below, and for everything else the pass-through arm's own
+/// comment explains why repeating the engine is the honest answer.
+pub struct RenderRefusal {
+    /// What the operator is told. Already an instruction, never engine prose
+    /// for the cases this shell has a better sentence for.
+    pub message: String,
+    /// What the shell is told.
+    pub kind: RefusalKind,
+}
+
+/// The two kinds of refusal the shell treats differently — O186.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RefusalKind {
+    /// **The renderer cannot produce pixels for this page at this scale, and
+    /// it never will.** Either the whole-page pixmap exceeds
+    /// `pdfcer_render::MAX_PIXMAP_EDGE` ([`pdfcer_render::RenderError::BadRasterSize`])
+    /// or the rasterizer's own arithmetic gave out
+    /// ([`pdfcer_render::RenderError::RasterizerLimit`]).
+    ///
+    /// ★★ **Monotonic in the scale, which is the whole property that makes it
+    /// learnable.** Both limits are overflows of a product of the page's own
+    /// extent and the scale, so a page that refused at a scale refuses at
+    /// every larger one. That is what lets
+    /// `crate::app::state::OpenDoc::learn_raster_ceiling` turn one refusal
+    /// into a permanent ceiling instead of a failure the operator meets again
+    /// on every notch.
+    ///
+    /// ★ It is **not** monotonic in the page, which is why the ceiling is
+    /// learned per page and never for the document: an E-size sheet was
+    /// measured failing at scale 284,964 where a business card reached
+    /// 8,053,069.
+    BeyondRaster,
+    /// Anything else: a content stream that would not decode, a worker that
+    /// stopped, a font the engine refused.
+    ///
+    /// ★ **Must never be learned as a ceiling.** A page that will not decode
+    /// fails at *every* scale including the fit zoom, so treating it as a
+    /// raster limit would pin the operator's zoom to wherever they happened to
+    /// be standing and word it as a magnification limit — a wrong sentence
+    /// about a real defect, which is worse than the defect alone.
+    Other,
+}
+
+/// What a completed render hands back: pixels, or a typed refusal.
+///
+/// Named rather than spelled out at the three signatures that return it, so a
+/// future third member of the error side is one edit rather than four.
+pub type RenderOutcome = Result<RenderedPixels, RenderRefusal>;
+
+impl RenderRefusal {
+    /// A refusal that says nothing about how far this page can be magnified.
+    fn other(message: String) -> Self {
+        Self {
+            message,
+            kind: RefusalKind::Other,
+        }
+    }
+
+    /// A refusal that **is** this page's magnification limit at this scale.
+    fn beyond_raster(message: String) -> Self {
+        Self {
+            message,
+            kind: RefusalKind::BeyondRaster,
+        }
+    }
 }
 
 mod key;
@@ -393,7 +487,7 @@ impl RenderWorker {
     /// Cancels the previous render *before* spawning rather than after:
     /// two rasterizations of a CAD page competing for cores make both
     /// slower, and the old one's output is already known to be unwanted.
-    pub fn spawn(&mut self, request: RenderRequest) -> Option<Result<RenderedPixels, String>> {
+    pub fn spawn(&mut self, request: RenderRequest) -> Option<RenderOutcome> {
         let key = RenderKey::of(&request);
 
         // Already rendering exactly this? Leave it alone. See `RenderKey`
@@ -479,7 +573,9 @@ impl RenderWorker {
                 // render failure rather than hanging forever waiting for
                 // a message that will never arrive.
                 let _ = handle.join();
-                Some(Err(crate::text::canvas_render_worker_stopped().to_owned()))
+                Some(Err(RenderRefusal::other(
+                    crate::text::canvas_render_worker_stopped().to_owned(),
+                )))
             }
         }
     }
@@ -488,7 +584,7 @@ impl RenderWorker {
     ///
     /// Returns `None` both when nothing is running and when the render
     /// is still going — the shell's action is the same either way.
-    pub fn poll(&mut self) -> Option<Result<RenderedPixels, String>> {
+    pub fn poll(&mut self) -> Option<RenderOutcome> {
         let flight = self.in_flight.as_mut()?;
         match flight.rx.try_recv() {
             Ok(outcome) => {
@@ -528,7 +624,9 @@ impl RenderWorker {
                 if let Some(handle) = flight.handle.take() {
                     let _ = handle.join();
                 }
-                Some(Err(crate::text::canvas_render_worker_stopped().to_owned()))
+                Some(Err(RenderRefusal::other(
+                    crate::text::canvas_render_worker_stopped().to_owned(),
+                )))
             }
         }
     }
@@ -615,10 +713,10 @@ impl RenderWorker {
         }
     }
 
-    fn outcome_to_result(outcome: Outcome) -> Option<Result<RenderedPixels, String>> {
+    fn outcome_to_result(outcome: Outcome) -> Option<RenderOutcome> {
         match outcome {
             Outcome::Done(pixels) => Some(Ok(*pixels)),
-            Outcome::Failed(message) => Some(Err(message)),
+            Outcome::Failed(refusal) => Some(Err(refusal)),
             // A cancelled render has no result and is not a failure.
             // The shell keeps whatever it was already showing.
             Outcome::Cancelled => None,
@@ -814,9 +912,134 @@ fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
                     u8::from(request.region.is_some())
                 )
             });
-            Outcome::Failed(crate::text::canvas_zoom_past_rasterizer().to_owned())
+            Outcome::Failed(RenderRefusal::beyond_raster(
+                crate::text::canvas_zoom_past_rasterizer().to_owned(),
+            ))
         }
-        Err(e) => Outcome::Failed(e.to_string()),
+        // ★★★ **THE SENTENCE THE OPERATOR ACTUALLY SAW** —
+        // `OPERATOR_REQUESTS.md` O186, 2026-09-12, his words:
+        //
+        // > *"I think this sometimes results in similar error to 'This page
+        // > could not be drawn. requested raster size 50411508x32619210 is
+        // > empty or exceeds MAX_PIXMAP_EDGE'."*
+        //
+        // That is `BadRasterSize`'s `Display`, arriving here through the
+        // pass-through arm below and painted into a page's rectangle by
+        // `crate::render::strip::draw_page_state`. At deep zoom that rectangle
+        // is millions of pixels across, so it filled his drawing.
+        //
+        // # Why it needed a named arm, in two independent halves
+        //
+        // 1. **The shell owes an instruction where the engine owes a fact.**
+        //    The same argument the `RasterizerLimit` arm above makes at
+        //    length, and it applies here more strongly, because this
+        //    variant's `Display` carries two raw pixel counts. "50411508 by
+        //    32619210" is a true statement about a pixmap and no statement at
+        //    all about what a man looking at a blank sheet should do next.
+        // 2. **The shell must LEARN from it** — and cannot learn from a
+        //    string. See [`RefusalKind::BeyondRaster`]: this is the refusal
+        //    that becomes a zoom ceiling, which is the half of O186 that stops
+        //    the error recurring rather than merely rewording it.
+        //
+        // # ★★ Why this is a net and not the fix
+        //
+        // The cause of the sentence he saw was measured and fixed one layer
+        // up: `crate::render::settle`'s `fill_strip` was ordering a WHOLE-PAGE
+        // raster for a visible neighbour sheet at the current page's deep
+        // scale, because `OpenDoc::region_for` refuses a region to any page
+        // but the current one and nothing asked whether the order could be
+        // filled. `50411508 x 32619210` is 1,224 x 792 pt at scale 41,185.87,
+        // and the failing sheet was one of the two odd-sized pages in a
+        // thirty-six page set — never the sheet he was zoomed into.
+        //
+        // So by construction nothing should reach this arm any more. It is
+        // here because *"by construction"* is the claim that was already wrong
+        // once today, and because a path that reaches it now hands the shell a
+        // ceiling rather than a blank page with somebody else's prose on it.
+        Err(pdfcer_render::RenderError::BadRasterSize { width, height }) => {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                format!(
+                    "bad-raster-size px={width}x{height} page={} scale={:.1} region={}",
+                    request.page_index,
+                    request.raster_scale,
+                    u8::from(request.region.is_some())
+                )
+            });
+            // ★★★ **EMPTY IS NOT THE SAME WALL AS TOO LARGE**, and the
+            // variant does not distinguish them — its `Display` is *"is empty
+            // OR exceeds MAX_PIXMAP_EDGE"*. The shell must, because it LEARNS
+            // from this refusal.
+            //
+            // An empty pixmap is a request whose width or height rounded to
+            // zero, which happens at a very SMALL scale. Categorising that as
+            // a magnification limit would have
+            // `crate::render::ceiling::RasterCeiling` learn a ceiling near
+            // zero and pin the operator's zoom there — a document that
+            // refuses to be magnified at all, presented as a deliberate
+            // limit, on evidence that says the exact opposite.
+            //
+            // So the kind is decided by WHICH half of the engine's `or`
+            // fired, measured from the two numbers the variant carries rather
+            // than read out of its sentence.
+            //
+            // ★ And the two halves get DIFFERENT sentences, not one sentence
+            // and two kinds. "This zoom is further in than pdfcer can
+            // rasterize" would be simply false about an empty pixmap, and a
+            // wrong refusal sentence is worse than a vague one: whoever
+            // believes it — the operator, or a later reader of this file —
+            // looks for the defect in the wrong place.
+            //
+            // The empty case is reachable only through a degenerate page box,
+            // which is why its sentence says so. `viewer::MIN_ZOOM` is 0.10,
+            // so a scale small enough to round a real page's pixmap to zero
+            // would need a page under about ten points on a side; every
+            // ordinary page is three orders of magnitude away from it.
+            //
+            // ★★ **The two predicates are the engine's own, copied from its
+            // source rather than inferred from its sentence** —
+            // `pdfcer-render/src/lib.rs:839` as of the pin in `Cargo.lock`:
+            //
+            // ```text
+            // if width == 0 || height == 0
+            //     || width > MAX_PIXMAP_EDGE || height > MAX_PIXMAP_EDGE
+            // ```
+            //
+            // Note `>` and not `>=`. A pixmap exactly `MAX_PIXMAP_EDGE` across
+            // is *allowed*, so a shell guard written `>=` would be a different
+            // predicate from the one that fired — harmless today only because
+            // the misclassified value cannot occur, which is the sort of
+            // accident that stops being one after an engine bump.
+            //
+            // ★★★ And it is a THREE-way question, not two. The `else` below is
+            // neither half: it is reached only if the engine grows a third
+            // reason to raise this variant, and it must fall to
+            // `RefusalKind::Other` rather than to the ceiling. A reason this
+            // shell does not understand is not evidence about how far the page
+            // can be magnified, and learning a ceiling from one would cap the
+            // zoom on a guess. The engine's own sentence is the honest answer
+            // there, exactly as it is in the pass-through arm below.
+            if width == 0 || height == 0 {
+                Outcome::Failed(RenderRefusal::other(
+                    crate::text::canvas_page_has_no_area().to_owned(),
+                ))
+            } else if width > pdfcer_render::MAX_PIXMAP_EDGE
+                || height > pdfcer_render::MAX_PIXMAP_EDGE
+            {
+                Outcome::Failed(RenderRefusal::beyond_raster(
+                    crate::text::canvas_zoom_past_rasterizer().to_owned(),
+                ))
+            } else {
+                Outcome::Failed(RenderRefusal::other(
+                    pdfcer_render::RenderError::BadRasterSize { width, height }.to_string(),
+                ))
+            }
+        }
+        // The pass-through. Repeating the engine is the honest answer for
+        // everything this shell has nothing better to say about — a content
+        // stream that would not decode names the thing that would not decode,
+        // and no sentence written here could.
+        Err(e) => Outcome::Failed(RenderRefusal::other(e.to_string())),
     }
 }
 

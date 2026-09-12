@@ -302,10 +302,27 @@ impl PdfcerApp {
         // `zoom_ceiling` is the one place the whole-page limit and the region
         // tier are reconciled, so this site and `canvas::zoom` cannot answer
         // the question differently.
+        // ★★ O186: and the ceiling this page has TAUGHT us, if it has taught
+        // us one. Resolved here rather than inside `zoom_ceiling` because that
+        // function is pure with respect to document state — it takes a page
+        // extent and a density, not an `OpenDoc` — and keeping it that way is
+        // what lets its whole ladder be unit-tested.
+        //
+        // ★ Asked for **the current page** and at **the current epoch**, which
+        // is the whole of the invalidation rule: a ceiling measured on sheet 7
+        // says nothing about sheet 3, and one measured before an edit says
+        // nothing about the page after it. Both narrowings are
+        // `RasterCeiling::for_page`'s own contract; this site simply supplies
+        // the two numbers it needs.
+        let learned = doc.raster_ceiling.for_page(
+            doc.view.page_index,
+            doc.page_epochs.get(doc.view.page_index),
+        );
         let max_zoom = viewer::zoom_ceiling(
             doc.current_extent(),
             pixels_per_point,
             self.prefs.max_zoom_percent,
+            learned,
         );
         let page_count = doc.pages.len();
 

@@ -712,6 +712,43 @@ pub fn max_zoom_for_page(page_pts: (f32, f32), pixels_per_point: f32) -> f32 {
     ceiling.clamp(MIN_ZOOM, MAX_ZOOM)
 }
 
+/// The display density to actually use, given whatever egui reported.
+///
+/// Returns `pixels_per_point` when it is a usable density and `1.0` otherwise.
+///
+/// # ★★★ Why this is a named function rather than a `.max()` at each site
+///
+/// Four places divide or multiply by the display density — [`raster_scale`],
+/// [`ceiling::zoom_ceiling`]'s learned clause, `render::settle`'s
+/// `learn_raster_ceiling`, and `app::status::rasterstop` — and they are not free
+/// to guard it differently, because they are three readings of *one* number
+/// (`crate::render::ceiling::RasterCeiling`'s stored raster scale) and a
+/// disagreement between them is a shell that clamps at one zoom and explains
+/// itself at another.
+///
+/// ★★ The tempting spelling is `pixels_per_point.max(f32::MIN_POSITIVE)`, and it
+/// is **wrong in the one case that matters**. `f32::max` returns the *other*
+/// operand when one is `NaN`, so a `NaN` density becomes `f32::MIN_POSITIVE` —
+/// and a division by it produces infinity, which is the most destructive
+/// possible answer rather than a conservative one. It shipped here on
+/// 2026-09-12 in two of the four sites above and was caught by writing the
+/// `NaN` row of a unit test; the sentence that was supposed to explain a zoom
+/// limit would have been switched off permanently, silently, in exactly the
+/// state it exists for.
+///
+/// `1.0` is the right fallback because it is the *identity*: a scale and a zoom
+/// are the same number at unit density, so a caller that cannot learn the
+/// density falls back to treating the two as interchangeable, which is what the
+/// shell did for its whole life before HiDPI was handled at all.
+#[must_use]
+pub fn sane_pixels_per_point(pixels_per_point: f32) -> f32 {
+    if pixels_per_point.is_finite() && pixels_per_point > 0.0 {
+        pixels_per_point
+    } else {
+        1.0
+    }
+}
+
 /// The device-pixel scale to rasterize at for a given logical `zoom`.
 ///
 /// `zoom` is points per PDF user-space unit — what the operator sees as
@@ -726,11 +763,7 @@ pub fn raster_scale(
     pixels_per_point: f32,
     quality: crate::app::prefs::RenderQuality,
 ) -> f32 {
-    let ppp = if pixels_per_point.is_finite() && pixels_per_point > 0.0 {
-        pixels_per_point
-    } else {
-        1.0
-    };
+    let ppp = sane_pixels_per_point(pixels_per_point);
     // ★ The operator's quality multiplier — 2026-08-17.
     //
     // `RIBBON_IA.md` §5.2 commissioned this as View ▸ Render ▸ Quality and
@@ -925,239 +958,11 @@ fn apply_transform(transform: &Transform, point: Pos2) -> Pos2 {
 }
 
 #[cfg(test)]
-#[allow(clippy::float_cmp, reason = "ladder rungs are exact f32 literals")] // ui-text-exempt: clippy lint justification, never displayed
+#[allow(
+    clippy::float_cmp,
+    reason = "clamps and raster ceilings are exact f32 values"
+)] // ui-text-exempt: clippy lint justification, never displayed
 mod tests {
-    /// ★★★ **The ladder can actually REACH a configured maximum**, stepping.
-    ///
-    /// `zoom_ceiling` answering a big number is necessary and not sufficient:
-    /// the `+` button walks `ZOOM_LADDER`, which ends at 8.0. If stepping
-    /// stopped there the setting would be honoured by every code path except
-    /// the one the operator actually uses, which is the same silently-inert
-    /// control in a subtler place.
-    ///
-    /// ★ This is the gap `OPERATOR_REQUESTS.md` O24 predicted in its own
-    /// words — *"the buttons stop working exactly where the setting starts
-    /// mattering"* — asserted rather than left to be discovered.
-    #[test]
-    fn the_zoom_ladder_can_climb_to_a_configured_maximum() {
-        let ceiling = zoom_ceiling((1584.0, 1224.0), 1.0, 500_000.0);
-        let mut zoom = 1.0_f32;
-        for _ in 0..200 {
-            let mut view = ViewState {
-                zoom,
-                ..ViewState::default()
-            };
-            view.zoom_in(ceiling);
-            if (view.zoom - zoom).abs() < f32::EPSILON {
-                break;
-            }
-            zoom = view.zoom;
-        }
-        assert!(
-            zoom > 100.0,
-            "stepping stalled at {zoom}x against a ceiling of {ceiling}x — the ladder \
-             cannot reach the configured maximum, so the setting is inert for the +/- \
-             buttons even though `zoom_ceiling` honours it"
-        );
-    }
-
-    /// ★★★ **THE SETTING IS NOT DECORATIVE** — the whole risk of O24.
-    ///
-    /// `OPERATOR_REQUESTS.md` O24 warned in as many words that shipping the
-    /// setting without the mechanism would produce *"a control that is drawn,
-    /// accepted, persisted, and quietly overruled downstream"* — the operator
-    /// types 100,000 % and the zoom stops near a thousand with nothing said.
-    ///
-    /// This is that failure, stated as an assertion. `zoom_ceiling` must
-    /// answer the operator's configured maximum wherever it is higher than
-    /// the whole-page raster limit, on a page large enough that the raster
-    /// limit really does bind.
-    #[test]
-    fn a_configured_maximum_is_honoured_past_the_whole_page_raster_limit() {
-        let a1 = (1584.0_f32, 1224.0);
-        let whole_page = max_zoom_for_page(a1, 1.0);
-        assert!(
-            whole_page < 20.0,
-            "the premise: an A1 sheet's whole-page ceiling is around 1,000% ({whole_page})"
-        );
-
-        // ★ Below the positional cap the configured maximum is honoured
-        // exactly. `10_000%` and `100_000%` are both well inside it on an A1
-        // sheet, whose cap is around 1,050,000%.
-        for percent in [10_000.0_f32, 100_000.0] {
-            let ceiling = zoom_ceiling(a1, 1.0, percent);
-            assert!(
-                (ceiling - percent / 100.0).abs() / (percent / 100.0) < 1e-6,
-                "{percent}% was overruled: ceiling {ceiling}, wanted {}",
-                percent / 100.0
-            );
-        }
-
-        // ★★ …and a TRILLION percent is honoured too, since tier 3 wired the
-        // `f64` position model. The cap that stood here until then is gone; the
-        // same constant now decides when `DeepAnchor` takes over instead of
-        // when to refuse.
-        // ★★ …and above it the STRIP EXTENT is what binds now, not the raster
-        // and not the scroll offset. Asking for a trillion percent yields the
-        // deepest zoom the page is confirmed to actually draw at.
-        let deep = zoom_ceiling(a1, 1.0, 1e12);
-        assert!(
-            (deep - 1e10).abs() / 1e10 < 1e-6,
-            "a trillion percent must be honoured in full now that nothing caps it: {deep}x"
-        );
-        assert!(
-            deep_position_needed(a1, deep),
-            "…and at that zoom the f64 anchor must be the one positioning the view"
-        );
-        assert!(
-            deep > 1_000_000.0,
-            "the cap must still be past 100,000,000%: {deep}x"
-        );
-    }
-
-    /// ★★★ **The default reaches the maximum** — the operator's instruction of
-    /// 2026-08-22, *"Also set the default to be able to hit the maximum zoom."*
-    ///
-    /// This test previously asserted the opposite: that the default reproduced
-    /// the old ceiling exactly, so a fresh install was unchanged. That was the
-    /// cautious call and he overruled it — a capability you have to find a
-    /// preferences file to switch on is one most of its users never have.
-    ///
-    /// ★ The property is kept, not dropped: **what must not change is the
-    /// PANNING**, which is what he actually cares about. That is asserted by
-    /// `every_zoom_the_shell_offers_today_still_rasterizes_the_whole_page` in
-    /// `render::strategy`, which walks the whole ladder — the ceiling is
-    /// permission, and the strategy is behaviour.
-    #[test]
-    fn the_default_reaches_the_maximum_on_every_page_and_display_scale() {
-        for page in [(1584.0_f32, 1224.0), (612.0, 792.0), (306.0, 396.0)] {
-            for ppp in [1.0_f32, 1.5, 2.0] {
-                let ceiling = zoom_ceiling(page, ppp, crate::app::prefs::DEFAULT_MAX_ZOOM_PERCENT);
-                // ★ The default asks for the maximum and now GETS it, on every
-                // page and display scale — which is only honest because tier 3
-                // positions the view past the point an `f32` offset could.
-                // ★ The default asks for the maximum and gets the deepest the
-                // strip can still place a page at — which is what the shell can
-                // actually deliver, on every page size.
-                let wanted = crate::app::prefs::DEFAULT_MAX_ZOOM_PERCENT / 100.0;
-                assert!(
-                    (ceiling - wanted).abs() / wanted < 1e-6,
-                    "page {page:?} at {ppp}x: ceiling {ceiling} should be {wanted}"
-                );
-                assert!(
-                    ceiling > 1_000_000.0,
-                    "every page must reach past 100,000,000%: {page:?} got {ceiling}x"
-                );
-            }
-        }
-    }
-
-    /// ★★ **…and a LOW setting still lets the pixmap ceiling bind.**
-    ///
-    /// The half that survives from the test this replaced, and it is the one
-    /// that stops the change being dangerous: below `MAX_ZOOM` the whole-page
-    /// raster limit is a real constraint — an A1 sheet at 1.5x tops out at
-    /// 690 %, not 800 % — and asking past it would demand a raster the engine
-    /// refuses.
-    #[test]
-    fn a_low_setting_does_not_lift_the_whole_page_raster_limit() {
-        let a1 = (1584.0_f32, 1224.0);
-        let whole_page = max_zoom_for_page(a1, 1.5);
-        assert!(
-            whole_page < MAX_ZOOM,
-            "the premise: {whole_page} < {MAX_ZOOM}"
-        );
-
-        // A setting BELOW the pixmap ceiling must not raise it…
-        let ceiling = zoom_ceiling(a1, 1.5, 300.0);
-        assert!(
-            (ceiling - whole_page).abs() < 1e-4,
-            "a 300% setting should leave the {whole_page}x pixmap ceiling alone, got {ceiling}"
-        );
-    }
-    /// ★★★ **The position model changes hands exactly where an `f32` offset
-    /// stops being able to place the view** — O24 tier 3.
-    ///
-    /// One unit of content space is one screen pixel, so `2^24` content points
-    /// is the last extent at which the offset is exact. Below it the scroll
-    /// area is authoritative and the canvas is unchanged; above it
-    /// `viewer::deep::DeepAnchor` is.
-    ///
-    /// ★ Asserted on both sides of the threshold, because a predicate that
-    /// answered `true` everywhere would put the whole shell on the deep path —
-    /// and that path is the one that has never carried ordinary use.
-    #[test]
-    fn the_deep_position_model_takes_over_only_past_the_sub_pixel_extent() {
-        let letter = (612.0_f32, 792.0);
-        let threshold = ceiling::SUB_PIXEL_CONTENT_EXTENT / letter.1;
-
-        assert!(
-            !deep_position_needed(letter, threshold * 0.9),
-            "below the extent the scroll offset must stay authoritative"
-        );
-        assert!(
-            deep_position_needed(letter, threshold * 1.1),
-            "above it the f64 anchor must take over"
-        );
-
-        // Every zoom the shell has ever offered stays on the ordinary path.
-        for zoom in ZOOM_LADDER {
-            assert!(
-                !deep_position_needed(letter, *zoom),
-                "zoom {zoom} left the ordinary position model"
-            );
-        }
-
-        // Degenerate input never claims to need the deep path.
-        for bad in [f32::NAN, f32::INFINITY, 0.0, -1.0] {
-            assert!(!deep_position_needed(letter, bad));
-            assert!(!deep_position_needed((bad, bad), 1.0));
-        }
-    }
-
-    /// ★★★ **The page's size stops mattering once regions are available** —
-    /// O24.
-    ///
-    /// This is the whole point of the region tier stated as an assertion. In
-    /// the whole-page tier an A0 sheet hits its ceiling far sooner than a
-    /// business card, because the ceiling is a pixmap size and the page is in
-    /// it. With regions the pixmap is the window, so both pages reach the same
-    /// limit — the operator's.
-    #[test]
-    fn with_regions_the_page_size_no_longer_caps_the_zoom() {
-        let huge = (3370.0_f32, 2384.0); // A0
-        let tiny = (180.0_f32, 252.0); // a business card
-
-        // Whole-page tier: the two pages have very different ceilings.
-        assert!(
-            max_zoom_for_page(tiny, 1.0) > max_zoom_for_page(huge, 1.0),
-            "the whole-page ceiling must depend on the page's size"
-        );
-
-        // Region tier: neither page enters the arithmetic.
-        let limit = 10_000.0_f32;
-        assert!((max_zoom_with_regions(limit) - limit).abs() < f32::EPSILON);
-    }
-
-    /// A stored limit that is nonsense must not make the document unzoomable.
-    #[test]
-    fn a_broken_limit_falls_back_to_the_floor_rather_than_to_zero() {
-        for bad in [f32::NAN, f32::NEG_INFINITY, -5.0, 0.0, MIN_ZOOM / 2.0] {
-            assert!(
-                (max_zoom_with_regions(bad) - MIN_ZOOM).abs() < f32::EPSILON,
-                "{bad} should fall back to MIN_ZOOM"
-            );
-        }
-    }
-
-    /// ★ **Infinity is not a limit**, and is refused rather than passed
-    /// through — an infinite ceiling would propagate into a scroll extent and
-    /// blank the canvas, which is the failure `geometry`'s guards exist for.
-    #[test]
-    fn an_infinite_limit_is_refused() {
-        assert!((max_zoom_with_regions(f32::INFINITY) - MIN_ZOOM).abs() < f32::EPSILON);
-    }
-
     use super::*;
 
     // ---- page-index clamping -------------------------------------

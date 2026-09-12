@@ -925,6 +925,57 @@ pub const fn recovered_status_line() -> &'static str {
     "This file's index was damaged — pdfcer rebuilt it to open the document. The Properties panel says what was recovered."
 }
 
+/// ★★★ **Why zooming in stopped**, on the bottom bar — `OPERATOR_REQUESTS.md`
+/// O186's fourth clause, in the operator's own words:
+///
+/// > *"If this error is caused by some other limitation that will always happen,
+/// > zoom should stop at the limit and not end up showing an error - the canvas
+/// > will just stop zooming in and can still function. the error can still be
+/// > shown on the bottom bar so the user has some idea as to why zooming stopped
+/// > short of 1 trillion percent."*
+///
+/// That sentence is a complete specification and it has two halves. The first —
+/// *stop, do not show an error* — is
+/// [`crate::viewer::zoom_ceiling`]'s learned clause and
+/// `crate::render::settle`'s pull-back. This is the second: without it the `+`
+/// button and Ctrl+wheel would simply stop responding with nothing anywhere
+/// saying why, which is the silently-inert control the project has already been
+/// corrected about twice.
+///
+/// # ★★ What it does NOT say, and why each omission is deliberate
+///
+/// **It does not name the percentage.** The zoom readout is three controls to
+/// the right on the same bar, showing exactly the number the zoom stopped at,
+/// and `app::status::decline`'s header makes this same ruling for the
+/// raster-ceiling-clamped region zoom: the framing verb carries the *clamped*
+/// scale, so the readout states the truth on the same frame. A number repeated
+/// in a sentence beside the control that already shows it is a number that can
+/// disagree with it.
+///
+/// **It does not say "error", "failed" or "could not".** The whole of O186 is
+/// that this state is *not* an error — the page is drawn, the canvas works, the
+/// operator can pan and select and edit. Ken's complaint was an error sentence
+/// painted across his drawing where a limit had been reached; wording the limit
+/// as a failure would move the same mistake to a smaller surface.
+///
+/// **It does not offer a remedy.** There is nothing the operator can do: this is
+/// the rasterizer's own wall on this page's geometry, not a setting. A line that
+/// said "try zooming out" would be advice about the thing they were already
+/// doing when it stopped.
+///
+/// # ★ Why it says the limit was measured on *this sheet*
+///
+/// Because the number is genuinely per-page and the operator will otherwise read
+/// it as a property of pdfcer. Measured: an E-size sheet gave out at raster
+/// scale 284,964 where a business-card page reached 8,053,069 — a 28× spread in
+/// one build. So *"other pages may go further"* is not hedging; it is the single
+/// most surprising true thing about this limit, and the clause that stops the
+/// operator concluding the application has a maximum zoom it does not have.
+#[must_use]
+pub const fn raster_stop_status_line() -> &'static str {
+    "Zoom stopped here — this page cannot be drawn any larger. The limit was measured on this sheet; other pages may go further."
+}
+
 /// ★★★ **Show points was switched on and the object has more anchors than the
 /// canvas will draw.**
 ///

@@ -92,7 +92,7 @@ that says FILED means exactly that: his words are recorded and nothing else.
 
 ---
 
-## O177 — ◑ **FILED 2026-09-12** — "the page or pages view should snap back to center of the canvas", and fit-page in two-up should fit BOTH pages
+## O177 — ◑ **BUILT AND DRIVEN 2026-09-12** — "the page or pages view should snap back to center of the canvas", and fit-page in two-up should fit BOTH pages
 
 > *"when switching the view from scroll pages to show one page at a time or
 > show two pages side by side the page or pages view should snap back to center
@@ -112,6 +112,31 @@ Two separate defects in one paragraph and they must not be merged:
    the page.
 
 Both are shell work. Neither is filed with the engine.
+
+
+### What was built
+
+**Two separate defects, and they only looked like one because they arrive in
+the same click.**
+
+1. **Leaving *Scroll pages* kept the scrolling view's offset.** The one-page
+   and two-page views were handed a position that meant something in a
+   continuous strip and nothing in a single sheet, so a document scrolled a
+   third of the way down put the page a third of the way off the top of the
+   canvas. Switching the page display now recentres.
+2. **Fit page on a facing spread fitted one page.** The *scale* half of fit has
+   understood spreads since spreads were built; the *placement* half never did,
+   so the shell measured a row of two pages, computed the right zoom for the
+   pair, and then centred as though one page were the subject. One landed in
+   the middle and the other ran off the edge - which is exactly your *"it snaps
+   to fitting one"*, and **the zoom was never wrong**.
+
+★ The lesson kept, and written into the RAG: when a feature's scale rule is
+taught about a new unit and its placement rule is not, the symptom always
+presents as the scale being wrong.
+
+Driven by `switching_the_page_display_recentres_and_a_facing_fit_fits_the_spread`,
+written and run against the broken build first, so the pass is a measurement.
 
 ---
 
@@ -140,7 +165,7 @@ are cheap once it is measured. (4) is cheap and should not wait for (1)–(3).
 
 ---
 
-## O179 — ◑ **FILED 2026-09-12, AND IT IS A REPORT AGAINST O163** — the search zoom checkbox is unchecked and it still zooms
+## O179 — ◑ **BUILT AND DRIVEN 2026-09-12, AND IT WAS A REPORT AGAINST O163** — the search zoom checkbox is unchecked and it still zooms
 
 > *"In the search options when I unselect the zoom option, instead of jumping to
 > the page that the text is found on and leaving the page in its current
@@ -155,9 +180,23 @@ What he asked for, restated so the fix cannot drift: with zoom **off**, a hit
 changes the *page* and nothing else. Not the zoom, not the scroll position, not
 the centring. The highlight still appears; the operator finds it by looking.
 
+
+### What was built
+
+**The tick governed half of what it named.** It stopped the zoom percentage
+from following the page and did nothing whatever about the **centring**, which
+is a separate mechanism that was armed unconditionally. So with the tick off
+the view still scrolled each hit into the middle of the canvas - and to anyone
+using it, that is the visible half of "it zoomed".
+
+What survives on purpose: the page still changes and the hit is still
+highlighted, so going to a hit on another page still takes you there. The
+tooltip was widened to name the position as well as the zoom, because a
+control's honest description is what it actually does.
+
 ---
 
-## O180 — ◑ **FILED 2026-09-12** — a trailing space pasted from Excel stops the search finding the text
+## O180 — ◑ **BUILT AND DRIVEN 2026-09-12** — a trailing space pasted from Excel stops the search finding the text
 
 > *"trailing spaces/tabs/etc stops a search from finding text on the page that
 > doesn't have these symbols - this should be an option in the settings to
@@ -177,6 +216,22 @@ trailing space is meaningful in some searches. So:
 - ⇒ and, because the failure is invisible, the search bar should *disclose*
   when the query it was given ends in whitespace. Off-canvas, non-blocking,
   Rule 4 — the operator cannot see the character, so the program must say it.
+
+
+### What was built
+
+Nothing between the clipboard and the search ever looked at the query, so an
+invisible character at the end of it silently decided the answer.
+
+- **Blanks at the ends are trimmed**; interior spacing is never touched, so
+  `PART  NUMBER` stays as typed.
+- **A tick in Settings**, under *Copying and extracting text* - search is
+  extraction, which is where you asked for it.
+- ★ **It defaults to ON, which reverses what first shipped.** Defaulting it off
+  would have fixed the report only for people who went looking in Settings.
+- **The bar says so either way.** A short muted note appears whenever a search
+  has a blank at either end, saying whether it was ignored or is being looked
+  for - because trimming in silence is the same defect wearing the other coat.
 
 ---
 
@@ -272,7 +327,7 @@ the ones pdfcer authors. Nothing here touches **pdf dimensions** — the CAD
 
 ---
 
-## O184 — ◑ **FILED 2026-09-12** — the drag preview outline grows with zoom until it is the width of the canvas
+## O184 — ◑ **BUILT, DRIVEN AND FALSIFIED 2026-09-12** — the drag preview outline grew with zoom until it was the width of the canvas
 
 > *"The live preview blue outlines that appear when we drag and object scale
 > with zooming in and out of the page instead of being independent of zoom - at
@@ -295,6 +350,45 @@ showing a different program's answer.
 units vanished at low zoom. Here, an outline sized in document units explodes
 at high zoom. Same underlying question: *which space does an affordance live
 in?* — and the answer is not the same for both.
+
+
+### What was built - and it is two rulings, not one
+
+**The preview is the CURSOR, and a cursor does not grow when the document is
+magnified.** It was sized in document units, so a 3 pt outline previewed 3 px
+at the opening zoom and **27 px at 900 %**; a 6 pt highlighter at 3,000 %
+became a hundred and eighty pixels of solid blue.
+
+★★ The reason this mattered was already written into the canvas module, one
+paragraph above the defect and years older than the report: a preview is
+**stroked and never filled** because *"a filled shape following the pointer
+would hide what is under it, and what is under it is the page the operator is
+aligning against"*. **A stroke two hundred pixels wide IS a fill.** The defect
+defeated the whole purpose of the preview at exactly the zoom where lining
+things up is the entire task.
+
+- **Ruling 1** - the ghost keeps the object's own line width, in points drawn
+  as that many screen pixels, and magnification does not enter into it.
+- **Ruling 2** - the one-device-pixel line-weight view **governs** it, so with
+  that view on the preview is one pixel, because that is what the page
+  underneath is doing.
+
+★ What deliberately still scales is the **erase band** painted under the
+preview: it covers ink a renderer actually put on the raster, and that ink did
+scale, so shrinking it would leave the original object showing down both sides
+of its own footprint. Two things that look like one drawing and are statements
+about two different spaces.
+
+Driven by `preview_width_ignores_zoom`, and **falsified twice against
+deliberately re-broken builds, once per ruling** - because a check that has
+only ever been green is not evidence.
+
+⚠ The check **pins its own fixture and page geometry** and ignores `--pdf`,
+`--doc-point` and `--page-size`. Both rulings need a stroke wider than one
+point, and `preview_px` floors at one device pixel: driven on the suite's
+shared aim point it PASSED at 1.00 px at both zooms, which is ruling 1
+measured and ruling 2 **not measured at all**. A number already at the clamp
+cannot be lowered to the clamp. That is now a RAG lesson of its own.
 
 ---
 
@@ -356,7 +450,7 @@ The three claims, separated:
 
 ---
 
-## O187 — ◑ **FILED 2026-09-12, AND IT IS A DEFECT AGAINST O151** — the page-preview timeout must be remembered, and 0 must mean never
+## O187 — ◑ **BUILT AND DRIVEN 2026-09-12, AND IT WAS A DEFECT AGAINST O151** — the page-preview timeout must be remembered, and 0 must mean never
 
 > *"the draw page previews timeout needs to be remembered, and setting it to 0
 > should set it to infinity (never time out)"*
@@ -370,6 +464,23 @@ did not do:
 2. **0 means never.** Today 0 presumably means "give up immediately", which is
    the opposite of what anybody typing 0 into that box wants. ⇒ and the field
    should *say* so, next to itself, rather than making him discover it.
+
+
+### What was built - and the first attempt was itself inert, which is why it is stated twice
+
+The timeout is remembered, and **`0` means never give up**.
+
+It was built once, and then found to do nothing: opening a document reset the
+whole view state to its defaults, and both preview preferences were inside that
+state, so they were thrown away before the panel ever drew a frame. The save
+was innocent throughout; the thing that ate the value ran afterwards.
+
+★ **This is the first build in which the setting survives opening a file** -
+no version of this fix exists in any binary you have had before it.
+
+★ The general rule earned, now in the Rust RAG: a whole-struct reset silently
+eats any field that stopped being transient and became a preference. It
+compiles, and every unit test still passes.
 
 ---
 

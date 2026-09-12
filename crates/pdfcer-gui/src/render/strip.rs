@@ -387,10 +387,11 @@ impl StripRasters {
 
 /// Why a page has no picture on it.
 ///
-/// Three states rather than a boolean, because the operator's response to each
-/// differs: *wait*, *wait*, and *there is something wrong with this page*.
-/// Collapsing the first two would be tolerable; collapsing either with the
-/// third would tell somebody to wait for a picture that is never coming.
+/// Four states rather than a boolean, because the operator's response to each
+/// differs: *wait*, *wait*, **zoom out**, and *there is something wrong with
+/// this page*. Collapsing the first two would be tolerable; collapsing any of
+/// them with the last would tell somebody to wait for a picture that is never
+/// coming, or to look for damage that is not there.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PageState {
     /// A render for this page is running now.
@@ -398,6 +399,19 @@ pub enum PageState {
     /// This page is visible and has not been started yet — the renderer is
     /// working through the strip and has not reached it.
     Waiting,
+    /// ★★★ **This page's whole-sheet raster is larger than the renderer can
+    /// allocate at this zoom, and a strip page has no region tier to fall back
+    /// on.** O186, 2026-09-12.
+    ///
+    /// Nothing was ordered and nothing failed: `render::settle::fill_strip`
+    /// declined to place an order it knew could not be filled. See
+    /// `render::strategy::whole_page_raster_fits` for the whole report,
+    /// including the operator's `50411508x32619210` and why the page he was
+    /// *on* was never the one that could not be drawn.
+    ///
+    /// Distinct from [`Self::Refused`] because the distinction is the operator's
+    /// next move: a refusal is a fault to report, this is a zoom to undo.
+    BeyondRaster,
     /// This page will not draw, and this is the renderer's own reason.
     Refused(String),
 }
@@ -448,6 +462,16 @@ pub fn draw_page_state(
         ),
         PageState::Waiting => (
             crate::text::canvas_page_waiting(page_number),
+            visuals.text_color(),
+        ),
+        // ★ The ORDINARY text colour, not the error colour, and that is the
+        // whole point of the state existing. Nothing failed — the operator has
+        // simply zoomed in past the point where a neighbour sheet can be
+        // rastered whole, and his own sheet is drawing perfectly through the
+        // region tier. Painting this in `error_fg_color` would re-introduce
+        // exactly the alarm O186 was reported as.
+        PageState::BeyondRaster => (
+            crate::text::canvas_page_beyond_raster(page_number),
             visuals.text_color(),
         ),
         // A refusal is a different kind of statement and gets the theme's

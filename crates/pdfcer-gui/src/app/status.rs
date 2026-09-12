@@ -399,6 +399,16 @@ pub(super) mod filter;
 /// height and right-hand cluster are fixed, and a label that turns out to be
 /// a button is already this surface's idiom.
 pub(super) mod maxzoom;
+/// ★ **Why zooming in stopped** — O186's fourth clause, the one sentence that
+/// keeps the learned raster ceiling from being a control that silently stops
+/// responding.
+///
+/// The only line on this bar that needs **no store and no retirement rule**: it
+/// is a pure function of the current frame's state, so it appears at the ceiling
+/// and is gone the moment he zooms out, turns the page, or edits it. Its header
+/// carries why that follows from what the sentence means rather than being a
+/// shortcut, and why [`decline`]'s partial-grant ruling does not cover it.
+pub(super) mod rasterstop;
 /// The zoom controls and the maximum-zoom popup the readout opens.
 ///
 /// Split out under R2 when the popup pushed this file over 1,500 lines;
@@ -885,6 +895,22 @@ pub fn show(
         // EVERY gesture will. An operator reading the bar because the
         // canvas stopped responding needs the general answer first.
         filter::empty_note(ui, *filter);
+
+        // ★★ …and the same species of fact about one DIRECTION — O186.
+        //
+        // *"Why will every zoom-in gesture do nothing?"*, which is the empty
+        // filter's question narrowed to one axis, and it belongs here for the
+        // same reason: between the general answer above and the
+        // single-gesture answer below. An operator reading this bar because a
+        // control stopped responding wants them in that order.
+        //
+        // ★ It is deliberately NOT part of `decline::show`. The clamped region
+        // zoom that module declines to word is a partial grant the zoom readout
+        // already explains; this one the readout cannot explain, because the
+        // number it shows did not move. That argument is in `rasterstop`'s
+        // header, and beside `decline`'s own ruling, because those are the two
+        // places the next reader will look.
+        rasterstop::show(ui, doc);
 
         decline::show(ui, doc);
 

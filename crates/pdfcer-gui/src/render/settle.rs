@@ -81,7 +81,7 @@ use crate::app::PdfcerApp;
 use crate::app::state::{OpenDoc, Status};
 use crate::render::raster::{self, PageTexture};
 use crate::render::strip::{PageRaster, PageState};
-use crate::render::worker::{RenderKey, RenderedPixels};
+use crate::render::worker::{RefusalKind, RenderKey, RenderOutcome};
 use crate::viewer;
 
 /// How long a zoom must stop changing before it is committed to a real
@@ -92,6 +92,16 @@ use crate::viewer;
 /// shell settled on against real CAD sheets; it is a constant rather than a
 /// literal so the next person to tune it does so once, with a paper trail.
 pub const ZOOM_SETTLE: Duration = Duration::from_millis(150);
+
+/// The [`crate::diag::trace_changed`] slot for *"how many visible neighbour
+/// sheets could not be ordered at this zoom"* — O186.
+///
+/// Its own slot, not shared with any other line in this module, because
+/// `trace_changed` de-duplicates **per slot**: sharing one would make each line
+/// suppress the other and the count would appear only when it happened to
+/// alternate. See `canvas::trace`'s slot table for the same rule stated once for
+/// the canvas.
+const BEYOND_RASTER_SLOT: &str = "strip-beyond-raster";
 
 impl OpenDoc {
     /// How long this document's zoom must stop changing before it is committed.
@@ -185,7 +195,17 @@ impl OpenDoc {
     /// current page's render that finishes after they have scrolled past it
     /// lands in the strip. Routing by "which slot asked" would have to
     /// remember the request, and would be wrong in exactly those two cases.
-    fn absorb_render(&mut self, ctx: &egui::Context, result: Result<RenderedPixels, String>) {
+    ///
+    /// # ★★★ It is also where a raster refusal becomes a zoom CEILING — O186
+    ///
+    /// The operator, 2026-09-12: *"zoom should stop at the limit and not end up
+    /// showing an error — the canvas will just stop zooming in and can still
+    /// function."* This function is the one place in the shell a render refusal
+    /// is absorbed, so it is necessarily the place that clause is executed: see
+    /// the `Err` arm's own commentary for the learn-and-pull-back, and
+    /// [`crate::render::ceiling`] for why the number can only come from a
+    /// refusal that has already happened.
+    fn absorb_render(&mut self, ctx: &egui::Context, result: RenderOutcome) {
         match result {
             Ok(pixels) => {
                 let page = pixels.key.page();
@@ -304,16 +324,48 @@ impl OpenDoc {
                     );
                 }
             }
-            Err(message) => {
+            Err(refusal) => {
                 // ★ A failure carries no key — `RenderWorker` reports the
-                // message alone — so it is attributed to whatever the worker
+                // refusal alone — so it is attributed to whatever the worker
                 // was rendering. That is exactly the page it is about: the
                 // worker is single-slot, and `render_in_flight` was read
                 // *before* the poll took the slot (see `poll_render`). Without
                 // that reading, a strip page that would not draw would blank
                 // the whole canvas by landing in `render_error`.
+                //
+                // ★★ **The refusal carries a KIND as well as a sentence** — O186.
+                // See [`RefusalKind`]: the whole of this arm's new behaviour
+                // turns on `BeyondRaster`, and none of it may turn on reading
+                // the sentence, which is a string from `crate::text` that the
+                // operator is free to have reworded.
                 match self.render_in_flight.take() {
                     Some(key) if key.page() != self.view.page_index => {
+                        // ★★ **A neighbour's limit is still a FACT about that
+                        // neighbour**, so it is written down — but the zoom is
+                        // NOT pulled back for it.
+                        //
+                        // The distinction is the whole of why the learn and the
+                        // clamp are separated. A ceiling belongs to the page it
+                        // was measured on (`RefusalKind::BeyondRaster` records
+                        // the 28x spread measured between two pages of one
+                        // document), and `crate::viewer::zoom_ceiling` is asked
+                        // only about the page the operator is looking at. So
+                        // learning here costs nothing today and pays when he
+                        // navigates onto that sheet: his zoom is already capped
+                        // where it can be drawn, having never shown him an
+                        // error at all.
+                        //
+                        // ★ Pulling the zoom back here instead would be the
+                        // defect: it would cap the sheet he IS looking at —
+                        // which renders perfectly — because a different sheet in
+                        // the same window cannot be drawn that far in.
+                        if refusal.kind == RefusalKind::BeyondRaster {
+                            self.raster_ceiling.learn(
+                                key.page(),
+                                key.raster_scale(),
+                                self.page_epochs.get(key.page()),
+                            );
+                        }
                         self.strip_rasters.insert(
                             key.page(),
                             key,
@@ -321,10 +373,58 @@ impl OpenDoc {
                             // as a picture, so an edit to that page gets it a
                             // second attempt and an edit elsewhere does not.
                             self.page_epochs.get(key.page()),
-                            PageRaster::Failed(message),
+                            PageRaster::Failed(refusal.message),
                         );
                     }
                     slot => {
+                        // ★★★ **O186's FIRST THREE CLAUSES, and they are one
+                        // act:** *"zoom should stop at the limit and not end up
+                        // showing an error — the canvas will just stop zooming
+                        // in and can still function."*
+                        //
+                        // `handled` is true when all three were honoured,
+                        // which requires every one of these to hold:
+                        //
+                        // * the refusal is a raster wall and not a broken page
+                        //   (`BeyondRaster` — a page that will not decode fails
+                        //   at the fit zoom too, and capping the zoom for it
+                        //   would word a real defect as a magnification limit);
+                        // * the refusal is attributable, so there is a page and
+                        //   a scale to write down;
+                        // * the ceiling is news — `learn` returns `None` for a
+                        //   repeat, and a repeat means the clamp below already
+                        //   ran and did not hold, which is a condition to
+                        //   report rather than to silently re-apply;
+                        // * the resulting zoom is strictly BELOW where he
+                        //   stands. This is the guard that keeps the silence
+                        //   honest: if the clamp cannot actually move the view
+                        //   down — the arithmetic bottomed out at
+                        //   `viewer::MIN_ZOOM`, or the scale that refused was
+                        //   somehow at or below the current one — then nothing
+                        //   has been fixed, and swallowing the error would
+                        //   leave a blank page with no explanation anywhere.
+                        //   Fall through and tell him.
+                        //
+                        // ★★ When `handled`, `render_error` is deliberately NOT
+                        // set and `page_texture` is deliberately NOT cleared.
+                        // Both are the ordinary, correct responses to a failed
+                        // render and both are wrong here:
+                        //
+                        // * the sentence is the thing he asked us to stop
+                        //   painting across his drawing, and its replacement is
+                        //   `crate::app::status::rasterstop` on the bottom bar
+                        //   — his fourth clause;
+                        // * the texture on screen is a picture of this page at
+                        //   a LOWER zoom, and the zoom has just been pulled
+                        //   down toward it. Clearing it would blank the canvas
+                        //   at the exact moment the clamp made it more nearly
+                        //   right, and *"can still function"* is the clause
+                        //   that forbids it.
+                        let handled = refusal.kind == RefusalKind::BeyondRaster
+                            && slot.is_some_and(|key| self.learn_raster_ceiling(ctx, key));
+                        if handled {
+                            return;
+                        }
                         // ★★★ THE MEMO THAT STOPS THE RETRY STORM.
                         //
                         // `render_error` alone cannot do this job -- see
@@ -344,11 +444,80 @@ impl OpenDoc {
                         self.render_refused =
                             slot.map(|key| (key, self.page_epochs.get(self.view.page_index)));
                         self.page_texture = None;
-                        self.render_error = Some(message);
+                        self.render_error = Some(refusal.message);
                     }
                 }
             }
         }
+    }
+
+    /// **Write down what this page's raster limit turned out to be, and bring
+    /// the zoom back under it** — O186.
+    ///
+    /// Returns whether the refusal was *fully absorbed*: a `true` means the
+    /// operator has been moved to a zoom this page can be drawn at, so the
+    /// caller must not also file an error. A `false` means nothing useful could
+    /// be concluded and the ordinary refusal path must run — the four
+    /// conditions are enumerated at the call site, which is the only caller.
+    ///
+    /// # Why the clamp is expressed in ZOOM and the ceiling in raster SCALE
+    ///
+    /// They are different quantities and the conversion between them is the
+    /// display's density: a raster scale is *device pixels per PDF point*,
+    /// which is `zoom * pixels_per_point`. The ceiling is stored in scale
+    /// because that is what the renderer refused and the only quantity the
+    /// refusal is a fact about — move the window to a 200 % monitor and the
+    /// same zoom orders twice the pixels, so a ceiling stored in zoom would be
+    /// wrong by a factor of two on the other screen, silently, and only on the
+    /// machine it was not measured on.
+    ///
+    /// ★ So `pixels_per_point` is read here, at the moment of the clamp, and
+    /// again on every frame by [`crate::viewer::zoom_ceiling`]. Neither caches
+    /// it. A dragged window is a real gesture on this operator's desk — he runs
+    /// two monitors at different densities — and a cached density is a ceiling
+    /// that is wrong exactly after the drag.
+    ///
+    /// # Why it floors at [`crate::viewer::MIN_ZOOM`] and then checks again
+    ///
+    /// `set_zoom` clamps into `[MIN_ZOOM, max]` itself, so handing it a smaller
+    /// number cannot produce an absurd view. What it *can* produce is a zoom
+    /// that did not move, and that is the case this function must not report as
+    /// handled: an unmoved zoom means the page still cannot be drawn, and
+    /// returning `true` would hide the one failure the operator would have no
+    /// way to diagnose — a permanently blank sheet with no sentence anywhere.
+    /// Hence the `<` comparison *after* the clamp rather than a prediction
+    /// before it.
+    fn learn_raster_ceiling(&mut self, ctx: &egui::Context, key: RenderKey) -> bool {
+        let page = key.page();
+        let Some(ceiling) =
+            self.raster_ceiling
+                .learn(page, key.raster_scale(), self.page_epochs.get(page))
+        else {
+            return false;
+        };
+        let pixels_per_point = crate::viewer::sane_pixels_per_point(ctx.pixels_per_point());
+        let target = ceiling / pixels_per_point;
+        let before = self.view.zoom;
+        // `set_zoom(target, target)` rather than a ceiling computed from
+        // `zoom_ceiling`: this IS the ceiling, freshly measured, and asking
+        // `zoom_ceiling` for it one statement after teaching it would be the
+        // same number through a longer path — with the hazard that the two
+        // disagree for one frame if anything else in the expression moved.
+        self.view.set_zoom(target, target);
+        let moved = self.view.zoom < before;
+        // Published because the whole effect of a success here is that nothing
+        // happens: no error, no blank page, no further refusal. An absence is
+        // the one thing a driven check cannot assert, so the act announces
+        // itself. Low cardinality by construction — at most one line per page
+        // per edit, because `learn` returns `None` for a repeat.
+        let after = self.view.zoom;
+        crate::diag::trace(move || {
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            format!(
+                "raster-ceiling-learned page={page} scale={ceiling:.1} zoom={before:.2} to={after:.2} moved={moved}"
+            )
+        });
+        moved
     }
 
     /// Collect a background render, if one has finished.
@@ -445,6 +614,54 @@ impl OpenDoc {
         }
     }
 
+    /// ★★★ **Can this strip page be ordered at all at this raster scale?** —
+    /// O186, 2026-09-12.
+    ///
+    /// A strip page is always handed `region: None`: `OpenDoc::region_for`
+    /// refuses a region for any page but the current one, deliberately, because
+    /// a region is expressed in one page's own coordinate space and applying
+    /// page 4's rectangle to page 5 would rasterize the wrong part of the
+    /// neighbour with nothing reporting an error. So for a strip page the
+    /// renderer's whole-sheet pixmap ceiling is not a *tier boundary* — it is a
+    /// wall, and above it there is nothing to ask for.
+    ///
+    /// # Why this exists as one function rather than two conditions
+    ///
+    /// Two callers need the same answer and they must never disagree:
+    ///
+    /// * [`Self::fill_strip`] uses it to **not place an order** it knows cannot
+    ///   be filled — the fix for the operator's
+    ///   `requested raster size 50411508x32619210` (see
+    ///   [`crate::render::strategy::whole_page_raster_fits`] for the full
+    ///   measurement, including why the failing sheet was never the one he was
+    ///   looking at);
+    /// * [`Self::strip_page_state`] uses it to say the **true** thing about the
+    ///   resulting empty page. If only the first caller existed, the page would
+    ///   report itself as `Waiting` — *"not drawn yet"* — for a picture that is
+    ///   never coming at this zoom. That is the wrong-refusal-sentence class of
+    ///   defect: the sentence is read as an answered question and nobody
+    ///   investigates.
+    ///
+    /// # What it deliberately does NOT ask
+    ///
+    /// `strategy::for_page`. That is the union of this hard limit and the soft
+    /// ink one, and an ink page above the CMYK buffer ceiling answers `Region`
+    /// from it while its whole-page raster allocates perfectly well — so asking
+    /// the union here would leave a neighbour sheet blank at an ordinary zoom
+    /// to avoid a failure that was never going to happen.
+    ///
+    /// A page index past the end answers `false`: there is no sheet to order,
+    /// and [`Self::rasterize`] would discard the request anyway.
+    #[must_use]
+    pub fn strip_page_orderable(&self, page: usize, raster_scale: f32) -> bool {
+        self.pages.get(page).is_some_and(|p| {
+            crate::render::strategy::whole_page_raster_fits(
+                viewer::page_extent_pts(p),
+                raster_scale,
+            )
+        })
+    }
+
     /// What state a **strip** page is in, for
     /// [`crate::render::strip::draw_page_state`].
     ///
@@ -463,6 +680,19 @@ impl OpenDoc {
         {
             Some(PageRaster::Ready(_)) => None,
             Some(PageRaster::Failed(detail)) => Some(PageState::Refused(detail.clone())),
+            // ★★★ Asked FIRST among the empty cases, and from the key's own
+            // scale rather than from a second reading of the view — see
+            // [`Self::strip_page_orderable`]. `Drawing` cannot be true here
+            // after `fill_strip` stopped ordering these pages, and `Waiting`
+            // would be a promise this zoom cannot keep.
+            //
+            // A `Ready` or `Failed` entry still wins above, which is right: the
+            // key carries the scale, so an entry that matches this frame's key
+            // is an entry made at a scale that fit. A page cached at a shallower
+            // zoom does not match and falls through to here.
+            None if !self.strip_page_orderable(page, key.raster_scale()) => {
+                Some(PageState::BeyondRaster)
+            }
             None if self.render_worker.rendering_key().map(|k| k.page()) == Some(page) => {
                 Some(PageState::Drawing)
             }
@@ -729,10 +959,63 @@ impl PdfcerApp {
         // at a scale the operator is still changing would rasterize a document
         // per wheel notch.
         let settling = now < doc.zoom_commit_at;
+
+        // ★★ **The decline, published.** O186, 2026-09-12.
+        //
+        // Without this line the fix below is invisible: the whole point of it is
+        // that nothing happens — no request, no failure, no message — and an
+        // absence is the one thing a driven check cannot assert. So the count of
+        // visible neighbour sheets this frame declined to order is traced,
+        // before the scan that skips them.
+        //
+        // ★ `trace_changed`, and a COUNT rather than a list of page indices, so
+        // the cardinality is one line per transition instead of one line per
+        // frame of a zoom gesture. Which pages they were is derivable: the
+        // canvas already publishes the visible set through
+        // `strip-raster-requested visible=`, and every visible page that is not
+        // the current one and has no raster is one of these.
+        //
+        // `pages=0` is printed too, on purpose. Leaving the regime has to be
+        // visible or the check cannot tell "never entered it" from "still in
+        // it", which is how an absence assertion comes to pass against a
+        // planted defect.
+        let beyond = visible
+            .iter()
+            .copied()
+            .filter(|&page| page != current && !doc.strip_page_orderable(page, raster_scale))
+            .count();
+        crate::diag::trace_changed(BEYOND_RASTER_SLOT, || {
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            // ★ The SCALE is deliberately absent. Including it would make the
+            // line change on every wheel notch and defeat the de-duplication
+            // this slot exists for; the zoom is already published by
+            // `canvas-pos`, once per transition, from the canvas that decided
+            // it.
+            format!("strip-beyond-raster pages={beyond}")
+        });
+
         let next = visible
             .iter()
             .copied()
             .filter(|&page| page != current)
+            // ★★★ **O186's raster error, at its source.** A strip page is
+            // ordered whole-sheet — `OpenDoc::region_for` gives a region to the
+            // current page only — so above the renderer's pixmap ceiling there
+            // is no order to place. Asking anyway is what painted
+            // *"requested raster size 50411508x32619210 is empty or exceeds
+            // MAX_PIXMAP_EDGE"* across a neighbouring sheet of the operator's
+            // drawing set while the sheet he was reading drew perfectly.
+            //
+            // ★ A `filter`, deliberately, and not a check inside the `find`'s
+            // predicate or after it: the scan must CARRY ON to the next
+            // candidate. A document whose visible pages are an unorderable A1
+            // followed by an orderable letter sheet must still fill the letter
+            // sheet, and a `find` that stopped at the first unorderable page
+            // would starve it forever.
+            //
+            // The same question answers what the page says about itself — see
+            // `OpenDoc::strip_page_orderable`.
+            .filter(|&page| doc.strip_page_orderable(page, raster_scale))
             .find(|&page| {
                 !doc.strip_rasters.has(
                     page,

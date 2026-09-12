@@ -511,6 +511,16 @@ pub struct OpenDoc {
     /// harness still reads the panic out of the capture. What it removes is
     /// the shell's contribution — 573 attempts where one was asked for.
     pub render_refused: Option<(RenderKey, u64)>,
+    /// **How far each page has been MEASURED able to be magnified** — O186.
+    ///
+    /// Empty until a render is actually refused for a raster limit, which for
+    /// almost every document is never. See
+    /// [`crate::render::ceiling::RasterCeiling`] for the whole of the reasoning:
+    /// why the number cannot be derived, why one observation is enough, and why
+    /// it is keyed on the page and its epoch. Written in
+    /// `crate::render::settle`'s `absorb_render`, read by
+    /// [`crate::viewer::zoom_ceiling`] and by `crate::app::status::rasterstop`.
+    pub raster_ceiling: crate::render::ceiling::RasterCeiling,
     /// **How many fonts the last mark-by-search in this document could not
     /// read**, or 0 — Pass 127.1's disclosure.
     ///
@@ -1272,6 +1282,7 @@ impl OpenDoc {
             wheel_travel: 0.0,
             render_in_flight: None,
             render_error: None,
+            raster_ceiling: crate::render::ceiling::RasterCeiling::default(),
             render_refused: None,
             // Nothing has been marked yet, so there is nothing to disclose.
             last_redaction_unreadable_fonts: 0,

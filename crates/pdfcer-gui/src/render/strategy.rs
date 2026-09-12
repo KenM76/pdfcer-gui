@@ -218,6 +218,71 @@ pub enum Ink {
     Subtractive(Option<usize>),
 }
 
+/// **Can a whole-page raster of this page be ALLOCATED at all at this scale?**
+///
+/// `MAX_PIXMAP_EDGE` and nothing else: no opinion about colour, no opinion
+/// about speed. `true` means `pdfcer_render::render_page` will get past its own
+/// size guard; `false` means it will return
+/// `RenderError::BadRasterSize { width, height }` and the caller will have a
+/// refusal to explain instead of a picture.
+///
+/// # Why this is a separate function from [`for_page`], added 2026-09-12
+///
+/// Because two different callers need two different questions answered, and
+/// until O186 they were both asking [`for_page`] — which is the *union* of this
+/// hard limit and the soft ink one.
+///
+/// * The **canvas** asks *"which tier should I use?"* It wants the union:
+///   dropping to a region is the right answer both when the whole page cannot
+///   be allocated and when it can but would lose its ink.
+/// * The **strip** asks *"can I order this page at all?"* A strip page is
+///   handed `region: None` by construction — `OpenDoc::region_for` refuses a
+///   region for any page but the current one, deliberately, because a region is
+///   in one page's coordinate space — so for a strip page `Region` is not an
+///   alternative tier, it is *"there is nothing I can order"*.
+///
+/// ★★★ Asking [`for_page`] there was **O186's raster error**. The operator,
+/// 2026-09-12, on his 36-page drawing set at a deep zoom:
+///
+/// > *"I think this sometimes results in similar error to 'This page could not
+/// > be drawn. requested raster size 50411508x32619210 is empty or exceeds
+/// > MAX_PIXMAP_EDGE'."*
+///
+/// `50411508 × 32619210` is **1224 × 792 pt at scale 41185.87**, and
+/// `SW41177.pdf` has exactly two pages that size against thirty-four at
+/// 1584 × 1224. The failing raster was a **neighbour** sheet in the continuous
+/// strip, ordered whole-page at the current page's deep scale, because
+/// `render::settle::fill_strip` asked for every visible page without ever
+/// asking whether the order could be filled.
+///
+/// ★ And the union would have been the *wrong* predicate for the strip even so:
+/// an ink page above the CMYK buffer ceiling but below the pixmap one answers
+/// `Region` from [`for_page`] while its whole-page raster allocates perfectly
+/// well. Skipping it would have left a neighbour sheet undrawn at an ordinary
+/// zoom to avoid a failure that was never going to happen — trading a real
+/// regression for an imaginary one.
+///
+/// # Degenerate input answers `true`
+///
+/// The same rule [`for_page`] applies, and for the same reason: a zero or
+/// non-finite extent cannot be reasoned about, the whole-page path refuses it
+/// safely with its own sentence, and answering "it does not fit" here would
+/// instead make the strip silently skip a page whose real problem is something
+/// else entirely.
+#[must_use]
+pub fn whole_page_raster_fits(page_pts: (f32, f32), raster_scale: f32) -> bool {
+    let longest = page_pts.0.max(page_pts.1);
+    if !longest.is_finite() || longest <= 0.0 || !raster_scale.is_finite() || raster_scale <= 0.0 {
+        return true;
+    }
+    #[allow(
+        clippy::cast_precision_loss,
+        reason = "MAX_PIXMAP_EDGE is 16384; f32 is exact to 2^24" // ui-text-exempt: clippy lint justification, never displayed
+    )]
+    let ceiling = (pdfcer_render::MAX_PIXMAP_EDGE - 1) as f32;
+    longest * raster_scale <= ceiling
+}
+
 #[must_use]
 pub fn for_page(page_pts: (f32, f32), raster_scale: f32, ink: Ink) -> Strategy {
     let longest = page_pts.0.max(page_pts.1);
@@ -225,14 +290,16 @@ pub fn for_page(page_pts: (f32, f32), raster_scale: f32, ink: Ink) -> Strategy {
         // A degenerate page or scale cannot be reasoned about, and the
         // whole-page path already refuses it safely. Never answer `Region` on
         // bad input: that would send a nonsense rectangle to the renderer.
+        // Also the guard the ink arithmetic below relies on — it casts a
+        // product to `u32`.
         return Strategy::WholePage;
     }
-    #[allow(
-        clippy::cast_precision_loss,
-        reason = "MAX_PIXMAP_EDGE is 16384; f32 is exact to 2^24" // ui-text-exempt: clippy lint justification, never displayed
-    )]
-    let ceiling = (pdfcer_render::MAX_PIXMAP_EDGE - 1) as f32;
-    if longest * raster_scale > ceiling {
+    // ★ The hard ceiling, through [`whole_page_raster_fits`] rather than
+    // restated here. One definition of `MAX_PIXMAP_EDGE`'s arithmetic, so the
+    // tier the canvas picks and the order the strip declines to place cannot
+    // come to disagree about where the wall is — which is the class of defect
+    // that produced O186's raster error in the first place.
+    if !whole_page_raster_fits(page_pts, raster_scale) {
         return Strategy::Region;
     }
 
@@ -541,6 +608,71 @@ mod tests {
         );
     }
 
+    /// ★ [`whole_page_raster_fits`] is the pixmap ceiling and **the pixmap
+    /// ceiling only** — it agrees with [`for_page`] about the wall and has no
+    /// opinion about anything else.
+    ///
+    /// Both directions, at the exact boundary, because the boundary is what the
+    /// strip's order gate reads: one ulp on the wrong side of it is either a
+    /// neighbour sheet blanked for nothing or the operator's
+    /// `MAX_PIXMAP_EDGE` message back.
+    #[test]
+    fn the_hard_ceiling_is_the_same_wall_for_page_finds() {
+        #[allow(clippy::cast_precision_loss, reason = "16384 is exact in f32")]
+        let ceiling = (pdfcer_render::MAX_PIXMAP_EDGE - 1) as f32;
+        let exact = ceiling / A1_LONG_PT;
+
+        assert!(
+            whole_page_raster_fits((A1_LONG_PT, 1100.0), exact),
+            "the scale that exactly reaches the ceiling must still fit"
+        );
+        assert!(
+            !whole_page_raster_fits((A1_LONG_PT, 1100.0), exact * 1.01),
+            "past the ceiling the whole-sheet raster cannot be allocated"
+        );
+        // And the two agree, which is the property that keeps the canvas's tier
+        // choice and the strip's order gate from drifting apart.
+        for scale in [exact * 0.5, exact, exact * 1.01, exact * 100.0] {
+            assert_eq!(
+                whole_page_raster_fits((A1_LONG_PT, 1100.0), scale),
+                for_page((A1_LONG_PT, 1100.0), scale, Ink::Additive) == Strategy::WholePage,
+                "the two disagreed about the wall at scale {scale}"
+            );
+        }
+    }
+
+    /// ★★★ **An ink page that `for_page` sends to the region tier still FITS.**
+    ///
+    /// The regression guard for the mistake O186's fix was one keystroke from
+    /// making. `render::settle::fill_strip` declines to order a strip page whose
+    /// whole-sheet raster cannot be allocated; had it asked [`for_page`] instead
+    /// — the union of this hard limit and the soft ink one — then a page observed
+    /// compositing in ink, above the CMYK buffer ceiling but comfortably below
+    /// the pixmap one, would have been skipped at an ordinary zoom. Its raster
+    /// allocates perfectly well; it would merely have been flattened in RGB,
+    /// which is a colour compromise and not a failure.
+    ///
+    /// That would have traded a real regression — a neighbour sheet blank at
+    /// 300 % — for a failure that was never going to happen.
+    #[test]
+    fn an_ink_page_pushed_to_the_region_tier_still_fits_whole() {
+        // A scale where the ink ceiling bites and the pixmap one does not: a
+        // tiny byte budget forces `will_composite_in_cmyk` to refuse, while the
+        // page is only a few thousand pixels across.
+        let page = (612.0_f32, 792.0);
+        let scale = 4.0_f32;
+        assert_eq!(
+            for_page(page, scale, Ink::Subtractive(Some(1))),
+            Strategy::Region,
+            "a 1-byte ink budget must push this page off the whole-page tier"
+        );
+        assert!(
+            whole_page_raster_fits(page, scale),
+            "...and its whole-sheet raster must still be allocatable, which is \
+             why the strip's gate asks this and not for_page"
+        );
+    }
+
     /// Degenerate input never answers `Region`, because a nonsense rectangle
     /// would then be handed to the renderer.
     #[test]
@@ -554,6 +686,13 @@ mod tests {
                 for_page((bad, bad), 1.0, Ink::Additive),
                 Strategy::WholePage
             );
+            // ★ And the order gate says "orderable" on the same input, for the
+            // same reason: the whole-page path refuses a degenerate page with
+            // its own sentence, and answering "it does not fit" here would
+            // instead make a strip page silently claim it was zoomed past when
+            // its real problem is a broken box.
+            assert!(whole_page_raster_fits((A1_LONG_PT, 1100.0), bad));
+            assert!(whole_page_raster_fits((bad, bad), 1.0));
         }
     }
 

@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 4ba7202906481b0265a2ab1aa61577c1536b0392
+# baseline: ce205006614d60c46b480fd1ec03923e54cd04b4
 # crates: pdfcer-core pdfcer-render pdfcer-print
-# items: 7527
+# items: 7528
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-core field pdfcer_core::parser::DuplicateKeyRecord::discarded -- the value pdfcer threw away, which is the fact that makes the operator's choice offerable rather than theoretical -- the engine's own argument for carrying both. Reached here as `LoadAnomaly::DuplicateDictKey::discarded` and printed beside the kept value today; the override that would ACT on it is filed `wanted` in ENGINE_BACKLOG.md against `LoadOptions::with_duplicate_keys`, not against this field.
@@ -6921,6 +6921,7 @@ pdfcer-render field pdfcer_render::interpret::Diagnostics::icc_unmanaged_paints
 pdfcer-render field pdfcer_render::interpret::Diagnostics::image_notes
 pdfcer-render field pdfcer_render::interpret::Diagnostics::images_codec_unsupported
 pdfcer-render field pdfcer_render::interpret::Diagnostics::images_colorant_none
+pdfcer-render field pdfcer_render::interpret::Diagnostics::images_culled
 pdfcer-render field pdfcer_render::interpret::Diagnostics::images_mask_unsupported
 pdfcer-render field pdfcer_render::interpret::Diagnostics::images_masked
 pdfcer-render field pdfcer_render::interpret::Diagnostics::images_rendered

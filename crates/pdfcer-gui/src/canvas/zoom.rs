@@ -678,6 +678,17 @@ pub fn plan_framing(
     // is — this function stays pure with respect to egui and to app state,
     // which is what keeps it reviewable and unit-testable.
     max_zoom_percent: f32,
+    // ★★ O186: the raster ceiling this page has already been measured to have,
+    // as a raster SCALE, or `None` if it has never refused a render — which is
+    // the answer for every page of every document until one does.
+    //
+    // Threaded for the same reason `max_zoom_percent` is, and the purity it
+    // preserves is load-bearing here rather than stylistic: the caller
+    // ([`frame_rect`]) holds the `OpenDoc` and can ask
+    // `RasterCeiling::for_page` the page-and-epoch question, and this function
+    // could not — it is given a `CanvasFrame`, which knows a page's extent and
+    // not its index.
+    learned_raster_scale: Option<f32>,
 ) -> FramingPlan {
     let region = framed_region(region);
     let viewport = (
@@ -691,7 +702,12 @@ pub fn plan_framing(
     // derives per action.
     let applied = viewer::clamp_zoom(
         requested,
-        viewer::zoom_ceiling(frame.extent, pixels_per_point, max_zoom_percent),
+        viewer::zoom_ceiling(
+            frame.extent,
+            pixels_per_point,
+            max_zoom_percent,
+            learned_raster_scale,
+        ),
     );
     FramingPlan {
         outcome: ZoomOutcome::Zoomed { requested, applied },
@@ -736,12 +752,27 @@ fn frame_rect(
     let Some(frame) = last_frame(ctx) else {
         return ZoomOutcome::NoCanvas;
     };
+    // ★★ O186. Resolved here because this is the first frame in the call chain
+    // that holds the document: `plan_framing` below is deliberately pure and
+    // `zoom_ceiling` below that is deliberately ignorant of page identity, so
+    // the page-and-epoch question can only be asked at this level.
+    //
+    // ★ It matters that a FRAMING zoom is capped too, and not only the ladder.
+    // "Zoom to selection" on a small object is the single easiest way to ask
+    // for an enormous magnification in one gesture — no wheel notches, no
+    // typing a percentage — which makes it the most likely route to the wall,
+    // and it was the route a driven check found first.
+    let learned = doc.raster_ceiling.for_page(
+        doc.view.page_index,
+        doc.page_epochs.get(doc.view.page_index),
+    );
     let plan = plan_framing(
         &frame,
         region,
         margin,
         ctx.pixels_per_point(),
         max_zoom_percent,
+        learned,
     );
     doc.zoom_anchor = Some(plan.anchor);
     if let ZoomOutcome::Zoomed { applied, .. } = plan.outcome {
@@ -1259,6 +1290,7 @@ mod tests {
             // available, which clamps almost nothing. Passing the default here
             // made the test assert that an unclamped answer was clamped.
             viewer::MAX_ZOOM * 100.0,
+            None,
         );
         match plan.outcome {
             ZoomOutcome::Zoomed { requested, applied } => {
@@ -1283,6 +1315,7 @@ mod tests {
             16.0,
             1.0,
             crate::app::prefs::DEFAULT_MAX_ZOOM_PERCENT,
+            None,
         );
         match plan.outcome {
             ZoomOutcome::Zoomed { requested, applied } => {

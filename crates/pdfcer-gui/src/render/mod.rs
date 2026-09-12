@@ -70,6 +70,15 @@
 // doc comment, and the run stays alphabetical.** A doc comment stranded above a
 // `pub mod` whose name it does not describe is the tell.
 
+/// ★★★ **The zoom ceiling this document TAUGHT the shell** — O186's
+/// *"zoom should stop at the limit and not end up showing an error"*.
+///
+/// Its header carries why this one ceiling cannot be derived the way the two in
+/// [`crate::viewer::ceiling`] are: the wall is inside `tiny-skia` and is
+/// content-dependent, measured 28x apart on two pages of the same document, so
+/// the only honest source of the number is a refusal that has already happened.
+pub mod ceiling;
+
 /// **The pixel proof for O137's "line weights off" display mode** — that the
 /// mode really thins a drawing, and thins it in the direction the operator
 /// asked for rather than the opposite one.

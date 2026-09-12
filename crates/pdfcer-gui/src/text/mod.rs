@@ -578,9 +578,25 @@ pub fn canvas_no_pages() -> &'static str {
 ///
 /// `detail` is `pdfcer-render`'s own error `Display`, passed through rather
 /// than rewritten: the renderer's errors are structured, specific
-/// diagnostics ("requested raster size 115200x86400 exceeds
-/// MAX_PIXMAP_EDGE"), and replacing one with "an error occurred" throws
+/// diagnostics — a content stream that would not decode names the object
+/// that would not decode — and replacing one with "an error occurred" throws
 /// away the only part of the sentence that helps.
+///
+/// # ★★★ The example this paragraph used to give is now the counter-example
+///
+/// It read: *"the renderer's errors are structured, specific diagnostics
+/// ('requested raster size 115200x86400 exceeds MAX_PIXMAP_EDGE')"*. That is
+/// `pdfcer_render::RenderError::BadRasterSize`, and on 2026-09-12 the operator
+/// reported seeing exactly it, painted across a site plan he was editing
+/// (`OPERATOR_REQUESTS.md` O186). Two pixel counts are a precise fact about a
+/// pixmap and no instruction at all to a man looking at a blank sheet.
+///
+/// So `crate::render::worker` now takes that variant out of the pass-through
+/// and gives it one of this module's own sentences. The example is kept here
+/// inverted rather than deleted, because the **rule** in the paragraph above is
+/// still right — repeat the engine where it knows more than the shell does —
+/// and the way it goes wrong is to repeat the engine where the shell knows what
+/// the operator should DO.
 #[must_use]
 pub fn canvas_render_failed(detail: &str) -> String {
     format!("This page could not be drawn. {detail}")
@@ -696,6 +712,47 @@ pub fn canvas_page_waiting(page_number: usize) -> String {
     format!("Page {page_number} — not drawn yet")
 }
 
+/// Shown on a **neighbour** page in a continuous strip whose whole-sheet raster
+/// is larger than the renderer can allocate at the zoom the operator is at.
+///
+/// # Why this is not [`canvas_page_waiting`], and why that mattered
+///
+/// O186, 2026-09-12. Deep inside a 36-sheet drawing set the operator got
+///
+/// > *"This page could not be drawn. requested raster size 50411508x32619210
+/// > is empty or exceeds MAX_PIXMAP_EDGE"*
+///
+/// painted across a neighbouring sheet. That was [`canvas_page_refused`]
+/// carrying `pdfcer-render`'s own sentence, which is the right thing to do for
+/// a page that is *broken* and the wrong thing for a page that is merely
+/// **further in than the renderer's pixmap ceiling** — nothing is wrong with
+/// the sheet, nothing is wrong with the document, and the engine's wording
+/// names a constant the operator has never heard of and a pixel count he cannot
+/// act on.
+///
+/// Closing the hole that ordered that raster (`render::settle::fill_strip` now
+/// declines to place an order it knows cannot be filled) leaves the page with
+/// no picture and no sentence. [`canvas_page_waiting`] would then be the
+/// obvious thing to show and it would be a **lie**: nothing is coming, at this
+/// zoom, ever. A wrong refusal sentence hides the defect in whoever believes
+/// it, so the state gets its own words.
+///
+/// # Why it says what to do and not why
+///
+/// *"Zoom out"* is the whole of the operator's available response, and it
+/// works. The cause — a pixmap edge limit measured in device pixels, which
+/// bites at a different zoom on every sheet size — is traced for us and is of
+/// no use to him. [`canvas_zoom_past_rasterizer`] made the same choice for the
+/// same reason, and the two sentences are deliberately close: one is about the
+/// sheet he is reading, this one is about a sheet beside it.
+///
+/// ★ It names the page because a strip shows several at once and an unqualified
+/// sentence in one rectangle reads as a statement about the document.
+#[must_use]
+pub fn canvas_page_beyond_raster(page_number: usize) -> String {
+    format!("Page {page_number} — not drawn this far in. Zoom out to see it.")
+}
+
 /// Shown on a page that will not draw at all.
 ///
 /// The per-page sibling of [`canvas_render_failed`], and the difference
@@ -720,6 +777,36 @@ pub fn canvas_page_refused(page_number: usize, detail: &str) -> String {
 /// different in kind: a render *failure* is something about this page, and
 /// a stopped worker is something about the process. Conflating them would
 /// send an operator looking at their document for a fault that is ours.
+/// Shown when the renderer was asked for a picture with no pixels in it.
+///
+/// `pdfcer_render::RenderError::BadRasterSize` covers two conditions in one
+/// variant — *"is empty **or** exceeds MAX_PIXMAP_EDGE"* — and they are
+/// opposite failures that want opposite sentences. This is the empty half;
+/// [`canvas_zoom_past_rasterizer`] is the other. `crate::render::worker`
+/// decides which by reading the two pixel counts the variant carries, never by
+/// reading its prose.
+///
+/// # ★★ Why it names the page box rather than the zoom
+///
+/// Because a real page cannot reach this by zooming out.
+/// `crate::viewer::MIN_ZOOM` is 0.10, so rounding a pixmap's width to zero at
+/// that scale needs a page under about ten points on a side. Every ordinary
+/// page — the smallest thing in a drawing set is a business card at 252 pt —
+/// is an order of magnitude clear of it. What does reach it is a `/MediaBox` or
+/// `/CropBox` with no area, which is a property of the **file** and is the
+/// thing the operator can act on: the page is malformed, not mis-displayed.
+///
+/// ★ Saying *"zoom out and it will draw"* here would be the worse failure. It
+/// is false, it is actionable, and an operator who follows it concludes the
+/// program is broken rather than the sheet.
+///
+/// ★ It says *this page* and not *this document*, because a drawing set with
+/// one degenerate sheet navigates perfectly and the other thirty-five draw.
+#[must_use]
+pub fn canvas_page_has_no_area() -> &'static str {
+    "This page has no area to draw — its page box is empty."
+}
+
 #[must_use]
 pub fn canvas_render_worker_stopped() -> &'static str {
     "The page renderer stopped unexpectedly. Reopen the document to try again."
