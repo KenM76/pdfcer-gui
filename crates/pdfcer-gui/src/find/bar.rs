@@ -803,7 +803,9 @@ fn options(ui: &mut egui::Ui, state: &mut FindState, actions: &mut Vec<Action>) 
     // raising only the action makes the control lag by one frame.
     if zoom_on_jump != zoom_before {
         state.set_zoom_on_jump(zoom_on_jump);
-        actions.push(Action::SetFindZoom(zoom_on_jump));
+        actions.push(Action::Pref(
+            crate::app::actions::prefs::PrefAction::FindZoom(zoom_on_jump),
+        ));
         crate::diag::trace(|| {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed in the UI

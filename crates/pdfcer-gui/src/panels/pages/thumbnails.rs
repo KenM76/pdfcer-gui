@@ -281,6 +281,63 @@ pub const MIN_PAGE_BUDGET: Duration = Duration::from_millis(100);
 /// full-size raster of that page belongs anyway.
 pub const MAX_PAGE_BUDGET: Duration = Duration::from_secs(60);
 
+/// ★★★ **The only place in this crate that decides what a budget number
+/// MEANS** — `OPERATOR_REQUESTS.md` **O187**, 2026-09-12: *“setting it to 0
+/// should set it to infinity (never time out)”*.
+///
+/// `crate::app::prefs::Prefs::page_preview_budget_ms` holds the operator's
+/// number as a plain `u64` because the preferences file is a text file they
+/// type into. [`ThumbnailCache::budget`] holds it as an `Option<Duration>`
+/// because the code that consults it must not be able to forget the special
+/// case. This function is the join, and it is the whole of the conversion:
+///
+/// | Input | Result | Why |
+/// |---|---|---|
+/// | `0` | `None` | the operator's own instruction — no watchdog is armed |
+/// | `1`…`99` | `Some(100 ms)` | below the floor an ordinary sheet already fails |
+/// | `100`…`60 000` | `Some(that)` | in range, untouched |
+/// | over `60 000` | `Some(60 s)` | above the ceiling a hitch reads as a hang |
+///
+/// # ★ Why `0` is not simply clamped like every other out-of-range value
+///
+/// Because it is not out of range — it is a different *kind* of answer.
+/// Clamping it to [`MIN_PAGE_BUDGET`] would give the operator who typed the
+/// number he was told to type the **most aggressive** limit in the control's
+/// whole span, which is the exact opposite of what he asked for and is the
+/// defect O187 reported in advance: *“today 0 presumably means give up
+/// immediately”*. Every other number is a time limit and is bounded like
+/// one; `0` is an instruction and is obeyed.
+///
+/// # ⚠ What `None` costs
+///
+/// [`ThumbnailCache::render_one`] does not spawn the watchdog thread and
+/// does not arm a [`RenderCancel`] at all, so a page renders to completion
+/// on the UI thread however long that takes. `BENCHMARK.md` records ~10 s at
+/// 1× for a full-size CAD raster; a thumbnail is much cheaper, but nothing
+/// in the format bounds it. The control says **never** in words rather than
+/// showing a `0`, so this is not a state anybody arrives in by mistyping.
+#[must_use]
+pub fn budget_from_millis(millis: u64) -> Option<Duration> {
+    if millis == 0 {
+        return None;
+    }
+    Some(Duration::from_millis(millis).clamp(MIN_PAGE_BUDGET, MAX_PAGE_BUDGET))
+}
+
+/// The inverse, for the write-back that persists what the operator chose.
+///
+/// `None` becomes `0` — the same number he types, going back out to the same
+/// file. Kept beside [`budget_from_millis`] rather than inlined at the call
+/// site so the two halves of one convention cannot drift apart: a reader who
+/// changes what `0` means has both directions in front of them.
+#[must_use]
+pub fn millis_from_budget(budget: Option<Duration>) -> u64 {
+    // `as u64` is lossless here: the value is clamped to MAX_PAGE_BUDGET
+    // (60 000) before it is ever stored, and `u128` -> `u64` of a number
+    // under 2^16 cannot truncate.
+    budget.map_or(0, |d| d.as_millis() as u64)
+}
+
 /// How many uploaded thumbnails are kept at once.
 ///
 /// The arithmetic, because a texture cache with no stated size is a leak
@@ -442,16 +499,31 @@ pub struct ThumbnailCache {
     /// operator reported. Skip the page, not the feature.
     on: bool,
     /// **The operator's per-page time limit**, from the box beside the
-    /// checkbox.
+    /// checkbox — or `None`, meaning *never give up*.
     ///
-    /// Held here rather than in `Settings` deliberately, and that is a
-    /// limitation worth stating rather than hiding: it is application-scoped
-    /// but **not persisted**, so it returns to [`PAGE_BUDGET_DEFAULT`] on the
-    /// next launch, exactly as the checkbox does. Persisting it means a
-    /// `Settings` field, which is engine territory (`pdfcer-core`), and this
-    /// project does not write to the engine — see `PROJECT_PLAN.md`. Filed
-    /// rather than smuggled.
-    budget: Duration,
+    /// ★★★ **Persisted since 2026-09-12** (`OPERATOR_REQUESTS.md` **O187**),
+    /// in `crate::app::prefs::Prefs::page_preview_budget_ms`. The sentence
+    /// that used to sit here said persisting it *“means a `Settings` field,
+    /// which is engine territory”* and filed the limitation rather than
+    /// smuggling it. **That sentence was wrong**, and it is recorded here
+    /// rather than deleted because the error is instructive: `Settings` is
+    /// the *engine's* configuration, but this is a **shell** preference and
+    /// the shell has had its own preferences file all along. A limitation
+    /// argued from the wrong file is a limitation that does not exist, and it
+    /// cost the operator four days of a control that forgot itself every
+    /// launch.
+    ///
+    /// # ★ `Option`, not a zero
+    ///
+    /// `Duration::ZERO` would have been a sentinel every reader of this field
+    /// had to remember; `None` is one the compiler makes them handle. The
+    /// operator's `0` is converted at exactly one place,
+    /// [`budget_from_millis`], and turned back at [`millis_from_budget`].
+    ///
+    /// ⚠ `None` means [`Self::render_one`] arms no watchdog and no
+    /// [`RenderCancel`] — see that function's step 1. A page then takes
+    /// however long it takes, on the UI thread.
+    budget: Option<Duration>,
     /// The page indices in [`Self::ready`], newest last.
     ///
     /// Kept beside the map only so eviction has a deterministic tie-break;
@@ -477,7 +549,7 @@ impl Default for ThumbnailCache {
             synced: crate::app::state::pageepoch::PageEpochs::default(),
             skipped: None,
             on: true,
-            budget: PAGE_BUDGET_DEFAULT,
+            budget: Some(PAGE_BUDGET_DEFAULT),
             order: Vec::new(),
         }
     }
@@ -593,9 +665,9 @@ impl ThumbnailCache {
         self.on = on;
     }
 
-    /// The operator's per-page time limit.
+    /// The operator's per-page time limit, or `None` for *never give up*.
     #[must_use]
-    pub fn budget(&self) -> Duration {
+    pub fn budget(&self) -> Option<Duration> {
         self.budget
     }
 
@@ -603,10 +675,13 @@ impl ThumbnailCache {
     ///
     /// Three things happen, and the second and third are the ones that matter:
     ///
-    /// 1. The value is clamped to [`MIN_PAGE_BUDGET`]..=[`MAX_PAGE_BUDGET`].
-    ///    The control clamps too, but a control narrower than what the value
-    ///    may legally hold silently rewrites it, so the clamp lives on the
-    ///    value as well.
+    /// 1. The value is clamped to [`MIN_PAGE_BUDGET`]..=[`MAX_PAGE_BUDGET`]
+    ///    **when there is one**. The control clamps too, but a control
+    ///    narrower than what the value may legally hold silently rewrites it,
+    ///    so the clamp lives on the value as well. `None` — the operator's
+    ///    `0`, *never give up* — is stored as given: it is an instruction
+    ///    rather than an out-of-range number, and [`budget_from_millis`]
+    ///    carries the argument. O187, 2026-09-12.
     /// 2. **Every [`Unavailable::Abandoned`] entry is dropped**, so the pages
     ///    the *old* budget gave up on are queued again. Without this, raising
     ///    the limit would visibly do nothing — the operator's whole reason for
@@ -621,8 +696,8 @@ impl ThumbnailCache {
     /// ★ Idempotent by design — the panel calls this from a `DragValue` that
     /// reports a change on every pixel of a drag, so an unchanged value must
     /// cost nothing.
-    pub fn set_budget(&mut self, budget: Duration) {
-        let budget = budget.clamp(MIN_PAGE_BUDGET, MAX_PAGE_BUDGET);
+    pub fn set_budget(&mut self, budget: Option<Duration>) {
+        let budget = budget.map(|d| d.clamp(MIN_PAGE_BUDGET, MAX_PAGE_BUDGET));
         if budget == self.budget {
             return;
         }
@@ -772,19 +847,37 @@ impl ThumbnailCache {
         let cancel = RenderCancel::new();
         // ★ Copied out before the thread is spawned: `self` is borrowed
         // mutably for the whole of this function, so the closure cannot read
-        // the field, and a `Duration` is `Copy`.
+        // the field, and an `Option<Duration>` is `Copy`.
         let budget = self.budget;
-        // 1. The watchdog. `tx` stays here; dropping it at the end of this
-        //    function disconnects the channel, which wakes the thread with
+        // 1. The watchdog — **and only when there is a limit to watch for**.
+        //
+        //    ★★★ O187, 2026-09-12: the operator's `0` reaches here as `None`,
+        //    and `None` means no thread is spawned and `options.cancel` is
+        //    left unset. Both halves matter and the second is the one easy to
+        //    forget: arming the token without a watchdog would work today and
+        //    would silently become a hang the day anything else in this
+        //    function learned to cancel.
+        //
+        //    ⚠ The alternative — a watchdog armed at `Duration::MAX` — was
+        //    rejected. It spawns a thread per page that parks until the
+        //    channel disconnects, which is a thread doing nothing for the
+        //    whole of a render the operator asked not to be bounded.
+        //
+        //    `tx` stays here; dropping it at the end of this function
+        //    disconnects the channel, which wakes the thread with
         //    `Disconnected` and exits it without cancelling.
         let (tx, rx) = channel::<()>();
-        let watchdog = cancel.clone();
-        let guard = std::thread::spawn(move || {
-            if matches!(rx.recv_timeout(budget), Err(RecvTimeoutError::Timeout)) {
-                watchdog.cancel();
-            }
+        let guard = budget.map(|budget| {
+            let watchdog = cancel.clone();
+            std::thread::spawn(move || {
+                if matches!(rx.recv_timeout(budget), Err(RecvTimeoutError::Timeout)) {
+                    watchdog.cancel();
+                }
+            })
         });
-        options.cancel = Some(cancel.clone());
+        if budget.is_some() {
+            options.cancel = Some(cancel.clone());
+        }
 
         // 2. The render. The `view()` borrow lives and dies inside this
         //    statement, so no `Arc<EditSession>` clone escapes the frame.
@@ -795,7 +888,14 @@ impl ThumbnailCache {
         };
         let elapsed = started.elapsed();
         drop(tx);
-        let _ = guard.join();
+        // ★ `drop(tx)` is unconditional even when no watchdog was spawned:
+        // `rx` was moved into the closure only in the `Some` arm, so in the
+        // `None` arm the receiver is dropped with `guard`'s `None` and the
+        // sender has nothing to wake. Dropping it anyway costs nothing and
+        // keeps the two paths' shape identical for whoever reads this next.
+        if let Some(guard) = guard {
+            let _ = guard.join();
+        }
 
         // 3. The outcome.
         match outcome {
@@ -851,7 +951,15 @@ impl ThumbnailCache {
                 //
                 // `budget`, not `elapsed`, because the page's real cost is
                 // unknown — pdfcer stopped it precisely so as not to spend it.
-                self.skipped = Some(SkippedPage {
+                //
+                // ★ `budget` is `Some` on every path that reaches here: the
+                // token is only armed when there is a limit (step 1), so a
+                // cancelled render implies one. `map` rather than `expect`
+                // because a disclosure is not worth a panic — if that
+                // invariant is ever broken, the tile still says *Not
+                // finished* and only the sentence above the grid is missing,
+                // which is the failure this whole module prefers.
+                self.skipped = budget.map(|budget| SkippedPage {
                     page_index,
                     millis: budget.as_millis(),
                 });

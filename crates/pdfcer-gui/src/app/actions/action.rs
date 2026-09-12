@@ -1200,33 +1200,26 @@ pub enum Action {
     /// *which* way to step cannot be re-derived after the frame that asked.
     /// See `crate::find` for what happens on the other end.
     Find(crate::find::FindRequest),
-    /// ★ **Persist the Find bar's *Zoom* control** — `OPERATOR_REQUESTS.md`
-    /// **O163**, 2026-09-09.
+    /// ★★ **Everything the operator sets that is NOT part of a
+    /// document** — [`super::prefs`].
     ///
-    /// # Why this is not a [`Self::Find`] request
+    /// Two members today: the Find bar's *Zoom* tick (**O163**) and the
+    /// Pages panel's previews tick with its time limit (**O187**).
     ///
-    /// [`crate::find::FindRequest`]'s own doc comment states the rule its two
-    /// variants share: *what has to go through the funnel is what needs the
-    /// **document***, and both of them do. This needs the opposite — it must
-    /// work with **no document open**, because the operator can open the Find
-    /// bar, set a preference and never open a file, and `Action::Find`'s arm
-    /// is inside a `Status::Open(doc)` match that would silently drop it.
+    /// # Why they moved out of this enum, 2026-09-12
     ///
-    /// # Why it is an action at all, when the bar has already applied it
+    /// **R2**, and a real seam rather than a size-driven cut — the same
+    /// test [`Self::Field`] and [`Self::Vector`] pass. The family's four
+    /// shared properties are in its module header, and the first is the
+    /// one that makes it a family: **a preference needs no open
+    /// document**, so it is matched above the guard every other arm in
+    /// `apply` lives under. Nothing else in this enum can say that.
     ///
-    /// Because the *live* half and the *persisted* half have different
-    /// owners. `crate::find::bar` writes the live value into
-    /// [`crate::find::FindState`] the instant the box is ticked — a preference
-    /// that took a frame to arrive would let the very next *Next* obey the old
-    /// answer. What the bar cannot reach is `PdfcerApp::prefs` and the file
-    /// behind it, so the carried boolean is the *write-through*, and the arm
-    /// saves immediately for `view.smart_select`'s stated reason: one discrete
-    /// operator decision is one write, now.
-    ///
-    /// The operand is carried rather than re-read, like every other action
-    /// here — the arm must not have to ask a widget that has stopped existing
-    /// what it was set to.
-    SetFindZoom(bool),
+    /// ★ The argument that used to be written out twice here — *why an
+    /// action at all, when the surface has already applied it* — is
+    /// stated once in that header. Two variants carrying the same
+    /// paragraph is how a paragraph drifts from itself.
+    Pref(super::prefs::PrefAction),
     /// ★ **Everything done to a form FIELD**, as its own family — [`super::forms`].
     ///
     /// Eight verbs: fill a control, select one on the page, place one, author

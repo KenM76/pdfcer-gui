@@ -496,6 +496,73 @@ pub struct Prefs {
     /// that reason. It is still not a `FindOptions` field: those are the
     /// bar's own menu, and he asked for this one in Settings.
     pub find_trim_query: bool,
+    /// ★★★ **Is the pages panel allowed to draw page pictures?** —
+    /// `OPERATOR_REQUESTS.md` **O187**, 2026-09-12, and it closes the half
+    /// **O151** left open on 2026-09-08.
+    ///
+    /// O151 stopped pdfcer turning the tick off behind the operator's back.
+    /// It did not make the tick *survive a restart*, so an operator who
+    /// cleared it because previews were slow on their sheet set met them
+    /// again on the next launch — which is the same complaint wearing a
+    /// longer fuse. His words: *“the draw page previews timeout needs to be
+    /// remembered”*, and a timeout remembered without the tick beside it
+    /// would be half an answer.
+    ///
+    /// The persisted half of
+    /// [`crate::panels::pages::thumbnails::ThumbnailCache::previews_on`].
+    /// The live value lives on the cache because the checkbox reads and
+    /// writes it every frame and `Prefs` is not reachable from a panel
+    /// widget; this is where it survives a restart. Written by
+    /// `Action::SetPagePreviews`, read back into the cache once at startup.
+    ///
+    /// ★ **`true` by default** — the behaviour every build has had, and
+    /// [`Self::smart_select`]'s argument exactly: a checkbox that exists so
+    /// something can be turned OFF defaults to ON.
+    ///
+    /// ⚠ **Nothing but the operator may write this field**, and that is not
+    /// a style rule. `ThumbnailCache::on` was `Option<bool>` until
+    /// 2026-09-08 precisely because pdfcer also wrote it and the type had to
+    /// record *who last decided*. If a future change makes the panel clear
+    /// this on the operator's behalf, that three-state problem comes back
+    /// and so does the reported defect — now with a file to make it
+    /// permanent. Skip the page, not the feature.
+    pub page_previews: bool,
+    /// ★★★ **How long one page picture may take, in milliseconds — and
+    /// `0` means never give up** — `OPERATOR_REQUESTS.md` **O187**,
+    /// 2026-09-12: *“setting it to 0 should set it to infinity (never time
+    /// out)”*.
+    ///
+    /// The persisted half of
+    /// [`crate::panels::pages::thumbnails::ThumbnailCache::budget`], which
+    /// holds the live value as an `Option<Duration>` — `None` being the
+    /// same fact in the type system rather than in a sentinel.
+    ///
+    /// # ★ Why a `u64` of milliseconds and not an `Option`
+    ///
+    /// Because the preferences **file** is the operator's, and they type
+    /// into it. `0` is the number he asked to be able to type, it is what
+    /// the box beside the checkbox shows, and it is what the file records;
+    /// a file that said `page_preview_budget_ms = none` would be a third
+    /// spelling of the same answer for a reader to get wrong. The sentinel
+    /// is converted to `None` at exactly one place —
+    /// [`crate::panels::pages::thumbnails::budget_from_millis`] — and never
+    /// re-derived.
+    ///
+    /// # ⚠ What `0` actually costs, stated because the operator is entitled
+    /// to know before typing it
+    ///
+    /// The watchdog is not armed at all, so a page that would have taken a
+    /// minute takes a minute, on the UI thread, with the application
+    /// unresponsive for the duration. That is a legitimate thing to want —
+    /// he has drawings where the picture is worth the wait — and it is not
+    /// a thing to arrange by accident, so the box says **never** in words
+    /// when it is set and the tooltip says what never means.
+    ///
+    /// ★★ **Out-of-range values are clamped, `0` is not** — see
+    /// `budget_from_millis`. 1 ms would be an off switch wearing a number,
+    /// so it becomes the 100 ms floor; `0` is a deliberate instruction and
+    /// survives untouched.
+    pub page_preview_budget_ms: u64,
     /// **Does the ribbon band hide itself until the pointer reaches the tab
     /// strip?** — his instruction of 2026-09-05, *"we should also add the
     /// capability to auto hide the ribbon until we hover over top of it."*
@@ -813,6 +880,16 @@ impl Default for Prefs {
             // See the field's ★ on why this is the one default in this
             // struct that reverses what shipped.
             find_trim_query: true,
+            // ★ True = what every build has done, deliberately. See the
+            // field's ★ on why a checkbox that exists to disable something
+            // defaults to enabled.
+            page_previews: true,
+            // ★ 2 000 ms, and it is NOT written as a literal: this is the
+            // same number as `PAGE_BUDGET_DEFAULT`, which carries the
+            // measured table that chose it. Two constants for one number
+            // is how a default drifts from its own justification.
+            page_preview_budget_ms: crate::panels::pages::thumbnails::PAGE_BUDGET_DEFAULT
+                .as_millis() as u64,
             ribbon_auto_hide: false,
             rail_auto_hide: false,
             chrome: PageChrome::default(),

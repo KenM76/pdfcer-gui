@@ -291,7 +291,7 @@ pub fn body(
     // instruction from the operator, one number, one sentence explaining a
     // skipped tile — and everything it touches lives on `ThumbnailCache`.
     // Nothing above or below it in this function reads what it writes.
-    previews::row(ui, pages);
+    previews::row(ui, pages, actions);
     ui.separator();
 
     let mut go: Option<usize> = None;
@@ -485,7 +485,11 @@ pub fn body(
             visible.len(),
             pages.cache.ready_count(),
             u8::from(pages.cache.previews_on()),
-            pages.cache.budget().as_millis(),
+            // ★ `0` for *no limit*, which is the operator's own notation and
+            // the one the preferences file uses — so a harness reading this
+            // field and a reader opening the file meet the same number. O187,
+            // 2026-09-12.
+            thumbnails::millis_from_budget(pages.cache.budget()),
         )
     });
 

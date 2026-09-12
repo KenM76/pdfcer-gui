@@ -139,9 +139,9 @@ fn raising_the_limit_retries_what_it_skipped_and_nothing_else() {
         millis: 2000,
     });
 
-    cache.set_budget(Duration::from_secs(8));
+    cache.set_budget(Some(Duration::from_secs(8)));
 
-    assert_eq!(cache.budget(), Duration::from_secs(8));
+    assert_eq!(cache.budget(), Some(Duration::from_secs(8)));
     assert_eq!(
         cache.state(2),
         TileState::NotDrawnYet,
@@ -164,15 +164,84 @@ fn raising_the_limit_retries_what_it_skipped_and_nothing_else() {
 /// A control narrower than what the value may legally hold silently
 /// rewrites it — the argument `canvas::markup::swatch` makes for taking
 /// the pen's own range. Here the risk runs the other way: a future caller
-/// that is not the `DragValue` could set a budget of zero, which is a
-/// build where every page is abandoned while the checkbox reads "on".
+/// that is not the `DragValue` could set a budget of a millisecond, which
+/// is a build where every page is abandoned while the checkbox reads
+/// "on".
+///
+/// ⚠ **This test used to pass `Duration::ZERO` and expect the floor**, and
+/// it must never be written that way again. Since O187 (2026-09-12) zero
+/// has a second, opposite meaning — *no limit at all* — and it does not
+/// arrive here as a `Duration`: it arrives as `None`, from
+/// [`budget_from_millis`], which is the single place that decides what the
+/// number means. `Some(Duration::ZERO)` is therefore not the operator's
+/// zero; it is a caller asking for an instant give-up, and it is still
+/// clamped to the floor. The two are asserted separately below because
+/// conflating them is exactly the defect this doc exists to prevent.
 #[test]
 fn the_limit_cannot_be_set_outside_what_is_useful() {
     let mut cache = ThumbnailCache::default();
-    cache.set_budget(Duration::ZERO);
-    assert_eq!(cache.budget(), MIN_PAGE_BUDGET);
-    cache.set_budget(Duration::from_secs(60 * 60));
-    assert_eq!(cache.budget(), MAX_PAGE_BUDGET);
+    cache.set_budget(Some(Duration::ZERO));
+    assert_eq!(
+        cache.budget(),
+        Some(MIN_PAGE_BUDGET),
+        "a zero DURATION is an instant give-up and is raised to the floor"
+    );
+    cache.set_budget(Some(Duration::from_secs(60 * 60)));
+    assert_eq!(cache.budget(), Some(MAX_PAGE_BUDGET));
+}
+
+/// **★★★ Zero milliseconds is `None`, and `None` is not a small number.**
+///
+/// `OPERATOR_REQUESTS.md` **O187**, 2026-09-12: *“setting it to 0 should set
+/// it to infinity (never time out)”*. This is the assertion that the
+/// sentinel survives the clamp that catches every other small value — the
+/// one thing that could quietly undo the whole request, because `1` and
+/// `0` look alike in a clamp and one of them is an instruction.
+///
+/// The round trip is asserted in both directions: what the file holds
+/// becomes what the cache holds, and what the cache holds becomes what the
+/// file holds. A one-way test would let the write-back turn *no limit*
+/// back into the default on the next gesture, which the operator would
+/// experience as the box refusing to keep the zero he typed.
+#[test]
+fn zero_milliseconds_means_no_limit_and_survives_the_clamp() {
+    assert_eq!(
+        budget_from_millis(0),
+        None,
+        "0 is the operator's word for never"
+    );
+    assert_eq!(millis_from_budget(None), 0, "and it must go back out as 0");
+
+    assert_eq!(
+        budget_from_millis(1),
+        Some(MIN_PAGE_BUDGET),
+        "1 ms is an off switch wearing a number, so it is raised to the floor"
+    );
+    assert_eq!(
+        budget_from_millis(u64::MAX),
+        Some(MAX_PAGE_BUDGET),
+        "a hand-edited absurdity is held at the ceiling, not honoured"
+    );
+
+    let ms = millis_from_budget(Some(PAGE_BUDGET_DEFAULT));
+    assert_eq!(
+        budget_from_millis(ms),
+        Some(PAGE_BUDGET_DEFAULT),
+        "an ordinary value must survive a trip through the file unchanged"
+    );
+
+    let mut cache = ThumbnailCache::default();
+    cache.set_budget(budget_from_millis(0));
+    assert_eq!(
+        cache.budget(),
+        None,
+        "set_budget's own clamp must not resurrect a limit the operator removed"
+    );
+    assert_eq!(
+        millis_from_budget(cache.budget()),
+        0,
+        "and the write-back must not hand the file a default it never asked for"
+    );
 }
 
 /// **★ Setting the same limit twice is free.**
@@ -189,7 +258,7 @@ fn setting_the_same_limit_again_changes_nothing() {
         page_index: 2,
         millis: 2000,
     });
-    cache.set_budget(PAGE_BUDGET_DEFAULT);
+    cache.set_budget(Some(PAGE_BUDGET_DEFAULT));
     assert_eq!(cache.state(2), TileState::Abandoned);
     assert_eq!(cache.skipped().map(|s| s.page_index), Some(2));
 }
@@ -494,7 +563,7 @@ fn the_operators_settings_survive_an_edit() {
     epochs.resize(2);
     let mut cache = ThumbnailCache::default();
     cache.sync(&epochs, 2.0);
-    cache.set_budget(Duration::from_secs(5));
+    cache.set_budget(Some(Duration::from_secs(5)));
     cache.skipped = Some(SkippedPage {
         page_index: 1,
         millis: 5000,
@@ -509,7 +578,7 @@ fn the_operators_settings_survive_an_edit() {
     );
     assert_eq!(
         cache.budget(),
-        Duration::from_secs(5),
+        Some(Duration::from_secs(5)),
         "the operator's time limit did not survive an edit"
     );
     assert_eq!(cache.skipped().map(|s| s.page_index), Some(1));
@@ -526,7 +595,7 @@ fn the_operators_settings_survive_an_edit() {
 fn the_shipped_defaults_draw_something() {
     let cache = ThumbnailCache::default();
     assert!(cache.previews_on());
-    assert_eq!(cache.budget(), PAGE_BUDGET_DEFAULT);
+    assert_eq!(cache.budget(), Some(PAGE_BUDGET_DEFAULT));
     assert_eq!(cache.skipped(), None);
     assert_eq!(cache.state(0), TileState::NotDrawnYet);
 }

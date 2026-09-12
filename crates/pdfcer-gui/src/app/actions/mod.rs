@@ -17,6 +17,18 @@
 #![doc = include_str!("OVERVIEW.md")]
 
 pub mod destination;
+/// ★★ **The verbs whose subject is a PREFERENCE rather than a document**
+/// — split out of [`action`] and [`apply`] under R2 on 2026-09-12, when
+/// **O187** gave the family its second member.
+///
+/// Its header carries the four properties every member shares, and the
+/// first of them is why the family exists at all: a preference needs **no
+/// open document**, so its arm is matched above the `Status::Open` guard
+/// that every other arm in [`apply`] lives under. `pub` rather than
+/// private because the surfaces that raise these verbs are outside `app`
+/// — `find::bar` and `panels::pages::previews` both name
+/// [`prefs::PrefAction`] to build one.
+pub mod prefs;
 /// ★ **Reordering a page's annotations** — O99. Split out of [`forms`] on
 /// 2026-09-02 under R2; its header carries why the disclosures are the
 /// interesting part rather than the call.

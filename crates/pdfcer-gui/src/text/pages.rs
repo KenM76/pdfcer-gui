@@ -287,10 +287,39 @@ pub fn previews_budget_prefix() -> &'static str {
 /// the document too.
 #[must_use]
 pub fn previews_budget_tooltip() -> &'static str {
-    "How long pdfcer may spend drawing one page. An ordinary drawing sheet \
+    "How long pdfcer may spend drawing one page. Set it to 0 and there is no \
+     limit at all: every page finishes however long it takes, and the window \
+     does not respond while one is drawing. An ordinary drawing sheet \
      takes well under a tenth of a second; the densest CAD page measured takes \
      nearly one second. A page that runs over is skipped on its own — the rest \
      of the document still draws — and raising this draws it again."
+}
+
+/// ★★★ **What the time-limit box shows when it is set to nothing** —
+/// `OPERATOR_REQUESTS.md` **O187**, 2026-09-12: *“setting it to 0 should set
+/// it to infinity (never time out)”*.
+///
+/// # Why the box shows a word and not the number
+///
+/// Because `0` and *no limit* are opposite readings of the same glyph, and
+/// the wrong one is the intuitive one. A box reading `≤ 0.0 s` beside a
+/// grid of blank tiles says *give up immediately*, which is what O187
+/// predicted the operator would otherwise be left to discover — and the
+/// operator who typed `0` on purpose would have no confirmation that pdfcer
+/// understood them. One word removes both readings.
+///
+/// It is deliberately the whole contents of the box, prefix and suffix
+/// included: `≤ never s` is not English, and a control that keeps its units
+/// while its value stops being a quantity reads as a formatting accident.
+///
+/// ⚠ It is also what `crate::panels::pages::previews::parse_budget` must
+/// accept back, because a
+/// `DragValue` re-parses what it displayed the moment the operator clicks
+/// into it. A word shown and not accepted is a control that empties itself
+/// on a click.
+#[must_use]
+pub fn previews_budget_never() -> &'static str {
+    "no limit"
 }
 
 /// Which page was skipped, what it was given, and how to give it more.

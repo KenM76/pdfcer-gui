@@ -1152,7 +1152,30 @@ impl PdfcerApp {
             recent_choice: None,
             font_change: None,
             markup_change: None,
-            panels: crate::panels::PanelsState::default(),
+            // ★★★ Seeded from the preference file, once, here — O187,
+            // 2026-09-12, and for the reason the `find` block below states at
+            // length: the live value lives on a type the app owns outright
+            // (`ThumbnailCache`), so the file is consulted at construction
+            // and `Action::SetPagePreviews` writes back the other way.
+            //
+            // ⚠ `force_on` is the ONLY writer of the tick, and this call is
+            // the one exception to *“nothing but the operator writes it”* —
+            // which it is not really an exception to at all, because what it
+            // replays is the operator's own last instruction rather than a
+            // judgement pdfcer formed. The distinction is the whole of O151
+            // and is why `ThumbnailCache::on` could go back to a plain
+            // `bool`: there is still exactly one party deciding.
+            panels: {
+                let mut panels = crate::panels::PanelsState::default();
+                let pages = panels.pages_mut();
+                pages.cache.force_on(prefs.page_previews);
+                pages
+                    .cache
+                    .set_budget(crate::panels::pages::thumbnails::budget_from_millis(
+                        prefs.page_preview_budget_ms,
+                    ));
+                panels
+            },
             // ★ Seeded from the preference file, once, here — not synced
             // every frame the way `smart_select` is. The difference is where
             // the live value lives: `smart_select`'s lives in `egui::Memory`

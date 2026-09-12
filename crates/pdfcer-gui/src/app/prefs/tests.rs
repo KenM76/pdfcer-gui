@@ -38,6 +38,8 @@ fn every_preference_round_trips_through_the_file() {
                 find_zoom_on_jump: false,
                 // ★ Non-default, identically. O180 ships `true`.
                 find_trim_query: false,
+                page_previews: false,
+                page_preview_budget_ms: 0,
                 ribbon_auto_hide: false,
                 rail_auto_hide: false,
                 // ★ Non-default for the identical reason — O96 ships `true`,
@@ -579,6 +581,8 @@ fn the_writer_emits_no_key_the_parser_rejects() {
         find_zoom_on_jump: false,
         // ★ …and O180, which also ships `true`.
         find_trim_query: false,
+        page_previews: false,
+        page_preview_budget_ms: 0,
         ribbon_auto_hide: false,
         rail_auto_hide: false,
         // ★ …and O96, which also ships `true`.

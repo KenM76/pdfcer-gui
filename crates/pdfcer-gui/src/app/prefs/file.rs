@@ -340,6 +340,36 @@ impl Prefs {
                         line,
                     }),
                 },
+                // ★ The pages panel's two, O187, 2026-09-12. One arm each,
+                // for the reason the comment below gives about the auto-hide
+                // pair: they are one row on screen but two independent
+                // decisions, and a reader meeting one inside a joint arm
+                // would reasonably expect the other to move with it.
+                "page_previews" => match opening::bool_from_key(value) {
+                    Some(on) => prefs.page_previews = on,
+                    None => notes.push(PrefNote::BadValue {
+                        key: key.to_owned(),
+                        value: value.to_owned(),
+                        line,
+                    }),
+                },
+                // ★★ Parsed, NOT clamped here, and that is deliberate. A
+                // hand-edited 5 ms is a legal `u64` and an illegal budget;
+                // clamping it at the parse would make the file disagree
+                // with itself silently on the next write. The single place
+                // that decides what a number MEANS is
+                // `thumbnails::budget_from_millis`, which the startup seed
+                // and the control both go through. `0` reaches it intact
+                // because `0` is the operator's instruction, not an
+                // out-of-range value.
+                "page_preview_budget_ms" => match value.parse::<u64>() {
+                    Ok(ms) => prefs.page_preview_budget_ms = ms,
+                    Err(_) => notes.push(PrefNote::BadValue {
+                        key: key.to_owned(),
+                        value: value.to_owned(),
+                        line,
+                    }),
+                },
                 // The two auto-hide settings, 2026-09-05. One arm each rather
                 // than a shared pattern: they are two independent surfaces and
                 // a reader meeting one inside a joint arm would reasonably
@@ -705,6 +735,28 @@ impl Prefs {
         // ui-text-exempt: a file KEY, as above.
         out.push_str("ask_default_app = ");
         out.push_str(opening::bool_key(self.ask_default_app));
+        out.push('\n');
+        out.push_str(
+            "\n\
+             # page_previews: true | false. Whether the Pages panel draws a\n\
+             # small picture of each sheet. Turning it off leaves the page\n\
+             # numbers and every page command working; only the pictures go.\n\
+             #\n\
+             # page_preview_budget_ms: how long pdfcer may spend drawing ONE\n\
+             # of those pictures, in milliseconds. A page that runs over is\n\
+             # skipped on its own and the rest of the document still draws.\n\
+             # Raising the number draws the skipped ones again.\n\
+             #\n\
+             # SET IT TO 0 FOR NO LIMIT -- pdfcer will then finish every\n\
+             # page however long it takes, and the window does not respond\n\
+             # while it does. Anything else is held between 100 and 60000.\n",
+        );
+        // ui-text-exempt: file KEYS, as above.
+        out.push_str("page_previews = ");
+        out.push_str(opening::bool_key(self.page_previews));
+        out.push('\n');
+        out.push_str("page_preview_budget_ms = "); // ui-text-exempt: a file KEY, as above.
+        out.push_str(&self.page_preview_budget_ms.to_string());
         out.push('\n');
         out.push_str(
             "\n\

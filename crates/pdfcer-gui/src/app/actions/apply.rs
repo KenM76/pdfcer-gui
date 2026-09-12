@@ -262,25 +262,22 @@ impl PdfcerApp {
                 }
                 return;
             }
-            // ★ Matched HERE — above the `Status::Open` guard below — because
-            // this is a **preference**, not a document action. The Find bar is
-            // reachable with nothing open, and a setting that silently failed
-            // to stick in that state would be the worst kind of defect: it
-            // would work most of the time.
+            // ★★ Matched HERE — above the `Status::Open` guard below —
+            // because a **preference** is not a document action.
             //
-            // The live value is already in `self.find`; the bar wrote it in the
-            // frame that raised this. This arm exists for the file.
-            Action::SetFindZoom(on) => {
-                self.prefs.find_zoom_on_jump = on;
-                // Immediately, and the failure is swallowed, exactly as
-                // `view.smart_select` argues: one discrete operator decision is
-                // one write, and losing a preference across a restart does not
-                // justify a modal in front of somebody who is searching.
-                let _ = self.prefs.save();
-                crate::diag::trace(|| {
-                    // ui-text-exempt: diagnostic trace, never displayed in the UI
-                    format!("find-zoom-persisted on={on}")
-                });
+            // Split into `super::prefs` under R2 on 2026-09-12. Its header
+            // carries the four properties every member shares; the one that
+            // decides the position of this arm is the first: the Find bar is
+            // reachable with nothing open, so a preference dropped by the
+            // guard would stick most of the time and vanish the rest.
+            //
+            // ⚠ The arm hands over `&mut self.prefs` and nothing else. That
+            // is the enforcement of the seam rather than a courtesy: a future
+            // member that needed the document could not be written against
+            // this signature, and would be telling you it does not belong in
+            // the family.
+            Action::Pref(pref) => {
+                pref.apply(&mut self.prefs);
                 return;
             }
             _ => {}
@@ -366,7 +363,7 @@ impl PdfcerApp {
             | Action::SaveCopy
             | Action::SaveAs
             | Action::Find(_)
-            | Action::SetFindZoom(_)
+            | Action::Pref(_)
             | Action::RereadWithDuplicateKeys { .. } => {
                 // ui-text-exempt: a panic message, read from a stack trace by
                 // whoever moved one of these arms. Never rendered.
