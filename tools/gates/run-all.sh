@@ -127,6 +127,7 @@ run "check-strong-text --self-test" bash "$HERE/check-strong-text.sh" --self-tes
 run "check-shipped-assets --self-test" bash "$HERE/check-shipped-assets.sh" --self-test
 run "check-string-gaps --self-test" bash "$HERE/check-string-gaps.sh" --self-test
 run "check-trace-names --self-test" python "$HERE/check-trace-names.py" --self-test
+run "check-orphan-docs --self-test" python "$HERE/check-orphan-docs.py" --self-test
 
 # --- 1. the gates themselves ------------------------------------------------
 run "check-ui-strings"   bash "$HERE/check-ui-strings.sh"
@@ -261,6 +262,36 @@ run "check-suite-name-absent" python "$ROOT/tools/check-suite-name-absent.py"
 # stream, `BT /F1 12 Tf` -- that pins the anchor: the first cut of mechanism 3
 # scanned whole files and reported 31 hits of which one was real.
 run "check-trace-names" python "$HERE/check-trace-names.py"
+# ★★★ `check-orphan-docs`, added 2026-09-12 — and it is the only gate here
+# aimed at documentation being attached to the WRONG ITEM rather than at its
+# being absent or false.
+#
+# A contiguous run of `///` lines is ONE doc comment to Rust, so an item
+# inserted below an existing item's doc comment — rather than below that item
+# — adopts its documentation. The owner is left with none. TWELVE instances
+# had accumulated in this crate over thirteen days and shipped in four
+# releases.
+#
+# ★★ No part of the toolchain can see it. `rustc` is happy; a doc comment is
+# valid prose wherever it sits. `cargo fmt` is happy. `clippy -D warnings` is
+# happy. `cargo doc` would show it and nobody runs that on a binary crate. The
+# one that surfaced was luck: deleting an absorbing item left a blank line
+# after a doc comment, which clippy DOES lint. Chasing that lint rather than
+# silencing it found the other eleven.
+#
+# ★ Its self-test falsifies in both directions, because this gate's history is
+# two wrong drafts. Aimed at a bold title AFTER a paragraph break it found
+# ZERO — that is the shape of an ordinary mid-doc heading, so the detector was
+# pointed at the normal case and a clean report meant nothing. Aimed at `**`
+# anywhere it found 717, all but none of them mid-sentence emphasis wrapped
+# across a line. So the self-test plants an orphan AND asserts that the
+# ordinary heading, the wrapped emphasis and an indented bullet continuation
+# are all left alone.
+#
+# ★ Its one exemption is checked for STALENESS: an entry matching nothing
+# fails the gate. `check-strong-text.sh` had carried a carve-out whose premise
+# had silently stopped being true, and that is the lesson taken literally.
+run "check-orphan-docs" python "$HERE/check-orphan-docs.py"
 
 # `check-verb-coverage` fails when `pdfcer-core` has a verb this shell names
 # nowhere AND `EDITABLE_SURFACES.md` says nothing about it either.

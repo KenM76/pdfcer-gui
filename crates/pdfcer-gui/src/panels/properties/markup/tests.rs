@@ -38,6 +38,15 @@
 
 use super::*;
 
+// ★ Named explicitly rather than picked up by the glob above, because it is
+// not in the parent: `ALL_ENDINGS` lives in `rows.rs` with `ending_chooser`,
+// the only code that iterates it, and **nothing in the library reads it from
+// outside that file.** Re-exporting it through the parent to keep the glob
+// working made an import that existed for the test suite alone, which clippy
+// correctly called unused. The path is the honest form and it says where the
+// table lives.
+use super::rows::ALL_ENDINGS;
+
 // ★ `page_tree::Rect`, not `annot_author::Rect`. `annot_author` imports the
 // type privately, so the path that reads naturally is not a path that
 // resolves — the one place in this module where the engine's own module

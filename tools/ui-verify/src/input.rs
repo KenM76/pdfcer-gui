@@ -661,25 +661,6 @@ impl Driver {
         Ok(())
     }
 
-    /// Press a **chord** — a virtual key with modifiers held — in the target
-    /// window.
-    ///
-    /// The reason this exists: `Ctrl+F` and every other letter chord in the
-    /// manifest keymap were unreachable from this harness, so the checks that
-    /// would have driven them could not be written. `press` sends a bare
-    /// virtual key with no modifiers, and a shell that binds a command to
-    /// `Ctrl+F` cannot be reached by sending `F`.
-    ///
-    /// # Errors
-    ///
-    /// If there is no target window, for exactly the reason [`Self::press`]
-    /// refuses — and more sharply. A bare keystroke into the operator's editor
-    /// types a character. **A chord into the operator's editor runs a
-    /// command**, and `Ctrl+W`, `Ctrl+Q` and `Ctrl+S` are all one letter away
-    /// from a chord a UI test might plausibly send.
-    ///
-    /// Modifiers are released by [`sys::key_stroke_with`] on every path; see
-    /// its docs for why that is not merely tidy.
     /// **Type an ASCII string, one real keystroke per character.**
     ///
     /// # ★★ Why this refuses rather than skipping what it cannot type
@@ -780,6 +761,29 @@ impl Driver {
         Ok(())
     }
 
+    /// Press a **chord** — a virtual key with modifiers held — in the target
+    /// window.
+    ///
+    /// The reason this exists: `Ctrl+F` and every other letter chord in the
+    /// manifest keymap were unreachable from this harness, so the checks that
+    /// would have driven them could not be written. `press` sends a bare
+    /// virtual key with no modifiers, and a shell that binds a command to
+    /// `Ctrl+F` cannot be reached by sending `F`.
+    ///
+    /// # Errors
+    ///
+    /// If there is no target window, for exactly the reason [`Self::press`]
+    /// refuses — and more sharply. A bare keystroke into the operator's editor
+    /// types a character. **A chord into the operator's editor runs a
+    /// command**, and `Ctrl+W`, `Ctrl+Q` and `Ctrl+S` are all one letter away
+    /// from a chord a UI test might plausibly send.
+    ///
+    /// Modifiers are released by [`sys::key_stroke_with`] on every path; see
+    /// its docs for why that is not merely tidy.
+    ///
+    /// ★ Moved here on 2026-09-12. It sat above `type_ascii`, run
+    /// together with that item's doc comment — so it documented `type_ascii`
+    /// and this function had none. See `tools/gates/check-orphan-docs.py`.
     pub fn press_chord(&self, modifiers: &[u16], vk: u16) -> Result<()> {
         self.raise_and_confirm()?;
         sys::key_stroke_with(modifiers, vk);
@@ -787,56 +791,6 @@ impl Driver {
         Ok(())
     }
 
-    /// Raise the target and confirm it is actually in front.
-    ///
-    /// ★ **`raise()` is a request, not a result.** `SetForegroundWindow` is
-    /// refused outright for a process without foreground rights — silently,
-    /// via a boolean return nobody is obliged to read — so a window that was
-    /// created behind an already-active one can stay behind it through any
-    /// number of raise calls. Windows' foreground lock exists precisely to
-    /// stop background processes stealing focus, and this harness IS a
-    /// background process.
-    ///
-    /// Without this check the failure is not "the keystroke did not arrive".
-    /// It is:
-    ///
-    /// * the keystroke arriving **in the operator's own window** — and for a
-    ///   chord that means running one of their commands, not typing a
-    ///   character; and
-    /// * the check reporting that the FEATURE is broken, when the truth is
-    ///   that nothing was ever typed at it. A false failure naming the wrong
-    ///   subsystem is worse than no check, because somebody then goes and
-    ///   looks at working code.
-    ///
-    /// Both were observed: a `find_opens_and_finds` run reported "Ctrl+F did
-    /// not dispatch `edit.find`" against a build in which Ctrl+F works.
-    /// **Bring the target to the front and PROVE it got there**, or refuse.
-    ///
-    /// ★★ Every input method uses this, and until 2026-08-20 only the keyboard
-    /// ones did. The pointer methods called the fire-and-forget `raise` below,
-    /// and the consequence is the reason this doc comment exists:
-    ///
-    /// > **A click sent to a window that is not in front goes to whatever
-    /// > window IS, and the check then reports the feature as broken.**
-    ///
-    /// Windows refuses `SetForegroundWindow` to a process without foreground
-    /// rights, and this harness is a background process — so the raise is a
-    /// *request*, not a fact, and whether it is honoured depends on which
-    /// process last had focus and on how recently the operator typed. That
-    /// makes it **intermittent**, which is the worst available property: it
-    /// works while a suite is running and fails on a single check run alone,
-    /// or the reverse, and every failure it produces is a confident, specific
-    /// accusation against code that is fine.
-    ///
-    /// Measured on 2026-08-20: `markup_rectangle_arms_from_the_ribbon` and
-    /// `insert_image_places_a_picture` both reported the ribbon as unresponsive
-    /// — *"the click on `ribbon.tab.markup` produced no `ribbon-tab-activated`"*
-    /// — over a build in which the ribbon works, and both had passed in a full
-    /// suite an hour earlier. The old build reproduced it too, which is what
-    /// ruled the application out.
-    ///
-    /// The message this returns is deliberately long. Whoever meets it is one
-    /// step from diagnosing a feature that was never clicked.
     /// **Which of the application's windows owns this point**, decided by
     /// geometry rather than by z-order.
     ///
@@ -1034,6 +988,61 @@ impl Driver {
         Ok(())
     }
 
+    /// Raise the target and confirm it is actually in front.
+    ///
+    /// ★ **`raise()` is a request, not a result.** `SetForegroundWindow` is
+    /// refused outright for a process without foreground rights — silently,
+    /// via a boolean return nobody is obliged to read — so a window that was
+    /// created behind an already-active one can stay behind it through any
+    /// number of raise calls. Windows' foreground lock exists precisely to
+    /// stop background processes stealing focus, and this harness IS a
+    /// background process.
+    ///
+    /// Without this check the failure is not "the keystroke did not arrive".
+    /// It is:
+    ///
+    /// * the keystroke arriving **in the operator's own window** — and for a
+    ///   chord that means running one of their commands, not typing a
+    ///   character; and
+    /// * the check reporting that the FEATURE is broken, when the truth is
+    ///   that nothing was ever typed at it. A false failure naming the wrong
+    ///   subsystem is worse than no check, because somebody then goes and
+    ///   looks at working code.
+    ///
+    /// Both were observed: a `find_opens_and_finds` run reported "Ctrl+F did
+    /// not dispatch `edit.find`" against a build in which Ctrl+F works.
+    ///
+    /// **Bring the target to the front and PROVE it got there**, or refuse.
+    ///
+    /// ★★ Every input method uses this, and until 2026-08-20 only the keyboard
+    /// ones did. The pointer methods called the fire-and-forget `raise` below,
+    /// and the consequence is the reason this doc comment exists:
+    ///
+    /// > **A click sent to a window that is not in front goes to whatever
+    /// > window IS, and the check then reports the feature as broken.**
+    ///
+    /// Windows refuses `SetForegroundWindow` to a process without foreground
+    /// rights, and this harness is a background process — so the raise is a
+    /// *request*, not a fact, and whether it is honoured depends on which
+    /// process last had focus and on how recently the operator typed. That
+    /// makes it **intermittent**, which is the worst available property: it
+    /// works while a suite is running and fails on a single check run alone,
+    /// or the reverse, and every failure it produces is a confident, specific
+    /// accusation against code that is fine.
+    ///
+    /// Measured on 2026-08-20: `markup_rectangle_arms_from_the_ribbon` and
+    /// `insert_image_places_a_picture` both reported the ribbon as unresponsive
+    /// — *"the click on `ribbon.tab.markup` produced no `ribbon-tab-activated`"*
+    /// — over a build in which the ribbon works, and both had passed in a full
+    /// suite an hour earlier. The old build reproduced it too, which is what
+    /// ruled the application out.
+    ///
+    /// The message this returns is deliberately long. Whoever meets it is one
+    /// step from diagnosing a feature that was never clicked.
+    ///
+    /// ★ Moved here on 2026-09-12. It sat above `window_owning`, run
+    /// together with that item's doc comment — so it documented `window_owning`
+    /// and this function had none. See `tools/gates/check-orphan-docs.py`.
     fn raise_and_confirm(&self) -> Result<()> {
         // ★ The window the last pointer action focused, if any, and the
         // application's own window otherwise. A keystroke follows the focus.

@@ -313,6 +313,27 @@ fn worded(error: &pdfcer_core::sign::apply::SignApplyError) -> String {
         // one. `crate::sign::prepare`'s note argues why asking would be handing
         // the operator arithmetic.
         E::ReservationTooSmall { .. } => t::reservation_too_small(&detail),
+        // ★★★ NO arm for `Edit(FieldAuthoring(DottedPartialName))`,
+        // deliberately, and this comment is the record of why — because the
+        // engine's own doc names `sign` as one of that variant's three
+        // raisers, so its absence here looks like an omission.
+        //
+        // The engine raises it on the CREATE path only, and this shell never
+        // takes that path. `crate::sign::Placement::ExistingField { name }` is
+        // the only thing that sets `SignRequest::field_name`, and its `name`
+        // comes from a list of fields the open document already has — so the
+        // engine's `existing.contains(n)` branch is taken and it reuses the
+        // field instead of authoring one. Where a period in that name is
+        // **correct**: `Approvals.Engineer` is a legitimate nested placeholder
+        // to sign into, which is the shape a title block on a drawing leaves,
+        // and the engine allows it for exactly that reason.
+        //
+        // ⇒ An arm here would word a refusal no operator can provoke. If this
+        // shell ever grows a "name a NEW signature box" control, the arm and
+        // its sentence are wanted then — and the sentence must say *the name
+        // of a new signature box*, because a flat *"a signature box's name
+        // cannot contain a dot"* would be false and would stop an operator
+        // trying a nested box that signs perfectly well.
         _ => t::engine_refused(&detail),
     }
 }

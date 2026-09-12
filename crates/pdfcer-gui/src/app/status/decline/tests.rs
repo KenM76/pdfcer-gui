@@ -698,6 +698,8 @@ fn a_new_decline_cannot_be_added_unnoticed(declined: Declined) {
         | Declined::Unshare(_)
         | Declined::SettingsNotSaved
         | Declined::FieldNameTaken
+        | Declined::FieldPathCrossesTerminal(_)
+        | Declined::DottedPartialName(_)
         | Declined::WidgetHasNoName
         | Declined::FlattenCertified
         | Declined::FieldDeleteRefused

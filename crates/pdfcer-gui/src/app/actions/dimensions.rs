@@ -779,28 +779,6 @@ impl DimensionAction {
     }
 }
 
-/// Apply one ce-dimension verb to the open document.
-///
-/// ## The two-step every arm shares
-///
-/// 1. **Invalidate as widely as the verb reaches.** A group verb clears
-///    `doc.strip_rasters` wholesale, because a group's members are wherever the
-///    operator put them and a strip entry drawn before the edit would keep
-///    showing the old number with nothing to say so. This is the same
-///    wholesale-invalidation argument `app::pages` makes for a page
-///    permutation, arriving from a different direction.
-/// 2. **Mutate through [`super::apply::vector_edit`]**, so the
-///    cancel-mutate-bump-invalidate protocol, the undo entry, the trace line
-///    and the disclosure store are the ones every other edit in this
-///    application uses, rather than a second implementation of them here.
-///
-/// ## Why the group arms pass page `0`
-///
-/// `vector_edit` takes a page for its trace line and its per-page raster drop.
-/// A group is document-scoped and has no page, so `0` is passed with this note
-/// rather than the signature gaining an `Option<usize>` that every other caller
-/// would have to spell. The wholesale clear in step 1 is what actually
-/// discharges the invalidation; the page reaches the funnel only as a label.
 /// **Set or clear a ce dimension's caption.**
 ///
 /// # ★★ What is reported, and why the restore says something different
@@ -845,6 +823,32 @@ fn set_label(
     });
 }
 
+/// Apply one ce-dimension verb to the open document.
+///
+/// ## The two-step every arm shares
+///
+/// 1. **Invalidate as widely as the verb reaches.** A group verb clears
+///    `doc.strip_rasters` wholesale, because a group's members are wherever the
+///    operator put them and a strip entry drawn before the edit would keep
+///    showing the old number with nothing to say so. This is the same
+///    wholesale-invalidation argument `app::pages` makes for a page
+///    permutation, arriving from a different direction.
+/// 2. **Mutate through [`super::apply::vector_edit`]**, so the
+///    cancel-mutate-bump-invalidate protocol, the undo entry, the trace line
+///    and the disclosure store are the ones every other edit in this
+///    application uses, rather than a second implementation of them here.
+///
+/// ## Why the group arms pass page `0`
+///
+/// `vector_edit` takes a page for its trace line and its per-page raster drop.
+/// A group is document-scoped and has no page, so `0` is passed with this note
+/// rather than the signature gaining an `Option<usize>` that every other caller
+/// would have to spell. The wholesale clear in step 1 is what actually
+/// discharges the invalidation; the page reaches the funnel only as a label.
+///
+/// ★ Moved here on 2026-09-12. It sat above `set_label`, run
+/// together with that item's doc comment — so it documented `set_label`
+/// and this function had none. See `tools/gates/check-orphan-docs.py`.
 pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
     if action.regenerates_the_whole_group() {
         doc.strip_rasters.clear();

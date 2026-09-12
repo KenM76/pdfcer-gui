@@ -300,7 +300,7 @@ pub fn draw_anchors(
     if draw_unselected {
         // ★ The CULLED set, so the regions name dots that are on screen —
         // O69. Publishing a region for an anchor scrolled out of view was the
-        // trap `D:\devag\egui` records twice: the harness resolves a rect,
+        // trap `D:/dev/rag/egui` records twice: the harness resolves a rect,
         // clicks its centre, and hits whatever is actually there. A rect that
         // is off screen is a click aimed at nothing, reported as a defect in
         // whatever the click did instead.

@@ -509,11 +509,6 @@ pub fn finish(ctx: &egui::Context, actions: &mut Vec<Action>) -> bool {
     }
 }
 
-/// **Abandon a pick in progress**, reporting whether there was one.
-///
-/// Escape's claimant. It sits *below* the drag-in-flight rung and *above*
-/// retiring the tool — see [`crate::canvas::tool::disarm_measure`], which
-/// carries the argument for why those are two separate presses.
 /// **Take the completed calibration line's measured length, once.**
 ///
 /// Returns `Some(points)` on the single frame after the two-point pick
@@ -550,6 +545,15 @@ pub fn take_completed_scale_line(ctx: &egui::Context) -> Option<f64> {
     Some(measured)
 }
 
+/// **Abandon a pick in progress**, reporting whether there was one.
+///
+/// Escape's claimant. It sits *below* the drag-in-flight rung and *above*
+/// retiring the tool — see [`crate::canvas::tool::disarm_measure`], which
+/// carries the argument for why those are two separate presses.
+///
+/// ★ Moved here on 2026-09-12. It sat above `take_completed_scale_line`, run
+/// together with that item's doc comment — so it documented `take_completed_scale_line`
+/// and this function had none. See `tools/gates/check-orphan-docs.py`.
 pub fn abandon(ctx: &egui::Context) -> bool {
     let id = egui::Id::new(MEASURE_MEMORY_KEY);
     let Some(mut st) = ctx.data_mut(|d| d.get_temp::<MeasureState>(id)) else {

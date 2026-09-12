@@ -17,6 +17,46 @@
 
 use crate::app::state::OpenDoc;
 
+/// **Author one new form control** from the draft the dialog accepted.
+///
+/// The single narrowing point between this shell's one `Draft` and
+/// `pdfcer-core`'s five spec types — see [`crate::canvas::formfield::draft`]'s
+/// header for why the shell holds one struct and the engine five. Every field
+/// a kind does not have is simply not read here, which is what makes that
+/// asymmetry cost one `match` instead of five dialogs.
+///
+/// ## ★★ The tooltip is the whole reason this verb was thought impossible
+///
+/// `TooltipChoice` has three states and the default is `Undecided`, which every
+/// one of these five verbs **refuses**: an interactive control owes a screen
+/// reader a name, and the engine will not invent one silently. That refusal was
+/// recorded in this project's own backlog as *"core's STRUCTURAL certification
+/// gate"* and parked the feature for nine days. It is not a gate; it is a
+/// required field of the dialog above.
+///
+/// So an empty tooltip becomes `TooltipChoice::Declined` rather than being left
+/// `Undecided`. The two are not the same and the difference is the point:
+/// `Declined` is the operator saying *"this control needs no name"*, which is a
+/// decision and is sometimes correct — a decorative button beside a labelled
+/// one. `Undecided` is nobody having been asked.
+///
+/// ## ★ Rule 4 — the outcome is disclosed, off-canvas, in full
+///
+/// `FieldAuthorOutcome` carries four things the operator **cannot see on the
+/// page**, and the one that matters most is `merged`: a name that matches an
+/// existing field makes this widget a second *view* of that field, so typing in
+/// one changes the other. Nothing about the rendered page says so, and a
+/// screenshot of it would be identical either way. That is precisely the half
+/// of rule 4 that survives decision 059 — *render normally; report separately* —
+/// so every flag the engine raises becomes a status line and none of them
+/// becomes a mark on the canvas.
+/// ★ Reunited with this function on 2026-09-12. It was left behind in `super`
+/// by the R2 split that moved `author` here on 2026-08-30, where a contiguous
+/// `///` run merged it into the next item's doc comment — so this function had
+/// no documentation and `group_is_a_field` had two functions' worth. Nothing
+/// warned: a doc comment is valid prose wherever it sits, and the only observer
+/// that could have caught it is `cargo doc`, which nobody runs on a binary
+/// crate. See `tools/gates/check-orphan-docs.py`.
 pub(in crate::app::actions) fn author(
     doc: &mut OpenDoc,
     page: usize,
@@ -29,21 +69,11 @@ pub(in crate::app::actions) fn author(
         NewRadioButton, NewTextField, TooltipChoice,
     };
 
-    // ★★★ REFUSE A NAME THAT WOULD SWALLOW AN EXISTING FIELD, before anything
-    // is written. See `group_is_a_field` — this is a shim for an engine gap and
-    // it guards unrecoverable data loss, so it runs first.
-    if let Some(victim) = super::group_is_a_field(doc, draft.name.trim()) {
-        crate::diag::trace(|| {
-            // ui-text-exempt: diagnostic trace, never displayed.
-            format!("add-form-field-refused reason=group-is-a-field victim={victim}")
-        });
-        crate::app::actions::record_note(
-            doc.edit_epoch,
-            crate::text::fieldclip::name_would_swallow(&victim),
-        );
-        return;
-    }
-
+    // ★★★ There was a PRE-CHECK here until 2026-09-11 — `group_is_a_field`,
+    // which modelled the engine's dotted-name rule and refused before the verb
+    // ran. It is gone, the engine's own refusal is read instead at the bottom
+    // of the closure below, and `super`'s deletion note carries the argument:
+    // a duplicate model of somebody else's rule drifts, and this one had.
     let name = draft.name.trim().to_owned();
     // ★ Empty means DECLINED, not undecided. See the header — this one line is
     // the difference between a feature and a nine-day blocker.
@@ -265,6 +295,32 @@ pub(in crate::app::actions) fn author(
                 }
             }
         };
+        // ★★★ THE ENGINE'S REFUSAL, WORDED WITH THE NAME THE ENGINE FOUND.
+        //
+        // `correctable` maps an `EditError` to the decline that says what the
+        // operator can do about it; today the only one an `add_*` verb raises
+        // is `FieldPathCrossesTerminal`, which carries the fully-qualified name
+        // of the existing field standing in the way.
+        //
+        // ★★ Recorded from INSIDE the closure, which is not incidental. The
+        // funnel's floor words every refusal no verb claimed, and its contract
+        // (`decline::floor`) is that a recorder firing in here **speaks first**
+        // and the floor yields to it. Recording after the funnel returned would
+        // be a second sentence for one gesture, in the wrong order.
+        //
+        // ★ Not a `record_note`. A note reports something that happened; this
+        // reports that nothing did — the engine refuses before it stages a byte
+        // or pushes an undo entry, so there is no edit to annotate.
+        //
+        // ★ The wildcard inside `correctable` is what makes this safe to leave
+        // alone as the engine grows: a refusal with no arm reaches the trace in
+        // the engine's own words and the bar in the floor's, which is a worse
+        // sentence but never a wrong one.
+        if let Err(error) = &outcome
+            && let Some(declined) = super::correctable(error)
+        {
+            crate::app::status::decline::record_field_author_refusal(declined);
+        }
         outcome.map(|o| super::disclosures(&o, kind))
     });
 

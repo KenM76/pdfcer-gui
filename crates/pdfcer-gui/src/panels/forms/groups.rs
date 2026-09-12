@@ -256,27 +256,6 @@ pub(super) fn section(
     crate::diag::ui_rect(REGION_HEADER, header.header_response.rect);
 }
 
-/// One row per grouping node, and the armed block under whichever row owns it.
-///
-/// # ★ At most one press per frame, and it is not an accident
-///
-/// The loop stops raising after the first press. Two presses in one frame would
-/// queue two actions against a form parsed **before** either ran, and the
-/// second would be acting on a set the first has already changed. The names
-/// here are stable where indices are not, so the second action would in fact
-/// still name the right node — the discipline is kept anyway, because *"queue
-/// only what was computed against the state you have"* is worth holding
-/// mechanically rather than re-deriving each time a queued verb is added. It
-/// costs the operator nothing: physically, one press per frame is all there is.
-///
-/// # ★★ Order is core's, deepest-first, and is deliberately not re-sorted
-///
-/// `AcroForm::groups` is post-order — a child appears before its parent — and
-/// core states it because *"it is the opposite of what DFS order suggests and a
-/// consumer that assumed parents-first would render a breadcrumb backwards."*
-/// It is also the useful order here: the deepest node is the smallest,
-/// least-destructive removal, so the list reads from the safest press to the
-/// most sweeping one.
 /// **The per-row census, written from the MODEL rather than from the drawing.**
 ///
 /// # ★★★ It lived inside the drawing loop until 2026-08-29, and the header lied
@@ -325,6 +304,31 @@ fn trace_rows(doc: &OpenDoc, form: &AcroForm) {
     }
 }
 
+/// One row per grouping node, and the armed block under whichever row owns it.
+///
+/// # ★ At most one press per frame, and it is not an accident
+///
+/// The loop stops raising after the first press. Two presses in one frame would
+/// queue two actions against a form parsed **before** either ran, and the
+/// second would be acting on a set the first has already changed. The names
+/// here are stable where indices are not, so the second action would in fact
+/// still name the right node — the discipline is kept anyway, because *"queue
+/// only what was computed against the state you have"* is worth holding
+/// mechanically rather than re-deriving each time a queued verb is added. It
+/// costs the operator nothing: physically, one press per frame is all there is.
+///
+/// # ★★ Order is core's, deepest-first, and is deliberately not re-sorted
+///
+/// `AcroForm::groups` is post-order — a child appears before its parent — and
+/// core states it because *"it is the opposite of what DFS order suggests and a
+/// consumer that assumed parents-first would render a breadcrumb backwards."*
+/// It is also the useful order here: the deepest node is the smallest,
+/// least-destructive removal, so the list reads from the safest press to the
+/// most sweeping one.
+///
+/// ★ Moved here on 2026-09-12. It sat above `trace_rows`, run
+/// together with that item's doc comment — so it documented `trace_rows`
+/// and this function had none. See `tools/gates/check-orphan-docs.py`.
 fn rows(ui: &mut egui::Ui, doc: &OpenDoc, form: &AcroForm, actions: &mut Vec<Action>) {
     let live = armed::armed(doc.edit_epoch);
     let mut raised: Option<FieldAction> = None;

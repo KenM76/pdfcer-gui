@@ -1195,44 +1195,6 @@ fn opacity(
     false
 }
 
-/// Which ends of a `/Line` carry an arrowhead.
-///
-/// **Absent for every other subtype**, because nothing else has ends to put one
-/// on — and **the engine is what says which those are**:
-/// `MarkupStyleSupport::takes_endings`, via [`Current::support`]. It was
-/// `Current::endings` being `Some` that decided it until 2026-09-06, which was
-/// this crate answering a question the engine owns; see the header. It costs no
-/// space — `egui_shell::ribbon::control` reserves the budgeted width only when
-/// the application supplies **no renderer at all**.
-///
-/// # ★★★ Four positions, and the SHAPE is preserved rather than chosen
-///
-/// `/LE` is two independent endings over three shapes each (§12.5.6.7, Table
-/// 176) — nine combinations, which is not a list anybody reads on a ribbon
-/// band. This offers the four *positions* an operator means and carries the
-/// mark's existing arrowhead shape through unchanged, so a closed arrowhead
-/// stays closed and an open one stays open.
-///
-/// ⇒ That is the difference between a control that answers the question asked
-/// (*which ends?*) and one that quietly answers a second question nobody asked
-/// (*and what shape?*). A chooser that normalised every arrow to `/OpenArrow`
-/// would silently rewrite a `/ClosedArrow` the operator's producer had set, and
-/// the change would be visible in another viewer.
-///
-/// # ★★★ …and a fifth state that is not a fifth position
-///
-/// The four positions all **write** `/LE`. `StyleEdit::Clear` **removes** it,
-/// which is a different file drawing the same line, and it is offered here as
-/// an **action below a separator** rather than as a fifth entry in the list.
-/// The header carries the argument in full; the two sentences that matter are
-/// that a fifth entry drawing identically to the first is a distinction a
-/// drafter cannot check by looking, and that it would leave the combo's
-/// `selected_text` with two equal claimants when `/LE` is absent.
-///
-/// ★ It is **absent unless `/LE` is in the dictionary**
-/// ([`Current::endings_key_present`]), which is [`fill`]'s Clear rule: a
-/// removal offered where there is nothing to remove has no possible effect but
-/// an undo entry the operator did not earn.
 /// **The border line style, `/BS` `/S` and `/D` — the eighth control.**
 ///
 /// # ★★★ What this closes
@@ -1305,6 +1267,48 @@ fn dash(
     true
 }
 
+/// Which ends of a `/Line` carry an arrowhead.
+///
+/// **Absent for every other subtype**, because nothing else has ends to put one
+/// on — and **the engine is what says which those are**:
+/// `MarkupStyleSupport::takes_endings`, via [`Current::support`]. It was
+/// `Current::endings` being `Some` that decided it until 2026-09-06, which was
+/// this crate answering a question the engine owns; see the header. It costs no
+/// space — `egui_shell::ribbon::control` reserves the budgeted width only when
+/// the application supplies **no renderer at all**.
+///
+/// # ★★★ Four positions, and the SHAPE is preserved rather than chosen
+///
+/// `/LE` is two independent endings over three shapes each (§12.5.6.7, Table
+/// 176) — nine combinations, which is not a list anybody reads on a ribbon
+/// band. This offers the four *positions* an operator means and carries the
+/// mark's existing arrowhead shape through unchanged, so a closed arrowhead
+/// stays closed and an open one stays open.
+///
+/// ⇒ That is the difference between a control that answers the question asked
+/// (*which ends?*) and one that quietly answers a second question nobody asked
+/// (*and what shape?*). A chooser that normalised every arrow to `/OpenArrow`
+/// would silently rewrite a `/ClosedArrow` the operator's producer had set, and
+/// the change would be visible in another viewer.
+///
+/// # ★★★ …and a fifth state that is not a fifth position
+///
+/// The four positions all **write** `/LE`. `StyleEdit::Clear` **removes** it,
+/// which is a different file drawing the same line, and it is offered here as
+/// an **action below a separator** rather than as a fifth entry in the list.
+/// The header carries the argument in full; the two sentences that matter are
+/// that a fifth entry drawing identically to the first is a distinction a
+/// drafter cannot check by looking, and that it would leave the combo's
+/// `selected_text` with two equal claimants when `/LE` is absent.
+///
+/// ★ It is **absent unless `/LE` is in the dictionary**
+/// ([`Current::endings_key_present`]), which is [`fill`]'s Clear rule: a
+/// removal offered where there is nothing to remove has no possible effect but
+/// an undo entry the operator did not earn.
+///
+/// ★ Moved here on 2026-09-12. It sat above `dash`, run
+/// together with that item's doc comment — so it documented `dash`
+/// and this function had none. See `tools/gates/check-orphan-docs.py`.
 fn endings(
     ui: &mut Ui,
     current: Current,

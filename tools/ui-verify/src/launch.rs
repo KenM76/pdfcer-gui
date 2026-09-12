@@ -108,11 +108,6 @@ impl LaunchSpec {
     }
 }
 
-/// The smallest client area the harness will accept as "the window is up".
-///
-/// Not a guess at the application's size — a floor below which the window
-/// cannot be a laid-out application window. See the polling loop in
-/// [`Session::launch`] for what happens without it.
 /// **Where every launched window is put**, in desktop pixels.
 ///
 /// To the **right** of the top-left corner, which is where always-on-top
@@ -129,6 +124,15 @@ const SAFE_ORIGIN_X: i32 = 780;
 /// See [`SAFE_ORIGIN_X`].
 const SAFE_ORIGIN_Y: i32 = 40;
 
+/// The smallest client area the harness will accept as "the window is up".
+///
+/// Not a guess at the application's size — a floor below which the window
+/// cannot be a laid-out application window. See the polling loop in
+/// [`Session::launch`] for what happens without it.
+///
+/// ★ Moved here on 2026-09-12. It sat above `SAFE_ORIGIN_X`, run
+/// together with that item's doc comment — so it documented `SAFE_ORIGIN_X`
+/// and this constant had none. See `tools/gates/check-orphan-docs.py`.
 const MIN_CLIENT_PX: u32 = 200;
 
 /// A running application, its captured trace, and its window.

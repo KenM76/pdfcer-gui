@@ -751,107 +751,59 @@ pub(super) fn field_names(doc: &OpenDoc) -> Vec<String> {
         .unwrap_or_default()
 }
 
-/// **Author one new form control** from the draft the dialog accepted.
-///
-/// The single narrowing point between this shell's one `Draft` and
-/// `pdfcer-core`'s five spec types — see [`crate::canvas::formfield::draft`]'s
-/// header for why the shell holds one struct and the engine five. Every field
-/// a kind does not have is simply not read here, which is what makes that
-/// asymmetry cost one `match` instead of five dialogs.
-///
-/// ## ★★ The tooltip is the whole reason this verb was thought impossible
-///
-/// `TooltipChoice` has three states and the default is `Undecided`, which every
-/// one of these five verbs **refuses**: an interactive control owes a screen
-/// reader a name, and the engine will not invent one silently. That refusal was
-/// recorded in this project's own backlog as *"core's STRUCTURAL certification
-/// gate"* and parked the feature for nine days. It is not a gate; it is a
-/// required field of the dialog above.
-///
-/// So an empty tooltip becomes `TooltipChoice::Declined` rather than being left
-/// `Undecided`. The two are not the same and the difference is the point:
-/// `Declined` is the operator saying *"this control needs no name"*, which is a
-/// decision and is sometimes correct — a decorative button beside a labelled
-/// one. `Undecided` is nobody having been asked.
-///
-/// ## ★ Rule 4 — the outcome is disclosed, off-canvas, in full
-///
-/// `FieldAuthorOutcome` carries four things the operator **cannot see on the
-/// page**, and the one that matters most is `merged`: a name that matches an
-/// existing field makes this widget a second *view* of that field, so typing in
-/// one changes the other. Nothing about the rendered page says so, and a
-/// screenshot of it would be identical either way. That is precisely the half
-/// of rule 4 that survives decision 059 — *render normally; report separately* —
-/// so every flag the engine raises becomes a status line and none of them
-/// becomes a mark on the canvas.
-/// **Which ancestor of `name`, if any, is already an ordinary terminal field.**
-///
-/// `None` when the name is safe to author. `Some(fqn)` names the field that
-/// would be **destroyed** by authoring it — see
-/// [`crate::text::fieldclip::name_would_swallow`] for the measurement and the
-/// mechanism.
-///
-/// # ★★ The tripwire, and what will make this function deletable
-///
-/// This is a shim for an engine gap. The `debug_assert` below states the
-/// condition that makes it unnecessary: **once `add_*_field` refuses a path
-/// that crosses a terminal**, authoring such a name will fail on its own and
-/// this guard becomes a duplicate check that can only disagree with the engine.
-///
-/// It asserts in debug builds rather than silently continuing, because a
-/// workaround with no caller is the kind of code that rots for months — and
-/// this project has already had a shim announce its own obsolescence two hours
-/// after it was written.
-///
-/// ★ Only ancestors are examined, never the whole name. `Text.2` checks `Text`;
-/// it does not check `Text.2` itself, because a name that already exists as a
-/// terminal field of the same type is a legitimate **merge** and is exactly what
-/// `Ctrl+Shift+V` relies on.
-pub(super) fn group_is_a_field(doc: &OpenDoc, name: &str) -> Option<String> {
-    if !name.contains('.') {
-        return None;
-    }
-    let view = doc.session.view();
-    let form = pdfcer_core::forms::parse_acroform(&view)?;
-    let segments: Vec<&str> = name.split('.').collect();
-    // Every proper prefix — `A`, `A.B`, … — but not the full name.
-    for cut in 1..segments.len() {
-        let ancestor = segments[..cut].join(".");
-        if form.fields_named(&ancestor).next().is_some() {
-            debug_assert!(
-                std::env::var("PDFCER_ENGINE_REFUSES_DOTTED_PATHS").is_err(),
-                // ui-text-exempt: a debug_assert message for a developer; never rendered.
-                "the engine now refuses a dotted path that crosses a terminal field, so `group_is_a_field` is a duplicate check and should be deleted along with `text::fieldclip::name_would_swallow` and this assertion"
-            );
-            return Some(ancestor);
-        }
-    }
-    None
-}
+// ---------------------------------------------------------------------------
+// ★★★ DELETED 2026-09-11 — `group_is_a_field`, and why the deletion is not a
+// simplification but a correctness fix
+// ---------------------------------------------------------------------------
+//
+// A ~25-line pre-check stood here. It split a dotted name, walked every proper
+// prefix, and refused before calling the verb if any prefix named something in
+// `AcroForm::fields`. It existed because, measured on 2026-08-29 at engine
+// `3ac9dd7`, authoring `Text.2` over an existing terminal `Text` **silently
+// destroyed** `Text` — its `/FT`, its `/V` and its widget's field-ness — and
+// reported success. A shim guarding unrecoverable loss earns its place.
+//
+// It carried a `debug_assert` tripwire naming the condition that would make it
+// deletable: *once the engine refuses a path that crosses a terminal*. The
+// engine shipped that refusal on 2026-08-30 — `FieldPathCrossesTerminal`, at
+// `place_new_field_deferred`, the single choke point all five `add_*` verbs and
+// `paste_field` reach, raised before a byte is staged or an undo entry pushed.
+//
+// ★★ THE TRIPWIRE NEVER FIRED, and could not have. Its condition was
+// `std::env::var("PDFCER_ENGINE_REFUSES_DOTTED_PATHS").is_err()` — an
+// environment variable nobody sets and nothing in this repository ever set. It
+// was a note to a future reader wearing an assertion's clothes. A tripwire
+// keyed on the author's own intention is not a tripwire; it is a comment that
+// costs a `debug_assert`.
+//
+// ★★★ AND BY THE TIME IT WAS READ, THE GUARD HAD BECOME WRONG. Not stale —
+// wrong, in the direction a duplicate model of somebody else's rule always goes
+// wrong. The engine refuses only when the deepest existing node on the path is
+// a **terminal** (`child_field_count == 0`, which is §12.7.3.1's own definition
+// of the word). This refused on any prefix present in `fields`. Those two sets
+// differ on the **mixed node** — a node carrying child fields *and* its own
+// bare widget kids, a shape `pdfcer_core::forms`'s `walk_field` deliberately
+// models and which pdfcer's own same-name merge can generate. The engine allows
+// a second child there, correctly, because the node is already not a terminal
+// and nothing is lost. The shell refused it, with a sentence claiming a field
+// would be destroyed when none would be.
+//
+// ⇒ So the replacement is not "call the engine and take what you get". It is
+// `correctable`'s new arm reading `FieldPathCrossesTerminal { terminal, .. }`
+// and wording it with the name **the engine identified**. That answer cannot
+// drift from the engine's, because it is the engine's. It is the one property a
+// re-derivation could never have, and it is worth more than the round trip it
+// costs.
+//
+// What survives the deletion is the SENTENCE — see
+// `crate::text::fieldclip::name_crosses_a_field`. The engine's own prose names
+// the victim and cites the clause, and it reaches `PDFCER_DIAG` and stops
+// there, because `check-ui-strings.sh`'s exclusion 3 is explicit that an error
+// type's `Display` is not permission to route operator text through it. Without
+// an arm in `correctable`, a correct engine refusal reaches the operator as the
+// floor's generic *"That change was refused"* — which is the right default and
+// the wrong outcome when the crate below has already worked out the answer.
 
-/// **Rename the selected field.**
-///
-/// ## ★★ The engine takes a PARTIAL name and the selection holds a FULLY
-/// QUALIFIED one, and conflating them corrupts a form
-///
-/// `rename_field(fqn, new_partial)` is asymmetric on purpose. A field's
-/// fully-qualified name is its own `/T` joined to its ancestors' with dots —
-/// `Address.Line1` is a field named `Line1` inside a parent named `Address`.
-/// Passing a dotted string as the new *partial* name would author a `/T`
-/// containing a dot, which no reader can resolve back: the field becomes
-/// unaddressable by every fill verb, including pdfcer's own.
-///
-/// So the dialog offers the partial name and this passes it through untouched.
-/// The engine is the one that rebuilds the qualified name, because only it
-/// knows the parent chain.
-///
-/// ## ★ The selection is cleared, not updated
-///
-/// After a rename the old fully-qualified name reaches nothing. Recomputing the
-/// new one here would mean deriving the parent chain a second time — the exact
-/// duplication the paragraph above warns about — so the selection is dropped
-/// and the operator's next click re-establishes it. One extra click, no chance
-/// of a panel describing a field by a name that no longer exists.
 /// **Change one property of an existing field.**
 ///
 /// # ★★★ Three disclosures Acrobat performs SILENTLY, and this is where they
@@ -1171,6 +1123,91 @@ fn set_button_action(
     });
 }
 
+/// **Rename the selected field.**
+///
+/// ## ★★ The engine takes a PARTIAL name and the selection holds a FULLY
+/// QUALIFIED one, and conflating them corrupts a form
+///
+/// `rename_field(fqn, new_partial)` is asymmetric on purpose. A field's
+/// fully-qualified name is its own `/T` joined to its ancestors' with dots —
+/// `Address.Line1` is a field named `Line1` inside a parent named `Address`.
+/// Passing a dotted string as the new *partial* name would author a `/T`
+/// containing a dot, which no reader can resolve back: the field becomes
+/// unaddressable by every fill verb, including pdfcer's own.
+///
+/// So the dialog offers the partial name and this passes it through untouched.
+/// The engine is the one that rebuilds the qualified name, because only it
+/// knows the parent chain.
+///
+/// ## ★ The selection is cleared, not updated
+///
+/// After a rename the old fully-qualified name reaches nothing. Recomputing the
+/// new one here would mean deriving the parent chain a second time — the exact
+/// duplication the paragraph above warns about — so the selection is dropped
+/// and the operator's next click re-establishes it. One extra click, no chance
+/// of a panel describing a field by a name that no longer exists.
+///
+/// # ★★★ Everything above was a SECOND doc comment until 2026-09-12, and it
+/// was not attached to this function
+///
+/// Those paragraphs were written for `rename` and sat 390 lines up the file,
+/// run together with the head of `edit_properties`' doc comment. A contiguous
+/// run of `///` lines is one doc comment whatever it says, so `cargo doc`
+/// showed `edit_properties` documenting itself *and* this function, and showed
+/// this function documenting nothing. It compiled, formatted, passed
+/// `clippy -D warnings`, and shipped.
+///
+/// ⚠ Which falsified the first draft of the paragraphs below, written an hour
+/// earlier: it opened *"it had NO doc comment, a straight R5 failure"*. It had
+/// a good one, in the wrong place. ⇒ *the absence of a doc comment and the
+/// presence of one attached to the wrong item are indistinguishable from the
+/// function's side* — so the fix was to move a doc, not to write one, and
+/// `tools/gates/check-orphan-docs.py` now looks for the shape crate-wide. It
+/// found ten more.
+///
+/// The paragraphs from here down were written for the refusal arm.
+///
+/// # The two early returns, and why neither is a decline
+///
+/// An empty `to`, or one equal to `from`, returns silently. Neither is a
+/// command the operator gave: the panel gates its Rename button on
+/// `!typed.is_empty()`, so an empty string can only arrive from a caller that
+/// is not that panel, and `to == from` is the engine's own no-op case, reached
+/// by pressing Rename without having changed anything. Declining either would
+/// put a sentence on the bar for a gesture that asked for nothing.
+///
+/// ⚠ This is **not** called per keystroke, and a draft of this paragraph said
+/// it was. `FieldAction::Rename` is pushed only on the Rename button's click
+/// or on Enter in the box, both gated on the same readiness flag — so every
+/// call here is a deliberate commit, which is what makes recording a decline
+/// safe rather than noisy. Measured at
+/// `crate::panels::properties::formfield`, not inferred from these returns.
+///
+/// # ★★★ Rule 4: pdfcer rewrites buttons the operator did not touch
+///
+/// `/ResetForm` and `/SubmitForm` name their targets as fully-qualified **name
+/// strings**, so a rename that did nothing else would leave them pointing at
+/// nothing. `rename_field` repairs them, correctly and invisibly, and no view
+/// in this shell shows an action's target list — so without the conditional
+/// sentence below the repair is unobservable. The condition is the point: a
+/// receipt reciting *"0 buttons updated"* after every rename is a form, and by
+/// the third one nobody reads the line that matters.
+///
+/// # ★★ What the error arm is actually for, measured rather than assumed
+///
+/// The panel greys Rename on `!typed.is_empty() && !typed.contains('.')`,
+/// which pre-empts every refusal `rename_field` can derive from the string
+/// alone — a dotted partial name, an empty name, a path too deep. **One**
+/// refusal survives that gate, because predicting it needs the field tree
+/// rather than the string: a **collision** with a name something already
+/// bears. That is also the one an operator meets — rename `Rev1` to `Rev2` on
+/// a form that has a `Rev2` — and until 2026-09-12 it came out as
+/// `decline::floor`'s *"That change was refused"*.
+///
+/// ⇒ So in [`correctable`] the dotted arm is defensive on this route and the
+/// collision arm is the fix. Both are asserted from the outside in
+/// `tests::renaming_onto_a_name_that_is_taken_says_so` and
+/// `tests::a_dotted_rename_is_worded_even_though_the_panel_greys_it`.
 pub(super) fn rename(doc: &mut OpenDoc, from: &str, to: &str) {
     let to = to.trim().to_owned();
     if to.is_empty() || to == from {
@@ -1178,31 +1215,42 @@ pub(super) fn rename(doc: &mut OpenDoc, from: &str, to: &str) {
     }
     doc.selected_field = None;
     super::apply::vector_edit(doc, "rename-field", 0, 1, |session| {
-        session.rename_field(from, &to).map(|outcome| {
-            let mut lines = vec![crate::text::forms::form_field_renamed(
-                &outcome.to,
-                outcome.descendants_renamed,
-            )];
-            // ★★★ Rule 4: pdfcer rewrote buttons the operator did not touch.
-            //
-            // `/ResetForm` and `/SubmitForm` name their targets as fully
-            // qualified NAME STRINGS, so a rename that did nothing else would
-            // leave them pointing at nothing. `rename_field` repairs them —
-            // correctly, invisibly, and not as anything the operator pressed.
-            // No view in this shell shows an action's target list, so without
-            // this sentence the repair is unobservable.
-            //
-            // ★ Conditional, like every disclosure on this surface: a rename
-            // that touched no action says one thing. A receipt that recites
-            // "0 buttons updated" after every rename is a form, and by the
-            // third one nobody reads the line that matters.
-            if outcome.action_targets_retargeted > 0 {
-                lines.push(crate::text::forms::form_field_actions_retargeted(
-                    outcome.action_targets_retargeted,
-                ));
-            }
-            lines
-        })
+        session
+            .rename_field(from, &to)
+            // ★ `inspect_err`, so the error is still returned unchanged for the
+            // funnel to trace and for the floor to word if `correctable`
+            // declines to claim it. Recording is an addition to the error path,
+            // never a substitution for it.
+            .inspect_err(|error| {
+                if let Some(declined) = correctable(error) {
+                    decline::record_field_rename_refusal(declined);
+                }
+            })
+            .map(|outcome| {
+                let mut lines = vec![crate::text::forms::form_field_renamed(
+                    &outcome.to,
+                    outcome.descendants_renamed,
+                )];
+                // ★★★ Rule 4: pdfcer rewrote buttons the operator did not touch.
+                //
+                // `/ResetForm` and `/SubmitForm` name their targets as fully
+                // qualified NAME STRINGS, so a rename that did nothing else would
+                // leave them pointing at nothing. `rename_field` repairs them —
+                // correctly, invisibly, and not as anything the operator pressed.
+                // No view in this shell shows an action's target list, so without
+                // this sentence the repair is unobservable.
+                //
+                // ★ Conditional, like every disclosure on this surface: a rename
+                // that touched no action says one thing. A receipt that recites
+                // "0 buttons updated" after every rename is a form, and by the
+                // third one nobody reads the line that matters.
+                if outcome.action_targets_retargeted > 0 {
+                    lines.push(crate::text::forms::form_field_actions_retargeted(
+                        outcome.action_targets_retargeted,
+                    ));
+                }
+                lines
+            })
     });
 }
 
@@ -1251,9 +1299,74 @@ pub(super) fn disclosures(
 /// these two sentences, which would be worse than saying nothing.
 fn correctable(error: &pdfcer_core::edit::EditError) -> Option<Declined> {
     use pdfcer_core::edit::EditError as E;
+    use pdfcer_core::forms_author::FormAuthorError as A;
     match error {
         E::FieldNameTaken { .. } => Some(Declined::FieldNameTaken),
         E::WidgetHasNoFieldIdentity { .. } => Some(Declined::WidgetHasNoName),
+        // ★★★ Added 2026-09-11, and it is the arm that made this a TABLE
+        // rather than a helper: it is unreachable from `adopt_widget`, which
+        // was this function's only caller until today, and it is the only one
+        // `author` can raise. Two surfaces, one mapping.
+        //
+        // `EditError::FieldAuthoring` is `#[error(transparent)]`, so the inner
+        // variant is the whole of the error and matching it is matching the
+        // refusal. `terminal` is the fully-qualified name of the existing field
+        // in the way, which the engine built by walking `/Parent` — it is not
+        // derivable from the operator's string, which is exactly why it is
+        // cloned out and carried rather than recomputed.
+        //
+        // ★★ Matched on the VARIANT, never on `error.to_string()`. The engine's
+        // prose for this refusal is good and names the field, and it is still
+        // the wrong thing to key on: prose is the part of an API with no
+        // compatibility promise, and this project has already had a refusal arm
+        // go on firing after the engine narrowed the condition underneath it
+        // while leaving the words alone.
+        E::FieldAuthoring(A::FieldPathCrossesTerminal { terminal, .. }) => {
+            Some(Declined::FieldPathCrossesTerminal(terminal.clone()))
+        }
+        // ★★★ Added 2026-09-12, and the engine asked for it by name. The
+        // private guard `reject_dotted_partial` reuses the variant
+        // `rename_field` already raised rather than adding a new one, with the
+        // stated reason *"so a consumer's error mapping needs no new arm — the
+        // shell asked for that by name"*.
+        //
+        // ⚠ That reasoning was sound and its premise was not: this shell had
+        // never mapped `DottedPartialName` on ANY route. The arm the engine was
+        // careful not to require did not exist. ⇒ *an engine delivery built to
+        // a request can be built to a wrong premise inside the request*, and
+        // the only way to find that out is to read the call site rather than
+        // the reply.
+        //
+        // ★★ Reachable from ONE surface, measured rather than assumed:
+        //
+        // | route | the control | reachable |
+        // |---|---|---|
+        // | `adopt_widget` | `panels::forms::tab_order::register`'s per-widget name box — free text, gated only on non-empty | **yes** |
+        // | `rename_field` | `panels::properties::formfield`'s name box — commit greyed while the text holds a period | no |
+        // | `sign` | no name box at all; the window lists fields that exist, and an existing FQN takes the engine's reuse branch where a period is legitimate | no |
+        //
+        // So this arm is the adopt surface's answer, and is defensive on the
+        // other two. Defensive is still worth having on rename: the gate there
+        // is a shell-side model of an engine rule, and this project deleted
+        // another of those the same day for drifting. If the gate goes, the
+        // sentence is already behind it.
+        E::FieldAuthoring(A::DottedPartialName { supplied }) => {
+            Some(Declined::DottedPartialName(supplied.clone()))
+        }
+        // ★★★ And the arm that has nothing to do with periods, found while
+        // scoping the one above: a rename onto a name something already bears.
+        // It is the **most common** way a rename fails, the **only** refusal
+        // the rename surface can reach that its own gate cannot predict, and
+        // it came out as the funnel floor's generic shrug until 2026-09-12.
+        //
+        // Mapped to `FieldNameTaken` rather than to a variant of its own,
+        // under *one fact, one wording*: the engine raises two variants here
+        // (`EditError::FieldNameTaken` from `adopt_widget`,
+        // `FormAuthorError::RenameCollision` from `rename_field`) because they
+        // are produced by different code, but from the operator's chair they
+        // are one sentence — *something already has that name* — with one
+        // remedy. See that variant's own doc, which now carries the table.
+        E::FieldAuthoring(A::RenameCollision { .. }) => Some(Declined::FieldNameTaken),
         _ => None,
     }
 }

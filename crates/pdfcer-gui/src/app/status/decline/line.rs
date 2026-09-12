@@ -67,6 +67,43 @@ impl Declined {
             Self::SettingsNotSaved => t::settings_not_saved(),
             Self::NothingToUndo => t::undo_declined_empty(),
             Self::NothingToRedo => t::redo_declined_empty(),
+            // ★★ Reaches across to `crate::text::fieldclip` on the rule this
+            // module's header states — *a string lives with the surface that
+            // owns its subject* — and this sentence's subject is a field NAME,
+            // which is the copy `fieldclip` already holds.
+            //
+            // ★★★ And it INTERPOLATES, making it the second arm in this table
+            // ever to need the `Cow`. That is worth a note because the arm
+            // directly below argues the opposite for itself and both are right:
+            // `FieldNameTaken` does not carry its name because the name is the
+            // one the operator just typed and is still in the box in front of
+            // him; this one carries its name because the name is a DIFFERENT
+            // field — he typed `Order.Total` and the field in the way is
+            // `Order` — and nothing on screen tells him which prefix offended.
+            Self::FieldPathCrossesTerminal(terminal) => {
+                return std::borrow::Cow::Owned(crate::text::fieldclip::name_crosses_a_field(
+                    terminal,
+                ));
+            }
+            // ★★ The third interpolating arm, and the one whose payload is the
+            // operator's OWN string rather than a fact the engine resolved.
+            // Echoed back because the surface that can reach this refusal —
+            // the Tab-order register panel's adopt rows — shows a name box per
+            // unclaimed widget, and the bar has one sentence to spend.
+            //
+            // ★★★ Worded by `fieldclip`, for the field surfaces only, and
+            // there is deliberately NO sign-surface wording beside it. The
+            // engine raises the same variant from `sign`, and this shell
+            // cannot reach it there: the signature window offers a list of
+            // field names that already exist, and an existing FQN takes the
+            // engine's reuse branch — where a period is CORRECT, because
+            // `Approvals.Engineer` is a real nested placeholder to sign into.
+            // A sentence for it would be a sentence no operator can provoke.
+            // See `crate::app::actions::sign::worded`, which records that
+            // absence where the missing arm would be.
+            Self::DottedPartialName(supplied) => {
+                return std::borrow::Cow::Owned(crate::text::fieldclip::name_is_a_path(supplied));
+            }
             Self::FieldNameTaken => t::adopt_declined_name_taken(),
             Self::WidgetHasNoName => t::adopt_declined_no_name(),
             Self::ResizeNotRebuildable { uniform } => t::resize_not_rebuildable(*uniform),

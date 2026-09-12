@@ -418,29 +418,6 @@ fn canvas_rect(rect: pdfcer_core::page_tree::Rect, page: &Page) -> Option<Rect> 
     annot_canvas_rect([rect.llx, rect.lly, rect.urx, rect.ury], page)
 }
 
-/// **Which note is under `point`** — topmost wins.
-///
-/// The **last** match in paint order, exactly as
-/// `crate::canvas::selection::annot::hit` takes the last: a sticky dropped on
-/// top of a cloud is the thing the operator sees and therefore the thing they
-/// mean.
-///
-/// # ★ The tolerance is the frame's, not a number of this module's own
-///
-/// Handed in from `crate::canvas::mapping::PageMapping::tolerance`, which is
-/// the same click tolerance content and annotation selection both use. A note
-/// icon must be exactly as easy to hit as the shape beside it, and a
-/// separately chosen constant here would drift from that the first time either
-/// was tuned.
-///
-/// # ★★ Rectangle containment, not ink
-///
-/// Unlike the selection hit test, which narrows a ce dimension to its drawn
-/// segments, this claims the whole `/Rect`. That is deliberate and it is the
-/// convention: in every reader in the class, clicking anywhere on a
-/// highlight's span or inside a cloud's box opens its note. Narrowing to ink
-/// would make the note on a hollow rectangle reachable only by clicking its
-/// hairline border.
 /// **Whether this annotation has a pop-up worth opening at all.**
 ///
 /// # The defect this closes
@@ -528,6 +505,33 @@ pub fn can_record_open_state(note: &NoteView) -> bool {
     note.subtype == "Text" || note.popup.is_some()
 }
 
+/// **Which note is under `point`** — topmost wins.
+///
+/// The **last** match in paint order, exactly as
+/// `crate::canvas::selection::annot::hit` takes the last: a sticky dropped on
+/// top of a cloud is the thing the operator sees and therefore the thing they
+/// mean.
+///
+/// # ★ The tolerance is the frame's, not a number of this module's own
+///
+/// Handed in from `crate::canvas::mapping::PageMapping::tolerance`, which is
+/// the same click tolerance content and annotation selection both use. A note
+/// icon must be exactly as easy to hit as the shape beside it, and a
+/// separately chosen constant here would drift from that the first time either
+/// was tuned.
+///
+/// # ★★ Rectangle containment, not ink
+///
+/// Unlike the selection hit test, which narrows a ce dimension to its drawn
+/// segments, this claims the whole `/Rect`. That is deliberate and it is the
+/// convention: in every reader in the class, clicking anywhere on a
+/// highlight's span or inside a cloud's box opens its note. Narrowing to ink
+/// would make the note on a hollow rectangle reachable only by clicking its
+/// hairline border.
+///
+/// ★ Moved here on 2026-09-12. It sat above `has_something_to_read`, run
+/// together with that item's doc comment — so it documented `has_something_to_read`
+/// and this function had none. See `tools/gates/check-orphan-docs.py`.
 #[must_use]
 pub fn under(notes: &[NoteView], point: Pos2, tolerance: f32) -> Option<&NoteView> {
     notes

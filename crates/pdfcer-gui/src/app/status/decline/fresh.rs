@@ -206,6 +206,41 @@ impl Declined {
             // Register again — and pressing Register is a command, which
             // `retire` catches.
             Self::FieldNameTaken | Self::WidgetHasNoName => true,
+            // ★★ Same ruling, fifth case — but on the OTHER of the two
+            // arguments this function keeps making, and the difference is
+            // worth an arm rather than another `|`.
+            //
+            // The two above are true because the FILE cannot change under them.
+            // This one is true because **nothing happened**: the engine refused
+            // inside `place_new_field_deferred`, before it staged a byte and
+            // before it pushed an undo entry, so the epoch did not move, the
+            // form is exactly as it was, and there is no later state for the
+            // sentence to be found stale against. What retires it is the
+            // operator retyping the name and pressing OK — a command, which
+            // `retire` catches.
+            //
+            // ★ Deliberately NOT re-asked by looking the named field up again.
+            // That is a `parse_acroform` walk of the whole document, and
+            // putting it in the per-frame path that decides whether a status
+            // line is still true would pay for it sixty times a second to learn
+            // an answer that cannot change without a command.
+            // ★ Joined rather than given an arm of its own, and the
+            // reasoning above is why: this is the SAME argument, not merely
+            // the same answer. `DottedPartialName` is raised before the verb
+            // resolves anything, so no byte was staged and no undo entry was
+            // pushed — there is no later state for the sentence to be found
+            // stale against, and the operator's next command retires it
+            // through `retire`.
+            //
+            // ★★ It is also the **only** one of the two whose fact could not
+            // change even in principle. `FieldPathCrossesTerminal` depends on
+            // what the document contains (is `Order` a terminal?) and is true
+            // here because re-asking costs a `parse_acroform` walk per frame,
+            // not because the answer is fixed. This one depends on nothing but
+            // the string: a `/T` cannot contain a period whatever the document
+            // holds. If a future reader ever makes the first one re-askable,
+            // this one still belongs exactly where it is.
+            Self::FieldPathCrossesTerminal(_) | Self::DottedPartialName(_) => true,
             // ★★ Same ruling, and here the temptation to key on
             // `selection_in_form` is strongest: all but one of the sentences are
             // about the DOCUMENT (encrypted, signed, damaged index, nested

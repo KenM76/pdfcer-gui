@@ -425,10 +425,147 @@ pub(crate) enum Declined {
     /// the operator retypes, with what they typed still in the box in front of
     /// them.
     ///
-    /// The clashing name is **not** carried into the sentence. It is a `Copy`
-    /// enum, and more to the point the name is already on screen — the operator
-    /// typed it seconds ago and it is still in the field they typed it into.
+    /// The clashing name is **not** carried into the sentence, and the reason
+    /// is that **the name is already on screen** — the operator typed it
+    /// seconds ago and it is still in the field they typed it into.
+    ///
+    /// ⚠ This paragraph used to open *"It is a `Copy` enum"*. That was never
+    /// the reason and is not even true: this enum derives
+    /// `Clone, Debug, PartialEq, Eq` and has carried non-`Copy` payloads since
+    /// `CustomStampUnavailable` arrived. The argument that matters survives the
+    /// correction intact — and see `FieldPathCrossesTerminal` immediately
+    /// below, which is the case where it does **not** hold and so does carry
+    /// its name.
+    ///
+    /// # ★★ TWO raisers since 2026-09-12, from two different engine variants
+    ///
+    /// | engine variant | verb | the fact |
+    /// |---|---|---|
+    /// | `EditError::FieldNameTaken` | `adopt_widget` | the name the widget would take is already borne |
+    /// | `FormAuthorError::RenameCollision` | `rename_field` | the name being renamed TO is already borne |
+    ///
+    /// One decline for both, deliberately, under *one fact, one wording*: from
+    /// the operator's chair these are the same sentence — *something already
+    /// has that name* — with the same remedy. Two variants here would be two
+    /// spellings of one fact, which is how a surface comes to tell the same
+    /// truth two ways depending on which control produced it.
+    ///
+    /// ★★★ And the rename one is **the only correctable refusal the rename
+    /// surface can actually reach.** Everything else `rename_field` refuses is
+    /// pre-empted by the Rename button's own gate —
+    /// `!typed.is_empty() && !typed.contains('.')` covers a dotted name, an
+    /// empty name and a too-deep path — but a collision would need a walk of
+    /// the field tree to predict, so the panel cannot grey on it and the
+    /// engine decides. It is also the common case: rename `Rev1` to `Rev2` on
+    /// a form that has a `Rev2`.
+    ///
+    /// ⚠ It reached the operator as the funnel floor's generic *"That change
+    /// was refused"* from the day the rename surface shipped until
+    /// 2026-09-12, because `actions::forms::rename` mapped only `Ok`.
     FieldNameTaken,
+    /// ★★★ **A field name was refused because a dot in it points through a
+    /// field that already exists** — `FormAuthorError::FieldPathCrossesTerminal`,
+    /// raised by every `EditSession::add_*` verb and by `paste_field`.
+    ///
+    /// A period separates levels of the field-name tree (§12.7.3.2), so
+    /// `Order.Total` asks for a field `Total` inside a group `Order` — and
+    /// §12.7.3.1 does not let one dictionary be both a terminal field and a
+    /// group. If `Order` is already an ordinary field, the request cannot be
+    /// granted without destroying it, so the engine refuses.
+    ///
+    /// # ★★ Why this one CARRIES its name when its neighbour deliberately does
+    /// not
+    ///
+    /// `FieldNameTaken` above argues that the clashing name is not worth
+    /// carrying because it is the name the operator just typed and it is still
+    /// in the box in front of him. That argument is sound there and does not
+    /// hold here, which is the whole reason this variant has a payload.
+    ///
+    /// The name in this sentence is a **different field**. He typed
+    /// `Order.Total`; the field in the way is `Order`. Nothing on screen says
+    /// which prefix of what he typed is the problem, and on a form with eight
+    /// fields "that name was refused" leaves him guessing. The engine already
+    /// worked it out — `fully_qualified_name` walked the `/Parent` chain to
+    /// build it — so the only thing standing between that answer and the
+    /// operator is whether this shell bothers to carry it.
+    ///
+    /// # ★★★ This replaced a shell-side pre-check, and the difference matters
+    ///
+    /// Until 2026-09-11 `actions::forms::group_is_a_field` modelled the
+    /// engine's rule here and refused **before** calling the verb, because at
+    /// the time the engine did not refuse at all and the act silently destroyed
+    /// the existing field. The engine has refused since `2026-08-30`, at a
+    /// single choke point all six authoring routes reach.
+    ///
+    /// The pre-check was then not merely redundant — it was **wrong**, and in
+    /// the direction a duplicate model always goes wrong. It refused on any
+    /// prefix present in `AcroForm::fields`, where the engine refuses only on a
+    /// **terminal** (`child_field_count == 0`). Those differ on the mixed node
+    /// — child fields *and* its own bare widget kids, a shape pdfcer's own
+    /// same-name merge can generate — which the engine correctly allows and the
+    /// shell refused, with a sentence claiming a field would be destroyed when
+    /// none would be.
+    ///
+    /// ⇒ Reading the engine's variant cannot drift from the engine, because it
+    /// *is* the engine's answer. That is the property the pre-check could never
+    /// have.
+    FieldPathCrossesTerminal(String),
+    /// ★★★ **A field name was refused because it is a PATH rather than a
+    /// name** — `FormAuthorError::DottedPartialName`.
+    ///
+    /// Raised by three engine verbs (`rename_field`, `adopt_widget`, `sign`)
+    /// and reachable from **one** of this shell's surfaces: the Tab-order
+    /// register panel's adopt boxes, which take free text and gate only on
+    /// non-empty. The rename box greys its commit button on a period and the
+    /// signature window offers only names that already exist, so neither can
+    /// produce the input. See [`crate::app::actions::forms::correctable`],
+    /// which carries the route table.
+    ///
+    /// # The distinction from [`Self::FieldPathCrossesTerminal`] directly
+    /// # above, which is the thing a reader will get backwards
+    ///
+    /// They are both about a period and they are **not** the same refusal. The
+    /// difference is which side of the period the verb was looking at:
+    ///
+    /// | | the verb was given | the period means | refused because |
+    /// |---|---|---|---|
+    /// | [`Self::FieldPathCrossesTerminal`] | a **path**, legitimately | *put `Total` inside a group `Order`* | `Order` already exists and is an ordinary field, so granting it would destroy `Order` |
+    /// | this one | a **partial name** | nothing — a partial name is one segment by §12.7.3.2's construction | the period cannot be honoured at all, whatever is or is not in the document |
+    ///
+    /// So the first depends on the document and the second does not. `A.B`
+    /// given to `add_text_field` is a perfectly good request that may or may
+    /// not be grantable; `A.B` given to `adopt_widget` is not a request the
+    /// verb can express, because a `/T` is the one segment its node
+    /// contributes to the fully-qualified name.
+    ///
+    /// # ★★ What the refusal prevents — and it is NOT data loss
+    ///
+    /// Worth stating because the obvious guess is wrong and the sentence this
+    /// variant words has to be true. Neither verb touches an existing field's
+    /// `/Kids`; a pre-existing `Text` survives an adopt of `Text.2` completely
+    /// intact. What would be produced is a field **nobody can address**:
+    /// §12.7.3.2 makes its FQN that same dotted string, and every resolver
+    /// splits on `.` first, looks for `2` inside a group `Text`, finds a
+    /// terminal there, and stops. It renders. It accepts a click. And
+    /// `fill_text_field`, FDF/XFDF import, a `/CO` calculation-order entry and
+    /// a reset-form `/Fields` array can none of them reach it — **pdfcer's own
+    /// fill verbs included**.
+    ///
+    /// ⇒ Which is why the sentence says *can be clicked but never filled*
+    /// rather than warning about a loss. See `crate::text::fieldclip`.
+    ///
+    /// # ★ Why it carries its name, and the first answer was wrong
+    ///
+    /// Not because the box has closed — it has not. The adopt panel's drafts
+    /// survive a refused adopt, so the typed name is still on screen.
+    ///
+    /// It carries the name because **that panel shows a name box per unclaimed
+    /// widget**, several at once, and the bar has one sentence. Without the
+    /// name, *"that name is a path"* is true of whichever row the operator was
+    /// in and says nothing about which one. [`Self::FieldNameTaken`]'s
+    /// opposite argument — *the name is in the box in front of him* — holds on
+    /// the Properties panel, where there is exactly one box.
+    DottedPartialName(String),
     /// **A widget could not be registered because it carries no name of its
     /// own, and none was supplied.**
     ///

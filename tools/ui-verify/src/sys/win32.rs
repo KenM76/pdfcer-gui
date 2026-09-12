@@ -437,13 +437,6 @@ pub fn mouse_button_secondary(down: bool) {
     unsafe { mouse_event(flags, 0, 0, 0, 0) };
 }
 
-/// Press and release a virtual key.
-///
-/// Goes to the **foreground window**, whichever that is — which is why callers
-/// raise the target first and why the input driver refuses to type when the
-/// foreground window is not the one under test. A keystroke sent to the wrong
-/// window is not a failed keystroke; it is a keystroke into the operator's
-/// editor.
 /// Turn the mouse wheel at the pointer's current position.
 ///
 /// `notches` is in wheel detents — positive scrolls **up** (away from the
@@ -462,12 +455,23 @@ pub fn mouse_button_secondary(down: bool) {
 /// `mouse_event` rather than `SendInput` for the same reason the button press
 /// uses it: no variable-length array to get the size of, and at the current
 /// pointer position the two are equivalent. `WHEEL_DELTA` is 120, the constant
-/// §the API defines one detent as.
+/// the API defines one detent as.
 pub fn wheel(notches: i32) {
     const WHEEL_DELTA: i32 = 120;
     unsafe { mouse_event(MOUSEEVENTF_WHEEL, 0, 0, notches * WHEEL_DELTA, 0) };
 }
 
+/// Press and release a virtual key.
+///
+/// Goes to the **foreground window**, whichever that is — which is why callers
+/// raise the target first and why the input driver refuses to type when the
+/// foreground window is not the one under test. A keystroke sent to the wrong
+/// window is not a failed keystroke; it is a keystroke into the operator's
+/// editor.
+///
+/// ★ Moved here on 2026-09-12. It sat above `wheel`, run
+/// together with that item's doc comment — so it documented `wheel`
+/// and this function had none. See `tools/gates/check-orphan-docs.py`.
 pub fn key_stroke(vk: u16) {
     // SAFETY: no pointers; the scan-code argument is 0, which tells Windows to
     // derive it from the virtual key.
@@ -477,21 +481,6 @@ pub fn key_stroke(vk: u16) {
     }
 }
 
-/// Whether `w` is the window that will receive keystrokes right now.
-///
-/// # Why this is asked rather than assumed
-///
-/// [`raise_window`] is **best-effort by Windows' own rules**: a process
-/// without foreground rights is refused, and the refusal is silent — it
-/// returns a boolean nobody was obliged to read. So "we called
-/// `SetForegroundWindow`" is not "the window is in front", and the gap between
-/// those two is where a keystroke lands in the operator's editor.
-///
-/// `key_stroke`'s own doc comment has said since it was written that "the
-/// input driver refuses to type when the foreground window is not the one
-/// under test". That was a description of an intent, not of the code: the
-/// driver checked only that a target *existed*. This is the function that
-/// makes the sentence true.
 /// **Which top-level window owns this screen point.**
 ///
 /// ★★ Added 2026-08-20, after an afternoon of confident, specific and entirely
@@ -625,6 +614,25 @@ pub fn resize_window(w: WindowHandle, width: i32, height: i32) {
     }
 }
 
+/// Whether `w` is the window that will receive keystrokes right now.
+///
+/// # Why this is asked rather than assumed
+///
+/// [`raise_window`] is **best-effort by Windows' own rules**: a process
+/// without foreground rights is refused, and the refusal is silent — it
+/// returns a boolean nobody was obliged to read. So "we called
+/// `SetForegroundWindow`" is not "the window is in front", and the gap between
+/// those two is where a keystroke lands in the operator's editor.
+///
+/// `key_stroke`'s own doc comment has said since it was written that "the
+/// input driver refuses to type when the foreground window is not the one
+/// under test". That was a description of an intent, not of the code: the
+/// driver checked only that a target *existed*. This is the function that
+/// makes the sentence true.
+///
+/// ★ Moved here on 2026-09-12. It sat above `window_at`, run
+/// together with that item's doc comment — so it documented `window_at`
+/// and this function had none. See `tools/gates/check-orphan-docs.py`.
 pub fn is_foreground(w: WindowHandle) -> bool {
     // SAFETY: no pointers, no ownership; returns a handle or null.
     unsafe { GetForegroundWindow() == w.hwnd() }

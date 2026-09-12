@@ -389,6 +389,73 @@ pub(crate) fn record_adopt_refusal(declined: Declined) {
     LAST.with_borrow_mut(|slot| *slot = Some(declined));
 }
 
+/// Record that **authoring a new form field** refused, and which refusal it
+/// was — today, only [`super::Declined::FieldPathCrossesTerminal`].
+///
+/// Called from `crate::app::actions::forms::author`, inside the funnel's
+/// closure, exactly as [`record_adopt_refusal`] is and for the same reason: the
+/// arm holding the session is the one that can tell which refusal happened.
+///
+/// # ★ Why this is a second function with an identical body rather than a
+/// second caller of the first
+///
+/// Because the name is the documentation. `record_adopt_refusal`'s doc carries
+/// a table of which of `adopt_widget`'s five refusals are reachable from the
+/// register panel, and that table is about a surface this call site is not on.
+/// A reader following this call into a doc comment about widget adoption learns
+/// something false about where they are. The bodies being the same line is not
+/// a reason to merge them; `record_history_empty` above makes the same argument
+/// and has the same body.
+///
+/// # ★★ Why a decline and not a `record_note`
+///
+/// The pre-check this replaced used `crate::app::actions::record_note`, which
+/// was right for a sentence the shell produced on its own before any verb ran.
+/// It is wrong now. A note reports something that **happened**; this reports
+/// that nothing did. The funnel's floor (`decline::floor`) exists precisely to
+/// word a refusal no verb claimed, and its contract is that a verb recording
+/// from inside the closure **speaks first** and the floor yields to it. So this
+/// is the seventh such recorder, and using the note channel instead would put a
+/// specific sentence in one slot while the floor put a generic one in the
+/// other, for a single gesture.
+pub(crate) fn record_field_author_refusal(declined: Declined) {
+    LAST.with_borrow_mut(|slot| *slot = Some(declined));
+}
+
+/// Record that **renaming a form field** refused, and which refusal it was —
+/// in practice always [`super::Declined::FieldNameTaken`], because that is the
+/// only one the Rename button's gate lets through.
+///
+/// Called from `crate::app::actions::forms::rename`, from inside
+/// `apply::vector_edit`'s closure, which is where the session is and therefore
+/// the only place that can tell which refusal happened.
+///
+/// # ★ The third one-line sibling, and the same argument as the second
+///
+/// [`record_adopt_refusal`] and [`record_field_author_refusal`] have this
+/// body. So does [`record_history_empty`]. The family's rule is in this file's
+/// header — *one constructor per source of truth* — and the reason is that the
+/// name is the documentation: a reader following a call into a doc comment
+/// about widget adoption, when they are standing in a rename, learns something
+/// false about where they are. Identical bodies are not a reason to merge; the
+/// bodies are not what a reader is reading.
+///
+/// # ★★ Why this did not exist until 2026-09-12, which is the finding
+///
+/// Because **the rename route recorded nothing at all**. `forms::rename`
+/// called `session.rename_field` and mapped only the success case, so every
+/// way a rename can fail reached the operator as `decline::floor`'s generic
+/// *"That change was refused"*. The floor worked exactly as designed and that
+/// is what made it invisible: there was a sentence, it just was not an answer.
+///
+/// ⇒ And the one that mattered was a **collision**, not anything exotic. The
+/// Properties panel greys its button on every refusal it can predict from the
+/// typed string alone; a collision needs the field tree, so it is the one
+/// refusal that had to arrive from the engine — and the one an operator meets.
+pub(crate) fn record_field_rename_refusal(declined: Declined) {
+    LAST.with_borrow_mut(|slot| *slot = Some(declined));
+}
+
 /// Record that a **node of a markup shape** could not be moved, added or taken
 /// away — [`super::Declined::MarkupNodeRefused`].
 ///

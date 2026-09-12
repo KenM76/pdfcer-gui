@@ -527,6 +527,29 @@ fn rename_row(
     // dotted string typed here would author a `/T` containing a dot — a field
     // no reader, including pdfcer, can address again.
     let typed = draft.trim().to_owned();
+    // ★★★ A shell-side model of an engine rule — this project deleted one of
+    // those on 2026-09-12 for drifting, and this one is KEPT. The difference is
+    // what the rule depends on:
+    //
+    // | | `group_is_a_field` (deleted) | this gate (kept) |
+    // |---|---|---|
+    // | depends on | the DOCUMENT — is this prefix a terminal? | the STRING only |
+    // | drifted? | yes — the engine refuses on a terminal, the shim refused on any prefix present, and they differ on a mixed node | cannot — §12.7.3.2 makes a `/T` one segment by construction, and the engine's `reject_dotted_partial` is `partial.contains('.')`, unconditionally |
+    // | what it produced | a refusal naming a loss that would not happen | a greyed button with a hover that says why |
+    //
+    // ★★ And it is greying R9 permits, not a placeholder: *you have not typed a
+    // usable name yet* is temporary and operator-fixable, and it is explained
+    // on hover a few lines down. The alternative — accept it, let the engine
+    // refuse, put a sentence on the bar — is strictly worse here, because the
+    // operator would find out after committing what he could have been told
+    // while typing.
+    //
+    // ⚠ The engine's refusal is wired anyway, BEHIND this gate:
+    // `FormAuthorError::DottedPartialName` → `actions::forms::correctable` →
+    // `Declined::DottedPartialName` → `fieldclip::name_is_a_path`. So removing
+    // this gate does not silence the rule, it moves the disclosure from hover
+    // to status bar. Said here because the next reader's question is *"is the
+    // refusal handled if I delete this?"* and the answer is yes.
     let ready = !typed.is_empty() && !typed.contains('.');
     let commit = ui.add_enabled(ready, egui::Button::new(t::rename_button()));
     // ★ Published only on the path where the control exists — see

@@ -1289,23 +1289,6 @@ impl RedactDialog {
     }
 }
 
-/// **The sentence shown once bytes are on disk.**
-///
-/// Free rather than a method so the catalog's rule 1 — *a residual is named in
-/// the same sentence as the success* — is decided by a pure function a test can
-/// drive, rather than inside a `match` on a window's state.
-///
-/// The branch is on `residuals`, and the two sentences are genuinely different
-/// copy rather than one with a number in it. An operator who acknowledged a
-/// residual in this dialog and then closed it is owed a standing record of what
-/// remains, and *"…and verified absent from the saved file"* would be a lie in
-/// that case rather than merely an omission.
-///
-/// The **file name** rather than the whole path, because the sentence is read
-/// in a window that is about 700 pt wide and a Windows path is routinely longer
-/// than that. The full destination is on the trace line
-/// `PreparedRedaction::write_to` emits, which is where a reader who needs it
-/// will look.
 /// **The file name a sentence should use for `path`.**
 ///
 /// The name rather than the whole path, because every sentence that needs one
@@ -1326,6 +1309,27 @@ fn file_name_of(path: &Path) -> String {
     )
 }
 
+/// **The sentence shown once bytes are on disk.**
+///
+/// Free rather than a method so the catalog's rule 1 — *a residual is named in
+/// the same sentence as the success* — is decided by a pure function a test can
+/// drive, rather than inside a `match` on a window's state.
+///
+/// The branch is on `residuals`, and the two sentences are genuinely different
+/// copy rather than one with a number in it. An operator who acknowledged a
+/// residual in this dialog and then closed it is owed a standing record of what
+/// remains, and *"…and verified absent from the saved file"* would be a lie in
+/// that case rather than merely an omission.
+///
+/// The **file name** rather than the whole path, because the sentence is read
+/// in a window that is about 700 pt wide and a Windows path is routinely longer
+/// than that. The full destination is on the trace line
+/// `PreparedRedaction::write_to` emits, which is where a reader who needs it
+/// will look.
+///
+/// ★ Moved here on 2026-09-12. It sat above `file_name_of`, run
+/// together with that item's doc comment — so it documented `file_name_of`
+/// and this function had none. See `tools/gates/check-orphan-docs.py`.
 #[must_use]
 fn outcome_line(
     path: &Path,

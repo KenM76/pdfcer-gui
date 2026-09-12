@@ -849,25 +849,6 @@ fn model<'a>(ctx: &PageContext<'a>) -> EditableTextModel<'a> {
     EditableTextModel::recognize(ctx.text, &BlockRecognitionOptions::default())
 }
 
-/// Where a canvas-space point lands in the page's text.
-///
-/// Two hops, and the first is the one that is easy to get backwards: the canvas
-/// speaks **Y-down from the page's top-left with `/Rotate` applied**, and every
-/// glyph position `pdfcer-core` reports is in **PDF user space — Y-up, from the
-/// un-rotated CropBox's lower-left**. `canvas::mapping`'s header names conflating
-/// those two as *the classic silent defect*, and it is silent here in the worst
-/// way: the page looks perfect, and a drag selects a mirrored line.
-///
-/// So the conversion goes through [`crate::viewer::canvas_to_pdf_space`], which
-/// is the single bridge for that hop and works by inverting the **renderer's
-/// own** device transform — so the geometry and the picture agree by
-/// construction rather than by two implementations happening to match.
-///
-/// `None` when the page's transform will not invert, or when the page has no
-/// clustered glyph at all. Note that [`EditableTextModel::hit_test`] otherwise
-/// **always answers**, falling back to the nearest line when no line's box
-/// contains the point — which is deliberate and is Acrobat's behaviour: a drag
-/// begun in the margin selects from the nearest text rather than from nothing.
 /// **Is `canvas` inside the box of any text run on this page?**
 ///
 /// # ★★★ CONTAINMENT, and it must not be [`hit`]
@@ -908,6 +889,29 @@ pub fn word_at(ctx: &PageContext<'_>, canvas: Pos2) -> Option<()> {
         .then_some(())
 }
 
+/// Where a canvas-space point lands in the page's text.
+///
+/// Two hops, and the first is the one that is easy to get backwards: the canvas
+/// speaks **Y-down from the page's top-left with `/Rotate` applied**, and every
+/// glyph position `pdfcer-core` reports is in **PDF user space — Y-up, from the
+/// un-rotated CropBox's lower-left**. `canvas::mapping`'s header names conflating
+/// those two as *the classic silent defect*, and it is silent here in the worst
+/// way: the page looks perfect, and a drag selects a mirrored line.
+///
+/// So the conversion goes through [`crate::viewer::canvas_to_pdf_space`], which
+/// is the single bridge for that hop and works by inverting the **renderer's
+/// own** device transform — so the geometry and the picture agree by
+/// construction rather than by two implementations happening to match.
+///
+/// `None` when the page's transform will not invert, or when the page has no
+/// clustered glyph at all. Note that [`EditableTextModel::hit_test`] otherwise
+/// **always answers**, falling back to the nearest line when no line's box
+/// contains the point — which is deliberate and is Acrobat's behaviour: a drag
+/// begun in the margin selects from the nearest text rather than from nothing.
+///
+/// ★ Moved here on 2026-09-12. It sat above `word_at`, run
+/// together with that item's doc comment — so it documented `word_at`
+/// and this function had none. See `tools/gates/check-orphan-docs.py`.
 fn hit(model: &EditableTextModel<'_>, ctx: &PageContext<'_>, canvas: Pos2) -> Option<TextPosition> {
     let pdf = crate::viewer::canvas_to_pdf_space(canvas, ctx.page)?;
     // ★★ ONE call, since 2026-08-27. `EditableTextModel::hit_test` **projects
@@ -1006,26 +1010,6 @@ pub fn tilt_at(ctx: &PageContext<'_>, canvas: Pos2) -> Option<f32> {
     Some(step.y.atan2(step.x).to_degrees())
 }
 
-/// ★ **The one derivation** — module header §5.
-///
-/// One ordered pair in, one [`TextSelection`] out, and both of its halves
-/// produced by the same walk over the same byte windows:
-///
-/// * the **string** is sliced out of each covered run's own `text`, so derived
-///   word spaces and line breaks — which are runs carrying no glyphs — are
-///   copied along with the characters they separate;
-/// * the **boxes** are accumulated from the glyphs whose byte ranges intersect
-///   those same windows, grouped by the line the engine put each glyph on.
-///
-/// The glyph list comes from [`EditableTextModel::resolve_range`] rather than
-/// being re-derived from the byte windows here, because that function already
-/// owns the intersection rule (including its correct treatment of a zero-width
-/// caret window, which selects nothing) and a second implementation of it is
-/// precisely how a highlight comes to cover one glyph more than the copy does.
-///
-/// Returns `None` for a range covering no glyphs. That is the *only* way a
-/// caller clears a selection through this module, which is what makes "an empty
-/// selection is `None`" true everywhere rather than in most places.
 /// **Does this line run in a direction the page-axis box would get wrong?**
 ///
 /// `true` for anything that is not left-to-right along +x. The test is on the
@@ -1046,6 +1030,30 @@ fn is_rotated(model: &EditableTextModel<'_>, line: usize) -> bool {
     })
 }
 
+/// ★ **The one derivation** — module header §5.
+///
+/// One ordered pair in, one [`TextSelection`] out, and both of its halves
+/// produced by the same walk over the same byte windows:
+///
+/// * the **string** is sliced out of each covered run's own `text`, so derived
+///   word spaces and line breaks — which are runs carrying no glyphs — are
+///   copied along with the characters they separate;
+/// * the **boxes** are accumulated from the glyphs whose byte ranges intersect
+///   those same windows, grouped by the line the engine put each glyph on.
+///
+/// The glyph list comes from [`EditableTextModel::resolve_range`] rather than
+/// being re-derived from the byte windows here, because that function already
+/// owns the intersection rule (including its correct treatment of a zero-width
+/// caret window, which selects nothing) and a second implementation of it is
+/// precisely how a highlight comes to cover one glyph more than the copy does.
+///
+/// Returns `None` for a range covering no glyphs. That is the *only* way a
+/// caller clears a selection through this module, which is what makes "an empty
+/// selection is `None`" true everywhere rather than in most places.
+///
+/// ★ Moved here on 2026-09-12. It sat above `is_rotated`, run
+/// together with that item's doc comment — so it documented `is_rotated`
+/// and this function had none. See `tools/gates/check-orphan-docs.py`.
 fn resolve(
     model: &EditableTextModel<'_>,
     ctx: &PageContext<'_>,

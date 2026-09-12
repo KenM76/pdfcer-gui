@@ -279,15 +279,6 @@ impl PdfcerApp {
         }
     }
 
-    /// Draw the left and right docks and their panel bodies.
-    ///
-    /// The dock knows nothing about PDFs — it is handed opaque
-    /// [`egui_shell::dock::PanelId`]s and hands them back, and this closure
-    /// is the single place a `PanelId` becomes a `crate::panels::Panel`.
-    /// One dispatcher, exactly as the ribbon has one: an id that does not
-    /// resolve draws its own explanation rather than an empty pane, because
-    /// an empty pane is indistinguishable from a panel that had nothing to
-    /// say.
     /// **Draw every floating panel's window.**
     ///
     /// The second of the dock's two per-frame calls. It takes an
@@ -558,6 +549,19 @@ impl PdfcerApp {
         });
     }
 
+    /// Draw the left and right docks and their panel bodies.
+    ///
+    /// The dock knows nothing about PDFs — it is handed opaque
+    /// [`egui_shell::dock::PanelId`]s and hands them back, and this closure
+    /// is the single place a `PanelId` becomes a `crate::panels::Panel`.
+    /// One dispatcher, exactly as the ribbon has one: an id that does not
+    /// resolve draws its own explanation rather than an empty pane, because
+    /// an empty pane is indistinguishable from a panel that had nothing to
+    /// say.
+    ///
+    /// ★ Moved here on 2026-09-12. It sat above `floating_panels`, run
+    /// together with that item's doc comment — so it documented `floating_panels`
+    /// and this function had none. See `tools/gates/check-orphan-docs.py`.
     pub(super) fn docks(&mut self, ui: &mut egui::Ui, actions: &mut Vec<Action>) {
         // Borrows split before the closure: the body needs `status` and
         // `panels` while `show` holds `dock` mutably, and the closure

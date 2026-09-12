@@ -135,19 +135,42 @@ pub const fn brings_a_script() -> &'static str {
 /// discards its `/FT`, its `/V` and its widget's field-ness. The engine reports
 /// success and says nothing.
 ///
-/// # Why this lives here rather than being left to the engine
+/// # ★★★ CORRECTED 2026-09-11 — THE LOSS ABOVE CANNOT HAPPEN ANY MORE, AND
+/// THAT IS WHY THE WORDING CHANGED
 ///
-/// It should be the engine's, it is filed as
-/// `request_a_dotted_name_silently_swallows_an_existing_terminal_field.md`, and
-/// the guard there is already **half present** — `add_text_field` refuses the
-/// mirror case (*"the name belongs to a group that contains other fields"*) and
-/// not this one, which is the destructive direction.
+/// The measurement above stands as history and is left in place deliberately:
+/// it is what the request was built on. It is no longer what happens. The
+/// engine refuses this act at `place_new_field_deferred`, a single choke point
+/// all five `add_*` verbs and `paste_field` reach, before a byte is staged into
+/// the document and before any undo entry exists. Nothing is destroyed, and the
+/// request — `archive/2026-08-29-request_a_dotted_name_silently_swallows_an_…`
+/// — is closed.
 ///
-/// Until that lands, the path is reachable from this shell in two gestures: the
-/// placement dialog's name box, and the Properties panel's rename. Both take a
-/// name the operator typed. A shim that prevents an unrecoverable loss is worth
-/// its own deletion later; `actions::forms::group_is_a_field` carries the
-/// tripwire that will name the day it can go.
+/// So the old sentence had become **false in the operator's direction**, which
+/// is the worst way for a refusal to be wrong. It said *"Using this name would
+/// turn it into a group and lose what is in it"*, warning about a loss that can
+/// no longer occur, and it said nothing about what actually happened, which is
+/// that the edit was refused and his document is untouched. An operator reading
+/// it would reasonably believe he had just been stopped at the edge of
+/// something dangerous rather than told about a name he cannot have.
+///
+/// # ★★ Why the sentence survives the fix at all
+///
+/// Because the engine's own — which names the victim and cites §12.7.3.1 —
+/// cannot reach him. `check-ui-strings.sh`'s exclusion 3 says in as many words
+/// that an error type's `Display` is not permission to route operator text
+/// through it, so the funnel sends the engine's prose to `PDFCER_DIAG` and puts
+/// its own generic *"That change was refused"* on the bar. This function is
+/// what turns that shrug back into an answer, fed by
+/// `Declined::FieldPathCrossesTerminal`, which carries the name **the engine
+/// resolved** rather than one this shell re-derived.
+///
+/// ★ Also corrected: the old text said the hole was reachable "in two gestures:
+/// the placement dialog's name box, and the Properties panel's rename". **The
+/// rename was never one of them.** `rename_field` takes a *partial* name and
+/// refuses a dotted one outright (`DottedPartialName`), for a different reason
+/// — a `/T` containing a dot is unaddressable by every fill verb, pdfcer's
+/// included — and it has done so for longer than this comment existed.
 ///
 /// # The wording
 ///
@@ -156,11 +179,58 @@ pub const fn brings_a_script() -> &'static str {
 /// that is almost always what they meant — a plain name — rather than
 /// explaining PDF field hierarchies to a draughtsman.
 #[must_use]
-pub fn name_would_swallow(existing: &str) -> String {
+pub fn name_crosses_a_field(terminal: &str) -> String {
     format!(
-        "A name with a dot puts the field inside a group, and \u{201c}{existing}\u{201d} is \
-         already an ordinary field rather than a group. Using this name would turn it into a \
-         group and lose what is in it. Pick a name without a dot, or rename \u{201c}{existing}\u{201d} first."
+        "That name was refused and the document is unchanged: a dot puts the field inside a \
+         group, and \u{201c}{terminal}\u{201d} is already an ordinary field rather than a \
+         group. Pick a name without a dot, or rename \u{201c}{terminal}\u{201d} first."
+    )
+}
+
+/// **A dotted name where a single name was required** — refused, with the
+/// reason and the remedy.
+///
+/// `FormAuthorError::DottedPartialName`, reaching here through
+/// `Declined::DottedPartialName`. Raised by three engine verbs; reachable from
+/// **one** surface in this shell — the Tab-order register panel's adopt boxes,
+/// which take free text and gate only on non-empty.
+///
+/// # ★★★ Why the sentence does NOT warn about losing anything
+///
+/// Because nothing would be lost, and a refusal that overstates its stakes is
+/// the defect this surface already had once. `adopt_widget` does not touch an
+/// existing field's `/Kids`: a pre-existing `Text` survives an adopt of
+/// `Text.2` completely intact. [`name_crosses_a_field`] above is the one where
+/// a field really would be destroyed, and the two sentences have to stay
+/// distinguishable on exactly that point.
+///
+/// What WOULD be produced is a field **nobody can address**. §12.7.3.2 makes
+/// its FQN that same dotted string, so every resolver splits on `.` first,
+/// looks for `2` inside a group `Text`, finds a terminal there, and stops. It
+/// renders. It accepts a click. And `fill_text_field`, FDF/XFDF import, a
+/// `/CO` calculation-order entry and a reset-form `/Fields` array can none of
+/// them reach it — **pdfcer's own fill verbs included**.
+///
+/// ⇒ Hence *"can be clicked but never filled"*, which is the consequence in
+/// the operator's terms. He is about to put a box on a drawing that nobody,
+/// including pdfcer, can ever type into, and it will look perfectly normal.
+///
+/// # The wording
+///
+/// It echoes the name back, because the panel that reaches this shows a name
+/// box per unclaimed widget and the bar has one sentence — without the name it
+/// would not say which row. It says *the document is unchanged* first, because
+/// that is the question a refusal raises. It explains the period rule in one
+/// clause and does not cite the clause number — the operator is a draughtsman,
+/// and §12.7.3.2 is for this comment, not for the bar. And the remedy is the
+/// only one there is.
+#[must_use]
+pub fn name_is_a_path(supplied: &str) -> String {
+    format!(
+        "That name was refused and the document is unchanged: \u{201c}{supplied}\u{201d} is a \
+         path, not a name. A dot separates the levels of a form's field names, so a field whose \
+         own name contains one can be clicked but never filled in \u{2014} not by pdfcer, and \
+         not by any other reader. Pick a name without a dot."
     )
 }
 

@@ -193,6 +193,93 @@ fn a_rename_puts_the_retargeting_sentence_in_the_disclosure_store() {
     );
 }
 
+/// ★★★ **A rename that collides with an existing name says so, instead of the
+/// funnel floor's generic shrug.**
+///
+/// # What this is really asserting, because it is not the engine's rule
+///
+/// That `rename_field` refuses a collision is the engine's business and is
+/// asserted in the engine's own suite. What could only be asserted from here
+/// is that the refusal **arrives somewhere an operator can read**, and until
+/// 2026-09-12 it did not: `forms::rename` mapped only `Ok`, so every failure
+/// reached `decline::floor` and came out as *"That change was refused"*.
+///
+/// ★★ That is the shape worth the paragraph. The bar was never blank. There
+/// was always a sentence, it was always true, and it answered nothing — so no
+/// report, no gate and no test had anything to catch. A missing answer dressed
+/// as a present one is invisible in a way a missing sentence is not.
+///
+/// ★ And this is the refusal that matters, measured rather than guessed. The
+/// Properties panel greys Rename on
+/// `!typed.is_empty() && !typed.contains('.')`, which pre-empts every refusal
+/// derivable from the typed string. A collision needs the field tree, so it is
+/// the only one that can reach the engine from that control — and it is the
+/// ordinary one: rename `Rev1` to `Rev2` on a form that has a `Rev2`.
+///
+/// It asserts [`Declined::FieldNameTaken`] — the **same** decline `adopt`
+/// raises from a different engine variant — under *one fact, one wording*. If
+/// a later reader splits those into two variants, this test is where the
+/// reasoning is.
+#[test]
+fn renaming_onto_a_name_that_is_taken_says_so() {
+    crate::app::status::decline::retire();
+    let mut doc = crate::app::state::open_local_fixture("action-names-field.pdf");
+    let before = doc.edit_epoch;
+
+    super::rename(&mut doc, "Amount", "ResetIt");
+
+    assert_eq!(
+        doc.edit_epoch, before,
+        "a refused rename may not have edited anything"
+    );
+    assert_eq!(
+        crate::app::status::decline::recorded_for_test(),
+        Some(crate::app::status::decline::Declined::FieldNameTaken),
+        "the fixture holds both `Amount` and `ResetIt`, so renaming one onto the other collides.\
+            `None` means the rename route still words nothing and the floor answered for it; a\
+            different variant means the `RenameCollision` arm is missing from `correctable`"
+    );
+}
+
+/// ★★ **And the dotted name — asserted even though the panel will not let it
+/// through, which is the unusual part and needs its reason stated.**
+///
+/// `panels::properties::formfield` greys Rename while the typed text contains
+/// a period, so an operator cannot provoke this from that control. The
+/// assertion is here anyway, and NOT because more coverage is better:
+///
+/// ★★★ **the gate is a shell-side model of an engine rule, and this project
+/// deleted another one of those the same day for drifting.**
+/// `group_is_a_field` modelled a document-dependent rule and went wrong; this
+/// gate models a pure string rule and cannot. But *"cannot drift"* is an
+/// argument, not a guarantee — so the engine's refusal is wired behind the
+/// gate, and this test is what says the wiring works. If a later reader
+/// removes the gate, the sentence is already there and this test already
+/// proves it.
+///
+/// ⇒ It calls `super::rename` directly, which is what the panel's action
+/// dispatches to, minus the gate. That is the only way to reach the engine's
+/// refusal from a test, and it is honest about being that.
+#[test]
+fn a_dotted_rename_is_worded_even_though_the_panel_greys_it() {
+    crate::app::status::decline::retire();
+    let mut doc = crate::app::state::open_local_fixture("action-names-field.pdf");
+
+    super::rename(&mut doc, "Amount", "A.B");
+
+    let recorded = crate::app::status::decline::recorded_for_test().expect(
+        "`rename_field` refuses a dotted partial name unconditionally, so the `inspect_err` arm\
+            must have recorded a decline on the way past",
+    );
+    assert_eq!(
+        recorded,
+        crate::app::status::decline::Declined::DottedPartialName("A.B".to_owned()),
+        "the decline must name THIS refusal and carry the operator's own string. A different\
+            payload means the name was re-derived somewhere instead of being read out of the\
+            engine's error. Recorded: {recorded:?}"
+    );
+}
+
 /// ★★★ **A delete records the orphan warning**, which is the half that matters
 /// most — pdfcer knows it degraded the document and nothing in the saved file
 /// records that it knew.
@@ -248,51 +335,66 @@ fn renaming_a_field_nothing_names_records_no_second_sentence() {
     );
 }
 #[cfg(test)]
-/// ★★★ The dotted-name guard, against a REAL document rather than a stub.
+/// ★★★ **The dotted-name refusal is the ENGINE's, and this module asserts that
+/// the shell reads it rather than re-deriving it.**
 ///
-/// The loss it prevents was measured with `pdfcer` before this was written:
-/// a field `Text` holding "K. Mantle", plus a field named `Text.2`, leaves one
-/// empty field and an orphaned box. The value is not recoverable, which is why
-/// this is a refusal rather than a disclosure.
+/// The loss that started all this was measured with `pdfcer` before any of it
+/// was written: at engine `3ac9dd7`, a field `Text` holding "K. Mantle" plus a
+/// new field named `Text.2` left one empty field and an orphaned box, with no
+/// recovery. That is why it became a refusal rather than a disclosure.
+///
+/// It is no longer a loss. Since 2026-08-30 the engine refuses at
+/// `place_new_field_deferred` — `FormAuthorError::FieldPathCrossesTerminal` —
+/// before a byte is staged. On 2026-09-11 the shell's own pre-check was
+/// deleted and `actions::forms::correctable` gained an arm that reads the
+/// engine's variant and carries the field name the engine resolved.
+///
+/// # ★★★ TWO OF THE THREE TESTS THAT STOOD HERE COULD NOT HAVE FAILED
+///
+/// They are gone with the function, and the reason they are worth a paragraph
+/// is that **the deletion is not what exposed them** — nothing did, and nothing
+/// would have. Both would have gone on passing after the code they were named
+/// for ceased to exist.
+///
+/// - `a_name_without_a_dot_is_never_examined` asserted
+///   `!"Revision".contains('.')`. That is a claim about a string literal. It
+///   never named the function, never opened a document, and its own comment
+///   said so — *"Expressed as a doc-free call in the sibling tests below rather
+///   than here"* — which is an admission that the test body asserts nothing and
+///   the title is doing the work.
+/// - `the_prefix_walk_stops_before_the_full_name` built the prefix list **in
+///   the test** with `(1..segments.len())` and asserted the list it had just
+///   built equalled the list it expected. The product's walk was a second copy
+///   of the same three lines twenty feet away. Changing the product could not
+///   turn it red.
+///
+/// ⇒ Recorded because it is the same shape as the tautology the surviving test
+/// below documents, arrived at from the other direction: that one read its own
+/// assertion string, these two read their own arithmetic. **A test that never
+/// names the thing it is about is not testing it**, and a module title is not
+/// a citation.
+///
+/// What replaces them is nothing, deliberately. The behaviour they gestured at
+/// is the engine's and is asserted in the engine's own suite
+/// (`tests/form_field_merge.rs:1241`); re-asserting it here would rebuild the
+/// duplicate model whose deletion this module now documents.
 mod dotted_names {
-    /// A plain name is never touched — the cheap exit, and the common case.
-    #[test]
-    fn a_name_without_a_dot_is_never_examined() {
-        // No document needed: the function returns before it opens one, which
-        // is the property being asserted. Anything else would put a form parse
-        // on every field authored.
-        //
-        // Expressed as a doc-free call in the sibling tests below rather than
-        // here, because constructing an `OpenDoc` is what those do; this test
-        // exists to state the fast path in words that a reader will find.
-        assert!(!"Revision".contains('.'));
-    }
-
-    /// ★★ Only ANCESTORS are examined, never the full name.
-    ///
-    /// `Text.2` must check `Text` and must NOT check `Text.2`. A name that
-    /// already exists as a terminal field of the same type is a legitimate
-    /// **merge** — it is exactly what `Ctrl+Shift+V` relies on — so guarding
-    /// the full name would break the duplicate paste.
-    #[test]
-    fn the_prefix_walk_stops_before_the_full_name() {
-        let name = "A.B.C";
-        let segments: Vec<&str> = name.split('.').collect();
-        let checked: Vec<String> = (1..segments.len())
-            .map(|cut| segments[..cut].join("."))
-            .collect();
-        assert_eq!(
-            checked,
-            vec!["A".to_owned(), "A.B".to_owned()],
-            "★ `A.B.C` itself must NOT be in the list: an existing field of that exact name is a merge, not a collision"
-        );
-    }
-
-    /// The guard is reachable from the gesture that can trigger the loss.
+    /// **`author` reads the engine's refusal, and does not model it.**
     ///
     /// Named rather than exercised, because the operand is an operator-typed
-    /// string and the assertion that matters is that `author` consults the
-    /// guard **at all** — which the source does before it writes anything.
+    /// string and the assertion that matters is structural: that the refusal
+    /// reaching the operator is the **engine's**, carrying the name the engine
+    /// resolved, rather than a second predicate this shell evaluates first.
+    ///
+    /// ★★ Rewritten 2026-09-11, and the old subject is worth one line because
+    /// the assertion inverted. It used to require that `author` consult a
+    /// shell-side guard **before writing anything**. It now requires that it
+    /// consult **nothing** before calling the verb, and word what comes back.
+    /// The pre-check it defended had, by the time it was read, become wrong in
+    /// the way a duplicate model always does: it refused on any prefix present
+    /// in `AcroForm::fields`, where the engine refuses only on a **terminal**,
+    /// so it falsely refused the mixed node. A test guarding a guard is only as
+    /// right as the guard.
     ///
     /// # ★★★ THIS TEST PASSED BY READING ITS OWN ASSERTION STRING
     ///
@@ -319,17 +421,56 @@ mod dotted_names {
     /// reads `author.rs`, which contains the code and not the assertion, and
     /// the needle is split across two `contains` calls so that pasting this
     /// doc comment into the scanned file could not satisfy it either.
+    /// Everything in `src` that is not a full-line comment.
+    ///
+    /// ★★★ Why a source-scanning assertion needs this, added 2026-09-12.
+    ///
+    /// The check below went red because `author`'s doc comment — moved into
+    /// `author.rs` that day, see `tools/gates/check-orphan-docs.py` — *names*
+    /// the pre-check this test forbids, in a sentence explaining that it was
+    /// deleted. A flat `contains` over the whole file reads that mention as a
+    /// resurrection.
+    ///
+    /// ⇒ *a test keyed on a name cannot tell code from commentary.* The shape
+    /// is already recorded in the other direction, where prose DISCHARGED a
+    /// coverage gate: twenty-five engine verbs once scored "consumed" on doc
+    /// comments alone. A false red is the more confusing half, because it names
+    /// a real file and a real symbol and sends the reader hunting for something
+    /// that was correctly removed.
+    ///
+    /// ⚠ Full-line comments only. A trailing `// …` after code, and a `/* */`
+    /// block, are both left in — neither occurs in this crate's style, and a
+    /// stripper that tried to handle them would need to respect string literals
+    /// and would become the second parser this project maintains. If that ever
+    /// changes, the honest move is a real lexer, not a cleverer regex.
+    fn code_only(src: &str) -> String {
+        src.lines()
+            .filter(|line| !line.trim_start().starts_with("//"))
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
     #[test]
-    fn author_consults_the_group_collision_guard_before_writing() {
+    fn author_words_the_engines_refusal_rather_than_pre_empting_it() {
         // ⚠ `../` — this file moved into `forms/` on 2026-09-08 and
         // `include_str!` is relative to the file that writes it.
-        let src = include_str!("../forms/author.rs");
+        let src = code_only(include_str!("../forms/author.rs"));
         assert!(
-            src.contains("group_is_a_field(doc, draft.name.trim())"),
-            "★ `author` must consult the guard BEFORE anything is written. The placement \
-             dialog's name box reaches here with a string the operator typed, and a name that \
-             is already a GROUP would otherwise take a field with children out of the document. \
-             If this call moved, follow it — do not delete the assertion."
+            src.contains("super::correctable(error)"),
+            "★ `author` must read the ENGINE's refusal and word it. Until 2026-09-11 it \
+             pre-empted that refusal with a shell-side model of the rule, and by the time the \
+             engine shipped the real one the model had become WRONG in the permissive \
+             direction's opposite — it refused the mixed node, which the engine allows. If this \
+             call moved, follow it; do not delete the assertion, and do not replace it with a \
+             second model."
+        );
+        assert!(
+            !src.contains("group_is_a_field"),
+            "★★ the deleted pre-check must not come back. Its replacement is not a better \
+             predicate, it is NO predicate: `correctable` reads the variant the engine raised \
+             and carries the field name the engine itself resolved, which is the only answer \
+             that cannot drift from the engine's. ⚠ This reads CODE only — the file's doc \
+             comment names the deletion in prose, deliberately, and that is not a resurrection."
         );
         assert!(
             !src.contains("include_str!"),
