@@ -43,7 +43,7 @@
 
 use std::path::Path;
 
-use crate::coords::PageGeometry;
+use crate::coords::{DocPoint, PageGeometry};
 
 /// Read the first page's size from a PDF, if it can be read confidently.
 ///
@@ -159,6 +159,77 @@ pub fn operator_file_complaint(name: &str) -> String {
 // easy to read as part of the tests and is not. It was moved here on
 // 2026-09-05 when `OPERATOR_DIRS` was added above it during the driven
 // sweep -- the const is production code and belongs with production code.
+
+/// The workspace root, derived from this crate's manifest directory.
+///
+/// Every fixture this harness pins is named relative to the repository root,
+/// because that is the only place a path can be written down that survives
+/// being run from a different working directory - and `ui-verify` is run from
+/// the repository root by hand, from `tools/ui-verify` by `cargo run`, and
+/// from wherever a sweep script happens to be.
+///
+/// # Why it is here and not in each check
+///
+/// Eleven check modules carry a private copy of exactly this function:
+/// `link_follow`, `ocr_progress`, `off_page_census`, `off_page_marquee`,
+/// `off_page_press`, `off_page_toggle`, `off_page_visible`, `off_page_zoom`,
+/// `page_display_pref`, `quit_unsaved` and `save_as`. None of them is wrong.
+/// The problem is the twelfth: pinning a fixture is the standing repair for
+/// the checks the 2026-09-12 sweep found aimed at the wrong document, and
+/// there are about thirty of those.
+///
+/// ⇒ The eleven are left alone on purpose. Migrating them belongs in its own
+/// commit - a mechanical edit to eleven unrelated modules, folded into a
+/// defect repair, makes the repair unreviewable.
+#[must_use]
+pub fn workspace_root() -> std::path::PathBuf {
+    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("..")
+        .join("..")
+}
+
+/// Where a grip drag can actually be measured, and on which document.
+///
+/// # Why this is a function and not three literals
+///
+/// Three checks are the same gesture with three different verbs -
+/// [`crate::checks`]'s `resize_scales_a_shape`, `rotate_handle_turns_a_selection`
+/// and `shift_constrains_a_resize`. Each selects a shape, presses one of the
+/// eight grips and drags it. All three therefore need the same thing from the
+/// document: **a point where clicking selects a single path object whose
+/// selection outline is large enough on screen that its eight grips do not
+/// overlap each other.**
+///
+/// That is a property of the *fixture*, not of any one check, which is why it
+/// lives here beside the other thing the harness reads out of a document.
+///
+/// # What it cost to learn - measured 2026-09-12
+///
+/// `resize_scales_a_shape` was moved into `sweep-full.sh`'s ALONE table with
+/// `--doc-point 0,300,500` and passed. The other two kept taking the sweep's
+/// shared `0,2000,320` and **both failed**, each with several paragraphs
+/// naming three application functions as the likely cause. Every one of those
+/// functions is correct. The aim point was wrong, and the knowledge of which
+/// aim point works was written down in a shell script, attached to one of the
+/// three checks that needed it.
+///
+/// ⇒ **Knowledge a check cannot run without belongs beside the check, not in
+/// the runner's arguments** - the runner's arguments are a compromise chosen
+/// for the majority, and a check whose subject cannot exist under that
+/// compromise does not report *my input is wrong*. It reports something
+/// specific and believable about the program.
+///
+/// # The numbers
+///
+/// `fixtures/a1-titleblock.pdf`, page 0, **300, 500** in PDF user space -
+/// a shape near the lower-left of the 2383.9 x 1683.8 pt sheet, clear of the
+/// title block's own dense line work. Verified by `resize_scales_a_shape`
+/// committing `resize-commit grip=SouthEast sx=1.1449 sy=1.2052` from it.
+#[must_use]
+pub fn grip_gesture_target() -> (std::path::PathBuf, DocPoint) {
+    let pdf = workspace_root().join("fixtures").join("a1-titleblock.pdf");
+    (pdf, DocPoint::new(0, 300.0, 500.0))
+}
 
 #[cfg(test)]
 mod tests {

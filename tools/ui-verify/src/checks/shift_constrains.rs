@@ -208,17 +208,33 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    let pdf = ctx.pdf.clone().ok_or_else(|| {
-        Error::new("no --pdf. This check needs a drawing with a selectable shape on page 1.")
-    })?;
-    let target = ctx.target.ok_or_else(|| {
-        Error::new(
-            "no --doc-point. Pass PAGE,X,Y in PDF user space naming a point where the fixture \
-             has a selectable SHAPE — not text and not a picture, both of which the resize \
-             refuses by name. There is deliberately no default: a click on empty page is \
-             symptom-identical to a broken hit test.",
-        )
-    })?;
+    // ★ PINNED: `--pdf` and `--doc-point` are read and IGNORED here.
+    //
+    // This check and its two siblings drag one of the eight selection grips,
+    // and that gesture can only be measured where the selection outline is
+    // big enough on screen for the grips not to overlap each other. The sweep
+    // hands every check one shared aim point chosen for the majority, and on
+    // 2026-09-12 two of these three FAILED under it - each printing several
+    // paragraphs that named application functions as the likely cause. Every
+    // one of those functions was correct.
+    //
+    // ⇒ `fixture::grip_gesture_target` holds the point and the reason. A
+    // check whose subject cannot exist under an arbitrary aim must not be
+    // steerable into a place where its subject does not exist.
+    let (pdf, target) = crate::fixture::grip_gesture_target();
+    if !pdf.is_file() {
+        return Err(Error::new(format!(
+            "the grip-gesture fixture is not at {}. Every check that drags a selection grip \
+             needs it; `fixture::grip_gesture_target` says which point on it is the measurable \
+             one, and what it cost to find out.",
+            pdf.display()
+        )));
+    }
+    report.note(format!(
+        "--pdf and --doc-point are IGNORED: this check pins {} at page 0, 300, 500 — the \
+         one place on that sheet where a grip drag can be measured",
+        pdf.display()
+    ));
     if !ctx.allow_input {
         return Err(Error::new(
             "input is disabled (--no-input). This check clicks a mode segment, clicks page \

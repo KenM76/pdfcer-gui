@@ -176,14 +176,24 @@ fi
 #       page scrolled away and brought back — could never occur. The fixture is
 #       8 pages of 306 x 396 pt, so the aim point is a page centre.
 #
-#   resize_scales_a_shape
-#       Aims at a shape near the top-left of the title-block sheet, while the
-#       shared `--doc-point` is chosen for the checks that need a point out in
-#       the drawing. Moving the shared aim to suit this one would silently
-#       re-aim the other nineteen checks in its chunk.
+# ★★ AND WHAT IS NOT IN THIS TABLE, MEASURED 2026-09-12
+#
+#   `resize_scales_a_shape` used to be here, with
+#   `--pdf fixtures/a1-titleblock.pdf --doc-point 0,300,500`. It needed the
+#   same document as everybody else and only a different POINT on it, and
+#   that is the wrong kind of thing for this table to carry: two sibling
+#   checks that make the SAME gesture - `rotate_handle_turns_a_selection`
+#   and `shift_constrains_a_resize` - stayed on the shared aim point and
+#   both FAILED, each printing several paragraphs naming application
+#   functions that are correct. The knowledge of which point works was
+#   written down here, attached to one of the three checks that needed it.
+#
+#   ⇒ **This table is for a check that needs a different DOCUMENT.** A
+#   check that needs a different POINT pins the point beside itself - see
+#   `fixture::grip_gesture_target`, which all three now call, and which
+#   carries the reason so the next person does not have to re-derive it.
 ALONE='
 pages_stay_drawn_when_you_scroll_back|--pdf fixtures/synthetic-image-only-8pages.pdf --doc-point 0,150,200
-resize_scales_a_shape|--pdf fixtures/a1-titleblock.pdf --doc-point 0,300,500
 '
 
 # Take each ALONE name out of the chunked list, and refuse to continue when a
