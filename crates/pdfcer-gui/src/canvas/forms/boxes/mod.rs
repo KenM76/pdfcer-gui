@@ -38,7 +38,9 @@
 //! where the hit test lives ([`hit`]).
 
 use egui::{Align, Pos2, Rect, Vec2};
-use pdfcer_core::forms::{AcroForm, ButtonKind, Field, FieldFlags, FieldType, FieldValue, Widget};
+use pdfcer_core::forms::{
+    AcroForm, ButtonKind, Field, FieldFlags, FieldType, FieldValue, MkColor, Widget,
+};
 use pdfcer_core::object::ObjId;
 use pdfcer_core::page_tree::Page;
 use pdfcer_core::vartext::Quadding;
@@ -302,6 +304,15 @@ pub struct WidgetBox {
     pub kind: BoxKind,
     /// Where it is, in canvas space.
     pub rect: Rect,
+    /// The widget's own `/MK` `/BG` as sRGB components in `0.0..=1.0`, or
+    /// `None` when the file states no background — see [`editor_fill`], which
+    /// is the whole of the rule and carries the reasoning.
+    ///
+    /// Carried on the box rather than looked up at draw time because this list
+    /// is the cache: it is rebuilt per `(document, edit epoch)`, and an editor
+    /// that re-read the `AcroForm` every frame to find one colour would be
+    /// re-deriving a fact this structure exists to hold.
+    pub fill: Option<[f32; 3]>,
 }
 // ===========================================================================
 // The pure rules
@@ -353,6 +364,68 @@ pub fn offered_in(tool: CanvasTool) -> bool {
 /// from `Widget::rect` at all — see [`place`]. Asking here as well would be a
 /// second source of truth for where a widget is, and the one that is *not* the
 /// one being hit-tested.
+/// The widget's own background colour as sRGB components, or `None` for
+/// "leave the theme's box alone".
+///
+/// # ★★★ What this is for, and why it is not a facsimile
+///
+/// The in-canvas field editor lays a live `egui` text box over the raster for
+/// the duration of a keystroke. Until this existed that box was
+/// `extreme_bg_color` — near-white under the light presets — so a pale-yellow
+/// or shaded form field **turned grey the moment the operator touched it** and
+/// turned back a gesture later. That is a visible change to content nobody
+/// asked for, which is the thing pdfcer's rule 4 forbids.
+///
+/// It is not a fidelity claim, and the module header's §3 is the reason it is
+/// allowed to be neither. §3 refuses to make this box a facsimile because a
+/// substituted font cannot promise the document font's glyph advances — an
+/// **arithmetic** argument. The test a property must pass to be honoured here
+/// is therefore *does honouring it make a claim about where a particular glyph
+/// will land*. A fill does not, exactly as `/Q` did not. ★ That reading was
+/// contested: §3 was cited for eleven days as though it settled every
+/// appearance property, and `ENGINE_BACKLOG.md` carried opposite verdicts on
+/// this row until 2026-09-11. The engine's own `Widget::background` doc names
+/// this editor as the intended consumer, in these words: *"an on-page field
+/// EDITOR that lays a live text box over the raster … so a pale-yellow field
+/// does not flash white while the operator types."*
+///
+/// # The three-state `/BG`, which is why this takes the widget and not a colour
+///
+/// Table 189 distinguishes **absent** (`background == None`) from an **empty
+/// array** ([`MkColor::None`] — *explicitly no colour, transparent*). Both
+/// answer `None` here, because both mean *keep the theme's box*, but they are
+/// different facts about the file and a caller that collapsed them upstream
+/// would have lost one. This function is where they are allowed to merge, and
+/// it merges them at the point of use rather than at the point of reading.
+///
+/// # ★★ DeviceCMYK IS converted here, and elsewhere in this shell it is not
+///
+/// `app::markupband::rgb_of` returns `None` for a CMYK mark and
+/// `app::fontband` greys the swatch, on a rule this project holds firmly: *a
+/// swatch showing a converted colour is a control whose readback is a
+/// conversion the operator never asked for — pick it up, put it down
+/// unchanged, and the file now says something different.*
+///
+/// That argument is about a **round trip**, and this is not one. Nothing here
+/// is written back; the value is a tint on a transient overlay that is gone
+/// the moment the edit commits. And the conversion is
+/// [`pdfcer_core::color::cmyk_to_srgb`] — the engine's own calibrated one, the
+/// same conversion that produced **the raster pixels immediately around the
+/// box**. Refusing it would not avoid a conversion; it would make the editor
+/// disagree with the page it is sitting on.
+///
+/// ★ The match is exhaustive with no wildcard, so a new [`MkColor`] variant
+/// stops the build here rather than silently taking the `None` arm.
+#[must_use]
+pub fn editor_fill(widget: &Widget) -> Option<[f32; 3]> {
+    match widget.background? {
+        MkColor::None => None,
+        MkColor::Gray(g) => Some([g, g, g]),
+        MkColor::Rgb(r, g, b) => Some([r, g, b]),
+        MkColor::Cmyk(c, m, y, k) => Some(pdfcer_core::color::cmyk_to_srgb(c, m, y, k)),
+    }
+}
+
 pub fn classify(field: &Field, widget: &Widget, rotate: u16) -> Result<BoxKind, NotOnCanvas> {
     if !widget.has_normal_appearance {
         return Err(NotOnCanvas::NoAppearance);
@@ -557,6 +630,7 @@ pub fn place(form: &AcroForm, pages: &[Page], annots: &[Vec<(ObjId, [f64; 4])>])
                     widget: widget_index,
                     kind,
                     rect: canvas,
+                    fill: editor_fill(widget),
                 },
             ));
         }

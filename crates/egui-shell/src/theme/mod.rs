@@ -1035,6 +1035,74 @@ impl Theme {
         (theme.palette.accent, theme.palette.selection_fill)
     }
 
+    /// **The plate and the ink for a box tinted with a colour THIS THEME DID
+    /// NOT CHOOSE** — a fill that arrived from the document being edited.
+    ///
+    /// `srgb` is the fill as three sRGB components in `0.0..=1.0`; out-of-range
+    /// components are clamped rather than rejected, because a malformed source
+    /// is a reason to draw something sane, not to panic. Returns
+    /// `Some((fill, ink))`, or **`None` when the theme has no text colour that
+    /// reads on that fill** — in which case the caller must not tint at all.
+    ///
+    /// # ★★★ Why this exists, and why the pair is the whole point
+    ///
+    /// Every other `*_pair` on this type answers *"which two of MY roles go
+    /// together"*. This one is the case the theme does not own either half of:
+    /// something outside has a colour, the theme has to put text on it, and
+    /// **there is no role to look up** — the answer has to be measured.
+    ///
+    /// `DEFECTS.md` **D2** is what happens when it is not measured. D2 was a
+    /// foreground assigned for one fill and rendered on another, and it shipped
+    /// with two adjacent theme tests green, because
+    /// `tools/gates/check-theme-colors.sh` forbids *invented* colours and has
+    /// nothing to say about a *correctly-sourced colour used for the wrong
+    /// role*. A caller that painted a foreign fill and left the ink to the
+    /// theme would be re-creating D2 exactly, one preset change away from
+    /// invisible text — and this time on a colour no preset author controls.
+    ///
+    /// ⇒ **Fill and ink leave here together or neither leaves.** There is
+    /// deliberately no `foreign_fill()` that returns only the plate.
+    ///
+    /// # How the ink is chosen
+    ///
+    /// From the theme's own two text extremes — [`Palette::text`] (the body
+    /// colour, dark under the light presets) and [`Palette::on_accent`] (the
+    /// colour written on a saturated plate, light under the light presets) —
+    /// whichever has the larger luminance gap against the fill, measured by
+    /// [`contrast::gap`], which composites alpha first. So the ink inverts on
+    /// a dark fill without anybody maintaining a list, and a preset that
+    /// re-tunes either role moves this with it.
+    ///
+    /// The result must clear [`contrast::READABLE_LUMA_GAP`] — the same floor
+    /// the contrast gate holds every other pair to. Nothing exempts a pair
+    /// merely because the document picked one side of it;
+    /// `a_foreign_fill_is_readable_under_every_preset` walks a colour cube
+    /// against every preset so that a preset which broke this would fail a
+    /// test rather than hand an operator an unreadable box.
+    ///
+    /// # What this does NOT decide
+    ///
+    /// The **frame**. A caller drawing a focus ring keeps the theme's ring:
+    /// a ring is the *cursor*, not content, and pdfcer's rule 4 admits a
+    /// pre-commit affordance while forbidding content to be restyled.
+    #[must_use]
+    pub fn foreign_fill_pair(
+        ctx: &egui::Context,
+        srgb: [f32; 3],
+    ) -> Option<(egui::Color32, egui::Color32)> {
+        let theme = Self::of(ctx);
+        let byte = |v: f32| (v.clamp(0.0, 1.0) * 255.0).round() as u8;
+        let fill = egui::Color32::from_rgb(byte(srgb[0]), byte(srgb[1]), byte(srgb[2]));
+        let ink = [theme.palette.text, theme.palette.on_accent]
+            .into_iter()
+            .max_by(|a, b| {
+                contrast::gap(*a, fill)
+                    .partial_cmp(&contrast::gap(*b, fill))
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            })?;
+        (contrast::gap(ink, fill) >= contrast::READABLE_LUMA_GAP).then_some((fill, ink))
+    }
+
     /// The `egui::Style` this theme produces, standalone.
     ///
     /// # Why this is public

@@ -483,7 +483,7 @@ pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
             // see behind the field's own outline.
             //
             // ★★★ The SELECTION is what is read here, not a hit test, and that
-            // is deliberate: `canvas::forms::select_click` has already made the
+            // is deliberate: `canvas::forms::selecting::select_click` has already made the
             // field under the pointer the selected one on this very frame — a
             // secondary click selects exactly as a primary does, minus the
             // clear-on-paper. So *"is a field selected"* and *"did they

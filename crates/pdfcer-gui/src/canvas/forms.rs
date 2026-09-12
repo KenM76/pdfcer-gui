@@ -349,6 +349,16 @@
 /// on why the split is a seam rather than a cut.
 pub mod boxes;
 
+/// The Edit-mode half: which field is selected, what its outline looks like,
+/// and what a click means when a click is not a request to type. Split out
+/// under R2; see its header for why the seam is real and not a cut.
+mod selecting;
+
+/// Re-exported so the path `canvas::forms::right_click_hits_a_field` — which
+/// `canvas::rightclick` and `panels::properties::formfield` both cite by name
+/// — survived the R2 split unchanged.
+pub use selecting::right_click_hits_a_field;
+
 use crate::app::actions::forms::FieldAction;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -762,8 +772,8 @@ pub(super) fn overlay(
         settle(&ctx, doc, actions);
         if doc.annotations_visible() {
             let placed = placed(&ctx, doc);
-            select_click(&ctx, doc, pages, drawn, &placed.targets, actions);
-            select_cursor(&ctx, pages, &placed.targets);
+            selecting::select_click(&ctx, doc, pages, drawn, &placed.targets, actions);
+            selecting::select_cursor(&ctx, pages, &placed.targets);
             // ★★★ DRAW THE SELECTION. `OPERATOR_REQUESTS.md` **O53**.
             //
             // Nothing painted a selected form field. The click landed, the
@@ -786,7 +796,7 @@ pub(super) fn overlay(
             // squares are hit-tested whether or not they are painted -- and an
             // invisible target that steals a press is worse than a visible
             // control that does nothing.
-            selection_overlay(&ctx, ui.visuals(), doc, pages, &placed.targets);
+            selecting::selection_overlay(&ctx, ui.visuals(), doc, pages, &placed.targets);
         }
         return;
     }
@@ -998,24 +1008,91 @@ fn editor(
     // [`BoxKind::Text::align`] for why this one property is admissible and the
     // `/DA` font and size are not.
     let halign = editor_align(align);
-    let response = if multiline {
-        ui.put(
-            rect,
-            egui::TextEdit::multiline(&mut draft)
-                .id(id)
-                .horizontal_align(halign)
-                .font(egui::FontSelection::from(font)),
-        )
+
+    // ★★★ **`/MK` `/BG`, the second appearance property this editor reads, and
+    // it is here for the same reason `/Q` is.**
+    //
+    // Until this existed the live box was `extreme_bg_color` — near-white under
+    // every light preset — so a pale-yellow or shaded field **turned grey the
+    // moment the operator touched it** and turned back a gesture later. Nothing
+    // in the file changed; the only thing that changed was the colour of the
+    // thing being looked at, which is exactly the flicker pdfcer's rule 4
+    // exists to forbid. The engine's own `Widget::background` doc names this
+    // editor as its intended consumer, in these words: *"an on-page field
+    // EDITOR that lays a live text box over the raster … so a pale-yellow field
+    // does not flash white while the operator types."*
+    //
+    // ★★ **The fill and the ink arrive together, and that is not tidiness.**
+    // A document-derived fill under a theme-chosen foreground is `DEFECTS.md`
+    // D2's second shape — *a foreground assigned for a fill the text is not
+    // on* — and it is how the old GUI shipped near-white headings on light
+    // grey. [`Theme::foreign_fill_pair`] measures the pair and answers `None`
+    // when no theme ink reads on that fill; `None` means **paint neither**, so
+    // an unreadable field keeps the theme's own readable box rather than
+    // becoming a tinted one the operator cannot read their own typing in.
+    //
+    // What is deliberately NOT tinted: the focus ring. A ring is the *cursor*,
+    // which rule 4 admits in full — it says where the keystrokes are going, not
+    // what the document contains.
+    //
+    // The whole of which colour this is, including why DeviceCMYK is converted
+    // here and refused in the markup band, is [`boxes::editor_fill`].
+    let tint = widget_box
+        .fill
+        .and_then(|srgb| egui_shell::theme::Theme::foreign_fill_pair(&ctx, srgb));
+
+    let mut edit = if multiline {
+        egui::TextEdit::multiline(&mut draft)
     } else {
-        ui.put(
-            rect,
-            egui::TextEdit::singleline(&mut draft)
-                .id(id)
-                .password(password)
-                .horizontal_align(halign)
-                .font(egui::FontSelection::from(font)),
-        )
-    };
+        egui::TextEdit::singleline(&mut draft).password(password)
+    }
+    .id(id)
+    .horizontal_align(halign)
+    .font(egui::FontSelection::from(font));
+    if let Some((fill, ink)) = tint {
+        edit = edit.background_color(fill).text_color(ink);
+    }
+
+    // ★★ **The refusal is traced, because an operator cannot see one.**
+    //
+    // Three outcomes reach this point and only two of them are visible. A
+    // field with no `/BG` keeps the theme box, which is right and expected. A
+    // field WITH a `/BG` that the theme has no readable ink for also keeps the
+    // theme box — identical on screen, a different fact about the file — and
+    // pdfcer's rule 4 is explicit that an inference the operator cannot see
+    // still owes an off-canvas report. This is that report, in the place this
+    // shell puts machine-readable ones.
+    //
+    // Emitted once per opened editor rather than per frame: it is keyed on the
+    // seating branch below, which fires on the frame the caret is placed.
+    // Components are printed as decimals rather than `Debug`-formatted,
+    // because a driven check reads this line and a `{:?}` tuple is a shape
+    // that changes when the type does.
+    if !focus.seated {
+        crate::diag::trace(|| match (widget_box.fill, tint) {
+            (None, _) => {
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                format!("form-editor-tint field={} bg=absent", focus.field)
+            }
+            (Some(srgb), Some((_, ink))) => format!(
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                "form-editor-tint field={} bg={:.3},{:.3},{:.3} ink={},{},{}",
+                focus.field,
+                srgb[0],
+                srgb[1],
+                srgb[2],
+                ink.r(),
+                ink.g(),
+                ink.b()
+            ),
+            (Some(srgb), None) => format!(
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                "form-editor-tint field={} bg={:.3},{:.3},{:.3} declined=unreadable",
+                focus.field, srgb[0], srgb[1], srgb[2]
+            ),
+        });
+    }
+    let response = ui.put(rect, edit);
 
     // ★ Seat the caret exactly once. The click that asked for this editor was
     // consumed by the PAGE (see the module header §4), so there is no click
@@ -1226,256 +1303,6 @@ fn cursor(ctx: &egui::Context, pages: &[PageView], list: &[WidgetBox]) {
             return;
         }
     }
-}
-// ===========================================================================
-// Selecting a field, rather than filling it
-// ===========================================================================
-
-/// A click in **Edit mode**: select the field under the pointer, or clear the
-/// selection.
-///
-/// ★★ A click on empty paper CLEARS, and that is deliberate rather than
-/// incidental. Every selection model the operator uses works that way, and
-/// without it the properties panel would go on describing a field long after
-/// they had moved on — a panel that will not let go is worse than one that is
-/// empty, because its contents look current.
-///
-/// Nothing is mutated here. The outcome leaves as an [`Action`], like every
-/// other thing this canvas decides.
-fn select_click(
-    ctx: &egui::Context,
-    doc: &OpenDoc,
-    pages: &[PageView],
-    drawn: &[DrawnPage],
-    targets: &[boxes::FieldTarget],
-    actions: &mut Vec<Action>,
-) {
-    let Some(pos) = ctx.pointer_interact_pos() else {
-        return;
-    };
-    // ★★★ **A right-click selects too, and the two buttons are NOT the same
-    // rule.** `OPERATOR_REQUESTS.md` O53's ruling — anything the engine can do
-    // to an object must be reachable by clicking that object — reaches the
-    // context menu, and a menu about a field the operator did not point at is
-    // the `canvas.object` select-first defect in another costume: point at
-    // field B while field A is selected, choose Delete, and A is gone.
-    //
-    // ⇒ The difference is **what happens over PAPER**:
-    //
-    // | | primary | secondary |
-    // |---|---|---|
-    // | over a field | select it | select it |
-    // | over the selected field | no change | no change |
-    // | over blank paper | **clear** | **change nothing** |
-    //
-    // The last row is `canvas::menus`' rule 3 and its reason carries here
-    // unchanged: a left click on paper is an unambiguous *"deselect"*, a
-    // right-click is the opening of a question. An operator who right-clicks
-    // slightly wide of the field they meant, sees the wrong menu and presses
-    // Escape should still have their field.
-    let primary = drawn
-        .iter()
-        .find(|d| d.response.clicked_by(egui::PointerButton::Primary))
-        .map(|d| d.page);
-    let secondary = drawn
-        .iter()
-        .find(|d| d.response.clicked_by(egui::PointerButton::Secondary))
-        .map(|d| d.page);
-    let Some(page) = primary.or(secondary) else {
-        return;
-    };
-    let clearing = primary.is_some();
-    let Some(map) = pages.iter().find(|v| v.page == page).map(|v| v.map) else {
-        return;
-    };
-
-    let point = map.to_page(pos);
-    let picked =
-        boxes::hit_target(targets, page, point).map(|t| crate::app::state::SelectedField {
-            field: t.field.clone(),
-            widget: t.widget,
-            page: t.page,
-        });
-
-    // ★ Raised only on a CHANGE. A click that re-selects what is already
-    // selected, or that clears an empty selection, is not an event — and this
-    // surface is asked on every frame the pointer is down, so raising
-    // unconditionally would put an action on the queue sixty times a second
-    // and bump the epoch with it.
-    if picked == doc.selected_field {
-        return;
-    }
-    // ★ The one asymmetry between the buttons, and it is the table above's
-    // last row. A secondary click that hit nothing leaves the selection alone;
-    // a primary one clears it. Placed after the no-change guard so an
-    // unchanged selection still costs nothing either way.
-    if picked.is_none() && !clearing {
-        return;
-    }
-    crate::diag::trace(|| {
-        // ui-text-exempt: diagnostic trace, never displayed in the UI
-        match &picked {
-            Some(f) => format!(
-                "form-field-selected page={} field={} widget={}",
-                f.page, f.field, f.widget
-            ),
-            None => "form-field-selected none".to_owned(),
-        }
-    });
-    actions.push(FieldAction::Select(picked).into());
-}
-
-/// **Is a right-click at `point` about a form field?**
-///
-/// ## ★★★ Why this exists instead of reading `doc.selected_field`
-///
-/// Because on the frame of the click that field is **not selected yet**.
-/// [`select_click`] does not mutate — it raises `FieldAction::Select`, which
-/// the queue applies at the end of the frame — so `doc.selected_field` still
-/// holds whatever was selected before, and a menu keyed on it would show the
-/// *previous* field's menu, or the view menu, on the first right-click.
-///
-/// ⇒ That is precisely the stale-snapshot hazard `shell::menus::MenuHost::with_conditions`
-/// exists for, met one layer further out: `egui`'s popup is opened **by** the
-/// secondary click, so there is no later frame on which the right answer could
-/// arrive. The first right-click on a field would silently show the wrong menu
-/// for ever.
-///
-/// ★ It is the twin of [`crate::canvas::menus::right_clicked_object`], and it
-/// answers the same question the same way — by hit-testing the click's own
-/// position rather than by consulting state one frame behind it.
-///
-/// ## ★★ It reproduces the surface's own gates, and it must
-///
-/// `edit_content` and `annotations_visible`: a form field is only *selectable*
-/// in Edit mode with annotations shown, and a menu offered where selection is
-/// not is a menu whose Delete acts on nothing. Read from the same two places
-/// [`surface`] reads them, one frame later.
-#[must_use]
-pub fn right_click_hits_a_field(
-    ctx: &egui::Context,
-    doc: &OpenDoc,
-    caps: &crate::app::modes::Capabilities,
-    page: usize,
-    point: egui::Pos2,
-) -> bool {
-    if !caps.edit_content || !doc.annotations_visible() {
-        return false;
-    }
-    // `placed` is memoised on `(path, edit_epoch)`, so this is a map lookup on
-    // every frame after the first of an epoch — the same call `widgetdrag`
-    // makes for the same reason.
-    let placed = placed(ctx, doc);
-    boxes::hit_target(&placed.targets, page, point).is_some()
-}
-
-/// The pointer over a selectable widget in Edit mode.
-///
-/// ★ `PointingHand`, the same cursor the fill surface uses, and deliberately
-/// **not** a bespoke one. It says *"there is something here"*, which is the
-/// only claim either surface needs to make; what differs is what a click does,
-/// and a cursor is a poor place to say that. `ui-conventions` has no row for
-/// this because it is not a convention question — both readings of the click
-/// are "act on the thing under the pointer".
-fn select_cursor(ctx: &egui::Context, pages: &[PageView], targets: &[boxes::FieldTarget]) {
-    let Some(pos) = ctx.pointer_latest_pos() else {
-        return;
-    };
-    for view in pages {
-        if boxes::hit_target(targets, view.page, view.map.to_page(pos)).is_some() {
-            ctx.set_cursor_icon(egui::CursorIcon::PointingHand);
-            return;
-        }
-    }
-}
-
-/// **Paint the selected form field: its outline and its eight grips.**
-///
-/// `OPERATOR_REQUESTS.md` **O53**. Nothing drew this before 2026-08-28, so a
-/// selected field looked exactly like an unselected one.
-///
-/// ★★★ It is drawn **here** rather than in `canvas::overlay::draw_selection`,
-/// and the reason is that a form field is not in `SelectionState` at all:
-/// `canvas::selection::annot` excludes `/Widget` outright so the form surface
-/// owns those presses, and the selection lives on the document. The overlay
-/// draws what the selection state holds; this draws what this surface owns.
-///
-/// ★★ The rectangle is the **same one** `hit_target` matched and
-/// `widgetdrag::grab_box` projects — one rectangle for what the operator can
-/// see, what they can grab and what moves. That is rule H7, and the third use
-/// is the one that was missing.
-///
-/// ★ Nothing is drawn when the selection names a widget the form no longer has
-/// — a field deleted while selected, or a page that has changed underneath.
-/// An outline around nothing is a claim about a field that is gone.
-fn selection_overlay(
-    ctx: &egui::Context,
-    visuals: &egui::Visuals,
-    doc: &OpenDoc,
-    pages: &[PageView],
-    targets: &[boxes::FieldTarget],
-) {
-    let Some(selected) = doc.selected_field.as_ref() else {
-        return;
-    };
-    let Some(target) = targets.iter().find(|t| {
-        t.page == selected.page && t.field == selected.field && t.widget == selected.widget
-    }) else {
-        return;
-    };
-    let Some(view) = pages.iter().find(|v| v.page == target.page) else {
-        return;
-    };
-    let screen = view.map.rect_to_screen(target.rect);
-    let painter = ctx.layer_painter(egui::LayerId::new(
-        egui::Order::Foreground,
-        egui::Id::new("form-field-selection"), // ui-text-exempt: a layer id.
-    ));
-    // ★ The LIVE theme, read from the caller's own `Context`, never a colour
-    // resolved somewhere else and carried here: `Theme::of` returns the
-    // operator's current preset, so a painter that guessed would draw a
-    // selection outline in the wrong colour on exactly the build where
-    // somebody had changed it. (`visuals` is still the caller's, and
-    // `draw_grips` below still needs it for `window_fill`.)
-    //
-    // ★★★ It was `visuals.selection.stroke.color` until 2026-09-04 —
-    // `REVIEW_TRIAGE.md` T2. That is `egui`'s SELECTED-WIDGET channel, not a
-    // canvas role; while the theme pointed it here, every selected chrome
-    // control in the application was painted with this outline's colour. The
-    // value is identical, the address is not, and
-    // `tools/gates/check-selection-channel.sh` keeps the old one unreachable.
-    let stroke = egui::Stroke::new(1.5, egui_shell::theme::Theme::canvas_selection_ink(ctx));
-    painter.rect_stroke(
-        screen,
-        egui::CornerRadius::ZERO,
-        stroke,
-        egui::StrokeKind::Middle,
-    );
-    // ★★ Published under the SAME region name every other selection outline
-    // uses, so a driven check aiming at a grip reads one name whatever is
-    // selected. `handles::grip_rects` derives all eight from this box.
-    crate::diag::ui_rect(crate::canvas::overlay::SELECTION_OUTLINE_REGION, screen);
-    // ★★ `scale_only()`, spelled here as the same value `pressing::grabbable`
-    // hands the hit test for this selection — H7, and the field is the one
-    // selection where the two flags differ in the direction that would be
-    // easiest to get wrong by inheritance.
-    //
-    // ★★★ **A widget scales and does not turn**, and the asymmetry is
-    // §12.5.6.19 Table 189's rather than a gap in pdfcer: a widget's rotation is
-    // `/MK /R`, a quantised 0/90/180/270 *declaration* the field's appearance
-    // generator reads, not a free-angle transform. `rotate_annotation` refuses
-    // a widget by name and points at a verb that is not built.
-    //
-    // ⇒ So no ninth handle is painted here and none is hit-tested. **R9**:
-    // rendering nothing is the honest answer for a capability that does not
-    // exist — a circle on a stem that declined on release would be the
-    // "visible control, silently inert" defect wearing the costume of a fix.
-    crate::canvas::overlay::draw_grips(
-        &painter,
-        visuals,
-        screen,
-        crate::canvas::handles::GripSet::scale_only(),
-    );
 }
 
 /// See `canvas/forms/tests.rs` — moved out under R2 on 2026-09-04.

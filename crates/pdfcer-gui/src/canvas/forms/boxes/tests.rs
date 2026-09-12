@@ -133,8 +133,9 @@ fn drawn_widget() -> Widget {
         background: None,
         // The widget states no /MK /BC. Arrived with the engine commit
         // fad0d2d (2026-09-07), which added /BC beside /BG and fixed a
-        // read/write key mismatch between them. See ENGINE_BACKLOG.md:
-        // neither colour is consumed by this shell yet.
+        // read/write key mismatch between them. ★ /BG IS consumed, as of
+        // 2026-09-11 — it tints the in-place editor, see `editor_fill`. /BC
+        // is not, and that is the only half of this pair still outstanding.
         border_color: None,
         border: None,
         visibility: None,
@@ -419,6 +420,7 @@ fn two_adjacent_fields_never_claim_each_others_clicks() {
                 align: Quadding::Left,
             },
             rect: Rect::from_min_max(Pos2::new(10.0, 10.0), Pos2::new(60.0, 30.0)),
+            fill: None,
         },
         WidgetBox {
             page: 0,
@@ -431,6 +433,7 @@ fn two_adjacent_fields_never_claim_each_others_clicks() {
                 align: Quadding::Left,
             },
             rect: Rect::from_min_max(Pos2::new(61.0, 10.0), Pos2::new(110.0, 30.0)),
+            fill: None,
         },
     ];
 
@@ -457,6 +460,7 @@ fn a_widget_drawn_over_another_claims_the_click() {
             on: false,
         },
         rect: Rect::from_min_max(Pos2::new(0.0, 0.0), Pos2::new(100.0, 100.0)),
+        fill: None,
     };
     let over = WidgetBox {
         field: "Over".to_owned(),
@@ -852,5 +856,92 @@ fn the_selection_hit_test_prefers_the_widget_drawn_last() {
     assert!(
         hit_target(&targets, 0, Pos2::new(150.0, 50.0)).is_none(),
         "outside"
+    );
+}
+
+/// ★★★ **`/MK` `/BG`, every variant, and the two different `None`s.**
+///
+/// The subject is [`editor_fill`], which decides what colour the in-place
+/// editor tints itself. Its whole job is a mapping, so the test is the
+/// mapping — stated per variant, because the match is deliberately exhaustive
+/// with no wildcard and a future variant should arrive here as a compile
+/// error in the module and a missing case in this list, not as a silent
+/// `None`.
+///
+/// ★ **The case worth reading twice** is the pair at the top. Table 189 lets
+/// a file state `/BG []` — an EMPTY array, meaning *explicitly no colour* —
+/// and that is a different fact from `/BG` being absent. The engine keeps
+/// them apart ([`MkColor::None`] versus the enclosing `Option` being `None`),
+/// and this function is the one place they are allowed to merge, because the
+/// question it answers — *do I tint?* — has the same answer for both. Both
+/// are asserted so that a reader can see the merge is intentional rather
+/// than a missing arm.
+#[test]
+fn a_background_is_read_and_stating_none_is_not_the_same_as_stating_nothing() {
+    let mut w = drawn_widget();
+
+    w.background = None;
+    assert_eq!(
+        editor_fill(&w),
+        None,
+        "a file that states no /MK /BG at all"
+    );
+
+    w.background = Some(MkColor::None);
+    assert_eq!(
+        editor_fill(&w),
+        None,
+        "an empty /BG array states transparent on purpose, which is still leave the theme box alone"
+    );
+
+    w.background = Some(MkColor::Gray(0.75));
+    assert_eq!(editor_fill(&w), Some([0.75, 0.75, 0.75]));
+
+    w.background = Some(MkColor::Rgb(1.0, 0.95, 0.6));
+    assert_eq!(
+        editor_fill(&w),
+        Some([1.0, 0.95, 0.6]),
+        "the pale-yellow form field this whole feature exists for"
+    );
+}
+
+/// ★★ **A CMYK background goes through the ENGINE's calibrated conversion,
+/// not an arithmetic one.**
+///
+/// This shell refuses to convert DeviceCMYK in two other places on purpose
+/// (`app::markupband::rgb_of`, `app::fontband`) because those are swatches
+/// whose readback would write an invented colour back into the file.
+/// [`editor_fill`] writes nothing and sits on a raster the engine itself
+/// produced, so the right answer there is to use the engine's own table —
+/// which makes the box AGREE with the pixels beside it.
+///
+/// The assertion is chosen to be falsifiable by the failure it guards
+/// against: solid K ink alone is a **warm near-black**, around 0.13 red, and
+/// the naive `1.0 - k` an implementer reaches for first gives exactly 0.0. A
+/// hand-rolled conversion therefore fails here rather than shipping as a
+/// half-shade of wrong on every CAD form in the building. The bounds are the
+/// engine's own documented ones for this input, quoted rather than invented.
+#[test]
+fn a_cmyk_background_uses_the_engines_own_table_and_not_one_minus_k() {
+    let mut w = drawn_widget();
+
+    w.background = Some(MkColor::Cmyk(0.0, 0.0, 0.0, 0.0));
+    assert_eq!(
+        editor_fill(&w),
+        Some([1.0, 1.0, 1.0]),
+        "no ink at all is paper white"
+    );
+
+    w.background = Some(MkColor::Cmyk(0.0, 0.0, 0.0, 1.0));
+    let k100 = editor_fill(&w).expect("solid K is a colour");
+    assert!(
+        k100[0] > 0.10 && k100[0] < 0.18,
+        "solid K ink alone is a warm near-black near 0.13, not the 0.0 that 1.0 - k gives: {k100:?}"
+    );
+
+    assert_eq!(
+        editor_fill(&w),
+        Some(pdfcer_core::color::cmyk_to_srgb(0.0, 0.0, 0.0, 1.0)),
+        "the engine conversion verbatim, so this box and the raster under it can never disagree"
     );
 }

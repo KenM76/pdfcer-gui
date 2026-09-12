@@ -655,3 +655,92 @@ fn an_out_of_range_panel_padding_saturates_rather_than_wrapping() {
     assert_eq!(clamp_to_i8(-200.0), -128);
     assert_eq!(clamp_to_i8(f32::NAN), 0);
 }
+
+/// **A fill the theme did not choose still gets readable ink — under every
+/// preset, anywhere in the colour cube.**
+///
+/// [`Theme::foreign_fill_pair`] is the one accessor whose plate comes from
+/// OUTSIDE the palette, so no preset author can have looked at it. Its ink is
+/// therefore measured rather than named, and this walks the measurement: a
+/// 9×9×9 grid over the whole sRGB cube — 729 fills × 3 presets — asserting
+/// each returned pair clears the same [`contrast::READABLE_LUMA_GAP`] floor
+/// every other pair in this theme is held to.
+///
+/// # ★★ Why it asserts `is_some()` rather than tolerating `None`
+///
+/// `None` is the function's honest refusal — *this theme has no text colour
+/// that reads on that fill, so do not tint at all* — and a caller that
+/// obeys it is correct. But an operator meets that refusal as a field that
+/// **silently keeps the theme's grey box while its neighbours are tinted**,
+/// which reads as a defect, not as a decision. So the refusal must be
+/// unreachable in a shipped preset, and this is what says so. A preset
+/// re-tuned until some fill defeats both text roles fails here, on the
+/// machine, rather than in front of him.
+///
+/// The grid includes the two corners that defeat a naive fixed ink: `0,0,0`
+/// and `1,1,1`. A function that always answered [`Palette::text`] fails on
+/// black under the light presets; one that always answered
+/// [`Palette::on_accent`] fails on white.
+#[test]
+fn a_foreign_fill_is_readable_under_every_preset() {
+    const STEPS: usize = 9;
+    for preset in Preset::ALL {
+        let theme = Theme::new(*preset);
+        let ctx = egui::Context::default();
+        theme.apply(&ctx);
+
+        for ri in 0..STEPS {
+            for gi in 0..STEPS {
+                for bi in 0..STEPS {
+                    #[allow(clippy::cast_precision_loss)]
+                    let axis = |i: usize| i as f32 / (STEPS - 1) as f32;
+                    let srgb = [axis(ri), axis(gi), axis(bi)];
+                    let pair = Theme::foreign_fill_pair(&ctx, srgb);
+                    let Some((fill, ink)) = pair else {
+                        panic!(
+                            "{preset:?}: no readable ink for {srgb:?} — an \
+                                operator meets this as a field that stays grey while \
+                                its neighbours are tinted, which reads as a defect"
+                        );
+                    };
+                    let measured = contrast::gap(ink, fill);
+                    assert!(
+                        measured >= contrast::READABLE_LUMA_GAP,
+                        "{preset:?}: {srgb:?} → ink gap {measured} is under the \
+                            {} floor every other pair in this theme clears",
+                        contrast::READABLE_LUMA_GAP
+                    );
+                }
+            }
+        }
+    }
+}
+
+/// **The fill is the document's colour, not a colour near it — and a
+/// malformed component is clamped rather than wrapped.**
+///
+/// The plate half of the pair is the one thing this function must not have an
+/// opinion about: it is the file's own number, and a rounding that drifted
+/// would make the editor box disagree with the raster beside it. The clamp
+/// matters for the same reason `clamp_to_i8` does — a cast of `1.4 * 255.0`
+/// into `u8` is undefined-adjacent nonsense in the one case where the input
+/// came from a file somebody else wrote.
+#[test]
+fn a_foreign_fill_is_the_documents_own_colour_and_an_absurd_one_is_clamped() {
+    let theme = Theme::new(Preset::Quiet);
+    let ctx = egui::Context::default();
+    theme.apply(&ctx);
+
+    let (fill, _) = Theme::foreign_fill_pair(&ctx, [1.0, 0.0, 0.5]).expect("readable");
+    assert_eq!(fill, Color32::from_rgb(255, 0, 128));
+
+    let (low, _) = Theme::foreign_fill_pair(&ctx, [-3.0, -0.0, -1.0]).expect("readable");
+    assert_eq!(low, Color32::BLACK, "a negative component clamps to zero");
+
+    let (high, _) = Theme::foreign_fill_pair(&ctx, [4.0, 9.0, 2.0]).expect("readable");
+    assert_eq!(
+        high,
+        Color32::WHITE,
+        "an over-range component clamps to one"
+    );
+}

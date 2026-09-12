@@ -17,7 +17,7 @@
 //! | what | why it is stale | how it is answered |
 //! |---|---|---|
 //! | the object selection | a right-click over an unselected object **selects it**, and the ribbon's condition snapshot was taken at the top of the frame | [`crate::shell::menus::MenuHost::with_conditions`] corrects the conditions |
-//! | `doc.selected_field` | `canvas::forms::select_click` raises `FieldAction::Select`; the queue applies it at the **end** of the frame | a **hit test**, not a state read — see [`Click::field_menu`] |
+//! | `doc.selected_field` | `canvas::forms::selecting::select_click` raises `FieldAction::Select`; the queue applies it at the **end** of the frame | a **hit test**, not a state read — see [`Click::field_menu`] |
 //!
 //! ⇒ Both are the same defect shape and both had to be found the same way: by
 //! asking *"what does this read, and who writes it, and when?"* Neither is
