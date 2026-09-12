@@ -74,6 +74,26 @@
 # forced records to move would teach re-baselining, which is the failure mode
 # `check-engine-backlog.sh` already warns about in its own header.
 #
+# ⚠ AND IT CANNOT SEE THE ONE HAZARD WORTH NAMING, so name it here.
+#
+# `Cargo.lock` is this gate's oracle, and `Cargo.lock` is not stable between
+# two commands in the same session. `crates/pdfcer-gui/Cargo.toml` takes the
+# three engine crates as `{ git = …, branch = "main" }` — a BRANCH, with no
+# `rev` — and cargo re-resolves such a dependency opportunistically, without
+# anybody typing `cargo update`. That was measured on 2026-09-11: the lock
+# moved `d2465f5` → `f8f9a26` at 20:04 with no update command in the session's
+# history.
+#
+# So the strictly correct oracle is *the revision compiled into the exe*, and
+# what we have is *the revision the lock names now*. The two diverge in the
+# window between `cargo build` and this gate. That window is small, the gate
+# and `tools/package-portable.py`'s `locked_engine_rev` read the SAME source,
+# so `FEATURES.md` and `BUILD-INFO.txt` will at least agree with each other —
+# and a shipped pair that agree wrongly is a far smaller problem than a pair
+# that disagree. But if this gate ever demands an edit that surprises you,
+# **suspect the lock moved under the build** before editing the document:
+# re-run the build, then the gate, in that order.
+#
 # It also does not accept an ABSENT pin as a pass. If a future rewording
 # drops the phrase from the header, this gate FAILS and says so in those
 # words. A gate keyed on a name is discharged by prose that stops using the
