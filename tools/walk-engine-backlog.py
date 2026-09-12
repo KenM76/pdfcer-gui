@@ -150,8 +150,74 @@ def over_cap(text: str, cap: int) -> list[tuple[str, int, str]]:
 CONSUMED_MARKERS = ("\u2705", "WIRED", "CONSUMED", "SHIPPED AND")
 
 
+def opening_clause(cell: str) -> str:
+    """The verdict-bearing opening of a ``Why`` cell.
+
+    The register's convention is that a row's cell OPENS with its verdict, in
+    bold, optionally behind a status glyph: ``⬜ **`wanted` — …**``,
+    ``◑ **`/DV` and `/Q` CONSUMED …**``, ``**declined, deliberately …**``.
+    So the opening clause is *the first bolded run*, and the glyph in front of
+    it is decoration.
+
+    ★ The previous implementation read the first bolded run **only when the
+    cell began with ``**``** and otherwise fell back to the first 60 characters.
+    That is the same class of defect this whole module exists to catch: every
+    row that opens with a glyph — which is most of the interesting ones — was
+    measured by a fixed-width prefix instead of by its own structure, so a
+    verdict stated at character 61 was invisible, and prose at character 20 that
+    merely MENTIONED another verdict was not.  Read the structure.
+    """
+    i = cell.find("**")
+    if i == -1 or i > 12:  # a bold run further in than a glyph-plus-space is prose
+        return cell[:80]
+    run = cell[i + 2:].split("**")[0]
+    return run if run else cell[:80]
+
+
+def contrary_verdict(head: str, section: str) -> str | None:
+    """A verdict word in ``head`` that is not ``section``'s — or ``None``.
+
+    # ★★ Why this exists, and why it is the more important half
+
+    `CONSUMED_MARKERS` catches a row that announces itself WIRED.  It cannot
+    catch the other five ways a row can be misfiled, because those are spelled
+    with an ordinary word rather than a tick.  On 2026-09-11, with the marker
+    check green, a hand read of the ``wanted`` section found **eight** rows
+    carrying somebody else's verdict — five opening ``**declined …**``, two
+    ``**`shipped` …**``, one ``**✅ Accounted for …**`` — and only the last
+    three were reported.  ``wanted`` read **46** where the real gap was **38**:
+    a 17% overstatement of the work left, in the number a session reads to
+    choose what to build.
+
+    That is this project's recorded failure mode *a gate keyed on a name is
+    discharged by prose*, arriving from the opposite direction.  The verdict
+    word IS the name here, so the check is keyed on all five of them.
+
+    # Why a row may legitimately name another verdict
+
+    Constantly — and that is why the section's OWN word wins.  ``⬜ **`wanted`,
+    small, and blocked on nothing.**`` is a correctly filed `wanted` row; so is
+    ``**`wanted` — shipped 2026-09-09; the pin does not carry it yet**``, where
+    *shipped* describes the ENGINE, not this shell.  A row whose opening names
+    its own section is self-consistent and is never reported, whatever else it
+    mentions.  Only a row that names another verdict and never names its own is
+    worth a human's attention.
+    """
+    if section in head:
+        return None
+    for word in VERDICTS:
+        if word in head:
+            return word
+    return None
+
+
 def misfiled(text: str) -> list[tuple[str, int, str, str]]:
-    """Rows whose verdict CELL says consumed while their SECTION says otherwise.
+    """Rows whose verdict CELL contradicts the SECTION they are filed under.
+
+    Two ways a cell can contradict its section, and the second was unguarded
+    until 2026-09-11: it can announce the capability is already here
+    (`CONSUMED_MARKERS`), or it can simply open with a different verdict WORD
+    (:func:`contrary_verdict`). The second is the common one.
 
     Returns ``(section verdict, line number, opening clause, the marker found)``.
 
@@ -196,7 +262,7 @@ def misfiled(text: str) -> list[tuple[str, int, str, str]]:
             current = m.group("verdict") if m and m.group("verdict") in VERDICTS else None
             continue
         stripped = line.strip()
-        if current is None or current == "shipped" or not stripped.startswith("|"):
+        if current is None or not stripped.startswith("|"):
             continue
         cells = stripped.split("|")
         if len(cells) < 4:
@@ -204,13 +270,25 @@ def misfiled(text: str) -> list[tuple[str, int, str, str]]:
         first = cells[1].strip()
         if not first or first.startswith("---") or first.startswith("Row (") or set(first) <= set("-: "):
             continue
-        cell = cells[2].strip()
-        # The first bolded run, i.e. everything up to the closing `**`.
-        head = cell[2:].split("**")[0] if cell.startswith("**") else cell[:60]
-        for marker in CONSUMED_MARKERS:
-            if marker in head:
-                out.append((current, n, first[:60], marker))
-                break
+        head = opening_clause(cells[2].strip())
+
+        # (a) The cell announces the capability is HERE while the section says
+        #     it is not.  Never asked of the `shipped` section, where a cell
+        #     opening with a tick is the section agreeing with itself.
+        if current != "shipped":
+            for marker in CONSUMED_MARKERS:
+                if marker in head:
+                    out.append((current, n, first[:60], marker))
+                    break
+            else:
+                other = contrary_verdict(head, current)
+                if other:
+                    out.append((current, n, first[:60], f"opens `{other}`"))
+            continue
+
+        other = contrary_verdict(head, current)
+        if other:
+            out.append((current, n, first[:60], f"opens `{other}`"))
     return out
 
 
@@ -338,17 +416,21 @@ def main() -> int:
     wrong_section = misfiled(text)
     if wrong_section:
         print()
-        print(f"{len(wrong_section)} row(s) say consumed in a section that says not:")
+        print(f"{len(wrong_section)} row(s) open with a verdict their section contradicts:")
         for v, n, opening, marker in wrong_section:
             print(f"  {v:<9} line {n:<5} [{marker}] {opening}")
         print()
         print("A row's VERDICT is the section it sits in - that is what the counts")
-        print("above measure. A wired row left under `wanted` is handed to the next")
-        print("reader as work to do, because `wanted`'s own heading says those are")
-        print("the rows to read when choosing what to build next. Move it to")
-        print("`shipped`, then re-run with --write to move the headings. This is a")
-        print("REPORT, not a failure: a partly-consumed row may legitimately open")
-        print("with a tick. Somebody has to look.")
+        print("above measure. A row left in the wrong one is handed to the next")
+        print("reader as the section's own heading describes it, so a declined or")
+        print("shipped row under `wanted` becomes work somebody is told to do.")
+        print("Move it, then re-run with --write to rewrite the headings.")
+        print()
+        print("This is a REPORT, not a failure. A partly-consumed row may open")
+        print("with a tick and still belong where it is. Somebody has to look -")
+        print("on 2026-09-11 a hand read found EIGHT of these while this check")
+        print("reported three, because it was keyed on the tick and five of the")
+        print("eight spelled their verdict as an ordinary word.")
 
     long_rows = over_cap(text, args.cap)
     if long_rows:
