@@ -423,6 +423,42 @@ run "check-engine-api-drift" bash "$HERE/check-engine-api-drift.sh"
 # behind is fine, being behind without knowing is what fails here.
 run "check-ui-toolkit-drift" bash "$HERE/check-ui-toolkit-drift.sh"
 
+# ★★★ `check-pin-citation`, added 2026-09-11, and it is the THIRD member of
+# the drift family above -- but it watches a different kind of drift, and the
+# difference is the reason it exists.
+#
+# The two gates above ask whether the CODE is current. This one asks whether
+# the DOCUMENTS agree with the code about which engine commit was consumed.
+# `FEATURES.md` is the file that ships to the operator; its revision header
+# names the pin by hand, in seven characters, typed once at the moment a
+# human happened to look. `cargo update` then rewrites `Cargo.lock` silently
+# and correctly, and the header becomes a confident lie with nothing in a
+# position to notice -- because THE FILE THAT CHANGED DOES NOT CONTAIN THE
+# NUMBER THAT WENT WRONG.
+#
+# It was written after the eighth recorded instance of that shape in this
+# repository, and it caught a live one on its first run: the header said
+# `d2465f5`, measured at 19:52, while the lock had moved to `01c4a10` at
+# 22:01 and was about to move again. The previous seven were all corrected
+# by hand after somebody noticed, which is luck with a commit message.
+#
+# It matters more than an ordinary stale number for one specific reason:
+# when the operator reports a defect, the first question back is always
+# *which build and which engine pin*, and the answer he reaches for is the
+# one in the document that shipped beside the exe.
+#
+# ★ Absence is RED here, never green and never a skip. If a future rewording
+# drops the phrase from the header, this gate fails and says so in those
+# words -- a gate keyed on a name is otherwise discharged by prose that
+# stops using the name, which this repository has been bitten by before.
+run "check-pin-citation" bash "$HERE/check-pin-citation.sh"
+# And its own self-test, in the same file as the line above it, because
+# writing a --self-test is half the work and registering it is the other
+# half. Six sabotages, including the one case the gate is required to stay
+# QUIET about: a retained older revision header legitimately quoting an
+# older pin, which a naive whole-file grep would fail on for ever.
+run "check-pin-citation --self-test" bash "$HERE/check-pin-citation.sh" --self-test
+
 # `check-third-party-licences` regenerates THIRD_PARTY_LICENSES.md and fails if
 # the committed one differs. It is the SECOND gate written on 2026-09-01 for the
 # same underlying shape as `check-verb-coverage`: an ADDITION on the other side
