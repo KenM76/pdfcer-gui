@@ -26,17 +26,17 @@ file points at them rather than quoting them.
 Every figure below has the command that produced it. **Run the command.** Prose
 drifting from a count is the defect this project has spent eight corrections on.
 
-| What | Command | Value, 2026-09-11 late afternoon |
+| What | Command | Value, 2026-09-11 22:15 |
 |---|---|---|
-| Engine pin | `grep -m1 'pdfcer?branch=main#' Cargo.lock` | `f3ca53d` |
-| Engine HEAD | `cd /d/Dev/pdfcer && git log --oneline -1 main` | `f3ca53d` — **equal, v0.53.0** |
-| Last release | `git fetch --tags origin && git describe --tags --abbrev=0` | `v0.5.0-dev.20260911.3` |
-| Driven checks | `ui-verify --list \| grep -cE '^  [a-z0-9_]+$'` | 213 |
-| Gates | `bash tools/gates/run-all.sh` | **33 passed, 0 failed, 0 skipped** |
-| Unit tests | `cargo test --workspace` | **4,177 passing**, 51 ignored |
-| Source files | `find crates -name '*.rs' \| wc -l` | 772 |
-| Backlog register | `python tools/walk-engine-backlog.py` | 170 rows — wanted 46 / blocked 8 / declined 7 / **shipped 109** |
-| Request channel | `ls /d/Dev/FeatureRequests/pdfce_FeatureRequests/open \| wc -l` | 19 |
+| Engine pin | `grep -m1 'pdfcer?branch=main#' Cargo.lock` | `01c4a10` |
+| Engine HEAD | `cd /d/Dev/pdfcer && git log --oneline -1 main` | `21403ff` — **one ahead, and it is docs-only** |
+| Last release | `git fetch --tags origin && git describe --tags --abbrev=0` | `v0.5.0-dev.20260911.4` |
+| Driven checks | `ui-verify --list \| grep -cE '^  [a-z0-9_]+$'` | 213 (the sweep chunks 211 and runs 2 from the ALONE table separately) |
+| Gates | `bash tools/gates/run-all.sh` | **35 passed, 0 failed, 0 skipped** |
+| Unit tests | `cargo test --workspace` | **4,189 passing**, 51 ignored |
+| Source files | `find crates -name '*.rs' \| wc -l` | 775 |
+| Backlog register | `python tools/walk-engine-backlog.py` | 171 rows — wanted 37 / blocked 8 / unknown 0 / declined 13 / **shipped 113** |
+| Request channel | `ls /d/Dev/FeatureRequests/pdfce_FeatureRequests/open \| wc -l` | 30 — **many are closed exchanges awaiting archival** |
 
 ⚠ **The check-count command was wrong in this very table.** `--list` prints
 **two** lines per check plus a header, so `wc -l` answered 434 where the
@@ -59,11 +59,15 @@ seen the three releases cut since; the true figures were **21 commits** and
 **yesterday afternoon**. ⇒ **Any sentence containing *"commits unreleased"* or
 a release date gets a `git fetch --tags origin` immediately in front of it.**
 
-★★★ **`v0.5.0-dev.20260911.3` shipped 2026-09-11 15:38** — the fifth release of
-the day. Engine **v0.53.0** (unchanged from `.2`); the shell change is the
-style-ladder wiring. Zip on GitHub and verified as what `releases/latest`
-advertises; mirror in **`OneDrive\pdfcer-gui1`**, and **`pdfcer-gui2` holds the
-12:11 build**, so the fallback survives.
+★★★ **`v0.5.0-dev.20260911.4` shipped 2026-09-11 20:09** — the render report
+naming the blend space and who chose it, plus the redaction-override ruling.
+Verified as what `releases/latest` advertises. Mirror in
+**`OneDrive\pdfcer-gui1`** (20:05); **`pdfcer-gui2` holds `.3`** (19:50), so the
+fallback survives. **The next package rotates into slot 2.**
+
+⚠ **The number in a release title is the release count for that DAY, not the
+session's.** The previous edition of this block called `.3` *"the fifth release
+of the day"* and it was the fourth. If you need the count, `gh release list`.
 
 ---
 
