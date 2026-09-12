@@ -784,10 +784,25 @@ impl Host {
                     child.data_mut(|d| d.insert_temp(self.engaged_key, ENGAGED));
                 } else if opening {
                     child.send_viewport_cmd_to(self.id, egui::ViewportCommand::Focus);
+                    // ★ THE ASK, which is a different fact from the grant the
+                    // `dialog-focus` line below reports. One line per frame for as long
+                    // as the window is inside its opening grace period and the operator
+                    // has not yet touched it, so the two read together say whether the
+                    // platform answered and after how many frames. That is the only way
+                    // to tell *focus was never requested* from *focus was requested and
+                    // refused* — which look identical from the operator's chair and have
+                    // opposite fixes.
+                    //
+                    // Named `dialog-refocus` on 2026-09-11. It shipped in release
+                    // binaries as `TMPASK` — a name typed while chasing a focus bug and
+                    // meant to come back out, which survived this project's rename
+                    // and eight appearances per dialog in captured traces several
+                    // sessions had read. Mechanism 3 of
+                    // `tools/gates/check-trace-names.py` exists because of this line.
                     crate::diag::trace(|| {
                         // ui-text-exempt: diagnostic trace, never displayed.
                         format!(
-                            "TMPASK title={:?} now={now} opened_at={opened_at}",
+                            "dialog-refocus title={:?} now={now} opened_at={opened_at}",
                             self.title
                         )
                     });

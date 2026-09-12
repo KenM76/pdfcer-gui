@@ -126,6 +126,7 @@ run "check-theme-colors --self-test" bash "$HERE/check-theme-colors.sh" --self-t
 run "check-strong-text --self-test" bash "$HERE/check-strong-text.sh" --self-test
 run "check-shipped-assets --self-test" bash "$HERE/check-shipped-assets.sh" --self-test
 run "check-string-gaps --self-test" bash "$HERE/check-string-gaps.sh" --self-test
+run "check-trace-names --self-test" python "$HERE/check-trace-names.py" --self-test
 
 # --- 1. the gates themselves ------------------------------------------------
 run "check-ui-strings"   bash "$HERE/check-ui-strings.sh"
@@ -237,6 +238,28 @@ run "check-suite-name-absent" python "$ROOT/tools/check-suite-name-absent.py"
 # It found three more the moment it worked, one of them written the same hour,
 # and two that were correct only by STATEMENT ORDER - the module's line happened
 # to be traced after the funnel's, so `.last()` returned the right one by luck.
+#
+# ★★ Mechanism 3, added 2026-09-11: a trace name that reads like a debugging
+# leftover -- any capital letter, or a tmp/temp/dbg/debug/xxx/todo/fixme/hack
+# prefix -- is a violation in its own right.
+#
+# It was bought by `TMPASK`, which an ordinary ninety-second off-screen smoke
+# launch found in a RELEASE binary after this runner had gone green and 4,190
+# unit tests had passed. It had survived this project's own rename and eight
+# appearances per dialog in captured traces that several sessions had read.
+#
+# The instructive half is why THIS gate had never seen it: `FIRST_TOKEN` is
+# anchored `[a-z]`, because every deliberate trace name in the crate is
+# lowercase-and-hyphens. An all-caps scratch name never entered the scan. The
+# gate was not silent because the rule was weak; it was silent because the name
+# did not look like a trace name, which is exactly what makes a leftover a
+# leftover.
+#
+# The self-test is registered up in section 0, per this repository's
+# rule that a `--self-test` absent from this list does not exist. Its five
+# planted inputs include one that is not a violation and one -- a PDF content
+# stream, `BT /F1 12 Tf` -- that pins the anchor: the first cut of mechanism 3
+# scanned whole files and reported 31 hits of which one was real.
 run "check-trace-names" python "$HERE/check-trace-names.py"
 
 # `check-verb-coverage` fails when `pdfcer-core` has a verb this shell names
