@@ -659,8 +659,19 @@ impl ThumbnailCache {
 
     /// Record the operator's own instruction about previews.
     ///
-    /// The only writer of [`Self::on`], and it is called from exactly one
-    /// place — the checkbox.
+    /// The only writer of [`Self::on`], and every one of its three callers is
+    /// the operator's instruction rather than a judgement pdfcer formed:
+    ///
+    /// 1. the checkbox, which is where the instruction is given;
+    /// 2. `PdfcerApp::new`, replaying the last one out of `preferences.txt`;
+    /// 3. `PanelsState::forget_document`, carrying it across the reset that a
+    ///    new document performs.
+    ///
+    /// ★★ The third is not bookkeeping. That reset is `*self = Self::default()`
+    /// and it runs on every launch that opens a file, so without the carry the
+    /// seed in (2) is overwritten before the panel draws once — which is what
+    /// O187 did for the first few hours after it shipped. Measured by driving
+    /// the binary, 2026-09-12.
     pub fn force_on(&mut self, on: bool) {
         self.on = on;
     }

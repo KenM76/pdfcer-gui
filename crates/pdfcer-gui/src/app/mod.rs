@@ -1158,13 +1158,22 @@ impl PdfcerApp {
             // (`ThumbnailCache`), so the file is consulted at construction
             // and `PrefAction::PagePreviews` writes back the other way.
             //
-            // ⚠ `force_on` is the ONLY writer of the tick, and this call is
-            // the one exception to *“nothing but the operator writes it”* —
-            // which it is not really an exception to at all, because what it
-            // replays is the operator's own last instruction rather than a
-            // judgement pdfcer formed. The distinction is the whole of O151
-            // and is why `ThumbnailCache::on` could go back to a plain
-            // `bool`: there is still exactly one party deciding.
+            // ⚠ `force_on` is the ONLY writer of the tick, and this call
+            // is one of three, none of which is really an exception to
+            // *“nothing but the operator writes it”*: what each replays is the
+            // operator's own last instruction rather than a judgement pdfcer
+            // formed. The distinction is the whole of O151 and is why
+            // `ThumbnailCache::on` could go back to a plain `bool`: there is
+            // still exactly one party deciding.
+            //
+            // ★★★ THIS SEED IS NOT SUFFICIENT ON ITS OWN, and for three
+            // hours on 2026-09-12 it was all there was. Opening a document
+            // calls `PanelsState::forget_document`, which is
+            // `*self = Self::default()` — so the two values below were
+            // overwritten before the Pages panel drew once, on every launch,
+            // because pdfcer is always started on a file. That function now
+            // carries them across its own reset; read its body before
+            // changing anything here.
             panels: {
                 let mut panels = crate::panels::PanelsState::default();
                 let pages = panels.pages_mut();

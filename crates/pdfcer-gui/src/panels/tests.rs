@@ -558,3 +558,75 @@ fn an_impossibly_narrow_pane_still_gets_an_ellipsis() {
         Some("\u{2026}".to_owned())
     );
 }
+
+/// ★★★ **A document opening does not throw away the operator's preview
+/// preferences** — `OPERATOR_REQUESTS.md` O187, and the defect that shipped
+/// inside it.
+///
+/// [`PanelsState::forget_document`] is `*self = Self::default()`, which is
+/// exactly right for everything on the struct that describes a **document**
+/// and exactly wrong for the two fields that describe the **operator**. The
+/// tick and the time limit are read out of `preferences.txt` once, in
+/// `PdfcerApp::new`; this function then runs when a document opens, which on
+/// every real launch is a fraction of a second later, because pdfcer is
+/// started on a file.
+///
+/// ⚠ For three hours on 2026-09-12 that made the whole of O187 do nothing.
+/// The preference was written to the file correctly, read back correctly, and
+/// overwritten before the Pages panel drew a single frame. **3,376 unit tests
+/// and 41 gates were green throughout**, because every test of the mechanism
+/// calls the verb and the defect lives in the frame between the seed and the
+/// first draw. It was found by driving the binary across three processes.
+///
+/// ⇒ So the property is pinned here, at the seam that broke it, and it is
+/// pinned for BOTH fields: a carry that moved only the tick would leave the
+/// limit resetting to two seconds on every open, which is the half of O187
+/// the operator would notice second and complain about just as much.
+#[test]
+fn opening_a_document_does_not_throw_away_the_preview_preferences() {
+    use crate::panels::pages::thumbnails::budget_from_millis;
+
+    let mut state = PanelsState::default();
+    assert!(
+        state.pages_mut().cache.previews_on(),
+        "the shipped default is previews ON, or this test is starting where it means to finish"
+    );
+
+    // The operator's two instructions, as `PdfcerApp::new` replays them out of
+    // the preference file.
+    state.pages_mut().cache.force_on(false);
+    state.pages_mut().cache.set_budget(budget_from_millis(0));
+
+    // And a document opens.
+    state.forget_document();
+
+    assert!(
+        !state.pages_mut().cache.previews_on(),
+        "opening a document turned page previews back on, so the operator's tick survives only until the first file is opened — which is never"
+    );
+    assert_eq!(
+        state.pages_mut().cache.budget(),
+        None,
+        "opening a document replaced `never time out` with a number, so the second half of O187 reaches nothing the operator can see"
+    );
+
+    // ★ And the ordinary direction too, because a carry that only ever
+    // preserved the non-default values would be satisfied by a `forget` that
+    // simply stopped resetting the cache at all — which would also stop
+    // forgetting the THUMBNAILS, and those are document state.
+    state.pages_mut().cache.force_on(true);
+    state
+        .pages_mut()
+        .cache
+        .set_budget(budget_from_millis(5_000));
+    state.forget_document();
+    assert!(
+        state.pages_mut().cache.previews_on(),
+        "the carry works in both directions"
+    );
+    assert_eq!(
+        state.pages_mut().cache.budget(),
+        budget_from_millis(5_000),
+        "the carry works in both directions for the limit as well"
+    );
+}

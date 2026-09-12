@@ -1034,8 +1034,15 @@ impl PanelsState {
     /// draws while the shell is empty would never get the chance.
     ///
     /// `*self = Self::default()` rather than clearing fields one at a time,
-    /// so a field added later is forgotten by construction. This is the one
-    /// operation that must not need updating when the struct grows.
+    /// so a field added later is forgotten by construction — which is right
+    /// for everything here that describes a DOCUMENT, and wrong for the two
+    /// fields that describe the OPERATOR.
+    ///
+    /// ★★★ **The page-preview tick and its time limit are carried across the
+    /// reset**, and the body says at length why. In one sentence: they are
+    /// preferences read from `preferences.txt` at construction, this function
+    /// runs after construction on every launch that opens a file, and for a
+    /// few hours on 2026-09-12 that made O187 do nothing at all.
     ///
     /// ★★ **One thing this struct's reset cannot reach**, and it is named here
     /// rather than left to be discovered: `properties::refusedchar` keeps the
@@ -1047,7 +1054,38 @@ impl PanelsState {
     /// says so explicitly, and the "forgotten by construction" property above
     /// holds for every field that a `Default` can reach.
     pub fn forget_document(&mut self) {
+        // ★★★ THE TWO PAGE-PREVIEW PREFERENCES ARE CARRIED ACROSS THE RESET,
+        // and this is the whole of O187 working or not working.
+        //
+        // They are seeded once, in `PdfcerApp::new`, from `preferences.txt`.
+        // This function then ran `*self = Self::default()` over them the
+        // moment a document opened — which is every launch pdfcer has ever
+        // had, because the shell is started on a file. The operator cleared
+        // the tick, the file was written correctly, the next launch read it
+        // correctly, and the answer was thrown away before the panel drew.
+        //
+        // ⚠ Measured by driving the binary on 2026-09-12, hours after O187
+        // shipped with 3,376 unit tests and 41 gates green. Nothing that
+        // calls the verb can see this: every one of those tests constructs a
+        // `ThumbnailCache` directly, and the defect lives in the frame
+        // BETWEEN the seed and the first draw.
+        //
+        // ★★ Why a carry rather than a reseed at the call site: this
+        // function is also called from `Panel::show` EVERY FRAME while
+        // nothing is open, and that call site has no `Prefs` to reseed from.
+        // A carry holds for every caller, present and future, and it is
+        // idempotent — `set_budget` returns early on an unchanged value.
+        //
+        // ⇒ The rule this states, and the one a future field should be
+        // tested against: `*self = Self::default()` forgets DOCUMENT state.
+        // A field on this struct that answers to the operator rather than to
+        // the document does not belong to the reset, and must be carried
+        // here explicitly.
+        let previews_on = self.pages.cache.previews_on();
+        let preview_budget = self.pages.cache.budget();
         *self = Self::default();
+        self.pages.cache.force_on(previews_on);
+        self.pages.cache.set_budget(preview_budget);
         properties::refusedchar::forget_document();
     }
 

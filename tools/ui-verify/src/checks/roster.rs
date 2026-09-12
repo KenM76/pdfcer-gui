@@ -975,6 +975,14 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // Two launches and an Alt+F4, so it is placed with the other
         // multi-process checks rather than among the single-window ones.
         Box::new(page_display_pref::APageDisplayChoiceSurvivesACloseAndReachesANewDocument),
+        // ★★★ Immediately after its opposite number, and the pairing is the
+        // point: both are `a preference survives a close`, and they close the
+        // window in deliberately different ways. `page_display_pref` presses
+        // Alt+F4 because its write is debounced and needs the exit hook; this
+        // one KILLS all three of its processes because O187's write must not.
+        // Reading them side by side is how a future session learns that the
+        // close style is an assertion rather than a convenience.
+        Box::new(page_previews_pref::ThePagePreviewLimitIsRememberedAndZeroMeansNever),
         Box::new(save_as::SaveAsRebindsTheDocument),
         // Last of the new group: it is TWO launches and it presses Alt+F4,
         // so a run that fails on something cheaper should fail first.

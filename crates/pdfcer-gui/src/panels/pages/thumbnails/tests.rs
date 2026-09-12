@@ -299,9 +299,15 @@ fn turning_previews_off_by_hand_stops_explaining_a_skip() {
 /// the old rule and neither could have caught it: they asserted that the
 /// automatic stop worked, which it did.
 ///
-/// `force_on` is the one sanctioned writer and it is called from exactly
-/// one place — the checkbox. Any other assignment to `self.on` is pdfcer
-/// deciding on the operator's behalf again.
+/// `force_on` is the one sanctioned writer. Any other assignment to
+/// `self.on` is pdfcer deciding on the operator's behalf again.
+///
+/// ★ What this test does NOT constrain is how many places CALL `force_on`,
+/// and that distinction is load-bearing. There are three (see its own doc),
+/// and all three carry the operator's instruction rather than forming one.
+/// The sentence here used to say *"called from exactly one place — the
+/// checkbox"*, which was true when it was written and was still sitting in
+/// the file hours after O187 added a second and a third.
 ///
 /// # ⚠ It failed on its first run by reading its own assertion, and the
 /// fix is why this file exists where it does

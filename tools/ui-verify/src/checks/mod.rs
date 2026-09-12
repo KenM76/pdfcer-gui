@@ -453,6 +453,13 @@ pub mod page_clipboard;
 /// program has never seen.
 pub mod page_display_pref;
 pub mod page_ops;
+/// ★★★ **The page-preview limit is remembered, and zero means never** —
+/// `OPERATOR_REQUESTS.md` O187. THREE processes, each KILLED rather than
+/// closed, which is the deliberate opposite of [`page_display_pref`]: this
+/// preference is written at the moment of the gesture and must need no exit
+/// hook to survive. Its header carries why a two-launch version could not
+/// tell a whole-file write from one that carried only the last field touched.
+pub mod page_previews_pref;
 pub mod page_size;
 /// ★★★ **A save that would produce blank pages in Acrobat is refused** —
 /// the operator's report of 2026-09-05. `pdfcer-core`'s `delete_pages` leaves
