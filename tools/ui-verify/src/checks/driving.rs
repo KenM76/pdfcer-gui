@@ -388,6 +388,59 @@ pub fn declared_since(trace: &Trace, ui_rect: &str, name: &str, after: usize) ->
 /// to reading fossils.
 pub const UI_RECT_GONE_EVENT: &str = "ui-rect-gone";
 
+/// The event the application emits for a region it DECLINED to publish
+/// because too little of it survived the clip.
+pub const UI_RECT_CLIPPED_EVENT: &str = "ui-rect-clipped";
+
+/// **Why `name` is missing, when the answer is “it drew, off the edge”.**
+///
+/// Returns the application's own measurement - the region's rectangle, the
+/// clip it was tested against, the fraction that survived and the floor it
+/// failed - or `None` when no such line stands.
+///
+/// # ★★★ What this is for, and it is a fix for a failure MESSAGE
+///
+/// `crate::diag::ui_rect_visible` publishes a region only when at least 60 %
+/// of it is inside the clip. Until 2026-09-12 it was silent about the other
+/// case, and a check reading the trace could not tell a region that never
+/// drew from one that drew and overflowed. They have completely different
+/// fixes.
+///
+/// Measured that day: `restyling_selected_text_reaches_the_document` reported
+/// the Properties panel as saying nothing about a 12-character selection, and
+/// named `app::panels::show_panel`, `panels::properties::text::section` and
+/// `TextStyleDraft::sync` as candidates. All three were correct code. The
+/// Text section had drawn every one of its controls; its CMYK refusal
+/// sentence sat in a `ui.horizontal`, which does not wrap, so the section's
+/// box came out 851.7 pt wide inside a 354 pt dock and 42 % of it survived.
+/// The operator saw a truncated sentence; the check saw an absence; the two
+/// were the same defect and neither said so.
+///
+/// ⇒ A check that reports an absent region should ask this first. The
+/// candidate list is for the case where the answer is `None`.
+///
+/// # The retirement rule, and it is [`declared`]'s
+///
+/// The clipped line is a change log entry like every other line on this
+/// channel: it is written when the verdict CHANGES and stands until it
+/// changes back. A `ui-rect` for the same name at a later line number means
+/// the region became visible again, so the clipped line is a fossil and this
+/// answers `None`. Reading `.last()` alone would report a region as clipped
+/// on the strength of a frame it has long since left - the exact mistake that
+/// once made the UI-scale check report eighteen ribbon controls as mislaid.
+#[must_use]
+pub fn clipped_away(trace: &Trace, ui_rect: &str, name: &str) -> Option<String> {
+    let (line_of_clip, detail) = trace
+        .events(UI_RECT_CLIPPED_EVENT)
+        .filter(|l| l.get("name") == Some(name))
+        .map(|l| (l.lineno, l.raw.clone()))
+        .last()?;
+    let published_after = trace
+        .events(ui_rect)
+        .any(|l| l.lineno > line_of_clip && l.get("name") == Some(name));
+    if published_after { None } else { Some(detail) }
+}
+
 /// Every region name beginning with `prefix` that is **on screen now**.
 ///
 /// # ★★ Why this exists beside [`declared_names`], which counts fossils

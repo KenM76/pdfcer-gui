@@ -451,15 +451,76 @@ pub fn ui_rect_visible(name: &str, rect: egui::Rect, clip: egui::Rect) -> bool {
     // off, so the map lock and the `format!` — the parts that actually cost
     // anything — are unchanged.
     if !visible_enough(rect, clip) {
+        report_clipped(name, rect, clip);
         return false;
     }
     ui_rect(name, rect);
     true
-    // Deliberately silent when it does not intersect. This is not a retirement
-    // — `end_ui_frame` handles that, and a region that scrolls out of view and
-    // back is exactly the case it was built for: it emits `ui-rect-gone` on the
-    // frame the region stops being declared, and the rect is re-emitted when it
-    // returns.
+    // Not silent when it does not intersect - see [`report_clipped`], which
+    // was the whole of this comment until 2026-09-12 and was wrong about the
+    // cost of saying nothing. This is still not a retirement: `end_ui_frame`
+    // handles that, and a region that scrolls out of view and back is exactly
+    // the case it was built for: it emits `ui-rect-gone` on the frame the
+    // region stops being declared, and the rect is re-emitted when it returns.
+}
+
+/// **Why a region was not published, on the frame the answer changes.**
+///
+/// ```text
+/// pdfcer-diag ui-rect-clipped name=<region> rect=[[..]] clip=[[..]] shown=0.41 floor=0.60
+/// ```
+///
+/// # ★★★ The defect this is a fix for, and it cost three correct functions
+///
+/// [`ui_rect_visible`] answers a real question, *can the operator see this?*,
+/// and until 2026-09-12 it answered `no` by saying nothing at all. An absence
+/// is not a measurement. A driven check reading the trace cannot tell
+/// a region that was never drawn from one that drew and was clipped, and the
+/// two have completely different causes.
+///
+/// Measured that day: `restyling_selected_text_reaches_the_document` reported
+/// *“12 characters are selected and the Properties panel says nothing about
+/// them: no `properties.text` region”* and named three candidate causes, in
+/// `app::panels::show_panel`, `panels::properties::text::section` and
+/// `TextStyleDraft::sync`. All three were correct code. The same trace carried
+/// `properties.text.face`, `.size`, `.bold` and `.italic` - every control the
+/// section draws - at rectangles inside the dock body. The section had drawn;
+/// only its own bounding box failed [`visible_enough`], and nothing said so.
+///
+/// ⇒ **A diagnostic channel that declines to publish owes the reason.** The
+/// rule generalises past this function: an unevidenced absence reads as an
+/// answered question, and a reader who believes it goes looking somewhere
+/// else.
+///
+/// # Why `trace_on_change` and not `eprintln!`
+///
+/// Because a region clipped out of view is clipped out of view on every frame
+/// until something moves, and a per-frame line at sixty hertz is not a
+/// diagnostic. The key carries the region name so two regions cannot suppress
+/// each other, and the value carries the three numbers that decide the
+/// verdict, so a changed layout re-reports rather than staying quiet on a
+/// stale line.
+///
+/// ⚠ It inherits a change log's known weakness, stated rather than
+/// discovered: this line does NOT retract when the region becomes visible
+/// again. The retraction is the `ui-rect` line that then appears for the same
+/// name, and a reader comparing the two must compare their ORDER.
+fn report_clipped(name: &str, rect: egui::Rect, clip: egui::Rect) {
+    if !enabled() {
+        return;
+    }
+    let shown = clip.intersect(rect);
+    let area = rect.width() * rect.height();
+    let visible = shown.width().max(0.0) * shown.height().max(0.0);
+    // A zero-area region is reported as `shown=0.00` rather than as a division
+    // by zero. `visible_enough` already calls it invisible; this only has to
+    // name it in a way a reader and a check can both parse.
+    let fraction = if area > 0.0 { visible / area } else { 0.0 };
+    // ui-text-exempt: diagnostic trace, never displayed in the UI
+    trace_on_change(&format!("ui-rect-clipped name={name}"), || {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!("rect={rect:?} clip={clip:?} shown={fraction:.2} floor={VISIBLE_FRACTION:.2}")
+    });
 }
 
 /// **Where a child viewport's client area sits on the DESKTOP.**

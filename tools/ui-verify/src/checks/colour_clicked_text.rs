@@ -279,17 +279,31 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    let pdf = ctx
-        .pdf
-        .clone()
-        .ok_or_else(|| Error::new("no --pdf. This check needs a page carrying real text."))?;
-    let target = ctx.target.ok_or_else(|| {
-        Error::new(
-            "no --doc-point. Pass PAGE,X,Y in PDF user space naming the LEFT END of a piece of \
-             text's baseline — `RESUME.md`'s aim table gives 0,1140,62 on SW41177.pdf. A point \
-             on blank paper selects no object and the check would report the route as missing.",
-        )
-    })?;
+    // ★ PINNED: `--pdf` and `--doc-point` are read and IGNORED here.
+    //
+    // This check needs a click or a sweep that lands IN TEXT. On 2026-09-12
+    // it was handed the sweep's shared aim, which on `a1-titleblock.pdf`
+    // lands on a path - and that sheet is 2383.9 × 1683.8 pt carrying 123
+    // characters, so its tallest glyph is 2.4 screen pixels at fit zoom and
+    // no aim on it would have been reliable either. Sixteen checks reported
+    // sixteen plausible reasons for that one fact.
+    //
+    // `fixture::text_point_target` holds the document, the point, and the
+    // measurement behind both. Read its doc comment before changing either.
+    let (pdf, target) = crate::fixture::text_point_target();
+    if !pdf.is_file() {
+        return Ok(Some(format!(
+            "the text fixture is not at {}. It is committed to this repository, so an \
+             absence is a broken checkout rather than an unavailable precondition, and is \
+             reported as a failure for that reason - a SKIP would say the opposite.",
+            pdf.display()
+        )));
+    }
+    report.note(format!(
+        "--pdf and --doc-point are IGNORED: this check pins {} at page 0, 120, 704 - \
+         eight characters into a 12 pt line on a 612 × 792 page",
+        pdf.display()
+    ));
     if !ctx.allow_input {
         return Err(Error::new(
             "input is disabled (--no-input). This check clicks a page object, clicks a swatch, \

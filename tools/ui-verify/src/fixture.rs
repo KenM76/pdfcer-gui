@@ -160,6 +160,104 @@ pub fn operator_file_complaint(name: &str) -> String {
 // 2026-09-05 when `OPERATOR_DIRS` was added above it during the driven
 // sweep -- the const is production code and belongs with production code.
 
+/// Where a gesture on TEXT can actually be measured, and on which document.
+///
+/// # The one measurement that explains sixteen skips
+///
+/// On the 2026-09-12 full sweep, sixteen of the forty SKIPs were one fact
+/// wearing sixteen costumes. The shared aim `0,2000,320` on
+/// `fixtures/a1-titleblock.pdf` lands on a **path**, so every check needing
+/// a caret, a text selection, a text properties panel or a font control
+/// reported - correctly, at length, and about the wrong thing - that its
+/// subject was not there. Several named application modules while doing it.
+///
+/// ★★★ And a second fact would have survived fixing the aim: that sheet is
+/// **2383.9 × 1683.8 pt carrying 123 characters**, so at the fit zoom the
+/// sweep drives at, **the tallest text on it is 2.4 screen pixels**. A sweep
+/// or a click measured in whole screen pixels cannot reliably land inside a
+/// 2.4 px band, and a check that did land would be measuring the harness's
+/// luck rather than the program.
+///
+/// # What this fixture is, measured before anything was driven
+///
+/// `fixtures/paragraph.pdf`, by walking its content stream:
+///
+/// ```text
+/// MediaBox 0 0 612 792
+/// BT  /F1 12 Tf
+///   1 0 0 1 72.00 700.00 Tm  (The drawing office keeps every revision of a sheet) Tj
+///   1 0 0 1 72.00 684.00 Tm  (in one file, and the notes beside)                  Tj
+///   1 0 0 1 72.00 668.00 Tm  (the title block are edited far more often)           Tj
+///   1 0 0 1 72.00 652.00 Tm  (than the geometry is. A note that has been)          Tj
+///   1 0 0 1 72.00 636.00 Tm  (retyped twice no longer fills)                       Tj
+///   1 0 0 1 72.00 620.00 Tm  (its box.)                                            Tj
+/// ET
+/// ```
+///
+/// One text object, **six runs**, six baselines 16 pt apart, every one
+/// starting at x = 72. On a 612 × 792 page at fit zoom that text is an order
+/// of magnitude taller in screen pixels than the A1 sheet's.
+///
+/// # The aim
+///
+/// **Page 0, (120, 704)** - inside the FIRST line. The baseline is 700 and
+/// the cap height at 12 pt is about 8.4 pt, so the glyph band runs roughly
+/// 700..708; x = 120 is about eight characters into a line some 270 pt long.
+/// Driven confirmation: `deeper_rung_delete`'s label rung selects a text run
+/// there and removes it, `runs_before=6 runs_after=5`.
+///
+/// ⚠ **This is a single point on a single line, and that is deliberate.**
+/// A check that needs several separate text OBJECTS, or a band wide enough
+/// to sweep, needs more than this pair and must say so itself - see
+/// [`text_block_target`].
+#[must_use]
+pub fn text_point_target() -> (std::path::PathBuf, DocPoint) {
+    let pdf = workspace_root().join("fixtures").join("paragraph.pdf");
+    (pdf, DocPoint::new(0, 120.0, 704.0))
+}
+
+/// The same document, with the span of every line on it.
+///
+/// A few checks do not click at a point: they sweep a band, walk from one
+/// run to the next, or select a range and read back what was taken. Those
+/// need to know **where the text is**, not just one point inside it, and the
+/// numbers they need are the ones in [`text_point_target`]'s table.
+///
+/// Returns `(document, baseline, left edge, right edge)` for the **first**
+/// line only, in PDF user space.
+///
+/// # Why the first line and not the block
+///
+/// Because the lines are not the same length, and one right edge for the
+/// whole block would be a trap dressed as a convenience. The extents below
+/// are arithmetic rather than estimate - the file states `/Helvetica`,
+/// `/WinAnsiEncoding`, 12 pt and an origin of x = 72, so the widths come
+/// from the standard Helvetica metrics:
+///
+/// ```text
+/// baseline 700.0   x 72.0 .. 338.8   The drawing office keeps every revision of a sheet
+/// baseline 684.0   x 72.0 .. 241.4   in one file, and the notes beside
+/// baseline 668.0   x 72.0 .. 276.8   the title block are edited far more often
+/// baseline 652.0   x 72.0 .. 298.1   than the geometry is. A note that has been
+/// baseline 636.0   x 72.0 .. 216.7   retyped twice no longer fills
+/// baseline 620.0   x 72.0 .. 110.0   its box.
+/// ```
+///
+/// A sweep from 72 to 330 along the first line ends **inside** the glyphs.
+/// The same sweep along the last line would end 220 pt past the final full
+/// stop - a question about how the hit test treats trailing space, which is
+/// a real question and not one any of these checks means to ask by accident.
+///
+/// ⚠ The six baselines are 16 pt apart and the glyphs are about 8.4 pt
+/// tall, so a band aimed BETWEEN two baselines hits nothing. Aim at
+/// `baseline + 4.0`, never at a midpoint between lines. A check that needs a
+/// second line has the numbers above rather than an invitation to estimate.
+#[must_use]
+pub fn text_block_target() -> (std::path::PathBuf, f32, f32, f32) {
+    let pdf = workspace_root().join("fixtures").join("paragraph.pdf");
+    (pdf, 700.0, 72.0, 330.0)
+}
+
 /// The workspace root, derived from this crate's manifest directory.
 ///
 /// Every fixture this harness pins is named relative to the repository root,

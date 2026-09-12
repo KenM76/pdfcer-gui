@@ -239,18 +239,31 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    let pdf = ctx
-        .pdf
-        .clone()
-        .ok_or_else(|| Error::new("no --pdf. This check needs a page carrying real text."))?;
-    let target = ctx.target.ok_or_else(|| {
-        Error::new(
-            "no --doc-point. Pass PAGE,X,Y in PDF user space naming the LEFT END of a piece of \
-             text's baseline. `pdfcer extract-text --json` gives the first glyph's x and y of \
-             every run; use those. A point on blank paper sweeps nothing and the check would \
-             report the panel as broken.",
-        )
-    })?;
+    // ★ PINNED: `--pdf` and `--doc-point` are read and IGNORED here.
+    //
+    // This check needs a click or a sweep that lands IN TEXT. On 2026-09-12
+    // it was handed the sweep's shared aim, which on `a1-titleblock.pdf`
+    // lands on a path - and that sheet is 2383.9 × 1683.8 pt carrying 123
+    // characters, so its tallest glyph is 2.4 screen pixels at fit zoom and
+    // no aim on it would have been reliable either. Sixteen checks reported
+    // sixteen plausible reasons for that one fact.
+    //
+    // `fixture::text_point_target` holds the document, the point, and the
+    // measurement behind both. Read its doc comment before changing either.
+    let (pdf, target) = crate::fixture::text_point_target();
+    if !pdf.is_file() {
+        return Ok(Some(format!(
+            "the text fixture is not at {}. It is committed to this repository, so an \
+             absence is a broken checkout rather than an unavailable precondition, and is \
+             reported as a failure for that reason - a SKIP would say the opposite.",
+            pdf.display()
+        )));
+    }
+    report.note(format!(
+        "--pdf and --doc-point are IGNORED: this check pins {} at page 0, 120, 704 - \
+         eight characters into a 12 pt line on a 612 × 792 page",
+        pdf.display()
+    ));
     if !ctx.allow_input {
         return Err(Error::new(
             "input is disabled (--no-input). This check sweeps the pointer across text and \
@@ -361,6 +374,30 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         let shot = ctx.out("restyle_text.no-section.png");
         if crate::capture::window_to_png(&session, &shot).is_ok() {
             report.artifact(shot);
+        }
+        // ★★★ ASK THE APPLICATION WHY BEFORE GUESSING WHY.
+        //
+        // On 2026-09-12 the candidate list below sent a reader at three
+        // correct functions. The section had drawn every control it owns and
+        // its own box had overflowed the dock, so `ui_rect_visible` declined
+        // to publish it and said nothing. `ui-rect-clipped` is that silence
+        // filled in, and this branch is the whole reason it exists.
+        if let Some(detail) = driving::clipped_away(&trace, ui_rect, SECTION_REGION) {
+            return Ok(Some(format!(
+                "★ {swept} CHARACTER(S) ARE SELECTED AND THE TEXT SECTION DREW, BUT TOO \
+                 LITTLE OF IT IS ON SCREEN TO PUBLISH: `{}`.\n\
+                 This is NOT the section failing to draw and NOT the panel failing to \
+                 mount — the application measured its own box against the dock's clip and \
+                 declined. Read the rect against the clip: an overflow in WIDTH is a row \
+                 that does not wrap, and `ui.horizontal` does not wrap; an overflow in \
+                 HEIGHT is a section taller than the panel, which is the scroll area's \
+                 business and not this one's.\n\
+                 ★★ The operator sees the same defect the other way round: whatever \
+                 overflows is CUT OFF at the panel edge. The screenshot beside this report \
+                 shows it. Trace: {}.",
+                detail,
+                session.trace_path().display()
+            )));
         }
         return Ok(Some(format!(
             "★ {swept} CHARACTER(S) ARE SELECTED AND THE PROPERTIES PANEL SAYS NOTHING ABOUT \

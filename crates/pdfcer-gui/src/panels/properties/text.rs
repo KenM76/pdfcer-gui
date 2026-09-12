@@ -823,7 +823,35 @@ fn colour_row(
     runs: &[usize],
     actions: &mut Vec<Action>,
 ) {
-    ui.horizontal(|ui| {
+    // ★★★ `horizontal_wrapped`, NOT `horizontal` — 2026-09-12, and the defect
+    // it fixes was an unreadable disclosure rather than a layout blemish.
+    //
+    // The refusal below is a whole sentence. `ui.horizontal` does not wrap: it
+    // lays out past the end of the available width and reports a `min_rect`
+    // that wide. Measured on a 354 pt dock, the section's box came out 851.7 pt
+    // wide and the operator saw
+    //
+    //     Colour  Set in CMYK or a spot colour — pdfcer will not offer to
+    //
+    // with the rest against the window edge. ★ That is the disclosure failing
+    // in the precise way Rule 4 exists to prevent: the control is withheld AND
+    // the reason is unreadable, so the operator is left with a missing swatch
+    // and no account of it.
+    //
+    // ★★ It also hid itself. `diag::ui_rect_visible` publishes a region only
+    // when 60 % of it survives the clip, so `properties.text` was never
+    // published at all, and
+    // `tools/ui-verify/src/checks/restyle_text.rs` read that absence as the
+    // section not drawing and named three entirely correct functions as
+    // candidates. The `ui-rect-clipped` line added to `diag.rs` the same
+    // afternoon is what turned the absence into the measurement above.
+    //
+    // Wrapped rather than given a wider minimum, for `dialogs::print::preview`'s
+    // reason: a minimum would be a constant asserting how wide a sentence is,
+    // which depends on the theme preset's font and on the wording, so it would
+    // be right in one preset and wrong in another. A wrapped row is bounded by
+    // its available width by construction.
+    ui.horizontal_wrapped(|ui| {
         ui.label(t::text_colour_label());
         let Some(current) = draft.colour else {
             ui.label(t::text_colour_not_plain());
