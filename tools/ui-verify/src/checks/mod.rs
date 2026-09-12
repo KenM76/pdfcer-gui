@@ -229,6 +229,12 @@ pub mod field_delete_gate;
 /// class was outside R1's reach and left no failing test behind to say so.
 pub mod field_menu;
 pub mod find_bar;
+/// The find bar's two PREFERENCES, driven — O179 and O180. Both shipped
+/// with a green unit suite and both were wrong in the running program,
+/// which is this project's founding defect shape; its header records how
+/// each unit suite managed to be right about the function and silent about
+/// the operator's sentence.
+pub mod find_options;
 pub mod form_field;
 /// ★★★ The two forms surfaces `EDITABLE_SURFACES.md` found the engine had
 /// shipped and this shell had never grown: **deleting a field group**, which no

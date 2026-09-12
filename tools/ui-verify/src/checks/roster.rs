@@ -1000,6 +1000,19 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // having landed, and everything above has already waited for one.
         Box::new(render_diagnostics::RenderDiagnosticsOpensItsReport),
         Box::new(find_bar::FindOpensAndFinds),
+        // ★ Immediately after `find_bar`, and the order is load-bearing
+        // rather than tidy. Both of these press Ctrl+F and type into the
+        // same field, so if that gesture is broken the neighbour above
+        // names it in one sentence and these two report a SKIP off their
+        // own control probe. A reader scanning a run should meet the
+        // general failure before the two specific ones it explains.
+        //
+        // ★★ They are also the two most expensive checks in the suite:
+        // FOUR launches between them, because each asserts an ABSENCE and
+        // an absence needs a control launch that produced the presence.
+        // See the module header.
+        Box::new(find_options::ATrailingBlankDoesNotChangeWhatASearchFinds),
+        Box::new(find_options::ZoomOffHoldsTheViewOnAFindJump),
         // ★ Second to last among the driving checks, and the placement is a
         // property of what it does rather than of what it costs: it is the only
         // check that **cannot put the application back**. Read mode's exit is

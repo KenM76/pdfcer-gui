@@ -184,6 +184,22 @@ pub mod vk {
     /// See [`D`].
     pub const L: u16 = 0x4C;
 
+    /// `Space` — the bar, pressed as a **character** rather than as a
+    /// command.
+    ///
+    /// ★ The closed-list rule again, and this entry is the first that exists
+    /// to type a character whose whole point is that it is INVISIBLE.
+    /// `checks::find_options` presses it after a needle to reproduce what a
+    /// spreadsheet paste hands over (**O180**, 2026-09-12) — a trailing blank
+    /// that, before that fix, stopped a search from finding text that plainly
+    /// was on the page.
+    ///
+    /// A space rather than a tab, although the defect covers both: a tab in a
+    /// single-line egui field is a focus-moving key in most toolkits and would
+    /// risk measuring the focus handling instead of the search. The space is
+    /// also the character the operator actually named.
+    pub const SPACE: u16 = 0x20;
+
     /// `2` — the digit, for the `Ctrl+2` mode chord.
     ///
     /// Present only as a **control probe**: `Ctrl+2` is bound to

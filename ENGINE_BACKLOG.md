@@ -236,7 +236,7 @@ a claim that sixty things are unbuilt.
 
 ---
 
-## `wanted` — a real gap — **35 of 172** <!-- counted by tools/walk-engine-backlog.py, 2026-09-12; do not retype -->
+## `wanted` — a real gap — **35 of 173** <!-- counted by tools/walk-engine-backlog.py, 2026-09-12; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -355,7 +355,7 @@ from here and no box in it is ticked by this pass.
 
 ---
 
-## `blocked` — waiting on something named — **8 of 172** <!-- counted by tools/walk-engine-backlog.py, 2026-09-12; do not retype -->
+## `blocked` — waiting on something named — **8 of 173** <!-- counted by tools/walk-engine-backlog.py, 2026-09-12; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it is waiting on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat, and this project has found seven stale blockers already.
 
@@ -441,14 +441,14 @@ rule.
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 172** <!-- counted by tools/walk-engine-backlog.py, 2026-09-12; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 173** <!-- counted by tools/walk-engine-backlog.py, 2026-09-12; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess. **This section is empty**, and that is a claim: see *★★ Why nothing is `unknown`* in the header before you trust it.
 
 
 ---
 
-## `declined` — deliberately no surface — **13 of 172** <!-- counted by tools/walk-engine-backlog.py, 2026-09-12; do not retype -->
+## `declined` — deliberately no surface — **14 of 173** <!-- counted by tools/walk-engine-backlog.py, 2026-09-12; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -476,6 +476,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | Row (`FEATURES.md`, declined) | Why |
 |---|---|
 | Form XObject viewport culling — a `Do` whose `/BBox`, mapped … | The cull is **lossless by construction** — §8.10.1 makes `/BBox` a clip, so a culled form cannot mark a pixel and the raster is byte-identical. `app::status::notes::findings` reports only findings that change *what the operator can see*, and it excludes `tolerated` and `compat_skipped` on exactly that argument. `forms_culled` belongs with those two, not with the nine. ★ It becomes wanted the day a **performance** readout exists; it is not wanted on a correctness one. |
+| Image viewport culling — an image `Do` whose unit square, ma… | **`declined`, on the row above's argument** — lossless by construction (§8.9.5.2: `Do` paints only the unit square), byte-identical across the engine's fixtures, so a culled image cannot change what the operator sees and has no place on a **correctness** readout; `app::status::notes::findings` excludes `tolerated` and `compat_skipped` for the same reason. Filed apart from `forms_culled` because the engine counts it apart and says why — the gap between the two counters is itself the diagnostic. ★ Carries one number worth keeping: 1 090 of 1 183 images culled on a 7.9 MB street map with peak memory **unchanged** at 307 MB, so that file's cost is `ContentToken` volume, not image decoding. ★★ Becomes `wanted` with its sibling the day a **performance** readout exists. `Pass 300.0`. |
 | Decode `/BrotliDecode` streams (`Pass 123.0`, `4163ad9`) — read … | A decode filter has no control and should not have one. `/BrotliDecode` is read-only, reached through every path that opens a stream, and the operator's experience of it is that a file opens. ★ The only surfaceable fact would be a refusal — an inline image, or the nonstandard `/Br` abbreviation — and that already arrives as a load error rather than as a setting. |
 | `std14_faces_covering` — the standard-14 faces whose own built-in encoding covers a character, computed code by code rather than assumed | **declined for this shell, and the reason is that we already take the STRICTER route.** It backs the engine's improved refusal message, which is the right fix for the CLI and for every consumer without a properties panel. ⇒ `panels::properties::face::choices` reads `FontPreflight::standard_14` instead, and the difference is not cosmetic: each entry there has been run through `set_font`'s own gate, embedded-subset floor included, against the candidate text the operator is actually typing (`preview_font_resources_for`). ★★ A per-character answer and a per-EDIT answer can differ — he types `q` into `BRACE`, so the face has to cover `BRACEq`, not `q` — and offering a face that covers the character but not the run is a button that fails when pressed. Noted rather than ignored: if the two ever disagree in his favour, the per-character list is where to look. Raised as `note_our_two_font_coverage_numbers_disagree_and_the_difference_is_the_finding.md`. |
 
@@ -488,7 +489,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **116 of 172** <!-- counted by tools/walk-engine-backlog.py, 2026-09-12; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **116 of 173** <!-- counted by tools/walk-engine-backlog.py, 2026-09-12; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Sixty-five of ninety (★ 64 → 65 on 2026-09-04, when the encryption-authoring row moved out of `blocked` on the operator's O119 ruling), which is the single largest finding of this triage. Each row names the surface or the call site, and where this project's own record dates the work, the date. These rows are kept, never deleted — `EDITABLE_SURFACES.md`'s own rule, and the argument is the valuable part.
 
