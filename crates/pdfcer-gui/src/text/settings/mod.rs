@@ -563,7 +563,13 @@ mod tests {
     // leave it off one of them, which is the trust-store pair's test applied
     // and answered the other way: those two have different blast radii, these
     // two have the same one.
-    const SETTINGS_COUNT: usize = 34;
+    //
+    // ★ 34 → 35 on 2026-09-12: the find bar's blank-trimming preference
+    // (**O180**). A shell preference rather than an engine setting, like
+    // `field_shade` and the five before it, and filed in the *Copying and
+    // extracting text* group because searching is extraction — which is
+    // also the argument its `radius` line makes to the operator.
+    const SETTINGS_COUNT: usize = 35;
 
     /// The `(title, silence, radius)` triple for every setting in the window.
     ///
@@ -637,6 +643,10 @@ mod tests {
             (mask_title(), mask_silence(), mask_radius()),
             (minify_title(), minify_silence(), minify_radius()),
             (word_gap_title(), word_gap_silence(), word_gap_radius()),
+            // ★ A shell preference, not an engine setting — see
+            // SETTINGS_COUNT. Beside `word_gap` because both are about what
+            // comes out of the page as text.
+            (find_trim_title(), find_trim_silence(), find_trim_radius()),
             (parallel_title(), parallel_silence(), parallel_radius()),
             (
                 unmappable_title(),
@@ -1042,6 +1052,7 @@ mod tests {
             mask_radius(),
             minify_radius(),
             word_gap_radius(),
+            find_trim_radius(),
             parallel_radius(),
             unmappable_radius(),
             actual_text_radius(),

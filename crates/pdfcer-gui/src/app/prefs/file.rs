@@ -316,6 +316,16 @@ impl Prefs {
                     }),
                 },
                 // ui-text-exempt: a file KEY, matched literally.
+                // O180, 2026-09-12. Its own arm for its neighbour's reason.
+                "find_trim_query" => match opening::bool_from_key(value) {
+                    Some(on) => prefs.find_trim_query = on,
+                    None => notes.push(PrefNote::BadValue {
+                        key: key.to_owned(),
+                        value: value.to_owned(),
+                        line,
+                    }),
+                },
+                // ui-text-exempt: a file KEY, matched literally.
                 // O173, 2026-09-10. Its own arm for its neighbour's reason: it
                 // belongs to no key family, and a reader meeting it inside a
                 // shared pattern would go looking for the family it does not
@@ -651,17 +661,33 @@ impl Prefs {
         out.push_str(
             "\n\
              # find_zoom_on_jump: true | false. With this on, going to a\n\
-             # search hit re-applies Fit page or Fit width to whatever page\n\
-             # the hit is on -- so on a set whose sheets are different sizes,\n\
-             # the zoom changes as you step through the results. With it off\n\
-             # the page still changes and the hit is still highlighted, but\n\
-             # the view keeps the size you were reading at and the zoom\n\
-             # readout shows a percentage instead of a fit. The checkbox is\n\
-             # in the find bar's Options menu, named Zoom.\n",
+             # search hit centres the hit on the canvas, and re-applies Fit\n\
+             # page or Fit width to whatever page the hit is on -- so on a\n\
+             # set whose sheets are different sizes, the zoom changes as you\n\
+             # step through the results. With it off the page still changes\n\
+             # and the hit is still highlighted, but the page is left where\n\
+             # it is on the canvas at the size you were reading at, and the\n\
+             # zoom readout shows a percentage instead of a fit. The checkbox\n\
+             # is in the find bar's Options menu, named Zoom.\n",
         );
         // ui-text-exempt: a file KEY, as above.
         out.push_str("find_zoom_on_jump = ");
         out.push_str(opening::bool_key(self.find_zoom_on_jump));
+        out.push('\n');
+        out.push_str(
+            "\n\
+             # find_trim_query: true | false. With this on, spaces, tabs\n\
+             # and other blank characters at the START or the END of what\n\
+             # you type in the find bar are ignored, so text copied out of\n\
+             # a spreadsheet still finds the same words on the page. Blanks\n\
+             # in the MIDDLE of the query are always kept. With it off the\n\
+             # query is searched for exactly as typed. Either way the find\n\
+             # bar says so when what you typed has a blank at an end. The\n\
+             # tick is in Settings, under Copying and extracting text.\n",
+        );
+        // ui-text-exempt: a file KEY, as above.
+        out.push_str("find_trim_query = ");
+        out.push_str(opening::bool_key(self.find_trim_query));
         out.push('\n');
         out.push_str(
             "\n\

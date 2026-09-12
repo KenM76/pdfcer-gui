@@ -348,6 +348,23 @@ pub fn show(ui: &mut egui::Ui, state: &mut FindState, status: &Status, actions: 
             // prevent.
             egui::Frame::popup(ui.style()).show(ui, |ui| {
                 body(ui, state, epoch, actions);
+                // ★ FIRST of the second-row notes, and above the
+                // unsearchable one deliberately: this is a statement about
+                // what the OPERATOR typed, and the other two are statements
+                // about the document. The one they can act on immediately
+                // - by deleting a character - goes first.
+                //
+                // ★★ Unconditional on the readout, unlike its neighbour.
+                // `unsearchable_note` draws only on an empty result because
+                // a caveat under a successful search is the nagging he
+                // objected to. This one is owed even when the search
+                // SUCCEEDED: a trimmed query that finds things has still
+                // silently searched for something other than what was
+                // typed, and hits are exactly when the operator has no
+                // reason to suspect it.
+                if crate::find::query::has_edge_whitespace(state.query()) {
+                    blanks_note(ui, state.trim_query());
+                }
                 if unsearchable > 0 {
                     unsearchable_note(ui, unsearchable);
                 }
@@ -452,10 +469,23 @@ fn body(ui: &mut egui::Ui, state: &mut FindState, epoch: u64, actions: &mut Vec<
     crate::diag::trace_changed(FIND_SLOT, || {
         format!(
             // ui-text-exempt: diagnostic trace, never displayed in the UI
-            "find-bar open={} query={:?} readout={:?}",
+            //
+            // ★ `trim` and `edge_blanks` are PLAIN, not `{:?}`, and that
+            // is deliberate: they are read by a harness, and a Debug tuple
+            // in a field a machine parses has already produced one driven
+            // check that reported the opposite of the truth while quoting
+            // the truth in its own message. O180, 2026-09-12.
+            //
+            // `edge_blanks` is the DISCLOSURE's own condition rather than
+            // whether trimming changed anything, so a harness can assert
+            // the row appears in BOTH settings - which is the half of this
+            // fix that is easy to leave untested.
+            "find-bar open={} query={:?} readout={:?} trim={} edge_blanks={}",
             state.is_open(),
             state.query(),
             state.readout(epoch),
+            state.trim_query(),
+            crate::find::query::has_edge_whitespace(state.query()),
         )
     });
 }
@@ -952,5 +982,60 @@ fn unsearchable_note(ui: &mut egui::Ui, fonts: u64) {
 /// else produces the note and **no** OCR offer, and that is correct: the page
 /// in front of the operator is searchable, and the document still contains
 /// something no search will ever reach.
+/// ★★★ **The blank at the end of the query, said out loud** —
+/// `OPERATOR_REQUESTS.md` **O180**, 2026-09-12.
+///
+/// Ken: *“trailing spaces/tabs/etc stops a search from finding text on the
+/// page that doesn't have these symbols … copy pasting from excel seems to
+/// give a trailing space that I have to remove to search.”*
+///
+/// # Why a row exists at all, when the setting already fixes it
+///
+/// Because trimming **silently** is the same defect in the other
+/// direction. Before this, an invisible character decided the answer and
+/// nothing said so; after a silent trim, an invisible character would be
+/// discarded and nothing would say so. The operator who genuinely meant
+/// the space — checking whether a field is padded — would get hits they
+/// could not explain, which is the harder half of the same problem.
+///
+/// So the fact is disclosed in **both** states, with two sentences, and
+/// the predicate behind it is about the RAW query rather than about
+/// whether trimming changed anything. See [`crate::find::query`].
+///
+/// # ★ Off-canvas, and nothing is marked
+///
+/// Rule 4. The page renders exactly as it will render when saved; the
+/// highlight over a hit is unchanged; no badge, tint or flag appears
+/// anywhere near the document. The report lives in the bar's own second
+/// row, which already exists for the OCR offer and the unsearchable note,
+/// and it is not blocking and not positioned relative to the page.
+///
+/// # Muted, not strong
+///
+/// `DEFECTS.md` **D11**: `RichText::strong()` is unusable in this theme.
+/// `palette.text_muted` for its neighbours' stated reason — this is a
+/// statement about the search, not a control, and it must not compete
+/// with the readout one row up.
+fn blanks_note(ui: &mut egui::Ui, trimmed: bool) {
+    ui.allocate_ui_with_layout(
+        Vec2::new(BAR_WIDTH_PTS, ROW_HEIGHT_PTS),
+        Layout::left_to_right(Align::Center),
+        |ui| {
+            ui.set_min_size(Vec2::new(BAR_WIDTH_PTS, ROW_HEIGHT_PTS));
+            let theme = egui_shell::theme::Theme::of(ui.ctx());
+            let text = if trimmed {
+                crate::text::find::blanks_trimmed()
+            } else {
+                crate::text::find::blanks_kept()
+            };
+            ui.add(
+                egui::Label::new(egui::RichText::new(text).color(theme.palette.text_muted))
+                    .truncate(),
+            )
+            .on_hover_text(crate::text::find::blanks_tooltip());
+        },
+    );
+}
+
 #[cfg(test)]
 mod unsearchable_tests;

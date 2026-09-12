@@ -24,6 +24,7 @@ use pdfcer_core::settings::{
 };
 
 use super::{Draft, widgets};
+use crate::app::prefs::Prefs;
 use crate::text::settings as t;
 
 /// How wide a gap between glyphs means a space.
@@ -185,4 +186,50 @@ pub fn actual_text(ui: &mut Ui, draft: &mut Draft) {
         Some(t::actual_text_glyphs_note()),
     );
     widgets::disclosure(ui, t::actual_text_bound());
+}
+
+/// **Whether a blank at either end of a search is ignored** —
+/// `OPERATOR_REQUESTS.md` **O180**, 2026-09-12.
+///
+/// His report: *“trailing spaces/tabs/etc stops a search from finding text
+/// on the page that doesn't have these symbols … copy pasting from excel
+/// seems to give a trailing space that I have to remove to search … this
+/// should be an option in the settings to include or exclude such items in
+/// the search.”*
+///
+/// # ★ In this group, and the group's title is the argument
+///
+/// *Copying and extracting text* is where it belongs because **search is
+/// extraction** — the module header above already says so for the other
+/// three settings here, each of which reaches search without saying so in
+/// its own title. This one is the same subject approached from the other
+/// end: not what the page yields, but what the operator asked for.
+///
+/// It is in Settings rather than in the find bar's own Options menu because
+/// that is where he asked for it, and because the menu's two existing
+/// entries are per-search choices an operator changes while hunting, where
+/// this is a standing answer to how their clipboard behaves.
+///
+/// # ★★ The live half is applied in `PdfcerApp::save_settings`
+///
+/// This function edits `Draft::working_prefs`, which is the **file**. The
+/// value the next search reads lives on [`crate::find::FindState`], and
+/// `save_settings` copies it across when the operator presses Save, beside
+/// the paste chords and the Acrobat path, for the reason recorded there:
+/// adopting a preference without applying it gives the operator a control
+/// that saves correctly, reloads correctly, reads back correctly and
+/// changes nothing.
+pub fn find_trim(ui: &mut Ui, prefs: &mut Prefs) {
+    widgets::header(
+        ui,
+        t::find_trim_title(),
+        t::find_trim_silence(),
+        t::find_trim_radius(),
+    );
+    widgets::toggle(
+        ui,
+        &mut prefs.find_trim_query,
+        t::find_trim_label(),
+        Some(t::find_trim_note()),
+    );
 }

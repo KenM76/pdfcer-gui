@@ -1164,6 +1164,12 @@ impl PdfcerApp {
             find: {
                 let mut find = crate::find::FindState::default();
                 find.set_zoom_on_jump(prefs.find_zoom_on_jump);
+                // ★ The same argument, one preference later — O180,
+                // 2026-09-12. Read here and written back by
+                // `save_settings` rather than by an action, because this
+                // one is ticked in the Settings window and that window
+                // already owns a commit path.
+                find.set_trim_query(prefs.find_trim_query);
                 find
             },
             dialogs: crate::dialogs::DialogsState::default(),

@@ -468,6 +468,34 @@ pub struct Prefs {
     /// view preference moved would throw away the operator's place in the
     /// result list for no reason.
     pub find_zoom_on_jump: bool,
+    /// **Does a search ignore whitespace at either end of the query?** —
+    /// `OPERATOR_REQUESTS.md` **O180**, 2026-09-12. His words: *“trailing
+    /// spaces/tabs/etc stops a search from finding text on the page that
+    /// doesn't have these symbols … copy pasting from excel seems to give
+    /// a trailing space that I have to remove to search.”*
+    ///
+    /// The persisted half of [`crate::find::FindState::trim_query`]; the
+    /// live value lives on the find state for the same reason
+    /// [`Self::find_zoom_on_jump`]'s does, and this is where it survives a
+    /// restart. Written by `Action::SetFindTrim`, read back into the find
+    /// state once at startup.
+    ///
+    /// ★ **`true` by default, and that reverses what shipped** — the one
+    /// place in this struct where the default is not “what the previous
+    /// build did”. Every build before 2026-09-12 handed the query to the
+    /// engine verbatim, which is exactly the behaviour he reported as
+    /// broken; leaving the default at `false` would fix it only for
+    /// operators who go looking in Settings. What keeps the new default
+    /// from being its own silence is the find bar's disclosure row, which
+    /// appears whenever the raw query has whitespace at either end and
+    /// says which way the setting is pointing.
+    ///
+    /// ★★ **This one DOES change what matches**, unlike its neighbour
+    /// above, so changing it makes a standing result set wrong rather than
+    /// merely stale. `FindState::set_trim_query` clears the results for
+    /// that reason. It is still not a `FindOptions` field: those are the
+    /// bar's own menu, and he asked for this one in Settings.
+    pub find_trim_query: bool,
     /// **Does the ribbon band hide itself until the pointer reaches the tab
     /// strip?** — his instruction of 2026-09-05, *"we should also add the
     /// capability to auto hide the ribbon until we hover over top of it."*
@@ -781,6 +809,10 @@ impl Default for Prefs {
             // deliberately. See the field's ★ on why a checkbox that exists
             // to disable something defaults to enabled.
             find_zoom_on_jump: true,
+            // ★ True = NOT the behaviour before 2026-09-12, deliberately.
+            // See the field's ★ on why this is the one default in this
+            // struct that reverses what shipped.
+            find_trim_query: true,
             ribbon_auto_hide: false,
             rail_auto_hide: false,
             chrome: PageChrome::default(),

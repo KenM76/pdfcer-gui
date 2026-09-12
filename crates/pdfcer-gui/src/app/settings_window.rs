@@ -177,6 +177,30 @@ impl PdfcerApp {
         // reads it.
         self.refresh_acrobat();
 
+        // ★★★ AND THE FIND STATE FOLLOWS THE BLANK-TRIMMING PREFERENCE —
+        // `OPERATOR_REQUESTS.md` **O180**, 2026-09-12. The third instance of
+        // the paragraph above, and it is written out a third time rather than
+        // summarised because the failure it prevents is the same one twice
+        // over and the shape keeps recurring.
+        //
+        // `Prefs::find_trim_query` is the FILE. What a search actually
+        // consults is `FindState::trim_query`, seeded once at construction
+        // from the file. Adopting the preference without writing it across
+        // would give the operator a tick that saves correctly, reloads
+        // correctly, reads back correctly in this window — and changes
+        // nothing about the next search until pdfcer is restarted. That is
+        // this project's most-repeated defect shape, and it is the precise
+        // reason `apply_paste_chords` and `refresh_acrobat` are called here.
+        //
+        // ★ `set_trim_query` clears any standing result set, and only when
+        // the value actually changed — see its own doc. So pressing Save
+        // without touching this tick does not throw away the hits the
+        // operator is stepping through, while changing it does, because a
+        // hit list computed under the old answer is wrong rather than stale.
+        //
+        // ★ After `self.prefs` is adopted, necessarily.
+        self.find.set_trim_query(self.prefs.find_trim_query);
+
         // ★ Trace before the write, so a harness can see the adopted values
         // even if the write is what fails. `theme` is named separately because
         // it is the one setting whose effect is already on screen by now.

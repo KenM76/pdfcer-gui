@@ -68,6 +68,45 @@ pub const fn word_gap_note() -> &'static str {
 }
 
 // ===========================================================================
+// Copying and extracting text — blanks at the ends of a search
+//
+// ★ Filed in THIS module rather than in `look`, and the taxonomy in the
+// header is why: this setting changes what a search FINDS. It is the only
+// entry in the group that is a shell preference rather than an engine
+// setting, which it shares with `field_shade` two groups up.
+// ===========================================================================
+
+/// Trailing blanks: what it is.
+#[must_use]
+pub const fn find_trim_title() -> &'static str {
+    "Blanks at the start and end of what you search for"
+}
+
+/// What happens if you never touch it.
+#[must_use]
+pub const fn find_trim_silence() -> &'static str {
+    "A space, a tab or any other blank character is invisible in the find box, but it is part of what pdfcer looks for — and pasting from a spreadsheet or a table very often brings one along. pdfcer ignores them."
+}
+
+/// What changing it costs.
+#[must_use]
+pub const fn find_trim_radius() -> &'static str {
+    "Affects what the find bar and Replace match, and nothing else. Blanks in the middle of what you type are always kept either way. Does not change the file."
+}
+
+/// The toggle's own label.
+#[must_use]
+pub const fn find_trim_label() -> &'static str {
+    "Ignore blanks at the ends of a search"
+}
+
+/// The note under the toggle.
+#[must_use]
+pub const fn find_trim_note() -> &'static str {
+    "Turn this off if you are deliberately searching for a space — looking for a padded field, say. Either way the find bar tells you when what you typed has a blank at an end, so it is never decided behind your back."
+}
+
+// ===========================================================================
 // Copying and extracting text — unmappable codes
 // ===========================================================================
 

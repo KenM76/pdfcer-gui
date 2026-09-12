@@ -629,6 +629,14 @@ pub fn show(
                     text::unmappable(ui, draft);
                     ui.add_space(10.0);
                     text::actual_text(ui, draft);
+                    ui.add_space(10.0);
+                    // ★ LAST in the group, and a shell preference rather
+                    // than an engine setting. The three above are about what
+                    // the PAGE yields; this is about what the operator
+                    // ASKED for, so it reads as the closing question rather
+                    // than as an interruption between two halves of one
+                    // subject. O180, 2026-09-12.
+                    text::find_trim(ui, &mut draft.working_prefs);
                 });
                 widgets::group(ui, "measuring", t::group_measuring(), false, |ui| {
                     measuring::parallel(ui, draft);

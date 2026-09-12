@@ -367,13 +367,25 @@ pub fn find_zoom() -> &'static str {
 /// change a setting the operator can see in the zoom readout, and a control
 /// that quietly dropped Fit width without saying so would be the shell being
 /// sneaky about its own state.
+///
+/// ★★★ **Amended 2026-09-12, O179 — and the amendment is the whole point.**
+///
+/// Shipped, this control governed the zoom and nothing else, so with it off
+/// the view still scrolled the hit to the middle of the canvas on every
+/// step. Ken: *“instead of jumping to the page that the text is found on and
+/// leaving the page in its current position on the canvas it still zooms and
+/// repositions the page on the canvas.”* The control now also holds the
+/// POSITION, which is what he read the word to mean, so the sentence has to
+/// say so — a tooltip that promises only half of what a control does is a
+/// second defect sitting beside the first.
 #[must_use]
 pub fn find_zoom_tooltip() -> &'static str {
-    "On by default. Going to a hit lands on whatever page it is on, and if Fit page or Fit \
-     width is switched on the view re-scales to that page — so on a set whose sheets are \
-     different sizes, the zoom changes. Switch this off and going to a hit keeps the size you \
-     are reading at: the page still changes and the hit is still highlighted, but the view \
-     stops following the fit and the zoom readout shows the percentage instead."
+    "On by default. Going to a hit lands on whatever page it is on, centres the hit, and \
+     if Fit page or Fit width is switched on the view re-scales to that page — so on a set \
+     whose sheets are different sizes, the zoom changes too. Switch this off and going to a \
+     hit leaves the page where it is on the canvas at the size you are reading at: the page \
+     still changes and the hit is still highlighted, but nothing is scrolled to the middle, \
+     the view stops following the fit, and the zoom readout shows the percentage instead."
 }
 
 /// The caption in front of the whole-word rule chooser.
@@ -467,4 +479,44 @@ pub fn unsearchable_many(n: u64) -> String {
 #[must_use]
 pub fn unsearchable_tooltip() -> &'static str {
     "Some PDFs store text as drawings with no record of which letters they are. It renders correctly and can be printed, but nothing can search or copy it. Recognising the page adds a searchable layer."
+}
+
+/// ★ **The sentence when the blank was IGNORED** — `OPERATOR_REQUESTS.md`
+/// **O180**, 2026-09-12.
+///
+/// Trimming silently would be the reported defect wearing the other coat.
+/// He typed something; pdfcer searched for something else; without this row
+/// there is no surface anywhere that says so. Rule 4: the page renders
+/// normally and the inference is reported **off-canvas**, here, in the
+/// bar's own second row beside the unsearchable-fonts note.
+///
+/// Deliberately neutral about which end and about which character. A
+/// clipboard hands over tabs and non-breaking spaces as readily as spaces,
+/// and naming the character would mean either six sentences or a wrong one.
+/// *“Blanks”* covers all of them in the operator's own register.
+#[must_use]
+pub fn blanks_trimmed() -> &'static str {
+    "Blanks at the ends of your search were ignored."
+}
+
+/// ★ **The sentence when the blank was KEPT** — the same fact, the other
+/// setting.
+///
+/// Owed for the mirror-image reason: with trimming off, an invisible
+/// character is deciding the answer and the operator cannot see it. This is
+/// the row that turns *“why does this find nothing”* into one glance, which
+/// is the whole of what O180 reported.
+#[must_use]
+pub fn blanks_kept() -> &'static str {
+    "Your search starts or ends with a blank, and pdfcer is looking for it."
+}
+
+/// The hover explanation behind either sentence, naming where the switch is.
+///
+/// One tooltip for both rows rather than two: the operator needs the same
+/// two facts in either state — what a blank is, and where the setting lives
+/// — and the row above has already told them which way it is pointing.
+#[must_use]
+pub fn blanks_tooltip() -> &'static str {
+    "Spaces, tabs and similar characters are invisible in this box, and copying out of a spreadsheet or a table very often brings one along. Whether they are ignored is set in Settings, under Copying and extracting text. Blanks in the middle of what you type are always kept."
 }

@@ -112,6 +112,45 @@ pub(super) fn reveal_current(state: &FindState, doc: &mut OpenDoc) {
     let _held = hold_the_zoom_if_asked(state, doc, page);
     doc.view.go_to_page(page, doc.pages.len());
 
+    // ★★★ THE OPTION GOVERNS THE POSITION TOO - O179, 2026-09-12.
+    //
+    // Until this line the flag was read in exactly one place,
+    // `hold_the_zoom_if_asked`, which drops a standing fit so `apply_fit`
+    // stops re-scaling. That is the ZOOM half. The CENTRING is a wholly
+    // separate mechanism - `doc.find_reveal`, spent by
+    // `canvas::offset`'s reveal branch - and it was armed unconditionally,
+    // so with the option OFF the page still slid under the operator on
+    // every hit. His words: *“instead of … leaving the page in its current
+    // position on the canvas it still zooms and repositions the page”*.
+    //
+    // ★★ It also closed a real zoom hole, which is why he saw zooming with
+    // the option off even though nothing here calls `set_zoom`. Under a
+    // continuous display mode `view.page_index` is DERIVED from the scroll
+    // (`canvas::strip::track_current_page`), so the reveal's own centring
+    // scroll could carry `page_index` onto a differently-sized sheet on the
+    // next frame - at which point `apply_fit` re-scaled to that sheet.
+    // `hold_the_zoom_if_asked` cannot see that coming: its third guard
+    // returns early when the target IS the current page. Not arming the
+    // scroll removes the cause rather than adding a fourth guard.
+    //
+    // What survives, deliberately: the page change above (that is the whole
+    // point of a find), the highlight (`FindState::page_highlights` feeds
+    // the overlay independently of `find_reveal`), and the minimum
+    // page-change scroll that `canvas::strip::page_scroll_offset` performs
+    // under a continuous mode - the next branch down the scroll-priority
+    // chain, which brings the page into view without centring anything.
+    // Single-page mode scrolls not at all. That is his
+    // *“jumping to the page … and leaving the page in its current position”*
+    // exactly.
+    if !state.zoom_on_jump() {
+        doc.find_reveal = None;
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            format!("find-reveal page={page} declined=zoom-off")
+        });
+        return;
+    }
+
     // A hit whose page would not project has no centre to scroll to. The page
     // change still happened, which is the half of the answer that is
     // available, and scrolling to a guess would be worse than leaving the
