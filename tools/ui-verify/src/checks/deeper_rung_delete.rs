@@ -88,13 +88,30 @@
 //! `[SKIP]`, the fixture is wrong before the plant is wrong — see the table
 //! below.
 //!
-//! # Fixtures, and why each check needs a particular kind of thing
+//! # Fixtures — pinned in [`Rung::fixture`], not passed on the command line
 //!
-//! | check | fixture | `--doc-point` | why |
+//! ★★★ **This was a table addressed to a human typing a command line, and
+//! the sweep does not type command lines.** Every row below was correct on
+//! the day it was written and stayed correct, and on 2026-09-12 all three
+//! rungs nevertheless ran against one shared A1 sheet that satisfies none of
+//! them — because `drive` read `--pdf` and `--doc-point`, and the table was
+//! prose. See [`Rung::fixture`] for what that cost and what each rung now
+//! pins. The rows are kept because the *measurements* in them are the
+//! justification for the pins:
+//!
+//! | check | fixture | point | why |
 //! |---|---|---|---|
-//! | label | `D:/Dev/pdfTests/SW41177/SW41177.pdf` | `0,1140,62` | needs a text object holding **several** runs; on a one-run object `delete_text_run` correctly deletes the object and the check cannot tell right from wrong. Measured on that point: **18 runs**, page objects **5,903** |
+//! | label | `fixtures/paragraph.pdf` | `0,120,704` | needs a text object holding **several** runs; on a one-run object `delete_text_run` correctly deletes the object and the check cannot tell right from wrong. Measured by walking its content stream: one `BT`…`ET` block, **six** `Tj` operators, 12 pt, on a 612 × 792 page — so its text is also legible at fit zoom, which the A1 sheet's is not |
 //! | line | `fixtures/hole-in-a-big-object.pdf` | `0,336,500` | needs a path object holding **several** subpaths. Measured: **41** — a circle and forty unrelated segments in ONE object, which is the shape of the operator's own export |
 //! | point | `fixtures/polyline-nodes.pdf` | `0,150,260` | needs a subpath with **three or more** anchors — `delete_node` refuses one that would leave fewer than two, correctly. Measured: **6** |
+//!
+//! ⚠ The label row used to name `D:/Dev/pdfTests/SW41177/SW41177.pdf` at
+//! `0,1140,62` — **18 runs** on a page of **5,903** objects, and a fine
+//! measurement. It is an operator file outside this repository: no other
+//! machine has it, nothing in CI can fetch it, and a check that cannot run
+//! without it is a check that only ever runs here. The measurements taken
+//! against it are quoted throughout this module and remain valid; the
+//! *dependency* is gone.
 //!
 //! ★★★ **The line rung's fixture was WRONG in the first version of this table
 //! and the check said so rather than passing.** It named `polyline-nodes.pdf`
@@ -313,6 +330,59 @@ impl Rung {
             Self::Point => 3,
         }
     }
+    /// The document this rung must run against, and where on it to click.
+    ///
+    /// # Why this is code and why it used to be a table
+    ///
+    /// The header of this module has carried a correct fixture table since
+    /// 2026-09-05: one row per rung, each naming a document, a point, and the
+    /// measured part count that justifies the pair. It was prose, and `drive`
+    /// read `--pdf` and `--doc-point`.
+    ///
+    /// So on the 2026-09-12 full driven sweep - which hands all 211 chunked
+    /// checks one shared A1 sheet and one shared aim - all three rungs ran
+    /// against a document their own header already said they could not use.
+    /// The point rung reported `points_before=4 points_after=4`, a true
+    /// sentence about an object that was never its subject; the label rung
+    /// selected a path and complained about the rung it landed on. Neither
+    /// mentioned a fixture, because neither knew it had one.
+    ///
+    /// ⇒ **Knowledge a check cannot run without belongs in the check.** A
+    /// fixture table in a doc comment is a note to a human about to type a
+    /// command line. It is not a precondition, and against a runner that does
+    /// not read doc comments it is not even a note.
+    ///
+    /// # The three, and what was measured about each
+    ///
+    /// * **Label** — `fixtures/paragraph.pdf` at `0,120,704`. One `BT`…`ET`
+    ///   block holding **six** `Tj` operators at 12 pt on a 612 × 792 page;
+    ///   the aim is inside the first line, whose baseline is 700 and whose
+    ///   cap height at that size reaches about 708. ★ This row used to name
+    ///   `D:/Dev/pdfTests/SW41177/SW41177.pdf`, an operator file **outside
+    ///   this repository** that no sweep on another machine could find, and
+    ///   that this project's own read-only rule forbids depending on.
+    /// * **Line** — `fixtures/hole-in-a-big-object.pdf` at `0,336,500`. One
+    ///   path object holding **41** subpaths: a circle and forty unrelated
+    ///   segments, which is the shape of the operator's own CAD export and
+    ///   the reason this rung exists.
+    /// * **Point** — `fixtures/polyline-nodes.pdf` at `0,150,260`. A subpath
+    ///   with **six** anchors, against a floor of three — `delete_node`
+    ///   correctly refuses to leave a subpath with fewer than two.
+    ///
+    /// ⚠ A rung whose fixture is missing must FAIL, not SKIP. All three are
+    /// committed to this repository; an absent one is a broken checkout, not
+    /// an unavailable precondition, and a SKIP would say the opposite.
+    fn fixture(self) -> (std::path::PathBuf, DocPoint) {
+        let (name, page, x, y) = match self {
+            Self::Label => ("paragraph.pdf", 0, 120.0, 704.0),
+            Self::Line => ("hole-in-a-big-object.pdf", 0, 336.0, 500.0),
+            Self::Point => ("polyline-nodes.pdf", 0, 150.0, 260.0),
+        };
+        (
+            crate::fixture::workspace_root().join("fixtures").join(name),
+            DocPoint::new(page, x, y),
+        )
+    }
 }
 
 /// See the module documentation.
@@ -403,21 +473,32 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport, rung: Rung) -> Result<Opt
             ctx.profile.default_exe
         ))
     })?;
-    let pdf = ctx.pdf.clone().ok_or_else(|| {
-        Error::new(format!(
-            "no --pdf. This check needs a document whose page 1 holds an object with at least \
-             {} {}s in it. See the fixture table in this module's header.",
-            rung.needs_parts(),
-            rung.thing()
-        ))
-    })?;
-    let target = ctx.target.ok_or_else(|| {
-        Error::new(
-            "no --doc-point. Pass PAGE,X,Y in PDF user space naming a point ON the object \
-             whose part is to be removed. The harness deliberately has no default: a click on \
-             blank paper is symptom-identical to a broken hit test.",
-        )
-    })?;
+    // PINNED: `--pdf` and `--doc-point` are read and IGNORED here.
+    //
+    // Each rung needs a particular KIND of object - a text object holding
+    // several show operators, a path holding several subpaths, a subpath
+    // holding several anchors - and there is no arbitrary document on which
+    // all three exist. `Rung::fixture` holds the three pairs and the
+    // measurement behind each, including what a shared aim cost on
+    // 2026-09-12.
+    let (pdf, target) = rung.fixture();
+    if !pdf.is_file() {
+        return Ok(Some(format!(
+            "the {} rung's fixture is not at {}. It is committed to this repository, so \
+             this is a broken checkout rather than an unavailable precondition - reported \
+             as a failure for that reason, because a SKIP would say the opposite.",
+            rung.thing(),
+            pdf.display()
+        )));
+    }
+    report.note(format!(
+        "--pdf and --doc-point are IGNORED: the {} rung pins {} at page {}, {}, {}",
+        rung.thing(),
+        pdf.display(),
+        target.page,
+        target.x,
+        target.y
+    ));
     if !ctx.allow_input {
         return Err(Error::new(
             "input is disabled (--no-input). This check descends the selection ladder with \

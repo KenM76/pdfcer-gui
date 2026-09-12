@@ -207,13 +207,41 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    let pdf = ctx.pdf.clone().ok_or_else(|| {
-        Error::new(
-            "no --pdf. This check needs a document with an AUTO-SIZED text field — one whose \
-             /DA says `0 Tf`. Pass fixtures/autosize-field.pdf; its .PROVENANCE.py explains how \
-             it was made and why the byte offsets survive.",
-        )
-    })?;
+    // ★ PINNED: `--pdf` is read and IGNORED here.
+    //
+    // This check needs a document with an AUTO-SIZED text field — one whose
+    // /DA says `0 Tf` — and there is exactly one in this repository. Until
+    // 2026-09-12 the check knew that and could not act on it: the sentence
+    // naming `fixtures/autosize-field.pdf` lived in the refusal printed when
+    // NO --pdf was passed, and the sweep always passes one. Handed an A1 CAD
+    // sheet with no AcroForm, the check found no widget and reported “this
+    // fixture has exactly one” — false about the document it was given — then
+    // sent the reader to `canvas::forms::classify` and `block_reason`, both
+    // of which were correct.
+    //
+    // ⇒ A check that can name its fixture in prose can pin it in code.
+    //
+    // The AIM is deliberately not pinned: this check reads the widget's own
+    // published rect out of the trace and clicks its centre, so it has never
+    // used --doc-point and must not start.
+    let pdf = crate::fixture::workspace_root()
+        .join("fixtures")
+        .join("autosize-field.pdf");
+    if !pdf.is_file() {
+        return Ok(Some(format!(
+            "the auto-sized-field fixture is not at {}. It is committed to this \
+             repository together with its .PROVENANCE.py, which explains how it was made \
+             and why its byte offsets survive — so an absence here is a broken checkout, \
+             not an unavailable precondition, and is reported as a failure for that \
+             reason.",
+            pdf.display()
+        )));
+    }
+    report.note(format!(
+        "--pdf is IGNORED: this check pins {}, the one document here with a /DA of \
+         `0 Tf`",
+        pdf.display()
+    ));
     if !ctx.allow_input {
         return Err(Error::new(
             "input is disabled (--no-input). This check clicks a field and types into it. \
