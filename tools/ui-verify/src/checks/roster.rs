@@ -694,6 +694,13 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(colour_clicked_text::ClickingTextOffersItsColour),
         Box::new(multi_node::MultiNodeMoveMovesEveryPickedAnchor),
         Box::new(shape_preview::DraggingANodeBendsTheLine),
+        // ★★ Immediately after `shape_preview`, and the order is the diagnosis
+        // order: that one asks whether a preview is built and painted AT ALL,
+        // this one asks how WIDE it was painted. A build where nothing is
+        // drawn fails both, and reading the width failure first would send a
+        // reader after a stroke rule when the preview never reached the
+        // painter.
+        Box::new(preview_width::ADragPreviewDoesNotThickenWithZoom),
         Box::new(bezier_handle::BezierHandleDragChangesACurve),
         // The three deeper-rung deletes. The first two share `bezier_handle`'s
         // fixture; the third needs a text object holding SEVERAL runs and SKIPs

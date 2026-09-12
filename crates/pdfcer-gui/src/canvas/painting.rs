@@ -532,12 +532,29 @@ pub(super) fn draw(
             page,
             map,
             egui_shell::theme::Theme::canvas_selection_ink(ui.ctx()),
-            // ★ The scale is DERIVED by mapping a unit page vector, not read
-            // off the mapping's private zoom. `coords`' standing rule is that a
-            // coordinate is produced by exactly one conversion in exactly one
-            // place, and a stroke width is a coordinate — asking the mapping to
-            // convert a length is the same act as asking it to convert a point.
-            map.page_vec_to_screen(egui::vec2(1.0, 0.0)).x.abs(),
+            // ★★★ O184 — the zoom and the line-weight view travel TOGETHER,
+            // as one value, because a preview width is computed from both and a
+            // caller that supplied one without the other would silently get a
+            // preview that answers to a different program than the canvas does.
+            // `StrokeRule`'s header carries the whole ruling; the short version
+            // is that the preview is the cursor and does not grow with zoom,
+            // while the erase band underneath it does, because it is covering
+            // ink a renderer actually scaled.
+            crate::canvas::shapes::StrokeRule {
+                // ★ The zoom is DERIVED by mapping a unit page vector, not read
+                // off the mapping's private zoom. `coords`' standing rule is
+                // that a coordinate is produced by exactly one conversion in
+                // exactly one place, and a stroke width is a coordinate —
+                // asking the mapping to convert a length is the same act as
+                // asking it to convert a point.
+                zoom: map.page_vec_to_screen(egui::vec2(1.0, 0.0)).x.abs(),
+                // ★★ Read from the SAME field the render request reads
+                // (`app::state::renderreq`, O137), so the preview and the page
+                // underneath it can never disagree about whether this document
+                // is being shown in real widths or in hairlines. A second copy
+                // of this decision is a second thing that can drift.
+                real_widths: doc.view.line_weights,
+            },
         );
     }
     // ★ The ce-dimension placement preview, on the same layer and under the

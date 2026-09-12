@@ -299,6 +299,7 @@ fn navigating_the_view_never_alters_the_selection() {
         16.0,
         1.0,
         crate::app::prefs::DEFAULT_MAX_ZOOM_PERCENT,
+        None,
     )
     .outcome
     {
@@ -315,6 +316,7 @@ fn navigating_the_view_never_alters_the_selection() {
         16.0,
         1.0,
         crate::app::prefs::DEFAULT_MAX_ZOOM_PERCENT,
+        None,
     )
     .outcome
     {

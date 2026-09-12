@@ -555,6 +555,141 @@ fn trace(preview: &ShapePreview, asked: usize) {
     });
 }
 
+/// **How wide a preview stroke is drawn on glass** - `OPERATOR_REQUESTS.md`
+/// **O184**, and the one place in this module where the answer is NOT "whatever
+/// the document says".
+///
+/// # The report
+///
+/// **Ken, 2026-09-12:** *"The live preview blue outlines that appear when we
+/// drag an object scale with zooming in and out of the page instead of being
+/// independent of zoom - at high zoom levels they end up being the width of the
+/// canvas. I think they keep the same size as the line widths they are moving
+/// and that is ok - but if we set the line width view to the one pixel width
+/// option the preview lines should also be affected by this setting."*
+///
+/// Two rulings in one paragraph, and they are not the same ruling:
+///
+/// 1. the preview may take its width from **the line width of the object it is
+///    moving** - he says so explicitly, and it carries real information: a
+///    highlighter stroke and a hairline are different things and previewing
+///    both as the same thread would throw that away;
+/// 2. but that width is **in points, drawn as that many device pixels**, and
+///    zoom must not touch it.
+///
+/// # Why zoom-invariance is the correct answer and not merely the asked-for one
+///
+/// This module already argues the case, one paragraph up, for why a preview is
+/// stroked and never filled:
+///
+/// > *"A filled shape following the pointer would hide what is under it, and
+/// > what is under it is the page the operator is aligning against."*
+///
+/// ★★★ **A stroke two hundred pixels wide IS a fill.** At 3,000 % a 6 pt
+/// highlighter outline is 180 device pixels across, which hides precisely the
+/// geometry the operator zoomed in to line up with - so the zoom-scaled preview
+/// was defeating the reason the preview exists, by the module's own argument,
+/// at exactly the zoom where alignment is the whole task.
+///
+/// ⇒ The preview is **the cursor**. A cursor does not grow when the document
+/// is magnified, any more than the pointer arrow does.
+///
+/// # ★★ Why the ERASE pass is deliberately NOT zoom-invariant
+///
+/// The erase pass and the preview pass look like the same drawing and are
+/// statements about two different things:
+///
+/// | pass | what it is a statement about | space |
+/// |---|---|---|
+/// | preview | the cursor - *what you will get* | screen, zoom-invariant |
+/// | erase | the **raster underneath**, which still holds the object where it started | screen, and the raster scaled with zoom, so this must too |
+///
+/// The erase has to cover ink that a renderer actually put on the texture. That
+/// ink is `line_width x zoom` wide because that is what a zoom does to a
+/// stroke. Shrinking the erase to a zoom-invariant width would leave the
+/// original object showing down both sides of its own footprint, which reads as
+/// a rendering artefact rather than as a preview - the one outcome
+/// [`ShapePreview::erase`] exists to prevent.
+///
+/// ★ So a single constant cannot serve both, and the two methods below are kept
+/// apart on purpose rather than folded into one with a flag.
+///
+/// # `real_widths` - the second half of the ruling
+///
+/// `view.line_weights` (O137) is the operator's *"draw every stroke at one
+/// device pixel"* view. When it is off, the renderer put one device pixel on
+/// the texture for **every** stroke regardless of what the file said, so:
+///
+/// - the preview must be one pixel, because that is what the object looks like;
+/// - and the erase must be sized for one pixel too, because that is what is
+///   actually on the raster it is covering. Sizing the erase from the file's
+///   line width under a hairline view would paint a white band far wider than
+///   the ink it is hiding.
+///
+/// Both follow from the same sentence: **draw the preview the way the thing
+/// itself is being drawn.**
+///
+/// # Why this is a pair and not two parameters
+///
+/// A zoom and a display rule handed to a function as two loose arguments are
+/// two things a caller can supply inconsistently - and this canvas has already
+/// shipped one defect of exactly that shape, where the same measurement was
+/// passed twice under two names. Bundling them means there is one place that
+/// knows how a preview width is computed, and every caller gets that place.
+#[derive(Clone, Copy, Debug)]
+pub struct StrokeRule {
+    /// Device pixels per page point, at the zoom currently on screen.
+    ///
+    /// Derived by mapping a unit page vector rather than read off the mapping's
+    /// private zoom field - `coords`' standing rule is that a coordinate is
+    /// produced by exactly one conversion in exactly one place, and a length is
+    /// a coordinate.
+    pub zoom: f32,
+    /// `view.line_weights` - **true** when strokes are drawn at the widths the
+    /// file states, **false** when every stroke is one device pixel (O137).
+    pub real_widths: bool,
+}
+
+impl StrokeRule {
+    /// The width, in device pixels, of the **preview** outline for a stroke the
+    /// file states as `line_width` points.
+    ///
+    /// Zoom does not appear in this function, and that absence is the fix.
+    ///
+    /// The `max(1.0)` floor is older than O184 and survives it: a hairline
+    /// (`0 w`, PDF 32000-1 section 8.4.3.2) is one *device* pixel, and a zero-
+    /// width egui stroke vanishes under antialiasing. A preview nobody can see
+    /// is the same as no preview.
+    pub fn preview_px(self, line_width: f64) -> f32 {
+        if !self.real_widths {
+            // One device pixel, because that is what the renderer drew.
+            return 1.0;
+        }
+        (line_width as f32).max(1.0)
+    }
+
+    /// The width, in device pixels, of the **erase** band that covers the same
+    /// stroke's footprint on the raster underneath.
+    ///
+    /// Zoom DOES appear here, because the ink being covered scaled with it.
+    ///
+    /// The extra 1.5 px is not slack: an erase exactly as wide as the line
+    /// leaves a hairline of the original visible down both sides, because the
+    /// raster's antialiasing spread the ink half a pixel further than the
+    /// geometry says.
+    pub fn erase_px(self, line_width: f64) -> f32 {
+        let ink = if self.real_widths {
+            (line_width as f32) * self.zoom
+        } else {
+            // The hairline view put one device pixel on the texture whatever
+            // the file said, so that - and not the file's width - is what has
+            // to be covered.
+            1.0
+        };
+        ink.max(1.0) + 1.5
+    }
+}
+
 /// **Paint the preview**, in the selection stroke, over the page.
 ///
 /// # ★★ Stroke only, never fill — and this is the one place the preview is
@@ -581,7 +716,7 @@ pub fn draw(
     page: &pdfcer_core::page_tree::Page,
     map: &PageMapping,
     colour: egui::Color32,
-    scale: f32,
+    rule: StrokeRule,
 ) {
     // ★★ The census: what actually reached the PAINTER.
     //
@@ -598,10 +733,26 @@ pub fn draw(
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
             format!(
-                "canvas-shape-drawn shapes={} segments={} erased={}",
+                "canvas-shape-drawn shapes={} segments={} erased={} zoom={:.3} real_widths={} widest_px={:.2}",
                 preview.shapes.len(),
                 preview.segment_count(),
-                preview.erase.len()
+                preview.erase.len(),
+                rule.zoom,
+                // Printed as `true`/`false` rather than 1/0 so it reads the same
+                // way as `view-chrome LineWeights on=`, which is the other place
+                // this one field is published. Two spellings of one fact is one
+                // more thing a reader has to hold.
+                rule.real_widths,
+                // ★★★ O184 - the widest preview stroke this frame, IN THE
+                // TRACE, because zoom-invariance is a claim about two frames at
+                // two zooms and no screenshot of one frame can carry it. A
+                // driven check reads this line at 100 % and again at 800 % and
+                // asserts the number did not move.
+                preview
+                    .shapes
+                    .iter()
+                    .map(|s| rule.preview_px(s.line_width))
+                    .fold(0.0_f32, f32::max)
             )
         });
     }
@@ -612,22 +763,30 @@ pub fn draw(
     // cannot be redrawn inside a second, so without this the operator sees the
     // thing twice.
     //
-    // ★★ Painted **1.5 points wider** than the object's own stroke. An erase
-    // exactly as wide as the line leaves a hairline of the original visible
-    // down both sides, because the raster's antialiasing spread the ink half a
-    // pixel further than the geometry says. A visible outline of where the
-    // object *used* to be is the one outcome worse than not erasing at all — it
-    // reads as a rendering artefact rather than as a preview.
+    // ★★ Sized by [`StrokeRule::erase_px`], which is the ZOOM-SCALED one of the
+    // pair: this band covers ink a renderer actually put on the texture, and
+    // that ink scaled with the zoom. See the rule's header for why the erase
+    // and the preview deliberately answer to different spaces.
     for shape in &preview.erase {
-        let width = ((shape.line_width as f32) * scale).max(1.0) + 1.5;
-        stroke_shape(painter, shape, page, map, Stroke::new(width, paper()));
+        stroke_shape(
+            painter,
+            shape,
+            page,
+            map,
+            Stroke::new(rule.erase_px(shape.line_width), paper()),
+        );
     }
     for shape in &preview.shapes {
-        // ★ A minimum of one logical point. A hairline (`0 w`, §8.4.3.2) is one
-        // *device* pixel and would vanish under egui's antialiasing; and a
-        // preview nobody can see is the same as no preview.
-        let width = ((shape.line_width as f32) * scale).max(1.0);
-        stroke_shape(painter, shape, page, map, Stroke::new(width, colour));
+        // ★★★ Sized by [`StrokeRule::preview_px`], which zoom does not enter -
+        // O184. The preview is the cursor, and a cursor does not grow when the
+        // document is magnified.
+        stroke_shape(
+            painter,
+            shape,
+            page,
+            map,
+            Stroke::new(rule.preview_px(shape.line_width), colour),
+        );
     }
 }
 

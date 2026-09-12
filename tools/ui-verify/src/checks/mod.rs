@@ -733,6 +733,13 @@ pub mod scale_sweep;
 // control drawn with no frame, and a control drawn with no glyph. Written
 // 2026-09-04 with the fix it verifies, and deliberately left UNRUN -- see
 // its header for why, and for the command that runs it.
+/// ★★★ **The preview is the cursor, and a cursor does not grow with the
+/// document** — `OPERATOR_REQUESTS.md` O184. Drags one object at two zooms nine
+/// times apart and asserts the outline was painted at the same width both
+/// times, then turns the one-pixel line-weight view on and asserts the preview
+/// obeys it too. Its header carries why no single screenshot can make this
+/// claim.
+pub mod preview_width;
 /// ★★★ **The chooser offers a face the document does not contain** —
 /// `pdfcer-core` v0.15.0's standard-14 authoring, reached from a font list.
 ///

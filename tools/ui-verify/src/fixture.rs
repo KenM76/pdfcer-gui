@@ -329,6 +329,53 @@ pub fn grip_gesture_target() -> (std::path::PathBuf, DocPoint) {
     (pdf, DocPoint::new(0, 300.0, 500.0))
 }
 
+/// **A point on a path whose stroke is heavy enough to MEASURE a stroke rule**
+/// - `fixtures/polyline-nodes.pdf`, page 0, **150, 260**.
+///
+/// # The property being asked of the document
+///
+/// `preview_width_ignores_zoom` (`OPERATOR_REQUESTS.md` **O184**) measures how
+/// wide the drag preview is painted, and it asks two questions of that number:
+/// that zoom does not change it, and that the one-pixel line-weight view does.
+/// Both need **a stroke wider than one point**, because
+/// `canvas::shapes::StrokeRule::preview_px` floors at one device pixel: on a
+/// hairline the correct build answers `1.00` under every setting, and an
+/// assertion that two settings differ would be asserting something true builds
+/// do not do.
+///
+/// ⇒ The requirement is not "a path" but **"a path with a heavy pen"**, and
+/// that is a property of the fixture rather than of the check.
+///
+/// # ★★★ What the shared aim point measured, 2026-09-12
+///
+/// Driven first on the sweep's shared `a1-titleblock.pdf --doc-point
+/// 0,2000,320`, the check **SKIPPED**: that coordinate is over text
+/// (`marquee-mode hits=5 paths=0 text=5`), a text run has no stroked geometry,
+/// and `canvas::shapes::for_move_subject` answers it with an erase and no
+/// shapes - so there was no preview stroke to measure at all.
+///
+/// Moved to [`grip_gesture_target`]'s `0,300,500` it **passed, at 1.00 px at
+/// both zooms** - and that pass is half a measurement. Ruling 1 was real there
+/// (the defect multiplies before the floor, so a 0.5 pt line would have read
+/// 4.74 px at 948 %), but ruling 2 could not be measured at all, because a
+/// number already at the floor cannot be lowered to it.
+///
+/// ⇒ On this fixture the same check reports **3.00 px at both zooms, and 1.00
+/// px with line weights off**. Three separate numbers, a 13.5x magnification
+/// between two of them, and every assertion has somewhere to fail.
+///
+/// # The numbers
+///
+/// `fixtures/polyline-nodes.pdf` is 535 bytes and one open path - a zigzag and
+/// two Beziers, drawn `3.0 w`, which is the widest single-path pen in this
+/// fixture set. `deeper_rung_delete` and `bezier_handle` already pin it, for
+/// the unrelated reason that its tail has enough anchors to delete one from.
+#[must_use]
+pub fn heavy_stroke_target() -> (std::path::PathBuf, DocPoint) {
+    let pdf = workspace_root().join("fixtures").join("polyline-nodes.pdf");
+    (pdf, DocPoint::new(0, 150.0, 260.0))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
