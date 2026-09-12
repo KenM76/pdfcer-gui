@@ -1156,7 +1156,7 @@ impl PdfcerApp {
             // 2026-09-12, and for the reason the `find` block below states at
             // length: the live value lives on a type the app owns outright
             // (`ThumbnailCache`), so the file is consulted at construction
-            // and `Action::SetPagePreviews` writes back the other way.
+            // and `PrefAction::PagePreviews` writes back the other way.
             //
             // ⚠ `force_on` is the ONLY writer of the tick, and this call is
             // the one exception to *“nothing but the operator writes it”* —
@@ -1182,7 +1182,7 @@ impl PdfcerApp {
             // because the canvas reads it from places that hold a context and
             // nothing else, so it has to be pushed in each frame. This one
             // lives on `FindState`, which the app owns outright, so the file
-            // is only ever consulted at construction and `Action::SetFindZoom`
+            // is only ever consulted at construction and `PrefAction::FindZoom`
             // writes back the other way. O163, 2026-09-09.
             find: {
                 let mut find = crate::find::FindState::default();

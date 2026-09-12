@@ -679,7 +679,8 @@ impl FindState {
     /// and make the operator search again to get the same list back.
     ///
     /// Two callers: `PdfcerApp::new`, mirroring the persisted preference in at
-    /// startup, and the `Action::SetFindZoom` arm, carrying the operator's
+    /// startup, and the [`PrefAction::FindZoom`](crate::app::actions::prefs::PrefAction::FindZoom)
+    /// arm, carrying the operator's
     /// click. Both go through here rather than writing the field so there is
     /// one place to read when the value is wrong.
     pub fn set_zoom_on_jump(&mut self, on: bool) {

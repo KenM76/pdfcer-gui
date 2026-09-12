@@ -453,7 +453,8 @@ pub struct Prefs {
     /// The persisted half of [`crate::find::FindState::zoom_on_jump`]. The
     /// live value lives on the find state because the bar reads and writes it
     /// every frame and `Prefs` is not reachable from a widget; this is where
-    /// it survives a restart. Written by `Action::SetFindZoom`, read back into
+    /// it survives a restart. Written by
+    /// [`PrefAction::FindZoom`](crate::app::actions::prefs::PrefAction::FindZoom), read back into
     /// the find state once at startup.
     ///
     /// ★ **`true` by default**, which is the behaviour every build before
@@ -513,7 +514,8 @@ pub struct Prefs {
     /// The live value lives on the cache because the checkbox reads and
     /// writes it every frame and `Prefs` is not reachable from a panel
     /// widget; this is where it survives a restart. Written by
-    /// `Action::SetPagePreviews`, read back into the cache once at startup.
+    /// [`PrefAction::PagePreviews`](crate::app::actions::prefs::PrefAction::PagePreviews), read
+    /// back into the cache once at startup.
     ///
     /// ★ **`true` by default** — the behaviour every build has had, and
     /// [`Self::smart_select`]'s argument exactly: a checkbox that exists so

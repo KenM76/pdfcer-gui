@@ -64,9 +64,11 @@ const BUDGET_REGION: &str = "panel-pages-budget"; // ui-text-exempt: trace regio
 /// ★ `actions` joined it on 2026-09-12 (**O187**) and is the exception that
 /// proves the sentence above: both controls now have a **persisted** half
 /// living in `PdfcerApp::prefs`, which no panel widget can reach. Every
-/// change to either raises one [`Action::SetPagePreviews`] carrying **both**
-/// current values, so the gesture *“turn previews off and set a limit for
-/// when I turn them back on”* costs one whole-file write rather than two.
+/// change to either raises one
+/// [`PrefAction::PagePreviews`](crate::app::actions::prefs::PrefAction::PagePreviews)
+/// carrying **both** current values, so the gesture *“turn previews off and
+/// set a limit for when I turn them back on”* costs one whole-file write
+/// rather than two.
 pub fn row(ui: &mut egui::Ui, pages: &mut PagesUi, actions: &mut Vec<Action>) {
     // ★★★ THE PREVIEWS ROW — a checkbox and the time limit beside it (O151).
     //
@@ -225,7 +227,9 @@ pub fn row(ui: &mut egui::Ui, pages: &mut PagesUi, actions: &mut Vec<Action>) {
 /// step with.
 ///
 /// ★ One action, therefore one `Prefs::save`, therefore one whole-file write
-/// per operator gesture. `Action::SetPagePreviews`' own doc carries the
+/// per operator gesture.
+/// [`PrefAction::PagePreviews`](crate::app::actions::prefs::PrefAction::PagePreviews)' own doc
+/// carries the
 /// argument for why the two are not separate variants.
 fn persist(pages: &PagesUi, actions: &mut Vec<Action>) {
     actions.push(Action::Pref(

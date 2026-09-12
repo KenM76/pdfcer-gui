@@ -1,5 +1,5 @@
 //! ★★★ **The verbs whose subject is a PREFERENCE, not a document** — split out
-//! of [`super::action`] and [`super::apply`] under **R2** on 2026-09-12, the day
+//! of [`action`] and [`apply`] under **R2** on 2026-09-12, the day
 //! **O187** made the family a family by giving it a second member.
 //!
 //! # What makes this a family rather than a size-driven cut
@@ -7,7 +7,7 @@
 //! Four properties, and every member has all four. A verb that has three of
 //! them belongs somewhere else.
 //!
-//! 1. **It needs no open document.** Every other arm in [`super::apply`] acts
+//! 1. **It needs no open document.** Every other arm in [`apply`] acts
 //!    on `Status::Open(doc)`, and the guard's *"no document: silently drop"* is
 //!    the right answer for all of them. It is the wrong answer here, and
 //!    wrong in a way that is almost impossible to report: the Find bar is
@@ -16,7 +16,7 @@
 //!    the worst kind there is.
 //!
 //! 2. **It changes nothing an undo could reach.** No `EditSession`, no epoch
-//!    bump, no raster invalidation, no [`super::funnel::vector_edit`]. The
+//!    bump, no raster invalidation, no [`funnel::vector_edit`]. The
 //!    four-step protocol that every document change goes through has nothing
 //!    to do here, which is why these arms `return` rather than falling into
 //!    it.
@@ -51,7 +51,8 @@
 //! reason; here it is not a style rule but the difference between a preference
 //! that sticks and one that sticks when the panel happens to still be open.
 //!
-//! ★ [`PrefAction::PagePreviews`] takes this one step further and carries
+//! ★ [`PrefAction::PagePreviews`](prefs::PrefAction::PagePreviews) takes this one
+//! step further and carries
 //! **both** of its two values even when only one changed, because
 //! `Prefs::save` is a whole-file write. See its own doc.
 //!

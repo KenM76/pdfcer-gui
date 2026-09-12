@@ -74,7 +74,8 @@ impl PrintDialog {
     ///
     /// # The failure is swallowed, and that matches every other preference
     ///
-    /// `Action::SetFindZoom` states the rule this follows: *"one discrete
+    /// [`crate::app::actions::prefs`] states the rule this follows, as the
+    /// fourth of the four properties every preference verb shares: *"one discrete
     /// operator decision is one write, and losing a preference across a restart
     /// does not justify a modal in front of somebody who is"* — here — *about
     /// to print*. A read-only `userdata` folder must not turn a print into an
