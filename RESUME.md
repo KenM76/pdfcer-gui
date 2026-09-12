@@ -26,11 +26,11 @@ file points at them rather than quoting them.
 Every figure below has the command that produced it. **Run the command.** Prose
 drifting from a count is the defect this project has spent eight corrections on.
 
-| What | Command | Value, 2026-09-12 04:30 |
+| What | Command | Value, 2026-09-12 07:16 (the release cut) |
 |---|---|---|
 | Engine pin | `grep -m1 'pdfcer?branch=main#' Cargo.lock` | `ad73160` |
 | Engine HEAD | `cd /d/Dev/pdfcer && git log --oneline -1 main` | `ad73160` — ★ **level with the pin**, for the first time in four releases. Level is the only state in which a sentence of the form *the engine cannot do X* is safe to write. |
-| Last release | `git fetch --tags origin && git describe --tags --abbrev=0` | `v0.5.0-dev.20260911.4` |
+| Last release | `git fetch --tags origin && git describe --tags --abbrev=0` | `v0.5.0-dev.20260912.1` - cut 2026-09-12 07:16, 15 commits, verified as what `releases/latest` advertises |
 | Driven checks | `ui-verify --list \| grep -cE '^  [a-z0-9_]+$'` | 213 (the sweep chunks 211 and runs 2 from the ALONE table separately) |
 | Gates | `bash tools/gates/run-all.sh` | **41 passed, 0 failed, 0 skipped** — ⚠ **41 gates are registered, not 39**; the runner prints its own tally and that is the only figure to quote. A hand-written 39 stood here and in `FEATURES.md` while `cargo fmt` and `cargo clippy` were red. — ★★ up four, and `check-pin-citation` went **red** on the run before this table was patched, naming both stale pin citations. It reads the row above. |
 | Unit tests | `cargo test --workspace` | **4,199 passing**, 51 ignored — summed over 24 `test result:` lines, which is the only method that counts this workspace correctly. |
@@ -59,11 +59,26 @@ seen the three releases cut since; the true figures were **21 commits** and
 **yesterday afternoon**. ⇒ **Any sentence containing *"commits unreleased"* or
 a release date gets a `git fetch --tags origin` immediately in front of it.**
 
-★★★ **`v0.5.0-dev.20260911.4` shipped 2026-09-11 20:09** — the render report
-naming the blend space and who chose it, plus the redaction-override ruling.
-Verified as what `releases/latest` advertises. Mirror in
-**`OneDrive\pdfcer-gui1`** (20:05); **`pdfcer-gui2` holds `.3`** (19:50), so the
-fallback survives. **The next package rotates into slot 2.**
+★★★ **`v0.5.0-dev.20260912.1` shipped 2026-09-12 07:16** — the canvas
+context menu, which had been deleting itself under the cursor since 2026-09-10,
+plus the shaded-field editor and the dotted-name refusal. Verified as what
+`releases/latest` advertises, with the packager's own zip as the only asset.
+Mirror in **`OneDrive\pdfcer-gui2`** (07:14); **`pdfcer-gui1` holds `.4`**
+(2026-09-11 20:05), so the fallback survives. **The next package rotates into
+slot 1** — and the rotation works this out for itself from the two slots'
+timestamps, so pass `--slot` only to RETRACT, never to steer a normal build.
+
+⚠ **It packaged from a clean tree and the name proves it**:
+`pdfcergui-20260912-0714-ad73160-2ec99f5`, no `-dirty` suffix. That is the
+first release in three where it is true, and the reason is `--no-update`:
+the engine had nothing to pick up, so the packager was not asked to rewrite
+`Cargo.lock` thirty seconds before stamping the tree it had just modified.
+
+⚠ **`BUILD-INFO.txt` in that zip says verification was *not run*.** It means
+the packager did not re-run it, not that it was not done — 41 gates and 4,199
+tests were measured against this exact source before the commit, and the
+release notes say so. ⇒ If a future release wants that line to read green,
+the flag is `--verify` and it costs a test run plus a gate sweep.
 
 ⚠ **The number in a release title is the release count for that DAY, not the
 session's.** The previous edition of this block called `.3` *"the fifth release
