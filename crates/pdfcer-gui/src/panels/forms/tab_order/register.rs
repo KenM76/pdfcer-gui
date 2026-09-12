@@ -429,9 +429,34 @@ fn refusal_kind(error: &pdfcer_core::edit::EditError) -> &'static str {
 /// for it is worse than handing them none.
 fn refusal_hint(error: &pdfcer_core::edit::EditError) -> &'static str {
     use pdfcer_core::edit::EditError as E;
+    use pdfcer_core::forms_author::FormAuthorError as A;
     match error {
         E::WidgetHasNoFieldIdentity { .. } => t::tab_order_register_needs_a_name(),
         E::FieldNameTaken { .. } => t::tab_order_register_name_taken(),
+        // ★★★ Added 2026-09-12 after MEASURING what this surface can reach,
+        // and the measurement contradicted a table written the day before.
+        // `actions::forms::correctable`'s reachability table says a dotted name
+        // is reachable HERE and defensive elsewhere, on the grounds that this
+        // box is free text gated only on non-empty. True of this shell's own
+        // gate — and beside the point, because the engine put
+        // `reject_dotted_partial` inside `adopt_plan`, which `adopt_preview`
+        // shares. The refusal arrives in the preview, the button greys, and the
+        // press that table describes cannot happen.
+        //
+        // ★★ Which makes these two arms necessary rather than decorative: the
+        // refusal that would have been a status-bar sentence after a press is a
+        // hover before one, and without them it fell into the catch-all saying
+        // *the reason is not one this panel expects*. The rule was being
+        // enforced and the operator was being told the program was confused.
+        //
+        // ⇒ **A guard's placement decides which surface has to explain it.** The
+        // engine moved this one into the shared plan for its own reasons, and
+        // the disclosure moved with it — silently, into a panel whose catch-all
+        // then apologised for it.
+        E::FieldAuthoring(A::DottedPartialName { .. }) => t::tab_order_register_name_is_a_path(),
+        E::FieldAuthoring(A::EmptyNameSegment { .. }) => {
+            t::tab_order_register_name_has_a_bare_dot()
+        }
         _ => t::tab_order_register_unavailable(),
     }
 }
@@ -605,5 +630,114 @@ mod tests {
         let mut names = BTreeMap::new();
         names.insert(id.num, "Agree".to_owned());
         assert_eq!(names.get(&12).map(String::as_str), Some("Agree"));
+    }
+
+    /// ★★★ **The dotted name never reaches a press here, and the table that
+    /// said it did was measuring the wrong gate.**
+    ///
+    /// [`crate::app::actions::forms::correctable`]'s reachability table marks
+    /// this surface **yes** for `DottedPartialName` — the one route of three
+    /// that can raise it — on the grounds that this box is free text gated only
+    /// on non-empty. True of *this shell's* gate. Beside the point, because the
+    /// engine put `reject_dotted_partial` inside `adopt_plan`, and
+    /// `EditSession::adopt_preview` is documented as sharing that plan by
+    /// construction. The refusal therefore arrives in the preview this row draws
+    /// from, the button greys, and the press the table describes cannot happen.
+    ///
+    /// ⇒ **A guard's placement decides which surface has to explain it.** The
+    /// engine moved this one for its own reasons — one predicate for three
+    /// enforcement sites — and the disclosure moved with it, out of the status
+    /// bar and into a hover, silently.
+    ///
+    /// ★★ The second assertion is the one worth having. Before the
+    /// `DottedPartialName` arm was added on 2026-09-12, [`refusal_hint`] fell
+    /// into [`t::tab_order_register_unavailable`], which tells the operator *the
+    /// reason is not one this panel expects* — the rule being enforced correctly
+    /// while the program apologises for being confused. Asserting only that the
+    /// preview is `Err` would be green through that entire state.
+    ///
+    /// Driven on `ORPHAN_WIDGET`, the hand-authored fixture: one page, one
+    /// `/Widget` owned by no field and no `/AcroForm` at all, which is the only
+    /// shape this panel offers a Register row for.
+    #[test]
+    fn a_dotted_name_greys_the_register_button_and_the_hover_names_the_rule() {
+        let doc = crate::app::state::open_local_fixture(crate::app::state::ORPHAN_WIDGET);
+        let widget = only_unclaimed_widget(&doc);
+
+        // Asked exactly as the row asks it — with what the operator has typed so
+        // far, not with `None`.
+        let refusal = doc
+            .session
+            .adopt_preview(widget, Some("Text.2"))
+            .expect_err("the preview must refuse a dotted partial name. Passing here means the guard is no longer inside `adopt_plan`, so this button is live and the operator can author a field nobody can address");
+
+        assert_eq!(
+            refusal_hint(&refusal),
+            t::tab_order_register_name_is_a_path(),
+            "the hover must name the period rule. The catch-all says the reason is not one this panel expects, which is the program apologising for a rule it is enforcing correctly. Refusal was: {refusal:?}"
+        );
+
+        // ★ The control, and it is not ceremony: without it the assertion above
+        // would be green on a fixture that can never be adopted for some other
+        // reason entirely, and would then be measuring nothing about periods.
+        doc.session
+            .adopt_preview(widget, Some("Claimed"))
+            .expect("an undotted name must be offered on this fixture; a refusal here means the widget is unadoptable for an unrelated reason and the dotted assertion above proves nothing");
+    }
+
+    /// The bare-dot refusal is reachable from here too, and worded separately.
+    ///
+    /// ★★ It became reachable on 2026-09-12 and not before. Until then the
+    /// engine's `reject_dotted_partial` tested `contains('.')` and only that, so
+    /// `a..b` was **accepted** by `adopt_widget` while `rename_field` refused it
+    /// — two behaviours for one rule across three enforcement sites, which they
+    /// found only by making the rule askable as `validate_partial_name`.
+    ///
+    /// ⇒ *a private predicate with three callers is three behaviours until
+    /// something forces them to agree.* Asserted here because this surface is
+    /// one of the three, and because a regression would present as the hover
+    /// going back to the catch-all rather than as anything visibly broken.
+    #[test]
+    fn a_name_with_a_bare_dot_is_refused_with_its_own_sentence() {
+        let doc = crate::app::state::open_local_fixture(crate::app::state::ORPHAN_WIDGET);
+        let widget = only_unclaimed_widget(&doc);
+
+        let refusal = doc
+            .session
+            .adopt_preview(widget, Some("a..b"))
+            .expect_err("a doubled period leaves a segment with nothing in it, which no viewer can address. Passing here is the pre-2026-09-12 engine behaviour, where this verb took the period rule and the rename verb took the segment rule");
+
+        assert_eq!(
+            refusal_hint(&refusal),
+            t::tab_order_register_name_has_a_bare_dot(),
+            "the empty-segment refusal has its own sentence because its remedy is different: the operator is not being told to remove every period, only to put a name beside this one. Refusal was: {refusal:?}"
+        );
+    }
+
+    /// The fixture's single unclaimed `/Widget`, by object id.
+    ///
+    /// ★★ Derived through [`super::super::model::collect`] rather than typed as
+    /// a literal `ObjId`, and that is not fastidiousness about magic numbers:
+    /// **it is the derivation the row the operator presses uses**, so the tests
+    /// above drive the id this surface would hand to `FieldAction::Adopt`. A
+    /// number typed into a test is a claim about bytes nobody re-reads, and this
+    /// project has already had a harness report defects that did not exist from
+    /// exactly that.
+    ///
+    /// `form` is `None` here — the fixture's catalog has no `/AcroForm`, which is
+    /// the whole point of it — and `collect` is documented to put every widget in
+    /// `unclaimed` in that case.
+    fn only_unclaimed_widget(doc: &OpenDoc) -> ObjId {
+        let view = doc.session.view();
+        let slots = doc.session.page_slots().expect("the fixture's page tree walks — it is five objects and its xref offsets are asserted by its own generator");
+        let form = pdfcer_core::forms::parse_acroform(&view);
+        let listing = super::super::model::collect(&view, &slots, form.as_ref());
+        let found = &listing.pages[0].unclaimed;
+        assert_eq!(
+            found.len(),
+            1,
+            "`orphan-widget.pdf` holds exactly one unclaimed widget on its one page; see `fixtures/orphan-widget.PROVENANCE.py`. Found: {found:?}"
+        );
+        found[0].id
     }
 }

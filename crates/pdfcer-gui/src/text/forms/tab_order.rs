@@ -366,6 +366,54 @@ pub const fn tab_order_register_name_taken() -> &'static str {
      boxes, so pdfcer needs a different one."
 }
 
+/// Hover on a Register control refused because the typed name is a PATH.
+///
+/// # ★★★ This hover exists because a guard moved, not because a rule changed
+///
+/// `FormAuthorError::DottedPartialName` was described in this shell as
+/// reachable from this surface *after a press*, on the grounds that this box
+/// is free text gated only on non-empty. True of the shell's own gate — and
+/// beside the point, because the engine put `reject_dotted_partial` inside
+/// `adopt_plan`, which [`pdfcer_core::edit::EditSession::adopt_preview`]
+/// shares. The refusal therefore arrives in the preview, the button greys, and
+/// the press never happens.
+///
+/// So the sentence the operator would have read on the status bar had to
+/// become a hover, and without this it fell into
+/// [`tab_order_register_unavailable`] — which says the reason is not one this
+/// panel expects. The rule was being enforced correctly and the operator was
+/// being told the program was confused.
+///
+/// ★★ The long form is [`crate::text::fieldclip::name_is_a_path`], which spells
+/// out that the field would be clickable and never fillable. This one is read
+/// while the operator is still looking at the box, so it states the rule and
+/// the remedy and stops.
+#[must_use]
+pub const fn tab_order_register_name_is_a_path() -> &'static str {
+    "A dot separates a field from its parent, so this name would be read as a path to somewhere else. Type a name with no dots in it."
+}
+
+/// Hover on a Register control refused because the typed name has a bare dot.
+///
+/// `a..b`, `.x`, `x.` — `FormAuthorError::EmptyNameSegment`, a period that
+/// starts, ends or doubles up and so names a level with nothing in it.
+///
+/// ★★ Worth a sentence of its own rather than folding into
+/// [`tab_order_register_name_is_a_path`], because the remedies differ: there,
+/// remove the dot; here, remove it **or** put a name beside it. Telling an
+/// operator who typed `Address..City` to use no dots would be a true sentence
+/// that solves a problem he does not have.
+///
+/// ⚠ This became reachable on 2026-09-12. The engine reported that making the
+/// rule askable exposed `adopt_widget` ACCEPTING `a..b` where `rename_field`
+/// refused it — two behaviours across three enforcement sites, unreported.
+/// Routing all three through one predicate closed it, and this surface is the
+/// one that inherited the new refusal.
+#[must_use]
+pub const fn tab_order_register_name_has_a_bare_dot() -> &'static str {
+    "That name has a dot with nothing beside it. Remove the dot, or put a name on both sides of it."
+}
+
 /// Hover on a Register control pdfcer cannot pre-judge.
 ///
 /// The catch-all for refusals this surface believes are unreachable. It says

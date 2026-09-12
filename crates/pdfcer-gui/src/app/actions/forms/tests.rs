@@ -322,12 +322,24 @@ fn an_unowned_widget_adopts_under_an_ordinary_name() {
 /// ★★ And it is a different test from the rename one above, which is green and
 /// proves nothing about this. That drives `rename_field`, which has refused
 /// dotted names for weeks, from a surface whose button is greyed while a period
-/// is typed. `adopt_widget` is reached from
-/// `panels::forms::tab_order::register`'s per-widget name box — **free text,
-/// gated only on non-empty** — the one route in `correctable`'s reachability
-/// table marked *yes*, and it had no test at all.
+/// is typed. This one drives `adopt_widget`, which had no test at all.
 /// ⇒ *a green test naming the variant is not evidence about the route that can
 /// actually raise it.*
+///
+/// ⚠ **Corrected 2026-09-12.** This doc said `adopt_widget` was reached from
+/// `panels::forms::tab_order::register`'s name box as *free text gated only on
+/// non-empty* — the one route `correctable`'s table marked reachable. Measured
+/// the next morning and it is wrong: the engine's guard is inside `adopt_plan`,
+/// which `adopt_preview` shares, so that row greys its own button while the
+/// period is typed and the press never happens. The table has been corrected in
+/// place and the grey is asserted by
+/// `panels::forms::tab_order::register::tests::a_dotted_name_greys_the_register_button_and_the_hover_names_the_rule`.
+///
+/// ★★★ **This test is kept, and its value went UP rather than down.** It is no
+/// longer a test of a route an operator can walk; it is the measurement that
+/// the floor still holds when the gate in front of it does not. Every reason
+/// this arm is now unreachable is a claim about a gate — two shell-side
+/// judgments and one `&self` preview call — and gates are what refactors move.
 ///
 /// What is asserted is the operator's own string coming back, not merely the
 /// variant: a payload that is not `Text.2` means the name was re-derived

@@ -527,30 +527,39 @@ fn rename_row(
     // dotted string typed here would author a `/T` containing a dot — a field
     // no reader, including pdfcer, can address again.
     let typed = draft.trim().to_owned();
-    // ★★★ A shell-side model of an engine rule — this project deleted one of
-    // those on 2026-09-12 for drifting, and this one is KEPT. The difference is
-    // what the rule depends on:
+    // ★★★ ASKED, not modelled. Until 2026-09-12 this line was
+    // `!typed.is_empty() && !typed.contains('.')` — a second model of an
+    // engine rule, living in this repository, derived by reading a *private*
+    // function. It carried a table arguing why it was safe to keep on the very
+    // day a different shim (`group_is_a_field`) was deleted for drifting: this
+    // one depended on the STRING only, that one on the document.
     //
-    // | | `group_is_a_field` (deleted) | this gate (kept) |
-    // |---|---|---|
-    // | depends on | the DOCUMENT — is this prefix a terminal? | the STRING only |
-    // | drifted? | yes — the engine refuses on a terminal, the shim refused on any prefix present, and they differ on a mixed node | cannot — §12.7.3.2 makes a `/T` one segment by construction, and the engine's `reject_dotted_partial` is `partial.contains('.')`, unconditionally |
-    // | what it produced | a refusal naming a loss that would not happen | a greyed button with a hover that says why |
+    // The argument was sound. It was also **exactly the argument the deleted
+    // shim's author would have written**, which is why it went to the engine as
+    // a decision-058 workaround report rather than being filed as settled. The
+    // reply shipped `validate_partial_name` within the hour and reported that
+    // making the rule askable had immediately exposed a live divergence:
+    // `adopt_widget` and `sign` accepted `a..b` where `rename_field` refused it.
+    // Three enforcement sites, two behaviours, unreported and unreportable
+    // while the rule could only be enforced and never asked.
     //
-    // ★★ And it is greying R9 permits, not a placeholder: *you have not typed a
-    // usable name yet* is temporary and operator-fixable, and it is explained
-    // on hover a few lines down. The alternative — accept it, let the engine
-    // refuse, put a sentence on the bar — is strictly worse here, because the
-    // operator would find out after committing what he could have been told
-    // while typing.
+    // ★★ What this buys beyond being correct today is that the hover can name
+    // the case that actually applies. The old gate could only report that one
+    // of its two clauses had failed, so an operator looking at an EMPTY box —
+    // the state this panel opens in — was told to type a name with no dots in
+    // it.
     //
-    // ⚠ The engine's refusal is wired anyway, BEHIND this gate:
-    // `FormAuthorError::DottedPartialName` → `actions::forms::correctable` →
-    // `Declined::DottedPartialName` → `fieldclip::name_is_a_path`. So removing
-    // this gate does not silence the rule, it moves the disclosure from hover
-    // to status bar. Said here because the next reader's question is *"is the
-    // refusal handled if I delete this?"* and the answer is yes.
-    let ready = !typed.is_empty() && !typed.contains('.');
+    // ⚠ The engine's refusal is still wired BEHIND this gate:
+    // `FormAuthorError::DottedPartialName` -> `actions::forms::correctable` ->
+    // `Declined::DottedPartialName` -> `fieldclip::name_is_a_path`. Removing the
+    // gate would move the disclosure from hover to status bar, not silence the
+    // rule. Said here because the next reader's question is *is the refusal
+    // handled if I delete this?* and the answer is yes.
+    //
+    // Greying is R9-legal: *you have not typed a usable name yet* is temporary
+    // and operator-fixable, and it is explained on hover a few lines down.
+    let refusal = pdfcer_core::forms_author::validate_partial_name(&typed).err();
+    let ready = refusal.is_none();
     let commit = ui.add_enabled(ready, egui::Button::new(t::rename_button()));
     // ★ Published only on the path where the control exists — see
     // `REGION_RENAME`. Greying is still correct HERE: "you have not typed a
@@ -558,8 +567,11 @@ fn rename_row(
     // reserves greying for, and it is explained on hover two lines down.
     crate::diag::ui_rect(REGION_RENAME, commit.rect);
     let pressed = commit.clicked();
-    if !ready {
-        commit.on_disabled_hover_text(t::rename_disabled());
+    // `if let` rather than `if !ready`: the two are the same condition, and
+    // binding the refusal is what makes it impossible to word a hover for a
+    // state the engine did not report.
+    if let Some(refusal) = &refusal {
+        commit.on_disabled_hover_text(t::rename_disabled(refusal));
     }
     // Enter in the box commits, because a single-field form with a button
     // beside it is the one place an operator always tries Enter first.

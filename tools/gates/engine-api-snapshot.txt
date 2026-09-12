@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: f8f9a26ca485291f7d7f4476280156b3984a1a8d
+# baseline: 4ba7202906481b0265a2ab1aa61577c1536b0392
 # crates: pdfcer-core pdfcer-render pdfcer-print
-# items: 7526
+# items: 7527
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-core field pdfcer_core::parser::DuplicateKeyRecord::discarded -- the value pdfcer threw away, which is the fact that makes the operator's choice offerable rather than theoretical -- the engine's own argument for carrying both. Reached here as `LoadAnomaly::DuplicateDictKey::discarded` and printed beside the kept value today; the override that would ACT on it is filed `wanted` in ENGINE_BACKLOG.md against `LoadOptions::with_duplicate_keys`, not against this field.
@@ -2814,6 +2814,7 @@ pdfcer-core fn pdfcer_core::forms::retarget_target_list
 pdfcer-core fn pdfcer_core::forms::scan_javascript
 pdfcer-core fn pdfcer_core::forms_author::resolve_field_path
 pdfcer-core fn pdfcer_core::forms_author::split_field_path
+pdfcer-core fn pdfcer_core::forms_author::validate_partial_name
 pdfcer-core fn pdfcer_core::image_codec::decode_image
 pdfcer-core fn pdfcer_core::image_codec::decode_image_view
 pdfcer-core fn pdfcer_core::image_codec::decode_image_view_with
@@ -5517,11 +5518,11 @@ pdfcer-core variant pdfcer_core::forms_author::FieldShape::KidsWidgets
 pdfcer-core variant pdfcer_core::forms_author::FieldShape::MergedSingleWidget
 pdfcer-core variant pdfcer_core::forms_author::FormAuthorError::DottedPartialName
 pdfcer-core variant pdfcer_core::forms_author::FormAuthorError::EmptyName
+pdfcer-core variant pdfcer_core::forms_author::FormAuthorError::EmptyNameSegment
 pdfcer-core variant pdfcer_core::forms_author::FormAuthorError::FieldPathCrossesTerminal
 pdfcer-core variant pdfcer_core::forms_author::FormAuthorError::FieldTypeCollision
 pdfcer-core variant pdfcer_core::forms_author::FormAuthorError::NameIsGroupingNode
 pdfcer-core variant pdfcer_core::forms_author::FormAuthorError::PathTooDeep
-pdfcer-core variant pdfcer_core::forms_author::FormAuthorError::PeriodInPartialName
 pdfcer-core variant pdfcer_core::forms_author::FormAuthorError::RenameCollision
 pdfcer-core variant pdfcer_core::function::FunctionError::BadArrayLength
 pdfcer-core variant pdfcer_core::function::FunctionError::BadBitsPerSample

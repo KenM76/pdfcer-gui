@@ -263,12 +263,68 @@ pub fn delete_refused() -> String {
         .to_owned()
 }
 
-/// Why Rename is greyed.
+/// Why Rename is greyed, in the terms of the rule that actually refused it.
+///
+/// # ★★★ Why this takes the engine's refusal rather than a boolean
+///
+/// It used to be one sentence — *type a name with no dots in it* — shown for
+/// every reason the box was not yet usable, because the panel's gate was a
+/// two-clause shell-side model (`!is_empty() && !contains('.')`) and the only
+/// thing it could report was that one of the two had failed.
+///
+/// That sentence was **wrong for the commonest case**. A freshly selected
+/// field opens this panel with an empty box; hovering the greyed button then
+/// named a rule about periods the operator had not broken, which reads as the
+/// program having misunderstood what he typed rather than as a blank field.
+///
+/// Since `pdfcer-core` `7a0a9c2` the rule is askable —
+/// [`pdfcer_core::forms_author::validate_partial_name`] — so the panel asks it
+/// and hands the answer here. The wording is then chosen by the variant the
+/// engine raised, which means this function cannot describe a refusal
+/// different from the one about to happen.
+///
+/// ★★ And the rule may grow a clause without this going stale in the dangerous
+/// direction. A new variant lands in the catch-all, which says the name cannot
+/// be used and does not guess why — unhelpful, but true. The deleted model
+/// would have kept greying the old set and let the new refusal arrive on the
+/// status bar after the commit instead of on hover before it.
+///
+/// # The wordings
+///
+/// Each names the rule and the remedy, and none cites a clause number: the
+/// operator is a draughtsman, and §12.7.3.2 is for this comment. The dotted
+/// case is the short form of [`crate::text::fieldclip::name_is_a_path`], which
+/// is the sentence shown after a commit that got through — both exist because
+/// they are read at different moments, one while typing and one after.
 #[must_use]
-pub fn rename_disabled() -> String {
-    "Type a name with no dots in it. A dot separates a field from its parent, \
-     so a name containing one cannot be addressed."
-        .to_owned()
+pub fn rename_disabled(refusal: &pdfcer_core::forms_author::FormAuthorError) -> String {
+    use pdfcer_core::forms_author::FormAuthorError as F;
+    match refusal {
+        // The empty box is the state this panel OPENS in, so this is the
+        // sentence most often read. It asks for the thing that is missing and
+        // says nothing about periods.
+        F::EmptyName => "Type the new name for this field. It cannot be left blank.".to_owned(),
+        // `Text.2` — a well-formed path supplied where one segment was required.
+        // The consequence, not the clause: a name with a dot in it is read as a
+        // path to somewhere else, so the field it would author is one nobody can
+        // address.
+        F::DottedPartialName { .. } => "Type a name with no dots in it. A dot separates a field from its parent, so a name containing one cannot be addressed.".to_owned(),
+        // `a..b`, `.x`, `x.` — a period that starts, ends or doubles up. A
+        // different rule from the one above with a different remedy, so it gets
+        // its own sentence rather than being folded into the dot one.
+        //
+        // ⚠ Unreachable from this box until 2026-09-12 and wired anyway: the
+        // engine reported that making the rule askable exposed `adopt_widget`
+        // and `sign` ACCEPTING `a..b` where `rename_field` refused it. One
+        // predicate now serves all three, so what a shell can be shown here is
+        // decided by the engine and not by which verb it happened to call.
+        F::EmptyNameSegment { .. } => "That name has a dot with nothing beside it. Remove the dot, or put a name on both sides of it.".to_owned(),
+        // ★★ The catch-all does not guess. Reaching here means the engine refused
+        // for a reason this shell has not met, and a wrong reason in a hover is
+        // worse than none — it sends the operator to fix something that is not
+        // broken.
+        _ => "pdfcer cannot use that name. Try a different one.".to_owned(),
+    }
 }
 
 /// The delete-the-field button.

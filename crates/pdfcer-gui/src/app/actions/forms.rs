@@ -1337,19 +1337,44 @@ fn correctable(error: &pdfcer_core::edit::EditError) -> Option<Declined> {
         // the only way to find that out is to read the call site rather than
         // the reply.
         //
-        // ★★ Reachable from ONE surface, measured rather than assumed:
+        // ★★★ **Reachable from NO surface, and the table that said otherwise
+        // was corrected on 2026-09-12 by measuring instead of reading.**
         //
-        // | route | the control | reachable |
+        // | route | the control | reaches this arm |
         // |---|---|---|
-        // | `adopt_widget` | `panels::forms::tab_order::register`'s per-widget name box — free text, gated only on non-empty | **yes** |
-        // | `rename_field` | `panels::properties::formfield`'s name box — commit greyed while the text holds a period | no |
+        // | `adopt_widget` | `panels::forms::tab_order::register`'s per-widget name box — free text, but the row calls `adopt_preview` every frame and `add_enabled(false, ..)`s the button on any `Err` | no — the button greys while the period is typed |
+        // | `rename_field` | `panels::properties::formfield`'s name box — commit greyed on `validate_partial_name` | no |
         // | `sign` | no name box at all; the window lists fields that exist, and an existing FQN takes the engine's reuse branch where a period is legitimate | no |
         //
-        // So this arm is the adopt surface's answer, and is defensive on the
-        // other two. Defensive is still worth having on rename: the gate there
-        // is a shell-side model of an engine rule, and this project deleted
-        // another of those the same day for drifting. If the gate goes, the
-        // sentence is already behind it.
+        // The row above said **yes** for `adopt_widget` for one day. The
+        // reasoning was *this box is free text gated only on non-empty*, which
+        // is a true statement about this shell's own gate and the wrong
+        // question. `reject_dotted_partial` lives inside the engine's
+        // `adopt_plan`, and `adopt_preview` is documented as that same plan
+        // with the writes dropped — so the refusal arrives in the preview the
+        // row already draws from, before any press exists to map.
+        //
+        // ⇒ **A guard's placement decides which surface has to explain it.**
+        // The engine put this one in the shared plan for its own reasons — one
+        // predicate for three enforcement sites — and in doing so moved the
+        // disclosure out of the status bar and into a hover, in a shell whose
+        // code did not change. Nobody decided that. It is why the register
+        // panel needed two hover sentences of its own the same day: without
+        // them its `refusal_hint` fell into the catch-all that says *the reason
+        // is not one this panel expects*, which is the program apologising for
+        // a rule it is enforcing correctly.
+        //
+        // ★★ So this arm is now the floor on all three routes, and it is kept
+        // rather than deleted because every one of those `no`s is a claim about
+        // a gate rather than about the engine. Two of the three gates are
+        // shell-side judgments that can be relaxed in a refactor; the third is
+        // a preview call that a `&self`-to-`&mut self` change upstream would
+        // silently end. When any of them goes, the operator gets a sentence
+        // instead of `Display` output, without anyone having to notice.
+        // Measured: `panels::forms::tab_order::register::tests::a_dotted_name_greys_the_register_button_and_the_hover_names_the_rule`
+        // asserts the grey, and
+        // `tests::adopting_under_a_dotted_name_is_refused_and_worded` asserts
+        // this arm, deliberately as two separate measurements.
         E::FieldAuthoring(A::DottedPartialName { supplied }) => {
             Some(Declined::DottedPartialName(supplied.clone()))
         }
